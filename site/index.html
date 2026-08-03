@@ -7,13 +7,15 @@
 <meta name="description" content="Heroes is a small compiled language designed so that every plausible LLM mistake is a compile error. Native binaries, no GC, no standard library — everything through the C FFI.">
 <style>
   :root {
-    --bg: #101014; --fg: #e8e6e1; --dim: #9a9790; --accent: #e6b450;
-    --card: #17171d; --line: #2a2a33; --code: #c8d3f5;
+    --bg: #0d0d12; --fg: #ece9e2; --dim: #9a9790;
+    --red: #e5393e; --blue: #3f7bff; --gold: #e6b450;
+    --card: #16161d; --line: #2b2b35; --code: #cdd6f4;
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg: #faf8f4; --fg: #1c1b18; --dim: #6b6860; --accent: #8a5a00;
-      --card: #f1eee7; --line: #ddd8cc; --code: #24365e;
+      --bg: #f7f2e9; --fg: #191713; --dim: #6b6860;
+      --red: #c2262b; --blue: #1f4fd8; --gold: #8a5a00;
+      --card: #efe9dc; --line: #dcd4c2; --code: #24365e;
     }
   }
   * { box-sizing: border-box; }
@@ -22,23 +24,47 @@
     font: 17px/1.65 Georgia, 'Times New Roman', serif;
   }
   main { max-width: 42rem; margin: 0 auto; padding: 4rem 1.25rem 5rem; }
+
+  /* ------- the marquee: condensed glam caps + the Aladdin Sane bolt ------- */
+  header { position: relative; }
   h1 {
-    font-size: 3.4rem; margin: 0; letter-spacing: -0.02em; font-weight: 600;
+    font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    font-size: 4.6rem; margin: 0; line-height: 1;
   }
-  h1 .q { color: var(--accent); }
-  .tagline { font-size: 1.25rem; color: var(--dim); margin: 0.75rem 0 0; font-style: italic; }
+  h1 .q { color: var(--gold); }
+  .bolt {
+    position: absolute; top: -1.6rem; right: 0.2rem; width: 4.4rem; height: auto;
+    transform: rotate(8deg); pointer-events: none;
+  }
+  @media (max-width: 480px) { h1 { font-size: 3rem; } .bolt { width: 3rem; } }
+  .tagline { font-size: 1.25rem; color: var(--dim); margin: 0.9rem 0 0; font-style: italic; }
   .badge {
     display: inline-block; margin-top: 1.5rem; padding: 0.2rem 0.7rem;
     border: 1px solid var(--line); border-radius: 999px;
     font: 0.8rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
   }
+  .badge a { color: var(--blue); text-decoration: none; }
+
+  /* ------- section headings: poster caps, bolt bullet, red/blue ------- */
   h2 {
-    font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.12em;
-    color: var(--accent); margin: 3rem 0 0.75rem; font-weight: 600;
+    font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
+    font-size: 1.15rem; color: var(--red); margin: 3.2rem 0 0.75rem;
   }
+  h2::before {
+    content: ''; display: inline-block; width: 0.75em; height: 1em;
+    margin-right: 0.5rem; vertical-align: -0.12em;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%233f7bff' d='M14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E") no-repeat center / contain;
+  }
+  h2 .nod {
+    display: block; font-size: 0.72rem; letter-spacing: 0.22em; color: var(--dim);
+    margin-top: 0.15rem;
+  }
+
   blockquote {
     margin: 1.25rem 0; padding: 0.25rem 0 0.25rem 1.25rem;
-    border-left: 3px solid var(--accent); font-size: 1.15rem; font-style: italic;
+    border-left: 3px solid var(--red); font-size: 1.15rem; font-style: italic;
   }
   pre {
     background: var(--card); border: 1px solid var(--line); border-radius: 8px;
@@ -48,27 +74,26 @@
   pre .c { color: var(--dim); }
   ul.pillars { list-style: none; padding: 0; margin: 1rem 0; }
   ul.pillars li { margin: 0.9rem 0; padding-left: 1.4rem; position: relative; }
-  ul.pillars li::before { content: '—'; position: absolute; left: 0; color: var(--accent); }
+  ul.pillars li::before { content: '—'; position: absolute; left: 0; color: var(--red); }
   ul.pillars b { font-style: normal; }
   dl.why dt { font-weight: 600; margin-top: 1.1rem; }
-  dl.why dd { margin: 0.25rem 0 0 0; color: var(--fg); }
-  dl.why dd .ref { color: var(--dim); font-size: 0.85rem; }
+  dl.why dd { margin: 0.25rem 0 0 0; }
   ol.log { list-style: none; padding: 0; margin: 1rem 0; }
   ol.log li {
     margin: 0; padding: 0.9rem 0 0.9rem 1.4rem; position: relative;
     border-left: 2px solid var(--line);
   }
   ol.log li::before {
-    content: ''; position: absolute; left: -6px; top: 1.35rem;
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--accent);
+    content: ''; position: absolute; left: -7px; top: 1.3rem;
+    width: 12px; height: 12px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E") no-repeat center / contain;
   }
   ol.log .when {
     font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
     color: var(--dim); display: block;
   }
   ol.log b { font-style: normal; }
-  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
   footer {
     margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
     color: var(--dim); font-size: 0.9rem;
@@ -78,9 +103,14 @@
 <body>
 <main>
   <header>
+    <!-- the Aladdin Sane bolt (1973): red over blue, worn at a jaunty angle -->
+    <svg class="bolt" viewBox="0 0 48 64" aria-hidden="true">
+      <path fill="var(--blue)" d="M30 2 L8 36 h14 L16 62 L44 24 h-16 z" transform="translate(3.5,3)"/>
+      <path fill="var(--red)"  d="M30 2 L8 36 h14 L16 62 L44 24 h-16 z"/>
+    </svg>
     <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
     <p class="tagline">A small compiled language, designed for the reader that reads most code today: a language model.</p>
-    <span class="badge">pre-alpha &middot; being built in the open &middot; nothing to install yet</span>
+    <span class="badge">pre-alpha &middot; being built in the open &middot; <a href="#log">where are we now? ↓</a></span>
   </header>
 
   <h2>The thesis</h2>
@@ -94,7 +124,7 @@
     a control build of the same compiler with the safety rules switched off.
   </p>
 
-  <h2>What it looks like</h2>
+  <h2>What it looks like <span class="nod">· sound and vision ·</span></h2>
   <pre><code><span class="c"># A comment adjacent to a declaration is its documentation.</span>
 <span class="c"># Squared distance. Avoids sqrt to preserve precision.</span>
 dist2 = function: (a: Point, b: Point) -> int
@@ -110,7 +140,7 @@ test "3-4-5 triangle"
     assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25
 </code></pre>
 
-  <h2>The rules it lives by</h2>
+  <h2>The rules it lives by <span class="nod">· fashion ·</span></h2>
   <ul class="pillars">
     <li><b>Locality is the currency.</b> The meaning of a line is decided by that line plus the enclosing signature — never by something defined three files away. No inheritance, no macros, no exceptions, no implicit conversions, no null.</li>
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, one integer type, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
@@ -119,7 +149,7 @@ test "3-4-5 triangle"
     <li><b>Small enough to compile itself.</b> The whole specification fits in ~1500 tokens. The language is finished for v1 when its compiler is written in it — and the bootstrap compiler is retired.</li>
   </ul>
 
-  <h2>Why these choices</h2>
+  <h2>Why these choices <span class="nod">· quicksand, avoided ·</span></h2>
   <p>
     One formula drives every decision:
     <b>real cost = program tokens &times; (1 + rewrite rate)</b>.
@@ -184,7 +214,7 @@ test "3-4-5 triangle"
     same one.</dd>
   </dl>
 
-  <h2>The build log</h2>
+  <h2 id="log">The build log <span class="nod">· changes ·</span></h2>
   <p>The journey, newest first — one entry per milestone. The full diary
   (decisions, adversarial reviews, predictions and what broke) lives in the
   repo; this is the postcard version.</p>
@@ -221,17 +251,20 @@ test "3-4-5 triangle"
     </li>
   </ol>
 
-  <h2>Follow the build</h2>
+  <h2>Follow the build <span class="nod">· station to station ·</span></h2>
   <p>
-    The language is being built in the open, one documented step at a time —
-    design decisions, adversarial reviews, measurements and all:
+    The compiler is an assembly line — lexer to parser to types to IR to C —
+    and it is being built in the open, one documented station at a time:
+    design decisions, adversarial reviews, measurements and all.
     <a href="https://github.com/giuseppearici/heroes-lang">github.com/giuseppearici/heroes-lang</a>.
   </p>
 
   <footer>
     <p>The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977) —
-    the quotation marks are his. The irony lives in the prose; the language keeps
-    its keywords plain.</p>
+    the quotation marks are his. The lightning bolt is borrowed from 1973, worn
+    at a respectful angle. The section nods are song titles, nothing more: the
+    irony lives in the packaging, and the language keeps its keywords plain —
+    you will never meet Bowie in an error message.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>
 </main>

@@ -90,7 +90,10 @@ never a script, never a Makefile. Declared exception with an expiry date:
 **Everything written is English** — code, comments, docs, commits, verdicts.
 Conversation with the author is Italian. `Heroes` in prose, `heroes` for the
 binary, `.hero` for files. ASCII-only syntax. Bowie belongs in prose, never in
-error text or library names.
+error text or library names. The site's register is **70s-glam Bowie** per
+`site/README.md` § Style guide: the Aladdin Sane bolt as the one motif,
+song/album TITLES as section nods — **never lyrics** — and puns confined to
+the packaging.
 
 ## 12. Precedence when artifacts disagree
 Spec beats compiler (the compiler has the bug). Measurement beats opinion —
