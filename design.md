@@ -22,7 +22,7 @@ Two practical notes for the implementation:
 - **Bowie references belong in prose, never in the language surface.** Section headings in example
   files, chapter epigraphs, the README, the book — all fair game. But keyword names, error message
   text, and library function names stay plain and literal, because they are read by a machine that
-  has to parse them and by a model that has to learn them from a 1500-token spec. A cute error
+  has to parse them and by a model that has to learn them from a 2000-token spec. A cute error
   message costs spec tokens and comprehension; a cute README costs nothing. This is the same
   discipline as Part 1.10 (ASCII-only syntax): personality in the packaging, precision in the
   substrate.
@@ -225,16 +225,26 @@ annotations at use sites; anything derivable is derived. Note this is the *oppos
 
 ### 1.6 The spec budget
 
-**The entire language specification — syntax, semantics, built-in library — must fit in ~1500
-tokens.** About two pages. That document is not documentation, it is *the prompt*.
+**The entire language specification — syntax, semantics, built-in library — must fit in ~2000
+tokens.** About three pages. That document is not documentation, it is *the prompt*.
 
 This is the forcing function that makes the whole project coherent, because it merges two goals into
-one: every feature has to pay rent in spec tokens, and a language whose spec fits in two pages is
+one: every feature has to pay rent in spec tokens, and a language whose spec fits in a few pages is
 necessarily a language one person can implement. Want generics? That's ~200 tokens of spec — justify
 it. Want three ways to write a loop? Triple cost, zero gain.
 
-**Current state: ~1400 tokens. The budget is nearly spent. From here, every addition requires a
-removal.**
+**Raised from ~1500 to 2000 by author decision (2026-08-04; panel 009, retro-record).** Two reasons
+are on the record. First, 1500 was a forcing function, never a measurement — and it was being
+defended with a 1.33 tokens/word prose heuristic applied to a document that is ~14% punctuation by
+character, so the figures every budget verdict rested on (~1496) may always have been ~350 low
+(panel 008). Second, this document has instructed from the start that the count be taken *with a
+real tokeniser, not by estimation* (Part 10); until `heroes measure` does so, the spec's true size
+is unknown and no headroom claim means anything.
+
+**The discipline the number was proxying for survives independently of headroom: every addition
+still carries §1.0's burden of proof — compiler-need or a measured thesis effect — and a bigger
+budget buys no exemption from it.** A spec that grows to fill 2000 tokens because it can has failed
+§1.2 just as surely as one that breaches it.
 
 Historical calibration: Wirth's **Oberon report** is sixteen pages, and an entire operating system
 was written in Oberon. That is the right order of magnitude for one person.
@@ -810,7 +820,7 @@ Five operations, each with a distinct job:
 **`.default(v)`, not `.or(v)`.** `|` means "or" everywhere in this language; using "or" for
 "fallback value" would give one word two jobs — exactly the incoherence removed by dropping `or` as
 an operator. There is a defence (both are "take the first if usable, else the second"), but a pun
-costs the reader, and in a 1400-token language the reader learns *everything*, so internal coherence
+costs the reader, and in a two-thousand-token language the reader learns *everything*, so coherence
 outweighs resemblance to Python.
 
 **Not an operator (`??`).** In JavaScript `a ?? 0 + 1` parses as `a ?? (0 + 1)` because `??` binds
@@ -1804,7 +1814,7 @@ that compiles and diffs. This is the only thing that makes it possible to evolve
 silently breaking it.
 
 **Write the spec in condensed English early — around step 7, not at the end.** It is the control
-instrument: if it doesn't fit in ~1500 tokens, too much has been added, and you find out in an hour
+instrument: if it doesn't fit in ~2000 tokens, too much has been added, and you find out in an hour
 instead of three months. Count it with a real tokeniser, not by estimation — the BPE vocabulary
 contains arbitrary choices nobody predicts.
 

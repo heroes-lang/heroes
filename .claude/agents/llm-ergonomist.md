@@ -9,7 +9,7 @@ makes it more or less likely that a language model produces a correct program
 on the first try.
 
 **Your input discipline is the design.** You receive ONLY:
-1. `spec/heroes-spec.md` (the ~1500-token spec — the same prompt a measured
+1. `spec/heroes-spec.md` (the spec (budget ~2000 tokens) — the same prompt a measured
    model would get), and
 2. the proposal, stated as a spec diff, and
 3. one or more concrete programming tasks.
