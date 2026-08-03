@@ -187,6 +187,144 @@ fn operators_multichar_and_floats() {
     );
 }
 
+// --- strings and char literals (M1 step 3) ---------------------------------
+
+#[test]
+fn strings_and_chars() {
+    assert_eq!(
+        dump("greeting = \"hello, world\"\nc = 'a'\nsp = ' '\n"),
+        "\
+1:1 ident greeting
+1:10 eq =
+1:12 str \"hello, world\"
+1:26 terminator
+2:1 ident c
+2:3 eq =
+2:5 char 'a'
+2:8 terminator
+3:1 ident sp
+3:4 eq =
+3:6 char ' '
+3:9 terminator
+4:1 eof
+"
+    );
+}
+
+#[test]
+fn backslash_is_an_ordinary_byte() {
+    // No escape sequences exist (design.md is silent; gap on record in
+    // OPEN-QUESTIONS): "a\nb" is FOUR characters, backslash included.
+    assert_eq!(
+        dump("s = \"a\\nb\"\n"),
+        "\
+1:1 ident s
+1:3 eq =
+1:5 str \"a\\nb\"
+1:11 terminator
+2:1 eof
+"
+    );
+}
+
+#[test]
+fn unterminated_string_is_loud() {
+    assert_eq!(
+        dump("s = \"oops\nx = 1\n"),
+        "\
+1:1 ident s
+1:3 eq =
+1:5 error \"oops
+2:1 ident x
+2:3 eq =
+2:5 int 1
+2:6 terminator
+3:1 eof
+DIAG test.hero:1:5: error[unterminated_string]: this string never closes — strings are single-line, `\"` to `\"`
+"
+    );
+}
+
+#[test]
+fn char_literal_is_one_ascii_character() {
+    assert_eq!(
+        dump("a = ''\nb = 'ab'\nc = 'é'\n"),
+        "\
+1:1 ident a
+1:3 eq =
+1:5 error ''
+2:1 ident b
+2:3 eq =
+2:5 error 'ab'
+3:1 ident c
+3:3 eq =
+3:5 error 'é'
+4:1 eof
+DIAG test.hero:1:5: error[char_literal]: a character literal holds exactly one ASCII character ('a', '0', ' ') — `''` does not
+DIAG test.hero:2:5: error[char_literal]: a character literal holds exactly one ASCII character ('a', '0', ' ') — `'ab'` does not
+DIAG test.hero:3:5: error[char_literal]: a character literal holds exactly one ASCII character ('a', '0', ' ') — `'é'` does not
+"
+    );
+}
+
+// --- reserved foreign words (M1 step 4, spec/reserved-words.md) ------------
+
+#[test]
+fn foreign_keywords_fail_with_the_fix_prewritten() {
+    assert_eq!(
+        dump("struct Point\nlet x = 5\n"),
+        "\
+1:1 error struct
+1:8 ident Point
+1:13 terminator
+2:1 error let
+2:5 ident x
+2:7 eq =
+2:9 int 5
+2:10 terminator
+3:1 eof
+DIAG test.hero:1:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `Point = record`
+DIAG test.hero:2:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+"
+    );
+}
+
+#[test]
+fn null_family_and_exceptions_share_their_messages() {
+    assert_eq!(
+        dump("x = None\ntry\n"),
+        "\
+1:1 ident x
+1:3 eq =
+1:5 error None
+2:1 error try
+3:1 eof
+DIAG test.hero:1:5: error[reserved_word]: there is no null in this language — absence is a fallible type: `int?`
+DIAG test.hero:2:1: error[reserved_word]: there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`
+"
+    );
+}
+
+#[test]
+fn certain_fix_travels_with_the_diagnostic() {
+    // design.md §4.17 discipline: `while` → `for` is a pure word swap, so
+    // the Fix is Certain and machine-applicable.
+    let src = Source::new("test.hero".to_string(), "while x > 0\n".to_string());
+    let out = lex(&src);
+    let d = &out.diagnostics[0];
+    assert_eq!(d.code, "reserved_word");
+    assert_eq!(d.fixes.len(), 1);
+    assert_eq!(d.fixes[0].replacement, "for");
+    assert!(matches!(
+        d.fixes[0].certainty,
+        crate::diagnostics::Certainty::Certain
+    ));
+    // `let` has guidance but no mechanical repair: no fix attached.
+    let src2 = Source::new("test.hero".to_string(), "let x = 5\n".to_string());
+    let out2 = lex(&src2);
+    assert_eq!(out2.diagnostics[0].fixes.len(), 0);
+}
+
 // --- panel 007: completed ender list + brackets-only continuation ---------
 
 #[test]

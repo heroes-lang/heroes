@@ -30,7 +30,7 @@
 #[cfg(test)]
 mod tests;
 
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::source::{Source, Span};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -39,6 +39,14 @@ pub enum TokenKind {
     Ident,
     Int,
     Float,
+    /// `"…"` — any bytes except `"` and newline. NO escape sequences exist:
+    /// design.md is silent on them and the appendix never uses one; the
+    /// backslash is an ordinary byte. The gap ("how does a program write a
+    /// tab or newline character?") is on record in OPEN-QUESTIONS for a
+    /// panel before the library milestone.
+    Str,
+    /// `'a'` — exactly one ASCII character; value is an `int` (§4.3).
+    Char,
     // Heroes keywords (spec/reserved-words.md § keywords).
     KwConstant,
     KwFunction,
@@ -147,14 +155,15 @@ pub fn lex(src: &Source) -> LexOutput {
 
 /// design.md §4.15 (panel 007): the terminator is inserted when a line ends
 /// with an identifier, a literal, `return`, `break`, `continue`, `???`,
-/// postfix `?`, `)`, `]`, or `}`. Str/char literal kinds join the list when
-/// they land.
+/// postfix `?`, `)`, `]`, or `}`.
 fn is_line_ender(kind: TokenKind) -> bool {
     matches!(
         kind,
         TokenKind::Ident
             | TokenKind::Int
             | TokenKind::Float
+            | TokenKind::Str
+            | TokenKind::Char
             | TokenKind::KwTrue
             | TokenKind::KwFalse
             | TokenKind::KwReturn
@@ -192,12 +201,42 @@ fn keyword(text: &str) -> Option<TokenKind> {
     })
 }
 
+/// spec/reserved-words.md: the likeliest mistake from a model on autopilot
+/// is a keyword imported from another language — each is a loud failure
+/// with the solution pre-written. Returns the prescribed message and, where
+/// the repair is a pure word-for-word swap, the `Certain` replacement
+/// (design.md §4.17: only certain fixes are machine-applicable).
+fn foreign_word(text: &str) -> Option<(&'static str, Option<&'static str>)> {
+    Some(match text {
+        "struct" => ("`struct` is not a word in this language — use `record`: `Point = record`", Some("record")),
+        "enum" => ("`enum` is not a word in this language — use `variant`: `Token = variant`", Some("variant")),
+        "union" => ("`union` is not a word in this language — use `variant`: `Token = variant`", Some("variant")),
+        "class" => ("`class` is not a word in this language — use `record` (there is no inheritance)", None),
+        "fn" => ("`fn` is not a word in this language — use `function`: `f = function: (x: int) -> int`", Some("function")),
+        "func" => ("`func` is not a word in this language — use `function`", Some("function")),
+        "def" => ("`def` is not a word in this language — use `function`", Some("function")),
+        "let" => ("`let` is not a word in this language — bind with `=`: `x = 5`", None),
+        "var" => ("`var` is not a word in this language — declare a mutable with `@`: `v: int @ 0`", None),
+        "const" => ("`const` is not a word in this language — use `constant`: `MAX = constant: int`", Some("constant")),
+        "while" => ("`while` is not a word in this language — use `for`: `for x > 0`", Some("for")),
+        "elif" => ("`elif` is not a word in this language — write `else if`", Some("else if")),
+        "switch" => ("`switch` is not a word in this language — use `match`", Some("match")),
+        "case" => ("`case` is not a word in this language — a `match` arm is `.name => expr`", None),
+        "null" | "nil" | "None" => ("there is no null in this language — absence is a fallible type: `int?`", None),
+        "try" | "catch" | "throw" | "raise" => ("there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`", None),
+        "import" | "use" | "include" => ("modules do not exist yet — one file is one program (v1)", None),
+        _ => return None,
+    })
+}
+
 /// Stable lowercase name, used by `heroes lex --json` and the snapshots.
 pub fn kind_name(kind: TokenKind) -> &'static str {
     match kind {
         TokenKind::Ident => "ident",
         TokenKind::Int => "int",
         TokenKind::Float => "float",
+        TokenKind::Str => "str",
+        TokenKind::Char => "char",
         TokenKind::KwConstant => "kw_constant",
         TokenKind::KwFunction => "kw_function",
         TokenKind::KwRecord => "kw_record",
@@ -373,6 +412,8 @@ impl LexState {
                     return;
                 }
                 Some(b'#') => self.comment(src),
+                Some(b'"') => self.string(src),
+                Some(b'\'') => self.char_lit(src),
                 Some(b) if b.is_ascii_digit() => self.number(src),
                 Some(b) if b.is_ascii_alphabetic() || b == b'_' => self.ident(src),
                 Some(_) => self.punct(src),
@@ -399,6 +440,83 @@ impl LexState {
             kind: TokenKind::Comment,
             span: Span { start: start as u32, end: end as u32 },
         });
+    }
+
+    /// `"…"` to the closing quote on the same line. No escapes exist: every
+    /// byte between the quotes is itself (see `TokenKind::Str`).
+    fn string(&mut self, src: &Source) {
+        let text = src.text.as_bytes();
+        let start = self.pos;
+        self.pos += 1; // opening "
+        loop {
+            match text.get(self.pos) {
+                Some(b'"') => {
+                    self.pos += 1;
+                    self.push(TokenKind::Str, start);
+                    return;
+                }
+                None | Some(b'\n') => {
+                    let span = Span { start: start as u32, end: self.pos as u32 };
+                    self.diagnostics.push(Diagnostic::new(
+                        "unterminated_string",
+                        "this string never closes — strings are single-line, `\"` to `\"`"
+                            .to_string(),
+                        span,
+                    ));
+                    self.tokens.push(Token { kind: TokenKind::Error, span });
+                    self.last_significant = Some(TokenKind::Error);
+                    return;
+                }
+                Some(_) => self.pos += 1,
+            }
+        }
+    }
+
+    /// `'a'` — exactly one ASCII character between single quotes; its value
+    /// is an `int` (design.md §4.3: `'+'`, `'0'`, `' '`). Syntax is
+    /// ASCII-only (§1.10), so a multi-byte character here is an error, not
+    /// an interpretation.
+    fn char_lit(&mut self, src: &Source) {
+        let text = src.text.as_bytes();
+        let start = self.pos;
+        self.pos += 1; // opening '
+        // Find the closing quote on this line.
+        let mut close = self.pos;
+        while let Some(&b) = text.get(close) {
+            if b == b'\'' || b == b'\n' {
+                break;
+            }
+            close += 1;
+        }
+        if text.get(close) != Some(&b'\'') {
+            let span = Span { start: start as u32, end: close as u32 };
+            self.pos = close;
+            self.diagnostics.push(Diagnostic::new(
+                "unterminated_char",
+                "this character literal never closes — write exactly one ASCII character: 'a'"
+                    .to_string(),
+                span,
+            ));
+            self.tokens.push(Token { kind: TokenKind::Error, span });
+            self.last_significant = Some(TokenKind::Error);
+            return;
+        }
+        let content = &src.text[self.pos..close];
+        self.pos = close + 1;
+        if content.len() == 1 && content.as_bytes()[0].is_ascii() {
+            self.push(TokenKind::Char, start);
+        } else {
+            let span = Span { start: start as u32, end: self.pos as u32 };
+            self.diagnostics.push(Diagnostic::new(
+                "char_literal",
+                format!(
+                    "a character literal holds exactly one ASCII character ('a', '0', ' ') — `'{content}'` does not"
+                ),
+                span,
+            ));
+            self.tokens.push(Token { kind: TokenKind::Error, span });
+            self.last_significant = Some(TokenKind::Error);
+        }
     }
 
     fn number(&mut self, src: &Source) {
@@ -432,8 +550,27 @@ impl LexState {
             self.pos += 1;
         }
         let word = &src.text[start..self.pos];
-        let kind = keyword(word).unwrap_or(TokenKind::Ident);
-        self.push(kind, start);
+        if let Some(kind) = keyword(word) {
+            self.push(kind, start);
+            return;
+        }
+        if let Some((message, replacement)) = foreign_word(word) {
+            let span = Span { start: start as u32, end: self.pos as u32 };
+            let mut diag = Diagnostic::new("reserved_word", message.to_string(), span);
+            if let Some(fix) = replacement {
+                diag.fixes.push(Fix {
+                    title: format!("replace `{word}` with `{fix}`"),
+                    replacement: fix.to_string(),
+                    span,
+                    certainty: Certainty::Certain,
+                });
+            }
+            self.diagnostics.push(diag);
+            self.tokens.push(Token { kind: TokenKind::Error, span });
+            self.last_significant = Some(TokenKind::Error);
+            return;
+        }
+        self.push(TokenKind::Ident, start);
     }
 
     fn punct(&mut self, src: &Source) {
