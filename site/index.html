@@ -50,6 +50,24 @@
   ul.pillars li { margin: 0.9rem 0; padding-left: 1.4rem; position: relative; }
   ul.pillars li::before { content: '—'; position: absolute; left: 0; color: var(--accent); }
   ul.pillars b { font-style: normal; }
+  dl.why dt { font-weight: 600; margin-top: 1.1rem; }
+  dl.why dd { margin: 0.25rem 0 0 0; color: var(--fg); }
+  dl.why dd .ref { color: var(--dim); font-size: 0.85rem; }
+  ol.log { list-style: none; padding: 0; margin: 1rem 0; }
+  ol.log li {
+    margin: 0; padding: 0.9rem 0 0.9rem 1.4rem; position: relative;
+    border-left: 2px solid var(--line);
+  }
+  ol.log li::before {
+    content: ''; position: absolute; left: -6px; top: 1.35rem;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent);
+  }
+  ol.log .when {
+    font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+    color: var(--dim); display: block;
+  }
+  ol.log b { font-style: normal; }
   a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
   footer {
     margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
@@ -100,6 +118,108 @@ test "3-4-5 triangle"
     <li><b>No standard library — on purpose.</b> A minimal runtime, native binaries, no GC (refcounting + copy-on-write), and everything else through a C FFI where clang verifies every signature against the real header.</li>
     <li><b>Small enough to compile itself.</b> The whole specification fits in ~1500 tokens. The language is finished for v1 when its compiler is written in it — and the bootstrap compiler is retired.</li>
   </ul>
+
+  <h2>Why these choices</h2>
+  <p>
+    One formula drives every decision:
+    <b>real cost = program tokens &times; (1 + rewrite rate)</b>.
+    A clever compact construct saves a few percent of a file's tokens; a single
+    correction round-trip — model reads the error, re-reads the file, rewrites,
+    recompiles — costs 500&ndash;2000. <i>One correction round wipes out ten
+    syntactic optimisations.</i> So Heroes never shortens anything at the price
+    of a plausible silent error. Some consequences, each an answer to a real
+    mistake models make:
+  </p>
+  <dl class="why">
+    <dt>Why no null, and no exceptions?</dt>
+    <dd>Both produce the one class of bug that raises no compile error: the
+    unhandled path. Absence is a type (<code>int?</code>), failure is a value
+    (<code>fail(code, msg)</code>), and propagation is visible on the line
+    (<code>?</code>). Invisible control flow is banned wholesale — exceptions,
+    inheritance, macros, operator overloading — because a model reads locally
+    and cannot jump to a definition three files away.</dd>
+
+    <dt>Why do arguments need names when two parameters share a type?</dt>
+    <dd>Swapping two same-typed arguments is a classic model error — and the
+    types match, so nothing catches it. <code>copy(from: a, to: b)</code>
+    spends tokens exactly and only where that error lives. Where types already
+    protect (<code>save(42, "mario")</code>), names stay optional.</dd>
+
+    <dt>Why one integer type?</dt>
+    <dd>Conversion rules are the most expensive item a spec can carry and the
+    number-one error source in C. One <code>int</code>, no implicit
+    conversions, no width bugs — and a whole family of ambiguities never
+    exists.</dd>
+
+    <dt>Why is the formatting rigid — exactly 4 spaces, tabs are errors?</dt>
+    <dd>So that &ldquo;nearly right&rdquo; is a compile failure instead of a
+    silently different program. A canonical formatter removes every style
+    decision from the writer: any textual difference between two programs is a
+    difference in meaning.</dd>
+
+    <dt>Why no standard library?</dt>
+    <dd>A modern standard library is more work than a compiler — it is what
+    kills one-person languages. Heroes ships a minimal runtime; maths, files,
+    JSON, HTTP arrive from C libraries through an FFI where the C compiler
+    verifies every declared signature against the real header. A wrong FFI
+    type is a compile error, not a runtime disaster.</dd>
+
+    <dt>Why does the compiler emit C?</dt>
+    <dd>Chosen for the boundary, not for speed: emitting C makes the FFI
+    nearly free (headers, macros, verification included) and gives real
+    debugging via <code>#line</code>. The original backend (QBE) was dropped
+    when the founding constraint won the argument — the whole debate is in
+    the repo, verdicts included.</dd>
+
+    <dt>Why value semantics — every assignment a copy?</dt>
+    <dd>No aliasing means no function can modify your data behind your back,
+    no data races by construction, and reference cycles cannot exist — so
+    refcounting with copy-on-write is complete memory management, no GC.
+    Locality becomes total: what a line means is decided by that line.</dd>
+
+    <dt>And the spec fits in ~1500 tokens. Why so hard a cap?</dt>
+    <dd>Because the spec <i>is</i> the prompt. Every feature pays rent in it,
+    and a language whose entire definition fits in two pages is also a
+    language one person can implement — the two constraints are secretly the
+    same one.</dd>
+  </dl>
+
+  <h2>The build log</h2>
+  <p>The journey, newest first — one entry per milestone. The full diary
+  (decisions, adversarial reviews, predictions and what broke) lives in the
+  repo; this is the postcard version.</p>
+  <ol class="log">
+    <li>
+      <span class="when">2026-08-03 · M0 — day zero</span>
+      <b>Foundations, and four programs written before the compiler.</b>
+      Git, a Rust workspace, a golden-test harness green with zero tests, and
+      the language spec frozen at ~1500 tokens as the measurement baseline.
+      Then four hand-written C programs — the exact shape the compiler must
+      one day emit — including a recursive tree with reference counting,
+      verified leak-free under AddressSanitizer. The machine found the first
+      design bug before any human did: an unused-label warning that changed
+      how every generated function will begin.
+    </li>
+    <li>
+      <span class="when">2026-08-03 · before the code</span>
+      <b>The plan meets five hostile experts.</b>
+      Before a single token was lexed, the build plan was reviewed by five
+      adversarial reviewers — language design, compiler engineering,
+      simplicity, LLM ergonomics, didactics. Three said <i>object</i>. The
+      thesis metric gained a control arm, two missing compiler passes were
+      discovered, and the backend switched from QBE to C emission — for the
+      FFI, not for speed. The plan that survived is revision 2.
+    </li>
+    <li>
+      <span class="when">2026-08-03 · the beginning</span>
+      <b>A 2000-line design document and one question.</b>
+      The language arrived as a long design conversation: a compiled language
+      with no standard library, built for the reader that isn't human. The
+      first engineering decision — which language writes the language — was
+      overturned within the hour by a one-line question about the backend.
+      Everything since has been argued in writing.
+    </li>
+  </ol>
 
   <h2>Follow the build</h2>
   <p>

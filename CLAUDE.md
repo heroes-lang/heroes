@@ -109,7 +109,8 @@ the journey, and the beats are its raw material; see `docs/book/README.md`),
 commit (`M<n> step <k>: <what> (docs/journal/NNN)`). One tag per milestone
 (pushed with `--follow-tags`). A milestone closes only when goldens pass
 (ASan-clean where applicable), the determinism diff is empty, the prediction
-predates the implementation, and the mutation drill ran. The repo pushes to
+predates the implementation, the mutation drill ran, and the site's build log
+gained its entry (`site/README.md` § Keeping it current). The repo pushes to
 `origin` (github.com/giuseppearici/heroes-lang).
 
 ## Commands
