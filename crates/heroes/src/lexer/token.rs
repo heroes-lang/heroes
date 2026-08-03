@@ -14,14 +14,13 @@ pub enum TokenKind {
     Ident,
     Int,
     Float,
-    /// `"…"` — any bytes except `"` and newline, single-line. NO escape
-    /// sequences exist yet: design.md is silent on them and the appendix
-    /// never uses one, so the backslash is an ordinary byte. The gap
-    /// ("how does a program write a tab or newline character?") is on
-    /// record in docs/panel/OPEN-QUESTIONS.md for a panel before M6.
+    /// `"…"` — single-line, any UTF-8 between the quotes, with the five
+    /// escapes of `escape.rs` (`\n \t \\ \"`; `'` is bare here).
     Str,
-    /// `'a'` — exactly one ASCII character; its value is an `int`
-    /// (design.md §4.3: char literals exist to kill magic numbers).
+    /// `'…'` — exactly ONE character: one ASCII character or one escape
+    /// (`\n \t \\ \'`; `"` is bare here). Its value is an `int`
+    /// (design.md §4.3: char literals exist to kill magic numbers), so
+    /// `'\n'` is four source bytes and one character.
     Char,
 
     // --- Heroes keywords (spec/reserved-words.md § keywords) ----------

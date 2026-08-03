@@ -13,6 +13,7 @@
 //! | `keywords.rs` | the word tables: Heroes keywords, foreign words with prescribed errors |
 //! | `layout.rs`   | shape: rigid indentation, terminator insertion (panel 007) |
 //! | `scan.rs`     | words: comments, literals, identifiers, punctuation |
+//! | `escape.rs`   | escape sequences: the table, validation, decoding (panel 008) |
 //! | `tests/`      | snapshot tests, grouped the same way |
 //!
 //! Two invariants hold everywhere:
@@ -27,11 +28,13 @@
 #[cfg(test)]
 mod tests;
 
+mod escape;
 mod keywords;
 mod layout;
 mod scan;
 mod token;
 
+pub use escape::unescape;
 pub use token::{kind_name, Token, TokenKind};
 
 use crate::diagnostics::Diagnostic;

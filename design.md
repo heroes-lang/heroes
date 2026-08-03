@@ -682,11 +682,29 @@ v1 without debate.
 **No implicit conversions.** `1 + 2.0` is a compile error. Convert explicitly: `to_f64(x)`,
 `to_int(x)`.
 
-**Character literals are `int`.** `'+'`, `'0'`, `' '`. No new type, no conversion, one line in the
-lexer. **Rationale:** the first lexer written in this language contained `c == 43`,
-`c >= 48 && c <= 57`, `c == 40` — seven magic numbers in twenty lines, and writing `43` for `+` is an
-error no compiler can catch. This was judged the best benefit-to-cost modification in the entire
-review.
+**Character literals are `int`.** `'+'`, `'0'`, `' '`. No new type, no conversion, ~70 lines in the
+lexer (the original text said "one line"; the measured cost is on record in panel 008).
+**Rationale:** the first lexer written in this language contained `c == 43`, `c >= 48 && c <= 57`,
+`c == 40` — seven magic numbers in twenty lines, and writing `43` for `+` is an error no compiler
+can catch. This was judged the best benefit-to-cost modification in the entire review.
+
+**Escape sequences: five, split by context** (panel 008). In a string: `\n` `\t` `\\` `\"`. In a
+character literal: `\n` `\t` `\\` `\'`. A `'` needs no escape inside a string and a `"` needs none
+inside a character literal, so **each character has exactly one spelling** — §4.15's canonical-form
+rule survives into the literals. A character literal therefore holds exactly one *character*: one
+ASCII character or one escape, so `'\n'` is four source bytes and one character.
+
+**The backslash is reserved**: any other character after it is a compile error whose diagnostic
+names the legal escapes and carries a `certain` fix. This half is the point. Without it,
+`print("a\nb")` compiles and prints four characters — a plausible model mistake that is *not* a
+compile error, which is the thesis inverted. Go, Rust and Zig all error on unknown escapes from day
+one; C's permissiveness is what Python has been unwinding since 2016. **The set is frozen**: `\0`,
+`\xNN`, `\u{...}` and octal escapes need a panel, because they can produce an interior NUL, which
+silently truncates every C call and voids §4.20's guarantee that `.cstr()` is free.
+
+**Known residual trap** (found in implementation, panel 008): `"C:\temp"` cannot be made loud —
+`\t` is legal, so the path silently becomes `C:<TAB>emp`. Every language with C-style escapes
+carries this; the remedy is raw string literals, which are not v1 material. Recorded in Part 8.
 
 **Strings** are immutable UTF-8, **indexed in bytes**. `s[i]` yields an `int` in 0..255. Iterate
 characters with `s.chars()`, which yields single-character `str`. Slicing that lands mid-sequence is
@@ -1733,6 +1751,15 @@ visible rather than patched with a second form.
 14. **Error accumulation is manual**: `@diags: [Diagnostic]` threaded through every pass of the
     self-hosted compiler (§1.0). Legal, uniform, and slightly noisy; the price of having neither
     globals nor closures in v1.
+15. **`"C:\temp"` is silently a tab** (panel 008). Reserving the backslash makes `"\d+"` a loud
+    error, but it cannot catch a path whose next letter happens to name a legal escape. Inherited by
+    every language with C-style escapes; the remedy is raw string literals, which v1 does not have.
+16. **`print` took only half of `WriteLn`** (panel 008, historian). design.md cites Pascal's
+    `WriteLn` as the fifty-year precedent for `print`'s forced trailing newline — but Pascal pairs it
+    with `write` (no newline) and out-of-string character codes (`#10`), and Oberon-07 uses `0AX`.
+    Heroes has neither, so before escapes landed it was strictly weaker than its own cited
+    precedent. Escapes close the gap for literals; there is still no way to print without a
+    trailing newline.
 
 ---
 

@@ -91,6 +91,23 @@ precedent at the source.
   uses `0AX`. Heroes has neither, which made it strictly weaker than its
   own cited precedent — escapes close the gap. Recorded as a known wart.
 
+## Correction, found during implementation (2026-08-04)
+
+The ergonomist's finding 5 and the resolution's rationale both claimed
+Amendment D "turns `"C:\temp"` and `"\d+"` from silent bytes into
+diagnostics". **Half of that is false, and the half that fails is the
+example everyone reaches for.** `\t` is a legal escape, so `"C:\temp"`
+produces no diagnostic at all — it silently becomes `C:<TAB>emp`. Only
+`"\d+"` and `"C:\Users"` are loud.
+
+This is the residual silent trap that C-style escapes carry in every
+language that has them, and it is not fixable by tuning the escape set: the
+standard remedy is raw string literals (Go's backquotes, Rust's `r#"…"#`,
+Swift SE-0200), which are out of scope for v1 and would need their own
+panel. Pinned by `the_residual_windows_path_trap_is_on_the_record` in
+`crates/heroes/src/lexer/tests/literals.rs` so the limit stays visible
+rather than being rediscovered as a bug.
+
 ## Predictions to score
 
 - ergonomist: ≥45pp compile-vs-tests-pass gap on newline-in-string tasks

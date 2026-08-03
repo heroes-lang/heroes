@@ -40,12 +40,24 @@ or it breaches the 1500-token budget.
   completions contain such a break. If the warden is wrong, reconvene with
   Nim's explicit continuator set + the sentence (+ a named spec removal and
   a real tokenizer count).
-- **Escape sequences do not exist (M1.3, needs a session before M6):**
-  design.md never mentions them; the lexer implements the letter — a
-  backslash in a string is an ordinary byte, and a char literal is one
-  ASCII character. But the self-hosted lexer must express the tab and
-  newline *characters* without magic numbers (`c == 9` is exactly what
-  §4.3's char literals were introduced to kill), and `join`/`Builder` (M6
-  library) will want them in strings. Design question for the panel: a
-  minimal escape set (`\n \t \\ \" \'`?) vs named constants in the library
-  vs something else. Compiler-need under §1.0, so it cannot be waved off.
+- ~~Escape sequences do not exist (M1.3)~~ — **resolved by panel 008**
+  (author ratified 2026-08-04): five escapes split by context, backslash
+  reserved, set frozen.
+- **Raw string literals (no panel yet, no urgency):** panel 008's
+  implementation found that `"C:\temp"` cannot be made loud — `\t` is legal,
+  so the path silently becomes `C:<TAB>emp`. Every C-style-escape language
+  carries this; the standard remedy is raw strings (Go backquotes, Rust
+  `r#"…"#`, Swift SE-0200), which are v2 material at best. Recorded so it is
+  not rediscovered as a bug.
+- **Repeated `@` arguments are a silent divergence (found by the ergonomist
+  in panel 009, needs a session before M3c):** `shift(a @ n, b @ n)` — the
+  same variable passed twice as a mutable argument — compiles under both
+  readings of §4.8 and yields *different answers* (copy-in/copy-out:
+  last write wins; reference semantics: the writes see each other). Every
+  mainstream language installs the reference model, so a model will guess
+  wrong silently. Proposed fix is not spec prose but a compile error on
+  repeated `@` arguments.
+- **The harness needs a compiles-but-wrong-output bucket** separate from the
+  compile-error bucket (ergonomist, 009): without it the thesis's central
+  claim — that silent errors are what the design eliminates — has no
+  instrument, and panels 008/009's predictions are untestable.

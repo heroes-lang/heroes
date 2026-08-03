@@ -1,7 +1,25 @@
-//! Words that denote values: numbers, operators, strings, char literals —
-//! including what does NOT exist yet (escapes) and what fails loudly.
+//! Words that denote values: numbers, operators, strings, char literals,
+//! and the escape rules panel 008 settled.
+//!
+//! Note the division of labour: the dump format prints RAW SOURCE SLICES,
+//! so it can show that a literal lexed but never what it *means*. Escape
+//! semantics are therefore tested against `unescape`, on byte values.
 
 use super::dump;
+use crate::lexer::{lex, unescape, TokenKind};
+use crate::source::Source;
+
+/// Decode the first `Str`/`Char` token of a snippet.
+fn value_of(text: &str) -> String {
+    let src = Source::new("test.hero".to_string(), text.to_string());
+    let out = lex(&src);
+    let t = out
+        .tokens
+        .iter()
+        .find(|t| matches!(t.kind, TokenKind::Str | TokenKind::Char))
+        .expect("a string or char token");
+    unescape(&src, t.span)
+}
 
 #[test]
 fn operators_multichar_and_floats() {
@@ -50,21 +68,117 @@ fn strings_and_chars() {
     );
 }
 
+// --- panel 008: the five escapes, split by context -------------------------
+
 #[test]
-fn backslash_is_an_ordinary_byte() {
-    // No escape sequences exist (design.md is silent; gap on record in
-    // OPEN-QUESTIONS): "a\nb" is FOUR characters, backslash included.
+fn escapes_decode_to_their_bytes() {
+    // The whole point, and invisible to the token dump: these are VALUES.
+    assert_eq!(value_of("s = \"a\\nb\"\n"), "a\nb");
+    assert_eq!(value_of("s = \"a\\tb\"\n"), "a\tb");
+    assert_eq!(value_of("s = \"C:\\\\temp\"\n"), "C:\\temp");
+    assert_eq!(value_of("s = \"he said \\\"hi\\\"\"\n"), "he said \"hi\"");
+    // A `'` needs no escape inside a string; a `"` needs none inside a char.
+    assert_eq!(value_of("s = \"it's\"\n"), "it's");
+    assert_eq!(value_of("c = '\"'\n"), "\"");
+    // Char literals decode to one character each.
+    assert_eq!(value_of("c = '\\n'\n"), "\n");
+    assert_eq!(value_of("c = '\\t'\n"), "\t");
+    assert_eq!(value_of("c = '\\\\'\n"), "\\");
+    assert_eq!(value_of("c = '\\''\n"), "'");
+    // UTF-8 in strings survives untouched (spec: strings may hold any UTF-8).
+    assert_eq!(value_of("s = \"caffè ☕\"\n"), "caffè ☕");
+}
+
+#[test]
+fn escaped_literals_still_lex_as_one_token() {
     assert_eq!(
-        dump("s = \"a\\nb\"\n"),
+        dump("s = \"a\\nb\"\nc = '\\t'\n"),
         "\
 1:1 ident s
 1:3 eq =
 1:5 str \"a\\nb\"
 1:11 terminator
-2:1 eof
+2:1 ident c
+2:3 eq =
+2:5 char '\\t'
+2:9 terminator
+3:1 eof
 "
     );
 }
+
+#[test]
+fn unknown_escape_is_loud_but_does_not_poison_the_token() {
+    // panel 008: the token stays `str`. Poisoning it to `error` would
+    // delete the line's terminator (error is not an ender, panel 007) and
+    // glue the next line on — one mistake becoming two.
+    assert_eq!(
+        dump("re = \"\\d+\"\nx = 1\n"),
+        "\
+1:1 ident re
+1:4 eq =
+1:6 str \"\\d+\"
+1:11 terminator
+2:1 ident x
+2:3 eq =
+2:5 int 1
+2:6 terminator
+3:1 eof
+DIAG test.hero:1:7: error[unknown_escape]: `\\d` is not an escape sequence — the escapes are \\n \\t \\\\ \\\"; write `\\\\` for a literal backslash
+"
+    );
+}
+
+#[test]
+fn the_residual_windows_path_trap_is_on_the_record() {
+    // Honest limit of panel 008, found while testing: reserving the
+    // backslash makes `"\d+"` loud, but it CANNOT make `"C:\temp"` loud —
+    // `\t` is a legal escape, so the path silently becomes `C:<TAB>emp`.
+    // Every language with C-style escapes carries this; the fix is not
+    // more escapes but raw strings (deferred, and out of scope for v1).
+    assert_eq!(value_of("p = \"C:\\temp\"\n"), "C:\temp");
+    let src = Source::new("test.hero".to_string(), "p = \"C:\\temp\"\n".to_string());
+    assert!(lex(&src).diagnostics.is_empty());
+    // The half that IS loud: an unknown escape after the backslash.
+    let src2 = Source::new("test.hero".to_string(), "p = \"C:\\Users\"\n".to_string());
+    assert_eq!(lex(&src2).diagnostics[0].code, "unknown_escape");
+}
+
+#[test]
+fn cross_context_escape_is_rejected_with_its_own_repair() {
+    // Go's split, enforced: exactly one spelling for each character.
+    let src = Source::new("test.hero".to_string(), "s = \"it\\'s\"\n".to_string());
+    let out = lex(&src);
+    let d = &out.diagnostics[0];
+    assert_eq!(d.code, "escape_not_needed");
+    assert_eq!(d.fixes[0].replacement, "'");
+    let src2 = Source::new("test.hero".to_string(), "c = '\\\"'\n".to_string());
+    let out2 = lex(&src2);
+    assert_eq!(out2.diagnostics[0].code, "escape_not_needed");
+    assert_eq!(out2.diagnostics[0].fixes[0].replacement, "\"");
+}
+
+#[test]
+fn backslash_at_end_of_line_leaves_the_layout_intact() {
+    // The escape must not swallow the newline: doing so would destroy
+    // every indent/dedent that follows (§4.15).
+    assert_eq!(
+        dump("s = \"oops\\\n    x\n"),
+        "\
+1:1 ident s
+1:3 eq =
+1:5 error \"oops\\
+2:1 indent
+2:5 ident x
+2:6 terminator
+3:1 dedent
+3:1 eof
+DIAG test.hero:1:5: error[unterminated_string]: this string never closes — strings are single-line, `\"` to `\"`
+"
+    );
+}
+
+// --- broken literals -------------------------------------------------------
 
 #[test]
 fn unterminated_string_is_loud() {
@@ -85,7 +199,7 @@ DIAG test.hero:1:5: error[unterminated_string]: this string never closes — str
 }
 
 #[test]
-fn char_literal_is_one_ascii_character() {
+fn char_literal_holds_exactly_one_character() {
     assert_eq!(
         dump("a = ''\nb = 'ab'\nc = 'é'\n"),
         "\
@@ -99,9 +213,20 @@ fn char_literal_is_one_ascii_character() {
 3:3 eq =
 3:5 error 'é'
 4:1 eof
-DIAG test.hero:1:5: error[char_literal]: a character literal holds exactly one ASCII character ('a', '0', ' ') — `''` does not
-DIAG test.hero:2:5: error[char_literal]: a character literal holds exactly one ASCII character ('a', '0', ' ') — `'ab'` does not
-DIAG test.hero:3:5: error[char_literal]: a character literal holds exactly one ASCII character ('a', '0', ' ') — `'é'` does not
+DIAG test.hero:1:5: error[char_literal]: a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\\n', '\\t') — `''` does not
+DIAG test.hero:2:5: error[char_literal]: a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\\n', '\\t') — `'ab'` does not
+DIAG test.hero:3:5: error[char_literal]: a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\\n', '\\t') — `'é'` does not
 "
     );
+}
+
+#[test]
+fn lone_backslash_char_suggests_escaping_it() {
+    // `'\'` — the backslash escaped the closing quote, so the literal never
+    // closes. The repair is certain: `'\\'`.
+    let src = Source::new("test.hero".to_string(), "c = '\\'\n".to_string());
+    let out = lex(&src);
+    let d = &out.diagnostics[0];
+    assert_eq!(d.code, "unterminated_char");
+    assert_eq!(d.fixes[0].replacement, "'\\\\'");
 }
