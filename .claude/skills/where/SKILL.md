@@ -21,8 +21,8 @@ first time it appears — no exceptions, take nothing for granted.**
 git log --oneline -15
 git tag
 tail -8 DESIGN-LOG.md
-ls docs/journal/ | tail -3        # + read the latest entry's open items
-cat docs/panel/OPEN-QUESTIONS.md  # headings only
+head -20 docs/ROADMAP.md          # current milestone + what is next
+cat docs/debrief/QUEUE.md         # open items = everything owed to the author
 cargo test --quiet 2>&1 | tail -2 # green or red, one line
 ```
 
@@ -56,18 +56,18 @@ has never heard the word "compilatore". Rules:
 - Use the canonical analogies below — always the same ones, so the author's
   mental model accumulates instead of resetting.
 
-### 4. «Tocca a te» — the author's pending actions
-List anything waiting on the author (prediction files, panel decisions,
-adversarial goldens, baseline run), each with the file path and the reason it
-can't be done for them — e.g. *la predizione ha valore solo se la fai tu senza
-vedere la risposta*.
+### 4. «Tocca a te» — the author's pending items (never blocking)
+Summarize the open `docs/debrief/QUEUE.md` items (ratifications, drills,
+baseline run, exercises), each with the file path and why it is worth their
+time — e.g. *la diagnosi ha più valore se provi a indovinare la causa prima
+di leggere il fix*. Make clear nothing is waiting on them to proceed.
 
 ### 5. «La pillola di oggi» — one micro-lesson
 ONE concept (3–5 sentences max), tied to the current stage, with its analogy.
 End with a question the author can answer mentally to check they got it.
 If the concept has a `docs/glossary/` entry, link it; if the pillola resolves
-a fresh friction, distill it into a new glossary entry afterwards
-(CLAUDE.md rule 3: friction produces an artifact).
+a fresh gap, distill it into a new glossary entry afterwards (a gap resolved
+is an artifact earned — see `/debrief`).
 
 ## Canonical analogies (use these, always the same)
 
@@ -87,7 +87,7 @@ a fresh friction, distill it into a new glossary entry afterwards
 | refcount / COW | ogni valore ha un contatore di chi lo sta guardando; si copia davvero solo quando qualcuno modifica una cosa guardata anche da altri |
 | golden test | una coppia «input + output atteso scritto su file»: se domani l'output cambia, il test urla |
 | fixpoint | il compilatore scritto in Heroes ricompila se stesso e ottiene un risultato IDENTICO byte per byte: la prova che non dipende più da Rust |
-| panel | il consiglio dei cinque giudici che esamina ogni modifica al linguaggio prima che entri |
+| panel | il consiglio dei cinque giudici che esamina ogni modifica al linguaggio; adotta la via prudente e tu ratifichi con calma |
 
 ## Tone rules
 - Never English jargon without immediate Italian gloss.

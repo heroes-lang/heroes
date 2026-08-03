@@ -1,6 +1,6 @@
 ---
 name: panel
-description: Convene the Heroes design panel on a proposal — five judges with differentiated inputs and falsifiable predictions. Mandatory before changing spec/, design.md, surface syntax/semantics, a diagnostic class, or architecture. Writes docs/panel/NNN and a DESIGN-LOG line.
+description: Convene the Heroes design panel on a proposal — five judges with differentiated inputs and falsifiable predictions. Mandatory before changing the language (spec/, design.md Parts 1-11, surface syntax/semantics, a diagnostic class, architecture). Never blocks — adopts a conservative provisional default and queues the author's ratification. Writes docs/panel/NNN and a DESIGN-LOG line.
 ---
 
 # /panel <proposal> — the design panel
@@ -36,8 +36,12 @@ makes their verdicts carry information instead of correlated opinion.
    - the verdict table (verdict · section · cost/delta · prediction ·
      condition, per judge)
    - disagreements, stated plainly — do not smooth them over
-   - **the decision is the author's.** A veto does not block; it compels a
-     written answer, which goes in this file.
+   - **the decision is the author's, asynchronously.** The synthesis adopts
+     the most conservative resolution, marked `provisional — author
+     ratification pending`, records what a veto would compel, and appends an
+     item to `docs/debrief/QUEUE.md`. Work proceeds on the provisional
+     default; the author's verdict is appended to this file when given (in
+     `/debrief` or whenever), with follow-up work if they overturn it.
    - every judge's `prediction` is copied into a "Predictions to score"
      section with the milestone at which each becomes checkable. When the
      harness next runs, score them and append the results — judges accrue
