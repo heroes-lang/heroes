@@ -38,17 +38,23 @@ language, which is a point in its favour, but a five-minute search is cheap insu
 ### The author
 
 One person, learning. Not a compiler expert. On macOS (Apple Silicon). The implementation will be
-written largely with your help, which means the author's learning has to come from *predicting,
-testing, and debugging* rather than from typing. Three consequences that should shape how you work:
+written largely with your help, which means the author's learning comes from *retrieval, testing,
+and debugging* rather than from typing — and it runs **on the author's clock, never as a gate on
+the work** (protocol inverted 2026-08-03, author instruction; the executable form lives in the
+`/step` and `/debrief` skills). Three consequences that should shape how you work:
 
-1. **Before implementing a phase, state what the output should look like and let the author compare
-   against their own prediction.** The gap between prediction and reality is the lesson. Don't skip
-   straight to working code without showing the shape of what you're about to do.
-2. **The author writes the tests.** Golden tests (a directory of `.hero` files each paired with
-   expected output) are the single most important artifact of this project and the least delegable.
-   Ask for them; don't invent them all yourself.
-3. **When something breaks, explain before fixing.** Diagnosis is where the density of learning is
-   highest.
+1. **Implement first; queue the understanding.** The assistant never stops mid-step to ask.
+   Everything worth understanding — a new concept, a surprising output, a design default — becomes
+   an entry in `docs/debrief/QUEUE.md`, processed in `/debrief` sessions when the author chooses.
+   Inside a debrief, retrieval still comes first: the question before the explanation, because the
+   gap between the author's guess and reality is the lesson.
+2. **The assistant writes the tests; the author ratifies them.** Golden tests (a directory of
+   `.hero` files each paired with expected output) remain the single most important artifact of
+   this project. Each milestone's five adversarial cases stay marked
+   `# UNVERIFIED — pending debrief` until the author has said what each one guards against.
+3. **When something breaks, fix it and keep the symptom.** The raw symptom and the fixing commit
+   are queued so the author can hypothesise before reading the fix — diagnosis is still where the
+   density of learning is highest; it just no longer blocks the pipeline.
 
 Also maintain a `DESIGN-LOG.md`: one line per decision plus the reason. In three months this is the
 only thing that distinguishes reasoning from improvisation.

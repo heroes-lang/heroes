@@ -15,14 +15,15 @@ for that book a first-class output of the process, not an afterthought.
 | `DESIGN-LOG.md` | every decision, dated, one line, with its reason |
 | `docs/panel/` | the arguments — objections, verdicts, and the author's answers |
 | `git log` + tags | the true chronology; `git checkout m2` re-opens any chapter's code |
-| `docs/measurements/` | the numbers that make the thesis a claim, not an opinion |
+| measurement records (born with the first harness run) | the numbers that make the thesis a claim, not an opinion |
 | `docs/book/beats.md` | **story beats** (see below) — the human texture the other sources drop |
 
 ## The one new habit: story beats
 
 Technical records forget how things *felt*, and the book needs exactly that.
-So every `/step` close and every panel decision appends one line to
-`docs/book/beats.md`:
+So every **milestone close** and every panel decision appends one line to
+`docs/book/beats.md` (cadence per CLAUDE.md rule 14 — and any day something
+genuinely diverged deserves one too):
 
 ```
 date | milestone | the beat (1–2 sentences, plain language)
