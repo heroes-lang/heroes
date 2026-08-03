@@ -15,3 +15,6 @@ Format: `date | decision | reason | design.md § | panel`
 2026-08-03 | Fixpoint acceptance = byte-identical generated C (diff B.c C.c), not Mach-O binaries | binary identity depends on clang/ld noise (LC_UUID, DWARF paths) | Part 0 | 000
 2026-08-03 | Emitter always enters via explicit `goto bb0` | spike 02 finding: entry label is never a jump target → unused-label warning | — | journal 000
 2026-08-03 | Errata applied to design.md: Part 2 heading restored; `&`→`&&` in §4.3/§4.8 examples | document already legislates && at §4.14; these were internal inconsistencies | Part 2, §4.3, §4.8 | 000
+
+2026-08-03 | design.md is the LIVING document: every decided amendment is applied directly, history lives in git, open questions are inline OPEN QUESTION markers | author instruction | — | —
+2026-08-03 | spec v0 stays FROZEN until the pre-amendment baseline run; then decided amendments produce spec v1 | preserves the only unrecoverable measurement | §1.6, Part 11 | 000
