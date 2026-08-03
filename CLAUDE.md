@@ -3,8 +3,8 @@
 Heroes is a small compiled language designed so that **every plausible LLM
 mistake is a compile error**. Bootstrap compiler in Rust, backend emits C11
 compiled by clang, self-hosting is the v1 finish line (fixpoint on generated
-C). `design.md` is the source of truth; the approved plan lives at
-`docs/panel/000-plan-review/`. One person is learning compilers through this
+C). `design.md` is the source of truth; the milestone chain lives at
+`docs/ROADMAP.md`. One person is learning compilers through this
 project — the process rules below are teaching apparatus, not bureaucracy.
 
 ## 1. Re-read protocol — what never to trust from memory
