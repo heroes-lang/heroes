@@ -13,17 +13,19 @@ heroes — the Heroes compiler
 usage: heroes <command> [args]
 
 commands:
-  doctor      check the toolchain (clang, CLT, arch, cache)
-  --version   print the compiler version
+  doctor                    check the toolchain (clang, CLT, arch, cache)
+  lex <file.hero> [--json]  dump the token stream
+  --version                 print the compiler version
 
 More subcommands arrive with each milestone:
-  lex parse (M1–M2) · fmt (M2) · check (M3) · build run (M5) · test (M6)
+  parse (M2) · fmt (M2) · check (M3) · build run (M5) · test (M6)
   lsp outline explain (M6+) · cc doc (M7) · measure (M3)";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("doctor") => commands::doctor::run(),
+        Some("lex") => commands::lex::run(&args[1..]),
         Some("--version") | Some("-V") => {
             println!("heroes {}", heroes::VERSION);
             ExitCode::SUCCESS
