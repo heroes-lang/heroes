@@ -55,14 +55,21 @@ only thing that distinguishes reasoning from improvisation.
 
 ### Two definitions of success
 
-**Near-term (the project is real):** a program that lexes, parses, type-checks, and emits QBE IL
-that assembles and runs, for a subset of the language, on macOS ARM64.
+**Near-term (the project is real):** a program that lexes, parses, type-checks, and emits C that
+compiles and runs, for a subset of the language, on macOS ARM64.
 
 **Long-term (the language is real):** the language can express its own compiler. A compiler needs a
 tree with heterogeneous nodes, symbol tables, lists, recursive functions, error handling, and
 multiple files. If the language can write that, it is not a toy. Historical precedent:
 **Pascal-P4**, Wirth's self-hosting Pascal compiler, is roughly 4,000 lines of Pascal — published as
 a book because it could be read end to end. That is the target scale.
+
+The acceptance test for self-hosting is the classic bootstrap **fixpoint**: the Rust bootstrap
+compiler builds compiler A from the Heroes source; A compiles the same source to `B.c`; B compiles
+it again to `C.c`; `B.c` and `C.c` must be byte-identical. (Generated C, not Mach-O binaries —
+binary identity additionally depends on clang/ld noise such as `LC_UUID` and DWARF paths.) At the
+fixpoint the bootstrap compiler is archived and never maintained again: the final picture is
+Heroes → C → native binary, with no third language anywhere.
 
 ### The measurable thesis
 
@@ -88,6 +95,39 @@ program. Every design decision below was chosen to raise this percentage.
 These are the principles. They are load-bearing. Every concrete rule in Part 4 is derived from them,
 and if you need to make a decision this document doesn't cover, derive it from these rather than from
 what other languages do.
+
+### 1.0 Principle zero: the smallest self-consistent surface
+
+> **Every syntactic form is a place where a bug can hide. The language is finished for v1 when it
+> can compile itself.**
+
+Self-hosting is **necessary, not sufficient**, as a criterion for a form to enter v1 — the stricter
+version ("reject anything the compiler doesn't need") would delete the thesis features themselves
+(`???`, the same-typed-argument rule, rich errors), which no compiler needs and this language exists
+for. The burden of proof for any proposed form:
+
+- it is on the **closure list** below (the compiler needs it), **or**
+- it **provably serves the thesis** — a measured effect on the Part 11 metrics, or an argument
+  derived from Part 1 that the panel accepts.
+
+Neither → it waits, regardless of elegance. This gives the design a **stopping rule**, which
+language designs normally lack, and it makes Part 7's ordering non-negotiable until the closure
+list compiles itself.
+
+**The closure list** (what writing this compiler in Heroes requires): `record` · `variant` +
+exhaustive `match` · `[T]` · `{K: V}` (iteration order: open question, panel 006) · `str` · `int` ·
+`bool` · `()` · `T?` with `?`/`.must()`/`.default()` · `=`/`@` bindings · `@` parameters ·
+`if`/`else if`/`else` · `for cond` / `for x in xs` (including over maps) / `break`/`continue` ·
+`return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
+`exit(code)` · modules. Library closure: `print`, `len`, `push`, `slice`, `chars`, `has`, `sort`,
+`join`/`Builder`, `to_int`/`to_f64`, `.str()`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
+`all`/`range` written in Heroes.
+
+One pattern deserves stating now because the whole self-hosted compiler will be written in it:
+**error accumulation**. `T?` carries one error and `?` aborts the current computation, but a
+resolver and a type checker must *collect* diagnostics. With no globals and no closures, the
+compiler threads a mutable list through its passes: `@diags: [Diagnostic]`. This is ordinary
+Heroes — but the spec shows it as an idiom, and the golden tests pin it.
 
 ### 1.1 The triangle, and its hierarchy
 
@@ -310,26 +350,24 @@ already recorded in this document exist for this reason and should not be revisi
   would force pinning and finalisers around every pointer handed to C (see the memory model).
 - **Native compilation rather than wasm** — wasm cannot call native C libraries at all (3.2).
 
-**The unresolved tension, stated plainly.** QBE was chosen for its learning value, but **QBE makes
-the FFI harder than emitting C would**. With C emission you write `#include <sqlite3.h>` and call the
-function: the C compiler handles declarations, macros, `inline` functions, struct layout and constant
-definitions. With QBE there are no headers, so every signature is transcribed by hand, macros and
-`inline` functions are unreachable, and nothing verifies that your declaration matches reality.
+**The tension this section used to carry is resolved.** An earlier revision chose QBE for its
+learning value while admitting that "QBE makes the FFI harder than emitting C would" — no headers,
+every signature transcribed by hand, macros and `inline` functions unreachable, nothing verifying
+declarations against reality. Since FFI ease is a founding constraint and not a preference, the
+backend is now **C emission** (§3.1; decided in panel 001), and the three points that managed the
+tension become:
 
-Since FFI ease is a founding constraint and not a preference, this tension has to be managed rather
-than ignored. The resolution:
+1. **The internal IR stays clean and backend-agnostic** — a claim that is only redeemable by
+   actually building a second backend, which is why the QBE backend is *scheduled* post-fixpoint
+   (Part 7 item 14) rather than left as "maybe".
+2. **A thin C shim remains standard practice** for C++ libraries and awkward struct-passing: a `.c`
+   file exposing plain functions, compiled by `heroes cc`, linked in. Macros, `inline` functions and
+   `#define` constants are now reachable directly, so shims are for the hard cases only.
+3. **FFI signatures are verified by clang against the real header** (`importc`-style declarations,
+   §4.19) — a wrong type in an `extern` is a *compile* error, which is this project's thesis applied
+   to the boundary.
 
-1. **Keep the internal IR clean and backend-agnostic** so that a C-emission backend can be added
-   without touching the frontend. This is cheap now and expensive later.
-2. **Standard practice for any non-trivial library: write a thin C shim.** A `.c` file exposing plain
-   functions with plain scalar and pointer arguments, compiled separately and linked. This handles
-   macros, `inline` functions, `#define` constants, and awkward struct-passing in one place, and it is
-   the only realistic route to C++ libraries anyway.
-3. **If binding real libraries starts dominating the work, that is the signal to add the C backend**
-   and let QBE become the "learn how registers work" path rather than the daily driver. Making that
-   switch should be a weekend, not a rewrite — which is exactly what point 1 buys.
-
-
+## Part 2 — Non-goals
 
 State these plainly so nobody drifts:
 
@@ -345,90 +383,103 @@ State these plainly so nobody drifts:
   can't call native C libraries, which breaks the founding premise). Backend needs concurrency,
   which doesn't exist yet. See Part 9.
 - **No concurrency in v1.** This is the largest gap and it is deliberate.
-- **No debugger.** Debug with `print`. QBE emits no DWARF.
+- **No typed variable inspection in v1.** Line-level debugging works: generated C carries `#line`
+  directives, so lldb breaks on and steps through `.hero` source lines. But `p x` shows a mangled C
+  temporary, not a Heroes value — printing rich values is still `print`'s job.
 
 ---
 
 ## Part 3 — Toolchain
 
-### 3.1 Backend: QBE
+### 3.1 Backend: C emission (C11)
 
-QBE (`https://c9x.me/compile/`) is "LLVM but simple", explicitly designed as such. ~12k lines of C,
-textual SSA-based IL, spec readable in one evening. The author's own framing: LLVM is hauling a
-backpack with a truck; QBE is riding a bicycle. It targets "the first 70%, not the last 30%".
+The compiler lowers to a three-address IR with explicit basic blocks (Part 10 step 6 — that stage
+is the heart and it stays), and **emits C11 from the IR**, compiled by clang. Decided in panel 001;
+the grounds are §1.11 and §4.19 — the FFI is the founding constraint — never optimisation, which
+Part 2 rules out as a justification.
 
-**What QBE does for you:**
+**What clang does for you:**
 
-- **Full C ABI.** This is the biggest single item. Implementing a complete C ABI — struct arguments
-  and returns, per-platform register classification — is famously delicate and unpleasant, and
-  Clang carries roughly 10,000 lines of ABI code *per target*. QBE's is fuzz-tested. This is what
-  makes the FFI premise viable.
-- **Register allocation** (linear with hinting, split spiller — simpler than graph colouring).
-- Copy elimination, sparse conditional constant propagation, dead code elimination, registerisation
-  of small stack slots, loop-aware spilling heuristics, amd64 addressing modes.
-- **You do not have to construct SSA.** This is the critical practical point and it is
-  counter-intuitive for an SSA backend. QBE provides *non-SSA temporaries* and fixes up programs that
-  aren't in SSA form. You may reassign a temporary freely (`%v =w add %v, 1`), and QBE inserts the
-  phi nodes and computes dominance frontiers itself. In LLVM you would have to either build SSA or
-  route everything through stack slots (load/add/store for a single increment). **Do not emit `phi`
-  instructions.** QBE assumes that anything defined by a phi satisfies all SSA invariants, so
-  mixing hand-written phis with non-SSA code is unsafe. All-or-nothing; choose nothing.
+- **The full C ABI**, per target, maintained by people paid to get it right. Struct passing,
+  varargs (including Apple ARM64's on-stack variadics), alignment — never your problem.
+- **Header access.** `#include <sqlite3.h>` reaches macros, `inline` functions and `#define`
+  constants, and — the property that matters most — **clang verifies every `extern` signature
+  against the real header**. A wrong FFI type is a compile error, not a runtime disaster.
+- **Debug info.** `#line` directives map generated C back to `.hero` lines; lldb breaks on and
+  steps through the author's source.
+- The entire LLVM optimisation pipeline at `-O2` — a welcome side effect, not a reason.
 
-**What QBE does not do, accept it:**
+**What the emitter must do (the obligations are ours, not clang's):**
 
-- **No API.** Frontends emit textual `.ssa` files. (This is a feature here: text is readable,
-  diffable, inspectable — which matters for a learning project.)
-- **No GEP.** Struct field access is manual offset arithmetic: `%p =l add %base, 8` then `loadw`.
-  Tedious, but it forces understanding of data layout, which is worth having.
-- **No debug info.** No DWARF; debuggers show assembly, not source lines. This is the most concrete
-  loss versus emitting C with `#line`.
-- No inlining, no loop optimisations, no vectorisation, no unwinding, 64-bit targets only.
-
-**macOS specifics:** QBE 1.1 added the `arm64_apple` target; amd64 is supported on both Linux and
-macOS. The Apple target exists separately because macOS uses underscore-prefixed symbols, Mach-O
-instead of ELF, and — critically — **Apple ARM64 passes variadic arguments on the stack** rather
-than in registers. Choosing the right target means you never handle this.
+- **Declaration ordering.** Heroes' top level is order-free with free mutual recursion (§4.2); C is
+  not. Emit prototypes for all functions and `typedef struct`s topologically sorted by by-value
+  containment (cycles are legal only through `[T]`), in deterministic order.
+- **Name mangling.** A Heroes identifier can collide with a C keyword (`default`, `register`) or a
+  libc symbol (`index`, `y1`). Every user name becomes `h_<module>_<name>[_<typehash>]`; fields,
+  variant cases and labels are mangled too; runtime names are `hero_*`; `extern` FFI names pass
+  through unmangled by design. The rule lives in one place (the mangler).
+- **Control flow as blocks.** One `goto`+label per basic block, an explicit entry `goto bb0` (the
+  entry label is otherwise an unused-label warning), all locals hoisted to the function prologue
+  (`goto` may not jump over declarations).
+- **`#line` on source-line change** — not per statement — restored to the generated file around
+  synthetic prologue/cleanup code, so lldb never blames user lines for housekeeping. `--emit-c
+  --no-line` exists for debugging the emitter itself.
+- **UB is not a diagnostic.** Arithmetic aborts via `__builtin_*_overflow` (§4.14), every
+  type-system-proven-unreachable point gets `hero_unreachable()`, and generated C compiles with
+  `-Wall -Werror=return-type -Werror=uninitialized -fno-strict-aliasing`. A missing return after an
+  exhaustive `match` must not become whatever `-O2` feels like.
+- **Determinism.** Same input → byte-identical `--emit-c` output, enforced by a double-emit diff in
+  CI from the first emitting milestone. The bootstrap fixpoint (Part 0) depends on it; no
+  timestamps, no absolute paths, no hash-seeded orderings anywhere in the pipeline.
+- **`f64` literals emitted round-trip-exact** (`%a`).
 
 Pipeline:
 
 ```
-qbe -t arm64_apple prog.ssa -o prog.s
-clang prog.s runtime.o -o prog
+heroes build prog.hero        # emit build/<hash>/prog.c, clang -O2, link runtime.o
+heroes run prog.hero          # same, then execute (the dev loop)
+heroes build --emit-c ...     # stop at the C and read it
 ```
 
-Requires Xcode Command Line Tools (`xcode-select --install`) for `as` and `ld`. Note that macOS
-provides no static libc, so `-static` will not work; binaries always link dynamically to
-`libSystem`. `tcc` is not usable on Apple Silicon.
+Requires Xcode Command Line Tools for clang and the linker. macOS provides no static libc, so
+`-static` will not work; binaries always link dynamically to `libSystem`.
 
-**Reference implementations to read:** `cproc` by Michael Forney (a complete C compiler on QBE — its
-`qbe.c` is the model for how to structure emission), and chapter 63 of DoctorWkt's *A Compiler
-Writing Journey*, which shows IL and generated assembly side by side.
+**macOS note that survives from the QBE era:** Apple ARM64 passes variadic arguments on the stack —
+under C emission this is entirely clang's problem, which is part of the point.
 
 ### 3.2 Alternatives that were considered and rejected
 
 Document these so they don't get relitigated:
 
+- **QBE** (`https://c9x.me/compile/`) — the primary backend for most of the design process, and the
+  scheduled second backend now (Part 7 item 14). "LLVM but simple": ~12k lines of C, textual SSA IL
+  readable in an evening, a fuzz-tested C ABI, register allocation, and non-SSA temporaries (you
+  never construct SSA or emit `phi`). Its `arm64_apple` target handles Mach-O symbols and Apple's
+  on-stack variadics. Rejected as primary for the reason §1.11 records: **no headers** — every FFI
+  signature transcribed by hand with nothing verifying it, macros and `inline` functions
+  unreachable, and no DWARF. It was originally chosen *for the learning value* (contact with basic
+  blocks and registers); that lesson now lives in the scheduled second backend, `clang -S`, and the
+  hand-written spikes. Reference implementations if that day comes: `cproc` by Michael Forney, and
+  chapter 63 of DoctorWkt's *A Compiler Writing Journey*.
 - **LLVM (C++ API)** — rejected. It does not solve the FFI, it makes it worse: LLVM IR sits *below*
   the ABI, so you decide struct passing, varargs and alignment yourself. Plus a multi-GB dependency
   with an API that churns every release, mandatory SSA construction, and manual DWARF.
 - **LLVM IR as text (`.ll` → `clang file.ll`)** — viable, and interesting for learning SSA, since
-  you can inspect passes with `opt`. Still leaves ABI work. Kept as a possible future second
-  backend.
-- **Emitting C99** — the pragmatic favourite for most of the design process, and still the fallback.
-  Zero ABI work, `#include <sqlite3.h>` gives you the FFI for free including macros and `inline`
-  functions, three interchangeable toolchains (`tcc` for dev, `zig cc` for cross-compilation,
-  `gcc`/`clang` for release), and it works everywhere. **Rejected only because of the learning goal**
-  — the author wanted contact with basic blocks and register allocation. Note the strong precedent:
-  the first C++ was `cfront`, a C emitter, as were Nim, Vala, Chicken Scheme, Cython and early
-  Haskell.
+  you can inspect passes with `opt`. Still leaves ABI work. A possible future third backend.
 - **MIR** (~20k lines, C API, ~70% of `gcc -O2`), **libgccjit** (excellent ABI handling, but GPL and
   requires `--enable-host-shared`), **Cranelift** (good, but really wants a Rust frontend; note
   that its reputation for "memory optimisation" is a misreading — it's optimised for *compile speed*
   and verifiability, and its memory work is about wasm linear-memory bounds checks, not about your
   language's memory model).
-- **wasm** — interesting as a future *second* backend (sandboxing, runs in browser, and structured
+- **wasm** — interesting as a future backend (sandboxing, runs in browser, and structured
   control flow makes for a genuinely instructive relooper problem). Rejected as primary because
   **wasm cannot call native C libraries**, which destroys the "don't write a stdlib" premise.
+
+**Why C11 emission won** (formerly "Emitting C99 — the fallback"): zero ABI work,
+`#include <sqlite3.h>` gives the FFI for free *with verification*, `#line` gives debugging, and the
+lineage is the strongest in the business — the first C++ was `cfront`, a C emitter, as were Nim,
+Vala, Chicken Scheme, Cython and early Haskell. The compile toolchain is clang only (`tcc` is not
+usable on Apple Silicon; `zig cc` remains interesting for future cross-compilation).
 
 ### 3.3 The compiler must be a library
 
@@ -441,12 +492,44 @@ the AST of this file, give me the outline, pretty-print this function, type-chec
 CLI is one client among several. This is not extra work now — it is just not writing a `main()` that
 does everything — but retrofitting it later is painful.
 
-### 3.4 Implementation language
+### 3.4 Implementation language: Rust, in the Cyclone subset
 
-Whatever the author knows best, with one preference: something with sum types and pattern matching,
-because an AST is built to be inspected that way. In order of comfort: OCaml, Rust, Swift/Kotlin,
-TypeScript. Python works for prototyping speed but the type checker becomes hard to maintain
-without types.
+**Decided: Rust** (the author's preference, and second in the original comfort list). Enums with
+payloads plus exhaustive `match` fit an AST exactly, and ownership *enforces* the no-aliasing
+discipline Heroes has by construction. The bootstrap compiler is scaffolding with an expiry date:
+at the fixpoint (Part 0) it is archived and never maintained again.
+
+It is written in the **Heroes subset of Rust — the Cyclone rule** (named for the precedent in the
+appendix: references only as function parameters, never in structs or return types, which
+eliminates lifetime annotations entirely and maps 1:1 onto Heroes' `@` parameters):
+
+- **Forbidden**, enforced by `clippy.toml` and `#![forbid(unsafe_code)]`: `Box`, `Rc`, `Arc`,
+  `RefCell`, `Cell`, `HashMap`/`HashSet` (nondeterministic iteration breaks the fixpoint — `BTreeMap`
+  only), stored closures, `dyn`, trait bounds on generics, references in data structures.
+- **Allowed**: owned `struct`/`enum` + exhaustive `match`, `Vec<T>` → `[T]`, `BTreeMap<K,V>` →
+  `{K:V}`, `String` → `str`, `Option`/`Result` → `T?`, `?` → `?`, `&mut` **only as a parameter** →
+  `@`. Iterator/`Option` closures are fine (expressions, not stored state). Links are indices, never
+  references.
+- Every necessary violation carries `// PORT-DEBT: <reason>`. The count is the measured distance
+  from self-hosting, it must not ratchet upward, and each entry is a design finding about Heroes —
+  the same way Part 8's warts were found by writing real programs.
+
+### 3.5 The tool is one command
+
+One executable, `heroes`, with subcommands — the `zig`/`cargo` model, and the direct corollary of
+§3.3: one library, one thin CLI, many subcommands. **A second binary never exists**; neither does a
+Makefile, a script, or a separate formatter/test-runner/LSP/package tool. Inspection is flags
+(`--dump-tokens`, `--dump-ast`, `--dump-ir`, `--emit-c`, `--emit-asm`, `--pipeline`), not
+subcommands. `heroes run` is the dev loop: emit C, clang, execute, hash-keyed cache in `build/` —
+the runtime compiles once and never at the user's initiative.
+
+Dependencies, honestly: with no standard library (§1.11), a v1 "dependency" is a link flag declared
+in the source next to the `extern` that needs it. No package manager exists before modules do; when
+it arrives it will be `heroes add`/`heroes fetch` — inside the same binary.
+
+One declared exception with an expiry date: `cargo build`/`cargo test` build *the compiler* until
+the fixpoint (as Zig's contributors use Zig's build system while users type only `zig`); after M8c,
+`heroes` is the only command for compiler development too.
 
 ---
 
@@ -533,9 +616,8 @@ today into Java and C# `record`. The rejected alternatives:
   sum type, and `enumeration` described only the degenerate case.
 - `union` (the machine-level word) misreads badly: C's `union` is **untagged**, hence unsafe, while
   ours is tagged with exhaustive `match`. A reader seeing `union` expects the dangerous thing.
-- `subroutine` was considered because at the machine level it is accurate — QBE emits the same
-  `call` instruction whether or not there is a return value, and the mechanism is Wheeler's 1951
-  subroutine. Rejected because in FORTRAN, BASIC and Pascal tradition `subroutine`/`procedure`
+- `subroutine` was considered because at the machine level it is accurate — the backend emits the
+  same `call` either way, return value or not, and the mechanism is Wheeler's 1951 subroutine. Rejected because in FORTRAN, BASIC and Pascal tradition `subroutine`/`procedure`
   specifically means *returns nothing*, and unlike `procedure` the word was never rehabilitated as
   an umbrella term. Also it would put three theory-level words next to one machine-level word.
 - `function` is kept as the modern de-facto umbrella (C, JS, Python, Rust), and it is a single
@@ -562,6 +644,7 @@ forward declarations, mutual recursion is free, and the model can emit functions
 | `[T]` | dynamic array |
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
+| `()` | no value — the return type of functions that return nothing |
 
 **One integer type only.** No `i8`, `u32`, `usize`. No choice, no width conversions, no conversion
 bugs. This single decision also removes a whole family of ambiguities elsewhere (see 4.5 on
@@ -574,7 +657,7 @@ v1 without debate.
 
 **Character literals are `int`.** `'+'`, `'0'`, `' '`. No new type, no conversion, one line in the
 lexer. **Rationale:** the first lexer written in this language contained `c == 43`,
-`c >= 48 & c <= 57`, `c == 40` — seven magic numbers in twenty lines, and writing `43` for `+` is an
+`c >= 48 && c <= 57`, `c == 40` — seven magic numbers in twenty lines, and writing `43` for `+` is an
 error no compiler can catch. This was judged the best benefit-to-cost modification in the entire
 review.
 
@@ -726,6 +809,15 @@ cost generics and spec — but at least it is comparable.
 
 **`?` applied to a non-fallible value is a compile error.**
 
+> **OPEN QUESTION (panel 002).** The acceptance program needs a `T`-typed expression where `T?` is
+> expected at six sites (all marked in the appendix), and `fail`'s own type is only determinable
+> from the *expected* type — return-type-directed instantiation that §4.12's inference cannot do.
+> Implicit promotion is off the table (Part 6 rejects implicit conversions permanently).
+> **Recommended resolution:** an explicit `ok(x)` constructor, `fail`'s symmetric twin, with both
+> checked against the expected type (the bidirectional ⇐ mode). ~+8 spec tokens, zero new
+> vocabulary. Also avoids the `T??` ambiguity implicit promotion would create under
+> monomorphisation with `A := Expr?`. Pending the author's decision.
+
 **No exceptions, ever.** This is the most instructive rejected feature, because exceptions are
 **unbeatable on tokens**: zero cost at the call site (`save(x)` versus `save(x)?` plus declaring the
 error in the signature). But the control flow is *invisible* — looking at `save(x)` you cannot tell
@@ -799,7 +891,7 @@ advance = function: (@l: Lex)
 
 read_number = function: (@l: Lex) -> int
     v: int @ 0
-    for !l.at_end() & l.here().is_digit()
+    for !l.at_end() && l.here().is_digit()
         v @ v * 10 + (l.here() - '0')
         advance(@l)
     return v
@@ -862,6 +954,9 @@ m = { "mario": 30, "anna": 25 }
 - **Out-of-bounds index aborts** with a message; it does not read arbitrary memory.
 - **Map access returns `V?`**, always. A missing key cannot pass unnoticed.
 - `has(m, k) -> bool` exists. (Its absence forced a sentinel-value hack in an example program.)
+- **OPEN QUESTION (panel 006):** `for k in m` needs a *specified* iteration order — determinism is
+  a bootstrap-fixpoint requirement, and this document never fixed one. Recommended: insertion
+  order, fixed hash seed. Pending the author's decision.
 - Multi-line literals separate by **newline**, not comma. Single-line literals use commas. The
   canonical formatter picks based on length, so the model never chooses.
 
@@ -937,7 +1032,7 @@ rough edge of the data model and it is left visible rather than patched.
 
 **Known performance consequence to plan for:** `s + t` copies, so building compiler output by
 successive concatenation is O(n²). Not a concern in principle, but on a hundred thousand lines of
-QBE output it becomes real waiting. Provide `join([str]) -> str` or a small `Builder`. This is the
+generated C it becomes real waiting. Provide `join([str]) -> str` or a small `Builder`. This is the
 one place where copy-on-write elegance presents a bill.
 
 ### 4.11 UFCS
@@ -1082,6 +1177,13 @@ character per operator and closes nothing.
 non-bool, or `!` on a non-bool, is a compile error. No operator overloading. No ternary operator
 (`if` is an expression).
 
+> **OPEN QUESTION (panel 003).** `xs.push(4)` as a statement compiles and silently does nothing
+> useful — `push` is *pure* under value semantics (§4.10), so the result vanishes. That is a
+> plausible silent error in exactly the class this language exists to kill. **Recommended
+> resolution:** a non-`()` expression in statement position is a compile error, with the
+> diagnostic dictating the fix (`_ = expr`, or use the value). Zero keywords, ~+8 spec tokens;
+> subsumes Nim's `discard`. Pending the author's decision.
+
 **Arithmetic edge cases, all of which must be specified because unspecified means the model
 invents:**
 
@@ -1163,6 +1265,15 @@ context and the symbol table, both of which the type checker holds anyway for it
 There is no new mechanism; you are *exposing* information the compiler possesses and normally throws
 away.
 
+Two rules discovered by adversarial review (panel 000), both now normative:
+
+- **A file containing `???` suppresses unused-binding errors.** Without this, §4.16's own example
+  fails to compile: `p` is bound by `for p in ps` and used only *inside* the hole, which §4.4 would
+  reject. The suppression is file-wide and lifts the moment the last hole is filled.
+- **Hole suggestions are ranked by type-relevance, capped at 5, in deterministic order — and the
+  cap is stated in the spec.** Unbounded "nearby functions" would flood a model's context on a
+  5k-line compiler and vary with file layout, making identical holes give different guidance.
+
 Prior art: proof assistants (Idris, Agda) have holes, but for mathematicians. Nobody has them for
 LLM code generation.
 
@@ -1200,6 +1311,14 @@ error: incompatible types
 
 The signature, the record definition, where it lives, and two concrete routes. The model fixes it
 **in one turn**, without opening anything.
+
+**Fixes are tagged `certain | guess`, and only `certain` fixes are machine-applicable.** The
+example above shows why: "convert: `to_int(user.id)`" may be right, but "change save's signature to
+accept a str id" is usually the *wrong* repair — and a model will apply whatever the compiler
+blesses. A `certain` fix (insert the missing type annotation the checker just computed, rename to
+the one in-scope candidate) may be applied mechanically; a `guess` is prose for the reader. The
+golden convention enforces honesty: `x.hero` + `x.expected` (+ `x.fixed` where a certain fix
+exists, and CI asserts that applying it makes the program compile).
 
 **Implementation cost: zero theory.** The type checker already knows all of this at the moment it
 detects the error — which function, which signature, which record, which line. Today it throws that
@@ -1273,23 +1392,26 @@ budget forbids until the first mechanism is proven.
 **Read 1.11 first — this is the section that carries the project's founding constraint, so treat its
 ergonomics as a priority rather than an afterthought.**
 
-QBE emits assembly, so **there are no headers to include.** Signatures are transcribed by hand:
+The backend emits C (§3.1), so an `extern` declaration is Nim's `importc` design — the signature
+plus the header it comes from, no external tool, no libclang, no generated binding files:
 
 ```
-extern sqlite3_open = function: (path: cstr, out: ptr) -> int
-extern sqlite3_close = function: (db: ptr) -> int
+extern sqlite3_open = function: (path: cstr, out: ptr) -> int      # header "sqlite3.h"
+extern sqlite3_close = function: (db: ptr) -> int                  # header "sqlite3.h"
 ```
 
-`ptr` is an opaque pointer, `cstr` a C-style string. Link with `-lsqlite3`.
+(The exact header-attachment syntax is fixed at the FFI milestone; the mechanism is decided.) The
+emitter produces the `#include`, and **clang verifies the declared signature against the real
+header** — a wrong FFI type is a compile error, not a runtime disaster. That property is this
+project's thesis applied to the boundary. `ptr` is an opaque pointer, `cstr` a C-style string; the
+link flag is declared next to the `extern` that needs it. Macros, `inline` functions and `#define`
+constants are reachable because the C compiler sees the real header.
 
-**Accepted losses, stated plainly:** no automatic binding generation, **no access to macros or
-`inline` functions** in headers (and many C libraries use plenty), no access to `#define` constants,
-and no verification that your signature matches reality — get a type wrong and you find out at
-runtime.
+**The remaining accepted loss:** no automatic binding *generation* — declarations are still written
+by hand, they are merely verified. C++ libraries are still reachable only through a shim.
 
-**The standard mitigation, and it should be the default practice rather than a fallback: write a thin
-C shim.** For any library beyond a handful of calls, create a `.c` file that exposes plain functions
-taking scalars and opaque pointers, compile it separately, and bind to that.
+**For C++ and awkward struct-passing, write a thin C shim** (compiled by `heroes cc`, linked in):
+a `.c` file that exposes plain functions taking scalars and opaque pointers.
 
 ```c
 /* sqlite_shim.c */
@@ -1304,9 +1426,10 @@ int hero_sqlite_exec(void *db, const char *sql) {
 }
 ```
 
-This solves macros, `inline` functions, `#define` constants, struct-passing-by-value, out-parameters,
-and callbacks in one place — and it is the only realistic route to C++ libraries, since `extern "C"`
-wrappers are the same pattern. Budget for shims as normal work, not as a workaround.
+This solves struct-passing-by-value, out-parameters, and callbacks in one place — and it is the
+only realistic route to C++ libraries, since `extern "C"` wrappers are the same pattern. Budget for
+shims as normal work, not as a workaround — but note they are now for the hard cases only, not for
+every macro.
 
 **A binding annotation vocabulary will eventually be needed**, because ownership has to cross the
 boundary somehow. Three cases to cover: a pointer you *must* free (and with which function), a
@@ -1315,17 +1438,11 @@ these annotations (an earlier draft suggested `@owned`, before `@` was assigned 
 Reserve a keyword. Until this exists, treat every `ptr` as opaque and free it explicitly through a
 shim function.
 
-**Nim's `importc` pragma is the design to steal from if the backend ever changes to C emission** —
-declaring the signature plus the header name, with no external tool, no libclang, and no generated
-binding files:
-
-```nim
-proc sqlite3_open(path: cstring, db: ptr PSqlite): cint
-  {.importc, header: "sqlite3.h".}
-```
-
-It is the cheapest FFI mechanism that exists, and it works *only* because the backend is C. This is
-the single strongest argument for the C backend described in 1.11.
+**Provenance of the mechanism:** Nim's `importc` pragma (`{.importc, header: "sqlite3.h".}`) — the
+cheapest FFI mechanism that exists, and it works *only* because the backend is C. An earlier
+revision of this document called it "the design to steal from if the backend ever changes to C
+emission" and "the single strongest argument for the C backend"; the backend changed (panel 001),
+and it was stolen.
 
 **Acceptance tests for the FFI, in order of increasing ambition.** Each one is a real milestone, and
 the first is the one that proves the project's premise:
@@ -1340,20 +1457,36 @@ the first is the one that proves the project's premise:
 
 ### 4.20 The runtime, in C
 
-A few hundred lines, written once:
+A few hundred lines, written once. It ships a header, **`heroes_runtime.h`, which generated C
+includes — so clang type-checks every runtime call.** Contents:
 
 - allocator (a wrapper over `malloc`)
 - `incref` / `decref`
 - the `str` struct (`ptr`, `len`, `refcount`), **always NUL-terminated** — allocate `len+1` so
   `.cstr()` is free with zero copies. (This is Zig's `[:0]u8` trick and it is the single
   highest-return decision in the string design.)
-- the array struct with `push` and an aborting bounds check
-- the map (hash table)
+- the array: a heap header (`refcount`, `len`, `cap`, element descriptor) with elements in-line,
+  `push`, and an aborting bounds check — representation fixed by the hand-written, ASan-verified
+  spike `tools/spike/04-variant.c` before any compiler code existed
+- the map (hash table; **fixed seed** — iteration determinism is a fixpoint requirement, panel 006)
 - copy-on-write checks in the mutation primitives
-- `panic` with a message
+- `panic` with a message; `hero_unreachable` for type-system-proven-unreachable points
 - `join` / `Builder` for string building
+- `print`'s monomorphic entry points (`hero_print_int`, …) — the surface contract is panel 006
 
-Compile to a `.o` and always link it.
+**Per-type functions are generated by the compiler, not written in the runtime.** C has no copy
+constructors, destructors, or generic comparison, but §4.3 demands structural `==` recursively and
+§4.10 demands value-semantics copies and drops. So the **type-descriptor pass** (Part 5) generates
+`h_T_copy` / `h_T_drop` / `h_T_eq` (and `h_T_hash` for map keys) for every reachable type, as plain
+C the runtime calls through per-type descriptors. The alternative — a type-erased `void*` runtime —
+would void the "clang type-checks every call" property, and is rejected.
+
+Compile to a `.o` once, cache it, and always link it.
+
+The consolidated built-in inventory (Tier 1 in C, Tier 2 in Heroes) is Principle 0's library
+closure list (§1.0): `print`, `len`, `push`, `slice`, `chars`, `has`, `sort`, `join`/`Builder`,
+`to_int`/`to_f64`, `.str()`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/`all`/`range` in
+Heroes.
 
 ---
 
@@ -1372,6 +1505,16 @@ Compile to a `.o` and always link it.
 7. Primitive operations
 
 Only these need implementing in the type checker *and* the lowering *and* the backend.
+
+Two passes sit between type checking and emission, and they are **core obligations, not details**
+(panel 000, compiler-engineering review — "where this project would actually stall"):
+
+- **The type-descriptor pass** generates `copy`/`drop`/`eq`/`hash` per reachable type (§4.20) —
+  C has none of them and §4.3/§4.10 require all of them.
+- **The ownership pass** inserts `incref`/`decref`/`cow_check` during lowering — *visible in
+  `--dump-ir`* — and builds a cleanup-label chain per function so every exit edge (`return`, `?`,
+  `break`, `continue`, `panic`, match fallthrough) releases live locals and performs `@` copy-out
+  (§4.8: "copy-out happens always"). The runtime cannot know where a scope ends; only lowering can.
 
 ### The sugar: erased in the frontend
 
@@ -1422,6 +1565,7 @@ maximising locality satisfies two vertices of the triangle at once.
 | 1-based indexing | every FFI boundary becomes a silent off-by-one |
 | Literate source (code inside a markdown document) | breaks editors, explodes tokens, noisy diffs. `heroes doc` generates the document instead — one direction only |
 | Non-ASCII syntax | tokenises badly, untypeable on some layouts, encoding-fragile |
+| Style-insensitive identifiers (Nim's `fooBar` ≡ `foo_bar`) | two spellings for one thing, against §4.15's "exactly one correct way"; for a model it is pure confusion |
 
 ---
 
@@ -1429,6 +1573,10 @@ maximising locality satisfies two vertices of the triangle at once.
 
 These lose only on the *simplicity* vertex, which means they are postponed rather than refused. The
 distinction matters and depends on which vertex said no.
+
+**Nothing on this list is considered until the Principle 0 closure list (§1.0) compiles itself.**
+The ordering below is not negotiable before the fixpoint; items 2–4 are the exception because they
+are *on* the closure list.
 
 1. **Closures** — v1.5, immediately after the first running program. Much cheaper than usual thanks
    to value semantics (capture by copy = a record plus a function pointer). Will delete the handful
@@ -1473,9 +1621,11 @@ distinction matters and depends on which vertex said no.
     **no aliasing means no data races by construction**, since there is no shared state to protect.
     This is Erlang's 1986 insight (immutability plus message passing for concurrent systems) and the
     reason actors are natural there. The road is open and wide; it is simply far away.
-14. **A second backend** — LLVM textual `.ll`, or wasm (which brings sandboxing and the browser, and
-    the genuinely instructive relooper problem of reconstructing structured control flow from basic
-    blocks). Cheap if the internal IR stays clean: emitting QBE, C and `.ll` in parallel is also the
+14. **The QBE backend — scheduled, post-fixpoint.** Not "if and when": one backend proves nothing
+    about the IR's claimed agnosticism, and QBE carries the register-allocation and instruction-
+    selection lesson this project originally wanted (~500 lines from the same IR; see §3.2 for what
+    QBE is). Later still: LLVM textual `.ll`, or wasm (which brings sandboxing and the browser, and
+    the genuinely instructive relooper problem). Emitting C, QBE and `.ll` in parallel is also the
     best way to understand what they have in common.
 
 ---
@@ -1515,6 +1665,16 @@ visible rather than patched with a second form.
 10. **`?` combined with `@` copy-out** needed an explicit rule (copy-out always happens) because it
     was undefined. Watch for other interactions of this kind.
 11. **No user-extensible iteration**, since there are no traits.
+12. **Every name passes through a mangler** (§3.1): a valid Heroes identifier can collide with a C
+    keyword or a libc symbol, and without the mangler a correct program fails to compile for
+    reasons invisible to its author — the exact error class this project exists to eliminate. The
+    mangled names are what `lldb` shows for variables (see Part 2's reworded debugger non-goal).
+13. **An emitter bug surfaces as a clang error**, not a Heroes error. Mitigated — `#line` points the
+    message at `.hero` source and the `-Werror` set catches the UB-shaped cases — but not erased:
+    when the emitter is wrong, the author reads C.
+14. **Error accumulation is manual**: `@diags: [Diagnostic]` threaded through every pass of the
+    self-hosted compiler (§1.0). Legal, uniform, and slightly noisy; the price of having neither
+    globals nor closures in v1.
 
 ---
 
@@ -1567,19 +1727,29 @@ than six months of design on paper.
 5. **Bidirectional type checker**: `record`, `variant` with payload, `match` with exhaustiveness.
    **Rich error messages from day one** — not retrofitted.
 6. **Lowering** to a three-address internal IR with explicit basic blocks. This is the heart. Flatten
-   every expression into temporaries; reduce control flow to labels and conditional jumps.
-7. **QBE emission** — textual `.ssa`. Remember: **no `phi`**, use reassignable temporaries.
-   **First running program.** Celebrate here.
+   every expression into temporaries; reduce control flow to labels and conditional jumps. Pass
+   order matters: named-argument checking (§4.9) runs **before** monomorphisation, or generic
+   collapse (`A := B := int`) spuriously triggers the same-typed-argument rule.
+7. **C emission from the IR** — `goto`+labels, prototypes and topologically-sorted typedefs,
+   the mangler, `#line` from day one, the `-Werror` set, `hero_unreachable`, and the double-emit
+   determinism diff (green forever after). **First running program.** Celebrate here.
 8. **Sugar layer**: `if`, `for x in xs`, UFCS, `T?` with `?` / `.must()` / `.default()`.
-9. **Value semantics with copy-on-write**, refcount insertion, the C runtime.
+9. **Value semantics with copy-on-write**: the **ownership pass** (refcount insertion in lowering,
+   visible in `--dump-ir`, cleanup chains on every exit edge), the **type-descriptor pass**
+   (per-type `copy`/`drop`/`eq`/`hash`), and the C runtime — goldens run under
+   `-fsanitize=address,undefined` from here on.
 10. **Functions as values.**
 11. **Generics by monomorphisation.**
 12. **`???` output**, `test` runner, `assert` with source text, `outline`.
 13. **The library written in the language**: `map`, `filter`, `fold`, `range`, `join`.
 14. **FFI**, and one real C binding. **SQLite is the right acceptance test**: pure C, clean header,
-    immediate value. If `sqlite3_open`, a query and a close work without you having written a stdlib,
-    the architecture holds.
-15. Then the deferred list, in order: closures, I/O, args, modules.
+    immediate value — and now cheap, since clang verifies the declarations (§4.19). If
+    `sqlite3_open`, a query and a close work without you having written a stdlib, the architecture
+    holds.
+15. Then the closure-list remainder, in order: I/O, args, modules — and the port to Heroes,
+    finished by the **fixpoint**: A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty, clang
+    version pinned and recorded. The bootstrap compiler is archived here. (Closures, being off the
+    closure list, wait for the fixpoint.)
 
 **Golden tests from step 1.** A directory of `.hero` files each with expected output, plus a script
 that compiles and diffs. This is the only thing that makes it possible to evolve the language without
@@ -1594,20 +1764,36 @@ contains arbitrary choices nobody predicts.
 
 ## Part 11 — Measurement harness
 
-Build this. It is what separates this project from an opinion.
+Build this. It is what separates this project from an opinion. Methodology hardened by panel 000
+(the LLM-ergonomics review: "revision 1's numbers would have been meaningless").
 
-1. **Token counting.** Take a realistic program, count tokens with a real tokeniser, and **count
-   declarations separately from uses** (to verify the asymmetry of 1.5), and **punctuation separately
-   from the rest** (to settle whether braces/parens are 3% or 15%). Half an hour of work, closes
-   several debates permanently.
-2. **First-try compile rate.** Spec → model → ten programs → count how many pass the type checker
-   unmodified. The thesis metric.
-3. **Silent-error rate.** Ten correct programs, one injected plausible error each, count how many
-   produce a compile error. The factor that multiplies everything in 1.2.
-4. **Turns-to-green.** Given a broken program, how many exchanges to make it compile. Measures the
-   value of the rich error messages, which are otherwise unfalsifiable.
+**The control arm.** Every trial runs against `heroes check` *and* `heroes check --permissive` —
+the same compiler with the thesis-bearing checks disabled (`_` on variants allowed, positional
+same-typed arguments, no mandatory type on `@` declarations, non-exhaustive `match`, unused
+variables tolerated). Same model, same spec size, same unfamiliarity, opposite design choices: the
+only comparison that isolates *design* from training-data familiarity. Without it there is no
+falsifiable claim.
 
-Re-run these after every significant change. Change one thing at a time.
+1. **Token counting.** With the real reader's tokeniser (the Anthropic `count_tokens` endpoint —
+   never `tiktoken`, which undercounts Claude tokens 15–20% on text and worse on code). **Count
+   declarations separately from uses** (verifies §1.5's asymmetry) and **punctuation separately
+   from the rest** (settles whether braces/parens are 3% or 15%). The §1.6 budget is checked
+   against the spec; the *prompt* cost is additionally reported from real runs' billed tokens.
+2. **First-try rate.** Spec → model → programs → count. Two gradings, both reported: *compile* rate
+   (from the type checker's arrival) and *tests-pass* rate (from `test`'s arrival — §4.18:
+   compiling is not working). 20 frozen tasks × 5 samples, Wilson intervals; frozen, hashed prompt
+   templates; API-only, single-turn, **spec-only context** — the measured model co-designed this
+   language, so it never sees this document or the repo. One non-Anthropic model as robustness.
+3. **Silent-error rate.** Mutation operators as *data* (swap same-typed args, drop a variant case,
+   forget `@`, mutate an undeclared name, typo an identifier), applied mechanically to the golden
+   corpus; per-operator kill rate. Deterministic, free, no API needed.
+4. **Turns-to-green.** Given a broken program, how many exchanges to make it compile — capped at 5,
+   non-convergence counted separately. Measures the rich errors, otherwise unfalsifiable.
+
+Every measurement records provenance: spec sha, compiler sha, model id, prompt sha, suite sha.
+Never diff runs with different compiler shas unless explicitly flagged — a stricter checker lowers
+first-try rate with zero language change. Re-run after every significant change; change one thing
+at a time. The pre-amendment v0 baseline is taken before any panel amendment lands.
 
 ---
 
@@ -1627,6 +1813,9 @@ deliberate:
   lines as the self-hosting target; the `SYSTEM` module as the model for bounded unsafety.
 - **Modula-3 `UNSAFE`, Rust `unsafe`, Zig `@ptrCast`** — the same bounded-unsafety pattern.
 - **Cyclone** — references restricted to function parameters only, eliminating lifetime annotations.
+  Promoted from a note to a load-bearing precedent: it names the discipline (**the Cyclone rule**)
+  the Rust bootstrap compiler is written in (§3.4), which is also why the port to Heroes is
+  mechanical.
 - **Hylo / Val** — mutable value semantics: memory safety without a borrow checker. The direct
   ancestor of Part 4.10.
 - **Swift** — `inout` (our `@` parameters), copy-on-write, leading-dot variant syntax.
@@ -1636,9 +1825,11 @@ deliberate:
 - **Zig** — tests in the source file; `[:0]u8` NUL-terminated slices (our string design).
 - **Erlang, 1986** — immutability plus message passing chosen specifically for concurrent systems.
   The reason value semantics leaves the concurrency road open.
-- **Nim** — the `importc` pragma as the cheapest possible FFI (only works with a C backend);
-  `proc` vs `func` as the resolution of the purity-connotation problem; and as a cautionary tale, a
-  compiler that is simple to *use* and enormous to *implement*.
+- **Nim** — promoted from a note to a primary source now that the backend is C: the `importc`
+  pragma is the adopted FFI mechanism (§4.19), the per-module compilation cache is the model for
+  `build/`, and `nim r` is the model for `heroes run`. Also `proc` vs `func` as the resolution of
+  the purity-connotation problem; and as a cautionary tale, a compiler that is simple to *use* and
+  enormous to *implement* — the standing rule is **copy Nim's surface, never its implementation**.
 - **Odin / Jai** — uniform declaration syntax; `proc` as umbrella.
 - **Lua / Nelua / Pallene** — the "Lua but compiled" precedent, and the lesson that the single
   heterogeneous table must be sacrificed because boxed values make every C call require marshalling.
@@ -1651,8 +1842,9 @@ deliberate:
   aimed at a different reader.
 - **Unison** — code stored as an AST with names as labels; the origin of the two-representation idea
   that was explored and ultimately dropped in favour of a single readable syntax.
-- **cfront, Nim, Vala, Chicken Scheme, Cython, early Haskell** — the C-emission lineage, kept as the
-  fallback backend.
+- **cfront, Nim, Vala, Chicken Scheme, Cython, early Haskell** — the C-emission lineage, now the
+  *chosen* backend (§3.1, panel 001): historically the dominant technique for languages built by few
+  people.
 - **Bidirectional type checking** — the modern consensus over global Hindley–Milner, chosen here for
   error locality.
 
@@ -1664,6 +1856,14 @@ This is the acceptance target: a lexer, parser and evaluator for arithmetic expr
 variables. If the language can express this, it can express its own compiler. Note this is written in
 the *current* syntax and has not been validated by any implementation — treat discrepancies as bugs
 in this document, and flag them.
+
+**Known discrepancies, flagged (panel 000/002):** six sites produce a `T` where `T?` is expected —
+`factor`'s `.num`/`.var` arms and `group`'s `return inner`, `term`'s and `expression`'s
+`return first`, and `lookup`'s tail — pending panel 002 they become `ok(...)`. `lookup` also uses
+the `has`-then-`.must()` sentinel that §4.9 added `has` to remove, and `main`'s
+`print(c, " = ", v)` mixes `str` and `int` — `print`'s variadic contract is panel 006. The `err`
+payload's type (`e.code`, `e.msg`) is used but never declared as a record; that definition lands
+with panel 002's session.
 
 ```
 ## Calculator
@@ -1992,6 +2192,11 @@ main = function: ()
 Suggested first move: **Part 10, step 1 and 2 only** — a lexer with rigid indentation and a parser
 for a minimal subset (integers, `=`/`@` locals, `if`, `for cond`, `function` entities, arithmetic),
 emitting nothing yet, with a `--dump-ast` flag and a handful of golden tests. Then show the author
-the AST for a small program and let them predict the QBE output before you generate it.
+the AST for a small program and let them predict the generated C before you emit it.
 
 Do not build the whole language before running anything.
+
+*Status note: this project is underway. The scaffolding, spikes, spec v0 and measurement baseline
+exist (M0); this document is kept current with every decided amendment — history is in git, open
+questions are marked inline as `OPEN QUESTION (panel NNN)`, and the session records live in
+`docs/panel/`.*
