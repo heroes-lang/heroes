@@ -65,6 +65,9 @@ vedere la risposta*.
 ### 5. «La pillola di oggi» — one micro-lesson
 ONE concept (3–5 sentences max), tied to the current stage, with its analogy.
 End with a question the author can answer mentally to check they got it.
+If the concept has a `docs/glossary/` entry, link it; if the pillola resolves
+a fresh friction, distill it into a new glossary entry afterwards
+(CLAUDE.md rule 3: friction produces an artifact).
 
 ## Canonical analogies (use these, always the same)
 

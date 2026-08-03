@@ -26,9 +26,12 @@ accepts). Neither → it waits, regardless of elegance.
 - **Predict before implementing — closed questions, not essays.** Before any
   src/ change for a step, the assistant asks 1–4 closed questions (a count, a
   choice among structures, an output value; click-or-one-word answers). The
-  author's answers are transcribed **verbatim** into
-  `docs/journal/NNN-prediction.md` and committed first. The assistant never
-  states or confirms the expected output until that commit exists.
+  raw answers go verbatim into `docs/journal/private/` (git-ignored —
+  personal performance is never published); the committed
+  `docs/journal/NNN-prediction.md` carries the questions plus a SHA-256 seal
+  of the raw record, so precedence stays provable. The assistant never
+  states or confirms the expected output until that commit exists. Journals
+  record divergences as impersonal lessons — shapes and rules, never scores.
 - **Comprehension over authorship.** The assistant implements each small step,
   then walks the author through it in plain language; the author answers 2–3
   spot-check questions per step. Golden cases: the assistant proposes, the
@@ -39,11 +42,22 @@ accepts). Neither → it waits, regardless of elegance.
   symptom (golden diff, clang error) and STOP until the author gives a
   one-sentence hypothesis — free-form or picked from offered options. Then
   explain before fixing.
+- **Friction produces an artifact.** Any comprehension gap — a missed
+  prediction, a failed spot-check, an author's "spiegami meglio" — ends as a
+  `docs/glossary/NNN-<concept>.md` entry (numbered in birth order): the
+  explanation that resolved it, distilled, in English (rule 11, no
+  exceptions) using the `/where` canonical analogies. Origin cited, refined
+  over time, never deleted.
 - One function per milestone is dictated by the author (pseudocode is fine);
   the assistant transcribes, the author confirms it line by line.
 - Each journal closes with the author's explain-it-back — dictated in any
   form, transcribed by the assistant — and 3 spaced questions from ≥2 steps
   back.
+- **Pace: gates attach to concepts, not steps.** The prediction + spot-check
+  cycle fires only when a step introduces a new concept (typically once per
+  milestone: first tokens, first tree, first types, first blocks, first C).
+  Plumbing steps — CLI, harness, refactors, bulk cases — chain autonomously,
+  no ceremony. Journal and story beat are per milestone (rule 14).
 
 ## 4. Panel triggers (path-based, mandatory)
 Convene `/panel` before changing: `spec/**`, `design.md`, surface syntax or
@@ -115,10 +129,11 @@ in design.md Part 6. Anything in Part 7 before the closure list compiles
 itself.
 
 ## 14. Documentation duty + git
-A step is not done without: journal entry, DESIGN-LOG line, **story beat**
-(one line in `docs/book/beats.md` — this project ends in a mini-book about
-the journey, and the beats are its raw material; see `docs/book/README.md`),
-commit (`M<n> step <k>: <what> (docs/journal/NNN)`). One tag per milestone
+A step is not done without a commit (`M<n> step <k>: <what>`). Journal entry
+and **story beat** (one line in `docs/book/beats.md` — this project ends in
+a mini-book about the journey, and the beats are its raw material; see
+`docs/book/README.md`) are per **milestone**, or when something genuinely
+diverged; DESIGN-LOG lines per decision. One tag per milestone
 (pushed with `--follow-tags`). A milestone closes only when goldens pass
 (ASan-clean where applicable), the determinism diff is empty, the prediction
 predates the implementation, the mutation drill ran, and the site's build log

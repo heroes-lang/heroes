@@ -10,6 +10,11 @@ Learning therefore comes from **predicting, testing, and debugging** (design.md
 Part 0), and this skill is the mechanism. Do the phases in order; never skip a
 gate.
 
+**Pace (author instruction 2026-08-03): gates attach to concepts, not
+steps.** Run Phase 2 only when the step introduces a new concept (typically
+once per milestone); chain plumbing steps autonomously without stopping.
+Phase 5 closes the milestone's journal, not every step's.
+
 ## Phase 1 — Goal (assistant)
 1. Session bookends first: `git log --oneline -10`, DESIGN-LOG tail, last
    journal entry. Read `spec/heroes-spec.md` in full.
@@ -19,14 +24,18 @@ gate.
    size, not an analogy.** The prediction must be uncued.
 
 ## Phase 2 — Prediction gate (author) — HARD STOP
-3. Create `docs/journal/NNN-prediction.md` containing only the input example
-   and blank prompts for a countable, falsifiable prediction (exact token
-   list, number of basic blocks, exact C names — "roughly X" is not a
-   prediction).
-4. **STOP. Tell the author to fill it in and commit it.** Do not proceed, do
-   not touch `crates/`, until `git log` shows the prediction commit. If the
-   author explicitly waives the prediction for this step, record the waiver
-   in the journal — their call, but it must be written.
+3. Ask the author 1–4 closed prediction questions in conversation (a count,
+   a choice among structures, an output value — click-or-one-word answers),
+   with the input example fully visible in chat. Create
+   `docs/journal/NNN-prediction.md` containing the input example and the
+   questions only.
+4. **STOP for the author's answers.** Transcribe them verbatim into
+   `docs/journal/private/NNN-prediction-raw.md` (git-ignored — personal
+   performance is never published), seal `NNN-prediction.md` with the
+   SHA-256 of the raw record, and commit it. Do not proceed, do not touch
+   `crates/`, until `git log` shows that commit. If the author explicitly
+   waives the prediction for this step, record the waiver in the journal —
+   their call, but it must be written.
 
 ## Phase 3 — Implement (assistant + author)
 5. Implement. If this milestone's author-written function has not been done
@@ -43,15 +52,19 @@ gate.
    explain what actually broke — before fixing it — and fix.
 
 ## Phase 5 — Close (author + assistant)
-9. Complete the journal: §3 what diverged from the prediction (diff it
-   against NNN-prediction.md — this is the lesson), §4 what broke + the
-   author's diagnosis first, §5 the author's explain-it-back (≤10 lines,
-   written from memory, files closed; then diff their account against the
-   code and list omissions).
+9. Complete the journal: §3 what diverged from the prediction, written as an
+   impersonal lesson — shapes and rules, never scores (compare against the
+   private raw record); §4 what broke + the author's one-sentence hypothesis
+   first; §5 the author's explain-it-back, dictated in any form with files
+   closed — the assistant transcribes, diffs the account against the code,
+   and lists omissions.
 10. Ask the author 3 spaced questions from journals ≥2 steps back, from
-    memory. Record answers.
-11. If a prediction missed badly, write/update the relevant
-    `docs/theory/<concept>.md` note (that is the trigger for theory notes).
+    memory. What needed re-explaining goes to the glossary, not the journal.
+11. If a prediction missed or any comprehension friction surfaced (a failed
+    spot-check, an author's "spiegami meglio"), write/update the matching
+    `docs/glossary/NNN-<concept>.md` entry — numbered in birth order,
+    English, canonical analogies, origin cited, never deleted (see
+    `docs/glossary/README.md`, which absorbed the old docs/theory notes).
 12. Append one **story beat** to `docs/book/beats.md` (1–2 sentences, plain
     language: the surprise, the wrong turn, the small victory — the human
     fact the technical records drop; see `docs/book/README.md`).
