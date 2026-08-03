@@ -7,9 +7,14 @@
 //!   an error, and an indent may grow by at most one level per line;
 //! - Go-style terminator insertion: a `Terminator` is emitted at end of
 //!   line only when the line's last significant token is an identifier, a
-//!   literal, `return`, `)`, `]`, or `}`. NOTE: design.md's ender list
-//!   omits `break`/`continue`/`???` — implemented by the letter; the gap is
-//!   on record in docs/panel/OPEN-QUESTIONS.md for a session before M2.
+//!   literal, `true`/`false`, `return`, `break`, `continue`, `???`,
+//!   postfix `?`, `)`, `]`, or `}` (design.md §4.15 as amended by panel 007).
+//! - Continuation inside brackets only (panel 007): within `( [ {` leading
+//!   whitespace is not structural — no Indent/Dedent tokens are emitted;
+//!   terminators are inserted unchanged everywhere (multi-line literals
+//!   rely on them as element separators, §4.9). An unclosed opener is a
+//!   diagnostic at EOF, citing the opener — otherwise one missing `)`
+//!   would silently swallow the rest of the file's layout.
 //! - `#` comments run to end of line and are RETAINED as tokens (a comment
 //!   directly above a declaration is its documentation; `##` is a section
 //!   heading — telling them apart is the parser's job, the text is in the
@@ -110,6 +115,7 @@ pub fn lex(src: &Source) -> LexOutput {
     let mut st = LexState {
         pos: 0,
         level: 0,
+        open_brackets: Vec::new(),
         tokens: Vec::new(),
         diagnostics: Vec::new(),
         last_significant: None,
@@ -121,9 +127,16 @@ pub fn lex(src: &Source) -> LexOutput {
         }
         st.line_body(src);
     }
-    // EOF: terminate the last line if it ended without a newline, then
-    // close every open block.
+    // EOF: terminate the last line if it ended without a newline, report
+    // every opener that never closed, then close every open block.
     st.maybe_terminator();
+    for span in &st.open_brackets {
+        st.diagnostics.push(Diagnostic::new(
+            "unclosed_bracket",
+            format!("`{}` opened here is never closed", src.slice(*span)),
+            *span,
+        ));
+    }
     let end = Span { start: st.pos as u32, end: st.pos as u32 };
     for _ in 0..st.level {
         st.tokens.push(Token { kind: TokenKind::Dedent, span: end });
@@ -132,8 +145,10 @@ pub fn lex(src: &Source) -> LexOutput {
     LexOutput { tokens: st.tokens, diagnostics: st.diagnostics }
 }
 
-/// design.md §4.15: the terminator is inserted when a line ends with an
-/// identifier, a literal, `return`, `)`, `]`, or `}`.
+/// design.md §4.15 (panel 007): the terminator is inserted when a line ends
+/// with an identifier, a literal, `return`, `break`, `continue`, `???`,
+/// postfix `?`, `)`, `]`, or `}`. Str/char literal kinds join the list when
+/// they land.
 fn is_line_ender(kind: TokenKind) -> bool {
     matches!(
         kind,
@@ -143,6 +158,10 @@ fn is_line_ender(kind: TokenKind) -> bool {
             | TokenKind::KwTrue
             | TokenKind::KwFalse
             | TokenKind::KwReturn
+            | TokenKind::KwBreak
+            | TokenKind::KwContinue
+            | TokenKind::Hole
+            | TokenKind::Question
             | TokenKind::RParen
             | TokenKind::RBracket
             | TokenKind::RBrace
@@ -241,6 +260,10 @@ struct LexState {
     pos: usize,
     /// Current indentation level (one level == 4 spaces).
     level: u32,
+    /// Spans of the openers `( [ {` not yet closed; its length is the
+    /// bracket depth. Inside brackets, indentation is not structural
+    /// (panel 007).
+    open_brackets: Vec<Span>,
     tokens: Vec<Token>,
     diagnostics: Vec<Diagnostic>,
     /// Kind of the current line's last significant (non-comment) token.
@@ -277,6 +300,11 @@ impl LexState {
                 span,
             ));
             // Recovery: keep the current level; the line still lexes.
+            return;
+        }
+        // Inside brackets, leading whitespace is not structural: no
+        // Indent/Dedent, and the level is frozen (panel 007).
+        if !self.open_brackets.is_empty() {
             return;
         }
         // Layout-neutral lines: empty, or comment-only.
@@ -471,10 +499,21 @@ impl LexState {
     }
 
     fn push(&mut self, kind: TokenKind, start: usize) {
-        self.tokens.push(Token {
-            kind,
-            span: Span { start: start as u32, end: self.pos as u32 },
-        });
+        let span = Span { start: start as u32, end: self.pos as u32 };
+        // Bracket depth lives here, where the kind is known — so brackets
+        // inside future string literals can never touch it.
+        match kind {
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => {
+                self.open_brackets.push(span);
+            }
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
+                // Saturating pop: a stray closer never corrupts the
+                // following layout; the parser reports it.
+                self.open_brackets.pop();
+            }
+            _ => {}
+        }
+        self.tokens.push(Token { kind, span });
         self.last_significant = Some(kind);
     }
 }
