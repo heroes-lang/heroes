@@ -28,10 +28,13 @@ or it breaches the 1500-token budget.
 - Canonical `f64` rendering: deterministic, locale-independent; exact
   algorithm fixed at M5b with its goldens (ffi-pragmatist, 006).
 - CLAUDE.md's "Nim ≈150k lines" is an unverified assumption (historian, 005).
-- **Terminator ender-list gap (M1.1, needs a session before M2):** design.md
-  §4.15 inserts the terminator only after an identifier, a literal, `return`,
-  `)`, `]`, `}` — the list omits `break`, `continue` and `???`, so by the
-  letter `break` alone on a line gets no terminator, and `x = ???` doesn't
-  either. Related and also unspecified: how a continuation line (e.g.
-  `b = (2 +` … `3)`) interacts with Indent/Dedent tokens. The lexer
-  implements the letter and the parser will need the answer.
+- ~~Terminator ender-list gap (M1.1)~~ — **resolved by panel 007** (author
+  ratified 2026-08-03): ender list completed, continuation inside brackets
+  only, unclosed opener = EOF error.
+- **Depth-0 trailing-operator continuation + the spec-v1 layout sentence
+  (007-bis, keyed to the baseline run):** deferred as one package. Score at
+  the baseline: ergonomist predicts ≥25pp first-try loss on depth-0
+  expression breaks with a silent spec; spec-warden predicts zero baseline
+  completions contain such a break. If the warden is wrong, reconvene with
+  Nim's explicit continuator set + the sentence (+ a named spec removal and
+  a real tokenizer count).
