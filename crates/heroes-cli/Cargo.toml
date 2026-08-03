@@ -1,0 +1,11 @@
+[package]
+name = "heroes-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "heroes"
+path = "src/main.rs"
+
+[dependencies]
+heroes = { path = "../heroes" }

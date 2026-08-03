@@ -1,0 +1,4 @@
+[package]
+name = "heroes"
+version.workspace = true
+edition.workspace = true

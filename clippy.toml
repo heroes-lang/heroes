@@ -1,0 +1,12 @@
+# The Cyclone rule, tool-enforced (CLAUDE.md rule 7).
+# References only as function parameters; the array (Vec) is the only indirection;
+# deterministic iteration everywhere (the fixpoint depends on it).
+disallowed-types = [
+    { path = "std::boxed::Box", reason = "Cyclone rule: Heroes' only indirection is the array — use Vec or indices" },
+    { path = "std::rc::Rc", reason = "Cyclone rule: no shared ownership; Heroes has value semantics" },
+    { path = "std::sync::Arc", reason = "Cyclone rule: no shared ownership; Heroes has value semantics" },
+    { path = "std::cell::RefCell", reason = "Cyclone rule: no interior mutability; use &mut parameters (Heroes' @)" },
+    { path = "std::cell::Cell", reason = "Cyclone rule: no interior mutability; use &mut parameters (Heroes' @)" },
+    { path = "std::collections::HashMap", reason = "nondeterministic iteration order breaks the bootstrap fixpoint — use BTreeMap" },
+    { path = "std::collections::HashSet", reason = "nondeterministic iteration order breaks the bootstrap fixpoint — use BTreeSet" },
+]
