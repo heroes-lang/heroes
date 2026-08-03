@@ -29,7 +29,26 @@ program above **before** opening `tools/spike/02-loop.c`.
 
 ## 3. What diverged — the lesson
 
-(To be filled after the author's prediction is committed and compared.)
+The prediction and the spike disagreed on the loop's *shape* (raw prediction
+record: `docs/journal/private/`, sealed in `000-prediction.md`):
+
+| Aspect | Predicted shape | Spike (naive lowering) |
+|---|---|---|
+| basic blocks | 5 — the rotated form (guard + test at the bottom) | **4** — bb0 init · bb1 test · bb2 body · bb3 print+return |
+| where `i < 5` lives | end of the body block | **a block of its own** (bb1) |
+| in-edges of the test block | 3 | **2** — one from bb0 (first arrival), one back-edge from bb2 |
+| output | 10 | 10 — agreement |
+
+The predicted shape is not nonsense — it is the *rotated* loop (do-while
+form, test at the bottom) that optimising compilers produce, usually plus a
+guard block for the may-run-zero-times case, which is exactly how one gets
+to 5 blocks. Heroes' M4 lowering deliberately keeps the naive shape instead:
+one test block entered twice — from above on first arrival, from below on
+every iteration — because it is uniform to emit and easy to verify, and
+clang -O2 rotates it by itself (see the spike header). Core lesson,
+distilled into `docs/glossary/000-basic-block.md`: **the two in-edges of bb1
+are the loop** — a loop is nothing but a cycle in the block graph, and the
+block count follows from the shape, it is not the shape.
 
 One divergence already found by the machine rather than by anyone's intuition:
 the **entry block's label is never a jump target**, so clang warns

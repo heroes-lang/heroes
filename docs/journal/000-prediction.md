@@ -1,8 +1,9 @@
 # 000 — Prediction (author)
 
-**Do not open `tools/spike/02-loop.c` until this file is filled in and
-committed.** That file contains the answer; the value of this exercise is
-recalling the shape yourself, not recognising it.
+Low-typing protocol (CLAUDE.md rule 3): the questions are committed, the
+author's raw answers are not — they live in `docs/journal/private/`
+(git-ignored, local to the author). The SHA-256 seal below proves the
+recorded prediction predates the implementation without publishing it.
 
 ## The program
 
@@ -16,28 +17,22 @@ main = function: ()
     print(total)
 ```
 
-## Your task
+## The questions (answered 2026-08-03, before the spike was opened)
 
-The lowering (M4) reduces ALL control flow to *basic blocks* — straight-line
-runs of instructions — connected by jumps (unconditional) and conditional
-jumps (two targets: taken / not taken). Draw that graph for the program above.
+1. How many basic blocks? — 3 / 4 / 5
+2. Where does the `i < 5` test live? — in the entry block, with the
+   initialisations / in a block of its own / at the end of the body block
+3. How many arrows enter the block holding the test? — 1 / 2 / 3
+4. What does `print(total)` print? — 5 / 10 / 15
 
-1. How many basic blocks? ______
-2. For each block, list its instructions and where it jumps:
+## Seal
 
 ```
-bb0: ________________________________   → ____
-bb1: ________________________________   → ____ / ____
-bb2: ________________________________   → ____
-bb3: ________________________________   → ____
-(add or remove blocks as you see fit — the count is YOUR prediction)
+sha256(docs/journal/private/000-prediction-raw.md) =
+bd0dacdaf61c47c732b56a08373ef035a8cebacb4a29b63d98bc6e680fbb0470
 ```
 
-3. Which block does the loop's `for i < 5` test live in? ______
-4. What does the program print? ______
+## Where the lesson lives
 
-## After committing this file
-
-Open `tools/spike/02-loop.c`, compare, and record every divergence in
-`000-setup.md` §3 — a wrong block count or a misplaced test is not a failure,
-it IS the lesson (design.md Part 0).
+Divergences, recorded impersonally: `000-setup.md` §3. Distilled concept:
+`docs/glossary/000-basic-block.md`.
