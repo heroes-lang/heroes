@@ -1,0 +1,37 @@
+# Reserved words and their prescribed errors
+
+design.md §4.17: the likeliest mistake from a model writing on autopilot is a
+keyword imported from another language. Each one is a **loud failure with the
+solution pre-written** — the lexer recognises these words and emits the exact
+text below (~5 lines of code each). This file is the registry; the diagnostic
+renderer reads from it conceptually, the golden tests in `check/` pin it.
+
+| Foreign word | Error text |
+|---|---|
+| `struct` | error: `struct` is not a word in this language — use `record`:  `Point = record` |
+| `enum` | error: `enum` is not a word in this language — use `variant`:  `Token = variant` |
+| `union` | error: `union` is not a word in this language — use `variant`:  `Token = variant` |
+| `class` | error: `class` is not a word in this language — use `record` (there is no inheritance) |
+| `fn` | error: `fn` is not a word in this language — use `function`:  `f = function: (x: int) -> int` |
+| `func` | error: `func` is not a word in this language — use `function` |
+| `def` | error: `def` is not a word in this language — use `function` |
+| `let` | error: `let` is not a word in this language — bind with `=`:  `x = 5` |
+| `var` | error: `var` is not a word in this language — declare a mutable with `@`:  `v: int @ 0` |
+| `const` | error: `const` is not a word in this language — use `constant`:  `MAX = constant: int` |
+| `while` | error: `while` is not a word in this language — use `for`:  `for x > 0` |
+| `elif` | error: `elif` is not a word in this language — write `else if` |
+| `switch` | error: `switch` is not a word in this language — use `match` |
+| `case` | error: `case` is not a word in this language — a `match` arm is `.name => expr` |
+| `null` / `nil` / `None` | error: there is no null in this language — absence is a fallible type:  `int?` |
+| `try` / `catch` / `throw` / `raise` | error: there are no exceptions in this language — errors are values:  `fail(code, msg)`, propagate with `?` |
+| `return` used as `return;` | error: `return` with no value only in functions returning `()` |
+| `import` / `use` / `include` | error: modules do not exist yet — one file is one program (v1) |
+
+Also prescribed (design.md §4.17): `@name` in **prefix statement position**
+(Python/Ruby decorator prior) is always a syntax error with a note showing the
+two legal `@` forms (`v: int @ 0` declaration, `v @ expr` mutation).
+
+Keywords of Heroes itself (cannot be identifiers): `constant` `function`
+`record` `variant` `match` `if` `else` `for` `in` `break` `continue` `return`
+`test` `assert` `extern` `true` `false` `fail` — plus the two-character forms
+`=>` `->` and the sigil `@`.
