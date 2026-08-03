@@ -22,15 +22,16 @@ main = function: ()
     print(total)
 ```
 
-## 2. Prediction (author — see 000-prediction.md, uncued)
+## 2. Prediction (author, uncued — under the original protocol)
 
-→ `docs/journal/000-prediction.md`. Draw the control-flow graph for the
-program above **before** opening `tools/spike/02-loop.c`.
+The author drew the control-flow graph for the program above before opening
+`tools/spike/02-loop.c`. (The prediction files and their SHA-256 seals were
+retired with the protocol inversion of 2026-08-03; the sealed record lives
+in git history.)
 
 ## 3. What diverged — the lesson
 
-The prediction and the spike disagreed on the loop's *shape* (raw prediction
-record: `docs/journal/private/`, sealed in `000-prediction.md`):
+The prediction and the spike disagreed on the loop's *shape*:
 
 | Aspect | Predicted shape | Spike (naive lowering) |
 |---|---|---|
@@ -62,9 +63,9 @@ spec-v0 commit message understated the token estimate (~1250 vs the computed
 ~1496); amended. Lesson: the budget is AT the edge, exactly as design.md §1.6
 says ("the budget is nearly spent") — every future addition needs a removal.
 
-## 5. Explain-it-back (author, ≤10 lines, from memory)
+## 5. Explain-it-back (author, dictated, from memory)
 
-(To be written by the author at the M0 close: what does spike 04 decide, and
+(Open — queued in `docs/debrief/QUEUE.md`: what does spike 04 decide, and
 why does it exist before any compiler code?)
 
 ---
@@ -73,6 +74,7 @@ Verified today: `cargo test` green (golden harness, zero cases) · clippy green
 · `heroes doctor` all ok · spikes 01→`20`, 02→`10`, 03→`1`, 04→`1 0 -42`
 with ASan+UBSan reporting zero leaks.
 
-Open at close of M0: author's prediction (this file §2), author's
-explain-it-back (§5), panel decisions 002/003/005/006, harness baseline run
-(n=20, needs API key or manual sessions).
+Open at close of M0 — now tracked in `docs/debrief/QUEUE.md`: author's
+explain-it-back (§5), harness baseline run (n=20, needs API key or manual
+sessions). Panel decisions 002/003/005/006: taken 2026-08-03, applied to
+design.md.

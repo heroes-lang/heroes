@@ -8,7 +8,7 @@
  * This file defines the SHAPE of what the emitter must produce, before the
  * emitter exists. In M5a we diff the generated C against this by eye.
  *
- * Shape rules (CLAUDE.md rule 8):
+ * Shape rules (CLAUDE.md § "Generated-C rules"):
  *   - #line points every step at the .hero source, so clang errors and lldb
  *     land on the author's file, never on generated text.
  *   - Arithmetic aborts on overflow via __builtin_*_overflow — never C's UB.

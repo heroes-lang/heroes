@@ -1,34 +1,23 @@
-# Measurement harness (design.md Part 11)
+# Measurement harness — frozen until it can run
 
-"It is what separates this project from an opinion." Everything here is frozen
-and hashed; every run records provenance (spec sha, compiler sha, model id,
-prompt sha, suite sha) into `docs/measurements/NNN.md`.
+Methodology (arms, sample sizes, grading, metrics): **design.md Part 11** —
+the single source; this file only points and states what is pending.
+
+**Pending, both on the author (queued in `docs/debrief/QUEUE.md`):**
+the v0 baseline (metric 2, n=20, against spec v0 = commit `d10fbec`) needs
+`ANTHROPIC_API_KEY` or manual fresh sessions, and must run BEFORE any spec
+amendment lands — spec v0 stays frozen until then (DESIGN-LOG). And 15 of
+the 20 tasks must be author-written (held out — an assistant-written suite
+would measure the assistant's priors).
 
 ## Layout
 
-- `tasks/` — the frozen task suite for metric 2 (first-try rate). Target: 20
-  author-confirmed tasks. Assistant-drafted tasks are marked
-  `# UNVERIFIED — author must confirm` until reviewed.
-- `mutations/operators.md` — metric 3's mutation operators, as data. Applied
-  mechanically to the golden corpus; per-operator kill rate reported. No API
-  needed.
-- `prompts/first-try.md` — the frozen prompt template for metric 2. Single
-  turn, **spec-only context** (never design.md, never this repo — the measured
-  model co-designed the language).
+- `prompts/first-try.md` — the frozen prompt template (metric 2):
+  single-turn, spec-only context, hashed.
+- `mutations/operators.md` — metric 3's operators as data; applied
+  mechanically to the golden corpus, per-operator kill rate; no API needed.
+- `tasks/` — the frozen task suite (see its README for authorship rules).
 
-## Protocol (metric 2)
-
-20 tasks × 5 samples per arm, Wilson intervals. Two arms per trial:
-`heroes check` and `heroes check --permissive` (the control — same compiler,
-thesis-bearing checks off). Two gradings once available: compile rate (M3d+),
-tests-pass rate (M6+). Cap turns-to-green at 5 (metric 4).
-
-## The v0 baseline (pending — needs the author)
-
-The pre-amendment baseline must be taken against spec v0 (commit `d10fbec`)
-BEFORE panels 002/003/005/006 amend the spec. No API key is configured on this
-machine, so either: configure `ANTHROPIC_API_KEY` (or `ant auth login`) and
-run the trials API-side, or run them by hand in fresh Claude sessions pasting
-ONLY `spec/heroes-spec.md` + one task, recording results in
-`docs/measurements/000-baseline.md`. Grading for the baseline is by-hand
-review (the compiler doesn't exist yet): does the program conform to the spec?
+Provenance, on every run: spec sha, compiler sha, model id, prompt sha,
+suite sha, recorded into `docs/measurements/NNN.md` (directory born with the
+first run). Never diff runs with different compiler shas unless flagged.

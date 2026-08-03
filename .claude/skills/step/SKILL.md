@@ -17,7 +17,7 @@ for it before a step; no other ceremony attaches to it.)
 the ROADMAP.
 
 ## 2. Implement
-- If the step touches a panel path (CLAUDE.md rule 4), run `/panel` first —
+- If the step touches a panel path (CLAUDE.md § Panel), run `/panel` first —
   asynchronous: adopt the conservative default, queue the ratification.
 - Write the code and the golden cases. Mark the milestone's 5 adversarial
   cases `# UNVERIFIED — pending debrief`; label bulk regression cases.

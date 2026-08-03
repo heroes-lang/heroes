@@ -6,12 +6,13 @@
 //!   tests/golden/check/   <name>.hero + <name>.expected  (rendered diagnostics)
 //!   tests/golden/run/     <name>.hero + <name>.expected  (program output, ASan-clean)
 //!
-//! Discipline (CLAUDE.md rule 10):
+//! Discipline (CLAUDE.md § "Golden discipline"):
 //!   - UPDATE_GOLDEN=1 may rewrite `run/` expectations after HUMAN review of the
 //!     diff (quoted in the commit body). It is FORBIDDEN in `check/`, and must
 //!     never be used to turn a red test green without reading why it was red.
-//!   - The author writes 5 adversarial cases per milestone; assistant-written
-//!     bulk regression cases are marked as such in a leading comment.
+//!   - Each milestone's 5 adversarial cases stay marked
+//!     `# UNVERIFIED — pending debrief` until the author ratifies them;
+//!     assistant-written bulk regression cases are marked as such.
 //!
 //! M0: both directories exist and are empty; the harness passes with zero cases.
 //! From M1 on, each case is executed through the compiler and diffed.

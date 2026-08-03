@@ -5,19 +5,17 @@ project and are **never deleted** (history lives in git). This directory
 absorbed the old `docs/theory/` (2026-08-03) — one home for every concept
 note. An entry is born one of two ways:
 
-- **Friction** — a missed prediction, a failed spot-check, an author's
-  "spiegami meglio": the explanation that finally worked is distilled here so
-  it never has to be reinvented (CLAUDE.md rule 3).
-- **Prerequisite** — planned notes that land BEFORE their milestone (plan,
-  didactics review):
-  - bidirectional-type-checking — days before M3 (paper exercise included)
-  - core-vs-sugar — before M4 (author hand-desugars three constructs first)
-  - basic-block — carried by `tools/spike/02-loop.c` + journal 000 (M0) —
-    **landed**, see index
+- **A debrief gap** — whenever a `/debrief` session (or a `/where` pillola)
+  needs a genuinely new explanation, the one that worked is distilled here
+  so it never has to be reinvented.
+- **Prerequisite** — the two planned notes are queued as author exercises in
+  `docs/debrief/QUEUE.md` and will be born from those sessions:
+  bidirectional-type-checking (before M3b) and core-vs-sugar (before M4).
+  basic-block (M0) already **landed** — see index.
 
 ## Rules
 
-- **English, like every artifact** (CLAUDE.md rule 11 — no exceptions).
+- **English, like every artifact** (the language rule — no exceptions).
   Entries use the same canonical analogies as `.claude/skills/where/SKILL.md`
   (the assembly line, the road and its intersections, the sentence tree) so
   the author's mental model accumulates; `/where` renders those analogies in

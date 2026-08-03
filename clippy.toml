@@ -1,4 +1,4 @@
-# The Cyclone rule, tool-enforced (CLAUDE.md rule 7).
+# The Cyclone rule, tool-enforced (CLAUDE.md § "The Heroes subset of Rust").
 # References only as function parameters; the array (Vec) is the only indirection;
 # deterministic iteration everywhere (the fixpoint depends on it).
 disallowed-types = [

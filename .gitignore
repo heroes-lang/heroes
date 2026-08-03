@@ -8,8 +8,5 @@
 stage[0-9]
 *.o
 
-# author's raw prediction records — personal, never published (CLAUDE.md rule 3)
-/docs/journal/private/
-
 # macOS
 .DS_Store

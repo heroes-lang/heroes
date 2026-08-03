@@ -1,10 +1,10 @@
 /* Spike 2 — basic blocks and jumps, by hand.
  *
  * ============================================================================
- * AUTHOR: STOP. Before reading past this comment, draw the control-flow graph
- * for the Heroes program below in docs/journal/000-prediction.md — boxes for
- * blocks, arrows for jumps. That drawing is your first uncued prediction
- * (journal 000). Then come back and compare.
+ * This spike carried the author's first uncued prediction: draw the
+ * control-flow graph before reading the code, then compare. Done at M0;
+ * the divergence and its lesson live in docs/journal/000-setup.md §3 and
+ * docs/glossary/000-basic-block.md.
  * ============================================================================
  *
  * Heroes source:
