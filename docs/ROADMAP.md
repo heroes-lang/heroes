@@ -9,8 +9,11 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**Status: M0 closed 2026-08-03 (untagged — it predates the tagging habit).
-Next: M1, step 1.**
+**Status: M1 closed 2026-08-04, tag `m1` (lexer complete: journal 001;
+panel 007 resolved terminators; escape gap queued for a panel before M6).
+M0 closed 2026-08-03 (untagged — it predates the tagging habit).
+Next: M2, step 1 (parser scaffold) — but panel 007-bis and the escape
+session are pending inputs it may need.**
 
 ## The chain
 
@@ -24,11 +27,13 @@ skeleton, four hand-written C spikes in `tools/spike/` (01 target shape ·
 ASan-clean — decided the container/descriptor ABI). Panels 000–006 all
 decided; decisions applied to design.md.
 
-### M1 — Lexer
-Rigid indentation (INDENT/DEDENT, tab = error), terminator insertion, char
-literals, comments retained, reserved-word detection (spec/reserved-words.md
-prescribes the error text). `heroes lex --json`. Crate-internal snapshot
-tests for token dumps. Bonus: TextMate grammar (~30 lines).
+### M1 — Lexer ✅ (2026-08-04, tag `m1`)
+Rigid indentation (INDENT/DEDENT, tab = error), terminator insertion (as
+amended by panel 007: full ender list, brackets-only continuation,
+unclosed-opener diagnostic), str/char literals (no escapes — gap queued),
+comments retained, reserved-word detection with prescribed errors and
+`Certain` fixes. `heroes lex --json`. 23 crate-internal snapshot tests.
+TextMate grammar (bonus): deferred.
 **Runnable:** `heroes lex examples/first.hero --json`.
 
 ### M2 — Parser, AST, pretty printer

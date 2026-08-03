@@ -38,3 +38,12 @@ or it breaches the 1500-token budget.
   completions contain such a break. If the warden is wrong, reconvene with
   Nim's explicit continuator set + the sentence (+ a named spec removal and
   a real tokenizer count).
+- **Escape sequences do not exist (M1.3, needs a session before M6):**
+  design.md never mentions them; the lexer implements the letter — a
+  backslash in a string is an ordinary byte, and a char literal is one
+  ASCII character. But the self-hosted lexer must express the tab and
+  newline *characters* without magic numbers (`c == 9` is exactly what
+  §4.3's char literals were introduced to kill), and `join`/`Builder` (M6
+  library) will want them in strings. Design question for the panel: a
+  minimal escape set (`\n \t \\ \" \'`?) vs named constants in the library
+  vs something else. Compiler-need under §1.0, so it cannot be waved off.
