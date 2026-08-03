@@ -27,7 +27,9 @@ or it breaches the 1500-token budget.
   (compiler-engineer, 006).
 - Canonical `f64` rendering: deterministic, locale-independent; exact
   algorithm fixed at M5b with its goldens (ffi-pragmatist, 006).
-- CLAUDE.md's "Nim ≈150k lines" is an unverified assumption (historian, 005).
+- ~~CLAUDE.md's "Nim ≈150k lines"~~ — resolved by removal (2026-08-04): the
+  claim was dropped in CLAUDE.md's single-sourcing rewrite; the repo no
+  longer asserts a line count for Nim anywhere (historian, 005, satisfied).
 - ~~Terminator ender-list gap (M1.1)~~ — **resolved by panel 007** (author
   ratified 2026-08-03): ender list completed, continuation inside brackets
   only, unclosed opener = EOF error.
