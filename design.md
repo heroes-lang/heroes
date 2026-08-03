@@ -1245,8 +1245,23 @@ invents:**
   gone. This is the one accepted silent-error case in the language. It is bounded, and it is
   mitigated by the fact that LLMs are extremely well trained on Python's indentation, and that for a
   new language the model will rewrite whole functions rather than patching three lines.
-- **No semicolons.** The lexer inserts a terminator when a line ends with an identifier, a literal,
-  `return`, `)`, `]`, or `}`. ~15 lines, free token saving, no risk. (Go's rule.)
+- **No semicolons.** The lexer inserts a terminator when a line ends with an identifier, a literal
+  (including `true`/`false`, and string/char literals when they land), `return`, `break`,
+  `continue`, `???`, postfix `?`, `)`, `]`, or `}` — Go's rule, faithfully this time: Go's own list
+  carries `break`/`continue` and the postfix operators, and the original transcription dropped
+  them. `fallthrough` is omitted deliberately (no such keyword). One departure from Go on record:
+  its `++`/`--` are statements while Heroes' `?` is an expression — safe only because §4.14's
+  statement-position rule makes a stranded continuation a loud error. ~20 lines. (Panel 007.)
+- **Continuation lines: inside brackets only.** Within `(` `[` `{`, leading whitespace is not
+  structural — no indent/dedent tokens are emitted, so multi-line calls, signatures and literals
+  indent freely (Python's discipline; §4.9's newline-separated literals rely on terminators, which
+  are inserted unchanged everywhere, brackets included). At bracket depth zero every line's
+  indentation is structural: a long expression is broken inside parentheses or not at all. An
+  unclosed opener is a compile error reported at end of file, citing the opener — without that
+  diagnostic one missing `)` would silently swallow the rest of the file's layout.
+  Trailing-operator continuation at depth zero (Nim's rule) was considered and deferred: it enters
+  only if the measurement baseline shows models actually produce that break shape. (Panel 007,
+  predictions on record.)
 - **No parens around conditions.** `if x > 3`, not `if (x > 3)`. Zero information, two tokens saved,
   and Go/Rust/Swift already do it, so no familiarity cost.
 - **Canonical formatter, mandatory, `gofmt`-style: there is exactly one correct way to write any
