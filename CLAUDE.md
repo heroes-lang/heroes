@@ -21,20 +21,29 @@ if the compiler needs it (the closure list in the plan) **or** it provably
 serves the thesis (measured Part 11 effect, or a §1-derived argument the panel
 accepts). Neither → it waits, regardless of elegance.
 
-## 3. Part 0's three rules (teaching protocol — non-negotiable)
-- **Predict before implementing, uncued.** The author's prediction goes in
-  `docs/journal/NNN-prediction.md`, countable and falsifiable, **committed
-  before any src/ change for that step**. The assistant states only the goal
-  and input — never the expected output — until the prediction is committed.
-- **The author writes the tests.** 5 adversarial golden cases per milestone
-  come from the author. Assistant-proposed cases are marked
-  `# UNVERIFIED — author must confirm` and bulk regression cases are labelled.
-- **Author-first diagnosis.** On any failure, post the raw symptom (golden
-  diff, clang error) and STOP until the author writes a hypothesis and names
-  the file. Then explain before fixing.
-- One function per milestone is written by the author; the assistant reviews.
-- Each journal closes with the author's explain-it-back (≤10 lines, from
-  memory) and 3 spaced questions from ≥2 steps back.
+## 3. Part 0's three rules (teaching protocol — low-typing form, author
+## instruction 2026-08-03; retrieval practice kept, written production dropped)
+- **Predict before implementing — closed questions, not essays.** Before any
+  src/ change for a step, the assistant asks 1–4 closed questions (a count, a
+  choice among structures, an output value; click-or-one-word answers). The
+  author's answers are transcribed **verbatim** into
+  `docs/journal/NNN-prediction.md` and committed first. The assistant never
+  states or confirms the expected output until that commit exists.
+- **Comprehension over authorship.** The assistant implements each small step,
+  then walks the author through it in plain language; the author answers 2–3
+  spot-check questions per step. Golden cases: the assistant proposes, the
+  author approves each one by saying briefly what it guards against;
+  unapproved cases stay marked `# UNVERIFIED — author must confirm` and bulk
+  regression cases are labelled.
+- **Author-first diagnosis, one sentence.** On any failure, post the raw
+  symptom (golden diff, clang error) and STOP until the author gives a
+  one-sentence hypothesis — free-form or picked from offered options. Then
+  explain before fixing.
+- One function per milestone is dictated by the author (pseudocode is fine);
+  the assistant transcribes, the author confirms it line by line.
+- Each journal closes with the author's explain-it-back — dictated in any
+  form, transcribed by the assistant — and 3 spaced questions from ≥2 steps
+  back.
 
 ## 4. Panel triggers (path-based, mandatory)
 Convene `/panel` before changing: `spec/**`, `design.md`, surface syntax or
