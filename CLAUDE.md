@@ -94,6 +94,11 @@ Conversation with the author is Italian. `Heroes` in prose, `heroes` for the
 binary, `.hero` for files. ASCII-only syntax. Bowie belongs in prose and
 packaging, never in error text or library names; the site's register and its
 rules live in `site/README.md` § Style guide.
+**Code is written to be read** (author instruction 2026-08-04): files stay
+short and single-concern — split a module before it passes ~300 lines; every
+file opens with a module doc stating its role and citing its design.md
+sections; comments teach the invariant and the why, never the diff. The
+author must be able to open any file and read it without drowning.
 
 ## 12. Precedence when artifacts disagree
 Spec beats compiler (the compiler has the bug). Measurement beats opinion —
