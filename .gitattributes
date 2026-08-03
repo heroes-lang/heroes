@@ -1,0 +1,2 @@
+# A CRLF conversion would silently break golden-file comparisons.
+* text=auto eol=lf

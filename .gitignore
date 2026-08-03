@@ -1,0 +1,12 @@
+# Rust
+/target
+
+# heroes build cache (generated C, runtime.o, binaries — all derived)
+/build
+
+# bootstrap stages (derived)
+stage[0-9]
+*.o
+
+# macOS
+.DS_Store
