@@ -78,7 +78,8 @@ references, for links. Every necessary violation carries `// PORT-DEBT:
 ## 6. Nim: copy the surface, never the implementation
 `importc`-style FFI, per-module cache, `nim r` → `heroes run`: yes.
 Macros, templates, effect systems, style-insensitive identifiers, a separate
-package binary: never. (Nim's compiler is ~150k lines — the face not to copy.)
+package binary: never. (Nim's compiler is reportedly ~150k lines — unverified,
+panel 005 historian — the face not to copy.)
 
 ## 7. Generated-C rules
 C11; `int64_t`/`double`/`bool`; `#include "heroes_runtime.h"` (clang

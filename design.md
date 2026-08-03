@@ -117,10 +117,16 @@ for. The burden of proof for any proposed form:
 
 Neither → it waits, regardless of elegance. This gives the design a **stopping rule**, which
 language designs normally lack, and it makes Part 7's ordering non-negotiable until the closure
-list compiles itself.
+list compiles itself. Ratified by panel 005 (2026-08-03) — with the historian's honesty clause on
+record: no verified language ever used self-hosting as a feature freeze; this is a deliberate
+departure. The closure-list audit runs at the M6 checkpoint, under three riders: it is mechanical
+(grep of the appendix plus a representative compiler pass, not opinion), it audits **spec
+coverage** and arrives with named cuts (modules, file I/O, `args()`, `exit` are on this list but
+not yet in the spec — mortgaged budget), and it assigns `file I/O`/`args()`/`exit(code)` a
+runtime tier (§4.20 Tier 1 vs plain externs).
 
 **The closure list** (what writing this compiler in Heroes requires): `record` · `variant` +
-exhaustive `match` · `[T]` · `{K: V}` (iteration order: open question, panel 006) · `str` · `int` ·
+exhaustive `match` · `[T]` · `{K: V}` (insertion order, panel 006) · `str` · `int` ·
 `bool` · `()` · `T?` with `?`/`.must()`/`.default()` · `=`/`@` bindings · `@` parameters ·
 `if`/`else if`/`else` · `for cond` / `for x in xs` (including over maps) / `break`/`continue` ·
 `return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
@@ -814,14 +820,14 @@ cost generics and spec — but at least it is comparable.
 
 **`?` applied to a non-fallible value is a compile error.**
 
-> **OPEN QUESTION (panel 002).** The acceptance program needs a `T`-typed expression where `T?` is
-> expected at six sites (all marked in the appendix), and `fail`'s own type is only determinable
-> from the *expected* type — return-type-directed instantiation that §4.12's inference cannot do.
-> Implicit promotion is off the table (Part 6 rejects implicit conversions permanently).
-> **Recommended resolution:** an explicit `ok(x)` constructor, `fail`'s symmetric twin, with both
-> checked against the expected type (the bidirectional ⇐ mode). ~+8 spec tokens, zero new
-> vocabulary. Also avoids the `T??` ambiguity implicit promotion would create under
-> monomorphisation with `A := Expr?`. Pending the author's decision.
+**`ok(x)` is `fail`'s symmetric twin (panel 002, decided 2026-08-03).** Both are checked against
+the *expected* type — the bidirectional ⇐ mode that §4.5 already commits the checker to for empty
+literals, leading-dot variants, `return` and `???` — so `return ok(v)` where `T?` is expected, and
+`fail(code, msg)` likewise. No implicit `T` → `T?` promotion exists, ever (Part 6): besides the
+locality argument, it creates the `T??` level ambiguity under monomorphisation with `A := Expr?`,
+the exact trap Swift had to patch with SE-0230 five versions in. In synthesis position (`x =
+ok(3)` with no expected type) the diagnostic says: annotate. The appendix acceptance program is
+written accordingly (eleven sites).
 
 **No exceptions, ever.** This is the most instructive rejected feature, because exceptions are
 **unbeatable on tokens**: zero cost at the call site (`save(x)` versus `save(x)?` plus declaring the
@@ -959,9 +965,14 @@ m = { "mario": 30, "anna": 25 }
 - **Out-of-bounds index aborts** with a message; it does not read arbitrary memory.
 - **Map access returns `V?`**, always. A missing key cannot pass unnoticed.
 - `has(m, k) -> bool` exists. (Its absence forced a sentinel-value hack in an example program.)
-- **OPEN QUESTION (panel 006):** `for k in m` needs a *specified* iteration order — determinism is
-  a bootstrap-fixpoint requirement, and this document never fixed one. Recommended: insertion
-  order, fixed hash seed. Pending the author's decision.
+- **Map iteration follows insertion order (panel 006, decided 2026-08-03).** Overwriting an
+  existing key keeps its position. Determinism is a bootstrap-fixpoint requirement; insertion
+  order is also the order models assume when they fail to re-read the spec (the Python-3.7/ES2015
+  prior — Go's randomization condemns *unspecified* order, not guaranteed order). The hash seed
+  is fixed and, with insertion-order iteration, unobservable. Port trap, recorded: the Rust
+  bootstrap iterates `BTreeMap` (sorted) — every ordering-sensitive map walk in the Rust source
+  is marked `// ORDER:` at the write site and becomes an explicit `sort` in the Heroes port, or
+  the M8 fixpoint diff breaks.
 - Multi-line literals separate by **newline**, not comma. Single-line literals use commas. The
   canonical formatter picks based on length, so the model never chooses.
 
@@ -986,7 +997,13 @@ the first and third is just as plausible. And it applies to *declared* types, no
 monomorphisation, otherwise a generic function's call convention would change depending on whether
 its type parameters collapse.
 
-No default parameter values, no overloading, no user variadics.
+No default parameter values, no overloading, no user variadics. The one variadic-looking form is
+`print`, and it is **compiler-known, not a function value** (panel 006, decided 2026-08-03): a
+comma-separated list of `str`/`int`/`f64`/`bool` values, each rendered by its canonical `.str()`,
+no separator between values, exactly one trailing newline. Canonical `f64` rendering is
+deterministic and locale-independent (exact algorithm fixed at M5b with its goldens). This was
+bought by trading away string interpolation (Part 7 item 7); Pascal's `WriteLn` is the fifty-year
+precedent.
 
 ### 4.10 Value semantics and copy-on-write
 
@@ -1182,12 +1199,17 @@ character per operator and closes nothing.
 non-bool, or `!` on a non-bool, is a compile error. No operator overloading. No ternary operator
 (`if` is an expression).
 
-> **OPEN QUESTION (panel 003).** `xs.push(4)` as a statement compiles and silently does nothing
-> useful — `push` is *pure* under value semantics (§4.10), so the result vanishes. That is a
-> plausible silent error in exactly the class this language exists to kill. **Recommended
-> resolution:** a non-`()` expression in statement position is a compile error, with the
-> diagnostic dictating the fix (`_ = expr`, or use the value). Zero keywords, ~+8 spec tokens;
-> subsumes Nim's `discard`. Pending the author's decision.
+**A non-`()` expression in statement position is a compile error (panel 003, decided
+2026-08-03).** `xs.push(4)` as a statement compiles and silently does nothing useful — `push` is
+*pure* under value semantics (§4.10), so the result vanishes: a plausible silent error in exactly
+the class this language exists to kill, and the highest-frequency LLM habit error under value
+semantics. The diagnostic dictates the fix (`_ = expr` to discard intentionally, or use the
+value) and the fix is `certain`, i.e. machine-applicable (§4.17). Zero keywords; subsumes Nim's
+`discard`; `_ = e` lowers to C's free `(void)e;`. The check is a type judgment — statement
+position expects `()` in ⇐ mode, sharing panel 002's machinery. `extern` calls get **no
+relaxation**: an ignored C return code is C's own classic silent bug (§1.11); if real bindings
+ever push the `_ =` rate past ~25% of call statements, the valve is a per-`extern` annotation in
+§4.19's vocabulary, never a blanket exemption.
 
 **Arithmetic edge cases, all of which must be specified because unspecified means the model
 invents:**
@@ -1862,13 +1884,16 @@ variables. If the language can express this, it can express its own compiler. No
 the *current* syntax and has not been validated by any implementation — treat discrepancies as bugs
 in this document, and flag them.
 
-**Known discrepancies, flagged (panel 000/002):** six sites produce a `T` where `T?` is expected —
-`factor`'s `.num`/`.var` arms and `group`'s `return inner`, `term`'s and `expression`'s
-`return first`, and `lookup`'s tail — pending panel 002 they become `ok(...)`. `lookup` also uses
-the `has`-then-`.must()` sentinel that §4.9 added `has` to remove, and `main`'s
-`print(c, " = ", v)` mixes `str` and `int` — `print`'s variadic contract is panel 006. The `err`
-payload's type (`e.code`, `e.msg`) is used but never declared as a record; that definition lands
-with panel 002's session.
+**Discrepancies resolved (panels 002/006, decided 2026-08-03):** the `T`-where-`T?` sites are now
+written `ok(...)` — eleven in all: the six originally flagged (`factor`'s `.num`/`.var` arms,
+`group`'s `return inner`, `term`'s and `expression`'s `return first`, `lookup`'s tail) plus five
+more found when applying the rule exhaustively (`term`/`expression`'s variant-construction
+returns, `sum_of`/`product_of`'s `return tot`, `evaluate`'s `.num` arm). `main`'s
+`print(c, " = ", v)` is legal under panel 006's contract (compiler form, `str`/`int`/`f64`/`bool`
+arguments, no separator, one trailing newline). Still open here: `lookup` keeps the
+`has`-then-`.must()` sentinel §4.9 wants gone, and the `err` payload (`e.code`, `e.msg`) is a
+built-in shape (§4.6), not a user-declared record — the spec states its two fields and nothing
+more.
 
 ```
 ## Calculator
@@ -2041,8 +2066,8 @@ factor = function: (@p: Parse) -> Expr?
     parse_advance(@p)
 
     return match t
-        .num n                     => .num(v: n.v)
-        .name x                    => .var(name: x.s)
+        .num n                     => ok(.num(v: n.v))
+        .name x                    => ok(.var(name: x.s))
         .lparen                    => group(@p)
         .plus | .times | .rparen   => fail("expected_factor", "found an operator")
 
@@ -2054,7 +2079,7 @@ group = function: (@p: Parse) -> Expr?
     if p.parse_here() != .rparen
         return fail("unclosed_paren", "missing closing paren")
     parse_advance(@p)
-    return inner
+    return ok(inner)
 
 # A product of one or more factors.
 term = function: (@p: Parse) -> Expr?
@@ -2066,8 +2091,8 @@ term = function: (@p: Parse) -> Expr?
         children @ children.push(factor(@p)?)
 
     if children.len() == 1
-        return first
-    return .product(children: children)
+        return ok(first)
+    return ok(.product(children: children))
 
 # A sum of one or more terms.
 expression = function: (@p: Parse) -> Expr?
@@ -2079,8 +2104,8 @@ expression = function: (@p: Parse) -> Expr?
         children @ children.push(term(@p)?)
 
     if children.len() == 1
-        return first
-    return .sum(children: children)
+        return ok(first)
+    return ok(.sum(children: children))
 
 ## Evaluator
 
@@ -2088,24 +2113,24 @@ expression = function: (@p: Parse) -> Expr?
 lookup = function: (env: {str: int}, name: str) -> int?
     if !env.has(name)
         return fail("unknown_name", "undefined variable: " + name)
-    return env[name].must()
+    return ok(env[name].must())
 
 sum_of = function: (children: [Expr], env: {str: int}) -> int?
     tot: int @ 0
     for c in children
         tot @ tot + evaluate(c, env)?
-    return tot
+    return ok(tot)
 
 product_of = function: (children: [Expr], env: {str: int}) -> int?
     tot: int @ 1
     for c in children
         tot @ tot * evaluate(c, env)?
-    return tot
+    return ok(tot)
 
 # The value of the tree. Fails on the first unknown name.
 evaluate = function: (e: Expr, env: {str: int}) -> int?
     return match e
-        .num n     => n.v
+        .num n     => ok(n.v)
         .var x     => env.lookup(x.name)
         .sum s     => s.children.sum_of(env)
         .product q => q.children.product_of(env)
