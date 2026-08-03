@@ -1,6 +1,6 @@
 # 001 — M1: the lexer
 
-Milestone M1 · 2026-08-03/04 · steps 1–4 · first entry under the inverted
+Milestone M1 · 2026-08-03/04 · steps 1–5 · first entry under the inverted
 protocol (implement first, comprehension in `docs/debrief/QUEUE.md`).
 
 ## 1. Goal
@@ -9,11 +9,14 @@ Source text → tokens, the whole specced lexical surface: 18 keywords, all
 operators and punctuation, int/float/str/char literals, comments retained
 as tokens, rigid indentation (spaces only, exactly 4 per level,
 Indent/Dedent), Go-style terminator insertion (design.md §4.15), reserved
-foreign words with prescribed errors (spec/reserved-words.md), error
-recovery that never stops the stream. Surface: `heroes lex <file> [--json]`.
+foreign words with prescribed errors (spec/reserved-words.md), escape
+sequences (panel 008), error recovery that never stops the stream.
+Surface: `heroes lex <file> [--json]`.
 Modules born: `source/` (owned text + byte-offset spans), `diagnostics/`
-(codes + `certain|guess` fixes from day one), `lexer/`. 23 crate-internal
-snapshot tests; 519+ lines of lexer.
+(codes + `certain|guess` fixes from day one), `lexer/` — split mid-milestone
+into six single-concern files (author instruction: code is written to be
+read). 29 crate-internal tests plus 4 golden `check/` cases executed through
+the real binary; ~970 lines of lexer.
 
 ## 2. What surprised — shapes and rules
 
@@ -32,12 +35,20 @@ snapshot tests; 519+ lines of lexer.
   depth; inside brackets indentation is not structural), and the kind of
   the line's last significant token (decides the terminator). Everything
   else is dispatch.
-- **Escapes don't exist and nothing forced the question until now.**
-  design.md never mentions `\n`; the appendix never uses one. The letter is
-  implementable (backslash = ordinary byte) but the self-hosted lexer will
-  need the tab *character* without writing `9` — the exact magic-number
-  class §4.3's char literals were introduced to kill. On record in
-  OPEN-QUESTIONS for a panel before M6.
+- **The gap that was not a gap but an incompleteness.** design.md never
+  mentions escapes, so the letter was implementable — backslash as an
+  ordinary byte — and it was *wrong in a way no test could have caught*:
+  `"a\nb"` compiled and printed four characters, and a `"` inside a string
+  was unwritable at all. Panel 008 settled it (five escapes split by
+  context, backslash reserved); the ffi judge compiled the proof that
+  `printf("%d\n")` was unexpressible. The lesson worth keeping is the
+  shape: **a rule that is merely absent reads as permission, and permission
+  is where silent wrongness lives.**
+- **A fix has a boundary, and the boundary belongs in the record.**
+  Reserving the backslash makes `"\d+"` loud but cannot make `"C:\temp"`
+  loud — `\t` is legal, so the path silently becomes `C:<TAB>emp`. Found by
+  writing the test, not by reasoning; the panel record had claimed
+  otherwise and was corrected. Now wart 15.
 - **The thesis became executable in ~30 lines.** `let x = 5` now fails
   with "bind with `=`: `x = 5`" and `while` carries a machine-applicable
   `Certain` fix to `for`. First feature where "every plausible LLM mistake
@@ -58,6 +69,11 @@ Nothing red reached a commit; two course-corrections mid-step, on record:
 
 Open at close of M1 (tracked in `docs/debrief/QUEUE.md`): milestone debrief
 offers (walkthrough, adversarial ratification, mutation drill, exit-quiz),
-the escape-sequence panel (before M6), 007-bis predictions (at the
-baseline). TextMate grammar (ROADMAP bonus) deferred. Verified at close:
-23/23 snapshots, clippy clean, `heroes lex` live on examples/first.hero.
+007-bis and the panel-009 governance ratification (both at the baseline),
+the repeated-`@` silent divergence (a panel before M3c). TextMate grammar
+(ROADMAP bonus) deferred — recorded, not dropped.
+
+Verified at close: 29 crate tests + 2 golden tests green, clippy clean,
+`heroes lex` live on examples/first.hero, and `tests/golden/check/` now
+executes through the real binary — the promise `golden.rs` made at M0
+("from M1 on, each case is executed") and M1 nearly failed to keep.

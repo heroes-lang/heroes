@@ -1,0 +1,2 @@
+tests/golden/check/indentation.hero:2:1: error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per level; found 5
+tests/golden/check/indentation.hero:4:1: error[indentation_jump]: indentation jumps from level 0 to level 2; a block opens one level at a time

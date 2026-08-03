@@ -1,0 +1,3 @@
+tests/golden/check/reserved-words.hero:2:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `Point = record`
+tests/golden/check/reserved-words.hero:3:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/reserved-words.hero:4:1: error[reserved_word]: `while` is not a word in this language — use `for`: `for x > 0`

@@ -60,6 +60,12 @@ fn collect_cases(dir: &Path) -> Vec<PathBuf> {
     cases
 }
 
+/// The deepest frontend stage that exists today. `check/` cases run through
+/// it and pin the diagnostics it renders; it becomes `check` at M3d, when
+/// the expectations are refreshed once (diff read and quoted in the commit
+/// body — UPDATE_GOLDEN stays forbidden here, CLAUDE.md § Golden discipline).
+const FRONTEND_CMD: &str = "lex";
+
 #[test]
 fn golden_tree_is_well_formed() {
     let root = workspace_root().join("tests/golden");
@@ -68,6 +74,40 @@ fn golden_tree_is_well_formed() {
         assert!(dir.is_dir(), "missing golden directory {}", dir.display());
         let cases = collect_cases(&dir);
         println!("golden/{sub}: {} case(s)", cases.len());
-        // M1+ will compile/run each case here and diff against .expected.
+    }
+}
+
+/// Every `check/` case, through the real binary, diffed against its
+/// `.expected`. Cases are invoked with a path relative to the workspace
+/// root so the rendered `file:line:col` prefixes are identical on every
+/// machine.
+#[test]
+fn golden_check_cases_render_their_diagnostics() {
+    let root = workspace_root();
+    for case in collect_cases(&root.join("tests/golden/check")) {
+        let relative = case
+            .strip_prefix(&root)
+            .expect("case lives under the workspace root");
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .arg(FRONTEND_CMD)
+            .arg(relative)
+            .output()
+            .expect("the heroes binary runs");
+        let actual = String::from_utf8_lossy(&output.stderr).into_owned();
+        let expected_path = case.with_extension("expected");
+        let expected = std::fs::read_to_string(&expected_path)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        assert_eq!(
+            actual,
+            expected,
+            "\ngolden mismatch for {}\n--- expected ---\n{expected}--- actual ---\n{actual}",
+            relative.display()
+        );
+        assert!(
+            !output.status.success(),
+            "{} is a diagnostics case: the compiler must exit non-zero",
+            relative.display()
+        );
     }
 }

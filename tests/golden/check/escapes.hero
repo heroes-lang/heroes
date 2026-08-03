@@ -1,0 +1,4 @@
+# The backslash is reserved (panel 008).
+re = "\d+"
+s = "it\'s"
+c = '\"'

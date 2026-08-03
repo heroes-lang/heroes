@@ -10,10 +10,12 @@ must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
 **Status: M1 closed 2026-08-04, tag `m1` (lexer complete: journal 001;
-panel 007 resolved terminators; escape gap queued for a panel before M6).
+panels 007 and 008 resolved terminators and escapes; golden `check/` cases
+now execute through the binary).
 M0 closed 2026-08-03 (untagged — it predates the tagging habit).
-Next: M2, step 1 (parser scaffold) — but panel 007-bis and the escape
-session are pending inputs it may need.**
+Next: M2, step 1 (parser scaffold). Nothing blocks it; 007-bis and the
+panel-009 governance ratification wait on the baseline, and the repeated-`@`
+divergence needs its panel before M3c, not before M2.**
 
 ## The chain
 
@@ -30,10 +32,12 @@ decided; decisions applied to design.md.
 ### M1 — Lexer ✅ (2026-08-04, tag `m1`)
 Rigid indentation (INDENT/DEDENT, tab = error), terminator insertion (as
 amended by panel 007: full ender list, brackets-only continuation,
-unclosed-opener diagnostic), str/char literals (no escapes — gap queued),
-comments retained, reserved-word detection with prescribed errors and
-`Certain` fixes. `heroes lex --json`. 23 crate-internal snapshot tests.
-TextMate grammar (bonus): deferred.
+unclosed-opener diagnostic), str/char literals with the five escapes of
+panel 008 (split by context, backslash reserved), comments retained,
+reserved-word detection with prescribed errors and `Certain` fixes.
+`heroes lex --json`. 29 crate-internal tests + 4 golden `check/` cases run
+through the real binary. Lexer split into six single-concern files.
+TextMate grammar (bonus): deferred, not dropped.
 **Runnable:** `heroes lex examples/first.hero --json`.
 
 ### M2 — Parser, AST, pretty printer
