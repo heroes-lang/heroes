@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heroes — a language for the reader that reads most code</title>
+<meta name="description" content="Heroes is a small compiled language designed so that every plausible LLM mistake is a compile error. Native binaries, no GC, no standard library — everything through the C FFI.">
+<style>
+  :root {
+    --bg: #101014; --fg: #e8e6e1; --dim: #9a9790; --accent: #e6b450;
+    --card: #17171d; --line: #2a2a33; --code: #c8d3f5;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #faf8f4; --fg: #1c1b18; --dim: #6b6860; --accent: #8a5a00;
+      --card: #f1eee7; --line: #ddd8cc; --code: #24365e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 17px/1.65 Georgia, 'Times New Roman', serif;
+  }
+  main { max-width: 42rem; margin: 0 auto; padding: 4rem 1.25rem 5rem; }
+  h1 {
+    font-size: 3.4rem; margin: 0; letter-spacing: -0.02em; font-weight: 600;
+  }
+  h1 .q { color: var(--accent); }
+  .tagline { font-size: 1.25rem; color: var(--dim); margin: 0.75rem 0 0; font-style: italic; }
+  .badge {
+    display: inline-block; margin-top: 1.5rem; padding: 0.2rem 0.7rem;
+    border: 1px solid var(--line); border-radius: 999px;
+    font: 0.8rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+  }
+  h2 {
+    font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--accent); margin: 3rem 0 0.75rem; font-weight: 600;
+  }
+  blockquote {
+    margin: 1.25rem 0; padding: 0.25rem 0 0.25rem 1.25rem;
+    border-left: 3px solid var(--accent); font-size: 1.15rem; font-style: italic;
+  }
+  pre {
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    padding: 1.1rem 1.3rem; overflow-x: auto;
+    font: 0.86rem/1.55 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--code);
+  }
+  pre .c { color: var(--dim); }
+  ul.pillars { list-style: none; padding: 0; margin: 1rem 0; }
+  ul.pillars li { margin: 0.9rem 0; padding-left: 1.4rem; position: relative; }
+  ul.pillars li::before { content: '—'; position: absolute; left: 0; color: var(--accent); }
+  ul.pillars b { font-style: normal; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  footer {
+    margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    color: var(--dim); font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
+    <p class="tagline">A small compiled language, designed for the reader that reads most code today: a language model.</p>
+    <span class="badge">pre-alpha &middot; being built in the open &middot; nothing to install yet</span>
+  </header>
+
+  <h2>The thesis</h2>
+  <blockquote>
+    A language designed so that every plausible LLM mistake is a compile error
+    will produce working programs in fewer total tokens than a conventional
+    language — even if each program costs more tokens to write.
+  </blockquote>
+  <p>
+    Nothing here is taken on faith: the claim is measured, continuously, against
+    a control build of the same compiler with the safety rules switched off.
+  </p>
+
+  <h2>What it looks like</h2>
+  <pre><code><span class="c"># A comment adjacent to a declaration is its documentation.</span>
+<span class="c"># Squared distance. Avoids sqrt to preserve precision.</span>
+dist2 = function: (a: Point, b: Point) -> int
+    dx = a.x - b.x
+    dy = a.y - b.y
+    return dx*dx + dy*dy
+
+Point = record
+    x: int
+    y: int
+
+test "3-4-5 triangle"
+    assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25
+</code></pre>
+
+  <h2>The rules it lives by</h2>
+  <ul class="pillars">
+    <li><b>Locality is the currency.</b> The meaning of a line is decided by that line plus the enclosing signature — never by something defined three files away. No inheritance, no macros, no exceptions, no implicit conversions, no null.</li>
+    <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, one integer type, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
+    <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn — expected type, definition site, concrete fixes. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
+    <li><b>No standard library — on purpose.</b> A minimal runtime, native binaries, no GC (refcounting + copy-on-write), and everything else through a C FFI where clang verifies every signature against the real header.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification fits in ~1500 tokens. The language is finished for v1 when its compiler is written in it — and the bootstrap compiler is retired.</li>
+  </ul>
+
+  <h2>Follow the build</h2>
+  <p>
+    The language is being built in the open, one documented step at a time —
+    design decisions, adversarial reviews, measurements and all:
+    <a href="https://github.com/giuseppearici/heroes-lang">github.com/giuseppearici/heroes-lang</a>.
+  </p>
+
+  <footer>
+    <p>The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977) —
+    the quotation marks are his. The irony lives in the prose; the language keeps
+    its keywords plain.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

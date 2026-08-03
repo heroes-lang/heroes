@@ -1,0 +1,12 @@
+# Story beats — raw material for the mini-book
+
+One line per beat: `date | milestone | the beat`. Append-only; never polish
+here — polishing happens in the book.
+
+2026-08-03 | pre-M0 | The author arrived with a 2000-line design document written with an AI in a long conversation, and asked for a plan "senza scrivere il compilatore". The first real decision was which language would write the language.
+2026-08-03 | pre-M0 | Swift won on paper (the semantic mirror of Heroes), lived for about an hour, and died to a one-line question from the author: "ma se devo usare QBE non è meglio scriverlo in C?" — which reopened the backend question instead.
+2026-08-03 | pre-M0 | QBE — chosen in the design document for its learning value — was killed in one conversation. Not for speed: because with C emission, clang checks the FFI signatures against the real headers, and the FFI was the founding constraint all along. The design document had already written the escape hatch ("the design to steal from if the backend ever changes to C emission"); we just walked through it.
+2026-08-03 | pre-M0 | The author, three times in one afternoon: one command like zig, everything in English (but talk to me in Italian), keep the surface tiny enough to compile itself. Constraints, not features.
+2026-08-03 | pre-M0 | The plan was sent to five hostile expert reviewers before a line of code existed. Three said "object". The prediction protocol was cued (the answer written above the blank), the thesis metric had no control arm, and two whole compiler passes were missing. The plan that survived is revision 2.
+2026-08-03 | M0 | Day zero produced no compiler and four hand-written C programs — the targets the compiler must hit. The machine found the first design bug before any human: clang warned that the entry label was never used, so every generated function now enters with an explicit goto.
+2026-08-03 | M0 | The spec came in at ~1496 estimated tokens against a budget of 1500. The design document had said "the budget is nearly spent" — it wasn't kidding.

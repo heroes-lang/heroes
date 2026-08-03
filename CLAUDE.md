@@ -103,11 +103,14 @@ in design.md Part 6. Anything in Part 7 before the closure list compiles
 itself.
 
 ## 14. Documentation duty + git
-A step is not done without: journal entry, DESIGN-LOG line, commit
-(`M<n> step <k>: <what> (docs/journal/NNN)`). One tag per milestone. A
-milestone closes only when goldens pass (ASan-clean where applicable), the
-determinism diff is empty, the prediction predates the implementation, and the
-mutation drill ran. No remote, no push, unless the author asks.
+A step is not done without: journal entry, DESIGN-LOG line, **story beat**
+(one line in `docs/book/beats.md` — this project ends in a mini-book about
+the journey, and the beats are its raw material; see `docs/book/README.md`),
+commit (`M<n> step <k>: <what> (docs/journal/NNN)`). One tag per milestone
+(pushed with `--follow-tags`). A milestone closes only when goldens pass
+(ASan-clean where applicable), the determinism diff is empty, the prediction
+predates the implementation, and the mutation drill ran. The repo pushes to
+`origin` (github.com/giuseppearici/heroes-lang).
 
 ## Commands
 ```

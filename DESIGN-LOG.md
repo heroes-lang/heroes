@@ -18,3 +18,5 @@ Format: `date | decision | reason | design.md § | panel`
 
 2026-08-03 | design.md is the LIVING document: every decided amendment is applied directly, history lives in git, open questions are inline OPEN QUESTION markers | author instruction | — | —
 2026-08-03 | spec v0 stays FROZEN until the pre-amendment baseline run; then decided amendments produce spec v1 | preserves the only unrecoverable measurement | §1.6, Part 11 | 000
+2026-08-03 | End goal declared: a mini-book on how the language came to be; story beats collected per step in docs/book/beats.md | journal/DESIGN-LOG/panel are the sources; beats keep the human texture | Part 0 | —
+2026-08-03 | Showcase site stub in site/ for heroes-lang.org (domain owned); deployment deferred, ask before publishing | personality in the packaging, precision in the substrate | §"The name" | —

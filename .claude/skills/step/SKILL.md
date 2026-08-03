@@ -52,7 +52,10 @@ gate.
     memory. Record answers.
 11. If a prediction missed badly, write/update the relevant
     `docs/theory/<concept>.md` note (that is the trigger for theory notes).
-12. Append the DESIGN-LOG line if any decision was made. Commit:
+12. Append one **story beat** to `docs/book/beats.md` (1–2 sentences, plain
+    language: the surprise, the wrong turn, the small victory — the human
+    fact the technical records drop; see `docs/book/README.md`).
+13. Append the DESIGN-LOG line if any decision was made. Commit:
     `M<n> step <k>: <what> (docs/journal/NNN)`. If this closes a milestone:
     run the mutation drill (inject one bug in committed compiler code; the
     author diagnoses from the failing golden alone), then the tag exit-quiz
