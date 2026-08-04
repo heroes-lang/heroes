@@ -18,14 +18,16 @@ pub mod diagnostics;
 pub mod lexer;
 pub mod measure;
 pub mod printer;
+pub mod resolve;
 pub mod source;
 pub mod syntax;
 
 // Pipeline modules land one milestone at a time (see docs/ROADMAP.md):
 //   source/ diagnostics/          M1 (landed, step 1)
 //   lexer/                        M1 (landed, step 1)
-//   syntax/ printer/              M2 (landing, step 1)
-//   resolve/ types/               M3a–M3d
+//   syntax/ printer/              M2 (landed)
+//   resolve/                      M3a (landing)
+//   types/                        M3b–M3d
 //   desugar/ ir/                  M4
 //   descriptors/ ownership/       M5b–M5c
 //   backend/ driver/ api          M5a

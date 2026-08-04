@@ -18,11 +18,13 @@ commands:
   measure [file]            count the spec against §1.6's ceiling
   parse <file.hero> [--dump-ast]
                             parse the file; with the flag, print the tree
+  check <file.hero> [--dump-scopes]
+                            resolve every name; with the flag, print the scopes
   fmt <file.hero> [--write] print the canonical form; with the flag, replace it
   --version                 print the compiler version
 
 More subcommands arrive with each milestone:
-  check (M3) · build run (M5) · test (M6)
+  build run (M5) · test (M6)
   lsp outline explain (M6+) · cc doc (M7)";
 
 fn main() -> ExitCode {
@@ -32,6 +34,7 @@ fn main() -> ExitCode {
         Some("lex") => commands::lex::run(&args[1..]),
         Some("measure") => commands::measure::run(&args[1..]),
         Some("parse") => commands::parse::run(&args[1..]),
+        Some("check") => commands::check::run(&args[1..]),
         Some("fmt") => commands::fmt::run(&args[1..]),
         Some("--version") | Some("-V") => {
             println!("heroes {}", heroes::VERSION);

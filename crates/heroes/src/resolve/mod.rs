@@ -1,0 +1,244 @@
+//! The resolver: every name, and what it means (design.md Part 10 step 4,
+//! §4.4 bindings, §4.16 the hole exemption; ROADMAP M3a).
+//!
+//! One pass over a *clean* tree answers four questions the checker would
+//! otherwise have to answer while it is also doing arithmetic:
+//!
+//! 1. **What does this name refer to?** A local, a top-level declaration, or a
+//!    built-in — recorded per occurrence in `Resolved::uses`, so no later pass
+//!    ever searches for a name again.
+//! 2. **Is this name defined at all?** An unknown name is a compile error
+//!    here, before any type exists, which is what keeps a typo from being
+//!    reported as a type mismatch.
+//! 3. **Is anything declared twice, or never read?** §4.4 makes both an error;
+//!    §4.16 suspends the second one file-wide while a `???` is still in the
+//!    file.
+//! 4. **Which written type is which?** `int` the primitive, `Point` the
+//!    record, `A` the generic parameter — `Resolved::type_uses`, indexed by the
+//!    arena the parser already built.
+//!
+//! | file | idea |
+//! |------|------|
+//! | `builtins.rs` | the names no file declares (§4.20's inventory) |
+//! | `top.rs`      | the order-free top level, collected before any body |
+//! | `scope.rs`    | the scope stack, shadowing, and the read/write counts |
+//! | `decls.rs`    | one declaration at a time: generics, signature, body |
+//! | `stmts.rs`    | statements: what binds, what reads, what writes |
+//! | `exprs.rs`    | expressions, patterns, and the root of a mutated place |
+//! | `types.rs`    | written types against primitives, declarations, generics |
+//! | `errors.rs`   | the messages, and the one-candidate `Certain` rename |
+//!
+//! **The resolver only ever runs on a tree that parsed clean.** After a parse
+//! error the tree holds recovery guesses, and a name error about a line the
+//! author did not write is worse than no name error at all — the same rule
+//! `--dump-ast` follows. `resolve` never panics on a dirty tree; it is the
+//! caller that declines to ask.
+//!
+//! **Later passes consume `uses`; they never resolve a name again.** This is
+//! not an optimisation, it is a correctness rule, and the compiler-engineer
+//! measured why while costing panel 015: in one function `len(xs)` can be a
+//! local and `xs.len()` the built-in, legitimately. Part 5 erases UFCS in the
+//! frontend, so a pass that re-resolved `f(x, y)` after erasure would silently
+//! give the erased call the *other* meaning. One resolution, recorded once.
+
+use crate::diagnostics::Diagnostic;
+use crate::source::{Source, Span};
+use crate::syntax::{Ast, ExprId, ExprKind, TypeId};
+
+mod builtins;
+mod decls;
+mod errors;
+mod exprs;
+mod scope;
+mod stmts;
+mod top;
+mod types;
+
+#[cfg(test)]
+mod tests;
+
+pub use builtins::{Builtin, Tier, BUILTINS};
+pub use types::Prim;
+
+use scope::Scopes;
+
+/// What a name refers to. `Unresolved` covers both "this node is not a name"
+/// and "this name has no answer" — the array is dense, one entry per
+/// expression, because §4.10 makes the array Heroes' only indirection and the
+/// port reads `uses: [Ref]` unchanged.
+///
+/// Two kinds of node are keyed here, and they mean subtly different things:
+/// for a `Name` the entry is *that expression's* binding; for a `Method`
+/// (`x.f(y)`) it is the binding of the **name after the dot**, since the
+/// parser gives that name no `ExprId` of its own.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Ref {
+    Unresolved,
+    /// Index into `Resolved::locals`.
+    Local(u32),
+    /// Index into `Ast::decls`.
+    Top(u32),
+    /// Index into `BUILTINS`.
+    Builtin(u32),
+}
+
+/// What a written type name refers to. Dense over `Ast::types`, same reasons.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum TypeRef {
+    Unresolved,
+    Prim(Prim),
+    /// A `record` or `variant` declaration: index into `Ast::decls`.
+    Top(u32),
+    /// A type parameter of the enclosing function: index into its `generics`.
+    Generic(u32),
+}
+
+/// Where a local came from. The kind is not decoration: it decides the word the
+/// unused-binding error uses, and whether the name may be written.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum LocalKind {
+    /// A function parameter. `@p` is `mutable`.
+    Param,
+    /// `x = 5` — binds once, forever.
+    Bind,
+    /// `v: int @ 0` — a mutable cell.
+    Cell,
+    /// `for x in xs` — bound afresh per element, never mutable.
+    Loop,
+    /// `.num n` — a variant payload bound by a pattern.
+    Payload,
+}
+
+/// One binding site.
+///
+/// `reads` and `writes` are counted separately on purpose: a cell that is
+/// written and never read is a value nobody consumes (panel 015 question B).
+/// The declaration's own initialiser is **not** a write — counting it would
+/// make the unused rule blind to every cell in the language.
+///
+/// `ty` and `value` are the syntax's own answer to "what is this local", kept
+/// because M3b would otherwise re-walk the tree to find it: a parameter and a
+/// cell always carry a written type (§4.4), a plain `x = e` carries only its
+/// value (§4.5 — inference is local), and a loop variable carries the iterable
+/// it draws elements from.
+pub struct Local {
+    pub name: Span,
+    pub kind: LocalKind,
+    pub mutable: bool,
+    /// Index into `Ast::decls` — which declaration this local lives in.
+    pub owner: u32,
+    /// Scope nesting inside that declaration, 0 for parameters. Only
+    /// `--dump-scopes` reads it; it is what makes the nesting visible.
+    pub depth: u32,
+    pub ty: Option<TypeId>,
+    pub value: Option<ExprId>,
+    pub reads: u32,
+    pub writes: u32,
+}
+
+pub struct Resolved {
+    /// One entry per expression in `Ast::exprs`.
+    pub uses: Vec<Ref>,
+    /// One entry per node in `Ast::types`.
+    pub type_uses: Vec<TypeRef>,
+    pub locals: Vec<Local>,
+    /// Every top-level name, sorted — declaration order carries no meaning
+    /// (§4.2), so the table that holds them has no order either. The value is
+    /// an index into `Ast::decls`.
+    pub top: std::collections::BTreeMap<String, u32>,
+    /// True if the file contains a `???`. While it does, unused bindings and
+    /// unused parameters are not reported (§4.16, normative — the section's own
+    /// example binds a name that is read only inside the hole).
+    pub has_hole: bool,
+    pub diagnostics: Vec<Diagnostic>,
+}
+
+impl Resolved {
+    pub fn use_at(&self, id: ExprId) -> Ref {
+        self.uses[id.0 as usize]
+    }
+
+    pub fn type_at(&self, id: TypeId) -> TypeRef {
+        self.type_uses[id.0 as usize]
+    }
+}
+
+/// Resolve one parsed file.
+pub fn resolve(ast: &Ast, src: &Source) -> Resolved {
+    let mut r = Resolver {
+        out: Resolved {
+            uses: vec![Ref::Unresolved; ast.exprs.len()],
+            type_uses: vec![TypeRef::Unresolved; ast.types.len()],
+            locals: Vec::new(),
+            top: std::collections::BTreeMap::new(),
+            // A flat scan of the arena, not a walk: a hole suspends the unused
+            // rule wherever it is, including inside a construct the walk gives
+            // up on.
+            has_hole: ast.exprs.iter().any(|e| matches!(e.kind, ExprKind::Hole)),
+            diagnostics: Vec::new(),
+        },
+        scopes: Scopes::new(),
+        generics: Vec::new(),
+        fields: std::collections::BTreeSet::new(),
+        suggested: std::collections::BTreeSet::new(),
+        owner: 0,
+    };
+    top::collect(&mut r, ast, src);
+    for index in 0..ast.decls.len() {
+        r.owner = index as u32;
+        decls::declaration(&mut r, ast, src, index);
+    }
+    r.report_unused(src);
+    // Within the pass, source order. Diagnostics from earlier stages stay ahead
+    // of these (see `syntax::parse`): grouped by the stage that can explain
+    // them, ordered by position inside it.
+    r.out.diagnostics.sort_by_key(|d| d.span.start);
+    r.out
+}
+
+/// The pass's working state. It owns everything and takes `&Ast`/`&Source` as
+/// parameters, which is the Cyclone rule (CLAUDE.md §5) rather than a style
+/// choice: nothing here may store a reference.
+struct Resolver {
+    out: Resolved,
+    scopes: Scopes,
+    /// Type parameters of the function being resolved, `(name, position)`.
+    /// Cleared at every declaration: generics are on functions only (§4.12).
+    generics: Vec<(String, u32)>,
+    /// Every field name declared anywhere in the file — record fields and
+    /// variant payload fields alike. It exists for one narrow purpose: to keep
+    /// the unknown-function error off `h.cb(n)` where `cb` is a field holding
+    /// a function value (§4.13), which §4.11's algorithm resolves by looking at
+    /// the receiver's *type* and M3a has none. See `exprs::method`.
+    fields: std::collections::BTreeSet<String>,
+    /// Names the compiler has offered as the repair for an unknown name. They
+    /// are exempt from the unused sweep: applying the fix would read them, so
+    /// reporting both would be two diagnostics for one typo — and this project
+    /// counts that as a defect (the lexer and parser hold the same invariant).
+    suggested: std::collections::BTreeSet<String>,
+    owner: u32,
+}
+
+impl Resolver {
+    fn push_diagnostic(&mut self, diagnostic: Diagnostic) {
+        self.out.diagnostics.push(diagnostic);
+    }
+
+    /// The candidates for a name that resolved to nothing, remembered so the
+    /// unused sweep can stay quiet about them.
+    fn near_names(&mut self, name: &str, candidates: &[String]) -> Vec<String> {
+        let near = errors::nearest(name, candidates);
+        for candidate in &near {
+            self.suggested.insert(candidate.clone());
+        }
+        near
+    }
+
+    /// Records what an occurrence resolved to, and counts the read.
+    fn record(&mut self, at: ExprId, to: Ref) {
+        self.out.uses[at.0 as usize] = to;
+        if let Ref::Local(index) = to {
+            self.out.locals[index as usize].reads += 1;
+        }
+    }
+}

@@ -1,3 +1,4 @@
+pub mod check;
 pub mod doctor;
 pub mod fmt;
 pub mod lex;

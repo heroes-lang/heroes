@@ -9,6 +9,7 @@
 //! | `types.rs`  | a type in surface syntax — the piece diagnostics need first |
 //! | `bodies.rs` | statements and expressions, the latter fully parenthesised |
 //! | `dump.rs`   | `--dump-ast`: the tree seen, one node per line |
+//! | `scopes.rs` | `--dump-scopes`: the symbol table and every binding |
 //! | `fmt.rs`      | `heroes fmt`: declarations, comments, blank lines |
 //! | `fmt_stmt.rs` | its statement half, including where a long line breaks |
 //! | `fmt_expr.rs` | expressions with the *minimum* parentheses |
@@ -25,9 +26,11 @@ mod dump;
 mod fmt;
 mod fmt_expr;
 mod fmt_stmt;
+mod scopes;
 mod types;
 
 pub use bodies::render_expr;
 pub use dump::dump_ast;
 pub use fmt::format_file;
+pub use scopes::dump_scopes;
 pub use types::render_type;
