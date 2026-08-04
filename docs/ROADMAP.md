@@ -9,7 +9,7 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**Status: M4 closed 2026-08-04, tag `m4` — the middle end exists. Part 5's sugar
+**M4 closed 2026-08-04, tag `m4` — the middle end exists. Part 5's sugar
 table is erased on the way into a three-address IR with explicit basic blocks,
 **slots and no phi nodes** (panel 019, unanimous, on LLVM's own advice to frontend
 authors), and `heroes build [--dump-ir]` is the fifth verb.
@@ -43,6 +43,80 @@ and the out-of-range `int` literal are both decided-by-default and queued as the
 own diagnostic classes; a function that runs off its end waits for
 `-Werror=return-type`; `-Wconditional-uninitialized` and `-Werror=format` want
 adding to CLAUDE.md §7.**
+
+**M4 closed 2026-08-04, tag `m4` — the middle end exists. Part 5's sugar
+table is erased on the way into a three-address IR with explicit basic blocks,
+**slots and no phi nodes** (panel 019, unanimous, on LLVM's own advice to frontend
+authors), and `heroes build [--dump-ir]` is the fifth verb.
+
+Three measurable outcomes. **design.md's 320-line acceptance program lowers and
+verifies** — 35 functions, 226 basic blocks, its one hole reported — and for the
+first milestone in five it produced *no new defect in the program*: the frontend's
+recorded answers were complete enough for a pass that reads them instead of
+re-walking the tree. **The dump is an artifact, not debug output**: 4.77 IR lines
+per source line against the panel's ceiling of 12, deterministic and byte-identical
+twice (the cheap analogue of §7's double-emit diff, a milestone before there is any
+C), explicitly **not** version-stable — LLVM's own stance on `.ll`. **Panel 019
+changed the design in five places**, each because a judge compiled or read something
+rather than argued: linkage on every callee (an unmangled Heroes `function open`
+silently replaces libc's — compiled, prints 7, no diagnostic), at most one
+destination on a call (`dst = call print(x)` is a hard clang error), a place as a
+store's target, construction as an instruction, and an explicit cast at the FFI
+boundary. Two vetoes were lifted by amending design.md §4.12 and Part 5 rather than
+by argument (CLAUDE.md §12: spec beats compiler).
+
+304 tests (was 259): 277 crate, 3 golden harnesses over 42 cases (`tests/golden/ir/`
+is born with 14 — one per live sugar row plus 5 adversarial, marked UNVERIFIED —
+and inherits `check/`'s `UPDATE_GOLDEN` ban), 21 CLI surface tests, 6 harness-level.
+`ir/` is sixteen files, none over 300 lines, and `verify.rs` is GHC's Core Lint
+without GHC's tree: it asserts §4.8's "copy-out happens always" on every exit edge,
+including the error side of `?`.
+Next: M5a, scalars run — `int`/`bool`/`if`/`while`/functions/`print` → C → binary,
+the mangler, `#line` on change, the `-Werror` set, and the double-emit determinism
+test that stays green forever. Nothing blocks it. Carried in: `???` reaching `build`
+and the out-of-range `int` literal are both decided-by-default and queued as their
+own diagnostic classes; a function that runs off its end waits for
+`-Werror=return-type`; `-Wconditional-uninitialized` and `-Werror=format` want
+adding to CLAUDE.md §7.**
+
+**Status: M5a closed 2026-08-04, tag `m5a` — the compiler compiles.
+`heroes run examples/gallery/00-first.hero` prints `20`. `emit/` is eight files and
+1166 non-test lines: a printer over the M4 IR plus declaration ordering and the
+mangler, with no analysis and no optimisation (the pipeline is clang's).
+
+Three measurable outcomes. **Zero clang warnings across the whole corpus at both `-O0`
+and `-O2`**, with warnings forwarded on success so they could fire — the number that
+promoted `-Wconditional-uninitialized` to `-Werror=` in the same step that measured it,
+resolving panel 020's disposition by a run rather than a discussion. **The double-emit
+determinism diff lands and is green**, including the stronger form: identical bytes on
+stdout and through `-o`, because the emitted C never mentions its own output path (GCC's
+stage2-vs-stage3 comparison is the named ancestor, and the M8c fixpoint is the same test
+thirty years later). **Panel 020 arrived with two vetoes and both were lifted by a
+change, not an argument**: one table row (`extern` waits for M7 — §4.19's guarantee is
+the `#include`, and measured, an emitter-invented prototype is verified by *nothing*:
+`abs(-2147483649)` returned 2147483647 at exit 0 and `sqlite3_open` was accepted in total
+silence under `-Weverything -pedantic`) and one exit code (an unsupported form is **1**;
+given 2, a judge checked the version, ran doctor, grepped for the milestone identifier,
+and told its user the toolchain was broken).
+
+363 tests (was 331): 326 crate (+27 emit), 13 golden harnesses over 55 cases
+(`run/` is born with 10 — 5 bulk, 5 adversarial marked UNVERIFIED — each compiled and
+executed at **both** `-O0` and `-O2`; `emit/` pins the C byte for byte; `unsupported/`
+pins what the backend refuses and inherits the `#~ <code>` annotation invariant, which
+is *why* the refusal is a `Diagnostic` kind and not a parallel type), 24 CLI surface.
+Two new diagnostic classes: `unsupported` (kind, 12 capability codes) and
+`missing_return`, the latter having caught design.md's own appendix and earned §4.16's
+file-wide hole exemption. The verifier gained dominance, and `verify.rs` split at the
+seam. `--no-line` was **not** born (panel 016's stopping rule, applied at the milestone
+panel 016 named). The spec gained panel 006's four-milestone-old print sentence:
+2139 → **2155** binding, headroom 845.
+Next: M5b, strings and the ownership pass — `str` in the runtime, visible
+`incref`/`decref`/`cow_check` in `--dump-ir`, cleanup-label chains on every exit edge,
+canonical `f64` rendering with its goldens, ASan/UBSan gating in `run/`. Nothing blocks
+it. Carried in: the `unsupported` gate's `str` and `f64` rows are the ones M5b deletes;
+a binding statement's span runs to the end of its line, so a trailing `#~` annotation
+lands under the caret; `while true` in a value-returning function needs an unreachable
+`return`; and the spec is silent on `INT64_MIN % -1`, which Heroes aborts.**
 
 **M3 closed 2026-08-04, tag `m3` — the frontend is complete. M3a the
 resolver, M3b the bidirectional checker, M3c the data rules, M3d errors as a
@@ -191,10 +265,17 @@ exist yet. The witness is the appendix, read out of design.md by a test: 320 lin
 hand-desugar three constructs, against the IR text.)
 
 ### M5 — split around the two passes
-- **M5a — Scalars run:** `int`/`bool`/`if`/`while cond`/functions/`print` →
-  C → binary. Decl-ordering pass + mangler + `#line`-on-change + `-Werror`
-  set + `hero_unreachable`. **Double-emit determinism test lands here and
-  stays green forever.** Compare with spike 01. Celebrate.
+- **M5a — Scalars run ✅** (2026-08-04, tag `m5a`)**:** `int`/`bool`/`if`/`while`/
+  functions/`print` → C → binary. Prototypes before definitions, the mangler (module
+  component sanitised so `h_<module>_<name>` is injective), `#line` against the current
+  *effective* line, the `-Werror` set with two flags added, `hero_unreachable`, and the
+  `@` parameter's pointer ABI. **The double-emit determinism test lands here and stays
+  green forever.** Panel 020 settled the backend, the artifact surface and the
+  unsupported-form class; `--no-line` was refused rather than implemented.
+  **Runnable:** `heroes run examples/gallery/00-first.hero` (prints 20) · `heroes build
+  <file> --emit-c` (the C on stdout, byte-identical twice and through `-o`) · `heroes
+  build examples/gallery/07-strings.hero` (the refusal: exit 1, the capability named,
+  and nothing that resolves in another file).
 - **M5b — Strings + ownership pass:** `str` in the runtime; ownership pass
   emitting visible `incref`/`decref`/`cow_check` in `--dump-ir`;
   cleanup-label chains on every exit edge; ASan/UBSan gating in `run/`
