@@ -1,0 +1,11 @@
+# UNVERIFIED — pending debrief
+# Adversarial case, straight out of §4.4's own argument for why the type is
+# mandatory on a mutable declaration. `totl @ total + x` reads the typo on the
+# very line that writes it, so no unused rule could ever catch it: the only
+# thing that makes it loud is that `@` writes to a name that must already be
+# declared. If mutation ever declares, this file compiles and returns 0.
+sum = function: (xs: [int]) -> int
+    total: int @ 0
+    for x in xs
+        totl @ total + x
+    return total

@@ -1,0 +1,1 @@
+tests/golden/check/ufcs-unknown-function.hero:12:7: error[unknown_function]: no function named `set` — `x.set(…)` means `set(x, …)`, so `set` has to be a top-level function or a built-in

@@ -1,0 +1,20 @@
+# Bulk regression case (assistant-written): the left of `@` must be a cell, and
+# each message teaches the repair for its own kind of binding — §4.4's `=` binds
+# once forever, §4.8's parameter needs the marker in the signature and at every
+# call site, there are no mutable globals, and a loop variable is bound afresh
+# per element. Every name here is read as well as written, so each mistake
+# produces exactly one diagnostic.
+MAX = constant: int
+    64
+
+main = function: (n: int, xs: [int])
+    x = 1
+    x @ 2
+    print(x)
+    n @ n + 1
+    print(n)
+    MAX @ 3
+    print(MAX)
+    for e in xs
+        e @ 0
+        print(e)

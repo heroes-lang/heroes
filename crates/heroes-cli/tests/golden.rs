@@ -60,16 +60,22 @@ fn collect_cases(dir: &Path) -> Vec<PathBuf> {
     cases
 }
 
-/// The deepest frontend stage that exists today: `lex` at M1, `parse` from
-/// M2, `check` at M3d. `check/` cases run through it and pin every diagnostic
-/// it renders — which is why the stage moves rather than the cases: a case
-/// written for the lexer must keep saying the same thing when a later stage
-/// starts reading the same file.
+/// The deepest frontend stage that exists today: `lex` at M1, `parse` at M2,
+/// `check` from M3a. `check/` cases run through it and pin every diagnostic it
+/// renders — which is why the stage moves rather than the cases: a case written
+/// for the lexer must keep saying the same thing when a later stage starts
+/// reading the same file.
+///
+/// The name stops moving here. M3b–M3d deepen `check` without renaming it, and
+/// the move to it changed **nothing**: all twelve inherited cases hold a lexer
+/// or parser mistake, and `check` declines to resolve a tree built out of
+/// recovery guesses, so it prints exactly what `parse` printed (verified
+/// case-by-case, and quoted in the commit that moved it).
 ///
 /// Each move refreshes the expectations exactly once, with the diff read and
 /// quoted in the commit body. `UPDATE_GOLDEN` stays forbidden here
 /// (CLAUDE.md § Golden discipline).
-const FRONTEND_CMD: &str = "parse";
+const FRONTEND_CMD: &str = "check";
 
 #[test]
 fn golden_tree_is_well_formed() {

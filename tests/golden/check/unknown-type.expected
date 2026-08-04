@@ -1,0 +1,2 @@
+tests/golden/check/unknown-type.hero:6:22: error[unknown_type]: no type named `Poimt` — did you mean `Point`?
+tests/golden/check/unknown-type.hero:9:24: error[not_a_type]: `dist` is a function, not a type

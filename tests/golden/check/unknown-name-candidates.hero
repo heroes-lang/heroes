@@ -1,0 +1,12 @@
+# Bulk regression case (assistant-written): the did-you-mean, in both of its
+# forms. One candidate is a CERTAIN fix and the message names it; three
+# candidates are prose and carry no fix, because a tool that picks one of three
+# is guessing (§4.17).
+main = function: ()
+    total = 1
+    cat = 2
+    cut = 3
+    bat = 4
+    print(total + cat + cut + bat)
+    print(totl)
+    print(cot)

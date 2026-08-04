@@ -1,0 +1,2 @@
+tests/golden/check/shadowing.hero:11:5: error[shadowed_binding]: `n` is already in scope, bound at line 10 — shadowing is an error here: a name means one thing for as long as it is visible
+tests/golden/check/shadowing.hero:12:5: error[shadowed_binding]: `MAX` is the name of the declaration at line 7, which is in scope everywhere — pick another name

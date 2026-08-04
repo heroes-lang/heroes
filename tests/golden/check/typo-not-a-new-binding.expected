@@ -1,0 +1,1 @@
+tests/golden/check/typo-not-a-new-binding.hero:10:9: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?

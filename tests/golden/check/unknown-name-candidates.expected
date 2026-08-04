@@ -1,0 +1,2 @@
+tests/golden/check/unknown-name-candidates.hero:11:11: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+tests/golden/check/unknown-name-candidates.hero:12:11: error[unknown_name]: nothing named `cot` is in scope — the closest names in scope are `cut`, `cat`

@@ -1,0 +1,20 @@
+# UNVERIFIED — pending debrief
+# Adversarial case, four shapes of "nobody reads this" in one file, and no
+# `???` anywhere — which is what makes them fire (panel 015 A and B):
+#   a parameter · a cell that is written and never read · a loop variable ·
+#   a pattern payload
+# Two of the four carry a CERTAIN fix, and it is the same one: rename to `_`.
+# That is the escape valve three judges said the rule cannot ship without.
+Token = variant
+    num
+        v: int
+    plus
+
+describe = function: (t: Token, verbose: bool) -> int
+    total: int @ 0
+    total @ 1
+    for i in range(0, 3)
+        print("tick")
+    return match t
+        .num n => 1
+        .plus => 2

@@ -1,0 +1,13 @@
+# Bulk regression case (assistant-written): `x.f(y)` is `f(x, y)` (§4.11), so
+# an unknown name after the dot is answerable before any type exists — and the
+# message teaches the rewrite rather than naming a receiver type the language
+# does not have. The `h.cb(n)` call is the control: `cb` IS a field somewhere in
+# this file and a field can hold a function value (§4.13), so the resolver must
+# stay silent and leave it to M3c.
+Holder = record
+    cb: (function(int) -> int)
+
+run = function: (h: Holder, n: int) -> int
+    m: {str: int} @ {}
+    m.set("a", 1)
+    return h.cb(n)

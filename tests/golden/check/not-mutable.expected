@@ -1,0 +1,4 @@
+tests/golden/check/not-mutable.hero:12:5: error[not_mutable]: `x` was bound with `=`, which binds once, forever — a cell is declared with its type: `x: <type> @ <value>`
+tests/golden/check/not-mutable.hero:14:5: error[not_mutable]: `n` is a parameter without `@`, so it cannot be written — mark it `@n` in the signature and at every call site (copy in, copy out)
+tests/golden/check/not-mutable.hero:16:5: error[no_mutable_globals]: `MAX` is a top-level declaration, and there are no mutable globals — pass what changes as an `@` parameter
+tests/golden/check/not-mutable.hero:19:9: error[not_mutable]: `e` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop
