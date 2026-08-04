@@ -1,0 +1,50 @@
+## Failure is a value
+#
+# There is no `null` and there are no exceptions. A `T?` is a `T` or an
+# error, `fail` makes one, `?` hands it to the caller, and `match` is the
+# general way to look.
+
+# Parses a decimal digit. Fails on anything else.
+digit_of = function: (c: int) -> int?
+    if c < '0' || c > '9'
+        return fail("not_a_digit", "expected 0-9")
+    return ok(c - '0')
+
+# Reads a whole non-negative number. Empty input is an error, not a zero.
+number_of = function: (text: str) -> int?
+    if text.len() == 0
+        return fail("empty", "there is nothing to read")
+    total: int @ 0
+    for i in range(0, text.len())
+        total @ total * 10 + digit_of(text[i])?
+    return ok(total)
+
+# The `?` above is the whole point: three lines, no error handling in sight,
+# and the first bad character stops everything.
+average_of = function: (parts: [str]) -> int?
+    sum: int @ 0
+    for p in parts
+        sum @ sum + number_of(p)?
+    if parts.len() == 0
+        return fail("empty", "no parts to average")
+    return ok(sum / parts.len())
+
+# Four ways to read a fallible value, in the order you reach for them.
+report = function: (text: str) -> str
+    match number_of(text)
+        .ok v  => return "read " + v.str()
+        .err e => return "failed: " + e.code + " (" + e.msg + ")"
+
+first_or_zero = function: (parts: [str]) -> int
+    return number_of(parts[0]).default(0)
+
+test "a good number and a bad one"
+    assert number_of("120").must() == 120
+    assert number_of("12x").is_err()
+    assert report("7") == "read 7"
+    assert first_or_zero(["oops"]) == 0
+
+main = function: ()
+    print(report("42"))
+    print(report("4b2"))
+    print(average_of(["10", "20", "30"]).default(-1))

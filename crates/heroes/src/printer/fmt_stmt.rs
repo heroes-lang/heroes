@@ -37,13 +37,19 @@ impl Fmt {
             }
             self.statement(ast, src, comments, *id, indent, "");
             // A statement that carried a block has already moved `last_line`
-            // past its own body. One that did not, ends where it started.
+            // past its own body. One that did not, ends where it started —
+            // *unless* its value is a list literal written down the page, which
+            // ends several lines lower and, until this was added, made the rule
+            // below invent a blank line after every such list.
             //
-            // Its span cannot answer this: a statement ending in a block ends
-            // at a `Dedent`, whose span sits on the *next* line — which is
-            // exactly how two blank lines went missing the first time.
-            if self.last_line < line {
-                self.last_line = line;
+            // The statement's own `span` cannot answer this and must not be
+            // used: a statement ending in a block ends at a `Dedent` whose span
+            // sits on the *next* line, and trusting it made `trailing_comment`
+            // steal the following declaration's doc comment — twice, once in
+            // 2026-08-04's first attempt at this very line.
+            let end = literal_end_line(ast, src, stmt).unwrap_or(line);
+            if self.last_line < end {
+                self.last_line = end;
             }
             self.trailing_comment(src, comments, self.last_line);
         }
@@ -141,24 +147,40 @@ impl Fmt {
                 let head = format!("{head}match {}", render(ast, src, *scrutinee));
                 self.line(indent, &head);
                 self.last_line = src.line_col(ast.exprs[scrutinee.0 as usize].span.end).0;
-                for arm in arms {
-                    let patterns: Vec<String> = arm
-                        .patterns
-                        .iter()
-                        .map(|pattern| super::bodies::render_pattern_public(ast, src, pattern))
-                        .collect();
-                    let left = patterns.join(" | ");
+                let lefts = arm_heads(ast, src, arms);
+                let pads = arm_alignment(src, arms, &lefts);
+                // A blank line between arms is content, exactly as it is between
+                // statements: it is how a long `match` shows which cases belong
+                // together, and it is what stops the alignment run — so deleting
+                // it would contradict the padding computed above.
+                //
+                // Tracked here rather than through `last_line`, which an arm
+                // deliberately clamps to its own first line so `trailing_comment`
+                // cannot reach past it. The comparison is against where the
+                // previous arm *ended*, not where it began: an inline arm body can
+                // be an `if` with two blocks under it, and that arm is five lines
+                // long while its head is one.
+                let mut previous_end: Option<u32> = None;
+                for (index, arm) in arms.iter().enumerate() {
+                    let left = &lefts[index];
                     let (line, _) = src.line_col(arm.span.start);
                     self.comments_before(src, comments, line, indent + 4);
+                    if let Some(previous) = previous_end {
+                        if line > previous + 1 {
+                            self.blank_line();
+                        }
+                    }
+                    previous_end = Some(src.line_col(arm.span.end.saturating_sub(1)).0);
                     match &arm.body {
                         ArmBody::Stmt(id) => {
+                            let width = pads[index];
                             self.statement(
                                 ast,
                                 src,
                                 comments,
                                 *id,
                                 indent + 4,
-                                &format!("{left} => "),
+                                &format!("{left:<width$} => "),
                             );
                             // The arm's own line, NOT `arm.span.end`: that span
                             // now reaches the terminator, and a `last_line` one
@@ -169,6 +191,8 @@ impl Fmt {
                             self.trailing_comment(src, comments, self.last_line);
                         }
                         ArmBody::Block(block) => {
+                            // A block arm never pads: its `=>` ends the line, so
+                            // there is nothing to line up with.
                             self.line(indent + 4, &format!("{left} =>"));
                             self.last_line = line;
                             self.block(ast, src, comments, block, indent + 8);
@@ -178,7 +202,7 @@ impl Fmt {
             }
             _ => {
                 let text = one_line(ast, src, head, value);
-                if indent + text.len() <= WIDTH {
+                if indent + text.len() <= WIDTH && !spans_lines(ast, src, value) {
                     return self.line(indent, &text);
                 }
                 self.broken(ast, src, head, value, indent);
@@ -250,4 +274,108 @@ impl Fmt {
         }
         self.line(indent, ")");
     }
+}
+
+/// The left side of every arm — its patterns, joined by `|`.
+fn arm_heads(ast: &Ast, src: &Source, arms: &[crate::syntax::Arm]) -> Vec<String> {
+    arms.iter()
+        .map(|arm| {
+            let patterns: Vec<String> = arm
+                .patterns
+                .iter()
+                .map(|pattern| super::bodies::render_pattern_public(ast, src, pattern))
+                .collect();
+            patterns.join(" | ")
+        })
+        .collect()
+}
+
+/// How wide each arm's left side is printed, so that `=>` lines up.
+///
+/// A `match` is the language's most distinctive construct and its arms are a
+/// table: the patterns are the keys and the bodies are the values. Lining up the
+/// arrow is the same policy gofmt applies to adjacent trailing comments, and it
+/// is what design.md's own appendix does by hand — so the reference aesthetic
+/// and the canonical form are now the same thing.
+///
+/// A run stops at a **block-bodied arm** (its `=>` ends the line, so there is
+/// nothing to align with) and at a **blank line** between arms, because blank
+/// lines are content in this formatter and a group the author separated is two
+/// groups. Every other arm in the run is padded to the widest left side in it.
+fn arm_alignment(src: &Source, arms: &[crate::syntax::Arm], lefts: &[String]) -> Vec<usize> {
+    let mut pads = vec![0usize; arms.len()];
+    let mut run: Vec<usize> = Vec::new();
+    let mut previous_line = 0u32;
+    for (index, arm) in arms.iter().enumerate() {
+        let (line, _) = src.line_col(arm.span.start);
+        let inline = matches!(arm.body, ArmBody::Stmt(_));
+        let joined = !run.is_empty() && line == previous_line + 1;
+        if !inline || !joined {
+            close_run(&run, lefts, &mut pads);
+            run.clear();
+        }
+        if inline {
+            run.push(index);
+        }
+        previous_line = line;
+    }
+    close_run(&run, lefts, &mut pads);
+    pads
+}
+
+fn close_run(run: &[usize], lefts: &[String], pads: &mut [usize]) {
+    let widest = run.iter().map(|i| lefts[*i].chars().count()).max().unwrap_or(0);
+    for index in run {
+        pads[*index] = widest;
+    }
+}
+
+/// True where the author wrote a **list literal** across more than one line.
+///
+/// Such a list keeps its shape even when it would fit on one, which is the same
+/// policy blank lines get: the layout is content. §4.9 gives the two forms
+/// different separators — newline across lines, comma on one — so an array
+/// written down the page is not merely a wrapped array, it is the other spelling,
+/// and a formatter that joins it deletes the grouping the author chose.
+///
+/// Only literals, and only the value's outermost node: a call keeps its commas
+/// and is joined whenever it fits, because a signature's shape carries no
+/// grouping.
+fn spans_lines(ast: &Ast, src: &Source, value: ExprId) -> bool {
+    let expr = &ast.exprs[value.0 as usize];
+    let multi = match &expr.kind {
+        ExprKind::Array(items) => items.len() > 1,
+        ExprKind::Map(entries) => entries.len() > 1,
+        _ => false,
+    };
+    if !multi {
+        return false;
+    }
+    let (first, _) = src.line_col(expr.span.start);
+    let (last, _) = src.line_col(expr.span.end.saturating_sub(1));
+    last > first
+}
+
+/// The last source line a statement's own text occupies, when its value is a
+/// **list literal written across lines** — and `None` otherwise.
+///
+/// Deliberately narrow. The blank-line rule needs to know where a statement
+/// stopped, and a multi-line list is the one case where that is not the line it
+/// started on. Every other case is answered by the block printer itself, and
+/// asking the statement's span instead would reach past a `Dedent` onto the next
+/// declaration's doc comment.
+fn literal_end_line(ast: &Ast, src: &Source, stmt: &crate::syntax::Stmt) -> Option<u32> {
+    let value = match &stmt.kind {
+        StmtKind::Bind { value, .. }
+        | StmtKind::Declare { value, .. }
+        | StmtKind::Mutate { value, .. }
+        | StmtKind::Return(Some(value))
+        | StmtKind::Assert(value)
+        | StmtKind::Expr(value) => *value,
+        _ => return None,
+    };
+    if !spans_lines(ast, src, value) {
+        return None;
+    }
+    Some(src.line_col(ast.exprs[value.0 as usize].span.end.saturating_sub(1)).0)
 }

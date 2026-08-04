@@ -1,0 +1,62 @@
+## Loops and cells
+#
+# One keyword, two loops: `for cond` while a condition holds, `for x in xs`
+# over a sequence. Mutation is the minority of lines and it is marked, so the
+# order-dependent part of a program is the part that jumps out.
+
+# The largest element. Fails on nothing: an empty array has no largest, so
+# the caller is asked for a floor instead.
+largest_or = function: (xs: [int], floor: int) -> int
+    best: int @ floor
+    for x in xs
+        if x > best
+            best @ x
+    return best
+
+# Sums until the running total would pass a limit, then stops.
+sum_until = function: (xs: [int], limit: int) -> int
+    total: int @ 0
+    for x in xs
+        if total + x > limit
+            break
+        total @ total + x
+    return total
+
+# Counts the even ones, and shows `continue` earning its keep.
+even_count = function: (xs: [int]) -> int
+    seen: int @ 0
+    for x in xs
+        if x % 2 != 0
+            continue
+        seen @ seen + 1
+    return seen
+
+# The conditional loop, with the counter visible: `for cond` has no header
+# that hides where the index changes.
+digits_in = function: (n: int) -> int
+    left: int @ n
+    digits: int @ 1
+    for left >= 10
+        left @ left / 10
+        digits @ digits + 1
+    return digits
+
+# The loop variable is not needed, so it is `_` — the same wildcard a pattern
+# uses, and the reason an unused name is never an accident here.
+repeat_dash = function: (times: int) -> str
+    out: str @ ""
+    for _ in range(0, times)
+        out @ out + "-"
+    return out
+
+test "the four loops"
+    assert largest_or([3, 9, 4], 0) == 9
+    assert largest_or([], -1) == -1
+    assert sum_until([5, 5, 5, 5], 12) == 10
+    assert even_count([1, 2, 3, 4]) == 2
+    assert digits_in(1004) == 4
+    assert repeat_dash(3) == "---"
+
+main = function: ()
+    print(repeat_dash(20))
+    print("digits in 2026: ", digits_in(2026))

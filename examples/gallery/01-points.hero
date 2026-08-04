@@ -1,0 +1,45 @@
+## Points
+#
+# Records, their constructors, and UFCS. Every field is named at the call
+# site, always — `Point(3, 4)` does not exist.
+
+# A position on the integer grid.
+Point = record
+    x: int
+    y: int
+
+# A rectangle, by two corners.
+Rect = record
+    corner: Point
+    extent: Point
+
+# Squared distance. Avoids the square root to keep it exact.
+dist2 = function: (a: Point, b: Point) -> int
+    dx = a.x - b.x
+    dy = a.y - b.y
+    return dx * dx + dy * dy
+
+# The point halfway between two others, rounded towards zero.
+midpoint = function: (a: Point, b: Point) -> Point
+    return Point(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+
+area = function: (r: Rect) -> int
+    return r.extent.x * r.extent.y
+
+# Reads as a sentence, and it is one function call: `translate(r, by)`.
+translate = function: (r: Rect, by: Point) -> Rect
+    moved = Point(x: r.corner.x + by.x, y: r.corner.y + by.y)
+    return Rect(corner: moved, extent: r.extent)
+
+test "the 3-4-5 triangle"
+    assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25
+
+test "a rectangle keeps its size when it moves"
+    unit = Rect(corner: Point(x: 0, y: 0), extent: Point(x: 2, y: 3))
+    assert unit.translate(Point(x: 10, y: 10)).area() == unit.area()
+
+main = function: ()
+    a = Point(x: 0, y: 0)
+    b = Point(x: 3, y: 4)
+    print("distance squared: ", a.dist2(b))
+    print("midpoint x: ", a.midpoint(b).x)

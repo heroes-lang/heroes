@@ -8,6 +8,7 @@
 //! | `types.rs`      | written types against primitives, declarations, generics |
 //! | `mutation.rs`   | what may be written, and what a write counts as |
 //! | `acceptance.rs` | design.md's whole appendix program, resolved clean |
+//! | `gallery.rs`    | `examples/gallery/`, nine programs written to be read |
 //!
 //! Two helpers, and the difference between them is the point: `diagnostics`
 //! renders what the compiler *says* (the deliverable, §4.17), `scopes` renders
@@ -15,6 +16,7 @@
 //! message and the bookkeeping can disagree.
 
 mod acceptance;
+mod gallery;
 mod mutation;
 mod names;
 mod scopes;

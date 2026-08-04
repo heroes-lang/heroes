@@ -10,6 +10,10 @@
 //! | `bodies.rs` | statements and expressions, the latter fully parenthesised |
 //! | `dump.rs`   | `--dump-ast`: the tree seen, one node per line |
 //! | `scopes.rs` | `--dump-scopes`: the symbol table and every binding |
+//!
+//! `gallery.rs` (tests only) holds `examples/gallery/` to the properties this
+//! module claims: every example parses clean, is canonical byte for byte, and
+//! survives formatting with its tree intact.
 //! | `fmt.rs`      | `heroes fmt`: declarations, comments, blank lines |
 //! | `fmt_stmt.rs` | its statement half, including where a long line breaks |
 //! | `fmt_expr.rs` | expressions with the *minimum* parentheses |
@@ -18,6 +22,8 @@
 //! the parser understand?" and parenthesises everything; `fmt` answers "how
 //! is this program written?" and parenthesises nothing it does not have to.
 
+#[cfg(test)]
+mod gallery;
 #[cfg(test)]
 mod tests;
 

@@ -1,0 +1,48 @@
+## Tokens
+#
+# A variant with payloads, and the only construct that takes one apart.
+# `match` is exhaustive or the program does not compile, and `_` is
+# forbidden on a variant — adding a case has to break something.
+
+Token = variant
+    number
+        value: int
+    word
+        text: str
+    plus
+    times
+    open
+    close
+
+# What a token is called in a message.
+name_of = function: (t: Token) -> str
+    return match t
+        .number _ => "a number"
+        .word _   => "a word"
+        .plus     => "`+`"
+        .times    => "`*`"
+        .open     => "`(`"
+        .close    => "`)`"
+
+# Binding power, strongest first (§4.14's table, in miniature).
+power_of = function: (t: Token) -> int
+    return match t
+        .times         => 2
+        .plus          => 1
+        .number _      => 0
+        .word _        => 0
+        .open | .close => 0
+
+is_operator = function: (t: Token) -> bool
+    return match t
+        .plus | .times                       => true
+        .number _ | .word _ | .open | .close => false
+
+test "every token has a name and a power"
+    assert name_of(.plus) == "`+`"
+    assert power_of(.times) > power_of(.plus)
+    assert is_operator(.number(value: 7)) == false
+
+main = function: ()
+    for t in [.open, .number(value: 12), .plus, .word(text: "x"), .close]
+        print(name_of(t))

@@ -2199,10 +2199,10 @@ factor = function: (@p: Parse) -> Expr?
     parse_advance(@p)
 
     return match t
-        .num n                     => ok(.num(v: n.v))
-        .name x                    => ok(.variable(name: x.s))
-        .lparen                    => group(@p)
-        .plus | .times | .rparen   => fail("expected_factor", "found an operator")
+        .num n                   => ok(.num(v: n.v))
+        .name x                  => ok(.variable(name: x.s))
+        .lparen                  => group(@p)
+        .plus | .times | .rparen => fail("expected_factor", "found an operator")
 
 # An expression followed by its closing paren.
 group = function: (@p: Parse) -> Expr?
@@ -2301,7 +2301,7 @@ test "precedence and parens"
     assert calculate("2 * 3 * 4", empty).must() == 24
 
 test "variables from the environment"
-    env = { "x": 10, "y": 4 }
+    env = {"x": 10, "y": 4}
     assert calculate("x * y + 2", env).must() == 42
 
 test "errors reach the top"
@@ -2332,7 +2332,7 @@ simplify = function: (e: Expr) -> Expr
 ## Program
 
 main = function: ()
-    env = { "x": 10, "y": 4 }
+    env = {"x": 10, "y": 4}
 
     cases = [
         "2 + 3 * 4"

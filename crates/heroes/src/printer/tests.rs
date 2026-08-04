@@ -16,7 +16,7 @@ use crate::syntax::parse;
 
 use super::{dump_ast, format_file};
 
-fn format(text: &str) -> String {
+pub(super) fn format(text: &str) -> String {
     let src = Source::new("test.hero".to_string(), text.to_string());
     let out = parse(&src);
     let rendered: Vec<String> = out.diagnostics.iter().map(|d| d.render_line(&src)).collect();
@@ -31,7 +31,7 @@ fn dump(text: &str) -> String {
 }
 
 /// Formatting twice changes nothing, and formatting does not change the tree.
-fn assert_canonical(text: &str) {
+pub(super) fn assert_canonical(text: &str) {
     let once = format(text);
     let twice = format(&once);
     assert_eq!(once, twice, "fmt is not idempotent");
@@ -41,6 +41,12 @@ fn assert_canonical(text: &str) {
 /// The acceptance program: 317 lines, every construct in the language, read
 /// out of design.md's appendix (its single source — see
 /// `syntax::tests::acceptance`).
+///
+/// It asserts more than idempotence: the appendix **is** canonical form, byte
+/// for byte. That became true when the formatter learned to align a run of arms
+/// — the appendix had been aligning them by hand since before any compiler
+/// existed, and the tool now produces what the reference document shows. If the
+/// two ever disagree again, one of them is wrong and this test says so.
 #[test]
 fn the_acceptance_program_is_canonical_and_unchanged_by_formatting() {
     let design = std::fs::read_to_string(concat!(
@@ -54,7 +60,50 @@ fn the_acceptance_program_is_canonical_and_unchanged_by_formatting() {
     let tail = &design[appendix..];
     let open = tail.find("```\n").expect("the appendix has a code fence") + 4;
     let close = tail[open..].find("\n```").expect("the fence closes") + open;
-    assert_canonical(&tail[open..=close]);
+    let text = &tail[open..=close];
+    assert_canonical(text);
+    assert_eq!(format(text), text, "design.md's appendix is not in canonical form");
+}
+
+/// A run of single-line arms lines its `=>` up, so a `match` reads as the table
+/// it is. The run stops where the author stopped it: at a block-bodied arm,
+/// whose `=>` ends its line, and at a blank line, because blank lines are
+/// content in this formatter.
+#[test]
+fn a_run_of_inline_arms_aligns_its_arrows() {
+    let text = "\
+f = function: (n: int) -> int
+    return match n
+        0     => 10
+        1     => 20
+        30000 => 30
+
+        2 => 40
+";
+    assert_eq!(format(text), text);
+    assert_canonical(text);
+}
+
+/// A list the author wrote down the page keeps its shape even though it fits on
+/// one line. §4.9 gives the two forms different separators, so this is not
+/// wrapping — it is the other spelling, and the grouping is the author's.
+#[test]
+fn a_multi_line_list_stays_multi_line() {
+    let text = "\
+main = function: ()
+    cases = [
+        \"a\"
+        \"b\"
+    ]
+    print(cases)
+";
+    assert_eq!(format(text), text);
+    assert_canonical(text);
+    // …and one written on a line that fits stays on it.
+    assert_eq!(
+        format("main = function: ()\n    print([\"a\", \"b\"])\n"),
+        "main = function: ()\n    print([\"a\", \"b\"])\n"
+    );
 }
 
 /// `examples/first.hero` is already written in canonical form, and stays that
@@ -206,7 +255,7 @@ state = function: (t: Token) -> str
         \"?\"
     return match t
         .num n => n.v.str()
-        .plus => label
+        .plus  => label
 ";
     assert_eq!(format(text), text);
     assert_canonical(text);
@@ -250,7 +299,7 @@ fn statement_arm_bodies_are_canonical() {
         "\n",
         "test \"it rejects the unknown\"\n",
         "    match f([2])\n",
-        "        .ok _ => assert false\n",
+        "        .ok _  => assert false\n",
         "        .err e => assert e.code == \"two\"\n",
     );
     assert_eq!(format(text), text);
