@@ -33,10 +33,10 @@ apply.
 ## The canonical example (spike 02)
 
 ```
-main = function: ()
+function main()
     i: int @ 0
     total: int @ 0
-    for i < 5
+    while i < 5
         total @ total + i
         i @ i + 1
     print(total)
