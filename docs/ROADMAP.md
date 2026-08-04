@@ -9,7 +9,25 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**Status: M2 closed 2026-08-04, tag `m2` — parser, tree, `--dump-ast` and the
+**Status: M3a closed 2026-08-04, tag `m3a` — the resolver: order-free top
+level, scopes with no shadowing, unused bindings with §4.16's file-wide hole
+exemption, written types against primitives/declarations/generics, and
+`heroes check [--dump-scopes]`, which the golden harness now runs through (the
+frontend command's name stops moving here). Panel 015 settled the rejection set
+and changed three of its five defaults on the judges' evidence: one tier of
+built-in names, not two; the UFCS unknown narrowed to "not a field anywhere in
+the file"; `_` as the unused rule's escape valve. design.md's appendix renamed
+its `map`/`fold` to `apply`/`reduce` — the third rule that program has caught —
+and **resolves with zero diagnostics**: 33 top-level names, 60 bindings, 293
+resolved uses. 164 crate tests + 21 golden cases (12 inherited unchanged, 5
+adversarial, 4 bulk).
+Next: M3b, the bidirectional checker (⇐/⇒ on `int`/`bool`/functions). Carried
+in: classify `break`/`continue`/`return` (NOT as `()` — RFC 1216), `+` on `str`
+(unwritable per the spec's operator table, provided by §4.20's runtime — wants a
+panel), the value-`match` rule, declarations out of inline arm bodies, and the
+unrejected `()` in binding position.**
+
+**M2 closed 2026-08-04, tag `m2` — parser, tree, `--dump-ast` and the
 canonical formatter; panel 013 settled the function type's marker
 (`(function(A, B) -> C)`, `fn` stays an error everywhere). The 317-line
 acceptance program in design.md's appendix parses clean, formats idempotently
@@ -67,8 +85,14 @@ program parses clean and formats idempotently (pinned by tests that read
 design.md, so the appendix stays its single source).
 
 ### M3 — split in four (each with its own runnable artifact)
-- **M3a — Resolver:** scopes, no shadowing, unused (with the `???`
-  exemption), order-free top level. Name-error diagnostics.
+- **M3a — Resolver ✅** (2026-08-04, tag `m3a`)**:** scopes, no shadowing,
+  unused (with the `???` exemption), order-free top level, written types, and
+  the name-error diagnostic class settled by panel 015.
+  **Runnable:** `heroes check examples/first.hero` (silent — it resolves) ·
+  `heroes check tests/golden/check/shadowing.hero` (the diagnostic class) ·
+  `--dump-scopes` prints the alphabetical top-level table and every binding
+  nested by scope, for any file that has bindings. The witness is the appendix,
+  read out of design.md by a test so it cannot drift: zero diagnostics.
 - **M3b — Checker core:** bidirectional ⇐/⇒ on `int`/`bool`/functions.
   (Queued for the author: the ⇐/⇒ paper exercise, before this lands.)
 - **M3c — Data:** records, variants with payload, exhaustiveness, `_` ban,
@@ -102,7 +126,9 @@ constructs, before this lands.)
 ### M6 — Sugar, tests, generics, library
 `T?` operators, function values (C function pointers), generics by
 monomorphisation, `test`/`assert` with source text, `outline`, `explain`.
-Library in Heroes: map/filter/fold/find/any/all/range/join.
+Library in Heroes: map/filter/fold/find/any/all/range — `join` is Tier 1, in
+the C runtime with its `Builder` (§1.11, §4.20; this line used to say
+otherwise, and the ffi-pragmatist found the contradiction in panel 015).
 **Acceptance: the appendix calculator (restored to `examples/`) compiles,
 runs, its tests pass.** Harness: first *tests-pass* rates, both arms.
 Principle 0 checkpoint: the closure-list audit, under panel 005's three
