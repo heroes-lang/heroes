@@ -1174,7 +1174,7 @@ feature.
 **Functions only, no constraints, always inferred, implemented by monomorphisation.**
 
 ```
-map = function<A, B>: (xs: [A], f: (fn(A) -> B)) -> [B]
+map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
     for x in xs
         out @ out.push(f(x))
@@ -1224,7 +1224,12 @@ plus = function: (a: int, b: int) -> int
 total = values.fold(0, plus)
 ```
 
-Function type syntax: `(fn(A) -> B)`, **parens mandatory**. Honest note on why: having removed parens
+Function type syntax: `(function(A, B) -> C)`, **parens mandatory**, and the marker is the same word
+that declares a function — one word, one meaning, everywhere (panel 013, 2026-08-04: `fn` is a
+reserved-word error under §4.17, and spelling it inside a type made that error's `certain` fix wrong
+in the one position where the word was required). The parameter list mirrors a signature's: two
+parameters are `(function(int, int) -> bool)`, none is `(function() -> C)`. Honest note on why the
+parens: having removed parens
 from declarations, `f: fn A -> B -> [B]` would be ambiguous. This is the second price of dropping
 parens (the first being the four-line inline `if`), and it is left visible rather than papered over.
 
@@ -1547,6 +1552,17 @@ these annotations (an earlier draft suggested `@owned`, before `@` was assigned 
 Reserve a keyword. Until this exists, treat every `ptr` as opaque and free it explicitly through a
 shim function.
 
+**FFI callbacks are `ptr` until a C-width type vocabulary exists** (panel 013, verified by
+compiling against the real headers). §4.13's function type is a Heroes-internal feature and must
+never be presented as the FFI callback spelling: Heroes' `int` is `int64_t` while every real
+callback takes C `int` and `const` pointers, so a *typed* callback is a hard clang error —
+`qsort`, `sqlite3_exec`, `sqlite3_busy_handler` and all six raylib callback typedefs fail, 9 out of
+9. `cb: ptr` compiles, links and runs (SQLite needs no shim). What the boundary lacks is `c_int`
+and `const`, not a marker — see Part 7 item 10. Two things stay forbidden meanwhile: the emitter
+must never insert a cast from `ptr` to a header's function-pointer type (it compiles clean and
+silently calls the wrong callback — the exact silent-wrong-answer class this language exists to
+kill), and `-pedantic-errors` waits until callbacks have a typed route.
+
 **Provenance of the mechanism:** Nim's `importc` pragma (`{.importc, header: "sqlite3.h".}`) — the
 cheapest FFI mechanism that exists, and it works *only* because the backend is C. An earlier
 revision of this document called it "the design to steal from if the backend ever changes to C
@@ -1762,7 +1778,7 @@ visible rather than patched with a second form.
    ```
    This is the first price of dropping braces. `then` was proposed and rejected: a second form of
    `if` to save three lines per file.
-4. **Function type parens.** `(fn(A) -> B)` needs its parens because declarations don't have any.
+4. **Function type parens.** `(function(A) -> B)` needs its parens because declarations don't have any.
    Second price of the same decision.
 5. **Errors are codes plus strings, not types.** Weak. Mitigated by asserting on `e.code`.
 6. **The unrecoverable indentation case** (4.15). One accepted silent-error class.
@@ -2006,14 +2022,14 @@ more.
 ## Generic library
 
 # Applies `f` to every element, in order.
-map = function<A, B>: (xs: [A], f: (fn(A) -> B)) -> [B]
+map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
     for x in xs
         out @ out.push(f(x))
     return out
 
 # Reduces the sequence to one value, from the left.
-fold = function<A, B>: (xs: [A], initial: B, f: (fn(B, A) -> B)) -> B
+fold = function<A, B>: (xs: [A], initial: B, f: (function(B, A) -> B)) -> B
     acc: B @ initial
     for x in xs
         acc @ f(acc, x)

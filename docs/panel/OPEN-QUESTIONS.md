@@ -17,6 +17,32 @@ or it breaches the 1500-token budget.
 
 ## Watch list (not open sessions — conditions and gaps on the record)
 
+- **§1.6's scope for `spec/reserved-words.md` is undecided** (spec-warden,
+  013): 831 measured tokens saying which words are legal — semantics, and a
+  diagnostic class — currently uncounted by `heroes measure`, whose default
+  is `heroes-spec.md` alone. True headroom is 952 or 121 depending on the
+  answer. Bigger than anything panel 013 decided.
+- **`heroes measure` cannot reproduce panel 011's o200k number** (2050): only
+  two tables are vendored, so the binding maximum reports 2048. Immaterial to
+  every verdict so far; on the record so the instrument stays honest.
+- **The foreign-word registry collides with C identifiers that bindings must
+  name** (ffi-pragmatist, 013; pre-existing): in SDK headers, declarator or
+  field position, `function` occurs 571 times, `func` 29, `assert` 11,
+  `test` 5, `match` 3 — and §4.19 has no alias syntax. Belongs to §4.19's
+  deferred annotation vocabulary at M7.
+- **Closures (v1.5) break the C-ABI compatibility of function values**
+  (ffi-pragmatist, 013): a capturing closure is a record plus a pointer, so
+  the type system must distinguish capture-free at the boundary.
+- **Newline-separated parameter lists**: §4.9 gives newline separation to
+  multi-line *literals*; nothing says whether a signature may use it. The M2
+  parser requires `,` (the narrower reading) and reports the newline form.
+  Decide when `heroes fmt` picks the canonical long-signature shape (M2
+  step 4) — a panel path, since it is surface syntax.
+- **`T??` in the surface**: §4.6 refuses the level ambiguity but never says
+  whether the *written* form is rejected. The M2 parser rejects it with
+  `nested_fallible` (conservative: a rejection can be relaxed, an acceptance
+  cannot be withdrawn).
+
 - `()` is used by the 003 rule but never defined in the spec's type table;
   owes a row if the baseline shows confusion (spec-warden, 003).
 - The M6 closure-list audit is scoped by three riders: mechanical,
