@@ -49,8 +49,9 @@ or it breaches the 1500-token budget.
   carries this; the standard remedy is raw strings (Go backquotes, Rust
   `r#"…"#`, Swift SE-0200), which are v2 material at best. Recorded so it is
   not rediscovered as a bug.
-- **Repeated `@` arguments are a silent divergence (found by the ergonomist
-  in panel 009, needs a session before M3c):** `shift(a @ n, b @ n)` — the
+- ~~Repeated `@` arguments are a silent divergence~~ — **resolved by panel
+  010** (adopted provisionally 2026-08-04, ratification queued): two `@`
+  arguments sharing a root binding are a compile error. Original statement: `shift(a @ n, b @ n)` — the
   same variable passed twice as a mutable argument — compiles under both
   readings of §4.8 and yields *different answers* (copy-in/copy-out:
   last write wins; reference semantics: the writes see each other). Every

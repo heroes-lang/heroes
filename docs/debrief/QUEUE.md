@@ -26,7 +26,7 @@ queue is also the record). Format:
 - [x] M1.5 | `"a\nb"` used to compile printing four characters. Now it prints two lines. Which half of panel 008 did that — the five escapes, or reserving the backslash? | docs/panel/008-escape-sequences.md · lexer/escape.rs | the reserved backslash is the half that does the thesis work
 - [x] M1.5 | `"C:\temp"` still compiles silently as `C:<TAB>emp`. Why can no escape set fix that, and what would? | lexer/tests/literals.rs (the_residual_windows_path_trap_is_on_the_record) | knowing the limits of a fix is part of owning it
 - [x] panel 009 | Ratify the budget governance adopted provisionally: measured-only, soft 1500/hard 2000, the +500 as a pre-allocated purse, spend only where a wrong guess is silent | docs/panel/009-spec-budget-2000.md § Resolution | it is the rule that keeps 2000 from becoming 2500
-- [ ] design | Repeated `@` arguments (`shift(a @ n, b @ n)`) compile with two different meanings — panel needed before M3c | docs/panel/OPEN-QUESTIONS.md | a silent divergence in the language itself, found by a judge
+- [ ] panel 010 | Ratify (or overturn) the repeated-`@` rule adopted provisionally: two `@` arguments sharing a root binding are a compile error, over-rejecting distinct-index pairs by design | docs/panel/010-repeated-mutable-arguments.md § Resolution | three judges converged; Ada reached the same rule in 2012 after 33 years of the alternative
 
 ## Covered
 

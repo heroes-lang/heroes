@@ -964,6 +964,23 @@ which is the only thing `@` exists to make visible. Always `advance(@l)`, prefix
 **Copy-out happens always**, including on early `return` and on `?` propagation. This was
 undefined, and undefined means the model will invent something.
 
+**Two `@` arguments of one call may not share a root binding** (panel 010). `shift(a @ n, b @ n)`,
+`shift(a @ p.x, b @ p.x)` and `shift(a @ xs[0], b @ xs[0])` are compile errors, and the diagnostic
+ships the `certain` repair: pass a copy for the second argument. The rule is not a new restriction —
+it is the precondition that makes §4.10's "no aliasing exists anywhere" *true*, because two
+copy-outs landing on one place is aliasing of the destination. Left legal, the call's meaning would
+depend on copy-out order, which nothing specifies: the same program would print 16 under a reference
+reading, 15 under left-to-right copy-out and 6 under reverse. Precedent is one-sided — Ada defined
+copy-back with arbitrary order for thirty-three years and then made the overlapping call illegal in
+Ada 2012 ("known to denote the same object"), because order-dependence "is usually a bug, and in any
+case, is not portable"; Swift (SE-0176) and Hylo forbid it on the same copy-in/copy-out model, and no
+sourced language specifies the order. Since Heroes has no references, every place has exactly one
+root, so comparing roots is a *complete* alias test — no dataflow, no borrow checker. It
+deliberately over-rejects `f(a @ xs[i], b @ xs[j])` with distinct indices; that form is not on the
+closure list and the rule can be relaxed later without invalidating any program. The invariant it
+buys the backend is worth stating: **`@` parameters never alias**, so a direct-pointer lowering and
+`restrict` stay legal.
+
 **Rejected: sigils on names** (`@total` everywhere, Ruby-style). Every language that uses name
 sigils encodes something *permanent* — Ruby's `@x` is scope, Perl's `$x`/`@x`/`%x` is type.
 Mutability is precisely the property that *changes* during development, so a name sigil turns a
