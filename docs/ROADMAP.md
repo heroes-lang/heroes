@@ -9,7 +9,44 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**Status: M5a closed 2026-08-04, tag `m5a` — the compiler compiles.
+**Status: M5b closed 2026-08-05, tag `m5b` — `str` reaches C and values have
+lifetimes. `own.rs` is the first IR→IR pass: `incref`/`decref` as real instructions
+visible in `--dump-ir`, `Program::phase` so the verifier names which pass to blame, and
+canonical `f64` rendering (panel 021).
+
+Three measurable outcomes. **The leak counter caught a real defect on its first run** —
+`panic: 3 heap blocks still live at exit`, all three from one missing row, because `+`
+on a `str` is an `Op::Binary` that reads like arithmetic and is a constructor. That is
+the entire reason it replaced AddressSanitizer as the leak gate: ASan on Darwin arm64
+answers `detect_leaks is not supported on this platform`, and a 999-block leak exits 0
+in silence (measured by two judges independently). **The phase-indexed verifier refuted
+the ownership pass's design twice, on real programs, before any test did** — end-of-block
+release cannot survive `name + " scored " + got.must().to_str()`, where `.must()` opens
+a block in the middle of an expression, and the repair cashes panel 019's slots decision
+properly: an owning temporary is *moved* into a synthetic slot, so every release is a
+slot's. **Two judges' findings composed into a better `f64` than either had**: with
+gnulib's subnormal branch, `5e-324` renders `5e-324` and the warden's own counterexample
+to "shortest" dissolves.
+
+368 tests (was 363): 331 crate, 13 golden harnesses over 68 cases, 24 surface — and
+every `run/` case now runs in **three** configurations (`-O0`, `-O2`, `--sanitize`),
+with the leak balance asserted in every generated `main`. The runtime went from 50 lines
+to 285: `HeroStr {ptr, len}` **by value** (an FFI decision — by pointer the wrong
+`str`→`cstr` conversion compiles clean *with a cast* and hands a refcount word to
+`sqlite3_open`), a magic word that catches a fabricated `HeroStr`, `hero_str_from_bytes`
+(without which no `extern` may return `str`), and a locale-proof renderer. The spec
+gained two sentences at +41 measured (2155 → 2196): `slice`'s `to` is excluded, and an
+`f64` always prints a point or an exponent.
+Next: M5c, aggregates — records, variants, arrays and maps through the descriptor pass
+(`copy`/`drop`/`eq`/`hash` per reachable type, spike 04's frozen ABI), structural `==`,
+and COW on the mutation primitives. Nothing blocks it. Carried in: `cow_check` was
+struck from M5b for having zero call sites and `push` is what gives it one; reference
+counting **leaks cycles** and M5c's recursive `variant` is where that stops being
+hypothetical (Nim needed ORC for exactly this); `Op::Cast` is unreachable from source
+until M7; and `len`'s unit is still derivable rather than stated, with `print(len("è"))`
+as the discriminating probe.**
+
+**M5a closed 2026-08-04, tag `m5a` — the compiler compiles.
 `heroes run examples/gallery/00-first.hero` prints `20`. `emit/` is eight files and
 1166 non-test lines: a printer over the M4 IR plus declaration ordering and the
 mangler, with no analysis and no optimisation (the pipeline is clang's).
@@ -241,10 +278,15 @@ hand-desugar three constructs, against the IR text.)
   <file> --emit-c` (the C on stdout, byte-identical twice and through `-o`) · `heroes
   build examples/gallery/07-strings.hero` (the refusal: exit 1, the capability named,
   and nothing that resolves in another file).
-- **M5b — Strings + ownership pass:** `str` in the runtime; ownership pass
-  emitting visible `incref`/`decref`/`cow_check` in `--dump-ir`;
-  cleanup-label chains on every exit edge; ASan/UBSan gating in `run/`
-  goldens. Canonical `f64` rendering fixed here with its goldens (panel 006).
+- **M5b — Strings + ownership pass ✅** (2026-08-05, tag `m5b`)**:** `str` in the
+  runtime; the first IR→IR pass, emitting visible `incref`/`decref` in `--dump-ir`
+  (`cow_check` struck — zero call sites until M5c); the release sweep on every exit
+  edge; `--sanitize` as a third `run/` configuration, and the **leak counter** that
+  replaced ASan's, which does not exist on this platform. Canonical `f64` rendering
+  fixed here with its goldens, round-trip-exact and locale-proof (panels 006, 021).
+  **Runnable:** `heroes run tests/golden/run/strings.hero` · `heroes run
+  tests/golden/run/f64-rendering.hero` · `heroes build tests/golden/emit/strings.hero
+  --emit-c` (the refcounting, readable as text) · `heroes run --sanitize <file>`.
 - **M5c — Aggregates:** records/variants/arrays/maps via the descriptor pass
   (`copy/drop/eq/hash` per reachable type — spike 04's ABI); structural
   `==`; COW on mutation primitives.
