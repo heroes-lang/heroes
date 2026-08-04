@@ -110,7 +110,7 @@
     </svg>
     <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
     <p class="tagline">A small compiled language, designed for the reader that reads most code today: a language model.</p>
-    <span class="badge">pre-alpha &middot; being built in the open &middot; <a href="#log">where are we now? ↓</a></span>
+    <span class="badge">pre-alpha &middot; the lexer runs &middot; <a href="#log">where are we now? ↓</a></span>
   </header>
 
   <h2>The thesis</h2>
@@ -146,7 +146,7 @@ test "3-4-5 triangle"
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, one integer type, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn — expected type, definition site, concrete fixes. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
     <li><b>No standard library — on purpose.</b> A minimal runtime, native binaries, no GC (refcounting + copy-on-write), and everything else through a C FFI where clang verifies every signature against the real header.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification fits in ~3000 tokens. The language is finished for v1 when its compiler is written in it — and the bootstrap compiler is retired.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification fits in 3000 tokens, measured. The language is finished for v1 when its compiler is written in it — and the bootstrap compiler is retired.</li>
   </ul>
 
   <h2>Why these choices <span class="nod">· quicksand, avoided ·</span></h2>
@@ -207,11 +207,54 @@ test "3-4-5 triangle"
     refcounting with copy-on-write is complete memory management, no GC.
     Locality becomes total: what a line means is decided by that line.</dd>
 
-    <dt>And the spec fits in ~3000 tokens. Why cap it at all?</dt>
+    <dt>How does a line end, if there are no semicolons?</dt>
+    <dd>
+      The compiler adds the ending itself, but only when the line
+      <i>can</i> be over — when it finishes with a name, a value, a closing
+      bracket, or one of a short list of words. A line ending in
+      <code>+</code> is visibly unfinished, so it continues. Long
+      expressions break inside brackets, where indentation stops meaning
+      anything; outside them, every line's indentation is structural. This
+      is Go's rule, and the first version of it here was wrong: the list of
+      words had been copied incompletely, so <code>break</code> alone on a
+      line never ended its statement.
+    </dd>
+
+    <dt>What can a string hold?</dt>
+    <dd>
+      Five escapes, and no more: <code>\n</code>, <code>\t</code>,
+      <code>\\</code>, plus <code>\"</code> inside a string and
+      <code>\'</code> inside a character literal — so every character has
+      exactly one spelling. Any other letter after a backslash is a compile
+      error carrying its own correction. That second half is the point:
+      until it existed, <code>"a\nb"</code> compiled happily and printed a
+      backslash, which is the kind of quiet wrongness this language exists
+      to make impossible. One honest limit survives: <code>"C:\temp"</code>
+      still means a tab, because <code>\t</code> is legal and no compiler
+      can read intent.
+    </dd>
+
+    <dt>Can the same variable be passed twice to one call?</dt>
+    <dd>
+      No — not when both parameters can write to it. Mutable arguments are
+      marked <code>@</code> at the call site and copied in and out, so two
+      of them aimed at one variable would make the result depend on the
+      order the copies are written back — an order nothing specifies. Ada
+      lived with that for thirty-three years and then made it illegal in
+      2012, for the reason this language was built around: an answer that
+      depends on evaluation order is usually a bug. Rejecting it is what
+      makes the promise "no aliasing exists anywhere" actually true.
+    </dd>
+
+    <dt>And the spec fits in 3000 tokens. Why cap it at all?</dt>
     <dd>Because the spec <i>is</i> the prompt. Every feature pays rent in it,
     and a language whose entire definition fits in a few pages is also a
     language one person can implement — the two constraints are secretly the
-    same one.</dd>
+    same one. The number is measured, not estimated, and that distinction
+    cost the project two days: the budget was defended with a word-count
+    rule of thumb until someone actually counted, and found the spec a third
+    larger than believed. It is counted now with two published tokenisers,
+    offline; where they disagree, the larger one binds.</dd>
   </dl>
 
   <h2 id="log">The build log <span class="nod">· changes ·</span></h2>
@@ -219,6 +262,20 @@ test "3-4-5 triangle"
   (decisions, adversarial reviews, predictions and what broke) lives in the
   repo; this is the postcard version.</p>
   <ol class="log">
+    <li>
+      <span class="when">2026-08-04 · M1 — the lexer</span>
+      <b>The first real code, and three things it found by being written.</b>
+      Source text now becomes tokens: rigid indentation where a tab is an
+      error rather than an interpretation, statement ends inferred so the
+      language needs no semicolons, and keywords borrowed from other
+      languages — <i>struct</i>, <i>let</i>, <i>while</i> — failing with the
+      correction already written into the message. Writing it to the letter
+      of the design exposed three holes in the design itself: the rule for
+      ending a line cited Go but had dropped three of Go's words; strings
+      had no way to hold a newline, or a quotation mark at all; and the
+      budget the project had been defending for two days had never been
+      counted. It was a third larger than everyone believed.
+    </li>
     <li>
       <span class="when">2026-08-03 · M0 — day zero</span>
       <b>Foundations, and four programs written before the compiler.</b>
