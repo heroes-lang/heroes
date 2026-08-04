@@ -125,9 +125,40 @@ fn arm(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Option<Arm> {
     let body = if cur.at(TokenKind::Indent) {
         ArmBody::Block(block(cur, ast, src, "a `match` arm")?)
     } else {
-        ArmBody::Stmt(statement(cur, ast, src))
+        let id = statement(cur, ast, src);
+        reject_declaration(cur, ast, src, id);
+        ArmBody::Stmt(id)
     };
     Some(Arm { patterns, body, span: start.to(cur.previous_span()) })
+}
+
+/// A declaration is not an arm body (panel 017 D). `.a => x = 5` binds a name
+/// nothing can read: the arm is one statement, so the binding's scope ends with
+/// it.
+///
+/// The rejection lives here, in the parser, where Rust puts the same rule — as a
+/// *grammar* exclusion of `let` from expression position. In the checker it would
+/// arrive second: the resolver already reports the name as unused, with a repair
+/// ("remove the binding, or read it") that the author cannot apply, and the user
+/// would get both messages for one mistake.
+///
+/// The `Error` guard is not defensive. Without it a body the parser could not read
+/// at all reports twice — once as the real syntax error and once as this — which
+/// `tests::recovery` catches.
+fn reject_declaration(cur: &mut Cursor, ast: &Ast, src: &Source, id: crate::syntax::StmtId) {
+    let (name, value) = match &ast.stmts[id.0 as usize].kind {
+        crate::syntax::StmtKind::Bind { name, value, .. } => (*name, *value),
+        crate::syntax::StmtKind::Declare { name, value, .. } => (*name, *value),
+        _ => return,
+    };
+    if matches!(ast.exprs[value.0 as usize].kind, ExprKind::Error) {
+        return;
+    }
+    let text = src.slice(name);
+    let message = format!(
+        "an arm's body may not declare a name — `{text}` would be bound where nothing can read it; write the value as the arm's body, or open a block"
+    );
+    cur.error("declaration_in_arm", message, ast.stmts[id.0 as usize].span);
 }
 
 /// `.num n`, `.num _`, `.plus`, `_`, or a literal.

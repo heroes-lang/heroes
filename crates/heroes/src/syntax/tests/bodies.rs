@@ -331,3 +331,39 @@ fn a_mutable_marker_where_a_colon_belongs_is_repaired() {
         "    expr shift(a: @n)\nDIAG test.hero:2:13: error[misplaced_mutable_marker]: a named mutable argument is written `name: @value` — `:` names the parameter, `@` marks the argument\n"
     );
 }
+
+/// Panel 017 D: a declaration is not an arm body. `x` would be bound where
+/// nothing can read it — the arm *is* one statement, so its scope ends with it.
+/// The rejection lives in the parser because in the checker the resolver would
+/// speak first, with a repair the author cannot apply.
+#[test]
+fn a_declaration_is_not_an_arm_body() {
+    assert_eq!(
+        dump("f = function: (k: int) -> int\n    return match k\n        0 => x = 5\n        _ => 1\n"),
+        "\
+file test.hero
+  function f(k: int) -> int
+    return match k
+      0 => bind x = 5
+      _ => expr 1
+DIAG test.hero:3:14: error[declaration_in_arm]: an arm's body may not declare a name — `x` would be bound where nothing can read it; write the value as the arm's body, or open a block
+"
+    );
+}
+
+/// …and a *mutation* stays legal, because it changes a cell that already exists
+/// somewhere a reader can see.
+#[test]
+fn a_mutation_is_still_a_legal_arm_body() {
+    assert_eq!(
+        dump("f = function: (k: int)\n    v: int @ 0\n    match k\n        0 => v @ 1\n        _ => print(v)\n"),
+        "\
+file test.hero
+  function f(k: int) -> ()
+    declare v: int @ 0
+    match k
+      0 => mutate v @ 1
+      _ => expr print(v)
+"
+    );
+}
