@@ -1,0 +1,6 @@
+tests/golden/check/swapped-arguments.hero:16:21: error[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`
+tests/golden/check/swapped-arguments.hero:16:26: error[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `to`
+tests/golden/check/swapped-arguments.hero:17:16: error[needs_label]: two of `pair`'s parameters are `A`, so every one of them is named at the call site — this one is `a`
+tests/golden/check/swapped-arguments.hero:17:19: error[needs_label]: two of `pair`'s parameters are `A`, so every one of them is named at the call site — this one is `b`
+tests/golden/check/swapped-arguments.hero:18:21: error[wrong_label]: `copy_text` has nothing called `to` at this position — it is `from`
+tests/golden/check/swapped-arguments.hero:18:30: error[wrong_label]: `copy_text` has nothing called `from` at this position — it is `to`

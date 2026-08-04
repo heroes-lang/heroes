@@ -1,0 +1,20 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for the two rules that hold each other up (§4.7): a `match`
+# over a variant is exhaustive or an error, and `_` is FORBIDDEN as an arm over
+# one. Neither works alone — with `_` allowed, adding a case would stop breaking
+# compilation and exhaustiveness would be theatre; without exhaustiveness, the
+# ban would just be an inconvenience.
+Token = variant
+    num
+        v: int
+    plus
+    times
+
+missing = function: (t: Token) -> int
+    return match t
+        .num n => n.v
+
+lazy = function: (t: Token) -> int
+    return match t
+        .num n => n.v
+        _      => 0

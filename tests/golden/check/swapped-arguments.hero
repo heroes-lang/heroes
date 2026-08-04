@@ -1,0 +1,18 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for §4.9's same-typed-argument rule — the one place the
+# language spends tokens on purpose. `copy(a, b)` with the arguments the wrong
+# way round type-checks perfectly and does the wrong thing, which is the classic
+# LLM inversion and metric 3's `swap-args` operator. The rule fires on the
+# *written* signature, before any generic is instantiated, so `pair(1, 2)` at
+# `A := int` is caught for the same reason.
+copy_text = function: (from: str, to: str) -> str
+    return from + to
+
+pair = function<A>: (a: A, b: A) -> A
+    _ = b
+    return a
+
+main = function: ()
+    print(copy_text("a", "b"))
+    print(pair(1, 2))
+    print(copy_text(to: "b", from: "a"))

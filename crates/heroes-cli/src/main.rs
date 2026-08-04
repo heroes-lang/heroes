@@ -31,6 +31,7 @@ fn main() -> ExitCode {
         Tag::Doctor => commands::doctor::run(),
         Tag::Lex => commands::lex::run(&file, &invocation),
         Tag::Measure => commands::measure::run(invocation.file.as_deref()),
+        Tag::Mutate => commands::mutate::run(invocation.file.as_deref()),
         Tag::Parse => commands::parse::run(&file, &invocation),
         Tag::Check => commands::check::run(&file, &invocation),
         Tag::Fmt => commands::fmt::run(&file, &invocation),

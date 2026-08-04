@@ -163,7 +163,7 @@ fn measure_states_its_default() {
 fn the_rich_form_carries_the_line_the_caret_and_the_other_end() {
     let out = heroes(&["check", "tests/golden/check/certain-labels.hero"]);
     let shown = String::from_utf8_lossy(&out.stderr).into_owned();
-    assert!(shown.starts_with("error[wrong_label]: `Point` has no field `z` at this position — it is `y`\n"), "{shown}");
+    assert!(shown.starts_with("error[wrong_label]: `Point` has nothing called `z` at this position — it is `y`\n"), "{shown}");
     assert!(shown.contains("  at tests/golden/check/certain-labels.hero:10:21"), "{shown}");
     assert!(shown.contains("    a = Point(x: 1, z: 2)"), "the line as written: {shown}");
     assert!(shown.contains("^"), "the span, underlined: {shown}");

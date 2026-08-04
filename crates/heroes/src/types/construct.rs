@@ -39,7 +39,8 @@ pub(super) fn construct_record(
         .map(|f| (src.slice(f.name).to_string(), f.ty))
         .collect();
     let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
-    check_named_fields(checker, ast, resolved, src, &name, &expected, args, line, span);
+    let holder = Holder { label: name, line };
+    check_named_fields(checker, ast, resolved, src, &holder, &expected, args, span);
     checker.out.types.intern(Ty::Named(decl))
 }
 
@@ -89,7 +90,8 @@ pub(super) fn case(
         .collect();
     let label = format!("{holder}.{name}");
     let (line, _) = src.line_col(found.name.start);
-    check_named_fields(checker, ast, resolved, src, &label, &expected_fields, args, line, span);
+    let holder = Holder { label, line };
+    check_named_fields(checker, ast, resolved, src, &holder, &expected_fields, args, span);
     checker.record(at, expected);
 }
 
@@ -146,20 +148,28 @@ pub(super) fn fallible_constructor(
 
 /// Named fields, for a record or a case: every one mandatory, none repeated,
 /// none unknown, and the label must match the field at that position.
+/// What is being built, as one value: the name a message calls it and the line
+/// its declaration sits on. Grouped because those two always travel together —
+/// and because the alternative is a nine-parameter function.
+struct Holder {
+    label: String,
+    line: u32,
+}
+
 fn check_named_fields(
     checker: &mut Checker,
     ast: &Ast,
     resolved: &Resolved,
     src: &Source,
-    holder: &str,
+    holder: &Holder,
     expected: &[(String, crate::syntax::TypeId)],
     args: &[Arg],
-    declared_at: u32,
     span: Span,
 ) {
     if args.len() != expected.len() {
         let names: Vec<String> = expected.iter().map(|(n, _)| n.clone()).collect();
-        let diagnostic = errors::missing_fields(holder, &names, declared_at, span);
+        let diagnostic =
+            errors::missing_fields(&holder.label, &names, holder.line, span);
         checker.push_diagnostic(diagnostic);
         for arg in args {
             exprs::synth(checker, ast, resolved, src, arg.value);
@@ -172,12 +182,12 @@ fn check_named_fields(
             Some(label) if src.slice(label) == field.as_str() => {}
             Some(label) => {
                 let diagnostic =
-                    errors::wrong_label(holder, src.slice(label), field, label);
+                    errors::wrong_label(&holder.label, src.slice(label), field, label);
                 checker.push_diagnostic(diagnostic);
             }
             None => {
                 let at = ast.exprs[arg.value.0 as usize].span;
-                let diagnostic = errors::missing_label(holder, field, at);
+                let diagnostic = errors::missing_label(&holder.label, field, at);
                 checker.push_diagnostic(diagnostic);
             }
         }

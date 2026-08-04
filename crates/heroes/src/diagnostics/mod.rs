@@ -83,6 +83,7 @@ impl Diagnostic {
                 | "ufcs_on_mutable"
                 | "declaration_in_arm"
                 | "missing_label"
+                | "needs_label"
                 | "wrong_label"
                 | "declared_twice"
         )

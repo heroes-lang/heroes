@@ -1,0 +1,17 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for panel 002: **no `T` is ever promoted to a `T?`**. Swift
+# SE-0230 is the counter-precedent — implicit promotion there produced exactly
+# the confusion this refuses — and the price is that every fallible return says
+# `ok(...)`. If promotion ever appears, `return n` and `return ok(n)` become the
+# same program written two ways, and one of them stops being checkable.
+#
+# The third function guards the other half of §4.6: a `?` needs a caller that
+# can fail.
+half = function: (n: int) -> int?
+    return n
+
+unwrapped = function: (n: int) -> int?
+    return ok(n).must()
+
+forgotten = function: (n: int) -> int
+    return half(n)?

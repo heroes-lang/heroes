@@ -1,0 +1,2 @@
+tests/golden/check/non-exhaustive.hero:14:12: error[non_exhaustive]: this `match` does not cover `.plus`, `.times`
+tests/golden/check/non-exhaustive.hero:20:9: error[wildcard_on_variant]: `_` is not allowed as an arm over `Token` — name every case, so that adding one breaks this `match` instead of silently falling through

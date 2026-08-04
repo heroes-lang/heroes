@@ -7,11 +7,56 @@ use super::{assert_clean, diagnostics, type_of_last};
 fn a_call_checks_its_arguments_and_its_arity() {
     assert_clean(
         "\
+repeat = function: (text: str, times: int) -> str
+    out: str @ \"\"
+    for _ in range(0, times)
+        out @ out + text
+    return out
+
+main = function: ()
+    print(repeat(\"ab\", 2))
+",
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+repeat = function: (text: str, times: int) -> str
+    print(times)
+    return text
+
+main = function: ()
+    print(repeat(\"ab\"))
+"
+        ),
+        "test.hero:6:11: error[wrong_arity]: `repeat` takes 2 argument(s), found 1\n"
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+repeat = function: (text: str, times: int) -> str
+    print(times)
+    return text
+
+main = function: ()
+    print(repeat(\"ab\", \"two\"))
+"
+        ),
+        "test.hero:6:24: error[type_mismatch]: expected `int`, found `str`\n"
+    );
+}
+
+/// §4.9's same-typed-argument rule: the one place the language spends tokens on
+/// purpose, because `save(user.name, user.id)` type-checks perfectly and does the
+/// wrong thing. It is also what metric 3's `swap-args` operator exists to produce.
+#[test]
+fn two_parameters_of_one_type_must_be_named_at_the_call_site() {
+    assert_clean(
+        "\
 add = function: (a: int, b: int) -> int
     return a + b
 
 main = function: ()
-    print(add(1, 2))
+    print(add(a: 1, b: 2))
 ",
     );
     assert_eq!(
@@ -21,22 +66,35 @@ add = function: (a: int, b: int) -> int
     return a + b
 
 main = function: ()
-    print(add(1))
+    print(add(1, 2))
 "
         ),
-        "test.hero:5:11: error[wrong_arity]: `add` takes 2 argument(s), found 1\n"
+        "test.hero:5:15: error[needs_label]: two of `add`'s parameters are `int`, so every one of them is named at the call site — this one is `a`\ntest.hero:5:18: error[needs_label]: two of `add`'s parameters are `int`, so every one of them is named at the call site — this one is `b`\n"
     );
-    assert_eq!(
-        diagnostics(
-            "\
-add = function: (a: int, b: int) -> int
-    return a + b
+    // …and where the types differ, a label is optional — the rule spends nothing
+    // where nothing can be inverted.
+    assert_clean(
+        "\
+at = function: (text: str, index: int) -> int
+    return text[index]
 
 main = function: ()
-    print(add(1, \"two\"))
-"
-        ),
-        "test.hero:5:18: error[type_mismatch]: expected `int`, found `str`\n"
+    print(at(\"ab\", 1))
+    print(at(text: \"ab\", index: 1))
+",
+    );
+    // The receiver of a UFCS call names nothing: the dot *is* its position.
+    assert_clean(
+        "\
+Point = record
+    x: int
+
+dist = function: (a: Point, b: Point) -> int
+    return a.x - b.x
+
+main = function: (p: Point, q: Point)
+    print(p.dist(b: q))
+",
     );
 }
 
@@ -229,10 +287,10 @@ pair = function<A>: (a: A, b: A) -> A
     return a
 
 main = function: ()
-    print(pair(1, \"two\"))
+    print(pair(a: 1, b: \"two\"))
 "
         ),
-        "test.hero:6:19: error[type_mismatch]: expected `int`, found `str`\n"
+        "test.hero:6:25: error[type_mismatch]: expected `int`, found `str`\n"
     );
 }
 

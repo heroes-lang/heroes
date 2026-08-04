@@ -94,7 +94,7 @@ pub(in crate::types) fn missing_fields(
 pub(in crate::types) fn wrong_label(holder: &str, written: &str, expected: &str, span: Span) -> Diagnostic {
     let mut diagnostic = Diagnostic::new(
         "wrong_label",
-        format!("`{holder}` has no field `{written}` at this position — it is `{expected}`"),
+        format!("`{holder}` has nothing called `{written}` at this position — it is `{expected}`"),
         span,
     );
     // The span is the label's *identifier* — the `:` is not in it — so the
@@ -110,6 +110,31 @@ pub(in crate::types) fn wrong_label(holder: &str, written: &str, expected: &str,
     diagnostic
 }
 
+
+/// §4.9's same-typed-argument rule. The message names the *reason* — two
+/// parameters share a type — because the rule looks arbitrary without it, and a
+/// model that does not know why will drop the label again at the next call.
+pub(in crate::types) fn needs_label(
+    name: &str,
+    expected: &str,
+    shared: &str,
+    span: Span,
+) -> Diagnostic {
+    let mut diagnostic = Diagnostic::new(
+        "needs_label",
+        format!(
+            "two of `{name}`'s parameters are `{shared}`, so every one of them is named at the call site — this one is `{expected}`"
+        ),
+        span,
+    );
+    diagnostic.fixes.push(Fix {
+        title: format!("write `{expected}: `"),
+        replacement: format!("{expected}: "),
+        span: Span { start: span.start, end: span.start },
+        certainty: Certainty::Certain,
+    });
+    diagnostic
+}
 
 pub(in crate::types) fn missing_label(holder: &str, expected: &str, span: Span) -> Diagnostic {
     let mut diagnostic = Diagnostic::new(

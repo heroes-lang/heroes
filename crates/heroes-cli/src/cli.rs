@@ -31,6 +31,7 @@ pub enum Tag {
     Doctor,
     Lex,
     Measure,
+    Mutate,
     Parse,
     Check,
     Fmt,
@@ -147,6 +148,15 @@ pub fn commands() -> Vec<Command> {
             operand: Operand::None,
             flags: Vec::new(),
             summary: "check the toolchain (clang, CLT, arch, cache)".to_string(),
+        },
+        Command {
+            tag: Tag::Mutate,
+            name: "mutate".to_string(),
+            operand: Operand::Optional,
+            flags: Vec::new(),
+            summary:
+                "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)"
+                    .to_string(),
         },
         Command {
             tag: Tag::Measure,

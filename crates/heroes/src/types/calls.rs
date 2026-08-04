@@ -177,6 +177,23 @@ fn user_call(
     let mutable: Vec<bool> = function.params.iter().map(|p| p.mutable).collect();
     let result = lower::ty(checker, ast, resolved, function.result);
 
+    // §4.9's same-typed-argument rule: when two parameters share a type, the
+    // call site must name them. This is the rule that spends tokens exactly where
+    // argument inversion happens — `save(user.name, user.id)` type-checks
+    // perfectly and does the wrong thing, and it is the mistake metric 3's
+    // `swap-args` operator is built to produce.
+    //
+    // The receiver of a UFCS call is exempt: `p.copy_to(other)` names nothing for
+    // the first argument because the dot *is* its position (§4.11).
+    let ambiguous: Vec<usize> = params
+        .iter()
+        .enumerate()
+        .filter(|(index, ty)| {
+            params.iter().enumerate().any(|(other, candidate)| other != *index && candidate == *ty)
+        })
+        .map(|(index, _)| index)
+        .collect();
+
     let mut offset = 0;
     if let Some(receiver_ty) = receiver {
         bind(checker, ast, src, params[0], receiver_ty, &mut bindings, span);
@@ -184,6 +201,46 @@ fn user_call(
     }
     for (index, arg) in args.iter().enumerate() {
         let param = params[index + offset];
+        let position = index + offset;
+        if ambiguous.contains(&position) {
+            let wanted = src.slice(function.params[position].name).to_string();
+            match arg.name {
+                Some(label) if src.slice(label) == wanted.as_str() => {}
+                Some(label) => {
+                    let diagnostic =
+                        errors::wrong_label(&name, src.slice(label), &wanted, label);
+                    checker.push_diagnostic(diagnostic);
+                }
+                None => {
+                    let at = ast.exprs[arg.value.0 as usize].span;
+                    // Rendered with the *callee's* type-parameter names: at a
+                    // call site the enclosing function's letters are the wrong
+                    // dictionary, and `#0` is nobody's type.
+                    let callee_generics: Vec<String> = function
+                        .generics
+                        .iter()
+                        .map(|span| src.slice(*span).to_string())
+                        .collect();
+                    let shared = super::render_ty(
+                        &checker.out.types,
+                        ast,
+                        src,
+                        param,
+                        &callee_generics,
+                    );
+                    let diagnostic = errors::needs_label(&name, &wanted, &shared, at);
+                    checker.push_diagnostic(diagnostic);
+                }
+            }
+        } else if let Some(label) = arg.name {
+            // A label where the signature does not need one still has to be the
+            // right label: a wrong one is a wrong argument with a comment on it.
+            let wanted = src.slice(function.params[position].name);
+            if src.slice(label) != wanted {
+                let diagnostic = errors::wrong_label(&name, src.slice(label), wanted, label);
+                checker.push_diagnostic(diagnostic);
+            }
+        }
         // §4.8: the `@` marker is repeated at the call site, and a marked
         // argument must meet a marked parameter.
         if arg.mutable != mutable[index + offset] {
@@ -232,6 +289,14 @@ fn builtin_call(
             }
             None => types.push(exprs::synth(checker, ast, resolved, src, arg.value)),
         }
+    }
+    // `ok` and `fail` are not in the built-in table: they are ⇐-only and live in
+    // `construct.rs`, so reaching them here means they were written where nothing
+    // expects a fallible value.
+    if name == "ok" || name == "fail" {
+        let diagnostic = errors::constructor_needs_context(name, span);
+        checker.push_diagnostic(diagnostic);
+        return checker.error_ty();
     }
     match builtins::call(checker, ast, src, name, &types, span) {
         Some(ty) => ty,

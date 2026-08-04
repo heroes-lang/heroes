@@ -14,6 +14,10 @@ Rect = record
     extent: Point
 
 # Squared distance. Avoids the square root to keep it exact.
+#
+# Both parameters are `Point`, so §4.9 makes the names mandatory at every call
+# site: `a.dist2(b: c)` cannot be silently the other way round. That is the rule
+# that spends tokens exactly where argument inversion happens.
 dist2 = function: (a: Point, b: Point) -> int
     dx = a.x - b.x
     dy = a.y - b.y
@@ -32,7 +36,7 @@ translate = function: (r: Rect, by: Point) -> Rect
     return Rect(corner: moved, extent: r.extent)
 
 test "the 3-4-5 triangle"
-    assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25
+    assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25
 
 test "a rectangle keeps its size when it moves"
     unit = Rect(corner: Point(x: 0, y: 0), extent: Point(x: 2, y: 3))
@@ -41,5 +45,5 @@ test "a rectangle keeps its size when it moves"
 main = function: ()
     a = Point(x: 0, y: 0)
     b = Point(x: 3, y: 4)
-    print("distance squared: ", a.dist2(b))
-    print("midpoint x: ", a.midpoint(b).x)
+    print("distance squared: ", a.dist2(b: b))
+    print("midpoint x: ", a.midpoint(b: b).x)

@@ -16,20 +16,28 @@ extern floor = function: (x: f64) -> f64
 extern puts = function: (s: cstr) -> int
 
 # The hypotenuse, in the language's own arithmetic plus one C call.
+#
+# Both sides are `f64`, so §4.9 makes the names mandatory at the call site. C's
+# numeric APIs are where same-typed parameters cluster — `pow(base:, exponent:)`
+# is the same shape — so this is where the rule is felt most and where argument
+# inversion would be silent without it.
 hypotenuse = function: (a: f64, b: f64) -> f64
     return sqrt(a * a + b * b)
 
 # No implicit conversions: an `int` becomes an `f64` because you said so.
 diagonal_of = function: (width: int, height: int) -> f64
-    return hypotenuse(to_f64(width), to_f64(height))
+    return hypotenuse(a: to_f64(width), b: to_f64(height))
 
 # `pow` is C's, `floor` is C's, and the rounding is yours.
 rounded_power = function: (base: f64, exponent: f64) -> int
-    return to_int(floor(pow(base, exponent)))
+    return to_int(floor(pow(base: base, exponent: exponent)))
 
 test "the C library does the maths"
-    assert hypotenuse(3.0, 4.0) == 5.0
-    assert rounded_power(2.0, 10.0) == 1024
+    assert hypotenuse(a: 3.0, b: 4.0) == 5.0
+    assert rounded_power(base: 2.0, exponent: 10.0) == 1024
 
 main = function: ()
-    print("the 16:9 diagonal of a 1920-wide screen: ", diagonal_of(1920, 1080))
+    print(
+        "the 16:9 diagonal of a 1920-wide screen: ",
+        diagonal_of(width: 1920, height: 1080)
+    )

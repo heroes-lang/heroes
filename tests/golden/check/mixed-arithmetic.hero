@@ -1,0 +1,14 @@
+# UNVERIFIED — pending debrief
+# Adversarial case. Guards the rule with the widest blast radius in the type
+# system: **no implicit conversions**, ever (§4.3, §4.14). `1 + 2.0` is the
+# habit every other language in a model's training set allows, and the whole
+# reason `int` and `f64` are separate words here. The message must name the
+# conversion, because a rule without a repair is a wall.
+mix = function: (n: int, x: f64) -> f64
+    return n + x
+
+compare = function: (n: int, x: f64) -> bool
+    return n < x
+
+concat = function: (s: str, n: int) -> str
+    return s + n

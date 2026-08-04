@@ -263,7 +263,7 @@ make = function: (n: int) -> Token
     return .num(value: n)
 "
         ),
-        "test.hero:6:17: error[wrong_label]: `Token.num` has no field `value` at this position — it is `v`\n"
+        "test.hero:6:17: error[wrong_label]: `Token.num` has nothing called `value` at this position — it is `v`\n"
     );
     assert_eq!(
         diagnostics(

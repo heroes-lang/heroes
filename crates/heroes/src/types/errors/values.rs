@@ -186,6 +186,20 @@ pub(in crate::types) fn constructor_not_expected(name: &str, expected: &str, spa
 }
 
 
+/// `ok(x)` and `fail(c, m)` are ⇐-only (panel 002), so in a position with no
+/// expectation there is nothing for them to build. The message says which
+/// positions *do* have one, because "cannot infer" alone sends the reader
+/// looking for a type annotation that does not belong on a call.
+pub(in crate::types) fn constructor_needs_context(name: &str, span: Span) -> Diagnostic {
+    Diagnostic::new(
+        "cannot_infer",
+        format!(
+            "`{name}(…)` builds a fallible value, and which one comes from the context — return it, bind it with an annotation, or pass it where a `T?` is expected"
+        ),
+        span,
+    )
+}
+
 pub(in crate::types) fn record_name_alone(name: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "record_name_alone",
