@@ -909,7 +909,25 @@ value = match e
 - **`|` in patterns is allowed:** `.plus | .times | .rparen => fail(...)`. This was deferred, but
   the `_` ban made it necessary — without it, one function had three arms saying the same thing.
   The two rules support each other; neither works alone. Note `|` still means "or", consistently.
-- Arms may be an expression or an indented block.
+- **An arm's body is one statement, inline, or an indented block** (panel 014,
+  2026-08-04). `.num n => n.v` and `.ok _ => assert false` are the same shape:
+  a single statement, and an expression statement's value is the arm's value.
+  Blocks were already expressions ("a block's value is its last expression"),
+  so this removes a distinction rather than adding a form — and with it the
+  compiler special case that made `heroes fmt` delete an arm's `if` branches.
+- **A jump is admissible as an arm body.** `break`, `continue` and `return`
+  produce no value; the `match`'s type comes from the arms that can. They must
+  **not** be typed `()` — RFC 1216 records that exact wrong turn ("some code in
+  the compiler assigns type `()` to diverging expressions because it doesn't
+  have a sensible type to assign to them"), and under `()` an `int`-valued
+  `match` with a `return` arm would become a type error. Rust types them `!`,
+  Kotlin `Nothing`.
+- **A `match` used as a value requires every arm to produce a value** — the
+  rule that makes `tag = match t` with a `.eof => break` arm loud instead of
+  silent. It is a checker judgment (M3c, one ⇐-check), it is *orthogonal* to
+  the arm-body spelling (the block form always admitted the same valueless
+  arm), and declarations stay out of inline arm bodies: a name bound in an arm
+  is a name nothing can read.
 
 **`if` takes only a `bool`** — it is sugar for `match` on a two-case variant, which is what `bool`
 is. One line of spec covers all its behaviour. `else if` and `else` exist.
