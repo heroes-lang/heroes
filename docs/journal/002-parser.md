@@ -17,8 +17,9 @@ Surface: `heroes parse <file> [--dump-ast]` and `heroes fmt <file>
 Modules born: `syntax/` (nine files: `ast/` as a directory, `cursor`,
 `recover`, `decl`, `data`, `members`, `stmt`, `expr`, `primary`, `control`,
 `types`, `describe`) and `printer/` (`types`, `bodies` for the dump, `fmt`,
-`fmt_stmt`, `fmt_expr`). 104 crate tests, 8 golden `check/` cases through the
-real binary, 5 of them adversarial.
+`fmt_stmt`, `fmt_expr`). 104 crate tests, 11 golden `check/` cases through the
+real binary — the 4 inherited from M1 (which now run through `parse` and
+still say the same thing), 5 adversarial, 2 bulk.
 
 The measurable outcome: **the 317-line acceptance program in design.md's
 appendix parses with zero diagnostics, formats idempotently, and its tree is

@@ -14,7 +14,7 @@ canonical formatter; panel 013 settled the function type's marker
 (`(function(A, B) -> C)`, `fn` stays an error everywhere). The 317-line
 acceptance program in design.md's appendix parses clean, formats idempotently
 and its tree survives formatting. Golden `check/` now runs through `parse`;
-104 crate tests + 8 golden cases, 5 of them adversarial.
+104 crate tests + 11 golden cases (4 inherited from M1, 5 adversarial, 2 bulk).
 M1 closed 2026-08-04 tag `m1`; M0 closed 2026-08-03, retro-tagged `m0`.
 Next: M3a, step 1 (resolver — scopes, no shadowing, unused with the `???`
 exemption, order-free top level). Nothing blocks it. Queued design questions
