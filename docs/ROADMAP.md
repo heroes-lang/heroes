@@ -13,11 +13,10 @@ milestone close (the checklist is in `/step`).
 TextMate bonus; journal 001; panels 007/008 settled terminators and escapes;
 golden `check/` cases execute through the binary; 32 tests green.
 M0 closed 2026-08-03, retro-tagged `m0`.
-Next: M2, step 1 (parser scaffold). Nothing blocks it. Open behind it:
-panels 010/011/012 await ratification (all adopted provisionally), 007-bis
-waits on the baseline, and `heroes measure` — now known to be implementable
-offline in ~180 lines — is the instrument that makes the budget rule
-enforceable.**
+Next: M2, step 1 (parser scaffold). Nothing blocks it. Panels 007–012 are
+all ratified; `heroes measure` landed early (it was scheduled for M3d) and
+the spec now measures 1989/2048 against a 3000 ceiling. Only 007-bis and
+the metric-2 protocol still wait on a measurement run.**
 
 ## The chain
 
@@ -61,7 +60,8 @@ reserved-word errors with pre-written fixes. Pretty printer immediately
 - **M3d — Diagnostics as a product:** rich errors with `certain|guess`
   fixes, `x.fixed` goldens, `???` output (capped at 5, deterministic),
   `heroes check --json` (versioned schema) and `--permissive` (the control
-  arm). First full harness run: metrics 1–3, both arms.
+  arm). First full harness run: metrics 1–3, both arms. (Metric 1 landed
+  early — `heroes measure`, M1.)
 
 ### M4 — Desugar + lowering
 Part 5's sugar table erased in the frontend; three-address IR with explicit
