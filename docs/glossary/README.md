@@ -35,3 +35,8 @@ note. An entry is born one of two ways:
 - [001-expressible-vs-loud.md](001-expressible-vs-loud.md) — the two jobs a
   language rule can do (widen what can be said vs narrow what is accepted);
   the four-worlds grid; why loudness cannot reach `"C:\temp"`
+- [002-binding-power-and-position.md](002-binding-power-and-position.md) —
+  power says how tight, position says which side; `power + 1` for the right
+  operand is all of associativity; a rule stated over constructs instead of
+  tokens is wrong in exactly one case (the terminator, the place of a
+  mutation)

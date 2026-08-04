@@ -108,3 +108,19 @@ DIAG test.hero:2:9: error[reserved_word]: `fn` is not a word in this language �
 "
     );
 }
+
+/// One node per written constructor, and `?` *wraps* rather than annotates:
+/// `{str: [int]}?` is five nodes, not three. Pinned because the count is the
+/// whole reason the arena exists — a recursive type needs no pointers, only
+/// indices, which is what lets it port to Heroes unchanged (§4.10).
+#[test]
+fn the_arena_holds_one_node_per_written_constructor() {
+    let src = crate::source::Source::new(
+        "test.hero".to_string(),
+        "T = record\n    f: {str: [int]}?\n".to_string(),
+    );
+    let out = crate::syntax::parse(&src);
+    assert_eq!(out.diagnostics.len(), 0);
+    // str · int · [int] · {str: [int]} · {str: [int]}?
+    assert_eq!(out.ast.types.len(), 5);
+}
