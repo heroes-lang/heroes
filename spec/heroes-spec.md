@@ -1,17 +1,11 @@
-<!-- heroes-spec v0 — THE PRE-AMENDMENT BASELINE.
-     This document is not documentation: it is the prompt handed to a model
-     (design.md §1.6, budget ~1500 tokens). v0 faithfully condenses design.md
-     Part 4 AS IT STANDS, including its open questions — amendments land only
-     with panel verdicts, so the M0 measurement baseline stays recoverable. -->
-
 # The Heroes Language
 
 Heroes is a small compiled language. This document is the whole language.
 
 ## Files and layout
 - One file is one program. Entry point: `main = function: ()`.
-- `#` comments to end of line; comment text is markdown. A comment directly
-  above a declaration is its documentation. `##` is a section heading.
+- `#` comments to end of line, markdown inside. A comment directly above a
+  declaration documents it; `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
   compile error. No braces, no semicolons, no parentheses around conditions.
 - Syntax is ASCII-only; strings and comments may contain any UTF-8.
@@ -57,6 +51,8 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 - No implicit conversions: `1 + 2.0` is an error; write `to_f64(x)`, `to_int(x)`.
 - No null. Absence is a different type (`T?`).
 - Character literals are `int`: `'a'`, `'0'`, `' '`.
+- Five escapes, and no others: `\n` `\t` `\\` `\"` in a string, `\'` instead of
+  `\"` in a character literal. Any other escape is a compile error.
 - `==` is structural equality on everything — ints, strings, records,
   variants, arrays, maps, recursively.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
@@ -71,7 +67,8 @@ v @ v + 1          # mutation; only a declared @ name can be mutated
 `=` binds once, forever. `@` declares a mutable cell and re-binds it.
 Signatures are always explicit; inference is local only. Empty container
 literals need an annotation: `xs: [int] = []` · `m: {str: int} @ {}`.
-All bindings are initialised. An unused variable is a compile error.
+All bindings are initialised. An unused binding or parameter is a compile
+error; a read is a use and a write is not, except through an `@` parameter.
 Shadowing is a compile error.
 
 ## Functions and calls
@@ -86,9 +83,10 @@ Shadowing is a compile error.
   out (copy-out always happens, including on early return and `?`). UFCS does
   not apply when the first parameter is `@`.
 - Top-level functions are values: `xs.fold(0, add)`. Function type syntax:
-  `(fn(A) -> B)` — the parentheses are mandatory.
+  `(function(A) -> B)`, `(function(A, B) -> C)`, `(function() -> C)` — the
+  parentheses are mandatory.
 - Generics: on functions only, no constraints, always inferred, never written
-  at the call site: `map = function<A, B>: (xs: [A], f: (fn(A) -> B)) -> [B]`.
+  at the call site: `map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]`.
 
 ## Control flow
 `match` is the only destructuring construct:
@@ -99,10 +97,13 @@ value = match e
 ```
 - Exhaustive or compile error. `_` as a catch-all arm is FORBIDDEN on
   variants (allowed on `int`/`str`, where exhaustiveness is impossible).
-- `_` as a payload name is allowed: `.num _ => 0`.
+- `_` names anything you do not use: a payload (`.num _ => 0`), a parameter, a
+binding (`_ = f(x)`). It binds nothing, so it is never unused and may repeat.
 - `|` joins patterns: `.plus | .times => f()`.
-- An arm is an expression or an indented block; a block's value is its last
-  expression. `if` is an expression too.
+- An arm's body is one statement, inline, or an indented block; a block's value
+  is its last expression. A `match` may stand as a statement. A jump (`return`,
+  `break`, `continue`) is a valid arm body: it yields no value and does not
+  constrain the `match`'s type.
 
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
 Loops: `for cond` and `for x in xs`; `break` and `continue` exist; ranges are
@@ -128,12 +129,13 @@ truncates).
 ## Operators
 ```
 arithmetic   + - * / %          (int with int, f64 with f64 — never mixed)
+             +                  (str with str: concatenation)
 comparison   == != < <= > >=
 boolean      && || !            (bool only; && and || short-circuit)
 ```
 Precedence, strongest first: call and `.` → unary `-` `!` → `* / %` → `+ -`
 → comparisons → `&&` → `||`. `& | ^ << >> ~` are reserved for future bitwise
-use. There is no ternary; `if` is an expression.
+use. There is no ternary; `if` is an expression, and so is `match`.
 
 ## Strings, arrays, maps
 `s[i]` yields an `int` in 0..255 (a byte); iterate characters with
@@ -141,16 +143,17 @@ use. There is no ternary; `if` is an expression.
 separate elements by newline; single-line by comma.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` · `chars` ·
-`has` · `join` · `to_int` · `to_f64` · `range` — and, written in Heroes:
-`map` · `filter` · `fold` · `find` · `any` · `all`.
+`has` · `join` · `sort` · `to_int` · `to_f64` · `to_str` — and, written in
+Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
+None of these names may be redeclared.
 
 ## Tests and holes
 ```
 test "3-4-5 triangle"
     assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25
 ```
-`heroes test file.hero` compiles and runs `test` blocks; ordinary builds
-ignore them. `assert` failures show the source expression and both sides.
+`test` blocks run only when asked for; ordinary builds ignore them. An
+`assert` failure shows the source expression and both sides.
 
 `???` is a valid expression anywhere. It is not an error: the compiler
 reports what belongs there (the expected type, what is in scope). A program
@@ -162,5 +165,4 @@ libraries:
 ```
 extern sqrt = function: (x: f64) -> f64
 ```
-`ptr` is an opaque pointer, `cstr` a C string. (Header binding syntax lands
-with the FFI milestone.)
+`ptr` is an opaque pointer, `cstr` a C string.

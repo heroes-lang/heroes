@@ -131,3 +131,11 @@ impl LexState {
         self.last_significant = Some(TokenKind::Error);
     }
 }
+
+/// Whether a word is one the foreign-word registry rejects on sight
+/// (`keywords.rs`). Public because the *spec* has to be checked against it: a
+/// document that uses a word the lexer refuses is a document that briefs a model
+/// wrongly, and `measure::spec` asserts it does not.
+pub fn is_foreign_word(word: &str) -> bool {
+    keywords::foreign_word(word).is_some()
+}

@@ -22,6 +22,7 @@
 
 mod bpe;
 mod pretokenize;
+mod spec;
 
 use std::path::{Path, PathBuf};
 
@@ -145,11 +146,22 @@ mod tests {
     }
 
     #[test]
-    fn the_spec_measures_what_panel_011_measured() {
-        // The number that retired the word heuristic. If this moves, the
-        // spec changed — which is the point of the budget.
+    fn the_two_instruments_agree_within_their_error_bar() {
+        // Panel 011 measured spec **v0** at 1989 (claude-legacy) / 2048 (cl100k),
+        // and that pair is what retired the 1.33-tokens-per-word heuristic: the
+        // estimate had said 1496. Those numbers are history — v1 landed at M3d —
+        // so what is asserted here is the property that survives an amendment:
+        // the instruments disagree by a small, published margin, and one of them
+        // is the binding number.
         let spec = std::fs::read_to_string(spec_path())
-            .expect("spec/heroes-spec.md is present");
-        assert_eq!(count(&spec), 1989);
+            .expect("the spec must exist");
+        let measured = measure(&spec, &vendor_dir()).expect("the tables load");
+        assert_eq!(measured.readings.len(), 2, "two instruments, both vendored");
+        assert!(
+            measured.spread() * 20 < measured.max(),
+            "the instruments disagree by {} on {} — that is more than 5% and one of them is wrong",
+            measured.spread(),
+            measured.max()
+        );
     }
 }

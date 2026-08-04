@@ -39,7 +39,7 @@ pub(super) fn keyword(text: &str) -> Option<TokenKind> {
 /// attach as a `Certain`, machine-applicable fix (design.md §4.17).
 /// Guidance-only cases (`let`, `null`, `try`…) carry no fix: guessing a
 /// repair a model would blindly apply is worse than explaining.
-pub(super) fn foreign_word(text: &str) -> Option<(&'static str, Option<&'static str>)> {
+pub(crate) fn foreign_word(text: &str) -> Option<(&'static str, Option<&'static str>)> {
     Some(match text {
         "struct" => ("`struct` is not a word in this language — use `record`: `Point = record`", Some("record")),
         "enum" => ("`enum` is not a word in this language — use `variant`: `Token = variant`", Some("variant")),
