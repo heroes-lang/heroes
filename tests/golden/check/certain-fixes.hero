@@ -6,17 +6,17 @@
 #
 # All three are the resolver's, deliberately: the stages are gated, so a case
 # mixing a name mistake with a type mistake would only ever show the first.
-Token = variant
+variant Token
     num
         v: int
     plus
 
-label_of = function: (t: Token) -> int
+function label_of(t: Token) -> int
     return match t
         .num n => 1
         .plus  => 2
 
-main = function: ()
+function main()
     total = 4
     print(totl)
     for i in range(0, 3)

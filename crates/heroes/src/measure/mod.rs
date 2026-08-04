@@ -141,7 +141,7 @@ mod tests {
 
     #[test]
     fn pretokenisation_is_lossless() {
-        let text = "main = function: ()\n    print((2 + 3) * 4)\n";
+        let text = "function main()\n    print((2 + 3) * 4)\n";
         assert_eq!(pretokenize::pretokenize(text).concat(), text);
     }
 

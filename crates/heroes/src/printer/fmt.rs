@@ -61,8 +61,8 @@ pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
     fmt.out
 }
 
-/// The line a declaration starts on. `test` and `extern` begin at their
-/// keyword, which sits before the name the tree carries.
+/// The line a declaration starts on. Since panel 018 every declaration
+/// begins at its kind keyword, which sits before the name the tree carries.
 fn decl_start(src: &Source, decl: &Decl) -> u32 {
     let _ = src;
     decl.span.start.min(decl.name.start)
@@ -144,7 +144,7 @@ impl Fmt {
         let (line, _) = src.line_col(decl.name.start);
         match &decl.kind {
             DeclKind::Constant { ty, body } => {
-                self.line(0, &format!("{name} = constant: {}", render_type(ast, *ty, src)));
+                self.line(0, &format!("constant {name}: {}", render_type(ast, *ty, src)));
                 self.last_line = line;
                 self.trailing_comment(src, comments, line);
                 self.block(ast, src, comments, body, 4);
@@ -158,14 +158,14 @@ impl Fmt {
                 }
             }
             DeclKind::Record { fields } => {
-                self.line(0, &format!("{name} = record"));
+                self.line(0, &format!("record {name}"));
                 self.last_line = line;
                 for field in fields {
                     self.field(ast, src, comments, field, 4);
                 }
             }
             DeclKind::Variant { cases } => {
-                self.line(0, &format!("{name} = variant"));
+                self.line(0, &format!("variant {name}"));
                 self.last_line = line;
                 for case in cases {
                     self.case(ast, src, comments, case);
@@ -204,23 +204,23 @@ impl Fmt {
     }
 }
 
-/// `map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]`.
+/// `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
 ///
 /// `-> ()` is never printed: a function that returns nothing writes no arrow
-/// (§4.2's `main = function: ()`), so the canonical form has one spelling.
+/// (§4.2's `function main()`), so the canonical form has one spelling.
 fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
     let mut out = String::new();
     if function.is_extern {
         out.push_str("extern ");
     }
+    out.push_str("function ");
     out.push_str(name);
-    out.push_str(" = function");
     if !function.generics.is_empty() {
         let names: Vec<&str> =
             function.generics.iter().map(|span| src.slice(*span)).collect();
         out.push_str(&format!("<{}>", names.join(", ")));
     }
-    out.push_str(": (");
+    out.push('(');
     let params: Vec<String> = function
         .params
         .iter()

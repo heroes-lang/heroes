@@ -4,10 +4,10 @@
 # does not have. The `h.cb(n)` call is the control: `cb` IS a field somewhere in
 # this file and a field can hold a function value (§4.13), so the resolver must
 # stay silent and leave it to M3c.
-Holder = record
+record Holder
     cb: (function(int) -> int)
 
-run = function: (h: Holder, n: int) -> int
+function run(h: Holder, n: int) -> int
     m: {str: int} @ {}
     m.set("a", 1)
     return h.cb(n)

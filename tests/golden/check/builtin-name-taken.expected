@@ -1,4 +1,4 @@
-tests/golden/check/builtin-name-taken.hero:7:1: error[builtin_name_taken]: `map` is a built-in of the language, so the name is taken everywhere — pick another name
-tests/golden/check/builtin-name-taken.hero:10:20: error[builtin_name_taken]: `range` is a built-in of the language, so the name is taken everywhere — pick another name
-tests/golden/check/builtin-name-taken.hero:10:32: error[builtin_name_taken]: `ok` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/builtin-name-taken.hero:7:10: error[builtin_name_taken]: `map` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/builtin-name-taken.hero:10:16: error[builtin_name_taken]: `range` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/builtin-name-taken.hero:10:28: error[builtin_name_taken]: `ok` is a built-in of the language, so the name is taken everywhere — pick another name
 tests/golden/check/builtin-name-taken.hero:11:5: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name

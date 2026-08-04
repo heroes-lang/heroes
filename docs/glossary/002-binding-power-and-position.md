@@ -77,12 +77,18 @@ positions* — turned up twice more in the same milestone.
 
 - **The terminator.** §4.15's rule is not "record and variant headers have no
   terminator". It is "a terminator is planted when the line's **last token**
-  can end a statement". `MAX = constant: int` and `test "3-4-5"` end in a
-  type name and a string, so they get one; `Point = record` ends in a keyword,
-  so it does not. Stated over constructs, the rule needs a list and the list
-  will be wrong; stated over the last token, it is one predicate
-  (`is_line_ender`) and the parser never has to ask which declaration it is
-  looking at — it skips terminators and asks only for the `Indent`.
+  can end a statement". In the pre-018 shape, `MAX = constant: int` and
+  `test "3-4-5"` ended in a type name and a string, so they got one;
+  `Point = record` ended in a keyword, so it did not. Stated over constructs,
+  the rule needs a list and the list will be wrong; stated over the last
+  token, it is one predicate (`is_line_ender`) and the parser never has to
+  ask which declaration it is looking at — it skips terminators and asks only
+  for the `Indent`. Coda, 2026-08-04: panel 018 inverted the declaration
+  shape (`record Point` — every header now ends in an ender) and the
+  position-stated rule absorbed the change with **zero lexer edits**, while
+  the construct-stated patch built on the old gap (`at_line_start`, span
+  arithmetic in recovery) was deleted outright. The lesson, demonstrated on
+  itself.
 - **The place of a mutation.** `v @ v + 1` is not recognised by lookahead at
   all, because "what may be mutated" is a property of a *position* (a name, or
   a field or index path rooted at one), not of a token. The parser reads the

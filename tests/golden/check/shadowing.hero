@@ -4,10 +4,10 @@
 # built-in. The two `for x in` loops are the control: they are SIBLINGS, not
 # nested, so reusing `x` is legal and this file must report nothing about them.
 # Java (JLS §6.4) and C# (CS0136) say the same thing in as many words.
-MAX = constant: int
+constant MAX: int
     64
 
-report = function: (n: int, xs: [int], ys: [int]) -> int
+function report(n: int, xs: [int], ys: [int]) -> int
     n = 1
     MAX = 2
     total: int @ 0

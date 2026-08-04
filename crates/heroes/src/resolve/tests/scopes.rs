@@ -8,12 +8,12 @@ use super::{assert_clean, diagnostics, scopes};
 fn declaration_order_never_matters() {
     assert_clean(
         "\
-even = function: (n: int) -> bool
+function even(n: int) -> bool
     if n == 0
         return true
     return odd(n - 1)
 
-odd = function: (n: int) -> bool
+function odd(n: int) -> bool
     if n == 0
         return false
     return even(n - 1)
@@ -26,14 +26,14 @@ fn two_declarations_of_one_name_collide() {
     assert_eq!(
         diagnostics(
             "\
-f = function: () -> int
+function f() -> int
     return 1
 
-f = function: () -> int
+function f() -> int
     return 2
 "
         ),
-        "test.hero:4:1: error[declared_twice]: `f` is already declared at line 1 — one file is one program, and a name means one thing in it\n"
+        "test.hero:4:10: error[declared_twice]: `f` is already declared at line 1 — one file is one program, and a name means one thing in it\n"
     );
 }
 
@@ -43,14 +43,14 @@ fn a_record_and_a_variant_of_the_same_name_collide() {
     assert_eq!(
         diagnostics(
             "\
-Token = record
+record Token
     x: int
 
-Token = variant
+variant Token
     plus
 "
         ),
-        "test.hero:4:1: error[declared_twice]: `Token` is already declared at line 1 — one file is one program, and a name means one thing in it\n"
+        "test.hero:4:9: error[declared_twice]: `Token` is already declared at line 1 — one file is one program, and a name means one thing in it\n"
     );
 }
 
@@ -59,9 +59,9 @@ fn a_local_may_not_shadow_an_enclosing_binding() {
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     x = 1
-    for x > 0
+    while x > 0
         x = 2
         print(x)
 "
@@ -75,7 +75,7 @@ fn a_local_may_not_shadow_a_parameter() {
     assert_eq!(
         diagnostics(
             "\
-f = function: (n: int) -> int
+function f(n: int) -> int
     n = 2
     return n
 "
@@ -91,10 +91,10 @@ fn a_local_may_not_shadow_a_top_level_declaration() {
     assert_eq!(
         diagnostics(
             "\
-MAX = constant: int
+constant MAX: int
     64
 
-main = function: ()
+function main()
     MAX = 1
     print(MAX)
 "
@@ -110,25 +110,25 @@ fn a_builtin_name_is_taken_in_every_position() {
     assert_eq!(
         diagnostics(
             "\
-len = function: () -> int
+function len() -> int
     return 1
 "
         ),
-        "test.hero:1:1: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name\n"
+        "test.hero:1:10: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name\n"
     );
     assert_eq!(
         diagnostics(
             "\
-f = function: (ok: int) -> int
+function f(ok: int) -> int
     return ok
 "
         ),
-        "test.hero:1:16: error[builtin_name_taken]: `ok` is a built-in of the language, so the name is taken everywhere — pick another name\n"
+        "test.hero:1:12: error[builtin_name_taken]: `ok` is a built-in of the language, so the name is taken everywhere — pick another name\n"
     );
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     range = 1
     print(range)
 "
@@ -144,7 +144,7 @@ main = function: ()
 fn sibling_scopes_may_reuse_a_name() {
     assert_clean(
         "\
-sum_both = function: (xs: [int], ys: [int]) -> int
+function sum_both(xs: [int], ys: [int]) -> int
     total: int @ 0
     for x in xs
         total @ total + x
@@ -163,7 +163,7 @@ sum_both = function: (xs: [int], ys: [int]) -> int
 fn a_binding_below_a_block_does_not_reach_back_into_it() {
     assert_clean(
         "\
-f = function: (flag: bool) -> int
+function f(flag: bool) -> int
     if flag
         w = 1
         print(w)
@@ -178,13 +178,13 @@ f = function: (flag: bool) -> int
 fn each_arm_is_its_own_scope() {
     assert_clean(
         "\
-Shape = variant
+variant Shape
     circle
         r: int
     square
         side: int
 
-area = function: (s: Shape) -> int
+function area(s: Shape) -> int
     return match s
         .circle n => n.r * 3
         .square n => n.side * n.side
@@ -193,13 +193,13 @@ area = function: (s: Shape) -> int
     assert_eq!(
         diagnostics(
             "\
-Shape = variant
+variant Shape
     circle
         r: int
     square
         r: int
 
-first = function: (s: Shape) -> int
+function first(s: Shape) -> int
     return match s
         .circle n | .square n => n.r
 "
@@ -214,20 +214,20 @@ fn a_type_parameter_may_not_repeat_or_take_a_taken_name() {
     assert_eq!(
         diagnostics(
             "\
-first = function<A, A>: (xs: [A]) -> A
+function first<A, A>(xs: [A]) -> A
     return xs[0]
 "
         ),
-        "test.hero:1:21: error[shadowed_binding]: `A` is already in scope, bound at line 1 — shadowing is an error here: a name means one thing for as long as it is visible\n"
+        "test.hero:1:19: error[shadowed_binding]: `A` is already in scope, bound at line 1 — shadowing is an error here: a name means one thing for as long as it is visible\n"
     );
     assert_eq!(
         diagnostics(
             "\
-first = function<int>: (xs: [int]) -> int
+function first<int>(xs: [int]) -> int
     return xs[0]
 "
         ),
-        "test.hero:1:18: error[builtin_name_taken]: `int` is a built-in of the language, so the name is taken everywhere — pick another name\n"
+        "test.hero:1:16: error[builtin_name_taken]: `int` is a built-in of the language, so the name is taken everywhere — pick another name\n"
     );
 }
 
@@ -238,7 +238,7 @@ fn the_dump_shows_the_table_and_the_nesting() {
     assert_eq!(
         scopes(
             "\
-main = function: (xs: [int])
+function main(xs: [int])
     total: int @ 0
     for x in xs
         total @ total + x

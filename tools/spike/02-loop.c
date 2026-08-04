@@ -9,7 +9,7 @@
  *
  * Heroes source:
  *
- *     main = function: ()
+ *     function main()
  *         i: int @ 0
  *         total: int @ 0
  *         for i < 5

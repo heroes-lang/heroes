@@ -12,12 +12,14 @@
 //! | `recover_to_next_decl` | the line end, then the block that hung off it |
 //! | `recover_past_closer` | the bracket that matches the one consumed |
 //!
-//! The subtle one is `at_line_start`, and it exists because of panel 007: a
-//! line ending in `record` or `variant` gets **no terminator**, so a line
-//! boundary can be invisible in the token stream. Spans see it anyway.
+//! There used to be a subtle fifth move here — `at_line_start`, span
+//! arithmetic to see the line boundary panel 007's rule made invisible
+//! after `Point = record`. The keyword-first shape (panel 018) retired it:
+//! every header now ends in a token that can end a statement, so the
+//! Terminator is always in the stream and tokens carry the answer.
 
 use crate::lexer::TokenKind;
-use crate::source::{Source, Span};
+use crate::source::Span;
 
 use super::cursor::Cursor;
 
@@ -65,18 +67,23 @@ impl Cursor {
     /// if it had one, its whole body. One bad declaration must cost one
     /// diagnostic, not one per line inside it — and, just as importantly,
     /// must not cost the *next* declaration.
-    pub(super) fn recover_to_next_decl(&mut self, src: &Source) {
-        if self.at_line_start(src) {
-            // Nothing left of the broken line. A block still goes with it:
-            // it belonged to the declaration that failed.
-            if self.at(TokenKind::Indent) {
-                self.balanced_block();
-            }
-            return;
-        }
-        while !self.at(TokenKind::Eof) && !self.at(TokenKind::Indent) {
-            if self.bump().kind == TokenKind::Terminator {
-                break;
+    pub(super) fn recover_to_next_decl(&mut self) {
+        // Since panel 018 every header line ends in a token that can end a
+        // statement, so a Terminator (or a layout token) behind the cursor
+        // means a fresh line: nothing is left of the broken declaration but
+        // a possible orphaned block. This used to need span arithmetic
+        // (`at_line_start`, panel 007) when `Point = record` ended in a
+        // non-ender; the keyword-first shape made the token stream carry it.
+        let at_line_start = self.pos == 0
+            || matches!(
+                self.tokens[self.pos - 1].kind,
+                TokenKind::Terminator | TokenKind::Indent | TokenKind::Dedent
+            );
+        if !at_line_start {
+            while !self.at(TokenKind::Eof) && !self.at(TokenKind::Indent) {
+                if self.bump().kind == TokenKind::Terminator {
+                    break;
+                }
             }
         }
         if self.at(TokenKind::Indent) {
@@ -107,18 +114,4 @@ impl Cursor {
         }
     }
 
-    /// True when the current token opens a new source line.
-    ///
-    /// Spans decide it, not tokens, because a line ending in `record` or
-    /// `variant` gets no terminator at all (panel 007: those words cannot
-    /// end a statement). Without this, `Point = record` with its fields
-    /// forgotten would swallow the declaration written below it — one
-    /// mistake, two casualties.
-    fn at_line_start(&self, src: &Source) -> bool {
-        if self.pos == 0 {
-            return true;
-        }
-        let previous = self.tokens[self.pos - 1];
-        src.line_col(previous.span.end).0 != src.line_col(self.span().start).0
-    }
 }

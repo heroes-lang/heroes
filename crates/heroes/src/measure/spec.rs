@@ -6,7 +6,7 @@
 //! shipped one for four milestones: panel 013 ratified `(function(A) -> B)` while
 //! the spec still said `(fn(A) -> B)`, which is a *reserved-word error* in every
 //! position. §4.20's inventory listed `sort` and the int-to-string conversion; the
-//! spec listed neither, so `sort = function:` was spec-legal and
+//! spec listed neither, so a `function sort(...)` was spec-legal and
 //! resolver-rejected.
 //!
 //! These tests are the mechanism that makes that class of defect loud. They do

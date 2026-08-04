@@ -7,11 +7,11 @@ fn a_record_field_is_read_by_name() {
     assert_eq!(
         type_of_last(
             "\
-Point = record
+record Point
     x: int
     y: f64
 
-f = function: (p: Point) -> f64
+function f(p: Point) -> f64
     return p.y
 "
         ),
@@ -20,11 +20,11 @@ f = function: (p: Point) -> f64
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
     y: int
 
-f = function: (p: Point) -> int
+function f(p: Point) -> int
     return p.z
 "
         ),
@@ -39,13 +39,13 @@ fn two_records_with_the_same_fields_are_different_types() {
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
 
-Size = record
+record Size
     x: int
 
-f = function: (p: Point) -> Size
+function f(p: Point) -> Size
     return p
 "
         ),
@@ -59,13 +59,13 @@ f = function: (p: Point) -> Size
 fn a_payload_binding_has_the_case_type() {
     assert_clean(
         "\
-Shape = variant
+variant Shape
     circle
         r: int
     square
         side: int
 
-area = function: (s: Shape) -> int
+function area(s: Shape) -> int
     return match s
         .circle c => c.r * 3
         .square q => q.side * q.side
@@ -74,13 +74,13 @@ area = function: (s: Shape) -> int
     assert_eq!(
         diagnostics(
             "\
-Shape = variant
+variant Shape
     circle
         r: int
     square
         side: int
 
-area = function: (s: Shape) -> int
+function area(s: Shape) -> int
     return match s
         .circle c => c.side
         .square q => q.side
@@ -95,11 +95,11 @@ fn a_variants_fields_are_reached_through_match() {
     assert_eq!(
         diagnostics(
             "\
-Shape = variant
+variant Shape
     circle
         r: int
 
-f = function: (s: Shape) -> int
+function f(s: Shape) -> int
     return s.r
 "
         ),
@@ -113,13 +113,13 @@ fn a_match_over_a_variant_is_exhaustive_or_names_what_is_missing() {
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
     plus
     times
 
-f = function: (t: Token) -> int
+function f(t: Token) -> int
     return match t
         .num n => n.v
 "
@@ -135,12 +135,12 @@ fn a_wildcard_arm_is_forbidden_on_a_variant() {
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
     plus
 
-f = function: (t: Token) -> int
+function f(t: Token) -> int
     return match t
         .num n => n.v
         _      => 0
@@ -156,7 +156,7 @@ f = function: (t: Token) -> int
 fn matching_an_int_needs_a_wildcard() {
     assert_clean(
         "\
-f = function: (n: int) -> str
+function f(n: int) -> str
     return match n
         0 => \"zero\"
         1 => \"one\"
@@ -166,7 +166,7 @@ f = function: (n: int) -> str
     assert_eq!(
         diagnostics(
             "\
-f = function: (n: int) -> str
+function f(n: int) -> str
     return match n
         0 => \"zero\"
         1 => \"one\"
@@ -181,12 +181,12 @@ fn an_unknown_case_lists_the_ones_that_exist() {
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
     plus
 
-f = function: (t: Token) -> int
+function f(t: Token) -> int
     return match t
         .num n  => n.v
         .plus   => 0
@@ -202,12 +202,12 @@ fn a_case_covered_twice_is_reported() {
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
     plus
 
-f = function: (t: Token) -> int
+function f(t: Token) -> int
     return match t
         .num n => n.v
         .plus  => 0
@@ -225,7 +225,7 @@ fn a_literal_arm_matches_the_subjects_type() {
     assert_eq!(
         diagnostics(
             "\
-f = function: (n: int) -> int
+function f(n: int) -> int
     return match n
         \"zero\" => 0
         _      => 1
@@ -240,26 +240,26 @@ f = function: (n: int) -> int
 fn a_case_is_constructed_against_the_expected_type() {
     assert_clean(
         "\
-Token = variant
+variant Token
     num
         v: int
     plus
 
-make = function: (n: int) -> Token
+function make(n: int) -> Token
     return .num(v: n)
 
-plus_token = function: () -> Token
+function plus_token() -> Token
     return .plus
 ",
     );
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
 
-make = function: (n: int) -> Token
+function make(n: int) -> Token
     return .num(value: n)
 "
         ),
@@ -268,11 +268,11 @@ make = function: (n: int) -> Token
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
 
-make = function: (n: int) -> int
+function make(n: int) -> int
     return .num(v: n)
 "
         ),
@@ -287,10 +287,10 @@ fn a_case_with_no_expectation_says_what_is_missing() {
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     plus
 
-main = function: ()
+function main()
     t = .plus
     print(t == .plus)
 "
@@ -305,11 +305,11 @@ main = function: ()
 fn equality_gives_a_case_its_type() {
     assert_clean(
         "\
-Token = variant
+variant Token
     plus
     times
 
-is_plus = function: (t: Token) -> bool
+function is_plus(t: Token) -> bool
     return t == .plus
 ",
     );

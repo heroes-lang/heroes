@@ -12,7 +12,7 @@ fn a_binding_nobody_reads_is_an_error() {
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     x = 1
     print(2)
 "
@@ -28,7 +28,7 @@ fn a_cell_that_is_written_and_never_read_is_unused() {
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     total: int @ 0
     total @ 1
     print(2)
@@ -46,7 +46,7 @@ fn the_initialiser_is_not_a_write() {
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     total: int @ 0
     print(2)
 "
@@ -63,10 +63,10 @@ fn a_field_write_is_a_write_and_not_a_read() {
     assert_eq!(
         diagnostics(
             "\
-Counter = record
+record Counter
     n: int
 
-main = function: ()
+function main()
     c: Counter @ Counter(n: 0)
     c.n @ 1
     print(2)
@@ -82,11 +82,11 @@ fn a_parameter_nobody_reads_is_an_error() {
     assert_eq!(
         diagnostics(
             "\
-f = function: (a: int, b: int) -> int
+function f(a: int, b: int) -> int
     return a
 "
         ),
-        "test.hero:1:24: error[unused_binding]: the parameter `b` is never read — remove it from the signature, or write `???` in the body while the function is unfinished\n"
+        "test.hero:1:20: error[unused_binding]: the parameter `b` is never read — remove it from the signature, or write `???` in the body while the function is unfinished\n"
     );
 }
 
@@ -97,7 +97,7 @@ f = function: (a: int, b: int) -> int
 fn a_write_through_a_mutable_parameter_is_a_use() {
     assert_clean(
         "\
-reset = function: (@counts: {str: int})
+function reset(@counts: {str: int})
     counts @ {}
 ",
     );
@@ -107,7 +107,7 @@ reset = function: (@counts: {str: int})
 /// ffi-pragmatist's condition: a 40-extern binding file must compile.
 #[test]
 fn an_extern_parameter_is_never_unused() {
-    assert_clean("extern sqrt = function: (x: f64) -> f64\n");
+    assert_clean("extern function sqrt(x: f64) -> f64\n");
 }
 
 /// `_` is the escape valve, and every language that enforces an unused rule
@@ -117,10 +117,10 @@ fn an_extern_parameter_is_never_unused() {
 fn the_wildcard_binds_nothing_anywhere() {
     assert_clean(
         "\
-render = function: (page: str, _: int, _: bool) -> str
+function render(page: str, _: int, _: bool) -> str
     return page
 
-main = function: ()
+function main()
     for _ in range(0, 3)
         print(\"tick\")
 ",
@@ -133,7 +133,7 @@ main = function: ()
 fn a_loop_variable_and_a_payload_offer_a_certain_rename() {
     let (out, _) = resolved(
         "\
-main = function: ()
+function main()
     for i in range(0, 3)
         print(\"tick\")
 ",
@@ -145,12 +145,12 @@ main = function: ()
 
     let (payload, _) = resolved(
         "\
-Token = variant
+variant Token
     num
         v: int
     plus
 
-describe = function: (t: Token) -> int
+function describe(t: Token) -> int
     return match t
         .num n => 1
         .plus => 2
@@ -167,11 +167,11 @@ describe = function: (t: Token) -> int
 fn one_hole_anywhere_suspends_the_rule_for_the_whole_file() {
     assert_clean(
         "\
-f = function: (a: int, b: int) -> int
+function f(a: int, b: int) -> int
     unused = 1
     return a
 
-simplify = function: (e: int) -> int
+function simplify(e: int) -> int
     ???
 ",
     );
@@ -184,12 +184,12 @@ fn a_hole_suspends_nothing_but_the_unused_rule() {
     assert_eq!(
         diagnostics(
             "\
-f = function: (a: int) -> int
+function f(a: int) -> int
     x = 1
     print(nope)
     return a
 
-g = function: () -> int
+function g() -> int
     ???
 "
         ),
@@ -203,10 +203,10 @@ g = function: () -> int
 fn an_uncalled_declaration_is_not_unused() {
     assert_clean(
         "\
-helper = function: () -> int
+function helper() -> int
     return 1
 
-main = function: ()
+function main()
     print(2)
 ",
     );

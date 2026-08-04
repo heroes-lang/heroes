@@ -187,8 +187,13 @@ resolution.
   `.*:\s*$`; under F the pattern must be keyword-anchored (today's already
   misses function headers).
 
-## Author's verdict
+## Author's verdict — RATIFIED 2026-08-04
 
-*(pending — the choice: ratify the candidate core now with E or F chosen,
-ratify core-with-F-default and let the first metric-2 run settle the colon,
-or leave A standing. B and C stay rejected under all.)*
+Option 2, by author instruction ("vai 2 e implementa tutto"): **the candidate
+core is adopted with the F default** — keyword-first declarations without
+`=`, the parameter list attached to the name, bare headers, and the
+`while`/`for` split. The E-vs-F colon question stays open exactly as
+pre-registered: the first metric-2 run measures colon-insertion under F
+against the recorded E predictions, and the flip conditions above govern.
+The sweep lands in this worktree branch (author: "continua finché tutti i
+file del progetto hanno recepito la nuova sintassi F").

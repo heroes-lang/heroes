@@ -4,10 +4,10 @@
 # call site, there are no mutable globals, and a loop variable is bound afresh
 # per element. Every name here is read as well as written, so each mistake
 # produces exactly one diagnostic.
-MAX = constant: int
+constant MAX: int
     64
 
-main = function: (n: int, xs: [int])
+function main(n: int, xs: [int])
     x = 1
     x @ 2
     print(x)

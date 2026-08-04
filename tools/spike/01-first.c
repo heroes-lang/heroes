@@ -2,7 +2,7 @@
  *
  * Heroes source this C corresponds to (examples/first.hero):
  *
- *     main = function: ()
+ *     function main()
  *         print((2 + 3) * 4)
  *
  * This file defines the SHAPE of what the emitter must produce, before the

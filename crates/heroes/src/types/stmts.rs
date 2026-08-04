@@ -186,7 +186,7 @@ pub(super) fn statement(
             if got != bool_ty && !checker.out.types.poisoned(got) {
                 let shown = checker.show(ast, src, got);
                 let at = ast.exprs[cond.0 as usize].span;
-                let diagnostic = errors::not_bool("a `for` condition", &shown, at);
+                let diagnostic = errors::not_bool("a `while` condition", &shown, at);
                 checker.push_diagnostic(diagnostic);
             }
             checker.loops += 1;

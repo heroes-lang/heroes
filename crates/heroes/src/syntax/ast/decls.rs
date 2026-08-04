@@ -22,12 +22,12 @@ pub struct Decl {
 }
 
 pub enum DeclKind {
-    /// `MAX = constant: int` + body (§4.2).
+    /// `constant MAX: int` + body (§4.2).
     Constant { ty: TypeId, body: Block },
     Function(Function),
-    /// `Point = record` + one field per line.
+    /// `record Point` + one field per line.
     Record { fields: Vec<Field> },
-    /// `Token = variant` + one case per line, each optionally with fields.
+    /// `variant Token` + one case per line, each optionally with fields.
     Variant { cases: Vec<Case> },
     /// `test "3-4-5 triangle"` + body (§4.18). `name` holds the string
     /// literal, quotes included — it is the test's title, not an identifier.
@@ -35,8 +35,8 @@ pub enum DeclKind {
 }
 
 pub struct Function {
-    /// `function<A, B>:` — type parameters, no constraints, always inferred
-    /// at the call site (§4.12).
+    /// `function map<A, B>(…)` — type parameters, no constraints, always
+    /// inferred at the call site (§4.12).
     pub generics: Vec<Span>,
     pub params: Vec<Param>,
     /// The declared result. A signature without `->` gets a `Unit` node, so

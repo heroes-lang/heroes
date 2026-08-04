@@ -97,7 +97,7 @@ impl Fmt {
                 self.valued(ast, src, comments, &format!("{head}assert "), *value, indent)
             }
             StmtKind::While { cond, block } => {
-                self.line(indent, &format!("{head}for {}", render(ast, src, *cond)));
+                self.line(indent, &format!("{head}while {}", render(ast, src, *cond)));
                 self.last_line = src.line_col(ast.exprs[cond.0 as usize].span.end).0;
                 self.block(ast, src, comments, block, indent + 4);
             }

@@ -72,8 +72,8 @@ impl Cursor {
 
     /// The kind `ahead` significant tokens on. Comments are skipped here too,
     /// so lookahead sees what the grammar sees. Two places need it: telling
-    /// `name: value` from a bare argument, and telling `for x in xs` from
-    /// `for cond`.
+    /// `name: value` from a bare argument, and telling `for x in xs` from a
+    /// condition mistakenly written after `for` (the `while` repair).
     pub(super) fn peek(&self, ahead: usize) -> TokenKind {
         let mut left = ahead;
         let mut at = self.pos;

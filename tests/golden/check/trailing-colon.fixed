@@ -1,0 +1,11 @@
+# Adversarial case (panel 018). # UNVERIFIED — pending debrief.
+# Guards the Python suite colon — the slip the blind experiment pre-registered
+# above every other (12-18% of files). It must be loud on every block header,
+# and the fix is certain: a `:` is never legal at a block boundary, so
+# dropping it can never repair the wrong program.
+record Point
+    x: int
+    y: int
+
+function double(n: int) -> int
+    return n * 2

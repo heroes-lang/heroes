@@ -146,7 +146,7 @@ basic blocks. Named-arg check ordered before monomorphisation.
 constructs, before this lands.)
 
 ### M5 — split around the two passes
-- **M5a — Scalars run:** `int`/`bool`/`if`/`for cond`/functions/`print` →
+- **M5a — Scalars run:** `int`/`bool`/`if`/`while cond`/functions/`print` →
   C → binary. Decl-ordering pass + mangler + `#line`-on-change + `-Werror`
   set + `hero_unreachable`. **Double-emit determinism test lands here and
   stays green forever.** Compare with spike 01. Celebrate.

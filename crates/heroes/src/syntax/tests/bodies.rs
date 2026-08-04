@@ -10,7 +10,7 @@ use super::dump;
 /// One statement in `main`, dumped. Keeps the tests about the line under
 /// test instead of about the wrapper.
 fn stmt(text: &str) -> String {
-    let dumped = dump(&format!("main = function: ()\n    {text}\n"));
+    let dumped = dump(&format!("function main()\n    {text}\n"));
     dumped
         .strip_prefix("file test.hero\n  function main() -> ()\n")
         .unwrap_or(&dumped)
@@ -32,7 +32,7 @@ fn arithmetic_is_left_associative() {
 }
 
 /// Comparisons sit *above* `&&`, so a compound condition needs no
-/// parentheses — the property that makes `for a < b && c < d` readable.
+/// parentheses — the property that makes `while a < b && c < d` readable.
 #[test]
 fn comparison_binds_tighter_than_and_which_binds_tighter_than_or() {
     assert_eq!(
@@ -104,7 +104,7 @@ fn containers_and_the_leading_dot_variant() {
 #[test]
 fn a_multi_line_list_separates_by_newline() {
     assert_eq!(
-        dump("main = function: ()\n    cases = [\n        \"a\"\n        \"b\"\n    ]\n"),
+        dump("function main()\n    cases = [\n        \"a\"\n        \"b\"\n    ]\n"),
         "\
 file test.hero
   function main() -> ()
@@ -150,21 +150,22 @@ fn return_break_continue_and_assert() {
 
 // --- control flow ------------------------------------------------------
 
-/// One keyword, two loops (§4.7). `in` is the only difference the parser
-/// needs to see.
+/// Two loops, two keywords (§4.7; panel 018 split the condition loop out of
+/// the old two-grammar `for`): `while` takes the condition, `for … in` takes
+/// the iteration.
 #[test]
-fn both_loops_are_for() {
+fn while_takes_the_condition_and_for_the_iteration() {
     assert_eq!(
-        dump("main = function: ()\n    for i < 3\n        print(i)\n"),
+        dump("function main()\n    while i < 3\n        print(i)\n"),
         "\
 file test.hero
   function main() -> ()
-    for (i < 3)
+    while (i < 3)
       expr print(i)
 "
     );
     assert_eq!(
-        dump("main = function: ()\n    for x in xs\n        print(x)\n"),
+        dump("function main()\n    for x in xs\n        print(x)\n"),
         "\
 file test.hero
   function main() -> ()
@@ -174,12 +175,47 @@ file test.hero
     );
 }
 
+/// The autopilot mistake the split predicts: a condition after `for`. One
+/// diagnostic carrying the `while` fix, and the body is still parsed as the
+/// condition loop it was meant to be. The fix is Certain only when no loop
+/// variable can be present (`for !done` — no for-in produces that line); a
+/// condition that *starts* with a name (`for i < 3`) gets the same fix as a
+/// Guess, because `for i of xs` reaches the identical parse state.
+#[test]
+fn a_condition_after_for_is_repaired_to_while() {
+    assert_eq!(
+        dump("function main()\n    for !done\n        print(1)\n"),
+        "\
+file test.hero
+  function main() -> ()
+    while (!done)
+      expr print(1)
+DIAG test.hero:2:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `!` — a loop over a condition is `while`
+"
+    );
+    let certain = crate::source::Source::new(
+        "test.hero".to_string(),
+        "function main()\n    for !done\n        print(1)\n".to_string(),
+    );
+    let out = crate::syntax::parse(&certain);
+    assert_eq!(out.diagnostics[0].fixes[0].replacement, "while");
+    assert!(matches!(out.diagnostics[0].fixes[0].certainty, crate::diagnostics::Certainty::Certain));
+    let guess = crate::source::Source::new(
+        "test.hero".to_string(),
+        "function main()\n    for i < 3\n        print(i)\n".to_string(),
+    );
+    let out = crate::syntax::parse(&guess);
+    assert_eq!(out.diagnostics[0].code, "for_missing_in");
+    assert_eq!(out.diagnostics[0].fixes[0].replacement, "while");
+    assert!(matches!(out.diagnostics[0].fixes[0].certainty, crate::diagnostics::Certainty::Guess));
+}
+
 #[test]
 fn if_else_if_else_is_one_expression() {
     assert_eq!(
         dump(
             "\
-main = function: ()
+function main()
     if c == ' '
         advance(@l)
     else if c == '+'
@@ -206,7 +242,7 @@ file test.hero
 #[test]
 fn an_if_can_be_a_value() {
     assert_eq!(
-        dump("main = function: ()\n    state = if t.done\n        \"[x]\"\n    else\n        \"[ ]\"\n"),
+        dump("function main()\n    state = if t.done\n        \"[x]\"\n    else\n        \"[ ]\"\n"),
         "\
 file test.hero
   function main() -> ()
@@ -229,7 +265,7 @@ fn match_arms_carry_patterns_and_bodies() {
     assert_eq!(
         dump(
             "\
-factor = function: (t: Token) -> int
+function factor(t: Token) -> int
     return match t
         .num n                   => n.v
         .name _                  => 0
@@ -258,7 +294,7 @@ fn match_can_stand_as_a_statement() {
     assert_eq!(
         dump(
             "\
-main = function: ()
+function main()
     match calculate(c, env)
         .ok v  => print(v)
         .err e => print(e.code)
@@ -279,7 +315,7 @@ file test.hero
 #[test]
 fn a_wildcard_arm_is_recorded_not_judged() {
     assert_eq!(
-        dump("f = function: (n: int) -> int\n    return match n\n        0 => 1\n        _ => 2\n"),
+        dump("function f(n: int) -> int\n    return match n\n        0 => 1\n        _ => 2\n"),
         "\
 file test.hero
   function f(n: int) -> int
@@ -339,7 +375,7 @@ fn a_mutable_marker_where_a_colon_belongs_is_repaired() {
 #[test]
 fn a_declaration_is_not_an_arm_body() {
     assert_eq!(
-        dump("f = function: (k: int) -> int\n    return match k\n        0 => x = 5\n        _ => 1\n"),
+        dump("function f(k: int) -> int\n    return match k\n        0 => x = 5\n        _ => 1\n"),
         "\
 file test.hero
   function f(k: int) -> int
@@ -356,7 +392,7 @@ DIAG test.hero:3:14: error[declaration_in_arm]: an arm's body may not declare a 
 #[test]
 fn a_mutation_is_still_a_legal_arm_body() {
     assert_eq!(
-        dump("f = function: (k: int)\n    v: int @ 0\n    match k\n        0 => v @ 1\n        _ => print(v)\n"),
+        dump("function f(k: int)\n    v: int @ 0\n    match k\n        0 => v @ 1\n        _ => print(v)\n"),
         "\
 file test.hero
   function f(k: int) -> ()

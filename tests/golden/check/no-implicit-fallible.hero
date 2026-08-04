@@ -7,11 +7,11 @@
 #
 # The third function guards the other half of §4.6: a `?` needs a caller that
 # can fail.
-half = function: (n: int) -> int?
+function half(n: int) -> int?
     return n
 
-unwrapped = function: (n: int) -> int?
+function unwrapped(n: int) -> int?
     return ok(n).must()
 
-forgotten = function: (n: int) -> int
+function forgotten(n: int) -> int
     return half(n)?

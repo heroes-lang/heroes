@@ -22,7 +22,7 @@
     ["'", "'"]
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(.*(function|record|variant|match)\\s*$|(if|else if|else|for|test)\\b.*$|.*=>\\s*$)",
+    "increaseIndentPattern": "^\\s*((constant|function|record|variant|test|extern|if|else if|else|for|while|match)\\b.*$|.*=>\\s*$)",
     "decreaseIndentPattern": "^\\s*(else|else if)\\b"
   },
   "onEnterRules": [

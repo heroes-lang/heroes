@@ -7,15 +7,15 @@ use super::{assert_clean, diagnostics};
 fn a_cell_and_a_mutable_parameter_may_be_written() {
     assert_clean(
         "\
-Lex = record
+record Lex
     pos: int
 
-advance = function: (@l: Lex)
+function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-count = function: (n: int) -> int
+function count(n: int) -> int
     total: int @ 0
-    for total < n
+    while total < n
         total @ total + 1
     return total
 ",
@@ -29,7 +29,7 @@ fn an_immutable_binding_cannot_be_written() {
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     x = 1
     x @ 2
     print(x)
@@ -46,7 +46,7 @@ fn a_parameter_without_the_marker_cannot_be_written() {
     assert_eq!(
         diagnostics(
             "\
-bump = function: (n: int) -> int
+function bump(n: int) -> int
     n @ n + 1
     return n
 "
@@ -60,7 +60,7 @@ fn a_loop_variable_is_bound_afresh_and_is_not_a_cell() {
     assert_eq!(
         diagnostics(
             "\
-main = function: (xs: [int])
+function main(xs: [int])
     for x in xs
         x @ x + 1
 "
@@ -74,10 +74,10 @@ fn there_are_no_mutable_globals() {
     assert_eq!(
         diagnostics(
             "\
-MAX = constant: int
+constant MAX: int
     64
 
-main = function: ()
+function main()
     MAX @ 1
     print(MAX)
 "
@@ -91,7 +91,7 @@ main = function: ()
 fn the_index_of_an_element_write_is_a_read() {
     assert_clean(
         "\
-main = function: (n: int)
+function main(n: int)
     xs: [int] @ [0, 0]
     i = n
     xs[i] @ 1
@@ -107,7 +107,7 @@ fn a_typo_on_the_left_of_a_mutation_is_an_unknown_name() {
     assert_eq!(
         diagnostics(
             "\
-sum = function: (xs: [int]) -> int
+function sum(xs: [int]) -> int
     total: int @ 0
     for x in xs
         totl @ total + x

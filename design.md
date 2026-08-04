@@ -134,7 +134,7 @@ runtime tier (§4.20 Tier 1 vs plain externs).
 **The closure list** (what writing this compiler in Heroes requires): `record` · `variant` +
 exhaustive `match` · `[T]` · `{K: V}` (insertion order, panel 006) · `str` · `int` ·
 `bool` · `()` · `T?` with `?`/`.must()`/`.default()` · `=`/`@` bindings · `@` parameters ·
-`if`/`else if`/`else` · `for cond` / `for x in xs` (including over maps) / `break`/`continue` ·
+`if`/`else if`/`else` · `while cond` / `for x in xs` (including over maps) / `break`/`continue` ·
 `return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
 `exit(code)` · modules. Library closure: `print`, `len`, `push`, `slice`, `chars`, `has`, `sort`,
 `join`/`Builder`, `to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
@@ -601,34 +601,35 @@ name = entity: type
   ecosystem scale, and it saves a form from the budget.
 - `##` is a section heading — reads as both "comment plus markdown h2" and, visually, as a heading.
 - The compiler reuses doc comments in `???` output, in error messages, and in `outline`.
-- Entry point: `main = function: ()`.
+- Entry point: `function main()`.
 
 ### 4.2 The four entities
 
-Everything at top level is a **named entity**. One form:
+Everything at top level starts with its **kind**. One form (panel 018):
 
 ```
-NAME = entity: type
+kind NAME …
     body
 ```
 
-`constant` and `function` have a type (the type of the value being declared), so they take `:`.
-`record` and `variant` *are* type definitions rather than values, so they take no `:`.
+`constant` declares a value, so its name takes `: type`; a `function`'s parameter list attaches
+directly to its name, as at the call site (`function dist2(a: Point, b: Point) -> int`).
+`record` and `variant` *are* type definitions rather than values, so nothing follows the name.
 
 ```
-MAX_DEPTH = constant: int
+constant MAX_DEPTH: int
     64
 
-dist2 = function: (a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> int
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy
 
-Point = record
+record Point
     x: int
     y: int
 
-Token = variant
+variant Token
     num
         v: int
     name
@@ -649,6 +650,21 @@ for functions. Four shapes. The entity form makes it genuinely one shape, and bu
    surface syntax, not just in the theory.
 2. **`=` and `@` separate cleanly**, which *deletes* a rule rather than adding one. See 4.4.
 3. One shape means less spec and less hesitation.
+
+**Rationale for the keyword-first shape** (panel 018 — the `name = entity` iteration between the
+two). The `=` iteration had litigated only what *follows* the keyword; which side of `=` the keyword
+sits on was a first visit, and the evidence all pointed one way. `name = entity` made `=` carry two
+productions, left `test "…"` and `extern` outside the shape, and kept two headers ending in
+non-enders (the panel-007 terminator patch existed only for them). Keyword-first with the parameter
+list attached to the name (`function dist2(a: Point, b: Point) -> int`) deletes three compiler
+special cases, keeps `=` mono-semantic ("binds once, forever" is now globally true), unifies all six
+top-level heads, measures −8 spec tokens, won the blind experiment (pre-registered 55% vs 45%
+whole-file first-try), and is the Pascal→Go→Carbon mainline — while `keyword = name` is attested in
+zero of seventeen shipped languages checked. `=` at top level is gone entirely: a declaration is not
+a binding, and the surface stops claiming it is (this also retires §4.13's old complaint that
+`dist2 = function: …` said "dist2 *is* a value you can pass"). The Python suite colon stays out
+(E-vs-F, pre-registered both ways, first metric-2 run is the tiebreaker) but is caught with a
+`Certain` fix, since it is the top predicted slip of the colon-less shape.
 
 **Rationale for the vocabulary.** `record` and `variant` are a matched pair from the same tradition —
 product and sum, the two ways types compose — from Pascal's *variant record*, carried into ML, and
@@ -834,7 +850,7 @@ negation.
 A `T?` is a built-in variant with two cases, `ok` and `err`:
 
 ```
-find = function: (xs: [int], target: int) -> int?
+function find(xs: [int], target: int) -> int?
     for i in range(0, xs.len())
         if xs[i] == target
             return i
@@ -948,10 +964,12 @@ else
     "[ ]"
 ```
 
-**One loop keyword, two forms:**
+**Two loops, two words** (panel 018 — one keyword with two grammars was the same sin the entity
+form fixed, and the old `for cond` sat on no prior while `while` sits on all of them; the `while`
+trap left the registry and became a parser-position `Certain` fix on `for` without `in`):
 
 ```
-for cond
+while cond
     ...
 
 for x in xs
@@ -974,12 +992,12 @@ second negation form when `if !x` exists.
 ### 4.8 Mutable parameters: `@`
 
 ```
-advance = function: (@l: Lex)
+function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-read_number = function: (@l: Lex) -> int
+function read_number(@l: Lex) -> int
     v: int @ 0
-    for !l.at_end() && l.here().is_digit()
+    while !l.at_end() && l.here().is_digit()
         v @ v * 10 + (l.here() - '0')
         advance(@l)
     return v
@@ -1073,8 +1091,8 @@ m = { "mario": 30, "anna": 25 }
 **Named arguments become mandatory when two parameters in a signature share a type:**
 
 ```
-copy = function: (from: str, to: str) -> bool
-save = function: (id: int, name: str) -> bool
+function copy(from: str, to: str) -> bool
+function save(id: int, name: str) -> bool
 
 copy(from: "/tmp/x", to: "/tmp/y")    # mandatory
 save(42, "mario")                      # free: int and str can't be confused
@@ -1134,7 +1152,7 @@ there is one rule instead of two.
 **Consequence for recursive types.** A tree is expressed as:
 
 ```
-Expr = variant
+variant Expr
     num
         v: int
     sum
@@ -1201,7 +1219,7 @@ feature.
 **Functions only, no constraints, always inferred, implemented by monomorphisation.**
 
 ```
-map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
+function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
     for x in xs
         out @ out.push(f(x))
@@ -1238,14 +1256,16 @@ containers covered most needs. That covers ~90% of real generic use here too.
 
 ### 4.13 Functions as values
 
-There is a lie in the current syntax: `dist2 = function: ...` says "dist2 *is* a function", but you
-cannot pass it anywhere. The surface says value, the semantics says otherwise.
+There *was* a lie in the pre-018 syntax: `dist2 = function: ...` said "dist2 *is* a function" —
+surface says value — while nothing function-shaped could be passed. Panel 018's keyword-first form
+retired the lie (`function dist2(…)` claims nothing about value-ness), and the semantic question
+underneath it remains this section's, unchanged:
 
 **Functions that capture nothing are values.** A top-level function passed as an argument is just a
 pointer — no environment to allocate, no refcounting interaction.
 
 ```
-plus = function: (a: int, b: int) -> int
+function plus(a: int, b: int) -> int
     return a + b
 
 total = values.fold(0, plus)
@@ -1369,7 +1389,7 @@ invents:**
 there.
 
 ```
-centroid = function: (ps: [Point]) -> Point
+function centroid(ps: [Point]) -> Point
     sx: int @ 0
     for p in ps
         ???
@@ -1441,7 +1461,7 @@ error: incompatible types
 
   user.id has type str
   defined at line 4:
-      User = record
+      record User
           id: str
           name: str
 
@@ -1476,7 +1496,7 @@ anyone.
   is `struct`/`enum`/`fn`/`let`/`var`/`function` used wrongly:
   ```
   error: `struct` is not a word in this language
-    use `record`:  Point = record
+    use `record`:  record Point
   ```
   Loud failure with the solution pre-written. Five lines of code each.
 - `@name` in prefix position is a **syntax error, always** — so a model carrying a Python/Ruby prior
@@ -1491,7 +1511,7 @@ anyone.
 ignores them entirely.
 
 ```
-dist2 = function: (a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> int
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy
@@ -1537,8 +1557,8 @@ The backend emits C (§3.1), so an `extern` declaration is Nim's `importc` desig
 plus the header it comes from, no external tool, no libclang, no generated binding files:
 
 ```
-extern sqlite3_open = function: (path: cstr, out: ptr) -> int      # header "sqlite3.h"
-extern sqlite3_close = function: (db: ptr) -> int                  # header "sqlite3.h"
+extern function sqlite3_open(path: cstr, out: ptr) -> int      # header "sqlite3.h"
+extern function sqlite3_close(db: ptr) -> int                  # header "sqlite3.h"
 ```
 
 (The exact header-attachment syntax is fixed at the FFI milestone; the mechanism is decided.) The
@@ -1673,7 +1693,7 @@ Two passes sit between type checking and emission, and they are **core obligatio
 | Sugar | Reduces to |
 |---|---|
 | `if` / `else if` / `else` | `match` on `bool` |
-| `for x in xs` | `for cond` with an index |
+| `for x in xs` | `while cond` with an index |
 | `?` | `match` plus early `return` |
 | `.must()`, `.default()`, `.is_err()` | `match` |
 | `T?` | a built-in variant with `ok` / `err` |
@@ -1787,11 +1807,12 @@ are *on* the closure list.
 Do not hide these. Each was noticed by writing real programs in the language, and each was left
 visible rather than patched with a second form.
 
-1. **The entity form is disproportionate on tiny functions.** `is_digit = function: (c: int) ->
-   bool` is a header longer than its body, and a realistic file has nine of these. On a real function
-   like `tokenize` the proportion is right; on a one-line predicate it is not. This is the single
-   biggest aesthetic cost of the uniform form, and it is also the strongest argument for pulling
-   closures forward — those helpers exist mostly to be passed around.
+1. **The header is still heavier than a one-line body deserves.** Panel 018 shrank it —
+   `function is_digit(c: int) -> bool` lost `= …:` and reads like the call site — but a realistic
+   file still has nine one-line predicates whose header outweighs the body. On a real function
+   like `tokenize` the proportion is right; on a one-line predicate it is not. This remains the
+   strongest argument for pulling closures forward — those helpers exist mostly to be passed
+   around.
 2. **`constant` costs three lines for one number.** For a map of weights the proportion is fine; for
    an integer it isn't. Accepted, because a second form for scalar constants would cost more than it
    saves.
@@ -1852,7 +1873,7 @@ The principle: **low-level access is a marked, bounded region, not a scattering 
 ```
 use raw
 
-read_u32 = function: (b: [int], off: int) -> int
+function read_u32(b: [int], off: int) -> int
     return raw.load_u32(b, off)
 ```
 
@@ -2052,7 +2073,7 @@ more.
 # Applies `f` to every element, in order. Named `apply` rather than `map`
 # because `map` is a built-in name and no file may redeclare one (panel 015);
 # the point here is generics, and any name demonstrates them.
-apply = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
+function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
     for x in xs
         out @ out.push(f(x))
@@ -2060,25 +2081,25 @@ apply = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
 
 # Reduces the sequence to one value, from the left. `fold` is a built-in name
 # too, so this one is `reduce`.
-reduce = function<A, B>: (xs: [A], initial: B, f: (function(B, A) -> B)) -> B
+function reduce<A, B>(xs: [A], initial: B, f: (function(B, A) -> B)) -> B
     acc: B @ initial
     for x in xs
         acc @ f(acc, x)
     return acc
 
-plus = function: (a: int, b: int) -> int
+function plus(a: int, b: int) -> int
     return a + b
 
 test "generics work across types"
     assert [1, 2, 3].apply(double) == [2, 4, 6]
     assert [1, 2, 3, 4].reduce(0, plus) == 10
 
-double = function: (n: int) -> int
+function double(n: int) -> int
     return n * 2
 
 ## Tokens
 
-Token = variant
+variant Token
     num
         v: int
     name
@@ -2089,46 +2110,46 @@ Token = variant
     rparen
 
 # Text and position. Travels through the lexer as `@`.
-Lex = record
+record Lex
     text: str
     pos: int
 
-at_end = function: (l: Lex) -> bool
+function at_end(l: Lex) -> bool
     return l.pos >= l.text.len()
 
-here = function: (l: Lex) -> int
+function here(l: Lex) -> int
     return l.text[l.pos]
 
-advance = function: (@l: Lex)
+function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-is_digit = function: (c: int) -> bool
+function is_digit(c: int) -> bool
     return c >= '0' && c <= '9'
 
-is_letter = function: (c: int) -> bool
+function is_letter(c: int) -> bool
     return c >= 'a' && c <= 'z'
 
 # Reads an integer, consuming it.
-read_number = function: (@l: Lex) -> int
+function read_number(@l: Lex) -> int
     v: int @ 0
-    for !l.at_end() && l.here().is_digit()
+    while !l.at_end() && l.here().is_digit()
         v @ v * 10 + (l.here() - '0')
         advance(@l)
     return v
 
 # Reads an identifier, consuming it.
-read_name = function: (@l: Lex) -> str
+function read_name(@l: Lex) -> str
     start = l.pos
-    for !l.at_end() && l.here().is_letter()
+    while !l.at_end() && l.here().is_letter()
         advance(@l)
     return l.text.slice(from: start, to: l.pos)
 
 # Splits the text into tokens. Fails on the first unknown character.
-tokenize = function: (text: str) -> [Token]?
+function tokenize(text: str) -> [Token]?
     l: Lex @ Lex(text: text, pos: 0)
     out: [Token] @ []
 
-    for !l.at_end()
+    while !l.at_end()
         c = l.here()
 
         if c == ' '
@@ -2170,7 +2191,7 @@ test "tokenize rejects the unknown"
 
 # A tree node. Children live in an array, which is the language's
 # only indirection: that is what makes the recursive type finite.
-Expr = variant
+variant Expr
     num
         v: int
     variable
@@ -2181,17 +2202,17 @@ Expr = variant
         children: [Expr]
 
 # Tokens and position. Travels through the parser as `@`.
-Parse = record
+record Parse
     ts: [Token]
     pos: int
 
-parse_at_end = function: (p: Parse) -> bool
+function parse_at_end(p: Parse) -> bool
     return p.pos >= p.ts.len()
 
-parse_here = function: (p: Parse) -> Token
+function parse_here(p: Parse) -> Token
     return p.ts[p.pos]
 
-parse_advance = function: (@p: Parse)
+function parse_advance(@p: Parse)
     p.pos @ p.pos + 1
 
 ## Parser
@@ -2201,7 +2222,7 @@ parse_advance = function: (@p: Parse)
 # declarations.
 
 # A number, a name, or a parenthesised expression.
-factor = function: (@p: Parse) -> Expr?
+function factor(@p: Parse) -> Expr?
     if p.parse_at_end()
         return fail("unexpected_end", "the expression ends too soon")
 
@@ -2215,7 +2236,7 @@ factor = function: (@p: Parse) -> Expr?
         .plus | .times | .rparen => fail("expected_factor", "found an operator")
 
 # An expression followed by its closing paren.
-group = function: (@p: Parse) -> Expr?
+function group(@p: Parse) -> Expr?
     inner = expression(@p)?
     if p.parse_at_end()
         return fail("unclosed_paren", "missing closing paren")
@@ -2225,11 +2246,11 @@ group = function: (@p: Parse) -> Expr?
     return ok(inner)
 
 # A product of one or more factors.
-term = function: (@p: Parse) -> Expr?
+function term(@p: Parse) -> Expr?
     first = factor(@p)?
     children: [Expr] @ [first]
 
-    for !p.parse_at_end() && p.parse_here() == .times
+    while !p.parse_at_end() && p.parse_here() == .times
         parse_advance(@p)
         children @ children.push(factor(@p)?)
 
@@ -2238,11 +2259,11 @@ term = function: (@p: Parse) -> Expr?
     return ok(.product(children: children))
 
 # A sum of one or more terms.
-expression = function: (@p: Parse) -> Expr?
+function expression(@p: Parse) -> Expr?
     first = term(@p)?
     children: [Expr] @ [first]
 
-    for !p.parse_at_end() && p.parse_here() == .plus
+    while !p.parse_at_end() && p.parse_here() == .plus
         parse_advance(@p)
         children @ children.push(term(@p)?)
 
@@ -2253,25 +2274,25 @@ expression = function: (@p: Parse) -> Expr?
 ## Evaluator
 
 # The value bound to a name, with a decent message if absent.
-lookup = function: (env: {str: int}, name: str) -> int?
+function lookup(env: {str: int}, name: str) -> int?
     if !env.has(name)
         return fail("unknown_name", "undefined variable: " + name)
     return ok(env[name].must())
 
-sum_of = function: (children: [Expr], env: {str: int}) -> int?
+function sum_of(children: [Expr], env: {str: int}) -> int?
     tot: int @ 0
     for c in children
         tot @ tot + evaluate(c, env)?
     return ok(tot)
 
-product_of = function: (children: [Expr], env: {str: int}) -> int?
+function product_of(children: [Expr], env: {str: int}) -> int?
     tot: int @ 1
     for c in children
         tot @ tot * evaluate(c, env)?
     return ok(tot)
 
 # The value of the tree. Fails on the first unknown name.
-evaluate = function: (e: Expr, env: {str: int}) -> int?
+function evaluate(e: Expr, env: {str: int}) -> int?
     return match e
         .num n      => ok(n.v)
         .variable x => env.lookup(x.name)
@@ -2279,14 +2300,14 @@ evaluate = function: (e: Expr, env: {str: int}) -> int?
         .product q  => q.children.product_of(env)
 
 # Every name appearing in the tree, with repetitions.
-names_used = function: (e: Expr) -> [str]
+function names_used(e: Expr) -> [str]
     return match e
         .num _      => []
         .variable x => [x.name]
         .sum s      => names_of(s.children)
         .product q  => names_of(q.children)
 
-names_of = function: (children: [Expr]) -> [str]
+function names_of(children: [Expr]) -> [str]
     out: [str] @ []
     for c in children
         for n in c.names_used()
@@ -2296,7 +2317,7 @@ names_of = function: (children: [Expr]) -> [str]
 ## Interface
 
 # From text to result, in one call.
-calculate = function: (text: str, env: {str: int}) -> int?
+function calculate(text: str, env: {str: int}) -> int?
     ts = tokenize(text)?
     p: Parse @ Parse(ts: ts, pos: 0)
     tree = expression(@p)?
@@ -2336,12 +2357,12 @@ test "values are always copies"
 ## To do
 
 # Simplify the tree: `x * 1` becomes `x`, `x + 0` becomes `x`.
-simplify = function: (e: Expr) -> Expr
+function simplify(e: Expr) -> Expr
     ???
 
 ## Program
 
-main = function: ()
+function main()
     env = {"x": 10, "y": 4}
 
     cases = [
@@ -2363,7 +2384,7 @@ main = function: ()
 ## How to start
 
 Suggested first move: **Part 10, step 1 and 2 only** — a lexer with rigid indentation and a parser
-for a minimal subset (integers, `=`/`@` locals, `if`, `for cond`, `function` entities, arithmetic),
+for a minimal subset (integers, `=`/`@` locals, `if`, `while cond`, `function` entities, arithmetic),
 emitting nothing yet, with a `--dump-ast` flag and a handful of golden tests. Then show the author
 the AST for a small program and let them predict the generated C before you emit it.
 

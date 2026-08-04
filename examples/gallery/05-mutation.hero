@@ -6,29 +6,29 @@
 # site, so a mutating call cannot look like a reading one.
 
 # A cursor over text. Travels through the reader as `@`.
-Reader = record
+record Reader
     text: str
     pos: int
 
-at_end = function: (r: Reader) -> bool
+function at_end(r: Reader) -> bool
     return r.pos >= r.text.len()
 
-here = function: (r: Reader) -> int
+function here(r: Reader) -> int
     return r.text[r.pos]
 
 # The `@` is the whole signature's news: this one moves.
-advance = function: (@r: Reader)
+function advance(@r: Reader)
     r.pos @ r.pos + 1
 
 # Consumes spaces. The caller sees `@r` and knows the reader moved.
-skip_spaces = function: (@r: Reader)
-    for !at_end(r) && here(r) == ' '
+function skip_spaces(@r: Reader)
+    while !at_end(r) && here(r) == ' '
         advance(@r)
 
 # Reads a run of letters and hands it back, leaving the reader after it.
-word_at = function: (@r: Reader) -> str
+function word_at(@r: Reader) -> str
     start = r.pos
-    for !at_end(r) && here(r) >= 'a' && here(r) <= 'z'
+    while !at_end(r) && here(r) >= 'a' && here(r) <= 'z'
         advance(@r)
     return r.text.slice(from: start, to: r.pos)
 
@@ -48,6 +48,6 @@ test "values are copies"
     assert a.len() == 3
     assert b.len() == 4
 
-main = function: ()
+function main()
     r: Reader @ Reader(text: "one two", pos: 0)
     print(word_at(@r))

@@ -11,13 +11,13 @@ use super::{assert_clean, checked};
 fn a_hole_records_the_type_the_context_expects() {
     let (out, _) = checked(
         "\
-f = function: (n: int) -> str
+function f(n: int) -> str
     return ???
 ",
     );
     assert!(out.diagnostics.is_empty(), "a hole is not an error");
     assert_eq!(out.holes.len(), 1);
-    let ty = super::super::render_ty(&out.types, &parse_of("f = function: (n: int) -> str\n    return ???\n").0, &parse_of("f = function: (n: int) -> str\n    return ???\n").1, out.holes[0].expected, &[]);
+    let ty = super::super::render_ty(&out.types, &parse_of("function f(n: int) -> str\n    return ???\n").0, &parse_of("function f(n: int) -> str\n    return ???\n").1, out.holes[0].expected, &[]);
     assert_eq!(ty, "str");
 }
 
@@ -27,11 +27,11 @@ f = function: (n: int) -> str
 fn each_hole_knows_its_own_expectation() {
     let (out, src) = checked(
         "\
-add = function: (a: int, b: str) -> int
+function add(a: int, b: str) -> int
     print(b)
     return a
 
-main = function: ()
+function main()
     print(add(???, ???))
 ",
     );
@@ -53,10 +53,10 @@ main = function: ()
 fn the_rest_of_the_file_is_still_checked() {
     let (out, _) = checked(
         "\
-half = function: (n: int) -> int
+function half(n: int) -> int
     return n / 2
 
-later = function: (n: int) -> str
+function later(n: int) -> str
     ???
 ",
     );
@@ -70,11 +70,11 @@ later = function: (n: int) -> str
 fn a_hole_in_a_field_position_expects_the_fields_type() {
     assert_clean(
         "\
-Point = record
+record Point
     x: int
     y: int
 
-origin = function: () -> Point
+function origin() -> Point
     return Point(x: 0, y: ???)
 ",
     );

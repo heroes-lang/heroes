@@ -1,2 +1,2 @@
-tests/golden/check/fn-not-function.hero:5:24: error[reserved_word]: `fn` is not a word in this language — use `function`: `f = function: (x: int) -> int`
-tests/golden/check/fn-not-function.hero:8:10: error[reserved_word]: `fn` is not a word in this language — use `function`: `f = function: (x: int) -> int`
+tests/golden/check/fn-not-function.hero:5:20: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: int) -> int`
+tests/golden/check/fn-not-function.hero:8:1: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: int) -> int`

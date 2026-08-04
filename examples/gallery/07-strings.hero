@@ -5,7 +5,7 @@
 # two are different jobs and the language refuses to blur them.
 
 # Bytes, not characters: this counts the ASCII spaces.
-space_count = function: (s: str) -> int
+function space_count(s: str) -> int
     seen: int @ 0
     for i in range(0, s.len())
         if s[i] == ' '
@@ -13,7 +13,7 @@ space_count = function: (s: str) -> int
     return seen
 
 # Characters, not bytes: this one is right for text.
-letters_of = function: (s: str) -> [str]
+function letters_of(s: str) -> [str]
     out: [str] @ []
     for c in s.chars()
         if c != " "
@@ -21,7 +21,7 @@ letters_of = function: (s: str) -> [str]
     return out
 
 # Splitting on a single space, written out. There is no library to hide in.
-words_of = function: (s: str) -> [str]
+function words_of(s: str) -> [str]
     out: [str] @ []
     start: int @ 0
     for i in range(0, s.len())
@@ -35,10 +35,10 @@ words_of = function: (s: str) -> [str]
 
 # `join` is the other direction, and the separator is an argument, not a
 # convention.
-sentence_of = function: (words: [str]) -> str
+function sentence_of(words: [str]) -> str
     return words.join(" ")
 
-initials_of = function: (words: [str]) -> str
+function initials_of(words: [str]) -> str
     out: str @ ""
     for w in words
         if w.len() > 0
@@ -52,7 +52,7 @@ test "bytes, characters and words"
     assert sentence_of(["one", "two"]) == "one two"
     assert initials_of(["heroes", "language"]) == "hl"
 
-main = function: ()
+function main()
     words = words_of("the quick brown fox")
     print(sentence_of(words))
     print(initials_of(words))

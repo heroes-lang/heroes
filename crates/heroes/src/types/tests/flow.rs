@@ -11,7 +11,7 @@ use super::{assert_clean, diagnostics, type_of_last};
 /// The program A3 would reject. It is also every function in this compiler.
 #[test]
 fn a_function_may_end_in_return() {
-    assert_clean("f = function: (n: int) -> int\n    return n + 1\n");
+    assert_clean("function f(n: int) -> int\n    return n + 1\n");
 }
 
 /// §4.7: a jump is admissible as an arm body, and the `match`'s type comes from
@@ -20,12 +20,12 @@ fn a_function_may_end_in_return() {
 fn a_match_takes_its_type_from_the_arms_that_produce_a_value() {
     assert_clean(
         "\
-Token = variant
+variant Token
     num
         v: int
     eof
 
-value_of = function: (t: Token) -> int
+function value_of(t: Token) -> int
     tag = match t
         .num n => n.v
         .eof   => return 0
@@ -41,7 +41,7 @@ fn an_if_with_a_diverging_branch_still_has_a_type() {
     assert_eq!(
         type_of_last(
             "\
-f = function: (c: bool) -> int
+function f(c: bool) -> int
     x = if c
         1
     else
@@ -60,7 +60,7 @@ fn a_construct_whose_every_branch_jumps_produces_no_value() {
     assert_eq!(
         diagnostics(
             "\
-f = function: (c: bool) -> int
+function f(c: bool) -> int
     x = if c
         return 1
     else
@@ -73,12 +73,12 @@ f = function: (c: bool) -> int
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
     eof
 
-f = function: (t: Token) -> int
+function f(t: Token) -> int
     tag = match t
         .num _ => return 1
         .eof   => return 0
@@ -95,12 +95,12 @@ f = function: (t: Token) -> int
 fn a_match_whose_arms_all_jump_is_legal_as_a_statement() {
     assert_clean(
         "\
-Token = variant
+variant Token
     num
         v: int
     eof
 
-f = function: (t: Token) -> int
+function f(t: Token) -> int
     match t
         .num n => return n.v
         .eof   => return 0
@@ -115,12 +115,12 @@ fn arms_that_disagree_are_reported_where_they_disagree() {
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     num
         v: int
     eof
 
-f = function: (t: Token) -> int
+function f(t: Token) -> int
     tag = match t
         .num n => n.v
         .eof   => \"none\"
@@ -138,7 +138,7 @@ fn an_if_used_as_a_value_needs_an_else() {
     assert_eq!(
         diagnostics(
             "\
-f = function: (c: bool) -> int
+function f(c: bool) -> int
     x = if c
         1
     return x
@@ -152,7 +152,7 @@ f = function: (c: bool) -> int
 fn break_and_continue_belong_to_a_loop() {
     assert_clean(
         "\
-f = function: (xs: [int]) -> int
+function f(xs: [int]) -> int
     total: int @ 0
     for x in xs
         if x == 0
@@ -164,23 +164,23 @@ f = function: (xs: [int]) -> int
 ",
     );
     assert_eq!(
-        diagnostics("f = function: () -> int\n    break\n"),
-        "test.hero:2:5: error[jump_outside_loop]: `break` is only meaningful inside a `for`\n"
+        diagnostics("function f() -> int\n    break\n"),
+        "test.hero:2:5: error[jump_outside_loop]: `break` is only meaningful inside a `while` or a `for`\n"
     );
 }
 
 #[test]
 fn return_agrees_with_the_signature_in_both_directions() {
     assert_eq!(
-        diagnostics("f = function: () -> int\n    return \"x\"\n"),
+        diagnostics("function f() -> int\n    return \"x\"\n"),
         "test.hero:2:12: error[type_mismatch]: expected `int`, found `str`\n"
     );
     assert_eq!(
-        diagnostics("f = function: () -> int\n    return\n"),
+        diagnostics("function f() -> int\n    return\n"),
         "test.hero:2:5: error[missing_value]: this function returns `int`, so `return` needs a value\n"
     );
     assert_eq!(
-        diagnostics("f = function: ()\n    return 1\n"),
+        diagnostics("function f()\n    return 1\n"),
         "test.hero:2:5: error[returns_nothing]: this function returns nothing, so `return` takes no value\n"
     );
 }
@@ -194,7 +194,7 @@ fn a_branch_that_ends_on_a_statement_has_no_value() {
     assert_eq!(
         diagnostics(
             "\
-f = function: (xs: [int]) -> int
+function f(xs: [int]) -> int
     x = if xs.len() > 0
         for y in xs
             return y

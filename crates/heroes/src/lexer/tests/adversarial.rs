@@ -39,15 +39,13 @@ fn adversarial_five_space_indent() {
     // meant instead of a function with no body (2026-08-04: that guess used to
     // cost three further diagnostics about a mistake already reported).
     assert_eq!(
-        dump("f = function: ()\n     x\n"),
+        dump("function f()\n     x\n"),
         "\
-1:1 ident f
-1:3 eq =
-1:5 kw_function function
-1:13 colon :
-1:15 lparen (
-1:16 rparen )
-1:17 terminator
+1:1 kw_function function
+1:10 ident f
+1:11 lparen (
+1:12 rparen )
+1:13 terminator
 2:1 indent
 2:6 ident x
 2:7 terminator
@@ -69,15 +67,13 @@ fn adversarial_indentation_jump() {
     // diagnostic about the same mistake. Nothing opens two levels, so nothing
     // is invented by refusing to.
     assert_eq!(
-        dump("f = function: ()\n        x\n"),
+        dump("function f()\n        x\n"),
         "\
-1:1 ident f
-1:3 eq =
-1:5 kw_function function
-1:13 colon :
-1:15 lparen (
-1:16 rparen )
-1:17 terminator
+1:1 kw_function function
+1:10 ident f
+1:11 lparen (
+1:12 rparen )
+1:13 terminator
 2:1 indent
 2:9 ident x
 2:10 terminator

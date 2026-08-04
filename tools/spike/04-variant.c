@@ -17,7 +17,7 @@
  *
  * The Heroes type this hand-compiles (design.md §4.10's own example):
  *
- *     Expr = variant
+ *     variant Expr
  *         num
  *             v: int
  *         sum

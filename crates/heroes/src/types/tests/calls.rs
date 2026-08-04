@@ -7,24 +7,24 @@ use super::{assert_clean, diagnostics, type_of_last};
 fn a_call_checks_its_arguments_and_its_arity() {
     assert_clean(
         "\
-repeat = function: (text: str, times: int) -> str
+function repeat(text: str, times: int) -> str
     out: str @ \"\"
     for _ in range(0, times)
         out @ out + text
     return out
 
-main = function: ()
+function main()
     print(repeat(\"ab\", 2))
 ",
     );
     assert_eq!(
         diagnostics(
             "\
-repeat = function: (text: str, times: int) -> str
+function repeat(text: str, times: int) -> str
     print(times)
     return text
 
-main = function: ()
+function main()
     print(repeat(\"ab\"))
 "
         ),
@@ -33,11 +33,11 @@ main = function: ()
     assert_eq!(
         diagnostics(
             "\
-repeat = function: (text: str, times: int) -> str
+function repeat(text: str, times: int) -> str
     print(times)
     return text
 
-main = function: ()
+function main()
     print(repeat(\"ab\", \"two\"))
 "
         ),
@@ -52,20 +52,20 @@ main = function: ()
 fn two_parameters_of_one_type_must_be_named_at_the_call_site() {
     assert_clean(
         "\
-add = function: (a: int, b: int) -> int
+function add(a: int, b: int) -> int
     return a + b
 
-main = function: ()
+function main()
     print(add(a: 1, b: 2))
 ",
     );
     assert_eq!(
         diagnostics(
             "\
-add = function: (a: int, b: int) -> int
+function add(a: int, b: int) -> int
     return a + b
 
-main = function: ()
+function main()
     print(add(1, 2))
 "
         ),
@@ -75,10 +75,10 @@ main = function: ()
     // where nothing can be inverted.
     assert_clean(
         "\
-at = function: (text: str, index: int) -> int
+function at(text: str, index: int) -> int
     return text[index]
 
-main = function: ()
+function main()
     print(at(\"ab\", 1))
     print(at(text: \"ab\", index: 1))
 ",
@@ -86,13 +86,13 @@ main = function: ()
     // The receiver of a UFCS call names nothing: the dot *is* its position.
     assert_clean(
         "\
-Point = record
+record Point
     x: int
 
-dist = function: (a: Point, b: Point) -> int
+function dist(a: Point, b: Point) -> int
     return a.x - b.x
 
-main = function: (p: Point, q: Point)
+function main(p: Point, q: Point)
     print(p.dist(b: q))
 ",
     );
@@ -104,14 +104,14 @@ main = function: (p: Point, q: Point)
 fn ufcs_is_argument_reordering_and_nothing_else() {
     assert_clean(
         "\
-Point = record
+record Point
     x: int
     y: int
 
-sum_of = function: (p: Point) -> int
+function sum_of(p: Point) -> int
     return p.x + p.y
 
-main = function: (p: Point)
+function main(p: Point)
     print(p.sum_of())
     print(sum_of(p))
 ",
@@ -125,13 +125,13 @@ main = function: (p: Point)
 fn the_mutable_marker_is_checked_on_both_sides() {
     assert_clean(
         "\
-Lex = record
+record Lex
     pos: int
 
-advance = function: (@l: Lex)
+function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-main = function: ()
+function main()
     l: Lex @ Lex(pos: 0)
     advance(@l)
     print(l.pos)
@@ -140,13 +140,13 @@ main = function: ()
     assert_eq!(
         diagnostics(
             "\
-Lex = record
+record Lex
     pos: int
 
-advance = function: (@l: Lex)
+function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-main = function: ()
+function main()
     l: Lex @ Lex(pos: 0)
     advance(l)
     print(l.pos)
@@ -157,13 +157,13 @@ main = function: ()
     assert_eq!(
         diagnostics(
             "\
-Lex = record
+record Lex
     pos: int
 
-advance = function: (@l: Lex)
+function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-main = function: ()
+function main()
     l: Lex @ Lex(pos: 0)
     l.advance()
     print(l.pos)
@@ -178,11 +178,11 @@ main = function: ()
 fn a_record_is_built_with_every_field_named() {
     assert_clean(
         "\
-Point = record
+record Point
     x: int
     y: int
 
-main = function: ()
+function main()
     p = Point(x: 1, y: 2)
     print(p.x)
 ",
@@ -190,11 +190,11 @@ main = function: ()
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
     y: int
 
-main = function: ()
+function main()
     p = Point(x: 1)
     print(p.x)
 "
@@ -204,11 +204,11 @@ main = function: ()
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
     y: int
 
-main = function: ()
+function main()
     p = Point(1, 2)
     print(p.x)
 "
@@ -221,11 +221,11 @@ main = function: ()
 fn a_wrong_label_names_the_right_one_and_offers_the_rename() {
     let (out, _) = super::checked(
         "\
-Point = record
+record Point
     x: int
     y: int
 
-main = function: ()
+function main()
     p = Point(x: 1, z: 2)
     print(p.y)
 ",
@@ -249,10 +249,10 @@ fn generics_are_inferred_from_the_arguments() {
     assert_eq!(
         type_of_last(
             "\
-first = function<A>: (xs: [A]) -> A
+function first<A>(xs: [A]) -> A
     return xs[0]
 
-head = function: () -> int
+function head() -> int
     return first([1, 2, 3])
 "
         ),
@@ -260,16 +260,16 @@ head = function: () -> int
     );
     assert_clean(
         "\
-apply = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
+function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
     for x in xs
         out @ out.push(f(x))
     return out
 
-label = function: (n: int) -> str
+function label(n: int) -> str
     return n.to_str()
 
-main = function: ()
+function main()
     print(apply([1, 2], label).len())
 ",
     );
@@ -282,11 +282,11 @@ fn a_type_parameter_must_agree_with_itself() {
     assert_eq!(
         diagnostics(
             "\
-pair = function<A>: (a: A, b: A) -> A
+function pair<A>(a: A, b: A) -> A
     _ = b
     return a
 
-main = function: ()
+function main()
     print(pair(a: 1, b: \"two\"))
 "
         ),
@@ -301,10 +301,10 @@ fn a_function_is_a_value_of_its_signature_type() {
     assert_eq!(
         type_of_last(
             "\
-double = function: (n: int) -> int
+function double(n: int) -> int
     return n * 2
 
-twice = function: () -> int
+function twice() -> int
     f = double
     return f(2)
 "
@@ -314,13 +314,13 @@ twice = function: () -> int
     assert_eq!(
         diagnostics(
             "\
-double = function: (n: int) -> int
+function double(n: int) -> int
     return n * 2
 
-takes = function: (f: (function(str) -> int)) -> int
+function takes(f: (function(str) -> int)) -> int
     return f(\"a\")
 
-main = function: ()
+function main()
     print(takes(double))
 "
         ),
@@ -334,10 +334,10 @@ main = function: ()
 fn a_function_valued_field_is_called_through_the_dot() {
     assert_clean(
         "\
-Holder = record
+record Holder
     cb: (function(int) -> int)
 
-run = function: (h: Holder, n: int) -> int
+function run(h: Holder, n: int) -> int
     return h.cb(n)
 ",
     );
@@ -352,13 +352,13 @@ fn neither_a_field_nor_a_function_is_one_message() {
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
 
-Widget = record
+record Widget
     handler: (function(int) -> int)
 
-f = function: (p: Point) -> int
+function f(p: Point) -> int
     return p.handler(1)
 "
         ),
@@ -368,26 +368,26 @@ f = function: (p: Point) -> int
 
 #[test]
 fn the_builtins_know_their_shapes() {
-    assert_eq!(type_of_last("f = function: (s: str) -> int\n    return s.len()\n"), "int");
+    assert_eq!(type_of_last("function f(s: str) -> int\n    return s.len()\n"), "int");
     assert_eq!(
-        type_of_last("f = function: (s: str) -> [str]\n    return s.chars()\n"),
+        type_of_last("function f(s: str) -> [str]\n    return s.chars()\n"),
         "[str]"
     );
     assert_eq!(
-        type_of_last("f = function: (xs: [int]) -> [int]\n    return xs.push(4)\n"),
+        type_of_last("function f(xs: [int]) -> [int]\n    return xs.push(4)\n"),
         "[int]"
     );
     assert_eq!(
-        type_of_last("f = function: (m: {str: int}) -> bool\n    return m.has(\"a\")\n"),
+        type_of_last("function f(m: {str: int}) -> bool\n    return m.has(\"a\")\n"),
         "bool"
     );
     assert_eq!(
-        type_of_last("f = function: (xs: [str]) -> str\n    return xs.join(\", \")\n"),
+        type_of_last("function f(xs: [str]) -> str\n    return xs.join(\", \")\n"),
         "str"
     );
-    assert_eq!(type_of_last("f = function: () -> [int]\n    return range(0, 3)\n"), "[int]");
+    assert_eq!(type_of_last("function f() -> [int]\n    return range(0, 3)\n"), "[int]");
     assert_eq!(
-        diagnostics("f = function: (n: int) -> int\n    return n.len()\n"),
+        diagnostics("function f(n: int) -> int\n    return n.len()\n"),
         "test.hero:2:12: error[bad_operand]: `len` takes `str`, `[T]` or `{K: V}`, found `int`\n"
     );
 }
@@ -397,15 +397,15 @@ fn the_builtins_know_their_shapes() {
 #[test]
 fn print_takes_any_number_of_the_four_printable_types() {
     assert_clean(
-        "main = function: (n: int, x: f64, b: bool, s: str)\n    print(s, n, x, b, \"\\n\")\n",
+        "function main(n: int, x: f64, b: bool, s: str)\n    print(s, n, x, b, \"\\n\")\n",
     );
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
 
-main = function: (p: Point)
+function main(p: Point)
     print(p)
 "
         ),
@@ -420,12 +420,12 @@ main = function: (p: Point)
 fn a_builtin_argument_can_be_a_contextual_form() {
     assert_clean(
         "\
-Token = variant
+variant Token
     num
         v: int
     plus
 
-main = function: ()
+function main()
     out: [Token] @ []
     out @ out.push(.plus)
     out @ out.push(.num(v: 1))
@@ -438,18 +438,18 @@ main = function: ()
 fn an_extern_is_called_like_any_other_function() {
     assert_clean(
         "\
-extern sqrt = function: (x: f64) -> f64
+extern function sqrt(x: f64) -> f64
 
-hypotenuse = function: (a: f64, b: f64) -> f64
+function hypotenuse(a: f64, b: f64) -> f64
     return sqrt(a * a + b * b)
 ",
     );
     assert_eq!(
         diagnostics(
             "\
-extern sqrt = function: (x: f64) -> f64
+extern function sqrt(x: f64) -> f64
 
-f = function: (n: int) -> f64
+function f(n: int) -> f64
     return sqrt(n)
 "
         ),

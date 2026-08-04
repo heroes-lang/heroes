@@ -3,7 +3,7 @@
 Heroes is a small compiled language. This document is the whole language.
 
 ## Files and layout
-- One file is one program. Entry point: `main = function: ()`.
+- One file is one program. Entry point: `function main()`.
 - `#` comments to end of line, markdown inside. A comment directly above a
   declaration documents it; `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
@@ -11,23 +11,24 @@ Heroes is a small compiled language. This document is the whole language.
 - Syntax is ASCII-only; strings and comments may contain any UTF-8.
 
 ## Top-level declarations
-Everything at top level has one shape. `constant` and `function` declare values
-and take `: type`; `record` and `variant` declare types and do not.
+Every top-level line starts with its kind. A `constant`'s name takes `: type`;
+a `function`'s parameter list attaches to its name; `record` and `variant`
+declare types, so nothing follows their name.
 
 ```
-MAX_DEPTH = constant: int
+constant MAX_DEPTH: int
     64
 
-dist2 = function: (a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> int
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy
 
-Point = record
+record Point
     x: int
     y: int
 
-Token = variant
+variant Token
     num
         v: int
     plus
@@ -79,14 +80,14 @@ Shadowing is a compile error.
 - `x.f(y)` is sugar for `f(x, y)` (UFCS). There are no methods, no
   inheritance, no overloading, no default values, no user variadics.
 - Mutable parameters are marked `@` in the signature and at the call site:
-  `advance = function: (@l: Lex)` … `advance(@l)`. Semantics: copy in, copy
+  `function advance(@l: Lex)` … `advance(@l)`. Semantics: copy in, copy
   out (copy-out always happens, including on early return and `?`). UFCS does
   not apply when the first parameter is `@`.
 - Top-level functions are values: `xs.fold(0, add)`. Function type syntax:
   `(function(A) -> B)`, `(function(A, B) -> C)`, `(function() -> C)` — the
   parentheses are mandatory.
 - Generics: on functions only, no constraints, always inferred, never written
-  at the call site: `map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]`.
+  at the call site: `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
 
 ## Control flow
 `match` is the only destructuring construct:
@@ -106,8 +107,8 @@ binding (`_ = f(x)`). It binds nothing, so it is never unused and may repeat.
   constrain the `match`'s type.
 
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
-Loops: `for cond` and `for x in xs`; `break` and `continue` exist; ranges are
-`range(a, b) -> [int]`.
+Loops: `while cond` and `for x in xs`; `break` and `continue` exist; ranges
+are `range(a, b) -> [int]`.
 
 ## Failure: `T?`
 A `T?` is a `T` or an error. Construct an error with `fail(code, msg)`; codes
@@ -163,6 +164,6 @@ with holes type-checks everything else but produces no binary.
 Anything beyond this document — files, sockets, maths, JSON — comes from C
 libraries:
 ```
-extern sqrt = function: (x: f64) -> f64
+extern function sqrt(x: f64) -> f64
 ```
 `ptr` is an opaque pointer, `cstr` a C string.

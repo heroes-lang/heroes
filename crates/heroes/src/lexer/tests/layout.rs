@@ -26,15 +26,13 @@ fn terminator_only_after_enders() {
 #[test]
 fn nesting_indents_and_dedents() {
     assert_eq!(
-        dump("f = function: ()\n    if x\n        g()\n    h()\n"),
+        dump("function f()\n    if x\n        g()\n    h()\n"),
         "\
-1:1 ident f
-1:3 eq =
-1:5 kw_function function
-1:13 colon :
-1:15 lparen (
-1:16 rparen )
-1:17 terminator
+1:1 kw_function function
+1:10 ident f
+1:11 lparen (
+1:12 rparen )
+1:13 terminator
 2:1 indent
 2:5 kw_if if
 2:8 ident x
@@ -49,6 +47,37 @@ fn nesting_indents_and_dedents() {
 4:6 lparen (
 4:7 rparen )
 4:8 terminator
+5:1 dedent
+5:1 eof
+"
+    );
+}
+
+/// Panel 007 used to pin the *absence* of a terminator here: `Point = record`
+/// ended in a keyword, a non-ender, so the header line was never over. Panel
+/// 018 inverted the shape — every header now ends in the declared name (or
+/// `)`, a string, a type), so `record Point` and `variant Token` terminate
+/// like any other line, and the parser reads the boundary off the tokens.
+#[test]
+fn record_and_variant_headers_earn_a_terminator() {
+    assert_eq!(
+        dump("record Point\n    x: int\nvariant Token\n    plus\n"),
+        "\
+1:1 kw_record record
+1:8 ident Point
+1:13 terminator
+2:1 indent
+2:5 ident x
+2:6 colon :
+2:8 ident int
+2:11 terminator
+3:1 dedent
+3:1 kw_variant variant
+3:9 ident Token
+3:14 terminator
+4:1 indent
+4:5 ident plus
+4:9 terminator
 5:1 dedent
 5:1 eof
 "

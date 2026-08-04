@@ -26,7 +26,7 @@
 //!   same error order-*insensitive*: §1.3 says locality is the currency, and a
 //!   legality rule that reads downwards spends it.
 //! - **A write through an `@` parameter is a use.** §4.8's copy-out always
-//!   happens, so `reset = function: (@counts: {str: int})` whose whole body is
+//!   happens, so `function reset(@counts: {str: int})` whose whole body is
 //!   `counts @ {}` is a complete function, not an unused binding (panel 015,
 //!   llm-ergonomist). Every other write is not a use: only a read is.
 

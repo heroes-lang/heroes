@@ -43,7 +43,7 @@ pub(in crate::types) fn not_indexable(got: &str, span: Span) -> Diagnostic {
 pub(in crate::types) fn jump_outside_loop(word: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "jump_outside_loop",
-        format!("`{word}` is only meaningful inside a `for`"),
+        format!("`{word}` is only meaningful inside a `while` or a `for`"),
         span,
     )
 }

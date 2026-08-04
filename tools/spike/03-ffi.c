@@ -8,7 +8,7 @@
  *
  * The Heroes surface for this (M7, importc-style):
  *
- *     extern sqrt = function: (x: f64) -> f64        # header "math.h"
+ *     extern function sqrt(x: f64) -> f64        # header "math.h"
  *
  * TRY THIS: change sqrt(2.0) to sqrt("2") — clang rejects it. That error
  * was a runtime disaster under QBE.

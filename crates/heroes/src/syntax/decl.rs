@@ -1,15 +1,17 @@
-//! The top level: what a name can be bound to, plus `extern` and `test`
-//! (design.md §4.1, §4.2, §4.18, §4.19).
+//! The top level: the six declaration heads, one shape (design.md §4.1,
+//! §4.2, §4.18, §4.19; panel 018).
 //!
-//! One shape carries the four entities — `NAME = entity: type` — so the
-//! dispatcher reads a name, an `=`, and one keyword; the arms differ only in
-//! what follows. `record` and `variant` live next door in `data.rs`.
+//! Every top-level line starts with its kind — `constant`, `function`,
+//! `record`, `variant`, `test`, `extern` — so the dispatcher is a switch on
+//! the first token of the line, and an identifier at top level is never a
+//! declaration. That closed keyword set is also recovery's anchor: one
+//! broken declaration can never swallow the next one.
 //!
-//! The rule that is easy to get wrong, written down once here: **a body is
-//! not introduced by a terminator.** The lexer plants one only when a line's
-//! last token could end a statement (panel 007), so `MAX = constant: int`
-//! gets one and `Point = record` does not. Every body therefore skips
-//! terminators and asks only for the `Indent`.
+//! A useful consequence of the keyword-first shape: every header line now
+//! ends in a token that can end a statement (a name, `)`, a type, a
+//! string), so every header gets a terminator and the panel-007 trap —
+//! headers ending in non-enders — is gone. Bodies still skip terminators
+//! and ask only for the `Indent`.
 
 use crate::lexer::TokenKind;
 use crate::source::{Source, Span};
@@ -28,13 +30,16 @@ pub(super) fn file(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
         cur.skip_terminators();
         match cur.kind() {
             TokenKind::Eof => return,
-            TokenKind::Ident => named(cur, ast, src),
+            TokenKind::KwConstant => constant(cur, ast, src),
+            TokenKind::KwFunction => function_decl(cur, ast, src),
+            TokenKind::KwRecord => record(cur, ast, src),
+            TokenKind::KwVariant => variant(cur, ast, src),
             TokenKind::KwExtern => extern_function(cur, ast, src),
             TokenKind::KwTest => test(cur, ast, src),
             _ => {
                 if !cur.at_reported_error() {
                     let message = format!(
-                        "expected a declaration, found {} — every top-level line names something: `name = constant|function|record|variant`, `test \"…\"`, or `extern`",
+                        "expected a declaration, found {} — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`",
                         cur.found(src)
                     );
                     cur.error("expected_declaration", message, cur.span());
@@ -48,86 +53,86 @@ pub(super) fn file(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
                     cur.balanced_block();
                 } else {
                     cur.bump();
-                    cur.recover_to_next_decl(src);
+                    cur.recover_to_next_decl();
                 }
             }
         }
     }
 }
 
-/// `NAME = <entity>` — the four entities share this head.
-fn named(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
-    let name = cur.span();
-    let doc = cur.take_docs(src, name);
+/// The shared head of every named declaration: the kind keyword —
+/// documentation attaches to it, since it opens the line — then the declared
+/// name. Returns `None` (already recovered) when the name is missing.
+pub(super) fn head(cur: &mut Cursor, src: &Source, example: &str) -> Option<(Span, Vec<Span>, Span)> {
+    let keyword = cur.span();
+    let doc = cur.take_docs(src, keyword);
+    let kind = cur.found(src);
     cur.bump();
-    if !cur.expect(
-        TokenKind::Eq,
-        "expected_eq",
-        "`=` — a top-level line binds a name to one of the four entities",
-        src,
-    ) {
-        cur.recover_to_next_decl(src);
-        return;
-    }
-    match cur.kind() {
-        TokenKind::KwConstant => constant(cur, ast, src, name, doc),
-        TokenKind::KwFunction => function(cur, ast, src, name, doc, false),
-        TokenKind::KwRecord => record(cur, ast, src, name, doc),
-        TokenKind::KwVariant => variant(cur, ast, src, name, doc),
-        _ => {
-            if !cur.at_reported_error() {
-                let message = format!(
-                    "expected `constant`, `function`, `record` or `variant`, found {} — those four are everything a name can be",
-                    cur.found(src)
-                );
-                cur.error("expected_entity", message, cur.span());
-            }
-            cur.recover_to_next_decl(src);
+    if !cur.at(TokenKind::Ident) {
+        if !cur.at_reported_error() {
+            let message = format!(
+                "expected the declared name after {kind}, found {} — `{example}`",
+                cur.found(src)
+            );
+            cur.error("expected_name", message, cur.span());
         }
+        cur.recover_to_next_decl();
+        return None;
     }
+    let name = cur.bump().span;
+    Some((keyword, doc, name))
 }
 
-/// `MAX_DEPTH = constant: int` + the value, indented (§4.2). Constants use
+/// `constant MAX_DEPTH: int` + the value, indented (§4.2). Constants use
 /// SCREAMING_CASE by convention; the parser does not police it.
-fn constant(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span, doc: Vec<Span>) {
-    cur.bump(); // `constant`
+fn constant(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
+    let Some((keyword, doc, name)) = head(cur, src, "constant MAX_DEPTH: int") else {
+        return;
+    };
     if !cur.expect(
         TokenKind::Colon,
         "expected_constant_type",
         "`:` and the constant's type — a `constant` declares a value, so it has one",
         src,
     ) {
-        cur.recover_to_next_decl(src);
+        cur.recover_to_next_decl();
         return;
     }
     let ty = parse_type(cur, ast, src);
     let Some(body) = block(cur, ast, src, "a `constant`") else {
-        cur.recover_to_next_decl(src);
+        cur.recover_to_next_decl();
         return;
     };
-    let span = name.to(body.span);
+    let span = keyword.to(body.span);
     ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body } });
 }
 
-/// `dist2 = function: (a: Point, b: Point) -> int` + body, and the same
-/// signature without a body for an `extern` (§4.19).
-fn function(
+/// `function dist2(a: Point, b: Point) -> int` + body (§4.2). The parameter
+/// list attaches to the name, as at the call site.
+fn function_decl(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
+    let Some((keyword, doc, name)) =
+        head(cur, src, "function dist2(a: Point, b: Point) -> int")
+    else {
+        return;
+    };
+    function_tail(cur, ast, src, keyword, doc, name, false);
+}
+
+/// Everything after a function's name: generics, the signature, and — for a
+/// non-extern — the body. Shared by `function` and `extern function`.
+fn function_tail(
     cur: &mut Cursor,
     ast: &mut Ast,
     src: &Source,
-    name: Span,
+    keyword: Span,
     doc: Vec<Span>,
+    name: Span,
     is_extern: bool,
 ) {
-    cur.bump(); // `function`
     let generic_names = generics(cur, src);
-    if !cur.expect(
-        TokenKind::Colon,
-        "expected_signature",
-        "`:` and the signature — `function: (a: int) -> bool`",
-        src,
-    ) {
-        cur.recover_to_next_decl(src);
+    if !cur.at(TokenKind::LParen) {
+        params(cur, ast, src); // reports the missing `(` with its own message
+        cur.recover_to_next_decl();
         return;
     }
     let parameters = params(cur, ast, src);
@@ -147,7 +152,7 @@ fn function(
         match block(cur, ast, src, "a `function`") {
             Some(body) => Some(body),
             None => {
-                cur.recover_to_next_decl(src);
+                cur.recover_to_next_decl();
                 return;
             }
         }
@@ -163,43 +168,42 @@ fn function(
         body,
         is_extern,
     });
-    ast.decls.push(Decl { name, doc, span: name.to(end), kind });
+    ast.decls.push(Decl { name, doc, span: keyword.to(end), kind });
 }
 
-/// `extern sqrt = function: (x: f64) -> f64` (§4.19). Only a function can be
-/// `extern`: the implementation comes from C, and C has functions.
+/// `extern function sqrt(x: f64) -> f64` (§4.19). Only a function can be
+/// `extern`: the implementation comes from C, and C has functions. The
+/// keyword carries the *kind* — when extern globals arrive with the FFI
+/// milestone, they will spell theirs (panel 018 watch list).
 fn extern_function(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
     let keyword = cur.span();
     let doc = cur.take_docs(src, keyword);
     cur.bump(); // `extern`
-    if !cur.at(TokenKind::Ident) {
-        if !cur.at_reported_error() {
-            let message = format!(
-                "expected the C function's name, found {} — `extern sqrt = function: (x: f64) -> f64`",
-                cur.found(src)
-            );
-            cur.error("expected_extern_name", message, cur.span());
-        }
-        cur.recover_to_next_decl(src);
-        return;
-    }
-    let name = cur.bump().span;
-    if !cur.expect(TokenKind::Eq, "expected_eq", "`=` and the signature", src) {
-        cur.recover_to_next_decl(src);
-        return;
-    }
     if !cur.at(TokenKind::KwFunction) {
         if !cur.at_reported_error() {
             let message = format!(
-                "only a `function` can be `extern`, found {} — everything else comes from C through a function (§4.19)",
+                "only a `function` can be `extern`, found {} — `extern function sqrt(x: f64) -> f64` (§4.19)",
                 cur.found(src)
             );
             cur.error("extern_not_function", message, cur.span());
         }
-        cur.recover_to_next_decl(src);
+        cur.recover_to_next_decl();
         return;
     }
-    function(cur, ast, src, name, doc, true);
+    cur.bump(); // `function`
+    if !cur.at(TokenKind::Ident) {
+        if !cur.at_reported_error() {
+            let message = format!(
+                "expected the C function's name, found {} — `extern function sqrt(x: f64) -> f64`",
+                cur.found(src)
+            );
+            cur.error("expected_name", message, cur.span());
+        }
+        cur.recover_to_next_decl();
+        return;
+    }
+    let name = cur.bump().span;
+    function_tail(cur, ast, src, keyword, doc, name, true);
 }
 
 /// An `extern` with a body is a mistake worth naming: the body would never
@@ -234,12 +238,12 @@ fn test(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
             );
             cur.error("expected_test_name", message, cur.span());
         }
-        cur.recover_to_next_decl(src);
+        cur.recover_to_next_decl();
         return;
     }
     let name = cur.bump().span;
     let Some(body) = block(cur, ast, src, "a `test`") else {
-        cur.recover_to_next_decl(src);
+        cur.recover_to_next_decl();
         return;
     };
     let span = keyword.to(body.span);

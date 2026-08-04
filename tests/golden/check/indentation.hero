@@ -1,4 +1,4 @@
-f = function: ()
+function f()
      five_spaces
-g = function: ()
+function g()
         double_jump

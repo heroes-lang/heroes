@@ -1,7 +1,7 @@
 # The backslash is reserved (panel 008).
 # Wrapped in a function so the case isolates the escape class: at top level
 # these lines are not declarations at all, and the parser said so.
-main = function: ()
+function main()
     re = "\d+"
     s = "it\'s"
     c = '\"'

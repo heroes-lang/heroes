@@ -6,26 +6,49 @@
 
 use super::dump;
 
-/// The `=` is the whole declaration form; without it there is nothing to
-/// read. The body goes with the broken header, not to a second diagnostic.
+/// The pre-panel-018 shape, written from habit: a name where the kind
+/// keyword belongs. The dispatcher is a switch on the closed keyword set, so
+/// it says so once — and the body goes with the broken header, not to a
+/// second diagnostic. (Replaces the `expected_eq` test: with no `=` in the
+/// grammar there is no missing `=` to report.)
 #[test]
-fn a_missing_eq_costs_one_diagnostic() {
+fn the_old_shape_costs_one_diagnostic() {
     assert_eq!(
-        dump("MAX constant: int\n    1\n"),
+        dump("MAX = constant: int\n    1\n"),
         "\
 file test.hero
-DIAG test.hero:1:5: error[expected_eq]: expected `=` — a top-level line binds a name to one of the four entities, found `constant`
+DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`MAX`) — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
 "
     );
 }
 
+/// An invented kind word gets the whole list: the keyword set is closed, so
+/// the message can enumerate everything a top-level line may start with.
+/// (Replaces the `expected_entity` test — there is no `= entity` position
+/// left for an unknown word to sit in.)
 #[test]
-fn an_unknown_entity_word_names_the_four() {
+fn an_unknown_kind_word_names_the_six() {
     assert_eq!(
-        dump("Point = thing\n    x: int\n"),
+        dump("widget Point\n    x: int\n"),
         "\
 file test.hero
-DIAG test.hero:1:9: error[expected_entity]: expected `constant`, `function`, `record` or `variant`, found a name (`thing`) — those four are everything a name can be
+DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`widget`) — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
+"
+    );
+}
+
+/// The anchor property panel 018 bought: recovery trusts the closed keyword
+/// set, so one broken declaration head never swallows the declaration below
+/// it — the next line starts with `record`, and `record` is never body.
+#[test]
+fn a_broken_head_does_not_swallow_the_next_declaration() {
+    assert_eq!(
+        dump("constant MAX\nrecord Point\n    x: int\n"),
+        "\
+file test.hero
+  record Point
+    field x: int
+DIAG test.hero:1:13: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found end of line
 "
     );
 }
@@ -35,10 +58,10 @@ DIAG test.hero:1:9: error[expected_entity]: expected `constant`, `function`, `re
 #[test]
 fn a_foreign_entity_word_is_reported_once() {
     assert_eq!(
-        dump("Point = struct\n    x: int\n"),
+        dump("struct Point\n    x: int\n"),
         "\
 file test.hero
-DIAG test.hero:1:9: error[reserved_word]: `struct` is not a word in this language — use `record`: `Point = record`
+DIAG test.hero:1:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
 "
     );
 }
@@ -46,7 +69,7 @@ DIAG test.hero:1:9: error[reserved_word]: `struct` is not a word in this languag
 #[test]
 fn a_declaration_without_a_body_says_so() {
     assert_eq!(
-        dump("MAX = constant: int\n"),
+        dump("constant MAX: int\n"),
         "\
 file test.hero
 DIAG test.hero:2:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found end of file)
@@ -54,13 +77,16 @@ DIAG test.hero:2:1: error[missing_body]: a `constant` needs an indented body —
     );
 }
 
-/// The recovery case that needed spans instead of tokens: `record` plants no
-/// terminator, so a header with its fields forgotten must not swallow the
-/// declaration below it.
+/// This used to be the recovery case that needed spans instead of tokens:
+/// `Point = record` ended in a non-ender, so its line boundary was invisible.
+/// Panel 018 flipped the invariant — `record Point` ends in the declared
+/// name and earns a terminator like any other line — but what the test pins
+/// survives the flip: a header with its fields forgotten must not swallow
+/// the declaration below it.
 #[test]
 fn an_empty_record_does_not_eat_the_next_declaration() {
     assert_eq!(
-        dump("Point = record\nMAX = constant: int\n    1\n"),
+        dump("record Point\nconstant MAX: int\n    1\n"),
         "\
 file test.hero
   constant MAX: int
@@ -73,7 +99,7 @@ DIAG test.hero:2:1: error[empty_record]: a `record` needs at least one field, in
 #[test]
 fn an_empty_variant_says_what_is_missing() {
     assert_eq!(
-        dump("Token = variant\n"),
+        dump("variant Token\n"),
         "\
 file test.hero
 DIAG test.hero:2:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
@@ -86,7 +112,7 @@ DIAG test.hero:2:1: error[empty_variant]: a `variant` needs at least one case, i
 #[test]
 fn a_broken_field_line_loses_only_that_field() {
     assert_eq!(
-        dump("Point = record\n    x int\n    y: int\n"),
+        dump("record Point\n    x int\n    y: int\n"),
         "\
 file test.hero
   record Point
@@ -101,7 +127,7 @@ DIAG test.hero:2:7: error[expected_field_type]: expected `:` and the field's typ
 #[test]
 fn an_extern_with_a_body_is_an_error() {
     assert_eq!(
-        dump("extern sqrt = function: (x: f64) -> f64\n    return x\n"),
+        dump("extern function sqrt(x: f64) -> f64\n    return x\n"),
         "\
 file test.hero
   extern function sqrt(x: f64) -> f64
@@ -121,7 +147,7 @@ DIAG test.hero:2:1: error[extern_has_body]: an `extern` declaration has no body 
 #[test]
 fn parameters_are_separated_by_commas_not_newlines() {
     assert_eq!(
-        dump("copy = function: (\n    from: str\n    to: str\n) -> bool\n    return true\n"),
+        dump("function copy(\n    from: str\n    to: str\n) -> bool\n    return true\n"),
         "\
 file test.hero
   function copy(from: str) -> bool
@@ -136,12 +162,12 @@ DIAG test.hero:3:5: error[expected_params_close]: expected `)`, or `,` and anoth
 #[test]
 fn a_stray_indented_block_does_not_derail_the_file() {
     assert_eq!(
-        dump("    x = 1\nMAX = constant: int\n    1\n"),
+        dump("    x = 1\nconstant MAX: int\n    1\n"),
         "\
 file test.hero
   constant MAX: int
     expr 1
-DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found an indented block — every top-level line names something: `name = constant|function|record|variant`, `test \"…\"`, or `extern`
+DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found an indented block — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
 "
     );
 }
@@ -157,7 +183,7 @@ DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a
 #[test]
 fn a_failed_arm_with_a_body_terminates() {
     assert_eq!(
-        dump("f = function: (k: int) -> int\n    return match k\n        + => 1\n            print(k)\n        _ => 0\n"),
+        dump("function f(k: int) -> int\n    return match k\n        + => 1\n            print(k)\n        _ => 0\n"),
         "file test.hero\n  function f(k: int) -> int\n    return match k\n      _ => expr 0\nDIAG test.hero:3:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, a literal, or `_` (on `int`/`str` only)\n"
     );
 }
@@ -170,7 +196,7 @@ fn a_failed_arm_with_a_body_terminates() {
 #[test]
 fn a_broken_arm_body_reports_once() {
     assert_eq!(
-        dump("f = function: (k: int) -> int\n    return match k\n        1 => x = = 2\n        _ => 0\n"),
+        dump("function f(k: int) -> int\n    return match k\n        1 => x = = 2\n        _ => 0\n"),
         "file test.hero\n  function f(k: int) -> int\n    return match k\n      1 => bind x = <?>\n      _ => expr 0\nDIAG test.hero:3:18: error[expected_expression]: expected an expression, found `=` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
     );
 }

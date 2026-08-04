@@ -9,11 +9,11 @@ use super::{assert_clean, diagnostics, resolved};
 fn the_primitives_a_record_and_a_generic_all_resolve() {
     assert_clean(
         "\
-Point = record
+record Point
     x: int
     y: f64
 
-first = function<A>: (xs: [A], flag: bool, name: str) -> A
+function first<A>(xs: [A], flag: bool, name: str) -> A
     print(flag)
     print(name)
     return xs[0]
@@ -27,10 +27,10 @@ first = function<A>: (xs: [A], flag: bool, name: str) -> A
 fn every_node_of_a_nested_type_is_answered() {
     let (out, _) = resolved(
         "\
-Point = record
+record Point
     x: int
 
-f = function: (m: {str: [Point]?}) -> int
+function f(m: {str: [Point]?}) -> int
     print(m)
     return 0
 ",
@@ -50,14 +50,14 @@ fn an_unknown_type_names_the_nearest_candidate() {
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
 
-f = function: (p: Poimt) -> int
+function f(p: Poimt) -> int
     return p.x
 "
         ),
-        "test.hero:4:19: error[unknown_type]: no type named `Poimt` — did you mean `Point`?\n"
+        "test.hero:4:15: error[unknown_type]: no type named `Poimt` — did you mean `Point`?\n"
     );
 }
 
@@ -68,15 +68,15 @@ fn a_function_in_type_position_is_told_what_it_is() {
     assert_eq!(
         diagnostics(
             "\
-g = function: () -> int
+function g() -> int
     return 1
 
-f = function: (x: g) -> int
+function f(x: g) -> int
     print(x)
     return 1
 "
         ),
-        "test.hero:4:19: error[not_a_type]: `g` is a function, not a type\n"
+        "test.hero:4:15: error[not_a_type]: `g` is a function, not a type\n"
     );
 }
 
@@ -87,23 +87,23 @@ fn a_type_parameter_does_not_escape_its_function() {
     assert_eq!(
         diagnostics(
             "\
-first = function<A>: (xs: [A]) -> A
+function first<A>(xs: [A]) -> A
     return xs[0]
 
-second = function: (ys: [A]) -> int
+function second(ys: [A]) -> int
     print(ys)
     return 0
 "
         ),
-        "test.hero:4:26: error[unknown_type]: no type named `A`\n"
+        "test.hero:4:22: error[unknown_type]: no type named `A`\n"
     );
 }
 
 /// §4.19's two FFI names are types like any other.
 #[test]
 fn ptr_and_cstr_are_primitives() {
-    assert_clean("extern puts = function: (s: cstr) -> int\n");
-    let (out, _) = resolved("extern malloc = function: (n: int) -> ptr\n");
+    assert_clean("extern function puts(s: cstr) -> int\n");
+    let (out, _) = resolved("extern function malloc(n: int) -> ptr\n");
     assert_eq!(out.type_at(TypeId(1)), TypeRef::Prim(Prim::Ptr));
 }
 
@@ -113,20 +113,20 @@ fn ptr_and_cstr_are_primitives() {
 fn a_function_type_resolves_its_parameters_and_result() {
     assert_clean(
         "\
-Point = record
+record Point
     x: int
 
-twice = function: (f: (function(Point) -> int), p: Point) -> int
+function twice(f: (function(Point) -> int), p: Point) -> int
     return f(p) + f(p)
 ",
     );
     assert_eq!(
         diagnostics(
             "\
-twice = function: (f: (function(Poimt) -> int)) -> int
+function twice(f: (function(Poimt) -> int)) -> int
     return f(1)
 "
         ),
-        "test.hero:1:33: error[unknown_type]: no type named `Poimt`\n"
+        "test.hero:1:29: error[unknown_type]: no type named `Poimt`\n"
     );
 }

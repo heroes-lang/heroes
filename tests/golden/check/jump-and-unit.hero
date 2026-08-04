@@ -6,18 +6,18 @@
 # binding that is the error. Then the mirror pair: a `()` value cannot be bound
 # (017 C, Nim's rule), and a non-`()` value alone on a line cannot be discarded
 # silently (panel 003).
-Token = variant
+variant Token
     num
         v: int
     eof
 
-nothing_to_bind = function: (t: Token) -> int
+function nothing_to_bind(t: Token) -> int
     tag = match t
         .num _ => return 1
         .eof   => return 0
     return tag
 
-bound_nothing = function: (xs: [int]) -> int
+function bound_nothing(xs: [int]) -> int
     done = print("counting")
     print(done)
     xs.push(4)

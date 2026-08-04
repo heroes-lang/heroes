@@ -12,10 +12,10 @@ use super::{assert_clean, diagnostics, resolved};
 fn a_local_a_top_level_name_and_a_builtin_each_record_their_own_kind() {
     let (out, _) = resolved(
         "\
-MAX = constant: int
+constant MAX: int
     64
 
-main = function: ()
+function main()
     x = MAX
     print(x)
 ",
@@ -36,7 +36,7 @@ main = function: ()
 fn the_use_table_has_one_entry_per_expression() {
     let (out, src) = resolved(
         "\
-main = function: ()
+function main()
     print(1 + 2)
 ",
     );
@@ -48,7 +48,7 @@ main = function: ()
 #[test]
 fn an_unknown_name_names_the_nearest_candidate_and_offers_a_certain_fix() {
     let program = "\
-main = function: ()
+function main()
     total = 1
     print(totl)
 ";
@@ -69,7 +69,7 @@ main = function: ()
 fn several_candidates_are_listed_and_carry_no_fix() {
     let (out, src) = resolved(
         "\
-main = function: ()
+function main()
     cat = 1
     cut = 2
     bat = 3
@@ -87,10 +87,10 @@ fn a_case_only_difference_is_a_candidate() {
     assert_eq!(
         diagnostics(
             "\
-Point = record
+record Point
     x: int
 
-main = function: ()
+function main()
     p = point(x: 1)
     print(p.x)
 "
@@ -107,7 +107,7 @@ fn an_unknown_ufcs_name_teaches_the_rewrite() {
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     m: {str: int} @ {}
     m.set(\"a\", 1)
 "
@@ -123,10 +123,10 @@ main = function: ()
 fn a_field_that_could_hold_a_function_is_left_to_the_checker() {
     assert_clean(
         "\
-Holder = record
+record Holder
     cb: (function(int) -> int)
 
-run = function: (h: Holder, n: int) -> int
+function run(h: Holder, n: int) -> int
     return h.cb(n)
 ",
     );
@@ -137,10 +137,10 @@ fn a_top_level_name_that_is_not_a_function_cannot_be_called_through_a_dot() {
     assert_eq!(
         diagnostics(
             "\
-MAX = constant: int
+constant MAX: int
     64
 
-main = function: ()
+function main()
     x = 1
     print(x.MAX())
 "
@@ -154,11 +154,11 @@ fn a_variant_name_in_value_position_says_where_the_values_are() {
     assert_eq!(
         diagnostics(
             "\
-Token = variant
+variant Token
     plus
     minus
 
-main = function: ()
+function main()
     t = Token
     print(t)
 "
@@ -171,11 +171,11 @@ main = function: ()
 fn a_record_is_called_by_name_because_construction_is_a_call() {
     assert_clean(
         "\
-Point = record
+record Point
     x: int
     y: int
 
-main = function: ()
+function main()
     p = Point(x: 1, y: 2)
     print(p.x)
 ",
@@ -188,7 +188,7 @@ main = function: ()
 fn fail_and_ok_resolve_as_builtins() {
     assert_clean(
         "\
-half = function: (n: int) -> int?
+function half(n: int) -> int?
     if n < 0
         return fail(\"negative\", \"n must not be negative\")
     return ok(n / 2)
@@ -203,7 +203,7 @@ half = function: (n: int) -> int?
 fn to_str_is_a_builtin_because_the_inventory_says_so() {
     assert_clean(
         "\
-describe = function: (n: int) -> str
+function describe(n: int) -> str
     return \"n = \" + n.to_str()
 ",
     );
@@ -214,7 +214,7 @@ fn a_name_used_before_its_own_binding_is_not_defined_yet() {
     assert_eq!(
         diagnostics(
             "\
-main = function: ()
+function main()
     x = x + 1
     print(x)
 "
@@ -229,7 +229,7 @@ main = function: ()
 fn a_hole_resolves_to_nothing_and_is_not_an_error() {
     let (out, _) = resolved(
         "\
-f = function: () -> int
+function f() -> int
     return ???
 ",
     );

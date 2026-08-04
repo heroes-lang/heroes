@@ -24,13 +24,11 @@ fn first_hero_end_to_end() {
 3:1 comment # The smallest program worth compiling — the M5a acceptance input.
 4:1 comment # Its hand-written C target is tools/spike/01-first.c; in M5a the emitter's
 5:1 comment # output is compared against that file by eye.
-7:1 ident main
-7:6 eq =
-7:8 kw_function function
-7:16 colon :
-7:18 lparen (
-7:19 rparen )
-7:20 terminator
+7:1 kw_function function
+7:10 ident main
+7:14 lparen (
+7:15 rparen )
+7:16 terminator
 8:1 indent
 8:5 ident print
 8:10 lparen (

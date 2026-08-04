@@ -9,7 +9,7 @@
 //! **An `extern`'s parameters are not bindings.** Its body is in C (§4.19), so
 //! its parameter names can never be read, and declaring them would make every
 //! FFI declaration in the file an unused-binding error. Their *types* are
-//! resolved: `extern sqrt = function: (x: f64) -> f64` must still name types
+//! resolved: `extern function sqrt(x: f64) -> f64` must still name types
 //! that exist, because clang is going to be handed those names.
 
 use crate::source::Source;

@@ -4,5 +4,5 @@
 # Its hand-written C target is tools/spike/01-first.c; in M5a the emitter's
 # output is compared against that file by eye.
 
-main = function: ()
+function main()
     print((2 + 3) * 4)

@@ -4,9 +4,9 @@
 # parameter, as a local. The two-tier version, where a file's own `map` won
 # silently, was vetoed by two judges from opposite directions, and this file is
 # what would go quiet if it ever came back.
-map = function<A>: (xs: [A]) -> [A]
+function map<A>(xs: [A]) -> [A]
     return xs
 
-count = function: (range: int, ok: bool) -> int
+function count(range: int, ok: bool) -> int
     len = 1
     return range + len

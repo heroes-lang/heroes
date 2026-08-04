@@ -9,7 +9,7 @@
 //! language its constructor (`Point(x: 3, y: 4)` is a call, §4.9), while a
 //! `variant` name is only ever a type — its cases are written `.num`, and which
 //! variant they belong to comes from context (§4.5's ⇐ mode). Keeping both in
-//! one table is what makes `Token = variant` and `Token = record` in one file a
+//! one table is what makes `variant Token` and `record Token` in one file a
 //! collision instead of a puzzle.
 //!
 //! The same walk collects every **field name** in the file. That set exists for

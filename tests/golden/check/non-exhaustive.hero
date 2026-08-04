@@ -4,17 +4,17 @@
 # one. Neither works alone — with `_` allowed, adding a case would stop breaking
 # compilation and exhaustiveness would be theatre; without exhaustiveness, the
 # ban would just be an inconvenience.
-Token = variant
+variant Token
     num
         v: int
     plus
     times
 
-missing = function: (t: Token) -> int
+function missing(t: Token) -> int
     return match t
         .num n => n.v
 
-lazy = function: (t: Token) -> int
+function lazy(t: Token) -> int
     return match t
         .num n => n.v
         _      => 0

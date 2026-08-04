@@ -4,7 +4,7 @@
 # `match` is exhaustive or the program does not compile, and `_` is
 # forbidden on a variant — adding a case has to break something.
 
-Token = variant
+variant Token
     number
         value: int
     word
@@ -15,7 +15,7 @@ Token = variant
     close
 
 # What a token is called in a message.
-name_of = function: (t: Token) -> str
+function name_of(t: Token) -> str
     return match t
         .number _ => "a number"
         .word _   => "a word"
@@ -25,7 +25,7 @@ name_of = function: (t: Token) -> str
         .close    => "`)`"
 
 # Binding power, strongest first (§4.14's table, in miniature).
-power_of = function: (t: Token) -> int
+function power_of(t: Token) -> int
     return match t
         .times         => 2
         .plus          => 1
@@ -33,7 +33,7 @@ power_of = function: (t: Token) -> int
         .word _        => 0
         .open | .close => 0
 
-is_operator = function: (t: Token) -> bool
+function is_operator(t: Token) -> bool
     return match t
         .plus | .times                       => true
         .number _ | .word _ | .open | .close => false
@@ -43,7 +43,7 @@ test "every token has a name and a power"
     assert power_of(.times) > power_of(.plus)
     assert is_operator(.number(value: 7)) == false
 
-main = function: ()
+function main()
     # The annotation is required and it is not ceremony: a case says which
     # case it is, never which variant, so a literal list of them has nothing
     # to infer from. Name the type once and the whole list is checked.

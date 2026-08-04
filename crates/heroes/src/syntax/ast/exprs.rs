@@ -46,9 +46,10 @@ pub enum StmtKind {
     /// `assert e` (§4.18). The source text of `e` is its span, which is why
     /// the failure message can quote the expression.
     Assert(ExprId),
-    /// `for cond` — the conditional loop.
+    /// `while cond` — the condition loop (§4.7; panel 018 gave it its own
+    /// keyword).
     While { cond: ExprId, block: Block },
-    /// `for x in xs` — sugar for `for cond` with an index (Part 5).
+    /// `for x in xs` — iteration; sugar for a `while` with an index (Part 5).
     ForIn { name: Span, iterable: ExprId, block: Block },
     /// An expression alone on a line. Its type must be `()` (§4.14, panel
     /// 003) — a *type* judgment, not a parse error, so the parser accepts

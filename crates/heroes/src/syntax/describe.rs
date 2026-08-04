@@ -28,6 +28,7 @@ pub(super) fn describe(kind: TokenKind) -> &'static str {
         TokenKind::KwIf => "`if`",
         TokenKind::KwElse => "`else`",
         TokenKind::KwFor => "`for`",
+        TokenKind::KwWhile => "`while`",
         TokenKind::KwIn => "`in`",
         TokenKind::KwBreak => "`break`",
         TokenKind::KwContinue => "`continue`",

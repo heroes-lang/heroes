@@ -4,9 +4,9 @@
 # parameter here, which is the shape §4.16's own example has — and suspends
 # NOTHING else. The unknown name below is still an error, or a file with one
 # hole would stop being checked at all.
-draft = function: (a: int, b: int) -> int
+function draft(a: int, b: int) -> int
     spare = 1
     return a + nope
 
-later = function: () -> int
+function later() -> int
     ???

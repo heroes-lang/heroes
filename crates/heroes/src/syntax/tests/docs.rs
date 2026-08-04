@@ -9,7 +9,7 @@ use super::dump;
 #[test]
 fn the_comment_directly_above_is_documentation() {
     assert_eq!(
-        dump("# Squared distance, without the square root.\nMAX = constant: int\n    1\n"),
+        dump("# Squared distance, without the square root.\nconstant MAX: int\n    1\n"),
         "\
 file test.hero
   constant MAX: int
@@ -22,7 +22,7 @@ file test.hero
 #[test]
 fn a_run_of_comments_stays_in_source_order() {
     assert_eq!(
-        dump("# First line.\n# Second line.\nMAX = constant: int\n    1\n"),
+        dump("# First line.\n# Second line.\nconstant MAX: int\n    1\n"),
         "\
 file test.hero
   constant MAX: int
@@ -38,7 +38,7 @@ file test.hero
 #[test]
 fn a_blank_line_ends_the_documentation() {
     assert_eq!(
-        dump("# Just a note about the file.\n\nMAX = constant: int\n    1\n"),
+        dump("# Just a note about the file.\n\nconstant MAX: int\n    1\n"),
         "\
 file test.hero
   constant MAX: int
@@ -52,7 +52,7 @@ file test.hero
 #[test]
 fn a_section_heading_is_not_documentation() {
     assert_eq!(
-        dump("## Limits\nMAX = constant: int\n    1\n"),
+        dump("## Limits\nconstant MAX: int\n    1\n"),
         "\
 file test.hero
   constant MAX: int
@@ -66,7 +66,7 @@ file test.hero
 #[test]
 fn a_trailing_comment_on_the_line_above_is_not_documentation() {
     assert_eq!(
-        dump("A = constant: int\n    1  # the answer\nB = constant: int\n    2\n"),
+        dump("constant A: int\n    1  # the answer\nconstant B: int\n    2\n"),
         "\
 file test.hero
   constant A: int
@@ -81,7 +81,7 @@ file test.hero
 #[test]
 fn fields_carry_their_own_documentation() {
     assert_eq!(
-        dump("Point = record\n    # Distance from the left edge.\n    x: int\n    y: int\n"),
+        dump("record Point\n    # Distance from the left edge.\n    x: int\n    y: int\n"),
         "\
 file test.hero
   record Point

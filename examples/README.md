@@ -10,7 +10,7 @@
   | `01-points.hero`    | records, named construction, UFCS |
   | `02-tokens.hero`    | a variant with payloads, and exhaustive `match` |
   | `03-fallible.hero`  | `T?`, `fail`/`ok`, `?`, `.must()`, `.default()` |
-  | `04-loops.hero`     | `for cond`, `for x in xs`, cells, `break`/`continue` |
+  | `04-loops.hero`     | `while cond`, `for x in xs`, cells, `break`/`continue` |
   | `05-mutation.hero`  | `@` parameters: copy in, copy out, no aliasing |
   | `06-generics.hero`  | generics on functions, and functions as values |
   | `07-strings.hero`   | bytes versus characters, `slice`, `join` |

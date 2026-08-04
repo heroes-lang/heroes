@@ -72,7 +72,7 @@ fn the_acceptance_program_is_canonical_and_unchanged_by_formatting() {
 #[test]
 fn a_run_of_inline_arms_aligns_its_arrows() {
     let text = "\
-f = function: (n: int) -> int
+function f(n: int) -> int
     return match n
         0     => 10
         1     => 20
@@ -90,7 +90,7 @@ f = function: (n: int) -> int
 #[test]
 fn a_multi_line_list_stays_multi_line() {
     let text = "\
-main = function: ()
+function main()
     cases = [
         \"a\"
         \"b\"
@@ -101,8 +101,8 @@ main = function: ()
     assert_canonical(text);
     // …and one written on a line that fits stays on it.
     assert_eq!(
-        format("main = function: ()\n    print([\"a\", \"b\"])\n"),
-        "main = function: ()\n    print([\"a\", \"b\"])\n"
+        format("function main()\n    print([\"a\", \"b\"])\n"),
+        "function main()\n    print([\"a\", \"b\"])\n"
     );
 }
 
@@ -123,32 +123,32 @@ fn the_first_program_is_already_canonical() {
 #[test]
 fn parentheses_survive_exactly_where_they_carry_meaning() {
     assert_eq!(
-        format("main = function: ()\n    x = 2 + (3 * 4)\n"),
-        "main = function: ()\n    x = 2 + 3 * 4\n"
+        format("function main()\n    x = 2 + (3 * 4)\n"),
+        "function main()\n    x = 2 + 3 * 4\n"
     );
     assert_eq!(
-        format("main = function: ()\n    x = (2 + 3) * 4\n"),
-        "main = function: ()\n    x = (2 + 3) * 4\n"
+        format("function main()\n    x = (2 + 3) * 4\n"),
+        "function main()\n    x = (2 + 3) * 4\n"
     );
     // Left-associative, so the right operand of an equal-power operator keeps
     // its parentheses: `a - (b - c)` is not `a - b - c`.
     assert_eq!(
-        format("main = function: ()\n    x = a - (b - c)\n"),
-        "main = function: ()\n    x = a - (b - c)\n"
+        format("function main()\n    x = a - (b - c)\n"),
+        "function main()\n    x = a - (b - c)\n"
     );
     assert_eq!(
-        format("main = function: ()\n    x = (a - b) - c\n"),
-        "main = function: ()\n    x = a - b - c\n"
+        format("function main()\n    x = (a - b) - c\n"),
+        "function main()\n    x = a - b - c\n"
     );
 }
 
-/// A function that returns nothing writes no arrow — `main = function: ()` is
+/// A function that returns nothing writes no arrow — `function main()` is
 /// the form §4.2 shows, so `-> ()` has one spelling and it is the empty one.
 #[test]
 fn the_unit_result_is_never_written() {
     assert_eq!(
-        format("main = function: () -> ()\n    print(1)\n"),
-        "main = function: ()\n    print(1)\n"
+        format("function main() -> ()\n    print(1)\n"),
+        "function main()\n    print(1)\n"
     );
 }
 
@@ -156,16 +156,16 @@ fn the_unit_result_is_never_written() {
 /// documentation (§4.1), so the formatter may never open or close that gap.
 #[test]
 fn a_blank_line_between_comment_and_declaration_is_preserved() {
-    let doc = "# The limit.\nMAX = constant: int\n    64\n";
+    let doc = "# The limit.\nconstant MAX: int\n    64\n";
     assert_eq!(format(doc), doc);
-    let remark = "# Just a remark.\n\nMAX = constant: int\n    64\n";
+    let remark = "# Just a remark.\n\nconstant MAX: int\n    64\n";
     assert_eq!(format(remark), remark);
 }
 
 #[test]
 fn comments_inside_a_body_are_kept_where_they_were() {
     let text = "\
-main = function: ()
+function main()
     # Why this order matters.
     print(1)
     print(2)  # the second one
@@ -178,12 +178,12 @@ main = function: ()
 #[test]
 fn declarations_are_separated_by_exactly_one_blank_line() {
     assert_eq!(
-        format("A = constant: int\n    1\nB = constant: int\n    2\n"),
-        "A = constant: int\n    1\n\nB = constant: int\n    2\n"
+        format("constant A: int\n    1\nconstant B: int\n    2\n"),
+        "constant A: int\n    1\n\nconstant B: int\n    2\n"
     );
     assert_eq!(
-        format("A = constant: int\n    1\n\n\n\nB = constant: int\n    2\n"),
-        "A = constant: int\n    1\n\nB = constant: int\n    2\n"
+        format("constant A: int\n    1\n\n\n\nconstant B: int\n    2\n"),
+        "constant A: int\n    1\n\nconstant B: int\n    2\n"
     );
 }
 
@@ -191,10 +191,10 @@ fn declarations_are_separated_by_exactly_one_blank_line() {
 /// so one survives and a run collapses.
 #[test]
 fn one_blank_line_inside_a_body_survives() {
-    let text = "main = function: ()\n    print(1)\n\n    print(2)\n";
+    let text = "function main()\n    print(1)\n\n    print(2)\n";
     assert_eq!(format(text), text);
     assert_eq!(
-        format("main = function: ()\n    print(1)\n\n\n\n    print(2)\n"),
+        format("function main()\n    print(1)\n\n\n\n    print(2)\n"),
         text
     );
 }
@@ -204,11 +204,11 @@ fn one_blank_line_inside_a_body_survives() {
 /// continuation.
 #[test]
 fn a_list_too_long_for_one_line_breaks_by_newline() {
-    let long = "main = function: ()\n    xs = [\"aaaaaaaaaaaaaaaa\", \"bbbbbbbbbbbbbbbb\", \"cccccccccccccccc\", \"dddddddddddddddd\"]\n";
+    let long = "function main()\n    xs = [\"aaaaaaaaaaaaaaaa\", \"bbbbbbbbbbbbbbbb\", \"cccccccccccccccc\", \"dddddddddddddddd\"]\n";
     assert_eq!(
         format(long),
         "\
-main = function: ()
+function main()
     xs = [
         \"aaaaaaaaaaaaaaaa\"
         \"bbbbbbbbbbbbbbbb\"
@@ -224,11 +224,11 @@ main = function: ()
 /// about literals, and the parser requires `,` in a call.
 #[test]
 fn an_argument_list_too_long_for_one_line_breaks_by_comma() {
-    let long = "main = function: ()\n    copy(from: \"/tmp/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", to: \"/tmp/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\")\n";
+    let long = "function main()\n    copy(from: \"/tmp/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", to: \"/tmp/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\")\n";
     assert_eq!(
         format(long),
         "\
-main = function: ()
+function main()
     copy(
         from: \"/tmp/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",
         to: \"/tmp/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"
@@ -243,12 +243,12 @@ main = function: ()
 #[test]
 fn control_forms_and_type_declarations_round_trip() {
     let text = "\
-Token = variant
+variant Token
     num
         v: int
     plus
 
-state = function: (t: Token) -> str
+function state(t: Token) -> str
     label = if t == .plus
         \"+\"
     else
@@ -271,7 +271,7 @@ state = function: (t: Token) -> str
 #[test]
 fn an_arm_whose_body_is_a_control_form_keeps_its_blocks() {
     let text = "\
-g = function: (x: int) -> int
+function g(x: int) -> int
     return match x
         0 => if x > 0
             1
@@ -287,7 +287,7 @@ g = function: (x: int) -> int
 #[test]
 fn statement_arm_bodies_are_canonical() {
     let text = concat!(
-        "f = function: (ts: [int]) -> int?\n",
+        "function f(ts: [int]) -> int?\n",
         "    total: int @ 0\n",
         "    for t in ts\n",
         "        match t\n",
@@ -313,12 +313,12 @@ fn statement_arm_bodies_are_canonical() {
 #[test]
 fn an_arm_does_not_steal_the_next_declarations_doc_comment() {
     let text = "\
-f = function: (k: int) -> int
+function f(k: int) -> int
     return match k
         _ => 2
 
 # Doc for g.
-g = function: () -> int
+function g() -> int
     return 1
 ";
     assert_eq!(format(text), text);

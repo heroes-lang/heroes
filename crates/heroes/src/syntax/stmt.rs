@@ -15,6 +15,7 @@
 //! typo (`totl @ total + x`) must not silently declare a new variable, and
 //! the shapes have to be distinguishable without scanning the block (§4.4).
 
+use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::lexer::TokenKind;
 use crate::source::{Source, Span};
 
@@ -26,12 +27,39 @@ use super::types::parse_type;
 /// The indented body of a declaration, a loop, an `if` or a `match` arm.
 /// `None` means the block was missing and a diagnostic said so; the caller
 /// gives up on that construct.
+/// `function f():` — the Python suite colon, the one autopilot slip panel
+/// 018's blind experiment pre-registered above every other (12-18% of
+/// files). Eaten with a `Certain` fix so one habit costs one diagnostic and
+/// the block still parses. A `:` is never legal at a block boundary —
+/// annotations, named arguments and map literals all live inside other
+/// structure — so this can never misfire.
+pub(super) fn eat_python_colon(cur: &mut Cursor) {
+    if !cur.at(TokenKind::Colon) {
+        return;
+    }
+    let span = cur.span();
+    let mut diag = Diagnostic::new(
+        "trailing_colon",
+        "a block is opened by the indentation alone — drop the `:` (this is not Python)".to_string(),
+        span,
+    );
+    diag.fixes.push(Fix {
+        title: "drop the `:`".to_string(),
+        replacement: String::new(),
+        span,
+        certainty: Certainty::Certain,
+    });
+    cur.push_diagnostic(diag);
+    cur.bump();
+}
+
 pub(super) fn block(
     cur: &mut Cursor,
     ast: &mut Ast,
     src: &Source,
     owner: &str,
 ) -> Option<Block> {
+    eat_python_colon(cur);
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
         if !cur.at_reported_error() {
@@ -90,7 +118,8 @@ pub(super) fn statement(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtId
             cur.bump();
             StmtKind::Assert(expr(cur, ast, src))
         }
-        TokenKind::KwFor => loop_stmt(cur, ast, src),
+        TokenKind::KwFor => for_stmt(cur, ast, src),
+        TokenKind::KwWhile => while_stmt(cur, ast, src),
         // `x = …` and `v: … @ …` are the two declaration shapes; everything
         // else starting with a name is an expression, and possibly the place
         // of a mutation.
@@ -154,10 +183,26 @@ fn return_stmt(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
     StmtKind::Return(Some(expr(cur, ast, src)))
 }
 
-/// One keyword, two loops (§4.7): `for cond` and `for x in xs`. The `in`
-/// decides, and it is one token of lookahead.
-fn loop_stmt(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
-    cur.bump(); // `for`
+/// `while cond` — the condition loop (§4.7; panel 018 split it out of the
+/// old two-grammar `for`).
+fn while_stmt(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
+    cur.bump(); // `while`
+    let cond = expr(cur, ast, src);
+    match block(cur, ast, src, "a `while`") {
+        Some(block) => StmtKind::While { cond, block },
+        None => StmtKind::Error,
+    }
+}
+
+/// `for x in xs` — iteration only (§4.7). A condition after `for` is the one
+/// autopilot mistake this arm exists to catch. The `while` fix is `Certain`
+/// only when no loop variable can be present (`for !done`, `for 0 < x`): no
+/// for-in could have produced that line. `for x > 0` gets the same fix as a
+/// `Guess`, because `for x of xs` — a mangled iteration, not a condition —
+/// reaches the identical parse state, and a machine-applied `while` there
+/// would not compile.
+fn for_stmt(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
+    let keyword = cur.bump().span; // `for`
     if cur.at(TokenKind::Ident) && cur.peek(1) == TokenKind::KwIn {
         let name = cur.bump().span;
         cur.bump(); // `in`
@@ -167,6 +212,27 @@ fn loop_stmt(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
             None => StmtKind::Error,
         };
     }
+    if !cur.at_reported_error() {
+        let certainty = if cur.at(TokenKind::Ident) {
+            Certainty::Guess
+        } else {
+            Certainty::Certain
+        };
+        let message = format!(
+            "`for` iterates — `for x in xs`; found {} — a loop over a condition is `while`",
+            cur.found(src)
+        );
+        let mut diag = Diagnostic::new("for_missing_in", message, cur.span());
+        diag.fixes.push(Fix {
+            title: "use `while`".to_string(),
+            replacement: "while".to_string(),
+            span: keyword,
+            certainty,
+        });
+        cur.push_diagnostic(diag);
+    }
+    // Parse the rest as the condition loop it most likely was: one mistake,
+    // one diagnostic, and the body still gets checked.
     let cond = expr(cur, ast, src);
     match block(cur, ast, src, "a `for`") {
         Some(block) => StmtKind::While { cond, block },

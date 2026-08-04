@@ -19,7 +19,7 @@ use crate::source::Source;
 use super::ast::{Arm, ArmBody, Ast, Branch, Expr, ExprId, ExprKind, Pattern, PatternKind};
 use super::cursor::Cursor;
 use super::expr::expr;
-use super::stmt::{block, statement};
+use super::stmt::{block, eat_python_colon, statement};
 
 /// `if cond` + block, then any number of `else if`, then an optional `else`.
 /// No parentheses around the condition (§4.15) and no truthiness: the
@@ -56,6 +56,7 @@ pub(super) fn if_expr(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
 pub(super) fn match_expr(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
     let start = cur.bump().span; // `match`
     let scrutinee = expr(cur, ast, src);
+    eat_python_colon(cur);
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
         if !cur.at_reported_error() {

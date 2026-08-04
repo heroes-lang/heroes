@@ -1,24 +1,27 @@
 //! The two type declarations: `record` and `variant` — product and sum
-//! (design.md §4.2).
+//! (design.md §4.2; panel 018 for the keyword-first shape).
 //!
 //! They are the two entities that declare a *type* rather than a value, so
-//! they take no `:` and no signature: a keyword, then a block. Both share
-//! the same trap, which is why they share a file: neither `record` nor
-//! `variant` can end a statement, so the lexer plants **no terminator**
-//! after the header (panel 007). A missing block is therefore discovered on
-//! the *next line*, and the diagnostic must not take that line with it —
-//! see `Cursor::at_line_start`.
+//! no `:` and no signature follow the name: keyword, name, block. Their old
+//! shared trap — headers ending in a non-ender, so no terminator (panel
+//! 007) — died with the inversion: `record Point` ends in a name, and the
+//! lexer terminates the line like any other.
 
 use crate::lexer::TokenKind;
-use crate::source::{Source, Span};
+use crate::source::Source;
 
 use super::ast::{Ast, Decl, DeclKind};
 use super::cursor::Cursor;
+use super::decl::head;
 use super::members::{case_block, field_block};
+use super::stmt::eat_python_colon;
 
-/// `Point = record` + one field per line (§4.2).
-pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span, doc: Vec<Span>) {
-    cur.bump(); // `record`
+/// `record Point` + one field per line (§4.2).
+pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
+    let Some((keyword, doc, name)) = head(cur, src, "record Point") else {
+        return;
+    };
+    eat_python_colon(cur);
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
         if !cur.at_reported_error() {
@@ -28,7 +31,7 @@ pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span, 
                 cur.span(),
             );
         }
-        cur.recover_to_next_decl(src);
+        cur.recover_to_next_decl();
         return;
     }
     let start = cur.span();
@@ -37,15 +40,18 @@ pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span, 
     ast.decls.push(Decl {
         name,
         doc,
-        span: name.to(end),
+        span: keyword.to(end),
         kind: DeclKind::Record { fields },
     });
 }
 
-/// `Token = variant` + one case per line, each case optionally carrying
+/// `variant Token` + one case per line, each case optionally carrying
 /// fields — a case with fields *is* a small record (§4.2).
-pub(super) fn variant(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span, doc: Vec<Span>) {
-    cur.bump(); // `variant`
+pub(super) fn variant(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
+    let Some((keyword, doc, name)) = head(cur, src, "variant Token") else {
+        return;
+    };
+    eat_python_colon(cur);
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
         if !cur.at_reported_error() {
@@ -55,11 +61,11 @@ pub(super) fn variant(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span,
                 cur.span(),
             );
         }
-        cur.recover_to_next_decl(src);
+        cur.recover_to_next_decl();
         return;
     }
     let start = cur.span();
     let cases = case_block(cur, ast, src);
     let end = cases.last().map_or(start, |case| case.name);
-    ast.decls.push(Decl { name, doc, span: name.to(end), kind: DeclKind::Variant { cases } });
+    ast.decls.push(Decl { name, doc, span: keyword.to(end), kind: DeclKind::Variant { cases } });
 }

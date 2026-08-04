@@ -7,7 +7,7 @@
 use super::dump;
 
 fn field(ty: &str) -> String {
-    dump(&format!("T = record\n    f: {ty}\n"))
+    dump(&format!("record T\n    f: {ty}\n"))
 }
 
 #[test]
@@ -99,12 +99,12 @@ DIAG test.hero:2:18: error[named_parameter_in_function_type]: a function type li
 #[test]
 fn fn_is_still_a_reserved_word_inside_a_type() {
     assert_eq!(
-        dump("T = record\n    f: (fn(int) -> int)\n"),
+        dump("record T\n    f: (fn(int) -> int)\n"),
         "\
 file test.hero
   record T
     field f: <?>
-DIAG test.hero:2:9: error[reserved_word]: `fn` is not a word in this language — use `function`: `f = function: (x: int) -> int`
+DIAG test.hero:2:9: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: int) -> int`
 "
     );
 }
@@ -117,7 +117,7 @@ DIAG test.hero:2:9: error[reserved_word]: `fn` is not a word in this language �
 fn the_arena_holds_one_node_per_written_constructor() {
     let src = crate::source::Source::new(
         "test.hero".to_string(),
-        "T = record\n    f: {str: [int]}?\n".to_string(),
+        "record T\n    f: {str: [int]}?\n".to_string(),
     );
     let out = crate::syntax::parse(&src);
     assert_eq!(out.diagnostics.len(), 0);

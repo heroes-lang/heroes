@@ -8,17 +8,16 @@ renderer reads from it conceptually, the golden tests in `check/` pin it.
 
 | Foreign word | Error text |
 |---|---|
-| `struct` | error: `struct` is not a word in this language — use `record`:  `Point = record` |
-| `enum` | error: `enum` is not a word in this language — use `variant`:  `Token = variant` |
-| `union` | error: `union` is not a word in this language — use `variant`:  `Token = variant` |
+| `struct` | error: `struct` is not a word in this language — use `record`:  `record Point` |
+| `enum` | error: `enum` is not a word in this language — use `variant`:  `variant Token` |
+| `union` | error: `union` is not a word in this language — use `variant`:  `variant Token` |
 | `class` | error: `class` is not a word in this language — use `record` (there is no inheritance) |
-| `fn` | error: `fn` is not a word in this language — use `function`:  `f = function: (x: int) -> int` |
+| `fn` | error: `fn` is not a word in this language — use `function`:  `function f(x: int) -> int` |
 | `func` | error: `func` is not a word in this language — use `function` |
 | `def` | error: `def` is not a word in this language — use `function` |
 | `let` | error: `let` is not a word in this language — bind with `=`:  `x = 5` |
 | `var` | error: `var` is not a word in this language — declare a mutable with `@`:  `v: int @ 0` |
-| `const` | error: `const` is not a word in this language — use `constant`:  `MAX = constant: int` |
-| `while` | error: `while` is not a word in this language — use `for`:  `for x > 0` |
+| `const` | error: `const` is not a word in this language — use `constant`:  `constant MAX: int` |
 | `elif` | error: `elif` is not a word in this language — write `else if` |
 | `switch` | error: `switch` is not a word in this language — use `match` |
 | `case` | error: `case` is not a word in this language — a `match` arm is `.name => expr` |
@@ -31,7 +30,14 @@ Also prescribed (design.md §4.17): `@name` in **prefix statement position**
 (Python/Ruby decorator prior) is always a syntax error with a note showing the
 two legal `@` forms (`v: int @ 0` declaration, `v @ expr` mutation).
 
+Two parser-position prescriptions joined them with panel 018, worded in the
+parser because their words are legal elsewhere: `for` without `in` (the Go
+condition-loop prior) fails with the fix `use \`while\`` — `Certain` when no
+loop variable can be present, `Guess` after one; and a trailing `:` on any
+block header (the Python suite colon, the shape's top pre-registered slip)
+fails with a `Certain` fix that deletes it.
+
 Keywords of Heroes itself (cannot be identifiers): `constant` `function`
-`record` `variant` `match` `if` `else` `for` `in` `break` `continue` `return`
+`record` `variant` `match` `if` `else` `for` `while` `in` `break` `continue` `return`
 `test` `assert` `extern` `true` `false` `fail` — plus the two-character forms
 `=>` `->` and the sigil `@`.

@@ -1,5 +1,6 @@
 //! The four entities and their two neighbours (`extern`, `test`) — one
-//! shape, `NAME = entity`, seen six ways (design.md §4.2, §4.18, §4.19).
+//! keyword-first shape, `constant MAX: int` / `function f(…)` / `record R` /
+//! `variant V`, seen six ways (design.md §4.2, §4.18, §4.19; panel 018).
 
 use super::dump;
 
@@ -11,7 +12,7 @@ fn empty_file_has_no_declarations() {
 #[test]
 fn constant_carries_its_type_and_its_value() {
     assert_eq!(
-        dump("MAX_DEPTH = constant: int\n    64\n"),
+        dump("constant MAX_DEPTH: int\n    64\n"),
         "\
 file test.hero
   constant MAX_DEPTH: int
@@ -23,7 +24,7 @@ file test.hero
 #[test]
 fn function_signature_reads_back_as_written() {
     assert_eq!(
-        dump("dist2 = function: (a: Point, b: Point) -> int\n    return 1\n"),
+        dump("function dist2(a: Point, b: Point) -> int\n    return 1\n"),
         "\
 file test.hero
   function dist2(a: Point, b: Point) -> int
@@ -32,13 +33,13 @@ file test.hero
     );
 }
 
-/// `main = function: ()` — the entry point (§4.1). No `->` at all, and the
+/// `function main()` — the entry point (§4.1). No `->` at all, and the
 /// result still prints as `()`: the parser synthesises the node so no later
 /// pass has to ask whether the arrow was written.
 #[test]
 fn no_arrow_means_the_result_is_unit() {
     assert_eq!(
-        dump("main = function: ()\n    print(1)\n"),
+        dump("function main()\n    print(1)\n"),
         "\
 file test.hero
   function main() -> ()
@@ -52,7 +53,7 @@ file test.hero
 #[test]
 fn mutable_parameter_keeps_its_marker() {
     assert_eq!(
-        dump("advance = function: (@l: Lex)\n    print(1)\n"),
+        dump("function advance(@l: Lex)\n    print(1)\n"),
         "\
 file test.hero
   function advance(@l: Lex) -> ()
@@ -64,7 +65,7 @@ file test.hero
 #[test]
 fn generics_are_names_only() {
     assert_eq!(
-        dump("map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]\n    return xs\n"),
+        dump("function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]\n    return xs\n"),
         "\
 file test.hero
   function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
@@ -76,7 +77,7 @@ file test.hero
 #[test]
 fn record_is_one_field_per_line() {
     assert_eq!(
-        dump("Point = record\n    x: int\n    y: int\n"),
+        dump("record Point\n    x: int\n    y: int\n"),
         "\
 file test.hero
   record Point
@@ -91,7 +92,7 @@ file test.hero
 #[test]
 fn variant_cases_carry_optional_payloads() {
     assert_eq!(
-        dump("Token = variant\n    num\n        v: int\n    plus\n"),
+        dump("variant Token\n    num\n        v: int\n    plus\n"),
         "\
 file test.hero
   variant Token
@@ -106,7 +107,7 @@ file test.hero
 #[test]
 fn extern_has_a_signature_and_no_body() {
     assert_eq!(
-        dump("extern sqrt = function: (x: f64) -> f64\n"),
+        dump("extern function sqrt(x: f64) -> f64\n"),
         "file test.hero\n  extern function sqrt(x: f64) -> f64\n"
     );
 }
@@ -132,13 +133,13 @@ fn a_whole_file_keeps_its_reading_order() {
     assert_eq!(
         dump(
             "\
-Point = record
+record Point
     x: int
 
-dist2 = function: (a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> int
     return 1
 
-MAX = constant: int
+constant MAX: int
     64
 "
         ),

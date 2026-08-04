@@ -5,12 +5,12 @@
 #   a pattern payload
 # Two of the four carry a CERTAIN fix, and it is the same one: rename to `_`.
 # That is the escape valve three judges said the rule cannot ship without.
-Token = variant
+variant Token
     num
         v: int
     plus
 
-describe = function: (t: Token, verbose: bool) -> int
+function describe(t: Token, verbose: bool) -> int
     total: int @ 0
     total @ 1
     for i in range(0, 3)

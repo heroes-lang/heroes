@@ -14,8 +14,9 @@ use super::ast::{Ast, Case, Field, Param};
 use super::cursor::Cursor;
 use super::types::parse_type;
 
-/// `function<A, B>:` — type parameter names, no constraints, never written
-/// at the call site (§4.12). Absent `<` means a non-generic function.
+/// `function map<A, B>(…)` — type parameter names after the declared name,
+/// no constraints, never written at the call site (§4.12). Absent `<` means
+/// a non-generic function.
 pub(super) fn generics(cur: &mut Cursor, src: &Source) -> Vec<Span> {
     let mut names: Vec<Span> = Vec::new();
     if !cur.eat(TokenKind::Lt) {

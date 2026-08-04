@@ -1,1 +1,0 @@
-tests/golden/check/signature-without-colon.hero:5:18: error[expected_signature]: expected `:` and the signature — `function: (a: int) -> bool`, found `(`

@@ -1,4 +1,4 @@
-tests/golden/check/unused-bindings.hero:13:33: error[unused_binding]: the parameter `verbose` is never read — remove it from the signature, or write `???` in the body while the function is unfinished
+tests/golden/check/unused-bindings.hero:13:29: error[unused_binding]: the parameter `verbose` is never read — remove it from the signature, or write `???` in the body while the function is unfinished
 tests/golden/check/unused-bindings.hero:14:5: error[unused_binding]: `total` is written and never read — a cell nothing reads is a value nobody uses
 tests/golden/check/unused-bindings.hero:16:9: error[unused_binding]: the loop variable `i` is never read — write `for _ in …` when the element is not needed
 tests/golden/check/unused-bindings.hero:19:14: error[unused_binding]: the payload `n` is never read — write `_` in the pattern when the value is not needed

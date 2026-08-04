@@ -75,7 +75,7 @@ fn write_stmt(
             write_valued(ast, src, &format!("{head}assert "), *value, indent, out)
         }
         StmtKind::While { cond, block } => {
-            line(out, indent, &format!("{head}for {}", render_expr(ast, *cond, src)));
+            line(out, indent, &format!("{head}while {}", render_expr(ast, *cond, src)));
             write_block(ast, src, block, indent + 2, out);
         }
         StmtKind::ForIn { name, iterable, block } => {
