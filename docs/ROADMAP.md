@@ -23,7 +23,9 @@ mutants, 94% caught against 76% in the control arm, recorded with provenance in
 `docs/measurements/001-metric-3.md` — the project's first number about its own
 thesis, with the columns that show *no* effect named as plainly as the ones that
 do. **spec v1 landed and the freeze is over**: seven panels' amendments, 160
-measured tokens of removals spent, 2136 binding max (from 2048), and the spec is
+measured tokens of removals spent, 2139 binding max (from 2048 — the number read
+2136 until panel 018's sweep landed, which cost +3 measured against a table that
+had sold its shape as −4 on v0: deltas measured on v0 did not transfer), and the spec is
 now *tested* against the compiler — because it had been briefing models into a
 reserved-word error for four milestones.
 
@@ -34,7 +36,7 @@ rebuilt on panel 016's verdict: one strict table-driven argv parser, exit codes
 0/1/2 printed in `--help`, `--dump-<stage>` per design.md §3.5, `--in-place`
 where `--write` used to be, and a stopping rule in CLAUDE.md §10 so the surface
 does not sprawl.
-Next: M4, desugar and lowering — Part 5's sugar table erased in the frontend, a
+Next: M4, desugar and lowering — Part 5's sugar table erased on the way into the IR, a
 three-address IR with explicit basic blocks, `heroes build --dump-ir`. Nothing
 blocks it. Carried in: `()` inside a container is still accepted, a `match` over
 `bool` cannot be written exhaustively, and the same-typed-argument rule's cost on
@@ -140,10 +142,13 @@ design.md, so the appendix stays its single source).
   measured mechanism and not yet its measured claim.
 
 ### M4 — Desugar + lowering
-Part 5's sugar table erased in the frontend; three-address IR with explicit
-basic blocks. Named-arg check ordered before monomorphisation.
-`heroes build --dump-ir`. (Queued for the author: hand-desugar three
-constructs, before this lands.)
+Part 5's sugar table erased **on the way into the IR** — no desugared tree, and
+`--dump-ir` is the evidence (one golden per row); three-address IR with explicit
+basic blocks, **slots and no phi nodes** (panel 019). Named-arg check ordered
+before monomorphisation, which is itself an IR→IR pass at M6. `heroes build
+[--dump-ir]`, and an IR verifier that runs in tests — GHC's Core Lint without
+GHC's tree. (Queued for the author: hand-desugar three constructs, against the
+IR text.)
 
 ### M5 — split around the two passes
 - **M5a — Scalars run:** `int`/`bool`/`if`/`while cond`/functions/`print` →

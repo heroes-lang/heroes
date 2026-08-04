@@ -273,7 +273,9 @@ plus *elaboration*; it is how ML, Haskell and Scheme are formally described.
 
 This is not academic elegance — **it determines the size of your compiler.** Anything in the core
 must be implemented in the type checker *and* the lowering *and* the backend. Anything that is sugar
-is erased by one function in the frontend and never touched again.
+is erased by one function **on the way into the IR** and never touched again (panel 019: the erasure
+happens *inside* lowering, not in a pass before it — there is no desugared tree, and `--dump-ir` is
+the evidence that the table below was honoured).
 
 **Therefore the working criterion for "is this a simplification?": does it move something from the
 core to the sugar, or remove a special case from the compiler?** Not: does it shorten the syntax.
@@ -1247,8 +1249,21 @@ Rules that keep the cost low:
   (`collect::<Vec<i32>>()`) cannot exist in this language**, because there is no syntax to specify
   type arguments manually. That is deliberate: it tokenises terribly, being a very rare sequence.
 - **Monomorphisation.** On seeing `map(nums, plus)` with `nums: [int]`, generate a copy of the
-  function with `A := int`. This is textual substitution on the AST before type checking — no
-  theory, a few hundred lines.
+  function with `A := int`. **This is substitution on the IR, after type checking** — an IR→IR pass
+  that runs before the ownership pass and before the emitter, both of which assert that no
+  `Ty::Generic` survives. No theory, a few hundred lines.
+
+  *Amended by panel 019 (2026-08-04).* This paragraph used to say "textual substitution on the AST
+  before type checking", and M3 had already falsified it: the bidirectional checker checks a generic
+  body **once, polymorphically**, with `Ty::Generic(i)` in the type table. Substituting first would
+  mean checking every instantiation and reporting the same mistake once per instantiation — and it
+  has no success story: rustc creates no monomorphised MIR at all (monomorphisation is "the first
+  step in the backend"), Swift states there is "no such thing as an instantiation-time error", and
+  C++, the language usually described this way, is not textual substitution either — two-phase name
+  lookup took MSVC until Visual Studio 2017 15.3 to implement. The order also has a practical edge
+  in this compiler: the ownership pass cannot decide whether a `Generic(0)` slot needs a `decref`,
+  which is why monomorphisation must precede it and why the invariant is written down rather than
+  assumed.
 - **Generics on functions only, not on types.** `T?`, `[T]` and `{K:V}` stay built-in.
 
 Historical note: Go shipped without user generics for a decade precisely because the three built-in
@@ -1688,25 +1703,37 @@ Two passes sit between type checking and emission, and they are **core obligatio
   `break`, `continue`, `panic`, match fallthrough) releases live locals and performs `@` copy-out
   (§4.8: "copy-out happens always"). The runtime cannot know where a scope ends; only lowering can.
 
-### The sugar: erased in the frontend
+### The sugar: erased on the way into the IR
 
 | Sugar | Reduces to |
 |---|---|
-| `if` / `else if` / `else` | `match` on `bool` |
+| `if` / `else if` / `else` | a two-way branch, and a join slot when it has a value |
 | `for x in xs` | `while cond` with an index |
-| `?` | `match` plus early `return` |
-| `.must()`, `.default()`, `.is_err()` | `match` |
+| `?` | a branch plus an early `return` |
+| `.must()`, `.default()`, `.is_err()` | a branch on the `ok`/`err` tag |
 | `T?` | a built-in variant with `ok` / `err` |
 | `.variant` (leading dot) | fully-qualified variant, type from context |
 | UFCS `x.f(y)` | `f(x, y)` |
-| `test` | a generated `main` |
-| `assert` | `if` plus `panic`, with source text attached |
+| `test` | a zero-argument function, entered only by `heroes test` |
+| `assert` | a branch plus `panic`, carrying the source text and both sides |
 | named arguments | positional, after checking labels |
-| record construction | a call with named arguments |
-| generics | monomorphisation before type checking |
+| record construction | one construction instruction, fields in declared order |
+| generics | monomorphisation on the IR, after type checking (§4.12) |
 | `range(a, b)` | library function |
 
-Everything in this table should be gone before the lowering stage sees the tree.
+Everything in this table is gone **in the IR**: lowering erases it on the way in, and the erasure is
+inspectable with `heroes build --dump-ir`, one golden per row. Three rows used to say `match` where
+they meant *a branch*: `match` is the surface's only destructuring construct, and the IR has no
+`match` either — it has `switch` on a variant tag and `branch` on a `bool`.
+
+*Amended by panel 019 (2026-08-04).* This section used to end "everything in this table should be
+gone before the lowering stage sees the tree", which asks for a desugared tree the compiler does not
+build. It would have cost ~450 lines (a second tree type, its printer, its tests) and invalidated two
+dense side tables the frontend already produces — `Checked::expr_types` and `Resolved::uses`, both
+indexed by `Ast::exprs`. GHC is the usual precedent cited for the extra tree, and it is precedent for
+something else: what Core bought GHC was **Core Lint**, "an 100% independent check on the type
+inference engine". Heroes buys the check without the tree — `ir::verify` runs on every lowered
+function in tests.
 
 ---
 
