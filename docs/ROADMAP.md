@@ -9,76 +9,6 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**M4 closed 2026-08-04, tag `m4` — the middle end exists. Part 5's sugar
-table is erased on the way into a three-address IR with explicit basic blocks,
-**slots and no phi nodes** (panel 019, unanimous, on LLVM's own advice to frontend
-authors), and `heroes build [--dump-ir]` is the fifth verb.
-
-Three measurable outcomes. **design.md's 320-line acceptance program lowers and
-verifies** — 35 functions, 226 basic blocks, its one hole reported — and for the
-first milestone in five it produced *no new defect in the program*: the frontend's
-recorded answers were complete enough for a pass that reads them instead of
-re-walking the tree. **The dump is an artifact, not debug output**: 4.77 IR lines
-per source line against the panel's ceiling of 12, deterministic and byte-identical
-twice (the cheap analogue of §7's double-emit diff, a milestone before there is any
-C), explicitly **not** version-stable — LLVM's own stance on `.ll`. **Panel 019
-changed the design in five places**, each because a judge compiled or read something
-rather than argued: linkage on every callee (an unmangled Heroes `function open`
-silently replaces libc's — compiled, prints 7, no diagnostic), at most one
-destination on a call (`dst = call print(x)` is a hard clang error), a place as a
-store's target, construction as an instruction, and an explicit cast at the FFI
-boundary. Two vetoes were lifted by amending design.md §4.12 and Part 5 rather than
-by argument (CLAUDE.md §12: spec beats compiler).
-
-304 tests (was 259): 277 crate, 3 golden harnesses over 42 cases (`tests/golden/ir/`
-is born with 14 — one per live sugar row plus 5 adversarial, marked UNVERIFIED —
-and inherits `check/`'s `UPDATE_GOLDEN` ban), 21 CLI surface tests, 6 harness-level.
-`ir/` is sixteen files, none over 300 lines, and `verify.rs` is GHC's Core Lint
-without GHC's tree: it asserts §4.8's "copy-out happens always" on every exit edge,
-including the error side of `?`.
-Next: M5a, scalars run — `int`/`bool`/`if`/`while`/functions/`print` → C → binary,
-the mangler, `#line` on change, the `-Werror` set, and the double-emit determinism
-test that stays green forever. Nothing blocks it. Carried in: `???` reaching `build`
-and the out-of-range `int` literal are both decided-by-default and queued as their
-own diagnostic classes; a function that runs off its end waits for
-`-Werror=return-type`; `-Wconditional-uninitialized` and `-Werror=format` want
-adding to CLAUDE.md §7.**
-
-**M4 closed 2026-08-04, tag `m4` — the middle end exists. Part 5's sugar
-table is erased on the way into a three-address IR with explicit basic blocks,
-**slots and no phi nodes** (panel 019, unanimous, on LLVM's own advice to frontend
-authors), and `heroes build [--dump-ir]` is the fifth verb.
-
-Three measurable outcomes. **design.md's 320-line acceptance program lowers and
-verifies** — 35 functions, 226 basic blocks, its one hole reported — and for the
-first milestone in five it produced *no new defect in the program*: the frontend's
-recorded answers were complete enough for a pass that reads them instead of
-re-walking the tree. **The dump is an artifact, not debug output**: 4.77 IR lines
-per source line against the panel's ceiling of 12, deterministic and byte-identical
-twice (the cheap analogue of §7's double-emit diff, a milestone before there is any
-C), explicitly **not** version-stable — LLVM's own stance on `.ll`. **Panel 019
-changed the design in five places**, each because a judge compiled or read something
-rather than argued: linkage on every callee (an unmangled Heroes `function open`
-silently replaces libc's — compiled, prints 7, no diagnostic), at most one
-destination on a call (`dst = call print(x)` is a hard clang error), a place as a
-store's target, construction as an instruction, and an explicit cast at the FFI
-boundary. Two vetoes were lifted by amending design.md §4.12 and Part 5 rather than
-by argument (CLAUDE.md §12: spec beats compiler).
-
-304 tests (was 259): 277 crate, 3 golden harnesses over 42 cases (`tests/golden/ir/`
-is born with 14 — one per live sugar row plus 5 adversarial, marked UNVERIFIED —
-and inherits `check/`'s `UPDATE_GOLDEN` ban), 21 CLI surface tests, 6 harness-level.
-`ir/` is sixteen files, none over 300 lines, and `verify.rs` is GHC's Core Lint
-without GHC's tree: it asserts §4.8's "copy-out happens always" on every exit edge,
-including the error side of `?`.
-Next: M5a, scalars run — `int`/`bool`/`if`/`while`/functions/`print` → C → binary,
-the mangler, `#line` on change, the `-Werror` set, and the double-emit determinism
-test that stays green forever. Nothing blocks it. Carried in: `???` reaching `build`
-and the out-of-range `int` literal are both decided-by-default and queued as their
-own diagnostic classes; a function that runs off its end waits for
-`-Werror=return-type`; `-Wconditional-uninitialized` and `-Werror=format` want
-adding to CLAUDE.md §7.**
-
 **Status: M5a closed 2026-08-04, tag `m5a` — the compiler compiles.
 `heroes run examples/gallery/00-first.hero` prints `20`. `emit/` is eight files and
 1166 non-test lines: a printer over the M4 IR plus declaration ordering and the
@@ -117,6 +47,41 @@ it. Carried in: the `unsupported` gate's `str` and `f64` rows are the ones M5b d
 a binding statement's span runs to the end of its line, so a trailing `#~` annotation
 lands under the caret; `while true` in a value-returning function needs an unreachable
 `return`; and the spec is silent on `INT64_MIN % -1`, which Heroes aborts.**
+
+**M4 closed 2026-08-04, tag `m4` — the middle end exists. Part 5's sugar
+table is erased on the way into a three-address IR with explicit basic blocks,
+**slots and no phi nodes** (panel 019, unanimous, on LLVM's own advice to frontend
+authors), and `heroes build [--dump-ir]` is the fifth verb.
+
+Three measurable outcomes. **design.md's 320-line acceptance program lowers and
+verifies** — 35 functions, 226 basic blocks, its one hole reported — and for the
+first milestone in five it produced *no new defect in the program*: the frontend's
+recorded answers were complete enough for a pass that reads them instead of
+re-walking the tree. **The dump is an artifact, not debug output**: 4.77 IR lines
+per source line against the panel's ceiling of 12, deterministic and byte-identical
+twice (the cheap analogue of §7's double-emit diff, a milestone before there is any
+C), explicitly **not** version-stable — LLVM's own stance on `.ll`. **Panel 019
+changed the design in five places**, each because a judge compiled or read something
+rather than argued: linkage on every callee (an unmangled Heroes `function open`
+silently replaces libc's — compiled, prints 7, no diagnostic), at most one
+destination on a call (`dst = call print(x)` is a hard clang error), a place as a
+store's target, construction as an instruction, and an explicit cast at the FFI
+boundary. Two vetoes were lifted by amending design.md §4.12 and Part 5 rather than
+by argument (CLAUDE.md §12: spec beats compiler).
+
+304 tests (was 259): 277 crate, 3 golden harnesses over 42 cases (`tests/golden/ir/`
+is born with 14 — one per live sugar row plus 5 adversarial, marked UNVERIFIED —
+and inherits `check/`'s `UPDATE_GOLDEN` ban), 21 CLI surface tests, 6 harness-level.
+`ir/` is sixteen files, none over 300 lines, and `verify.rs` is GHC's Core Lint
+without GHC's tree: it asserts §4.8's "copy-out happens always" on every exit edge,
+including the error side of `?`.
+Next: M5a, scalars run — `int`/`bool`/`if`/`while`/functions/`print` → C → binary,
+the mangler, `#line` on change, the `-Werror` set, and the double-emit determinism
+test that stays green forever. Nothing blocks it. Carried in: `???` reaching `build`
+and the out-of-range `int` literal are both decided-by-default and queued as their
+own diagnostic classes; a function that runs off its end waits for
+`-Werror=return-type`; `-Wconditional-uninitialized` and `-Werror=format` want
+adding to CLAUDE.md §7.**
 
 **M3 closed 2026-08-04, tag `m3` — the frontend is complete. M3a the
 resolver, M3b the bidirectional checker, M3c the data rules, M3d errors as a
