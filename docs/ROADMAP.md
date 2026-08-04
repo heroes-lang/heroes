@@ -63,12 +63,12 @@ amended by panel 007: full ender list, brackets-only continuation,
 unclosed-opener diagnostic), str/char literals with the five escapes of
 panel 008 (split by context, backslash reserved), comments retained,
 reserved-word detection with prescribed errors and `Certain` fixes.
-`heroes lex --json`. 30 crate-internal tests + 4 golden `check/` cases run
+`heroes lex --dump-tokens [--json]` (spelled `--json` alone until panel 016). 30 crate-internal tests + 4 golden `check/` cases run
 through the real binary. Lexer split into six single-concern files.
 TextMate grammar (bonus): `editors/vscode/` (installable extension) — foreign
 reserved words and unknown escapes scoped `invalid.illegal`, so the thesis
 shows up while you type.
-**Runnable:** `heroes lex examples/first.hero --json`.
+**Runnable:** `heroes lex examples/first.hero --dump-tokens`.
 
 ### M2 — Parser, AST, pretty printer ✅ (2026-08-04, tag `m2`)
 Four entities plus `extern` and `test`, `=`/`@`, the §4.14 precedence table,
@@ -162,8 +162,9 @@ architecture-holds test) → raylib. `heroes cc` for C++ shims.
 ```sh
 heroes doctor                                  # M0
 cargo build && cargo test                      # M1+
-heroes lex ex.hero --json                      # M1
+heroes lex ex.hero --dump-tokens [--json]      # M1
 heroes parse ex.hero --dump-ast                # M2
+heroes fmt ex.hero [--in-place]                # M2 (the flag was --write until panel 016)
 heroes check ex.hero --json [--permissive]     # M3a–d
 heroes build ex.hero --dump-ir                 # M4 (M5b: increfs visible)
 heroes build ex.hero --emit-c                  # M5a — and the determinism diff:

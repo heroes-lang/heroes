@@ -88,6 +88,20 @@ Any new capability is a `heroes` subcommand or flag. Never a second binary,
 never a script, never a Makefile. Declared exception with an expiry date:
 `cargo build`/`cargo test` build the compiler until the fixpoint (M8c).
 
+**The stopping rule** (panel 016): a capability enters the surface only if the
+fixpoint invocation, the golden harness or the Part 11 harness must type it, or
+it has a measured Part 11 effect. Its shape is then mechanical — a **subcommand**
+if it answers a different question (a different artifact class), a **flag** if it
+changes how one question is answered about the same input, and **nothing** if two
+existing invocations already compose to it. A new top-level verb needs a *proven
+overload* of an existing one, which is what every recorded split was (`git
+checkout` → `switch`/`restore`, `go get` → `go install`) — never a new capability.
+**The contract**: the artifact on stdout, diagnostics on stderr; exit 0 clean · 1
+the input has diagnostics · 2 the tool could not run. Inspection is `--dump-<stage>`
+(§3.5's own list); `--json` says *how* to print, never *what*; a mutating flag is
+`--in-place`; `--emit-c` is an output, not a dump. One argv table parses and
+prints the help, so they cannot disagree.
+
 ## 11. Language and conventions
 **Everything written is English** — code, comments, docs, commits, verdicts.
 Conversation with the author is Italian. `Heroes` in prose, `heroes` for the

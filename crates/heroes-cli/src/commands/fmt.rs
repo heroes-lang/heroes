@@ -1,64 +1,50 @@
-//! `heroes fmt <file.hero> [--write]` — the canonical form (M2).
+//! `heroes fmt <file.hero> [--in-place]` — the canonical form (M2, §4.15).
 //!
-//! Prints to stdout by default, like `gofmt`; `--write` replaces the file.
-//! Either way it **refuses a file with diagnostics**: formatting a tree built
-//! out of recovery guesses would rewrite the author's program into the
-//! parser's guess about it, which is the one thing a formatter must never do.
-
-use std::process::ExitCode;
+//! Prints to stdout by default, like `gofmt`; `--in-place` rewrites the file and
+//! prints nothing. The flag was `--write` until panel 016: "write" is read as
+//! "write the output somewhere", the *non*-destructive meaning, which made the
+//! plausible misreading the one that overwrites a file. The retired spelling
+//! names its replacement, the same treatment the language gives `fn`.
+//!
+//! Either way it **refuses a file with diagnostics**: formatting a tree built out
+//! of recovery guesses would rewrite the author's program into the parser's guess
+//! about it, which is the one thing a formatter must never do.
 
 use heroes::printer::format_file;
-use heroes::source::Source;
 use heroes::syntax::parse;
 
-const USAGE: &str = "usage: heroes fmt <file.hero> [--write]";
+use crate::cli::{Exit, Invocation};
+use crate::input;
 
-pub fn run(args: &[String]) -> ExitCode {
-    let mut file: Option<&String> = None;
-    let mut write = false;
-    for arg in args {
-        match arg.as_str() {
-            "--write" => write = true,
-            _ if !arg.starts_with('-') && file.is_none() => file = Some(arg),
-            _ => {
-                eprintln!("error: unexpected argument `{arg}`\n{USAGE}");
-                return ExitCode::FAILURE;
-            }
-        }
-    }
-    let Some(path) = file else {
-        eprintln!("{USAGE}");
-        return ExitCode::FAILURE;
-    };
-    let text = match std::fs::read_to_string(path) {
-        Ok(text) => text,
-        Err(e) => {
-            eprintln!("error: cannot read `{path}`: {e}");
-            return ExitCode::FAILURE;
+pub fn run(path: &str, args: &Invocation) -> Exit {
+    let src = match input::read(path) {
+        Ok(src) => src,
+        Err((message, exit)) => {
+            eprintln!("error: {message}");
+            return exit;
         }
     };
-    let src = Source::new(path.clone(), text);
     let out = parse(&src);
     if !out.diagnostics.is_empty() {
         for diagnostic in &out.diagnostics {
             eprintln!("{}", diagnostic.render_line(&src));
         }
-        eprintln!("error: `{path}` is not formatted because it does not parse");
-        return ExitCode::FAILURE;
+        eprintln!("error: refusing to format a file with diagnostics");
+        return Exit::Diagnostics;
     }
     let formatted = format_file(&out.ast, &out.comments, &src);
-    if !write {
+    if !args.has("--in-place") {
         print!("{formatted}");
-        return ExitCode::SUCCESS;
+        return Exit::Ok;
     }
     if formatted == src.text {
-        return ExitCode::SUCCESS; // nothing to do, and no needless mtime churn
+        return Exit::Ok; // already canonical: no write, no mtime change
     }
     match std::fs::write(path, &formatted) {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(()) => Exit::Ok,
         Err(e) => {
             eprintln!("error: cannot write `{path}`: {e}");
-            ExitCode::FAILURE
+            Exit::Failed
         }
     }
 }

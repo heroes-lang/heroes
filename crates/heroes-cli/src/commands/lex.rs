@@ -1,94 +1,82 @@
-//! `heroes lex <file.hero> [--json]` — dump the token stream (M1).
+//! `heroes lex <file.hero> [--dump-tokens] [--json]` — the token stream (M1).
 //!
-//! Plain mode mirrors the snapshot format (`line:col kind [text]`); `--json`
-//! emits one object per token. Both orders are the token order — already
-//! deterministic, nothing to sort. Diagnostics render to stderr; any
-//! diagnostic means a failing exit code.
-
-use std::process::ExitCode;
+//! Without a flag it is a lexical check: silent on success, diagnostics on
+//! stderr. `--dump-tokens` prints the stream (design.md §3.5's own spelling), and
+//! `--json` says how — one object per token instead of `line:col kind [text]`.
+//!
+//! The two flags are deliberately not one: `--dump-tokens` chooses *what* to
+//! print, `--json` chooses *how*, and before panel 016 the surface had them in the
+//! same bracket looking alike.
 
 use heroes::lexer::{kind_name, lex, TokenKind};
-use heroes::source::Source;
 
-const USAGE: &str = "usage: heroes lex <file.hero> [--json]";
+use crate::cli::{Exit, Invocation};
+use crate::input;
 
-pub fn run(args: &[String]) -> ExitCode {
-    let mut file: Option<&String> = None;
-    let mut json = false;
-    for a in args {
-        match a.as_str() {
-            "--json" => json = true,
-            _ if !a.starts_with('-') && file.is_none() => file = Some(a),
-            _ => {
-                eprintln!("error: unexpected argument `{a}`\n{USAGE}");
-                return ExitCode::FAILURE;
-            }
-        }
-    }
-    let Some(path) = file else {
-        eprintln!("{USAGE}");
-        return ExitCode::FAILURE;
-    };
-    let text = match std::fs::read_to_string(path) {
-        Ok(t) => t,
-        Err(e) => {
-            eprintln!("error: cannot read `{path}`: {e}");
-            return ExitCode::FAILURE;
+pub fn run(path: &str, args: &Invocation) -> Exit {
+    let src = match input::read(path) {
+        Ok(src) => src,
+        Err((message, exit)) => {
+            eprintln!("error: {message}");
+            return exit;
         }
     };
-    let src = Source::new(path.clone(), text);
     let out = lex(&src);
-
-    if json {
-        println!("[");
-        let last = out.tokens.len().saturating_sub(1);
-        for (i, t) in out.tokens.iter().enumerate() {
-            let (line, col) = src.line_col(t.span.start);
-            let comma = if i == last { "" } else { "," };
-            println!(
-                "  {{\"kind\": \"{}\", \"text\": \"{}\", \"line\": {line}, \"col\": {col}}}{comma}",
-                kind_name(t.kind),
-                json_escape(src.slice(t.span)),
-            );
-        }
-        println!("]");
-    } else {
-        for t in &out.tokens {
-            let (line, col) = src.line_col(t.span.start);
-            let layout = matches!(
-                t.kind,
-                TokenKind::Terminator | TokenKind::Indent | TokenKind::Dedent | TokenKind::Eof
-            );
-            if layout || t.span.start == t.span.end {
-                println!("{line}:{col} {}", kind_name(t.kind));
-            } else {
-                println!("{line}:{col} {} {}", kind_name(t.kind), src.slice(t.span));
-            }
+    if args.has("--dump-tokens") {
+        if args.has("--json") {
+            print!("{}", json(&out.tokens, &src));
+        } else {
+            print!("{}", text(&out.tokens, &src));
         }
     }
-
-    for d in &out.diagnostics {
-        eprintln!("{}", d.render_line(&src));
+    for diagnostic in &out.diagnostics {
+        eprintln!("{}", diagnostic.render_line(&src));
     }
     if out.diagnostics.is_empty() {
-        ExitCode::SUCCESS
+        Exit::Ok
     } else {
-        ExitCode::FAILURE
+        Exit::Diagnostics
     }
 }
 
-fn json_escape(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
-            c => out.push(c),
+fn json(tokens: &[heroes::lexer::Token], src: &heroes::source::Source) -> String {
+    let mut out = String::from("[\n");
+    let last = tokens.len().saturating_sub(1);
+    for (i, token) in tokens.iter().enumerate() {
+        let (line, col) = src.line_col(token.span.start);
+        let comma = if i == last { "" } else { "," };
+        out.push_str(&format!(
+            "  {{\"kind\": \"{}\", \"text\": \"{}\", \"line\": {line}, \"col\": {col}}}{comma}\n",
+            kind_name(token.kind),
+            escape(shown(token.kind, src.slice(token.span)))
+        ));
+    }
+    out.push_str("]\n");
+    out
+}
+
+fn text(tokens: &[heroes::lexer::Token], src: &heroes::source::Source) -> String {
+    let mut out = String::new();
+    for token in tokens {
+        let (line, col) = src.line_col(token.span.start);
+        let shown = shown(token.kind, src.slice(token.span));
+        if shown.is_empty() {
+            out.push_str(&format!("{line}:{col} {}\n", kind_name(token.kind)));
+        } else {
+            out.push_str(&format!("{line}:{col} {} {shown}\n", kind_name(token.kind)));
         }
     }
     out
+}
+
+/// Layout tokens carry no text, so printing their (empty) slice would be noise.
+fn shown(kind: TokenKind, text: &str) -> &str {
+    match kind {
+        TokenKind::Indent | TokenKind::Dedent | TokenKind::Terminator | TokenKind::Eof => "",
+        _ => text,
+    }
+}
+
+fn escape(text: &str) -> String {
+    text.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n")
 }

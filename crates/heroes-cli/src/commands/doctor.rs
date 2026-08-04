@@ -4,7 +4,9 @@
 //! and that the build cache directory is writable. Exit code is non-zero if a
 //! required piece is missing, so scripts can gate on it.
 
-use std::process::{Command, ExitCode};
+use std::process::Command;
+
+use crate::cli::Exit;
 
 struct Check {
     name: &'static str,
@@ -21,7 +23,7 @@ fn run_capture(cmd: &str, args: &[&str]) -> Option<String> {
     Some(text.lines().next().unwrap_or("").trim().to_string())
 }
 
-pub fn run() -> ExitCode {
+pub fn run() -> Exit {
     let mut checks: Vec<Check> = Vec::new();
 
     // clang — the backend. Generated C is compiled by it (plan: C11 emission).
@@ -73,8 +75,8 @@ pub fn run() -> ExitCode {
     }
 
     if all_ok {
-        ExitCode::SUCCESS
+        Exit::Ok
     } else {
-        ExitCode::FAILURE
+        Exit::Failed
     }
 }

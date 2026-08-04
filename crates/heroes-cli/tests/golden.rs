@@ -115,9 +115,13 @@ fn golden_check_cases_render_their_diagnostics() {
             "\ngolden mismatch for {}\n--- expected ---\n{expected}--- actual ---\n{actual}",
             relative.display()
         );
-        assert!(
-            !output.status.success(),
-            "{} is a diagnostics case: the compiler must exit non-zero",
+        // Exactly 1, not merely non-zero: panel 016's contract distinguishes
+        // "the input has diagnostics" from "the tool could not run", and a case
+        // that started failing to *run* would otherwise pass this test.
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "{} is a diagnostics case: the compiler must exit 1",
             relative.display()
         );
     }

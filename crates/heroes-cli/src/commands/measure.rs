@@ -5,9 +5,9 @@
 //! against the 3000-token ceiling; exits non-zero on a breach, so the rule
 //! is enforceable rather than merely stated.
 
-use std::process::ExitCode;
-
 use heroes::measure::{measure, spec_path, vendor_dir};
+
+use crate::cli::Exit;
 
 /// design.md §1.6, as raised by panel 012 and measured, not estimated.
 const CEILING: usize = 3000;
@@ -15,17 +15,7 @@ const CEILING: usize = 3000;
 /// or a pre-registered prediction.
 const SOFT: usize = 2000;
 
-const USAGE: &str = "usage: heroes measure [file]   (default: spec/heroes-spec.md)";
-
-pub fn run(args: &[String]) -> ExitCode {
-    let mut file: Option<&String> = None;
-    for a in args {
-        if a.starts_with('-') || file.is_some() {
-            eprintln!("error: unexpected argument `{a}`\n{USAGE}");
-            return ExitCode::FAILURE;
-        }
-        file = Some(a);
-    }
+pub fn run(file: Option<&str>) -> Exit {
     let path = match file {
         Some(f) => std::path::PathBuf::from(f),
         None => spec_path(),
@@ -34,14 +24,14 @@ pub fn run(args: &[String]) -> ExitCode {
         Ok(t) => t,
         Err(e) => {
             eprintln!("error: cannot read `{}`: {e}", path.display());
-            return ExitCode::FAILURE;
+            return Exit::Failed;
         }
     };
     let m = match measure(&text, &vendor_dir()) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("error: {e}");
-            return ExitCode::FAILURE;
+            return Exit::Diagnostics;
         }
     };
 
@@ -60,7 +50,7 @@ pub fn run(args: &[String]) -> ExitCode {
         println!("\nBREACH: {max} over the {CEILING}-token ceiling (design.md §1.6).");
         println!("An amendment must be net-negative, or the ceiling moves — with a");
         println!("measurement, a panel, and a named alternative (panel 012).");
-        return ExitCode::FAILURE;
+        return Exit::Diagnostics;
     }
     if max > SOFT {
         println!("\nAbove the soft {SOFT}: an addition needs a named removal or a");
@@ -68,7 +58,7 @@ pub fn run(args: &[String]) -> ExitCode {
     } else {
         println!("\nUnder the soft {SOFT}: Principle 0 alone. Headroom: {}.", CEILING - max);
     }
-    ExitCode::SUCCESS
+    Exit::Ok
 }
 
 fn spread_percent(m: &heroes::measure::Measurement) -> usize {
