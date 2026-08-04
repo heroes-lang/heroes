@@ -35,9 +35,11 @@ amended by panel 007: full ender list, brackets-only continuation,
 unclosed-opener diagnostic), str/char literals with the five escapes of
 panel 008 (split by context, backslash reserved), comments retained,
 reserved-word detection with prescribed errors and `Certain` fixes.
-`heroes lex --json`. 29 crate-internal tests + 4 golden `check/` cases run
+`heroes lex --json`. 30 crate-internal tests + 4 golden `check/` cases run
 through the real binary. Lexer split into six single-concern files.
-TextMate grammar (bonus): deferred, not dropped.
+TextMate grammar (bonus): `editors/heroes.tmLanguage.json` — foreign
+reserved words and unknown escapes scoped `invalid.illegal`, so the thesis
+shows up while you type.
 **Runnable:** `heroes lex examples/first.hero --json`.
 
 ### M2 — Parser, AST, pretty printer

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Heroes",
+  "scopeName": "source.hero",
+  "fileTypes": ["hero"],
+  "patterns": [
+    { "include": "#section" },
+    { "include": "#comment" },
+    { "include": "#foreign" },
+    { "include": "#keyword" },
+    { "include": "#builtin-type" },
+    { "include": "#hole" },
+    { "include": "#string" },
+    { "include": "#char" },
+    { "include": "#number" },
+    { "include": "#declaration" },
+    { "include": "#operator" }
+  ],
+  "repository": {
+    "section": {
+      "comment": "`##` opens a section heading (spec: comment text is markdown)",
+      "match": "^\\s*##.*$",
+      "name": "markup.heading.hero"
+    },
+    "comment": {
+      "comment": "A comment directly above a declaration is its documentation",
+      "match": "#.*$",
+      "name": "comment.line.number-sign.hero"
+    },
+    "foreign": {
+      "comment": "spec/reserved-words.md — keywords imported from another language. Marked INVALID on purpose: the editor shows the mistake before the compiler does.",
+      "match": "\\b(struct|enum|union|class|fn|func|def|let|var|const|while|elif|switch|case|null|nil|None|try|catch|throw|raise|import|use|include)\\b",
+      "name": "invalid.illegal.foreign-keyword.hero"
+    },
+    "keyword": {
+      "match": "\\b(constant|function|record|variant|match|if|else|for|in|break|continue|return|test|assert|extern|fail)\\b",
+      "name": "keyword.control.hero"
+    },
+    "builtin-type": {
+      "match": "\\b(int|f64|bool|str|ptr|cstr|true|false)\\b",
+      "name": "support.type.hero"
+    },
+    "hole": {
+      "comment": "`???` is a valid expression, not an error (§4.16)",
+      "match": "\\?\\?\\?",
+      "name": "markup.italic.hole.hero"
+    },
+    "string": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.hero",
+      "patterns": [
+        {
+          "comment": "panel 008: exactly these four in a string",
+          "match": "\\\\[nt\\\\\"]",
+          "name": "constant.character.escape.hero"
+        },
+        {
+          "comment": "the backslash is reserved — anything else is a compile error",
+          "match": "\\\\.",
+          "name": "invalid.illegal.unknown-escape.hero"
+        }
+      ]
+    },
+    "char": {
+      "comment": "one ASCII character or one escape; its value is an int (§4.3)",
+      "patterns": [
+        { "match": "'\\\\[nt\\\\']'", "name": "constant.character.hero" },
+        { "match": "'[\\x20-\\x7E]'", "name": "constant.character.hero" },
+        { "match": "'[^']*'", "name": "invalid.illegal.char-literal.hero" }
+      ]
+    },
+    "number": {
+      "patterns": [
+        { "match": "\\b[0-9]+\\.[0-9]+\\b", "name": "constant.numeric.float.hero" },
+        { "match": "\\b[0-9]+\\b", "name": "constant.numeric.integer.hero" }
+      ]
+    },
+    "declaration": {
+      "comment": "`name = function:` / `Point = record` — the one shape of every top-level entity",
+      "match": "^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*(?==\\s*(constant|function|record|variant))",
+      "captures": { "1": { "name": "entity.name.function.hero" } }
+    },
+    "operator": {
+      "patterns": [
+        { "match": "->|=>|==|!=|<=|>=|&&|\\|\\|", "name": "keyword.operator.hero" },
+        { "match": "@", "name": "keyword.operator.mutable.hero" },
+        { "match": "[-+*/%<>=!?|.]", "name": "keyword.operator.hero" }
+      ]
+    }
+  }
+}
