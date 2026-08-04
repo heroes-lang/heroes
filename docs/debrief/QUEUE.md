@@ -12,7 +12,7 @@ queue is also the record). Format:
 - [x] M0 | Decide: retro-tag `m0`? → tagged 2026-08-04 at 02c4ca1 (M0 closed before the tagging habit) | git log 02c4ca1 | tags are the chronology the book and /where rely on
 - [ ] harness | Metric 2 minimum viable protocol (panel 011): local open-weights model, or 2 pre-registered tasks per milestone. NOT an API-key question | docs/panel/011-measurement-without-an-api-key.md | ~16 samples by v1 beats zero; the pre-amendment number is still unrecoverable later
 - [ ] harness | Held-out tasks must be author-written (assistant-written tasks would measure the assistant's priors); n now scales with the paced protocol, not 15 at once | harness/tasks/README.md | metric 2 validity
-- [ ] panel 011 | Ratify: budget as hard measured ceiling (now 3000, panel 012) (max over two vendored tokenisers), metric 3 primary-but-never-pooled with three arms, metric 2 via local model or paced sampling | docs/panel/011-measurement-without-an-api-key.md § Resolution | the repo is IN BREACH today at 2050 — this decides what happens next
+- [x] panel 011 | RATIFIED 2026-08-04 — budget as hard measured ceiling (3000, panel 012) (max over two vendored tokenisers), metric 3 primary-but-never-pooled with three arms, metric 2 via local model or paced sampling | docs/panel/011-measurement-without-an-api-key.md § Resolution | the repo is IN BREACH today at 2050 — this decides what happens next
 - [ ] tooling | Implement `heroes measure` offline: two vendored BPE tables (sha256-pinned), ~180 lines, zero deps; port debt at M8c needs file I/O + maps in Heroes | panel 011 | the rule 'measured-only' is unenforceable until this exists
 - [ ] pre-M3b | Paper exercise: hand-check five expressions in two columns (⇐ checking / ⇒ synthesis) | glossary entry to be born from this session | M3b is the conceptual cliff; the exercise should precede it
 - [ ] pre-M4 | Hand-desugar `for x in xs`, `?`, and one UFCS chain from the appendix calculator | design.md Part 5 | the desugarer lands in M4
@@ -28,9 +28,11 @@ queue is also the record). Format:
 - [x] M1.5 | `"a\nb"` used to compile printing four characters. Now it prints two lines. Which half of panel 008 did that — the five escapes, or reserving the backslash? | docs/panel/008-escape-sequences.md · lexer/escape.rs | the reserved backslash is the half that does the thesis work
 - [x] M1.5 | `"C:\temp"` still compiles silently as `C:<TAB>emp`. Why can no escape set fix that, and what would? | lexer/tests/literals.rs (the_residual_windows_path_trap_is_on_the_record) | knowing the limits of a fix is part of owning it
 - [x] panel 009 | Ratify the budget governance adopted provisionally: measured-only, soft 1500/hard 2000, the +500 as a pre-allocated purse, spend only where a wrong guess is silent | docs/panel/009-spec-budget-2000.md § Resolution | it is the rule that keeps 2000 from becoming 2500
-- [ ] panel 010 | Ratify (or overturn) the repeated-`@` rule adopted provisionally: two `@` arguments sharing a root binding are a compile error, over-rejecting distinct-index pairs by design | docs/panel/010-repeated-mutable-arguments.md § Resolution | three judges converged; Ada reached the same rule in 2012 after 33 years of the alternative
+- [x] panel 010 | RATIFIED 2026-08-04 — the repeated-`@` rule: two `@` arguments sharing a root binding are a compile error, over-rejecting distinct-index pairs by design | docs/panel/010-repeated-mutable-arguments.md § Resolution | three judges converged; Ada reached the same rule in 2012 after 33 years of the alternative
 
 ## Covered
+
+- 2026-08-04 — Ratified panels 010 (repeated `@` arguments are a compile error), 011 (offline measurement, metric 3 primary but never pooled, metric 2 via local model or paced sampling) and 012's carry-forward governance.
 
 - 2026-08-04 — M0/M1 closed out: spike 04 walkthrough written into journal 000 §5, mutation drill run and recorded in journal 001 §4 (the diagnostic lied — the bug was in the bookkeeping it reads), `m0` retro-tagged. Exit-quiz declined; it stays available on request.
 

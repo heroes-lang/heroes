@@ -81,10 +81,9 @@ an aliased call genuine UB. E makes non-aliasing of `@` parameters a
 guarantee the emitter may rely on. F/G ban `restrict` and mandate
 temporaries forever.
 
-## Resolution — adopted, `provisional — author ratification pending`
+## Resolution — RATIFIED by the author 2026-08-04
 
-Per CLAUDE.md § Panel (asynchronous): the conservative resolution is
-adopted and the ratification is queued.
+Adopted as put by the three judges.
 
 1. **Amendment E, stated over places.** Two `@` arguments of one call whose
    place expressions share a **root binding** are a compile error. Because

@@ -57,7 +57,10 @@ for a *comparative* metric a weaker model is arguably the better instrument
 because the ceiling effect is smaller. Metric 2 was never dead; it was
 mis-scoped.
 
-## Resolution — adopted, `provisional — author ratification pending`
+## Resolution — RATIFIED by the author 2026-08-04
+
+(Point 2's ceiling was superseded the same day by panel 012: the hard
+measured ceiling is 3000, not 2000. Everything else stands as written.)
 
 1. **Metric 1 is recovered, offline.** `heroes measure` counts with
    **two vendored tokenisers** (Anthropic legacy + cl100k, pinned by
