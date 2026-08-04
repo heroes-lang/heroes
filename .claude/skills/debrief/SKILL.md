@@ -9,6 +9,14 @@ Development never waits for understanding; this is where understanding
 catches up. Conversation in Italian, using the `/where` canonical analogies;
 artifacts written here (glossary entries, queue updates) in English.
 
+**Ask in plain text, never in the question widget** (author instruction
+2026-08-04). Put the code snippet in a fenced block and the options in a
+lettered list, in the message itself — the widget hides the very code the
+question is about, and a question whose subject is invisible is not
+retrieval practice. Ask the whole batch at once and stop; the author
+answers in one reply ("1b 2a 3a 4c"). The widget stays fine for decisions
+(panel ratifications, picking an approach), never for questions about code.
+
 ## Procedure
 
 1. Read `docs/debrief/QUEUE.md`. Group open items by milestone; propose a
