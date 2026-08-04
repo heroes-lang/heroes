@@ -1,0 +1,12 @@
+# Bulk regression case (assistant-written): the checker's two `certain` fixes,
+# both about §4.9's rule that a field is always named. The position determines
+# which field it is, so the repair is not a guess — and applying both leaves a
+# program that checks clean, which is the property `x.fixed` exists to assert.
+Point = record
+    x: int
+    y: int
+
+main = function: ()
+    a = Point(x: 1, y: 2)
+    b = Point(x: 3, y: 4)
+    print(a.x + b.y)

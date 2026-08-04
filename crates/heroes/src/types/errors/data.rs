@@ -72,7 +72,12 @@ pub(in crate::types) fn field_of_variant(holder: &str, field: &str, span: Span) 
 }
 
 
-pub(in crate::types) fn missing_fields(holder: &str, fields: &[String], span: Span) -> Diagnostic {
+pub(in crate::types) fn missing_fields(
+    holder: &str,
+    fields: &[String],
+    line: u32,
+    span: Span,
+) -> Diagnostic {
     let list: Vec<String> = fields.iter().map(|f| format!("{f}:")).collect();
     Diagnostic::new(
         "missing_fields",
@@ -82,6 +87,7 @@ pub(in crate::types) fn missing_fields(holder: &str, fields: &[String], span: Sp
         ),
         span,
     )
+    .with_note(format!("`{holder}` is declared at line {line}"))
 }
 
 
@@ -91,9 +97,13 @@ pub(in crate::types) fn wrong_label(holder: &str, written: &str, expected: &str,
         format!("`{holder}` has no field `{written}` at this position — it is `{expected}`"),
         span,
     );
+    // The span is the label's *identifier* — the `:` is not in it — so the
+    // replacement is the bare name. Applying `y:` here produced `y:: 2`, which
+    // the `.fixed` goldens caught the first time they ran: a `certain` fix is a
+    // claim that the result compiles, and only running it proves the claim.
     diagnostic.fixes.push(Fix {
         title: format!("write `{expected}:`"),
-        replacement: format!("{expected}:"),
+        replacement: expected.to_string(),
         span,
         certainty: Certainty::Certain,
     });

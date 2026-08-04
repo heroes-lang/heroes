@@ -28,6 +28,7 @@
 //! | `builtins.rs` | the built-ins' type rules (§4.20's inventory) |
 //! | `join.rs`   | one rule for every branch join, diverging arms skipped |
 //! | `patterns.rs` | patterns, `_`'s ban, and exhaustiveness |
+//! | `holes.rs`    | §4.16's output: what the compiler knew and threw away |
 //! | `exprs.rs`  | ⇒ synthesise a type from an expression |
 //! | `expect.rs` | ⇐ check an expression against one, and the four forms that need it |
 //! | `decls.rs`  | one declaration at a time: what its body is for |
@@ -57,6 +58,7 @@ mod errors;
 mod expect;
 mod exprs;
 mod generics;
+mod holes;
 mod join;
 mod lower;
 mod ops;
@@ -68,11 +70,18 @@ mod table;
 #[cfg(test)]
 mod tests;
 
+pub use holes::report as report_holes;
 pub use render::render_ty;
 pub use table::{Params, Ty, TyId, Types};
 
 pub struct Checked {
     pub types: Types,
+    /// The type of every local, indexed as `Resolved::locals` is — kept because
+    /// §4.16's hole output has to say what is in scope, and M4's lowering will
+    /// ask the same question.
+    pub local_types: Vec<TyId>,
+    /// Each function declaration's result type, by index into `Ast::decls`.
+    pub results: std::collections::BTreeMap<u32, TyId>,
     /// The type of every expression, dense over `Ast::exprs`. A diverging or
     /// unreported-error expression carries `Types::error()`.
     pub expr_types: Vec<TyId>,
@@ -80,6 +89,20 @@ pub struct Checked {
     /// output is built from this at M3d, and the cap of 5 is applied there.
     pub holes: Vec<Hole>,
     pub diagnostics: Vec<Diagnostic>,
+}
+
+impl Checked {
+    /// The type of a local, by its index in `Resolved::locals`. `holes.rs` reads
+    /// it to print what is in scope.
+    pub fn local_type(&self, index: usize) -> TyId {
+        self.local_types.get(index).copied().unwrap_or(TyId(0))
+    }
+
+    /// The result type of a top-level function, or `None` if that declaration is
+    /// not one. `holes.rs` ranks suggestions by it.
+    pub fn result_type(&self, decl: u32) -> Option<TyId> {
+        self.results.get(&decl).copied()
+    }
 }
 
 /// One typed hole: where it is, and what belongs there.
@@ -103,11 +126,12 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
     let mut checker = Checker {
         out: Checked {
             types,
+            local_types,
+            results: std::collections::BTreeMap::new(),
             expr_types: Vec::new(),
             holes: Vec::new(),
             diagnostics: Vec::new(),
         },
-        local_types,
         result: TyId(0),
         fallible: false,
         loops: 0,
@@ -129,9 +153,6 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
 /// are parameters (the Cyclone rule, CLAUDE.md §5).
 struct Checker {
     out: Checked,
-    /// The type of each local, indexed as `Resolved::locals` is. Filled from the
-    /// declaration's syntax before its body is walked.
-    local_types: Vec<TyId>,
     /// The result type of the function being checked — what `return` is checked
     /// against.
     result: TyId,
@@ -170,7 +191,7 @@ impl Checker {
     /// source* rather than by both happening to walk in the same order.
     fn bind_local(&mut self, name: Span, ty: TyId) {
         if let Some(index) = self.locals_by_span.get(&name.start) {
-            self.local_types[*index as usize] = ty;
+            self.out.local_types[*index as usize] = ty;
         }
     }
 

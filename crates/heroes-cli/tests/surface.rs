@@ -52,9 +52,9 @@ fn the_artifact_is_on_stdout_and_diagnostics_are_on_stderr() {
 fn an_unknown_flag_names_what_the_command_accepts() {
     let out = heroes(&["check", "--dump-ast", "examples/first.hero"]);
     let message = String::from_utf8_lossy(&out.stderr).into_owned();
-    assert_eq!(
-        message,
-        "error: `check` does not accept `--dump-ast` — it accepts --dump-scopes\n"
+    assert!(
+        message.starts_with("error: `check` does not accept `--dump-ast` — it accepts --dump-scopes"),
+        "the error enumerates what is accepted: {message}"
     );
     let out = heroes(&["doctor", "--json"]);
     assert!(
@@ -152,4 +152,99 @@ fn measure_states_its_default() {
     let shown = String::from_utf8_lossy(&heroes(&["--help"]).stdout).into_owned();
     assert!(shown.contains("(default: spec/heroes-spec.md)"));
     assert_eq!(code(&heroes(&["measure"])), 0);
+}
+
+// --- M3d: diagnostics as a product -----------------------------------
+
+/// §4.17's whole argument, executable: the message, the line as written, the span
+/// underlined, the note that carries the other end of the mistake, and the fixes
+/// with their tags. A human has the project open; a model has this.
+#[test]
+fn the_rich_form_carries_the_line_the_caret_and_the_other_end() {
+    let out = heroes(&["check", "tests/golden/check/certain-labels.hero"]);
+    let shown = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(shown.starts_with("error[wrong_label]: `Point` has no field `z` at this position — it is `y`\n"), "{shown}");
+    assert!(shown.contains("  at tests/golden/check/certain-labels.hero:10:21"), "{shown}");
+    assert!(shown.contains("    a = Point(x: 1, z: 2)"), "the line as written: {shown}");
+    assert!(shown.contains("^"), "the span, underlined: {shown}");
+    assert!(shown.contains("fix (certain): write `y:`"), "the fix, tagged: {shown}");
+    assert_eq!(code(&out), 1);
+}
+
+/// The same diagnostics, one line each — what a terminal scans and what the
+/// goldens pin, so the layout of the rich form can change without touching
+/// twenty expectations.
+#[test]
+fn brief_is_one_line_per_diagnostic() {
+    let out = heroes(&["check", "tests/golden/check/certain-labels.hero", "--brief"]);
+    let shown = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert_eq!(shown.lines().count(), 3);
+    for line in shown.lines() {
+        assert!(line.starts_with("tests/golden/check/certain-labels.hero:"), "{line}");
+    }
+}
+
+/// Schema 1, and the version is first because a consumer that reads it can refuse
+/// a version it does not know.
+#[test]
+fn json_is_versioned_and_carries_the_fixes() {
+    let out = heroes(&["check", "tests/golden/check/certain-labels.hero", "--json"]);
+    let shown = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(shown.starts_with("{\n  \"schema\": 1,\n"), "{shown}");
+    assert!(shown.contains("\"code\": \"wrong_label\""));
+    assert!(shown.contains("\"certainty\": \"certain\""));
+    assert!(shown.contains("\"line\": 10"));
+    assert_eq!(code(&out), 1);
+}
+
+/// Part 11's control arm: the same compiler with §1's argument switched off.
+/// Without it the thesis has no falsifiable claim — a language that rejects
+/// everything maximises catch rate.
+#[test]
+fn permissive_drops_the_thesis_rules_and_keeps_the_rest() {
+    // Every diagnostic in this case is a thesis rule, so permissive accepts it.
+    let strict = heroes(&["check", "tests/golden/check/unused-bindings.hero", "--brief"]);
+    assert_eq!(code(&strict), 1);
+    assert_eq!(String::from_utf8_lossy(&strict.stderr).lines().count(), 4);
+    let permissive =
+        heroes(&["check", "tests/golden/check/unused-bindings.hero", "--brief", "--permissive"]);
+    assert_eq!(code(&permissive), 0, "every rule in that case is a thesis rule");
+    assert!(permissive.stderr.is_empty());
+
+    // …and a rule the program's *meaning* depends on survives it.
+    let both = heroes(&["check", "tests/golden/check/unknown-type.hero", "--brief", "--permissive"]);
+    assert_eq!(code(&both), 1, "an unknown type is not a thesis rule");
+}
+
+/// CLAUDE.md §8: only `certain` is machine-applicable. `--apply` is that promise
+/// with a command attached, and the `.fixed` goldens are the assertion that the
+/// repaired program compiles.
+#[test]
+fn apply_repairs_the_program_with_certain_fixes_only() {
+    let out = heroes(&["check", "tests/golden/check/certain-fixes.hero", "--apply"]);
+    let repaired = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(repaired.contains("print(total)"), "the rename was applied: {repaired}");
+    assert!(repaired.contains("for _ in range(0, 3)"), "the loop variable: {repaired}");
+    assert!(repaired.contains(".num _ => 1"), "the payload: {repaired}");
+    assert_eq!(code(&out), 0, "a repair is not a failure");
+    // A `guess` is never applied: this case's only fix is one, and the file comes
+    // back unchanged apart from nothing.
+    let untouched = heroes(&["check", "tests/golden/check/not-mutable.hero", "--apply"]);
+    let text = String::from_utf8_lossy(&untouched.stdout).into_owned();
+    assert!(text.contains("    x @ 2"), "a guess is prose, not an edit");
+}
+
+/// §4.16: a hole is not an error. The file type-checks, the exit code stays 0, and
+/// the compiler prints what belongs in the gap — the expected type, what is in
+/// scope, and which functions return it.
+#[test]
+fn a_hole_is_reported_on_stdout_and_the_exit_code_stays_zero() {
+    let out = heroes(&["check", "examples/gallery/09-holes.hero"]);
+    let shown = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert_eq!(code(&out), 0, "a program with holes is not wrong");
+    assert!(shown.contains("hole at examples/gallery/09-holes.hero:"), "{shown}");
+    assert!(shown.contains("this function returns: Entry"), "{shown}");
+    assert!(shown.contains("expected type: str"), "{shown}");
+    assert!(shown.contains("in scope:"), "{shown}");
+    assert!(shown.contains("entries: [Entry]"), "{shown}");
 }

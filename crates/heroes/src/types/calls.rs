@@ -161,7 +161,9 @@ fn user_call(
     let arity = function.params.len();
     let given = args.len() + usize::from(receiver.is_some());
     if given != arity {
-        let diagnostic = errors::arity(&name, arity, given, span);
+        let signature = crate::printer::render_signature(ast, src, decl);
+        let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
+        let diagnostic = errors::arity(&name, arity, given, Some((signature, line)), span);
         checker.push_diagnostic(diagnostic);
         return checker.error_ty();
     }
@@ -264,7 +266,7 @@ fn indirect_call(
     let params = checker.out.types.params_of(params);
     let given = args.len() + usize::from(receiver.is_some());
     if given != params.len() {
-        let diagnostic = errors::arity("this function", params.len(), given, span);
+        let diagnostic = errors::arity("this function", params.len(), given, None, span);
         checker.push_diagnostic(diagnostic);
         return checker.error_ty();
     }

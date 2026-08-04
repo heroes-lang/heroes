@@ -54,20 +54,30 @@ pub(super) fn synth(
             // own (§4.5's ⇐ mode), so in an equality it takes the *other* side's.
             // One rule, both directions, and only for the two operators where
             // both operands must have the same type anyway.
-            let equality = matches!(op, crate::syntax::BinaryOp::Eq | crate::syntax::BinaryOp::Ne);
-            if equality && contextual(ast, *right) && !contextual(ast, *left) {
+            // Every binary operator in this language wants both operands to have
+            // the same type — arithmetic and comparison by §4.14, equality by
+            // §4.3, `&&`/`||` because both are `bool`. So whenever *one* side has
+            // no type of its own, the other side's is the expectation: that is
+            // what makes `t == .plus` writable, and what gives the `???` in
+            // `"n = " + ???` an expected type to report (§4.16).
+            //
+            // The operator still decides the *result*: this only settles what the
+            // operands are, and `ops::binary` does the rest, so a comparison
+            // still yields `bool` and an addition still yields its operands' type.
+            let (left_ty, right_ty) = if contextual(ast, *right) && !contextual(ast, *left) {
                 let left_ty = synth(checker, ast, resolved, src, *left);
                 check(checker, ast, resolved, src, *right, left_ty);
-                checker.out.types.bool()
-            } else if equality && contextual(ast, *left) && !contextual(ast, *right) {
+                (left_ty, left_ty)
+            } else if contextual(ast, *left) && !contextual(ast, *right) {
                 let right_ty = synth(checker, ast, resolved, src, *right);
                 check(checker, ast, resolved, src, *left, right_ty);
-                checker.out.types.bool()
+                (right_ty, right_ty)
             } else {
                 let left_ty = synth(checker, ast, resolved, src, *left);
                 let right_ty = synth(checker, ast, resolved, src, *right);
-                ops::binary(checker, ast, src, *op, left_ty, right_ty, span)
-            }
+                (left_ty, right_ty)
+            };
+            ops::binary(checker, ast, src, *op, left_ty, right_ty, span)
         }
         ExprKind::Field { base, name: field } => {
             let base_ty = synth(checker, ast, resolved, src, *base);
@@ -163,11 +173,11 @@ pub(super) fn synth(
 
 
 /// True where an expression has no type of its own and must be checked against
-/// one — §4.5's ⇐-only forms, listed in one place so the equality rule and any
-/// later one agree about what they are.
+/// one — §4.5's ⇐-only forms, listed in one place so every rule that needs to
+/// know agrees about what they are.
 fn contextual(ast: &Ast, id: ExprId) -> bool {
     match &ast.exprs[id.0 as usize].kind {
-        ExprKind::Case { .. } => true,
+        ExprKind::Case { .. } | ExprKind::Hole => true,
         ExprKind::Array(items) => items.is_empty(),
         ExprKind::Map(entries) => entries.is_empty(),
         _ => false,
@@ -185,7 +195,7 @@ fn name(
     span: Span,
 ) -> TyId {
     match resolved.use_at(id) {
-        Ref::Local(index) => checker.local_types[index as usize],
+        Ref::Local(index) => checker.out.local_types[index as usize],
         Ref::Top(decl) => match &ast.decls[decl as usize].kind {
             // §4.13: a top-level function is a value, and its type is its
             // signature.

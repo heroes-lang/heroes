@@ -25,7 +25,6 @@ use super::{errors, lower, Checker, TyId};
 
 pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &Source) {
     for (index, decl) in ast.decls.iter().enumerate() {
-        let _ = index;
         match &decl.kind {
             DeclKind::Constant { ty, body } => {
                 let declared = lower::ty(checker, ast, resolved, *ty);
@@ -48,6 +47,7 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                     .map(|span| src.slice(*span).to_string())
                     .collect();
                 let result = lower::ty(checker, ast, resolved, function.result);
+                checker.out.results.insert(index as u32, result);
                 checker.result = result;
                 checker.fallible = is_fallible(checker, result);
                 for param in &function.params {

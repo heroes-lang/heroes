@@ -65,6 +65,16 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
 
 /// `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]` — the header
 /// in one line, which is how a signature is read.
+pub fn render_signature(ast: &Ast, src: &Source, decl: u32) -> String {
+    let declaration = &ast.decls[decl as usize];
+    match &declaration.kind {
+        DeclKind::Function(function) => {
+            signature(ast, src, src.slice(declaration.name), function)
+        }
+        _ => src.slice(declaration.name).to_string(),
+    }
+}
+
 fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
     let mut out = String::new();
     if function.is_extern {

@@ -108,12 +108,28 @@ pub(in crate::types) fn not_callable(got: &str, span: Span) -> Diagnostic {
 }
 
 
-pub(in crate::types) fn arity(name: &str, expected: usize, got: usize, span: Span) -> Diagnostic {
-    Diagnostic::new(
+/// §4.17: the error carries the signature, because that is the file the reader
+/// would otherwise open.
+pub(in crate::types) fn arity(
+    name: &str,
+    expected: usize,
+    got: usize,
+    declared: Option<(String, u32)>,
+    span: Span,
+) -> Diagnostic {
+    let diagnostic = Diagnostic::new(
         "wrong_arity",
         format!("`{name}` takes {expected} argument(s), found {got}"),
         span,
-    )
+    );
+    // A built-in and a function *value* have no declaration to cite, and a note
+    // saying so would be worse than no note.
+    match declared {
+        Some((signature, line)) => {
+            diagnostic.with_note(format!("declared at line {line}: {signature}"))
+        }
+        None => diagnostic,
+    }
 }
 
 

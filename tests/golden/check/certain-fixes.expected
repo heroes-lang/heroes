@@ -1,0 +1,3 @@
+tests/golden/check/certain-fixes.hero:16:14: error[unused_binding]: the payload `n` is never read — write `_` in the pattern when the value is not needed
+tests/golden/check/certain-fixes.hero:21:11: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+tests/golden/check/certain-fixes.hero:22:9: error[unused_binding]: the loop variable `i` is never read — write `for _ in …` when the element is not needed

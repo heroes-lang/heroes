@@ -1,0 +1,24 @@
+# Bulk regression case (assistant-written): a file where **every** diagnostic
+# carries a `certain` fix, so `check --apply` repairs it completely and the
+# result checks clean. That pairing is CLAUDE.md §8's promise made executable —
+# "only `certain` is machine-applicable" is a claim about every fix the compiler
+# tags, and one that left the file broken would falsify it.
+#
+# All three are the resolver's, deliberately: the stages are gated, so a case
+# mixing a name mistake with a type mistake would only ever show the first.
+Token = variant
+    num
+        v: int
+    plus
+
+label_of = function: (t: Token) -> int
+    return match t
+        .num _ => 1
+        .plus  => 2
+
+main = function: ()
+    total = 4
+    print(total)
+    for _ in range(0, 3)
+        print("tick")
+    print(label_of(.num(v: total)))

@@ -174,7 +174,10 @@ main = function: ()
     );
     assert_eq!(out.diagnostics.len(), 1);
     assert_eq!(out.diagnostics[0].code, "wrong_label");
-    assert_eq!(out.diagnostics[0].fixes[0].replacement, "y:");
+    // The bare name: the span is the label's identifier and the `:` is not in
+    // it, which is what the `.fixed` goldens caught — the first version of this
+    // fix produced `y:: 2`.
+    assert_eq!(out.diagnostics[0].fixes[0].replacement, "y");
     assert_eq!(
         out.diagnostics[0].fixes[0].certainty,
         crate::diagnostics::Certainty::Certain

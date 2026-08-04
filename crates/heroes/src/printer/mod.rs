@@ -36,7 +36,7 @@ mod scopes;
 mod types;
 
 pub use bodies::render_expr;
-pub use dump::dump_ast;
+pub use dump::{dump_ast, render_signature};
 pub use fmt::format_file;
 pub use scopes::dump_scopes;
 pub use types::render_type;

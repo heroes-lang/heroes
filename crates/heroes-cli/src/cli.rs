@@ -118,7 +118,17 @@ pub fn commands() -> Vec<Command> {
             tag: Tag::Check,
             name: "check".to_string(),
             operand: Operand::File,
-            flags: vec![flag("--dump-scopes", "print the symbols and every binding")],
+            flags: vec![
+                flag("--dump-scopes", "print the symbols and every binding"),
+                flag("--json", "print the diagnostics as JSON (schema 1) instead of text"),
+                flag("--brief", "one line per diagnostic instead of the full form"),
+                flag(
+                    "--permissive",
+                    "drop the diagnostics that exist for the thesis — the control arm of Part 11's measurement",
+                ),
+                flag("--apply", "print the program with every certain fix applied"),
+                flag("--in-place", "with --apply, rewrite the file instead of printing it"),
+            ],
             summary: "check names and types".to_string(),
         },
         Command {

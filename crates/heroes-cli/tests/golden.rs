@@ -77,6 +77,14 @@ fn collect_cases(dir: &Path) -> Vec<PathBuf> {
 /// (CLAUDE.md § Golden discipline).
 const FRONTEND_CMD: &str = "check";
 
+/// The goldens pin the **one-line** form, which is why `--brief` is passed: it is
+/// one line per diagnostic and its shape does not move, so a case's expectation
+/// is about the *message* rather than about the renderer's layout. §4.17's rich
+/// form is pinned in a crate test instead — the layout is one thing, and forty
+/// expectations quoting it would make every future change to it a forty-file
+/// commit.
+const FRONTEND_FLAG: &str = "--brief";
+
 #[test]
 fn golden_tree_is_well_formed() {
     let root = workspace_root().join("tests/golden");
@@ -103,6 +111,7 @@ fn golden_check_cases_render_their_diagnostics() {
             .current_dir(&root)
             .arg(FRONTEND_CMD)
             .arg(relative)
+            .arg(FRONTEND_FLAG)
             .output()
             .expect("the heroes binary runs");
         let actual = String::from_utf8_lossy(&output.stderr).into_owned();
@@ -125,4 +134,56 @@ fn golden_check_cases_render_their_diagnostics() {
             relative.display()
         );
     }
+}
+
+/// `x.fixed` — where a case has one, applying every `certain` fix to `x.hero`
+/// must produce it *and* the result must check clean.
+///
+/// This is CLAUDE.md §8's promise made executable: "only `certain` is
+/// machine-applicable" is a claim about every fix the compiler tags, and a fix
+/// that produces a program the compiler then rejects would falsify it. The
+/// harness applies them through the real binary (`check --apply`), so what is
+/// tested is the shipped path and not a test helper's imitation of it.
+#[test]
+fn applying_certain_fixes_produces_the_fixed_file_and_it_checks_clean() {
+    let root = workspace_root();
+    let mut seen = 0;
+    for case in collect_cases(&root.join("tests/golden/check")) {
+        let fixed_path = case.with_extension("fixed");
+        if !fixed_path.exists() {
+            continue;
+        }
+        seen += 1;
+        let relative = case.strip_prefix(&root).expect("under the workspace root");
+        let applied = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args([FRONTEND_CMD, &relative.display().to_string(), "--apply"])
+            .output()
+            .expect("the heroes binary runs");
+        let got = String::from_utf8_lossy(&applied.stdout).into_owned();
+        let expected = std::fs::read_to_string(&fixed_path)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", fixed_path.display()));
+        assert_eq!(
+            got,
+            expected,
+            "\napplied fixes differ for {}\n--- expected ---\n{expected}--- actual ---\n{got}",
+            relative.display()
+        );
+        // …and the repaired program is accepted. A `certain` fix that leaves the
+        // file broken is a `guess` that lied.
+        let fixed_relative = fixed_path.strip_prefix(&root).expect("under the root");
+        let rechecked = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args([FRONTEND_CMD, &fixed_relative.display().to_string(), FRONTEND_FLAG])
+            .output()
+            .expect("the heroes binary runs");
+        assert_eq!(
+            rechecked.status.code(),
+            Some(0),
+            "{} does not check clean after its fixes:\n{}",
+            fixed_relative.display(),
+            String::from_utf8_lossy(&rechecked.stderr)
+        );
+    }
+    assert!(seen >= 3, "expected at least three `.fixed` cases, found {seen}");
 }

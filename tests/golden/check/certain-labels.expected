@@ -1,0 +1,3 @@
+tests/golden/check/certain-labels.hero:10:21: error[wrong_label]: `Point` has no field `z` at this position — it is `y`
+tests/golden/check/certain-labels.hero:11:15: error[missing_label]: `Point`'s fields are always named — this one is `x`
+tests/golden/check/certain-labels.hero:11:18: error[missing_label]: `Point`'s fields are always named — this one is `y`

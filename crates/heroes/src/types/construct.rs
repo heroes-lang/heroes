@@ -38,7 +38,8 @@ pub(super) fn construct_record(
         .iter()
         .map(|f| (src.slice(f.name).to_string(), f.ty))
         .collect();
-    check_named_fields(checker, ast, resolved, src, &name, &expected, args, span);
+    let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
+    check_named_fields(checker, ast, resolved, src, &name, &expected, args, line, span);
     checker.out.types.intern(Ty::Named(decl))
 }
 
@@ -87,7 +88,8 @@ pub(super) fn case(
         .map(|f| (src.slice(f.name).to_string(), f.ty))
         .collect();
     let label = format!("{holder}.{name}");
-    check_named_fields(checker, ast, resolved, src, &label, &expected_fields, args, span);
+    let (line, _) = src.line_col(found.name.start);
+    check_named_fields(checker, ast, resolved, src, &label, &expected_fields, args, line, span);
     checker.record(at, expected);
 }
 
@@ -122,7 +124,7 @@ pub(super) fn fallible_constructor(
     };
     if name == "ok" {
         if args.len() != 1 {
-            let diagnostic = errors::arity("ok", 1, args.len(), span);
+            let diagnostic = errors::arity("ok", 1, args.len(), None, span);
             checker.push_diagnostic(diagnostic);
             return Some(checker.error_ty());
         }
@@ -130,7 +132,7 @@ pub(super) fn fallible_constructor(
         return Some(expected);
     }
     if args.len() != 2 {
-        let diagnostic = errors::arity("fail", 2, args.len(), span);
+        let diagnostic = errors::arity("fail", 2, args.len(), None, span);
         checker.push_diagnostic(diagnostic);
         return Some(checker.error_ty());
     }
@@ -152,11 +154,12 @@ fn check_named_fields(
     holder: &str,
     expected: &[(String, crate::syntax::TypeId)],
     args: &[Arg],
+    declared_at: u32,
     span: Span,
 ) {
     if args.len() != expected.len() {
         let names: Vec<String> = expected.iter().map(|(n, _)| n.clone()).collect();
-        let diagnostic = errors::missing_fields(holder, &names, span);
+        let diagnostic = errors::missing_fields(holder, &names, declared_at, span);
         checker.push_diagnostic(diagnostic);
         for arg in args {
             exprs::synth(checker, ast, resolved, src, arg.value);
