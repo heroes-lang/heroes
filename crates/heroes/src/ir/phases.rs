@@ -26,7 +26,6 @@
 use crate::types::Checked;
 
 use super::inst::{Op, SlotId, Term};
-use super::uses::operands;
 use super::{is_refcounted, Block, Function, Phase, Program, SlotKind};
 
 pub(super) fn check(
@@ -43,10 +42,10 @@ pub(super) fn check(
                 problems.push(at("a refcount operation before the ownership pass".to_string()));
             }
         }
-        Phase::Owned => released_on_return(function, block, checked, at, problems),
-    }
-    if program.phase == Phase::Owned {
-        released_where_they_are_read(function, block, at, problems);
+        Phase::Owned => {
+            released_on_return(function, block, checked, at, problems);
+            owning_temporaries_move_into_slots(block, checked, at, problems);
+        }
     }
 }
 
@@ -66,66 +65,93 @@ fn released_on_return(
     if !matches!(block.term, Term::Return(_)) {
         return;
     }
-    let owed = function
-        .slots
-        .iter()
-        .enumerate()
-        .filter(|(index, slot)| {
-            matches!(slot.kind, SlotKind::Local | SlotKind::Synthetic)
-                && is_refcounted(checked, slot.ty)
-                && !function.params.contains(&SlotId(*index as u32))
+    // Which slots this block released, and **after their last write** — which is the
+    // only reading that distinguishes a sweep from a store.
+    //
+    // Counting `Decref`s was the first version and it was a proxy rather than a check.
+    // Matching a `Decref` to a `Load` of the same slot was the second, and it could not
+    // tell the two apart either: a store to a counted slot *also* loads the old value
+    // and decrefs it, and that pair is byte-identical to a sweep pair. What separates
+    // them is position — the store's load necessarily precedes the store, and the
+    // sweep's necessarily follows it. Removing a sweep decref by hand and watching the
+    // check stay silent is how that was found.
+    let last_write = |slot: u32| -> Option<usize> {
+        block.insts.iter().rposition(|inst| match inst.op {
+            Op::Store { place, .. } => place.root.0 == slot && place.path.len == 0,
+            _ => false,
         })
-        .count();
-    let released = block.insts.iter().filter(|inst| matches!(inst.op, Op::Decref(_))).count();
-    if released < owed {
-        problems
-            .push(at(format!("returns after releasing {released} of {owed} owned slots")));
+    };
+    let released_after = |slot: u32, after: Option<usize>| -> bool {
+        let floor = after.map(|at| at + 1).unwrap_or(0);
+        for (index, inst) in block.insts.iter().enumerate().skip(floor) {
+            let Op::Decref(value) = inst.op else { continue };
+            let loaded = block.insts[..index].iter().skip(floor).any(|one| {
+                one.dest == Some(value)
+                    && matches!(one.op, Op::Load(place) if place.root.0 == slot && place.path.len == 0)
+            });
+            if loaded {
+                return true;
+            }
+        }
+        false
+    };
+    for (index, slot) in function.slots.iter().enumerate() {
+        let index = index as u32;
+        let owed = matches!(slot.kind, SlotKind::Local | SlotKind::Synthetic)
+            && is_refcounted(checked, slot.ty)
+            && !function.params.contains(&SlotId(index));
+        if owed && !released_after(index, last_write(index)) {
+            problems.push(at(format!(
+                "returns without releasing `{}`, a slot it owns",
+                slot.name
+            )));
+        }
     }
 }
 
-/// A temporary the pass **releases** is read only in the block that releases it.
+/// **Every owning temporary is moved into a slot in the block that defines it.**
 ///
-/// This is the invariant that makes `own.rs`'s cheap classification safe. That pass
-/// decrefs an owning temporary at the end of its defining block instead of computing
-/// liveness, so what must hold is that nothing reads such a value from another block —
-/// where, physically, it may already be freed.
+/// This is the invariant that replaces liveness. `own.rs` never releases a temporary —
+/// it moves the reference into a synthetic slot the instruction after it appears — so
+/// nothing owned crosses a block edge, and every release is a slot's, at a point
+/// already known. Checked here rather than trusted there.
 ///
-/// The first wording was "a **counted** temporary is read only in the block that defines
-/// it", and it fired immediately on `assert s == "x"`: the `assert` lowering computes
-/// both operands in the test block and reads them in the abort block, and one of them is
-/// the source text. That read is **harmless**, because a string literal is a static
-/// block the pass never releases — so the property is not about being counted, it is
-/// about being *released*. Keying the check on where the `Decref` actually is says
-/// exactly that, and needs no second copy of the pass's own classification.
-///
-/// Panel 021 predicted the `assert` collision and queued it as an M6 repair. It arrived
-/// early, and what it corrected was the invariant rather than the lowering.
-fn released_where_they_are_read(
-    function: &Function,
+/// Two earlier wordings were refuted, and the record is worth keeping because both were
+/// too strong rather than too weak. "A **counted** temporary is read only in the block
+/// that defines it" fired on `assert s == "x"`, whose operands legitimately cross into
+/// the abort block — harmlessly, since a literal is static. "A **released** temporary
+/// never crosses a block" then fired on `name + " scored " + got.must().to_str()`,
+/// where `.must()` opens a block in the middle of an expression: not a corner case, but
+/// what any expression containing a fallible call looks like. Both were found by an
+/// existing test or a gallery program within the hour of being written.
+fn owning_temporaries_move_into_slots(
     block: &Block,
+    checked: &Checked,
     at: &dyn Fn(String) -> String,
     problems: &mut Vec<String>,
 ) {
-    for (index, other) in function.blocks.iter().enumerate() {
-        for inst in &other.insts {
-            let Op::Decref(released) = inst.op else { continue };
-            // Only a temporary: the exit sweep decrefs slots through a fresh load, and
-            // that load is defined in the block that reads it.
-            let defined_here = block.insts.iter().any(|one| one.dest == Some(released));
-            if defined_here {
-                continue;
-            }
-            let read_here = block
-                .insts
-                .iter()
-                .any(|one| operands(function, one.op).contains(&released));
-            if read_here {
-                problems.push(at(format!(
-                    "reads ${}, which bb{index} releases — a released temporary never \
-                     crosses a block",
-                    released.0
-                )));
-            }
+    for inst in &block.insts {
+        let Some(dest) = inst.dest else { continue };
+        if !allocates(inst.op) || !is_refcounted(checked, inst.ty) {
+            continue;
+        }
+        let moved = block.insts.iter().any(|one| match one.op {
+            Op::Store { value, .. } => value == dest,
+            _ => false,
+        });
+        if !moved {
+            problems.push(at(format!(
+                "${} owns a reference and no store in this block takes it — a temporary \
+                 never carries ownership across an edge",
+                dest.0
+            )));
         }
     }
+}
+
+/// Which operations hand back a new reference. It has to agree with `own.rs`'s own
+/// answer, and the only way to guarantee that is for there to be one — so this is the
+/// pass's function, re-exported rather than reimplemented.
+fn allocates(op: Op) -> bool {
+    crate::own::allocates(op)
 }

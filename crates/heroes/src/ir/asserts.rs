@@ -35,13 +35,43 @@ pub(super) fn assert(
     let text = source_text(b, checked, src, ast.exprs[expr.0 as usize].span, span);
     let (cond, sides) = condition(b, ast, resolved, checked, src, expr);
 
+    // **A counted operand travels through a slot, not across the edge.**
+    //
+    // The two sides are computed here, in the test block, and read over there, in the
+    // failure block — which is the whole reason they are named at all. For an `int`
+    // that is free. For a `str` it is a use-after-free, because M5b's ownership pass
+    // releases an owning temporary at the end of the block that defines it, and a
+    // block-crossing read is precisely what it cannot see.
+    //
+    // Panel 021 predicted this and scheduled the repair for M6, with `Abort::Assert`.
+    // It arrived early: the verifier's `Owned` invariant fired on
+    // `examples/gallery/07-strings.hero`, on `assert sentence_of([…]) == "one two"`.
+    // A synthetic slot is the fix the panel named, and it costs two instructions on a
+    // path that is about to abort the program.
+    let carried: Vec<Carried> = sides
+        .into_iter()
+        .map(|value| {
+            let ty = b.value_type(value);
+            if !super::is_refcounted(checked, ty) {
+                return Carried::Value(value);
+            }
+            let slot = b.synthetic("assert", ty);
+            b.store(slot, value, span);
+            Carried::Slot(slot)
+        })
+        .collect();
+
     let good = b.block("assert: held");
     let bad = b.block("assert: failed");
     b.terminate(Term::Branch { cond, then: good, otherwise: bad });
 
     b.switch_to(bad);
     let mut operands = vec![Arg::Value(text)];
-    for value in sides {
+    for value in carried {
+        let value = match value {
+            Carried::Value(value) => value,
+            Carried::Slot(slot) => b.load(slot, span),
+        };
         operands.push(Arg::Value(value));
     }
     let args = b.args(&operands);
@@ -50,6 +80,13 @@ pub(super) fn assert(
     b.terminate(Term::Unreachable);
 
     b.switch_to(good);
+}
+
+/// How an operand reaches the failure block: directly, or through a slot because it
+/// carries a reference.
+enum Carried {
+    Value(ValueId),
+    Slot(super::inst::SlotId),
 }
 
 /// The condition, and the two sides when there are two.

@@ -276,54 +276,46 @@ fn a_refcount_before_the_ownership_pass_is_caught() {
     says(&verify(&program, &checked), "after lowering");
 }
 
-/// The `Owned` half: a returning block that releases fewer slots than it owns is a
-/// leak, and the leak counter would find it at runtime — this finds it at compile time
-/// and says which function.
+/// The `Owned` half: a returning block that does not release a slot it owns is a leak,
+/// and the runtime's counter would find it — this finds it at compile time and names the
+/// slot.
 #[test]
-fn a_return_that_releases_too_few_slots_is_caught() {
-    let (mut program, checked) = owned("function f(n: str) -> str\n    s: str @ \"x\"\n    return s + n\n");
+fn a_return_that_leaves_a_slot_unreleased_is_caught() {
+    let (mut program, checked) =
+        owned("function f(n: str) -> str\n    s: str @ \"x\"\n    return s + n\n");
     let exit = program.functions[0]
         .blocks
         .iter()
         .position(|b| matches!(b.term, crate::ir::Term::Return(_)))
         .expect("an exit block");
-    program.functions[0].blocks[exit].insts.retain(|inst| !matches!(inst.op, Op::Decref(_)));
-    says(&verify(&program, &checked), "owned slots");
+    // Drop the last decref: one slot now goes unreleased, and the message says which.
+    let insts = &mut program.functions[0].blocks[exit].insts;
+    let last = insts
+        .iter()
+        .rposition(|inst| matches!(inst.op, Op::Decref(_)))
+        .expect("the sweep released something");
+    insts.remove(last);
+    says(&verify(&program, &checked), "a slot it owns");
     says(&verify(&program, &checked), "after the ownership pass");
 }
 
-/// And the invariant that makes the pass's cheap classification safe: a temporary it
-/// releases must not be read from another block.
-///
-/// The damage has to be built rather than moved, because the pass never produces a
-/// violation — which is the point. A second block is given a read of a value the first
-/// block releases, which is exactly what an end-of-block release would free too early.
+/// And the invariant that replaces liveness: an owning temporary must be **moved** into
+/// a slot in the block that defines it. Remove the store and the reference has nowhere
+/// to live, which is what an end-of-block release would have had to guess about.
 #[test]
-fn a_released_temporary_read_from_another_block_is_caught() {
-    let (mut program, checked) =
-        owned("function f(c: bool, n: str) -> int\n    if c\n        return len(n + n)\n    return 0\n");
+fn an_owning_temporary_that_no_store_takes_is_caught() {
+    let (mut program, checked) = owned("function f(n: str) -> str\n    return n + n\n");
     let function = &mut program.functions[0];
-    // The value the pass released, and the block it released it in.
-    let mut released = None;
-    for (index, block) in function.blocks.iter().enumerate() {
-        for inst in &block.insts {
-            if let Op::Decref(value) = inst.op {
-                released = Some((index, value));
-            }
+    for block in function.blocks.iter_mut() {
+        // The pass's own move: a store whose value is a concatenation's result.
+        if let Some(at) = block.insts.iter().position(|inst| {
+            matches!(inst.op, Op::Store { .. }) && inst.dest.is_none()
+        }) {
+            block.insts.remove(at);
+            break;
         }
     }
-    let (home, value) = released.expect("the pass released something");
-    // A different block now reads it. `len` is a one-operand instruction, so this is
-    // the smallest read that exists.
-    let elsewhere = (0..function.blocks.len()).find(|i| *i != home).expect("another block");
-    let inst = Inst {
-        dest: None,
-        op: Op::Incref(value),
-        ty: checked.types.unit(),
-        span: function.span,
-    };
-    function.blocks[elsewhere].insts.insert(0, inst);
-    says(&verify(&program, &checked), "never crosses a block");
+    says(&verify(&program, &checked), "never carries ownership across an edge");
 }
 
 /// The phase cannot go backwards, and a pass cannot run twice.

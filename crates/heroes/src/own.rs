@@ -27,20 +27,31 @@
 //!    string-building loop leaked 999 blocks — measured.
 //! 4. **A returned value is increfed before the sweep**, or `return prefix + name`
 //!    is a use-after-free: silent at `-O0`, and a heap-use-after-free under ASan.
-//! 5. **An owning temporary is decrefed at the end of its defining block.** A value
-//!    is owning iff its defining op *allocates*. `print(a + b)` leaks without this,
-//!    and the alternative — a liveness pass — would spend exactly what panel 019
-//!    bought by choosing slots over phi nodes: cleanup as a table walk.
+//! 5. **An owning temporary is MOVED into a synthetic slot, in the block that defines
+//!    it.** Nothing is ever owned by a temporary past its own instruction, so nothing
+//!    has to be released at a block boundary — and that is what cashes panel 019's
+//!    reason for choosing slots over phi nodes, properly this time: **ownership lives
+//!    in slots, and cleanup is a walk over a table.**
 //!
-//! Rule 5 is made safe by a **checked invariant** rather than by an analysis: at
-//! phase `Owned` the verifier asserts that a refcounted temporary is read only in the
-//! block that defines it. That is the same move `ir/values.rs` represents — buy the
-//! check, not the machinery.
+//! Rule 5 was first written the way panel 021 costed it — decref an owning temporary
+//! at the end of its defining block, made safe by a checked invariant — and the
+//! verifier refuted it on two real programs within the hour. `.must()`, `?`, `&&` and
+//! `if`-as-an-expression all open a block in the *middle* of an expression, so
+//! `name + " scored " + got.must().to_str()` computes a concatenation in one block and
+//! consumes it in another. That is not a corner case; it is what any expression
+//! containing a fallible call looks like. The alternative would have been liveness —
+//! the thing choosing slots was supposed to avoid — and the move to a slot avoids it
+//! for real, because a slot's release point is already known.
 //!
-//! A `Load` is **borrowed** (+0), which is what makes the whole scheme uniform: a
-//! store increfs, a return increfs, a call argument does neither, and the only +1s in
-//! the program come from allocating instructions and are released at the end of their
-//! block.
+//! The consequence is a uniform reading: **every value that reaches a store is
+//! borrowed**, because the only +1 in the program was moved into a slot the
+//! instruction after it was created. So a store always increfs, a return always
+//! increfs, a call argument does neither, and every release is a slot's.
+//!
+//! The cost is over-retention rather than a leak: a string is held by its synthetic
+//! slot until the function returns, even if nothing reads it again. Performance is a
+//! non-goal (Part 2) and correctness is not, and a loop does not accumulate — the
+//! synthetic slot is overwritten each iteration, and the overwrite releases.
 
 use crate::ir::{is_refcounted, Function, Inst, Op, Phase, Place, Program, Shape, SlotKind, Term};
 use crate::source::Span;
@@ -55,30 +66,21 @@ pub fn run(program: &mut Program, checked: &Checked) {
     program.advance_to(Phase::Owned);
 }
 
+/// **Two walks, and the order is the whole correctness argument.** The first inserts
+/// the increfs and the moves, which is what *creates* the synthetic slots; the second
+/// appends the exit sweeps, which need the slot list to be complete. Done in one walk,
+/// a block that returns early sweeps only the slots invented before it — which the
+/// verifier caught immediately as `returns without releasing $own7`.
 fn rewrite(function: &mut Function, checked: &Checked) {
-    // The sweep's targets, computed once: local and synthetic slots whose type is
-    // counted. Parameters are borrowed (rule 1) and `@` parameters are moved out
-    // (rule 2), so neither appears here.
-    let sweep: Vec<u32> = function
-        .slots
-        .iter()
-        .enumerate()
-        .filter(|(_, slot)| {
-            matches!(slot.kind, SlotKind::Local | SlotKind::Synthetic)
-                && is_refcounted(checked, slot.ty)
-        })
-        .map(|(index, _)| index as u32)
-        .collect();
-
     let mut next_value = function.values.len() as u32;
     for index in 0..function.blocks.len() {
         let mut out: Vec<Inst> = Vec::new();
-        let mut owning: Vec<crate::ir::ValueId> = Vec::new();
         for inst in std::mem::take(&mut function.blocks[index].insts) {
-            // Rule 3: the old value dies when the slot is overwritten, and the new
-            // one must be alive before it does.
+            // Rule 3: the old value dies when the slot is overwritten, and the new one
+            // must be alive before it does. Every value reaching a store is borrowed
+            // (rule 5 moved the owning ones out), so the incref is unconditional.
             if let Op::Store { place, value } = inst.op {
-                let ty = slot_type(function, place);
+                let ty = function.slots[place.root.0 as usize].ty;
                 if is_refcounted(checked, ty) && place.path.len == 0 {
                     let old = fresh(&mut next_value, function, ty);
                     out.push(plain(Some(old), Op::Load(place), ty, inst.span));
@@ -88,41 +90,81 @@ fn rewrite(function: &mut Function, checked: &Checked) {
                     continue;
                 }
             }
-            if let Some(dest) = inst.dest {
-                if allocates(inst.op) && is_refcounted(checked, inst.ty) {
-                    owning.push(dest);
-                }
-            }
+            let owning = inst
+                .dest
+                .filter(|_| allocates(inst.op) && is_refcounted(checked, inst.ty))
+                .map(|dest| (dest, inst.ty, inst.span));
             out.push(inst);
+            // Rule 5: move it into a slot, now, in this block. The reference is
+            // *moved*, so there is no incref and no decref of the temporary — which is
+            // what makes every later value borrowed.
+            if let Some((dest, ty, span)) = owning {
+                let slot = own_slot(function, ty);
+                let place = whole(slot);
+                let old = fresh(&mut next_value, function, ty);
+                out.push(plain(Some(old), Op::Load(place), ty, span));
+                out.push(plain(None, Op::Store { place, value: dest }, ty, span));
+                out.push(plain(None, Op::Decref(old), ty, span));
+            }
         }
-        // Rule 4, then the sweep, then rule 5 — in that order, because the returned
-        // value may be one of the temporaries the last step releases.
+        function.blocks[index].insts = out;
+    }
+    // The second walk. Rules 1 and 2 decide the list: local and synthetic slots only,
+    // because a plain parameter is borrowed and an `@` parameter is copied out. Taking
+    // the other reading was the first program panel 021's ffi-pragmatist compiled, and
+    // ASan failed it on the first run with a heap-use-after-free.
+    let sweep: Vec<u32> = function
+        .slots
+        .iter()
+        .enumerate()
+        .filter(|(index, slot)| {
+            matches!(slot.kind, SlotKind::Local | SlotKind::Synthetic)
+                && is_refcounted(checked, slot.ty)
+                && !function.params.contains(&crate::ir::SlotId(*index as u32))
+        })
+        .map(|(index, _)| index as u32)
+        .collect();
+    for index in 0..function.blocks.len() {
         let term = function.blocks[index].term.clone();
-        let span = out.last().map(|i| i.span).unwrap_or(function.span);
+        if !matches!(term, Term::Return(_)) {
+            continue;
+        }
+        let span =
+            function.blocks[index].insts.last().map(|i| i.span).unwrap_or(function.span);
+        let mut out = std::mem::take(&mut function.blocks[index].insts);
+        // Rule 4, before the sweep: the returned value is borrowed by here — it lives
+        // in a slot — so the caller's reference has to be a new one.
         if let Term::Return(Some(value)) = term {
             let ty = function.value_type(value);
             if is_refcounted(checked, ty) {
                 out.push(plain(None, Op::Incref(value), ty, span));
             }
         }
-        if matches!(term, Term::Return(_)) {
-            for slot in &sweep {
-                let ty = function.slots[*slot as usize].ty;
-                let loaded = fresh(&mut next_value, function, ty);
-                let place = Place {
-                    root: crate::ir::SlotId(*slot),
-                    path: crate::ir::Steps { start: 0, len: 0 },
-                };
-                out.push(plain(Some(loaded), Op::Load(place), ty, span));
-                out.push(plain(None, Op::Decref(loaded), ty, span));
-            }
-        }
-        for value in owning {
-            let ty = function.value_type(value);
-            out.push(plain(None, Op::Decref(value), ty, span));
+        for slot in &sweep {
+            let ty = function.slots[*slot as usize].ty;
+            let loaded = fresh(&mut next_value, function, ty);
+            let place = whole(crate::ir::SlotId(*slot));
+            out.push(plain(Some(loaded), Op::Load(place), ty, span));
+            out.push(plain(None, Op::Decref(loaded), ty, span));
         }
         function.blocks[index].insts = out;
     }
+}
+
+/// A synthetic slot for one owning temporary. Its name starts with `$`, which no
+/// Heroes program contains, so it can collide with nothing the author wrote.
+fn own_slot(function: &mut Function, ty: TyId) -> crate::ir::SlotId {
+    let index = function.slots.len() as u32;
+    function.slots.push(crate::ir::Slot {
+        name: format!("$own{}", index),
+        ty,
+        kind: SlotKind::Synthetic,
+    });
+    crate::ir::SlotId(index)
+}
+
+fn whole(slot: crate::ir::SlotId) -> Place {
+    Place { root: slot, path: crate::ir::Steps { start: 0, len: 0 } }
 }
 
 /// A value the pass invented. It extends `Function::values`, which is dense over
@@ -136,10 +178,6 @@ fn fresh(next: &mut u32, function: &mut Function, ty: TyId) -> crate::ir::ValueI
 
 fn plain(dest: Option<crate::ir::ValueId>, op: Op, ty: TyId, span: Span) -> Inst {
     Inst { dest, op, ty, span }
-}
-
-fn slot_type(function: &Function, place: Place) -> TyId {
-    function.slots[place.root.0 as usize].ty
 }
 
 /// Whether this operation hands back a **new** reference. Everything else either
@@ -156,7 +194,7 @@ fn slot_type(function: &Function, place: Place) -> TyId {
 /// (§4.14) puts `+` on `str` in the same row as `+` on `int`, and only the *result
 /// type* tells them apart. This function is called only when the result is
 /// refcounted, so `Op::Binary` here can be nothing else.
-fn allocates(op: Op) -> bool {
+pub(crate) fn allocates(op: Op) -> bool {
     match op {
         Op::Call { .. } | Op::Construct { .. } | Op::Cast { .. } | Op::Binary { .. } => true,
         // M5c: a field read of a counted field, an index, a map get, and a payload
