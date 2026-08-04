@@ -2039,15 +2039,18 @@ more.
 
 ## Generic library
 
-# Applies `f` to every element, in order.
-map = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
+# Applies `f` to every element, in order. Named `apply` rather than `map`
+# because `map` is a built-in name and no file may redeclare one (panel 015);
+# the point here is generics, and any name demonstrates them.
+apply = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
     for x in xs
         out @ out.push(f(x))
     return out
 
-# Reduces the sequence to one value, from the left.
-fold = function<A, B>: (xs: [A], initial: B, f: (function(B, A) -> B)) -> B
+# Reduces the sequence to one value, from the left. `fold` is a built-in name
+# too, so this one is `reduce`.
+reduce = function<A, B>: (xs: [A], initial: B, f: (function(B, A) -> B)) -> B
     acc: B @ initial
     for x in xs
         acc @ f(acc, x)
@@ -2057,8 +2060,8 @@ plus = function: (a: int, b: int) -> int
     return a + b
 
 test "generics work across types"
-    assert [1, 2, 3].map(double) == [2, 4, 6]
-    assert [1, 2, 3, 4].fold(0, plus) == 10
+    assert [1, 2, 3].apply(double) == [2, 4, 6]
+    assert [1, 2, 3, 4].reduce(0, plus) == 10
 
 double = function: (n: int) -> int
     return n * 2
