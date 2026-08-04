@@ -33,6 +33,11 @@ fn adversarial_five_space_indent() {
     // Guards: "nearly right" indentation. Four spaces is the only legal
     // step — five is not slightly crooked, it is wrong. This is the whole
     // rigid-indentation bet in one case.
+    //
+    // The margin is still an error; what the recovery does is round it to the
+    // nearest level, so the parser is handed the body the author obviously
+    // meant instead of a function with no body (2026-08-04: that guess used to
+    // cost three further diagnostics about a mistake already reported).
     assert_eq!(
         dump("f = function: ()\n     x\n"),
         "\
@@ -43,8 +48,10 @@ fn adversarial_five_space_indent() {
 1:15 lparen (
 1:16 rparen )
 1:17 terminator
+2:1 indent
 2:6 ident x
 2:7 terminator
+3:1 dedent
 3:1 eof
 DIAG test.hero:2:1: error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per level; found 5
 "
@@ -54,9 +61,13 @@ DIAG test.hero:2:1: error[indentation_not_multiple_of_4]: indentation must be ex
 #[test]
 fn adversarial_indentation_jump() {
     // Guards: the recovery invariant. Opening two levels at once is an
-    // error, but the lexer must still hand the parser a coherent structure
-    // (two indents, later two dedents) instead of a truncated file — one
-    // bad margin must not hide every error after it.
+    // error, and one bad margin must not hide every error after it.
+    //
+    // The recovery **clamps to one level** (2026-08-04, author instruction):
+    // honouring the two levels the writer asked for produced a block that
+    // nothing in the language opens, and the parser then said so — a second
+    // diagnostic about the same mistake. Nothing opens two levels, so nothing
+    // is invented by refusing to.
     assert_eq!(
         dump("f = function: ()\n        x\n"),
         "\
@@ -68,10 +79,8 @@ fn adversarial_indentation_jump() {
 1:16 rparen )
 1:17 terminator
 2:1 indent
-2:1 indent
 2:9 ident x
 2:10 terminator
-3:1 dedent
 3:1 dedent
 3:1 eof
 DIAG test.hero:2:1: error[indentation_jump]: indentation jumps from level 0 to level 2; a block opens one level at a time

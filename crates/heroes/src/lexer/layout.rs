@@ -88,17 +88,25 @@ impl LexState {
             None | Some(b'\n') | Some(b'\r') | Some(b'#') => return,
             _ => {}
         }
+        let span = Span { start: ws_start as u32, end: self.pos as u32 };
+        // Recovery, and the distinction matters: a wrong margin is always an
+        // **error** — the program never compiles, so nothing is interpreted in
+        // the sense §4.15 forbids. What is recovered is only the *structure
+        // handed downstream*, and it should be the most plausible one, because
+        // every implausible guess arrives at the parser as a second, third and
+        // fourth diagnostic about a mistake already reported.
+        //
+        // Two moves: round the margin to the nearest level, and never open more
+        // than one level at a time — there is nothing in the language that
+        // opens two.
+        let mut new_level = (spaces + 2) / 4;
         if !spaces.is_multiple_of(4) {
-            let span = Span { start: ws_start as u32, end: self.pos as u32 };
             self.diagnostics.push(Diagnostic::new(
                 "indentation_not_multiple_of_4",
                 format!("indentation must be exactly 4 spaces per level; found {spaces}"),
                 span,
             ));
-            return;
         }
-        let new_level = spaces / 4;
-        let span = Span { start: ws_start as u32, end: self.pos as u32 };
         if new_level > self.level + 1 {
             self.diagnostics.push(Diagnostic::new(
                 "indentation_jump",
@@ -108,13 +116,9 @@ impl LexState {
                 ),
                 span,
             ));
-            // Recovery: honour the nesting the writer asked for, so the
-            // parser sees a consistent block structure downstream.
-            for _ in self.level..new_level {
-                self.tokens.push(Token { kind: TokenKind::Indent, span });
-            }
-            self.level = new_level;
-        } else if new_level == self.level + 1 {
+            new_level = self.level + 1;
+        }
+        if new_level == self.level + 1 {
             self.tokens.push(Token { kind: TokenKind::Indent, span });
             self.level = new_level;
         } else {
