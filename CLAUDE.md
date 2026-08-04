@@ -78,10 +78,23 @@ without opening another file (design.md §4.17).
 
 ## 9. Golden discipline
 `UPDATE_GOLDEN=1` never turns a red test green without the diff being read and
-quoted in the commit body. It is **forbidden in `tests/golden/check/`**.
-The assistant writes all cases; each milestone's 5 adversarial cases stay
-marked `# UNVERIFIED — pending debrief` until ratified in `/debrief`; bulk
-regression cases are labelled as such.
+quoted in the commit body. It is **forbidden in `tests/golden/check/`** and in
+`tests/golden/ir/`. The assistant writes all cases; each milestone's 5
+adversarial cases stay marked `# UNVERIFIED — pending debrief` until ratified in
+`/debrief`; bulk regression cases are labelled as such.
+
+**Every diagnostic is annotated in the source that provokes it** — `#~ <code>`
+for this line, `#~v <code>` for the next — *in addition to* the `.expected`
+snapshot. rustc's rule and rustc's reason: the redundancy exists because
+snapshots are auto-generated and absorb mistakes, and because the annotation
+shows where the span points without opening a second file. It is what turns the
+paragraph above from a convention into an invariant: a regenerator can rewrite
+`x.expected`, but it cannot invent an annotation in `x.hero`. A **fixed defect
+gets a case named after it**, carrying symptom, cause and date (Go's
+`test/fixedbugs`); every **verifier check has a test that makes it fire**
+(LLVM's `test/Verifier`); and an invariant that must hold on every accepted
+program is asserted over `heroes mutate`'s corpus rather than over cases somebody
+thought of (`llvm-opt-fuzzer`'s `verifyModule`).
 
 ## 10. One command
 Any new capability is a `heroes` subcommand or flag. Never a second binary,

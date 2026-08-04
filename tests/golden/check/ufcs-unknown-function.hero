@@ -9,5 +9,5 @@ record Holder
 
 function run(h: Holder, n: int) -> int
     m: {str: int} @ {}
-    m.set("a", 1)
+    m.set("a", 1)  #~ unknown_function
     return h.cb(n)

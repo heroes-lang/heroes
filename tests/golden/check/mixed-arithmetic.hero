@@ -5,10 +5,10 @@
 # reason `int` and `f64` are separate words here. The message must name the
 # conversion, because a rule without a repair is a wall.
 function mix(n: int, x: f64) -> f64
-    return n + x
+    return n + x  #~ mixed_arithmetic
 
 function compare(n: int, x: f64) -> bool
-    return n < x
+    return n < x  #~ mixed_arithmetic
 
 function concat(s: str, n: int) -> str
-    return s + n
+    return s + n  #~ mixed_arithmetic

@@ -13,12 +13,12 @@ variant Token
 
 function label_of(t: Token) -> int
     return match t
-        .num _ => 1
+        .num _ => 1  #~ unused_binding
         .plus  => 2
 
 function main()
     total = 4
-    print(total)
-    for _ in range(0, 3)
+    print(total)  #~ unknown_name
+    for _ in range(0, 3)  #~ unused_binding
         print("tick")
     print(label_of(.num(v: total)))

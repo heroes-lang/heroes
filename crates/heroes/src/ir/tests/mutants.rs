@@ -5,11 +5,15 @@
 //! catch are, by definition, programs that type-check. Each of those is a test case
 //! for this invariant, and nobody had to write it.
 //!
-//! The pattern is Csmith's, scaled down: generate a corpus mechanically, then assert
-//! an **internal invariant** over it rather than an output. That is the part worth
-//! copying — a generated corpus checked only against expected output can be no
-//! stronger than the expectations somebody wrote by hand, whereas an invariant holds
-//! over inputs nobody imagined.
+//! The precedent for *this* shape — a mutated corpus checked against an **internal
+//! invariant** rather than an output — is `llvm-opt-fuzzer`, which mutates a module,
+//! runs the pass pipeline, then calls `verifyModule` and reports "Transformation
+//! resulted in an invalid module". Csmith is the famous generator and it is
+//! *output*-differential (compile with several compilers, run, compare); what Csmith
+//! contributes here is its verdict, which is this test's whole justification: "our
+//! results suggest that fixed test suites — the main way that compilers are tested —
+//! are an inadequate mechanism for quality control". An invariant holds over inputs
+//! nobody imagined; an expectation can be no stronger than whoever wrote it.
 //!
 //! Two invariants are asserted per surviving mutant, and the second is the one that
 //! costs nothing and catches the most: the **dump is byte-identical twice**. Any

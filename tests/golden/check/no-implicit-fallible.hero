@@ -8,10 +8,10 @@
 # The third function guards the other half of §4.6: a `?` needs a caller that
 # can fail.
 function half(n: int) -> int?
-    return n
+    return n  #~ type_mismatch
 
 function unwrapped(n: int) -> int?
-    return ok(n).must()
+    return ok(n).must()  #~ cannot_infer
 
 function forgotten(n: int) -> int
-    return half(n)?
+    return half(n)?  #~ try_in_infallible

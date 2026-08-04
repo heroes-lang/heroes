@@ -1,4 +1,4 @@
 function f()
-     five_spaces
+     five_spaces  #~ indentation_not_multiple_of_4
 function g()
-        double_jump
+        double_jump  #~ indentation_jump

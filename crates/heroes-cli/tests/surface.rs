@@ -29,7 +29,7 @@ fn the_three_exit_codes_mean_three_different_things() {
     assert_eq!(code(&heroes(&["check", "tests/golden/check/shadowing.hero"])), 1);
     assert_eq!(code(&heroes(&["check", "no/such/file.hero"])), 2);
     // A bad command line is the tool failing to run, not the program failing.
-    assert_eq!(code(&heroes(&["check", "--nonsense", "examples/first.hero"])), 2);
+    assert_eq!(code(&heroes(&["check", "--nonsense", "examples/gallery/00-first.hero"])), 2);
     assert_eq!(code(&heroes(&["frobnicate"])), 2);
 }
 
@@ -37,7 +37,7 @@ fn the_three_exit_codes_mean_three_different_things() {
 /// stdout for errors would otherwise find nothing and conclude success.
 #[test]
 fn the_artifact_is_on_stdout_and_diagnostics_are_on_stderr() {
-    let clean = heroes(&["parse", "examples/first.hero", "--dump-ast"]);
+    let clean = heroes(&["parse", "examples/gallery/00-first.hero", "--dump-ast"]);
     assert!(!clean.stdout.is_empty(), "the tree goes to stdout");
     assert!(clean.stderr.is_empty(), "a clean file says nothing on stderr");
 
@@ -50,7 +50,7 @@ fn the_artifact_is_on_stdout_and_diagnostics_are_on_stderr() {
 /// instead of a guess.
 #[test]
 fn an_unknown_flag_names_what_the_command_accepts() {
-    let out = heroes(&["check", "--dump-ast", "examples/first.hero"]);
+    let out = heroes(&["check", "--dump-ast", "examples/gallery/00-first.hero"]);
     let message = String::from_utf8_lossy(&out.stderr).into_owned();
     assert!(
         message.starts_with("error: `check` does not accept `--dump-ast` — it accepts --dump-scopes"),
@@ -67,7 +67,7 @@ fn an_unknown_flag_names_what_the_command_accepts() {
 /// gives a foreign keyword.
 #[test]
 fn a_retired_flag_names_its_replacement() {
-    let out = heroes(&["fmt", "--write", "examples/first.hero"]);
+    let out = heroes(&["fmt", "--write", "examples/gallery/00-first.hero"]);
     assert_eq!(
         String::from_utf8_lossy(&out.stderr).into_owned(),
         "error: `--write` is no longer a flag of `fmt` — use `--in-place`\n"
@@ -76,7 +76,7 @@ fn a_retired_flag_names_its_replacement() {
     // …and the file was not touched, which is the point of the rename.
     let text = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../examples/first.hero"
+        "/../../examples/gallery/00-first.hero"
     ))
     .expect("first.hero exists");
     assert!(text.contains("print((2 + 3) * 4)"));
@@ -87,14 +87,14 @@ fn a_retired_flag_names_its_replacement() {
 /// was a table to memorise.
 #[test]
 fn a_stage_prints_only_when_asked() {
-    let quiet = heroes(&["lex", "examples/first.hero"]);
+    let quiet = heroes(&["lex", "examples/gallery/00-first.hero"]);
     assert!(quiet.stdout.is_empty(), "`lex` alone is a lexical check");
     assert_eq!(code(&quiet), 0);
 
-    let text = heroes(&["lex", "examples/first.hero", "--dump-tokens"]);
+    let text = heroes(&["lex", "examples/gallery/00-first.hero", "--dump-tokens"]);
     assert!(String::from_utf8_lossy(&text.stdout).contains("ident main"));
 
-    let json = heroes(&["lex", "examples/first.hero", "--dump-tokens", "--json"]);
+    let json = heroes(&["lex", "examples/gallery/00-first.hero", "--dump-tokens", "--json"]);
     let shown = String::from_utf8_lossy(&json.stdout);
     assert!(shown.starts_with("[\n"), "--json changes how, not what: {shown}");
     assert!(shown.contains("\"kind\""));
@@ -104,7 +104,7 @@ fn a_stage_prints_only_when_asked() {
 /// *what*. Two flags because they are two questions.
 #[test]
 fn json_alone_selects_no_output() {
-    let out = heroes(&["lex", "examples/first.hero", "--json"]);
+    let out = heroes(&["lex", "examples/gallery/00-first.hero", "--json"]);
     assert!(out.stdout.is_empty());
     assert_eq!(code(&out), 0);
 }
@@ -258,7 +258,7 @@ fn a_hole_is_reported_on_stdout_and_the_exit_code_stays_zero() {
 /// without saying so would have promoted that misreading into the tool's behaviour.
 #[test]
 fn build_with_no_flag_says_what_it_did_and_what_does_not_exist_yet() {
-    let out = heroes(&["build", "examples/first.hero"]);
+    let out = heroes(&["build", "examples/gallery/00-first.hero"]);
     assert_eq!(code(&out), 0);
     assert!(out.stdout.is_empty(), "no artifact was asked for");
     let said = String::from_utf8_lossy(&out.stderr).into_owned();
@@ -271,7 +271,7 @@ fn build_with_no_flag_says_what_it_did_and_what_does_not_exist_yet() {
 /// contract, so a wrapper can pipe one without the other.
 #[test]
 fn build_dumps_the_ir_on_stdout() {
-    let out = heroes(&["build", "examples/first.hero", "--dump-ir"]);
+    let out = heroes(&["build", "examples/gallery/00-first.hero", "--dump-ir"]);
     assert_eq!(code(&out), 0);
     let ir = String::from_utf8_lossy(&out.stdout).into_owned();
     assert!(ir.starts_with("function main()"), "{ir}");
@@ -287,7 +287,7 @@ fn build_honours_the_exit_code_contract() {
     assert_eq!(code(&heroes(&["build", "examples/gallery/01-points.hero"])), 0);
     assert_eq!(code(&heroes(&["build", "tests/golden/check/shadowing.hero"])), 1);
     assert_eq!(code(&heroes(&["build", "no/such/file.hero"])), 2);
-    assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/first.hero"])), 2);
+    assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/gallery/00-first.hero"])), 2);
 }
 
 /// `run` is still retired and now points at `build` rather than at `check`: a
@@ -295,7 +295,7 @@ fn build_honours_the_exit_code_contract() {
 /// *language* gives a foreign keyword (`fn` → `function`).
 #[test]
 fn the_retired_run_spelling_now_points_at_build() {
-    let out = heroes(&["run", "examples/first.hero"]);
+    let out = heroes(&["run", "examples/gallery/00-first.hero"]);
     assert_eq!(code(&out), 2);
     let message = String::from_utf8_lossy(&out.stderr).into_owned();
     assert!(message.contains("`run` is no longer a command"), "{message}");

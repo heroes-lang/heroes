@@ -2,6 +2,6 @@
 # Wrapped in a function so the case isolates the escape class: at top level
 # these lines are not declarations at all, and the parser said so.
 function main()
-    re = "\d+"
-    s = "it\'s"
-    c = '\"'
+    re = "\d+"  #~ unknown_escape
+    s = "it\'s"  #~ escape_not_needed
+    c = '\"'  #~ escape_not_needed

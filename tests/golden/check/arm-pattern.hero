@@ -3,6 +3,6 @@
 # loop forever until 2026-08-04 (panel 014's costing found it).
 function f(k: int) -> int
     return match k
-        + => 1
+        + => 1  #~ expected_pattern
             print(k)
         _ => 0

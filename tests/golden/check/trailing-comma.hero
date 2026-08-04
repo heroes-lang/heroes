@@ -2,4 +2,4 @@
 # Guards the Python/JS habit of a trailing comma. Heroes has one spelling per
 # program (§4.15), so `f(a, b,)` and `f(a, b)` cannot both be it.
 function main()
-    print(1, 2,)
+    print(1, 2,)  #~ trailing_comma

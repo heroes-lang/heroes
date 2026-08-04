@@ -11,7 +11,7 @@
 //!
 //! ```text
 //! error[type_mismatch]: expected `int`, found `str`
-//!   at examples/first.hero:5:12
+//!   at examples/gallery/00-first.hero:5:12
 //!    |
 //!  5 |     return "x"
 //!    |            ^^^

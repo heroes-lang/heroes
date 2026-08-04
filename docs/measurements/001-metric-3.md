@@ -8,7 +8,7 @@ Date: 2026-08-04 · milestone M3d · **the first measurement of the thesis itsel
 |---|---|
 | compiler | `b8da932` (`git rev-parse`) |
 | spec | sha256 `f67917c91db2…` — v0, still frozen |
-| corpus | `examples/` — 10 programs that check clean today (the gallery's nine plus `first.hero`) |
+| corpus | `examples/` — 10 programs that check clean today (the gallery's nine plus `first.hero`). *Paths as they were at the run: `first.hero` moved to `examples/gallery/00-first.hero` on 2026-08-04, and the gallery gained `10-maps` and `11-trees`, so a rerun measures 12 programs and its numbers are not comparable to these.* |
 | operators | `harness/mutations/operators.md`, all ten |
 | arms | `check` and `check --permissive` (the same compiler, the twelve thesis rules dropped) |
 | command | `heroes mutate` |

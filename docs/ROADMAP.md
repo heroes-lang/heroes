@@ -136,7 +136,7 @@ through the real binary. Lexer split into six single-concern files.
 TextMate grammar (bonus): `editors/vscode/` (installable extension) — foreign
 reserved words and unknown escapes scoped `invalid.illegal`, so the thesis
 shows up while you type.
-**Runnable:** `heroes lex examples/first.hero --dump-tokens`.
+**Runnable:** `heroes lex examples/gallery/00-first.hero --dump-tokens`.
 
 ### M2 — Parser, AST, pretty printer ✅ (2026-08-04, tag `m2`)
 Four entities plus `extern` and `test`, `=`/`@`, the §4.14 precedence table,
@@ -147,8 +147,8 @@ is what proves the formatter preserved meaning. Formatter policies in
 DESIGN-LOG (minimal parens, 88 columns inside brackets only, blank lines as
 content). Recovery landmarks: brackets and lines, the two things the language
 cannot lie about.
-**Runnable:** `heroes parse examples/first.hero --dump-ast` ·
-`heroes fmt examples/first.hero` (already canonical) · the appendix acceptance
+**Runnable:** `heroes parse examples/gallery/00-first.hero --dump-ast` ·
+`heroes fmt examples/gallery/00-first.hero` (already canonical) · the appendix acceptance
 program parses clean and formats idempotently (pinned by tests that read
 design.md, so the appendix stays its single source).
 
@@ -156,7 +156,7 @@ design.md, so the appendix stays its single source).
 - **M3a — Resolver ✅** (2026-08-04, tag `m3a`)**:** scopes, no shadowing,
   unused (with the `???` exemption), order-free top level, written types, and
   the name-error diagnostic class settled by panel 015.
-  **Runnable:** `heroes check examples/first.hero` (silent — it resolves) ·
+  **Runnable:** `heroes check examples/gallery/00-first.hero` (silent — it resolves) ·
   `heroes check tests/golden/check/shadowing.hero` (the diagnostic class) ·
   `--dump-scopes` prints the alphabetical top-level table and every binding
   nested by scope, for any file that has bindings. The witness is the appendix,
@@ -183,7 +183,7 @@ basic blocks, **slots and no phi nodes** (panel 019). Named-arg check ordered
 before monomorphisation, which is itself an IR→IR pass at M6. `heroes build
 [--dump-ir]`, and an IR verifier that runs in tests — GHC's Core Lint without
 GHC's tree.
-**Runnable:** `heroes build examples/first.hero --dump-ir` · `heroes build
+**Runnable:** `heroes build examples/gallery/00-first.hero --dump-ir` · `heroes build
 examples/gallery/05-mutation.hero --dump-ir` (the `@` copy-out chain on every exit
 edge) · `heroes build <file>` alone, which says what it lowered and what does not
 exist yet. The witness is the appendix, read out of design.md by a test: 320 lines,
@@ -250,7 +250,7 @@ heroes build ex.hero                           # M4: lowers, verifies, says so
 heroes build ex.hero --dump-ir                 # M4 (M5b: increfs visible)
 heroes build ex.hero --emit-c                  # M5a — and the determinism diff:
 heroes build ex.hero --emit-c -o a.c && heroes build ex.hero --emit-c -o b.c && diff a.c b.c
-heroes run examples/first.hero                 # M5a: first native binary (-O2)
+heroes run examples/gallery/00-first.hero                 # M5a: first native binary (-O2)
 heroes test examples/calculator.hero           # M6: acceptance
 # M8c — the fixpoint, on generated C:
 cargo run -- build selfhost/heroes.hero -o A

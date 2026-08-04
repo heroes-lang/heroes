@@ -13,6 +13,6 @@ function pair<A>(a: A, b: A) -> A
     return a
 
 function main()
-    print(copy_text("a", "b"))
-    print(pair(1, 2))
-    print(copy_text(to: "b", from: "a"))
+    print(copy_text("a", "b"))  #~ needs_label needs_label
+    print(pair(1, 2))  #~ needs_label needs_label
+    print(copy_text(to: "b", from: "a"))  #~ wrong_label wrong_label

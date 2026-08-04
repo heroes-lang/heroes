@@ -285,3 +285,104 @@ fn no_diagnostic_speaks_in_the_ir_s_vocabulary() {
         .expect("the runtime must exist");
     assert!(!runtime.contains('$'), "runtime/runtime.c prints a `$`");
 }
+
+/// **Every diagnostic is annotated in the source that provokes it**, and every
+/// annotation is matched by a diagnostic.
+///
+/// This is rustc's rule, adopted verbatim including its reason. `tests/ui/` keeps a
+/// full `.stderr` snapshot *and* requires inline `//~ ERROR` annotations, and the
+/// dev guide says why: "This redundancy helps avoid mistakes since the `.stderr`
+/// files are usually auto-generated. It also helps to directly see where the error
+/// spans are expected to point to by looking at one file instead of having to
+/// compare the `.stderr` file with the source. Finally, they ensure that no
+/// additional unexpected errors are generated."
+///
+/// Four implementations converged on in-file expectations: rustc's `//~ ERROR`, Go's
+/// `// ERROR "regexp"` under an `// errorcheck` header, Zig's trailing manifest of
+/// `:line:col: error:` lines, and LLVM's `; CHECK:` beside the offending construct.
+/// QBE goes furthest and puts the driver *and* the expected output in the input.
+///
+/// What it buys here is mechanical rather than stylistic. CLAUDE.md §9 forbids
+/// `UPDATE_GOLDEN=1` in `check/` and relies on a human reading the diff; a
+/// regenerator can rewrite `x.expected`, but it **cannot invent an annotation in
+/// `x.hero`**. The prohibition stops being a convention and becomes an invariant.
+///
+/// Two forms, and the second exists because the annotation cannot always sit on the
+/// offending line (rustc has `//~^` and `//~v` for the same reason):
+///
+/// - `#~ <code>…` — a diagnostic with each code is expected **on this line**;
+/// - `#~v <code>…` — on the **next** line. `unterminated.hero` needs it because a
+///   trailing comment would land inside the unterminated string, and
+///   `missing-body.hero` because one of its diagnostics points at the position just
+///   past the last line of the file.
+///
+/// The retrofit's own evidence: annotating all twenty-eight cases changed **no**
+/// `.expected` file by a single byte.
+///
+/// One consequence to expect rather than be surprised by: a `.fixed` file carries the
+/// annotations through, so a repaired program contains an annotation for a diagnostic
+/// it no longer has. That is harmless — a comment provokes nothing, and the
+/// `.fixed` file still has to check clean — and this test deliberately does not look
+/// at `.fixed` files, only at the `.hero` cases that produce diagnostics.
+#[test]
+fn every_diagnostic_is_annotated_in_the_source_that_provokes_it() {
+    let root = workspace_root();
+    let mut annotated = 0;
+    for case in collect_cases(&root.join("tests/golden/check")) {
+        let hero = std::fs::read_to_string(&case).expect("a readable case");
+        let expected_path = case.with_extension("expected");
+        let expected = std::fs::read_to_string(&expected_path).expect("a readable expectation");
+        let name = case.file_name().expect("a file name").to_string_lossy().into_owned();
+
+        let mut claimed = annotations(&hero);
+        let mut reported = diagnostics(&expected);
+        annotated += reported.len();
+        claimed.sort();
+        reported.sort();
+        assert_eq!(
+            claimed, reported,
+            "\n{name}: the annotations and the diagnostics disagree.\n  \
+             annotated: {claimed:?}\n  reported:  {reported:?}\n  \
+             `#~ <code>` marks this line, `#~v <code>` the next one."
+        );
+    }
+    assert!(annotated >= 60, "only {annotated} annotated diagnostics");
+}
+
+/// `(line, code)` for every annotation in a case, resolving `#~v` to the next line.
+fn annotations(text: &str) -> Vec<(u32, String)> {
+    let mut found = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        let Some((_, marks)) = line.split_once("#~") else { continue };
+        // One comment may carry both forms: `#~ empty_record #~v empty_variant`.
+        for (offset, chunk) in marks.split("#~").enumerate() {
+            let chunk = chunk.trim();
+            let (delta, codes) = match chunk.strip_prefix('v') {
+                Some(rest) => (1, rest),
+                None if offset == 0 => (0, chunk),
+                None => (0, chunk),
+            };
+            for code in codes.split_whitespace() {
+                found.push((index as u32 + 1 + delta, code.to_string()));
+            }
+        }
+    }
+    found
+}
+
+/// `(line, code)` for every diagnostic in an expectation, read out of the `--brief`
+/// form: `<file>:<line>:<col>: error[<code>]: <message>`.
+fn diagnostics(expected: &str) -> Vec<(u32, String)> {
+    let mut found = Vec::new();
+    for line in expected.lines() {
+        let mut parts = line.split(':');
+        let _file = parts.next();
+        let Some(number) = parts.next().and_then(|n| n.trim().parse::<u32>().ok()) else {
+            continue;
+        };
+        let Some(rest) = line.split("error[").nth(1) else { continue };
+        let Some(code) = rest.split(']').next() else { continue };
+        found.push((number, code.to_string()));
+    }
+    found
+}

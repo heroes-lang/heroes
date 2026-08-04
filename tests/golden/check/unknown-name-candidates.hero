@@ -8,5 +8,5 @@ function main()
     cut = 3
     bat = 4
     print(total + cat + cut + bat)
-    print(totl)
-    print(cot)
+    print(totl)  #~ unknown_name
+    print(cot)  #~ unknown_name

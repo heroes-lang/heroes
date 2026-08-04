@@ -1,4 +1,4 @@
 # Foreign keywords: each fails with the repair pre-written.
-struct Point
-let x = 5
-const MAX = 5
+struct Point  #~ reserved_word
+let x = 5  #~ reserved_word
+const MAX = 5  #~ reserved_word

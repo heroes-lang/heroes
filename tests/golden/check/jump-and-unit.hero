@@ -12,13 +12,13 @@ variant Token
     eof
 
 function nothing_to_bind(t: Token) -> int
-    tag = match t
+    tag = match t  #~ no_value
         .num _ => return 1
         .eof   => return 0
     return tag
 
 function bound_nothing(xs: [int]) -> int
-    done = print("counting")
+    done = print("counting")  #~ bound_unit
     print(done)
-    xs.push(4)
+    xs.push(4)  #~ discarded_value
     return xs.len()

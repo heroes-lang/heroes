@@ -1,4 +1,4 @@
 # Bulk regression case (assistant-written): the left of `@` must name where
 # the value goes (§4.4).
 function main()
-    f(x) @ 1
+    f(x) @ 1  #~ not_a_place

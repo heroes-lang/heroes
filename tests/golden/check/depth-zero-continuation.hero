@@ -4,4 +4,4 @@
 # same expression — and an indented line there is a block, not a continuation.
 function main()
     total = 1 +
-        2
+        2  #~ expected_expression

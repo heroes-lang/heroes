@@ -9,12 +9,12 @@ constant MAX: int
 
 function main(n: int, xs: [int])
     x = 1
-    x @ 2
+    x @ 2  #~ not_mutable
     print(x)
-    n @ n + 1
+    n @ n + 1  #~ not_mutable
     print(n)
-    MAX @ 3
+    MAX @ 3  #~ no_mutable_globals
     print(MAX)
     for e in xs
-        e @ 0
+        e @ 0  #~ not_mutable
         print(e)

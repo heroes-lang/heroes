@@ -4,9 +4,9 @@
 # parameter, as a local. The two-tier version, where a file's own `map` won
 # silently, was vetoed by two judges from opposite directions, and this file is
 # what would go quiet if it ever came back.
-function map<A>(xs: [A]) -> [A]
+function map<A>(xs: [A]) -> [A]  #~ builtin_name_taken
     return xs
 
-function count(range: int, ok: bool) -> int
-    len = 1
+function count(range: int, ok: bool) -> int  #~ builtin_name_taken builtin_name_taken
+    len = 1  #~ builtin_name_taken
     return range + len

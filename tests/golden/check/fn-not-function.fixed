@@ -2,8 +2,8 @@
 # Guards panel 013: `fn` is one word with one meaning — an error — in BOTH
 # positions, and the same certain fix repairs both. If `fn` ever becomes legal
 # in a type, the registry starts asserting something false.
-function apply(f: (function(int) -> int), x: int) -> int
+function apply(f: (function(int) -> int), x: int) -> int  #~ reserved_word
     return f(x)
 
-function double(n: int) -> int
+function double(n: int) -> int  #~ reserved_word
     return n * 2

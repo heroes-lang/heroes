@@ -106,15 +106,15 @@ function main()
     );
 }
 
-/// `examples/first.hero` is already written in canonical form, and stays that
+/// `examples/gallery/00-first.hero` is already written in canonical form, and stays that
 /// way: this test fails the day the formatter's policies change under it.
 #[test]
 fn the_first_program_is_already_canonical() {
     let text = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../examples/first.hero"
+        "/../../examples/gallery/00-first.hero"
     ))
-    .expect("examples/first.hero must exist");
+    .expect("examples/gallery/00-first.hero must exist");
     assert_eq!(format(&text), text);
 }
 

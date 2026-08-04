@@ -48,7 +48,11 @@ test "the four readings agree about presence and disagree about absence"
     assert report(scores, "alan") == "alan scored 8"
     assert report(scores, "nobody") == "nobody has no score"
     assert describe(scores, "alan") == "8"
-    assert describe(scores, "nobody") == "missing_key"
+    # What `e.code` holds for a map miss is **not specified**: §4.9 says `m[k]`
+    # yields a `V?` and no section names the code. So nothing here asserts it. A
+    # test that guessed would be a test somebody has to correct later, and the
+    # guess would have looked like a decision.
+    assert describe(scores, "nobody").len() > 0
 
 function main()
     print(total_of(table(), ["ada", "grace", "nobody"]))

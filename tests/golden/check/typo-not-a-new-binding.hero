@@ -7,5 +7,5 @@
 function sum(xs: [int]) -> int
     total: int @ 0
     for x in xs
-        totl @ total + x
+        totl @ total + x  #~ unknown_name
     return total

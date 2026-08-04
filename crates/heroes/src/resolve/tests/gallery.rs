@@ -23,7 +23,7 @@ fn every_gallery_program_resolves_clean() {
         .map(|path| path.to_string_lossy().into_owned())
         .collect();
     names.sort();
-    assert!(names.len() >= 11, "the gallery lost files: {}", names.len());
+    assert!(names.len() >= 12, "the gallery lost files: {}", names.len());
     for path in names {
         let text = std::fs::read_to_string(&path).expect("a readable .hero file");
         let short = path.rsplit('/').next().unwrap_or(&path).to_string();

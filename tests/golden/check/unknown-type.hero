@@ -3,9 +3,9 @@
 record Point
     x: int
 
-function dist(p: Poimt) -> int
+function dist(p: Poimt) -> int  #~ unknown_type
     return p.x
 
-function use_it(f: dist) -> int
+function use_it(f: dist) -> int  #~ not_a_type
     print(f)
     return 0

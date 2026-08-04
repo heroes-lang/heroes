@@ -3,9 +3,9 @@
 # above every other (12-18% of files). It must be loud on every block header,
 # and the fix is certain: a `:` is never legal at a block boundary, so
 # dropping it can never repair the wrong program.
-record Point
+record Point  #~ trailing_colon
     x: int
     y: int
 
-function double(n: int) -> int
+function double(n: int) -> int  #~ trailing_colon
     return n * 2

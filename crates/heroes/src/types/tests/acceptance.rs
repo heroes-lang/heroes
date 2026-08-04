@@ -95,7 +95,7 @@ fn every_gallery_program_type_checks() {
         .map(|path| path.to_string_lossy().into_owned())
         .collect();
     paths.sort();
-    assert!(paths.len() >= 11, "the gallery lost files: {}", paths.len());
+    assert!(paths.len() >= 12, "the gallery lost files: {}", paths.len());
     for path in paths {
         let text = std::fs::read_to_string(&path).expect("a readable .hero file");
         let short = path.rsplit('/').next().unwrap_or(&path).to_string();

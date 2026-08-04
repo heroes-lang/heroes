@@ -1,4 +1,4 @@
-function main()
+function main()  #~v unterminated_string
     s = "never closes
-    c = 'ab'
-    d = 1 & 2
+    c = 'ab'  #~ char_literal
+    d = 1 & 2  #~ unexpected_character

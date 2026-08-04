@@ -6,7 +6,7 @@
 # hole would stop being checked at all.
 function draft(a: int, b: int) -> int
     spare = 1
-    return a + nope
+    return a + nope  #~ unknown_name
 
 function later() -> int
     ???

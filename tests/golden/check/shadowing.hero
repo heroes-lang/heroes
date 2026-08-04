@@ -8,8 +8,8 @@ constant MAX: int
     64
 
 function report(n: int, xs: [int], ys: [int]) -> int
-    n = 1
-    MAX = 2
+    n = 1  #~ shadowed_binding
+    MAX = 2  #~ shadowed_binding
     total: int @ 0
     for x in xs
         total @ total + x

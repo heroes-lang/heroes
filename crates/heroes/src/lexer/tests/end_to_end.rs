@@ -9,13 +9,13 @@ fn empty_file_is_just_eof() {
 
 #[test]
 fn first_hero_end_to_end() {
-    // The real examples/first.hero, byte for byte — if its header comments
+    // The real examples/gallery/00-first.hero, byte for byte — if its header comments
     // change, this snapshot churns on purpose (it pins the whole file).
     let text = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../examples/first.hero"
+        "/../../examples/gallery/00-first.hero"
     ))
-    .expect("examples/first.hero must exist");
+    .expect("examples/gallery/00-first.hero must exist");
     assert_eq!(
         dump(&text),
         "\

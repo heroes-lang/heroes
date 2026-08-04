@@ -7,6 +7,6 @@ record Point
     y: int
 
 function main()
-    a = Point(x: 1, y: 2)
-    b = Point(x: 3, y: 4)
+    a = Point(x: 1, y: 2)  #~ wrong_label
+    b = Point(x: 3, y: 4)  #~ missing_label missing_label
     print(a.x + b.y)

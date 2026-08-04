@@ -37,9 +37,9 @@ pub use operators::OPERATORS;
 ///
 /// Exported because the *surviving* mutants are a free corpus for anything that
 /// must hold on **every program the compiler accepts**: they type-check by
-/// definition, so lowering them must produce a well-formed IR. Csmith's lesson
-/// applied to a generator this project already owns — the mutants were built to
-/// measure the thesis, and they cost nothing to reuse as a fuzz corpus.
+/// definition, so lowering them must produce a well-formed IR. `llvm-opt-fuzzer`
+/// does the same thing with `verifyModule` over a mutated module; the mutants here
+/// were built to measure the thesis and cost nothing to reuse as its corpus.
 pub fn mutants(operator: &str, name: &str, text: &str) -> Vec<String> {
     operators::apply(operator, name, text)
 }

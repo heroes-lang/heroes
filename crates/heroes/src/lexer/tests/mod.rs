@@ -4,7 +4,7 @@
 //!
 //! | file             | what it pins |
 //! |------------------|--------------|
-//! | `end_to_end.rs`  | whole files: empty input, examples/first.hero |
+//! | `end_to_end.rs`  | whole files: empty input, examples/gallery/00-first.hero |
 //! | `layout.rs`      | indentation, terminators, panel-007 behaviour |
 //! | `literals.rs`    | numbers, operators, strings, char literals |
 //! | `reserved.rs`    | foreign words and their prescribed errors |

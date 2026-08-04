@@ -1,9 +1,10 @@
 //! Every invariant, **broken on purpose** — one test per check in `verify.rs`.
 //!
-//! Copied from LLVM, which keeps a directory whose whole purpose is to prove each
-//! verifier check *fires*. Before this file, `verify.rs` was 257 lines of assertions
-//! that nothing tested: it ran on every build, said nothing, and there was no
-//! evidence any of it could speak. A safety net nobody has ever fallen into is
+//! Copied from LLVM, whose `test/Verifier/README.txt` states the purpose in one
+//! sentence: "This directory contains testcases that the verifier is supposed to
+//! detect as malformed LLVM code." Before this file, `verify.rs` was 257 lines of
+//! assertions that nothing tested: it ran on every build, said nothing, and there was
+//! no evidence any of it could speak. A safety net nobody has ever fallen into is
 //! indistinguishable from no net.
 //!
 //! The method is the one thing that differs from LLVM's, and it differs because
@@ -12,9 +13,10 @@
 //! — which has a side benefit LLVM's text cases lack, in that the starting point is
 //! always something the real lowering produced.
 //!
-//! Each test names the message it expects. That is deliberate: a check that fires
-//! with the wrong message sends the reader to the wrong place, and at exit code 2
-//! the reader is the person maintaining this compiler.
+//! Each test names the message it expects — LLVM's cases assert the text too, with a
+//! `; CHECK:` line beside the malformed construct. That is deliberate: a check that
+//! fires with the wrong message sends the reader to the wrong place, and at exit
+//! code 2 the reader is the person maintaining this compiler.
 
 use super::unverified;
 use crate::ir::{verify, Abort, Callee, Inst, Op, Place, Steps, Term, ValueId};
