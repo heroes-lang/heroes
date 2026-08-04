@@ -9,13 +9,15 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**Status: M1 closed 2026-08-04, tag `m1` (lexer complete: journal 001;
-panels 007 and 008 resolved terminators and escapes; golden `check/` cases
-now execute through the binary).
-M0 closed 2026-08-03 (untagged — it predates the tagging habit).
-Next: M2, step 1 (parser scaffold). Nothing blocks it; 007-bis and the
-panel-009 governance ratification wait on the baseline, and the repeated-`@`
-divergence needs its panel before M3c, not before M2.**
+**Status: M1 closed 2026-08-04, tag `m1` — every deliverable including the
+TextMate bonus; journal 001; panels 007/008 settled terminators and escapes;
+golden `check/` cases execute through the binary; 32 tests green.
+M0 closed 2026-08-03, retro-tagged `m0`.
+Next: M2, step 1 (parser scaffold). Nothing blocks it. Open behind it:
+panels 010/011/012 await ratification (all adopted provisionally), 007-bis
+waits on the baseline, and `heroes measure` — now known to be implementable
+offline in ~180 lines — is the instrument that makes the budget rule
+enforceable.**
 
 ## The chain
 
