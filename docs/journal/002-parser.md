@@ -130,3 +130,28 @@ unchanged by formatting.**
 - `.fixed` goldens — CI applying a `certain` fix and asserting the result
   compiles — remain an M3d deliverable. Three certain fixes are waiting for
   it: the reserved-word swap, the trailing comma, the misplaced `@`.
+
+## 5. Resolved the same day, in the debrief (after tag `m2`)
+
+Two of the three items above did not survive the afternoon, which is worth
+recording because both were resolved by *measurement* rather than by argument:
+
+- **The layout cascade** (author instruction "layout → migliora"): better
+  lexer recovery instead of gating the parser — round a wrong margin to the
+  nearest level, clamp a jump to one level, keep both diagnostics. Two
+  mistakes now produce two diagnostics instead of five. Gating was rejected
+  because it would have hidden genuine parse errors elsewhere in the file.
+- **The `match` arm body** (panel 014): an arm's body is one statement,
+  inline, or an indented block. The judge who costs changes *built* the
+  option instead of estimating it, and found the status quo shipping two
+  defects with a single cause — `heroes fmt` deleting an arm's `if` branches
+  and `heroes parse` never terminating. A second judge, reading only the
+  spec, showed the guard the status quo appeared to provide had never
+  existed. design.md's appendix is back to the 8 inline `assert` arms it was
+  written with.
+
+The lesson that generalises, and it is about process rather than parsing:
+**a judge given the real tree finds bugs a judge given a description cannot.**
+Panel 013 produced a useful null result the same way — the ffi-pragmatist
+compiled real C against three real headers and reported that nothing in the
+proposal touched the ABI.

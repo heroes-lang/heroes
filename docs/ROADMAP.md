@@ -16,11 +16,16 @@ acceptance program in design.md's appendix parses clean, formats idempotently
 and its tree survives formatting. Golden `check/` now runs through `parse`;
 104 crate tests + 11 golden cases (4 inherited from M1, 5 adversarial, 2 bulk).
 M1 closed 2026-08-04 tag `m1`; M0 closed 2026-08-03, retro-tagged `m0`.
+Debrief of the same day (after the tag): panels 013 and 014 ratified/resolved,
+M2's five adversarial cases ratified, the layout cascade improved (5
+diagnostics → 2), and two defects panel 014's costing exposed are fixed —
+`heroes fmt` was deleting an arm's `if` branches and `heroes parse` could hang.
+110 tests, 12 golden cases.
 Next: M3a, step 1 (resolver — scopes, no shadowing, unused with the `???`
-exemption, order-free top level). Nothing blocks it. Queued design questions
-from M2, none blocking: may a `match` arm's body be a statement; should the
-parser run after a layout error (2 mistakes → 5 diagnostics today); the
-registry's reserved words are unusable as identifiers.**
+exemption, order-free top level). Nothing blocks it. Carried into M3: classify
+`break`/`continue`/`return` (NOT as `()` — RFC 1216), the value-`match` rule,
+declarations out of inline arm bodies, and the unrejected `()` in binding
+position.**
 
 ## The chain
 
