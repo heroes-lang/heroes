@@ -29,7 +29,7 @@
  * Build (sanitizers are the point of this spike):
  *   clang -std=c11 -Wall -Werror=return-type -fsanitize=address,undefined \
  *       -Iruntime tools/spike/04-variant.c runtime/runtime.c -o build/spike04
- * Run:  build/spike04     → three lines: 1, 0, -42 (checked against
+ * Run:  build/spike04     → three lines: 1, 1, -42 (checked against
  *                          tools/spike/04-variant.expected by a test) — and ASan must
  *       report ZERO leaks (it aborts loudly if a drop is missing).
  */
@@ -118,6 +118,14 @@ static bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b) {
 /* Deep copy = new array + per-element copy. Under full COW semantics a plain
  * `b = a` is incref-only and copying happens on mutation; the deep path below
  * is what the COW machinery calls at that point. */
+/* Kept, unused, and deliberately so: this is the function a mutation primitive calls
+ * when the refcount exceeds one, and M5c's `hero_array_unshare` is it with a
+ * write-back. Panel 022 measured what happens when that unshare is done once at the
+ * primitive instead of once per step of the place path: `h = g` then
+ * `g.rows[0].cells[0] @ 7` changes `h` too, with ASan clean and the leak counter at
+ * zero. Unsharing level 1 copies its elements, whose `copy` increfs level 2 — so
+ * level 2 is shared exactly when level 1 was copied. */
+__attribute__((unused))
 static HeroArrayHeader *hero_array_deep_copy(HeroArrayHeader *a) {
     HeroArrayHeader *b = hero_array_new(a->elem, a->cap);
     const unsigned char *src = (const unsigned char *)(a + 1);
@@ -144,13 +152,25 @@ typedef struct {
 
 static const HeroDesc h_Expr_desc; /* forward: elements reference their type */
 
+/* SHALLOW plus incref, amended at M5c by panel 022.
+ *
+ * This function used to deep-copy, and that was the real contradiction between this
+ * spike and the descriptor pass — not the variant's boxing, which the spike had
+ * right all along. Copy-on-write is what makes a deep copy unnecessary: sharing is
+ * unobservable until somebody mutates, and the mutation primitives unshare. Deep
+ * copying here would pay for every binding what only a mutation costs.
+ *
+ * The consequence is visible in this spike's own output, which is why it has a
+ * checked `.expected`: the copy now shares its children, so mutating the original's
+ * array is observable through the copy *within this file*, which has no COW at the
+ * mutation site. The second printed line changes from 0 to 1 and that change is the
+ * amendment, not a regression. A real M5c program cannot see it. */
 static void h_Expr_copy(void *dst_v, const void *src_v) {
     const h_Expr *src = src_v;
     h_Expr *dst = dst_v;
     *dst = *src;
     if (src->tag == H_EXPR_SUM) {
-        /* value semantics: the copy owns its own tree */
-        dst->as.sum.children = hero_array_deep_copy(src->as.sum.children);
+        hero_array_incref(src->as.sum.children);
     }
 }
 
@@ -212,7 +232,10 @@ int main(void) {
     h_Expr *inner =
         &((h_Expr *)hero_array_data(copy.as.sum.children))[1];
     ((h_Expr *)hero_array_data(inner->as.sum.children))[0].as.num.v = 99;
-    hero_print_int(h_Expr_eq(&tree, &copy) ? 1 : 0); /* → 0 */
+    /* → 1 since M5c: the copy SHARES this array, and this file has no COW at the
+     * mutation site, so the mutation is visible through both. A real Heroes program
+     * cannot see it — `xs[i] @ v` unshares first, per step. */
+    hero_print_int(h_Expr_eq(&tree, &copy) ? 1 : 0); /* → 1 */
     hero_print_end();
 
     /* drop both — ASan verifies zero leaks, zero double-frees */

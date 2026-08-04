@@ -40,9 +40,10 @@ gained two sentences at +41 measured (2155 → 2196): `slice`'s `to` is excluded
 Next: M5c, aggregates — records, variants, arrays and maps through the descriptor pass
 (`copy`/`drop`/`eq`/`hash` per reachable type, spike 04's frozen ABI), structural `==`,
 and COW on the mutation primitives. Nothing blocks it. Carried in: `cow_check` was
-struck from M5b for having zero call sites and `push` is what gives it one; reference
-counting **leaks cycles** and M5c's recursive `variant` is where that stops being
-hypothetical (Nim needed ORC for exactly this); `Op::Cast` is unreachable from source
+struck from M5b for having zero call sites and `push` is what gives it one; **cycles are impossible** and the
+reason is now cited rather than assumed — references cannot be stored in fields, so values
+form disjoint trees (Abrahams et al., ICOOOLPS '21); this line previously said reference
+counting leaks cycles, contradicting design.md §4.10 gift 2; `Op::Cast` is unreachable from source
 until M7; and `len`'s unit is still derivable rather than stated, with `print(len("è"))`
 as the discriminating probe.**
 

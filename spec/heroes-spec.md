@@ -55,7 +55,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 - Five escapes, and no others: `\n` `\t` `\\` `\"` in a string, `\'` instead of
   `\"` in a character literal. Any other escape is a compile error.
 - `==` is structural equality on everything — ints, strings, records,
-  variants, arrays, maps, recursively.
+  variants, arrays, maps, recursively; a map's insertion order does not affect it.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
   never changes `a`. No aliasing exists anywhere.
 
@@ -123,7 +123,7 @@ are stable snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 | `.is_err()` | boolean test |
 
 `?` on a non-fallible value is a compile error. Map access `m[k]` returns
-`V?`; `has(m, k) -> bool` tests membership. An out-of-bounds array index
+`V?` with code `missing_key`; `has(m, k) -> bool` tests membership. An out-of-bounds array index
 aborts; integer overflow aborts; division by zero aborts (integer division
 truncates).
 
@@ -144,7 +144,8 @@ use. There is no ternary; `if` is an expression, and so is `match`.
 separate elements by newline; single-line by comma.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `has` · `join` · `sort` · `to_int` · `to_f64` · `to_str` — and, written in
+`chars` · `has` · `join` · `sort` · `to_int` (truncating; out of range aborts) ·
+`to_f64` · `to_str` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
 separator and exactly one trailing newline. An `f64` always prints a point or

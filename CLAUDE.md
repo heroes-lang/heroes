@@ -80,7 +80,11 @@ unconditional, with `ptr == NULL` as the non-value every runtime entry point
 rejects (panel 021). `--sanitize` adds `-fsanitize=address,undefined`, which
 catches use-after-free and double-free; **leaks are caught by
 `hero_runtime_check_leaks()`**, because ASan's leak detector does not exist on
-Darwin arm64. Every name through the
+Darwin arm64. A generated `eq` or `hash` walks **fields, never bytes** (padding
+makes two equal records hash differently, silently), `hash` is never null, and
+COW is **one unshare per step** of a mutated place — one at the primitive lets a
+nested store alias, measured, with every instrument in this project reporting
+success (panel 022). Every name through the
 mangler (`h_<module>_<name>[_<typehash>]`; fields, variant cases and labels
 too; the module component sanitised to `[A-Za-z0-9]` so the first `_` ends it;
 `extern` FFI names pass through unmangled by design, and `extern` reaches no

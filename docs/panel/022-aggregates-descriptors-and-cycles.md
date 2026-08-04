@@ -222,10 +222,19 @@ indefensible option, and one of the two must be chosen by M6's closure audit.
 | `to_int` truncates; out of range aborts | **+10** |
 | `m[k]`'s error code is `missing_key` | **+7** |
 
-2196 → **2220** binding, headroom 780. Panel 012's rule is satisfied by the second
-branch rather than the first: each carries a falsifiable prediction, and the named
-reserve is design.md §4.6's own nomination — the `.is_err()` row, **−11 measured**,
-which §4.6 calls the "weakest member, first to cut". It is not spent here.
+2196 → **2225** binding, headroom 775 — and the difference between that and the +24 the
+three separate measurements sum to is worth recording, because it is the third time
+this project has met it. **Measured deltas do not compose**: panel 018 found deltas
+measured on spec v0 did not transfer to v1, panel 020 found panel 006's "+15 est" text
+measuring +39, and here three sentences priced at +7, +10 and +7 land together at +29.
+The number that counts is the one measured on the file that ships, which is why the
+rule says measured and not estimated. Still comfortably inside the warden's own
+combined candidate (2242 for the full package, 2231 without the `.is_err()` row).
+
+Panel 012's rule is satisfied by the second branch rather than the first: each sentence
+carries a falsifiable prediction, and the named reserve is design.md §4.6's own
+nomination — the `.is_err()` row, **−11 measured**, which §4.6 calls the "weakest
+member, first to cut". It is not spent here.
 
 Map equality's silence is the one the warden ranked first and it is worth the
 paragraph: with insertion-ordered maps, `h_T_eq` written the cheapest way — a pairwise
