@@ -54,6 +54,14 @@ pub enum Ty {
     /// identical fields are **different types** — Heroes is nominal here, which
     /// is what makes `Point` and `Size` unconfusable.
     Named(u32),
+    /// One *case* of a variant: `(declaration, case index)`. A case with fields
+    /// is a small record (§4.2), and this is the type a pattern's payload
+    /// binding has — `.num n` gives `n` this type. It cannot be written in
+    /// surface syntax, and messages print it `Token.num`.
+    Case(u32, u32),
+    /// The error side of a `T?` (§4.6): two `str` fields, `code` and `msg`,
+    /// built in. `.err e` binds `e` to this.
+    Failure,
     /// A type parameter of the enclosing function, by position (§4.12).
     Generic(u32),
     /// A type the checker could not work out. Its diagnostic has already been
@@ -79,13 +87,59 @@ impl Default for Types {
 }
 
 impl Types {
+    /// The scalars are interned first, in a fixed order, so their ids are
+    /// constants the whole pass can name without a lookup — and `Error` is
+    /// **id 0**, which is what lets `expr_types` be a dense array whose default
+    /// entry already means "not typed, and something said why".
     pub fn new() -> Types {
-        Types {
+        let mut types = Types {
             nodes: Vec::new(),
             params: Vec::new(),
             index: BTreeMap::new(),
             runs: BTreeMap::new(),
+        };
+        for ty in [
+            Ty::Error,
+            Ty::Unit,
+            Ty::Int,
+            Ty::F64,
+            Ty::Bool,
+            Ty::Str,
+            Ty::Ptr,
+            Ty::Cstr,
+            Ty::Failure,
+        ] {
+            types.intern(ty);
         }
+        types
+    }
+
+    pub fn error(&self) -> TyId {
+        TyId(0)
+    }
+
+    pub fn unit(&self) -> TyId {
+        TyId(1)
+    }
+
+    pub fn int(&self) -> TyId {
+        TyId(2)
+    }
+
+    pub fn f64(&self) -> TyId {
+        TyId(3)
+    }
+
+    pub fn bool(&self) -> TyId {
+        TyId(4)
+    }
+
+    pub fn str(&self) -> TyId {
+        TyId(5)
+    }
+
+    pub fn failure(&self) -> TyId {
+        TyId(8)
     }
 
     pub fn intern(&mut self, ty: Ty) -> TyId {
@@ -114,6 +168,13 @@ impl Types {
             params: Params { start, len: params.len() as u32 },
             result,
         })
+    }
+
+    /// Whether a structure is already interned, without interning it. One
+    /// caller: a rule that needs to *compare* against `[str]` and must not
+    /// create the type as a side effect of asking.
+    pub fn lookup(&self, ty: Ty) -> Option<TyId> {
+        self.index.get(&ty).copied()
     }
 
     pub fn get(&self, id: TyId) -> Ty {

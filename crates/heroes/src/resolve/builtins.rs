@@ -71,9 +71,9 @@ pub const BUILTINS: [Builtin; 23] = [
     Builtin { name: "range", tier: Tier::Heroes },
     Builtin { name: "slice", tier: Tier::Runtime },
     Builtin { name: "sort", tier: Tier::Runtime },
-    Builtin { name: "str", tier: Tier::Runtime },
     Builtin { name: "to_f64", tier: Tier::Runtime },
     Builtin { name: "to_int", tier: Tier::Runtime },
+    Builtin { name: "to_str", tier: Tier::Runtime },
 ];
 
 pub fn index_of(name: &str) -> Option<u32> {

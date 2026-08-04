@@ -196,14 +196,15 @@ half = function: (n: int) -> int?
     );
 }
 
-/// `.str()` is on §4.20's built-in inventory and missing from the spec's list —
-/// found by resolving the acceptance program, which calls it.
+/// The int-to-string conversion is on §4.20's inventory and was missing from the
+/// spec's list — found by resolving the acceptance program, which calls it. Panel
+/// 017 renamed it `to_str`, so the three conversions share one scheme.
 #[test]
-fn str_is_a_builtin_because_the_inventory_says_so() {
+fn to_str_is_a_builtin_because_the_inventory_says_so() {
     assert_clean(
         "\
 describe = function: (n: int) -> str
-    return \"n = \" + n.str()
+    return \"n = \" + n.to_str()
 ",
     );
 }

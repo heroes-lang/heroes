@@ -3,10 +3,12 @@
 //!
 //! This is the command the golden `check/` cases run through, and it is where
 //! every frontend stage's diagnostics come out from now on. The stages are
-//! ordered, not interleaved: **the resolver runs only if lexing and parsing
-//! produced nothing.** After a parse error the tree is made of recovery
-//! guesses, and a name error about a line the author did not write costs more
-//! than it buys — the same rule that keeps `--dump-ast` quiet on a broken file.
+//! ordered, not interleaved: **each stage runs only if the one before it
+//! produced nothing.** After a parse error the tree is made of recovery guesses,
+//! and a name error about a line the author did not write costs more than it
+//! buys; after a name error the checker would be typing expressions whose
+//! meaning is unknown. Same rule that keeps `--dump-ast` quiet on a broken file,
+//! applied twice.
 
 use std::process::ExitCode;
 
@@ -14,6 +16,7 @@ use heroes::printer::dump_scopes;
 use heroes::resolve::resolve;
 use heroes::source::Source;
 use heroes::syntax::parse;
+use heroes::types::check;
 
 const USAGE: &str = "usage: heroes check <file.hero> [--dump-scopes]";
 
@@ -54,6 +57,13 @@ pub fn run(args: &[String]) -> ExitCode {
         eprintln!("{}", diagnostic.render_line(&src));
     }
     if !resolved.diagnostics.is_empty() {
+        return ExitCode::FAILURE;
+    }
+    let checked = check(&parsed.ast, &resolved, &src);
+    for diagnostic in &checked.diagnostics {
+        eprintln!("{}", diagnostic.render_line(&src));
+    }
+    if !checked.diagnostics.is_empty() {
         return ExitCode::FAILURE;
     }
     if dump {

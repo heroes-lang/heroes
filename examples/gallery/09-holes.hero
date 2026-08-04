@@ -23,7 +23,7 @@ heaviest = function: (entries: [Entry]) -> Entry
 
 # The hole can be one argument of an otherwise finished line.
 summary_of = function: (entries: [Entry]) -> str
-    return "total " + total_calories(entries).str() + ", heaviest " + ???
+    return "total " + total_calories(entries).to_str() + ", heaviest " + ???
 
 test "the part that exists, works"
     lunch = [Entry(name: "soup", calories: 120), Entry(name: "bread", calories: 250)]

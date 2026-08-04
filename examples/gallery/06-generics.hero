@@ -38,7 +38,7 @@ add = function: (a: int, b: int) -> int
     return a + b
 
 label = function: (n: int) -> str
-    return n.str()
+    return n.to_str()
 
 test "one generic, three element types"
     assert each([1, 2, 3], double) == [2, 4, 6]

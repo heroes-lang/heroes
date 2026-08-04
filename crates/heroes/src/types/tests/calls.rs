@@ -1,0 +1,397 @@
+//! Calls, built-ins, UFCS, the `@` marker, and generics (§4.9, §4.11, §4.12,
+//! §4.13, §4.8).
+
+use super::{assert_clean, diagnostics, type_of_last};
+
+#[test]
+fn a_call_checks_its_arguments_and_its_arity() {
+    assert_clean(
+        "\
+add = function: (a: int, b: int) -> int
+    return a + b
+
+main = function: ()
+    print(add(1, 2))
+",
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+add = function: (a: int, b: int) -> int
+    return a + b
+
+main = function: ()
+    print(add(1))
+"
+        ),
+        "test.hero:5:11: error[wrong_arity]: `add` takes 2 argument(s), found 1\n"
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+add = function: (a: int, b: int) -> int
+    return a + b
+
+main = function: ()
+    print(add(1, \"two\"))
+"
+        ),
+        "test.hero:5:18: error[type_mismatch]: expected `int`, found `str`\n"
+    );
+}
+
+/// §4.11: `x.f(y)` is `f(x, y)`, so the receiver is the first argument and the
+/// signature is checked exactly as it would be at a plain call.
+#[test]
+fn ufcs_is_argument_reordering_and_nothing_else() {
+    assert_clean(
+        "\
+Point = record
+    x: int
+    y: int
+
+sum_of = function: (p: Point) -> int
+    return p.x + p.y
+
+main = function: (p: Point)
+    print(p.sum_of())
+    print(sum_of(p))
+",
+    );
+}
+
+/// §4.8: the marker is repeated at the call site, and the dotted form is refused
+/// on a `@` first parameter — the whole point of the marker is that it is visible
+/// on the line that mutates.
+#[test]
+fn the_mutable_marker_is_checked_on_both_sides() {
+    assert_clean(
+        "\
+Lex = record
+    pos: int
+
+advance = function: (@l: Lex)
+    l.pos @ l.pos + 1
+
+main = function: ()
+    l: Lex @ Lex(pos: 0)
+    advance(@l)
+    print(l.pos)
+",
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+Lex = record
+    pos: int
+
+advance = function: (@l: Lex)
+    l.pos @ l.pos + 1
+
+main = function: ()
+    l: Lex @ Lex(pos: 0)
+    advance(l)
+    print(l.pos)
+"
+        ),
+        "test.hero:9:13: error[marker_mismatch]: `advance` changes this argument, so the call site writes `@` too\n"
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+Lex = record
+    pos: int
+
+advance = function: (@l: Lex)
+    l.pos @ l.pos + 1
+
+main = function: ()
+    l: Lex @ Lex(pos: 0)
+    l.advance()
+    print(l.pos)
+"
+        ),
+        "test.hero:9:7: error[ufcs_on_mutable]: `advance` changes its first argument, so it is called `advance(@x, …)` — the dotted form would hide the `@`\n"
+    );
+}
+
+/// §4.9: record construction is a call, and every field is named, always.
+#[test]
+fn a_record_is_built_with_every_field_named() {
+    assert_clean(
+        "\
+Point = record
+    x: int
+    y: int
+
+main = function: ()
+    p = Point(x: 1, y: 2)
+    print(p.x)
+",
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+Point = record
+    x: int
+    y: int
+
+main = function: ()
+    p = Point(x: 1)
+    print(p.x)
+"
+        ),
+        "test.hero:6:9: error[missing_fields]: `Point` is built with every field, named: x:, y: — all of them, always\n"
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+Point = record
+    x: int
+    y: int
+
+main = function: ()
+    p = Point(1, 2)
+    print(p.x)
+"
+        ),
+        "test.hero:6:15: error[missing_label]: `Point`'s fields are always named — this one is `x`\ntest.hero:6:18: error[missing_label]: `Point`'s fields are always named — this one is `y`\n"
+    );
+}
+
+#[test]
+fn a_wrong_label_names_the_right_one_and_offers_the_rename() {
+    let (out, _) = super::checked(
+        "\
+Point = record
+    x: int
+    y: int
+
+main = function: ()
+    p = Point(x: 1, z: 2)
+    print(p.y)
+",
+    );
+    assert_eq!(out.diagnostics.len(), 1);
+    assert_eq!(out.diagnostics[0].code, "wrong_label");
+    assert_eq!(out.diagnostics[0].fixes[0].replacement, "y:");
+    assert_eq!(
+        out.diagnostics[0].fixes[0].certainty,
+        crate::diagnostics::Certainty::Certain
+    );
+}
+
+/// §4.12: generics are inferred from the arguments and never written at the call
+/// site. One pass, no unification variables.
+#[test]
+fn generics_are_inferred_from_the_arguments() {
+    assert_eq!(
+        type_of_last(
+            "\
+first = function<A>: (xs: [A]) -> A
+    return xs[0]
+
+head = function: () -> int
+    return first([1, 2, 3])
+"
+        ),
+        "int"
+    );
+    assert_clean(
+        "\
+apply = function<A, B>: (xs: [A], f: (function(A) -> B)) -> [B]
+    out: [B] @ []
+    for x in xs
+        out @ out.push(f(x))
+    return out
+
+label = function: (n: int) -> str
+    return n.to_str()
+
+main = function: ()
+    print(apply([1, 2], label).len())
+",
+    );
+}
+
+/// A type parameter that meets two different types is the error, and it lands on
+/// the argument that disagreed.
+#[test]
+fn a_type_parameter_must_agree_with_itself() {
+    assert_eq!(
+        diagnostics(
+            "\
+pair = function<A>: (a: A, b: A) -> A
+    _ = b
+    return a
+
+main = function: ()
+    print(pair(1, \"two\"))
+"
+        ),
+        "test.hero:6:19: error[type_mismatch]: expected `int`, found `str`\n"
+    );
+}
+
+/// §4.13: a top-level function is a value, and its type is written with the word
+/// that declares one (panel 013).
+#[test]
+fn a_function_is_a_value_of_its_signature_type() {
+    assert_eq!(
+        type_of_last(
+            "\
+double = function: (n: int) -> int
+    return n * 2
+
+twice = function: () -> int
+    f = double
+    return f(2)
+"
+        ),
+        "int"
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+double = function: (n: int) -> int
+    return n * 2
+
+takes = function: (f: (function(str) -> int)) -> int
+    return f(\"a\")
+
+main = function: ()
+    print(takes(double))
+"
+        ),
+        "test.hero:8:17: error[type_mismatch]: expected `(function(str) -> int)`, found `(function(int) -> int)`\n"
+    );
+}
+
+/// The compiler-engineer's panel-015 veto, now typed: a field holding a function
+/// is called through the dot, and §4.11 looks for the field *first*.
+#[test]
+fn a_function_valued_field_is_called_through_the_dot() {
+    assert_clean(
+        "\
+Holder = record
+    cb: (function(int) -> int)
+
+run = function: (h: Holder, n: int) -> int
+    return h.cb(n)
+",
+    );
+}
+
+/// …and when it is neither a field of *this* receiver nor a function, one message
+/// says both — which is what the veto bought. The resolver stayed silent because
+/// `handler` is a field *somewhere* in the file, which is exactly the type-free
+/// approximation panel 015 D settled on.
+#[test]
+fn neither_a_field_nor_a_function_is_one_message() {
+    assert_eq!(
+        diagnostics(
+            "\
+Point = record
+    x: int
+
+Widget = record
+    handler: (function(int) -> int)
+
+f = function: (p: Point) -> int
+    return p.handler(1)
+"
+        ),
+        "test.hero:8:14: error[unknown_function]: `Point` has no field `handler`, and no function is named `handler` — `x.handler(…)` means `handler(x, …)`\n"
+    );
+}
+
+#[test]
+fn the_builtins_know_their_shapes() {
+    assert_eq!(type_of_last("f = function: (s: str) -> int\n    return s.len()\n"), "int");
+    assert_eq!(
+        type_of_last("f = function: (s: str) -> [str]\n    return s.chars()\n"),
+        "[str]"
+    );
+    assert_eq!(
+        type_of_last("f = function: (xs: [int]) -> [int]\n    return xs.push(4)\n"),
+        "[int]"
+    );
+    assert_eq!(
+        type_of_last("f = function: (m: {str: int}) -> bool\n    return m.has(\"a\")\n"),
+        "bool"
+    );
+    assert_eq!(
+        type_of_last("f = function: (xs: [str]) -> str\n    return xs.join(\", \")\n"),
+        "str"
+    );
+    assert_eq!(type_of_last("f = function: () -> [int]\n    return range(0, 3)\n"), "[int]");
+    assert_eq!(
+        diagnostics("f = function: (n: int) -> int\n    return n.len()\n"),
+        "test.hero:2:12: error[bad_operand]: `len` takes `str`, `[T]` or `{K: V}`, found `int`\n"
+    );
+}
+
+/// `print` is a compiler form, not a function: any number of arguments, four
+/// types, canonical rendering (panel 006).
+#[test]
+fn print_takes_any_number_of_the_four_printable_types() {
+    assert_clean(
+        "main = function: (n: int, x: f64, b: bool, s: str)\n    print(s, n, x, b, \"\\n\")\n",
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+Point = record
+    x: int
+
+main = function: (p: Point)
+    print(p)
+"
+        ),
+        "test.hero:5:5: error[bad_operand]: `print` takes `int`, `f64`, `bool` or `str`, found `Point`\n"
+    );
+}
+
+/// A built-in's argument is *checked*, not synthesised, from the second one on —
+/// which is what lets a `.case` be written inside `push` (design.md's appendix
+/// does it six times).
+#[test]
+fn a_builtin_argument_can_be_a_contextual_form() {
+    assert_clean(
+        "\
+Token = variant
+    num
+        v: int
+    plus
+
+main = function: ()
+    out: [Token] @ []
+    out @ out.push(.plus)
+    out @ out.push(.num(v: 1))
+    print(out.len())
+",
+    );
+}
+
+#[test]
+fn an_extern_is_called_like_any_other_function() {
+    assert_clean(
+        "\
+extern sqrt = function: (x: f64) -> f64
+
+hypotenuse = function: (a: f64, b: f64) -> f64
+    return sqrt(a * a + b * b)
+",
+    );
+    assert_eq!(
+        diagnostics(
+            "\
+extern sqrt = function: (x: f64) -> f64
+
+f = function: (n: int) -> f64
+    return sqrt(n)
+"
+        ),
+        "test.hero:4:17: error[type_mismatch]: expected `f64`, found `int`\n"
+    );
+}

@@ -10,3 +10,12 @@ disallowed-types = [
     { path = "std::collections::HashMap", reason = "nondeterministic iteration order breaks the bootstrap fixpoint — use BTreeMap" },
     { path = "std::collections::HashSet", reason = "nondeterministic iteration order breaks the bootstrap fixpoint — use BTreeSet" },
 ]
+
+# Four of every pass function's parameters are spent before its first real one:
+# `checker`/`resolver` (the owned state), then `ast`, `resolved` and `src`. The
+# obvious fix — bundling the three read-only inputs into a `Context` struct — is
+# exactly what the Cyclone rule forbids ("references only as function parameters,
+# never in structs"), because a struct of references does not port to Heroes.
+# So the budget is raised by one and the reason lives here rather than in a
+# scattering of `#[allow]`s.
+too-many-arguments-threshold = 8

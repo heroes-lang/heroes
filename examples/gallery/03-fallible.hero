@@ -32,7 +32,7 @@ average_of = function: (parts: [str]) -> int?
 # Four ways to read a fallible value, in the order you reach for them.
 report = function: (text: str) -> str
     match number_of(text)
-        .ok v  => return "read " + v.str()
+        .ok v  => return "read " + v.to_str()
         .err e => return "failed: " + e.code + " (" + e.msg + ")"
 
 first_or_zero = function: (parts: [str]) -> int

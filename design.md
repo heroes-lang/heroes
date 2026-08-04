@@ -137,7 +137,7 @@ exhaustive `match` · `[T]` · `{K: V}` (insertion order, panel 006) · `str` ·
 `if`/`else if`/`else` · `for cond` / `for x in xs` (including over maps) / `break`/`continue` ·
 `return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
 `exit(code)` · modules. Library closure: `print`, `len`, `push`, `slice`, `chars`, `has`, `sort`,
-`join`/`Builder`, `to_int`/`to_f64`, `.str()`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
+`join`/`Builder`, `to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
 `all`/`range` written in Heroes.
 
 One pattern deserves stating now because the whole self-hosted compiler will be written in it:
@@ -922,12 +922,21 @@ value = match e
   have a sensible type to assign to them"), and under `()` an `int`-valued
   `match` with a `return` arm would become a type error. Rust types them `!`,
   Kotlin `Nothing`.
-- **A `match` used as a value requires every arm to produce a value** — the
-  rule that makes `tag = match t` with a `.eof => break` arm loud instead of
-  silent. It is a checker judgment (M3c, one ⇐-check), it is *orthogonal* to
-  the arm-body spelling (the block form always admitted the same valueless
-  arm), and declarations stay out of inline arm bodies: a name bound in an arm
-  is a name nothing can read.
+- **A `match` used as a value requires every arm to produce a value *or jump*.**
+  As first written (panel 014) this bullet said "every arm", full stop, and it
+  contradicted the one above it: `tag = match t` with a `.eof => break` arm is
+  exactly the program the bullet above declares legal. Panel 017 resolved it for
+  the bullet above — the compiler-engineer built all three typings and measured
+  that typing a jump at all rejects every function whose body ends in `return` —
+  and the value rule's payoff moves to where the silent program actually was: an
+  arm whose body has type `()`, as in `_ => print(0)`, inside a `match` used as
+  a value. That case needs no arm-specific rule at all; it is the ordinary
+  ⇐-check against the expected type, which is why this rule now costs zero
+  attributable lines. A `match` **all** of whose arms jump produces no value and
+  is legal only in statement position. Declarations stay out of inline arm
+  bodies — a name bound in an arm is a name nothing can read — and that rejection
+  lives in the parser, so it is one diagnostic instead of the unused-binding
+  message plus a second one.
 
 **`if` takes only a `bool`** — it is sugar for `match` on a two-case variant, which is what `bool`
 is. One line of spec covers all its behaviour. `else if` and `else` exist.
@@ -1084,7 +1093,7 @@ its type parameters collapse.
 
 No default parameter values, no overloading, no user variadics. The one variadic-looking form is
 `print`, and it is **compiler-known, not a function value** (panel 006, decided 2026-08-03): a
-comma-separated list of `str`/`int`/`f64`/`bool` values, each rendered by its canonical `.str()`,
+comma-separated list of `str`/`int`/`f64`/`bool` values, each rendered by its canonical `to_str`,
 no separator between values, exactly one trailing newline. Canonical `f64` rendering is
 deterministic and locale-independent (exact algorithm fixed at M5b with its goldens). This was
 bought by trading away string interpolation (Part 7 item 7); Pascal's `WriteLn` is the fifty-year
@@ -1628,7 +1637,7 @@ Compile to a `.o` once, cache it, and always link it.
 
 The consolidated built-in inventory (Tier 1 in C, Tier 2 in Heroes) is Principle 0's library
 closure list (§1.0): `print`, `len`, `push`, `slice`, `chars`, `has`, `sort`, `join`/`Builder`,
-`to_int`/`to_f64`, `.str()`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/`all`/`range` in
+`to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/`all`/`range` in
 Heroes.
 
 ---
@@ -2014,8 +2023,9 @@ variables. If the language can express this, it can express its own compiler. No
 the *current* syntax and has not been validated by any implementation — treat discrepancies as bugs
 in this document, and flag them.
 
-**Discrepancies resolved (panels 002/006, decided 2026-08-03):** the `T`-where-`T?` sites are now
-written `ok(...)` — eleven in all: the six originally flagged (`factor`'s `.num`/`.variable` arms,
+**Discrepancies resolved (panels 002/006, decided 2026-08-03; a twelfth found by the checker
+itself at M3b, 2026-08-04 — `tokenize`'s own `return out`):** the `T`-where-`T?` sites are now
+written `ok(...)` — twelve in all: the six originally flagged (`factor`'s `.num`/`.variable` arms,
 `group`'s `return inner`, `term`'s and `expression`'s `return first`, `lookup`'s tail) plus five
 more found when applying the rule exhaustively (`term`/`expression`'s variant-construction
 returns, `sum_of`/`product_of`'s `return tot`, `evaluate`'s `.num` arm). `main`'s
@@ -2140,9 +2150,9 @@ tokenize = function: (text: str) -> [Token]?
             out @ out.push(.rparen)
             advance(@l)
         else
-            return fail("unknown_char", "at position " + l.pos.str())
+            return fail("unknown_char", "at position " + l.pos.to_str())
 
-    return out
+    return ok(out)
 
 test "tokenizes numbers, names and symbols"
     ts = tokenize("12 + xy * (3)").must()

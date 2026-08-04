@@ -44,5 +44,10 @@ test "every token has a name and a power"
     assert is_operator(.number(value: 7)) == false
 
 main = function: ()
-    for t in [.open, .number(value: 12), .plus, .word(text: "x"), .close]
+    # The annotation is required and it is not ceremony: a case says which
+    # case it is, never which variant, so a literal list of them has nothing
+    # to infer from. Name the type once and the whole list is checked.
+    line: [Token] = [.open, .number(value: 12), .plus, .word(text: "x"), .close]
+
+    for t in line
         print(name_of(t))

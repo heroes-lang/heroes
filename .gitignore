@@ -10,3 +10,6 @@ stage[0-9]
 
 # macOS
 .DS_Store
+
+# Scratch git worktrees created by panel judges (never project content).
+.claude/worktrees/
