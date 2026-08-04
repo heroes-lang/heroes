@@ -288,9 +288,26 @@ hand-desugar three constructs, against the IR text.)
   **Runnable:** `heroes run tests/golden/run/strings.hero` · `heroes run
   tests/golden/run/f64-rendering.hero` · `heroes build tests/golden/emit/strings.hero
   --emit-c` (the refcounting, readable as text) · `heroes run --sanitize <file>`.
-- **M5c — Aggregates:** records/variants/arrays/maps via the descriptor pass
-  (`copy/drop/eq/hash` per reachable type — spike 04's ABI); structural
-  `==`; COW on mutation primitives.
+- **M5c — Aggregates** (designed, not implemented — **panel 022 decided, amendments
+  landed 2026-08-05**)**:** records and variants **by value** (confirming spike 04),
+  arrays and maps via the descriptor pass (`copy/drop/eq/hash` per **reachable** type,
+  from a worklist rather than the interned arena); structural `==` as a direct
+  `h_T_eq`; and **COW as one unshare per array/map step of the place path**, with the
+  stored value increfed before the outermost unshare. `Op::CowCheck` does **not** enter
+  the IR — a judge built a three-block cycle out of the hoistable form, and inside the
+  runtime primitive C's argument-evaluation rule makes the bad order inexpressible.
+  The map is **read-only** at M5c (its mutation half has no reachable call sites), and
+  the closure-list question is priced: fund `set` at +29 or delete `{K: V}` at −57 by
+  M6's audit.
+  Four rules from compiled evidence: `eq`/`hash` walk fields and never bytes (padding),
+  `hash` is never null (SEGV at pc 0), a payload-free case leaves the union (C11 has no
+  empty struct), and `T?` is 40 bytes for every `T`.
+  **The veto that shaped it**: with one unshare at the primitive, `h = g` then
+  `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit 0. A
+  green harness on a program violating spec line 58, and nothing in this project could
+  have seen it. Three `run/` cases are owed: the nested-aliasing one, the
+  self-referential `n.children[0] @ n`, and one where the stored value aliases the
+  container.
 
 ### M6 — Sugar, tests, generics, library
 `T?` operators, function values (C function pointers), generics by
