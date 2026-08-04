@@ -67,6 +67,34 @@ Nothing red reached a commit; two course-corrections mid-step, on record:
   pass. The fix cost ~30 lines; the bug would have cost every indented
   body in the language.
 
+## 4. The mutation drill
+
+Run 2026-08-04. One bug injected into committed lexer code; exactly one test
+went red, and the symptom is worth keeping because **the diagnostic lied**:
+
+```
+lexer::tests::layout::brackets_suspend_indentation FAILED
+  ... 4:1 rbracket ]        ← the bracket IS closed, it is right there
+  DIAG error[unclosed_bracket]: `[` opened here is never closed
+```
+
+Diagnosis: when a message contradicts something visible in the same output,
+the bug is in the *bookkeeping the message reads*, not in the message. The
+lexer decides "closed" in one place only — `push()` in `lexer/mod.rs`, where
+bracket depth is tracked — and the mutation had narrowed its closing arm
+from `RParen | RBracket | RBrace` to `RParen` alone. So `]` lexed correctly
+as a token and simultaneously failed to close anything.
+
+The shape to carry forward: **a token stream and the layout state are two
+different machines**, and a diagnostic reports the second while the dump
+shows the first. When they disagree, believe the dump.
+
+*(Recorded as an assistant walkthrough — the drill was posed to the author,
+who chose to keep the session moving; the injection was reverted before the
+next commit and the tree was green throughout.)*
+
+## 5. Open items
+
 Open at close of M1 (tracked in `docs/debrief/QUEUE.md`): milestone debrief
 offers (walkthrough, adversarial ratification, mutation drill, exit-quiz),
 007-bis and the panel-009 governance ratification (both at the baseline),

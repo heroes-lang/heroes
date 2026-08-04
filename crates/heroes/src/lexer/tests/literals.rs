@@ -181,6 +181,27 @@ DIAG test.hero:1:5: error[unterminated_string]: this string never closes — str
 // --- broken literals -------------------------------------------------------
 
 #[test]
+fn a_multibyte_character_after_the_backslash_does_not_panic() {
+    // Regression guard: the escape validator must advance by the escaped
+    // character's UTF-8 LENGTH, not by one byte. Advancing by a fixed two
+    // bytes would leave `pos` mid-character and the next slice would panic
+    // on a non-char-boundary — a crash, not a diagnostic.
+    assert_eq!(
+        dump("s = \"a\\èb\"\n"),
+        "\
+1:1 ident s
+1:3 eq =
+1:5 str \"a\\èb\"
+1:12 terminator
+2:1 eof
+DIAG test.hero:1:7: error[unknown_escape]: `\\è` is not an escape sequence — the escapes are \\n \\t \\\\ \\\"; write `\\\\` for a literal backslash
+"
+    );
+    // And it decodes without losing the character.
+    assert_eq!(value_of("s = \"a\\èb\"\n"), "a\\èb");
+}
+
+#[test]
 fn unterminated_string_is_loud() {
     assert_eq!(
         dump("s = \"oops\nx = 1\n"),

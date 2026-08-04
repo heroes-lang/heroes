@@ -63,10 +63,40 @@ spec-v0 commit message understated the token estimate (~1250 vs the computed
 ~1496); amended. Lesson: the budget is AT the edge, exactly as design.md §1.6
 says ("the budget is nearly spent") — every future addition needs a removal.
 
-## 5. Explain-it-back (author, dictated, from memory)
+## 5. What spike 04 decides — walkthrough
 
-(Open — queued in `docs/debrief/QUEUE.md`: what does spike 04 decide, and
-why does it exist before any compiler code?)
+*(Closed 2026-08-04 as an assistant walkthrough, not an author
+explain-it-back: the author chose to spend the session on the M1 concepts
+instead. Labelled honestly so the record does not overstate what happened.)*
+
+Spike 04 fixes **two decisions that every later milestone depends on**, and
+it fixes them in hand-written C so they are decided by something that
+compiles and runs rather than by an argument:
+
+1. **The container representation.** `[T]` is a pointer to a heap header
+   (refcount, len, cap, element descriptor) followed by the elements
+   in-line. The array is Heroes' *only* indirection (§4.10) — which is
+   precisely what makes a recursive type like `Expr = variant { num(v: int),
+   sum(children: [Expr]) }` finite: the recursion passes through the one
+   pointer the language has.
+2. **The descriptor ABI.** C has no copy constructors, no destructors and no
+   generic equality, while §4.3 demands structural `==` on everything and
+   §4.10 demands value-semantics copies and drops. So for every reachable
+   type the compiler will *generate* ordinary C functions
+   (`h_T_copy` / `h_T_drop` / `h_T_eq`) plus a descriptor struct pointing at
+   them; the runtime works through descriptors and clang still type-checks
+   every call. The alternative — a type-erased `void*` runtime — would have
+   voided that property, which is the whole reason the backend emits C.
+
+**Why before the compiler and not after:** these are not implementation
+details the emitter can choose later, they are the *shape of the target*.
+M5c will generate code that must fit them, the ownership pass (M5b) must
+insert increfs against them, and the fixpoint at M8c compares generated C
+byte for byte — so a representation discovered late would invalidate every
+emitter test written before it. Deciding it by hand costs one afternoon;
+discovering it at M5c costs the emitter. The spike also runs under
+AddressSanitizer, so "the drops are complete" is a fact the machine
+asserted, not a claim anyone made.
 
 ---
 
