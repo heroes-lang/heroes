@@ -32,3 +32,6 @@ note. An entry is born one of two ways:
 - [000-basic-block.md](000-basic-block.md) — the longest stretch of road
   without intersections; the two forced cuts; the if/else diamond; two
   incoming arrows = merge or loop
+- [001-expressible-vs-loud.md](001-expressible-vs-loud.md) — the two jobs a
+  language rule can do (widen what can be said vs narrow what is accepted);
+  the four-worlds grid; why loudness cannot reach `"C:\temp"`
