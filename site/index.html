@@ -146,7 +146,7 @@ test "3-4-5 triangle"
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, one integer type, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn — expected type, definition site, concrete fixes. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
     <li><b>No standard library — on purpose.</b> A minimal runtime, native binaries, no GC (refcounting + copy-on-write), and everything else through a C FFI where clang verifies every signature against the real header.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification fits in ~2000 tokens. The language is finished for v1 when its compiler is written in it — and the bootstrap compiler is retired.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification fits in ~3000 tokens. The language is finished for v1 when its compiler is written in it — and the bootstrap compiler is retired.</li>
   </ul>
 
   <h2>Why these choices <span class="nod">· quicksand, avoided ·</span></h2>
@@ -207,7 +207,7 @@ test "3-4-5 triangle"
     refcounting with copy-on-write is complete memory management, no GC.
     Locality becomes total: what a line means is decided by that line.</dd>
 
-    <dt>And the spec fits in ~2000 tokens. Why cap it at all?</dt>
+    <dt>And the spec fits in ~3000 tokens. Why cap it at all?</dt>
     <dd>Because the spec <i>is</i> the prompt. Every feature pays rent in it,
     and a language whose entire definition fits in a few pages is also a
     language one person can implement — the two constraints are secretly the
@@ -223,7 +223,7 @@ test "3-4-5 triangle"
       <span class="when">2026-08-03 · M0 — day zero</span>
       <b>Foundations, and four programs written before the compiler.</b>
       Git, a Rust workspace, a golden-test harness green with zero tests, and
-      the language spec frozen as the measurement baseline (budget: ~2000 tokens).
+      the language spec frozen as the measurement baseline (budget: 3000 tokens, measured).
       Then four hand-written C programs — the exact shape the compiler must
       one day emit — including a recursive tree with reference counting,
       verified leak-free under AddressSanitizer. The machine found the first

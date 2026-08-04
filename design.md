@@ -22,7 +22,7 @@ Two practical notes for the implementation:
 - **Bowie references belong in prose, never in the language surface.** Section headings in example
   files, chapter epigraphs, the README, the book — all fair game. But keyword names, error message
   text, and library function names stay plain and literal, because they are read by a machine that
-  has to parse them and by a model that has to learn them from a 2000-token spec. A cute error
+  has to parse them and by a model that has to learn them from a 3000-token spec. A cute error
   message costs spec tokens and comprehension; a cute README costs nothing. This is the same
   discipline as Part 1.10 (ASCII-only syntax): personality in the packaging, precision in the
   substrate.
@@ -225,8 +225,8 @@ annotations at use sites; anything derivable is derived. Note this is the *oppos
 
 ### 1.6 The spec budget
 
-**The entire language specification — syntax, semantics, built-in library — must fit in ~2000
-tokens.** About three pages. That document is not documentation, it is *the prompt*.
+**The entire language specification — syntax, semantics, built-in library — must fit in 3000
+tokens, measured.** About four pages. That document is not documentation, it is *the prompt*.
 
 This is the forcing function that makes the whole project coherent, because it merges two goals into
 one: every feature has to pay rent in spec tokens, and a language whose spec fits in a few pages is
@@ -236,13 +236,16 @@ it. Want three ways to write a loop? Triple cost, zero gain.
 **MEASURED, 2026-08-04 (panel 011): spec v0 is 1989 tokens (Anthropic legacy) / 2048 (cl100k) /
 2050 (o200k).** The word heuristic every earlier verdict relied on said 1496 — low by a third. So
 the 1500 budget was breached on the day it was written and nobody could see it, and the 2000
-ceiling is met by one instrument and breached by two. **The repo is in breach as of today**, by
-the pessimistic bound that panel 009 made binding; the next spec amendment must be net-negative,
-and the 5-line header comment (−89 measured) buys back the first one and nothing more. The budget
-is a **hard measured ceiling of 2000**, taken as the maximum over the vendored instruments — which
-reconciles the "~" above with panel 009's veto threshold.
+ceiling that replaced it was already breached on the pessimistic bound the hour it was set.
 
-**Raised from ~1500 to 2000 by author decision (2026-08-04; panel 009, retro-record).** Two reasons
+**Raised to 3000 by author decision (2026-08-04; panel 012, retro-record) — the first budget number
+in this project's history set against a measurement rather than a guess.** It leaves ~950 tokens of
+real headroom on the binding instrument, which is roughly what §1.0's mortgaged closure items
+(modules, file I/O, `args()`, `exit`) plus the deferred sentences were always going to cost. The
+budget is a **hard measured ceiling of 3000**, taken as the maximum over the vendored instruments —
+which reconciles the number above with the panel's veto threshold.
+
+**Why 1500 fell.** (Raised to 2000 on 2026-08-04, panel 009; superseded the same day by the measurement above.) Two reasons
 are on the record. First, 1500 was a forcing function, never a measurement — and it was being
 defended with a 1.33 tokens/word prose heuristic applied to a document that is ~14% punctuation by
 character, so the figures every budget verdict rested on (~1496) may always have been ~350 low
@@ -256,7 +259,7 @@ the design rule it always was and stops being an audited one (panel 011).
 
 **The discipline the number was proxying for survives independently of headroom: every addition
 still carries §1.0's burden of proof — compiler-need or a measured thesis effect — and a bigger
-budget buys no exemption from it.** A spec that grows to fill 2000 tokens because it can has failed
+budget buys no exemption from it.** A spec that grows to fill 3000 tokens because it can has failed
 §1.2 just as surely as one that breaches it.
 
 Historical calibration: Wirth's **Oberon report** is sixteen pages, and an entire operating system
@@ -1871,7 +1874,7 @@ that compiles and diffs. This is the only thing that makes it possible to evolve
 silently breaking it.
 
 **Write the spec in condensed English early — around step 7, not at the end.** It is the control
-instrument: if it doesn't fit in ~2000 tokens, too much has been added, and you find out in an hour
+instrument: if it doesn't fit in 3000 tokens, too much has been added, and you find out in an hour
 instead of three months. Count it with a real tokeniser, not by estimation — the BPE vocabulary
 contains arbitrary choices nobody predicts.
 
