@@ -127,7 +127,12 @@ fn a_missing_file_operand_is_named_with_the_shape_that_works() {
 fn the_help_text_states_the_exit_codes_and_the_streams() {
     let out = heroes(&["--help"]);
     let shown = String::from_utf8_lossy(&out.stdout);
-    assert!(shown.contains("exit:    0 nothing to report · 1 the input has diagnostics · 2 the tool could not run."));
+    // The gloss on 1 widened at M5a: an unsupported form is a diagnostic about the
+    // *compiler* and still exits 1, because 2 sends a reader to reinstall the
+    // toolchain (panel 020, measured).
+    assert!(shown.contains("1 diagnostics were reported, no artifact was produced"));
+    assert!(shown.contains("2 the tool could not run."));
+    assert!(shown.contains("HEROES_RUNTIME"), "the one input channel outside the table");
     assert!(shown.contains("streams: the artifact on stdout"));
     assert_eq!(code(&out), 0);
     // No arguments prints the same thing, and that is not an error either.
@@ -257,14 +262,21 @@ fn a_hole_is_reported_on_stdout_and_the_exit_code_stays_zero() {
 /// success for a program that has no backend yet". A `build` that produced nothing
 /// without saying so would have promoted that misreading into the tool's behaviour.
 #[test]
-fn build_with_no_flag_says_what_it_did_and_what_does_not_exist_yet() {
+fn build_says_where_it_put_the_binary() {
     let out = heroes(&["build", "examples/gallery/00-first.hero"]);
     assert_eq!(code(&out), 0);
-    assert!(out.stdout.is_empty(), "no artifact was asked for");
+    assert!(out.stdout.is_empty(), "the binary is the artifact, and it is a file");
     let said = String::from_utf8_lossy(&out.stderr).into_owned();
-    assert!(said.contains("lowered"), "{said}");
-    assert!(said.contains("--dump-ir"), "it names the flag that shows the work: {said}");
-    assert!(said.contains("M5a"), "it names the milestone code generation waits for: {said}");
+    // Candidate (ii) of the panel's experiment: given this line the reader wrote
+    // `heroes build f.hero && ./build/<hash>/f` correctly first try; given silence
+    // it wrote `./f`, which cannot work.
+    assert!(said.starts_with("wrote build/"), "{said}");
+    assert!(said.trim_end().ends_with("/00first"), "{said}");
+    // And the path it names exists and runs.
+    let path = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."))
+        .join(said.trim_start_matches("wrote ").trim_end());
+    let ran = std::process::Command::new(&path).output().expect("the binary runs");
+    assert_eq!(String::from_utf8_lossy(&ran.stdout), "20\n");
 }
 
 /// `--dump-ir` puts the IR on stdout and leaves stderr alone: panel 016's stream
@@ -284,32 +296,76 @@ fn build_dumps_the_ir_on_stdout() {
 /// having said nothing.
 #[test]
 fn build_honours_the_exit_code_contract() {
-    assert_eq!(code(&heroes(&["build", "examples/gallery/01-points.hero"])), 0);
+    assert_eq!(code(&heroes(&["build", "examples/gallery/00-first.hero"])), 0);
     assert_eq!(code(&heroes(&["build", "tests/golden/check/shadowing.hero"])), 1);
+    // A correct program the backend cannot emit yet is **1**, not 2: the tool
+    // worked, and no edit to the file will help.
+    assert_eq!(code(&heroes(&["build", "examples/gallery/01-points.hero"])), 1);
     assert_eq!(code(&heroes(&["build", "no/such/file.hero"])), 2);
     assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/gallery/00-first.hero"])), 2);
 }
 
-/// `run` is still retired and now points at `build` rather than at `check`: a
-/// retired spelling names its replacement, which is the same treatment the
-/// *language* gives a foreign keyword (`fn` → `function`).
+/// `run` stops being a retired spelling and becomes the dev loop (M5a). It compiles
+/// at `-O2`, executes, and forwards the program's own exit status — the program is
+/// the artifact, so its verdict is the command's.
 #[test]
-fn the_retired_run_spelling_now_points_at_build() {
+fn run_compiles_and_executes_the_program() {
     let out = heroes(&["run", "examples/gallery/00-first.hero"]);
+    assert_eq!(code(&out), 0);
+    assert_eq!(String::from_utf8_lossy(&out.stdout), "20\n");
+    // Nothing of the tool's own before the program's output.
+    assert!(out.stderr.is_empty(), "{}", String::from_utf8_lossy(&out.stderr));
+}
+
+/// `--no-line` is not born, and the message says so rather than printing the list:
+/// panel 016 refused it on CLAUDE.md §10's stopping rule and panel 020 declined to
+/// implement it, so a reader who plausibly reaches for it gets the reason.
+#[test]
+fn the_refused_no_line_flag_names_what_to_do_instead() {
+    let out = heroes(&["build", "examples/gallery/00-first.hero", "--no-line"]);
     assert_eq!(code(&out), 2);
     let message = String::from_utf8_lossy(&out.stderr).into_owned();
-    assert!(message.contains("`run` is no longer a command"), "{message}");
-    assert!(message.contains("build"), "{message}");
+    assert!(message.contains("no longer a flag"), "{message}");
+    assert!(message.contains("--emit-c"), "{message}");
+}
+
+/// `-o` is the surface's first value-taking flag, and it is strict: a missing path
+/// is an error that shows the shape rather than a silent default.
+#[test]
+fn the_output_flag_takes_a_path_and_says_so_when_it_is_missing() {
+    let out = heroes(&["build", "examples/gallery/00-first.hero", "-o"]);
+    assert_eq!(code(&out), 2);
+    assert!(String::from_utf8_lossy(&out.stderr).contains("needs a path"));
+}
+
+/// Two stops in one invocation is refused rather than silently resolved: whichever
+/// one won, the reader asked for the other half of the time.
+#[test]
+fn two_stops_in_one_invocation_are_refused() {
+    let out = heroes(&["build", "examples/gallery/00-first.hero", "--dump-ir", "--emit-c"]);
+    assert_eq!(code(&out), 2);
+    assert!(String::from_utf8_lossy(&out.stderr).contains("one artifact at a time"));
 }
 
 /// §4.16: a file with a hole is not wrong. It lowers, the compiler says what belongs
 /// in the gaps, and the summary carries the one sentence that matters — no binary can
 /// come of it. Panel 019 recorded this as decided-by-default and queued it.
 #[test]
-fn a_hole_lowers_and_the_summary_says_no_binary() {
+fn a_hole_reports_what_belongs_there_and_the_build_exits_one() {
     let out = heroes(&["build", "examples/gallery/09-holes.hero"]);
-    assert_eq!(code(&out), 0, "a hole is not an error");
-    assert!(!out.stdout.is_empty(), "the hole report is the artifact");
+    // §4.16 keeps both halves: the hole is not an error *and* there is no binary.
+    // Panel 019 queued this as decided-by-default; panel 020 decided it, on the
+    // ergonomist's measurement — under exit 0 a `build && ./artifact` loop reports
+    // success and then runs yesterday's binary.
+    assert_eq!(code(&out), 1, "no artifact was produced");
+    assert!(!out.stdout.is_empty(), "the hole report is the artifact that does exist");
     let said = String::from_utf8_lossy(&out.stderr).into_owned();
-    assert!(said.contains("no binary while the file has holes"), "{said}");
+    assert!(said.trim_end().ends_with("holes in examples/gallery/09-holes.hero"), "{said}");
+    assert!(said.starts_with("no binary: 2 holes"), "{said}");
+    // `check` still exits 0 on the same file: a hole is not a program defect, and
+    // the two commands answer different questions.
+    assert_eq!(code(&heroes(&["check", "examples/gallery/09-holes.hero"])), 0);
+    // …and so does `--dump-ir`, which is inspection rather than a promise of a
+    // binary.
+    assert_eq!(code(&heroes(&["build", "examples/gallery/09-holes.hero", "--dump-ir"])), 0);
 }

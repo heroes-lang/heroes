@@ -15,6 +15,7 @@
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod diagnostics;
+pub mod emit;
 pub mod ir;
 pub mod lexer;
 pub mod measure;
@@ -33,4 +34,4 @@ pub mod types;
 //   types/                        M3b (landing), M3c–M3d
 //   desugar/ ir/                  M4
 //   descriptors/ ownership/       M5b–M5c
-//   backend/ driver/ api          M5a
+//   emit/                         M5a (landing)

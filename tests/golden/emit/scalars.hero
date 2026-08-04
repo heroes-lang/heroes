@@ -1,0 +1,9 @@
+# The first program that runs, and the one spike 01 was written against
+# (CLAUDE.md § Generated-C rules: this shape is the target the emitter must hit).
+# Bulk regression case.
+
+function main()
+    print((2 + 3) * 4)
+    print(7 / 2)
+    print(7 % 2)
+    print(0 - 5)

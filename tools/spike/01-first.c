@@ -16,11 +16,17 @@
  *
  * TRY THIS (the property that justifies the whole backend):
  *   change hero_print_int(t1) to hero_print_int(&t1) and recompile —
- *   clang's error will point at examples/gallery/00-first.hero:2, not at this file.
+ *   clang's error will point at examples/gallery/00-first.hero, not at this file.
+ *   NOTE (panel 020): the LINE it names is not 2. `#line N` anchors the *next*
+ *   line and C auto-increments, so a Heroes line lowering to K C lines drifts by
+ *   K-1 — measured here as :6, which is blank. The real emitter re-anchors per C
+ *   line for exactly this reason; this hand-written file keeps the drift on the
+ *   record instead of hiding it.
  *
  * Build:  clang -std=c11 -Wall -Werror=return-type -Iruntime \
  *             tools/spike/01-first.c build/runtime.o -o build/spike01
  * Run:    build/spike01        → 20
+ *         (checked against tools/spike/01-first.expected by a test)
  */
 
 #include "heroes_runtime.h"
@@ -32,5 +38,6 @@ int main(void) {
     if (__builtin_add_overflow((int64_t)2, (int64_t)3, &t0)) hero_panic_overflow();
     if (__builtin_mul_overflow(t0, (int64_t)4, &t1)) hero_panic_overflow();
     hero_print_int(t1);
+    hero_print_end();
     return 0;
 }

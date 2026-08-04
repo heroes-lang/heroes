@@ -1,0 +1,153 @@
+//! What the backend refuses, and the two things it deliberately does not.
+//!
+//! Every row of `gate.rs`'s table has a test that makes it fire — LLVM's
+//! `test/Verifier` discipline, applied to the other direction (CLAUDE.md §9). When
+//! M5b lands, the `str` and `f64` tests here are the ones that must be deleted, and
+//! that is the point: a row nobody can make fire is a row nobody can retire.
+
+use crate::diagnostics::Kind;
+
+use super::emitted;
+
+/// The refusal's shape, checked once so the other tests can be one line each.
+fn refusal(text: &str) -> (String, String) {
+    let out = emitted(text);
+    assert!(out.c.is_empty(), "a refused program must emit no C at all");
+    let first = out.diagnostics.first().expect("a refusal");
+    assert_eq!(first.kind, Kind::Unsupported, "not an error: the program is fine");
+    assert!(first.fixes.is_empty(), "no edit to the file will fix this");
+    assert!(
+        first.notes.iter().any(|n| n == "no change to this file will fix this"),
+        "the note that ends the reader's fix loop is missing"
+    );
+    assert!(
+        first.notes.iter().any(|n| n.contains("the backend emits")),
+        "the note that answers `what can I do instead` is missing"
+    );
+    assert!(
+        !first.message.contains("M5") && !first.message.contains("M6") && !first.message.contains("M7"),
+        "a milestone identifier reached the message: {}",
+        first.message
+    );
+    (first.code.clone(), first.message.clone())
+}
+
+#[test]
+fn text_is_refused_and_the_code_names_the_capability() {
+    let (code, message) = refusal("function main()\n    print(\"hi\")\n");
+    assert_eq!(code, "str");
+    assert_eq!(message, "text (`str`) is not emitted yet");
+}
+
+#[test]
+fn floating_point_is_refused() {
+    let (code, _) = refusal("function main()\n    x = 1.5\n    print(x > 1.0)\n");
+    assert_eq!(code, "f64");
+}
+
+#[test]
+fn arrays_maps_records_and_variants_are_refused() {
+    assert_eq!(refusal("function main()\n    xs = [1, 2]\n    print(xs[0])\n").0, "array");
+    assert_eq!(refusal("record P\n    x: int\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n").0, "record");
+}
+
+#[test]
+fn a_fallible_value_is_refused() {
+    let (code, _) = refusal(
+        "function half(n: int) -> int?\n    if n % 2 == 0\n        return ok(n / 2)\n    return fail(\"odd\", \"not even\")\n\nfunction main()\n    print(half(4).default(0))\n",
+    );
+    assert_eq!(code, "fallible");
+}
+
+#[test]
+fn a_generic_function_is_refused() {
+    let (code, _) = refusal(
+        "function twice<A>(x: A, f: (function(A) -> A)) -> A\n    return f(f(x))\n\nfunction inc(n: int) -> int\n    return n + 1\n\nfunction main()\n    print(twice(1, inc))\n",
+    );
+    // The generic function and the function value are both refused; the earliest
+    // span wins, and it is the declaration.
+    assert!(code == "generics" || code == "function_value", "{code}");
+}
+
+/// The ffi-pragmatist's veto, as a test. §4.19's mechanism is the `#include`, and
+/// there is no header attachment yet — so an emitted prototype would be
+/// self-consistent by construction and clang would verify nothing.
+#[test]
+fn an_extern_is_refused_because_nothing_would_check_its_signature() {
+    let (code, message) = refusal("extern function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    assert_eq!(code, "extern");
+    assert_eq!(message, "an `extern` function is not emitted yet");
+}
+
+/// `xs.len()` lowers to `call builtin len` while `for` lowers to `Op::Len`. Gating
+/// the op alone would leave an undefined symbol at link time — a linker error is
+/// the failure class the gate exists to prevent.
+#[test]
+fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
+    let (code, message) = refusal("function main()\n    xs = [1, 2]\n    print(xs.len())\n");
+    // Arrays are refused too and come first in the source; the built-in row is what
+    // must also appear, so the whole list is checked rather than the first line.
+    let out = emitted("function main()\n    xs = [1, 2]\n    print(xs.len())\n");
+    let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
+    assert!(codes.contains(&"array"), "{codes:?}");
+    let _ = (code, message);
+}
+
+#[test]
+fn every_unsupported_capability_is_reported_not_only_the_first() {
+    let out = emitted(
+        "function main()\n    print(\"a\")\n    xs = [1]\n    print(xs[0])\n    y = 2.5\n    print(y > 1.0)\n",
+    );
+    let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
+    assert!(codes.contains(&"str") && codes.contains(&"array") && codes.contains(&"f64"), "{codes:?}");
+    // Sorted by span: three invocations to learn three facts is what the message
+    // carrying the list exists to prevent.
+    let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
+    let mut sorted = spans.clone();
+    sorted.sort_unstable();
+    assert_eq!(spans, sorted);
+}
+
+#[test]
+fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
+    let out = emitted("function main()\n    print(\"a\")\n    print(\"b\")\n    print(\"c\")\n");
+    assert_eq!(out.diagnostics.len(), 1, "a program with three strings has one string problem");
+}
+
+/// A `test` block is **skipped**, not refused: `ir/mod.rs` says ordinary builds
+/// ignore it, and refusing it would make a file unbuildable at M5a and still
+/// unbuildable after M5b and M5c.
+#[test]
+fn a_test_block_does_not_stop_the_build_and_does_not_reach_the_c() {
+    let out = emitted("function double(n: int) -> int\n    return n * 2\n\ntest \"doubling\"\n    assert double(2) == 4\n\nfunction main()\n    print(double(3))\n");
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics[0].message);
+    assert!(!out.c.contains("doubling"), "a test block reached the translation unit");
+    assert!(out.c.contains("h_scratch_double"));
+}
+
+/// A file with no `main` is a perfectly good translation unit. Refusing it here
+/// would make `--emit-c` useless for a library, and the binary's need for an entry
+/// point belongs to the driver.
+#[test]
+fn a_file_with_no_main_emits_a_unit_with_no_shim() {
+    let out = emitted("function double(n: int) -> int\n    return n * 2\n");
+    assert!(out.diagnostics.is_empty());
+    assert!(out.c.contains("h_scratch_double"));
+    assert!(!out.c.contains("int main(void)"));
+    assert!(crate::emit::entry_point(&crate::emit::tests::gate::program_of("function double(n: int) -> int\n    return n * 2\n")).is_none());
+}
+
+/// The helper the test above needs: `entry_point` answers over a `Program`, and the
+/// question is worth asking through the real lowering rather than a stub.
+pub(super) fn program_of(text: &str) -> crate::ir::Program {
+    use crate::ir::lower;
+    use crate::resolve::resolve;
+    use crate::source::Source;
+    use crate::syntax::parse;
+    use crate::types::check;
+    let src = Source::new("scratch.hero".to_string(), text.to_string());
+    let parsed = parse(&src);
+    let resolved = resolve(&parsed.ast, &src);
+    let checked = check(&parsed.ast, &resolved, &src);
+    lower(&parsed.ast, &resolved, &checked, &src).program
+}

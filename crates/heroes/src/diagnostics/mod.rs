@@ -21,6 +21,44 @@ pub enum Certainty {
     Guess,
 }
 
+/// What kind of thing is being reported. Two, and the second one is **not** a
+/// claim about the program (panel 020).
+///
+/// GCC has had this exact distinction since version 2.5.8: `sorry` sits in
+/// `kinds.def` beside `error`, `warning` and `ice`, `sorry_at` takes a
+/// `location_t` exactly as `error_at` does, and `if (sorrycount) exit
+/// (FATAL_EXIT_CODE)` — the *same* status as an error. GHC's `Sorry` carries the
+/// reasoning in a comment: "The user tickled something that's known not to work
+/// yet, but we're not counting it as a bug." Both kept it inside the ordinary
+/// diagnostic path, and the panel's historian could find no compiler that built a
+/// parallel channel instead.
+///
+/// The local reason is mechanical rather than stylistic: CLAUDE.md §9's `#~
+/// <code>` invariant keys off diagnostic *codes*, so a report that lives outside
+/// this type is a test class outside the invariant — and §4.17's renderer, the
+/// JSON schema and multi-diagnostic ordering would each need a second
+/// implementation.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Kind {
+    /// The program is wrong.
+    Error,
+    /// The program is fine and **this compiler is unfinished**. Carries no fixes
+    /// — no edit to the file will help — is never dropped by `--permissive`, and
+    /// never applied by `--apply`.
+    Unsupported,
+}
+
+impl Kind {
+    /// The word that goes where `error` goes. It is the first thing read, so it
+    /// is the thing that has to be true.
+    pub fn word(self) -> &'static str {
+        match self {
+            Kind::Error => "error",
+            Kind::Unsupported => "unsupported",
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Fix {
     pub title: String,
@@ -31,6 +69,7 @@ pub struct Fix {
 
 #[derive(Debug)]
 pub struct Diagnostic {
+    pub kind: Kind,
     /// Stable snake_case code (the same convention as `fail` codes).
     pub code: String,
     pub message: String,
@@ -46,11 +85,32 @@ pub struct Diagnostic {
 impl Diagnostic {
     pub fn new(code: &str, message: String, span: Span) -> Diagnostic {
         Diagnostic {
+            kind: Kind::Error,
             code: code.to_string(),
             message,
             span,
             fixes: Vec::new(),
             notes: Vec::new(),
+        }
+    }
+
+    /// A form the backend cannot emit yet. The message names the **capability**
+    /// and never the milestone: `(M5b)` resolves only in `docs/ROADMAP.md`, a
+    /// file the reader does not have, and §4.17's standard is everything needed
+    /// without opening another file. The panel's llm-ergonomist read `(M5b)` as
+    /// an internal tracker id, grepped the repository for it, and then told its
+    /// user the toolchain was broken.
+    /// The `code` names the *capability*, so a harness can count which one blocked
+    /// what; the `kind` is what a fix loop keys on, because it is the fact that
+    /// terminates the loop.
+    pub fn unsupported(code: &str, message: String, span: Span) -> Diagnostic {
+        Diagnostic {
+            kind: Kind::Unsupported,
+            code: code.to_string(),
+            message,
+            span,
+            fixes: Vec::new(),
+            notes: vec!["no change to this file will fix this".to_string()],
         }
     }
 
@@ -89,9 +149,17 @@ impl Diagnostic {
         )
     }
 
-    /// `file:line:col: error[code]: message`
+    /// `file:line:col: <kind>[code]: message`
     pub fn render_line(&self, src: &Source) -> String {
         let (line, col) = src.line_col(self.span.start);
-        format!("{}:{}:{}: error[{}]: {}", src.name, line, col, self.code, self.message)
+        format!(
+            "{}:{}:{}: {}[{}]: {}",
+            src.name,
+            line,
+            col,
+            self.kind.word(),
+            self.code,
+            self.message
+        )
     }
 }

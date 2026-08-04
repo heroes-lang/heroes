@@ -1,0 +1,7 @@
+unsupported[str]: text (`str`) is not emitted yet
+  at tests/golden/unsupported/strings.hero:14:5
+     |
+  14 |     greeting = "hello"
+     |     ^^^^^^^^^^^^^^^^^^
+  note: no change to this file will fix this
+  note: the backend emits `int`, `bool`, `if`, `while`, functions and `print`

@@ -29,7 +29,8 @@
  * Build (sanitizers are the point of this spike):
  *   clang -std=c11 -Wall -Werror=return-type -fsanitize=address,undefined \
  *       -Iruntime tools/spike/04-variant.c runtime/runtime.c -o build/spike04
- * Run:  build/spike04     → three lines: "eq 1", "eq 0", "ok" — and ASan must
+ * Run:  build/spike04     → three lines: 1, 0, -42 (checked against
+ *                          tools/spike/04-variant.expected by a test) — and ASan must
  *       report ZERO leaks (it aborts loudly if a drop is missing).
  */
 
@@ -205,17 +206,20 @@ int main(void) {
 
     /* structural equality, recursively (§4.3) */
     hero_print_int(h_Expr_eq(&tree, &copy) ? 1 : 0); /* → 1 */
+    hero_print_end();
 
     /* mutate the copy's inner leaf; the original must be untouched */
     h_Expr *inner =
         &((h_Expr *)hero_array_data(copy.as.sum.children))[1];
     ((h_Expr *)hero_array_data(inner->as.sum.children))[0].as.num.v = 99;
     hero_print_int(h_Expr_eq(&tree, &copy) ? 1 : 0); /* → 0 */
+    hero_print_end();
 
     /* drop both — ASan verifies zero leaks, zero double-frees */
     h_Expr_drop(&tree);
     h_Expr_drop(&copy);
 
     hero_print_int(-42); /* "ok" sentinel: reached the end alive */
+    hero_print_end();
     return 0;
 }

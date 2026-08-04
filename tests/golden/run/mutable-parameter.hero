@@ -1,0 +1,22 @@
+# §4.8's copy-in/copy-out, executed rather than inspected: the callee works on a
+# copy, and the copy-out happens on EVERY exit edge — including the early return
+# below, which is the sentence panel 000 named as the place this project would
+# stall. `seen` must be 3 after the call, not 0.
+#
+# Both arguments are named, because two of the parameters share a type (§4.9's
+# same-typed-argument rule) — the marker and the label sit together: `n: @n`.
+# Bulk regression case.
+
+function count_down(@n: int, @seen: int)
+    while n > 0
+        seen @ seen + 1
+        n @ n - 1
+        if seen > 2
+            return
+
+function main()
+    n: int @ 10
+    seen: int @ 0
+    count_down(n: @n, seen: @seen)
+    print(n)
+    print(seen)

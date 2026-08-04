@@ -38,8 +38,11 @@ use super::{Certainty, Diagnostic};
 pub fn render(diagnostic: &Diagnostic, src: &Source) -> String {
     let (line, col) = src.line_col(diagnostic.span.start);
     let mut out = format!(
-        "error[{}]: {}\n  at {}:{line}:{col}\n",
-        diagnostic.code, diagnostic.message, src.name
+        "{}[{}]: {}\n  at {}:{line}:{col}\n",
+        diagnostic.kind.word(),
+        diagnostic.code,
+        diagnostic.message,
+        src.name
     );
     let number = format!("{line}");
     let gutter = " ".repeat(number.len());

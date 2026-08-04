@@ -3,9 +3,11 @@
 //! design.md Part 0 calls golden tests "the single most important artifact of
 //! this project and the least delegable". The tree lives at the workspace root:
 //!
-//!   tests/golden/check/   <name>.hero + <name>.expected  (rendered diagnostics)
-//!   tests/golden/ir/      <name>.hero + <name>.expected  (the lowered IR, M4)
-//!   tests/golden/run/     <name>.hero + <name>.expected  (program output, ASan-clean)
+//!   tests/golden/check/       <name>.hero + <name>.expected  (rendered diagnostics)
+//!   tests/golden/ir/          <name>.hero + <name>.expected  (the lowered IR, M4)
+//!   tests/golden/emit/        <name>.hero + <name>.expected  (the generated C11, M5a)
+//!   tests/golden/unsupported/ <name>.hero + <name>.expected  (what the backend refuses, M5a)
+//!   tests/golden/run/         <name>.hero + <name>.expected  (program output at -O0 AND -O2)
 //!
 //! Discipline (CLAUDE.md § "Golden discipline"):
 //!   - UPDATE_GOLDEN=1 may rewrite `run/` expectations after HUMAN review of the
@@ -93,7 +95,7 @@ const FRONTEND_FLAG: &str = "--brief";
 #[test]
 fn golden_tree_is_well_formed() {
     let root = workspace_root().join("tests/golden");
-    for sub in ["check", "ir", "run"] {
+    for sub in ["check", "ir", "emit", "unsupported", "run"] {
         let dir = root.join(sub);
         assert!(dir.is_dir(), "missing golden directory {}", dir.display());
         let cases = collect_cases(&dir);
@@ -328,7 +330,13 @@ fn no_diagnostic_speaks_in_the_ir_s_vocabulary() {
 fn every_diagnostic_is_annotated_in_the_source_that_provokes_it() {
     let root = workspace_root();
     let mut annotated = 0;
-    for case in collect_cases(&root.join("tests/golden/check")) {
+    let mut cases = collect_cases(&root.join("tests/golden/check"));
+    // The `unsupported` kind is inside the diagnostic system precisely so that it
+    // inherits this invariant (panel 020, the historian's decisive row): a report
+    // that lived outside `Diagnostic` would be the only test class in the repo
+    // exempt from CLAUDE.md §9.
+    cases.extend(collect_cases(&root.join("tests/golden/unsupported")));
+    for case in cases {
         let hero = std::fs::read_to_string(&case).expect("a readable case");
         let expected_path = case.with_extension("expected");
         let expected = std::fs::read_to_string(&expected_path).expect("a readable expectation");
@@ -370,19 +378,350 @@ fn annotations(text: &str) -> Vec<(u32, String)> {
     found
 }
 
-/// `(line, code)` for every diagnostic in an expectation, read out of the `--brief`
-/// form: `<file>:<line>:<col>: error[<code>]: <message>`.
+/// `(line, code)` for every diagnostic in an expectation.
+///
+/// Two forms, because two commands print diagnostics: `check --brief`'s one-liner
+/// `<file>:<line>:<col>: <kind>[<code>]: <message>`, and §4.17's rich form, whose
+/// code and location are on consecutive lines (`<kind>[<code>]: …` then `  at
+/// <file>:<line>:<col>`). The **kind** is read rather than assumed: `error` was the
+/// only one until M5a added `unsupported`, and hard-coding it would have quietly
+/// exempted the new kind from the invariant.
 fn diagnostics(expected: &str) -> Vec<(u32, String)> {
     let mut found = Vec::new();
+    let mut pending: Option<String> = None;
     for line in expected.lines() {
+        // The rich form's location line, which closes a pending code.
+        if let Some(rest) = line.strip_prefix("  at ") {
+            if let Some(code) = pending.take() {
+                if let Some(number) = rest.split(':').nth(1).and_then(|n| n.parse::<u32>().ok()) {
+                    found.push((number, code));
+                }
+            }
+            continue;
+        }
+        let Some(code) = kind_and_code(line) else { continue };
+        // The one-line form carries its own location; the rich form's headline does
+        // not, so it waits for the `at` line.
         let mut parts = line.split(':');
         let _file = parts.next();
-        let Some(number) = parts.next().and_then(|n| n.trim().parse::<u32>().ok()) else {
-            continue;
-        };
-        let Some(rest) = line.split("error[").nth(1) else { continue };
-        let Some(code) = rest.split(']').next() else { continue };
-        found.push((number, code.to_string()));
+        match parts.next().and_then(|n| n.trim().parse::<u32>().ok()) {
+            Some(number) => found.push((number, code)),
+            None => pending = Some(code),
+        }
     }
     found
+}
+
+/// The `<code>` out of `…<kind>[<code>]:…`, for any kind.
+fn kind_and_code(line: &str) -> Option<String> {
+    let open = line.find('[')?;
+    let close = line[open..].find(']')? + open;
+    let before = &line[..open];
+    let word = before.rsplit([' ', ':']).next()?;
+    if word.is_empty() || !word.chars().all(|c| c.is_ascii_lowercase()) {
+        return None;
+    }
+    let code = &line[open + 1..close];
+    // Digits belong: `indentation_not_multiple_of_4` is a code.
+    if code.is_empty()
+        || !code.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+    {
+        return None;
+    }
+    Some(code.to_string())
+}
+
+/// Every `unsupported/` case, through the real binary: `build` refuses it, says why
+/// in §4.17's form on stderr, and exits **1**.
+///
+/// Exit 1 rather than 2, and that is the milestone's most consequential single
+/// character. GCC has printed `sorry, unimplemented:` since version 2.5.8 and exits
+/// `FATAL_EXIT_CODE`, which is `EXIT_FAILURE` — 1. The panel's llm-ergonomist
+/// measured the other choice: given exit 2 its first action was `heroes --version &&
+/// heroes doctor`, its second `grep -rn "M5b" .`, and its third a message to the
+/// user saying "The Heroes toolchain looks broken" — a sentence it reported verbatim
+/// as false.
+#[test]
+fn golden_unsupported_cases_are_refused_with_a_reason_and_exit_one() {
+    let root = workspace_root();
+    let cases = collect_cases(&root.join("tests/golden/unsupported"));
+    assert!(cases.len() >= 3, "the unsupported goldens lost files: {}", cases.len());
+    for case in cases {
+        let relative = case.strip_prefix(&root).expect("under the workspace root");
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args(["build", &relative.display().to_string()])
+            .output()
+            .expect("the heroes binary runs");
+        let actual = String::from_utf8_lossy(&output.stderr).into_owned();
+        let expected_path = case.with_extension("expected");
+        let expected = std::fs::read_to_string(&expected_path)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        assert_eq!(
+            actual, expected,
+            "\nrefusal mismatch for {}\n--- expected ---\n{expected}--- actual ---\n{actual}",
+            relative.display()
+        );
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "{}: an unsupported form exits 1 — 2 says the tool could not run, and sends a reader to reinstall it",
+            relative.display()
+        );
+        // Nothing on stdout: there is no artifact.
+        assert!(output.stdout.is_empty(), "{} wrote an artifact", relative.display());
+    }
+}
+
+/// Every `emit/` case, through the real binary: `build --emit-c` on stdout, diffed
+/// against its `.expected`.
+///
+/// This is where the C's *shape* is pinned — the hoisted prologue, one label per
+/// block, `__builtin_*_overflow`, the `#line` directives, the `@` pointer ABI, the
+/// shim. `UPDATE_GOLDEN` is as forbidden here as in `check/` and `ir/`: these
+/// expectations are the only place the generated C is read by anything other than
+/// clang, and an expectation a script can regenerate is not evidence of anything.
+#[test]
+fn golden_emit_cases_produce_their_c() {
+    let root = workspace_root();
+    let cases = collect_cases(&root.join("tests/golden/emit"));
+    assert!(cases.len() >= 3, "the emit goldens lost files: {}", cases.len());
+    for case in cases {
+        let relative = case.strip_prefix(&root).expect("under the workspace root");
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args(["build", &relative.display().to_string(), "--emit-c"])
+            .output()
+            .expect("the heroes binary runs");
+        let actual = String::from_utf8_lossy(&output.stdout).into_owned();
+        let expected_path = case.with_extension("expected");
+        let expected = std::fs::read_to_string(&expected_path)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        assert_eq!(
+            actual, expected,
+            "\nC mismatch for {}\n--- expected ---\n{expected}--- actual ---\n{actual}",
+            relative.display()
+        );
+        assert_eq!(output.status.code(), Some(0), "{} must emit clean", relative.display());
+    }
+}
+
+/// **The double-emit determinism test** (CLAUDE.md §7): same input, byte-identical
+/// C. It stays green at all times, over every case in the two directories that have
+/// emittable programs.
+///
+/// The ancestor is named rather than invented: GCC's bootstrap compares stage2 and
+/// stage3 objects, and its manual says a mismatch "normally indicates that the
+/// stage2 compiler has compiled GCC incorrectly" — the M8c fixpoint, thirty years
+/// earlier. The stronger property is checked too: the C is identical whether it goes
+/// to stdout or through `-o`, because the emitted text never mentions the output
+/// path.
+#[test]
+fn the_emitted_c_is_byte_identical_twice_and_through_o() {
+    let root = workspace_root();
+    let scratch = root.join("build/determinism");
+    std::fs::create_dir_all(&scratch).expect("a scratch directory");
+    for case in collect_cases(&root.join("tests/golden/emit"))
+        .into_iter()
+        .chain(collect_cases(&root.join("tests/golden/run")))
+    {
+        let relative = case.strip_prefix(&root).expect("under the workspace root");
+        let emit = |extra: Vec<String>| -> String {
+            let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"));
+            command
+                .current_dir(&root)
+                .args(["build", &relative.display().to_string(), "--emit-c"])
+                .args(extra);
+            let output = command.output().expect("the heroes binary runs");
+            assert_eq!(
+                output.status.code(),
+                Some(0),
+                "{} must emit clean:\n{}",
+                relative.display(),
+                String::from_utf8_lossy(&output.stderr)
+            );
+            String::from_utf8_lossy(&output.stdout).into_owned()
+        };
+        let first = emit(Vec::new());
+        let second = emit(Vec::new());
+        assert_eq!(first, second, "{} emits differently twice", relative.display());
+        let name = case.file_stem().expect("a stem").to_string_lossy().into_owned();
+        let target = scratch.join(format!("{name}.c"));
+        emit(vec!["-o".to_string(), target.display().to_string()]);
+        let written = std::fs::read_to_string(&target).expect("the -o file");
+        assert_eq!(
+            first,
+            written,
+            "{} differs between stdout and -o: the C mentions its own output path",
+            relative.display()
+        );
+    }
+}
+
+/// Every `run/` case compiled and **executed**, at `-O0` and at `-O2`, both
+/// required to produce the expected bytes.
+///
+/// One corpus in more than one configuration is the cheapest multiplier in the
+/// record — GHC's testsuite runs in over 30 "ways" and Zig documents four build
+/// modes, so two is conservative. The class is real (GCC PR 115492: "fails at -O2
+/// but passes at -O0/-O1"), and for a C *emitter* an `-O0`/`-O2` divergence is
+/// usually our own undefined behaviour rather than clang's bug. One caveat on the
+/// record: `-fno-strict-aliasing` deliberately switches off the largest single
+/// source of `-O2` divergence, so the signal here will come from signed overflow and
+/// uninitialised reads — which is what the guards and `-Werror=uninitialized` are
+/// for.
+#[test]
+fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
+    let root = workspace_root();
+    let scratch = root.join("build/golden-run");
+    std::fs::create_dir_all(&scratch).expect("a scratch directory");
+    let cases = collect_cases(&root.join("tests/golden/run"));
+    assert!(cases.len() >= 5, "the run goldens lost files: {}", cases.len());
+    for case in cases {
+        let relative = case.strip_prefix(&root).expect("under the workspace root");
+        let expected_path = case.with_extension("expected");
+        let expected = std::fs::read_to_string(&expected_path)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        let name = case.file_stem().expect("a stem").to_string_lossy().into_owned();
+
+        // -O0: `build` writes a binary, and the harness runs it itself.
+        let binary = scratch.join(&name);
+        let built = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args(["build", &relative.display().to_string(), "-o", &binary.display().to_string()])
+            .output()
+            .expect("the heroes binary runs");
+        assert_eq!(
+            built.status.code(),
+            Some(0),
+            "{} did not build:\n{}",
+            relative.display(),
+            String::from_utf8_lossy(&built.stderr)
+        );
+        let ran = std::process::Command::new(&binary).output().expect("the program runs");
+        assert_eq!(
+            String::from_utf8_lossy(&ran.stdout),
+            expected,
+            "{} prints something else at -O0",
+            relative.display()
+        );
+
+        // -O2: `run` compiles and executes, and forwards the program's own status.
+        let at_o2 = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args(["run", &relative.display().to_string()])
+            .output()
+            .expect("the heroes binary runs");
+        assert_eq!(
+            String::from_utf8_lossy(&at_o2.stdout),
+            expected,
+            "{} prints something else at -O2 — the same corpus, one configuration apart",
+            relative.display()
+        );
+        assert_eq!(at_o2.status.code(), Some(0), "{} did not exit 0", relative.display());
+    }
+}
+
+/// The generated C compiles with **no warnings at all**, at both levels.
+///
+/// The flag set has `-Werror=` on four warnings and plain `-W` on
+/// `-Wconditional-uninitialized`, which panel 020 adopted with a falsifiable
+/// disposition: **zero fires across the corpus promotes it to `-Werror=`; one fire is
+/// a lowering bug and gets a case named after it**. This test is that measurement,
+/// standing. If it ever fails, read the warning before touching it — clang has found
+/// something about the emitter, at the one milestone where the emitter is small
+/// enough to fix cheaply.
+#[test]
+fn the_generated_c_compiles_without_a_single_warning() {
+    let root = workspace_root();
+    for case in collect_cases(&root.join("tests/golden/run"))
+        .into_iter()
+        .chain(collect_cases(&root.join("tests/golden/emit")))
+    {
+        let relative = case.strip_prefix(&root).expect("under the workspace root");
+        // `build` is -O0 and `run` is -O2, so the two verbs are the two
+        // configurations. clang's warnings reach stderr because `toolchain::run`
+        // forwards them even on success — a warning nobody sees cannot falsify
+        // anything.
+        for verb in ["build", "run"] {
+            let built = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+                .current_dir(&root)
+                .args([verb, &relative.display().to_string()])
+                .output()
+                .expect("the heroes binary runs");
+            let noise = String::from_utf8_lossy(&built.stderr);
+            let warnings: Vec<&str> = noise.lines().filter(|l| l.contains("warning:")).collect();
+            assert!(
+                warnings.is_empty(),
+                "{} under `{verb}` produced clang warnings:\n{}",
+                relative.display(),
+                warnings.join("\n")
+            );
+        }
+    }
+}
+
+/// The four hand-written spikes still compile, still run, and still print what they
+/// say they print.
+///
+/// They exist because they decided things before any compiler code did — the target
+/// shape (01), loops as `goto`+labels (02), the FFI (03), the container and
+/// descriptor ABI (04) — and CLAUDE.md keeps calling 01 "the shape the emitter must
+/// produce". But their expected output lived in a **C comment**, so when M5a moved
+/// print's newline out of `hero_print_int` and into `hero_print_end`, spike 04's
+/// three readable lines silently collapsed to `10-42` and nothing failed. Now each
+/// one has a checked `.expected`, and the frozen ABI is checked by compiling against
+/// the current runtime rather than by remembering that it was once fine.
+#[test]
+fn the_spikes_still_compile_and_print_what_they_claim() {
+    let root = workspace_root();
+    let build = root.join("build/spikes");
+    std::fs::create_dir_all(&build).expect("a scratch directory");
+    let object = build.join("runtime.o");
+    let clang = |args: Vec<String>| -> std::process::Output {
+        std::process::Command::new("clang")
+            .current_dir(&root)
+            .args(args)
+            .output()
+            .expect("clang runs")
+    };
+    let flags: Vec<String> = ["-std=c11", "-Wall", "-Werror=return-type", "-Iruntime"]
+        .iter()
+        .map(|f| f.to_string())
+        .collect();
+    let mut compile_runtime = flags.clone();
+    compile_runtime.extend([
+        "-c".to_string(),
+        "runtime/runtime.c".to_string(),
+        "-o".to_string(),
+        object.display().to_string(),
+    ]);
+    let out = clang(compile_runtime);
+    assert!(out.status.success(), "the runtime must compile: {}", String::from_utf8_lossy(&out.stderr));
+
+    for name in ["01-first", "02-loop", "03-ffi", "04-variant"] {
+        let binary = build.join(name);
+        let mut args = flags.clone();
+        args.push(format!("tools/spike/{name}.c"));
+        args.push(object.display().to_string());
+        if name == "03-ffi" {
+            args.push("-lm".to_string());
+        }
+        args.extend(["-o".to_string(), binary.display().to_string()]);
+        let compiled = clang(args);
+        assert!(
+            compiled.status.success(),
+            "spike {name} no longer compiles against the runtime:\n{}",
+            String::from_utf8_lossy(&compiled.stderr)
+        );
+        let ran = std::process::Command::new(&binary).output().expect("the spike runs");
+        let expected_path = root.join(format!("tools/spike/{name}.expected"));
+        let expected = std::fs::read_to_string(&expected_path)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        assert_eq!(
+            String::from_utf8_lossy(&ran.stdout),
+            expected,
+            "spike {name} prints something else now"
+        );
+    }
 }

@@ -1,0 +1,12 @@
+# Three unsupported capabilities, three diagnostics, sorted by span: a message
+# that carries the list is one round trip, and three invocations is three.
+# Bulk regression case.
+
+function main()
+    print("a")              #~ str
+    #~v array
+    xs = [1, 2]
+    print(xs[0])
+    #~v f64
+    y = 2.5
+    print(y > 1.0)

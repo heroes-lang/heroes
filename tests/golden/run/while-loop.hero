@@ -1,0 +1,15 @@
+# `while` is one of the seven core constructs (design.md Part 5): a test block, a
+# body, a back edge. Three basic blocks, and the sum of the first five squares.
+# Bulk regression case.
+
+function main()
+    n: int @ 0
+    total: int @ 0
+    while n < 5
+        total @ total + n * n
+        n @ n + 1
+    print(total)
+    if total > 10
+        print(1)
+    else
+        print(0)

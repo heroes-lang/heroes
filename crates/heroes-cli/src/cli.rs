@@ -1,29 +1,38 @@
-//! The command surface, as data (panel 016).
+//! The command surface: how one argv line is read against the table (panel 016).
 //!
-//! One table describes every command: its name, whether it takes a file, which
-//! flags it accepts, and one line of help. The table is what parses argv **and**
-//! what prints `--help`, so the two cannot disagree — ripgrep's design, and the
-//! opposite of docopt's (which generated the parser *from* the help text and has
-//! not shipped a release since 2014).
+//! The table itself is `cli/table.rs` and the help text is `cli/help.rs` — one
+//! table describes every command, and it is what parses argv **and** what prints
+//! `--help`, so the two cannot disagree. That is ripgrep's design, and the opposite
+//! of docopt's, which generated the parser *from* the help text and has not shipped
+//! a release since 2014.
 //!
-//! Three properties this file exists to guarantee, each of which was a guess
-//! before it:
+//! Three properties this file exists to guarantee, each of which was a guess before
+//! it:
 //!
-//! 1. **Strict.** An unknown flag, a flag on the wrong command, a second
-//!    operand — each is an error that *names what is accepted*. The
-//!    llm-ergonomist made this a condition: a lenient shared parser would turn
-//!    `check --json` (before it existed) into prose fed to a JSON reader, and a
-//!    silent wrong answer is the one failure this project spends tokens to avoid.
+//! 1. **Strict.** An unknown flag, a flag on the wrong command, a second operand —
+//!    each is an error that *names what is accepted*. The llm-ergonomist made this a
+//!    condition: a lenient shared parser would turn `check --json` (before it
+//!    existed) into prose fed to a JSON reader, and a silent wrong answer is the one
+//!    failure this project spends tokens to avoid.
 //! 2. **One exit-code contract**, the same for every command: **0** clean · **1**
-//!    the input has diagnostics · **2** the tool could not do its job. That is
-//!    POSIX's own shape (`grep`, `diff`) and javac has shipped it since JDK 1.x.
-//! 3. **`Tag`, not a name string.** Dispatch is an exhaustive `match` on this
-//!    enum, so a table entry with no dispatch arm is a *compile* error rather
-//!    than a runtime surprise — the compiler-engineer's condition, and one this
-//!    compiler should hold itself to before it asks a language to.
+//!    diagnostics were reported and no artifact was produced · **2** the tool could
+//!    not do its job. That is POSIX's own shape (`grep`, `diff`) and javac has
+//!    shipped it since JDK 1.x. The gloss on 1 widened at M5a: an unsupported form
+//!    is a diagnostic about the *compiler*, and it exits 1 because 2 sends an agent
+//!    to reinstall its toolchain (panel 020, measured).
+//! 3. **`Tag`, not a name string.** Dispatch is an exhaustive `match` on this enum,
+//!    so a table entry with no dispatch arm is a *compile* error rather than a
+//!    runtime surprise — the compiler-engineer's condition, and one this compiler
+//!    should hold itself to before it asks a language to.
 //!
-//! The Cyclone rule shapes the types here as much as anywhere: no `&'static
-//! [Flag]` in a struct, so the table is built by a function returning owned data.
+//! The Cyclone rule shapes the types here as much as anywhere: no `&'static [Flag]`
+//! in a struct, so the table is built by a function returning owned data.
+
+mod help;
+mod table;
+
+pub use help::help;
+pub use table::commands;
 
 /// Which command was asked for. Exhaustive dispatch lives in `main.rs`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -35,6 +44,7 @@ pub enum Tag {
     Parse,
     Check,
     Build,
+    Run,
     Fmt,
     Version,
     Help,
@@ -53,6 +63,8 @@ pub enum Operand {
 pub struct Flag {
     pub spelling: String,
     pub what: String,
+    /// Whether the next argument belongs to this flag (`-o path`).
+    pub value: bool,
 }
 
 pub struct Command {
@@ -64,16 +76,19 @@ pub struct Command {
 }
 
 /// The exit-code contract, in one place. Printed in `--help`, asserted by the
-/// golden harness, and the reason a wrapper can tell "your program is wrong"
-/// from "I could not run".
+/// golden harness, and the reason a wrapper can tell "your program is wrong" from
+/// "I could not run".
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Exit {
     /// Nothing to report.
     Ok,
-    /// The input has diagnostics. The program is wrong, the tool worked.
+    /// Diagnostics were reported and no artifact was produced. The tool worked.
     Diagnostics,
     /// The tool could not do its job: an unreadable file, a bad flag, no clang.
     Failed,
+    /// `run` only: the program itself exited with this status. The program is the
+    /// artifact, so its verdict is the command's.
+    Program(u8),
 }
 
 impl Exit {
@@ -82,112 +97,27 @@ impl Exit {
             Exit::Ok => std::process::ExitCode::from(0),
             Exit::Diagnostics => std::process::ExitCode::from(1),
             Exit::Failed => std::process::ExitCode::from(2),
+            Exit::Program(status) => std::process::ExitCode::from(status),
         }
     }
-}
-
-fn flag(spelling: &str, what: &str) -> Flag {
-    Flag { spelling: spelling.to_string(), what: what.to_string() }
-}
-
-/// Every command, in the order `--help` prints them: the pipeline in stage
-/// order, then the tools.
-///
-/// The `--dump-<stage>` spellings are design.md §3.5's own ("Inspection is flags
-/// … **not subcommands**"), which the code had drifted from — `lex` used to print
-/// its tokens by default and take `--json` as the only flag, so "which stages
-/// print without being asked" was a table you had to memorise.
-pub fn commands() -> Vec<Command> {
-    vec![
-        Command {
-            tag: Tag::Lex,
-            name: "lex".to_string(),
-            operand: Operand::File,
-            flags: vec![
-                flag("--dump-tokens", "print the token stream"),
-                flag("--json", "print it as JSON instead of text"),
-            ],
-            summary: "check the token stream".to_string(),
-        },
-        Command {
-            tag: Tag::Parse,
-            name: "parse".to_string(),
-            operand: Operand::File,
-            flags: vec![flag("--dump-ast", "print the syntax tree")],
-            summary: "check the syntax".to_string(),
-        },
-        Command {
-            tag: Tag::Check,
-            name: "check".to_string(),
-            operand: Operand::File,
-            flags: vec![
-                flag("--dump-scopes", "print the symbols and every binding"),
-                flag("--json", "print the diagnostics as JSON (schema 1) instead of text"),
-                flag("--brief", "one line per diagnostic instead of the full form"),
-                flag(
-                    "--permissive",
-                    "drop the diagnostics that exist for the thesis — the control arm of Part 11's measurement",
-                ),
-                flag("--apply", "print the program with every certain fix applied"),
-                flag("--in-place", "with --apply, rewrite the file instead of printing it"),
-            ],
-            summary: "check names and types".to_string(),
-        },
-        Command {
-            tag: Tag::Build,
-            name: "build".to_string(),
-            operand: Operand::File,
-            flags: vec![flag("--dump-ir", "print the lowered three-address IR")],
-            summary: "lower to the IR (code generation lands at M5a)".to_string(),
-        },
-        Command {
-            tag: Tag::Fmt,
-            name: "fmt".to_string(),
-            operand: Operand::File,
-            flags: vec![flag(
-                "--in-place",
-                "rewrite the file instead of printing it; prints nothing, and refuses a file it cannot parse",
-            )],
-            summary: "print the canonical form".to_string(),
-        },
-        Command {
-            tag: Tag::Doctor,
-            name: "doctor".to_string(),
-            operand: Operand::None,
-            flags: Vec::new(),
-            summary: "check the toolchain (clang, CLT, arch, cache)".to_string(),
-        },
-        Command {
-            tag: Tag::Mutate,
-            name: "mutate".to_string(),
-            operand: Operand::Optional,
-            flags: Vec::new(),
-            summary:
-                "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)"
-                    .to_string(),
-        },
-        Command {
-            tag: Tag::Measure,
-            name: "measure".to_string(),
-            operand: Operand::Optional,
-            flags: Vec::new(),
-            summary: "count a spec file against its ceiling (default: spec/heroes-spec.md)"
-                .to_string(),
-        },
-    ]
 }
 
 /// What a command line turned out to mean.
 pub struct Invocation {
     pub tag: Tag,
     pub file: Option<String>,
-    /// The flags that were present, in the order the table lists them.
-    flags: Vec<String>,
+    /// The flags that were present, in the order the table lists them, each with
+    /// its value if it takes one.
+    flags: Vec<(String, Option<String>)>,
 }
 
 impl Invocation {
     pub fn has(&self, spelling: &str) -> bool {
-        self.flags.iter().any(|f| f == spelling)
+        self.flags.iter().any(|(f, _)| f == spelling)
+    }
+
+    pub fn value_of(&self, spelling: &str) -> Option<String> {
+        self.flags.iter().find(|(f, _)| f == spelling).and_then(|(_, v)| v.clone())
     }
 }
 
@@ -207,30 +137,39 @@ pub fn parse(args: &[String]) -> Result<Invocation, String> {
         }
         _ => {}
     }
-    let table = commands();
-    let Some(command) = table.iter().find(|c| c.name == *word) else {
-        // A retired spelling names its replacement, which is the same treatment
-        // the *language* gives a foreign keyword (`fn` → `function`).
-        if let Some(replacement) = retired(word) {
+    let commands = commands();
+    let Some(command) = commands.iter().find(|c| c.name == *word) else {
+        if let Some(replacement) = table::retired(word) {
             return Err(format!("`{word}` is no longer a command — use `{replacement}`"));
         }
-        let names: Vec<String> = table.iter().map(|c| c.name.clone()).collect();
-        return Err(format!(
-            "unknown command `{word}` — the commands are {}",
-            names.join(", ")
-        ));
+        let names: Vec<String> = commands.iter().map(|c| c.name.clone()).collect();
+        return Err(format!("unknown command `{word}` — the commands are {}", names.join(", ")));
     };
     let mut file: Option<String> = None;
-    let mut flags: Vec<String> = Vec::new();
-    for arg in &args[1..] {
+    let mut flags: Vec<(String, Option<String>)> = Vec::new();
+    let mut rest = args[1..].iter();
+    while let Some(arg) = rest.next() {
         if arg.starts_with('-') {
             if let Some(known) = command.flags.iter().find(|f| f.spelling == *arg) {
-                if !flags.contains(&known.spelling) {
-                    flags.push(known.spelling.clone());
+                let value = if known.value {
+                    match rest.next() {
+                        Some(next) if !next.starts_with('-') => Some(next.clone()),
+                        _ => {
+                            return Err(format!(
+                                "`{arg}` needs a path: `heroes {} <file.hero> {arg} <path>`",
+                                command.name
+                            ))
+                        }
+                    }
+                } else {
+                    None
+                };
+                if !flags.iter().any(|(f, _)| *f == known.spelling) {
+                    flags.push((known.spelling.clone(), value));
                 }
                 continue;
             }
-            if let Some(replacement) = retired_flag(&command.name, arg) {
+            if let Some(replacement) = table::retired_flag(&command.name, arg) {
                 return Err(format!(
                     "`{arg}` is no longer a flag of `{}` — use `{replacement}`",
                     command.name
@@ -247,7 +186,10 @@ pub fn parse(args: &[String]) -> Result<Invocation, String> {
         file = Some(arg.clone());
     }
     if command.operand == Operand::File && file.is_none() {
-        return Err(format!("`{}` needs a file: `heroes {} <file.hero>`", command.name, command.name));
+        return Err(format!(
+            "`{}` needs a file: `heroes {} <file.hero>`",
+            command.name, command.name
+        ));
     }
     Ok(Invocation { tag: command.tag, file, flags })
 }
@@ -258,52 +200,6 @@ fn unknown_flag(command: &Command, arg: &str) -> String {
     if command.flags.is_empty() {
         return format!("`{}` takes no flags, and `{arg}` was given", command.name);
     }
-    let accepted: Vec<String> =
-        command.flags.iter().map(|f| f.spelling.clone()).collect();
-    format!(
-        "`{}` does not accept `{arg}` — it accepts {}",
-        command.name,
-        accepted.join(", ")
-    )
-}
-
-fn retired(word: &str) -> Option<&'static str> {
-    match word {
-        // `build` arrived at M4 — earlier than this table said, because the ROADMAP
-        // gives it `--dump-ir` there and the fixpoint invocation types the verb.
-        "run" => Some("build` for now (`run` lands at M5a"),
-        _ => None,
-    }
-}
-
-/// `--write` shipped from M2 to M3; panel 016 renamed it because "write" is read
-/// as "write the output somewhere", i.e. the *non*-destructive meaning, which
-/// makes the plausible misreading the one that overwrites a file.
-fn retired_flag(command: &str, arg: &str) -> Option<&'static str> {
-    match (command, arg) {
-        ("fmt", "--write") | ("fmt", "-w") => Some("--in-place"),
-        ("lex", "--tokens") => Some("--dump-tokens"),
-        _ => None,
-    }
-}
-
-/// `heroes --help`: the table, plus the contract. The exit codes are here
-/// because a wrapper script has nowhere else to read them.
-pub fn help() -> String {
-    let mut out = String::from("heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n");
-    for command in commands() {
-        let operand = match command.operand {
-            Operand::None => "",
-            Operand::File => " <file.hero>",
-            Operand::Optional => " [file]",
-        };
-        out.push_str(&format!("  {}{}\n      {}\n", command.name, operand, command.summary));
-        for flag in &command.flags {
-            out.push_str(&format!("      {}  {}\n", flag.spelling, flag.what));
-        }
-    }
-    out.push_str(
-        "\n  --version · --help\n\nstreams: the artifact on stdout, diagnostics and progress on stderr.\nexit:    0 nothing to report · 1 the input has diagnostics · 2 the tool could not run.\n\nMore commands arrive with each milestone: run (M5a) · test (M6)\nlsp outline explain (M6+) · cc doc (M7)\n",
-    );
-    out
+    let accepted: Vec<String> = command.flags.iter().map(|f| f.spelling.clone()).collect();
+    format!("`{}` does not accept `{arg}` — it accepts {}", command.name, accepted.join(", "))
 }

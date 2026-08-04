@@ -1,0 +1,12 @@
+# The ffi-pragmatist's veto, as a golden. §4.19's guarantee is that clang checks
+# an `extern` signature against the real header — and there is no header
+# attachment yet, so an emitted prototype would be self-consistent by
+# construction and verified by nothing. Measured: `abs(-2147483649)` returns
+# 2147483647 at exit 0, and `sqlite3_open` is accepted in total silence under
+# `-Weverything -pedantic`.
+# Bulk regression case.
+
+extern function labs(x: int) -> int     #~ extern
+
+function main()
+    print(labs(0 - 3))

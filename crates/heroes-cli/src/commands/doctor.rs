@@ -49,6 +49,23 @@ pub fn run() -> Exit {
         detail: std::env::consts::ARCH.to_string(),
     });
 
+    // The runtime — found by searching, so `doctor` is the place that says which of
+    // the three candidates won. It is also the only place `$HEROES_RUNTIME` is
+    // visible, being an input channel outside the argv table (CLAUDE.md §10).
+    let runtime = crate::commands::toolchain::Toolchain::find();
+    checks.push(match &runtime {
+        Ok(found) => Check {
+            name: "runtime",
+            ok: true,
+            detail: format!("{}", found.runtime.display()),
+        },
+        Err(message) => Check {
+            name: "runtime",
+            ok: false,
+            detail: message.lines().next().unwrap_or("not found").to_string(),
+        },
+    });
+
     // build/ cache — must be creatable and writable.
     let cache_ok = std::fs::create_dir_all("build")
         .and_then(|_| {

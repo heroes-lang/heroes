@@ -1,4 +1,5 @@
 pub mod build;
+pub mod compile;
 pub mod check;
 pub mod doctor;
 pub mod fmt;
@@ -6,3 +7,5 @@ pub mod lex;
 pub mod measure;
 pub mod mutate;
 pub mod parse;
+pub mod run;
+pub mod toolchain;

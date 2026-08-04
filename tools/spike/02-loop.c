@@ -65,5 +65,6 @@ bb2: /* loop body */
 
 bb3: /* after the loop */
     hero_print_int(total);
+    hero_print_end();
     return 0;
 }

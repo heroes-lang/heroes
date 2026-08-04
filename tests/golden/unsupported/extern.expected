@@ -1,0 +1,7 @@
+unsupported[extern]: an `extern` function is not emitted yet
+  at tests/golden/unsupported/extern.hero:9:1
+    |
+  9 | extern function labs(x: int) -> int     #~ extern
+    | ^
+  note: no change to this file will fix this
+  note: the backend emits `int`, `bool`, `if`, `while`, functions and `print`
