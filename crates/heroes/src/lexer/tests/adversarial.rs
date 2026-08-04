@@ -1,13 +1,20 @@
-//! M1's five adversarial cases (ROADMAP). They live here until the golden
-//! runner executes check/ cases through the CLI, then move there.
+//! M1's five adversarial cases (ROADMAP) — written to *break* the lexer,
+//! not to exercise it. Ratified by the author in the debrief of 2026-08-04;
+//! what each one guards against is stated on the case itself.
 //!
-//! # UNVERIFIED — pending debrief: the author has not yet said what each
-//! case guards against (docs/debrief/QUEUE.md).
+//! They all defend one bet: **in Heroes, whitespace carries meaning**, so
+//! every "nearly right" margin must be an error rather than an
+//! interpretation (design.md §4.15). A language where indentation is
+//! structural and ambiguity is tolerated is a language where the same file
+//! means different programs on different screens.
 
 use super::dump;
 
 #[test]
 fn adversarial_tab_in_indentation() {
+    // Guards: a tab in the margin LOOKS like an indent but its width is an
+    // editor setting, so the same file would mean different programs on
+    // different screens. Structure may never depend on display.
     assert_eq!(
         dump("\tx = 1\n"),
         "\
@@ -23,6 +30,9 @@ DIAG test.hero:1:1: error[tab_in_indentation]: a tab in indentation is a compile
 
 #[test]
 fn adversarial_five_space_indent() {
+    // Guards: "nearly right" indentation. Four spaces is the only legal
+    // step — five is not slightly crooked, it is wrong. This is the whole
+    // rigid-indentation bet in one case.
     assert_eq!(
         dump("f = function: ()\n     x\n"),
         "\
@@ -43,6 +53,10 @@ DIAG test.hero:2:1: error[indentation_not_multiple_of_4]: indentation must be ex
 
 #[test]
 fn adversarial_indentation_jump() {
+    // Guards: the recovery invariant. Opening two levels at once is an
+    // error, but the lexer must still hand the parser a coherent structure
+    // (two indents, later two dedents) instead of a truncated file — one
+    // bad margin must not hide every error after it.
     assert_eq!(
         dump("f = function: ()\n        x\n"),
         "\
@@ -67,6 +81,9 @@ DIAG test.hero:2:1: error[indentation_jump]: indentation jumps from level 0 to l
 
 #[test]
 fn adversarial_tab_between_tokens() {
+    // Guards: the tab rule being only half a rule. If tabs were rejected
+    // in the margin but tolerated between tokens, "spaces only" would be a
+    // claim the compiler does not actually keep.
     assert_eq!(
         dump("x =\t1\n"),
         "\
@@ -82,8 +99,11 @@ DIAG test.hero:1:4: error[tab_in_line]: a tab is a compile error — use spaces
 
 #[test]
 fn adversarial_single_ampersand_is_not_a_token() {
-    // design.md §4.14 reserves single `&` for future bitwise use; the
-    // boolean operator is `&&`.
+    // Guards: the reserved-operator boundary. design.md §4.14 reserves
+    // `&` for future bitwise use, so it must never quietly lex as
+    // something else — and this is also the proof that an unknown
+    // character costs exactly one skipped character, not the rest of the
+    // file.
     assert_eq!(
         dump("x = 1 & 2\n"),
         "\

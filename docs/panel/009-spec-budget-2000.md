@@ -66,11 +66,12 @@ mainstream languages install the reference model. Recorded as an open
 question (below); the ergonomist's proposed fix is not spec prose but a
 compile error on repeated `@` arguments.
 
-## Resolution — governance, adopted provisionally
+## Resolution — governance, RATIFIED by the author 2026-08-04
 
 The number is the author's; the rules that keep it meaningful are the
-panel's. Adopted as put by the warden, `provisional — author ratification
-pending` (queued in `docs/debrief/QUEUE.md`):
+panel's. Ratified in full, as put by the warden, in the debrief of
+2026-08-04 — including rule 3, which is the one with teeth: the raise is
+already almost entirely committed before anything new is written.
 
 1. **Measured-only.** From M3 the budget is a measured number
    (`heroes measure`, Anthropic `count_tokens`). No estimate may authorise a
