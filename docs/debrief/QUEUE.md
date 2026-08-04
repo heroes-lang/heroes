@@ -47,6 +47,9 @@ queue is also the record). Format:
 - [ ] M2.3 | `x = 2 + (3 * 4)` formats to `x = 2 + 3 * 4`, but `x = a - (b - c)` keeps its parentheses. What is the rule, in one sentence? | crates/heroes/src/printer/fmt_expr.rs (wrapped) | associativity is the half of the precedence table nobody writes down
 - [ ] M2.3 | `# Just a remark.` + blank line + a declaration. Why is the formatter forbidden from closing that gap? | crates/heroes/src/printer/tests.rs (a_blank_line_between_comment_and_declaration_is_preserved), §4.1 | in this language whitespace carries meaning twice: indentation, and this
 
+- [ ] panel? M2.4 | Should the parser run at all after a *layout* error? A wrong margin makes the block structure untrustworthy: `indentation.hero` shows 2 mistakes producing 5 diagnostics, 3 of them consequences | tests/golden/check/indentation.expected, docs/journal/002-parser.md §4 | the cascade is measured now, so the question has a number instead of an opinion
+- [ ] M2 close | Milestone debrief offers, all optional: walkthrough (tokens → tree → text, the two renderings and why both exist) · ratify the 5 adversarial cases (`fn` both positions, depth-zero continuation, braces as a block, signature without `:`, trailing comma) · mutation drill (break one line of `expr.rs`'s precedence table and predict which test fails) · exit-quiz (re-implement `wrapped` in fmt_expr.rs, or the three-line-shapes lookahead, on a throwaway branch) | /debrief | the author's call, when and how much
+
 ## Covered
 
 - 2026-08-04 — Ratified panels 010 (repeated `@` arguments are a compile error), 011 (offline measurement, metric 3 primary but never pooled, metric 2 via local model or paced sampling) and 012's carry-forward governance.

@@ -9,14 +9,18 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**Status: M1 closed 2026-08-04, tag `m1` — every deliverable including the
-TextMate bonus; journal 001; panels 007/008 settled terminators and escapes;
-golden `check/` cases execute through the binary; 32 tests green.
-M0 closed 2026-08-03, retro-tagged `m0`.
-Next: M2, step 1 (parser scaffold). Nothing blocks it. Panels 007–012 are
-all ratified; `heroes measure` landed early (it was scheduled for M3d) and
-the spec now measures 1989/2048 against a 3000 ceiling. Only 007-bis and
-the metric-2 protocol still wait on a measurement run.**
+**Status: M2 closed 2026-08-04, tag `m2` — parser, tree, `--dump-ast` and the
+canonical formatter; panel 013 settled the function type's marker
+(`(function(A, B) -> C)`, `fn` stays an error everywhere). The 317-line
+acceptance program in design.md's appendix parses clean, formats idempotently
+and its tree survives formatting. Golden `check/` now runs through `parse`;
+104 crate tests + 8 golden cases, 5 of them adversarial.
+M1 closed 2026-08-04 tag `m1`; M0 closed 2026-08-03, retro-tagged `m0`.
+Next: M3a, step 1 (resolver — scopes, no shadowing, unused with the `???`
+exemption, order-free top level). Nothing blocks it. Queued design questions
+from M2, none blocking: may a `match` arm's body be a statement; should the
+parser run after a layout error (2 mistakes → 5 diagnostics today); the
+registry's reserved words are unusable as identifiers.**
 
 ## The chain
 
@@ -43,11 +47,19 @@ reserved words and unknown escapes scoped `invalid.illegal`, so the thesis
 shows up while you type.
 **Runnable:** `heroes lex examples/first.hero --json`.
 
-### M2 — Parser, AST, pretty printer
-Four entities, `=`/`@`, precedence table, `???` as an AST node,
-reserved-word errors with pre-written fixes. Pretty printer immediately
-(formatter + error renderer). `heroes parse --dump-ast`, `heroes fmt`.
-**Runnable:** round-trip parse→print on the examples.
+### M2 — Parser, AST, pretty printer ✅ (2026-08-04, tag `m2`)
+Four entities plus `extern` and `test`, `=`/`@`, the §4.14 precedence table,
+`???` as an AST node, the type grammar (function type per panel 013), `if` and
+`match` as expressions, patterns. Two renderings of one tree: `--dump-ast`
+prints every parenthesis, `heroes fmt` prints the fewest — comparing the two
+is what proves the formatter preserved meaning. Formatter policies in
+DESIGN-LOG (minimal parens, 88 columns inside brackets only, blank lines as
+content). Recovery landmarks: brackets and lines, the two things the language
+cannot lie about.
+**Runnable:** `heroes parse examples/first.hero --dump-ast` ·
+`heroes fmt examples/first.hero` (already canonical) · the appendix acceptance
+program parses clean and formats idempotently (pinned by tests that read
+design.md, so the appendix stays its single source).
 
 ### M3 — split in four (each with its own runnable artifact)
 - **M3a — Resolver:** scopes, no shadowing, unused (with the `???`
