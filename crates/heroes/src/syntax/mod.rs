@@ -49,13 +49,17 @@ pub use ast::{
 };
 
 use crate::diagnostics::Diagnostic;
-use crate::lexer::lex;
-use crate::source::Source;
+use crate::lexer::{lex, TokenKind};
+use crate::source::{Source, Span};
 
 use cursor::Cursor;
 
 pub struct ParseOutput {
     pub ast: Ast,
+    /// Every comment in the file, in source order. The tree keeps only the
+    /// ones that are *documentation* (§4.1); `heroes fmt` needs all of them,
+    /// because a formatter that drops a comment is a formatter nobody runs.
+    pub comments: Vec<Span>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
@@ -69,10 +73,16 @@ pub struct ParseOutput {
 /// caused it read better together than interleaved by column.
 pub fn parse(src: &Source) -> ParseOutput {
     let lexed = lex(src);
+    let comments: Vec<Span> = lexed
+        .tokens
+        .iter()
+        .filter(|token| token.kind == TokenKind::Comment)
+        .map(|token| token.span)
+        .collect();
     let mut cur = Cursor::new(lexed.tokens);
     let mut ast = Ast::default();
     decl::file(&mut cur, &mut ast, src);
     let mut diagnostics = lexed.diagnostics;
     diagnostics.append(&mut cur.diagnostics);
-    ParseOutput { ast, diagnostics }
+    ParseOutput { ast, comments, diagnostics }
 }

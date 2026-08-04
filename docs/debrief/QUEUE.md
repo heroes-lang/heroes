@@ -43,6 +43,10 @@ queue is also the record). Format:
 - [ ] M2.2 | Three line shapes start with a name: `x = 5`, `v: int @ 0`, `v @ v + 1`. How many tokens of lookahead tell them apart, and which token is it in each case? | crates/heroes/src/syntax/stmt.rs (module doc, statement) | §4.4 designed the surface so this is decidable without scanning the block
 - [ ] M2.2 | `if` is an expression (§4.7). In the dump of `state = if t.done …`, what appears on the `bind` line, and where do the branches go? | crates/heroes/src/printer/bodies.rs (write_valued), tests/bodies.rs | one rule seen in two places is the claim; the printer is where it either holds or does not
 
+- [ ] M2.3 | `heroes fmt` is idempotent AND tree-preserving. Which of the two would a formatter that deletes every comment still pass? | crates/heroes/src/printer/tests.rs (assert_canonical) | the two properties are not the same property, and only one of them is about the reader
+- [ ] M2.3 | `x = 2 + (3 * 4)` formats to `x = 2 + 3 * 4`, but `x = a - (b - c)` keeps its parentheses. What is the rule, in one sentence? | crates/heroes/src/printer/fmt_expr.rs (wrapped) | associativity is the half of the precedence table nobody writes down
+- [ ] M2.3 | `# Just a remark.` + blank line + a declaration. Why is the formatter forbidden from closing that gap? | crates/heroes/src/printer/tests.rs (a_blank_line_between_comment_and_declaration_is_preserved), §4.1 | in this language whitespace carries meaning twice: indentation, and this
+
 ## Covered
 
 - 2026-08-04 — Ratified panels 010 (repeated `@` arguments are a compile error), 011 (offline measurement, metric 3 primary but never pooled, metric 2 via local model or paced sampling) and 012's carry-forward governance.

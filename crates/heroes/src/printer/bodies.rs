@@ -123,7 +123,7 @@ fn write_valued(
                 let patterns: Vec<String> = arm
                     .patterns
                     .iter()
-                    .map(|pattern| render_pattern(ast, src, pattern))
+                    .map(|pattern| render_pattern_public(ast, src, pattern))
                     .collect();
                 let left = patterns.join(" | ");
                 match &arm.body {
@@ -142,7 +142,7 @@ fn write_valued(
     }
 }
 
-fn render_pattern(ast: &Ast, src: &Source, pattern: &crate::syntax::Pattern) -> String {
+pub(super) fn render_pattern_public(ast: &Ast, src: &Source, pattern: &crate::syntax::Pattern) -> String {
     match &pattern.kind {
         crate::syntax::PatternKind::Case { name, binding } => match binding {
             Some(binding) => format!(".{} {}", src.slice(*name), src.slice(*binding)),

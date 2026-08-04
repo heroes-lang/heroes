@@ -9,14 +9,25 @@
 //! | `types.rs`  | a type in surface syntax — the piece diagnostics need first |
 //! | `bodies.rs` | statements and expressions, the latter fully parenthesised |
 //! | `dump.rs`   | `--dump-ast`: the tree seen, one node per line |
+//! | `fmt.rs`      | `heroes fmt`: declarations, comments, blank lines |
+//! | `fmt_stmt.rs` | its statement half, including where a long line breaks |
+//! | `fmt_expr.rs` | expressions with the *minimum* parentheses |
 //!
-//! `heroes fmt` — whole declarations in canonical form — lands in M2 step 4
-//! beside these.
+//! Two renderings of the same tree, on purpose. The dump answers "what did
+//! the parser understand?" and parenthesises everything; `fmt` answers "how
+//! is this program written?" and parenthesises nothing it does not have to.
+
+#[cfg(test)]
+mod tests;
 
 mod bodies;
 mod dump;
+mod fmt;
+mod fmt_expr;
+mod fmt_stmt;
 mod types;
 
 pub use bodies::render_expr;
 pub use dump::dump_ast;
+pub use fmt::format_file;
 pub use types::render_type;
