@@ -1,0 +1,16 @@
+function double(n: int) -> int
+    bb0  entry
+        $t1: int = load n
+        $t2: int = const 2
+        $t3: int = mul! $t1, $t2
+        return $t3
+
+function main()
+    bb0  entry
+        $t1: int = const 1
+        $t2: int = const 2
+        $t3: [int] = construct array($t1, $t2)
+        $t4: int = call builtin len($t3)
+        $t5: int = call heroes double($t4)
+        call builtin print($t5) variadic
+        return

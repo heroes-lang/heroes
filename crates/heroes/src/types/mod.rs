@@ -82,6 +82,10 @@ pub struct Checked {
     pub local_types: Vec<TyId>,
     /// Each function declaration's result type, by index into `Ast::decls`.
     pub results: std::collections::BTreeMap<u32, TyId>,
+    /// Every *written* type, by its node in `Ast::types`. The one table that answers
+    /// "what did the author write here" without a local to hang it on — which is
+    /// what an `extern`'s parameters need (§4.19: no body, so no locals).
+    pub written_types: std::collections::BTreeMap<u32, TyId>,
     /// The type of every expression, dense over `Ast::exprs`. A diverging or
     /// unreported-error expression carries `Types::error()`.
     pub expr_types: Vec<TyId>,
@@ -102,6 +106,11 @@ impl Checked {
     /// not one. `holes.rs` ranks suggestions by it.
     pub fn result_type(&self, decl: u32) -> Option<TyId> {
         self.results.get(&decl).copied()
+    }
+
+    /// The type a written type node resolved to.
+    pub fn written_type(&self, id: crate::syntax::TypeId) -> Option<TyId> {
+        self.written_types.get(&id.0).copied()
     }
 }
 
@@ -128,6 +137,7 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
             types,
             local_types,
             results: std::collections::BTreeMap::new(),
+            written_types: std::collections::BTreeMap::new(),
             expr_types: Vec::new(),
             holes: Vec::new(),
             diagnostics: Vec::new(),

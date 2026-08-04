@@ -1,0 +1,39 @@
+strings
+    0  "a"
+    1  "b"
+    2  "c"
+
+function loud(tag: str, answer: bool) -> bool
+    bb0  entry
+        $t1: str = load tag
+        call builtin print($t1) variadic
+        $t2: bool = load answer
+        return $t2
+
+function decide(a: bool, b: bool, c: bool) -> bool
+    slots  $b0: bool · $b1: bool
+    bb0  entry
+        $t1: str = const str 0
+        $t2: bool = load a
+        $t3: bool = call heroes loud($t1, $t2)
+        store $b1 <- $t3
+        branch $t3 -> bb1 else bb2
+    bb1  &&: right    preds bb0
+        $t4: str = const str 1
+        $t5: bool = load b
+        $t6: bool = call heroes loud($t4, $t5)
+        store $b1 <- $t6
+        jump bb2
+    bb2  &&: join    preds bb0, bb1
+        $t7: bool = load $b1
+        store $b0 <- $t7
+        branch $t7 -> bb4 else bb3
+    bb3  ||: right    preds bb2
+        $t8: str = const str 2
+        $t9: bool = load c
+        $t10: bool = call heroes loud($t8, $t9)
+        store $b0 <- $t10
+        jump bb4
+    bb4  ||: join    preds bb2, bb3
+        $t11: bool = load $b0
+        return $t11

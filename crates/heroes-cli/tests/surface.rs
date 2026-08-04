@@ -248,3 +248,68 @@ fn a_hole_is_reported_on_stdout_and_the_exit_code_stays_zero() {
     assert!(shown.contains("in scope:"), "{shown}");
     assert!(shown.contains("entries: [Entry]"), "{shown}");
 }
+
+/// `heroes build` with no flag **says what it did**, and this is the whole point of
+/// the test rather than a nicety.
+///
+/// The spec-warden vetoed a silent exit-0 `build` in panel 019, quoting panel 016's
+/// own watch list: "`check` is not `build` … a model runs `heroes check` and reports
+/// success for a program that has no backend yet". A `build` that produced nothing
+/// without saying so would have promoted that misreading into the tool's behaviour.
+#[test]
+fn build_with_no_flag_says_what_it_did_and_what_does_not_exist_yet() {
+    let out = heroes(&["build", "examples/first.hero"]);
+    assert_eq!(code(&out), 0);
+    assert!(out.stdout.is_empty(), "no artifact was asked for");
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(said.contains("lowered"), "{said}");
+    assert!(said.contains("--dump-ir"), "it names the flag that shows the work: {said}");
+    assert!(said.contains("M5a"), "it names the milestone code generation waits for: {said}");
+}
+
+/// `--dump-ir` puts the IR on stdout and leaves stderr alone: panel 016's stream
+/// contract, so a wrapper can pipe one without the other.
+#[test]
+fn build_dumps_the_ir_on_stdout() {
+    let out = heroes(&["build", "examples/first.hero", "--dump-ir"]);
+    assert_eq!(code(&out), 0);
+    let ir = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(ir.starts_with("function main()"), "{ir}");
+    assert!(ir.contains("bb0"), "{ir}");
+    assert!(out.stderr.is_empty(), "the summary makes way for the artifact");
+}
+
+/// The three exit codes again, for the new verb. A program with diagnostics never
+/// reaches lowering — the stages are ordered, each running only on the one before it
+/// having said nothing.
+#[test]
+fn build_honours_the_exit_code_contract() {
+    assert_eq!(code(&heroes(&["build", "examples/gallery/01-points.hero"])), 0);
+    assert_eq!(code(&heroes(&["build", "tests/golden/check/shadowing.hero"])), 1);
+    assert_eq!(code(&heroes(&["build", "no/such/file.hero"])), 2);
+    assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/first.hero"])), 2);
+}
+
+/// `run` is still retired and now points at `build` rather than at `check`: a
+/// retired spelling names its replacement, which is the same treatment the
+/// *language* gives a foreign keyword (`fn` → `function`).
+#[test]
+fn the_retired_run_spelling_now_points_at_build() {
+    let out = heroes(&["run", "examples/first.hero"]);
+    assert_eq!(code(&out), 2);
+    let message = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(message.contains("`run` is no longer a command"), "{message}");
+    assert!(message.contains("build"), "{message}");
+}
+
+/// §4.16: a file with a hole is not wrong. It lowers, the compiler says what belongs
+/// in the gaps, and the summary carries the one sentence that matters — no binary can
+/// come of it. Panel 019 recorded this as decided-by-default and queued it.
+#[test]
+fn a_hole_lowers_and_the_summary_says_no_binary() {
+    let out = heroes(&["build", "examples/gallery/09-holes.hero"]);
+    assert_eq!(code(&out), 0, "a hole is not an error");
+    assert!(!out.stdout.is_empty(), "the hole report is the artifact");
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(said.contains("no binary while the file has holes"), "{said}");
+}

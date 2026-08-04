@@ -1,0 +1,20 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for §4.8's hardest sentence: "copy-out happens always,
+# including on early return and `?`". This function has three exit edges — the
+# `?`'s error side, the early `return`, and the tail — and every one of them
+# owes `@r` a copy-out. Missing the one on the `?` edge would lose the caller's
+# mutation only on the failing path, which is the shape of bug that ships.
+record Reader
+    pos: int
+
+function parsed(s: str) -> int?
+    if s.len() == 0
+        return fail("empty", "nothing to parse")
+    return ok(s.len())
+
+function advance_over(@r: Reader, s: str) -> int?
+    n = parsed(s)?
+    if n == 0
+        return ok(0)
+    r.pos @ r.pos + n
+    return ok(n)

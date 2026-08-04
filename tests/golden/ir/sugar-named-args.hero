@@ -1,0 +1,16 @@
+# Part 5, rows 10 and 11: named arguments become positional, and a record
+# construction is one instruction. The first of those costs zero lines — a
+# label in Heroes never reorders anything, it annotates the position it is
+# written at (§4.9), so erasing it means not carrying it.
+record Point
+    x: int
+    y: int
+
+function moved(p: Point, by: int) -> Point
+    return Point(x: p.x + by, y: p.y)
+
+function copy_between(from: int, to: int) -> int
+    return to - from
+
+function main()
+    print(copy_between(from: 1, to: 4))

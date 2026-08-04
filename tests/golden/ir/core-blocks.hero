@@ -1,0 +1,21 @@
+# Not sugar — the core (Part 5's seven constructs): a `while` loop, `break`,
+# `continue`, and a `match` over literals, which lowers to a chain of
+# comparisons rather than a switch because exhaustiveness over `int` is
+# impossible and `_` is what closes it.
+function first_even_after(xs: [int], floor: int) -> int
+    i: int @ 0
+    while i < xs.len()
+        v = xs[i]
+        i @ i + 1
+        if v <= floor
+            continue
+        if v % 2 == 0
+            return v
+        break
+    return 0 - 1
+
+function named(n: int) -> str
+    return match n
+        0 => "zero"
+        1 => "one"
+        _ => "many"

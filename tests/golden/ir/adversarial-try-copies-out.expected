@@ -1,0 +1,66 @@
+strings
+    0  "empty"
+    1  "nothing to parse"
+
+function parsed(s: str) -> int?
+    bb0  entry
+        $t1: str = load s
+        $t2: int = call builtin len($t1)
+        $t3: int = const 0
+        $t4: bool = eq $t2, $t3
+        branch $t4 -> bb2 else bb3
+    bb1  if: join    preds bb3
+        $t8: str = load s
+        $t9: int = call builtin len($t8)
+        $t10: int? = construct ok($t9)
+        return $t10
+    bb2  if: then    preds bb0
+        $t5: str = const str 0
+        $t6: str = const str 1
+        $t7: int? = construct fail($t5, $t6)
+        return $t7
+    bb3  if: else    preds bb0
+        jump bb1
+
+function advance_over(@r: Reader, s: str) -> int?
+    slots  $f0: int? · n: int
+    bb0  entry
+        $t1: str = load s
+        $t2: int? = call heroes parsed($t1)
+        store $f0 <- $t2
+        $t3: int? = load $f0
+        $t4: int = tag $t3
+        $t5: int = const 0
+        $t6: bool = eq $t4, $t5
+        branch $t6 -> bb1 else bb2
+    bb1  ?: ok    preds bb0
+        $t10: int? = load $f0
+        $t11: int = payload $t10 .ok
+        store n <- $t11
+        $t12: int = load n
+        $t13: int = const 0
+        $t14: bool = eq $t12, $t13
+        branch $t14 -> bb4 else bb5
+    bb2  ?: propagate    preds bb0
+        $t7: int? = load $f0
+        $t8: the error (`code`, `msg`) = payload $t7 .err
+        $t9: int? = construct err($t8)
+        copyout r
+        return $t9
+    bb3  if: join    preds bb5
+        $t17: Reader = load r
+        $t18: int = field $t17.pos
+        $t19: int = load n
+        $t20: int = add! $t18, $t19
+        store r.pos <- $t20
+        $t21: int = load n
+        $t22: int? = construct ok($t21)
+        copyout r
+        return $t22
+    bb4  if: then    preds bb1
+        $t15: int = const 0
+        $t16: int? = construct ok($t15)
+        copyout r
+        return $t16
+    bb5  if: else    preds bb1
+        jump bb3

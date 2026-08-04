@@ -34,6 +34,7 @@ pub enum Tag {
     Mutate,
     Parse,
     Check,
+    Build,
     Fmt,
     Version,
     Help,
@@ -131,6 +132,13 @@ pub fn commands() -> Vec<Command> {
                 flag("--in-place", "with --apply, rewrite the file instead of printing it"),
             ],
             summary: "check names and types".to_string(),
+        },
+        Command {
+            tag: Tag::Build,
+            name: "build".to_string(),
+            operand: Operand::File,
+            flags: vec![flag("--dump-ir", "print the lowered three-address IR")],
+            summary: "lower to the IR (code generation lands at M5a)".to_string(),
         },
         Command {
             tag: Tag::Fmt,
@@ -261,7 +269,9 @@ fn unknown_flag(command: &Command, arg: &str) -> String {
 
 fn retired(word: &str) -> Option<&'static str> {
     match word {
-        "build" | "run" => Some("check` for now (`build` and `run` land at M5"),
+        // `build` arrived at M4 — earlier than this table said, because the ROADMAP
+        // gives it `--dump-ir` there and the fixpoint invocation types the verb.
+        "run" => Some("build` for now (`run` lands at M5a"),
         _ => None,
     }
 }
@@ -293,7 +303,7 @@ pub fn help() -> String {
         }
     }
     out.push_str(
-        "\n  --version · --help\n\nstreams: the artifact on stdout, diagnostics and progress on stderr.\nexit:    0 nothing to report · 1 the input has diagnostics · 2 the tool could not run.\n\nMore commands arrive with each milestone: build run (M5) · test (M6)\nlsp outline explain (M6+) · cc doc (M7)\n",
+        "\n  --version · --help\n\nstreams: the artifact on stdout, diagnostics and progress on stderr.\nexit:    0 nothing to report · 1 the input has diagnostics · 2 the tool could not run.\n\nMore commands arrive with each milestone: run (M5a) · test (M6)\nlsp outline explain (M6+) · cc doc (M7)\n",
     );
     out
 }

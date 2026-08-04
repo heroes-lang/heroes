@@ -1,0 +1,13 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for the `for` loop's fourth block. `continue` must land on
+# the *step*, not on the test: if it landed on the test, the index would never
+# advance on that path and this function would loop forever on the first odd
+# element. Nothing in the type system can catch that — the program compiles and
+# hangs — so the block a `continue` jumps to is pinned here.
+function evens_in(xs: [int]) -> int
+    count: int @ 0
+    for x in xs
+        if x % 2 == 1
+            continue
+        count @ count + 1
+    return count

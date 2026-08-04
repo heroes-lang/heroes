@@ -1,0 +1,31 @@
+function sign_of(n: int) -> int
+    slots  $r0: int · kind: int
+    bb0  entry
+        $t1: int = load n
+        $t2: int = const 0
+        $t3: bool = lt $t1, $t2
+        branch $t3 -> bb2 else bb3
+    bb1  if: join    preds bb2, bb4, bb5
+        $t12: int = load $r0
+        store kind <- $t12
+        $t13: int = load kind
+        return $t13
+    bb2  if: then    preds bb0
+        $t4: int = const 0
+        $t5: int = const 1
+        $t6: int = sub! $t4, $t5
+        store $r0 <- $t6
+        jump bb1
+    bb3  if: else    preds bb0
+        $t7: int = load n
+        $t8: int = const 0
+        $t9: bool = gt $t7, $t8
+        branch $t9 -> bb4 else bb5
+    bb4  if: then    preds bb3
+        $t10: int = const 1
+        store $r0 <- $t10
+        jump bb1
+    bb5  if: else    preds bb3
+        $t11: int = const 0
+        store $r0 <- $t11
+        jump bb1

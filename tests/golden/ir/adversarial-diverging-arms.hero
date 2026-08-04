@@ -1,0 +1,18 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for the join that nothing reaches. Every arm of this `match`
+# jumps, so the join block has no predecessors — and a lowering that emitted a
+# `load` there anyway would be reading a slot no path ever wrote. Panel 017 A
+# made this legal (a jump has no type), so it is a real shape and not a
+# defensive branch: the block must say `unreachable`.
+variant Step
+    stop
+    skip
+
+function walk(xs: [Step]) -> int
+    seen: int @ 0
+    for s in xs
+        match s
+            .stop => break
+            .skip => continue
+        seen @ seen + 1
+    return seen

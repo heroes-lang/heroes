@@ -1,0 +1,15 @@
+# Part 5, row 6: `.case` (leading dot) becomes a fully-qualified construction,
+# the variant coming from the type the checker recorded. And `match` becomes a
+# `switch` on the tag: dense, no default edge, because M3c proved it exhaustive.
+variant Token
+    num
+        v: int
+    plus
+
+function value_of(t: Token) -> int
+    return match t
+        .num n => n.v
+        .plus  => 0
+
+function one() -> Token
+    return .num(v: 1)

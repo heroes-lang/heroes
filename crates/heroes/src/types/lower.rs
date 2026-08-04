@@ -9,6 +9,13 @@
 //! reported by the resolver, and saying it twice is the one thing this compiler
 //! never does — it becomes `Ty::Error`, which every rule downstream stays quiet
 //! about.
+//!
+//! Every answer is **recorded** in `Checked::written_types`, keyed by the arena node
+//! it came from. M4 needs it for a reason worth stating: an `extern`'s parameters
+//! have no *locals* — there is no body to use them in, so the resolver makes none —
+//! and lowering still has to know their types, because the emitter writes a C
+//! prototype from them. Asking the locals table gave `?`, which is how this was
+//! found.
 
 use crate::resolve::{Prim, Resolved, TypeRef};
 use crate::syntax::{Ast, TypeId, TypeKind};
@@ -17,6 +24,17 @@ use super::table::Ty;
 use super::{Checker, TyId};
 
 pub(super) fn ty(
+    checker: &mut Checker,
+    ast: &Ast,
+    resolved: &Resolved,
+    id: TypeId,
+) -> TyId {
+    let answer = shape(checker, ast, resolved, id);
+    checker.out.written_types.insert(id.0, answer);
+    answer
+}
+
+fn shape(
     checker: &mut Checker,
     ast: &Ast,
     resolved: &Resolved,

@@ -1,0 +1,15 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for the iterable of a `for`. It is evaluated ONCE, into a
+# slot: a lowering that re-evaluated it per iteration would call `numbers()`
+# every time round, which is a different program with the same output — until
+# the call has a side effect, and then it is a different program with a
+# different output. The slot is what makes the difference visible in the dump.
+function numbers() -> [int]
+    print("built")
+    return [1, 2, 3]
+
+function total() -> int
+    sum: int @ 0
+    for n in numbers()
+        sum @ sum + n
+    return sum

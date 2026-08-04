@@ -1,0 +1,46 @@
+function evens_in(xs: [int]) -> int
+    slots  count: int · $xs0: [int] · $i0: int · x: int
+    bb0  entry
+        $t1: int = const 0
+        store count <- $t1
+        $t2: [int] = load xs
+        store $xs0 <- $t2
+        $t3: int = const 0
+        store $i0 <- $t3
+        jump bb1
+    bb1  for: test    preds bb0, bb3
+        $t4: int = load $i0
+        $t5: [int] = load $xs0
+        $t6: int = len $t5
+        $t7: bool = lt $t4, $t6
+        branch $t7 -> bb2 else bb4
+    bb2  for: body    preds bb1
+        $t8: [int] = load $xs0
+        $t9: int = load $i0
+        $t10: int = index! $t8, $t9
+        store x <- $t10
+        $t11: int = load x
+        $t12: int = const 2
+        $t13: int = rem! $t11, $t12
+        $t14: int = const 1
+        $t15: bool = eq $t13, $t14
+        branch $t15 -> bb6 else bb7
+    bb3  for: step    preds bb6, bb5
+        $t19: int = load $i0
+        $t20: int = const 1
+        $t21: int = add! $t19, $t20
+        store $i0 <- $t21
+        jump bb1
+    bb4  for: exit    preds bb1
+        $t22: int = load count
+        return $t22
+    bb5  if: join    preds bb7
+        $t16: int = load count
+        $t17: int = const 1
+        $t18: int = add! $t16, $t17
+        store count <- $t18
+        jump bb3
+    bb6  if: then    preds bb2
+        jump bb3
+    bb7  if: else    preds bb2
+        jump bb5

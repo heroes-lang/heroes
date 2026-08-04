@@ -34,6 +34,7 @@ fn main() -> ExitCode {
         Tag::Mutate => commands::mutate::run(invocation.file.as_deref()),
         Tag::Parse => commands::parse::run(&file, &invocation),
         Tag::Check => commands::check::run(&file, &invocation),
+        Tag::Build => commands::build::run(&file, &invocation),
         Tag::Fmt => commands::fmt::run(&file, &invocation),
         Tag::Version => {
             println!("heroes {}", heroes::VERSION);

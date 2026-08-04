@@ -1,0 +1,15 @@
+# Part 5, row 3: `?` becomes a branch plus an early return. The error side is
+# an exit edge, so §4.8's copy-out chain owes it the same as a `return` does —
+# `@r` is here to make that visible.
+record Reader
+    pos: int
+
+function first_of(xs: [int]) -> int?
+    if xs.len() == 0
+        return fail("empty", "no first element")
+    return ok(xs[0])
+
+function step(@r: Reader, xs: [int]) -> int?
+    v = first_of(xs)?
+    r.pos @ r.pos + 1
+    return ok(v)

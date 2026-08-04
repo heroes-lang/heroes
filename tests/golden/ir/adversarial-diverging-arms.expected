@@ -1,0 +1,41 @@
+function walk(xs: [Step]) -> int
+    slots  seen: int · $xs0: [Step] · $i0: int · s: Step · $s0: Step
+    bb0  entry
+        $t1: int = const 0
+        store seen <- $t1
+        $t2: [Step] = load xs
+        store $xs0 <- $t2
+        $t3: int = const 0
+        store $i0 <- $t3
+        jump bb1
+    bb1  for: test    preds bb0, bb3
+        $t4: int = load $i0
+        $t5: [Step] = load $xs0
+        $t6: int = len $t5
+        $t7: bool = lt $t4, $t6
+        branch $t7 -> bb2 else bb4
+    bb2  for: body    preds bb1
+        $t8: [Step] = load $xs0
+        $t9: int = load $i0
+        $t10: Step = index! $t8, $t9
+        store s <- $t10
+        $t11: Step = load s
+        store $s0 <- $t11
+        $t12: Step = load $s0
+        $t13: int = tag $t12
+        switch $t13 case 0 -> bb6, case 1 -> bb7
+    bb3  for: step    preds bb7
+        $t14: int = load $i0
+        $t15: int = const 1
+        $t16: int = add! $t14, $t15
+        store $i0 <- $t16
+        jump bb1
+    bb4  for: exit    preds bb1, bb6
+        $t17: int = load seen
+        return $t17
+    bb5  match: join
+        unreachable
+    bb6  match: arm    preds bb2
+        jump bb4
+    bb7  match: arm    preds bb2
+        jump bb3

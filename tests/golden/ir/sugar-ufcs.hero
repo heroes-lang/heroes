@@ -1,0 +1,8 @@
+# Part 5, row 7: `x.f(y)` becomes `f(x, y)`. The receiver is argument zero, and
+# the resolver already decided which `f` — the IR records the linkage, so a
+# Heroes function and a built-in of the same shape cannot be confused later.
+function double(n: int) -> int
+    return n * 2
+
+function main()
+    print([1, 2].len().double())

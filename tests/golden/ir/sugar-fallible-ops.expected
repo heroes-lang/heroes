@@ -1,0 +1,47 @@
+function widen(v: int?) -> int
+    slots  $f0: int? · $f1: int? · $r0: int · $f2: int?
+    bb0  entry
+        $t1: int? = load v
+        store $f0 <- $t1
+        $t2: int? = load $f0
+        $t3: int = tag $t2
+        $t4: int = const 1
+        $t5: bool = eq $t3, $t4
+        branch $t5 -> bb2 else bb3
+    bb1  if: join    preds bb3
+        $t15: int? = load v
+        store $f2 <- $t15
+        $t16: int? = load $f2
+        $t17: int = tag $t16
+        $t18: int = const 0
+        $t19: bool = eq $t17, $t18
+        branch $t19 -> bb7 else bb8
+    bb2  if: then    preds bb0
+        $t6: int? = load v
+        store $f1 <- $t6
+        $t7: int? = load $f1
+        $t8: int = tag $t7
+        $t9: int = const 0
+        $t10: bool = eq $t8, $t9
+        branch $t10 -> bb4 else bb5
+    bb3  if: else    preds bb0
+        jump bb1
+    bb4  default: ok    preds bb2
+        $t11: int? = load $f1
+        $t12: int = payload $t11 .ok
+        store $r0 <- $t12
+        jump bb6
+    bb5  default: else    preds bb2
+        $t13: int = const 0
+        store $r0 <- $t13
+        jump bb6
+    bb6  default: join    preds bb4, bb5
+        $t14: int = load $r0
+        return $t14
+    bb7  must: ok    preds bb1
+        $t20: int? = load $f2
+        $t21: int = payload $t20 .ok
+        return $t21
+    bb8  must: abort    preds bb1
+        abort must
+        unreachable

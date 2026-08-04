@@ -1,0 +1,48 @@
+strings
+    0  "built"
+
+function numbers() -> [int]
+    bb0  entry
+        $t1: str = const str 0
+        call builtin print($t1) variadic
+        $t2: int = const 1
+        $t3: int = const 2
+        $t4: int = const 3
+        $t5: [int] = construct array($t2, $t3, $t4)
+        return $t5
+
+function total() -> int
+    slots  sum: int · $xs0: [int] · $i0: int · n: int
+    bb0  entry
+        $t1: int = const 0
+        store sum <- $t1
+        $t2: [int] = call heroes numbers()
+        store $xs0 <- $t2
+        $t3: int = const 0
+        store $i0 <- $t3
+        jump bb1
+    bb1  for: test    preds bb0, bb3
+        $t4: int = load $i0
+        $t5: [int] = load $xs0
+        $t6: int = len $t5
+        $t7: bool = lt $t4, $t6
+        branch $t7 -> bb2 else bb4
+    bb2  for: body    preds bb1
+        $t8: [int] = load $xs0
+        $t9: int = load $i0
+        $t10: int = index! $t8, $t9
+        store n <- $t10
+        $t11: int = load sum
+        $t12: int = load n
+        $t13: int = add! $t11, $t12
+        store sum <- $t13
+        jump bb3
+    bb3  for: step    preds bb2
+        $t14: int = load $i0
+        $t15: int = const 1
+        $t16: int = add! $t14, $t15
+        store $i0 <- $t16
+        jump bb1
+    bb4  for: exit    preds bb1
+        $t17: int = load sum
+        return $t17
