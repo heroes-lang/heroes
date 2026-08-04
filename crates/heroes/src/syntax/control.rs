@@ -77,9 +77,28 @@ pub(super) fn match_expr(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprI
                 break;
             }
             TokenKind::Eof => break,
+            // A block where an arm should start: it belongs to an arm that
+            // failed, so it goes whole. Without this case the loop can spin
+            // forever — `skip_line` deliberately stops *before* an `Indent`
+            // (it must not leave the block it is cleaning), so a failed arm
+            // followed by an indented body consumed nothing at all and the
+            // parser never terminated. Found by the compiler-engineer while
+            // costing panel 014, on `1 => for x in xs` + its body.
+            TokenKind::Indent => {
+                cur.balanced_block();
+            }
             _ => {
+                let reported_before = cur.diagnostic_count();
                 if let Some(arm) = arm(cur, ast, src) {
+                    let failed = cur.diagnostic_count() > reported_before;
                     arms.push(arm);
+                    if failed {
+                        // The rest of the line is debris, not a second arm:
+                        // this is what turned one `=> assert false` into
+                        // `expected_expression` *and* a spurious
+                        // `expected_pattern`.
+                        cur.skip_line();
+                    }
                 } else {
                     cur.skip_line();
                 }

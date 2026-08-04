@@ -145,3 +145,30 @@ DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a
 "
     );
 }
+
+/// The one that never terminated. `skip_line` stops *before* an `Indent` — it
+/// must not leave the block it is cleaning — so a failed arm followed by an
+/// indented body consumed nothing and the loop spun forever. Found by the
+/// compiler-engineer while costing panel 014.
+///
+/// If this test ever hangs instead of failing, the arm loop lost its
+/// `Indent` case again. Note what recovery buys beyond termination: the
+/// broken arm survives as `<?>` and the arm *after* it is still read.
+#[test]
+fn a_failed_arm_with_a_body_terminates() {
+    assert_eq!(
+        dump("f = function: (k: int) -> int\n    return match k\n        1 => for x in xs\n            print(x)\n        _ => 0\n"),
+        "file test.hero\n  function f(k: int) -> int\n    return match k\n      1 => <?>\n      _ => 0\nDIAG test.hero:3:14: error[expected_expression]: expected an expression, found `for` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
+    );
+}
+
+/// One mistake, one diagnostic: `=> assert false` used to report
+/// `expected_expression` *and* a spurious `expected_pattern`, because the
+/// unconsumed token was read as the next arm's pattern.
+#[test]
+fn a_statement_in_an_arm_body_reports_once() {
+    assert_eq!(
+        dump("f = function: (k: int) -> int\n    return match k\n        1 => assert false\n        _ => 0\n"),
+        "file test.hero\n  function f(k: int) -> int\n    return match k\n      1 => <?>\n      _ => 0\nDIAG test.hero:3:14: error[expected_expression]: expected an expression, found `assert` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
+    );
+}
