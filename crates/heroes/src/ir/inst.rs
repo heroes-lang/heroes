@@ -229,6 +229,22 @@ pub enum Op {
     /// The program stops here. What follows in the block is nothing: the
     /// terminator is `unreachable`.
     Abort { reason: Abort, args: Args },
+    /// One reference more, one reference fewer (M5b, panel 021). Inserted by the
+    /// **ownership pass**, never by lowering — which is why they are real
+    /// instructions rather than something the emitter does on its own: Swift's SIL
+    /// has `strong_retain`/`strong_release` for the same reason, and LLVM D92808
+    /// records the failure mode of the alternative, where ARC's pairing lived only
+    /// in the backend and passes separated the calls from their markers.
+    ///
+    /// They name a **value**, not a place: releasing a slot is a `Load` followed by
+    /// a `Decref`, which keeps one form instead of two and makes the dominance
+    /// check cover it for free.
+    ///
+    /// `cow_check` is not here. It would have zero call sites until M5c gives it
+    /// `push`, and an arm in four exhaustive matches that nothing emits is the arm
+    /// that rots (panel 021 R1).
+    Incref(ValueId),
+    Decref(ValueId),
     /// `???` (§4.16). A hole type-checks, so lowering must produce something; the
     /// verifier allows it and the emitter (M5a) refuses it, which is how "no
     /// binary" is enforced without making a hole an error.

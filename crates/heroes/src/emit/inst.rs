@@ -82,6 +82,16 @@ pub(super) fn emit(
                 ));
             }
         }
+        Op::Incref(value) => {
+            // Housekeeping the author did not write, so it points at the generated
+            // file: lldb must not attribute a refcount to a user line.
+            w.at_generated();
+            w.line(&format!("    hero_str_incref({});", mangle::value(value.0)));
+        }
+        Op::Decref(value) => {
+            w.at_generated();
+            w.line(&format!("    hero_str_decref({});", mangle::value(value.0)));
+        }
         Op::Unary { op, operand } => unary(w, function, checked, op, operand, target),
         Op::Binary { op, left, right } => binary(w, function, checked, op, left, right, target),
         Op::Call { callee, args, .. } => {
@@ -96,15 +106,30 @@ pub(super) fn emit(
                 .collect();
             call(w, program, function, checked, callee, args, &arguments, target, module);
         }
+        Op::Len(value) => {
+            if let Some(name) = target {
+                w.line(&format!("    {name} = hero_str_len({});", mangle::value(value.0)));
+            }
+        }
+        // `s[i]`: a byte as an `int`, aborting out of range (spec line 142). The
+        // array case is the same op and waits for M5c.
+        Op::Index { base, index } if checked.types.get(function.value_type(base)) == Ty::Str => {
+            if let Some(name) = target {
+                w.line(&format!(
+                    "    {name} = hero_str_byte({}, {});",
+                    mangle::value(base.0),
+                    mangle::value(index.0)
+                ));
+            }
+        }
         // Every remaining form is refused by `gate.rs` at this milestone. The arm is
-        // here rather than in a catch-all so that M5b and M5c are compile errors
+        // here rather than in a catch-all so that M5c and M6 are compile errors
         // until they are written, not silent omissions.
         Op::Cast { .. }
         | Op::Construct { .. }
         | Op::Field { .. }
         | Op::Index { .. }
         | Op::MapGet { .. }
-        | Op::Len(_)
         | Op::Tag(_)
         | Op::Payload { .. }
         | Op::FuncRef(_)
@@ -133,10 +158,47 @@ fn constant(value: Const) -> String {
         Const::Int(i64::MIN) => "INT64_MIN".to_string(),
         Const::Int(n) => format!("INT64_C({n})"),
         Const::Bool(b) => (if b { "true" } else { "false" }).to_string(),
-        // Refused by the gate at M5a; `%a` round-trip-exact rendering is M5b's,
-        // with the goldens that pin it.
-        Const::Float(_) | Const::Str(_) => "0 /* refused */".to_string(),
+        // **A hex float, not a decimal one.** `%a` is round-trip-exact by
+        // construction, where `%.17g` is exact only in practice — and design.md §3.1
+        // has said "`f64` literals emitted round-trip-exact (`%a`)" since M0. This is
+        // the *literal*; how a value **prints** is `hero_print_f64`'s question and a
+        // different answer (§4.9).
+        Const::Float(x) => hex_float(x),
+        // A static block, laid out by clang: refcount -1 means "never freed", so a
+        // literal costs no allocation and decrefing one is a no-op.
+        Const::Str(id) => format!("HERO_STR_LIT(hero_str_{})", id.0),
     }
+}
+
+/// A `double` as a C11 hexadecimal floating literal. Exact, warning-free, and
+/// independent of every decimal-rendering question.
+fn hex_float(x: f64) -> String {
+    if x.is_nan() {
+        return "(0.0 / 0.0)".to_string();
+    }
+    if x.is_infinite() {
+        return if x > 0.0 { "HUGE_VAL".to_string() } else { "(-HUGE_VAL)".to_string() };
+    }
+    // Rust has no `{:a}`, so the digits are produced by the same route C reads them:
+    // sign, mantissa in hex, binary exponent.
+    let bits = x.to_bits();
+    let negative = bits >> 63 == 1;
+    let exponent = ((bits >> 52) & 0x7ff) as i64;
+    let mantissa = bits & 0x000f_ffff_ffff_ffff;
+    let sign = if negative { "-" } else { "" };
+    if exponent == 0 && mantissa == 0 {
+        return format!("{sign}0x0p+0");
+    }
+    let (lead, unbiased) = if exponent == 0 {
+        (0, -1022) // subnormal
+    } else {
+        (1, exponent - 1023)
+    };
+    // 13 hex digits hold all 52 mantissa bits exactly.
+    let digits = format!("{mantissa:013x}");
+    let trimmed = digits.trim_end_matches('0');
+    let fraction = if trimmed.is_empty() { String::new() } else { format!(".{trimmed}") };
+    format!("{sign}0x{lead}{fraction}p{}{}", if unbiased < 0 { "-" } else { "+" }, unbiased.abs())
 }
 
 fn unary(
@@ -176,7 +238,29 @@ fn binary(
     let Some(name) = target else { return };
     let l = mangle::value(left.0);
     let r = mangle::value(right.0);
-    let integral = checked.types.get(function.value_type(left)) == Ty::Int;
+    let operands = checked.types.get(function.value_type(left));
+    // `str` has its own arithmetic: `+` is concatenation (§4.14's operator table) and
+    // the comparisons are byte-wise, which is what makes `==` structural on a string
+    // the same way it is on a record.
+    if operands == Ty::Str {
+        let call = match op {
+            BinOp::Add => format!("hero_str_concat({l}, {r})"),
+            BinOp::Eq => format!("hero_str_eq({l}, {r})"),
+            BinOp::Ne => format!("!hero_str_eq({l}, {r})"),
+            BinOp::Lt => format!("hero_str_cmp({l}, {r}) < 0"),
+            BinOp::Le => format!("hero_str_cmp({l}, {r}) <= 0"),
+            BinOp::Gt => format!("hero_str_cmp({l}, {r}) > 0"),
+            BinOp::Ge => format!("hero_str_cmp({l}, {r}) >= 0"),
+            // `- * / %` on `str` do not type-check (§4.14), so this is unreachable
+            // by construction rather than by hope.
+            BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Rem => {
+                "0 /* not an operation on str */".to_string()
+            }
+        };
+        w.line(&format!("    {name} = {call};"));
+        return;
+    }
+    let integral = operands == Ty::Int;
     match op {
         BinOp::Add | BinOp::Sub | BinOp::Mul if integral => {
             let builtin = match op {
@@ -245,6 +329,25 @@ fn call(
         Callee::Builtin(index) if BUILTINS[index as usize].name == "print" => {
             print(w, function, checked, args, arguments);
         }
+        Callee::Builtin(index) if super::EMITTED_BUILTINS.contains(&BUILTINS[index as usize].name) => {
+            let entry = match BUILTINS[index as usize].name {
+                "len" => "hero_str_len",
+                "slice" => "hero_str_slice",
+                // `to_str` is one Heroes name over three C entry points, chosen by
+                // the argument's type — the same shape as `print`, for the same
+                // reason: the runtime is monomorphic and the emitter composes it.
+                _ => match function.args_of(args).first() {
+                    Some(Arg::Value(value)) => match checked.types.get(function.value_type(*value)) {
+                        Ty::F64 => "hero_f64_to_str",
+                        Ty::Bool => "hero_bool_to_str",
+                        Ty::Str => "hero_str_identity",
+                        _ => "hero_int_to_str",
+                    },
+                    _ => "hero_int_to_str",
+                },
+            };
+            w.line(&format!("    {assign}{entry}({});", arguments.join(", ")));
+        }
         // Refused by the gate. The arm exists so that adding a callee kind to the
         // IR breaks this file.
         Callee::Builtin(_) | Callee::Extern(_) | Callee::Indirect(_) => {
@@ -277,6 +380,8 @@ fn print(
         let printer = match arg {
             Arg::Value(value) => match checked.types.get(function.value_type(value)) {
                 Ty::Bool => "hero_print_bool",
+                Ty::Str => "hero_print_str",
+                Ty::F64 => "hero_print_f64",
                 _ => "hero_print_int",
             },
             // `print(@x)` cannot be written: §4.8's marker is for parameters

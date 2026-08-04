@@ -1,0 +1,26 @@
+# Canonical `f64` rendering (spec: "An `f64` always prints a point or exponent"),
+# and every line of it is a decision panel 021 had to make.
+#
+# `1.0` rather than `1`: under `1`, this program and one printing `print(5 * 2)`
+# would emit identical bytes, and an accidental int→f64 drift would stay green in
+# every golden — which is what §4.3's no-implicit-conversions rule exists to prevent.
+#
+# `0.1` rather than `0.10000000000000001`: round-trip-exact, not `%.17g`.
+#
+# `1e-323` rather than `9.88131291682493e-324`: the subnormal branch gnulib ships,
+# without which the ladder starts at fifteen significant digits for a value Python
+# renders `1e-323`.
+#
+# And every byte here is locale-immune: the render runs inside a "C" locale window,
+# because under de_DE.UTF-8 the same ladder emits the malformed `0,1.0` and the
+# round-trip check cannot see it.
+# Bulk regression case.
+
+function main()
+    print(0.1)
+    print(1.0)
+    print(0.1 + 0.2)
+    print(3.0 / 7.0)
+    print(0.0 - 1.0)
+    print(2.0 * 0.5)
+    print(to_str(1.0))

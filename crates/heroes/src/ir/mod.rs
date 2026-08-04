@@ -80,6 +80,7 @@ pub use inst::{
     Abort, Arg, Args, BinOp, BlockId, Callee, CastKind, Const, Inst, Op, Place, Shape, SlotId, Step,
     Steps, StrId, Term, UnOp, ValueId,
 };
+pub(crate) use layout::is_refcounted;
 pub use print::dump;
 pub use verify::verify;
 
@@ -178,7 +179,39 @@ impl Function {
     }
 }
 
+/// Which passes have run. The phase lives **on the program**, not in `verify`'s
+/// signature (panel 021 R8): a `verify(program, checked, Lowered)` on an owned
+/// program would silently skip the checks that only make sense afterwards, which is
+/// a verifier that quietly stops checking — and the phase cannot disagree with the
+/// program it describes if it is a field of it.
+///
+/// rustc puts the phase on the body and the pass name in the message
+/// (`validate_body(tcx, body, format!("after pass {pass_name}"))`); LLVM's
+/// `--verify-each` exists "for cases where it is suspected that a pass is creating an
+/// invalid module but it is not clear which pass is doing it"; Go runs `checkFunc`
+/// "between each phase", which caught a real ARM bug in `runtime/malloc.go`
+/// (golang/go#22499). All three were audited verbatim by panel 021's historian.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum Phase {
+    /// Straight out of lowering. No `incref`, no `decref`.
+    Lowered,
+    /// The ownership pass has run. Every exit edge releases what it owns.
+    Owned,
+}
+
+impl Phase {
+    /// What the verifier's failures name, so a message says which pass to suspect.
+    pub fn name(self) -> &'static str {
+        match self {
+            Phase::Lowered => "after lowering",
+            Phase::Owned => "after the ownership pass",
+        }
+    }
+}
+
 pub struct Program {
+    /// Which passes have run. Only `advance_to` may change it.
+    pub phase: Phase,
     /// In source order. Declaration order carries no meaning (§4.2), but the dump
     /// must be deterministic and the order the author reads is the one that costs
     /// nothing to preserve.
@@ -187,6 +220,21 @@ pub struct Program {
     /// characters: the escape rules (panel 008) are applied once, at lowering,
     /// and the emitter re-escapes for C.
     pub strings: Vec<String>,
+}
+
+impl Program {
+    /// Move to a later phase. A pass calls this once, at the end, and the assertion
+    /// is the cheap half of phase-indexing: a pass that runs twice, or out of order,
+    /// stops here rather than producing an IR whose invariants nobody can name.
+    pub fn advance_to(&mut self, phase: Phase) {
+        assert!(
+            phase > self.phase,
+            "the IR is already {} and cannot go back to {}",
+            self.phase.name(),
+            phase.name()
+        );
+        self.phase = phase;
+    }
 }
 
 pub struct Lowered {

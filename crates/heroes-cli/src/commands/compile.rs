@@ -27,6 +27,7 @@ use std::path::PathBuf;
 use heroes::diagnostics::{render, Diagnostic};
 use heroes::emit::{emit, entry_point, module_of};
 use heroes::ir::{dump, lower, verify};
+use heroes::own;
 use heroes::resolve::resolve;
 use heroes::source::{Source, Span};
 use heroes::syntax::parse;
@@ -44,6 +45,10 @@ pub struct Options {
     pub dump_ir: bool,
     pub emit_c: bool,
     pub output: Option<String>,
+    /// `-fsanitize=address,undefined`. Part of the cache key: a sanitised build
+    /// sharing a directory with a plain one is the same silent staleness the level
+    /// key exists to prevent.
+    pub sanitize: bool,
 }
 
 /// `Ok(None)` — it stopped at a dump. `Ok(Some(path))` — that binary exists now.
@@ -69,6 +74,19 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
     let problems = verify(&lowered.program, &checked);
     if !problems.is_empty() {
         eprintln!("internal error: the lowered program is not well formed");
+        for problem in &problems {
+            eprintln!("  {problem}");
+        }
+        return Err(Exit::Failed);
+    }
+    // The ownership pass: the first IR→IR pass, and `--dump-ir` shows its result
+    // because that is what the emitter sees (panel 021 R8). The verifier runs again
+    // afterwards, at phase `Owned`, where the invariants are different ones.
+    let mut lowered = lowered;
+    own::run(&mut lowered.program, &checked);
+    let problems = verify(&lowered.program, &checked);
+    if !problems.is_empty() {
+        eprintln!("internal error: the ownership pass produced an ill-formed program");
         for problem in &problems {
             eprintln!("  {problem}");
         }
@@ -119,7 +137,7 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
         }
     };
     let module = module_of(&src.name);
-    let dir = match toolchain.dir_for(&src.name, &src.text, options.level) {
+    let dir = match toolchain.dir_for(&src.name, &src.text, options.level, options.sanitize) {
         Ok(dir) => dir,
         Err(message) => {
             eprintln!("error: {message}");
@@ -128,7 +146,7 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
     };
     let c_file = dir.join(format!("{module}.c"));
     write(&c_file.display().to_string(), &emitted.c)?;
-    let object = match toolchain.runtime_object(options.level) {
+    let object = match toolchain.runtime_object(options.level, options.sanitize) {
         Ok(object) => object,
         Err(message) => {
             eprintln!("internal error: {message}");
@@ -139,7 +157,7 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
         Some(target) => PathBuf::from(target),
         None => dir.join(&module),
     };
-    if let Err(message) = toolchain.link(&c_file, &object, &binary, options.level) {
+    if let Err(message) = toolchain.link(&c_file, &object, &binary, options.level, options.sanitize) {
         // clang's verdict on generated C is a statement about this compiler, so it
         // speaks in the compiler's own vocabulary and exits 2 (panel 019's R1 rule
         // reserves that for exactly here and for `--dump-ir`).

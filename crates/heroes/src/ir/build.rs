@@ -65,7 +65,11 @@ impl Lowering {
     pub fn new(resolved: &Resolved, unit: TyId) -> Lowering {
         Lowering {
             out: Lowered {
-                program: Program { functions: Vec::new(), strings: Vec::new() },
+                program: Program {
+                    phase: super::Phase::Lowered,
+                    functions: Vec::new(),
+                    strings: Vec::new(),
+                },
                 diagnostics: Vec::new(),
             },
             func: empty(),

@@ -67,6 +67,7 @@ pub fn commands() -> Vec<Command> {
                 flag("--dump-ir", "print the lowered three-address IR and stop"),
                 flag("--emit-c", "print the generated C11 and stop, instead of compiling it"),
                 valued("-o", "write the artifact here instead of under build/"),
+                flag("--sanitize", "compile with -fsanitize=address,undefined"),
             ],
             summary: "compile to a native binary".to_string(),
         },
@@ -74,7 +75,10 @@ pub fn commands() -> Vec<Command> {
             tag: Tag::Run,
             name: "run".to_string(),
             operand: Operand::File,
-            flags: vec![valued("-o", "keep the binary here as well as running it")],
+            flags: vec![
+                valued("-o", "keep the binary here as well as running it"),
+                flag("--sanitize", "compile with -fsanitize=address,undefined"),
+            ],
             summary: "compile at -O2 and execute (the dev loop)".to_string(),
         },
         Command {

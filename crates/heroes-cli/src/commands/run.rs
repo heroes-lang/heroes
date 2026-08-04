@@ -24,6 +24,7 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
         dump_ir: false,
         emit_c: false,
         output: args.value_of("-o"),
+        sanitize: args.has("--sanitize"),
     };
     let binary = match compile(path, &options) {
         Err(exit) => return exit,

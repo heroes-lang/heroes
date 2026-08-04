@@ -1,23 +1,31 @@
-unsupported[str]: text (`str`) is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:6:11
-    |
-  6 |     print("a")              #~ str
-    |           ^^^
+unsupported[record]: a record or a variant is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:13:5
+     |
+  13 |     p = P(x: 1)
+     |     ^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `if`, `while`, functions and `print`
+  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
 
 unsupported[array]: an array is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:8:5
-    |
-  8 |     xs = [1, 2]
-    |     ^^^^^^^^^^^
-  note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `if`, `while`, functions and `print`
-
-unsupported[f64]: floating-point arithmetic is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:11:5
+  at tests/golden/unsupported/three-capabilities.hero:16:5
      |
-  11 |     y = 2.5
-     |     ^^^^^^^
+  16 |     xs = [1, 2]
+     |     ^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `if`, `while`, functions and `print`
+  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+
+unsupported[map]: a map is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:19:5
+     |
+  19 |     m = {"a": 1}
+     |     ^^^^^^^^^^^^
+  note: no change to this file will fix this
+  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+
+unsupported[builtin]: the built-in `has` is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:20:11
+     |
+  20 |     print(m.has("a"))     #~ builtin
+     |           ^^^^^^^^^^
+  note: no change to this file will fix this
+  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet

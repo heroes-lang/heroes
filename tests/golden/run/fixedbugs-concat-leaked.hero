@@ -1,0 +1,29 @@
+# FIXED DEFECT, 2026-08-04. Symptom: `panic: 3 heap blocks still live at exit (a
+# missing decref)` on the first Heroes program that contained a string. Cause: the
+# ownership pass classified a value as owning by looking at its defining operation,
+# and `+` on a `str` is an `Op::Binary` — it reads like arithmetic and it is a
+# constructor. §4.14's operator table puts `str + str` in the same row as `int + int`,
+# so only the RESULT TYPE tells them apart. Fix: `own.rs::allocates` returns true for
+# `Binary`, which it can only reach when the result is refcounted.
+#
+# All three leaked blocks traced to that one row: one per `greet` call (the returned
+# concatenation) plus the `s + s` in main. Named after the defect, per Go's
+# `test/fixedbugs` (CLAUDE.md §9).
+#
+# What makes this case a test rather than an anecdote: the leak counter in the shim.
+# AddressSanitizer reports NOTHING here — `detect_leaks is not supported on this
+# platform` — which is why panel 021 replaced it as the leak gate.
+
+function greet(name: str) -> str
+    return "hi " + name
+
+function main()
+    print(greet("Ziggy"))
+    s = "ab"
+    print(s + s)
+    out: str @ ""
+    i: int @ 0
+    while i < 200
+        out @ out + "x"
+        i @ i + 1
+    print(len(out))

@@ -67,3 +67,27 @@ pub(super) fn case_index(ast: &Ast, src: &Source, decl: u32, name: Span) -> Opti
 fn position<'a>(mut names: impl Iterator<Item = &'a str>, wanted: &str) -> Option<u32> {
     names.position(|name| name == wanted).map(|index| index as u32)
 }
+
+/// Whether a value of this type carries a reference the compiler must count
+/// (M5b, panel 021 R2).
+///
+/// **One home for this question**, and that is the whole reason it is here rather
+/// than in the ownership pass: M5c's descriptor pass asks it again for
+/// `copy`/`drop`/`eq`/`hash`, and two answers that disagree about which types are
+/// counted is a refcount bug that reproduces once a week — the same failure
+/// `uses.rs` was split out to prevent.
+///
+/// At M5b only `str` is counted. Every commented row below is a row M5c turns on,
+/// and each is listed rather than folded into a catch-all so that adding a type to
+/// the language cannot silently make it uncounted.
+pub(crate) fn is_refcounted(checked: &Checked, ty: TyId) -> bool {
+    match checked.types.get(ty) {
+        Ty::Str => true,
+        // M5c, with the descriptor pass: Array, Map, Named, Case, Fallible, Failure.
+        Ty::Array(_) | Ty::Map(_, _) | Ty::Named(_) | Ty::Case(_, _) => false,
+        Ty::Fallible(_) | Ty::Failure => false,
+        // Scalars, the FFI's opaque types, and a type the checker gave up on.
+        Ty::Int | Ty::F64 | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,
+        Ty::Func { .. } | Ty::Generic(_) | Ty::Error => false,
+    }
+}

@@ -1,12 +1,20 @@
 # Three unsupported capabilities, three diagnostics, sorted by span: a message
 # that carries the list is one round trip, and three invocations is three.
+#
+# Rewritten at M5b: the original used `str` and `f64`, which now emit. That the case
+# had to change is the gate working — a row dies per milestone.
 # Bulk regression case.
 
+record P
+    x: int
+
 function main()
-    print("a")              #~ str
+    #~v record
+    p = P(x: 1)
+    print(p.x)
     #~v array
     xs = [1, 2]
     print(xs[0])
-    #~v f64
-    y = 2.5
-    print(y > 1.0)
+    #~v map
+    m = {"a": 1}
+    print(m.has("a"))     #~ builtin

@@ -98,11 +98,18 @@ impl Toolchain {
     ///
     /// design.md §3.1's own shape. The hash is what makes two files with the same
     /// stem, or the same file at two optimisation levels, different builds.
-    pub fn dir_for(&self, source: &str, text: &str, level: &str) -> Result<PathBuf, String> {
+    pub fn dir_for(
+        &self,
+        source: &str,
+        text: &str,
+        level: &str,
+        sanitize: bool,
+    ) -> Result<PathBuf, String> {
         let key = digest(&format!(
-            "{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}",
+            "{}\u{1}{}{}\u{1}{}\u{1}{}\u{1}{}",
             heroes::VERSION,
             level,
+            if sanitize { "+san" } else { "" },
             source,
             text,
             self.runtime_text()
@@ -115,8 +122,12 @@ impl Toolchain {
     /// Compile the runtime once and cache it, keyed on its own contents and the
     /// level. A stale relink is silent, so the key is the only thing standing
     /// between a golden test and passing for the wrong reason.
-    pub fn runtime_object(&self, level: &str) -> Result<PathBuf, String> {
-        let key = digest(&format!("{}\u{1}{level}\u{1}{}", heroes::VERSION, self.runtime_text()));
+    pub fn runtime_object(&self, level: &str, sanitize: bool) -> Result<PathBuf, String> {
+        let key = digest(&format!(
+            "{}\u{1}{level}\u{1}{sanitize}\u{1}{}",
+            heroes::VERSION,
+            self.runtime_text()
+        ));
         std::fs::create_dir_all(&self.build)
             .map_err(|e| format!("cannot create {}: {e}", self.build.display()))?;
         let object = self.build.join(format!("runtime-{key}.o"));
@@ -124,7 +135,7 @@ impl Toolchain {
             return Ok(object);
         }
         let mut clang = Command::new("clang");
-        clang.args(FLAGS).arg(level).arg("-c");
+        clang.args(FLAGS).arg(level).args(sanitizers(sanitize)).arg("-c");
         clang.arg(self.runtime.join("runtime.c"));
         clang.arg("-I").arg(&self.runtime);
         clang.arg("-o").arg(&object);
@@ -139,13 +150,31 @@ impl Toolchain {
         object: &Path,
         binary: &Path,
         level: &str,
+        sanitize: bool,
     ) -> Result<(), String> {
         let mut clang = Command::new("clang");
-        clang.args(FLAGS).arg(level);
+        clang.args(FLAGS).arg(level).args(sanitizers(sanitize));
         clang.arg(c_file).arg(object);
         clang.arg("-I").arg(&self.runtime);
         clang.arg("-o").arg(binary);
         run(clang, "compiling the generated C")
+    }
+}
+
+/// `--sanitize`'s flags, and what they are for.
+///
+/// **Not a leak detector.** AddressSanitizer's is missing on Darwin arm64
+/// (`detect_leaks is not supported on this platform`, exit 134), and a program leaking
+/// 999 blocks exits 0 in silence under it — measured twice, by two panel judges
+/// independently. Leaks are caught by `hero_runtime_check_leaks()` in the generated
+/// `main`. What these two *do* catch is use-after-free and double-free, and they caught
+/// two real bugs in the panel's own hand-written C on their first run, which no output
+/// comparison would have.
+fn sanitizers(sanitize: bool) -> Vec<String> {
+    if sanitize {
+        vec!["-fsanitize=address,undefined".to_string(), "-g".to_string()]
+    } else {
+        Vec::new()
     }
 }
 

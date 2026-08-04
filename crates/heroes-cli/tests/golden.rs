@@ -525,6 +525,7 @@ fn the_emitted_c_is_byte_identical_twice_and_through_o() {
         .into_iter()
         .chain(collect_cases(&root.join("tests/golden/run")))
     {
+        let _ = &scratch;
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let emit = |extra: Vec<String>| -> String {
             let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"));
@@ -609,6 +610,25 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             .output()
             .expect("the heroes binary runs");
         check(relative, "-O2", &at_o2, &expected, &panic);
+
+        // The third configuration: `-fsanitize=address,undefined`. **Not** a leak
+        // gate — AddressSanitizer's is missing on Darwin arm64, and a 999-block leak
+        // exits 0 in silence under it (measured, panel 021). Leaks are caught by
+        // `hero_runtime_check_leaks()` in every generated `main`, which runs in all
+        // three configurations. What this one adds is use-after-free and double-free,
+        // which is what reference counting gets wrong.
+        let sanitised = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args(["run", &relative.display().to_string(), "--sanitize"])
+            .output()
+            .expect("the heroes binary runs");
+        let noise = String::from_utf8_lossy(&sanitised.stderr);
+        assert!(
+            !noise.contains("AddressSanitizer") && !noise.contains("runtime error:"),
+            "{} tripped a sanitiser:\n{noise}",
+            relative.display()
+        );
+        check(relative, "--sanitize", &sanitised, &expected, &panic);
     }
 }
 

@@ -1,7 +1,7 @@
-unsupported[extern]: an `extern` function is not emitted yet
-  at tests/golden/unsupported/extern.hero:9:1
+unsupported[fallible]: a fallible value (`T?`) is not emitted yet
+  at tests/golden/unsupported/fallible.hero:8:1
     |
-  9 | extern function labs(x: int) -> int     #~ extern
+  8 | function half(n: int) -> int?
     | ^
   note: no change to this file will fix this
   note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet

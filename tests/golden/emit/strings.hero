@@ -1,0 +1,14 @@
+# The C the ownership pass produces: a zero-initialised str slot, incref-before-
+# decref on the overwrite, an incref of the returned value, and the sweep before
+# every `return`. This file is the one place the refcounting is readable as text
+# rather than inferred from a leak counter.
+# Bulk regression case.
+
+function greet(name: str, formal: bool) -> str
+    prefix: str @ "hi "
+    if formal
+        prefix @ "good day "
+    return prefix + name
+
+function main()
+    print(greet("Ziggy", true))

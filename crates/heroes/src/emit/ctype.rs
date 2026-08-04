@@ -24,6 +24,14 @@ pub(super) fn c_type(checked: &Checked, ty: TyId) -> Option<String> {
         Ty::Int => Some("int64_t".to_string()),
         Ty::Bool => Some("bool".to_string()),
         Ty::F64 => Some("double".to_string()),
+        // A fat pointer, passed BY VALUE (§4.20, panel 021): 16 bytes, two
+        // registers, refcount and magic in a heap header before the bytes. By
+        // value because of the FFI, not for comfort — written as a pointer, the
+        // wrong `str`→`cstr` conversion compiles clean *with an explicit cast* and
+        // hands a refcount word to `sqlite3_open`; written by value it is
+        // `error: operand of type 'HeroStr' where arithmetic or pointer type is
+        // required`, which is inexpressible rather than wrong.
+        Ty::Str => Some("HeroStr".to_string()),
         // §4.19's two opaque types. They reach C only through an `extern`, which
         // this backend refuses until M7.
         Ty::Ptr => Some("void *".to_string()),

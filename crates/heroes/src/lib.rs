@@ -19,6 +19,7 @@ pub mod emit;
 pub mod ir;
 pub mod lexer;
 pub mod measure;
+pub mod own;
 pub mod mutate;
 pub mod printer;
 pub mod resolve;
@@ -33,5 +34,5 @@ pub mod types;
 //   resolve/                      M3a (landing)
 //   types/                        M3b (landing), M3c–M3d
 //   desugar/ ir/                  M4
-//   descriptors/ ownership/       M5b–M5c
+//   own/                          M5b (landing) · descriptors/  M5c
 //   emit/                         M5a (landing)

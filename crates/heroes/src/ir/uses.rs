@@ -25,6 +25,9 @@ pub(super) fn operands(function: &Function, op: Op) -> Vec<ValueId> {
             values
         }
         Op::Unary { operand, .. } | Op::Cast { operand, .. } => vec![operand],
+        // A refcount operation reads the value it adjusts. Saying so here is what
+        // makes the dominance check cover the ownership pass's own output.
+        Op::Incref(value) | Op::Decref(value) => vec![value],
         Op::Binary { left, right, .. } => vec![left, right],
         Op::Call { callee, args, .. } => {
             let mut values = match callee {

@@ -36,16 +36,37 @@
 //!   about carrying the list, applied to the backend.
 
 use crate::diagnostics::Diagnostic;
-use crate::ir::{Abort, Callee, Const, FnKind, Function, Op, Program, Shape, Term};
+use crate::ir::{Abort, Callee, FnKind, Function, Op, Program, Shape, Term};
 use crate::resolve::{Resolved, BUILTINS};
 use crate::source::{Source, Span};
 use crate::syntax::Ast;
 use crate::types::{render_ty, Checked, Ty, TyId};
 
-/// What the backend does emit, in the words the spec uses. It goes in a note on
-/// every refusal: "what can I do instead" is the reader's next question, and the
-/// answer is one line.
-pub const SUBSET: &str = "the backend emits `int`, `bool`, `if`, `while`, functions and `print`";
+/// The built-ins the backend emits. The gate reads this list and so does the note,
+/// so they cannot disagree — panel 021 R10, and CLAUDE.md §10's own pattern ("one
+/// argv table parses and prints the help"). A hand-written enumeration beside a
+/// machine-readable table is a sentence that becomes a lie one milestone later.
+pub const EMITTED_BUILTINS: [&str; 4] = ["len", "print", "slice", "to_str"];
+
+/// What the backend does emit. Derived, not maintained: the type list is the arms of
+/// `check_type` that return without a note, and the built-in list is the constant
+/// above.
+///
+/// The second clause is the llm-ergonomist's, and it is load-bearing: without it, the
+/// rewrite the message *invites* ("use a byte loop instead of `chars()`") is itself a
+/// coin flip, because a list that mixes types and forms never says it is exhaustive
+/// over built-ins.
+pub fn subset() -> String {
+    format!(
+        "the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, \
+         and the built-ins {} — no other built-in is emitted yet",
+        EMITTED_BUILTINS
+            .iter()
+            .map(|name| format!("`{name}`"))
+            .collect::<Vec<String>>()
+            .join(", ")
+    )
+}
 
 /// Every capability this program needs and this backend lacks, sorted by where it
 /// first appears.
@@ -78,7 +99,7 @@ pub(super) fn refuse(
         for block in &function.blocks {
             for inst in &block.insts {
                 check_type(&mut found, ast, checked, src, function, inst.ty, inst.span);
-                check_op(&mut found, ast, src, function, inst.op, inst.span);
+                check_op(&mut found, ast, checked, src, function, inst.op, inst.span);
             }
             if let Term::Switch { .. } = block.term {
                 note(
@@ -95,7 +116,7 @@ pub(super) fn refuse(
         .into_iter()
         .map(|(code, what, span)| {
             Diagnostic::unsupported(&code, format!("{what} is not emitted yet"), span)
-                .with_note(SUBSET.to_string())
+                .with_note(subset())
         })
         .collect()
 }
@@ -125,11 +146,9 @@ fn check_type(
     span: Span,
 ) {
     let (code, what) = match checked.types.get(ty) {
-        Ty::Int | Ty::Bool | Ty::Unit => return,
-        // M5b — the runtime's `str` and canonical `f64` rendering land together,
-        // because both are about bytes the goldens have to predict.
-        Ty::F64 => ("f64", "floating-point arithmetic".to_string()),
-        Ty::Str => ("str", "text (`str`)".to_string()),
+        // M5b landed `str` and `f64`: the two rows that used to be here are gone,
+        // which is the gate's whole design — a row dies per milestone.
+        Ty::Int | Ty::Bool | Ty::Unit | Ty::F64 | Ty::Str => return,
         // M5c — the descriptor pass, whose ABI spike 04 froze.
         Ty::Array(_) => ("array", "an array".to_string()),
         Ty::Map(_, _) => ("map", "a map".to_string()),
@@ -152,6 +171,7 @@ fn check_type(
 fn check_op(
     found: &mut Vec<(String, String, Span)>,
     ast: &Ast,
+    checked: &Checked,
     src: &Source,
     function: &Function,
     op: Op,
@@ -164,11 +184,10 @@ fn check_op(
                 note(found, "record", "a record or a variant".to_string(), span);
             }
         }
-        Op::Const(Const::Str(_)) => note(found, "str", "text (`str`)".to_string(), span),
-        Op::Const(Const::Float(_)) => {
-            note(found, "f64", "floating-point arithmetic".to_string(), span)
-        }
-        Op::Cast { .. } => note(found, "str", "text (`str`)".to_string(), span),
+        // `str`→`cstr` exists for one boundary and nothing consumes it before M7:
+        // the row is keyed to the FFI rather than to `str`, which is why landing
+        // `str` did not make it emittable.
+        Op::Cast { .. } => note(found, "extern", "an `extern` function".to_string(), span),
         Op::Call { callee, args, .. } => {
             callee_note(found, ast, src, callee, span);
             for arg in function.args_of(args) {
@@ -192,12 +211,35 @@ fn check_op(
             };
             note(found, code, what, span);
         }
-        Op::Field { .. } | Op::Tag(_) | Op::Payload { .. } => {
-            note(found, "record", "a record or a variant".to_string(), span)
+        // A tag, a payload and a field read are the same three operations on a
+        // variant and on a `T?` — §4.6's `ok`/`err` *is* a variant by the time it
+        // reaches here. Naming the capability the author wrote means asking what the
+        // base is, or the message says "a record" about a program containing neither.
+        Op::Field { base, .. } | Op::Tag(base) | Op::Payload { base, .. } => {
+            let ty = function.value_type(base);
+            if matches!(checked.types.get(ty), Ty::Fallible(_) | Ty::Failure) {
+                note(found, "fallible", "a fallible value (`T?`)".to_string(), span);
+            } else {
+                note(found, "record", "a record or a variant".to_string(), span);
+            }
         }
-        Op::Index { .. } => note(found, "array", "an array".to_string(), span),
+        // `s[i]` and `xs[i]` are the same op on different types (`ir/inst.rs` says
+        // so). The byte read emits; the element read waits for the descriptor pass.
+        Op::Index { base, .. } => {
+            if !matches!(checked.types.get(function.value_type(base)), Ty::Str) {
+                note(found, "array", "an array".to_string(), span);
+            }
+        }
         Op::MapGet { .. } => note(found, "map", "a map".to_string(), span),
-        Op::Len(_) => note(found, "builtin", "the built-in `len`".to_string(), span),
+        // `len` on a `str` emits; on an array or a map it waits for the descriptor
+        // pass. The op is the same op, so the row splits by operand type — which is
+        // why the gate walks types as well as ops.
+        Op::Len(value) => {
+            let ty = function.value_type(value);
+            if !matches!(checked.types.get(ty), Ty::Str) {
+                note(found, "builtin", "the built-in `len`".to_string(), span);
+            }
+        }
         Op::FuncRef(_) => {
             note(found, "function_value", "a function used as a value".to_string(), span)
         }
@@ -214,8 +256,9 @@ fn check_op(
         Op::Hole => note(found, "hole", "a hole (`???`)".to_string(), span),
         // The verifier rejects this before the emitter is asked.
         Op::Missing => note(found, "missing", "a form the compiler cannot lower".to_string(), span),
-        Op::Const(Const::Int(_))
-        | Op::Const(Const::Bool(_))
+        Op::Const(_)
+        | Op::Incref(_)
+        | Op::Decref(_)
         | Op::Unary { .. }
         | Op::Binary { .. }
         | Op::CopyOut { .. } => {}
@@ -237,7 +280,7 @@ fn callee_note(
         }
         Callee::Builtin(index) => {
             let name = BUILTINS[index as usize].name;
-            if name != "print" {
+            if !EMITTED_BUILTINS.contains(&name) {
                 note(found, "builtin", format!("the built-in `{name}`"), span);
             }
         }

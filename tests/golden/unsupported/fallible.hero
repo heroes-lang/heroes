@@ -1,0 +1,16 @@
+# `T?` is the language's whole failure story (§4.6) and the descriptor pass is what
+# gives it a representation, so it waits for M5c together with records and variants.
+# Three of the four `T?` operators appear here and the gate names the capability once,
+# not once per operator.
+# Bulk regression case.
+
+#~v fallible
+function half(n: int) -> int?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail("odd", "not divisible by two")
+
+function main()
+    a = half(4).default(0)
+    print(a)
+    print(half(3).is_err())

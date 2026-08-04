@@ -46,7 +46,7 @@ mod writer;
 #[cfg(test)]
 mod tests;
 
-pub use gate::SUBSET;
+pub use gate::{subset, EMITTED_BUILTINS};
 pub use mangle::module_of;
 
 /// What came out. Exactly one of the two is interesting: with any diagnostic the
@@ -86,7 +86,7 @@ pub fn emit(
     }
     let module = mangle::module_of(&src.name);
     let mut w = writer::Writer::new(&src.name, &module);
-    decls::prelude(&mut w, src);
+    decls::prelude(&mut w, program, src);
     for function in &program.functions {
         decls::prototype(&mut w, function, ast, checked, &module);
     }

@@ -1,0 +1,29 @@
+# UNVERIFIED — pending debrief
+#
+# §4.8's copy-out meets reference counting, and the failure mode is silent in both
+# directions. An `@ str` parameter is MOVED in and MOVED out (panel 021 rule 2): the
+# prologue's copy-in takes no reference, every reassignment decrefs the slot's previous
+# value, and the exit edge writes `*p_s = s` INSTEAD of decrefing that slot.
+#
+# Get it wrong one way — sweep the `@` slot as well as copying it out — and the caller
+# holds a freed string: `-O0` prints correctly, ASan says heap-use-after-free. Get it
+# wrong the other way — incref on copy-in — and the counter says a block leaked. The
+# early `return` inside the loop is the edge that makes both reachable.
+
+function extend(@s: str, times: int)
+    i: int @ 0
+    while i < times
+        s @ s + "!"
+        i @ i + 1
+        if i == 2
+            return
+
+function main()
+    a: str @ "hey"
+    extend(@a, 5)
+    print(a)
+    print(len(a))
+    b: str @ "x"
+    extend(@b, 0)
+    print(b)
+    print(len(b))

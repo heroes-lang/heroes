@@ -32,22 +32,49 @@ fn refusal(text: &str) -> (String, String) {
     (first.code.clone(), first.message.clone())
 }
 
+/// M5b deleted the `str` and `f64` rows, which is the gate's whole design: a row dies
+/// per milestone. The test that used to assert they were refused now asserts they are
+/// **not** — a row nobody can prove is gone is a row that comes back.
 #[test]
-fn text_is_refused_and_the_code_names_the_capability() {
-    let (code, message) = refusal("function main()\n    print(\"hi\")\n");
-    assert_eq!(code, "str");
-    assert_eq!(message, "text (`str`) is not emitted yet");
+fn text_and_floating_point_are_no_longer_refused() {
+    let text = super::c("function main()\n    print(\"hi\")\n    x = 1.5\n    print(x)\n");
+    assert!(text.contains("hero_print_str"), "{text}");
+    assert!(text.contains("hero_print_f64"), "{text}");
+    // …and the note now says so, derived from the same table the gate reads.
+    assert!(crate::emit::subset().contains("`str`"));
+    assert!(crate::emit::subset().contains("`f64`"));
 }
 
+/// `s[i]` and `xs[i]` are the same instruction, and `len` is one built-in over both:
+/// the row splits by operand type rather than by op, which is why the gate walks
+/// types as well as operations.
 #[test]
-fn floating_point_is_refused() {
-    let (code, _) = refusal("function main()\n    x = 1.5\n    print(x > 1.0)\n");
-    assert_eq!(code, "f64");
+fn the_string_half_of_a_shared_operation_emits_and_the_array_half_does_not() {
+    let text = super::c("function main()\n    s = \"ab\"\n    print(s[0])\n    print(len(s))\n");
+    assert!(text.contains("hero_str_byte"), "{text}");
+    assert!(text.contains("hero_str_len"), "{text}");
+    let (code, _) = refusal("function main()\n    xs = [1, 2]\n    print(xs[0])\n");
+    assert_eq!(code, "array");
+}
+
+/// `str`→`cstr` exists for one boundary and nothing consumes it before M7, so landing
+/// `str` did **not** make the cast emittable — the gate's row for it is keyed to the
+/// FFI rather than to `str`.
+///
+/// There is no end-to-end case, and the reason is worth recording rather than hiding
+/// behind a test that passes for the wrong reason: the checker refuses `puts("hi")`
+/// with `expected `cstr`, found `str``, so **`Op::Cast` is unreachable from source
+/// today**. The conversion arrives with M7's header attachment, and the row is here
+/// waiting for it. Queued.
+#[test]
+fn an_extern_is_still_refused_after_str_landed() {
+    let (code, _) = refusal("extern function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    assert_eq!(code, "extern");
 }
 
 #[test]
 fn arrays_maps_records_and_variants_are_refused() {
-    assert_eq!(refusal("function main()\n    xs = [1, 2]\n    print(xs[0])\n").0, "array");
+    assert_eq!(refusal("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n").0, "array");
     assert_eq!(refusal("record P\n    x: int\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n").0, "record");
 }
 
@@ -84,10 +111,10 @@ fn an_extern_is_refused_because_nothing_would_check_its_signature() {
 /// the failure class the gate exists to prevent.
 #[test]
 fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
-    let (code, message) = refusal("function main()\n    xs = [1, 2]\n    print(xs.len())\n");
+    let (code, message) = refusal("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n");
     // Arrays are refused too and come first in the source; the built-in row is what
     // must also appear, so the whole list is checked rather than the first line.
-    let out = emitted("function main()\n    xs = [1, 2]\n    print(xs.len())\n");
+    let out = emitted("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n");
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
     assert!(codes.contains(&"array"), "{codes:?}");
     let _ = (code, message);
@@ -96,10 +123,10 @@ fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
     let out = emitted(
-        "function main()\n    print(\"a\")\n    xs = [1]\n    print(xs[0])\n    y = 2.5\n    print(y > 1.0)\n",
+        "record P\n    x: int\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
-    assert!(codes.contains(&"str") && codes.contains(&"array") && codes.contains(&"f64"), "{codes:?}");
+    assert!(codes.contains(&"record") && codes.contains(&"map"), "{codes:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
@@ -110,8 +137,10 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 
 #[test]
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
-    let out = emitted("function main()\n    print(\"a\")\n    print(\"b\")\n    print(\"c\")\n");
-    assert_eq!(out.diagnostics.len(), 1, "a program with three strings has one string problem");
+    let out = emitted(
+        "function main()\n    xs = [1]\n    ys = [2]\n    zs = [3]\n    print(xs[0], ys[0], zs[0])\n",
+    );
+    assert_eq!(out.diagnostics.len(), 1, "a program with three arrays has one array problem");
 }
 
 /// A `test` block is **skipped**, not refused: `ir/mod.rs` says ordinary builds

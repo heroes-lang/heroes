@@ -35,6 +35,7 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
         dump_ir: args.has("--dump-ir"),
         emit_c: args.has("--emit-c"),
         output: args.value_of("-o"),
+        sanitize: args.has("--sanitize"),
     };
     match compile(path, &options) {
         Err(exit) => exit,

@@ -132,6 +132,8 @@ fn operation(
                 format!("abort {word}({operands})")
             }
         }
+        Op::Incref(value) => format!("incref {}", value_name(value)),
+        Op::Decref(value) => format!("decref {}", value_name(value)),
         Op::Hole => "???".to_string(),
         Op::Missing => "MISSING".to_string(),
     }

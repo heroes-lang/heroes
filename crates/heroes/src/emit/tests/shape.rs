@@ -9,7 +9,7 @@ fn the_first_program_has_the_shape_spike_01_froze() {
     let text = c(FIRST);
     // The prelude, and the stamp that makes a decoy runtime a compile error.
     assert!(text.contains("#include \"heroes_runtime.h\""));
-    assert!(text.contains("_Static_assert(HERO_RUNTIME_ABI == 1"));
+    assert!(text.contains("_Static_assert(HERO_RUNTIME_ABI == 2"));
     // One prototype before any definition, and the mangled name.
     let prototype = text.find("void h_scratch_main(void);").expect("a prototype");
     let definition = text.find("void h_scratch_main(void) {").expect("a definition");
@@ -27,7 +27,11 @@ fn the_first_program_has_the_shape_spike_01_froze() {
     assert!(text.contains("hero_print_int(t"));
     assert!(text.contains("    hero_print_end();"));
     // The shim, not a mangler exception.
-    assert!(text.contains("int main(void) {\n    h_scratch_main();\n    return 0;\n}"));
+    // The shim also asserts the leak balance, because AddressSanitizer's leak
+    // detector does not exist on this platform (panel 021 R9).
+    assert!(text.contains(
+        "int main(void) {\n    h_scratch_main();\n    hero_runtime_check_leaks();\n    return 0;\n}"
+    ), "{text}");
 }
 
 #[test]

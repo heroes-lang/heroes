@@ -1,0 +1,24 @@
+# UNVERIFIED — pending debrief
+#
+# `s @ s` and `s @ s + s`: the order of the two refcount operations around a store is
+# the whole rule. A store must incref the NEW value before decrefing the old (panel
+# 021 rule 3) — reversed, a self-assignment frees the buffer and then increfs a dead
+# one, which is a use-after-free that prints correctly at `-O0` because the bytes are
+# still there.
+#
+# The loop is the shape every string-building function in the self-hosted compiler
+# will have, and it is the one that leaked 999 blocks under the rule as first written.
+
+function main()
+    s: str @ "ab"
+    s @ s
+    print(s)
+    s @ s + s
+    print(s)
+    out: str @ ""
+    i: int @ 0
+    while i < 50
+        out @ out + to_str(i % 10)
+        i @ i + 1
+    print(len(out))
+    print(slice(out, from: 0, to: 10))
