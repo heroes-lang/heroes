@@ -146,7 +146,8 @@ separate elements by newline; single-line by comma.
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` · `chars` ·
 `has` · `join` · `sort` · `to_int` · `to_f64` · `to_str` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
-None of these names may be redeclared.
+None of these names may be redeclared. `print` writes its values with no
+separator and exactly one trailing newline.
 
 ## Tests and holes
 ```

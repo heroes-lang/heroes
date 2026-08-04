@@ -465,25 +465,54 @@ Part 2 rules out as a justification.
   through unmangled by design. The rule lives in one place (the mangler).
 - **Control flow as blocks.** One `goto`+label per basic block, an explicit entry `goto bb0` (the
   entry label is otherwise an unused-label warning), all locals hoisted to the function prologue
-  (`goto` may not jump over declarations).
-- **`#line` on source-line change** — not per statement — restored to the generated file around
-  synthetic prologue/cleanup code, so lldb never blames user lines for housekeeping. `--emit-c
-  --no-line` exists for debugging the emitter itself.
-- **UB is not a diagnostic.** Arithmetic aborts via `__builtin_*_overflow` (§4.14), every
+  (`goto` may not jump over declarations). A block is emitted **only if some edge targets it**:
+  the IR's own `preds` decide, which keeps `-Wunused-label` alive as a check that the emitter's
+  `goto` edges agree with the IR (panel 020 — a predecessor-less join block warns on a *correct*
+  program, and `-Wno-unused-label` would hide the emitter bug along with it).
+- **`#line` when the instruction's line differs from the current effective line** — not per
+  statement, and not per span change: `#line N` anchors the *next* line and C then
+  auto-increments, so a Heroes line lowering to K C lines drifts by K−1. Restored to the generated
+  file around synthetic prologue/cleanup code, so lldb never blames user lines for housekeeping —
+  which means the restore directive carries the printer's **own output line count**, making a
+  newline-counting writer structural rather than incidental (panel 020, measured against
+  `tools/spike/01-first.c`, which advertised `:2` and delivered `:6`). Debugging the emitter
+  itself is the *author's* activity, not the tool's capability: it is three lines in the emitter's
+  test helper, and `--no-line` is refused by CLAUDE.md §10's stopping rule (panel 016's watch
+  list, settled in panel 020).
+- **The `@` parameter is a pointer parameter.** `Op::CopyOut` writes the *caller's* place, which
+  the callee cannot reach in C, so §4.8's copy-in/copy-out becomes: a `T *p_l` parameter, a
+  prologue `T l = *p_l;`, and `*p_l = l;` at every `CopyOut` — in parameter order. `f(@x, @x)`
+  cannot arise, because panel 010 made two `@` arguments sharing a root a compile error; that rule
+  is what makes this convention total (panel 020).
+- **UB is not a diagnostic.** Arithmetic aborts via `__builtin_*_overflow` (§4.14) — whose
+  overflow verdict is against the *destination* type, not the operands, which is why Part 7's
+  `c_int` will move the threshold from 2⁶³ to 2³¹ with no visible change at the call site — every
   type-system-proven-unreachable point gets `hero_unreachable()`, and generated C compiles with
-  `-Wall -Werror=return-type -Werror=uninitialized -fno-strict-aliasing`. A missing return after an
-  exhaustive `match` must not become whatever `-O2` feels like.
+  `-Wall -Werror=return-type -Werror=uninitialized -Werror=format -Wconditional-uninitialized
+  -fno-strict-aliasing`. `%` is guarded exactly like `/`: `INT64_MIN % -1` is UB too, and on arm64
+  it does not trap — it returns a wrong answer at exit 0. A missing return after an
+  exhaustive `match` must not become whatever `-O2` feels like, and a missing return anywhere else
+  is a Heroes diagnostic (`missing_return`) rather than a clang error naming a mangled symbol.
 - **Determinism.** Same input → byte-identical `--emit-c` output, enforced by a double-emit diff in
   CI from the first emitting milestone. The bootstrap fixpoint (Part 0) depends on it; no
-  timestamps, no absolute paths, no hash-seeded orderings anywhere in the pipeline.
+  timestamps, no absolute paths, no hash-seeded orderings anywhere in the pipeline — and the
+  emitted C **never mentions the output path**, so it is the same bytes on stdout and in `-o a.c`.
 - **`f64` literals emitted round-trip-exact** (`%a`).
+- **Where the runtime comes from**, since an installed compiler has no repository above it:
+  `$HEROES_RUNTIME`, then `runtime/` under the working directory, then `runtime/` under an ancestor
+  of the executable. The header defines `HERO_RUNTIME_ABI` and every generated translation unit
+  `_Static_assert`s it, because a directory named `runtime/` is the commonest thing in the world:
+  measured, a decoy replaced the contract with **zero warnings under `-Weverything`** and printed
+  `0x1e` where `30` was expected (panel 020). The cached `runtime.o` is keyed on the contents of
+  `runtime.c` and the header, plus the flags — a stale relink is otherwise silent — and one `.o` is
+  correct across `-O0`, `-O2`, `-flto` and the sanitisers.
 
 Pipeline:
 
 ```
-heroes build prog.hero        # emit build/<hash>/prog.c, clang -O2, link runtime.o
-heroes run prog.hero          # same, then execute (the dev loop)
-heroes build --emit-c ...     # stop at the C and read it
+heroes build prog.hero        # emit build/<hash>/prog.c, clang, link runtime.o
+heroes run prog.hero          # same at -O2, then execute (the dev loop)
+heroes build --emit-c ...     # stop at the C and read it (stdout, or -o)
 ```
 
 Requires Xcode Command Line Tools for clang and the linker. macOS provides no static libc, so

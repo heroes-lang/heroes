@@ -58,16 +58,29 @@ package binary: never.
 
 ## 7. Generated-C rules
 C11; `int64_t`/`double`/`bool`; `#include "heroes_runtime.h"` (clang
-type-checks every runtime call). `#line` on source-line *change*, restored to
-the generated file around synthetic code; `--emit-c --no-line` for emitter
-debugging. Arithmetic aborts via `__builtin_*_overflow` — never C UB. One
-`goto`+label per basic block, explicit entry `goto bb0` (spike 2 finding), all
-locals hoisted to the prologue. `hero_unreachable()` at every
-type-system-proven-unreachable point. Compile flags:
-`-Wall -Werror=return-type -Werror=uninitialized -fno-strict-aliasing`.
-Every name through the mangler (`h_<module>_<name>[_<typehash>]`; fields,
-variant cases and labels too; `extern` FFI names pass through unmangled by
-design). **The double-emit determinism test stays green at all times.**
+type-checks every runtime call) and one `_Static_assert` on
+`HERO_RUNTIME_ABI`, so a decoy `runtime/` cannot silently replace the
+contract. `#line` when an instruction's line differs from the **current
+effective line** (`#line N` anchors the *next* line), restored to the
+generated file around synthetic code — the restore carries the printer's own
+output line count. Emitter debugging is the test helper's job: `--no-line`
+is refused by §10's stopping rule (panels 016, 020). Arithmetic aborts via
+`__builtin_*_overflow` — never C UB — and `%` is guarded like `/`
+(`INT64_MIN % -1` does not trap on arm64). `INT64_C(n)` for every `int`
+literal. One `goto`+label per basic block, explicit entry `goto bb0` (spike 2
+finding), a label **only where an edge targets it**, all locals hoisted to the
+prologue, and a unit-typed temporary never declared at all (`void t0;` is a
+hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
+`*p_l = l;`). `hero_unreachable()` at every type-system-proven-unreachable
+point. Compile flags: `-Wall -Werror=return-type -Werror=uninitialized
+-Werror=format -Wconditional-uninitialized -fno-strict-aliasing`; a clang
+failure is exit 2 and says the *compiler* is wrong. Every name through the
+mangler (`h_<module>_<name>[_<typehash>]`; fields, variant cases and labels
+too; the module component sanitised to `[A-Za-z0-9]` so the first `_` ends it;
+`extern` FFI names pass through unmangled by design, and `extern` reaches no
+binary before M7 because only the `#include` verifies it). **The double-emit
+determinism test stays green at all times**, and the emitted C never mentions
+the output path.
 
 ## 8. Error discipline
 Every `Diagnostic` carries `Fix`es tagged `certain | guess`; only `certain` is
