@@ -38,7 +38,7 @@ panel 008 (split by context, backslash reserved), comments retained,
 reserved-word detection with prescribed errors and `Certain` fixes.
 `heroes lex --json`. 30 crate-internal tests + 4 golden `check/` cases run
 through the real binary. Lexer split into six single-concern files.
-TextMate grammar (bonus): `editors/heroes.tmLanguage.json` — foreign
+TextMate grammar (bonus): `editors/vscode/` (installable extension) — foreign
 reserved words and unknown escapes scoped `invalid.illegal`, so the thesis
 shows up while you type.
 **Runnable:** `heroes lex examples/first.hero --json`.

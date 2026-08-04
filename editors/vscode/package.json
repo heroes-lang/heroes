@@ -1,0 +1,27 @@
+{
+  "name": "heroes-lang",
+  "displayName": "Heroes",
+  "description": "Syntax highlighting for the Heroes language (.hero)",
+  "version": "0.0.1",
+  "publisher": "heroes-lang",
+  "private": true,
+  "engines": { "vscode": "^1.60.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "hero",
+        "aliases": ["Heroes", "hero"],
+        "extensions": [".hero"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hero",
+        "scopeName": "source.hero",
+        "path": "./syntaxes/heroes.tmLanguage.json"
+      }
+    ]
+  }
+}
