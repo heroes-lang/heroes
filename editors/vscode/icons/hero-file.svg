@@ -2,10 +2,10 @@
   <!-- The Aladdin Sane bolt, the project's one motif (site/README.md
        § Style guide): red over blue, the same path the site header uses,
        kept as two offset copies rather than a gradient so it stays legible
-       at 16px. The group scales the 24x32 artwork down into a square slot
-       with a margin, so the icon sits like every other file icon instead
-       of filling the row edge to edge. -->
-  <g transform="translate(6.8 4.2) scale(0.72)">
+       at 16px. The group centres the 24x32 artwork in a square slot at 86%
+       — big enough to read in the file tree, with just enough margin that
+       it does not touch the row edges. -->
+  <g transform="translate(4.99 1.9) scale(0.86)">
     <path fill="#3f7bff" d="M14 0 L2 18 h8 L7 32 L22 12 h-9 z" transform="translate(1.6 0.8)"/>
     <path fill="#e5393e" d="M14 0 L2 18 h8 L7 32 L22 12 h-9 z"/>
   </g>
