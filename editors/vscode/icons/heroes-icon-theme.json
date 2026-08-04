@@ -1,16 +1,53 @@
 {
-  "//": "A deliberately minimal icon theme: it gives .hero the bolt and every other file a plain sheet. Activate it only if you want that trade — the README explains how to keep your existing icon theme and add the bolt through a file association instead.",
+  "//": "A small icon set, not a full theme. .hero gets the Aladdin Sane bolt; the file types this repo actually contains get a distinguishable shape; everything else gets a plain sheet. Enough that switching to it is not a downgrade while working here.",
   "iconDefinitions": {
-    "_hero": { "iconPath": "./hero-file.svg" },
-    "_file": { "iconPath": "./generic-file.svg" },
-    "_folder": { "iconPath": "./generic-folder.svg" },
-    "_folder_open": { "iconPath": "./generic-folder-open.svg" }
+    "_hero": {
+      "iconPath": "./hero-file.svg"
+    },
+    "_code": {
+      "iconPath": "./code.svg"
+    },
+    "_doc": {
+      "iconPath": "./doc.svg"
+    },
+    "_data": {
+      "iconPath": "./data.svg"
+    },
+    "_file": {
+      "iconPath": "./generic-file.svg"
+    },
+    "_folder": {
+      "iconPath": "./generic-folder.svg"
+    },
+    "_folder_open": {
+      "iconPath": "./generic-folder-open.svg"
+    }
   },
   "file": "_file",
   "folder": "_folder",
   "folderExpanded": "_folder_open",
   "fileExtensions": {
-    "hero": "_hero"
+    "hero": "_hero",
+    "rs": "_code",
+    "c": "_code",
+    "h": "_code",
+    "js": "_code",
+    "ts": "_code",
+    "py": "_code",
+    "sh": "_code",
+    "zsh": "_code",
+    "md": "_doc",
+    "txt": "_doc",
+    "html": "_doc",
+    "css": "_doc",
+    "svg": "_doc",
+    "json": "_data",
+    "toml": "_data",
+    "yaml": "_data",
+    "yml": "_data",
+    "lock": "_data",
+    "tiktoken": "_data",
+    "expected": "_data"
   },
   "languageIds": {
     "hero": "_hero"
