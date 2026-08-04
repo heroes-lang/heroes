@@ -187,3 +187,31 @@ spec's HTML provenance header, measured **−96**, which also still asserts the
   type system will have to distinguish capture-free at the boundary. An
   argument for keeping the function type narrow — and identical under either
   spelling.
+
+## Author's verdict — RATIFIED 2026-08-04
+
+**Ratified as resolved: the function type is `(function(A, B) -> C)`, and `fn`
+keeps its reserved-word error, with its `certain` fix, in every position.**
+
+The author read the reversal before ratifying: the recommendation put to the
+judges (D — `fn` as a keyword legal only in type position) is dead, on the
+judges' evidence and not on the panel's authority. What made it dead is worth
+keeping in one sentence, because it will apply again: **the registry's value
+is its uniformity**, and a machine-applicable fix that produces a syntax error
+in the one position where the word is required spends that uniformity to buy
+six characters.
+
+Standing consequences, now normative:
+
+- A foreign reserved word is an error **everywhere** — including as a variant
+  case, a field or a local name. Found the same day from the other side: the
+  acceptance program's `Expr.var` case did not lex, and the appendix was
+  amended (`.var` → `.variable`). The price is on the record: `var case union
+  use include class try const` cannot be identifiers.
+- §4.19 carries the ffi-pragmatist's condition verbatim: FFI callbacks are
+  `ptr` until a C-width type vocabulary exists.
+- Spec v0 stays frozen; the v1 amendment text above (spelling +0 tokens,
+  arity sentence +14) lands with the rest of the v1 package.
+
+The six predictions stay open and scoreable at the milestones named in
+§ "Predictions to score"; nothing in this ratification settles them.

@@ -1,4 +1,4 @@
-# UNVERIFIED — pending debrief
+# Adversarial case, ratified by the author 2026-08-04.
 # Guards the Go/C habit of writing the parameter list straight after the name.
 # The `:` is what makes every declaration one shape (§4.2), so its absence is
 # an error that names the shape.

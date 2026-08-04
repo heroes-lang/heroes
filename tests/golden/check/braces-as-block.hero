@@ -1,4 +1,4 @@
-# UNVERIFIED — pending debrief
+# Adversarial case, ratified by the author 2026-08-04.
 # Guards the most plausible C-family import: braces as a block delimiter.
 # Braces exist only as map literals, so `{` here starts a map and fails loudly
 # rather than opening a block.

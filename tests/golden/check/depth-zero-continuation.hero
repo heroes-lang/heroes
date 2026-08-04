@@ -1,4 +1,4 @@
-# UNVERIFIED — pending debrief
+# Adversarial case, ratified by the author 2026-08-04.
 # Guards panel 007: there is NO continuation at bracket depth zero. A line
 # ending in `+` gets no terminator, so the next line is read as part of the
 # same expression — and an indented line there is a block, not a continuation.
