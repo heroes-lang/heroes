@@ -211,3 +211,66 @@ state = function: (t: Token) -> str
     assert_eq!(format(text), text);
     assert_canonical(text);
 }
+
+/// The defect that made panel 014 expensive: an arm whose body is a control
+/// form. `heroes fmt` printed the `if` and **deleted its branches** — a
+/// formatter that silently changes what a program computes, reachable in three
+/// lines, and no test in this file had the shape.
+///
+/// It could not be fixed without panel 014: the inline arm body was the only
+/// body position rendering outside the block-aware path.
+#[test]
+fn an_arm_whose_body_is_a_control_form_keeps_its_blocks() {
+    let text = "\
+g = function: (x: int) -> int
+    return match x
+        0 => if x > 0
+            1
+        else
+            2
+        _ => 3
+";
+    assert_eq!(format(text), text);
+    assert_canonical(text);
+}
+
+/// Panel 014's forms, round-tripped: a check, a jump, and a `return` inline.
+#[test]
+fn statement_arm_bodies_are_canonical() {
+    let text = concat!(
+        "f = function: (ts: [int]) -> int?\n",
+        "    total: int @ 0\n",
+        "    for t in ts\n",
+        "        match t\n",
+        "            0 => break\n",
+        "            1 => continue\n",
+        "            2 => return fail(\"two\", \"no twos\")\n",
+        "            _ => total @ total + t\n",
+        "    return ok(total)\n",
+        "\n",
+        "test \"it rejects the unknown\"\n",
+        "    match f([2])\n",
+        "        .ok _ => assert false\n",
+        "        .err e => assert e.code == \"two\"\n",
+    );
+    assert_eq!(format(text), text);
+    assert_canonical(text);
+}
+
+/// The doc comment a first prototype of panel 014 silently ate: the arm's span
+/// reaches its terminator, so a `last_line` one line too far made
+/// `trailing_comment` steal the *next* declaration's documentation and glue it
+/// to the arm, where §4.1 adjacency then demoted it to a remark.
+#[test]
+fn an_arm_does_not_steal_the_next_declarations_doc_comment() {
+    let text = "\
+f = function: (k: int) -> int
+    return match k
+        _ => 2
+
+# Doc for g.
+g = function: () -> int
+    return 1
+";
+    assert_eq!(format(text), text);
+}

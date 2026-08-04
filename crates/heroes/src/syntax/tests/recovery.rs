@@ -148,27 +148,29 @@ DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a
 
 /// The one that never terminated. `skip_line` stops *before* an `Indent` — it
 /// must not leave the block it is cleaning — so a failed arm followed by an
-/// indented body consumed nothing and the loop spun forever. Found by the
+/// indented body consumed nothing and the arm loop spun forever. Found by the
 /// compiler-engineer while costing panel 014.
 ///
-/// If this test ever hangs instead of failing, the arm loop lost its
-/// `Indent` case again. Note what recovery buys beyond termination: the
-/// broken arm survives as `<?>` and the arm *after* it is still read.
+/// The input had to change when panel 014 landed: `1 => for x in xs` is now a
+/// *legal* arm body, so the failure has to come from the pattern. If this test
+/// ever hangs instead of failing, the arm loop lost its `Indent` case again.
 #[test]
 fn a_failed_arm_with_a_body_terminates() {
     assert_eq!(
-        dump("f = function: (k: int) -> int\n    return match k\n        1 => for x in xs\n            print(x)\n        _ => 0\n"),
-        "file test.hero\n  function f(k: int) -> int\n    return match k\n      1 => <?>\n      _ => 0\nDIAG test.hero:3:14: error[expected_expression]: expected an expression, found `for` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
+        dump("f = function: (k: int) -> int\n    return match k\n        + => 1\n            print(k)\n        _ => 0\n"),
+        "file test.hero\n  function f(k: int) -> int\n    return match k\n      _ => expr 0\nDIAG test.hero:3:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, a literal, or `_` (on `int`/`str` only)\n"
     );
 }
 
-/// One mistake, one diagnostic: `=> assert false` used to report
-/// `expected_expression` *and* a spurious `expected_pattern`, because the
-/// unconsumed token was read as the next arm's pattern.
+/// One mistake, one diagnostic. Kept from the era when `=> assert false` was
+/// itself the mistake: it reported `expected_expression` *and* a spurious
+/// `expected_pattern`, because the unconsumed token was read as the next arm's
+/// pattern. Panel 014 made the form legal, so the case now guards the
+/// diagnostic-count signal on a body that is still wrong.
 #[test]
-fn a_statement_in_an_arm_body_reports_once() {
+fn a_broken_arm_body_reports_once() {
     assert_eq!(
-        dump("f = function: (k: int) -> int\n    return match k\n        1 => assert false\n        _ => 0\n"),
-        "file test.hero\n  function f(k: int) -> int\n    return match k\n      1 => <?>\n      _ => 0\nDIAG test.hero:3:14: error[expected_expression]: expected an expression, found `assert` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
+        dump("f = function: (k: int) -> int\n    return match k\n        1 => x = = 2\n        _ => 0\n"),
+        "file test.hero\n  function f(k: int) -> int\n    return match k\n      1 => bind x = <?>\n      _ => expr 0\nDIAG test.hero:3:18: error[expected_expression]: expected an expression, found `=` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
     );
 }

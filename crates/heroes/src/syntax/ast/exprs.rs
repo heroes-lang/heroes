@@ -168,7 +168,10 @@ pub struct Arm {
 }
 
 pub enum ArmBody {
-    Expr(ExprId),
+    /// One statement on the same line as `=>`. An expression statement's value
+    /// is the arm's value, which is why this is not a second form: a block was
+    /// already "its last expression" (panel 014).
+    Stmt(StmtId),
     Block(Block),
 }
 

@@ -1,0 +1,8 @@
+# Bulk regression case (assistant-written): a `match` arm whose *pattern* is
+# not a pattern, followed by an indented body. This shape made `heroes parse`
+# loop forever until 2026-08-04 (panel 014's costing found it).
+f = function: (k: int) -> int
+    return match k
+        + => 1
+            print(k)
+        _ => 0

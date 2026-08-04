@@ -2150,10 +2150,8 @@ test "tokenizes numbers, names and symbols"
 
 test "tokenize rejects the unknown"
     match tokenize("2 $ 3")
-        .ok _ =>
-            assert false
-        .err e =>
-            assert e.code == "unknown_char"
+        .ok _  => assert false
+        .err e => assert e.code == "unknown_char"
 
 ## Syntax tree
 
@@ -2306,20 +2304,14 @@ test "variables from the environment"
 test "errors reach the top"
     empty: {str: int} = {}
     match calculate("2 +", empty)
-        .ok _ =>
-            assert false
-        .err e =>
-            assert e.code == "unexpected_end"
+        .ok _  => assert false
+        .err e => assert e.code == "unexpected_end"
     match calculate("z + 1", empty)
-        .ok _ =>
-            assert false
-        .err e =>
-            assert e.code == "unknown_name"
+        .ok _  => assert false
+        .err e => assert e.code == "unknown_name"
     match calculate("(2 + 3", empty)
-        .ok _ =>
-            assert false
-        .err e =>
-            assert e.code == "unclosed_paren"
+        .ok _  => assert false
+        .err e => assert e.code == "unclosed_paren"
 
 test "values are always copies"
     a = [1, 2, 3]

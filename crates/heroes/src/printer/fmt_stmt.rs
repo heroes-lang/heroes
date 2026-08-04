@@ -35,7 +35,7 @@ impl Fmt {
             if i > 0 && self.last_line > 0 && line > self.last_line + 1 {
                 self.blank_line();
             }
-            self.statement(ast, src, comments, *id, indent);
+            self.statement(ast, src, comments, *id, indent, "");
             // A statement that carried a block has already moved `last_line`
             // past its own body. One that did not, ends where it started.
             //
@@ -49,6 +49,11 @@ impl Fmt {
         }
     }
 
+    /// One statement, optionally behind a `head`. A `match` arm passes its
+    /// patterns as the head, which is what routes an arm whose body is an `if`
+    /// through `valued()` — the path that knows how to print a block under a
+    /// control head. Before panel 014 an inline arm body had its own path, and
+    /// that path printed `.a => if c` and **dropped the branches**.
     fn statement(
         &mut self,
         ast: &Ast,
@@ -56,6 +61,7 @@ impl Fmt {
         comments: &[Span],
         id: crate::syntax::StmtId,
         indent: usize,
+        head: &str,
     ) {
         match &ast.stmts[id.0 as usize].kind {
             StmtKind::Bind { name, ty, value } => {
@@ -63,35 +69,35 @@ impl Fmt {
                     Some(ty) => format!(": {}", render_type(ast, *ty, src)),
                     None => String::new(),
                 };
-                let head = format!("{}{annotation} = ", src.slice(*name));
+                let head = format!("{head}{}{annotation} = ", src.slice(*name));
                 self.valued(ast, src, comments, &head, *value, indent);
             }
             StmtKind::Declare { name, ty, value } => {
                 let head =
-                    format!("{}: {} @ ", src.slice(*name), render_type(ast, *ty, src));
+                    format!("{head}{}: {} @ ", src.slice(*name), render_type(ast, *ty, src));
                 self.valued(ast, src, comments, &head, *value, indent);
             }
             StmtKind::Mutate { place, value } => {
-                let head = format!("{} @ ", render(ast, src, *place));
+                let head = format!("{head}{} @ ", render(ast, src, *place));
                 self.valued(ast, src, comments, &head, *value, indent);
             }
             StmtKind::Return(Some(value)) => {
-                self.valued(ast, src, comments, "return ", *value, indent)
+                self.valued(ast, src, comments, &format!("{head}return "), *value, indent)
             }
-            StmtKind::Return(None) => self.line(indent, "return"),
-            StmtKind::Break => self.line(indent, "break"),
-            StmtKind::Continue => self.line(indent, "continue"),
+            StmtKind::Return(None) => self.line(indent, &format!("{head}return")),
+            StmtKind::Break => self.line(indent, &format!("{head}break")),
+            StmtKind::Continue => self.line(indent, &format!("{head}continue")),
             StmtKind::Assert(value) => {
-                self.valued(ast, src, comments, "assert ", *value, indent)
+                self.valued(ast, src, comments, &format!("{head}assert "), *value, indent)
             }
             StmtKind::While { cond, block } => {
-                self.line(indent, &format!("for {}", render(ast, src, *cond)));
+                self.line(indent, &format!("{head}for {}", render(ast, src, *cond)));
                 self.last_line = src.line_col(ast.exprs[cond.0 as usize].span.end).0;
                 self.block(ast, src, comments, block, indent + 4);
             }
             StmtKind::ForIn { name, iterable, block } => {
                 let head = format!(
-                    "for {} in {}",
+                    "{head}for {} in {}",
                     src.slice(*name),
                     render(ast, src, *iterable)
                 );
@@ -99,7 +105,7 @@ impl Fmt {
                 self.last_line = src.line_col(ast.exprs[iterable.0 as usize].span.end).0;
                 self.block(ast, src, comments, block, indent + 4);
             }
-            StmtKind::Expr(value) => self.valued(ast, src, comments, "", *value, indent),
+            StmtKind::Expr(value) => self.valued(ast, src, comments, head, *value, indent),
             // Unreachable: `fmt` refuses a file with diagnostics.
             StmtKind::Error => self.line(indent, "???"),
         }
@@ -145,10 +151,21 @@ impl Fmt {
                     let (line, _) = src.line_col(arm.span.start);
                     self.comments_before(src, comments, line, indent + 4);
                     match &arm.body {
-                        ArmBody::Expr(body) => {
-                            let text = format!("{left} => {}", render(ast, src, *body));
-                            self.line(indent + 4, &text);
-                            self.last_line = src.line_col(arm.span.end).0;
+                        ArmBody::Stmt(id) => {
+                            self.statement(
+                                ast,
+                                src,
+                                comments,
+                                *id,
+                                indent + 4,
+                                &format!("{left} => "),
+                            );
+                            // The arm's own line, NOT `arm.span.end`: that span
+                            // now reaches the terminator, and a `last_line` one
+                            // line too far made `trailing_comment` steal the
+                            // *next* declaration's doc comment and glue it here,
+                            // where §4.1 adjacency then demoted it to a remark.
+                            self.last_line = line;
                             self.trailing_comment(src, comments, self.last_line);
                         }
                         ArmBody::Block(block) => {

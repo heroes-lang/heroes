@@ -21,7 +21,7 @@ use super::types::render_type;
 
 pub fn write_block(ast: &Ast, src: &Source, block: &Block, indent: usize, out: &mut String) {
     for id in &block.stmts {
-        write_stmt(ast, src, *id, indent, out);
+        write_stmt(ast, src, *id, indent, "", out);
     }
 }
 
@@ -31,11 +31,17 @@ fn line(out: &mut String, indent: usize, text: &str) {
     out.push('\n');
 }
 
+/// One statement, optionally behind a `head` — which is how a `match` arm is
+/// printed: the arm's patterns are the head, and the body is a statement like
+/// any other (panel 014). Before that, an inline arm body had its own
+/// rendering path, and that path could not print a block under a control head:
+/// `heroes fmt` silently deleted the branches of an `if` inside an arm.
 fn write_stmt(
     ast: &Ast,
     src: &Source,
     id: crate::syntax::StmtId,
     indent: usize,
+    head: &str,
     out: &mut String,
 ) {
     match &ast.stmts[id.0 as usize].kind {
@@ -44,35 +50,37 @@ fn write_stmt(
                 Some(ty) => format!(": {}", render_type(ast, *ty, src)),
                 None => String::new(),
             };
-            let head = format!("bind {}{annotation} = ", src.slice(*name));
+            let head = format!("{head}bind {}{annotation} = ", src.slice(*name));
             write_valued(ast, src, &head, *value, indent, out);
         }
         StmtKind::Declare { name, ty, value } => {
             let head = format!(
-                "declare {}: {} @ ",
+                "{head}declare {}: {} @ ",
                 src.slice(*name),
                 render_type(ast, *ty, src)
             );
             write_valued(ast, src, &head, *value, indent, out);
         }
         StmtKind::Mutate { place, value } => {
-            let head = format!("mutate {} @ ", render_expr(ast, *place, src));
+            let head = format!("{head}mutate {} @ ", render_expr(ast, *place, src));
             write_valued(ast, src, &head, *value, indent, out);
         }
         StmtKind::Return(Some(value)) => {
-            write_valued(ast, src, "return ", *value, indent, out);
+            write_valued(ast, src, &format!("{head}return "), *value, indent, out);
         }
-        StmtKind::Return(None) => line(out, indent, "return"),
-        StmtKind::Break => line(out, indent, "break"),
-        StmtKind::Continue => line(out, indent, "continue"),
-        StmtKind::Assert(value) => write_valued(ast, src, "assert ", *value, indent, out),
+        StmtKind::Return(None) => line(out, indent, &format!("{head}return")),
+        StmtKind::Break => line(out, indent, &format!("{head}break")),
+        StmtKind::Continue => line(out, indent, &format!("{head}continue")),
+        StmtKind::Assert(value) => {
+            write_valued(ast, src, &format!("{head}assert "), *value, indent, out)
+        }
         StmtKind::While { cond, block } => {
-            line(out, indent, &format!("for {}", render_expr(ast, *cond, src)));
+            line(out, indent, &format!("{head}for {}", render_expr(ast, *cond, src)));
             write_block(ast, src, block, indent + 2, out);
         }
         StmtKind::ForIn { name, iterable, block } => {
             let head = format!(
-                "for {} in {}",
+                "{head}for {} in {}",
                 src.slice(*name),
                 render_expr(ast, *iterable, src)
             );
@@ -84,11 +92,11 @@ fn write_stmt(
         // reads like a statement kind that does not exist.
         StmtKind::Expr(value) => match &ast.exprs[value.0 as usize].kind {
             ExprKind::If { .. } | ExprKind::Match { .. } => {
-                write_valued(ast, src, "", *value, indent, out)
+                write_valued(ast, src, head, *value, indent, out)
             }
-            _ => write_valued(ast, src, "expr ", *value, indent, out),
+            _ => write_valued(ast, src, &format!("{head}expr "), *value, indent, out),
         },
-        StmtKind::Error => line(out, indent, "error"),
+        StmtKind::Error => line(out, indent, &format!("{head}error")),
     }
 }
 
@@ -127,9 +135,8 @@ fn write_valued(
                     .collect();
                 let left = patterns.join(" | ");
                 match &arm.body {
-                    ArmBody::Expr(value) => {
-                        let text = format!("{left} => {}", render_expr(ast, *value, src));
-                        line(out, indent + 2, &text);
+                    ArmBody::Stmt(id) => {
+                        write_stmt(ast, src, *id, indent + 2, &format!("{left} => "), out)
                     }
                     ArmBody::Block(block) => {
                         line(out, indent + 2, &format!("{left} =>"));

@@ -73,7 +73,7 @@ pub(super) fn block(
     Some(Block { span, stmts })
 }
 
-fn statement(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtId {
+pub(super) fn statement(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtId {
     let start = cur.span();
     let reported_before = cur.diagnostic_count();
     let kind = match cur.kind() {

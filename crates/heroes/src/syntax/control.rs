@@ -19,7 +19,7 @@ use crate::source::Source;
 use super::ast::{Arm, ArmBody, Ast, Branch, Expr, ExprId, ExprKind, Pattern, PatternKind};
 use super::cursor::Cursor;
 use super::expr::expr;
-use super::stmt::block;
+use super::stmt::{block, statement};
 
 /// `if cond` + block, then any number of `else if`, then an optional `else`.
 /// No parentheses around the condition (§4.15) and no truthiness: the
@@ -87,30 +87,22 @@ pub(super) fn match_expr(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprI
             TokenKind::Indent => {
                 cur.balanced_block();
             }
-            _ => {
-                let reported_before = cur.diagnostic_count();
-                if let Some(arm) = arm(cur, ast, src) {
-                    let failed = cur.diagnostic_count() > reported_before;
-                    arms.push(arm);
-                    if failed {
-                        // The rest of the line is debris, not a second arm:
-                        // this is what turned one `=> assert false` into
-                        // `expected_expression` *and* a spurious
-                        // `expected_pattern`.
-                        cur.skip_line();
-                    }
-                } else {
-                    cur.skip_line();
-                }
-            }
+            _ => match arm(cur, ast, src) {
+                // A body that failed has already dropped the rest of its line
+                // (`finish` does it for every statement, panel 014), so the
+                // loop must NOT skip again — that ate the arm below it.
+                Some(arm) => arms.push(arm),
+                // A pattern or `=>` that failed consumed nothing reusable.
+                None => cur.skip_line(),
+            },
         }
     }
     let span = start.to(cur.previous_span());
     ast.push_expr(Expr { kind: ExprKind::Match { scrutinee, arms }, span })
 }
 
-/// One arm: patterns joined by `|`, `=>`, then an expression on the same
-/// line or a block below it (§4.7).
+/// One arm: patterns joined by `|`, `=>`, then one statement on the same line
+/// or a block below it (§4.7, panel 014).
 fn arm(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Option<Arm> {
     let start = cur.span();
     let mut patterns = vec![pattern(cur, ast, src)?];
@@ -126,10 +118,14 @@ fn arm(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Option<Arm> {
         return None;
     }
     cur.skip_terminators();
+    // One statement, or a block — the same two shapes every other body has
+    // (panel 014). Going through `statement` is what gives an arm `assert`,
+    // `break` and `return`, and what stops the printer from having a second
+    // path that cannot render a block under a control head.
     let body = if cur.at(TokenKind::Indent) {
         ArmBody::Block(block(cur, ast, src, "a `match` arm")?)
     } else {
-        ArmBody::Expr(expr(cur, ast, src))
+        ArmBody::Stmt(statement(cur, ast, src))
     };
     Some(Arm { patterns, body, span: start.to(cur.previous_span()) })
 }

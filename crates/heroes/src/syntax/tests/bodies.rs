@@ -220,6 +220,10 @@ file test.hero
 
 /// Patterns: a case, a case that binds its payload, `_` as a payload name,
 /// `|` joining patterns, and a block arm (§4.7).
+///
+/// The `expr` label on the inline bodies is panel 014 visible in the dump: an
+/// arm's body is a *statement*, and an expression statement is what carries
+/// the arm's value.
 #[test]
 fn match_arms_carry_patterns_and_bodies() {
     assert_eq!(
@@ -239,9 +243,9 @@ factor = function: (t: Token) -> int
 file test.hero
   function factor(t: Token) -> int
     return match t
-      .num n => n.v
-      .name _ => 0
-      .plus | .times | .rparen => fail(\"expected_factor\", \"operator\")
+      .num n => expr n.v
+      .name _ => expr 0
+      .plus | .times | .rparen => expr fail(\"expected_factor\", \"operator\")
       .lparen =>
         expr print(t)
         return 1
@@ -264,8 +268,8 @@ main = function: ()
 file test.hero
   function main() -> ()
     match calculate(c, env)
-      .ok v => print(v)
-      .err e => print(e.code)
+      .ok v => expr print(v)
+      .err e => expr print(e.code)
 "
     );
 }
@@ -280,8 +284,8 @@ fn a_wildcard_arm_is_recorded_not_judged() {
 file test.hero
   function f(n: int) -> int
     return match n
-      0 => 1
-      _ => 2
+      0 => expr 1
+      _ => expr 2
 "
     );
 }
