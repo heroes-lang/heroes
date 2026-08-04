@@ -189,6 +189,13 @@ impl Cursor {
 
     // --- failing --------------------------------------------------------
 
+    /// How many diagnostics have been reported so far. The statement parser
+    /// compares it before and after: a statement that produced one has already
+    /// said what is wrong, wherever inside itself the mistake was.
+    pub(super) fn diagnostic_count(&self) -> usize {
+        self.diagnostics.len()
+    }
+
     pub(super) fn error(&mut self, code: &str, message: String, span: Span) {
         self.diagnostics.push(Diagnostic::new(code, message, span));
     }

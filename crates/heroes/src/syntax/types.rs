@@ -109,6 +109,10 @@ fn unit_or_function(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> TypeId {
         "`function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`",
         src,
     ) {
+        // This `(` was consumed here, so its `)` is this function's to find:
+        // leaving it for the caller made a signature containing one bad type
+        // report the mistake three times.
+        cur.recover_past_closer(TokenKind::LParen, TokenKind::RParen);
         return ast.push_type(TypeNode { kind: TypeKind::Error, span: open });
     }
     let params = function_params(cur, ast, src);

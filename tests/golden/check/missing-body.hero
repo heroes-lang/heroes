@@ -1,0 +1,7 @@
+# Bulk regression case (assistant-written): the three declarations that need a
+# body and do not have one.
+MAX = constant: int
+
+Point = record
+
+Token = variant

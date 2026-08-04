@@ -1,0 +1,9 @@
+# UNVERIFIED — pending debrief
+# Guards panel 013: `fn` is one word with one meaning — an error — in BOTH
+# positions, and the same certain fix repairs both. If `fn` ever becomes legal
+# in a type, the registry starts asserting something false.
+apply = function: (f: (fn(int) -> int), x: int) -> int
+    return f(x)
+
+double = fn: (n: int) -> int
+    return n * 2

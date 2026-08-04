@@ -1,0 +1,4 @@
+# Bulk regression case (assistant-written): the left of `@` must name where
+# the value goes (§4.4).
+main = function: ()
+    f(x) @ 1

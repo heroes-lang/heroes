@@ -1,0 +1,1 @@
+tests/golden/check/trailing-comma.hero:5:15: error[trailing_comma]: a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`

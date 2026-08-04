@@ -1,0 +1,3 @@
+tests/golden/check/missing-body.hero:5:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found a name (`Point`))
+tests/golden/check/missing-body.hero:7:1: error[empty_record]: a `record` needs at least one field, indented one level below it
+tests/golden/check/missing-body.hero:8:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it

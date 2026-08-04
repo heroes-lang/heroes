@@ -75,6 +75,7 @@ pub(super) fn block(
 
 fn statement(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtId {
     let start = cur.span();
+    let reported_before = cur.diagnostic_count();
     let kind = match cur.kind() {
         TokenKind::KwReturn => return_stmt(cur, ast, src),
         TokenKind::KwBreak => {
@@ -97,7 +98,8 @@ fn statement(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtId {
         TokenKind::Ident if cur.peek(1) == TokenKind::Colon => annotated(cur, ast, src),
         _ => expression_or_mutation(cur, ast, src),
     };
-    finish(cur, ast, src, start, kind)
+    let failed = cur.diagnostic_count() > reported_before;
+    finish(cur, ast, src, start, kind, failed)
 }
 
 /// Every statement ends at its line end. Consuming the terminator here — in
@@ -109,12 +111,18 @@ fn finish(
     src: &Source,
     start: Span,
     kind: StmtKind,
+    failed: bool,
 ) -> StmtId {
     let span = start.to(cur.previous_span());
     // A statement that already failed has said what is wrong: the rest of
-    // its line is debris, not a second mistake.
-    if matches!(kind, StmtKind::Error) {
+    // its line is debris, not a second mistake — and so is any block hanging
+    // off it, which is how a depth-zero line continuation (illegal, panel 007)
+    // used to cost three diagnostics instead of one.
+    if failed {
         cur.skip_line();
+        if cur.at(TokenKind::Indent) {
+            cur.balanced_block();
+        }
         return ast.push_stmt(Stmt { kind, span });
     }
     // A statement that ended with a block — a loop, an `if`, a `match` —

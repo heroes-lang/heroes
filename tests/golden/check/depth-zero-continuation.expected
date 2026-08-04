@@ -1,0 +1,1 @@
+tests/golden/check/depth-zero-continuation.hero:7:1: error[expected_expression]: expected an expression, found an indented block — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

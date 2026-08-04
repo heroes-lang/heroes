@@ -11,7 +11,7 @@
 
 use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::lexer::TokenKind;
-use crate::source::Source;
+use crate::source::{Source, Span};
 
 use super::ast::{Arg, Ast, Expr, ExprId, ExprKind, MapEntry};
 use super::control::{if_expr, match_expr};
@@ -123,10 +123,14 @@ fn map(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
 /// over — either properly, at the closer, or because the separator is
 /// missing, which is reported here.
 fn separator(cur: &mut Cursor, src: &Source, closer: TokenKind, what: &str) -> bool {
+    let comma_span = cur.span();
     let comma = cur.eat(TokenKind::Comma);
     let newline = cur.at(TokenKind::Terminator);
     cur.skip_terminators();
     if cur.at(closer) || cur.at(TokenKind::Eof) {
+        if comma {
+            trailing_comma(cur, comma_span);
+        }
         return false;
     }
     if comma || newline {
@@ -177,6 +181,11 @@ pub(super) fn call_args(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Vec<Ar
     }
     loop {
         cur.skip_terminators();
+        if cur.at(TokenKind::RParen) {
+            // Reached only after a comma: `f(a, b,)`.
+            trailing_comma(cur, cur.previous_span());
+            break;
+        }
         let name = if cur.at(TokenKind::Ident) && cur.peek(1) == TokenKind::Colon {
             let name = cur.bump().span;
             cur.bump(); // `:`
@@ -211,6 +220,24 @@ pub(super) fn call_args(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Vec<Ar
         cur.recover_past_closer(TokenKind::LParen, TokenKind::RParen);
     }
     args
+}
+
+/// `f(a, b,)` — the Python and JavaScript habit. Heroes has one spelling per
+/// program (§4.15), so the trailing comma cannot also be it; the fix is
+/// `certain` because deleting it is the whole repair.
+fn trailing_comma(cur: &mut Cursor, comma: Span) {
+    let mut diag = Diagnostic::new(
+        "trailing_comma",
+        "a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`".to_string(),
+        comma,
+    );
+    diag.fixes.push(Fix {
+        title: "delete the trailing comma".to_string(),
+        replacement: String::new(),
+        span: comma,
+        certainty: Certainty::Certain,
+    });
+    cur.push_diagnostic(diag);
 }
 
 /// `f(a @ n)` — `@` where the `:` of a named argument belongs. The two rules

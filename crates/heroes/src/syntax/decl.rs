@@ -101,7 +101,10 @@ fn constant(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span, doc: Vec<
         return;
     }
     let ty = parse_type(cur, ast, src);
-    let Some(body) = block(cur, ast, src, "a `constant`") else { return };
+    let Some(body) = block(cur, ast, src, "a `constant`") else {
+        cur.recover_to_next_decl(src);
+        return;
+    };
     let span = name.to(body.span);
     ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body } });
 }
@@ -143,7 +146,10 @@ fn function(
     } else {
         match block(cur, ast, src, "a `function`") {
             Some(body) => Some(body),
-            None => return,
+            None => {
+                cur.recover_to_next_decl(src);
+                return;
+            }
         }
     };
     let end = match &body {
@@ -232,7 +238,10 @@ fn test(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
         return;
     }
     let name = cur.bump().span;
-    let Some(body) = block(cur, ast, src, "a `test`") else { return };
+    let Some(body) = block(cur, ast, src, "a `test`") else {
+        cur.recover_to_next_decl(src);
+        return;
+    };
     let span = keyword.to(body.span);
     ast.decls.push(Decl { name, doc, span, kind: DeclKind::Test { body } });
 }

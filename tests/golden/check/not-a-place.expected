@@ -1,0 +1,1 @@
+tests/golden/check/not-a-place.hero:4:5: error[not_a_place]: only a name, a field or an element can be mutated — the left of `@` must name where the value goes

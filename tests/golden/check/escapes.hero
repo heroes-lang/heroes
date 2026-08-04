@@ -1,4 +1,7 @@
 # The backslash is reserved (panel 008).
-re = "\d+"
-s = "it\'s"
-c = '\"'
+# Wrapped in a function so the case isolates the escape class: at top level
+# these lines are not declarations at all, and the parser said so.
+main = function: ()
+    re = "\d+"
+    s = "it\'s"
+    c = '\"'

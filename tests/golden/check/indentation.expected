@@ -1,2 +1,5 @@
 tests/golden/check/indentation.hero:2:1: error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per level; found 5
 tests/golden/check/indentation.hero:4:1: error[indentation_jump]: indentation jumps from level 0 to level 2; a block opens one level at a time
+tests/golden/check/indentation.hero:2:6: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found a name (`five_spaces`))
+tests/golden/check/indentation.hero:2:17: error[expected_eq]: expected `=` — a top-level line binds a name to one of the four entities, found end of line
+tests/golden/check/indentation.hero:4:1: error[unexpected_block]: this block is indented deeper than anything that opens one

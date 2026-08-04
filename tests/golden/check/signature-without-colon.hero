@@ -1,0 +1,6 @@
+# UNVERIFIED — pending debrief
+# Guards the Go/C habit of writing the parameter list straight after the name.
+# The `:` is what makes every declaration one shape (§4.2), so its absence is
+# an error that names the shape.
+dist2 = function (a: int, b: int) -> int
+    return a * b
