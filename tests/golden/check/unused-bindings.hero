@@ -1,5 +1,5 @@
-# UNVERIFIED — pending debrief
-# Adversarial case, four shapes of "nobody reads this" in one file, and no
+# Adversarial case, ratified by the author 2026-08-04 (panel 015).
+# Guards four shapes of "nobody reads this" in one file, and no
 # `???` anywhere — which is what makes them fire (panel 015 A and B):
 #   a parameter · a cell that is written and never read · a loop variable ·
 #   a pattern payload

@@ -1,5 +1,5 @@
-# UNVERIFIED — pending debrief
-# Adversarial case for §4.16, which is normative and file-wide: one `???`
+# Adversarial case, ratified by the author 2026-08-04 (panel 015).
+# Guards §4.16, which is normative and file-wide: one `???`
 # anywhere suspends the unused rule for the WHOLE file — including the unused
 # parameter here, which is the shape §4.16's own example has — and suspends
 # NOTHING else. The unknown name below is still an error, or a file with one

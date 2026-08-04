@@ -1,5 +1,5 @@
-# UNVERIFIED — pending debrief
-# Adversarial case. Guards panel 015's one-tier resolution: every name in
+# Adversarial case, ratified by the author 2026-08-04 (panel 015).
+# Guards panel 015's one-tier resolution: every name in
 # §4.20's built-in inventory is taken EVERYWHERE — at the top level, as a
 # parameter, as a local. The two-tier version, where a file's own `map` won
 # silently, was vetoed by two judges from opposite directions, and this file is

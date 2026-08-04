@@ -1,5 +1,5 @@
-# UNVERIFIED — pending debrief
-# Adversarial case for the shadow ban in the three positions that matter: over
+# Adversarial case, ratified by the author 2026-08-04 (panel 015).
+# Guards the shadow ban in the three positions that matter: over
 # a parameter, over a top-level name (which is in scope everywhere), and over a
 # built-in. The two `for x in` loops are the control: they are SIBLINGS, not
 # nested, so reusing `x` is legal and this file must report nothing about them.

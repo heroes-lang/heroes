@@ -1,5 +1,5 @@
-# UNVERIFIED — pending debrief
-# Adversarial case, straight out of §4.4's own argument for why the type is
+# Adversarial case, ratified by the author 2026-08-04 (panel 015).
+# Guards §4.4's own argument for why the type is
 # mandatory on a mutable declaration. `totl @ total + x` reads the typo on the
 # very line that writes it, so no unused rule could ever catch it: the only
 # thing that makes it loud is that `@` writes to a name that must already be

@@ -213,3 +213,22 @@ rejection half shipped unnarrowed, the engineer's falsifier file would report
   `len(xs)` can be a local while `xs.len()` is the built-in, legitimately, so a
   pass that re-resolved after Part 5 erases UFCS would silently swap the second
   meaning for the first.
+
+## Author verdict — RATIFIED 2026-08-04
+
+Ratified in full, by author instruction to ratify the panels' final decisions
+without a separate sitting (`/goal`, 2026-08-04). All five resolutions stand as
+written, including the three the judges changed:
+
+- **A** with its two companions (`_` legal and repeatable as a parameter name;
+  §4.16's suppression covers parameters).
+- **B** extended past Go, with the `@`-copy-out carve-out.
+- **C** at one tier. The appendix rename stands.
+- **D** narrowed to the field-name test, with the combined message owed at M3c.
+- **E** sequential, against Java/C# — the departure is ratified *as a
+  departure*, with §1.3 as its reason and the precedent recorded against it.
+
+Two items do **not** close with this ratification and stay open on their own
+terms, because both are questions this panel did not have the standing to
+settle: `print`'s reservation against PEP 3105's counter-precedent, and `+` on
+`str` (put to panel 017).
