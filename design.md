@@ -233,6 +233,15 @@ one: every feature has to pay rent in spec tokens, and a language whose spec fit
 necessarily a language one person can implement. Want generics? That's ~200 tokens of spec — justify
 it. Want three ways to write a loop? Triple cost, zero gain.
 
+**MEASURED, 2026-08-04 (panel 011): spec v0 is 1989 tokens (Anthropic legacy) / 2048 (cl100k) /
+2050 (o200k).** The word heuristic every earlier verdict relied on said 1496 — low by a third. So
+the 1500 budget was breached on the day it was written and nobody could see it, and the 2000
+ceiling is met by one instrument and breached by two. **The repo is in breach as of today**, by
+the pessimistic bound that panel 009 made binding; the next spec amendment must be net-negative,
+and the 5-line header comment (−89 measured) buys back the first one and nothing more. The budget
+is a **hard measured ceiling of 2000**, taken as the maximum over the vendored instruments — which
+reconciles the "~" above with panel 009's veto threshold.
+
 **Raised from ~1500 to 2000 by author decision (2026-08-04; panel 009, retro-record).** Two reasons
 are on the record. First, 1500 was a forcing function, never a measurement — and it was being
 defended with a 1.33 tokens/word prose heuristic applied to a document that is ~14% punctuation by
@@ -240,6 +249,10 @@ character, so the figures every budget verdict rested on (~1496) may always have
 (panel 008). Second, this document has instructed from the start that the count be taken *with a
 real tokeniser, not by estimation* (Part 10); until `heroes measure` does so, the spec's true size
 is unknown and no headroom claim means anything.
+
+Note what this leaves unaudited: §1.2's cost formula has two factors, and only the first is now
+measured. The rewrite rate needs a model in the loop, so until metric 2 runs the formula remains
+the design rule it always was and stops being an audited one (panel 011).
 
 **The discipline the number was proxying for survives independently of headroom: every addition
 still carries §1.0's burden of proof — compiler-need or a measured thesis effect — and a bigger
@@ -1876,11 +1889,16 @@ variables tolerated). Same model, same spec size, same unfamiliarity, opposite d
 only comparison that isolates *design* from training-data familiarity. Without it there is no
 falsifiable claim.
 
-1. **Token counting.** With the real reader's tokeniser (the Anthropic `count_tokens` endpoint —
-   never `tiktoken`, which undercounts Claude tokens 15–20% on text and worse on code). **Count
-   declarations separately from uses** (verifies §1.5's asymmetry) and **punctuation separately
-   from the rest** (settles whether braces/parens are 3% or 15%). The §1.6 budget is checked
-   against the spec; the *prompt* cost is additionally reported from real runs' billed tokens.
+1. **Token counting.** With **two vendored BPE tokenisers** (Anthropic's legacy `claude.json` and
+   `cl100k_base`), pinned by sha256 and read offline — no API key, no network. The **maximum over
+   instruments binds** and their spread is published with every run: one instrument cannot detect
+   its own drift, and two disagreeing is the honest error bar. Measured on frozen spec v0 the
+   spread is 59 tokens (3%), not the order of magnitude this document once feared: an earlier
+   revision claimed `tiktoken` "undercounts Claude tokens 15–20%", which is unsourced and was
+   contradicted by measurement — `cl100k` counts 3% *above* Anthropic's own legacy tokeniser on
+   this document (panel 011). **Count declarations separately from uses** (verifies §1.5's
+   asymmetry) and **punctuation separately from the rest** (settles whether braces/parens are 3%
+   or 15%). The §1.6 budget is checked against the spec.
 2. **First-try rate.** Spec → model → programs → count. Two gradings, both reported: *compile* rate
    (from the type checker's arrival) and *tests-pass* rate (from `test`'s arrival — §4.18:
    compiling is not working). 20 frozen tasks × 5 samples, Wilson intervals; frozen, hashed prompt
