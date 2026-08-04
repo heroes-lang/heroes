@@ -1,0 +1,12 @@
+# `m[k]` is not `xs[i]`. A map access yields a `V?` and cannot abort; an array
+# index can, and only one of the two carries the `!` that says so. Same syntax,
+# two instructions — which is why lowering asks the checker for the base's type
+# instead of looking at the brackets.
+function score_of(scores: {str: int}, name: str) -> int
+    return scores[name].default(0)
+
+function first_of(xs: [int]) -> int
+    return xs[0]
+
+function both(scores: {str: int}, xs: [int]) -> int
+    return score_of(scores, "ada") + first_of(xs)

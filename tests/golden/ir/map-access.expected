@@ -1,0 +1,44 @@
+strings
+    0  "ada"
+
+function score_of(scores: {str: int}, name: str) -> int
+    slots  $f0: int? · $r0: int
+    bb0  entry
+        $t1: {str: int} = load scores
+        $t2: str = load name
+        $t3: int? = mapget $t1, $t2
+        store $f0 <- $t3
+        $t4: int? = load $f0
+        $t5: int = tag $t4
+        $t6: int = const 0
+        $t7: bool = eq $t5, $t6
+        branch $t7 -> bb1 else bb2
+    bb1  default: ok    preds bb0
+        $t8: int? = load $f0
+        $t9: int = payload $t8 .ok
+        store $r0 <- $t9
+        jump bb3
+    bb2  default: else    preds bb0
+        $t10: int = const 0
+        store $r0 <- $t10
+        jump bb3
+    bb3  default: join    preds bb1, bb2
+        $t11: int = load $r0
+        return $t11
+
+function first_of(xs: [int]) -> int
+    bb0  entry
+        $t1: [int] = load xs
+        $t2: int = const 0
+        $t3: int = index! $t1, $t2
+        return $t3
+
+function both(scores: {str: int}, xs: [int]) -> int
+    bb0  entry
+        $t1: {str: int} = load scores
+        $t2: str = const str 0
+        $t3: int = call heroes score_of($t1, $t2)
+        $t4: [int] = load xs
+        $t5: int = call heroes first_of($t4)
+        $t6: int = add! $t3, $t5
+        return $t6

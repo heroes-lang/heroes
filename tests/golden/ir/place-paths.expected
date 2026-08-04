@@ -1,0 +1,19 @@
+function set_cell(@g: Grid, r: int, c: int, v: int)
+    bb0  entry
+        $t1: int = load r
+        $t2: int = load c
+        $t3: int = load v
+        store g.rows[$t1].cells[$t2] <- $t3
+        copyout g
+        return
+
+function cell_of(g: Grid, r: int, c: int) -> int
+    bb0  entry
+        $t1: Grid = load g
+        $t2: [Row] = field $t1.rows
+        $t3: int = load r
+        $t4: Row = index! $t2, $t3
+        $t5: [int] = field $t4.cells
+        $t6: int = load c
+        $t7: int = index! $t5, $t6
+        return $t7

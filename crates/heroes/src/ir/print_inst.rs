@@ -22,7 +22,7 @@ use crate::syntax::Ast;
 use crate::types::{render_ty, Checked, Ty};
 
 use super::inst::{Abort, Arg, BinOp, CastKind, Const, Inst, Op, Place, Step, UnOp, ValueId};
-use super::print_names::{case_name, field_name, name_of_field, shape_name, target};
+use super::print_names::{case_name, field_name, field_type, name_of_field, shape_name, target};
 use super::Function;
 
 pub(super) fn value_name(value: ValueId) -> String {
@@ -152,7 +152,9 @@ fn written(
             Step::Field(index) => {
                 out.push('.');
                 out.push_str(&name_of_field(ast, checked, src, ty, index));
-                ty = checked.types.error();
+                // Carry the field's own type, or the next step in the path has
+                // nothing to look a name up in.
+                ty = field_type(ast, checked, ty, index);
             }
             Step::Index(value) => {
                 out.push('[');

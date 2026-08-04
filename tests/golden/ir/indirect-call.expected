@@ -1,0 +1,23 @@
+function double(n: int) -> int
+    bb0  entry
+        $t1: int = load n
+        $t2: int = const 2
+        $t3: int = mul! $t1, $t2
+        return $t3
+
+function apply_twice(n: int, f: (function(int) -> int)) -> int
+    bb0  entry
+        $t1: (function(int) -> int) = load f
+        $t2: (function(int) -> int) = load f
+        $t3: int = load n
+        $t4: int = call indirect $t2($t3)
+        $t5: int = call indirect $t1($t4)
+        return $t5
+
+function main()
+    bb0  entry
+        $t1: int = const 3
+        $t2: (function(int) -> int) = funcref heroes double
+        $t3: int = call heroes apply_twice($t1, $t2)
+        call builtin print($t3) variadic
+        return

@@ -1,0 +1,18 @@
+# REGRESSION, 2026-08-04 (M4). Symptom: `extern function sqrt(x: ?) -> f64` in
+# the dump — the parameter type came out as the error type. Cause: lowering asked
+# the *locals* table for a parameter's type, and an `extern` has no locals: there
+# is no body to use them in, so the resolver never makes any. Fix: the checker now
+# records every **written** type (`Checked::written_types`) and lowering asks that.
+#
+# It matters past the dump. M5a writes a C prototype from exactly these types, and
+# clang type-checks the call against the real header (§4.19) — a prototype built
+# from the error type would either not compile or, worse, compile wrong.
+extern function sqrt(x: f64) -> f64
+
+extern function abs(n: int) -> int
+
+function hypotenuse(a: f64, b: f64) -> f64
+    return sqrt(a * a + b * b)
+
+function distance(a: int, b: int) -> int
+    return abs(a - b)

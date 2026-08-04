@@ -1,0 +1,54 @@
+## Maps, and absence as a type
+#
+# `m[k]` does not return a `V`. It returns a `V?`, because the key might not
+# be there — so the compiler makes you say what happens when it isn't. There
+# is no null to forget to check.
+
+# The four ways to read a `V?`, on one line each (§4.6).
+function score_of(scores: {str: int}, name: str) -> int
+    return scores[name].default(0)
+
+function known(scores: {str: int}, name: str) -> bool
+    return has(scores, name)
+
+# `.is_err()` asks without extracting; the `match` extracts without aborting.
+function report(scores: {str: int}, name: str) -> str
+    got = scores[name]
+    if got.is_err()
+        return name + " has no score"
+    return name + " scored " + got.must().to_str()
+
+# The general way, and the only one that names the error: `match` on `.ok`/`.err`.
+function describe(scores: {str: int}, name: str) -> str
+    return match scores[name]
+        .ok v  => v.to_str()
+        .err e => e.code
+
+# A map is built as a literal. There is no insert in the built-in inventory
+# (§4.20) — `push` is for arrays — so this table is written, not accumulated.
+function table() -> {str: int}
+    return {"ada": 10, "grace": 9, "alan": 8}
+
+function total_of(scores: {str: int}, names: [str]) -> int
+    sum: int @ 0
+    for name in names
+        sum @ sum + score_of(scores, name)
+    return sum
+
+test "a missing key is a type, not a crash"
+    scores = table()
+    assert score_of(scores, "ada") == 10
+    assert score_of(scores, "nobody") == 0
+    assert known(scores, "grace")
+    assert known(scores, "nobody") == false
+    assert scores.len() == 3
+
+test "the four readings agree about presence and disagree about absence"
+    scores = table()
+    assert report(scores, "alan") == "alan scored 8"
+    assert report(scores, "nobody") == "nobody has no score"
+    assert describe(scores, "alan") == "8"
+    assert describe(scores, "nobody") == "missing_key"
+
+function main()
+    print(total_of(table(), ["ada", "grace", "nobody"]))

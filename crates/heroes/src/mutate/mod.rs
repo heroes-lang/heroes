@@ -33,6 +33,17 @@ mod operators;
 
 pub use operators::OPERATORS;
 
+/// Every mutant one operator makes of one source.
+///
+/// Exported because the *surviving* mutants are a free corpus for anything that
+/// must hold on **every program the compiler accepts**: they type-check by
+/// definition, so lowering them must produce a well-formed IR. Csmith's lesson
+/// applied to a generator this project already owns — the mutants were built to
+/// measure the thesis, and they cost nothing to reuse as a fuzz corpus.
+pub fn mutants(operator: &str, name: &str, text: &str) -> Vec<String> {
+    operators::apply(operator, name, text)
+}
+
 /// What became of one mutant.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Fate {

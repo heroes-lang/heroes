@@ -204,7 +204,7 @@ fn applying_certain_fixes_produces_the_fixed_file_and_it_checks_clean() {
 fn golden_ir_cases_lower_to_their_expected_form() {
     let root = workspace_root();
     let cases = collect_cases(&root.join("tests/golden/ir"));
-    assert!(cases.len() >= 14, "the IR goldens lost files: {}", cases.len());
+    assert!(cases.len() >= 20, "the IR goldens lost files: {}", cases.len());
     for case in cases {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))

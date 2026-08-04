@@ -1,0 +1,90 @@
+## A recursive shape, and the only indirection there is
+#
+# A tree needs to contain itself, and no pointer exists in this language. The
+# way through is §4.10's: the *array* is the indirection. `[Expr]` is a
+# finite type whose elements are `Expr`, so `sum` can hold its children and
+# the whole declaration stays a value that copies.
+
+variant Expr
+    number
+        v: int
+    add
+        parts: [Expr]
+    multiply
+        parts: [Expr]
+    negate
+        inner: [Expr]
+
+# Recursion over a variant is one `match` and one `for` — and the `match` is
+# exhaustive or it does not compile.
+function value_of(e: Expr) -> int
+    return match e
+        .number n   => n.v
+        .add a      => sum_of(a.parts)
+        .multiply m => product_of(m.parts)
+        .negate g   => 0 - first_value(g.inner)
+
+function sum_of(parts: [Expr]) -> int
+    total: int @ 0
+    for part in parts
+        total @ total + value_of(part)
+    return total
+
+function product_of(parts: [Expr]) -> int
+    total: int @ 1
+    for part in parts
+        total @ total * value_of(part)
+    return total
+
+# An empty child list is not an error here, so absence gets an answer instead
+# of an abort: the neutral element.
+function first_value(parts: [Expr]) -> int
+    for part in parts
+        return value_of(part)
+    return 0
+
+# How deep does it go? The same shape again, one level up.
+function depth_of(e: Expr) -> int
+    return match e
+        .number _   => 1
+        .add a      => 1 + deepest(a.parts)
+        .multiply m => 1 + deepest(m.parts)
+        .negate g   => 1 + deepest(g.inner)
+
+function deepest(parts: [Expr]) -> int
+    best: int @ 0
+    for part in parts
+        d = depth_of(part)
+        if d > best
+            best @ d
+    return best
+
+# Two cases share one answer, so their patterns share one arm (`|`).
+function is_combination(e: Expr) -> bool
+    return match e
+        .add _ | .multiply _ => true
+        .number _            => false
+        .negate _            => false
+
+# The annotation on the binding is not decoration: a leading-dot case takes its
+# variant from the context, and a bare `=` gives it none (§4.5). Written without
+# it, the compiler says so and names the three places the type could come from.
+function two_plus_three_times_four() -> Expr
+    three_times_four: Expr = .multiply(parts: [.number(v: 3), .number(v: 4)])
+    return .add(parts: [.number(v: 2), three_times_four])
+
+test "the tree evaluates and measures itself"
+    e = two_plus_three_times_four()
+    assert value_of(e) == 14
+    assert depth_of(e) == 3
+    assert is_combination(e)
+    assert is_combination(.number(v: 1)) == false
+
+test "negation nests, and an empty child list is neutral"
+    assert value_of(.negate(inner: [.number(v: 7)])) == 0 - 7
+    assert value_of(.add(parts: [])) == 0
+    assert value_of(.multiply(parts: [])) == 1
+    assert value_of(.negate(inner: [])) == 0
+
+function main()
+    print(value_of(two_plus_three_times_four()))

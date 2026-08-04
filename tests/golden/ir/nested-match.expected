@@ -1,0 +1,53 @@
+strings
+    0  "red dot"
+    1  "blue dot"
+    2  "red line"
+    3  "blue line"
+
+function describe(s: Shape, c: Colour) -> str
+    slots  $s0: Shape · $r0: str · $s1: Colour · $r1: str · $s2: Colour · $r2: str
+    bb0  entry
+        $t1: Shape = load s
+        store $s0 <- $t1
+        $t2: Shape = load $s0
+        $t3: int = tag $t2
+        switch $t3 case 0 -> bb2, case 1 -> bb3
+    bb1  match: join    preds bb4, bb7
+        $t16: str = load $r0
+        return $t16
+    bb2  match: arm    preds bb0
+        $t4: Colour = load c
+        store $s1 <- $t4
+        $t5: Colour = load $s1
+        $t6: int = tag $t5
+        switch $t6 case 0 -> bb5, case 1 -> bb6
+    bb3  match: arm    preds bb0
+        $t10: Colour = load c
+        store $s2 <- $t10
+        $t11: Colour = load $s2
+        $t12: int = tag $t11
+        switch $t12 case 0 -> bb8, case 1 -> bb9
+    bb4  match: join    preds bb5, bb6
+        $t9: str = load $r1
+        store $r0 <- $t9
+        jump bb1
+    bb5  match: arm    preds bb2
+        $t7: str = const str 0
+        store $r1 <- $t7
+        jump bb4
+    bb6  match: arm    preds bb2
+        $t8: str = const str 1
+        store $r1 <- $t8
+        jump bb4
+    bb7  match: join    preds bb8, bb9
+        $t15: str = load $r2
+        store $r0 <- $t15
+        jump bb1
+    bb8  match: arm    preds bb3
+        $t13: str = const str 2
+        store $r2 <- $t13
+        jump bb7
+    bb9  match: arm    preds bb3
+        $t14: str = const str 3
+        store $r2 <- $t14
+        jump bb7

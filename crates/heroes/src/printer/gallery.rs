@@ -41,7 +41,7 @@ pub(crate) fn gallery_files() -> Vec<(String, String)> {
         })
         .collect();
     files.sort();
-    assert!(files.len() >= 9, "the gallery lost files: {}", files.len());
+    assert!(files.len() >= 11, "the gallery lost files: {}", files.len());
     files
 }
 

@@ -1,0 +1,30 @@
+# A `match` inside a `match` arm: a switch whose arm block opens another switch.
+# Worth pinning because the inner one's join must not be confused with the
+# outer's — each `match` allocates its own subject slot (`$s`) and its own
+# result slot (`$r`), and the numbers say which is which.
+#
+# The inner `match` is written as a **block** arm body, and that is not a style
+# choice: written inline (`.dot => match c` with the inner arms indented below),
+# the parser rejects the *next* outer arm with "expected the end of the line".
+# The program looks legal under §4.7 and the message points at the wrong line;
+# recorded as a defect in the debrief queue rather than pinned here, because a
+# golden that expected it would make it permanent.
+variant Shape
+    dot
+    line
+        length: int
+
+variant Colour
+    red
+    blue
+
+function describe(s: Shape, c: Colour) -> str
+    return match s
+        .dot =>
+            match c
+                .red  => "red dot"
+                .blue => "blue dot"
+        .line _ =>
+            match c
+                .red  => "red line"
+                .blue => "blue line"

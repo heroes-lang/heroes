@@ -70,6 +70,35 @@ pub(super) fn field_name(
     name_of_field(ast, checked, src, function.value_type(base), index)
 }
 
+/// The type a field *holds*, so a path can keep naming its steps past the first
+/// one. Without it `g.rows[$t1].cells[$t2]` printed `g.rows[$t1].0[$t2]`: the type
+/// was dropped after one field step, and every name after it fell back to an index.
+pub(super) fn field_type(
+    ast: &Ast,
+    checked: &Checked,
+    owner: TyId,
+    index: u32,
+) -> TyId {
+    let written = match checked.types.get(owner) {
+        Ty::Named(decl) => match &ast.decls[decl as usize].kind {
+            DeclKind::Record { fields } => fields.get(index as usize).map(|field| field.ty),
+            _ => None,
+        },
+        Ty::Case(decl, case) => match &ast.decls[decl as usize].kind {
+            DeclKind::Variant { cases } => {
+                cases[case as usize].fields.get(index as usize).map(|field| field.ty)
+            }
+            _ => None,
+        },
+        // The two `str` fields of a failure (§4.6).
+        Ty::Failure => return checked.types.str(),
+        _ => None,
+    };
+    written
+        .and_then(|id| checked.written_type(id))
+        .unwrap_or_else(|| checked.types.error())
+}
+
 pub(super) fn name_of_field(
     ast: &Ast,
     checked: &Checked,

@@ -1,0 +1,13 @@
+# A top-level function is a value (§4.13): no environment, just a pointer. The
+# dump distinguishes the three things a call can be — `funcref` names the
+# function whose address is taken, `call indirect` names the temporary holding
+# it, and `call heroes` names a direct call. That distinction is panel 019's
+# most expensive finding, in miniature.
+function double(n: int) -> int
+    return n * 2
+
+function apply_twice(n: int, f: (function(int) -> int)) -> int
+    return f(f(n))
+
+function main()
+    print(apply_twice(3, double))
