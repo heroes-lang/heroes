@@ -1143,10 +1143,29 @@ its type parameters collapse.
 No default parameter values, no overloading, no user variadics. The one variadic-looking form is
 `print`, and it is **compiler-known, not a function value** (panel 006, decided 2026-08-03): a
 comma-separated list of `str`/`int`/`f64`/`bool` values, each rendered by its canonical `to_str`,
-no separator between values, exactly one trailing newline. Canonical `f64` rendering is
-deterministic and locale-independent (exact algorithm fixed at M5b with its goldens). This was
-bought by trading away string interpolation (Part 7 item 7); Pascal's `WriteLn` is the fifty-year
-precedent.
+no separator between values, exactly one trailing newline. This was bought by trading away string
+interpolation (Part 7 item 7); Pascal's `WriteLn` is the fifty-year precedent.
+
+**Canonical `f64` rendering** (fixed at M5b, panel 021). Deterministic, locale-independent, and
+**round-trip-exact — never "shortest"**: the algorithm is `snprintf("%.*g")` at increasing
+precision until `strtod` reads back the same bits, starting at 1 for a subnormal and at `DBL_DIG`
+otherwise, which is what gnulib's `ftoastr` ships. It is not the shortest decimal, and the
+distinction is not pedantic: `5e-324` renders `4.94065645841247e-324`, which round-trips, and Java
+shipped `1.9999999999999998E23` for eighteen years before Schubfach. A value with no fractional
+part still prints a point (`1.0`, not `1`) — under `1`, `print(price * to_f64(count))` and
+`print(5 * 2)` emit identical bytes, so an accidental `int`→`f64` drift would stay green in every
+golden, which is exactly what §4.3's no-implicit-conversions rule exists to prevent. Lua made the
+same choice when it gained a second numeric type; Rust prints `1` from `Display` and needed `Debug`
+to recover the distinction.
+
+**Locale is removed structurally, not promised away.** The render runs inside
+`uselocale()` with a lazily-created `newlocale(…, "C", …)`, which covers `snprintf` **and**
+`strtod` in one window. "The runtime never calls `setlocale`" was measured worthless: under
+`de_DE.UTF-8` the ladder emits the malformed `0,1.0` — the decimal-point rider finds no `.` and
+appends one — and the round-trip check cannot see it, because `strtod` reads the same locale and is
+wrong consistently. PEP 331 is the shape of the hazard: CPython never called `setlocale`, GTK+ did,
+CPython broke anyway. Rust, Go, Python-since-2.4 and C++17's `<charconv>` all removed the
+dependency rather than promising.
 
 ### 4.10 Value semantics and copy-on-write
 
@@ -1678,9 +1697,25 @@ includes — so clang type-checks every runtime call.** Contents:
 
 - allocator (a wrapper over `malloc`)
 - `incref` / `decref`
-- the `str` struct (`ptr`, `len`, `refcount`), **always NUL-terminated** — allocate `len+1` so
-  `.cstr()` is free with zero copies. (This is Zig's `[:0]u8` trick and it is the single
-  highest-return decision in the string design.)
+- the `str` **value**, `{ptr, len}`, passed **by value** (16 bytes, two registers), with the
+  refcount and an 8-byte magic word in a heap header immediately before the bytes — the earlier
+  wording "(`ptr`, `len`, `refcount`)" cannot be read literally, because a by-value copy with an
+  inline refcount diverges. **Always NUL-terminated** — allocate `len+1` so `.cstr()` is free with
+  zero copies. (This is Zig's `[:0]u8` trick and it is the single highest-return decision in the
+  string design.) By value **because of the FFI** (panel 021, measured): written as a pointer, the
+  wrong `str`→`cstr` conversion compiles clean *with an explicit cast* and passes a refcount word
+  to `sqlite3_open`; written by value it is `error: operand of type 'HeroStr' where arithmetic or
+  pointer type is required` — inexpressible, which is what §4.19 promises. The magic word catches a
+  `HeroStr` fabricated from a foreign pointer (`{sqlite3_column_text(…), n}`), which otherwise
+  compiles with **zero warnings under `-Weverything`** and corrupts the bound library's heap with
+  ASan silent.
+- `hero_str_from_bytes` / `hero_str_from_cstr`, which make an owning copy of a borrowed C
+  pointer. Without them **no `extern function` may return `str`** and §4.19's ladder is unwritable
+  at step 3 — "read a result" — because every C library returns strings as borrowed pointers.
+- `hero_runtime_live` / `hero_runtime_check_leaks`: a live-block counter asserted at exit. It is
+  the leak gate because AddressSanitizer is **not** one here — `detect_leaks is not supported on
+  this platform` on Darwin arm64, measured, with a 999-block leak exiting 0 in silence. ASan and
+  UBSan stay in the harness for use-after-free and double-free, which they do catch.
 - the array: a heap header (`refcount`, `len`, `cap`, element descriptor) with elements in-line,
   `push`, and an aborting bounds check — representation fixed by the hand-written, ASan-verified
   spike `tools/spike/04-variant.c` before any compiler code existed
@@ -1727,8 +1762,23 @@ Two passes sit between type checking and emission, and they are **core obligatio
 
 - **The type-descriptor pass** generates `copy`/`drop`/`eq`/`hash` per reachable type (§4.20) —
   C has none of them and §4.3/§4.10 require all of them.
-- **The ownership pass** inserts `incref`/`decref`/`cow_check` during lowering — *visible in
-  `--dump-ir`* — and builds a cleanup-label chain per function so every exit edge (`return`, `?`,
+- **The ownership pass** is the first **IR→IR** pass (amended at M5b, panel 021: "during lowering"
+  was the original wording, and a separate pass is what makes `--dump-ir` show the result and keeps
+  the emitter a printer). It inserts `incref`/`decref` as *real instructions* — Swift's SIL is the
+  precedent, and LLVM D92808 records what happens when refcount pairing lives only in the backend:
+  passes separate the calls from their markers. `cow_check` joins them at **M5c**, where `push`
+  gives it a call site; at M5b it would have none, and an instruction nothing emits is an arm that
+  rots. **Five rules, each with a compiled counterexample** (panel 021 R2): a plain parameter is
+  *borrowed* and excluded from the sweep, which covers local and synthetic slots only; an `@`
+  parameter is *moved in and moved out*, its copy-out replacing the decref; a store increfs the new
+  value before decrefing the old; a returned value is increfed before the sweep; and an owning
+  temporary — one whose defining op allocates — is decrefed at the end of its defining block, made
+  safe by a checked invariant rather than by a liveness pass. Refcounted slots are
+  **zero-initialised** in the prologue so cleanup is unconditional (clang's ARC specification
+  licenses exactly this for `__strong` locals; rustc's `ElaborateDrops` does the alternative and
+  then optimises it into the same thing), with `ptr == NULL` as the one non-value that every
+  runtime entry point rejects. The pass builds a cleanup-label chain per function so every exit
+  edge (`return`, `?`,
   `break`, `continue`, `panic`, match fallthrough) releases live locals and performs `@` copy-out
   (§4.8: "copy-out happens always"). The runtime cannot know where a scope ends; only lowering can.
 

@@ -73,8 +73,14 @@ prologue, and a unit-typed temporary never declared at all (`void t0;` is a
 hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
 `*p_l = l;`). `hero_unreachable()` at every type-system-proven-unreachable
 point. Compile flags: `-Wall -Werror=return-type -Werror=uninitialized
--Werror=format -Wconditional-uninitialized -fno-strict-aliasing`; a clang
-failure is exit 2 and says the *compiler* is wrong. Every name through the
+-Werror=format -Werror=conditional-uninitialized -fno-strict-aliasing`; a clang
+failure is exit 2 and says the *compiler* is wrong. **A refcounted slot is the
+one exception to the no-initialisation rule** — zero-initialised so cleanup is
+unconditional, with `ptr == NULL` as the non-value every runtime entry point
+rejects (panel 021). `--sanitize` adds `-fsanitize=address,undefined`, which
+catches use-after-free and double-free; **leaks are caught by
+`hero_runtime_check_leaks()`**, because ASan's leak detector does not exist on
+Darwin arm64. Every name through the
 mangler (`h_<module>_<name>[_<typehash>]`; fields, variant cases and labels
 too; the module component sanitised to `[A-Za-z0-9]` so the first `_` ends it;
 `extern` FFI names pass through unmangled by design, and `extern` reaches no

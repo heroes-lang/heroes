@@ -72,8 +72,19 @@ mod tests {
     fn every_name_the_spec_offers_as_a_builtin_exists() {
         let text = spec();
         let start = text.find("Built-ins:").expect("the built-in list must exist");
-        let end = text[start..].find("\n\n").map_or(text.len(), |at| start + at);
-        let listed: Vec<String> = text[start..end]
+        // The list ends where its own terminating sentence begins. Using the blank
+        // line instead would swallow the prose after it, and at M5b that prose names
+        // a *type* in a code span ("An `f64` always prints a point or exponent").
+        let end = text[start..]
+            .find("None of these names")
+            .or_else(|| text[start..].find("\n\n"))
+            .map_or(text.len(), |at| start + at);
+        // Parenthesised prose *outside* a code span is not part of the list — the
+        // `slice(from:, to:)` entry gained "(`to` excluded)" at M5b (panel 021), and
+        // `to` is a word about the built-in rather than the name of one. Code spans
+        // are kept whole, so `print(...)` survives.
+        let paragraph = without_prose_parentheses(&text[start..end]);
+        let listed: Vec<String> = paragraph
             .split('`')
             .skip(1)
             .step_by(2)
@@ -88,6 +99,32 @@ mod tests {
                 "the spec offers `{bare}` and the compiler has no such built-in"
             );
         }
+    }
+
+    /// Drop every `(…)` group that is not inside a code span.
+    fn without_prose_parentheses(text: &str) -> String {
+        let mut out = String::with_capacity(text.len());
+        let mut in_code = false;
+        let mut depth = 0u32;
+        for c in text.chars() {
+            if c == '`' {
+                in_code = !in_code;
+            }
+            if !in_code {
+                if c == '(' {
+                    depth += 1;
+                    continue;
+                }
+                if c == ')' && depth > 0 {
+                    depth -= 1;
+                    continue;
+                }
+            }
+            if depth == 0 {
+                out.push(c);
+            }
+        }
+        out
     }
 
     /// No word the lexer rejects may appear **in a code span**. `fn` is the case

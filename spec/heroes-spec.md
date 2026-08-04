@@ -143,11 +143,12 @@ use. There is no ternary; `if` is an expression, and so is `match`.
 `s.chars()`, which yields single-character `str`. Multi-line literals
 separate elements by newline; single-line by comma.
 
-Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` · `chars` ·
-`has` · `join` · `sort` · `to_int` · `to_f64` · `to_str` — and, written in
+Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
+`chars` · `has` · `join` · `sort` · `to_int` · `to_f64` · `to_str` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
-separator and exactly one trailing newline.
+separator and exactly one trailing newline. An `f64` always prints a point or
+exponent: `1.0`, `0.1`, `1e-06`, `1e+23`.
 
 ## Tests and holes
 ```
