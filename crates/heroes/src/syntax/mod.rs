@@ -1,0 +1,64 @@
+//! The parser: tokens → syntax tree (design.md Part 10 step 2, ROADMAP M2).
+//!
+//! Recursive descent, one file per idea:
+//!
+//! | file          | idea |
+//! |---------------|------|
+//! | `ast.rs`      | the tree: arena of types, declarations that own their members |
+//! | `cursor.rs`   | movement, recovery, and where documentation comes from |
+//! | `decl.rs`     | the top level: names, `constant`, `function`, `extern`, `test` |
+//! | `data.rs`     | the two type declarations: `record` and `variant` |
+//! | `members.rs`  | generics, parameters, record fields, variant cases |
+//! | `types.rs`    | the type grammar |
+//! | `describe.rs` | how a token is named in a diagnostic |
+//!
+//! Two invariants, inherited from the lexer because they are the same bet:
+//!
+//! - **The parser never stops.** Every failure is a diagnostic plus a
+//!   recovery move, so a file with ten mistakes reports about ten of them.
+//! - **Each mistake is reported once.** Where the lexer already emitted an
+//!   `Error` token the parser stays silent — one mistake, one diagnostic
+//!   (design.md §4.17: the error is the deliverable).
+
+#[cfg(test)]
+mod tests;
+
+pub mod ast;
+
+mod cursor;
+mod data;
+mod decl;
+mod describe;
+mod members;
+mod types;
+
+pub use ast::{Ast, Block, Case, Decl, DeclKind, Field, Function, Param, TypeId, TypeKind, TypeNode};
+
+use crate::diagnostics::Diagnostic;
+use crate::lexer::lex;
+use crate::source::Source;
+
+use cursor::Cursor;
+
+pub struct ParseOutput {
+    pub ast: Ast,
+    pub diagnostics: Vec<Diagnostic>,
+}
+
+/// Lex and parse one file in a single call — the pipeline is an
+/// implementation detail of the frontend, not of its clients (design.md
+/// §3.3: a library with a thin CLI on top).
+///
+/// Diagnostics come out lexer-first, then parser, which keeps them grouped
+/// by the stage that can explain them; within a stage they are in source
+/// order. Never sorted across stages: a shape error and the word error that
+/// caused it read better together than interleaved by column.
+pub fn parse(src: &Source) -> ParseOutput {
+    let lexed = lex(src);
+    let mut cur = Cursor::new(lexed.tokens);
+    let mut ast = Ast::default();
+    decl::file(&mut cur, &mut ast, src);
+    let mut diagnostics = lexed.diagnostics;
+    diagnostics.append(&mut cur.diagnostics);
+    ParseOutput { ast, diagnostics }
+}

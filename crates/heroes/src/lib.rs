@@ -17,12 +17,14 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub mod diagnostics;
 pub mod lexer;
 pub mod measure;
+pub mod printer;
 pub mod source;
+pub mod syntax;
 
 // Pipeline modules land one milestone at a time (see docs/ROADMAP.md):
 //   source/ diagnostics/          M1 (landed, step 1)
 //   lexer/                        M1 (landed, step 1)
-//   syntax/ printer/              M2
+//   syntax/ printer/              M2 (landing, step 1)
 //   resolve/ types/               M3a–M3d
 //   desugar/ ir/                  M4
 //   descriptors/ ownership/       M5b–M5c

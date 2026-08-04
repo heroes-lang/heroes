@@ -19,6 +19,14 @@ pub struct Span {
     pub end: u32,
 }
 
+impl Span {
+    /// The span covering `self` through `end` — how a node built out of
+    /// several tokens (a type, a declaration) states its own extent.
+    pub fn to(self, end: Span) -> Span {
+        Span { start: self.start, end: end.end }
+    }
+}
+
 impl Source {
     pub fn new(name: String, text: String) -> Source {
         let mut line_starts = vec![0u32];

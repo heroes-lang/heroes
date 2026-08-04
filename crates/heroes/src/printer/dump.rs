@@ -1,0 +1,136 @@
+//! `heroes parse --dump-ast`: the tree as text.
+//!
+//! Not the formatter (that is `heroes fmt`, M2 step 4) — this is the tree
+//! *seen*, one node per line, so that "what the parser understood" is
+//! readable without a debugger. Two deliberate differences from Heroes
+//! source keep the two apart at a glance: the dump indents by **2** spaces,
+//! and it names node kinds (`field`, `case`, `body`) that no program
+//! contains.
+//!
+//! The format is output surface: goldens and snapshots contain it, so a
+//! change to a word here churns them all.
+
+use crate::source::{Source, Span};
+use crate::syntax::{Ast, Case, Decl, DeclKind, Field, Function};
+
+use super::types::render_type;
+
+pub fn dump_ast(ast: &Ast, src: &Source) -> String {
+    let mut out = format!("file {}\n", src.name);
+    for decl in &ast.decls {
+        declaration(ast, src, decl, &mut out);
+    }
+    out
+}
+
+fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
+    let name = src.slice(decl.name);
+    match &decl.kind {
+        DeclKind::Constant { ty, body } => {
+            out.push_str(&format!("  constant {name}: {}\n", render_type(ast, *ty, src)));
+            docs(src, &decl.doc, out);
+            body_lines(src, body.span, out);
+        }
+        DeclKind::Function(function) => {
+            out.push_str(&format!("  {}\n", signature(ast, src, name, function)));
+            docs(src, &decl.doc, out);
+            // An `extern` has no body: the code is in C (§4.19).
+            if let Some(block) = &function.body {
+                body_lines(src, block.span, out);
+            }
+        }
+        DeclKind::Record { fields } => {
+            out.push_str(&format!("  record {name}\n"));
+            docs(src, &decl.doc, out);
+            for field in fields {
+                field_line(ast, src, field, "    ", out);
+            }
+        }
+        DeclKind::Variant { cases } => {
+            out.push_str(&format!("  variant {name}\n"));
+            docs(src, &decl.doc, out);
+            for case in cases {
+                case_lines(ast, src, case, out);
+            }
+        }
+        DeclKind::Test { body } => {
+            // `name` is the string literal, quotes included: a title.
+            out.push_str(&format!("  test {name}\n"));
+            docs(src, &decl.doc, out);
+            body_lines(src, body.span, out);
+        }
+    }
+}
+
+/// `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]` — the header
+/// in one line, which is how a signature is read.
+fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
+    let mut out = String::new();
+    if function.is_extern {
+        out.push_str("extern ");
+    }
+    out.push_str("function ");
+    out.push_str(name);
+    if !function.generics.is_empty() {
+        out.push('<');
+        for (i, generic) in function.generics.iter().enumerate() {
+            if i > 0 {
+                out.push_str(", ");
+            }
+            out.push_str(src.slice(*generic));
+        }
+        out.push('>');
+    }
+    out.push('(');
+    for (i, param) in function.params.iter().enumerate() {
+        if i > 0 {
+            out.push_str(", ");
+        }
+        if param.mutable {
+            out.push('@');
+        }
+        out.push_str(src.slice(param.name));
+        out.push_str(": ");
+        out.push_str(&render_type(ast, param.ty, src));
+    }
+    out.push_str(") -> ");
+    out.push_str(&render_type(ast, function.result, src));
+    out
+}
+
+fn case_lines(ast: &Ast, src: &Source, case: &Case, out: &mut String) {
+    out.push_str(&format!("    case {}\n", src.slice(case.name)));
+    docs_at(src, &case.doc, "      ", out);
+    for field in &case.fields {
+        field_line(ast, src, field, "      ", out);
+    }
+}
+
+fn field_line(ast: &Ast, src: &Source, field: &Field, indent: &str, out: &mut String) {
+    out.push_str(&format!(
+        "{indent}field {}: {}\n",
+        src.slice(field.name),
+        render_type(ast, field.ty, src)
+    ));
+    docs_at(src, &field.doc, &format!("{indent}  "), out);
+}
+
+fn docs(src: &Source, doc: &[Span], out: &mut String) {
+    docs_at(src, doc, "    ", out);
+}
+
+/// Doc comments are printed verbatim, `#` included: they are markdown, and
+/// the compiler reuses them in `???` output and `outline` (§4.1).
+fn docs_at(src: &Source, doc: &[Span], indent: &str, out: &mut String) {
+    for span in doc {
+        out.push_str(&format!("{indent}doc {}\n", src.slice(*span)));
+    }
+}
+
+/// The body as a line range. M2 step 1 parses its *shape* only; step 3 turns
+/// this line into a statement list.
+fn body_lines(src: &Source, span: Span, out: &mut String) {
+    let (first, _) = src.line_col(span.start);
+    let (last, _) = src.line_col(span.end);
+    out.push_str(&format!("    body lines {first}-{last}\n"));
+}

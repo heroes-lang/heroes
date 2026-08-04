@@ -30,6 +30,13 @@ queue is also the record). Format:
 - [x] panel 009 | Ratify the budget governance adopted provisionally: measured-only, soft 1500/hard 2000, the +500 as a pre-allocated purse, spend only where a wrong guess is silent | docs/panel/009-spec-budget-2000.md § Resolution | it is the rule that keeps 2000 from becoming 2500
 - [x] panel 010 | RATIFIED 2026-08-04 — the repeated-`@` rule: two `@` arguments sharing a root binding are a compile error, over-rejecting distinct-index pairs by design | docs/panel/010-repeated-mutable-arguments.md § Resolution | three judges converged; Ada reached the same rule in 2012 after 33 years of the alternative
 
+- [ ] panel 013 | Ratify the function type's marker: `(function(A, B) -> C)`, `fn` stays a reserved-word error everywhere. The recommendation put to the judges (`fn` as a type-position-only keyword) was overturned — worth reading why before ratifying | docs/panel/013-function-type-marker.md § Resolution | it is the first panel whose verdict reversed the proposal on evidence, and the registry's uniformity was what was at stake
+- [ ] panel 013 | Decide §1.6's scope for `spec/reserved-words.md` (831 measured tokens, uncounted). True headroom is 952 or 121 | docs/panel/013-function-type-marker.md § Watch list | the answer is worth more than anything panel 013 itself decided
+- [ ] M2.1 | First tree. `{str: [int]}?` — how many nodes does it put in the type arena: 3, 4 or 5? | crates/heroes/src/syntax/types.rs, tests/types.rs | the arena is why a recursive type needs no pointers, which is why it ports to Heroes
+- [ ] M2.1 | Two of the five declaration headers get NO terminator from the lexer. Which two, and why does the body parser skip terminators instead of requiring one? | crates/heroes/src/syntax/decl.rs (module doc), lexer/layout.rs is_line_ender | panel 007's rule, seen from the other side of the fence
+- [ ] M2.1 | `advance = function: (@l: Lex)` dumps with a result type. Which one, and where did it come from, given the source never wrote it? | syntax/decl.rs (the arrow branch), printer/dump.rs | a synthesised node is how later passes stop asking "was it written?"
+- [ ] M2.1 | A `#` comment, then a blank line, then a declaration: does the comment become documentation — and which two comparisons decide it? | syntax/cursor.rs take_docs (§4.1) | Go's adjacency rule is two integer comparisons, not a parser mode
+
 ## Covered
 
 - 2026-08-04 — Ratified panels 010 (repeated `@` arguments are a compile error), 011 (offline measurement, metric 3 primary but never pooled, metric 2 via local model or paced sampling) and 012's carry-forward governance.
