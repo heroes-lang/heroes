@@ -30,6 +30,32 @@ that was missing if nothing happened.
 Cursor, Windsurf and other forks read a different directory —
 `~/.cursor/extensions`, `~/.windsurf/extensions` — same copy, same reload.
 
+## The bolt on `.hero` files
+
+VS Code has no way for an extension to add *one* file icon — icons come
+only from a complete icon theme, which replaces the whole set. So there are
+two routes, and the second is almost certainly the one you want.
+
+**Keep your icon theme, add the bolt** (Material Icon Theme, VSCode Icons
+and most popular themes support custom associations). In settings:
+
+```json
+"material-icon-theme.files.associations": { "*.hero": "zeus" },
+"vsicons.associations.files": [
+  { "icon": "bolt", "extensions": ["hero"], "format": "svg" }
+]
+```
+
+Pick whichever line matches the theme you actually use; the bolt-shaped
+icons those themes ship are close enough to the motif.
+
+**Or use the bundled theme** — ⇧⌘P → *Preferences: File Icon Theme* →
+**Heroes (bolt on .hero only)**. It gives `.hero` the real Aladdin Sane
+bolt (`icons/hero-file.svg`, the same path the site header draws, red over
+blue) and everything else a plain sheet. That trade is the honest cost of
+VS Code's design, and it is why this theme is opt-in rather than the
+extension's default.
+
 ## One setting worth adding
 
 A tab is a compile error in Heroes, and the indentation must be exactly

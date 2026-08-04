@@ -1,0 +1,19 @@
+{
+  "//": "A deliberately minimal icon theme: it gives .hero the bolt and every other file a plain sheet. Activate it only if you want that trade — the README explains how to keep your existing icon theme and add the bolt through a file association instead.",
+  "iconDefinitions": {
+    "_hero": { "iconPath": "./hero-file.svg" },
+    "_file": { "iconPath": "./generic-file.svg" },
+    "_folder": { "iconPath": "./generic-folder.svg" },
+    "_folder_open": { "iconPath": "./generic-folder-open.svg" }
+  },
+  "file": "_file",
+  "folder": "_folder",
+  "folderExpanded": "_folder_open",
+  "fileExtensions": {
+    "hero": "_hero"
+  },
+  "languageIds": {
+    "hero": "_hero"
+  },
+  "hidesExplorerArrows": false
+}

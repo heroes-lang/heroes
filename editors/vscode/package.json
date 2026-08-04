@@ -5,14 +5,23 @@
   "version": "0.0.1",
   "publisher": "heroes-lang",
   "private": true,
-  "engines": { "vscode": "^1.60.0" },
-  "categories": ["Programming Languages"],
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
   "contributes": {
     "languages": [
       {
         "id": "hero",
-        "aliases": ["Heroes", "hero"],
-        "extensions": [".hero"],
+        "aliases": [
+          "Heroes",
+          "hero"
+        ],
+        "extensions": [
+          ".hero"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -21,6 +30,13 @@
         "language": "hero",
         "scopeName": "source.hero",
         "path": "./syntaxes/heroes.tmLanguage.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "heroes-bolt",
+        "label": "Heroes (bolt on .hero only)",
+        "path": "./icons/heroes-icon-theme.json"
       }
     ]
   }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32">
+  <!-- The Aladdin Sane bolt, the project's one motif (site/README.md
+       § Style guide): red over blue, the same path the site header uses.
+       Kept as two offset copies rather than a gradient so it stays legible
+       at 16px in the file tree. -->
+  <path fill="#3f7bff" d="M14 0 L2 18 h8 L7 32 L22 12 h-9 z" transform="translate(1.6 0.8)"/>
+  <path fill="#e5393e" d="M14 0 L2 18 h8 L7 32 L22 12 h-9 z"/>
+</svg>
