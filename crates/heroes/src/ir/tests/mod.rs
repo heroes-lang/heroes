@@ -50,6 +50,15 @@ fn text(program: &str) -> String {
     dumped
 }
 
+/// Lowers **and runs the ownership pass**, for the tests about what must be true
+/// afterwards. Unverified, like `unverified`, because every caller is about to damage
+/// the result on purpose.
+fn owned(text: &str) -> (Program, Checked) {
+    let (mut program, checked) = unverified(text);
+    crate::own::run(&mut program, &checked);
+    (program, checked)
+}
+
 /// Lowers **without** verifying, so a test can break an invariant on purpose and
 /// watch the verifier catch it. `verify.rs` is the only caller: everything else
 /// wants the checked version, because a test that skips the verifier would pass on

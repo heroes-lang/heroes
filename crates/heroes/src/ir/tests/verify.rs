@@ -18,7 +18,7 @@
 //! fires with the wrong message sends the reader to the wrong place, and at exit
 //! code 2 the reader is the person maintaining this compiler.
 
-use super::unverified;
+use super::{owned, unverified};
 use crate::ir::{verify, Abort, Callee, Inst, Op, Place, Steps, Term, ValueId};
 
 /// A one-function program with a loop, a branch and a return — enough structure for
@@ -206,7 +206,9 @@ fn a_problem_names_the_function_and_the_block() {
     program.functions[0].blocks[3].term = Term::Open;
     let problems = verify(&program, &checked);
     assert_eq!(problems.len(), 1, "{problems:?}");
-    assert_eq!(problems[0], "f: bb3: no terminator");
+    // The phase is in the message from M5b on, because "which pass produced this" is
+    // the first question a violation raises and the compiler knows the answer.
+    assert_eq!(problems[0], "f (after lowering): bb3: no terminator");
 }
 
 /// **Dominance** (panel 020, M5a). A value read in a block its definition does not
@@ -252,4 +254,83 @@ fn a_temporary_may_cross_a_block_when_its_definition_dominates() {
         "function main()\n    assert 1 + 1 == 2\n",
     );
     assert_eq!(verify(&program, &checked), Vec::<String>::new());
+}
+
+// --- M5b: the invariants that depend on which pass has run (panel 021) --------
+
+/// A refcount operation before the ownership pass is a lowering that has done the
+/// pass's job — which would then do it again.
+#[test]
+fn a_refcount_before_the_ownership_pass_is_caught() {
+    let (mut program, checked) = unverified(SUBJECT);
+    let value = program.functions[0].values.len() as u32 - 1;
+    let inst = Inst {
+        dest: None,
+        op: Op::Incref(ValueId(value)),
+        ty: checked.types.unit(),
+        span: program.functions[0].span,
+    };
+    program.functions[0].blocks[0].insts.push(inst);
+    says(&verify(&program, &checked), "a refcount operation before the ownership pass");
+    // …and the message names the pass to suspect.
+    says(&verify(&program, &checked), "after lowering");
+}
+
+/// The `Owned` half: a returning block that releases fewer slots than it owns is a
+/// leak, and the leak counter would find it at runtime — this finds it at compile time
+/// and says which function.
+#[test]
+fn a_return_that_releases_too_few_slots_is_caught() {
+    let (mut program, checked) = owned("function f(n: str) -> str\n    s: str @ \"x\"\n    return s + n\n");
+    let exit = program.functions[0]
+        .blocks
+        .iter()
+        .position(|b| matches!(b.term, crate::ir::Term::Return(_)))
+        .expect("an exit block");
+    program.functions[0].blocks[exit].insts.retain(|inst| !matches!(inst.op, Op::Decref(_)));
+    says(&verify(&program, &checked), "owned slots");
+    says(&verify(&program, &checked), "after the ownership pass");
+}
+
+/// And the invariant that makes the pass's cheap classification safe: a temporary it
+/// releases must not be read from another block.
+///
+/// The damage has to be built rather than moved, because the pass never produces a
+/// violation — which is the point. A second block is given a read of a value the first
+/// block releases, which is exactly what an end-of-block release would free too early.
+#[test]
+fn a_released_temporary_read_from_another_block_is_caught() {
+    let (mut program, checked) =
+        owned("function f(c: bool, n: str) -> int\n    if c\n        return len(n + n)\n    return 0\n");
+    let function = &mut program.functions[0];
+    // The value the pass released, and the block it released it in.
+    let mut released = None;
+    for (index, block) in function.blocks.iter().enumerate() {
+        for inst in &block.insts {
+            if let Op::Decref(value) = inst.op {
+                released = Some((index, value));
+            }
+        }
+    }
+    let (home, value) = released.expect("the pass released something");
+    // A different block now reads it. `len` is a one-operand instruction, so this is
+    // the smallest read that exists.
+    let elsewhere = (0..function.blocks.len()).find(|i| *i != home).expect("another block");
+    let inst = Inst {
+        dest: None,
+        op: Op::Incref(value),
+        ty: checked.types.unit(),
+        span: function.span,
+    };
+    function.blocks[elsewhere].insts.insert(0, inst);
+    says(&verify(&program, &checked), "never crosses a block");
+}
+
+/// The phase cannot go backwards, and a pass cannot run twice.
+#[test]
+#[should_panic(expected = "cannot go back")]
+fn the_phase_is_monotonic() {
+    let (mut program, checked) = owned("function f() -> int\n    return 1\n");
+    let _ = &checked;
+    program.advance_to(crate::ir::Phase::Owned);
 }

@@ -40,6 +40,7 @@
 //! | `print.rs` · `print_inst.rs` · `print_names.rs` | the dump: the shape, one instruction, and the names |
 //! | `uses.rs`   | what an instruction reads — the one def-use table |
 //! | `values.rs` | assigned once, and defined on every path that reads it |
+//! | `phases.rs` | what must be true after *which* pass |
 //! | `verify.rs` | the invariants, checked on every function in tests |
 //!
 //! **Lowering runs only on a tree that checked clean**, for the same reason the
@@ -63,6 +64,7 @@ mod fallible;
 mod inst;
 mod layout;
 mod matches;
+mod phases;
 mod places;
 mod slots;
 mod print;

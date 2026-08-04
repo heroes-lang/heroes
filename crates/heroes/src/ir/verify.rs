@@ -41,6 +41,7 @@ use super::build::successors;
 use super::inst::{Callee, Op, Term};
 use super::uses::{operands, slots_of};
 use super::values;
+use super::phases;
 use super::{Block, FnKind, Function, Program, SlotKind};
 
 /// Every invariant violation, or an empty list. The message names the function and
@@ -49,7 +50,12 @@ use super::{Block, FnKind, Function, Program, SlotKind};
 pub fn verify(program: &Program, checked: &Checked) -> Vec<String> {
     let mut problems = Vec::new();
     for function in &program.functions {
-        let where_ = |what: String| format!("{}: {what}", function.name);
+        // The phase is in every message, because "which pass produced this" is the
+        // first question a violation raises and the compiler already knows the answer
+        // (panel 021 R8). rustc bakes the same attribution in:
+        // `validate_body(tcx, body, format!("after pass {pass_name}"))`.
+        let phase = program.phase;
+        let where_ = |what: String| format!("{} ({}): {what}", function.name, phase.name());
         if function.kind == FnKind::Extern {
             if !function.blocks.is_empty() {
                 problems.push(where_("an extern has a body".to_string()));
@@ -68,6 +74,7 @@ pub fn verify(program: &Program, checked: &Checked) -> Vec<String> {
             check_instructions(function, block, &at, &mut problems);
             check_copy_out(function, block, mutable, &at, &mut problems);
             check_return_type(function, block, checked, &at, &mut problems);
+            phases::check(program, function, block, checked, &at, &mut problems);
         }
         values::check(function, &where_, &mut problems);
     }
