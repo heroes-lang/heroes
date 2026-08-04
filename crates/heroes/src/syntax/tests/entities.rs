@@ -15,7 +15,7 @@ fn constant_carries_its_type_and_its_value() {
         "\
 file test.hero
   constant MAX_DEPTH: int
-    body lines 2-2
+    expr 64
 "
     );
 }
@@ -27,7 +27,7 @@ fn function_signature_reads_back_as_written() {
         "\
 file test.hero
   function dist2(a: Point, b: Point) -> int
-    body lines 2-2
+    return 1
 "
     );
 }
@@ -42,7 +42,7 @@ fn no_arrow_means_the_result_is_unit() {
         "\
 file test.hero
   function main() -> ()
-    body lines 2-2
+    expr print(1)
 "
     );
 }
@@ -56,7 +56,7 @@ fn mutable_parameter_keeps_its_marker() {
         "\
 file test.hero
   function advance(@l: Lex) -> ()
-    body lines 2-2
+    expr print(1)
 "
     );
 }
@@ -68,7 +68,7 @@ fn generics_are_names_only() {
         "\
 file test.hero
   function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
-    body lines 2-2
+    return xs
 "
     );
 }
@@ -119,7 +119,7 @@ fn test_block_is_named_by_a_string() {
         "\
 file test.hero
   test \"3-4-5 triangle\"
-    body lines 2-2
+    assert (1 == 1)
 "
     );
 }
@@ -147,9 +147,9 @@ file test.hero
   record Point
     field x: int
   function dist2(a: Point, b: Point) -> int
-    body lines 5-5
+    return 1
   constant MAX: int
-    body lines 8-8
+    expr 64
 "
     );
 }

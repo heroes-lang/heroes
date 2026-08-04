@@ -14,10 +14,11 @@
 use crate::lexer::TokenKind;
 use crate::source::{Source, Span};
 
-use super::ast::{Ast, Block, Decl, DeclKind, Function, TypeKind, TypeNode};
+use super::ast::{Ast, Decl, DeclKind, Function, TypeKind, TypeNode};
 use super::cursor::Cursor;
 use super::data::{record, variant};
 use super::members::{generics, params};
+use super::stmt::block;
 use super::types::parse_type;
 
 /// Read declarations until end of file. Every path either builds a
@@ -100,7 +101,7 @@ fn constant(cur: &mut Cursor, ast: &mut Ast, src: &Source, name: Span, doc: Vec<
         return;
     }
     let ty = parse_type(cur, ast, src);
-    let Some(body) = body_block(cur, src, "a `constant`") else { return };
+    let Some(body) = block(cur, ast, src, "a `constant`") else { return };
     let span = name.to(body.span);
     ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body } });
 }
@@ -140,8 +141,8 @@ fn function(
         extern_body_check(cur);
         None
     } else {
-        match body_block(cur, src, "a `function`") {
-            Some(block) => Some(block),
+        match block(cur, ast, src, "a `function`") {
+            Some(body) => Some(body),
             None => return,
         }
     };
@@ -231,26 +232,7 @@ fn test(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
         return;
     }
     let name = cur.bump().span;
-    let Some(block) = body_block(cur, src, "a `test`") else { return };
-    let span = keyword.to(block.span);
-    ast.decls.push(Decl { name, doc, span, kind: DeclKind::Test { body: block } });
-}
-
-/// The indented body every `constant`, `function` and `test` carries.
-/// Statements land in M2 step 3; here the body is proven to exist and its
-/// extent recorded.
-fn body_block(cur: &mut Cursor, src: &Source, owner: &str) -> Option<Block> {
-    cur.skip_terminators();
-    if !cur.at(TokenKind::Indent) {
-        if !cur.at_reported_error() {
-            let message = format!(
-                "{owner} needs an indented body — one level deeper, exactly 4 spaces (found {})",
-                cur.found(src)
-            );
-            cur.error("missing_body", message, cur.span());
-        }
-        cur.recover_to_next_decl(src);
-        return None;
-    }
-    Some(Block { span: cur.balanced_block() })
+    let Some(body) = block(cur, ast, src, "a `test`") else { return };
+    let span = keyword.to(body.span);
+    ast.decls.push(Decl { name, doc, span, kind: DeclKind::Test { body } });
 }

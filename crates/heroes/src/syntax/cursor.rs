@@ -16,6 +16,9 @@
 //!
 //! The Cyclone rule (CLAUDE.md §5): the cursor *owns* its token vector and
 //! takes `&Source` as a parameter wherever it needs to read text.
+//!
+//! The recovery moves — what to drop after a mistake — live next door in
+//! `recover.rs`, on the same struct.
 
 use crate::diagnostics::Diagnostic;
 use crate::lexer::{Token, TokenKind};
@@ -24,8 +27,12 @@ use crate::source::{Source, Span};
 use super::describe::describe;
 
 pub(super) struct Cursor {
-    tokens: Vec<Token>,
-    pos: usize,
+    /// `tokens` and `pos` are `pub(super)` for one reason: `recover.rs`
+    /// implements the recovery moves on this same struct. Nothing else in
+    /// the parser may touch them — going through `bump` is what keeps the
+    /// "never rests on a comment" invariant true.
+    pub(super) tokens: Vec<Token>,
+    pub(super) pos: usize,
     pub(super) diagnostics: Vec<Diagnostic>,
     /// Comment spans passed over since the last `take_docs`.
     comments: Vec<Span>,
@@ -61,6 +68,38 @@ impl Cursor {
 
     pub(super) fn at(&self, kind: TokenKind) -> bool {
         self.kind() == kind
+    }
+
+    /// The kind `ahead` significant tokens on. Comments are skipped here too,
+    /// so lookahead sees what the grammar sees. Two places need it: telling
+    /// `name: value` from a bare argument, and telling `for x in xs` from
+    /// `for cond`.
+    pub(super) fn peek(&self, ahead: usize) -> TokenKind {
+        let mut left = ahead;
+        let mut at = self.pos;
+        while at + 1 < self.tokens.len() && left > 0 {
+            at += 1;
+            if self.tokens[at].kind != TokenKind::Comment {
+                left -= 1;
+            }
+        }
+        self.tokens[at].kind
+    }
+
+    /// The kind of the token just consumed. One caller, one reason: a
+    /// statement that ended with a block has already eaten its `Dedent`, so
+    /// it must not also be asked for a line end.
+    pub(super) fn previous_kind(&self) -> TokenKind {
+        let at = if self.pos == 0 { 0 } else { self.pos - 1 };
+        self.tokens[at].kind
+    }
+
+    /// The span of the token just consumed — how a node that ends in a
+    /// closer (`)`, `]`) states its own extent without carrying the closer
+    /// around.
+    pub(super) fn previous_span(&self) -> Span {
+        let at = if self.pos == 0 { 0 } else { self.pos - 1 };
+        self.tokens[at].span
     }
 
     /// True where the lexer already reported the problem: say nothing more.
@@ -114,106 +153,6 @@ impl Cursor {
         while self.at(TokenKind::Terminator) {
             self.bump();
         }
-    }
-
-    /// Consume an `Indent` … matching `Dedent` run and return the span of
-    /// what sat between them. Nested blocks go with it, so the caller
-    /// resumes on the next line of the *enclosing* block.
-    pub(super) fn balanced_block(&mut self) -> Span {
-        let open = self.bump(); // the Indent
-        let mut depth = 1u32;
-        let mut last = open.span;
-        while depth > 0 && !self.at(TokenKind::Eof) {
-            match self.kind() {
-                TokenKind::Indent => {
-                    depth += 1;
-                    last = self.bump().span;
-                }
-                TokenKind::Dedent => {
-                    depth -= 1;
-                    let closer = self.bump();
-                    if depth > 0 {
-                        last = closer.span;
-                    }
-                }
-                _ => last = self.bump().span,
-            }
-        }
-        Span { start: open.span.end, end: last.end }
-    }
-
-    /// Drop the rest of a broken line, stopping before whatever ends or
-    /// nests the block: the next line is then parsed on its own merits.
-    pub(super) fn skip_line(&mut self) {
-        while !matches!(
-            self.kind(),
-            TokenKind::Eof | TokenKind::Indent | TokenKind::Dedent
-        ) {
-            if self.bump().kind == TokenKind::Terminator {
-                return;
-            }
-        }
-    }
-
-    /// Drop what is left of a broken declaration: the rest of its line and,
-    /// if it had one, its whole body. One bad declaration must cost one
-    /// diagnostic, not one per line inside it — and, just as importantly,
-    /// must not cost the *next* declaration.
-    pub(super) fn recover_to_next_decl(&mut self, src: &Source) {
-        if self.at_line_start(src) {
-            // Nothing left of the broken line. A block still goes with it:
-            // it belonged to the declaration that failed.
-            if self.at(TokenKind::Indent) {
-                self.balanced_block();
-            }
-            return;
-        }
-        while !self.at(TokenKind::Eof) && !self.at(TokenKind::Indent) {
-            if self.bump().kind == TokenKind::Terminator {
-                break;
-            }
-        }
-        if self.at(TokenKind::Indent) {
-            self.balanced_block();
-        }
-    }
-
-    /// Recover inside a bracketed list: drop tokens up to and including the
-    /// closer matching the opener already consumed.
-    ///
-    /// Brackets are the one place where recovery has a landmark it cannot
-    /// misread, and using it is what keeps a single misplaced separator in a
-    /// signature from turning the rest of the line into "declarations" —
-    /// four diagnostics for one mistake, which is the failure mode §4.17
-    /// exists to prevent.
-    pub(super) fn recover_past_closer(&mut self, opener: TokenKind, closer: TokenKind) {
-        let mut depth = 1u32;
-        while !self.at(TokenKind::Eof) {
-            let kind = self.bump().kind;
-            if kind == opener {
-                depth += 1;
-            } else if kind == closer {
-                depth -= 1;
-                if depth == 0 {
-                    return;
-                }
-            }
-        }
-    }
-
-    /// True when the current token opens a new source line.
-    ///
-    /// Spans decide it, not tokens, because a line ending in `record` or
-    /// `variant` gets no terminator at all (panel 007: those words cannot
-    /// end a statement). Without this, `Point = record` with its fields
-    /// forgotten would swallow the declaration written below it — one
-    /// mistake, two casualties.
-    fn at_line_start(&self, src: &Source) -> bool {
-        if self.pos == 0 {
-            return true;
-        }
-        let previous = self.tokens[self.pos - 1];
-        src.line_col(previous.span.end).0 != src.line_col(self.span().start).0
     }
 
     // --- documentation --------------------------------------------------

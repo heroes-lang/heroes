@@ -64,7 +64,7 @@ fn an_empty_record_does_not_eat_the_next_declaration() {
         "\
 file test.hero
   constant MAX: int
-    body lines 3-3
+    expr 1
 DIAG test.hero:2:1: error[empty_record]: a `record` needs at least one field, indented one level below it
 "
     );
@@ -125,7 +125,7 @@ fn parameters_are_separated_by_commas_not_newlines() {
         "\
 file test.hero
   function copy(from: str) -> bool
-    body lines 5-5
+    return true
 DIAG test.hero:3:5: error[expected_params_close]: expected `)`, or `,` and another parameter, found a name (`to`)
 "
     );
@@ -140,7 +140,7 @@ fn a_stray_indented_block_does_not_derail_the_file() {
         "\
 file test.hero
   constant MAX: int
-    body lines 3-3
+    expr 1
 DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found an indented block — every top-level line names something: `name = constant|function|record|variant`, `test \"…\"`, or `extern`
 "
     );

@@ -5,10 +5,15 @@
 //! | file          | idea |
 //! |---------------|------|
 //! | `ast.rs`      | the tree: arena of types, declarations that own their members |
-//! | `cursor.rs`   | movement, recovery, and where documentation comes from |
+//! | `cursor.rs`   | movement, expectations, and where documentation comes from |
+//! | `recover.rs`  | what to drop after a mistake, and its landmarks |
 //! | `decl.rs`     | the top level: names, `constant`, `function`, `extern`, `test` |
 //! | `data.rs`     | the two type declarations: `record` and `variant` |
 //! | `members.rs`  | generics, parameters, record fields, variant cases |
+//! | `stmt.rs`     | blocks and statements: the three line shapes of §4.4 |
+//! | `expr.rs`     | the §4.14 precedence table, and the postfix chain |
+//! | `primary.rs`  | atoms: literals, calls, `[…]`, `{…}`, `.case`, `???` |
+//! | `control.rs`  | `if` and `match` — expressions whose body is a block |
 //! | `types.rs`    | the type grammar |
 //! | `describe.rs` | how a token is named in a diagnostic |
 //!
@@ -25,14 +30,23 @@ mod tests;
 
 pub mod ast;
 
+mod control;
 mod cursor;
 mod data;
 mod decl;
 mod describe;
+mod expr;
 mod members;
+mod primary;
+mod recover;
+mod stmt;
 mod types;
 
-pub use ast::{Ast, Block, Case, Decl, DeclKind, Field, Function, Param, TypeId, TypeKind, TypeNode};
+pub use ast::{
+    Arg, Arm, ArmBody, Ast, BinaryOp, Block, Branch, Case, Decl, DeclKind, Expr, ExprId, ExprKind,
+    Field, Function, MapEntry, Param, Pattern, PatternKind, Stmt, StmtId, StmtKind, TypeId,
+    TypeKind, TypeNode, UnaryOp,
+};
 
 use crate::diagnostics::Diagnostic;
 use crate::lexer::lex;

@@ -11,8 +11,9 @@
 //! change to a word here churns them all.
 
 use crate::source::{Source, Span};
-use crate::syntax::{Ast, Case, Decl, DeclKind, Field, Function};
+use crate::syntax::{Ast, Block, Case, Decl, DeclKind, Field, Function};
 
+use super::bodies::write_block;
 use super::types::render_type;
 
 pub fn dump_ast(ast: &Ast, src: &Source) -> String {
@@ -29,14 +30,14 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
         DeclKind::Constant { ty, body } => {
             out.push_str(&format!("  constant {name}: {}\n", render_type(ast, *ty, src)));
             docs(src, &decl.doc, out);
-            body_lines(src, body.span, out);
+            write_body(ast, src, body, out);
         }
         DeclKind::Function(function) => {
             out.push_str(&format!("  {}\n", signature(ast, src, name, function)));
             docs(src, &decl.doc, out);
             // An `extern` has no body: the code is in C (§4.19).
             if let Some(block) = &function.body {
-                body_lines(src, block.span, out);
+                write_body(ast, src, block, out);
             }
         }
         DeclKind::Record { fields } => {
@@ -53,11 +54,11 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
                 case_lines(ast, src, case, out);
             }
         }
-        DeclKind::Test { body } => {
+        DeclKind::Test { body: block } => {
             // `name` is the string literal, quotes included: a title.
             out.push_str(&format!("  test {name}\n"));
             docs(src, &decl.doc, out);
-            body_lines(src, body.span, out);
+            write_body(ast, src, block, out);
         }
     }
 }
@@ -127,10 +128,8 @@ fn docs_at(src: &Source, doc: &[Span], indent: &str, out: &mut String) {
     }
 }
 
-/// The body as a line range. M2 step 1 parses its *shape* only; step 3 turns
-/// this line into a statement list.
-fn body_lines(src: &Source, span: Span, out: &mut String) {
-    let (first, _) = src.line_col(span.start);
-    let (last, _) = src.line_col(span.end);
-    out.push_str(&format!("    body lines {first}-{last}\n"));
+/// A declaration's body: its statements, one per line, indented under the
+/// declaration they belong to.
+fn write_body(ast: &Ast, src: &Source, block: &Block, out: &mut String) {
+    write_block(ast, src, block, 4, out);
 }

@@ -14,7 +14,7 @@ fn the_comment_directly_above_is_documentation() {
 file test.hero
   constant MAX: int
     doc # Squared distance, without the square root.
-    body lines 3-3
+    expr 1
 "
     );
 }
@@ -28,7 +28,7 @@ file test.hero
   constant MAX: int
     doc # First line.
     doc # Second line.
-    body lines 4-4
+    expr 1
 "
     );
 }
@@ -42,7 +42,7 @@ fn a_blank_line_ends_the_documentation() {
         "\
 file test.hero
   constant MAX: int
-    body lines 4-4
+    expr 1
 "
     );
 }
@@ -56,7 +56,7 @@ fn a_section_heading_is_not_documentation() {
         "\
 file test.hero
   constant MAX: int
-    body lines 3-3
+    expr 1
 "
     );
 }
@@ -70,9 +70,9 @@ fn a_trailing_comment_on_the_line_above_is_not_documentation() {
         "\
 file test.hero
   constant A: int
-    body lines 2-2
+    expr 1
   constant B: int
-    body lines 4-4
+    expr 2
 "
     );
 }

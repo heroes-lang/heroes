@@ -894,7 +894,7 @@ and would require exception tables.
 ```
 value = match e
     .num n      => n.v
-    .var x      => env.lookup(x.name)
+    .variable x => env.lookup(x.name)
     .sum s      => sum_of(s.children, env)
     .product q  => product_of(q.children, env)
 ```
@@ -1997,7 +1997,7 @@ the *current* syntax and has not been validated by any implementation — treat 
 in this document, and flag them.
 
 **Discrepancies resolved (panels 002/006, decided 2026-08-03):** the `T`-where-`T?` sites are now
-written `ok(...)` — eleven in all: the six originally flagged (`factor`'s `.num`/`.var` arms,
+written `ok(...)` — eleven in all: the six originally flagged (`factor`'s `.num`/`.variable` arms,
 `group`'s `return inner`, `term`'s and `expression`'s `return first`, `lookup`'s tail) plus five
 more found when applying the rule exhaustively (`term`/`expression`'s variant-construction
 returns, `sum_of`/`product_of`'s `return tot`, `evaluate`'s `.num` arm). `main`'s
@@ -2132,8 +2132,10 @@ test "tokenizes numbers, names and symbols"
 
 test "tokenize rejects the unknown"
     match tokenize("2 $ 3")
-        .ok _  => assert false
-        .err e => assert e.code == "unknown_char"
+        .ok _ =>
+            assert false
+        .err e =>
+            assert e.code == "unknown_char"
 
 ## Syntax tree
 
@@ -2142,7 +2144,7 @@ test "tokenize rejects the unknown"
 Expr = variant
     num
         v: int
-    var
+    variable
         name: str
     sum
         children: [Expr]
@@ -2179,7 +2181,7 @@ factor = function: (@p: Parse) -> Expr?
 
     return match t
         .num n                     => ok(.num(v: n.v))
-        .name x                    => ok(.var(name: x.s))
+        .name x                    => ok(.variable(name: x.s))
         .lparen                    => group(@p)
         .plus | .times | .rparen   => fail("expected_factor", "found an operator")
 
@@ -2242,18 +2244,18 @@ product_of = function: (children: [Expr], env: {str: int}) -> int?
 # The value of the tree. Fails on the first unknown name.
 evaluate = function: (e: Expr, env: {str: int}) -> int?
     return match e
-        .num n     => ok(n.v)
-        .var x     => env.lookup(x.name)
-        .sum s     => s.children.sum_of(env)
-        .product q => q.children.product_of(env)
+        .num n      => ok(n.v)
+        .variable x => env.lookup(x.name)
+        .sum s      => s.children.sum_of(env)
+        .product q  => q.children.product_of(env)
 
 # Every name appearing in the tree, with repetitions.
 names_used = function: (e: Expr) -> [str]
     return match e
-        .num _     => []
-        .var x     => [x.name]
-        .sum s     => names_of(s.children)
-        .product q => names_of(q.children)
+        .num _      => []
+        .variable x => [x.name]
+        .sum s      => names_of(s.children)
+        .product q  => names_of(q.children)
 
 names_of = function: (children: [Expr]) -> [str]
     out: [str] @ []
@@ -2286,14 +2288,20 @@ test "variables from the environment"
 test "errors reach the top"
     empty: {str: int} = {}
     match calculate("2 +", empty)
-        .ok _  => assert false
-        .err e => assert e.code == "unexpected_end"
+        .ok _ =>
+            assert false
+        .err e =>
+            assert e.code == "unexpected_end"
     match calculate("z + 1", empty)
-        .ok _  => assert false
-        .err e => assert e.code == "unknown_name"
+        .ok _ =>
+            assert false
+        .err e =>
+            assert e.code == "unknown_name"
     match calculate("(2 + 3", empty)
-        .ok _  => assert false
-        .err e => assert e.code == "unclosed_paren"
+        .ok _ =>
+            assert false
+        .err e =>
+            assert e.code == "unclosed_paren"
 
 test "values are always copies"
     a = [1, 2, 3]
