@@ -1,0 +1,31 @@
+# UNVERIFIED — pending debrief
+#
+# §4.8: "copy-out happens always" — the sentence panel 000 named as the place
+# this project would stall. Three exit edges here, and each one owes both `@`
+# parameters: the early `return` inside the loop, the `return` after it, and the
+# fall-through. In C the parameter is a POINTER and the copy-out is `*p = local`,
+# so a missing one is not a crash: the caller keeps its old value and prints a
+# stale number at exit 0.
+#
+# Both arguments are labelled because two parameters share a type (§4.9).
+
+function walk(@n: int, @steps: int) -> bool
+    while n > 0
+        steps @ steps + 1
+        n @ n - 1
+        if steps == 2
+            return true
+    return false
+
+function main()
+    n: int @ 5
+    steps: int @ 0
+    hit = walk(n: @n, steps: @steps)
+    print(hit)
+    print(n)
+    print(steps)
+    m: int @ 0
+    taken: int @ 0
+    print(walk(n: @m, steps: @taken))
+    print(m)
+    print(taken)

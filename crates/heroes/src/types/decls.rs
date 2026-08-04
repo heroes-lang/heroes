@@ -17,14 +17,15 @@ use crate::resolve::Resolved;
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 
-use super::stmts::{block, Want};
+use super::stmts::{block, Flow, Want};
 use super::table::Ty;
 use super::{errors, lower, Checker, TyId};
 
 
 
 pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &Source) {
-    for (index, decl) in ast.decls.iter().enumerate() {
+    for (index, declaration) in ast.decls.iter().enumerate() {
+        let decl = declaration;
         match &decl.kind {
             DeclKind::Constant { ty, body } => {
                 let declared = lower::ty(checker, ast, resolved, *ty);
@@ -55,7 +56,27 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                     checker.bind_local(param.name, ty);
                 }
                 if let Some(body) = &function.body {
-                    block(checker, ast, resolved, src, body, Want::Nothing);
+                    let (flow, _) = block(checker, ast, resolved, src, body, Want::Nothing);
+                    // §4.7's flow promise. A body is checked with `Want::Nothing`
+                    // because its value comes from `return` statements rather than
+                    // from being a value block — so nothing here ever compared the
+                    // *tail* with the declared result, and a function that runs off
+                    // its end checked clean all the way through M4.
+                    //
+                    // The plan had been `-Werror=return-type` at M5a. Two facts
+                    // killed it: modern clang calls it `-Wreturn-mismatch`, so the
+                    // named net was not the real one, and what the author would see
+                    // is a clang error about `h_module_sign` at a `#line`-mapped
+                    // position in a file they did not write — design.md §8's wart 13
+                    // happening to a *program* error.
+                    if flow == Flow::Falls && result != checker.out.types.unit() {
+                        let want = checker.show(ast, src, result);
+                        let name = src.slice(declaration.name).to_string();
+                        let span = ast.types[function.result.0 as usize].span;
+                        checker
+                            .missing_returns
+                            .push(errors::missing_return(&name, &want, span));
+                    }
                 }
             }
             DeclKind::Test { body } => {

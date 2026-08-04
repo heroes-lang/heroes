@@ -208,3 +208,48 @@ fn a_problem_names_the_function_and_the_block() {
     assert_eq!(problems.len(), 1, "{problems:?}");
     assert_eq!(problems[0], "f: bb3: no terminator");
 }
+
+/// **Dominance** (panel 020, M5a). A value read in a block its definition does not
+/// dominate becomes, in the emitted C, a read of an uninitialised prologue local —
+/// which `-Werror=uninitialized` reports as `variable 't3' is used uninitialized`
+/// against the *author's* line. The verifier says it first, and says whose fault it
+/// is.
+///
+/// The damage: move the loop body's `add` into the block after the loop, where the
+/// path that skips the loop never passes through it.
+#[test]
+fn a_use_its_definition_does_not_dominate_is_caught() {
+    let (mut program, checked) = unverified(SUBJECT);
+    let function = &mut program.functions[0];
+    // Find the block that computes the addition, and the exit block that returns.
+    let mut moved: Option<Inst> = None;
+    for block in function.blocks.iter_mut() {
+        if let Some(position) = block.insts.iter().position(|i| {
+            matches!(i.op, Op::Binary { op: crate::ir::BinOp::Add, .. })
+        }) {
+            moved = Some(block.insts.remove(position));
+            break;
+        }
+    }
+    let moved = moved.expect("the loop body adds");
+    let exit = function
+        .blocks
+        .iter()
+        .position(|b| matches!(b.term, Term::Return(_)))
+        .expect("an exit block");
+    function.blocks[exit].insts.insert(0, moved);
+    says(&verify(&program, &checked), "does not dominate it");
+}
+
+/// The same check, from the other side: a definition in the *entry* block dominates
+/// everything, so reading it anywhere is legal. This is the case that killed the
+/// first version of the invariant — written as "a temporary is read only in the block
+/// that defines it", it condemned the `assert` lowering, which computes both sides of
+/// the comparison in the test block and reads them in the abort block.
+#[test]
+fn a_temporary_may_cross_a_block_when_its_definition_dominates() {
+    let (program, checked) = unverified(
+        "function main()\n    assert 1 + 1 == 2\n",
+    );
+    assert_eq!(verify(&program, &checked), Vec::<String>::new());
+}

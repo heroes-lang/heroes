@@ -1,0 +1,42 @@
+# UNVERIFIED — pending debrief
+#
+# `if` is an EXPRESSION (§4.7), and with slots instead of phi nodes a branching
+# expression writes a synthetic slot from each arm and loads it at the join
+# (panel 019). The failure mode: a slot written on only one arm. That is not a
+# crash either — the C local is hoisted to the prologue and left uninitialised,
+# so the wrong path reads whatever the stack held, deterministically enough to
+# look correct in a test that only exercises the other arm.
+#
+# `-Werror=uninitialized` is the second net and the verifier's dominance check is
+# the first; this case is the third, and the only one that runs.
+#
+# `nested`'s arguments are labelled because two of its parameters share a type
+# (§4.9's same-typed-argument rule) — which is the rule doing exactly its job here,
+# on a call where `true, false` and `false, true` are equally plausible.
+
+function pick(c: bool) -> int
+    v = if c
+        1
+    else
+        2
+    return v
+
+function nested(a: bool, b: bool) -> int
+    v = if a
+        if b
+            10
+        else
+            20
+    else
+        30
+    return v
+
+function main()
+    print(pick(true), pick(false))
+    print(nested(a: true, b: true), nested(a: true, b: false), nested(a: false, b: false))
+    i: int @ 0
+    total: int @ 0
+    while i < 4
+        total @ total + pick(i % 2 == 0)
+        i @ i + 1
+    print(total)

@@ -152,9 +152,20 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
             .map(|(index, local)| (local.name.start, index as u32))
             .collect(),
         generic_names: Vec::new(),
+        missing_returns: Vec::new(),
     };
     checker.out.expr_types = vec![checker.out.types.error(); ast.exprs.len()];
     decls::file(&mut checker, ast, resolved, src);
+    // §4.16's **file-wide hole exemption**, the same one the unused rule takes: a
+    // body that is `???` falls off its end by construction — that is what an
+    // unwritten thing does — and demanding a `return` from it would make `???`
+    // unusable for the case design.md's own appendix uses it for
+    // (`function simplify(e: Expr) -> Expr` / `???`). Found by this check firing on
+    // the appendix within an hour of being written.
+    if checker.out.holes.is_empty() {
+        let pending = std::mem::take(&mut checker.missing_returns);
+        checker.out.diagnostics.extend(pending);
+    }
     checker.out.diagnostics.sort_by_key(|d| d.span.start);
     checker.out
 }
@@ -179,6 +190,9 @@ struct Checker {
     /// order — a `Ty::Generic(i)` is only meaningful inside it, and messages
     /// must print the letter the author wrote.
     generic_names: Vec<String>,
+    /// A `missing_return` per function that can run off its end, held back until the
+    /// whole file is checked so that §4.16's file-wide hole exemption can apply.
+    missing_returns: Vec<Diagnostic>,
 }
 
 impl Checker {

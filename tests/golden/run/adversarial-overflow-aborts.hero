@@ -1,0 +1,16 @@
+# UNVERIFIED — pending debrief
+#
+# The failure mode this guards: the wrong answer is SILENT. Without
+# __builtin_add_overflow the sum wraps to INT64_MIN and the program prints a
+# large negative number at exit 0 — no diagnostic, no crash, a plausible-looking
+# result. Measured on arm64: signed overflow does not trap.
+#
+# The `1` before the abort also proves the flush: hero_panic calls fflush(stdout)
+# before abort(), because six bytes of buffered output were measured surviving
+# abort() through a pipe on Darwin.
+
+function main()
+    print(1)
+    big: int @ 9223372036854775807
+    big @ big + 1
+    print(big)

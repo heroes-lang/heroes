@@ -1,0 +1,19 @@
+# A function that runs off its end. Until M5a the plan was to let clang catch this
+# with -Werror=return-type; two facts killed that. Modern clang calls it
+# -Wreturn-mismatch, so the flag named in CLAUDE.md was not the net it claimed to
+# be — and what the author would see is a clang error about `h_module_sign`, at a
+# #line-mapped position, in a file they did not write.
+#
+# Verified before the class was written: this program checked CLEAN all the way
+# through M4.
+#
+# The span is the written result type, which is what rustc points at for the same
+# mistake: the promise is what was broken.
+# Bulk regression case.
+
+function sign(x: int) -> int    #~ missing_return
+    if x > 0
+        return 1
+
+function main()
+    print(sign(3))

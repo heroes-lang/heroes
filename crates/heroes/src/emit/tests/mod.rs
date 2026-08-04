@@ -11,6 +11,7 @@
 //! |------|--------------------------|
 //! | `shape.rs` | the prologue, the labels, the shim, `#line`, the guards |
 //! | `gate.rs`  | one refusal per capability, and the two that are *not* refusals |
+//! | `mutants.rs` | the gate and the emitter agree, over a corpus nobody wrote |
 
 use crate::emit::{emit, Emitted};
 use crate::ir::lower;
@@ -20,6 +21,7 @@ use crate::syntax::parse;
 use crate::types::check;
 
 mod gate;
+mod mutants;
 mod shape;
 
 /// Emits a program whose frontend said nothing, under a fixed file name so the

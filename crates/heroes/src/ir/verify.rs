@@ -31,13 +31,16 @@
 //!
 //! What an instruction *reads* lives in `uses.rs`, because M5b needs the same
 //! answer: an ownership pass is a walk over definitions and uses, and there must be
-//! exactly one table saying which is which.
+//! exactly one table saying which is which. What a *value* must satisfy — assigned
+//! once, and its definition dominating every use — lives in `values.rs`, which is
+//! where the dominator computation the second half needs also lives.
 
 use crate::types::Checked;
 
 use super::build::successors;
 use super::inst::{Callee, Op, Term};
-use super::uses::{operands, slots_of, terminator_operands};
+use super::uses::{operands, slots_of};
+use super::values;
 use super::{Block, FnKind, Function, Program, SlotKind};
 
 /// Every invariant violation, or an empty list. The message names the function and
@@ -66,7 +69,7 @@ pub fn verify(program: &Program, checked: &Checked) -> Vec<String> {
             check_copy_out(function, block, mutable, &at, &mut problems);
             check_return_type(function, block, checked, &at, &mut problems);
         }
-        check_definitions(function, &where_, &mut problems);
+        values::check(function, &where_, &mut problems);
     }
     problems
 }
@@ -214,44 +217,3 @@ fn check_return_type(
     }
 }
 
-/// Every value a function names must be produced by some instruction in it — or be
-/// `$t0`, the unit, which the function itself defines (`build.rs`).
-fn check_definitions(
-    function: &Function,
-    where_: &dyn Fn(String) -> String,
-    problems: &mut Vec<String>,
-) {
-    let mut defined = vec![false; function.values.len()];
-    if !defined.is_empty() {
-        defined[0] = true;
-    }
-    for slot in &function.params {
-        let _ = slot;
-    }
-    for block in &function.blocks {
-        for inst in &block.insts {
-            if let Some(dest) = inst.dest {
-                if (dest.0 as usize) < defined.len() {
-                    if defined[dest.0 as usize] {
-                        problems.push(where_(format!("${} is assigned twice", dest.0)));
-                    }
-                    defined[dest.0 as usize] = true;
-                }
-            }
-        }
-    }
-    for block in &function.blocks {
-        for inst in &block.insts {
-            for value in operands(function, inst.op) {
-                if (value.0 as usize) < defined.len() && !defined[value.0 as usize] {
-                    problems.push(where_(format!("${} is used and never produced", value.0)));
-                }
-            }
-        }
-        for value in terminator_operands(&block.term) {
-            if (value.0 as usize) < defined.len() && !defined[value.0 as usize] {
-                problems.push(where_(format!("${} is used and never produced", value.0)));
-            }
-        }
-    }
-}

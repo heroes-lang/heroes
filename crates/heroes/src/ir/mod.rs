@@ -39,6 +39,7 @@
 //! | `layout.rs` | where a field lives, and which case a name is — by index |
 //! | `print.rs` · `print_inst.rs` · `print_names.rs` | the dump: the shape, one instruction, and the names |
 //! | `uses.rs`   | what an instruction reads — the one def-use table |
+//! | `values.rs` | assigned once, and defined on every path that reads it |
 //! | `verify.rs` | the invariants, checked on every function in tests |
 //!
 //! **Lowering runs only on a tree that checked clean**, for the same reason the
@@ -69,6 +70,7 @@ mod print_inst;
 mod print_names;
 mod stmts;
 mod uses;
+mod values;
 mod verify;
 
 #[cfg(test)]

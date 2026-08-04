@@ -115,3 +115,28 @@ pub(in crate::types) fn if_without_else(span: Span) -> Diagnostic {
         span,
     )
 }
+
+
+/// A function that can run off its end (§4.7; panel 020).
+///
+/// The span is the **written result type**, which is what rustc points at for the
+/// same mistake and for the same reason: the promise is what was broken, and the
+/// promise is on that line. Pointing at the last statement instead would say "this
+/// line is wrong" about a line that may be perfectly correct — the missing one is the
+/// one that is not there.
+///
+/// No fix is offered. There are two repairs (add a `return`, or make the last
+/// statement the value) and neither is `certain`: which one preserves the author's
+/// meaning depends on what the function is for, and CLAUDE.md §8 says only `certain`
+/// fixes are machine-applicable. A `guess` that rewrites control flow is worse than
+/// no fix at all.
+pub(in crate::types) fn missing_return(name: &str, want: &str, span: Span) -> Diagnostic {
+    Diagnostic::new(
+        "missing_return",
+        format!("`{name}` must return `{want}`, and one path through it returns nothing"),
+        span,
+    )
+    .with_note(
+        "every path must end in a `return`, or the last statement must be the value".to_string(),
+    )
+}

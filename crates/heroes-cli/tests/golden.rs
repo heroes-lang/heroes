@@ -576,12 +576,13 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
     let scratch = root.join("build/golden-run");
     std::fs::create_dir_all(&scratch).expect("a scratch directory");
     let cases = collect_cases(&root.join("tests/golden/run"));
-    assert!(cases.len() >= 5, "the run goldens lost files: {}", cases.len());
+    assert!(cases.len() >= 10, "the run goldens lost files: {}", cases.len());
     for case in cases {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let expected_path = case.with_extension("expected");
-        let expected = std::fs::read_to_string(&expected_path)
+        let text = std::fs::read_to_string(&expected_path)
             .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        let (expected, panic) = split_expectation(&text);
         let name = case.file_stem().expect("a stem").to_string_lossy().into_owned();
 
         // -O0: `build` writes a binary, and the harness runs it itself.
@@ -599,12 +600,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             String::from_utf8_lossy(&built.stderr)
         );
         let ran = std::process::Command::new(&binary).output().expect("the program runs");
-        assert_eq!(
-            String::from_utf8_lossy(&ran.stdout),
-            expected,
-            "{} prints something else at -O0",
-            relative.display()
-        );
+        check(relative, "-O0", &ran, &expected, &panic);
 
         // -O2: `run` compiles and executes, and forwards the program's own status.
         let at_o2 = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
@@ -612,13 +608,69 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             .args(["run", &relative.display().to_string()])
             .output()
             .expect("the heroes binary runs");
-        assert_eq!(
-            String::from_utf8_lossy(&at_o2.stdout),
-            expected,
-            "{} prints something else at -O2 — the same corpus, one configuration apart",
-            relative.display()
-        );
-        assert_eq!(at_o2.status.code(), Some(0), "{} did not exit 0", relative.display());
+        check(relative, "-O2", &at_o2, &expected, &panic);
+    }
+}
+
+/// An expectation is the program's stdout — and, if its last line begins `!panic: `,
+/// the abort it must end in.
+///
+/// The convention is QBE's, which puts the driver *and* the expected output in the
+/// input file. It exists because the interesting half of §4.14 is the aborts: a
+/// program that overflows must **stop**, and the wrong emitter does not crash, it
+/// prints a wrapped number at exit 0. That behaviour is only a golden if the harness
+/// can spell it.
+fn split_expectation(text: &str) -> (String, Option<String>) {
+    let mut lines: Vec<&str> = text.lines().collect();
+    let mut panic = None;
+    if let Some(last) = lines.last() {
+        if let Some(message) = last.strip_prefix("!panic: ") {
+            panic = Some(message.to_string());
+            lines.pop();
+        }
+    }
+    let mut stdout = lines.join("\n");
+    if !stdout.is_empty() {
+        stdout.push('\n');
+    }
+    (stdout, panic)
+}
+
+fn check(
+    case: &Path,
+    level: &str,
+    output: &std::process::Output,
+    expected: &str,
+    panic: &Option<String>,
+) {
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        expected,
+        "{} prints something else at {level} — the same corpus, one configuration apart",
+        case.display()
+    );
+    match panic {
+        None => assert_eq!(
+            output.status.code(),
+            Some(0),
+            "{} did not exit 0 at {level}",
+            case.display()
+        ),
+        Some(message) => {
+            let said = String::from_utf8_lossy(&output.stderr);
+            assert!(
+                said.contains(message),
+                "{} at {level} must abort with {message:?}, and said:\n{said}",
+                case.display()
+            );
+            assert_ne!(
+                output.status.code(),
+                Some(0),
+                "{} at {level} must not exit 0: an abort that returns success is the silent \
+                 wrong answer this case exists to catch",
+                case.display()
+            );
+        }
     }
 }
 

@@ -1,0 +1,18 @@
+# UNVERIFIED — pending debrief
+#
+# `&&` short-circuits (§4.14), so it is CONTROL FLOW and lowers to blocks rather
+# than to an operator. The failure mode is loud in exactly one direction: if the
+# emitter evaluated both sides, the division by zero on the right would abort a
+# program that must print 0 and exit cleanly. An `and` instruction would compile,
+# type-check, pass every other test in the suite, and kill this program.
+
+function main()
+    if false && 1 / 0 == 0
+        print(9)
+    else
+        print(0)
+    n: int @ 0
+    if n != 0 && 10 / n > 1
+        print(9)
+    else
+        print(1)

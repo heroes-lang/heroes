@@ -1,0 +1,17 @@
+# UNVERIFIED — pending debrief
+#
+# `INT64_MIN / -1` and `INT64_MIN % -1` are both undefined in C, and on arm64
+# NEITHER traps: measured, the division returns INT64_MIN and the remainder
+# returns 0, both at exit 0. On x86 the same program raises SIGFPE. Same source,
+# two behaviours, no diagnostic — which is why `%` is guarded exactly like `/`
+# even though the spec's abort list mentions only division by zero (queued as a
+# spec gap).
+#
+# This case takes the remainder, because the division is the one everybody
+# remembers.
+
+function main()
+    low: int @ 0 - 9223372036854775807
+    low @ low - 1
+    minus: int @ 0 - 1
+    print(low % minus)
