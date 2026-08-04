@@ -7,6 +7,7 @@ queue is also the record). Format:
 
 ## Open
 
+- [ ] panel 018 | Ratify: A stands, the inversion and named tests rejected — then decide the candidate core (keyword-first, no `=`, attached parens: `record Point`, `function dist2(a: Point, b: Point) -> int`, plus the `while`/`for` split): ratify now (M3 closed — the engineer's churn window is open, >100 files past M4) or wait for metric 2? And the one open sub-decision: trailing `:` on every block header (E) vs bare headers (F) — pre-registered on both sides, first metric-2 run is the tiebreaker, conservative default F | docs/panel/018-top-level-declaration-shape.md § Resolution | the only §1.7-qualifying simplification on the table, and its cost compounds per milestone
 - [x] M0 | Explain-it-back: what does spike 04 decide, and why does it exist before any compiler code? | tools/spike/04-variant.c · docs/journal/000-setup.md §5 | it fixed the runtime container + descriptor ABI that M5c will implement
 - [x] M0 | Milestone offers: superseded by M1's drill (same lexer, live symptom); exit-quiz declined for now | docs/journal/000-setup.md | optional, on request — see /debrief
 - [x] M0 | Decide: retro-tag `m0`? → tagged 2026-08-04 at 02c4ca1 (M0 closed before the tagging habit) | git log 02c4ca1 | tags are the chronology the book and /where rely on
