@@ -16,6 +16,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod diagnostics;
 pub mod lexer;
+pub mod measure;
 pub mod source;
 
 // Pipeline modules land one milestone at a time (see docs/ROADMAP.md):

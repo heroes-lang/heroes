@@ -15,17 +15,19 @@ usage: heroes <command> [args]
 commands:
   doctor                    check the toolchain (clang, CLT, arch, cache)
   lex <file.hero> [--json]  dump the token stream
+  measure [file]            count the spec against §1.6's ceiling
   --version                 print the compiler version
 
 More subcommands arrive with each milestone:
   parse (M2) · fmt (M2) · check (M3) · build run (M5) · test (M6)
-  lsp outline explain (M6+) · cc doc (M7) · measure (M3)";
+  lsp outline explain (M6+) · cc doc (M7)";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("doctor") => commands::doctor::run(),
         Some("lex") => commands::lex::run(&args[1..]),
+        Some("measure") => commands::measure::run(&args[1..]),
         Some("--version") | Some("-V") => {
             println!("heroes {}", heroes::VERSION);
             ExitCode::SUCCESS
