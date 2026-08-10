@@ -88,3 +88,22 @@ or it breaches the 1500-token budget.
   compile-error bucket (ergonomist, 009): without it the thesis's central
   claim — that silent errors are what the design eliminates — has no
   instrument, and panels 008/009's predictions are untestable.
+- **The historical appendix cites K / APL for the notation and against the
+  value model on the same page** (reasoning 001): the entry reads "the
+  empirical evidence that ultra-compact notation **fails** for LLMs", while the
+  lineage brought in for §4.10 cites the same family — with J and BQN — as
+  sixty years of evidence that value semantics over whole values is a complete
+  programming style. Both readings are defensible and they are about different
+  axes; unstated, the document appears to contradict itself.
+- **The arena-plus-indices pattern is cited for Heroes and defined only for
+  Rust** (reasoning 001): `arena` and `indices` do not occur in `design.md`.
+  The pattern lives in CLAUDE.md §5 as the Cyclone rule for the *bootstrap
+  compiler*. Whether Heroes programs get the same pattern named for them is
+  undecided, and §4.10 ends its data-model discussion at the one-element-array
+  wart.
+- **Whether the refcount is non-atomic is undecided, not assumed**
+  (reasoning 002): `atomic` does not occur in `design.md`. §4.10 gives the
+  counter its job (deciding when to copy) and says nothing about atomicity. The
+  message-passing text derives non-atomicity from the concurrency model —
+  counters never cross a thread boundary — which is the right direction of
+  dependency and the reason it cannot be settled in the runtime as a detail.
