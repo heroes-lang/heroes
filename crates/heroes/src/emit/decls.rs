@@ -51,7 +51,7 @@ pub(super) fn prelude(w: &mut Writer, program: &Program, src: &Source) {
     w.line("#include <math.h>");
     w.line("");
     w.line(
-        "_Static_assert(HERO_RUNTIME_ABI == 3, \"heroes_runtime.h is from another compiler\");",
+        "_Static_assert(HERO_RUNTIME_ABI == 4, \"heroes_runtime.h is from another compiler\");",
     );
     w.line("");
     // Every decoded string literal **an emitted function actually reads**, as a

@@ -117,6 +117,10 @@ pub(super) fn emit(
                 Ty::Str => format!("    hero_str_decref({name});"),
                 Ty::Array(_) if keep => format!("    hero_array_incref({name});"),
                 Ty::Array(_) => format!("    hero_array_decref({name});"),
+                // A `T?` and a `Failure` are by value, so they are reached by address
+                // and their own function decides which side of the union is live.
+                Ty::Failure if keep => format!("    hero_failure_retain(&{name});"),
+                Ty::Failure => format!("    hero_failure_release(&{name});"),
                 _ => match aggregate::retain(types, ty, value, keep) {
                     Some(call) => format!("    {call};"),
                     None => "    hero_unreachable(); /* the gate refuses this type */".to_string(),
@@ -214,14 +218,42 @@ pub(super) fn emit(
                 }
             }
         }
+        // `ok(x)`, `fail(c, m)`, and the `err` that `?` produces.
+        Op::Construct { shape: shape @ (crate::ir::Shape::Ok | crate::ir::Shape::Fail | crate::ir::Shape::Err), args } => {
+            if let Some(name) = target {
+                let arguments: Vec<String> = function
+                    .args_of(args)
+                    .into_iter()
+                    .filter_map(|arg| match arg {
+                        Arg::Value(value) => Some(mangle::value(value.0)),
+                        Arg::InOut(_) => None,
+                    })
+                    .collect();
+                match aggregate::construct_option(types, inst.ty, shape, &arguments) {
+                    Some(text) => w.line(&format!("    {name} = {text};")),
+                    None => w.line("    hero_unreachable(); /* not a T? */"),
+                }
+            }
+        }
+        // A tag and a payload read the same two members on a variant and on a `T?`.
+        // §4.6's `ok`/`err` *is* a variant by the time it reaches here, and the only
+        // difference is where the member names come from.
         Op::Tag(base) => {
             if let Some(name) = target {
-                w.line(&format!("    {name} = {};", aggregate::tag(base)));
+                let text = match checked.types.get(function.value_type(base)) {
+                    Ty::Fallible(_) => aggregate::option_tag(base),
+                    _ => aggregate::tag(base),
+                };
+                w.line(&format!("    {name} = {text};"));
             }
         }
         Op::Payload { base, case } => {
             if let Some(name) = target {
-                match aggregate::payload(types, function, base, case) {
+                let text = match checked.types.get(function.value_type(base)) {
+                    Ty::Fallible(_) => Some(aggregate::option_payload(base, case)),
+                    _ => aggregate::payload(types, function, base, case),
+                };
+                match text {
                     Some(text) => w.line(&format!("    {name} = {text};")),
                     None => w.line("    hero_unreachable(); /* not a variant */"),
                 }

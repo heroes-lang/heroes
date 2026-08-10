@@ -3,6 +3,7 @@ strings
     1  "nothing to parse"
 
 function parsed(s: str) -> int?
+    slots  $own1: int? · $own2: int?
     bb0  entry
         $t1: str = load s
         $t2: int = call builtin len($t1)
@@ -13,21 +14,45 @@ function parsed(s: str) -> int?
         $t8: str = load s
         $t9: int = call builtin len($t8)
         $t10: int? = construct ok($t9)
+        $t11: int? = load $own1
+        store $own1 <- $t10
+        decref $t11
+        incref $t10
+        $t13: int? = load $own1
+        decref $t13
+        $t14: int? = load $own2
+        decref $t14
         return $t10
     bb2  if: then    preds bb0
         $t5: str = const str 0
         $t6: str = const str 1
+        incref $t5
+        incref $t6
         $t7: int? = construct fail($t5, $t6)
+        $t12: int? = load $own2
+        store $own2 <- $t7
+        decref $t12
+        incref $t7
+        $t15: int? = load $own1
+        decref $t15
+        $t16: int? = load $own2
+        decref $t16
         return $t7
     bb3  if: else    preds bb0
         jump bb1
 
 function advance_over(@r: Reader, s: str) -> int?
-    slots  $f0: int? · n: int
+    slots  $f0: int? · n: int · $own4: int? · $own5: int? · $own6: int? · $own7: int?
     bb0  entry
         $t1: str = load s
         $t2: int? = call heroes parsed($t1)
+        $t23: int? = load $own4
+        store $own4 <- $t2
+        decref $t23
+        $t24: int? = load $f0
+        incref $t2
         store $f0 <- $t2
+        decref $t24
         $t3: int? = load $f0
         $t4: int = tag $t3
         $t5: int = const 0
@@ -44,8 +69,23 @@ function advance_over(@r: Reader, s: str) -> int?
     bb2  ?: propagate    preds bb0
         $t7: int? = load $f0
         $t8: the error (`code`, `msg`) = payload $t7 .err
+        incref $t8
         $t9: int? = construct err($t8)
+        $t25: int? = load $own5
+        store $own5 <- $t9
+        decref $t25
         copyout r
+        incref $t9
+        $t28: int? = load $f0
+        decref $t28
+        $t29: int? = load $own4
+        decref $t29
+        $t30: int? = load $own5
+        decref $t30
+        $t31: int? = load $own6
+        decref $t31
+        $t32: int? = load $own7
+        decref $t32
         return $t9
     bb3  if: join    preds bb5
         $t17: Reader = load r
@@ -55,12 +95,40 @@ function advance_over(@r: Reader, s: str) -> int?
         store r.pos <- $t20
         $t21: int = load n
         $t22: int? = construct ok($t21)
+        $t26: int? = load $own6
+        store $own6 <- $t22
+        decref $t26
         copyout r
+        incref $t22
+        $t33: int? = load $f0
+        decref $t33
+        $t34: int? = load $own4
+        decref $t34
+        $t35: int? = load $own5
+        decref $t35
+        $t36: int? = load $own6
+        decref $t36
+        $t37: int? = load $own7
+        decref $t37
         return $t22
     bb4  if: then    preds bb1
         $t15: int = const 0
         $t16: int? = construct ok($t15)
+        $t27: int? = load $own7
+        store $own7 <- $t16
+        decref $t27
         copyout r
+        incref $t16
+        $t38: int? = load $f0
+        decref $t38
+        $t39: int? = load $own4
+        decref $t39
+        $t40: int? = load $own5
+        decref $t40
+        $t41: int? = load $own6
+        decref $t41
+        $t42: int? = load $own7
+        decref $t42
         return $t16
     bb5  if: else    preds bb1
         jump bb3

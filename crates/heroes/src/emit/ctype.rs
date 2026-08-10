@@ -29,6 +29,15 @@ use super::mangle;
 /// translation unit, where the module is decided.
 pub(super) struct Names {
     aggregates: std::collections::BTreeMap<u32, String>,
+    /// The C type of each distinct `T?`, by the `TyId` of the whole `T?`.
+    ///
+    /// Generated rather than declared: there is no `record` in the source for a
+    /// `T?`, and every `T` needs its own struct because the payload is by value.
+    /// Named by INDEX rather than by spelling — `int?` and `[int]?` sanitise to the
+    /// same identifier, and a collision here is two types sharing one C name. The
+    /// index is assigned in `TyId` order, which is a function of the program, so
+    /// the double-emit determinism test (CLAUDE.md §7) covers it.
+    options: std::collections::BTreeMap<u32, String>,
     /// The C type of one case's payload, by `(declaration, case)`. A separate table
     /// because `Ty::Case` is a real type in the IR and needs a real C name.
     cases: std::collections::BTreeMap<(u32, u32), String>,
@@ -56,7 +65,38 @@ impl Names {
                 _ => {}
             }
         }
-        Names { aggregates, cases }
+        Names { aggregates, cases, options: std::collections::BTreeMap::new() }
+    }
+
+    /// Assigns a C name to every `T?` the program interned. Called once, after the
+    /// aggregates, because it needs the type table rather than the syntax.
+    pub(super) fn with_options(mut self, module: &str, checked: &Checked) -> Names {
+        for index in 0..checked.types.len() {
+            let id = TyId(index as u32);
+            if matches!(checked.types.get(id), Ty::Fallible(_)) {
+                let at = self.options.len();
+                self.options.insert(id.0, format!("h_{module}_opt{at}"));
+            }
+        }
+        self
+    }
+
+    pub(super) fn option_of(&self, ty: TyId) -> &str {
+        self.options
+            .get(&ty.0)
+            .map(|name| name.as_str())
+            .expect("every `T?` is named before anything can mention one")
+    }
+
+    /// Every `T?`, as `(name, the payload type)`, in emission order.
+    pub(super) fn options(&self, checked: &Checked) -> Vec<(String, TyId)> {
+        self.options
+            .iter()
+            .filter_map(|(id, name)| match checked.types.get(TyId(*id)) {
+                Ty::Fallible(inner) => Some((name.clone(), inner)),
+                _ => None,
+            })
+            .collect()
     }
 
     /// The C type of one case's payload.
@@ -110,8 +150,12 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         // finite size (§4.10) and what makes an array field impose no ordering
         // constraint on C.
         Ty::Array(_) => Some("HeroArrayHeader *".to_string()),
-        // The map and `T?`: later steps own the representation, and `gate.rs`
-        // refuses them until then.
+        // A `T?` is a by-value tagged union, one generated struct per payload type;
+        // its error side is the runtime's own record, since §4.6 fixes its shape.
+        Ty::Fallible(_) => Some(names.option_of(ty).to_string()),
+        Ty::Failure => Some("HeroFailure".to_string()),
+        // The map: the step that lands it owns the representation, and `gate.rs`
+        // refuses it until then.
         _ => Some("HeroValue".to_string()),
     }
 }

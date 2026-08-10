@@ -59,8 +59,8 @@ pub const EMITTED_BUILTINS: [&str; 5] = ["len", "print", "push", "slice", "to_st
 pub fn subset() -> String {
     format!(
         "the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, \
-         `if`, `while`, `for`, `match`, functions, and the built-ins {} — no other \
-         built-in is emitted yet",
+         `T?`, `if`, `while`, `for`, `match`, functions, and the built-ins {} — no \
+         other built-in is emitted yet",
         EMITTED_BUILTINS
             .iter()
             .map(|name| format!("`{name}`"))
@@ -100,7 +100,7 @@ pub(super) fn refuse(
         for block in &function.blocks {
             for inst in &block.insts {
                 check_type(&mut found, ast, checked, src, function, inst.ty, inst.span);
-                check_op(&mut found, ast, checked, src, function, inst.op, inst.span);
+                check_op(&mut found, ast, checked, src, inst.op, inst.span);
             }
 
         }
@@ -150,7 +150,9 @@ fn check_type(
         // is gone: two capabilities became one again, which is what a milestone
         // finishing looks like.
         Ty::Named(_) | Ty::Case(_, _) => return,
-        Ty::Fallible(_) | Ty::Failure => ("fallible", "a fallible value (`T?`)".to_string()),
+        // A `T?` is a by-value tagged union from M5d. Its *operators* are not all here
+        // — `.must()` is an `Op::Abort` with its own row — but the representation is.
+        Ty::Fallible(_) | Ty::Failure => return,
         // M6.
         Ty::Func { .. } => ("function_value", "a function used as a value".to_string()),
         Ty::Generic(_) => ("generics", "a generic type".to_string()),
@@ -170,7 +172,6 @@ fn check_op(
     ast: &Ast,
     checked: &Checked,
     src: &Source,
-    function: &Function,
     op: Op,
     span: Span,
 ) {
@@ -201,9 +202,7 @@ fn check_op(
             let (code, what) = match shape {
                 Shape::Record(_) | Shape::Case(_, _) | Shape::Array => return,
                 Shape::Map => ("map", "a map".to_string()),
-                Shape::Ok | Shape::Fail | Shape::Err => {
-                    ("fallible", "a fallible value (`T?`)".to_string())
-                }
+                Shape::Ok | Shape::Fail | Shape::Err => return,
             };
             note(found, code, what, span);
         }
@@ -216,10 +215,7 @@ fn check_op(
             // variant and on a `T?` — §4.6's `ok`/`err` *is* a variant by the time it
             // reaches here. The aggregate side emits; the `T?` side waits, so the row
             // is keyed to the base's type rather than to the operation.
-            let ty = function.value_type(base);
-            if matches!(checked.types.get(ty), Ty::Fallible(_) | Ty::Failure) {
-                note(found, "fallible", "a fallible value (`T?`)".to_string(), span);
-            }
+            let _ = (base, checked);
         }
         // Both spellings of `[i]` emit now: a byte through `hero_str_byte`, an element
         // through `hero_array_at`.

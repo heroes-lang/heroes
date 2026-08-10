@@ -95,13 +95,14 @@ pub fn emit(
         return Emitted { c: String::new(), diagnostics: refused };
     }
     let module = mangle::module_of(&src.name);
-    let names = ctype::Names::new(&module, ast, src);
+    let names = ctype::Names::new(&module, ast, src).with_options(&module, checked);
     let mut w = writer::Writer::new(&src.name, &module);
     decls::prelude(&mut w, program, src);
     // Types before anything that can mention one: the typedefs in containment order
     // (`Checked::type_order`, filtered — panel 023 R3), then every per-type prototype,
     // then the ordinary function prototypes.
     types::definitions(&mut w, ast, checked, &names, src);
+    types::options(&mut w, checked, &names);
     perfn::prototypes(&mut w, ast, checked, &names, src);
     // The descriptors before any definition: an array literal names its element's
     // descriptor, so the object has to exist by the time a function body mentions it.

@@ -105,6 +105,42 @@ pub(super) fn definitions(
     }
 }
 
+/// One `typedef` per distinct `T?` (design.md §4.6).
+///
+/// A tagged union by value, exactly like a variant with two cases — but generated from
+/// a *type* rather than a declaration, because no `record` in the source describes it.
+/// The tag is a plain `int64_t` rather than an enum: `Op::Tag`'s result is an `int` in
+/// the IR and lowering already compares it against `const 0`, so an enum here would be
+/// a name the switch could not use.
+///
+/// `ok` is case 0 and `err` is case 1, which is `ir/inst.rs`'s own numbering, and the
+/// comment above each typedef names the Heroes type — the struct is called `optN`
+/// because `int?` and `[int]?` sanitise to the same identifier and a collision here is
+/// two types sharing one C name.
+pub(super) fn options(
+    w: &mut Writer,
+    checked: &Checked,
+    names: &Names,
+) {
+    for (name, payload) in names.options(checked) {
+        let spelling = c_type(names, checked, payload);
+        w.at_generated();
+        w.line(&format!("typedef struct {name} {{"));
+        w.line("    int64_t tag;");
+        w.line("    union {");
+        match &spelling {
+            // A unit payload has no declaration (`ctype.rs`'s unit rule), so `()?`
+            // carries nothing on its ok side and the union holds the failure alone.
+            Some(text) => w.line(&format!("        {text} ok;")),
+            None => {}
+        }
+        w.line("        HeroFailure err;");
+        w.line("    } as;");
+        w.line(&format!("}} {name};"));
+        w.blank();
+    }
+}
+
 /// A variant: the tag enum, one payload struct per case that has one, then the tagged
 /// union itself (§4.2, panel 022 — spike 04's own shape).
 ///

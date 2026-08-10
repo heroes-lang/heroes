@@ -287,8 +287,15 @@ pub(crate) fn allocates(op: Op) -> bool {
 /// decision here.
 fn retains_fields(shape: Shape) -> bool {
     match shape {
+        // A record, a variant case and both sides of a `T?` all hold their argument by
+        // value, so the new value is a second owner. `ok(x)` was first written as a
+        // *wrap* that consumes its argument, on panel 021's note — but rule 5 came
+        // later and made every value reaching a constructor borrowed, so consuming one
+        // is a release the program never made. The note is older than the rule.
         Shape::Record(_) | Shape::Case(_, _) => true,
-        Shape::Ok | Shape::Err | Shape::Fail => false,
+        Shape::Ok | Shape::Err | Shape::Fail => true,
+        // A container literal is built by `push`, whose `copy` already takes the
+        // array's own reference per element.
         Shape::Array | Shape::Map => false,
     }
 }

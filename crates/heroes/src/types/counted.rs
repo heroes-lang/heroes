@@ -81,11 +81,12 @@ fn counts(types: &Types, ast: &Ast, written: &Written, answer: &[bool], ty: TyId
         // row dies per step, and the row and the emission land together.
         //
         //   `{K: V}`  — the step that lands the map
-        //   `T?`      — the step after; every `T?` is counted whatever `T` is,
-        //               because a `Failure` is two `str`s
         Ty::Array(_) => true,
         Ty::Map(_, _) => false,
-        Ty::Fallible(_) | Ty::Failure => false,
+        // **Every** `T?` is counted whatever `T` is, and a `Failure` always: it is two
+        // `str`s, so even `int?` owns a reference on its error side. The union means the
+        // release has to switch on the tag rather than release both.
+        Ty::Fallible(_) | Ty::Failure => true,
         // Scalars, the FFI's opaque types, a function pointer, and the two the
         // checker uses for its own bookkeeping.
         Ty::Int | Ty::F64 | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,

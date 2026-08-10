@@ -133,6 +133,19 @@ pub(super) fn binary(
         w.line(&format!("    {name} = {text};"));
         return;
     }
+    // A `T?` and a `Failure` compare through their generated function: different tags
+    // are never equal, and §4.6's error side compares its code before its message.
+    if matches!(operands, Ty::Fallible(_) | Ty::Failure) {
+        let ty = function.value_type(left);
+        let call = aggregate::equality(types, ty, left, right);
+        let text = match (op, call) {
+            (BinOp::Eq, Some(call)) => call,
+            (BinOp::Ne, Some(call)) => format!("!{call}"),
+            _ => "(hero_unreachable(), false)".to_string(),
+        };
+        w.line(&format!("    {name} = {text};"));
+        return;
+    }
     if operands == Ty::Str {
         let call = match op {
             BinOp::Add => format!("hero_str_concat({l}, {r})"),

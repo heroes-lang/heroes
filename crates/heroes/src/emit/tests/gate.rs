@@ -242,9 +242,27 @@ fn a_record_holding_a_str_gets_a_retain_and_a_release() {
 }
 
 #[test]
-fn a_fallible_value_is_refused() {
-    let (code, _) = refusal(
+fn a_fallible_value_is_emitted_as_a_tagged_union_by_value() {
+    let out = super::emitted(
         "function half(n: int) -> int?\n    if n % 2 == 0\n        return ok(n / 2)\n    return fail(\"odd\", \"not even\")\n\nfunction main()\n    print(half(4).default(0))\n",
+    );
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    // One generated struct per distinct `T?`, named by index because `int?` and
+    // `[int]?` sanitise to the same identifier.
+    assert!(out.c.contains("typedef struct h_scratch_opt0"), "{}", out.c);
+    assert!(out.c.contains("int64_t tag;"), "{}", out.c);
+    assert!(out.c.contains("HeroFailure err;"), "{}", out.c);
+    // Every `T?` is counted whatever `T` is, because the error side is two `str`s.
+    assert!(out.c.contains("h_scratch_opt0_release"), "{}", out.c);
+    assert!(out.c.contains("hero_failure_release"), "{}", out.c);
+}
+
+/// `.must()` is not the representation: it is an `Op::Abort`, and it keeps its own row
+/// until the step that lands the aborting operators.
+#[test]
+fn must_is_still_refused_while_the_representation_is_not() {
+    let (code, _) = refusal(
+        "function half(n: int) -> int?\n    return ok(n / 2)\n\nfunction main()\n    print(half(4).must())\n",
     );
     assert_eq!(code, "fallible");
 }

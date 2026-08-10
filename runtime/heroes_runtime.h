@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 3
+#define HERO_RUNTIME_ABI 4
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -105,6 +105,33 @@ HeroStr hero_int_to_str(int64_t v);
 HeroStr hero_bool_to_str(bool v);
 HeroStr hero_str_identity(HeroStr s);
 
+/* -- the failure side of `T?` (design.md §4.6) -------------------------------
+ *
+ * `fail(code, msg)`, and the two fields the spec names: a stable snake_case code
+ * and a human message. Declared here rather than generated because it is the one
+ * record every `T?` in every program contains, and because §4.6 fixes its shape —
+ * there is no declaration in the source for the compiler to generate it from.
+ *
+ * Two `HeroStr` is 32 bytes, which is what makes a `T?` 40 bytes while `T` fits in
+ * 32 (measured; panel 023 corrected the earlier "40 for every T" — `sizeof(Big?)`
+ * is 48 for a 40-byte record, because past 32 the payload wins). */
+
+typedef struct HeroFailure {
+    HeroStr code;
+    HeroStr msg;
+} HeroFailure;
+
+void hero_failure_retain(const HeroFailure *v);
+void hero_failure_release(HeroFailure *v);
+bool hero_failure_eq(const HeroFailure *a, const HeroFailure *b);
+uint64_t hero_failure_hash(const void *elem);
+
+/* The failure `m[k]` produces when the key is absent (spec line 125-126: code
+ * `missing_key`). Both strings are static blocks, so a lookup that misses
+ * allocates nothing — which matters because a miss is the common case in a
+ * `.default(v)` chain. */
+HeroFailure hero_failure_missing_key(void);
+
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *
  * C has no copy constructors, no destructors and no generic comparison, while
@@ -148,6 +175,7 @@ extern const HeroDesc hero_desc_str;
  * through the header's own `elem`, so the descriptor of an array needs to know
  * nothing about what the array holds. `[[int]]` and `[[str]]` share this. */
 extern const HeroDesc hero_desc_array;
+extern const HeroDesc hero_desc_failure;
 
 /* -- the array: `[T]` (design.md §4.20, spike 04) ---------------------------
  *

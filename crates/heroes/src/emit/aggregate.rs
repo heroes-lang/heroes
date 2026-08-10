@@ -48,6 +48,16 @@ impl<'a> Types<'a> {
     /// which by here means the checker reported something and the emitter is running
     /// on a program it should never have been handed.
     fn field(&self, owner: TyId, index: u32) -> Option<(String, TyId)> {
+        // §4.6's built-in record: two `str`s, `code` then `msg`, with no declaration
+        // anywhere to read them from — `ir/layout.rs` fixes the order for the same
+        // reason and this is the C side of it.
+        if self.checked.types.get(owner) == Ty::Failure {
+            let member = match index {
+                0 => "code",
+                _ => "msg",
+            };
+            return Some((member.to_string(), self.checked.types.str()));
+        }
         let decl = match self.checked.types.get(owner) {
             Ty::Named(decl) | Ty::Case(decl, _) => decl,
             _ => return None,
@@ -71,6 +81,8 @@ impl<'a> Types<'a> {
         match self.checked.types.get(ty) {
             Ty::Named(decl) => Some(self.names.of(decl)),
             Ty::Case(decl, case) => Some(self.names.case_of(decl, case)),
+            Ty::Fallible(_) => Some(self.names.option_of(ty)),
+            Ty::Failure => Some("hero_failure"),
             _ => None,
         }
     }
@@ -354,4 +366,58 @@ pub(super) fn write_element(
         }
     }
     None
+}
+
+// --- `T?` -----------------------------------------------------------------
+
+/// `ok(x)`, `fail(code, msg)` and the `err` that `?` produces (design.md §4.6).
+///
+/// One compound literal each, and the tag is written explicitly even though C would
+/// zero it for `ok`: the two sides of a `T?` are the whole point of the type, and a
+/// reader of the generated C should not have to know C's initialiser rules to see
+/// which one this is.
+pub(super) fn construct_option(
+    types: &Types,
+    result: TyId,
+    shape: crate::ir::Shape,
+    arguments: &[String],
+) -> Option<String> {
+    use crate::ir::Shape;
+    let name = types.names.option_of(result);
+    match shape {
+        Shape::Ok => {
+            let value = arguments.first();
+            match value {
+                Some(text) => Some(format!("({name}){{.tag = INT64_C(0), .as.ok = {text}}}")),
+                // `ok(())` — a unit payload has no member at all, so the tag is the
+                // whole value.
+                None => Some(format!("({name}){{.tag = INT64_C(0)}}")),
+            }
+        }
+        Shape::Fail => {
+            let code = arguments.first()?;
+            let msg = arguments.get(1)?;
+            Some(format!(
+                "({name}){{.tag = INT64_C(1), .as.err = {{.code = {code}, .msg = {msg}}}}}"
+            ))
+        }
+        // `?` propagates the failure UNCHANGED into the caller's `T?`: nothing re-reads
+        // its code and msg on the way (§4.6), so this is one struct assignment.
+        Shape::Err => {
+            let failure = arguments.first()?;
+            Some(format!("({name}){{.tag = INT64_C(1), .as.err = {failure}}}"))
+        }
+        _ => None,
+    }
+}
+
+/// `t16 = t15.tag;` for a `T?`, the same member a variant uses.
+pub(super) fn option_tag(base: ValueId) -> String {
+    format!("{}.tag", mangle::value(base.0))
+}
+
+/// `.as.ok` for case 0 and `.as.err` for case 1 — `ir/inst.rs`'s own numbering.
+pub(super) fn option_payload(base: ValueId, case: u32) -> String {
+    let member = if case == 0 { "ok" } else { "err" };
+    format!("{}.as.{member}", mangle::value(base.0))
 }

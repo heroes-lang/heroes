@@ -1,7 +1,0 @@
-unsupported[fallible]: a fallible value (`T?`) is not emitted yet
-  at tests/golden/unsupported/fallible.hero:8:1
-    |
-  8 | function half(n: int) -> int?
-    | ^
-  note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet

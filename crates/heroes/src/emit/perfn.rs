@@ -29,6 +29,7 @@ use crate::types::{Checked, Ty};
 
 use super::ctype::Names;
 use super::mangle;
+use super::ctype::c_type;
 use super::types::{aggregates, cases_of, fields_of, is_variant};
 use super::writer::Writer;
 
@@ -52,6 +53,14 @@ pub(super) fn prototypes(
             w.line(&format!("void {name}_retain(const {name} *v);"));
             w.line(&format!("void {name}_release({name} *v);"));
         }
+        w.line(&format!("bool {name}_eq(const {name} *a, const {name} *b);"));
+        w.line(&format!("uint64_t {name}_hash(const void *elem);"));
+        any = true;
+    }
+    for (name, _) in names.options(checked) {
+        w.at_generated();
+        w.line(&format!("void {name}_retain(const {name} *v);"));
+        w.line(&format!("void {name}_release({name} *v);"));
         w.line(&format!("bool {name}_eq(const {name} *a, const {name} *b);"));
         w.line(&format!("uint64_t {name}_hash(const void *elem);"));
         any = true;
@@ -131,6 +140,78 @@ pub(super) fn bodies(
         }
         equality_body(w, checked, names, src, &name, fields);
         hash_body(w, checked, names, src, &name, fields);
+    }
+    option_bodies(w, checked, names);
+}
+
+/// The four functions for each `T?`. Every one switches on the tag, because the two
+/// sides of a `T?` are alternatives and touching the wrong one is reading a union
+/// member that was never written.
+fn option_bodies(w: &mut Writer, checked: &Checked, names: &Names) {
+    for (name, payload) in names.options(checked) {
+        let counted = crate::ir::is_refcounted(checked, payload);
+        let has_ok = c_type(names, checked, payload).is_some();
+        w.at_generated();
+        // retain / release. The error side is ALWAYS counted (two `str`s), which is why
+        // every `T?` is counted whatever `T` is — `int?` included.
+        for keep in [true, false] {
+            let verb = if keep { "retain" } else { "release" };
+            if keep {
+                w.line(&format!("void {name}_retain(const {name} *v) {{"));
+            } else {
+                w.line(&format!("void {name}_release({name} *v) {{"));
+            }
+            w.line("    if (v->tag == INT64_C(0)) {");
+            if counted && has_ok {
+                match super::descriptors::pointer(checked, names, payload) {
+                    Some(desc) => {
+                        w.line(&format!("        ({desc})->{}(&v->as.ok);", if keep { "copy" } else { "drop" }));
+                    }
+                    None => w.line("        hero_unreachable();"),
+                }
+            } else {
+                w.line("        return;");
+            }
+            w.line("    } else {");
+            w.line(&format!("        hero_failure_{verb}(&v->as.err);"));
+            w.line("    }");
+            w.line("}");
+            w.blank();
+        }
+        // equality: different tags are never equal.
+        w.line(&format!("bool {name}_eq(const {name} *a, const {name} *b) {{"));
+        w.line("    if (a->tag != b->tag) return false;");
+        w.line("    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);");
+        if has_ok {
+            match super::descriptors::pointer(checked, names, payload) {
+                Some(desc) => w.line(&format!("    return ({desc})->eq(&a->as.ok, &b->as.ok);")),
+                None => w.line("    hero_unreachable();"),
+            }
+        } else {
+            // Two `()?` that are both ok carry nothing to compare.
+            w.line("    return true;");
+        }
+        w.line("}");
+        w.blank();
+        w.line(&format!("uint64_t {name}_hash(const void *elem) {{"));
+        w.line(&format!("    const {name} *v = elem;"));
+        w.line("    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)");
+        w.line("        * UINT64_C(0x100000001b3);");
+        w.line("    if (v->tag != INT64_C(0)) {");
+        w.line("        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);");
+        w.line("    }");
+        if has_ok {
+            match super::descriptors::pointer(checked, names, payload) {
+                Some(desc) => {
+                    w.line(&format!("    return (h ^ ({desc})->hash(&v->as.ok)) * UINT64_C(0x100000001b3);"));
+                }
+                None => w.line("    hero_unreachable();"),
+            }
+        } else {
+            w.line("    return h;");
+        }
+        w.line("}");
+        w.blank();
     }
 }
 

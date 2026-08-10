@@ -1,23 +1,15 @@
 unsupported[map]: a map is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:26:5
+  at tests/golden/unsupported/three-capabilities.hero:27:5
      |
-  26 |     m = {"a": 1}
+  27 |     m = {"a": 1}
      |     ^^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `T?`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
 
 unsupported[builtin]: the built-in `has` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:27:11
+  at tests/golden/unsupported/three-capabilities.hero:28:11
      |
-  27 |     print(m.has("a"))     #~ builtin
+  28 |     print(m.has("a"))     #~ builtin
      |           ^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
-
-unsupported[fallible]: a fallible value (`T?`) is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:29:5
-     |
-  29 |     got = m["a"]
-     |     ^^^^^^^^^^^^
-  note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `T?`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet

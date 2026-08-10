@@ -1,0 +1,36 @@
+# `T?` is the language's whole failure story (§4.6), and this file used to be a REFUSAL
+# golden — moved rather than rewritten, so the record shows the row dying, the same way
+# `strings.hero` moved at M5b.
+#
+# A `T?` is a tagged union BY VALUE: an `int64_t` tag, then a union of the payload and
+# `HeroFailure`. Two `HeroStr` is 32 bytes, which is what makes an `int?` 40 — and 40 is
+# the number *while `T` fits in 32*, not for every `T` (panel 023 measured
+# `sizeof(Big?)` at 48 for a 40-byte record).
+#
+# So **every** `T?` is reference-counted whatever `T` is, `int?` included, because its
+# error side owns two strings. The release switches on the tag: touching the other side
+# of the union would read a member that was never written.
+#
+# `.must()` is deliberately absent — it is an `Op::Abort`, not part of the
+# representation, and it keeps its own refusal row.
+# Bulk regression case.
+
+function half(n: int) -> int?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail("odd", "not divisible by two")
+
+function main()
+    a = half(4).default(0)
+    print(a)
+    print(half(3).is_err())
+    # The error side, read through a `match`: §4.6's two fields, and a `Failure`
+    # propagated by `?` arrives unchanged rather than being rebuilt.
+    match half(3)
+        .ok v  => print(v)
+        .err e => print(e.code, e.msg)
+    # Structural equality on a `T?`: different tags are never equal, and two errors
+    # compare their codes before their messages.
+    print(half(4) == half(4))
+    print(half(4) == half(6))
+    print(half(3) == half(5))
