@@ -1,0 +1,55 @@
+# `{K: V}`: open addressing with linear probing over three parallel regions in one
+# block — a state byte per bucket, then the keys, then the values. Not one struct per
+# bucket, because key and value sizes come from descriptors at runtime and a per-bucket
+# layout would need padding this code computes.
+#
+# THE SEED IS FIXED, and it is not a style choice: iteration order has to be a function
+# of the contents, because the self-hosting fixpoint compares generated C byte for byte
+# (panel 006). A seed that varied per run would make the compiler produce two different
+# correct outputs and the fixpoint would never close.
+#
+# READ-ONLY, deliberately: panel 022 struck the mutation half for having zero reachable
+# call sites — the spec's inventory has no `insert`, and `for k in m` is `not_iterable`.
+# A map is a literal, `m[k]`, `has`, `len` and `==`.
+#
+# `==` IS ORDER-INDEPENDENT (spec line 58), and that is the line a cheap implementation
+# gets silently wrong: a pairwise walk of two dense entry arrays makes `{"a":1,"b":2}`
+# and `{"b":2,"a":1}` unequal, with nothing to notice. Panel 022 ranked it first among
+# what to get right, because the ergonomist answered `true` from the spec at 80%
+# confidence with nothing to read.
+#
+# `m[k]` is **not** `xs[i]`: it yields a `V?` and cannot abort (§4.9), with code
+# `missing_key` on a miss.
+# Bulk regression case.
+
+record Point
+    x: int
+    y: int
+
+function main()
+    m = {"a": 1, "b": 2, "c": 3}
+    print(len(m))
+    print(has(m, "a"), has(m, "z"))
+    print(m["b"].default(0))
+    print(m["z"].default(-1))
+    print(m["z"].is_err())
+    # Order-independence, three ways round.
+    print(m == {"c": 3, "b": 2, "a": 1})
+    print(m == {"a": 1, "b": 2})
+    print(m == {"a": 1, "b": 2, "c": 4})
+    # A later duplicate replaces the value.
+    d = {"k": 1, "k": 2}
+    print(len(d), d["k"].default(0))
+    # Non-string keys, and a value that owns a reference.
+    ns = {1: "one" + "!", 2: "two" + "!"}
+    print(ns[1].default("none"))
+    print(ns[9].default("none"))
+    # Aggregate values, reached through the generated descriptor.
+    ps = {"origin": Point(x: 0, y: 0), "unit": Point(x: 1, y: 1)}
+    got = ps["unit"]
+    print(got.default(Point(x: -1, y: -1)).x)
+    print(ps == {"unit": Point(x: 1, y: 1), "origin": Point(x: 0, y: 0)})
+    # An empty map: `len` is 0, every lookup misses, and the drop loop runs zero times.
+    e: {str: int} = {}
+    print(len(e), e["a"].is_err())
+    print(e == {})

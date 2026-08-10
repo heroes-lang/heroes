@@ -120,6 +120,21 @@ pub(super) fn binary(
     // `str` has its own arithmetic: `+` is concatenation (§4.14's operator table) and
     // the comparisons are byte-wise, which is what makes `==` structural on a string
     // the same way it is on a record.
+    // A map compares order-independently: same length, and every entry found in the
+    // other with an equal value. Spec line 58 requires exactly that, and a pairwise
+    // walk of two entry arrays would have made `{"a":1,"b":2}` and `{"b":2,"a":1}`
+    // unequal — the shape panel 022 ranked first among what a cheap map gets silently
+    // wrong.
+    if let Ty::Map(_, _) = operands {
+        let call = format!("hero_map_eq({l}, {r})");
+        let text = match op {
+            BinOp::Eq => call,
+            BinOp::Ne => format!("!{call}"),
+            _ => "(hero_unreachable(), false)".to_string(),
+        };
+        w.line(&format!("    {name} = {text};"));
+        return;
+    }
     // An array compares element by element through the descriptor, and a length
     // mismatch is answered before any element is touched.
     if let Ty::Array(_) = operands {
@@ -249,14 +264,23 @@ pub(super) fn call(
             print(w, function, checked, args, arguments);
         }
         Callee::Builtin(index) if super::EMITTED_BUILTINS.contains(&BUILTINS[index as usize].name) => {
+            let first_is_map = matches!(
+                function.args_of(args).first(),
+                Some(Arg::Value(value))
+                    if matches!(checked.types.get(function.value_type(*value)), Ty::Map(_, _))
+            );
             let first_is_array = matches!(
                 function.args_of(args).first(),
                 Some(Arg::Value(value))
                     if matches!(checked.types.get(function.value_type(*value)), Ty::Array(_))
             );
             let entry = match BUILTINS[index as usize].name {
+                "len" if first_is_map => "hero_map_len",
                 "len" if first_is_array => "hero_array_len",
                 "len" => "hero_str_len",
+                // `has(m, k)` takes its key by address: the runtime hashes and compares
+                // it through the key descriptor.
+                "has" => "hero_map_has",
                 "slice" => "hero_str_slice",
                 // `push` hands back a NEW array, always: `xs = [1,2,3]` leaves `xs`
                 // observable, its slot holds one reference, so a refcount of 1 means
@@ -280,7 +304,7 @@ pub(super) fn call(
             // `push`'s second argument is a *place*, not a value: the runtime copies
             // through the element descriptor, which is the only way one function can
             // append an `int` and a `Point`.
-            let written: Vec<String> = if BUILTINS[index as usize].name == "push" {
+            let written: Vec<String> = if matches!(BUILTINS[index as usize].name, "push" | "has") {
                 arguments
                     .iter()
                     .enumerate()

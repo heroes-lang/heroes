@@ -421,3 +421,76 @@ pub(super) fn option_payload(base: ValueId, case: u32) -> String {
     let member = if case == 0 { "ok" } else { "err" };
     format!("{}.as.{member}", mangle::value(base.0))
 }
+
+// --- `{K: V}` -------------------------------------------------------------
+
+/// `t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2);` plus one `put` per pair.
+///
+/// The arguments alternate key, value (`ir/inst.rs`'s own shape for `Shape::Map`), and
+/// both go in **by address**: the runtime copies them through their descriptors, which
+/// is the only way one function can insert a `str` key and a `Point` value.
+pub(super) fn build_map(
+    types: &Types,
+    result: TyId,
+    arguments: &[String],
+    into: &str,
+) -> Option<Vec<String>> {
+    let (key, value) = match types.checked.types.get(result) {
+        Ty::Map(key, value) => (key, value),
+        _ => return None,
+    };
+    let key_desc = super::descriptors::pointer(types.checked, types.names, key)?;
+    let value_desc = super::descriptors::pointer(types.checked, types.names, value)?;
+    let pairs = arguments.len() / 2;
+    let mut lines = vec![format!("{into} = hero_map_new({key_desc}, {value_desc}, {pairs});")];
+    for pair in arguments.chunks(2) {
+        if pair.len() == 2 {
+            lines.push(format!("hero_map_put({into}, &{}, &{});", pair[0], pair[1]));
+        }
+    }
+    Some(lines)
+}
+
+/// `m[k]`, which is **not** `xs[i]`: it yields a `V?` and cannot abort (§4.9).
+///
+/// The runtime hands back the value's address or NULL, because it cannot build the
+/// option — that struct is generated per payload type. So the wrapping is here, and the
+/// found value is copied through its descriptor rather than assigned: the map still
+/// owns its copy, and the `V?` needs one of its own.
+pub(super) fn map_get(
+    types: &Types,
+    function: &Function,
+    map: ValueId,
+    key: ValueId,
+    result: TyId,
+    into: &str,
+) -> Option<Vec<String>> {
+    let value = match types.checked.types.get(function.value_type(map)) {
+        Ty::Map(_, value) => value,
+        _ => return None,
+    };
+    let option = types.names.option_of(result);
+    let mut lines = vec![
+        "{".to_string(),
+        format!(
+            "  const void *found = hero_map_find({}, &{});",
+            mangle::value(map.0),
+            mangle::value(key.0)
+        ),
+        "  if (found == NULL) {".to_string(),
+        format!(
+            "    {into} = ({option}){{.tag = INT64_C(1), .as.err = hero_failure_missing_key()}};"
+        ),
+        "  } else {".to_string(),
+        format!("    {into}.tag = INT64_C(0);"),
+    ];
+    // A unit value type has no `ok` member at all (`ctype.rs`'s unit rule), so the tag
+    // is the whole answer.
+    if super::ctype::c_type(types.names, types.checked, value).is_some() {
+        let desc = super::descriptors::pointer(types.checked, types.names, value)?;
+        lines.push(format!("    ({desc})->copy(&{into}.as.ok, found);"));
+    }
+    lines.push("  }".to_string());
+    lines.push("}".to_string());
+    Some(lines)
+}

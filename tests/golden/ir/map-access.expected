@@ -2,15 +2,18 @@ strings
     0  "ada"
 
 function score_of(scores: {str: int}, name: str) -> int
-    slots  $f0: int? · $r0: int
+    slots  $f0: int? · $r0: int · $own4: int?
     bb0  entry
         $t1: {str: int} = load scores
         $t2: str = load name
         $t3: int? = mapget $t1, $t2
-        $t12: int? = load $f0
+        $t12: int? = load $own4
+        store $own4 <- $t3
+        decref $t12
+        $t13: int? = load $f0
         incref $t3
         store $f0 <- $t3
-        decref $t12
+        decref $t13
         $t4: int? = load $f0
         $t5: int = tag $t4
         $t6: int = const 0
@@ -27,8 +30,10 @@ function score_of(scores: {str: int}, name: str) -> int
         jump bb3
     bb3  default: join    preds bb1, bb2
         $t11: int = load $r0
-        $t13: int? = load $f0
-        decref $t13
+        $t14: int? = load $f0
+        decref $t14
+        $t15: int? = load $own4
+        decref $t15
         return $t11
 
 function first_of(xs: [int]) -> int

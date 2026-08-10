@@ -154,8 +154,10 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         // its error side is the runtime's own record, since §4.6 fixes its shape.
         Ty::Fallible(_) => Some(names.option_of(ty).to_string()),
         Ty::Failure => Some("HeroFailure".to_string()),
-        // The map: the step that lands it owns the representation, and `gate.rs`
-        // refuses it until then.
+        // One pointer, like the array: a header with three parallel regions after it.
+        Ty::Map(_, _) => Some("HeroMapHeader *".to_string()),
+        // §4.19's two opaque types reach C only through an `extern`, refused until M7,
+        // and the two the checker keeps for its own bookkeeping never reach here.
         _ => Some("HeroValue".to_string()),
     }
 }

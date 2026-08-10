@@ -1,17 +1,15 @@
-# Three unsupported capabilities, three diagnostics, sorted by span: a message
-# that carries the list is one round trip, and three invocations is three.
+# The list as it stands, and the file's job is to keep proving that all of it arrives
+# at once rather than one invocation at a time.
 #
-# Rewritten five times, and each rewrite is the gate working — at M5b the original's
-# `str` and `f64` started emitting, at M5c step 3 the `record`, at step 5 the `array`,
-# at step 6 writing one element of one, and at M5d `T?`. What is left is the list as it
-# stands, and the file's job is to keep proving that all of it arrives at once rather
-# than one invocation at a time. The count in the name is now the *shape* of the
-# assertion rather than a headcount.
+# Rewritten six times, and each rewrite is the gate working — `str` and `f64` at M5b,
+# `record` at M5c step 3, `array` at step 5, writing one element at step 6, `T?` and
+# `{K: V}` at M5d. **Every type in the language now emits**, so what is left is
+# built-ins with no runtime entry point, and the name of this file is now about the
+# shape of the assertion rather than a headcount.
 #
-# The record, the array and the element write all stay in the file deliberately: every
-# one of them emits now, so their presence proves the three refusals below are about
-# the three forms named and not about the program containing an aggregate, a container
-# or a mutation at all.
+# The record, the array, the element write, the map and the `T?` all stay in the file
+# deliberately: every one of them emits, so their presence proves the refusals below
+# are about the three named built-ins and not about the program's types.
 # Bulk regression case.
 
 record P
@@ -23,8 +21,8 @@ function main()
     xs: [int] @ [1, 2]
     xs[0] @ 7
     print(xs[0], len(xs))
-    #~v map
     m = {"a": 1}
-    print(m.has("a"))     #~ builtin
-    got = m["a"]
-    print(got.default(0))
+    print(has(m, "a"), m["a"].default(0))
+    print(sort(xs)[0])        #~ builtin
+    print(join(["a"], "-"))   #~ builtin
+    print(chars("ab")[0])     #~ builtin

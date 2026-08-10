@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 4
+#define HERO_RUNTIME_ABI 5
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -254,6 +254,68 @@ void *hero_array_at_mut(HeroArrayHeader *a, int64_t index);
  * outermost unshare, because the value may live inside the very container being
  * copied (`n.children[0] @ n`). */
 void hero_array_set(HeroArrayHeader **slot, int64_t index, const void *value);
+
+/* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
+ *
+ * Open addressing with linear probing, and THREE PARALLEL REGIONS in one block —
+ * a state byte per bucket, then the keys, then the values. Not one struct per
+ * bucket, because key and value sizes come from descriptors at runtime: a
+ * per-bucket layout would need padding this code computes, while parallel regions
+ * need only each region aligned once. The offsets are in the header so nothing
+ * recomputes them.
+ *
+ * FIXED SEED, and it is not a style choice: iteration order has to be a function
+ * of the contents, because the self-hosting fixpoint compares generated C
+ * byte-for-byte (panel 006). A seed that varied per run would make the compiler
+ * produce two different correct outputs, and the fixpoint would never close.
+ *
+ * READ-ONLY at M5d, and deliberately: panel 022 struck the mutation half for
+ * having zero reachable call sites — the spec's inventory has no `insert`, and
+ * `for k in m` is `not_iterable`. So there is no `hero_map_unshare` here. A map is
+ * a literal, `m[k]`, `has`, `len`, and `==`. The larger question the ROADMAP
+ * carries: `{K: V}` may be deleted at M6's closure audit, which recovers 57 spec
+ * tokens against 29 to fund `set` plus `for k in m`. */
+
+typedef struct HeroMapHeader {
+    int64_t refcount;
+    int64_t len;  /* live entries */
+    int64_t cap;  /* buckets, always a power of two, always > len */
+    const HeroDesc *key;
+    const HeroDesc *val;
+    size_t states; /* byte offsets from this header to the three regions */
+    size_t keys;
+    size_t vals;
+} HeroMapHeader;
+
+extern const HeroDesc hero_desc_map;
+
+/* `cap` is rounded up to a power of two with room to spare: linear probing
+ * degrades badly at high load, and a literal's size is known exactly, so there is
+ * no reason to be tight. */
+HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t entries);
+void hero_map_incref(HeroMapHeader *m);
+void hero_map_decref(HeroMapHeader *m); /* no-op on NULL */
+int64_t hero_map_len(const HeroMapHeader *m);
+
+/* Used only by the literal builder. It COPIES both key and value through their
+ * descriptors — the same rule as `hero_array_push`, because every value reaching a
+ * constructor is borrowed. A duplicate key replaces the VALUE, since `{"a": 1,
+ * "a": 2}` has to mean something and the later entry is what a reader expects. */
+void hero_map_put(HeroMapHeader *m, const void *key, const void *value);
+
+bool hero_map_has(const HeroMapHeader *m, const void *key);
+
+/* The value, or NULL when the key is absent. NULL rather than a `T?` because the
+ * runtime cannot build one: the option struct is generated per payload type, so
+ * wrapping is the emitter's job. */
+const void *hero_map_find(const HeroMapHeader *m, const void *key);
+
+/* Order-independent by construction: same length, and every entry of `a` found in
+ * `b` with an equal value. Spec line 58 requires exactly that — "a map's insertion
+ * order does not affect it" — and a pairwise walk of two dense entry arrays would
+ * have made `{"a":1,"b":2}` and `{"b":2,"a":1}` unequal, which is the shape panel
+ * 022 ranked first among the things a cheap implementation gets silently wrong. */
+bool hero_map_eq(const HeroMapHeader *a, const HeroMapHeader *b);
 
 /* -- the leak check ASan cannot do on this platform ------------------------
  * MEASURED (panel 021): AddressSanitizer on Darwin arm64 has NO

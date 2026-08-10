@@ -72,17 +72,13 @@ fn counts(types: &Types, ast: &Ast, written: &Written, answer: &[bool], ty: TyId
         Ty::Case(decl, case) => {
             case_fields_of(ast, written, decl, case).iter().any(|f| answer[f.0 as usize])
         }
-        // **Staged, deliberately, and each row is a step.** These three own or hold a
-        // reference and belong on the `true` side; they are `false` until the step
-        // that can *emit* the counting for them, because the ownership pass would
-        // otherwise write increfs into the IR of programs the gate refuses — a golden
-        // diff nobody can validate by running the program, which is the kind of diff
-        // that gets accepted because it looks plausible. The gate's own discipline: a
-        // row dies per step, and the row and the emission land together.
+        // Staged one step at a time while they landed, and the staging is done: every
+        // row here now emits. The discipline is worth keeping in mind — a row and the
+        // emission for it land together, because turning one on early writes increfs
+        // into the IR of programs the gate refuses, and that is a golden diff nobody
+        // can validate by running the program.
         //
-        //   `{K: V}`  — the step that lands the map
-        Ty::Array(_) => true,
-        Ty::Map(_, _) => false,
+        Ty::Array(_) | Ty::Map(_, _) => true,
         // **Every** `T?` is counted whatever `T` is, and a `Failure` always: it is two
         // `str`s, so even `int?` owns a reference on its error side. The union means the
         // release has to switch on the tag rather than release both.

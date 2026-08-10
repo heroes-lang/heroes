@@ -255,11 +255,19 @@ fn plain(dest: Option<crate::ir::ValueId>, op: Op, ty: TyId, span: Span) -> Inst
 pub(crate) fn allocates(op: Op) -> bool {
     match op {
         Op::Call { .. } | Op::Construct { .. } | Op::Cast { .. } | Op::Binary { .. } => true,
-        // M5c: a field read of a counted field, an index, a map get, and a payload
-        // all hand back a reference and will need the same treatment. They are
-        // refused by the gate today, and listed rather than defaulted so that
-        // switching one on is a decision here.
-        Op::Field { .. } | Op::Index { .. } | Op::MapGet { .. } | Op::Payload { .. } => false,
+        // **`m[k]` allocates**, and it is the only one of these four that does. The
+        // other three hand back a *borrowed* view — a field read, an element read and a
+        // payload read all copy bytes out of something that keeps its own reference — but
+        // a map lookup builds a `V?` around the value, and building it copies the value
+        // through its descriptor, which increfs. So the `V?` arrives owning something.
+        //
+        // The comment this replaces said "listed rather than defaulted so that switching
+        // one on is a decision here", and this is that decision. It was found by the leak
+        // counter: `{1: "one" + "!"}` then `.default(...)` leaked exactly one block, and
+        // only with a heap-allocated value — a `str` literal has a negative refcount, so
+        // the same missing decref is invisible.
+        Op::MapGet { .. } => true,
+        Op::Field { .. } | Op::Index { .. } | Op::Payload { .. } => false,
         Op::Const(_)
         | Op::Load(_)
         | Op::Store { .. }

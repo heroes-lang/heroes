@@ -34,6 +34,11 @@ pub(super) fn pointer(checked: &Checked, names: &Names, ty: TyId) -> Option<Stri
         Ty::Str => Some("&hero_desc_str".to_string()),
         // One for all of them: see the module doc.
         Ty::Array(_) => Some("&hero_desc_array".to_string()),
+        Ty::Map(_, _) => Some("&hero_desc_map".to_string()),
+        // Every `T?` needs its own, because its payload is by value — and so does the
+        // failure side, which the runtime ships.
+        Ty::Fallible(_) => Some(format!("&{}_desc", names.option_of(ty))),
+        Ty::Failure => Some("&hero_desc_failure".to_string()),
         Ty::Named(decl) => Some(format!("&{}_desc", names.of(decl))),
         Ty::Case(decl, case) => Some(format!("&{}_desc", names.case_of(decl, case))),
         _ => None,
@@ -66,21 +71,30 @@ pub(super) fn hash_call(checked: &Checked, names: &Names, ty: TyId, place: &str)
 /// test (CLAUDE.md §7) is what that buys.
 pub(super) fn generated(checked: &Checked) -> Vec<TyId> {
     let mut wanted: BTreeSet<u32> = BTreeSet::new();
-    // Every array in the program contributes its element type, and an element that
-    // is itself an array contributes *its* element in turn — a worklist rather than
-    // one pass, because `[[Point]]` reaches `Point` only at the second step.
+    // Every container in the program contributes what it holds. No second pass is
+    // needed for nesting: an inner `[T]` is itself an interned array type, so it is
+    // already in the list below — which is why `[[Point]]` reaches `Point` without the
+    // walk ever descending.
+    // Both containers contribute: an array its element, a map its key *and* its
+    // value, since the runtime reaches all three through descriptors.
     let mut queue: Vec<TyId> = (0..checked.types.len())
         .map(|index| TyId(index as u32))
-        .filter(|id| matches!(checked.types.get(*id), Ty::Array(_)))
+        .filter(|id| matches!(checked.types.get(*id), Ty::Array(_) | Ty::Map(_, _)))
         .collect();
     while let Some(id) = queue.pop() {
-        if let Ty::Array(element) = checked.types.get(id) {
+        let elements: Vec<TyId> = match checked.types.get(id) {
+            Ty::Array(element) => vec![element],
+            Ty::Map(key, value) => vec![key, value],
+            _ => Vec::new(),
+        };
+        for element in elements {
             match checked.types.get(element) {
                 // The scalars and `str` are the runtime's, and an array's descriptor
                 // is the one shared row — none of the three is generated.
                 Ty::Int | Ty::F64 | Ty::Bool | Ty::Str => {}
-                Ty::Array(_) => queue.push(element),
-                Ty::Named(_) | Ty::Case(_, _) => {
+                Ty::Array(_) | Ty::Map(_, _) | Ty::Failure => {}
+                // A `T?` element needs its own descriptor, and so does an aggregate.
+                Ty::Named(_) | Ty::Case(_, _) | Ty::Fallible(_) => {
                     wanted.insert(element.0);
                 }
                 // Refused by the gate until the step that lands it.

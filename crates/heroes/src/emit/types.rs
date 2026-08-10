@@ -128,11 +128,10 @@ pub(super) fn options(
         w.line(&format!("typedef struct {name} {{"));
         w.line("    int64_t tag;");
         w.line("    union {");
-        match &spelling {
-            // A unit payload has no declaration (`ctype.rs`'s unit rule), so `()?`
-            // carries nothing on its ok side and the union holds the failure alone.
-            Some(text) => w.line(&format!("        {text} ok;")),
-            None => {}
+        // A unit payload has no declaration (`ctype.rs`'s unit rule), so `()?` carries
+        // nothing on its ok side and the union holds the failure alone.
+        if let Some(text) = &spelling {
+            w.line(&format!("        {text} ok;"));
         }
         w.line("        HeroFailure err;");
         w.line("    } as;");

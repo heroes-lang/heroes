@@ -40,9 +40,12 @@ fn text_and_floating_point_are_no_longer_refused() {
     let text = super::c("function main()\n    print(\"hi\")\n    x = 1.5\n    print(x)\n");
     assert!(text.contains("hero_print_str"), "{text}");
     assert!(text.contains("hero_print_f64"), "{text}");
-    // …and the note now says so, derived from the same table the gate reads.
-    assert!(crate::emit::subset().contains("`str`"));
-    assert!(crate::emit::subset().contains("`f64`"));
+    // …and the note now says every type in the language, because at M5d that is the
+    // truth and enumerating them would be a list that only ever gets re-checked when a
+    // row dies. What the note still enumerates is the *built-ins*, which is where the
+    // remaining rows are.
+    assert!(crate::emit::subset().contains("every type in the language"));
+    assert!(crate::emit::subset().contains("`has`"));
 }
 
 /// `s[i]` and `xs[i]` are the same instruction, and `len` is one built-in over both:
@@ -78,13 +81,39 @@ fn an_extern_is_still_refused_after_str_landed() {
 }
 
 #[test]
-fn only_the_map_is_refused_now() {
-    let map = concat!(
+fn the_map_is_emitted_and_compares_without_regard_to_order() {
+    let out = super::emitted(concat!(
+        "function main()\n",
+        "    m = {\"a\": 1, \"b\": 2}\n",
+        "    print(len(m), has(m, \"a\"))\n",
+        "    print(m == {\"b\": 2, \"a\": 1})\n",
+    ));
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("hero_map_new(&hero_desc_str, &hero_desc_int"), "{}", out.c);
+    assert!(out.c.contains("hero_map_put"), "{}", out.c);
+    assert!(out.c.contains("hero_map_has"), "{}", out.c);
+    // `hero_map_eq` is order-independent by construction — a pairwise walk of two entry
+    // arrays would have made these two literals unequal.
+    assert!(out.c.contains("hero_map_eq"), "{}", out.c);
+}
+
+/// `m[k]` is **not** `xs[i]`: it yields a `V?` and cannot abort (§4.9). The runtime
+/// hands back an address or NULL, because it cannot build the option — that struct is
+/// generated per payload type, so the wrapping is the emitter's.
+#[test]
+fn a_map_lookup_wraps_the_value_in_a_fallible() {
+    let out = super::emitted(concat!(
         "function main()\n",
         "    m = {\"a\": 1}\n",
-        "    print(m.has(\"a\"))\n",
-    );
-    assert_eq!(refusal(map).0, "map");
+        "    print(m[\"a\"].default(0))\n",
+        "    print(m[\"z\"].default(-1))\n",
+    ));
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("hero_map_find"), "{}", out.c);
+    assert!(out.c.contains("hero_failure_missing_key()"), "{}", out.c);
+    // The found value is COPIED through its descriptor, not assigned: the map keeps its
+    // own, and the `V?` needs one of its own.
+    assert!(out.c.contains("->copy(&"), "{}", out.c);
 }
 
 /// The `array_write` row lived for one step and retired with copy-on-write. Stated as
@@ -303,10 +332,14 @@ fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
     let out = emitted(
-        "function main()\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n    print(sort([2, 1])[0])\n",
+        "function main()\n    print(sort([2, 1])[0])\n    print(join([\"a\"], \"-\"))\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
-    assert!(codes.contains(&"map") && codes.contains(&"builtin"), "{codes:?}");
+    assert!(codes.contains(&"builtin"), "{codes:?}");
+    // Two built-ins with no entry point, and both are named — the list arrives at once.
+    let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
+    assert!(messages.iter().any(|m| m.contains("`sort`")), "{messages:?}");
+    assert!(messages.iter().any(|m| m.contains("`join`")), "{messages:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
@@ -318,13 +351,13 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 #[test]
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
     let out = emitted(
-        "function main()\n    m = {\"a\": 1}\n    n = {\"b\": 2}\n    o = {\"c\": 3}\n    print(has(m, \"a\"), has(n, \"b\"), has(o, \"c\"))\n",
+        "function main()\n    print(sort([1])[0])\n    print(sort([2])[0])\n    print(sort([3])[0])\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
     assert_eq!(
-        codes.iter().filter(|c| **c == "map").count(),
+        codes.len(),
         1,
-        "a program with three maps has one map problem: {codes:?}"
+        "a program that calls one unsupported built-in three times has one problem: {codes:?}"
     );
 }
 

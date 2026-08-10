@@ -117,6 +117,8 @@ pub(super) fn emit(
                 Ty::Str => format!("    hero_str_decref({name});"),
                 Ty::Array(_) if keep => format!("    hero_array_incref({name});"),
                 Ty::Array(_) => format!("    hero_array_decref({name});"),
+                Ty::Map(_, _) if keep => format!("    hero_map_incref({name});"),
+                Ty::Map(_, _) => format!("    hero_map_decref({name});"),
                 // A `T?` and a `Failure` are by value, so they are reached by address
                 // and their own function decides which side of the union is live.
                 Ty::Failure if keep => format!("    hero_failure_retain(&{name});"),
@@ -151,6 +153,7 @@ pub(super) fn emit(
             if let Some(name) = target {
                 let counter = match checked.types.get(function.value_type(value)) {
                     Ty::Str => "hero_str_len",
+                    Ty::Map(_, _) => "hero_map_len",
                     _ => "hero_array_len",
                 };
                 w.line(&format!("    {name} = {counter}({});", mangle::value(value.0)));
@@ -238,6 +241,38 @@ pub(super) fn emit(
         // A tag and a payload read the same two members on a variant and on a `T?`.
         // §4.6's `ok`/`err` *is* a variant by the time it reaches here, and the only
         // difference is where the member names come from.
+        Op::Construct { shape: crate::ir::Shape::Map, args } => {
+            if let Some(name) = target {
+                let arguments: Vec<String> = function
+                    .args_of(args)
+                    .into_iter()
+                    .filter_map(|arg| match arg {
+                        Arg::Value(value) => Some(mangle::value(value.0)),
+                        Arg::InOut(_) => None,
+                    })
+                    .collect();
+                match aggregate::build_map(types, inst.ty, &arguments, &name) {
+                    Some(lines) => {
+                        for line in lines {
+                            w.line(&format!("    {line}"));
+                        }
+                    }
+                    None => w.line("    hero_unreachable(); /* not a map */"),
+                }
+            }
+        }
+        Op::MapGet { map, key } => {
+            if let Some(name) = target {
+                match aggregate::map_get(types, function, map, key, inst.ty, &name) {
+                    Some(lines) => {
+                        for line in lines {
+                            w.line(&format!("    {line}"));
+                        }
+                    }
+                    None => w.line("    hero_unreachable(); /* not a map */"),
+                }
+            }
+        }
         Op::Tag(base) => {
             if let Some(name) = target {
                 let text = match checked.types.get(function.value_type(base)) {
@@ -276,8 +311,6 @@ pub(super) fn emit(
             }
         }
         Op::Cast { .. }
-        | Op::Construct { .. }
-        | Op::MapGet { .. }
         | Op::FuncRef(_)
         | Op::Abort { .. }
         | Op::Hole

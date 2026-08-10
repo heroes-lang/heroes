@@ -163,10 +163,13 @@ fn option_bodies(w: &mut Writer, checked: &Checked, names: &Names) {
             }
             w.line("    if (v->tag == INT64_C(0)) {");
             if counted && has_ok {
-                match super::descriptors::pointer(checked, names, payload) {
-                    Some(desc) => {
-                        w.line(&format!("        ({desc})->{}(&v->as.ok);", if keep { "copy" } else { "drop" }));
-                    }
+                // The same dispatch a record field gets, and NOT the descriptor's
+                // `copy`: a descriptor has `copy(dst, src)` and no retain-in-place, so
+                // going through it would mean copying the payload onto itself and
+                // casting away the `const` on the retain's parameter. One helper, two
+                // call sites, no cast.
+                match reference_line(checked, names, payload, "v->as.ok", keep) {
+                    Some(line) => w.line(&format!("    {line}")),
                     None => w.line("        hero_unreachable();"),
                 }
             } else {
@@ -240,6 +243,9 @@ pub(super) fn descriptors(w: &mut Writer, checked: &Checked, names: &Names) {
         let name = match checked.types.get(ty) {
             Ty::Named(decl) => names.of(decl).to_string(),
             Ty::Case(decl, case) => names.case_of(decl, case).to_string(),
+            // A `T?` used as an element needs one too, and its four functions already
+            // exist — `option_bodies` writes them for every `T?` in the program.
+            Ty::Fallible(_) => names.option_of(ty).to_string(),
             _ => continue,
         };
         let counted = crate::ir::is_refcounted(checked, ty);
@@ -312,6 +318,35 @@ fn case_fields_are_counted(checked: &Checked, decl: u32, case: u32) -> bool {
     false
 }
 
+/// The one call that retains or releases a counted value sitting at `place`.
+///
+/// Shared by a record's fields and a `T?`'s payload, because the question is the same
+/// one — what does *this type* need to keep a reference alive — and two answers to it is
+/// the refcount bug `ir/layout.rs` documents.
+fn reference_line(
+    checked: &Checked,
+    names: &Names,
+    ty: crate::types::TyId,
+    place: &str,
+    keep: bool,
+) -> Option<String> {
+    let verb = if keep { "retain" } else { "release" };
+    Some(match checked.types.get(ty) {
+        Ty::Str if keep => format!("    hero_str_incref({place});"),
+        Ty::Str => format!("    hero_str_decref({place});"),
+        Ty::Array(_) if keep => format!("    hero_array_incref({place});"),
+        Ty::Array(_) => format!("    hero_array_decref({place});"),
+        Ty::Map(_, _) if keep => format!("    hero_map_incref({place});"),
+        Ty::Map(_, _) => format!("    hero_map_decref({place});"),
+        Ty::Failure => format!("    hero_failure_{verb}(&{place});"),
+        // Reached by address, and its own generated function decides what inside counts.
+        Ty::Named(inner) => format!("    {}_{verb}(&{place});", names.of(inner)),
+        Ty::Case(inner, case) => format!("    {}_{verb}(&{place});", names.case_of(inner, case)),
+        Ty::Fallible(_) => format!("    {}_{verb}(&{place});", names.option_of(ty)),
+        _ => return None,
+    })
+}
+
 /// `retain`/`release` for a record or a case payload: one call per counted field.
 fn reference_body(
     w: &mut Writer,
@@ -334,33 +369,14 @@ fn reference_body(
             continue;
         }
         let member = mangle::field(src.slice(field.name));
-        let line = match checked.types.get(ty) {
-            Ty::Str if keep => format!("    hero_str_incref(v->{member});"),
-            Ty::Str => format!("    hero_str_decref(v->{member});"),
-            // An array field owns its block, so it counts like a `str` — one pointer,
-            // one refcount, whatever it holds. Missing this arm is how `variant Expr`
-            // with a `[Expr]` payload aborted on its first run: the catch-all below
-            // emits `hero_unreachable()` rather than nothing, so the program stopped
-            // instead of leaking, which is the reason every row is listed.
-            Ty::Array(_) if keep => format!("    hero_array_incref(v->{member});"),
-            Ty::Array(_) => format!("    hero_array_decref(v->{member});"),
-            // A nested aggregate is by value, so it is reached by address and its own
-            // generated function decides what inside it counts.
-            Ty::Named(inner) => {
-                let called = names.of(inner);
-                let verb = if keep { "retain" } else { "release" };
-                format!("    {called}_{verb}(&v->{member});")
-            }
-            Ty::Case(inner, case) => {
-                let called = names.case_of(inner, case);
-                let verb = if keep { "retain" } else { "release" };
-                format!("    {called}_{verb}(&v->{member});")
-            }
-            // Anything else counted is a container, and `gate.rs` refuses a program
-            // that has one until the step that lands it. Reaching here would mean the
-            // gate let a form past, so it says so rather than emitting silence.
-            _ => "    hero_unreachable(); /* the gate refuses this field type */".to_string(),
-        };
+        // Missing a row here is how `variant Expr` with a `[Expr]` payload aborted on
+        // its first run: the fallback emits `hero_unreachable()` rather than nothing, so
+        // the program stopped instead of leaking. That is the reason every row is listed
+        // — and the reason the *last* one is loud.
+        let line = reference_line(checked, names, ty, &format!("v->{member}"), keep)
+            .unwrap_or_else(|| {
+                "    hero_unreachable(); /* the gate refuses this field type */".to_string()
+            });
         w.line(&line);
     }
     w.line("}");

@@ -2,7 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 4, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 5, "heroes_runtime.h is from another compiler");
 
 HERO_STR_STATIC(hero_str_0, "a");
 HERO_STR_STATIC(hero_str_1, "b");

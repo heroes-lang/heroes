@@ -1,15 +1,23 @@
-unsupported[map]: a map is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:27:5
+unsupported[builtin]: the built-in `sort` is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:26:11
      |
-  27 |     m = {"a": 1}
-     |     ^^^^^^^^^^^^
+  26 |     print(sort(xs)[0])        #~ builtin
+     |           ^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `T?`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `has`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
 
-unsupported[builtin]: the built-in `has` is not emitted yet
+unsupported[builtin]: the built-in `join` is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:27:11
+     |
+  27 |     print(join(["a"], "-"))   #~ builtin
+     |           ^^^^^^^^^^^^^^^^
+  note: no change to this file will fix this
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `has`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+
+unsupported[builtin]: the built-in `chars` is not emitted yet
   at tests/golden/unsupported/three-capabilities.hero:28:11
      |
-  28 |     print(m.has("a"))     #~ builtin
-     |           ^^^^^^^^^^
+  28 |     print(chars("ab")[0])     #~ builtin
+     |           ^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `T?`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `has`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet

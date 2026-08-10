@@ -36,7 +36,7 @@
 //!   about carrying the list, applied to the backend.
 
 use crate::diagnostics::Diagnostic;
-use crate::ir::{Abort, Callee, FnKind, Function, Op, Program, Shape};
+use crate::ir::{Abort, Callee, FnKind, Function, Op, Program};
 use crate::resolve::{Resolved, BUILTINS};
 use crate::source::{Source, Span};
 use crate::syntax::Ast;
@@ -46,7 +46,7 @@ use crate::types::{render_ty, Checked, Ty, TyId};
 /// so they cannot disagree — panel 021 R10, and CLAUDE.md §10's own pattern ("one
 /// argv table parses and prints the help"). A hand-written enumeration beside a
 /// machine-readable table is a sentence that becomes a lie one milestone later.
-pub const EMITTED_BUILTINS: [&str; 5] = ["len", "print", "push", "slice", "to_str"];
+pub const EMITTED_BUILTINS: [&str; 6] = ["has", "len", "print", "push", "slice", "to_str"];
 
 /// What the backend does emit. Derived, not maintained: the type list is the arms of
 /// `check_type` that return without a note, and the built-in list is the constant
@@ -58,9 +58,8 @@ pub const EMITTED_BUILTINS: [&str; 5] = ["len", "print", "push", "slice", "to_st
 /// over built-ins.
 pub fn subset() -> String {
     format!(
-        "the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, \
-         `T?`, `if`, `while`, `for`, `match`, functions, and the built-ins {} — no \
-         other built-in is emitted yet",
+        "the backend emits every type in the language, `if`, `while`, `for`, `match`, \
+         functions, and the built-ins {} — no other built-in is emitted yet",
         EMITTED_BUILTINS
             .iter()
             .map(|name| format!("`{name}`"))
@@ -100,7 +99,7 @@ pub(super) fn refuse(
         for block in &function.blocks {
             for inst in &block.insts {
                 check_type(&mut found, ast, checked, src, function, inst.ty, inst.span);
-                check_op(&mut found, ast, checked, src, inst.op, inst.span);
+                check_op(&mut found, ast, src, inst.op, inst.span);
             }
 
         }
@@ -145,7 +144,7 @@ fn check_type(
         Ty::Int | Ty::Bool | Ty::Unit | Ty::F64 | Ty::Str => return,
         // M5c — the descriptor pass, whose ABI spike 04 froze.
         Ty::Array(_) => return,
-        Ty::Map(_, _) => ("map", "a map".to_string()),
+        Ty::Map(_, _) => return,
         // Records and variants both emit from M5c step 4. The row that split at step 3
         // is gone: two capabilities became one again, which is what a milestone
         // finishing looks like.
@@ -170,7 +169,6 @@ fn check_type(
 fn check_op(
     found: &mut Vec<(String, String, Span)>,
     ast: &Ast,
-    checked: &Checked,
     src: &Source,
     op: Op,
     span: Span,
@@ -198,29 +196,19 @@ fn check_op(
             callee_note(found, ast, src, callee, span);
             let _ = args;
         }
-        Op::Construct { shape, .. } => {
-            let (code, what) = match shape {
-                Shape::Record(_) | Shape::Case(_, _) | Shape::Array => return,
-                Shape::Map => ("map", "a map".to_string()),
-                Shape::Ok | Shape::Fail | Shape::Err => return,
-            };
-            note(found, code, what, span);
-        }
-        // A tag, a payload and a field read are the same three operations on a
-        // variant and on a `T?` — §4.6's `ok`/`err` *is* a variant by the time it
-        // reaches here. Naming the capability the author wrote means asking what the
-        // base is, or the message says "a record" about a program containing neither.
-        Op::Field { base, .. } | Op::Tag(base) | Op::Payload { base, .. } => {
-            // A tag, a payload and a field read are the same three operations on a
-            // variant and on a `T?` — §4.6's `ok`/`err` *is* a variant by the time it
-            // reaches here. The aggregate side emits; the `T?` side waits, so the row
-            // is keyed to the base's type rather than to the operation.
-            let _ = (base, checked);
-        }
+        // **Every construction emits from M5d**: records, variant cases, both
+        // containers, and all three sides of a `T?`. The arm holds no rows rather than
+        // being deleted, so adding a shape to the IR is still a compile error here —
+        // the gate's own reason for enumerating instead of defaulting.
+        Op::Construct { .. } => {}
+        // A tag, a payload and a field read are the same three operations on a variant
+        // and on a `T?` — §4.6's `ok`/`err` *is* a variant by the time it reaches here —
+        // and all of them emit now.
+        Op::Field { .. } | Op::Tag(_) | Op::Payload { .. } => {}
         // Both spellings of `[i]` emit now: a byte through `hero_str_byte`, an element
         // through `hero_array_at`.
         Op::Index { .. } => {}
-        Op::MapGet { .. } => note(found, "map", "a map".to_string(), span),
+        Op::MapGet { .. } => {}
         // `len` counts bytes on a `str` and elements on an array; a map is the row
         // still standing, and it is refused by its own type before reaching here.
         Op::Len(_) => {}
