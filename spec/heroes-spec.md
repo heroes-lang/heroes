@@ -45,7 +45,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `f64` | 64-bit float |
 | `bool` | `true` / `false` |
 | `str` | immutable UTF-8 string, indexed in bytes |
-| `[T]` | dynamic array, indices from 0 |
+| `[T]` | dynamic array, indices from 0; how a type contains itself |
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
 

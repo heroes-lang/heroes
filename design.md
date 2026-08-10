@@ -458,7 +458,14 @@ Part 2 rules out as a justification.
 
 - **Declaration ordering.** Heroes' top level is order-free with free mutual recursion (§4.2); C is
   not. Emit prototypes for all functions and `typedef struct`s topologically sorted by by-value
-  containment (cycles are legal only through `[T]`), in deterministic order.
+  containment, in deterministic order. **An edge is a field C lays out by value** — the property,
+  never a list of permitted indirections (panel 023, measured). The earlier parenthetical here read
+  "cycles are legal only through `[T]`" and was wrong in both directions: `record Scope { vars:
+  {str: Scope} }` compiles at 8 bytes, and `record R { next: R? }` is `field has incomplete type`
+  because a `T?` is by value and therefore **transparent** — it propagates the edge into `T` rather
+  than breaking it. The property gets every row right without naming one, and it cannot drift when
+  M6 adds function values. A cycle over these edges is `no_size` (§4.17's class, panel 023); the
+  same walk yields the order, so the checker computes it and the emitter only filters it.
 - **Name mangling.** A Heroes identifier can collide with a C keyword (`default`, `register`) or a
   libc symbol (`index`, `y1`). Every user name becomes `h_<module>_<name>[_<typehash>]`; fields,
   variant cases and labels are mangled too; runtime names are `hero_*`; `extern` FFI names pass
@@ -1777,9 +1784,13 @@ includes — so clang type-checks every runtime call.** Contents:
   and two heap blocks for the appendix's five-node tree, against 8+24-per-node and seven blocks
   boxed. `HeroDesc.copy` is **shallow plus incref**: COW is what makes a deep copy unnecessary, and
   the spike's own expected output changed with this decision.
-- **A `T?` is a by-value struct and it is 40 bytes for every `T`**, because a `Failure` is two
-  `str`s — so `m[k]` returns through memory rather than in registers (measured on AAPCS64). Stated
-  here because it was inherited rather than decided for two milestones. Rust polices the same
+- **A `T?` is a by-value struct, 40 bytes while `T` fits in 32**, because a `Failure` is two `str`s
+  and the union takes the larger side — so `m[k]` returns through memory rather than in registers
+  (measured on AAPCS64). Past 32 bytes `T` wins: `sizeof(Big?)` is 48 for a 40-byte record, which
+  panel 023's ffi-pragmatist measured while compiling something else, correcting "40 bytes for every
+  `T`" — the shape of claim that is easy to write and false at one boundary. Being by value also
+  makes a `T?` **transparent** to §3.1's containment edge: `record R { next: R? }` has no size.
+  Stated here because it was inherited rather than decided for two milestones. Rust polices the same
   largest-case tax with two lints, `result_large_err`'s default threshold being 128 bytes.
 - the map (hash table; **fixed seed** — iteration determinism is a fixpoint requirement, panel 006)
 - copy-on-write checks in the mutation primitives
