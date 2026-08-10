@@ -29,17 +29,42 @@ use super::mangle;
 /// translation unit, where the module is decided.
 pub(super) struct Names {
     aggregates: std::collections::BTreeMap<u32, String>,
+    /// The C type of one case's payload, by `(declaration, case)`. A separate table
+    /// because `Ty::Case` is a real type in the IR and needs a real C name.
+    cases: std::collections::BTreeMap<(u32, u32), String>,
 }
 
 impl Names {
     pub(super) fn new(module: &str, ast: &Ast, src: &Source) -> Names {
         let mut aggregates = std::collections::BTreeMap::new();
+        let mut cases = std::collections::BTreeMap::new();
         for (index, decl) in ast.decls.iter().enumerate() {
-            if matches!(decl.kind, DeclKind::Record { .. } | DeclKind::Variant { .. }) {
-                aggregates.insert(index as u32, mangle::ty(module, src.slice(decl.name)));
+            let name = mangle::ty(module, src.slice(decl.name));
+            match &decl.kind {
+                DeclKind::Record { .. } => {
+                    aggregates.insert(index as u32, name);
+                }
+                DeclKind::Variant { cases: declared } => {
+                    for (at, case) in declared.iter().enumerate() {
+                        cases.insert(
+                            (index as u32, at as u32),
+                            mangle::case_type(&name, src.slice(case.name)),
+                        );
+                    }
+                    aggregates.insert(index as u32, name);
+                }
+                _ => {}
             }
         }
-        Names { aggregates }
+        Names { aggregates, cases }
+    }
+
+    /// The C type of one case's payload.
+    pub(super) fn case_of(&self, decl: u32, case: u32) -> &str {
+        self.cases
+            .get(&(decl, case))
+            .map(|name| name.as_str())
+            .expect("a Ty::Case always names a case of a declared variant")
     }
 
     /// The C name of an aggregate. A `TyId` naming a declaration that is not one is a
@@ -76,7 +101,11 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         // C type as `Ty::Named(d)`: a case is not a type of its own at runtime, it is
         // the whole variant with a known tag, and the checker's narrower view of it
         // stops mattering once the tag is a field.
-        Ty::Named(decl) | Ty::Case(decl, _) => Some(names.of(decl).to_string()),
+        // A variant is the whole tagged union; a *case* is its payload alone, which
+        // is a type of its own because the IR puts one in a temporary
+        // (`$t5: Token.num = payload $t4 .num`).
+        Ty::Named(decl) => Some(names.of(decl).to_string()),
+        Ty::Case(decl, case) => Some(names.case_of(decl, case).to_string()),
         // Containers and `T?`: later steps of M5c own the representation, and
         // `gate.rs` refuses them until then.
         _ => Some("HeroValue".to_string()),

@@ -52,8 +52,13 @@ impl<'a> Types<'a> {
             Ty::Named(decl) | Ty::Case(decl, _) => decl,
             _ => return None,
         };
-        let fields = match &self.ast.decls[decl as usize].kind {
-            DeclKind::Record { fields } => fields,
+        // A record's fields, or one case's payload fields — `Ty::Case` is a real type
+        // and `field $t6.v` reads it exactly as it reads a record's.
+        let fields = match (&self.ast.decls[decl as usize].kind, self.checked.types.get(owner)) {
+            (DeclKind::Record { fields }, _) => fields,
+            (DeclKind::Variant { cases }, Ty::Case(_, case)) => {
+                &cases.get(case as usize)?.fields
+            }
             _ => return None,
         };
         let field = fields.get(index as usize)?;
@@ -61,11 +66,24 @@ impl<'a> Types<'a> {
         Some((mangle::field(self.src.slice(field.name)), ty))
     }
 
+    /// The C type name a per-type function belongs to.
     fn aggregate_name(&self, ty: TyId) -> Option<&str> {
         match self.checked.types.get(ty) {
-            Ty::Named(decl) | Ty::Case(decl, _) => Some(self.names.of(decl)),
+            Ty::Named(decl) => Some(self.names.of(decl)),
+            Ty::Case(decl, case) => Some(self.names.case_of(decl, case)),
             _ => None,
         }
+    }
+
+    /// The variant a case belongs to, and the case's own name, for spelling a tag or a
+    /// union member.
+    fn case_names(&self, decl: u32, case: u32) -> Option<(String, String)> {
+        let cases = match &self.ast.decls[decl as usize].kind {
+            DeclKind::Variant { cases } => cases,
+            _ => return None,
+        };
+        let name = self.src.slice(cases.get(case as usize)?.name).to_string();
+        Some((self.names.of(decl).to_string(), name))
     }
 }
 
@@ -96,29 +114,81 @@ pub(super) fn place(types: &Types, function: &Function, at: Place) -> String {
 }
 
 /// `t3 = (h_m_Point){.f_x = t1, .f_y = t2};`
-pub(super) fn construct(
-    types: &Types,
-    result: TyId,
-    decl: u32,
-    arguments: &[String],
-) -> Option<String> {
+pub(super) fn construct(types: &Types, decl: u32, arguments: &[String]) -> Option<String> {
     let name = types.names.of(decl);
-    let _ = result;
     let fields = match &types.ast.decls[decl as usize].kind {
         DeclKind::Record { fields } => fields,
         _ => return None,
     };
-    let mut parts: Vec<String> = Vec::new();
-    for (index, field) in fields.iter().enumerate() {
-        let value = arguments.get(index)?;
-        parts.push(format!(".{} = {value}", mangle::field(types.src.slice(field.name))));
-    }
+    let parts = designators(types, fields, arguments)?;
     // A record with no fields is `error[empty_record]`, so this cannot be empty — and
     // `(T){}` is not C11 anyway, which is why the case is named rather than defaulted.
     if parts.is_empty() {
         return None;
     }
     Some(format!("({name}){{{}}}", parts.join(", ")))
+}
+
+/// `t2 = (h_m_Token){.tag = h_m_Token_tag_word, .as.c_word = {.f_text = t1}};`
+///
+/// The result is the **whole variant**, not the case: `construct Token.word($t4)` has
+/// type `Token` in the IR, and the case only names which arm of the union is written.
+/// A payload-free case writes the tag alone — C zeroes the rest of a compound literal,
+/// so the union is never left holding stale bytes.
+pub(super) fn construct_case(
+    types: &Types,
+    decl: u32,
+    case: u32,
+    arguments: &[String],
+) -> Option<String> {
+    let (name, case_name) = types.case_names(decl, case)?;
+    let cases = match &types.ast.decls[decl as usize].kind {
+        DeclKind::Variant { cases } => cases,
+        _ => return None,
+    };
+    let fields = &cases.get(case as usize)?.fields;
+    let tag = format!(".tag = {}", mangle::tag_of(&name, &case_name));
+    if fields.is_empty() {
+        return Some(format!("({name}){{{tag}}}"));
+    }
+    let parts = designators(types, fields, arguments)?;
+    Some(format!(
+        "({name}){{{tag}, .as.{} = {{{}}}}}",
+        mangle::case(&case_name),
+        parts.join(", ")
+    ))
+}
+
+/// `.f_x = t1` per field, in declared order.
+///
+/// Designated, never positional, even though the IR already holds the arguments in
+/// declared order — Part 5's "named arguments → positional" row costs zero lines
+/// because a Heroes label never reorders an argument. The designators are therefore
+/// redundant, and that is exactly why they are written: a field added in the middle of
+/// a record is a clang error at every construction site instead of a silent shift of
+/// every value one field along.
+fn designators(types: &Types, fields: &[crate::syntax::Field], arguments: &[String]) -> Option<Vec<String>> {
+    let mut parts = Vec::new();
+    for (index, field) in fields.iter().enumerate() {
+        let value = arguments.get(index)?;
+        parts.push(format!(".{} = {value}", mangle::field(types.src.slice(field.name))));
+    }
+    Some(parts)
+}
+
+/// `t3 = t2.tag;` — what a `Switch` reads.
+pub(super) fn tag(base: ValueId) -> String {
+    format!("{}.tag", mangle::value(base.0))
+}
+
+/// `t5 = t4.as.c_num;` — the payload of a case the `match` has already selected.
+pub(super) fn payload(types: &Types, function: &Function, base: ValueId, case: u32) -> Option<String> {
+    let decl = match types.checked.types.get(function.value_type(base)) {
+        Ty::Named(decl) => decl,
+        _ => return None,
+    };
+    let (_, case_name) = types.case_names(decl, case)?;
+    Some(format!("{}.as.{}", mangle::value(base.0), mangle::case(&case_name)))
 }
 
 /// `t2 = t1.f_x;`

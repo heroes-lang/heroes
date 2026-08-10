@@ -35,11 +35,25 @@ pub(super) fn emit(w: &mut Writer, function: &Function, checked: &Checked, term:
                 mangle::block(otherwise.0 as usize)
             ));
         }
-        // A `match` on a variant. `gate.rs` refuses it until the tag has a
-        // representation (M5c), and the arm stays here so that the day it lands is
-        // a compile error rather than a silent gap.
-        Term::Switch { .. } => {
-            w.line("    hero_unreachable(); /* the gate refuses this terminator */");
+        // A `match` on a variant. The cases are **dense over the declaration** and
+        // exhaustive by the time they get here (M3c), so there is no default edge in
+        // the IR — but C needs one, and `hero_unreachable()` is the honest spelling: a
+        // tag outside the range is the compiler being wrong, not the program.
+        //
+        // The labels are integers rather than the tag enum's own enumerators, and the
+        // reason is that this terminator does not know which variant it switches on:
+        // `Op::Tag`'s result is an `int`, so the declaration is not reachable from
+        // here. The enum in the typedef is the legend, and the indices are dense.
+        Term::Switch { tag, cases } => {
+            w.line(&format!("    switch ({}) {{", mangle::value(tag.0)));
+            for (index, target) in cases.iter().enumerate() {
+                w.line(&format!(
+                    "        case {index}: goto {};",
+                    mangle::block(target.0 as usize)
+                ));
+            }
+            w.line("        default: hero_unreachable();");
+            w.line("    }");
         }
         Term::Return(None) => w.line("    return;"),
         Term::Return(Some(value)) => {

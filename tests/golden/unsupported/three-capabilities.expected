@@ -4,7 +4,7 @@ unsupported[array]: an array is not emitted yet
   17 |     xs = [1, 2]
      |     ^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `if`, `while`, `match`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
 
 unsupported[map]: a map is not emitted yet
   at tests/golden/unsupported/three-capabilities.hero:20:5
@@ -12,7 +12,7 @@ unsupported[map]: a map is not emitted yet
   20 |     m = {"a": 1}
      |     ^^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `if`, `while`, `match`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
 
 unsupported[builtin]: the built-in `has` is not emitted yet
   at tests/golden/unsupported/three-capabilities.hero:21:11
@@ -20,4 +20,4 @@ unsupported[builtin]: the built-in `has` is not emitted yet
   21 |     print(m.has("a"))     #~ builtin
      |           ^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `if`, `while`, `match`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet

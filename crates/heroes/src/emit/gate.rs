@@ -36,7 +36,7 @@
 //!   about carrying the list, applied to the backend.
 
 use crate::diagnostics::Diagnostic;
-use crate::ir::{Abort, Callee, FnKind, Function, Op, Program, Shape, Term};
+use crate::ir::{Abort, Callee, FnKind, Function, Op, Program, Shape};
 use crate::resolve::{Resolved, BUILTINS};
 use crate::source::{Source, Span};
 use crate::syntax::Ast;
@@ -58,8 +58,9 @@ pub const EMITTED_BUILTINS: [&str; 4] = ["len", "print", "slice", "to_str"];
 /// over built-ins.
 pub fn subset() -> String {
     format!(
-        "the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, \
-         functions, and the built-ins {} — no other built-in is emitted yet",
+        "the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `if`, \
+         `while`, `match`, functions, and the built-ins {} — no other built-in is \
+         emitted yet",
         EMITTED_BUILTINS
             .iter()
             .map(|name| format!("`{name}`"))
@@ -101,14 +102,7 @@ pub(super) fn refuse(
                 check_type(&mut found, ast, checked, src, function, inst.ty, inst.span);
                 check_op(&mut found, ast, checked, src, function, inst.op, inst.span);
             }
-            if let Term::Switch { .. } = block.term {
-                note(
-                    &mut found,
-                    "variant",
-                    "`match` on a variant".to_string(),
-                    block.insts.last().map(|i| i.span).unwrap_or(function.span),
-                );
-            }
+
         }
     }
     found.sort_by_key(|(_, _, span)| span.start);
@@ -134,12 +128,6 @@ fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span:
     }
 }
 
-/// Whether this declaration is a `variant`. The gate asks because a record and a
-/// variant are one `Ty::Named` and, for this step, two different answers.
-fn is_variant(ast: &Ast, decl: u32) -> bool {
-    matches!(ast.decls[decl as usize].kind, crate::syntax::DeclKind::Variant { .. })
-}
-
 /// A type the runtime has no representation for yet. One row per §4.3 table entry,
 /// so M5b and M5c delete rows rather than discovering cases.
 fn check_type(
@@ -158,17 +146,10 @@ fn check_type(
         // M5c — the descriptor pass, whose ABI spike 04 froze.
         Ty::Array(_) => ("array", "an array".to_string()),
         Ty::Map(_, _) => ("map", "a map".to_string()),
-        // A `record` is emitted; a `variant` is not yet. They share `Ty::Named`, so
-        // the row splits on the *declaration* rather than on the type — which is the
-        // same reason `Op::Len` splits on its operand: one op, two capabilities.
-        Ty::Named(decl) => {
-            if is_variant(ast, decl) {
-                ("variant", "a variant".to_string())
-            } else {
-                return;
-            }
-        }
-        Ty::Case(_, _) => ("variant", "a variant".to_string()),
+        // Records and variants both emit from M5c step 4. The row that split at step 3
+        // is gone: two capabilities became one again, which is what a milestone
+        // finishing looks like.
+        Ty::Named(_) | Ty::Case(_, _) => return,
         Ty::Fallible(_) | Ty::Failure => ("fallible", "a fallible value (`T?`)".to_string()),
         // M6.
         Ty::Func { .. } => ("function_value", "a function used as a value".to_string()),
@@ -208,8 +189,7 @@ fn check_op(
         }
         Op::Construct { shape, .. } => {
             let (code, what) = match shape {
-                Shape::Record(_) => return,
-                Shape::Case(_, _) => ("variant", "a variant".to_string()),
+                Shape::Record(_) | Shape::Case(_, _) => return,
                 Shape::Array => ("array", "an array".to_string()),
                 Shape::Map => ("map", "a map".to_string()),
                 Shape::Ok | Shape::Fail | Shape::Err => {
@@ -223,16 +203,13 @@ fn check_op(
         // reaches here. Naming the capability the author wrote means asking what the
         // base is, or the message says "a record" about a program containing neither.
         Op::Field { base, .. } | Op::Tag(base) | Op::Payload { base, .. } => {
+            // A tag, a payload and a field read are the same three operations on a
+            // variant and on a `T?` — §4.6's `ok`/`err` *is* a variant by the time it
+            // reaches here. The aggregate side emits; the `T?` side waits, so the row
+            // is keyed to the base's type rather than to the operation.
             let ty = function.value_type(base);
-            match checked.types.get(ty) {
-                Ty::Fallible(_) | Ty::Failure => {
-                    note(found, "fallible", "a fallible value (`T?`)".to_string(), span)
-                }
-                // A field read on a record is emitted. A tag or a payload never has
-                // one as its base — those are a variant's, and `check_type` refused
-                // the variant already.
-                Ty::Named(decl) if !is_variant(ast, decl) && matches!(op, Op::Field { .. }) => {}
-                _ => note(found, "variant", "a variant".to_string(), span),
+            if matches!(checked.types.get(ty), Ty::Fallible(_) | Ty::Failure) {
+                note(found, "fallible", "a fallible value (`T?`)".to_string(), span);
             }
         }
         // `s[i]` and `xs[i]` are the same op on different types (`ir/inst.rs` says

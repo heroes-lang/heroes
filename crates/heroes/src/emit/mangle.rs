@@ -66,6 +66,30 @@ pub fn field(name: &str) -> String {
     format!("f_{name}")
 }
 
+/// One of a variant's cases: the union member that carries its payload.
+pub fn case(name: &str) -> String {
+    format!("c_{name}")
+}
+
+/// The payload of one case, as a C type of its own.
+///
+/// It needs a name rather than an anonymous `struct { … }` inside the union, because
+/// `Ty::Case` is a real type in the IR — `$t5: Token.num = payload $t4 .num` puts one
+/// in a temporary, and a temporary needs a declaration.
+pub fn case_type(ty: &str, case_name: &str) -> String {
+    format!("{ty}_{}", case(case_name))
+}
+
+/// The enum a variant's tag is drawn from.
+pub fn tag_type(ty: &str) -> String {
+    format!("{ty}_tag")
+}
+
+/// One enumerator of that enum.
+pub fn tag_of(ty: &str, case_name: &str) -> String {
+    format!("{}_{}", tag_type(ty), case_name)
+}
+
 /// A slot: a parameter, a local, a mutable cell, or one lowering invented.
 ///
 /// The index is in the name because two slots may share a spelling — a synthetic

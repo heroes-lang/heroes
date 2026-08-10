@@ -73,25 +73,72 @@ fn an_extern_is_still_refused_after_str_landed() {
 }
 
 #[test]
-fn arrays_maps_and_variants_are_refused() {
+fn arrays_and_maps_are_refused() {
     assert_eq!(refusal("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n").0, "array");
-    // A `record` is emitted from M5c step 3 and a `variant` is not, so this row split
-    // in two. They share `Ty::Named`, which is why the gate asks the *declaration*.
-    let variant = concat!(
-        "variant V\n",
-        "    a\n",
-        "        n: int\n",
-        "    b\n",
+    let map = concat!(
+        "function main()\n",
+        "    m = {\"a\": 1}\n",
+        "    print(m.has(\"a\"))\n",
+    );
+    assert_eq!(refusal(map).0, "map");
+}
+
+/// The row that retired at step 4. A variant is a tagged union by value, and `match`
+/// on one is a C `switch` — so the whole capability emits, including the case with no
+/// payload, which leaves the union entirely rather than becoming an empty struct.
+#[test]
+fn a_variant_and_a_match_on_it_are_emitted() {
+    let text = concat!(
+        "variant Token\n",
+        "    num\n",
+        "        v: int\n",
+        "    word\n",
+        "        text: str\n",
+        "    end\n",
         "\n",
-        "function size(v: V) -> int\n",
-        "    return match v\n",
-        "        .a x => x.n\n",
-        "        .b   => 0\n",
+        "function size(t: Token) -> int\n",
+        "    return match t\n",
+        "        .num n  => n.v\n",
+        "        .word w => len(w.text)\n",
+        "        .end    => 0\n",
         "\n",
         "function main()\n",
-        "    print(size(.a(n: 1)))\n",
+        "    print(size(.num(v: 7)))\n",
     );
-    assert_eq!(refusal(variant).0, "variant");
+    let out = super::emitted(text);
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("typedef enum h_scratch_Token_tag"), "no tag enum:\n{}", out.c);
+    assert!(out.c.contains("h_scratch_Token_c_word"), "no payload type:\n{}", out.c);
+    // The payload-free case is omitted from the union: C11 has no empty struct.
+    assert!(!out.c.contains("c_end;"), "a payload-free case reached the union:\n{}", out.c);
+    assert!(out.c.contains("switch ("), "no switch:\n{}", out.c);
+    // Only the counted case is touched by the variant's release.
+    assert!(out.c.contains("h_scratch_Token_c_word_release"), "{}", out.c);
+}
+
+/// When **every** case is payload-free the union goes away entirely. An empty
+/// `union { } as;` compiles at `-Wall` and is `error: empty union is a GNU extension`
+/// under `-pedantic-errors`, which §4.19 schedules — the landmine panel 023's
+/// ffi-pragmatist found while compiling something else.
+#[test]
+fn a_variant_with_no_payloads_emits_no_union() {
+    let text = concat!(
+        "variant Color\n",
+        "    red\n",
+        "    green\n",
+        "\n",
+        "function pick(c: Color) -> int\n",
+        "    return match c\n",
+        "        .red   => 0\n",
+        "        .green => 1\n",
+        "\n",
+        "function main()\n",
+        "    print(pick(.red))\n",
+    );
+    let out = super::emitted(text);
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(!out.c.contains("union"), "an empty union was emitted:\n{}", out.c);
+    assert!(out.c.contains("h_scratch_Color_tag tag;"), "{}", out.c);
 }
 
 /// The row that retired at this step. Kept as a test rather than deleted, because "a

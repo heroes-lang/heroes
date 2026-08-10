@@ -140,10 +140,11 @@ pub(super) fn emit(
         // Every remaining form is refused by `gate.rs` at this milestone. The arm is
         // here rather than in a catch-all so that M5c and M6 are compile errors
         // until they are written, not silent omissions.
-        // `Point(x: 1, y: 2)`. Only a record at this step; the other shapes are
+        // `Point(x: 1, y: 2)` and `.num(v: 7)`. The container shapes and `T?` are
         // still refused, and each stays a named arm so that landing one is a compile
         // error here rather than a silent omission.
-        Op::Construct { shape: crate::ir::Shape::Record(decl), args } => {
+        Op::Construct { shape: crate::ir::Shape::Record(decl), args }
+        | Op::Construct { shape: crate::ir::Shape::Case(decl, _), args } => {
             if let Some(name) = target {
                 let arguments: Vec<String> = function
                     .args_of(args)
@@ -153,9 +154,28 @@ pub(super) fn emit(
                         Arg::InOut(place) => format!("&{}", read(types, function, place)),
                     })
                     .collect();
-                match aggregate::construct(types, inst.ty, decl, &arguments) {
-                    Some(literal) => w.line(&format!("    {name} = {literal};")),
-                    None => w.line("    hero_unreachable(); /* not a record */"),
+                let literal = match inst.op {
+                    Op::Construct { shape: crate::ir::Shape::Case(decl, case), .. } => {
+                        aggregate::construct_case(types, decl, case, &arguments)
+                    }
+                    _ => aggregate::construct(types, decl, &arguments),
+                };
+                match literal {
+                    Some(text) => w.line(&format!("    {name} = {text};")),
+                    None => w.line("    hero_unreachable(); /* not an aggregate */"),
+                }
+            }
+        }
+        Op::Tag(base) => {
+            if let Some(name) = target {
+                w.line(&format!("    {name} = {};", aggregate::tag(base)));
+            }
+        }
+        Op::Payload { base, case } => {
+            if let Some(name) = target {
+                match aggregate::payload(types, function, base, case) {
+                    Some(text) => w.line(&format!("    {name} = {text};")),
+                    None => w.line("    hero_unreachable(); /* not a variant */"),
                 }
             }
         }
@@ -171,8 +191,6 @@ pub(super) fn emit(
         | Op::Construct { .. }
         | Op::Index { .. }
         | Op::MapGet { .. }
-        | Op::Tag(_)
-        | Op::Payload { .. }
         | Op::FuncRef(_)
         | Op::Abort { .. }
         | Op::Hole

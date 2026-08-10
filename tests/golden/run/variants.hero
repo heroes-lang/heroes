@@ -1,0 +1,50 @@
+# Variants: a tagged union by value, `match` as a C `switch`, and a case that owns a
+# `str` (spec lines 93-107). Three shapes in one file, because their C differs:
+#
+#   .num    a payload of scalars      — a struct in the union
+#   .word   a payload that OWNS       — the variant's release touches only this one
+#   .end    no payload at all         — omitted from the union, C11 has no empty struct
+#
+# The `match` is exhaustive by the time it reaches C, so the emitted `switch` covers
+# every tag and its `default:` is `hero_unreachable()` — a claim, not a fallback.
+# Bulk regression case.
+
+variant Token
+    num
+        v: int
+    word
+        text: str
+    end
+
+function size(t: Token) -> int
+    return match t
+        .num n  => n.v
+        .word w => len(w.text)
+        .end    => 0
+
+function label(t: Token) -> str
+    return match t
+        .num _  => "num"
+        .word w => "word:" + w.text
+        .end    => "end"
+
+function main()
+    print(size(.num(v: 7)))
+    print(size(.word(text: "abcd")))
+    print(size(.end))
+    print(label(.word(text: "hi" + "!")))
+    print(label(.end))
+    # Structural equality: different tags are never equal, same tags compare payloads.
+    a: Token = .num(v: 1)
+    b: Token = .num(v: 1)
+    c: Token = .num(v: 2)
+    d: Token = .end
+    print(a == b)
+    print(a == c)
+    print(a == d)
+    print(d == d)
+    # A counted payload compared by value, not by pointer: two separate blocks with
+    # the same bytes are equal.
+    w1: Token = .word(text: "ab")
+    w2: Token = .word(text: "a" + "b")
+    print(w1 == w2)
