@@ -37,7 +37,7 @@ to 285: `HeroStr {ptr, len}` **by value** (an FFI decision — by pointer the wr
 (without which no `extern` may return `str`), and a locale-proof renderer. The spec
 gained two sentences at +41 measured (2155 → 2196): `slice`'s `to` is excluded, and an
 `f64` always prints a point or an exponent.
-Next: M5c, aggregates — records, variants, arrays and maps through the descriptor pass
+Next: M5d, the map and `T?` — but only after M6's closure audit answers whether `{K: V}` survives. Aggregates and `[T]` landed at M5c through the descriptor pass
 (`copy`/`drop`/`eq`/`hash` per reachable type, spike 04's frozen ABI), structural `==`,
 and COW on the mutation primitives. Nothing blocks it. Carried in: `cow_check` was
 struck from M5b for having zero call sites and `push` is what gives it one; **cycles are impossible** and the
@@ -288,26 +288,41 @@ hand-desugar three constructs, against the IR text.)
   **Runnable:** `heroes run tests/golden/run/strings.hero` · `heroes run
   tests/golden/run/f64-rendering.hero` · `heroes build tests/golden/emit/strings.hero
   --emit-c` (the refcounting, readable as text) · `heroes run --sanitize <file>`.
-- **M5c — Aggregates** (designed, not implemented — **panel 022 decided, amendments
-  landed 2026-08-05**)**:** records and variants **by value** (confirming spike 04),
-  arrays and maps via the descriptor pass (`copy/drop/eq/hash` per **reachable** type,
-  from a worklist rather than the interned arena); structural `==` as a direct
-  `h_T_eq`; and **COW as one unshare per array/map step of the place path**, with the
-  stored value increfed before the outermost unshare. `Op::CowCheck` does **not** enter
-  the IR — a judge built a three-block cycle out of the hoistable form, and inside the
-  runtime primitive C's argument-evaluation rule makes the bad order inexpressible.
-  The map is **read-only** at M5c (its mutation half has no reachable call sites), and
-  the closure-list question is priced: fund `set` at +29 or delete `{K: V}` at −57 by
-  M6's audit.
-  Four rules from compiled evidence: `eq`/`hash` walk fields and never bytes (padding),
-  `hash` is never null (SEGV at pc 0), a payload-free case leaves the union (C11 has no
-  empty struct), and `T?` is 40 bytes for every `T`.
-  **The veto that shaped it**: with one unshare at the primitive, `h = g` then
-  `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit 0. A
-  green harness on a program violating spec line 58, and nothing in this project could
-  have seen it. Three `run/` cases are owed: the nested-aliasing one, the
-  self-referential `n.children[0] @ n`, and one where the stored value aliases the
-  container.
+- **M5c — Aggregates ✅** (2026-08-10, tag `m5c`, panels 022 and 023)**:** records
+  and variants **by value** (confirming spike 04), `[T]` through the descriptor pass at
+  `HERO_RUNTIME_ABI 3`, structural `==` as a direct `h_T_eq`, and **COW as one unshare
+  per array step of the place path** with write-back — the primitives take
+  `HeroArrayHeader **`, because a caller cannot forget to store a result that does not
+  exist. `Op::CowCheck` did **not** enter the IR: inside the primitive, C's
+  argument-evaluation rule makes the hoisted order inexpressible, and the hoistable form
+  is what a judge built a three-block cycle from.
+  **The acceptance is one program:** `examples/gallery/11-trees.hero`, design.md §4.10's
+  own recursive variant — `Expr` holding `[Expr]` — compiles, runs, prints 14, leak
+  counter zero. A tree containing itself in a language with no pointer. The gallery goes
+  from 3 building to 5, and nothing in it exits 2.
+  **The veto ran**: `h = g` then `g.rows[0].cells[0] @ 7` prints 7 and 0, where the
+  single-unshare version printed 7 and 7 with ASan clean, the leak counter at zero and
+  exit 0 — a green harness on a program violating spec line 60. All three owed `run/`
+  cases exist (`adversarial-cow-per-step.hero`).
+  New in the front end: the **`no_size`** class (panel 023) with the topological type
+  order it shares, and `Checked::counted` answering "does this type own a reference"
+  where the AST is.
+  **Runnable:** `heroes run examples/gallery/11-trees.hero` · `heroes run
+  tests/golden/run/adversarial-cow-per-step.hero` · `heroes build
+  tests/golden/emit/aggregates.hero --emit-c` (the descriptors and the tag switch, as
+  text) · `heroes check tests/golden/check/no-size-mutual.hero`.
+- **M5d — The map and `T?`, once the closure list has answered** (not started, and the
+  precondition is the point): a map literal, `m[k]`, `has`, `len` and structural `==`,
+  plus `T?`'s C representation — a by-value struct, **40 bytes while `T` fits in 32**
+  (panel 023 corrected "40 for every `T`": `sizeof(Big?)` is 48 for a 40-byte record).
+  Deferred out of M5c on **Principle 0, not on time**: panel 022 struck the map's
+  mutation half for having zero reachable call sites, and its R4 leaves `{K: V}` itself
+  open — **deleting it recovers −57 spec tokens** against **+29** to fund `set` plus
+  `for k in m`, and M6's audit decides. Building ~180 lines of C plus a generated option
+  struct per `T?` before that answer is what `cow_check` was struck for at M5b, with
+  more force because here the whole type may go. Blocks `03-fallible.hero` and
+  `10-maps.hero`; `04-loops.hero` and `07-strings.hero` wait on `range` and `chars`
+  instead, which are M6's.
 
 ### M6 — Sugar, tests, generics, library
 `T?` operators, function values (C function pointers), generics by
