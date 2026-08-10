@@ -4,4 +4,4 @@ unsupported[fallible]: a fallible value (`T?`) is not emitted yet
   8 | function half(n: int) -> int?
     | ^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `if`, `while`, `match`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, `if`, `while`, `for`, `match`, functions, and the built-ins `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet

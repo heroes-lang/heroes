@@ -98,6 +98,8 @@ pub(super) fn emit(
             let line = match checked.types.get(ty) {
                 Ty::Str if keep => format!("    hero_str_incref({name});"),
                 Ty::Str => format!("    hero_str_decref({name});"),
+                Ty::Array(_) if keep => format!("    hero_array_incref({name});"),
+                Ty::Array(_) => format!("    hero_array_decref({name});"),
                 _ => match aggregate::retain(types, ty, value, keep) {
                     Some(call) => format!("    {call};"),
                     None => "    hero_unreachable(); /* the gate refuses this type */".to_string(),
@@ -121,9 +123,16 @@ pub(super) fn emit(
                 .collect();
             ops::call(w, program, function, checked, callee, args, &arguments, target, module);
         }
+        // One built-in, two runtime entry points: `len` on a `str` counts bytes and on
+        // an array counts elements. The op is the same op, so the split is by operand
+        // type — the same shape the gate uses to ask about it.
         Op::Len(value) => {
             if let Some(name) = target {
-                w.line(&format!("    {name} = hero_str_len({});", mangle::value(value.0)));
+                let counter = match checked.types.get(function.value_type(value)) {
+                    Ty::Str => "hero_str_len",
+                    _ => "hero_array_len",
+                };
+                w.line(&format!("    {name} = {counter}({});", mangle::value(value.0)));
             }
         }
         // `s[i]`: a byte as an `int`, aborting out of range (spec line 142). The
@@ -166,6 +175,28 @@ pub(super) fn emit(
                 }
             }
         }
+        // An array literal is several statements rather than one expression, because
+        // each push has to release the array it grew from.
+        Op::Construct { shape: crate::ir::Shape::Array, args } => {
+            if let Some(name) = target {
+                let arguments: Vec<String> = function
+                    .args_of(args)
+                    .into_iter()
+                    .filter_map(|arg| match arg {
+                        Arg::Value(value) => Some(mangle::value(value.0)),
+                        Arg::InOut(_) => None,
+                    })
+                    .collect();
+                match aggregate::build_array(types, inst.ty, &arguments, &name) {
+                    Some(lines) => {
+                        for line in lines {
+                            w.line(&format!("    {line}"));
+                        }
+                    }
+                    None => w.line("    hero_unreachable(); /* not an array */"),
+                }
+            }
+        }
         Op::Tag(base) => {
             if let Some(name) = target {
                 w.line(&format!("    {name} = {};", aggregate::tag(base)));
@@ -187,9 +218,16 @@ pub(super) fn emit(
                 }
             }
         }
+        Op::Index { base, index } => {
+            if let Some(name) = target {
+                match aggregate::read_element(types, function, base, index) {
+                    Some(text) => w.line(&format!("    {name} = {text};")),
+                    None => w.line("    hero_unreachable(); /* not an array */"),
+                }
+            }
+        }
         Op::Cast { .. }
         | Op::Construct { .. }
-        | Op::Index { .. }
         | Op::MapGet { .. }
         | Op::FuncRef(_)
         | Op::Abort { .. }

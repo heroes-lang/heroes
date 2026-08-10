@@ -4,7 +4,10 @@ function total_of(xs: [int]) -> int
         $t1: int = const 0
         store sum <- $t1
         $t2: [int] = load xs
+        $t18: [int] = load $xs0
+        incref $t2
         store $xs0 <- $t2
+        decref $t18
         $t3: int = const 0
         store $i0 <- $t3
         jump bb1
@@ -32,4 +35,6 @@ function total_of(xs: [int]) -> int
         jump bb1
     bb4  for: exit    preds bb1
         $t17: int = load sum
+        $t19: [int] = load $xs0
+        decref $t19
         return $t17

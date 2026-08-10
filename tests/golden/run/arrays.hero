@@ -1,0 +1,50 @@
+# `[T]`: a pointer to a header with the elements in-line, and the only indirection
+# this language has (§4.10). Five element kinds in one file, because each reaches the
+# runtime through a different descriptor:
+#
+#   [int]      the runtime's `hero_desc_int`, nothing generated
+#   [str]      the runtime's, whose copy increfs
+#   [Point]    ONE generated `h_m_Point_desc`, with void* adapters
+#   [[int]]    the single shared `hero_desc_array` — copy/drop/eq on an array value
+#              reach the element type through the header, so every `[T]` shares one
+#
+# `push` hands back a NEW array, always. `xs = [1,2,3]` leaves `xs` observable and its
+# slot holds one reference, so a refcount of 1 means "only the slot has it" and
+# appending in place would change what the slot sees — value semantics has no reading
+# in which the argument is consumed. The last two lines are that assertion.
+#
+# `for n in xs` is here because it lowers to `len` and `index`, which are the same op
+# and the same built-in as `str`'s: the split is by operand type, and both halves now
+# have somewhere to go.
+# Bulk regression case.
+
+record Point
+    x: int
+    y: int
+
+function total(xs: [int]) -> int
+    sum: int @ 0
+    for n in xs
+        sum @ sum + n
+    return sum
+
+function main()
+    xs = [1, 2, 3, 4]
+    print(total(xs))
+    # an array of strings, each one heap-allocated
+    words = ["a" + "b", "c" + "d"]
+    print(words[0], words[1])
+    print(len(words))
+    # an array of records
+    ps = [Point(x: 1, y: 2), Point(x: 3, y: 4)]
+    print(ps[1].y)
+    print(ps == [Point(x: 1, y: 2), Point(x: 3, y: 4)])
+    print(ps == [Point(x: 1, y: 2)])
+    # nested arrays
+    grid = [[1, 2], [3, 4]]
+    print(grid[1][0])
+    print(grid == [[1, 2], [3, 4]])
+    # push leaves the original alone
+    more = push(xs, 5)
+    print(len(more), len(xs))
+    print(xs == [1, 2, 3, 4])

@@ -1,0 +1,86 @@
+# THE TYPE THE WHOLE DESIGN EXISTS FOR. A tree contains itself, and this language has
+# no `Box`, no `ref` and no pointer — so §4.10's answer is that the ARRAY is the
+# indirection, and `[Expr]` is what makes `Expr` a finite type that copies.
+#
+# Everything in the memory model meets here, in one declaration:
+#
+#   the array gives the recursion its finite size        (§4.10, and step 1's `no_size`
+#                                                         is what refuses the version
+#                                                         without it)
+#   the variant's release switches on the tag            only the counted case is touched
+#   the case payload's release decrefs the array         which drops each element through
+#                                                         the descriptor
+#   the descriptor's drop calls the variant's release    a recursion the compiler wrote
+#                                                         and the runtime drives
+#
+# So freeing one node frees the whole tree, and the cycle that would make refcounting
+# leak cannot be built: a field cannot hold a reference, so every value is a tree
+# (Racordon et al., ICOOOLPS '21). The leak counter at exit is the proof, and ASan is
+# the proof there is no second free.
+#
+# The empty-child cases are deliberate: `[]` needs its annotation (spec line 70), and
+# an empty array's drop loop runs zero times — the boundary where a length-driven loop
+# is most likely to be written `<=`.
+#
+# `# UNVERIFIED — pending debrief` (adversarial case 4 of 5 for M5c).
+
+variant Expr
+    number
+        v: int
+    add
+        parts: [Expr]
+    negate
+        inner: [Expr]
+
+function value_of(e: Expr) -> int
+    return match e
+        .number n => n.v
+        .add a    => sum_of(a.parts)
+        .negate g => 0 - sum_of(g.inner)
+
+function sum_of(parts: [Expr]) -> int
+    total: int @ 0
+    for part in parts
+        total @ total + value_of(part)
+    return total
+
+function depth_of(e: Expr) -> int
+    return match e
+        .number _ => 1
+        .add a    => 1 + deepest(a.parts)
+        .negate g => 1 + deepest(g.inner)
+
+function deepest(parts: [Expr]) -> int
+    best: int @ 0
+    for part in parts
+        d = depth_of(part)
+        if d > best
+            best @ d
+    return best
+
+function main()
+    leaf: Expr = .number(v: 7)
+    print(value_of(leaf))
+    print(depth_of(leaf))
+    # Two levels, one array each.
+    inner: Expr = .add(parts: [.number(v: 2), .number(v: 3)])
+    tree: Expr = .add(parts: [.number(v: 1), inner])
+    print(value_of(tree))
+    print(depth_of(tree))
+    # Three levels, through a different case.
+    deep: Expr = .negate(inner: [tree])
+    print(value_of(deep))
+    print(depth_of(deep))
+    # The empty boundary: an annotated empty literal, and a drop loop that runs zero
+    # times.
+    none: [Expr] = []
+    empty: Expr = .add(parts: none)
+    print(value_of(empty))
+    print(depth_of(empty))
+    # Structural equality all the way down, on two trees built separately.
+    same: Expr = .add(parts: [.number(v: 1), .add(parts: [.number(v: 2), .number(v: 3)])])
+    print(tree == same)
+    print(tree == deep)
+    # And a shared subtree: `inner` is inside `tree` and still its own binding, so the
+    # array it holds has two owners and exactly one release each.
+    print(value_of(inner))

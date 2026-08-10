@@ -4,7 +4,10 @@ function evens_in(xs: [int]) -> int
         $t1: int = const 0
         store count <- $t1
         $t2: [int] = load xs
+        $t23: [int] = load $xs0
+        incref $t2
         store $xs0 <- $t2
+        decref $t23
         $t3: int = const 0
         store $i0 <- $t3
         jump bb1
@@ -33,6 +36,8 @@ function evens_in(xs: [int]) -> int
         jump bb1
     bb4  for: exit    preds bb1
         $t22: int = load count
+        $t24: [int] = load $xs0
+        decref $t24
         return $t22
     bb5  if: join    preds bb7
         $t16: int = load count

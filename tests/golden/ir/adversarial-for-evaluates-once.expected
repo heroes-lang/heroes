@@ -2,6 +2,7 @@ strings
     0  "built"
 
 function numbers() -> [int]
+    slots  $own0: [int]
     bb0  entry
         $t1: str = const str 0
         call builtin print($t1) variadic
@@ -9,15 +10,27 @@ function numbers() -> [int]
         $t3: int = const 2
         $t4: int = const 3
         $t5: [int] = construct array($t2, $t3, $t4)
+        $t6: [int] = load $own0
+        store $own0 <- $t5
+        decref $t6
+        incref $t5
+        $t7: [int] = load $own0
+        decref $t7
         return $t5
 
 function total() -> int
-    slots  sum: int · $xs0: [int] · $i0: int · n: int
+    slots  sum: int · $xs0: [int] · $i0: int · n: int · $own4: [int]
     bb0  entry
         $t1: int = const 0
         store sum <- $t1
         $t2: [int] = call heroes numbers()
+        $t18: [int] = load $own4
+        store $own4 <- $t2
+        decref $t18
+        $t19: [int] = load $xs0
+        incref $t2
         store $xs0 <- $t2
+        decref $t19
         $t3: int = const 0
         store $i0 <- $t3
         jump bb1
@@ -45,4 +58,8 @@ function total() -> int
         jump bb1
     bb4  for: exit    preds bb1
         $t17: int = load sum
+        $t20: [int] = load $xs0
+        decref $t20
+        $t21: [int] = load $own4
+        decref $t21
         return $t17

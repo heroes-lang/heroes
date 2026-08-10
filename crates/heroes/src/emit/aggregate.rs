@@ -219,3 +219,68 @@ pub(super) fn retain(types: &Types, ty: TyId, value: ValueId, keep: bool) -> Opt
     let verb = if keep { "retain" } else { "release" };
     Some(format!("{name}_{verb}(&{})", mangle::value(value.0)))
 }
+
+// --- arrays ---------------------------------------------------------------
+
+/// `t4 = hero_array_new(&hero_desc_int, 3);` plus one push per element.
+///
+/// Built by pushing rather than by writing the elements directly, because `push` is
+/// where the element's `copy` runs — and that copy is what takes the array's own
+/// reference to a counted element. Writing the bytes would share the caller's
+/// reference without counting it.
+///
+/// Each push hands back a NEW array and the previous one is released, so a literal of
+/// n elements allocates n+1 blocks and frees n. That is §4.10's declared bill in its
+/// smallest form; performance is a non-goal (Part 2), and the alternative — a `push`
+/// that appends in place — has no reading under value semantics, because a refcount of
+/// 1 means "the slot has it" and appending would change what the slot sees.
+pub(super) fn build_array(
+    types: &Types,
+    result: TyId,
+    arguments: &[String],
+    into: &str,
+) -> Option<Vec<String>> {
+    let element = match types.checked.types.get(result) {
+        Ty::Array(element) => element,
+        _ => return None,
+    };
+    let desc = super::descriptors::pointer(types.checked, types.names, element)?;
+    let mut lines = vec![format!("{into} = hero_array_new({desc}, {});", arguments.len().max(1))];
+    for value in arguments {
+        // The temporary the push returns replaces the one it grew from, and the old one
+        // is released — one line each, and no temporary left owning anything.
+        lines.push(format!("{{ HeroArrayHeader *grown = hero_array_push({into}, &{value});"));
+        lines.push(format!("  hero_array_decref({into}); {into} = grown; }}"));
+    }
+    Some(lines)
+}
+
+/// `t9 = *(const int64_t *)hero_array_at(t7, t8);`
+///
+/// The read goes through the runtime because that is where the bounds check lives:
+/// spec line 126 says an out-of-bounds index aborts, and §4.9 says it never reads
+/// arbitrary memory. The cast is on the *result*, so the element type is stated at
+/// every read and clang checks the assignment.
+pub(super) fn read_element(
+    types: &Types,
+    function: &Function,
+    base: ValueId,
+    index: ValueId,
+) -> Option<String> {
+    let element = match types.checked.types.get(function.value_type(base)) {
+        Ty::Array(element) => element,
+        _ => return None,
+    };
+    let spelling = super::ctype::c_type(types.names, types.checked, element)?;
+    // `{spelling} const *`, not `const {spelling} *`: the two differ exactly when the
+    // element is itself a pointer. For `[[int]]` the element spelling is
+    // `HeroArrayHeader *`, and the prefix form reads as pointer-to-pointer-to-const,
+    // whose dereference is a `const HeroArrayHeader *` — assigning that to the
+    // temporary is `-Wincompatible-pointer-types-discards-qualifiers`. The suffix form
+    // says what is meant: a const pointer to the element, whatever the element is.
+    Some(format!(
+        "*({spelling} const *)hero_array_at({}, {})",
+        mangle::value(base.0),
+        mangle::value(index.0)
+    ))
+}

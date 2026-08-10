@@ -39,104 +39,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* -- the descriptor ABI (to be generated per reachable type in M5c) -------- */
-
-typedef struct HeroDesc HeroDesc;
-struct HeroDesc {
-    size_t size;                              /* element size in bytes        */
-    void (*copy)(void *dst, const void *src); /* deep copy (incref inside)    */
-    void (*drop)(void *elem);                 /* release owned memory         */
-    bool (*eq)(const void *a, const void *b); /* structural equality (§4.3)   */
-};
-
-/* -- the array representation ([T]) ---------------------------------------- */
-
-typedef struct {
-    int64_t refcount;
-    int64_t len;
-    int64_t cap;
-    const HeroDesc *elem;
-    /* elements follow in-line: len * elem->size bytes */
-} HeroArrayHeader;
-
-static void *hero_array_data(HeroArrayHeader *a) { return (void *)(a + 1); }
-
-static HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap) {
-    if (cap < 1) cap = 1;
-    HeroArrayHeader *a =
-        malloc(sizeof(HeroArrayHeader) + (size_t)cap * elem->size);
-    if (a == NULL) hero_panic("out of memory");
-    a->refcount = 1;
-    a->len = 0;
-    a->cap = cap;
-    a->elem = elem;
-    return a;
-}
-
-static void hero_array_incref(HeroArrayHeader *a) { a->refcount += 1; }
-
-static void hero_array_decref(HeroArrayHeader *a) {
-    a->refcount -= 1;
-    if (a->refcount > 0) return;
-    unsigned char *data = hero_array_data(a);
-    for (int64_t i = 0; i < a->len; i++) {
-        a->elem->drop(data + (size_t)i * a->elem->size);
-    }
-    free(a);
-}
-
-/* push MOVES the element in (ownership transfers to the array).
- * COW (copy when refcount > 1) arrives in M5c; this spike only needs the
- * unshared path, and asserts that precondition instead of hiding it. */
-static HeroArrayHeader *hero_array_push(HeroArrayHeader *a, const void *elem) {
-    if (a->refcount != 1) hero_panic("push on shared array: COW is M5c work");
-    if (a->len == a->cap) {
-        int64_t cap2 = a->cap * 2;
-        HeroArrayHeader *b =
-            realloc(a, sizeof(HeroArrayHeader) + (size_t)cap2 * a->elem->size);
-        if (b == NULL) hero_panic("out of memory");
-        a = b;
-        a->cap = cap2;
-    }
-    memcpy((unsigned char *)hero_array_data(a) + (size_t)a->len * a->elem->size,
-           elem, a->elem->size);
-    a->len += 1;
-    return a;
-}
-
-static bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b) {
-    if (a->len != b->len) return false;
-    const unsigned char *da = (const unsigned char *)(a + 1);
-    const unsigned char *db = (const unsigned char *)(b + 1);
-    for (int64_t i = 0; i < a->len; i++) {
-        size_t off = (size_t)i * a->elem->size;
-        if (!a->elem->eq(da + off, db + off)) return false;
-    }
-    return true;
-}
-
-/* Deep copy = new array + per-element copy. Under full COW semantics a plain
- * `b = a` is incref-only and copying happens on mutation; the deep path below
- * is what the COW machinery calls at that point. */
-/* Kept, unused, and deliberately so: this is the function a mutation primitive calls
- * when the refcount exceeds one, and M5c's `hero_array_unshare` is it with a
- * write-back. Panel 022 measured what happens when that unshare is done once at the
- * primitive instead of once per step of the place path: `h = g` then
- * `g.rows[0].cells[0] @ 7` changes `h` too, with ASan clean and the leak counter at
- * zero. Unsharing level 1 copies its elements, whose `copy` increfs level 2 — so
- * level 2 is shared exactly when level 1 was copied. */
-__attribute__((unused))
-static HeroArrayHeader *hero_array_deep_copy(HeroArrayHeader *a) {
-    HeroArrayHeader *b = hero_array_new(a->elem, a->cap);
-    const unsigned char *src = (const unsigned char *)(a + 1);
-    unsigned char *dst = hero_array_data(b);
-    for (int64_t i = 0; i < a->len; i++) {
-        size_t off = (size_t)i * a->elem->size;
-        a->elem->copy(dst + off, src + off);
-    }
-    b->len = a->len;
-    return b;
-}
+/* -- the descriptor ABI and the array now SHIP (M5c step 5) ------------------
+ *
+ * This spike declared `HeroDesc` and `HeroArrayHeader` itself, plus a hand-rolled
+ * `hero_array_*`, because it ran before any of it existed — that was the point:
+ * fix the representation before writing the compiler. Panel 022 scheduled the
+ * move, and M5c step 5 made it: both types and every array primitive are in
+ * `heroes_runtime.h`, so keeping local copies here is now
+ * `error: redefinition of 'HeroDesc'`.
+ *
+ * What the spike still owns is the part it was built to prove: the per-type
+ * functions for a recursive variant, hand-written where the compiler now
+ * generates them. Comparing this file to `heroes build --emit-c` on the same type
+ * is the check that the generator and the frozen decision still agree.
+ *
+ * One behaviour changed with the move, and it is recorded rather than hidden: the
+ * spike's own `hero_array_push` MOVED its element and asserted refcount == 1,
+ * while the shipped one COPIES — `push(xs, v)` must leave `xs` observable, so
+ * value semantics has no reading in which the argument is consumed. So the
+ * pushes below hand over borrowed values and the locals are dropped after.
+ */
 
 /* -- the generated shape for `Expr` (hand-written here, M5c generates it) -- */
 
@@ -190,11 +112,33 @@ static bool h_Expr_eq(const void *a_v, const void *b_v) {
     hero_unreachable(); /* exhaustive switch; reaching here is a compiler bug */
 }
 
+/* Added when the array moved into the runtime, and NOT because the spike needed
+ * it: `hero_array_new` refuses a descriptor whose `hash` is null, which is panel
+ * 022's rule ("generated for every type, never null — a call through a null one
+ * is SEGV at pc 0x0, with no type name and no source line"). The rule caught this
+ * file on its first run against the shipped header, which is the best evidence
+ * that a check with an instrument beats a check in a comment.
+ *
+ * Fields, never bytes, for the same reason `eq` is: the union means the padding
+ * after a `num` payload is whatever the last `sum` left there. */
+static uint64_t h_Expr_hash(const void *e_v) {
+    const h_Expr *e = e_v;
+    uint64_t h = (uint64_t)e->tag;
+    switch (e->tag) {
+        case H_EXPR_NUM:
+            return h * UINT64_C(0x100000001b3) ^ (uint64_t)e->as.num.v;
+        case H_EXPR_SUM:
+            return h * UINT64_C(0x100000001b3) ^ hero_desc_array.hash(&e->as.sum.children);
+    }
+    hero_unreachable();
+}
+
 static const HeroDesc h_Expr_desc = {
     .size = sizeof(h_Expr),
     .copy = h_Expr_copy,
     .drop = h_Expr_drop,
     .eq = h_Expr_eq,
+    .hash = h_Expr_hash,
 };
 
 /* -- convenience constructors (the emitter inlines these shapes) ----------- */
@@ -203,12 +147,20 @@ static h_Expr expr_num(int64_t v) {
     return (h_Expr){.tag = H_EXPR_NUM, .as.num = {v}};
 }
 
-/* sum of exactly two children — enough for the spike */
+/* sum of exactly two children — enough for the spike.
+ *
+ * `hero_array_push` COPIES, so each push takes its own reference and the local
+ * `a`/`b` still own theirs: they are dropped here, which is exactly what the
+ * ownership pass emits for a temporary that has been handed to a constructor. */
 static h_Expr expr_sum2(h_Expr a, h_Expr b) {
     HeroArrayHeader *kids = hero_array_new(&h_Expr_desc, 2);
-    kids = hero_array_push(kids, &a); /* moves a */
-    kids = hero_array_push(kids, &b); /* moves b */
-    return (h_Expr){.tag = H_EXPR_SUM, .as.sum = {kids}};
+    HeroArrayHeader *with_a = hero_array_push(kids, &a);
+    hero_array_decref(kids);
+    HeroArrayHeader *with_b = hero_array_push(with_a, &b);
+    hero_array_decref(with_a);
+    h_Expr_drop(&a);
+    h_Expr_drop(&b);
+    return (h_Expr){.tag = H_EXPR_SUM, .as.sum = {with_b}};
 }
 
 int main(void) {
@@ -229,9 +181,13 @@ int main(void) {
     hero_print_end();
 
     /* mutate the copy's inner leaf; the original must be untouched */
-    h_Expr *inner =
-        &((h_Expr *)hero_array_data(copy.as.sum.children))[1];
-    ((h_Expr *)hero_array_data(inner->as.sum.children))[0].as.num.v = 99;
+    const h_Expr *inner = (const h_Expr *)hero_array_at(copy.as.sum.children, 1);
+    /* Written through a const pointer on purpose: the shipped reader is
+     * `hero_array_at`, which hands back `const void *` because a Heroes program
+     * mutates through a place and never through an element pointer. The cast is
+     * this file admitting it is hand-compiling something the emitter would not. */
+    h_Expr *leaf = (h_Expr *)(void *)hero_array_at(inner->as.sum.children, 0);
+    leaf->as.num.v = 99;
     /* → 1 since M5c: the copy SHARES this array, and this file has no COW at the
      * mutation site, so the mutation is visible through both. A real Heroes program
      * cannot see it — `xs[i] @ v` unshares first, per step. */

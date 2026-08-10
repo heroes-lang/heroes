@@ -4,10 +4,10 @@
  * against it. Keep declarations exact: this file IS the contract.
  *
  * M5b scope: `str` with reference counting, canonical `f64` rendering, and the
- * live-block counter. The rest of §4.20 (array, map, COW, join) arrives at M5c
- * with the representation spike 04 froze.
+ * live-block counter. M5c adds the descriptor ABI and `[T]`, with the
+ * representation spike 04 froze — the map and COW's write-back follow.
  *
- * HERO_RUNTIME_ABI is 2 because the declarations changed shape (CLAUDE.md §7):
+ * HERO_RUNTIME_ABI is 3 because the declarations changed shape (CLAUDE.md §7):
  * every generated translation unit _Static_asserts it, so a `runtime/` from
  * another milestone is a compile error rather than a wrong answer.
  */
@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 2
+#define HERO_RUNTIME_ABI 3
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -104,6 +104,91 @@ HeroStr hero_f64_to_str(double v);
 HeroStr hero_int_to_str(int64_t v);
 HeroStr hero_bool_to_str(bool v);
 HeroStr hero_str_identity(HeroStr s);
+
+/* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
+ *
+ * C has no copy constructors, no destructors and no generic comparison, while
+ * §4.3 demands structural `==` recursively and §4.10 demands value-semantics
+ * copies and drops. So the COMPILER generates them, one small set per reachable
+ * type, and the runtime works through a descriptor. The alternative — a
+ * type-erased void* runtime that inspects values itself — would void the
+ * property this whole backend rests on, that clang type-checks every call.
+ *
+ * `copy` is SHALLOW plus incref, not deep (panel 022): copy-on-write is what
+ * makes a deep copy unnecessary, because sharing is unobservable until somebody
+ * mutates and the mutation primitives unshare. Deep copying here would pay for
+ * every binding what only a mutation costs.
+ *
+ * `hash` is generated for EVERY type and is never null, even where no map uses
+ * it. A call through a null one is `SEGV on unknown address 0x0, pc 0x0` — no
+ * type name, no source line — and Go's cheaper rule (emit it only for map-key
+ * types) reintroduces exactly that (panel 022).
+ *
+ * `eq` and `hash` walk FIELDS, never bytes. `record Flag { n: int, on: bool }`
+ * carries 7 padding bytes, so two `==`-equal records hash differently under
+ * memcmp with no warning, no error and no sanitiser report. */
+
+typedef struct HeroDesc HeroDesc;
+struct HeroDesc {
+    size_t size;                              /* one element, in bytes        */
+    void (*copy)(void *dst, const void *src); /* shallow + incref            */
+    void (*drop)(void *elem);                 /* release what it owns        */
+    bool (*eq)(const void *a, const void *b); /* structural equality (§4.3)  */
+    uint64_t (*hash)(const void *elem);       /* never null                  */
+};
+
+/* The scalars and `str`, so the compiler never writes a descriptor for a type it
+ * did not declare. `str`'s copy increfs; a scalar's is a plain assignment. */
+extern const HeroDesc hero_desc_int;
+extern const HeroDesc hero_desc_f64;
+extern const HeroDesc hero_desc_bool;
+extern const HeroDesc hero_desc_str;
+
+/* And ONE for every `[T]`, whatever T is: copy/drop/eq on an array value work
+ * through the header's own `elem`, so the descriptor of an array needs to know
+ * nothing about what the array holds. `[[int]]` and `[[str]]` share this. */
+extern const HeroDesc hero_desc_array;
+
+/* -- the array: `[T]` (design.md §4.20, spike 04) ---------------------------
+ *
+ * A pointer to a heap header followed by the elements IN-LINE. The array is
+ * Heroes' only indirection (§4.10), which is what gives a recursive type a
+ * finite size — and being one pointer wide is why an array field imposes no
+ * ordering constraint on C.
+ *
+ * NULL is the one non-value, exactly as for `str`: a zero-initialised slot the
+ * exit sweep can release unconditionally. Every entry point rejects it loudly
+ * rather than treating it as empty. */
+
+typedef struct HeroArrayHeader {
+    int64_t refcount;
+    int64_t len;
+    int64_t cap;
+    const HeroDesc *elem;
+    /* elements follow in-line: cap * elem->size bytes */
+} HeroArrayHeader;
+
+HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap);
+void hero_array_incref(HeroArrayHeader *a);
+void hero_array_decref(HeroArrayHeader *a); /* no-op on NULL */
+int64_t hero_array_len(const HeroArrayHeader *a);
+
+/* Read one element. Aborts out of range (spec line 126) — never reads
+ * arbitrary memory, which is the guarantee §4.9 states. */
+const void *hero_array_at(const HeroArrayHeader *a, int64_t index);
+
+/* `push(xs, v)` — a NEW array, always, and the copy is not an oversight.
+ *
+ * `xs = [1, 2, 3]` then `push(xs, 4)` leaves `xs` observable, and its slot holds
+ * one reference — so a refcount of 1 means "only the slot has it", and appending
+ * in place would change what that slot sees. Value semantics has no reading in
+ * which the argument can be mutated. The bill is §4.10's declared one: building
+ * an array by successive push is O(n^2), the same shape as `s + t`, and
+ * performance is a non-goal (Part 2). */
+HeroArrayHeader *hero_array_push(const HeroArrayHeader *a, const void *elem);
+
+/* Structural equality, element by element through the descriptor. */
+bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b);
 
 /* -- the leak check ASan cannot do on this platform ------------------------
  * MEASURED (panel 021): AddressSanitizer on Darwin arm64 has NO

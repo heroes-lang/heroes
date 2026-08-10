@@ -120,6 +120,19 @@ pub(super) fn binary(
     // `str` has its own arithmetic: `+` is concatenation (§4.14's operator table) and
     // the comparisons are byte-wise, which is what makes `==` structural on a string
     // the same way it is on a record.
+    // An array compares element by element through the descriptor, and a length
+    // mismatch is answered before any element is touched.
+    if let Ty::Array(_) = operands {
+        let call = format!("hero_array_eq({l}, {r})");
+        let text = match op {
+            BinOp::Eq => call,
+            BinOp::Ne => format!("!{call}"),
+            // §4.14 gives an array no ordering, so the checker rejected it already.
+            _ => "(hero_unreachable(), false)".to_string(),
+        };
+        w.line(&format!("    {name} = {text};"));
+        return;
+    }
     if operands == Ty::Str {
         let call = match op {
             BinOp::Add => format!("hero_str_concat({l}, {r})"),
@@ -223,9 +236,21 @@ pub(super) fn call(
             print(w, function, checked, args, arguments);
         }
         Callee::Builtin(index) if super::EMITTED_BUILTINS.contains(&BUILTINS[index as usize].name) => {
+            let first_is_array = matches!(
+                function.args_of(args).first(),
+                Some(Arg::Value(value))
+                    if matches!(checked.types.get(function.value_type(*value)), Ty::Array(_))
+            );
             let entry = match BUILTINS[index as usize].name {
+                "len" if first_is_array => "hero_array_len",
                 "len" => "hero_str_len",
                 "slice" => "hero_str_slice",
+                // `push` hands back a NEW array, always: `xs = [1,2,3]` leaves `xs`
+                // observable, its slot holds one reference, so a refcount of 1 means
+                // "only the slot has it" and appending in place would change what the
+                // slot sees. Value semantics has no reading in which the argument is
+                // consumed. §4.10's declared bill, in its smallest form.
+                "push" => "hero_array_push",
                 // `to_str` is one Heroes name over three C entry points, chosen by
                 // the argument's type — the same shape as `print`, for the same
                 // reason: the runtime is monomorphic and the emitter composes it.
@@ -239,7 +264,19 @@ pub(super) fn call(
                     _ => "hero_int_to_str",
                 },
             };
-            w.line(&format!("    {assign}{entry}({});", arguments.join(", ")));
+            // `push`'s second argument is a *place*, not a value: the runtime copies
+            // through the element descriptor, which is the only way one function can
+            // append an `int` and a `Point`.
+            let written: Vec<String> = if BUILTINS[index as usize].name == "push" {
+                arguments
+                    .iter()
+                    .enumerate()
+                    .map(|(at, text)| if at == 1 { format!("&{text}") } else { text.clone() })
+                    .collect()
+            } else {
+                arguments.to_vec()
+            };
+            w.line(&format!("    {assign}{entry}({});", written.join(", ")));
         }
         // Refused by the gate. The arm exists so that adding a callee kind to the
         // IR breaks this file.

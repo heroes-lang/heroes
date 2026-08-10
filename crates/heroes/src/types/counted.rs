@@ -80,10 +80,11 @@ fn counts(types: &Types, ast: &Ast, written: &Written, answer: &[bool], ty: TyId
         // that gets accepted because it looks plausible. The gate's own discipline: a
         // row dies per step, and the row and the emission land together.
         //
-        //   `[T]`, `{K: V}` — M5c step 4, with `hero_array_incref`
-        //   `T?`           — M5c step 5; every `T?` is counted whatever `T` is,
-        //                    because a `Failure` is two `str`s
-        Ty::Array(_) | Ty::Map(_, _) => false,
+        //   `{K: V}`  — the step that lands the map
+        //   `T?`      — the step after; every `T?` is counted whatever `T` is,
+        //               because a `Failure` is two `str`s
+        Ty::Array(_) => true,
+        Ty::Map(_, _) => false,
         Ty::Fallible(_) | Ty::Failure => false,
         // Scalars, the FFI's opaque types, a function pointer, and the two the
         // checker uses for its own bookkeeping.

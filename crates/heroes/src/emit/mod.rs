@@ -18,7 +18,8 @@
 //! | `ops.rs`    | what one operation is: a literal, an operator, a call, `print` |
 //! | `term.rs`   | how a block ends |
 //! | `types.rs`  | what a `record` and a `variant` look like in C |
-//! | `perfn.rs`  | the four per-type functions C cannot write for itself |
+//! | `perfn.rs`  | the per-type functions C cannot write for itself |
+//! | `descriptors.rs` | which types need a `HeroDesc`, and what to call it |
 //! | `aggregate.rs` | one record: construction, a field, a place with a path |
 //!
 //! **What the emitter refuses, it refuses as a diagnostic** (`Kind::Unsupported`,
@@ -41,6 +42,7 @@ use crate::types::Checked;
 
 mod aggregate;
 mod ctype;
+mod descriptors;
 mod decls;
 mod gate;
 mod inst;
@@ -101,6 +103,9 @@ pub fn emit(
     // then the ordinary function prototypes.
     types::definitions(&mut w, ast, checked, &names, src);
     perfn::prototypes(&mut w, ast, checked, &names, src);
+    // The descriptors before any definition: an array literal names its element's
+    // descriptor, so the object has to exist by the time a function body mentions it.
+    perfn::descriptors(&mut w, checked, &names);
     for function in &program.functions {
         decls::prototype(&mut w, function, ast, checked, &names, &module);
     }

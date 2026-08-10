@@ -6,11 +6,17 @@ function double(n: int) -> int
         return $t3
 
 function main()
+    slots  $own0: [int]
     bb0  entry
         $t1: int = const 1
         $t2: int = const 2
         $t3: [int] = construct array($t1, $t2)
+        $t6: [int] = load $own0
+        store $own0 <- $t3
+        decref $t6
         $t4: int = call builtin len($t3)
         $t5: int = call heroes double($t4)
         call builtin print($t5) variadic
+        $t7: [int] = load $own0
+        decref $t7
         return

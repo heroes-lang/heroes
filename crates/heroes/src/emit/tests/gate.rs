@@ -49,12 +49,17 @@ fn text_and_floating_point_are_no_longer_refused() {
 /// the row splits by operand type rather than by op, which is why the gate walks
 /// types as well as operations.
 #[test]
-fn the_string_half_of_a_shared_operation_emits_and_the_array_half_does_not() {
+fn both_halves_of_a_shared_operation_now_emit_to_their_own_entry_point() {
     let text = super::c("function main()\n    s = \"ab\"\n    print(s[0])\n    print(len(s))\n");
     assert!(text.contains("hero_str_byte"), "{text}");
     assert!(text.contains("hero_str_len"), "{text}");
-    let (code, _) = refusal("function main()\n    xs = [1, 2]\n    print(xs[0])\n");
-    assert_eq!(code, "array");
+    // `s[i]` and `xs[i]` are one op, and `len` one built-in: the split is by operand
+    // type, and at M5c step 5 both sides have somewhere to go. Each keeps its own
+    // bounds check in the runtime.
+    let array = super::c("function main()\n    xs = [1, 2]\n    print(xs[0])\n    print(len(xs))\n");
+    assert!(array.contains("hero_array_at"), "{array}");
+    assert!(array.contains("hero_array_len"), "{array}");
+    assert!(!array.contains("hero_str_len"), "the wrong half was chosen:\n{array}");
 }
 
 /// `str`→`cstr` exists for one boundary and nothing consumes it before M7, so landing
@@ -73,14 +78,50 @@ fn an_extern_is_still_refused_after_str_landed() {
 }
 
 #[test]
-fn arrays_and_maps_are_refused() {
-    assert_eq!(refusal("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n").0, "array");
+fn maps_are_refused_and_so_is_writing_one_element_of_an_array() {
     let map = concat!(
         "function main()\n",
         "    m = {\"a\": 1}\n",
         "    print(m.has(\"a\"))\n",
     );
     assert_eq!(refusal(map).0, "map");
+    // The row that arrived WITH arrays rather than dying with them: reading an element
+    // emits, writing one is copy-on-write — one unshare per array step of the place,
+    // each writing back at its level (panel 022). Without this row, `xs[0] @ 7` reached
+    // clang as `error: incompatible integer to pointer conversion assigning to
+    // 'HeroArrayHeader *'`, reported as an internal error with a path to generated C.
+    let write = "function main()\n    xs: [int] @ [1, 2]\n    xs[0] @ 7\n    print(xs[0])\n";
+    assert_eq!(refusal(write).0, "array_write");
+}
+
+/// The row that retired at step 5, stated as the claim it became.
+#[test]
+fn an_array_is_emitted_with_a_descriptor_for_its_element() {
+    let out = emitted("function main()\n    xs = [1, 2, 3]\n    print(len(xs), xs[0])\n");
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("hero_array_new(&hero_desc_int"), "{}", out.c);
+    assert!(out.c.contains("hero_array_push"), "{}", out.c);
+    // A scalar element uses the runtime's descriptor, so nothing is generated for it.
+    assert!(!out.c.contains("static const HeroDesc"), "an unused descriptor:\n{}", out.c);
+}
+
+/// An array of records DOES need a generated descriptor, and exactly one.
+#[test]
+fn an_aggregate_element_gets_one_generated_descriptor() {
+    let out = emitted(
+        "record P\n    x: int\n\nfunction main()\n    ps = [P(x: 1), P(x: 2)]\n    print(ps[1].x)\n",
+    );
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert_eq!(
+        out.c.matches("static const HeroDesc h_scratch_P_desc").count(),
+        1,
+        "{}",
+        out.c
+    );
+    // And it is emitted before the function that names it, or the C does not compile.
+    let desc = out.c.find("h_scratch_P_desc =").expect("the descriptor");
+    let use_site = out.c.find("hero_array_new(&h_scratch_P_desc").expect("the use");
+    assert!(desc < use_site, "the descriptor must precede its use");
 }
 
 /// The row that retired at step 4. A variant is a tagged union by value, and `match`
@@ -199,22 +240,21 @@ fn an_extern_is_refused_because_nothing_would_check_its_signature() {
 /// the failure class the gate exists to prevent.
 #[test]
 fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
-    let (code, message) = refusal("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n");
-    // Arrays are refused too and come first in the source; the built-in row is what
-    // must also appear, so the whole list is checked rather than the first line.
-    let out = emitted("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n");
-    let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
-    assert!(codes.contains(&"array"), "{codes:?}");
-    let _ = (code, message);
+    // `sort` has no entry point yet, and it is refused *by name* rather than by any
+    // type in the program: the row is keyed to the built-in list, so a built-in whose
+    // operands all emit is still refused until the runtime has it.
+    let (code, message) = refusal("function main()\n    xs = [2, 1]\n    ys = sort(xs)\n    print(ys[0])\n");
+    assert_eq!(code, "builtin");
+    assert!(message.contains("`sort`"), "the message must name it: {message}");
 }
 
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
     let out = emitted(
-        "function main()\n    xs = [1, 2]\n    print(xs.len())\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n",
+        "function main()\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n    xs: [int] @ [1]\n    xs[0] @ 2\n    print(xs[0])\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
-    assert!(codes.contains(&"array") && codes.contains(&"map"), "{codes:?}");
+    assert!(codes.contains(&"map") && codes.contains(&"array_write"), "{codes:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
@@ -226,9 +266,14 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 #[test]
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
     let out = emitted(
-        "function main()\n    xs = [1]\n    ys = [2]\n    zs = [3]\n    print(xs[0], ys[0], zs[0])\n",
+        "function main()\n    m = {\"a\": 1}\n    n = {\"b\": 2}\n    o = {\"c\": 3}\n    print(has(m, \"a\"), has(n, \"b\"), has(o, \"c\"))\n",
     );
-    assert_eq!(out.diagnostics.len(), 1, "a program with three arrays has one array problem");
+    let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
+    assert_eq!(
+        codes.iter().filter(|c| **c == "map").count(),
+        1,
+        "a program with three maps has one map problem: {codes:?}"
+    );
 }
 
 /// A `test` block is **skipped**, not refused: `ir/mod.rs` says ordinary builds

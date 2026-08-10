@@ -46,7 +46,7 @@ use crate::types::{render_ty, Checked, Ty, TyId};
 /// so they cannot disagree — panel 021 R10, and CLAUDE.md §10's own pattern ("one
 /// argv table parses and prints the help"). A hand-written enumeration beside a
 /// machine-readable table is a sentence that becomes a lie one milestone later.
-pub const EMITTED_BUILTINS: [&str; 4] = ["len", "print", "slice", "to_str"];
+pub const EMITTED_BUILTINS: [&str; 5] = ["len", "print", "push", "slice", "to_str"];
 
 /// What the backend does emit. Derived, not maintained: the type list is the arms of
 /// `check_type` that return without a note, and the built-in list is the constant
@@ -58,9 +58,9 @@ pub const EMITTED_BUILTINS: [&str; 4] = ["len", "print", "slice", "to_str"];
 /// over built-ins.
 pub fn subset() -> String {
     format!(
-        "the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `if`, \
-         `while`, `match`, functions, and the built-ins {} — no other built-in is \
-         emitted yet",
+        "the backend emits `int`, `bool`, `f64`, `str`, `record`, `variant`, `[T]`, \
+         `if`, `while`, `for`, `match`, functions, and the built-ins {} — no other \
+         built-in is emitted yet",
         EMITTED_BUILTINS
             .iter()
             .map(|name| format!("`{name}`"))
@@ -144,7 +144,7 @@ fn check_type(
         // which is the gate's whole design — a row dies per milestone.
         Ty::Int | Ty::Bool | Ty::Unit | Ty::F64 | Ty::Str => return,
         // M5c — the descriptor pass, whose ABI spike 04 froze.
-        Ty::Array(_) => ("array", "an array".to_string()),
+        Ty::Array(_) => return,
         Ty::Map(_, _) => ("map", "a map".to_string()),
         // Records and variants both emit from M5c step 4. The row that split at step 3
         // is gone: two capabilities became one again, which is what a milestone
@@ -175,10 +175,27 @@ fn check_op(
     span: Span,
 ) {
     match op {
-        // A place with a path is a field or an element. A field of a record is
-        // emitted now; an element is an array, and `check_type` has already refused
-        // the array itself, so nothing more is owed here.
-        Op::Load(_) | Op::Store { .. } => {}
+        // A place with a path is a field or an element. Reading either emits; *writing*
+        // through an element does not yet, because that is the copy-on-write path —
+        // one unshare per array step of the place, each writing back at its level
+        // (panel 022), and the mutation primitives it needs take `HeroArrayHeader **`.
+        //
+        // The row is here rather than left out because leaving it out is measured: with
+        // arrays emitting and this refused nowhere, `xs[0] @ 7` reached clang as
+        // `error: incompatible integer to pointer conversion assigning to
+        // 'HeroArrayHeader *'`, which this toolchain reports as an internal error with
+        // a path to generated C — the compiler blaming itself for the author's program,
+        // which is the one failure the gate exists to prevent.
+        Op::Store { place, .. } => {
+            if function
+                .steps_of(place.path)
+                .iter()
+                .any(|step| matches!(step, crate::ir::Step::Index(_)))
+            {
+                note(found, "array_write", "writing one element of an array".to_string(), span);
+            }
+        }
+        Op::Load(_) => {}
         // `str`→`cstr` exists for one boundary and nothing consumes it before M7:
         // the row is keyed to the FFI rather than to `str`, which is why landing
         // `str` did not make it emittable.
@@ -189,8 +206,7 @@ fn check_op(
         }
         Op::Construct { shape, .. } => {
             let (code, what) = match shape {
-                Shape::Record(_) | Shape::Case(_, _) => return,
-                Shape::Array => ("array", "an array".to_string()),
+                Shape::Record(_) | Shape::Case(_, _) | Shape::Array => return,
                 Shape::Map => ("map", "a map".to_string()),
                 Shape::Ok | Shape::Fail | Shape::Err => {
                     ("fallible", "a fallible value (`T?`)".to_string())
@@ -212,23 +228,13 @@ fn check_op(
                 note(found, "fallible", "a fallible value (`T?`)".to_string(), span);
             }
         }
-        // `s[i]` and `xs[i]` are the same op on different types (`ir/inst.rs` says
-        // so). The byte read emits; the element read waits for the descriptor pass.
-        Op::Index { base, .. } => {
-            if !matches!(checked.types.get(function.value_type(base)), Ty::Str) {
-                note(found, "array", "an array".to_string(), span);
-            }
-        }
+        // Both spellings of `[i]` emit now: a byte through `hero_str_byte`, an element
+        // through `hero_array_at`.
+        Op::Index { .. } => {}
         Op::MapGet { .. } => note(found, "map", "a map".to_string(), span),
-        // `len` on a `str` emits; on an array or a map it waits for the descriptor
-        // pass. The op is the same op, so the row splits by operand type — which is
-        // why the gate walks types as well as ops.
-        Op::Len(value) => {
-            let ty = function.value_type(value);
-            if !matches!(checked.types.get(ty), Ty::Str) {
-                note(found, "builtin", "the built-in `len`".to_string(), span);
-            }
-        }
+        // `len` counts bytes on a `str` and elements on an array; a map is the row
+        // still standing, and it is refused by its own type before reaching here.
+        Op::Len(_) => {}
         Op::FuncRef(_) => {
             note(found, "function_value", "a function used as a value".to_string(), span)
         }

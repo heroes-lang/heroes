@@ -24,7 +24,10 @@ function count_of(xs: [int]) -> int
         $t1: int = const 0
         store n <- $t1
         $t2: [int] = load xs
+        $t15: [int] = load $xs0
+        incref $t2
         store $xs0 <- $t2
+        decref $t15
         $t3: int = const 0
         store $i0 <- $t3
         jump bb1
@@ -48,4 +51,6 @@ function count_of(xs: [int]) -> int
         jump bb1
     bb4  for: exit    preds bb1
         $t14: int = load n
+        $t16: [int] = load $xs0
+        decref $t16
         return $t14

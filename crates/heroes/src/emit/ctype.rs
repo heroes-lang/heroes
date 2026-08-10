@@ -106,8 +106,12 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         // (`$t5: Token.num = payload $t4 .num`).
         Ty::Named(decl) => Some(names.of(decl).to_string()),
         Ty::Case(decl, case) => Some(names.case_of(decl, case).to_string()),
-        // Containers and `T?`: later steps of M5c own the representation, and
-        // `gate.rs` refuses them until then.
+        // One pointer, whatever it holds — which is what gives a recursive type a
+        // finite size (§4.10) and what makes an array field impose no ordering
+        // constraint on C.
+        Ty::Array(_) => Some("HeroArrayHeader *".to_string()),
+        // The map and `T?`: later steps own the representation, and `gate.rs`
+        // refuses them until then.
         _ => Some("HeroValue".to_string()),
     }
 }
