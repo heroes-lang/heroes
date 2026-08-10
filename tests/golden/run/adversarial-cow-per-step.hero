@@ -1,0 +1,73 @@
+# THE VETO, MADE EXECUTABLE. Panel 022 refused a single unshare at the mutation
+# primitive and required one per array step of the place, each writing back at its own
+# level. This file is the three programs that veto obliges, and the first is the one
+# that was MEASURED failing.
+#
+# WHAT WAS MEASURED (panel 022): with one unshare at the primitive, `h = g` then
+# `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit 0. A
+# green harness on a program that violates spec line 60, "No aliasing exists anywhere".
+# Nothing in this project could have caught it: the counter reads 0, the sanitisers are
+# silent, and no golden read a second name after a nested mutation. This one does.
+#
+# It is *necessarily* wrong under a single unshare, not accidentally: unsharing level 1
+# copies its elements, whose `copy` increfs level 2, so level 2 is shared exactly when
+# level 1 was copied.
+#
+# THE THREE, and what each must show:
+#
+#   1. nested aliasing        after `g.rows[0].cells[0] @ 7`, `h` still reads 0
+#   2. self-reference         `n.children[0] @ n` leaves the leak counter at zero
+#   3. the value aliases      storing something that lives inside the container being
+#      the container          mutated still works, because the incref precedes the
+#                             outermost unshare
+#
+# For (2) and (3) the assertion is partly the *absence* of output: no panic, no ASan
+# report, and `hero_runtime_check_leaks()` silent at exit. A cycle would show up as a
+# non-zero balance, because a cycle is what makes reference counting leak — and §4.10's
+# second gift is that a Heroes program cannot build one.
+#
+# `# UNVERIFIED — pending debrief` (adversarial case 5 of 5 for M5c).
+
+record Row
+    cells: [int]
+
+record Grid
+    rows: [Row]
+
+record Node
+    label: int
+    children: [Node]
+
+function main()
+    # (1) The veto's own program. `h = g` shares every level; the write must copy
+    # every level it passes through, or `h` sees the 7.
+    g: Grid @ Grid(rows: [Row(cells: [0, 0])])
+    h = g
+    g.rows[0].cells[0] @ 7
+    print(g.rows[0].cells[0])
+    print(h.rows[0].cells[0])
+    # And the untouched neighbour, so a copy that loses data would show.
+    print(g.rows[0].cells[1], h.rows[0].cells[1])
+
+    # (2) Self-reference. The stored value contains the array being mutated, so the
+    # order is the rule: increfed before the outermost unshare, therefore still alive
+    # when the copy happens. What comes out is a tree, never a cycle — the value it
+    # captured refers to the OLD block, and the unshare made a new one.
+    n: Node @ Node(label: 1, children: [Node(label: 2, children: [])])
+    n.children[0] @ n
+    print(n.label, len(n.children))
+    print(n.children[0].label)
+    print(len(n.children[0].children))
+
+    # (3) The stored value lives inside the container being mutated, one level down.
+    m: Grid @ Grid(rows: [Row(cells: [4, 5]), Row(cells: [6, 7])])
+    m.rows[0] @ m.rows[1]
+    print(m.rows[0].cells[0], m.rows[1].cells[0])
+    m.rows[0].cells[0] @ 9
+    print(m.rows[0].cells[0], m.rows[1].cells[0])
+
+    # A single step, for the boundary: no descent, `set` unshares by itself.
+    xs: [int] @ [1, 2, 3]
+    ys = xs
+    xs[1] @ 9
+    print(xs[1], ys[1])

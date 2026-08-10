@@ -284,3 +284,74 @@ pub(super) fn read_element(
         mangle::value(index.0)
     ))
 }
+
+/// `xs[i] @ v`, and every deeper spelling of it: **one unshare per array step of the
+/// place, each writing back at its own level** (panel 022).
+///
+/// The walk keeps a C *lvalue* for the place reached so far rather than an address,
+/// because a field step is `.member` on an lvalue and `&` is only needed where a
+/// primitive takes one. For `g.rows[0].cells[0] @ 7`:
+///
+/// ```text
+///   h0_g                                        the slot, ours already
+///   h0_g.f_rows                                 a field: no unshare, we own the record
+///   hero_array_unshare(&(h0_g.f_rows));         an array step: make THIS level unique
+///   (*(h_m_Row *)hero_array_at_mut(h0_g.f_rows, t12))          descend into the element
+///   ....f_cells                                 a field of the element
+///   hero_array_unshare(&(....f_cells));         the second array step, unique too
+///   hero_array_set(&(....f_cells), t13, &t14);  and the write, which unshares again
+/// ```
+///
+/// The last step's `set` unshares a third time and that is deliberate: it is a
+/// refcount test, it is idempotent, and having one entry point that cannot be reached
+/// without it beats an emitter that has to remember.
+pub(super) fn write_element(
+    types: &Types,
+    function: &Function,
+    at: Place,
+    value: ValueId,
+) -> Option<Vec<String>> {
+    let slot = &function.slots[at.root.0 as usize];
+    let mut lvalue = mangle::slot(at.root.0, &slot.name);
+    let mut ty = slot.ty;
+    let steps = function.steps_of(at.path);
+    let mut lines: Vec<String> = Vec::new();
+    for (position, step) in steps.iter().enumerate() {
+        let last = position + 1 == steps.len();
+        match step {
+            Step::Field(index) => {
+                let (member, next) = types.field(ty, *index)?;
+                lvalue = format!("{lvalue}.{member}");
+                ty = next;
+                // A field is not an indirection: the record is inside a place we
+                // already own, so nothing to unshare. A trailing field store is
+                // rule 3's plain assignment and never reaches this function.
+                if last {
+                    return None;
+                }
+            }
+            Step::Index(index) => {
+                let element = match types.checked.types.get(ty) {
+                    Ty::Array(element) => element,
+                    _ => return None,
+                };
+                if last {
+                    lines.push(format!(
+                        "hero_array_set(&({lvalue}), {}, &{});",
+                        mangle::value(index.0),
+                        mangle::value(value.0)
+                    ));
+                    return Some(lines);
+                }
+                lines.push(format!("hero_array_unshare(&({lvalue}));"));
+                let spelling = super::ctype::c_type(types.names, types.checked, element)?;
+                lvalue = format!(
+                    "(*({spelling} *)hero_array_at_mut({lvalue}, {}))",
+                    mangle::value(index.0)
+                );
+                ty = element;
+            }
+        }
+    }
+    None
+}

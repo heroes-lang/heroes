@@ -78,20 +78,54 @@ fn an_extern_is_still_refused_after_str_landed() {
 }
 
 #[test]
-fn maps_are_refused_and_so_is_writing_one_element_of_an_array() {
+fn only_the_map_is_refused_now() {
     let map = concat!(
         "function main()\n",
         "    m = {\"a\": 1}\n",
         "    print(m.has(\"a\"))\n",
     );
     assert_eq!(refusal(map).0, "map");
-    // The row that arrived WITH arrays rather than dying with them: reading an element
-    // emits, writing one is copy-on-write — one unshare per array step of the place,
-    // each writing back at its level (panel 022). Without this row, `xs[0] @ 7` reached
-    // clang as `error: incompatible integer to pointer conversion assigning to
-    // 'HeroArrayHeader *'`, reported as an internal error with a path to generated C.
-    let write = "function main()\n    xs: [int] @ [1, 2]\n    xs[0] @ 7\n    print(xs[0])\n";
-    assert_eq!(refusal(write).0, "array_write");
+}
+
+/// The `array_write` row lived for one step and retired with copy-on-write. Stated as
+/// the claim it became, because the only way to state it is to emit one.
+#[test]
+fn writing_one_element_unshares_once_per_array_step() {
+    let out = super::emitted(
+        "function main()\n    xs: [int] @ [1, 2]\n    xs[0] @ 7\n    print(xs[0])\n",
+    );
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("hero_array_set(&(h0_xs)"), "{}", out.c);
+    // One step, so no separate unshare: `set` does it, and doing it twice would be a
+    // refcount test run twice rather than a bug.
+    assert_eq!(out.c.matches("hero_array_unshare").count(), 0, "{}", out.c);
+
+    // Two array steps, and the outer one is unshared before the inner is reached —
+    // which is the whole of panel 022's veto: unsharing level 1 copies its elements,
+    // whose `copy` increfs level 2, so level 2 is shared exactly when level 1 was
+    // copied.
+    let nested = concat!(
+        "record Row\n",
+        "    cells: [int]\n",
+        "\n",
+        "record Grid\n",
+        "    rows: [Row]\n",
+        "\n",
+        "function main()\n",
+        "    g: Grid @ Grid(rows: [Row(cells: [0])])\n",
+        "    g.rows[0].cells[0] @ 7\n",
+        "    print(g.rows[0].cells[0])\n",
+    );
+    let deep = super::emitted(nested);
+    assert!(deep.diagnostics.is_empty(), "{:?}", deep.diagnostics);
+    assert_eq!(
+        deep.c.matches("hero_array_unshare").count(),
+        1,
+        "one unshare per array step that is not the last:\n{}",
+        deep.c
+    );
+    assert!(deep.c.contains("hero_array_at_mut"), "{}", deep.c);
+    assert!(deep.c.contains("hero_array_set"), "{}", deep.c);
 }
 
 /// The row that retired at step 5, stated as the claim it became.
@@ -251,10 +285,10 @@ fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
     let out = emitted(
-        "function main()\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n    xs: [int] @ [1]\n    xs[0] @ 2\n    print(xs[0])\n",
+        "function main()\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n    print(sort([2, 1])[0])\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
-    assert!(codes.contains(&"map") && codes.contains(&"array_write"), "{codes:?}");
+    assert!(codes.contains(&"map") && codes.contains(&"builtin"), "{codes:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();

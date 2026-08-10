@@ -73,6 +73,23 @@ pub(super) fn emit(
                 w.line(&format!("    {name} = {};", read(types, function, place)));
             }
         }
+        // A store whose place ends in an index is copy-on-write, and the runtime owns
+        // the whole replacement: unshare, release what was there, move the value in.
+        Op::Store { place, value }
+            if function
+                .steps_of(place.path)
+                .iter()
+                .any(|step| matches!(step, crate::ir::Step::Index(_))) =>
+        {
+            match aggregate::write_element(types, function, place, value) {
+                Some(lines) => {
+                    for line in lines {
+                        w.line(&format!("    {line}"));
+                    }
+                }
+                None => w.line("    hero_unreachable(); /* not an element write */"),
+            }
+        }
         Op::Store { place, value } => {
             if !is_unit(checked, function.value_type(value)) {
                 w.line(&format!(

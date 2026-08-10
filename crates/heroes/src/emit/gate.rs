@@ -186,16 +186,9 @@ fn check_op(
         // 'HeroArrayHeader *'`, which this toolchain reports as an internal error with
         // a path to generated C — the compiler blaming itself for the author's program,
         // which is the one failure the gate exists to prevent.
-        Op::Store { place, .. } => {
-            if function
-                .steps_of(place.path)
-                .iter()
-                .any(|step| matches!(step, crate::ir::Step::Index(_)))
-            {
-                note(found, "array_write", "writing one element of an array".to_string(), span);
-            }
-        }
-        Op::Load(_) => {}
+        // Reading and writing a place both emit now: a field is a member access, and an
+        // element write is copy-on-write, one unshare per array step with write-back.
+        Op::Load(_) | Op::Store { .. } => {}
         // `str`→`cstr` exists for one boundary and nothing consumes it before M7:
         // the row is keyed to the FFI rather than to `str`, which is why landing
         // `str` did not make it emittable.

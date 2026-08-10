@@ -104,6 +104,17 @@ fn rewrite(function: &mut Function, checked: &Checked) {
                     .steps_of(place.path)
                     .iter()
                     .any(|step| matches!(step, crate::ir::Step::Index(_)));
+                // An indexed store hands the value OVER: `hero_array_set` releases the
+                // element that was there and moves the new one in, so the pass increfs
+                // and does not decref. The order matters and this is where it is set —
+                // the incref precedes the store, therefore the outermost unshare,
+                // because the value may live inside the container being copied
+                // (`n.children[0] @ n`).
+                if is_refcounted(checked, ty) && indexed {
+                    out.push(plain(None, Op::Incref(value), ty, inst.span));
+                    out.push(inst);
+                    continue;
+                }
                 if is_refcounted(checked, ty) && !indexed {
                     let old = fresh(&mut next_value, function, ty);
                     out.push(plain(Some(old), Op::Load(place), ty, inst.span));

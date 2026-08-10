@@ -1,14 +1,16 @@
 # Three unsupported capabilities, three diagnostics, sorted by span: a message
 # that carries the list is one round trip, and three invocations is three.
 #
-# Rewritten three times, and each rewrite is the gate working — at M5b the original's
-# `str` and `f64` started emitting, at step 3 the `record`, at step 5 the `array` and
-# `len` on one. What is left is the list as it stands, and the file's job is to keep
-# proving that all of it arrives at once rather than one invocation at a time.
+# Rewritten four times, and each rewrite is the gate working — at M5b the original's
+# `str` and `f64` started emitting, at step 3 the `record`, at step 5 the `array`, at
+# step 6 writing one element of one. What is left is the list as it stands, and the
+# file's job is to keep proving that all of it arrives at once rather than one
+# invocation at a time.
 #
-# `record P` and the array literal stay in the file deliberately: both emit now, so
-# their presence proves the three refusals below are about the three forms named and
-# not about the program containing an aggregate or a container at all.
+# The record, the array and the element write all stay in the file deliberately: every
+# one of them emits now, so their presence proves the three refusals below are about
+# the three forms named and not about the program containing an aggregate, a container
+# or a mutation at all.
 # Bulk regression case.
 
 record P
@@ -18,9 +20,11 @@ function main()
     p = P(x: 1)
     print(p.x)
     xs: [int] @ [1, 2]
-    print(xs[0], len(xs))
-    #~v array_write
     xs[0] @ 7
+    print(xs[0], len(xs))
     #~v map
     m = {"a": 1}
     print(m.has("a"))     #~ builtin
+    #~v fallible
+    got = m["a"]
+    print(got.default(0))

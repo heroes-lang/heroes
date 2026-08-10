@@ -1,0 +1,53 @@
+# `xs[i] @ v` at every element type, because each replacement goes through a different
+# descriptor's `drop` — and a drop that does nothing where it should release is a leak,
+# while one that releases where it should do nothing is a double free.
+#
+#   [int]      hero_drop_nothing, so the old element is simply overwritten
+#   [str]      hero_str_decref on what was there
+#   [Point]    the generated h_m_Point_desc_drop, which releases nothing (no counted
+#              field) but still has to be *called*, or the shape is untested
+#   [Holder]   the generated drop that DOES release: a record with a `str` in it
+#   [[int]]    hero_desc_array's drop, releasing an inner array
+#
+# Every one is written twice, so a leak grows rather than sitting still, and each is
+# read back so a lost write shows up as output rather than as silence.
+# Bulk regression case.
+
+record Point
+    x: int
+    y: int
+
+record Holder
+    name: str
+
+function main()
+    ns: [int] @ [1, 2, 3]
+    ns[0] @ 10
+    ns[0] @ 11
+    ns[2] @ 33
+    print(ns[0], ns[1], ns[2])
+
+    ws: [str] @ ["a" + "1", "b" + "2"]
+    ws[0] @ "z" + "9"
+    ws[0] @ "y" + "8"
+    print(ws[0], ws[1])
+
+    ps: [Point] @ [Point(x: 1, y: 2), Point(x: 3, y: 4)]
+    ps[1] @ Point(x: 5, y: 6)
+    ps[1] @ Point(x: 7, y: 8)
+    print(ps[0].x, ps[1].x, ps[1].y)
+
+    hs: [Holder] @ [Holder(name: "one" + "!"), Holder(name: "two" + "!")]
+    hs[0] @ Holder(name: "new" + "!")
+    hs[0] @ Holder(name: "newer" + "!")
+    print(hs[0].name, hs[1].name)
+
+    gs: [[int]] @ [[1, 2], [3, 4]]
+    gs[0] @ [9]
+    gs[0] @ [8, 7]
+    print(gs[0][0], gs[0][1], gs[1][0])
+    print(len(gs[0]), len(gs))
+
+    # Out of range still aborts (spec line 126), and unsharing must not happen first —
+    # the message is the same whether or not the array was shared.
+    print(len(ns))

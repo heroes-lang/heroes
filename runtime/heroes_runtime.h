@@ -190,6 +190,43 @@ HeroArrayHeader *hero_array_push(const HeroArrayHeader *a, const void *elem);
 /* Structural equality, element by element through the descriptor. */
 bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b);
 
+/* -- copy-on-write (panel 022, and the veto that shaped it) ------------------
+ *
+ * `xs[i] @ v` mutates a place, and the place may be shared. So: make it unique
+ * first, and do it ONCE PER ARRAY STEP of the place path, each writing back at
+ * its own level. `**` rather than a returned pointer is what makes the write-back
+ * unavoidable — a caller cannot forget to store the result if there is no result.
+ *
+ * WHY PER STEP, measured: with a single unshare at the primitive, `h = g` then
+ * `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit
+ * 0. A green harness on a program that violates spec line 60 ("No aliasing exists
+ * anywhere"). It is *necessarily* wrong, not accidentally: unsharing level 1
+ * copies its elements, whose `copy` increfs level 2, so level 2 is shared exactly
+ * when level 1 was copied.
+ *
+ * WHY NOT AN IR INSTRUCTION: as a `cow_check` op inserted before every mutation it
+ * can be hoisted above the argument, and in that order the unshare is a no-op and
+ * `xs` ends up reaching itself — a three-block cycle a judge actually built, with
+ * ASan silent and only the block counter catching it. Inside the primitive, C's
+ * own rule that every argument is evaluated before the callee's first statement
+ * makes the bad order INEXPRESSIBLE, which beats a check because a check can be
+ * forgotten. */
+
+void hero_array_unshare(HeroArrayHeader **slot);
+
+/* The address of one element, for descending a place path after unsharing.
+ * Aborts out of range. Non-const, unlike `hero_array_at`, because the caller has
+ * just made the block its own. */
+void *hero_array_at_mut(HeroArrayHeader *a, int64_t index);
+
+/* Replace one element. Unshares first, releases the element that was there, and
+ * MOVES the value in — the caller hands over a reference (+1) rather than lending
+ * one, which is why the ownership pass increfs before the store and does not
+ * decref after. The order is part of the rule: the incref happens BEFORE the
+ * outermost unshare, because the value may live inside the very container being
+ * copied (`n.children[0] @ n`). */
+void hero_array_set(HeroArrayHeader **slot, int64_t index, const void *value);
+
 /* -- the leak check ASan cannot do on this platform ------------------------
  * MEASURED (panel 021): AddressSanitizer on Darwin arm64 has NO
  * LeakSanitizer. `ASAN_OPTIONS=detect_leaks=1` aborts with "not supported on
