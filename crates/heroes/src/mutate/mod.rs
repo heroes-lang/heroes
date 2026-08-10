@@ -167,3 +167,40 @@ pub fn report(scores: &[Score]) -> String {
     );
     out
 }
+
+/// The corpus every mutation invariant runs over: the gallery, plus the programs
+/// that actually compile and run.
+///
+/// Test-only, and shared rather than copied — `emit/tests/mutants.rs` asserts the
+/// gate and the emitter agree over it, `types/tests/sizes.rs` asserts the type
+/// order is a real topological order over it, and two readers of one corpus must
+/// not disagree about what the corpus is.
+///
+/// The second directory is the point. `examples/gallery/` is what `heroes mutate`
+/// scores, and at M5a exactly one of its programs was inside the backend's subset,
+/// so mutating it produced **zero** emitted mutants and the invariant asserted
+/// nothing.
+#[cfg(test)]
+pub(crate) fn corpus() -> Vec<(String, String)> {
+    let mut paths: Vec<std::path::PathBuf> = Vec::new();
+    for dir in [
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/gallery"),
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/golden/run"),
+    ] {
+        paths.extend(
+            std::fs::read_dir(dir)
+                .unwrap_or_else(|e| panic!("{dir} must exist: {e}"))
+                .map(|entry| entry.expect("a readable entry").path())
+                .filter(|path| path.extension().and_then(|e| e.to_str()) == Some("hero")),
+        );
+    }
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|path| {
+            let name = path.file_name().expect("a file name").to_string_lossy().into_owned();
+            let text = std::fs::read_to_string(&path).expect("a readable .hero file");
+            (name, text)
+        })
+        .collect()
+}

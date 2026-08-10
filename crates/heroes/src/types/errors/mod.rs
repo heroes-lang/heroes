@@ -11,6 +11,7 @@
 //! | `values.rs` | mismatches, operators, and where a value may stand |
 //! | `data.rs`   | fields, labels, cases, patterns, exhaustiveness |
 //! | `flow.rs`   | `return`, jumps, `?`, and branches without a value |
+//! | `sizes.rs`  | a type that would have to contain itself at every depth |
 //!
 //! The rich renderer is M3d's deliverable. These messages are written so the
 //! one-line form already carries the two types and the repair — a message that
@@ -18,8 +19,10 @@
 
 mod data;
 mod flow;
+mod sizes;
 mod values;
 
 pub(in crate::types) use data::*;
 pub(in crate::types) use flow::*;
+pub(in crate::types) use sizes::*;
 pub(in crate::types) use values::*;

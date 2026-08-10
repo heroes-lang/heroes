@@ -1,0 +1,21 @@
+# The case panel 023's llm-ergonomist required by name, and the reason is that it
+# does not LOOK like a mistake: "best friend" reads as a reference, the field feels
+# optional, and nothing in the surface says a field holds a whole value. Asked to
+# rule on this declaration from the spec alone, the judge answered "the spec does
+# not say" — three times out of three, on this and two sibling shapes — and said it
+# would have called the direct self-reference legal.
+#
+# The declaration is illegal for the same one reason as `no-size-self.hero`, and it
+# is a separate case because the temptation is different: there the author wanted a
+# tree, here they wanted a link. The repair is different too, and the fix stays a
+# `guess` for exactly that reason — `[Person]` is the compiler's advice for a
+# field the author meant to hold at most one.
+#
+# `# UNVERIFIED — pending debrief` (adversarial case 1 of 5 for M5c).
+
+record Person
+    name: str
+    best_friend: Person    #~ no_size
+
+function main()
+    print(1)

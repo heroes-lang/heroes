@@ -1,0 +1,1 @@
+tests/golden/check/no-size-self.hero:22:12: error[no_size]: `record Node` contains itself, so it has no size

@@ -1,0 +1,1 @@
+tests/golden/check/no-size-best-friend.hero:18:18: error[no_size]: `record Person` contains itself, so it has no size

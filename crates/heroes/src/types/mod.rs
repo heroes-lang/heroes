@@ -64,6 +64,7 @@ mod lower;
 mod ops;
 mod patterns;
 mod render;
+mod sized;
 mod stmts;
 mod table;
 
@@ -92,6 +93,16 @@ pub struct Checked {
     /// What the checker expected where a `???` stands, in source order. §4.16's
     /// output is built from this at M3d, and the cap of 5 is applied there.
     pub holes: Vec<Hole>,
+    /// `record` and `variant` declarations in an order where every by-value
+    /// dependency precedes its user — C needs every struct complete before it is
+    /// used by value, and Heroes' top level is order-free (§3.1, panel 023).
+    ///
+    /// Published here rather than recomputed in the backend because the order and
+    /// the `no_size` cycles are **one walk** (`sized.rs`), and two answers to one
+    /// question is the failure `ir/layout.rs` documents. The emitter *filters*
+    /// this to the descriptor worklist's reachable subset: a total order
+    /// restricted to a subset is still a total order.
+    pub type_order: Vec<u32>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
@@ -140,6 +151,7 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
             written_types: std::collections::BTreeMap::new(),
             expr_types: Vec::new(),
             holes: Vec::new(),
+            type_order: Vec::new(),
             diagnostics: Vec::new(),
         },
         result: TyId(0),
@@ -155,6 +167,12 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
         missing_returns: Vec::new(),
     };
     checker.out.expr_types = vec![checker.out.types.error(); ast.exprs.len()];
+    // Sizes first, and it needs no expression types: a containment cycle makes
+    // every *later* answer about those types a guess, and a file with one produces
+    // no binary anyway. Reporting it here also keeps the final sort's job trivial.
+    let (order, no_size) = sized::order_and_cycles(ast, resolved, src);
+    checker.out.type_order = order;
+    checker.out.diagnostics.extend(no_size);
     decls::file(&mut checker, ast, resolved, src);
     // §4.16's **file-wide hole exemption**, the same one the unused rule takes: a
     // body that is `???` falls off its end by construction — that is what an

@@ -21,44 +21,11 @@
 
 use crate::emit::emit;
 use crate::ir::{lower, verify};
-use crate::mutate::{mutants, OPERATORS};
+use crate::mutate::{corpus, mutants, OPERATORS};
 use crate::resolve::resolve;
 use crate::source::Source;
 use crate::syntax::parse;
 use crate::types::check;
-
-/// Two corpora, and the second one is the point.
-///
-/// `examples/gallery/` is what `heroes mutate` runs on, and at M5a exactly one of its
-/// twelve programs is inside the backend's subset — so mutating it produced **zero**
-/// emitted mutants on the first run of this test, and the emitter half of the
-/// invariant was asserting nothing. `tests/golden/run/` is the corpus of programs that
-/// *do* compile and run, so mutating those is what exercises the backend. Recorded
-/// rather than quietly fixed: a coverage hole a test cannot see is the same shape as
-/// the verifier that had 257 lines and no test that any of them fired.
-fn corpus() -> Vec<(String, String)> {
-    let mut paths: Vec<std::path::PathBuf> = Vec::new();
-    for dir in [
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/gallery"),
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/golden/run"),
-    ] {
-        paths.extend(
-            std::fs::read_dir(dir)
-                .unwrap_or_else(|e| panic!("{dir} must exist: {e}"))
-                .map(|entry| entry.expect("a readable entry").path())
-                .filter(|path| path.extension().and_then(|e| e.to_str()) == Some("hero")),
-        );
-    }
-    paths.sort();
-    paths
-        .into_iter()
-        .map(|path| {
-            let name = path.file_name().expect("a file name").to_string_lossy().into_owned();
-            let text = std::fs::read_to_string(&path).expect("a readable .hero file");
-            (name, text)
-        })
-        .collect()
-}
 
 #[test]
 fn no_accepted_program_emits_c_the_gate_should_have_refused() {

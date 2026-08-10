@@ -8,6 +8,7 @@
 //! | `fallible.rs`  | `T?`, `ok`/`fail` in ⇐ mode, `?`, and the error's two fields |
 //! | `flow.rs`      | panel 017 A: a jump has no type, and the one join rule |
 //! | `holes.rs`     | §4.16: what the compiler knew and used to throw away |
+//! | `sizes.rs`     | which types have a size, and the order the backend gets |
 //! | `acceptance.rs`| design.md's appendix, type-checked; and the gallery |
 //!
 //! `diagnostics` renders what the compiler *says*; `types_of` reads what it
@@ -20,6 +21,7 @@ mod fallible;
 mod flow;
 mod holes;
 mod scalars;
+mod sizes;
 
 use crate::resolve::resolve;
 use crate::source::Source;

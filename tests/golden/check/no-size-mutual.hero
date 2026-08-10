@@ -1,0 +1,25 @@
+# The mutual case: neither declaration holds itself, and together they do.
+#
+# One diagnostic, not two, because a cycle is one mistake ("one mistake, one
+# message" — `types/lower.rs`). The note carries the cycle as a path with field
+# names and lines, because BOTH edges are legal repair sites: the author may put
+# `A.b` in an array or `B.a` in one, and a message naming a single field silently
+# would be arbitrary advice dressed as help.
+#
+# Go arrived here by being told. Its old `cmd/compile` printed only `invalid
+# recursive type T2` for exactly this shape and that was filed as a bug (golang
+# #41575, "not as helpful as go/types"); the path form is what replaced it.
+#
+# The cycle is normalised to start at the lowest declaration index, so the
+# reported path does not depend on which declaration the walk entered from.
+# Without that, the message would change when the walk's entry point changed and
+# this `.expected` would rot for a reason having nothing to do with the program.
+
+record A
+    b: B
+
+record B
+    a: A    #~ no_size
+
+function main()
+    print(1)

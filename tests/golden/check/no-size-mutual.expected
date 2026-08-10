@@ -1,0 +1,1 @@
+tests/golden/check/no-size-mutual.hero:22:8: error[no_size]: `record B` contains itself through `A`, so it has no size

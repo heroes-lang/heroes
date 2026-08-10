@@ -1,0 +1,27 @@
+# A `T?` is a by-value struct, so it is TRANSPARENT to containment: it propagates
+# the edge into `T` rather than breaking it. `next: Node?` has no size.
+#
+# This row is here because two panel-023 judges found it independently, from
+# opposite ends and with different inputs. The llm-ergonomist, reading only the
+# spec, named `next: Node?` "the single most attractive wrong answer" for a linked
+# list — spec line 53 says "Absence is a different type (`T?`)" while line 50
+# defines a `T?` as "a `T`, or an error", so the spec itself licenses `T?` as an
+# option type. The compiler-engineer, reading only the tree, found the same shape
+# as a representation defect. Then the ffi-pragmatist compiled it: `field has
+# incomplete type 'h_m_R'`, exit 1.
+#
+# The proposal's rule — "a cycle not through `[T]` or `{K: V}`" — would have
+# PERMITTED this program, and the error the author would have seen names a struct
+# the compiler invented, with no line pointing at this file. Which is why the rule
+# is a property and not a list: an edge is a field C lays out by value.
+#
+# Measured alongside it, and all three compile: `record P { kids: [P?] }` is 8
+# bytes, `record Q { kids: [Q]? }` is 40, `record S { m: {int: S?} }` is 8. The
+# `T?` is not the problem — being reached by value is.
+
+record Node
+    value: int
+    next: Node?    #~ no_size
+
+function main()
+    print(1)

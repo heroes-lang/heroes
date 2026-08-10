@@ -1,0 +1,25 @@
+# A record that holds one of itself. Heroes has no `Box`, no `ref` and no pointer
+# type, so a record is a C struct by value: this one would need a `Node` at every
+# depth.
+#
+# Verified before the class was written: this program checked CLEAN, exit 0, all
+# the way through M5b — and the day M5c deletes the gate row that refuses records,
+# it would have reached clang as `error: field has incomplete type 'h_Node'`,
+# which CLAUDE.md §7 reports as exit 2, "internal error", with a path to generated
+# C. The compiler telling the author the compiler is broken about the author's
+# mistake. That is the defect this class exists to remove (panel 023).
+#
+# The span is the field's *type* as written, which is where the repair goes, and
+# it is Swift's choice for the same error in the same position — a value type with
+# no escape hatch. Swift puts it on the field, not the type header.
+#
+# The fix is a `guess`, never `certain`: `child: Node` -> `children: [Node]`
+# changes the field's cardinality *and* its name, so every use site moves with it.
+# rustc classifies its own `Box` suggestion the same way (`HasPlaceholders`), and
+# Swift emits no fix-it at all for structs.
+
+record Node
+    child: Node    #~ no_size
+
+function main()
+    print(1)
