@@ -132,7 +132,7 @@ not yet in the spec — mortgaged budget), and it assigns `file I/O`/`args()`/`e
 runtime tier (§4.20 Tier 1 vs plain externs).
 
 **The closure list** (what writing this compiler in Heroes requires): `record` · `variant` +
-exhaustive `match` · `[T]` · `{K: V}` (insertion order, panel 006) · `str` · `int` ·
+exhaustive `match` · `[T]` · `{K: V}` (order unspecified, panel 026) · `str` · `int` ·
 `bool` · `()` · `T?` with `?`/`.must()`/`.default()` · `=`/`@` bindings · `@` parameters ·
 `if`/`else if`/`else` · `while cond` / `for x in xs` (including over maps) / `break`/`continue` ·
 `return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
@@ -1143,14 +1143,30 @@ m = { "mario": 30, "anna": 25 }
   off-by-one. This is the one Lua inheritance that would genuinely cost.
 - **Out-of-bounds index aborts** with a message; it does not read arbitrary memory.
 - **Map access returns `V?`**, always. A missing key cannot pass unnoticed.
-- `has(m, k) -> bool` exists. (Its absence forced a sentinel-value hack in an example program.)
-- **Map iteration follows insertion order (panel 006, decided 2026-08-03).** Overwriting an
-  existing key keeps its position. Determinism is a bootstrap-fixpoint requirement; insertion
-  order is also the order models assume when they fail to re-read the spec (the Python-3.7/ES2015
-  prior — Go's randomization condemns *unspecified* order, not guaranteed order). The hash seed
-  is fixed and, with insertion-order iteration, unobservable. Port trap, recorded: the Rust
-  bootstrap iterates `BTreeMap` (sorted) — every ordering-sensitive map walk in the Rust source
-  is marked `// ORDER:` at the write site and becomes an explicit `sort` in the Heroes port, or
+- `has(m, k)` is **struck** (panel 026, −17 measured): map access returns `V?` always, so
+  `has(m, k)` and `!m[k].is_err()` are two spellings of one predicate. The parenthetical that
+  used to justify it — "its absence forced a sentinel-value hack" — was retired by the bullet
+  above it, which is the shape of a reason outliving the thing it argued against.
+- **The order of `keys(m)` is unspecified; a program that needs an order sorts** (panel 026,
+  replacing panel 006's insertion-order guarantee of 2026-08-03). The guarantee is not
+  weakened, it is **withdrawn as false**: `HeroMapHeader` has no order field, so arrival is
+  **not stored** and no iteration strategy can recover it — and `cap` derives from a literal's
+  duplicate-inclusive pair count, so two `==`-equal maps written differently iterate
+  differently (measured: `{"a":1,"b":2,"c":3}` iterates `b a c` at cap 8, and the same map with
+  a duplicated first key iterates `b c a` at cap 16). "Iteration order is a function of the
+  contents" was false as implemented from the day the map shipped.
+  Panel 006's argument for guaranteeing it was sound and is answered rather than overruled: it
+  feared *unspecified* order because a model's silent default is insertion order (the
+  Python-3.7/ES2015 prior) and Go's randomization is the recorded disaster. That hazard needs a
+  reader who iterates a map **directly**. There is no such form: iteration is `keys(m) -> [K]`
+  composed with the `for` and `sort` that already exist (CLAUDE.md §10 — nothing, when two
+  invocations compose to it), so the only order a program can rely on is one it sorted. The
+  fixed seed stays, because determinism *across runs* is still a fixpoint requirement.
+  Port note, and it now cuts the other way: the Rust bootstrap iterates a map in exactly one
+  place (`types/holes.rs`) and its own comment says it needs **sorted** order — which insertion
+  order would not have given it. Every ordering-sensitive walk is still marked `// ORDER:` at
+  the write site, and there are **zero** such marks in the tree today, so nothing exercised the
+  guarantee that has just been withdrawn. It becomes an explicit `sort` in the Heroes port, or
   the M8 fixpoint diff breaks.
 - Multi-line literals separate by **newline**, not comma. Single-line literals use commas. The
   canonical formatter picks based on length, so the model never chooses.

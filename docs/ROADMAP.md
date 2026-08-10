@@ -316,8 +316,10 @@ hand-desugar three constructs, against the IR text.)
   the runtime — so **every `T?` is reference-counted whatever `T` is**, `int?` included,
   because its error side is two `str`s. One generated option struct per distinct `T?`,
   named by index because `int?` and `[int]?` sanitise to the same identifier. The map is
-  open addressing over three parallel regions with a **fixed seed** (panel 006:
-  iteration order must be a function of the contents, or the fixpoint never closes) and
+  open addressing over three parallel regions with a **fixed seed** (determinism across runs
+  is a fixpoint requirement — but "iteration order is a function of the contents" was **false
+  as implemented**, corrected by panel 026: arrival is not stored and `cap` depends on a
+  literal's duplicate count) and
   **order-independent `==`** (spec line 58). `m[k]` yields a `V?`; the runtime returns an
   address or NULL because it cannot build an option struct generated per payload type.
   `HERO_RUNTIME_ABI` 5. **The gate now refuses no type at all.**
