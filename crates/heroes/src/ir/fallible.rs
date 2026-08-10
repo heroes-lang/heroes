@@ -72,8 +72,14 @@ pub(super) fn operation(
             branch_on_ok(b, checked, subject, good, bad, span);
 
             b.switch_to(bad);
-            let none = b.args(&[]);
-            b.emit_void(Op::Abort { reason: Abort::Must, args: none }, b.unit_ty(), span);
+            // **The failure travels with the abort.** Without it the panic can only say
+            // that a `.must()` failed, which is the one thing the reader already knows;
+            // with it, it says the `code` and `msg` the author wrote (§4.6). The read
+            // happens *inside* the abort block, so nothing counted crosses a block edge
+            // and `asserts.rs`'s synthetic-slot repair is not needed here.
+            let failure = payload(b, subject, 1, checked.types.failure(), span);
+            let carried = b.args(&[super::Arg::Value(failure)]);
+            b.emit_void(Op::Abort { reason: Abort::Must, args: carried }, b.unit_ty(), span);
             b.terminate(Term::Unreachable);
 
             b.switch_to(good);

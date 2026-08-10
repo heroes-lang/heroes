@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 5
+#define HERO_RUNTIME_ABI 6
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -131,6 +131,11 @@ uint64_t hero_failure_hash(const void *elem);
  * allocates nothing — which matters because a miss is the common case in a
  * `.default(v)` chain. */
 HeroFailure hero_failure_missing_key(void);
+
+/* `.must()` on an error (§4.6). Takes the failure, because the useful half of the
+ * message is the `code` and `msg` the author wrote — a panic saying only that a
+ * `.must()` failed tells the reader the one thing they already know. */
+_Noreturn void hero_panic_must(HeroFailure f);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *

@@ -1,0 +1,25 @@
+# `.must()`: extract or abort (§4.6), and the abort carries the failure.
+#
+# The whole point of this step is the second half. `abort must` was lowered with an
+# EMPTY argument list, so the only message available was "a `.must()` failed" — which
+# is the one thing the reader already knows. The failure now travels with the abort, so
+# the panic names the `code` and `msg` the author wrote.
+#
+# The read happens *inside* the abort block, so nothing counted crosses a block edge and
+# `asserts.rs`'s synthetic-slot repair is not needed here — the shape panel 021 had to
+# fix for `assert` does not recur for `must`.
+#
+# The `4` before the abort proves two things at once: `.must()` on an ok extracts, and
+# `hero_panic_must` flushes stdout before writing to stderr. Without the flush the
+# ordering of the two streams is undefined and this golden would be flaky.
+#
+# `# UNVERIFIED — pending debrief` (adversarial case 1 of 5 for M6).
+
+function half(n: int) -> int?
+    if n % 2 == 1
+        return fail("odd", "not divisible by two")
+    return ok(n / 2)
+
+function main()
+    print(half(8).must())
+    print(half(7).must())

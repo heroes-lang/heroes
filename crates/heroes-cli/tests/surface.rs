@@ -299,10 +299,12 @@ fn build_honours_the_exit_code_contract() {
     assert_eq!(code(&heroes(&["build", "examples/gallery/00-first.hero"])), 0);
     assert_eq!(code(&heroes(&["build", "tests/golden/check/shadowing.hero"])), 1);
     // A correct program the backend cannot emit yet is **1**, not 2: the tool
-    // worked, and no edit to the file will help. This named `01-points.hero` until
-    // M5c step 3 made records emit, which is the assertion working rather than
-    // breaking — a row dies per step, and the case has to follow it.
-    assert_eq!(code(&heroes(&["build", "examples/gallery/10-maps.hero"])), 1);
+    // worked, and no edit to the file will help. This has now named three different
+    // files — `01-points.hero` until records emitted, `10-maps.hero` until `.must()`
+    // did — which is the assertion working rather than breaking: a row dies per step
+    // and the case follows it. `06-generics.hero` is the one left whose refusal is a
+    // capability rather than a hole.
+    assert_eq!(code(&heroes(&["build", "examples/gallery/06-generics.hero"])), 1);
     assert_eq!(code(&heroes(&["build", "no/such/file.hero"])), 2);
     assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/gallery/00-first.hero"])), 2);
 }

@@ -1,7 +1,0 @@
-unsupported[fallible]: `.must()` is not emitted yet
-  at tests/golden/unsupported/must-aborts.hero:18:11
-     |
-  18 |     print(half(8).must())     #~ fallible
-     |           ^^^^^^^^^^^^^^
-  note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `has`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet

@@ -286,15 +286,22 @@ fn a_fallible_value_is_emitted_as_a_tagged_union_by_value() {
     assert!(out.c.contains("hero_failure_release"), "{}", out.c);
 }
 
-/// `.must()` is not the representation: it is an `Op::Abort`, and it keeps its own row
-/// until the step that lands the aborting operators.
+/// `.must()` emits from M6 step 1, and the row that mattered is the ARGUMENT: the
+/// failure travels with the abort, so the panic names the code and msg the author wrote
+/// rather than only that a `.must()` failed.
 #[test]
-fn must_is_still_refused_while_the_representation_is_not() {
-    let (code, _) = refusal(
+fn must_carries_its_failure_into_the_abort() {
+    let out = super::emitted(
         "function half(n: int) -> int?\n    return ok(n / 2)\n\nfunction main()\n    print(half(4).must())\n",
     );
-    assert_eq!(code, "fallible");
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("hero_panic_must("), "{}", out.c);
+    // Not a bare call: something is passed, and it is the failure read in the abort
+    // block itself — so nothing counted crosses a block edge.
+    assert!(!out.c.contains("hero_panic_must();"), "the failure was dropped:\n{}", out.c);
+    assert!(out.c.contains(".as.err"), "{}", out.c);
 }
+
 
 #[test]
 fn a_generic_function_is_refused() {

@@ -782,3 +782,13 @@ static uint64_t hero_hash_map(const void *elem) {
 
 const HeroDesc hero_desc_map = {sizeof(HeroMapHeader *), hero_copy_map, hero_drop_map,
                                 hero_eq_map, hero_hash_map};
+
+_Noreturn void hero_panic_must(HeroFailure f) {
+    /* Built by hand rather than through `hero_panic`, so the two strings print
+     * without needing a NUL-terminated join: a `HeroStr` always has its NUL, but
+     * `code` and `msg` come from the program and one `fprintf` is one write. */
+    fflush(stdout);
+    fprintf(stderr, "panic: .must() on an error: %s: %s\n",
+            hero_str_cstr(f.code), hero_str_cstr(f.msg));
+    abort();
+}

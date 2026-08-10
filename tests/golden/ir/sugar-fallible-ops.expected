@@ -2,10 +2,10 @@ function widen(v: int?) -> int
     slots  $f0: int? · $f1: int? · $r0: int · $f2: int?
     bb0  entry
         $t1: int? = load v
-        $t22: int? = load $f0
+        $t24: int? = load $f0
         incref $t1
         store $f0 <- $t1
-        decref $t22
+        decref $t24
         $t2: int? = load $f0
         $t3: int = tag $t2
         $t4: int = const 1
@@ -13,10 +13,10 @@ function widen(v: int?) -> int
         branch $t5 -> bb2 else bb3
     bb1  if: join    preds bb3
         $t15: int? = load v
-        $t23: int? = load $f2
+        $t25: int? = load $f2
         incref $t15
         store $f2 <- $t15
-        decref $t23
+        decref $t25
         $t16: int? = load $f2
         $t17: int = tag $t16
         $t18: int = const 0
@@ -24,10 +24,10 @@ function widen(v: int?) -> int
         branch $t19 -> bb7 else bb8
     bb2  if: then    preds bb0
         $t6: int? = load v
-        $t24: int? = load $f1
+        $t26: int? = load $f1
         incref $t6
         store $f1 <- $t6
-        decref $t24
+        decref $t26
         $t7: int? = load $f1
         $t8: int = tag $t7
         $t9: int = const 0
@@ -46,23 +46,25 @@ function widen(v: int?) -> int
         jump bb6
     bb6  default: join    preds bb4, bb5
         $t14: int = load $r0
-        $t25: int? = load $f0
-        decref $t25
-        $t26: int? = load $f1
-        decref $t26
-        $t27: int? = load $f2
+        $t27: int? = load $f0
         decref $t27
+        $t28: int? = load $f1
+        decref $t28
+        $t29: int? = load $f2
+        decref $t29
         return $t14
     bb7  must: ok    preds bb1
-        $t20: int? = load $f2
-        $t21: int = payload $t20 .ok
-        $t28: int? = load $f0
-        decref $t28
-        $t29: int? = load $f1
-        decref $t29
-        $t30: int? = load $f2
+        $t22: int? = load $f2
+        $t23: int = payload $t22 .ok
+        $t30: int? = load $f0
         decref $t30
-        return $t21
+        $t31: int? = load $f1
+        decref $t31
+        $t32: int? = load $f2
+        decref $t32
+        return $t23
     bb8  must: abort    preds bb1
-        abort must
+        $t20: int? = load $f2
+        $t21: the error (`code`, `msg`) = payload $t20 .err
+        abort must($t21)
         unreachable

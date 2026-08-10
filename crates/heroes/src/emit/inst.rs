@@ -273,6 +273,18 @@ pub(super) fn emit(
                 }
             }
         }
+        // `.must()` on an error. The failure travels with the abort (`ir/fallible.rs`),
+        // so the panic names the `code` and `msg` the author wrote rather than only that
+        // a `.must()` failed. `assert` keeps its own row until `heroes test` runs one.
+        Op::Abort { reason: crate::ir::Abort::Must, args } => {
+            w.at_generated();
+            match function.args_of(args).first() {
+                Some(Arg::Value(value)) => {
+                    w.line(&format!("    hero_panic_must({});", mangle::value(value.0)))
+                }
+                _ => w.line("    hero_unreachable(); /* a must with no failure */"),
+            }
+        }
         Op::Tag(base) => {
             if let Some(name) = target {
                 let text = match checked.types.get(function.value_type(base)) {
@@ -311,8 +323,8 @@ pub(super) fn emit(
             }
         }
         Op::Cast { .. }
-        | Op::FuncRef(_)
         | Op::Abort { .. }
+        | Op::FuncRef(_)
         | Op::Hole
         | Op::Missing => {
             w.line("    hero_unreachable(); /* the gate refuses this form */");

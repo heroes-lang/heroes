@@ -218,7 +218,15 @@ fn check_op(
         }
         Op::Abort { reason, .. } => {
             let (code, what) = match reason {
-                Abort::Must => ("fallible", "`.must()`".to_string()),
+                // `.must()` emits from M6 step 1.
+                Abort::Must => return,
+                // **This row cannot fire today, and that is worth writing down rather
+                // than testing.** An `assert` lives inside a `test` (§4.18), ordinary
+                // builds skip `FnKind::Test` entirely (above), and `heroes test` does not
+                // exist yet — so no program reaches here. It is the same shape as
+                // `cow_check`, struck at M5b for having zero call sites, and it is kept
+                // only because the step that lands `heroes test` needs the row already
+                // written. If that step slips, this row should be struck, not defended.
                 Abort::Assert => ("assert", "`assert`".to_string()),
             };
             note(found, code, what, span);
