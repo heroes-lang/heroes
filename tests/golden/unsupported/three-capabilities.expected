@@ -1,31 +1,23 @@
-unsupported[record]: a record or a variant is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:13:5
-     |
-  13 |     p = P(x: 1)
-     |     ^^^^^^^^^^^
-  note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
-
 unsupported[array]: an array is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:16:5
+  at tests/golden/unsupported/three-capabilities.hero:17:5
      |
-  16 |     xs = [1, 2]
+  17 |     xs = [1, 2]
      |     ^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
 
 unsupported[map]: a map is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:19:5
+  at tests/golden/unsupported/three-capabilities.hero:20:5
      |
-  19 |     m = {"a": 1}
+  20 |     m = {"a": 1}
      |     ^^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
 
 unsupported[builtin]: the built-in `has` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:20:11
+  at tests/golden/unsupported/three-capabilities.hero:21:11
      |
-  20 |     print(m.has("a"))     #~ builtin
+  21 |     print(m.has("a"))     #~ builtin
      |           ^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, functions, and the built-ins `len`, `print`, `slice`, `to_str` — no other built-in is emitted yet

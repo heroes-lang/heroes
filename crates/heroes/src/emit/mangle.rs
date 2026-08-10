@@ -49,6 +49,23 @@ pub fn function(module: &str, name: &str) -> String {
     format!("h_{module}_{name}")
 }
 
+/// A `record` or `variant` type, as a C struct tag and typedef name.
+///
+/// Same scheme as a function, and deliberately in the same namespace: C has one
+/// ordinary identifier namespace for both, so `record print` and `function print`
+/// would collide — and they collide *here*, at compile time, rather than at link
+/// time. Heroes forbids the collision itself (a name is declared once), so this is
+/// belt to that braces.
+pub fn ty(module: &str, name: &str) -> String {
+    format!("h_{module}_{name}")
+}
+
+/// A field, as a C struct member. Mangled too (CLAUDE.md §7 names fields
+/// explicitly), because a field may be spelled `default` or `register`.
+pub fn field(name: &str) -> String {
+    format!("f_{name}")
+}
+
 /// A slot: a parameter, a local, a mutable cell, or one lowering invented.
 ///
 /// The index is in the name because two slots may share a spelling — a synthetic

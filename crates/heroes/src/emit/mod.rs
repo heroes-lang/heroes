@@ -16,6 +16,8 @@
 //! | `decls.rs`  | prototypes, the prologue, the epilogue, the `main` shim |
 //! | `inst.rs`   | one instruction |
 //! | `term.rs`   | how a block ends |
+//! | `types.rs`  | aggregates as C, and the per-type functions C cannot write |
+//! | `aggregate.rs` | one record: construction, a field, a place with a path |
 //!
 //! **What the emitter refuses, it refuses as a diagnostic** (`Kind::Unsupported`,
 //! exit 1) rather than as a second channel. GCC's `sorry()` is the thirty-year
@@ -35,12 +37,14 @@ use crate::source::Source;
 use crate::syntax::Ast;
 use crate::types::Checked;
 
+mod aggregate;
 mod ctype;
 mod decls;
 mod gate;
 mod inst;
 mod mangle;
 mod term;
+mod types;
 mod writer;
 
 #[cfg(test)]
@@ -85,14 +89,21 @@ pub fn emit(
         return Emitted { c: String::new(), diagnostics: refused };
     }
     let module = mangle::module_of(&src.name);
+    let names = ctype::Names::new(&module, ast, src);
     let mut w = writer::Writer::new(&src.name, &module);
     decls::prelude(&mut w, program, src);
+    // Types before anything that can mention one: the typedefs in containment order
+    // (`Checked::type_order`, filtered — panel 023 R3), then every per-type prototype,
+    // then the ordinary function prototypes.
+    types::definitions(&mut w, ast, checked, &names, src);
+    types::prototypes(&mut w, ast, checked, &names, src);
     for function in &program.functions {
-        decls::prototype(&mut w, function, ast, checked, &module);
+        decls::prototype(&mut w, function, ast, checked, &names, &module);
     }
     for function in &program.functions {
-        decls::definition(&mut w, program, function, ast, checked, src, &module);
+        decls::definition(&mut w, program, function, ast, checked, &names, src, &module);
     }
+    types::bodies(&mut w, ast, checked, &names, src);
     if let Some(index) = entry_point(program) {
         decls::shim(&mut w, &program.functions[index], &module);
     }

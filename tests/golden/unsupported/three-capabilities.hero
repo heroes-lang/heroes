@@ -1,15 +1,16 @@
 # Three unsupported capabilities, three diagnostics, sorted by span: a message
 # that carries the list is one round trip, and three invocations is three.
 #
-# Rewritten at M5b: the original used `str` and `f64`, which now emit. That the case
-# had to change is the gate working — a row dies per milestone.
+# Rewritten twice, and each rewrite is the gate working: at M5b the original's `str`
+# and `f64` started emitting, and at M5c step 3 the `record` did. The `record P` stays
+# in the file deliberately — it now emits, so it proves the three refusals below are
+# about the three forms named and not about the program having an aggregate in it.
 # Bulk regression case.
 
 record P
     x: int
 
 function main()
-    #~v record
     p = P(x: 1)
     print(p.x)
     #~v array

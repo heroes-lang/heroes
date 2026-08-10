@@ -15,10 +15,45 @@
 //! a C spelling but no runtime support yet is the gate's business, and keeping the
 //! spellings here means M5b and M5c delete gate rows instead of adding cases.
 
+use crate::source::Source;
+use crate::syntax::{Ast, DeclKind};
 use crate::types::{Checked, Ty, TyId};
 
+use super::mangle;
+
+/// The C typedef name of every declared aggregate, by declaration index.
+///
+/// A table rather than a lookup on demand, because the name needs the *module* and
+/// the source text, and `Checked` carries neither: threading both into `c_type`
+/// would put four parameters on the emitter's smallest function. Built once per
+/// translation unit, where the module is decided.
+pub(super) struct Names {
+    aggregates: std::collections::BTreeMap<u32, String>,
+}
+
+impl Names {
+    pub(super) fn new(module: &str, ast: &Ast, src: &Source) -> Names {
+        let mut aggregates = std::collections::BTreeMap::new();
+        for (index, decl) in ast.decls.iter().enumerate() {
+            if matches!(decl.kind, DeclKind::Record { .. } | DeclKind::Variant { .. }) {
+                aggregates.insert(index as u32, mangle::ty(module, src.slice(decl.name)));
+            }
+        }
+        Names { aggregates }
+    }
+
+    /// The C name of an aggregate. A `TyId` naming a declaration that is not one is a
+    /// compiler bug: the checker would have had to intern `Ty::Named` for a function.
+    pub(super) fn of(&self, decl: u32) -> &str {
+        self.aggregates
+            .get(&decl)
+            .map(|name| name.as_str())
+            .expect("a Ty::Named always names a record or a variant")
+    }
+}
+
 /// The C type, or `None` for `()`, which has no declaration.
-pub(super) fn c_type(checked: &Checked, ty: TyId) -> Option<String> {
+pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<String> {
     match checked.types.get(ty) {
         Ty::Unit => None,
         Ty::Int => Some("int64_t".to_string()),
@@ -36,16 +71,22 @@ pub(super) fn c_type(checked: &Checked, ty: TyId) -> Option<String> {
         // this backend refuses until M7.
         Ty::Ptr => Some("void *".to_string()),
         Ty::Cstr => Some("const char *".to_string()),
-        // Everything else is a container, a descriptor or a `T?`: M5b and M5c own
-        // the representation, and `gate.rs` refuses them until then.
+        // A record is a C struct BY VALUE and a variant a tagged union by value
+        // (§4.10, §4.20, panel 022 confirming spike 04). `Ty::Case(d, c)` is the same
+        // C type as `Ty::Named(d)`: a case is not a type of its own at runtime, it is
+        // the whole variant with a known tag, and the checker's narrower view of it
+        // stops mattering once the tag is a field.
+        Ty::Named(decl) | Ty::Case(decl, _) => Some(names.of(decl).to_string()),
+        // Containers and `T?`: later steps of M5c own the representation, and
+        // `gate.rs` refuses them until then.
         _ => Some("HeroValue".to_string()),
     }
 }
 
 /// The type a *function* returns, in C. Unit is `void` — the one place the absence
 /// of a type has a spelling.
-pub(super) fn c_result(checked: &Checked, ty: TyId) -> String {
-    match c_type(checked, ty) {
+pub(super) fn c_result(names: &Names, checked: &Checked, ty: TyId) -> String {
+    match c_type(names, checked, ty) {
         Some(name) => name,
         None => "void".to_string(),
     }

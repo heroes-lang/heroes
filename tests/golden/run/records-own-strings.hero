@@ -1,0 +1,43 @@
+# A record that OWNS a reference, which is the case with a runtime obligation: the
+# `str` inside it is one heap block, and every copy of the record is another owner.
+#
+# `hero_runtime_check_leaks()` at exit is the assertion. It fires on a missing decref
+# and ASan fires on an extra one, so this file passes only if the count is exact.
+#
+# THE DEFECT THIS CASE IS NAMED AFTER (2026-08-10, M5c step 3): `both = Pair(one: p,
+# two: q)` printed every line correctly and then double-freed at exit. An aggregate
+# constructor captures its arguments BY VALUE, including the `str` handle inside them,
+# so the new value is a second owner — and nothing in the ownership pass added that
+# reference. ASan named `hero_str_decref` with the magic word already clobbered. The
+# fix is rule 6 in `own.rs`, and `ok(x)` is deliberately not covered by it, because
+# wrapping consumes its argument instead of sharing it.
+# `# UNVERIFIED — pending debrief` (adversarial case 2 of 5 for M5c).
+
+record Person
+    name: str
+    age: int
+
+record Pair
+    one: Person
+    two: Person
+
+function greet(p: Person) -> str
+    return "hello, " + p.name
+
+function main()
+    # Built from a concatenation, so the block is heap-allocated rather than static:
+    # a literal has a negative refcount and would hide every counting mistake.
+    p = Person(name: "ada" + "!", age: 36)
+    print(greet(p))
+    q: Person @ p
+    print(q.name)
+    q @ Person(name: "grace", age: 45)
+    print(q.name, p.name)
+    both = Pair(one: p, two: q)
+    print(both.one.name, both.two.name)
+    print(both == Pair(one: p, two: q))
+    print(both.one == both.two)
+    # The same record assigned over itself: the incref must precede the decref, or
+    # the block is freed and then retained.
+    q @ q
+    print(q.name)

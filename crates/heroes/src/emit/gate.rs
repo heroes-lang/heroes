@@ -58,8 +58,8 @@ pub const EMITTED_BUILTINS: [&str; 4] = ["len", "print", "slice", "to_str"];
 /// over built-ins.
 pub fn subset() -> String {
     format!(
-        "the backend emits `int`, `bool`, `f64`, `str`, `if`, `while`, functions, \
-         and the built-ins {} — no other built-in is emitted yet",
+        "the backend emits `int`, `bool`, `f64`, `str`, `record`, `if`, `while`, \
+         functions, and the built-ins {} — no other built-in is emitted yet",
         EMITTED_BUILTINS
             .iter()
             .map(|name| format!("`{name}`"))
@@ -134,6 +134,12 @@ fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span:
     }
 }
 
+/// Whether this declaration is a `variant`. The gate asks because a record and a
+/// variant are one `Ty::Named` and, for this step, two different answers.
+fn is_variant(ast: &Ast, decl: u32) -> bool {
+    matches!(ast.decls[decl as usize].kind, crate::syntax::DeclKind::Variant { .. })
+}
+
 /// A type the runtime has no representation for yet. One row per §4.3 table entry,
 /// so M5b and M5c delete rows rather than discovering cases.
 fn check_type(
@@ -152,7 +158,17 @@ fn check_type(
         // M5c — the descriptor pass, whose ABI spike 04 froze.
         Ty::Array(_) => ("array", "an array".to_string()),
         Ty::Map(_, _) => ("map", "a map".to_string()),
-        Ty::Named(_) | Ty::Case(_, _) => ("record", "a record or a variant".to_string()),
+        // A `record` is emitted; a `variant` is not yet. They share `Ty::Named`, so
+        // the row splits on the *declaration* rather than on the type — which is the
+        // same reason `Op::Len` splits on its operand: one op, two capabilities.
+        Ty::Named(decl) => {
+            if is_variant(ast, decl) {
+                ("variant", "a variant".to_string())
+            } else {
+                return;
+            }
+        }
+        Ty::Case(_, _) => ("variant", "a variant".to_string()),
         Ty::Fallible(_) | Ty::Failure => ("fallible", "a fallible value (`T?`)".to_string()),
         // M6.
         Ty::Func { .. } => ("function_value", "a function used as a value".to_string()),
@@ -178,31 +194,22 @@ fn check_op(
     span: Span,
 ) {
     match op {
-        // A place with a path is a field or an element, and both are M5c's.
-        Op::Load(place) | Op::Store { place, .. } => {
-            if place.path.len > 0 {
-                note(found, "record", "a record or a variant".to_string(), span);
-            }
-        }
+        // A place with a path is a field or an element. A field of a record is
+        // emitted now; an element is an array, and `check_type` has already refused
+        // the array itself, so nothing more is owed here.
+        Op::Load(_) | Op::Store { .. } => {}
         // `str`→`cstr` exists for one boundary and nothing consumes it before M7:
         // the row is keyed to the FFI rather than to `str`, which is why landing
         // `str` did not make it emittable.
         Op::Cast { .. } => note(found, "extern", "an `extern` function".to_string(), span),
         Op::Call { callee, args, .. } => {
             callee_note(found, ast, src, callee, span);
-            for arg in function.args_of(args) {
-                if let crate::ir::Arg::InOut(place) = arg {
-                    if place.path.len > 0 {
-                        note(found, "record", "a record or a variant".to_string(), span);
-                    }
-                }
-            }
+            let _ = args;
         }
         Op::Construct { shape, .. } => {
             let (code, what) = match shape {
-                Shape::Record(_) | Shape::Case(_, _) => {
-                    ("record", "a record or a variant".to_string())
-                }
+                Shape::Record(_) => return,
+                Shape::Case(_, _) => ("variant", "a variant".to_string()),
                 Shape::Array => ("array", "an array".to_string()),
                 Shape::Map => ("map", "a map".to_string()),
                 Shape::Ok | Shape::Fail | Shape::Err => {
@@ -217,10 +224,15 @@ fn check_op(
         // base is, or the message says "a record" about a program containing neither.
         Op::Field { base, .. } | Op::Tag(base) | Op::Payload { base, .. } => {
             let ty = function.value_type(base);
-            if matches!(checked.types.get(ty), Ty::Fallible(_) | Ty::Failure) {
-                note(found, "fallible", "a fallible value (`T?`)".to_string(), span);
-            } else {
-                note(found, "record", "a record or a variant".to_string(), span);
+            match checked.types.get(ty) {
+                Ty::Fallible(_) | Ty::Failure => {
+                    note(found, "fallible", "a fallible value (`T?`)".to_string(), span)
+                }
+                // A field read on a record is emitted. A tag or a payload never has
+                // one as its base — those are a variant's, and `check_type` refused
+                // the variant already.
+                Ty::Named(decl) if !is_variant(ast, decl) && matches!(op, Op::Field { .. }) => {}
+                _ => note(found, "variant", "a variant".to_string(), span),
             }
         }
         // `s[i]` and `xs[i]` are the same op on different types (`ir/inst.rs` says

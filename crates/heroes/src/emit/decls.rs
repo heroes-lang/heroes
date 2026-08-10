@@ -28,7 +28,7 @@ use crate::source::Source;
 use crate::syntax::Ast;
 use crate::types::Checked;
 
-use super::ctype::{c_result, c_type, is_unit};
+use super::ctype::{c_result, c_type, is_unit, Names};
 use super::mangle;
 use super::writer::Writer;
 use super::{inst, term};
@@ -54,16 +54,50 @@ pub(super) fn prelude(w: &mut Writer, program: &Program, src: &Source) {
         "_Static_assert(HERO_RUNTIME_ABI == 2, \"heroes_runtime.h is from another compiler\");",
     );
     w.line("");
-    // Every decoded string literal, as a static block clang lays out: refcount −1
-    // means "never freed", so a literal allocates nothing and decrefing one is a
-    // no-op. The escapes were applied once, at lowering (panel 008), so this is the
-    // one place they are re-escaped for C.
+    // Every decoded string literal **an emitted function actually reads**, as a
+    // static block clang lays out: refcount −1 means "never freed", so a literal
+    // allocates nothing and decrefing one is a no-op. The escapes were applied once,
+    // at lowering (panel 008), so this is the one place they are re-escaped for C.
+    //
+    // Reachability, not the whole table, and it is not tidiness: `program.strings`
+    // holds every literal in the *file*, including the ones only a `test` block or an
+    // `assert` message mentions — and §4.18 says ordinary builds ignore those. Emitted
+    // anyway, they are `-Wunused-const-variable`, which is the same warning panel 022
+    // named for an unused descriptor. Eight of them on one gallery program, on every
+    // build, is how a real diagnostic gets lost in noise.
+    //
+    // The index is kept: `hero_str_7` stays `hero_str_7` whether or not 0..6 are
+    // emitted, so the name is a function of the literal and not of what surrounds it —
+    // which is what keeps `--emit-c` stable when a `test` block is added to a file.
+    let live = live_strings(program);
     for (index, text) in program.strings.iter().enumerate() {
+        if !live.contains(&(index as u32)) {
+            continue;
+        }
         w.line(&format!("HERO_STR_STATIC(hero_str_{index}, \"{}\");", escape_c(text)));
     }
-    if !program.strings.is_empty() {
+    if !live.is_empty() {
         w.line("");
     }
+}
+
+/// Which string literals an emitted function reads. A walk, because the answer must
+/// come from the instructions rather than from a count kept in step with them.
+fn live_strings(program: &Program) -> std::collections::BTreeSet<u32> {
+    let mut live = std::collections::BTreeSet::new();
+    for function in &program.functions {
+        if !emitted(function) {
+            continue;
+        }
+        for block in &function.blocks {
+            for inst in &block.insts {
+                if let crate::ir::Op::Const(crate::ir::Const::Str(index)) = inst.op {
+                    live.insert(index.0);
+                }
+            }
+        }
+    }
+    live
 }
 
 /// A decoded Heroes string, as a C string literal. Octal escapes for everything
@@ -96,6 +130,7 @@ pub(super) fn prototype(
     function: &Function,
     ast: &Ast,
     checked: &Checked,
+    names: &Names,
     module: &str,
 ) {
     if !emitted(function) {
@@ -103,7 +138,7 @@ pub(super) fn prototype(
     }
     let _ = ast;
     w.at_generated();
-    w.line(&format!("{};", signature(function, checked, module)));
+    w.line(&format!("{};", signature(function, checked, names, module)));
 }
 
 /// `int64_t h_mod_dist(int64_t h0_a, int64_t *ph1_b)`.
@@ -111,21 +146,21 @@ pub(super) fn prototype(
 /// A mutable parameter is a **pointer** parameter — §4.8's copy-in/copy-out has no
 /// other shape in C, because `Op::CopyOut` writes the *caller's* place and the
 /// callee cannot otherwise reach it.
-fn signature(function: &Function, checked: &Checked, module: &str) -> String {
+fn signature(function: &Function, checked: &Checked, names: &Names, module: &str) -> String {
     let name = mangle::function(module, &function.name);
-    let result = c_result(checked, function.result);
+    let result = c_result(names, checked, function.result);
     let mut params: Vec<String> = Vec::new();
     for slot in &function.params {
-        params.push(param(function, checked, *slot));
+        params.push(param(function, checked, names, *slot));
     }
     let list = if params.is_empty() { "void".to_string() } else { params.join(", ") };
     format!("{result} {name}({list})")
 }
 
-fn param(function: &Function, checked: &Checked, slot: SlotId) -> String {
+fn param(function: &Function, checked: &Checked, names: &Names, slot: SlotId) -> String {
     let index = slot.0;
     let declared = &function.slots[index as usize];
-    let ty = c_type(checked, declared.ty).unwrap_or_else(|| "void".to_string());
+    let ty = c_type(names, checked, declared.ty).unwrap_or_else(|| "void".to_string());
     if matches!(declared.kind, SlotKind::Param { mutable: true }) {
         format!("{ty} *{}", mangle::out_param(index, &declared.name))
     } else {
@@ -139,6 +174,7 @@ pub(super) fn definition(
     function: &Function,
     ast: &Ast,
     checked: &Checked,
+    names: &Names,
     src: &Source,
     module: &str,
 ) {
@@ -150,10 +186,11 @@ pub(super) fn definition(
     // parameter type has to land on the line that wrote it.
     let (line, _) = src.line_col(function.span.start);
     w.at_source(line);
-    w.line(&format!("{} {{", signature(function, checked, module)));
+    w.line(&format!("{} {{", signature(function, checked, names, module)));
     w.at_generated();
+    let types = super::aggregate::Types { ast, checked, names, src };
     let live = reachable(function);
-    prologue(w, function, checked, &live);
+    prologue(w, function, checked, names, &live);
     w.line(&format!("    goto {};", mangle::block(0)));
     for (index, block) in function.blocks.iter().enumerate() {
         if !live[index] {
@@ -161,7 +198,7 @@ pub(super) fn definition(
         }
         w.line(&format!("{}:", mangle::block(index)));
         for one in &block.insts {
-            inst::emit(w, program, function, ast, checked, src, one, module);
+            inst::emit(w, program, &types, function, one, module);
         }
         term::emit(w, function, checked, &block.term);
     }
@@ -202,7 +239,7 @@ fn reachable(function: &Function) -> Vec<bool> {
     live
 }
 
-fn prologue(w: &mut Writer, function: &Function, checked: &Checked, live: &[bool]) {
+fn prologue(w: &mut Writer, function: &Function, checked: &Checked, names: &Names, live: &[bool]) {
     for (index, slot) in function.slots.iter().enumerate() {
         // A parameter is already declared by the signature. A mutable one is
         // declared here instead: the pointer is the parameter, and the slot is the
@@ -212,7 +249,7 @@ fn prologue(w: &mut Writer, function: &Function, checked: &Checked, live: &[bool
         if is_param && !mutable {
             continue;
         }
-        if let Some(ty) = c_type(checked, slot.ty) {
+        if let Some(ty) = c_type(names, checked, slot.ty) {
             // **The one exception to "nothing is initialised here"** (panel 021 R3).
             // A refcounted slot is zeroed so that the exit sweep is unconditional:
             // `decref` of the null non-value is a no-op, and the alternative is a
@@ -237,7 +274,7 @@ fn prologue(w: &mut Writer, function: &Function, checked: &Checked, live: &[bool
         if is_unit(checked, *ty) || !assigned(function, live, index as u32) {
             continue;
         }
-        if let Some(name) = c_type(checked, *ty) {
+        if let Some(name) = c_type(names, checked, *ty) {
             let initialiser = if is_refcounted(checked, *ty) { " = {0}" } else { "" };
             w.line(&format!("    {name} {}{initialiser};", mangle::value(index as u32)));
         }

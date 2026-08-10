@@ -170,3 +170,24 @@ fn the_module_prefix_comes_from_the_stem_and_not_from_the_path() {
     };
     assert_eq!(strip(a), strip(b));
 }
+
+/// A literal only a `test` block mentions is **not** emitted.
+///
+/// §4.18 says ordinary builds ignore a `test`, so its `assert` messages are in
+/// `program.strings` and read by nothing. Emitted anyway they are
+/// `-Wunused-const-variable` — eight of them on one gallery program, on every build,
+/// which is how a real diagnostic gets lost. The index is still the literal's own, so
+/// adding a `test` to a file cannot renumber the C.
+#[test]
+fn a_literal_only_a_test_mentions_is_not_emitted() {
+    let out = super::emitted(
+        "function main()\n    print(\"live\")\n\ntest \"t\"\n    assert 1 + 1 == 2\n",
+    );
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("\"live\""), "the reachable literal is missing:\n{}", out.c);
+    assert!(
+        !out.c.contains("1 + 1 == 2"),
+        "an assert message from a skipped `test` reached the C:\n{}",
+        out.c
+    );
+}

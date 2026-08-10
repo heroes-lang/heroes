@@ -73,9 +73,50 @@ fn an_extern_is_still_refused_after_str_landed() {
 }
 
 #[test]
-fn arrays_maps_records_and_variants_are_refused() {
+fn arrays_maps_and_variants_are_refused() {
     assert_eq!(refusal("function main()\n    xs = [1, 2]\n    _ = xs.push(3)\n    print(1)\n").0, "array");
-    assert_eq!(refusal("record P\n    x: int\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n").0, "record");
+    // A `record` is emitted from M5c step 3 and a `variant` is not, so this row split
+    // in two. They share `Ty::Named`, which is why the gate asks the *declaration*.
+    let variant = concat!(
+        "variant V\n",
+        "    a\n",
+        "        n: int\n",
+        "    b\n",
+        "\n",
+        "function size(v: V) -> int\n",
+        "    return match v\n",
+        "        .a x => x.n\n",
+        "        .b   => 0\n",
+        "\n",
+        "function main()\n",
+        "    print(size(.a(n: 1)))\n",
+    );
+    assert_eq!(refusal(variant).0, "variant");
+}
+
+/// The row that retired at this step. Kept as a test rather than deleted, because "a
+/// record is emitted" is the claim, and the only way to state it is to run one.
+#[test]
+fn a_record_is_emitted() {
+    let out = emitted("record P\n    x: int\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n");
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("typedef struct h_scratch_P"), "no typedef:\n{}", out.c);
+    assert!(out.c.contains("h_scratch_P_eq"), "no generated eq:\n{}", out.c);
+    // Uncounted, so it needs no retain at all — and generating one anyway would be a
+    // function nothing calls.
+    assert!(!out.c.contains("h_scratch_P_retain"), "an uncounted record got a retain");
+}
+
+/// And the counted case, which is the one with a runtime obligation.
+#[test]
+fn a_record_holding_a_str_gets_a_retain_and_a_release() {
+    let out = emitted(
+        "record H\n    name: str\n\nfunction main()\n    h = H(name: \"a\")\n    print(h.name)\n",
+    );
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("void h_scratch_H_retain(const h_scratch_H *v)"), "{}", out.c);
+    assert!(out.c.contains("hero_str_incref(v->f_name);"), "{}", out.c);
+    assert!(out.c.contains("hero_str_decref(v->f_name);"), "{}", out.c);
 }
 
 #[test]
@@ -123,10 +164,10 @@ fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
     let out = emitted(
-        "record P\n    x: int\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n",
+        "function main()\n    xs = [1, 2]\n    print(xs.len())\n    m = {\"a\": 1}\n    print(m.has(\"a\"))\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
-    assert!(codes.contains(&"record") && codes.contains(&"map"), "{codes:?}");
+    assert!(codes.contains(&"array") && codes.contains(&"map"), "{codes:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();

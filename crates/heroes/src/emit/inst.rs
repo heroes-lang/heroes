@@ -23,10 +23,9 @@
 
 use crate::ir::{Arg, BinOp, Const, Inst, Op, Place, Program, UnOp};
 use crate::resolve::BUILTINS;
-use crate::source::Source;
-use crate::syntax::Ast;
 use crate::types::{Checked, Ty};
 
+use super::aggregate;
 use super::ctype::is_unit;
 use super::mangle;
 use super::writer::Writer;
@@ -34,14 +33,15 @@ use super::writer::Writer;
 pub(super) fn emit(
     w: &mut Writer,
     program: &Program,
+    types: &aggregate::Types,
     function: &crate::ir::Function,
-    ast: &Ast,
-    checked: &Checked,
-    src: &Source,
     inst: &Inst,
     module: &str,
 ) {
-    let _ = ast;
+    // Unpacked once: the four references travel together everywhere in the backend
+    // (they are what "what is this type called in C" needs), so they arrive as one
+    // bundle and are spread here rather than in every signature.
+    let (checked, src) = (types.checked, types.src);
     let (line, _) = src.line_col(inst.span.start);
     match inst.op {
         // §4.8's second half, and the only instruction that is *about* the calling
@@ -70,30 +70,45 @@ pub(super) fn emit(
         }
         Op::Load(place) => {
             if let Some(name) = target {
-                w.line(&format!("    {name} = {};", read(function, place)));
+                w.line(&format!("    {name} = {};", read(types, function, place)));
             }
         }
         Op::Store { place, value } => {
             if !is_unit(checked, function.value_type(value)) {
                 w.line(&format!(
                     "    {} = {};",
-                    read(function, place),
+                    read(types, function, place),
                     mangle::value(value.0)
                 ));
             }
         }
-        Op::Incref(value) => {
-            // Housekeeping the author did not write, so it points at the generated
-            // file: lldb must not attribute a refcount to a user line.
+        // Housekeeping the author did not write, so it points at the generated file:
+        // lldb must not attribute a refcount to a user line.
+        //
+        // **Dispatched by type**, and the two shapes are different in kind. A `str`
+        // owns one block, so the runtime counts it. An aggregate owns nothing of its
+        // own and *contains* what is counted, so its generated function walks its
+        // fields — which is why this is `retain`/`release` and not `copy`: no bytes
+        // move, the references inside them just become owned.
+        Op::Incref(value) | Op::Decref(value) => {
             w.at_generated();
-            w.line(&format!("    hero_str_incref({});", mangle::value(value.0)));
-        }
-        Op::Decref(value) => {
-            w.at_generated();
-            w.line(&format!("    hero_str_decref({});", mangle::value(value.0)));
+            let keep = matches!(inst.op, Op::Incref(_));
+            let ty = function.value_type(value);
+            let name = mangle::value(value.0);
+            let line = match checked.types.get(ty) {
+                Ty::Str if keep => format!("    hero_str_incref({name});"),
+                Ty::Str => format!("    hero_str_decref({name});"),
+                _ => match aggregate::retain(types, ty, value, keep) {
+                    Some(call) => format!("    {call};"),
+                    None => "    hero_unreachable(); /* the gate refuses this type */".to_string(),
+                },
+            };
+            w.line(&line);
         }
         Op::Unary { op, operand } => unary(w, function, checked, op, operand, target),
-        Op::Binary { op, left, right } => binary(w, function, checked, op, left, right, target),
+        Op::Binary { op, left, right } => {
+            binary(w, types, function, checked, op, left, right, target)
+        }
         Op::Call { callee, args, .. } => {
             let arguments: Vec<String> = function
                 .args_of(args)
@@ -101,7 +116,7 @@ pub(super) fn emit(
                 .map(|arg| match arg {
                     Arg::Value(value) => mangle::value(value.0),
                     // A place, not a value: the callee gets its address (§4.8).
-                    Arg::InOut(place) => format!("&{}", read(function, place)),
+                    Arg::InOut(place) => format!("&{}", read(types, function, place)),
                 })
                 .collect();
             call(w, program, function, checked, callee, args, &arguments, target, module);
@@ -125,9 +140,35 @@ pub(super) fn emit(
         // Every remaining form is refused by `gate.rs` at this milestone. The arm is
         // here rather than in a catch-all so that M5c and M6 are compile errors
         // until they are written, not silent omissions.
+        // `Point(x: 1, y: 2)`. Only a record at this step; the other shapes are
+        // still refused, and each stays a named arm so that landing one is a compile
+        // error here rather than a silent omission.
+        Op::Construct { shape: crate::ir::Shape::Record(decl), args } => {
+            if let Some(name) = target {
+                let arguments: Vec<String> = function
+                    .args_of(args)
+                    .into_iter()
+                    .map(|arg| match arg {
+                        Arg::Value(value) => mangle::value(value.0),
+                        Arg::InOut(place) => format!("&{}", read(types, function, place)),
+                    })
+                    .collect();
+                match aggregate::construct(types, inst.ty, decl, &arguments) {
+                    Some(literal) => w.line(&format!("    {name} = {literal};")),
+                    None => w.line("    hero_unreachable(); /* not a record */"),
+                }
+            }
+        }
+        Op::Field { base, index } => {
+            if let Some(name) = target {
+                match aggregate::read_field(types, function, base, index) {
+                    Some(text) => w.line(&format!("    {name} = {text};")),
+                    None => w.line("    hero_unreachable(); /* the gate refuses this base */"),
+                }
+            }
+        }
         Op::Cast { .. }
         | Op::Construct { .. }
-        | Op::Field { .. }
         | Op::Index { .. }
         | Op::MapGet { .. }
         | Op::Tag(_)
@@ -144,9 +185,8 @@ pub(super) fn emit(
 
 /// A place, as a C lvalue. At M5a a place is its root: a path means a field or an
 /// element, and `gate.rs` refuses both until the descriptor pass exists.
-fn read(function: &crate::ir::Function, place: Place) -> String {
-    let slot = &function.slots[place.root.0 as usize];
-    mangle::slot(place.root.0, &slot.name)
+fn read(types: &aggregate::Types, function: &crate::ir::Function, place: Place) -> String {
+    aggregate::place(types, function, place)
 }
 
 /// `INT64_C(n)`, always. A bare `-9223372036854775808` warns
@@ -228,6 +268,7 @@ fn unary(
 
 fn binary(
     w: &mut Writer,
+    types: &aggregate::Types,
     function: &crate::ir::Function,
     checked: &Checked,
     op: BinOp,
@@ -258,6 +299,21 @@ fn binary(
             }
         };
         w.line(&format!("    {name} = {call};"));
+        return;
+    }
+    // Structural `==` on a record is one call to its generated `eq`, which walks
+    // fields — never bytes, because padding makes two equal records differ under
+    // `memcmp` with no warning and no sanitiser report (panel 022).
+    if matches!(operands, Ty::Named(_) | Ty::Case(_, _)) {
+        let ty = function.value_type(left);
+        let call = aggregate::equality(types, ty, left, right);
+        let text = match (op, call) {
+            (BinOp::Eq, Some(call)) => call,
+            (BinOp::Ne, Some(call)) => format!("!{call}"),
+            // §4.14 gives a record no ordering, so the checker rejected it already.
+            _ => "(hero_unreachable(), false)".to_string(),
+        };
+        w.line(&format!("    {name} = {text};"));
         return;
     }
     let integral = operands == Ty::Int;

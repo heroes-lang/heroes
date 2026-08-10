@@ -9,8 +9,9 @@
 //! LLVM D92808 records the failure mode of the alternative: ARC's `retainRV` pairing
 //! lived only in the backend, and passes separated the calls from their markers.
 //!
-//! **Five rules, and every one of them has a compiled counterexample** (panel 021
-//! R2, where a judge wrote the C and ran it under ASan):
+//! **Six rules, and every one of them has a compiled counterexample** — five from
+//! panel 021 R2, where a judge wrote the C and ran it under ASan, and the sixth from
+//! the first program in this project that held a `str` inside a record:
 //!
 //! 1. **A plain parameter is borrowed.** It is excluded from the exit sweep, which
 //!    covers local and synthetic slots only. Heroes parameters are immutable, so a
@@ -32,6 +33,11 @@
 //!    has to be released at a block boundary — and that is what cashes panel 019's
 //!    reason for choosing slots over phi nodes, properly this time: **ownership lives
 //!    in slots, and cleanup is a walk over a table.**
+//!
+//! 6. **An aggregate constructor retains every counted field it captures.** A record
+//!    is by value, so `Pair(one: p, two: q)` copies the `str` handle inside `p` and the
+//!    new value is a second owner of one block. `ok(x)` is the opposite — it *wraps*,
+//!    consuming its argument — which is why the shapes are listed one at a time.
 //!
 //! Rule 5 was first written the way panel 021 costed it — decref an owning temporary
 //! at the end of its defining block, made safe by a checked invariant — and the
@@ -88,6 +94,30 @@ fn rewrite(function: &mut Function, checked: &Checked) {
                     out.push(inst);
                     out.push(plain(None, Op::Decref(old), ty, inst.span));
                     continue;
+                }
+            }
+            // **Rule 6: an aggregate constructor retains every counted field it
+            // captures.** A record is by value, so `Pair(one: p, two: q)` copies the
+            // bytes of `p` — including the `str` handle inside it — and the new value
+            // is a second owner of the same block. Nothing else in the pass adds that
+            // reference: rule 5 moved the *result* into a slot, which is about the
+            // aggregate, and every value reaching an argument is borrowed by rule 5's
+            // own consequence.
+            //
+            // Found by running it: `both = Pair(one: p, two: q)` printed correctly and
+            // then double-freed at exit, with ASan naming `hero_str_decref` and the
+            // magic word already clobbered — the program was right for its whole
+            // visible life and wrong once, at the sweep.
+            if let Op::Construct { shape, args } = inst.op {
+                if retains_fields(shape) {
+                    for arg in function.args_of(args) {
+                        if let crate::ir::Arg::Value(value) = arg {
+                            let ty = function.value_type(value);
+                            if is_refcounted(checked, ty) {
+                                out.push(plain(None, Op::Incref(value), ty, inst.span));
+                            }
+                        }
+                    }
                 }
             }
             let owning = inst
@@ -218,9 +248,19 @@ pub(crate) fn allocates(op: Op) -> bool {
     }
 }
 
-/// A `Construct` that only wraps: it takes ownership of its argument rather than
-/// making a new reference. Listed for M5c, where `ok(s)` lands.
-#[allow(dead_code)]
-fn wraps(shape: Shape) -> bool {
-    matches!(shape, Shape::Ok | Shape::Err)
+/// Whether a constructor makes its result a **second owner** of every counted
+/// argument (rule 6).
+///
+/// A record and a variant case do: they hold the field by value, so two places now
+/// name one block. `ok(x)` and the `?`-propagating `err` do **not** — they *wrap*,
+/// taking ownership of the argument rather than adding a reference — and an array or
+/// a map literal is the same wrap repeated per element, because `push` moves. Listed
+/// one shape at a time rather than defaulted, so that landing a container is a
+/// decision here.
+fn retains_fields(shape: Shape) -> bool {
+    match shape {
+        Shape::Record(_) | Shape::Case(_, _) => true,
+        Shape::Ok | Shape::Err | Shape::Fail => false,
+        Shape::Array | Shape::Map => false,
+    }
 }
