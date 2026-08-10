@@ -37,7 +37,7 @@ to 285: `HeroStr {ptr, len}` **by value** (an FFI decision — by pointer the wr
 (without which no `extern` may return `str`), and a locale-proof renderer. The spec
 gained two sentences at +41 measured (2155 → 2196): `slice`'s `to` is excluded, and an
 `f64` always prints a point or an exponent.
-Next: M5d, the map and `T?` — but only after M6's closure audit answers whether `{K: V}` survives. Aggregates and `[T]` landed at M5c through the descriptor pass
+Next: M6, sugar and the library — `.must()`, function values, generics by monomorphisation, and the four built-ins with no entry point. Every TYPE in the language now emits (M5c aggregates, M5d `T?` and the map)
 (`copy`/`drop`/`eq`/`hash` per reachable type, spike 04's frozen ABI), structural `==`,
 and COW on the mutation primitives. Nothing blocks it. Carried in: `cow_check` was
 struck from M5b for having zero call sites and `push` is what gives it one; **cycles are impossible** and the
@@ -311,18 +311,27 @@ hand-desugar three constructs, against the IR text.)
   tests/golden/run/adversarial-cow-per-step.hero` · `heroes build
   tests/golden/emit/aggregates.hero --emit-c` (the descriptors and the tag switch, as
   text) · `heroes check tests/golden/check/no-size-mutual.hero`.
-- **M5d — The map and `T?`, once the closure list has answered** (not started, and the
-  precondition is the point): a map literal, `m[k]`, `has`, `len` and structural `==`,
-  plus `T?`'s C representation — a by-value struct, **40 bytes while `T` fits in 32**
-  (panel 023 corrected "40 for every `T`": `sizeof(Big?)` is 48 for a 40-byte record).
-  Deferred out of M5c on **Principle 0, not on time**: panel 022 struck the map's
-  mutation half for having zero reachable call sites, and its R4 leaves `{K: V}` itself
-  open — **deleting it recovers −57 spec tokens** against **+29** to fund `set` plus
-  `for k in m`, and M6's audit decides. Building ~180 lines of C plus a generated option
-  struct per `T?` before that answer is what `cow_check` was struck for at M5b, with
-  more force because here the whole type may go. Blocks `03-fallible.hero` and
-  `10-maps.hero`; `04-loops.hero` and `07-strings.hero` wait on `range` and `chars`
-  instead, which are M6's.
+- **M5d — `T?` and the map ✅** (2026-08-10, tag `m5d`, author instruction over the
+  M5c deferral)**:** `T?` as a tagged union **by value** with `HeroFailure` shipped in
+  the runtime — so **every `T?` is reference-counted whatever `T` is**, `int?` included,
+  because its error side is two `str`s. One generated option struct per distinct `T?`,
+  named by index because `int?` and `[int]?` sanitise to the same identifier. The map is
+  open addressing over three parallel regions with a **fixed seed** (panel 006:
+  iteration order must be a function of the contents, or the fixpoint never closes) and
+  **order-independent `==`** (spec line 58). `m[k]` yields a `V?`; the runtime returns an
+  address or NULL because it cannot build an option struct generated per payload type.
+  `HERO_RUNTIME_ABI` 5. **The gate now refuses no type at all.**
+  **The disagreement, unresolved and recorded:** M5c deferred both on Principle 0
+  because panel 022's R4 leaves `{K: V}` open — deleting it recovers **−57** spec tokens
+  against **+29** to fund `set` plus `for k in m`. The author overruled that. If M6's
+  audit deletes the container, this map goes with it; `T?` is not at risk under any
+  reading.
+  **Runnable:** `heroes run tests/golden/run/maps.hero` · `heroes run
+  tests/golden/run/fallible.hero` (a refusal golden that became a running one, like
+  `strings.hero` at M5b).
+  **What is left in the language is not a type:** `sort`, `join`, `chars` and `range`
+  have no runtime entry point, and `.must()` is an `Op::Abort` rather than a shape. All
+  five are M6's, and they are what the last four gallery programs wait on.
 
 ### M6 — Sugar, tests, generics, library
 `T?` operators, function values (C function pointers), generics by
