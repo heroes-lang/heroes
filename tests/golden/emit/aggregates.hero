@@ -1,0 +1,47 @@
+# The generated C for a record and a variant, as text, because the shape is the
+# decision and a program that runs proves only that some shape works.
+#
+# What this file pins, and each of these was a choice with an alternative:
+#
+#   the compound literal is DESIGNATED           .f_x = t1, not positional, so that a
+#                                                field added in the middle is a clang
+#                                                error at every construction site
+#   a payload struct has its own NAME            `Ty::Case` is a real type in the IR
+#                                                and a temporary needs a declaration
+#   a payload-free case leaves the UNION         C11 has no empty struct
+#   `eq` walks FIELDS                            padding makes two equal records
+#                                                differ under memcmp, silently
+#   the typedefs are in CONTAINMENT ORDER        C needs every struct complete before
+#                                                it is used by value, and a forward
+#                                                declaration does not rescue that
+#   the tag switch uses INTEGERS                 `Term::Switch` cannot see which
+#                                                variant it switches on
+#
+# `Inner` is declared AFTER `Outer` on purpose: the emitted order must be the reverse,
+# which is the whole reason the checker publishes a topological order.
+# Bulk regression case.
+
+record Outer
+    inner: Inner
+    n: int
+
+record Inner
+    name: str
+
+variant Shape
+    dot
+    line
+        from: Inner
+        len: int
+
+function width(s: Shape) -> int
+    return match s
+        .dot    => 0
+        .line l => l.len
+
+function main()
+    o = Outer(inner: Inner(name: "a" + "b"), n: 2)
+    print(o.inner.name)
+    print(o == Outer(inner: Inner(name: "ab"), n: 2))
+    print(width(.line(from: o.inner, len: 5)))
+    print(width(.dot))

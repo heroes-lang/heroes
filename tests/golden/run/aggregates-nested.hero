@@ -1,0 +1,46 @@
+# Records and variants NESTED IN EACH OTHER, which is where the two representations
+# meet: a variant case whose payload is a record, and a record whose field is a
+# variant. Both are by value, so `Holder` physically contains a `Node` which contains
+# a `Name` which owns a `str` — three levels, one heap block, and the generated
+# `release` has to walk all three to reach it.
+#
+# The `@` parameter is here for the same reason: §4.8 is copy-in/copy-out, so `bump`
+# works on its own `Holder` and writes it back. With a counted field that is a move in
+# and a move out (ownership rule 2), and getting it wrong is a double-free at the
+# second call rather than the first — which is why `bump` is called twice.
+#
+# `h == Holder(node: n, count: 2)` compares three levels down, field by field, ending
+# in `hero_str_eq` on two separate blocks with the same bytes.
+# Bulk regression case.
+
+record Name
+    text: str
+
+variant Node
+    leaf
+        label: Name
+    pair
+        a: Name
+        b: Name
+
+record Holder
+    node: Node
+    count: int
+
+function label_of(n: Node) -> str
+    return match n
+        .leaf l => l.label.text
+        .pair p => p.a.text + "/" + p.b.text
+
+function bump(@h: Holder)
+    h @ Holder(node: h.node, count: h.count + 1)
+
+function main()
+    n: Node = .pair(a: Name(text: "x" + "1"), b: Name(text: "y" + "2"))
+    print(label_of(n))
+    h: Holder @ Holder(node: n, count: 0)
+    bump(@h)
+    bump(@h)
+    print(h.count)
+    print(label_of(h.node))
+    print(h == Holder(node: n, count: 2))

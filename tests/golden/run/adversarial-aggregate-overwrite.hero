@@ -1,0 +1,60 @@
+# THE COUNTING CASE, and every line of it is a place the balance can go wrong once
+# per iteration rather than once per program — which is what makes a leak here grow
+# instead of sitting still.
+#
+#   a counted record overwritten in a loop      the store's decref releases the
+#                                               previous one, four times
+#   a counted variant overwritten through BOTH  `.full` allocates, `.empty` does not,
+#   cases, three times each                     so the release must switch on the tag
+#   a counted variant assigned OVER ITSELF      the incref must precede the decref, or
+#                                               the block is freed and then retained
+#   a place path two levels deep                f.item.tag reaches through a case
+#                                               payload into a record
+#
+# `hero_runtime_check_leaks()` at exit is the assertion, and it counts blocks rather
+# than naming a stack: an over-retention shows up as a non-zero balance, an
+# over-release as an ASan use-after-free. Both arms have to be silent.
+#
+# `# UNVERIFIED — pending debrief` (adversarial case 3 of 5 for M5c).
+
+record Cell
+    tag: str
+    n: int
+
+variant Slot
+    empty
+    full
+        item: Cell
+
+function main()
+    # A counted record overwritten in a loop: the store's decref must release the
+    # previous one every iteration, or the count grows without bound.
+    c: Cell @ Cell(tag: "seed", n: 0)
+    i: int @ 0
+    while i < 4
+        c @ Cell(tag: "n" + to_str(i), n: i)
+        i @ i + 1
+    print(c.tag)
+    # A counted variant overwritten in a loop, through both cases.
+    s: Slot @ .empty
+    j: int @ 0
+    while j < 3
+        s @ .full(item: Cell(tag: "x" + to_str(j), n: j))
+        s @ .empty
+        s @ .full(item: Cell(tag: "y" + to_str(j), n: j))
+        j @ j + 1
+    tag1 = match s
+        .empty  => "empty"
+        .full f => f.item.tag
+    print(tag1)
+    # Self-assignment of a counted variant: incref must precede decref.
+    s @ s
+    tag2 = match s
+        .empty  => "empty"
+        .full f => f.item.tag
+    print(tag2)
+    # A place path two levels deep, read as a value.
+    n = match s
+        .empty  => 0
+        .full f => f.item.n
+    print(n)

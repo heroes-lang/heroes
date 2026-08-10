@@ -1,0 +1,63 @@
+# Every arm shape the spec gives a `match`, on one variant (spec lines 93-107):
+#
+#   `|` joining two patterns          .neg | .pos => …
+#   `_` as an ignored payload         .num _     => …   (allowed; `_` as a whole ARM
+#                                                        is not, and the checker says
+#                                                        so — `wildcard_on_variant`)
+#   a `match` standing as a statement
+#   a `match` bound to a name and returned
+#
+# Written twice on the way here, and both mistakes are the language working: `_` as a
+# catch-all arm over a variant is `wildcard_on_variant` ("name every case, so that
+# adding one breaks this `match`"), and an unread parameter is `unused_binding`. Both
+# are the rules that make an added case a compile error rather than a silent fallthrough.
+#
+# The `f64` field is here because `==` on a record walks fields, and a `double`
+# compares with C's `==` — so two records differing only in the fraction are unequal,
+# and no padding byte can make two equal ones differ.
+# Bulk regression case.
+
+record P
+    n: int
+    f: f64
+
+variant Sign
+    neg
+    zero
+    pos
+
+function classify(n: int) -> Sign
+    if n < 0
+        return .neg
+    else if n == 0
+        return .zero
+    return .pos
+
+function word(s: Sign) -> str
+    return match s
+        .neg | .pos => "nonzero"
+        .zero       => "zero"
+
+function verdict(a: Sign) -> str
+    m = match a
+        .zero      => "is zero"
+        .neg | .pos => "is nonzero"
+    return m
+
+function main()
+    print(word(classify(-5)))
+    print(word(classify(0)))
+    # a match used as a statement, and a jump as an arm body
+    s = classify(3)
+    match s
+        .neg  => print("neg")
+        .zero => print("zero")
+        .pos  => print("pos")
+    print(verdict(.zero))
+    print(verdict(.pos))
+    # f64 in a record, compared
+    x = P(n: 1, f: 0.5)
+    y = P(n: 1, f: 0.5)
+    print(x == y)
+    print(x == P(n: 1, f: 0.25))
+    print(x.f)

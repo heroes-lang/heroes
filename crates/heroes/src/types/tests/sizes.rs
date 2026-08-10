@@ -295,15 +295,19 @@ fn every_accepted_program_has_a_real_topological_order() {
     // mutation operator that silently stops producing anything fails here instead of
     // making this test quietly assert nothing.
     //
-    // MEASURED TODAY: 66 accepted programs, and only **14** ordered aggregates
-    // across all of them. The order is thinly exercised, and the reason is recorded
-    // rather than papered over: the corpus predates aggregates being emittable, so
-    // almost nothing in it declares a record. It is the same coverage hole
-    // `emit/tests/mutants.rs` wrote down when it produced zero mutants on its first
-    // run — and it closes on its own, because M5c's `run/` cases are aggregates.
-    assert!(programs >= 60, "only {programs} accepted programs — the corpus is not being read");
+    // MEASURED, and the number moved once already: at M5c step 1 this corpus held 66
+    // accepted programs and only **14** ordered aggregates, because it predated
+    // aggregates being emittable and almost nothing in it declared a record. The same
+    // coverage hole `emit/tests/mutants.rs` wrote down when it produced zero mutants on
+    // its first run — and it closed the way that one did, by the milestone's own cases
+    // joining the corpus: **76 programs, 35 aggregates** today.
+    //
+    // The floors carry margin under those, so a shrinking corpus or a mutation operator
+    // that silently stops producing anything fails here instead of letting this test
+    // quietly assert nothing.
+    assert!(programs >= 70, "only {programs} accepted programs — the corpus is not being read");
     assert!(
-        ordered_aggregates >= 12,
+        ordered_aggregates >= 30,
         "only {ordered_aggregates} ordered aggregates: the corpus is not exercising the order"
     );
 }
