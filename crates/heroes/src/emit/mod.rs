@@ -14,7 +14,8 @@
 //! | `gate.rs`   | what this backend cannot emit yet, and what to say about it |
 //! | `writer.rs` | the output, counting its own lines, because `#line` needs that |
 //! | `decls.rs`  | prototypes, the prologue, the epilogue, the `main` shim |
-//! | `inst.rs`   | one instruction |
+//! | `inst.rs`   | which operation an instruction is, and where its result goes |
+//! | `ops.rs`    | what one operation is: a literal, an operator, a call, `print` |
 //! | `term.rs`   | how a block ends |
 //! | `types.rs`  | aggregates as C, and the per-type functions C cannot write |
 //! | `aggregate.rs` | one record: construction, a field, a place with a path |
@@ -43,6 +44,7 @@ mod decls;
 mod gate;
 mod inst;
 mod mangle;
+mod ops;
 mod term;
 mod types;
 mod writer;
