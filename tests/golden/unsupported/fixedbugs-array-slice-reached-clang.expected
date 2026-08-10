@@ -1,0 +1,7 @@
+unsupported[builtin]: the built-in `slice` on an array is not emitted yet
+  at tests/golden/unsupported/fixedbugs-array-slice-reached-clang.hero:31:10
+     |
+  31 |     ys = slice(xs, from: 1, to: 3)     #~ builtin
+     |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: no change to this file will fix this
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `has`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet

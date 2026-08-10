@@ -1,0 +1,35 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-10, panel 025): `slice(xs, from: 1, to: 3)` on an array passed
+# `heroes check` at exit 0 and then failed at `heroes run` with
+#
+#   internal error: compiling the generated C failed:
+#   error: passing 'HeroArrayHeader *' to parameter of incompatible type 'HeroStr'
+#       t8 = hero_str_slice(t5, t6, t7);
+#
+# — exit 2, which CLAUDE.md §7 reserves for "the compiler is wrong". The author is
+# entitled to write this: spec line 148 lists `slice` among the built-ins and does not
+# restrict it to `str`.
+#
+# CAUSE: `slice` is one built-in over two operand types and only the `str` half has a
+# runtime entry point. `len` has the same shape and needed no gate row, because both of
+# its halves landed in the same step; `slice`'s did not. The gate checked the built-in
+# by NAME, so the array half sailed through a list that was about names.
+#
+# FIX: the row splits by operand, exactly as `len`'s emission does. The array half is
+# refused until `hero_array_slice` exists (M6, with `sort`, `join`, `chars` and
+# `range`).
+#
+# HOW IT WAS FOUND, which is the part worth keeping: a judge pricing a *spec sentence*
+# went to verify that "`slice` out of range aborts" was true, and discovered it was
+# unverifiable for one of the two types the sentence covers. No test in the project
+# looked here. The sentence was held back and the bug was filed instead.
+# Bulk regression case.
+
+function main()
+    xs = [1, 2, 3]
+    ys = slice(xs, from: 1, to: 3)     #~ builtin
+    print(len(ys))
+    # The `str` half emits, and stays in the file so the refusal above is provably
+    # about the operand and not about the built-in's name.
+    print(slice("abcde", from: 1, to: 3))

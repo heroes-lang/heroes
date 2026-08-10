@@ -45,7 +45,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `f64` | 64-bit float |
 | `bool` | `true` / `false` |
 | `str` | immutable UTF-8 string, indexed in bytes |
-| `[T]` | dynamic array, indices from 0; how a type contains itself |
+| `[T]` | dynamic array, indices from 0 |
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
 
@@ -58,6 +58,8 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
   variants, arrays, maps, recursively; a map's insertion order does not affect it.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
   never changes `a`. No aliasing exists anywhere.
+- A record or variant holds its fields **by value**, so it may contain itself only
+  through `[T]` or `{K: V}`: `children: [Node]` is a tree, `child: Node` has no size.
 
 ## Bindings
 ```
@@ -124,8 +126,8 @@ are stable snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 
 `?` on a non-fallible value is a compile error. Map access `m[k]` returns
 `V?` with code `missing_key`; `has(m, k) -> bool` tests membership. An out-of-bounds array index
-aborts; integer overflow aborts; division by zero aborts (integer division
-truncates).
+aborts; integer overflow aborts; division by zero aborts. `/` and `%` truncate
+toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
 ## Operators
 ```
