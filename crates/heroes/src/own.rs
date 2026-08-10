@@ -25,7 +25,12 @@
 //!    pointer ABI is unchanged.
 //! 3. **A store increfs the new value before decrefing the old.** `s @ s` otherwise
 //!    frees the buffer and then increfs a dead one. Without the decref, a
-//!    string-building loop leaked 999 blocks — measured.
+//!    string-building loop leaked 999 blocks — measured. **A field path is the same
+//!    store**: `p.cells @ [7, 8]` reaches a counted place through a record the slot
+//!    already owns, and reading the *root slot's* type instead of the stored value's
+//!    left it uncounted — one leaked block, printed by the leak counter on the first
+//!    program that wrote one. An *index* path is not this rule: it needs
+//!    copy-on-write, and the gate refuses it until the primitive exists.
 //! 4. **A returned value is increfed before the sweep**, or `return prefix + name`
 //!    is a use-after-free: silent at `-O0`, and a heap-use-after-free under ASan.
 //! 5. **An owning temporary is MOVED into a synthetic slot, in the block that defines
@@ -86,8 +91,20 @@ fn rewrite(function: &mut Function, checked: &Checked) {
             // must be alive before it does. Every value reaching a store is borrowed
             // (rule 5 moved the owning ones out), so the incref is unconditional.
             if let Op::Store { place, value } = inst.op {
-                let ty = function.slots[place.root.0 as usize].ty;
-                if is_refcounted(checked, ty) && place.path.len == 0 {
+                // The *stored value's* type, not the root slot's: for a whole-slot
+                // store they are the same, and for a path store only the value's is
+                // right. `p.cells @ [7, 8]` writes a counted `[int]` into a `Row` slot
+                // that is itself counted for a different reason, and reading the root's
+                // type answered a question nobody asked.
+                let ty = function.value_type(value);
+                // An index step needs copy-on-write and its own primitive, so it is
+                // refused by the gate rather than counted here (panel 022). A field
+                // path needs nothing extra: the record is ours, in a slot we own.
+                let indexed = function
+                    .steps_of(place.path)
+                    .iter()
+                    .any(|step| matches!(step, crate::ir::Step::Index(_)));
+                if is_refcounted(checked, ty) && !indexed {
                     let old = fresh(&mut next_value, function, ty);
                     out.push(plain(Some(old), Op::Load(place), ty, inst.span));
                     out.push(plain(None, Op::Incref(value), ty, inst.span));

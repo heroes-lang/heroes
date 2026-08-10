@@ -1,0 +1,46 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-10, M5c step 6): `p.cells @ [7, 8]` printed the right answer and
+# then `panic: 1 heap blocks still live at exit (a missing decref)`. Under
+# `--sanitize`, ASan fired too.
+#
+# CAUSE: the ownership pass's rule 3 — a store increfs the new value before decrefing
+# the old — asked whether the ROOT SLOT's type was counted. For a whole-slot store
+# that is the same question as the stored value's type, so it had been right for two
+# milestones. For a path store it is a different question: the slot is a `Row`, which
+# is counted because it *contains* an array, while the place being written is the
+# `[int]` itself. The store was therefore treated as uncounted: the new array was
+# never increfed and the old one never released.
+#
+# FIX: rule 3 reads the stored value's type. An *index* path is deliberately not
+# covered — that one needs copy-on-write and the gate refuses it until the primitive
+# exists.
+#
+# The leak counter is what found this. ASan agreed, but the counter named it in one
+# line at exit; the shape of the bug is a missing decref, and a live-block balance is
+# the instrument that sees exactly that.
+
+record Row
+    cells: [int]
+
+record Pair
+    left: Row
+    right: Row
+
+function main()
+    p: Row @ Row(cells: [9])
+    print(p.cells[0], len(p.cells))
+    # The write that leaked: a counted place reached through a field.
+    p.cells @ [7, 8]
+    print(p.cells[0], len(p.cells))
+    # Twice over, so a leak would grow rather than sit still.
+    p.cells @ [1]
+    p.cells @ [2, 3, 4]
+    print(len(p.cells))
+    # Two levels deep, and through a record that holds two of them.
+    q: Pair @ Pair(left: Row(cells: [1]), right: Row(cells: [2]))
+    q.left @ Row(cells: [5, 6])
+    print(q.left.cells[1], q.right.cells[0])
+    # Assigning a field over itself: the incref must precede the decref.
+    q.right @ q.right
+    print(len(q.right.cells))
