@@ -17,7 +17,8 @@
 //! | `inst.rs`   | which operation an instruction is, and where its result goes |
 //! | `ops.rs`    | what one operation is: a literal, an operator, a call, `print` |
 //! | `term.rs`   | how a block ends |
-//! | `types.rs`  | aggregates as C, and the per-type functions C cannot write |
+//! | `types.rs`  | what a `record` and a `variant` look like in C |
+//! | `perfn.rs`  | the four per-type functions C cannot write for itself |
 //! | `aggregate.rs` | one record: construction, a field, a place with a path |
 //!
 //! **What the emitter refuses, it refuses as a diagnostic** (`Kind::Unsupported`,
@@ -45,6 +46,7 @@ mod gate;
 mod inst;
 mod mangle;
 mod ops;
+mod perfn;
 mod term;
 mod types;
 mod writer;
@@ -98,14 +100,14 @@ pub fn emit(
     // (`Checked::type_order`, filtered — panel 023 R3), then every per-type prototype,
     // then the ordinary function prototypes.
     types::definitions(&mut w, ast, checked, &names, src);
-    types::prototypes(&mut w, ast, checked, &names, src);
+    perfn::prototypes(&mut w, ast, checked, &names, src);
     for function in &program.functions {
         decls::prototype(&mut w, function, ast, checked, &names, &module);
     }
     for function in &program.functions {
         decls::definition(&mut w, program, function, ast, checked, &names, src, &module);
     }
-    types::bodies(&mut w, ast, checked, &names, src);
+    perfn::bodies(&mut w, ast, checked, &names, src);
     if let Some(index) = entry_point(program) {
         decls::shim(&mut w, &program.functions[index], &module);
     }
