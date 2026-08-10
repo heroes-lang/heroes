@@ -1209,6 +1209,43 @@ since refcounting already exists.
 Price, declared: mutating a shared array copies it, O(n). Performance is not a goal, and in exchange
 there is one rule instead of two.
 
+**Why this is not a naive choice.** Value semantics reads as amateurish to anyone whose model of a
+"real" language comes from C++, Java or Rust: no references, no graphs, copies everywhere. The
+opposite is the case, and it is recorded here rather than left implicit because an implementer who
+believes this is a beginner's mistake will keep trying to fix it. The lineage is in the appendix —
+APL and its descendants, R and MATLAB, Erlang, Swift, Hylo — and the load-bearing inference from it
+is one sentence: **sixty years of production array languages establish that the value model is not
+what makes a language slow**, and the one language that industrialised it is slowed instead by the
+half of itself that Heroes declines.
+
+**The alternatives, and what each would have cost.** This table exists so that §4.10 is not
+relitigated every milestone:
+
+| Alternative | Why not |
+|---|---|
+| Reference counting with shared references | cycles become possible, so it needs a cycle collector or `weak` — *plus* the aliasing this design exists to remove. The trap Swift fell into via `class` |
+| ARC / ORC (Swift, Nim) | as above, plus a compiler pass for ownership optimisation; ORC additionally needs a cycle collector for its `ref` types |
+| Tracing garbage collection | a runtime we cannot write, cannot spell out in the spec, and cannot cheaply hand across an FFI boundary. Contradicts §1.11 directly: a GC'd heap is hostile to C interop |
+| Borrow checker | already in Part 6 — its whole job is making aliasing safe, and there is no aliasing. The cost avoided is the largest single one in this document: lifetimes in the surface syntax, in the spec, and in every error message |
+| Manual allocators (Zig) | correct and honest, but it puts an allocation decision in every signature — spec tokens, and a whole class of plausible LLM error |
+| C++ RAII with references | manual lifetime reasoning, and the aliasing question returns to every signature |
+
+**What it buys, plainly.** No garbage collector to write. No cycle collector. No `weak`/`unowned`. No
+borrow checker, no lifetimes, no ownership annotations. No aliasing, so no data race becomes
+*expressible* once concurrency arrives (Part 7.13). And a counter whose only job is deciding when to
+copy, which can stay **non-atomic** for as long as no counted value crosses a thread — a constraint
+Part 7.13 records, not a property this section already holds. (The absence of `null` is *not* on this
+list: it comes from §4.6 making absence a variant, and crediting it here would inflate the claim.)
+
+**What it costs, equally plainly.** O(n) mutation of genuinely shared data. No linked structures and
+no general graphs *in the language* — they go through arena-plus-indices, which is also the
+discipline the bootstrap compiler itself is written in (§3.4). No shared-mutable-state patterns:
+observers, caches, pools, global registries. No high-performance data structure written in Heroes
+itself. The honest summary: **Heroes is strong at transforming data and awkward at interlinking
+data.** Performance is an explicit non-goal (Part 2) and the target programs are compilers, parsers
+and data transformation, so this is the right side of the trade — but it *is* a trade, and an
+implementer should not be surprised by it.
+
 **Consequence for recursive types.** A tree is expressed as:
 
 ```
@@ -1705,8 +1742,12 @@ the first is the one that proves the project's premise:
 A few hundred lines, written once. It ships a header, **`heroes_runtime.h`, which generated C
 includes — so clang type-checks every runtime call.** Contents:
 
-- allocator (a wrapper over `malloc`)
-- `incref` / `decref`
+- the allocator (a wrapper over `malloc`) — and **a single point**, which today is literally one
+  `malloc` and one `free`, both inside the `str` primitives. Not tidiness: Part 7.13's per-thread
+  heaps need one place to change, and a second allocation site discovered later is a redesign.
+- `incref` / `decref` — **behind a narrow, never-inlined boundary**, i.e. calls into this separately
+  compiled unit, for the same forward reason: making the counter thread-local or atomic must be one
+  edit, and inlined refcount arithmetic is not one edit.
 - the `str` **value**, `{ptr, len}`, passed **by value** (16 bytes, two registers), with the
   refcount and an 8-byte magic word in a heap header immediately before the bytes — the earlier
   wording "(`ptr`, `len`, `refcount`)" cannot be read literally, because a by-value copy with an
@@ -1925,9 +1966,59 @@ are *on* the closure list.
     receiver is not implicit, and no dynamic dispatch is needed since the body is copied at compile
     time. Requires an inlining pass in the lowering; likely lands together with closures.
 13. **Concurrency** — the largest gap. But value semantics puts you in the best possible position:
-    **no aliasing means no data races by construction**, since there is no shared state to protect.
+    **no aliasing means no data race is expressible**, since there is no shared state to protect.
     This is Erlang's 1986 insight (immutability plus message passing for concurrent systems) and the
-    reason actors are natural there. The road is open and wide; it is simply far away.
+    reason actors are natural there. The road is open and wide; it is simply far away. The shape is
+    written down now — **isolated per-thread heaps, copying at the boundaries** — so the eventual
+    implementation is a mechanical exercise rather than a redesign, and because two of its
+    consequences constrain code being written today.
+
+    - **A heap**, here, is the region where runtime-sized data lives: `str`, `[T]`, `{K: V}` and the
+      records reached through them — not scalars in registers or on the stack. *Separate* heaps means
+      each thread allocates from and frees into a region no other thread touches, so there is no
+      shared arena and therefore no lock on allocation.
+    - **A message is any Heroes value.** No message type, no envelope, no serialisation format. This
+      falls straight out of §4.10: a value holds no pointer to data it does not own and no shared
+      reference, so it is already a self-contained thing. An `int`, a `str`, a `[f64]`, a record, a
+      map — all equally valid, all handled by one rule.
+    - **The transport is a mailbox** — one queue per thread; the sender copies into the receiver's
+      heap and appends to the tail, the receiver pops from the head when it is ready. Deliberately
+      boring, and it *can* be boring precisely because what goes into it is isolated by construction:
+      the question that dominates shared-memory designs — what if the sender mutates it in flight —
+      does not exist here.
+    - **Two copy regimes, and they are not a contradiction.** Within a thread, §4.10's rule: share
+      physically, copy only on mutation of shared data. At a thread boundary, the copy is
+      unconditional and real. The first exists to avoid waste, the second to guarantee isolation.
+      Expect two distinct code paths and do not try to unify them.
+    - **The cost rule**, so the model gets used where it works: a boundary copy costs the size of the
+      value. It pays off when **the message is small relative to the work it triggers** — send a
+      slice, get back a number — and it is a bad fit for shuttling large values back and forth to do
+      little with them. Which is why the first and probably only rung Heroes needs is plain data
+      parallelism.
+    - **Threads, not green threads, not coroutines.** OS threads — few, real, OS-scheduled — give
+      *parallelism*, splitting work across cores, and are the only kind Heroes will use. Green
+      threads (language-scheduled workers multiplexed onto OS threads) and coroutines (the suspend/
+      resume mechanism they are usually built from) give *concurrency*, thousands of interleaved
+      logical tasks. Heroes wants the first and not the second. Coroutines are already refused
+      permanently in Part 6; green threads stay *here* rather than joining them because the vertex
+      that says no is **simplicity** — a scheduler to write and maintain — and by this Part's own
+      preamble that makes a deferral, not a rejection. The operative rule is blunt either way: **do
+      not build a scheduler.**
+    - **The one industrial precedent does not do what this describes, and the exception is the
+      instructive part.** Erlang copies message data between processes *except* refc binaries (over
+      64 bytes) and literals, which sit in a shared area with a reference count and travel as a
+      pointer. So the boundary copy is not an absolute even in the system that made isolation famous,
+      and its escape hatch for large immutable payloads is precisely a **cross-heap refcount** —
+      which is an atomic counter, i.e. the one thing this design gets to avoid. That is a trade to
+      make consciously if the copies ever hurt, not to rediscover.
+
+    **Net effect on v1: two rules, both already true, both now invariants.** Reach the allocator
+    through a **single point** — today that is literally one `malloc` and one `free`, both inside the
+    `str` primitives in `runtime/runtime.c` — and keep refcount operations behind a **narrow,
+    never-inlined boundary**: `hero_str_incref`/`hero_str_decref` are calls into a separately
+    compiled translation unit, so no inlining can smear refcount arithmetic across code that a
+    thread-local counter would later have to change. M5c's array and map allocation is the first test
+    of the first rule. Everything else in this item costs v1 nothing.
 14. **The QBE backend — scheduled, post-fixpoint.** Not "if and when": one backend proves nothing
     about the IR's claimed agnosticism, and QBE carries the register-allocation and instruction-
     selection lesson this project originally wanted (~500 lines from the same IR; see §3.2 for what
@@ -2139,14 +2230,34 @@ deliberate:
   the Rust bootstrap compiler is written in (§3.4), which is also why the port to Heroes is
   mechanical.
 - **Hylo / Val** — mutable value semantics: memory safety without a borrow checker. The direct
-  ancestor of Part 4.10.
-- **Swift** — `inout` (our `@` parameters), copy-on-write, leading-dot variant syntax.
+  ancestor of Part 4.10, and the current research frontier for exactly this thesis. The specific
+  insight Heroes depends on comes from here: **if values are never aliased, reference cycles cannot
+  be constructed, so reference counting is complete without a cycle collector.** That is not a
+  compromise — it is the reason the whole design is small.
+- **Swift** — `inout` (our `@` parameters), copy-on-write, leading-dot variant syntax. The most
+  direct precedent and the most reassuring one, because Swift is not a research language: `struct`,
+  `Array`, `Dictionary` and `String` are value types with copy-on-write over reference counting,
+  mechanically what §4.10 describes. The difference is that Swift *also* has `class`, with shared
+  reference semantics, and therefore inherits everything Heroes escapes — cycles, `weak`/`unowned`,
+  and an atomic counter to make sharing thread-safe. **Heroes takes the half that works and declines
+  the half that generates the complexity.**
 - **Go** — `gofmt` and canonical formatting; documentation by adjacency; unused variables as errors;
   semicolon insertion; shipping without user generics for a decade; adding type aliases five years
   after 1.0.
 - **Zig** — tests in the source file; `[:0]u8` NUL-terminated slices (our string design).
-- **Erlang, 1986** — immutability plus message passing chosen specifically for concurrent systems.
-  The reason value semantics leaves the concurrency road open.
+- **Erlang, 1986** — immutability plus message passing chosen specifically for concurrent systems,
+  enforced absolutely, in systems with famously long uptimes. The reason value semantics leaves the
+  concurrency road open. The relationship to Heroes is close but **the motive is inverted**, and the
+  inversion is the instructive part: Erlang removes sharing *for concurrency* — isolated processes,
+  a copy per message — while Heroes removes it *for local readability* — copy-on-write, sharing
+  freely at the physical level as long as nobody writes. Same principle, opposite engines. Erlang
+  pays copies always and buys isolation; Heroes pays copies only on mutation and buys the absence of
+  aliasing bugs. One correction to the folklore, load-bearing for Part 7.13: Erlang does **not** copy
+  every message. Refc binaries (over 64 bytes) and literals live in a shared area with a reference
+  count and travel as a pointer, so the boundary copy is not absolute even in the system that made
+  isolation famous —
+  [erlang.org](https://www.erlang.org/doc/system/eff_guide_processes.html),
+  [binary handling](https://www.erlang.org/doc/system/binaryhandling.html).
 - **Nim** — promoted from a note to a primary source now that the backend is C: the `importc`
   pragma is the adopted FFI mechanism (§4.19), the per-module compilation cache is the model for
   `build/`, and `nim r` is the model for `heroes run`. Also `proc` vs `func` as the resolution of
@@ -2157,8 +2268,20 @@ deliberate:
   heterogeneous table must be sacrificed because boxed values make every C call require marshalling.
 - **Ruby** — the DSL *reading rhythm* (named blocks, named arguments, dot chains) is worth taking;
   the *mechanism* (`method_missing`, `instance_eval`) is the worst possible case for locality.
-- **K / APL** — the empirical evidence that ultra-compact notation fails for LLMs, and not only for
-  lack of training data.
+- **APL / J / K / BQN** — cited twice, in opposite directions, and the split is deliberate. Against,
+  on *notation*: the empirical evidence that ultra-compact notation fails for LLMs, and not only for
+  lack of training data. In favour, on the *value model*: sixty years of value semantics over whole
+  arrays, with no aliasing and no references in the surface language — and K's descendant kdb+ holds
+  10 of the 17 STAC-M3 Antuco benchmarks and 9 of 10 Kanaga, the financial industry's own
+  time-series suite, which is the evidence that §4.10's model is not what makes a language slow.
+  What they establish for Heroes is that *transforming whole values* is a complete programming
+  style, not a restricted one.
+- **R / MATLAB** — copy-on-write value semantics for the core data structures, and jointly the
+  dominant languages of statistical and numerical computing for decades: millions of programmers who
+  never needed a mutable reference to do real work. They also document the failure mode honestly,
+  and it is *exactly* Heroes': both are slow when someone writes element-at-a-time loops over shared
+  structures, which is the same O(n)-per-mutation bill §4.10 declares. Precedent and warning in one
+  entry.
 - **Idris / Agda** — typed holes, here repurposed from proof assistants to code generation.
 - **Rust / Elm** — the demonstration that error message quality transforms the experience; here
   aimed at a different reader.
