@@ -9,6 +9,7 @@
 //! | `flow.rs`      | panel 017 A: a jump has no type, and the one join rule |
 //! | `holes.rs`     | §4.16: what the compiler knew and used to throw away |
 //! | `sizes.rs`     | which types have a size, and the order the backend gets |
+//! | `counted.rs`   | which types own a reference, transitively |
 //! | `acceptance.rs`| design.md's appendix, type-checked; and the gallery |
 //!
 //! `diagnostics` renders what the compiler *says*; `types_of` reads what it
@@ -16,6 +17,7 @@
 
 mod acceptance;
 mod calls;
+mod counted;
 mod data;
 mod fallible;
 mod flow;

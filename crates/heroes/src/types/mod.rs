@@ -53,6 +53,7 @@ mod arms;
 mod builtins;
 mod calls;
 mod construct;
+mod counted;
 mod decls;
 mod errors;
 mod expect;
@@ -103,6 +104,14 @@ pub struct Checked {
     /// this to the descriptor worklist's reachable subset: a total order
     /// restricted to a subset is still a total order.
     pub type_order: Vec<u32>,
+    /// One entry per interned type: does a value of it own a reference the compiler
+    /// must count (§4.10, §4.20). Built by `counted.rs` after checking, because the
+    /// question is transitive through a record's fields and a `TyId` carries a
+    /// declaration index rather than its contents.
+    ///
+    /// `ir::is_refcounted` is the one place this is *asked*; that is why it reads
+    /// this table instead of holding a second opinion.
+    pub counted: Vec<bool>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
@@ -152,6 +161,7 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
             expr_types: Vec::new(),
             holes: Vec::new(),
             type_order: Vec::new(),
+            counted: Vec::new(),
             diagnostics: Vec::new(),
         },
         result: TyId(0),
@@ -185,6 +195,11 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
         checker.out.diagnostics.extend(pending);
     }
     checker.out.diagnostics.sort_by_key(|d| d.span.start);
+    // Last, because it is dense over the interner and nothing may intern a type
+    // after it: a `TyId` past the end of this table would read as uncounted, which
+    // is a leak that no test can see.
+    checker.out.counted =
+        counted::table(&checker.out.types, ast, &checker.out.written_types);
     checker.out
 }
 

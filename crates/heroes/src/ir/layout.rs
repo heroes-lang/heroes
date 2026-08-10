@@ -69,25 +69,20 @@ fn position<'a>(mut names: impl Iterator<Item = &'a str>, wanted: &str) -> Optio
 }
 
 /// Whether a value of this type carries a reference the compiler must count
-/// (M5b, panel 021 R2).
+/// (M5b, panel 021; extended to aggregates at M5c).
 ///
-/// **One home for this question**, and that is the whole reason it is here rather
-/// than in the ownership pass: M5c's descriptor pass asks it again for
-/// `copy`/`drop`/`eq`/`hash`, and two answers that disagree about which types are
+/// **One home for this question**, and that is still the whole reason it is here:
+/// the ownership pass, the prologue's zero-initialisation, the exit sweep and the
+/// descriptor pass all ask it, and two answers that disagree about which types are
 /// counted is a refcount bug that reproduces once a week — the same failure
 /// `uses.rs` was split out to prevent.
 ///
-/// At M5b only `str` is counted. Every commented row below is a row M5c turns on,
-/// and each is listed rather than folded into a catch-all so that adding a type to
-/// the language cannot silently make it uncounted.
+/// It is now a **lookup**. The answer is transitive — `record Person { name: str }`
+/// owns a reference and a `TyId` for `Ty::Named(d)` carries only the declaration
+/// index — so it is computed once by `types/counted.rs`, where the AST is in hand,
+/// and asked here. A missing entry reads as *not counted*, which would be a silent
+/// leak, so the table is built after every type is interned and this asserts
+/// nothing quietly: an out-of-range `TyId` is a compiler bug and panics.
 pub(crate) fn is_refcounted(checked: &Checked, ty: TyId) -> bool {
-    match checked.types.get(ty) {
-        Ty::Str => true,
-        // M5c, with the descriptor pass: Array, Map, Named, Case, Fallible, Failure.
-        Ty::Array(_) | Ty::Map(_, _) | Ty::Named(_) | Ty::Case(_, _) => false,
-        Ty::Fallible(_) | Ty::Failure => false,
-        // Scalars, the FFI's opaque types, and a type the checker gave up on.
-        Ty::Int | Ty::F64 | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,
-        Ty::Func { .. } | Ty::Generic(_) | Ty::Error => false,
-    }
+    checked.counted[ty.0 as usize]
 }

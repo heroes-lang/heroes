@@ -10,8 +10,14 @@
 //!   signature's promise;
 //! - a **test**'s body is run for effect and returns nothing at all (§4.18).
 //!
-//! `record` and `variant` declare types, not values: their field types were
-//! already resolved, and there is nothing here to check.
+//! `record` and `variant` declare types, not values, so there is no body to check —
+//! but their field types are **interned here**, eagerly, and that is not
+//! bookkeeping. Every later question about a declaration's contents reads the
+//! interner: "does this record own a counted reference" (`counted.rs`) is answered
+//! over its fields' `TyId`s, and lowering them lazily made the answer depend on
+//! whether the *program* happened to read the field. `variant Token` with a `str`
+//! payload matched as `.word _` was uncounted, so it copied without an incref — a
+//! leak whose cause was a field nobody touched.
 
 use crate::resolve::Resolved;
 use crate::source::Source;
@@ -85,7 +91,23 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                 checker.fallible = false;
                 block(checker, ast, resolved, src, body, Want::Nothing);
             }
-            DeclKind::Record { .. } | DeclKind::Variant { .. } => {}
+            // No body, and no `Want`: only the field types, interned so that
+            // `counted.rs` and the descriptor pass can read them whether or not the
+            // program touches the field.
+            DeclKind::Record { fields } => {
+                checker.generic_names.clear();
+                for field in fields {
+                    let _ = lower::ty(checker, ast, resolved, field.ty);
+                }
+            }
+            DeclKind::Variant { cases } => {
+                checker.generic_names.clear();
+                for case in cases {
+                    for field in &case.fields {
+                        let _ = lower::ty(checker, ast, resolved, field.ty);
+                    }
+                }
+            }
         }
     }
 }
