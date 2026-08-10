@@ -12,7 +12,7 @@ clock, never as a gate** (rule 3).
 
 ## 1. Re-read protocol — what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session (budget
-  3000 tokens, measured — never estimated; that is the point of the budget).
+  4096 tokens, measured — never estimated; that is the point of the budget).
 - Reach `design.md` **by grep**, never from a remembered summary. Any asserted
   design rule must cite its section; an uncitable rule is a guess.
 - Session start: `git log --oneline -10`, DESIGN-LOG tail, ROADMAP status.

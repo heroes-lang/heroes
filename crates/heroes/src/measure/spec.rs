@@ -150,16 +150,17 @@ mod tests {
         );
     }
 
-    /// The budget, as a test rather than a habit: §1.6's ceiling is 3000 measured
-    /// (panel 012), and the soft line is 2000. Breaching the hard one fails here.
+    /// The budget, as a test rather than a habit: §1.6's ceiling is 4096 measured
+    /// (panel 024; 3000 before it, 2000 before that, and an unmeasured 1500 first),
+    /// and the soft line stays at 2000. Breaching the hard one fails here.
     #[test]
     fn the_spec_is_under_the_measured_ceiling() {
         let text = spec();
         let measured = crate::measure::measure(&text, &crate::measure::vendor_dir())
             .expect("the vendored tokenisers must load");
         assert!(
-            measured.max() <= 3000,
-            "the spec measures {} against §1.6's ceiling of 3000",
+            measured.max() <= 4096,
+            "the spec measures {} against §1.6's ceiling of 4096",
             measured.max()
         );
     }

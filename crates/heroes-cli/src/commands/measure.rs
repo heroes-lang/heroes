@@ -2,17 +2,24 @@
 //!
 //! Defaults to `spec/heroes-spec.md`, since that is the file the ceiling is
 //! about. Prints every instrument's reading, their spread, and the verdict
-//! against the 3000-token ceiling; exits non-zero on a breach, so the rule
-//! is enforceable rather than merely stated.
+//! against the ceiling; exits non-zero on a breach, so the rule is enforceable
+//! rather than merely stated.
 
 use heroes::measure::{measure, spec_path, vendor_dir};
 
 use crate::cli::Exit;
 
-/// design.md §1.6, as raised by panel 012 and measured, not estimated.
-const CEILING: usize = 3000;
-/// panel 012's soft threshold: above it, an addition needs a named removal
-/// or a pre-registered prediction.
+/// design.md §1.6, raised to 4096 by author decision (2026-08-10, panel 024
+/// retro-record). Measured, never estimated — that is the point of the budget.
+const CEILING: usize = 4096;
+/// The soft threshold, and it is deliberately **not** rescaled with the ceiling.
+///
+/// What the soft line is *for* is when an addition starts owing a named removal or
+/// a pre-registered falsifiable prediction (panel 012). Rescaling it in proportion
+/// — 2:3 would put it near 2730 — would drop that burden overnight for a document
+/// that measures 2231, which is the one thing §1.6 says must survive a raise:
+/// "a spec that grows to fill the budget because it can has failed §1.2 just as
+/// surely as one that breaches it". So the ceiling moved and the discipline did not.
 const SOFT: usize = 2000;
 
 pub fn run(file: Option<&str>) -> Exit {

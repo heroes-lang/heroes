@@ -22,7 +22,7 @@ Two practical notes for the implementation:
 - **Bowie references belong in prose, never in the language surface.** Section headings in example
   files, chapter epigraphs, the README, the book — all fair game. But keyword names, error message
   text, and library function names stay plain and literal, because they are read by a machine that
-  has to parse them and by a model that has to learn them from a 3000-token spec. A cute error
+  has to parse them and by a model that has to learn them from a 4096-token spec. A cute error
   message costs spec tokens and comprehension; a cute README costs nothing. This is the same
   discipline as Part 1.10 (ASCII-only syntax): personality in the packaging, precision in the
   substrate.
@@ -225,8 +225,8 @@ annotations at use sites; anything derivable is derived. Note this is the *oppos
 
 ### 1.6 The spec budget
 
-**The entire language specification — syntax, semantics, built-in library — must fit in 3000
-tokens, measured.** About four pages. That document is not documentation, it is *the prompt*.
+**The entire language specification — syntax, semantics, built-in library — must fit in 4096
+tokens, measured.** About five pages. That document is not documentation, it is *the prompt*.
 
 This is the forcing function that makes the whole project coherent, because it merges two goals into
 one: every feature has to pay rent in spec tokens, and a language whose spec fits in a few pages is
@@ -239,11 +239,38 @@ the 1500 budget was breached on the day it was written and nobody could see it, 
 ceiling that replaced it was already breached on the pessimistic bound the hour it was set.
 
 **Raised to 3000 by author decision (2026-08-04; panel 012, retro-record) — the first budget number
-in this project's history set against a measurement rather than a guess.** It leaves ~950 tokens of
-real headroom on the binding instrument, which is roughly what §1.0's mortgaged closure items
-(modules, file I/O, `args()`, `exit`) plus the deferred sentences were always going to cost. The
-budget is a **hard measured ceiling of 3000**, taken as the maximum over the vendored instruments —
-which reconciles the number above with the panel's veto threshold.
+in this project's history set against a measurement rather than a guess.** It left ~950 tokens of
+headroom on the binding instrument, which was taken to be roughly what §1.0's mortgaged closure items
+(modules, file I/O, `args()`, `exit`) plus the deferred sentences would cost. **Raised again to 4096
+by author decision (2026-08-10; panel 024, retro-record.)** The budget is a **hard measured ceiling
+of 4096**, taken as the maximum over the vendored instruments — which reconciles the number with the
+panel's veto threshold. The reader's real tokeniser is unpublished, so the ~2% spread applies to the
+ceiling too: the effective bound is 4010–4096.
+
+**The soft line stays at 2000, and that is the load-bearing half of the raise.** It is not a fraction
+of the ceiling. It is the point where growth stops being free — where an addition owes a named
+removal or a pre-registered falsifiable prediction (panel 012) — so rescaling it in proportion
+(2:3 would give ~2730) would put the spec, at 2231, *under* it and grant a blanket exemption to the
+next ~500 tokens. Panel 024's warden put the reason in one line: **a soft line that moves whenever
+the document approaches it is a thermometer, not a thermostat.**
+
+**What the raise is not backed by, recorded rather than argued away** (panel 024). The mortgage above
+justifies about 3181 (2231 + 950), which clears 3000 by 181 and is a precise reason to raise. 4096
+leaves **915 tokens with no named claimant — 41% of the current spec** — and the mortgage figure was
+itself derived *from* the old headroom (3000 − 2048 = 952) rather than costed per item. Measured over
+the document's first week: seven amendments, **+183 tokens total (+8.9%)**, **zero removals**, while
+the ceiling moved +173%. The warden's summary is the fairest reading available: the number tracks
+neither the document nor a costed need, and 4096 is the shape of a context window rather than of a
+language.
+
+**So the veto moves and something has to replace it.** At the observed mean of +30 tokens per
+amendment, 4096 binds after ~61 more amendments where 3000 would have bound after ~25 — a threshold
+that fires after five dozen panels is not an instrument. Two checks are owed, both enforceable at
+2231 rather than at the ceiling, and both are queued rather than adopted here because they are
+architecture (CLAUDE.md §4): a **delta gate**, failing when a commit's spec delta exceeds ~+50 tokens
+without a named removal or a registered prediction — level-independent, so it survives the next
+raise — and a **mortgage ledger** quoting each closure item separately, so that 2231 + Σquotes
+clearing the ceiling is arithmetic somebody can read.
 
 **Why 1500 fell.** (Raised to 2000 on 2026-08-04, panel 009; superseded the same day by the measurement above.) Two reasons
 are on the record. First, 1500 was a forcing function, never a measurement — and it was being
@@ -259,8 +286,10 @@ the design rule it always was and stops being an audited one (panel 011).
 
 **The discipline the number was proxying for survives independently of headroom: every addition
 still carries §1.0's burden of proof — compiler-need or a measured thesis effect — and a bigger
-budget buys no exemption from it.** A spec that grows to fill 3000 tokens because it can has failed
-§1.2 just as surely as one that breaches it.
+budget buys no exemption from it.** A spec that grows to fill the budget because it can has failed
+§1.2 just as surely as one that breaches it. Honest counter-evidence on the mechanism, from the same
+measurement: the "named removal" clause has produced **zero removals in seven amendments**. It damps
+growth; it does not subtract.
 
 Historical calibration: Wirth's **Oberon report** is sixteen pages, and an entire operating system
 was written in Oberon. That is the right order of magnitude for one person.
@@ -2175,7 +2204,7 @@ that compiles and diffs. This is the only thing that makes it possible to evolve
 silently breaking it.
 
 **Write the spec in condensed English early — around step 7, not at the end.** It is the control
-instrument: if it doesn't fit in 3000 tokens, too much has been added, and you find out in an hour
+instrument: if it doesn't fit in 4096 tokens, too much has been added, and you find out in an hour
 instead of three months. Count it with a real tokeniser, not by estimation — the BPE vocabulary
 contains arbitrary choices nobody predicts.
 
