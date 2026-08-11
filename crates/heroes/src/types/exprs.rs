@@ -211,9 +211,17 @@ fn name(
             }
             _ => checker.error_ty(),
         },
-        // A built-in used as a value: there are no built-in function *values*
-        // (they are compiler forms), so this is only reachable as a callee, and
-        // `calls.rs` never asks for the name's type.
-        Ref::Builtin(_) | Ref::Unresolved => checker.error_ty(),
+        // **A built-in used as a value.** The comment here used to say this was
+        // "only reachable as a callee" and it was false: `f = to_str` and
+        // `map(xs, to_str)` both reach it, and an `error_ty()` with no diagnostic
+        // is poison — it flowed to the emitter and produced `typedef HeroValue
+        // (*h_m_fn0)(int64_t)`, exit 2. Found by M6's closure-list audit.
+        Ref::Builtin(index) => {
+            let what = crate::resolve::BUILTINS[index as usize].name;
+            let diagnostic = errors::builtin_as_value(what, span);
+            checker.push_diagnostic(diagnostic);
+            checker.error_ty()
+        }
+        Ref::Unresolved => checker.error_ty(),
     }
 }

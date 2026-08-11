@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-builtin-as-value.hero:30:9: error[builtin_as_value]: `to_str` is a built-in of the language, not a function value — several take any number of arguments, or arguments of several types, which no single signature can describe
+tests/golden/check/fixedbugs-builtin-as-value.hero:33:23: error[builtin_as_value]: `len` is a built-in of the language, not a function value — several take any number of arguments, or arguments of several types, which no single signature can describe

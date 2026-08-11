@@ -211,6 +211,38 @@ pub(in crate::types) fn record_name_alone(name: &str, span: Span) -> Diagnostic 
 }
 
 
+/// A built-in used as a value rather than called.
+///
+/// **Found by M6's closure-list audit, on its first program**, and it was silent
+/// in the worst way: `exprs.rs` answered `error_ty()` with no diagnostic, and an
+/// error type with nothing reported is poison that flows into the emitter.
+/// `map(xs, to_str)` type-checked at exit 0 and then produced
+/// `typedef HeroValue (*h_m_fn0)(int64_t);` — `error: type specifier missing` —
+/// which CLAUDE.md §7 reserves for the compiler being wrong.
+///
+/// The rule already existed and only the message was missing: spec line 89 says
+/// *top-level functions* are values, and a built-in is not one. Several of them
+/// could not be, whatever the spec said — `print` takes any number of arguments
+/// of four types and `len` works on three, which is precisely why they are
+/// built-ins rather than declarations (`types/builtins.rs`'s own module doc).
+///
+/// The fix is a wrapper, and it is named because the reader would otherwise have
+/// to invent the shape.
+pub(in crate::types) fn builtin_as_value(name: &str, span: Span) -> Diagnostic {
+    Diagnostic::new(
+        "builtin_as_value",
+        format!(
+            "`{name}` is a built-in of the language, not a function value — several \
+             take any number of arguments, or arguments of several types, which no \
+             single signature can describe"
+        ),
+        span,
+    )
+    .with_note(format!(
+        "wrap it: `function {name}_of(x: …) -> …` with `return {name}(x)`, and pass that"
+    ))
+}
+
 pub(in crate::types) fn variant_not_callable(name: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "variant_not_callable",

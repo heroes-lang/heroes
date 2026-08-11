@@ -1,0 +1,33 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-11, M6's closure-list audit, first program): `map(xs, to_str)`
+# checked clean at exit 0 and then failed to compile as C —
+#
+#   typedef HeroValue (*h_m_fn0)(int64_t);
+#   error: type specifier missing, defaults to 'int'
+#
+# — reported as exit 2, which CLAUDE.md §7 reserves for the compiler being wrong.
+#
+# CAUSE: `types/exprs.rs` answered `error_ty()` for a built-in used as a value
+# **with no diagnostic**, and its comment said the case was "only reachable as a
+# callee". That was false: `f = to_str` and `map(xs, to_str)` both reach it. An
+# error type with nothing reported is poison — every other `error_ty()` in this
+# checker means "a mistake was already reported", and this one meant nothing.
+#
+# FIX: say so. The rule already existed and only the message was missing — spec
+# line 89 says *top-level functions* are values, and a built-in is not one.
+# Several of them could not be, whatever the spec said: `print` takes any number
+# of arguments of four types and `len` works on three, which is exactly why they
+# are built-ins rather than declarations.
+#
+# The fix note names the wrapper, because a reader would otherwise have to invent
+# its shape — and the llm-ergonomist predicted at panel 029 that ≥80% of
+# higher-order attempts would write one. It was right, and the compiler now says
+# so instead of leaving it to be discovered.
+# Bulk regression case.
+
+function main()
+    f = to_str          #~ builtin_as_value
+    print(f(1))
+    xs = [1, 2]
+    print(len(map(xs, len)))   #~ builtin_as_value
