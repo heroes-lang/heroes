@@ -59,7 +59,7 @@ pub fn misplaced(diagnostics: &[crate::diagnostics::Diagnostic], src: &Source) -
     let first = diagnostics.iter().find(|d| src.is_library(d.span.start))?;
     Some(format!(
         "a diagnostic landed inside the Heroes library, at its line {}: [{}] {}",
-        src.library_line_of(first.span.start),
+        src.file_line_of(first.span.start),
         first.code,
         first.message
     ))

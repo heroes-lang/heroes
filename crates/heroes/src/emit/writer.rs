@@ -152,7 +152,7 @@ fn escape(path: &str) -> String {
 /// answered in one place (CLAUDE.md §11's rule about where a rule lives).
 pub(super) fn at_span(w: &mut Writer, src: &crate::source::Source, offset: u32) {
     if src.is_library(offset) {
-        w.at_library(src.library_line_of(offset));
+        w.at_library(src.file_line_of(offset));
     } else {
         let (line, _) = src.line_col(offset);
         w.at_source(line);

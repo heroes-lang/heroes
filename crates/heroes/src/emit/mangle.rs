@@ -11,50 +11,32 @@
 //! what makes the scheme injective. Without it `h_<module>_<name>` is ambiguous
 //! wherever both halves may contain `_`: module `print` with name
 //! `inst_value_name` and module `print_inst` with name `value_name` are the same
-//! symbol — and those are this compiler's own file names, so M8a would have met it
+//! symbol — and those are this compiler's own file names, so M8a met it
 //! immediately. With the module alphanumeric, the first `_` after `h_` ends it.
 //! Nim reserves `__` for the same purpose and can do so because its identifiers
 //! forbid it; Heroes does not forbid `__`, so the separator cannot be widened and
 //! the *component* is narrowed instead.
 //!
-//! Residual and recorded: `print_inst.hero` and `printinst.hero` are one module.
-//! The failure is a duplicate-symbol error from the linker, which is loud — and at
-//! M8a a module is a declared name rather than a file stem, so the shape stops
-//! being a stem-sanitising question at all.
+//! **This paragraph used to end "at M8a a module is a declared name rather than
+//! a file stem, so the shape stops being a stem-sanitising question at all", and
+//! that was false** — panel 031 had it compiled. A module name is an identifier,
+//! identifiers admit `_`, and modules `geo_m` and `geom` still produce one
+//! component: `error: redefinition of 'h_geom_Point'`, which CLAUDE.md §7 turns
+//! into exit 2 — *the compiler is wrong* — on a program the author was entitled
+//! to write. The residual is real and it is now refused as a Heroes diagnostic
+//! naming both files (panel 031 R10), because the collision is a property of a
+//! set of modules and belongs where that set is known.
+//!
+//! **`module_of` and `LIBRARY_MODULE` live in `crate::source`** since M8a. A
+//! module is a language-level thing now — it is what a qualified name names —
+//! and the C symbol is downstream of it, so the file table owns the answer and
+//! this file spends it.
 //!
 //! `_<typehash>` arrives at M6 step 6 with monomorphisation: two copies of one
 //! generic declaration are two C functions, so the type arguments have to be in
 //! the name. `instance` below carries the reasoning, which three judges shaped.
 
-/// The module a source path stands for, until modules exist (M8a).
-///
-/// The file's stem, alphanumerics only. Deterministic from the path *as given* —
-/// `./x.hero`, `x.hero` and `/tmp/x.hero` all yield `x`, which is what keeps
-/// `--emit-c` byte-identical across invocations that name the same file
-/// differently.
-pub fn module_of(path: &str) -> String {
-    let file = path.rsplit(['/', '\\']).next().unwrap_or(path);
-    let stem = file.split('.').next().unwrap_or(file);
-    let kept: String = stem.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
-    if kept.is_empty() {
-        // A file called `.hero` or `---.hero`. It has to become *something*, and
-        // one fixed word is better than an empty component, which would make
-        // `h__main` collide with a module named `_`.
-        return "anon".to_string();
-    }
-    kept
-}
-
-/// The module component the library's own functions get, whatever file is being
-/// compiled. `range` is `h_library_range` in every program.
-///
-/// The reason is M8a's, decided at panel 028 R3b with the evidence in hand: one
-/// `.c` per module, every Heroes function emitted with external linkage, and two
-/// modules that both call `range` are `ld: duplicate symbol` at every
-/// optimisation level. The rule is one definition and many prototypes — which
-/// only works if the definition has the *same* name everywhere, so the module
-/// component cannot be the user's file stem.
-pub const LIBRARY_MODULE: &str = "library";
+use crate::source::LIBRARY_MODULE;
 
 /// The suffix a monomorphised instance carries: a hash of the **canonically
 /// rendered** type arguments (CLAUDE.md §7's `_<typehash>`, panel 029 R5).
@@ -72,7 +54,7 @@ pub const LIBRARY_MODULE: &str = "library";
 /// **Not a hash of the `TyId` sequence.** `TyId` is an interning-order artifact,
 /// and the M8c fixpoint compares generated C byte for byte — a `TyId`-derived hash
 /// would require the Rust bootstrap and the Heroes port to intern in *identical*
-/// order. `module_of` above already refuses a path-dependent name for the same
+/// order. `source::module_of` already refuses a path-dependent name for the same
 /// reason.
 ///
 /// **A hash of the rendering**, therefore: reproducible by any implementation from

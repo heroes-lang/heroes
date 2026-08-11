@@ -59,7 +59,7 @@ mod tests;
 
 pub use builtins::EMITTED as EMITTED_BUILTINS;
 pub use gate::subset;
-pub use mangle::module_of;
+pub use crate::source::module_of;
 
 /// The `test` blocks in this program, in source order, by their titles.
 ///
@@ -137,7 +137,7 @@ pub fn emit_for(
     if !refused.is_empty() {
         return Emitted { c: String::new(), diagnostics: refused };
     }
-    let module = mangle::module_of(&src.name);
+    let module = crate::source::module_of(&src.name);
     let names = ctype::Names::new(&module, ast, src)
         .with_options(&module, checked)
         .with_functions(&module, checked, program);
