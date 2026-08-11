@@ -21,3 +21,20 @@ _Noreturn void hero_unreachable(void) {
 void hero_print_int(int64_t v) { printf("%lld", (long long)v); }
 void hero_print_bool(bool v) { fputs(v ? "true" : "false", stdout); }
 void hero_print_end(void) { putchar('\n'); }
+
+/* Which test `heroes test` asked for. In the runtime rather than the generated C
+ * because CLAUDE.md §7 lets a translation unit include `heroes_runtime.h` and
+ * nothing else — `strtol` would need `<stdlib.h>`, and a second header in every
+ * generated unit is the collision surface §4.19 spends the FFI budget avoiding.
+ *
+ * A missing or unreadable argument is a compiler bug, not a user error: the only
+ * caller is `heroes test`, which always passes an index it computed itself. */
+int64_t hero_test_index(int argc, char **argv) {
+    if (argc < 2 || argv[1] == NULL) hero_panic("no test index — this is a compiler bug");
+    int64_t n = 0;
+    for (const char *p = argv[1]; *p != '\0'; p++) {
+        if (*p < '0' || *p > '9') hero_panic("bad test index — this is a compiler bug");
+        n = n * 10 + (*p - '0');
+    }
+    return n;
+}

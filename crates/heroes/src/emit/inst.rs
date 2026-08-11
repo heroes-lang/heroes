@@ -290,6 +290,60 @@ pub(super) fn emit(
                 _ => w.line("    hero_unreachable(); /* a must with no failure */"),
             }
         }
+        // `assert` (§4.18, spec line 163: "shows the source expression and both
+        // sides"). The IR carries three operands where the asserted expression is
+        // a comparison and one where it is not (`ir/asserts.rs`), and each side is
+        // rendered through the same `to_str` entry point `print` uses — so a side
+        // with no rendering (a record, an array) falls back to the text alone
+        // rather than inventing one.
+        Op::Abort { reason: crate::ir::Abort::Assert, args } => {
+            w.at_generated();
+            let operands = function.args_of(args);
+            let rendered: Vec<String> = operands
+                .iter()
+                .skip(1)
+                .filter_map(|arg| match arg {
+                    Arg::Value(value) => {
+                        let ty = checked.types.get(function.value_type(*value));
+                        let entry = match ty {
+                            Ty::Int => "hero_int_to_str",
+                            Ty::F64 => "hero_f64_to_str",
+                            Ty::Bool => "hero_bool_to_str",
+                            Ty::Str => "hero_str_identity",
+                            _ => return None,
+                        };
+                        Some(format!("{entry}({})", mangle::value(value.0)))
+                    }
+                    Arg::InOut(_) => None,
+                })
+                .collect();
+            let text = match operands.first() {
+                Some(Arg::Value(value)) => mangle::value(value.0),
+                _ => {
+                    w.line("    hero_unreachable(); /* an assert with no text */");
+                    return;
+                }
+            };
+            if rendered.len() == 2 {
+                w.line(&format!(
+                    "    hero_panic_assert_sides({text}, {}, {});",
+                    rendered[0], rendered[1]
+                ));
+            } else {
+                // A side with no rendering — a record, an array — is still
+                // computed: the lowering does not know what C can print, and
+                // asking it to would put a backend question in the IR. Discarding
+                // it explicitly is what keeps `-Wunused-but-set-variable` at zero,
+                // and the cast says "deliberately" where silence would say
+                // "forgotten".
+                for arg in operands.iter().skip(1) {
+                    if let Arg::Value(value) = arg {
+                        w.line(&format!("    (void){};", mangle::value(value.0)));
+                    }
+                }
+                w.line(&format!("    hero_panic_assert({text});"));
+            }
+        }
         Op::Tag(base) => {
             if let Some(name) = target {
                 let text = match checked.types.get(function.value_type(base)) {
@@ -350,7 +404,6 @@ pub(super) fn emit(
         // neither has an address to take.
         Op::FuncRef(_)
         | Op::Cast { .. }
-        | Op::Abort { .. }
         | Op::Hole
         | Op::Missing => {
             w.line("    hero_unreachable(); /* the gate refuses this form */");

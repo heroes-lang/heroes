@@ -45,6 +45,7 @@ pub enum Tag {
     Check,
     Build,
     Run,
+    Test,
     Fmt,
     Version,
     Help,

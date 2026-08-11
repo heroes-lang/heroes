@@ -19,11 +19,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 9
+#define HERO_RUNTIME_ABI 10
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
 _Noreturn void hero_unreachable(void);
+
+/* `heroes test`'s argument, parsed here so a generated unit still includes this
+ * header and nothing else (CLAUDE.md §7). */
+int64_t hero_test_index(int argc, char **argv);
 
 void hero_print_int(int64_t v);
 void hero_print_bool(bool v);
@@ -149,6 +153,14 @@ HeroFailure hero_failure_missing_key(void);
  * message is the `code` and `msg` the author wrote — a panic saying only that a
  * `.must()` failed tells the reader the one thing they already know. */
 _Noreturn void hero_panic_must(HeroFailure f);
+
+/* `assert` (§4.18). Two entry points because C has no optional arguments and the
+ * spec asks for both the source expression AND both sides — the second is what a
+ * bare "assert failed" loses. The emitter renders each side through the same
+ * `to_str` entry points `print` uses, and falls back to the text-only form where
+ * a side has no rendering (a record, an array). */
+_Noreturn void hero_panic_assert(HeroStr text);
+_Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *

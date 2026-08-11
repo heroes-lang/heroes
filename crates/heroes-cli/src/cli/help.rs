@@ -31,7 +31,7 @@ pub fn help() -> String {
          \x20        2 the tool could not run. `run` forwards the program's own status.\n\
          env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n\
          \x20        under the working directory or beside the compiler.\n\n\
-         More commands arrive with each milestone: test (M6)\n\
+         More commands arrive with each milestone:\n\
          lsp outline explain (M6+) · cc doc (M7)\n",
     );
     out

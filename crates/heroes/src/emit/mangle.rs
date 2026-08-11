@@ -110,6 +110,18 @@ pub fn instance_of(module: &str, name: &str, rendered: &str) -> String {
     format!("{}_{}", function(module, name), instance(rendered))
 }
 
+/// One `test` block, by its position in the file.
+///
+/// **By index, not by title.** A title is a string literal — `test "3-4-5
+/// triangle"` — so it contains spaces, digits at the front, and any UTF-8 the
+/// author likes, none of which a C identifier admits. Sanitising it would need a
+/// second escape scheme and would still not be injective, which is the argument
+/// `instance` above makes for the type hash. The index is already unique and
+/// already stable in source order.
+pub fn test(module: &str, index: usize) -> String {
+    format!("h_{module}_test{index}")
+}
+
 /// A `record` or `variant` type, as a C struct tag and typedef name.
 ///
 /// Same scheme as a function, and deliberately in the same namespace: C has one

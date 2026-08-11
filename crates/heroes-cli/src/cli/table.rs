@@ -82,6 +82,13 @@ pub fn commands() -> Vec<Command> {
             summary: "compile at -O2 and execute (the dev loop)".to_string(),
         },
         Command {
+            tag: Tag::Test,
+            name: "test".to_string(),
+            operand: Operand::File,
+            flags: vec![flag("--sanitize", "compile with -fsanitize=address,undefined")],
+            summary: "run the file's `test` blocks".to_string(),
+        },
+        Command {
             tag: Tag::Fmt,
             name: "fmt".to_string(),
             operand: Operand::File,

@@ -25,7 +25,7 @@
 use std::path::PathBuf;
 
 use heroes::diagnostics::{render, Diagnostic};
-use heroes::emit::{emit, entry_point, module_of};
+use heroes::emit::{emit_for, entry_point, module_of, Target};
 use heroes::ir::{dump, lower, verify};
 use heroes::ir::mono;
 use heroes::own;
@@ -50,10 +50,27 @@ pub struct Options {
     /// sharing a directory with a plain one is the same silent staleness the level
     /// key exists to prevent.
     pub sanitize: bool,
+    /// Which translation unit to build: the program, or the one that runs the
+    /// file's `test` blocks (§4.18). Part of the cache key, for the reason the two
+    /// above are — a test binary sharing a directory with a program binary is one
+    /// configuration pretending to be two.
+    pub target: Target,
 }
 
 /// `Ok(None)` — it stopped at a dump. `Ok(Some(path))` — that binary exists now.
 pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
+    compile_with_tests(path, options).map(|pair| pair.map(|(binary, _)| binary))
+}
+
+/// The same pipeline, handing back the `test` block titles as well.
+///
+/// `heroes test` needs them before it runs anything: the binary takes an index,
+/// and the titles stay in the compiler where they are already exact rather than
+/// being marshalled through C (see `decls::test_shim`).
+pub fn compile_with_tests(
+    path: &str,
+    options: &Options,
+) -> Result<Option<(PathBuf, Vec<String>)>, Exit> {
     let src = match input::read(path) {
         Ok(src) => src,
         Err((message, exit)) => {
@@ -124,7 +141,8 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
         eprintln!("no binary: {count} {unit} in {}", src.name);
         return Err(Exit::Diagnostics);
     }
-    let emitted = emit(&lowered.program, &parsed.ast, &resolved, &checked, &src);
+    let emitted =
+        emit_for(options.target, &lowered.program, &parsed.ast, &resolved, &checked, &src);
     report(&emitted.diagnostics, &src)?;
     if options.emit_c {
         match &options.output {
@@ -133,7 +151,10 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
         }
         return Ok(None);
     }
-    if entry_point(&lowered.program).is_none() {
+    // A test build needs no `main`: the `test` blocks are the program. A file with
+    // tests and no `main` is a legitimate thing to write, and `heroes test` is
+    // where it runs.
+    if options.target == Target::Program && entry_point(&lowered.program).is_none() {
         let end = src.text.len() as u32;
         let diagnostic = Diagnostic::new(
             "no_entry_point",
@@ -154,7 +175,11 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
         }
     };
     let module = module_of(&src.name);
-    let dir = match toolchain.dir_for(&src.name, &src.text, options.level, options.sanitize) {
+    let level_key = match options.target {
+        Target::Program => options.level.to_string(),
+        Target::Tests => format!("{}+tests", options.level),
+    };
+    let dir = match toolchain.dir_for(&src.name, &src.text, &level_key, options.sanitize) {
         Ok(dir) => dir,
         Err(message) => {
             eprintln!("error: {message}");
@@ -182,7 +207,7 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
         eprintln!("the generated C is at {}", c_file.display());
         return Err(Exit::Failed);
     }
-    Ok(Some(binary))
+    Ok(Some((binary, heroes::emit::tests_of(&lowered.program))))
 }
 
 fn write(path: &str, text: &str) -> Result<(), Exit> {

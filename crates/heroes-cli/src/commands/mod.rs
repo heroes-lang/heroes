@@ -8,4 +8,5 @@ pub mod measure;
 pub mod mutate;
 pub mod parse;
 pub mod run;
+pub mod test;
 pub mod toolchain;

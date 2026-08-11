@@ -70,6 +70,7 @@ pub fn subset() -> String {
 /// Every capability this program needs and this backend lacks, sorted by where it
 /// first appears.
 pub(super) fn refuse(
+    target: super::Target,
     program: &Program,
     ast: &Ast,
     resolved: &Resolved,
@@ -79,8 +80,10 @@ pub(super) fn refuse(
     let mut found: Vec<(String, String, Span)> = Vec::new();
     let _ = resolved;
     for function in &program.functions {
-        // §4.18: `heroes test` enters these and ordinary builds ignore them.
-        if function.kind == FnKind::Test {
+        // §4.18: `heroes test` enters these and ordinary builds ignore them. Under
+        // `heroes test` they ARE the program, so the gate walks them like any
+        // other function — and the `assert` row below can finally fire.
+        if function.kind == FnKind::Test && target != super::Target::Tests {
             continue;
         }
         if function.kind == FnKind::Extern {
@@ -265,21 +268,17 @@ fn check_op(
         Op::Len(_) => {}
         // A function designator, from M6 step 5.
         Op::FuncRef(_) => {}
-        Op::Abort { reason, .. } => {
-            let (code, what) = match reason {
-                // `.must()` emits from M6 step 1.
-                Abort::Must => return,
-                // **This row cannot fire today, and that is worth writing down rather
-                // than testing.** An `assert` lives inside a `test` (§4.18), ordinary
-                // builds skip `FnKind::Test` entirely (above), and `heroes test` does not
-                // exist yet — so no program reaches here. It is the same shape as
-                // `cow_check`, struck at M5b for having zero call sites, and it is kept
-                // only because the step that lands `heroes test` needs the row already
-                // written. If that step slips, this row should be struck, not defended.
-                Abort::Assert => ("assert", "`assert`".to_string()),
-            };
-            note(found, code, what, span);
-        }
+        // **Both aborts emit, and the second row is retired rather than defended.**
+        // `.must()` landed at M6 step 1. `assert` was kept at M5d "only because
+        // the step that lands `heroes test` needs the row already written" — that
+        // step is M6 step 7, and what it needed turned out to be the *emission*,
+        // not the refusal. An ordinary build never reaches a `test` block, and a
+        // test build emits it, so no program can make this row fire. The arm holds
+        // no rows rather than being deleted, which is the gate's own design: adding
+        // an `Abort` kind is a compile error here.
+        Op::Abort { reason, .. } => match reason {
+            Abort::Must | Abort::Assert => {}
+        },
         // §4.16 says a holed file "produces no binary". The build path reports the
         // holes themselves and stops before here, so this row is the belt to that
         // braces: a hole must never be emitted as anything.

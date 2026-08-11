@@ -61,6 +61,20 @@ pub use builtins::EMITTED as EMITTED_BUILTINS;
 pub use gate::subset;
 pub use mangle::module_of;
 
+/// The `test` blocks in this program, in source order, by their titles.
+///
+/// `heroes test` needs the list before it runs anything: it compiles once and
+/// then runs the binary once per test, so each failure is its own process and one
+/// abort does not hide the tests after it.
+pub fn tests_of(program: &Program) -> Vec<String> {
+    program
+        .functions
+        .iter()
+        .filter(|f| f.kind == FnKind::Test)
+        .map(|f| f.name.clone())
+        .collect()
+}
+
 /// What came out. Exactly one of the two is interesting: with any diagnostic the
 /// C is empty, because a translation unit missing the form that was refused would
 /// compile into a program that quietly does less.
@@ -85,6 +99,22 @@ pub fn entry_point(program: &Program) -> Option<usize> {
 /// The gate runs first and to completion: every unsupported form is reported,
 /// sorted by span, because a message that carries the list is one round trip and
 /// three invocations is three (`cli.rs`'s own rule, applied to the backend).
+/// What the translation unit is *for*: an ordinary binary, or one that runs the
+/// file's `test` blocks (§4.18).
+///
+/// It is one enum rather than a `bool` because the two differ in three places —
+/// which functions are emitted, which `main` is written, and whether `main` is
+/// written at all — and a `bool` at three call sites is three chances to read it
+/// backwards.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Target {
+    /// `heroes build` and `heroes run`: `test` blocks are ignored (§4.18).
+    Program,
+    /// `heroes test`: the `test` blocks are the program, and one is chosen by
+    /// index at run time so each runs in its own process.
+    Tests,
+}
+
 pub fn emit(
     program: &Program,
     ast: &Ast,
@@ -92,7 +122,18 @@ pub fn emit(
     checked: &Checked,
     src: &Source,
 ) -> Emitted {
-    let refused = gate::refuse(program, ast, resolved, checked, src);
+    emit_for(Target::Program, program, ast, resolved, checked, src)
+}
+
+pub fn emit_for(
+    target: Target,
+    program: &Program,
+    ast: &Ast,
+    resolved: &Resolved,
+    checked: &Checked,
+    src: &Source,
+) -> Emitted {
+    let refused = gate::refuse(target, program, ast, resolved, checked, src);
     if !refused.is_empty() {
         return Emitted { c: String::new(), diagnostics: refused };
     }
@@ -101,7 +142,7 @@ pub fn emit(
         .with_options(&module, checked)
         .with_functions(&module, checked, program);
     let mut w = writer::Writer::new(&src.name, &module);
-    decls::prelude(&mut w, program, src);
+    decls::prelude(&mut w, program, target, src);
     // Types before anything that can mention one: the typedefs in containment order
     // (`Checked::type_order`, filtered — panel 023 R3), then every per-type prototype,
     // then the ordinary function prototypes.
@@ -121,14 +162,19 @@ pub fn emit(
         .filter(|f| !src.is_library(f.span.start) || used.contains(&f.decl))
         .collect();
     for function in &shown {
-        decls::prototype(&mut w, function, ast, checked, src, &names, &module);
+        decls::prototype(&mut w, function, target, ast, checked, src, &names, &module);
     }
     for function in &shown {
-        decls::definition(&mut w, program, function, ast, checked, &names, src, &module);
+        decls::definition(&mut w, program, function, target, ast, checked, &names, src, &module);
     }
     perfn::bodies(&mut w, ast, checked, &names, src);
-    if let Some(index) = entry_point(program) {
-        decls::shim(&mut w, &program.functions[index], &module);
+    match target {
+        Target::Program => {
+            if let Some(index) = entry_point(program) {
+                decls::shim(&mut w, &program.functions[index], &module);
+            }
+        }
+        Target::Tests => decls::test_shim(&mut w, program, src, &module),
     }
     Emitted { c: w.finish(), diagnostics: Vec::new() }
 }

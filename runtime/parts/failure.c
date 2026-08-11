@@ -64,3 +64,32 @@ _Noreturn void hero_panic_must(HeroFailure f) {
             hero_str_cstr(f.code), hero_str_cstr(f.msg));
     abort();
 }
+
+/* -- `assert` (§4.18, spec line 163) ---------------------------------------
+ *
+ * "An `assert` failure shows the source expression and both sides." Both halves
+ * matter and the second is the one a bare `assert failed` loses: `dist2(3, 4)
+ * == 25` tells the reader what was claimed, and `26 != 25` tells them what
+ * happened. Two entry points rather than optional arguments, because C has no
+ * optional arguments and a NULL `HeroStr` is the one non-value every entry point
+ * here rejects.
+ *
+ * It is a PANIC, not a return: a test that fails stops. `heroes test` runs each
+ * test in its own process for exactly that reason, so one failure does not hide
+ * the tests after it. */
+_Noreturn void hero_panic_assert(HeroStr text) {
+    hero_str_require(text);
+    fflush(stdout);
+    fprintf(stderr, "assert failed: %s\n", hero_str_cstr(text));
+    abort();
+}
+
+_Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right) {
+    hero_str_require(text);
+    hero_str_require(left);
+    hero_str_require(right);
+    fflush(stdout);
+    fprintf(stderr, "assert failed: %s\n  left:  %s\n  right: %s\n",
+            hero_str_cstr(text), hero_str_cstr(left), hero_str_cstr(right));
+    abort();
+}

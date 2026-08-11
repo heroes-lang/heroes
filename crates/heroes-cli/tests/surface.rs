@@ -429,3 +429,82 @@ fn editing_a_runtime_part_invalidates_the_cached_object() {
          the key hashes runtime.c and heroes_runtime.h only"
     );
 }
+
+/// `heroes test` — §4.18's "run only when asked for", with the asking.
+///
+/// A **subcommand** under CLAUDE.md §10's stopping rule: it answers a different
+/// question about the same input and its artifact is a verdict per test, where
+/// `build`'s is a binary and `run`'s is a process.
+#[test]
+fn test_runs_each_block_and_reports_one_line_each() {
+    let out = heroes(&["test", "examples/calculator.hero"]);
+    let shown = String::from_utf8_lossy(&out.stdout).into_owned();
+    // The report is the artifact, so it is on stdout (§10's contract).
+    assert!(shown.contains("ok   \"precedence and parens\""), "{shown}");
+    assert!(shown.trim_end().ends_with("7 tests, all passed"), "{shown}");
+    assert_eq!(code(&out), 0);
+}
+
+/// A failing test is the **program** being wrong: exit 1, the same code a
+/// diagnostic gets and for the same reason — the tool worked.
+///
+/// And the failure carries what spec line 163 asks for: the source expression
+/// *and both sides*. A bare "assert failed" loses the half that says what
+/// happened.
+#[test]
+fn a_failing_test_shows_the_expression_and_both_sides() {
+    let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    let file = dir.join("build/surface-failing-test.hero");
+    std::fs::create_dir_all(dir.join("build")).expect("build/ is writable");
+    std::fs::write(
+        &file,
+        "function twice(n: int) -> int\n    return n * 2\n\n\
+         test \"holds\"\n    assert twice(2) == 4\n\n\
+         test \"fails\"\n    assert twice(2) == 5\n",
+    )
+    .expect("writable");
+    let out = heroes(&["test", "build/surface-failing-test.hero"]);
+    let shown = String::from_utf8_lossy(&out.stdout).into_owned();
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    let _ = std::fs::remove_file(&file);
+
+    assert!(shown.contains("ok   \"holds\""), "{shown}");
+    assert!(shown.contains("FAIL \"fails\""), "{shown}");
+    assert!(shown.contains("2 tests, 1 failed"), "{shown}");
+    // The expression as the author wrote it, and both sides.
+    assert!(said.contains("assert failed: twice(2) == 5"), "{said}");
+    assert!(said.contains("left:  4"), "{said}");
+    assert!(said.contains("right: 5"), "{said}");
+    assert_eq!(code(&out), 1, "a failing test is the program being wrong");
+}
+
+/// One process per test, which is what makes the report complete: an `assert` is
+/// a panic, so a runner that called them in sequence would stop at the first
+/// failure and hide every test after it.
+#[test]
+fn a_failing_test_does_not_hide_the_ones_after_it() {
+    let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    let file = dir.join("build/surface-order.hero");
+    std::fs::create_dir_all(dir.join("build")).expect("build/ is writable");
+    std::fs::write(
+        &file,
+        "test \"first, and it fails\"\n    assert 1 == 2\n\n\
+         test \"second, and it must still run\"\n    assert 1 == 1\n",
+    )
+    .expect("writable");
+    let out = heroes(&["test", "build/surface-order.hero"]);
+    let shown = String::from_utf8_lossy(&out.stdout).into_owned();
+    let _ = std::fs::remove_file(&file);
+    assert!(shown.contains("FAIL \"first, and it fails\""), "{shown}");
+    assert!(shown.contains("ok   \"second, and it must still run\""), "{shown}");
+}
+
+/// `build` and `run` ignore `test` blocks (§4.18), and a file that is *only*
+/// tests still builds — it just has no `main`, which `test` does not need.
+#[test]
+fn an_ordinary_build_ignores_test_blocks() {
+    let out = heroes(&["build", "examples/calculator.hero", "--emit-c"]);
+    let c = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(!c.contains("hero_panic_assert"), "a test block reached an ordinary build");
+    assert_eq!(code(&out), 0);
+}

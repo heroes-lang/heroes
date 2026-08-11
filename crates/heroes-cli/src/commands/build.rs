@@ -15,6 +15,8 @@
 
 use crate::cli::{Exit, Invocation};
 
+use heroes::emit::Target;
+
 use super::compile::{compile, Options};
 
 pub fn run(path: &str, args: &Invocation) -> Exit {
@@ -36,6 +38,7 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
         emit_c: args.has("--emit-c"),
         output: args.value_of("-o"),
         sanitize: args.has("--sanitize"),
+        target: Target::Program,
     };
     match compile(path, &options) {
         Err(exit) => exit,
