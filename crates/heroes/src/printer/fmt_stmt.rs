@@ -343,12 +343,18 @@ fn close_run(run: &[usize], lefts: &[String], pads: &mut [usize]) {
 /// grouping.
 fn spans_lines(ast: &Ast, src: &Source, value: ExprId) -> bool {
     let expr = &ast.exprs[value.0 as usize];
-    let multi = match &expr.kind {
-        ExprKind::Array(items) => items.len() > 1,
-        ExprKind::Map(entries) => entries.len() > 1,
-        _ => false,
-    };
-    if !multi {
+    // `if` and `match` carry blocks and the statement printer moves `last_line`
+    // for them itself; their spans reach a `Dedent` sitting on the *next* line,
+    // which is the hazard `literal_end_line`'s doc warns about. Every other kind
+    // is answered by its own extent.
+    //
+    // It used to be `Array` and `Map` alone, on the reasoning that a multi-line
+    // list is the only value that does not end on the line it started. That was
+    // true of source a person writes and false of source **this formatter
+    // writes**: the 88-column rule breaks a long call across lines, so
+    // formatting twice inserted a blank line after every one of them
+    // (`fixedbugs_formatting_twice_does_not_grow_a_blank_line`).
+    if matches!(expr.kind, ExprKind::If { .. } | ExprKind::Match { .. }) {
         return false;
     }
     let (first, _) = src.line_col(expr.span.start);
@@ -356,13 +362,13 @@ fn spans_lines(ast: &Ast, src: &Source, value: ExprId) -> bool {
     last > first
 }
 
-/// The last source line a statement's own text occupies, when its value is a
-/// **list literal written across lines** — and `None` otherwise.
+/// The last source line a statement's own text occupies, when its **value**
+/// crosses lines — and `None` otherwise.
 ///
-/// Deliberately narrow. The blank-line rule needs to know where a statement
-/// stopped, and a multi-line list is the one case where that is not the line it
-/// started on. Every other case is answered by the block printer itself, and
-/// asking the statement's span instead would reach past a `Dedent` onto the next
+/// The blank-line rule needs to know where a statement stopped, and the answer
+/// is the *value expression's* extent, never the statement's own span: a
+/// statement ending in a block ends at a `Dedent` whose span sits on the next
+/// line, and asking it made `trailing_comment` steal the following
 /// declaration's doc comment.
 fn literal_end_line(ast: &Ast, src: &Source, stmt: &crate::syntax::Stmt) -> Option<u32> {
     let value = match &stmt.kind {

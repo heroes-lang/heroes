@@ -267,3 +267,95 @@ fn statement_arm_bodies_are_canonical() {
     assert_eq!(format(text), text);
     assert_canonical(text);
 }
+
+/// **fixedbugs, 2026-08-12.** Symptom: `heroes fmt` run twice on a file grew a
+/// blank line — `fmt(fmt(x)) != fmt(x)` — on two of the ninety-odd programs in
+/// the repository. Cause: the blank-line rule asks where the previous statement
+/// *ended*, and `spans_lines` answered that question only for `Array` and `Map`
+/// values, on the reasoning that a multi-line list is the only value which does
+/// not end on the line it started. That was true of source a person writes and
+/// false of source **this formatter writes**: the 88-column rule breaks a long
+/// call across lines, so the next statement looked one line further away than it
+/// was and the rule invented a separator. Fix: ask the value's own extent, for
+/// every kind except `if` and `match`, whose blocks the statement printer
+/// already accounts for.
+///
+/// The narrowness was documented and argued in a comment, which is why reading
+/// did not catch it — the comment was true when it was written. The corpus sweep
+/// below is what catches the next one.
+#[test]
+fn fixedbugs_formatting_twice_does_not_grow_a_blank_line() {
+    // Over 88 columns, so the formatter itself is what puts it on four lines.
+    assert_canonical(
+        "\
+function nested(a: bool, b: bool) -> int
+    return 1
+
+function main()
+    print(nested(a: true, b: true), nested(a: true, b: false), nested(a: false, b: false))
+    print(2)
+",
+    );
+}
+
+/// **Every program in the repository is canonical-stable**, not the handful
+/// somebody thought to write a case for.
+///
+/// CLAUDE.md §9's rule — assert an invariant over the corpus rather than over
+/// cases — applied to the two properties this module's doc opens with. It is
+/// here because the property was *stated* at M2 and *tested* on one program, and
+/// the two files that violated it sat in `tests/golden/run/` for two milestones
+/// being compiled and executed by a harness that never formatted them.
+#[test]
+fn every_program_in_the_repository_survives_formatting_twice() {
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
+    let mut checked = 0;
+    for dir in ["examples", "tests/golden"] {
+        for path in hero_files(&std::path::Path::new(root).join(dir)) {
+            let text = std::fs::read_to_string(&path).expect("a readable .hero file");
+            let src = Source::new(path.display().to_string(), text.clone());
+            // A `check/` case may be deliberately unparseable; formatting is not
+            // defined for it and `heroes fmt` refuses it (panel 016).
+            if !parse(&src).diagnostics.is_empty() {
+                continue;
+            }
+            let once = format_file(&parse(&src).ast, &parse(&src).comments, &src);
+            let second = Source::new(path.display().to_string(), once.clone());
+            let parsed = parse(&second);
+            assert!(
+                parsed.diagnostics.is_empty(),
+                "formatting produced a file that does not parse: {}",
+                path.display()
+            );
+            let twice = format_file(&parsed.ast, &parsed.comments, &second);
+            assert_eq!(once, twice, "fmt is not idempotent on {}", path.display());
+            assert_eq!(
+                dump_ast(&parse(&src).ast, &src),
+                dump_ast(&parsed.ast, &second),
+                "fmt changed the tree of {}",
+                path.display()
+            );
+            checked += 1;
+        }
+    }
+    assert!(checked > 100, "the sweep found only {checked} programs — is the walk right?");
+}
+
+/// Every `.hero` under `dir`, recursively, in a deterministic order.
+fn hero_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(at) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&at) else { continue };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().and_then(|e| e.to_str()) == Some("hero") {
+                out.push(path);
+            }
+        }
+    }
+    out.sort();
+    out
+}
