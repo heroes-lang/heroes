@@ -1,0 +1,44 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-11, panel 029): three programs checked clean at exit 0, built
+# a binary, and aborted at run time with
+#
+#   panic: entered unreachable code — this is a compiler bug, please report it
+#
+# — `xs: [()] @ []`, `xs: [ptr] @ []`, and `m: {str: ptr} @ {}`. The generated C
+# said what was wrong and nobody read it: `hero_unreachable(); /* not an array */`.
+#
+# CAUSE: `emit/gate.rs`'s `check_type` answered `Ty::Array(_) => return` without
+# looking at what the array held, and the same for `Ty::Map` and `Ty::Fallible`.
+# So the `ffi_type` row never fired for `[ptr]`, and `()` — which has no C
+# declaration at all, by the unit rule — was accepted as an element for which
+# `hero_array_new` would need a descriptor that does not exist.
+#
+# FIX: the walk descends. A container's own row says the container emits; what it
+# HOLDS is the element's row, and `()` gets one of its own, because `()` is a
+# perfectly good type and no kind of element.
+#
+# WHY IT WAS FOUND NOW, which is the part worth keeping: it needs no generics,
+# and it was reachable for three milestones. A judge went looking for a concrete
+# type C could not spell — to decide whether monomorphisation could be
+# instantiated at one — and found that the gate never asked. Until M6 step 6 an
+# author had to *write* `[ptr]` to get here. After it they **infer** it:
+# `map(nums, print)` infers `B := ()` and `map(handles, close)` infers `A := ptr`,
+# and the author never writes the type that lands here at all.
+# Bulk regression case.
+
+function main()
+    units: [()] @ []                #~ unit_element
+    print(len(units))
+    handles: [ptr] @ []             #~ ffi_type
+    print(len(handles))
+    table: {str: ptr} @ {}
+    print(len(table))
+    # A nested one: refused for the `ptr` at the bottom, and named once.
+    deep: [[ptr]] @ []
+    print(len(deep))
+    # And the containers themselves emit, which is what makes the rows above
+    # about the element rather than about the container.
+    fine: [int] @ []
+    nested: {str: [int]} @ {}
+    print(len(fine), len(nested))

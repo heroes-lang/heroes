@@ -1,0 +1,15 @@
+unsupported[unit_element]: `()` as the element of an array is not emitted yet
+  at tests/golden/unsupported/fixedbugs-container-element-reached-clang.hero:31:5
+     |
+  31 |     units: [()] @ []                #~ unit_element
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: no change to this file will fix this
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
+
+unsupported[ffi_type]: the C type `ptr` is not emitted yet
+  at tests/golden/unsupported/fixedbugs-container-element-reached-clang.hero:33:5
+     |
+  33 |     handles: [ptr] @ []             #~ ffi_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: no change to this file will fix this
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet

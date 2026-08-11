@@ -129,6 +129,16 @@ fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span:
 
 /// A type the runtime has no representation for yet. One row per §4.3 table entry,
 /// so M5b and M5c delete rows rather than discovering cases.
+///
+/// **It descends into element and payload types**, and that was a filed defect
+/// rather than a design: `Ty::Array(_) => return` did not look at what the array
+/// held, so `xs: [()] @ []` and `xs: [ptr] @ []` and `m: {str: ptr} @ {}` all
+/// checked clean at exit 0, built a binary, and aborted with `entered
+/// unreachable code — this is a compiler bug`. The generated C said so itself —
+/// `hero_unreachable(); /* not an array */` — and nobody read it (panel 029 R4b).
+///
+/// Until M6 step 6 an author had to *write* `[ptr]` to reach it. After it they
+/// **infer** it: `map(nums, print)` infers `B := ()`.
 fn check_type(
     found: &mut Vec<(String, String, Span)>,
     ast: &Ast,
@@ -141,17 +151,31 @@ fn check_type(
     let (code, what) = match checked.types.get(ty) {
         // M5b landed `str` and `f64`: the two rows that used to be here are gone,
         // which is the gate's whole design — a row dies per milestone.
-        Ty::Int | Ty::Bool | Ty::Unit | Ty::F64 | Ty::Str => return,
-        // M5c — the descriptor pass, whose ABI spike 04 froze.
-        Ty::Array(_) => return,
-        Ty::Map(_, _) => return,
+        Ty::Int | Ty::Bool | Ty::F64 | Ty::Str => return,
+        // `()` has no C declaration at all (`ctype.rs`'s unit rule), which is right
+        // for a temporary and wrong for an element: `hero_array_new` would be handed
+        // a descriptor that does not exist. As a *type in its own right* it is fine,
+        // so the refusal is the container's, below.
+        Ty::Unit => return,
+        // M5c — the descriptor pass, whose ABI spike 04 froze. The container emits;
+        // whether its ELEMENT does is the element's own row.
+        Ty::Array(element) => {
+            return check_element(found, ast, checked, src, function, element, span, "an array")
+        }
+        Ty::Map(key, value) => {
+            check_element(found, ast, checked, src, function, key, span, "a map key");
+            return check_element(found, ast, checked, src, function, value, span, "a map value");
+        }
         // Records and variants both emit from M5c step 4. The row that split at step 3
         // is gone: two capabilities became one again, which is what a milestone
         // finishing looks like.
         Ty::Named(_) | Ty::Case(_, _) => return,
         // A `T?` is a by-value tagged union from M5d. Its *operators* are not all here
         // — `.must()` is an `Op::Abort` with its own row — but the representation is.
-        Ty::Fallible(_) | Ty::Failure => return,
+        Ty::Fallible(payload) => {
+            return check_element(found, ast, checked, src, function, payload, span, "a `T?`")
+        }
+        Ty::Failure => return,
         // M6 step 5: a plain C function pointer, one typedef per distinct
         // signature. The row is gone, which is what a milestone finishing looks
         // like.
@@ -166,6 +190,28 @@ fn check_type(
         Ty::Error => return,
     };
     note(found, code, what, span);
+}
+
+/// What a container holds, which is a narrower question than what a type is.
+///
+/// `()` is a perfectly good type and no kind of element: it has no C declaration,
+/// so there is no descriptor to hand the runtime. Everything else defers to
+/// `check_type`, so an `[[ptr]]` is refused for its `ptr` and says so once.
+fn check_element(
+    found: &mut Vec<(String, String, Span)>,
+    ast: &Ast,
+    checked: &Checked,
+    src: &Source,
+    function: &Function,
+    element: TyId,
+    span: Span,
+    container: &str,
+) {
+    if checked.types.get(element) == Ty::Unit {
+        note(found, "unit_element", format!("`()` as the element of {container}"), span);
+        return;
+    }
+    check_type(found, ast, checked, src, function, element, span);
 }
 
 fn check_op(
