@@ -123,3 +123,20 @@ fn case_fields_of(ast: &Ast, written: &Written, decl: u32, case: u32) -> Vec<TyI
     };
     fields.iter().filter_map(|field| written.get(&field.ty.0).copied()).collect()
 }
+
+/// Extend the table to cover every type interned since it was built.
+///
+/// The table is dense over the interner and built last, on the stated ground that
+/// nothing may intern a type after it — "a `TyId` past the end of this table
+/// would read as uncounted, which is a leak that no test can see". Then
+/// monomorphisation arrived, whose whole job is to intern `[str]` where only
+/// `[A]` existed (panel 029 R3).
+///
+/// So the invariant moves rather than breaking: nothing may intern a type after
+/// this table *without extending it*, and there is exactly one entry point that
+/// does. It recomputes the whole table rather than appending, because the answer
+/// for an existing type can only be the same and a rebuild cannot drift from an
+/// append.
+pub(crate) fn extend(types: &Types, ast: &Ast, written: &Written) -> Vec<bool> {
+    table(types, ast, written)
+}

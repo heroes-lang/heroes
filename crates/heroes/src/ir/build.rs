@@ -255,6 +255,7 @@ fn empty() -> Function {
         values: Vec::new(),
         args: Vec::new(),
         steps: Vec::new(),
+        instance: Vec::new(),
         span: Span { start: 0, end: 0 },
     }
 }

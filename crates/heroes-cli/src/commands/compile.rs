@@ -27,6 +27,7 @@ use std::path::PathBuf;
 use heroes::diagnostics::{render, Diagnostic};
 use heroes::emit::{emit, entry_point, module_of};
 use heroes::ir::{dump, lower, verify};
+use heroes::ir::mono;
 use heroes::own;
 use heroes::resolve::resolve;
 use heroes::source::{Source, Span};
@@ -79,10 +80,26 @@ pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
         }
         return Err(Exit::Failed);
     }
-    // The ownership pass: the first IR→IR pass, and `--dump-ir` shows its result
-    // because that is what the emitter sees (panel 021 R8). The verifier runs again
-    // afterwards, at phase `Owned`, where the invariants are different ones.
+    // **Monomorphisation first, and the order is forced** (panel 029 R1). The
+    // ownership pass asks `is_refcounted`, which answers `false` for a type
+    // parameter — right for `T = int` and a leak for `T = str` — so running it
+    // first does not decline to decide, it decides wrongly, and the verifier
+    // cannot catch it because `released_on_return` asks the same predicate.
     let mut lowered = lowered;
+    let mut checked = checked;
+    let problems = mono::run(&mut lowered.program, &mut checked, &parsed.ast, &src);
+    report(&problems, &src)?;
+    let problems = verify(&lowered.program, &checked);
+    if !problems.is_empty() {
+        eprintln!("internal error: monomorphisation produced an ill-formed program");
+        for problem in &problems {
+            eprintln!("  {problem}");
+        }
+        return Err(Exit::Failed);
+    }
+    // The ownership pass, and `--dump-ir` shows its result because that is what the
+    // emitter sees (panel 021 R8). The verifier runs again afterwards, at phase
+    // `Owned`, where the invariants are different ones.
     own::run(&mut lowered.program, &checked);
     let problems = verify(&lowered.program, &checked);
     if !problems.is_empty() {

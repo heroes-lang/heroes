@@ -87,9 +87,10 @@ pub(super) fn refuse(
             note(&mut found, "extern", "an `extern` function".to_string(), function.span);
             continue;
         }
-        if !function.generics.is_empty() {
-            note(&mut found, "generics", "a generic function".to_string(), function.span);
-        }
+        // The `generics` row died at M6 step 6: monomorphisation deleted every
+        // template and left one concrete copy per type tuple, so a generic
+        // function no longer reaches this backend at all. A survivor is a pass
+        // failure, and `ir/phases.rs` asserts it at two phases rather than here.
         for slot in &function.params {
             let ty = function.slots[slot.0 as usize].ty;
             check_type(&mut found, ast, checked, src, function, ty, function.span);
@@ -180,7 +181,9 @@ fn check_type(
         // signature. The row is gone, which is what a milestone finishing looks
         // like.
         Ty::Func { .. } => return,
-        Ty::Generic(_) => ("generics", "a generic type".to_string()),
+        // Same: a type parameter is gone by the time the emitter runs, and the
+        // verifier says so at `Phase::Mono` and again at `Phase::Owned`.
+        Ty::Generic(_) => return,
         // M7 — §4.19's two opaque types arrive with the header that verifies them.
         Ty::Ptr | Ty::Cstr => {
             let name = render_ty(&checked.types, ast, src, ty, &function.generics);

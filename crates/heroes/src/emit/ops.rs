@@ -238,13 +238,15 @@ pub(super) fn call(
     w: &mut Writer,
     program: &Program,
     function: &crate::ir::Function,
-    checked: &Checked,
+    types: &aggregate::Types,
     callee: crate::ir::Callee,
     args: crate::ir::Args,
     arguments: &[String],
     target: Option<String>,
     module: &str,
+    instance: Vec<crate::types::TyId>,
 ) {
+    let (checked, ast, src) = (types.checked, types.ast, types.src);
     use crate::ir::Callee;
     let assign = match &target {
         Some(name) => format!("{name} = "),
@@ -252,11 +254,17 @@ pub(super) fn call(
     };
     match callee {
         Callee::Heroes(decl) => {
+            // **The instance, not the template.** Monomorphisation deleted the
+            // generic function and left one copy per type tuple, so a call has to
+            // name the copy — and it reads which one from the same table the pass
+            // read (`Checked::instantiations`, keyed by this call's span). One
+            // answer, one place: re-deriving it here is the shape panel 029 R2
+            // refused.
             let name = program
                 .functions
                 .iter()
-                .find(|f| f.decl == decl)
-                .map(|f| mangle::function(module, &f.name))
+                .find(|f| f.decl == decl && f.instance == instance)
+                .map(|f| super::decls::instance_name(f, ast, checked, src, module))
                 .unwrap_or_else(|| "hero_unreachable".to_string());
             w.line(&format!("    {assign}{name}({});", arguments.join(", ")));
         }

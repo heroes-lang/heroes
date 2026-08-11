@@ -1,0 +1,46 @@
+# Generics by monomorphisation: one C function per concrete type tuple (§4.12).
+#
+# The panel required this case by name (029 R3). `Checked::counted` is dense over
+# the interner and was built *last*, on the stated ground that nothing may intern
+# a type after it — "a `TyId` past the end of this table would read as uncounted,
+# which is a leak that no test can see". Monomorphisation interns `[str]` where
+# only `[A]` existed, so the table is rebuilt after the pass, and this program is
+# what proves it: **one generic instantiated at `str` and at `int` in the same
+# file**, run under `--sanitize` with the leak counter asserted at exit.
+#
+# If the rebuild were missing, the `str` instance would read as uncounted and leak
+# silently while the `int` instance stayed correct — which is why one type is not
+# enough to test it.
+# Bulk regression case.
+
+function first<T>(xs: [T]) -> T
+    return xs[0]
+
+function last<T>(xs: [T]) -> T
+    return xs[len(xs) - 1]
+
+# Two type parameters, and the second appears only in the function's result.
+function convert<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
+    out: [B] @ []
+    for x in xs
+        out @ push(out, f(x))
+    return out
+
+function label(n: int) -> str
+    return "#" + to_str(n)
+
+function main()
+    # The counted instance and the uncounted one, side by side.
+    print(first(["ziggy", "starman"]), " ", first([1, 2, 3]))
+    print(last(["ziggy", "starman"]), " ", last([1, 2, 3]))
+
+    # A generic calling built-ins on its parameter, instantiated twice.
+    print(join(convert([1, 2, 3], label), "-"))
+
+    # The same instance reached twice is one C function, not two.
+    print(first([10, 20]), first([30, 40]))
+
+    # A generic over an owning type inside another: `[[str]]` interns a type the
+    # program never wrote.
+    rows = [["a", "b"], ["c"]]
+    print(len(first(rows)), " ", first(first(rows)))

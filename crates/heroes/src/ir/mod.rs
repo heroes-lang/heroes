@@ -59,6 +59,7 @@ mod build;
 mod calls;
 mod control;
 mod decls;
+pub mod mono;
 mod exprs;
 mod fallible;
 mod inst;
@@ -162,6 +163,10 @@ pub struct Function {
     pub args: Vec<Arg>,
     /// The field/index-step pool, for the same reason: `Place` stays `Copy`.
     pub steps: Vec<Step>,
+    /// The type arguments this function was instantiated at, empty for every
+    /// ordinary function (§4.12, panel 029). It is what makes two copies of one
+    /// generic declaration different functions, and what the mangler hashes.
+    pub instance: Vec<TyId>,
     pub span: Span,
 }
 
@@ -197,6 +202,14 @@ impl Function {
 pub enum Phase {
     /// Straight out of lowering. No `incref`, no `decref`.
     Lowered,
+    /// Monomorphisation has run: no `Ty::Generic` survives anywhere.
+    ///
+    /// **Between lowering and ownership, and the order is forced.**
+    /// `is_refcounted` answers `false` for `Ty::Generic`, which is right for
+    /// `T = int` and a leak for `T = str` — so an ownership pass running first
+    /// does not decline to decide, it decides wrongly, and `released_on_return`
+    /// cannot catch it because it asks the same predicate (panel 029 R1).
+    Mono,
     /// The ownership pass has run. Every exit edge releases what it owns.
     Owned,
 }
@@ -206,6 +219,7 @@ impl Phase {
     pub fn name(self) -> &'static str {
         match self {
             Phase::Lowered => "after lowering",
+            Phase::Mono => "after monomorphisation",
             Phase::Owned => "after the ownership pass",
         }
     }

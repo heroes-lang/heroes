@@ -1,31 +1,23 @@
-unsupported[generics]: a generic function is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:34:1
+unsupported[extern]: an `extern` function is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:40:1
      |
-  34 | function first<T>(items: [T]) -> T   #~ generics #~ generics
-     | ^
-  note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
-
-unsupported[generics]: a generic type is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:34:1
-     |
-  34 | function first<T>(items: [T]) -> T   #~ generics #~ generics
+  40 | extern function labs(x: int) -> int   #~ extern
      | ^
   note: no change to this file will fix this
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
 
 unsupported[builtin]: the built-in `sort` on elements other than `int`, `f64` or `str` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:51:15
+  at tests/golden/unsupported/three-capabilities.hero:56:15
      |
-  51 |     print(len(sort(ps)))      #~ builtin
+  56 |     print(len(sort(ps)))      #~ builtin
      |               ^^^^^^^^
   note: no change to this file will fix this
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
 
 unsupported[builtin]: the built-in `map` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:56:15
+  at tests/golden/unsupported/three-capabilities.hero:61:15
      |
-  56 |     print(len(map(ps, tag)))  #~ builtin
+  61 |     print(len(map(ps, tag)))  #~ builtin
      |               ^^^^^^^^^^^^
   note: no change to this file will fix this
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet

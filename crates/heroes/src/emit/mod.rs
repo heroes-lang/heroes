@@ -121,7 +121,7 @@ pub fn emit(
         .filter(|f| !src.is_library(f.span.start) || used.contains(&f.decl))
         .collect();
     for function in &shown {
-        decls::prototype(&mut w, function, ast, checked, &names, &module);
+        decls::prototype(&mut w, function, ast, checked, src, &names, &module);
     }
     for function in &shown {
         decls::definition(&mut w, program, function, ast, checked, &names, src, &module);

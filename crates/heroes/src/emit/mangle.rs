@@ -22,8 +22,9 @@
 //! M8a a module is a declared name rather than a file stem, so the shape stops
 //! being a stem-sanitising question at all.
 //!
-//! There is no `_<typehash>` yet. It exists for monomorphisation (§4.12) and a
-//! generic function does not reach this backend (`gate.rs`).
+//! `_<typehash>` arrives at M6 step 6 with monomorphisation: two copies of one
+//! generic declaration are two C functions, so the type arguments have to be in
+//! the name. `instance` below carries the reasoning, which three judges shaped.
 
 /// The module a source path stands for, until modules exist (M8a).
 ///
@@ -55,6 +56,40 @@ pub fn module_of(path: &str) -> String {
 /// component cannot be the user's file stem.
 pub const LIBRARY_MODULE: &str = "library";
 
+/// The suffix a monomorphised instance carries: a hash of the **canonically
+/// rendered** type arguments (CLAUDE.md §7's `_<typehash>`, panel 029 R5).
+///
+/// Three judges constrained this and the resolution takes all three.
+///
+/// **Not a readable suffix**, which was the obvious choice: it is **not
+/// injective**. With `record int_str`, `record str_x` and `record x` in one file,
+/// `pair<int, str_x>` and `pair<int_str, x>` both spell `h_m_pair_int_str_x`, and
+/// clang answers `error: conflicting types` on a **legal Heroes program**. A false
+/// rejection is worse than an opaque name. It also buys nothing where it would
+/// matter: clang prints the `aka` expansion on every type error, so the full
+/// instantiated signature is already in the message.
+///
+/// **Not a hash of the `TyId` sequence.** `TyId` is an interning-order artifact,
+/// and the M8c fixpoint compares generated C byte for byte — a `TyId`-derived hash
+/// would require the Rust bootstrap and the Heroes port to intern in *identical*
+/// order. `module_of` above already refuses a path-dependent name for the same
+/// reason.
+///
+/// **A hash of the rendering**, therefore: reproducible by any implementation from
+/// the same public spelling, which is exactly the deficiency RFC 2603 records
+/// against Rust's legacy scheme. The information the hash loses is given back for
+/// free — the emitter writes `/* map<int, str> */` above each instance.
+pub fn instance(rendered: &str) -> String {
+    // FNV-1a over the rendering: short, stable, and written out rather than taken
+    // from a crate, because the port must reproduce it exactly.
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in rendered.bytes() {
+        hash ^= u64::from(byte);
+        hash = hash.wrapping_mul(0x100_0000_01b3);
+    }
+    format!("{:x}", hash & 0xffff_ffff)
+}
+
 /// A Heroes function or constant.
 ///
 /// **A function whose name is in the built-in inventory belongs to the library**,
@@ -67,6 +102,12 @@ pub fn function(module: &str, name: &str) -> String {
         return format!("h_{LIBRARY_MODULE}_{name}");
     }
     format!("h_{module}_{name}")
+}
+
+/// The same, for one monomorphised instance: the base name plus `instance`'s hash
+/// of what it was instantiated at.
+pub fn instance_of(module: &str, name: &str, rendered: &str) -> String {
+    format!("{}_{}", function(module, name), instance(rendered))
 }
 
 /// A `record` or `variant` type, as a C struct tag and typedef name.

@@ -1,0 +1,33 @@
+# Polymorphic recursion: `f<T>` reaching `f<[T]>`, which reaches `f<[[T]]>`,
+# without end. Monomorphisation compiles one copy per type, so a chain that never
+# repeats a type never finishes.
+#
+# It type-checked clean at exit 0 until M6 step 6, and design.md does not mention
+# it anywhere. The refusal is the PASS's, and neither of the other two places
+# works: the checker checks a generic body once, polymorphically, and never
+# expands it, so it cannot see the growth; a depth limit would exit 2 — "the
+# compiler could not run" — for a program §4.12 makes legal.
+#
+# MLton's whole-program monomorphiser has been total for twenty-five years
+# *precisely* because SML bans this, and inference for it is undecidable
+# (Henglein 1993; Kfoury-Tiuryn-Urzyczyn 1993). Rust is the warning rather than
+# the model: it accepts at type-check and blows up in codegen with `reached the
+# recursion limit while instantiating` — no error code, late, unattributable.
+# It lives in `unsupported/` and is the first case here that is an ERROR rather
+# than an `unsupported`: this directory's job is what `heroes build` refuses and
+# why, and a build-time pass is the only place this refusal can come from. Note
+# what follows — `heroes check` exits 0 on this file, because the pass runs after
+# the frontend. That is the same split every gate refusal already has.
+# Bulk regression case.
+
+function wrap<T>(x: T) -> [T]
+    out: [T] @ []
+    return out.push(x)
+
+function depth<T>(x: T, n: int) -> int
+    if n <= 0
+        return 0
+    return 1 + depth(wrap(x), n - 1)   #~ polymorphic_recursion
+
+function main()
+    print(depth("a", 3))

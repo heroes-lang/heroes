@@ -130,15 +130,15 @@ pub(super) fn prototype(
     function: &Function,
     ast: &Ast,
     checked: &Checked,
+    src: &Source,
     names: &Names,
     module: &str,
 ) {
     if !emitted(function) {
         return;
     }
-    let _ = ast;
     w.at_generated();
-    w.line(&format!("{};", signature(function, checked, names, module)));
+    w.line(&format!("{};", signature(function, ast, checked, src, names, module)));
 }
 
 /// `int64_t h_mod_dist(int64_t h0_a, int64_t *ph1_b)`.
@@ -146,8 +146,51 @@ pub(super) fn prototype(
 /// A mutable parameter is a **pointer** parameter — §4.8's copy-in/copy-out has no
 /// other shape in C, because `Op::CopyOut` writes the *caller's* place and the
 /// callee cannot otherwise reach it.
-fn signature(function: &Function, checked: &Checked, names: &Names, module: &str) -> String {
-    let name = mangle::function(module, &function.name);
+/// The C name of one function: its mangled name, plus the hash of what it was
+/// instantiated at when it is a monomorphised instance (§4.12, panel 029 R5).
+///
+/// The rendering that is hashed is the *canonical* one — `render_instance` — so
+/// the port reproduces the same symbol from the same public spelling, and the
+/// M8c fixpoint does not depend on two implementations interning in the same
+/// order.
+pub(super) fn instance_name(
+    function: &Function,
+    ast: &Ast,
+    checked: &Checked,
+    src: &Source,
+    module: &str,
+) -> String {
+    if function.instance.is_empty() {
+        return mangle::function(module, &function.name);
+    }
+    let rendered = render_instance(ast, checked, src, &function.instance);
+    mangle::instance_of(module, &function.name, &rendered)
+}
+
+/// The type arguments as one string, which is what the hash is taken over and
+/// what the comment above an instance shows. Independent of `TyId`, of the
+/// module, and of the file's name.
+pub(super) fn render_instance(
+    ast: &Ast,
+    checked: &Checked,
+    src: &Source,
+    args: &[crate::types::TyId],
+) -> String {
+    args.iter()
+        .map(|t| crate::types::render_ty(&checked.types, ast, src, *t, &[]))
+        .collect::<Vec<String>>()
+        .join(", ")
+}
+
+fn signature(
+    function: &Function,
+    ast: &Ast,
+    checked: &Checked,
+    src: &Source,
+    names: &Names,
+    module: &str,
+) -> String {
+    let name = instance_name(function, ast, checked, src, module);
     let result = c_result(names, checked, function.result);
     let mut params: Vec<String> = Vec::new();
     for slot in &function.params {
@@ -185,7 +228,16 @@ pub(super) fn definition(
     // The signature is pointed at the author's declaration: a clang error about a
     // parameter type has to land on the line that wrote it.
     super::writer::at_span(w, src, function.span.start);
-    w.line(&format!("{} {{", signature(function, checked, names, module)));
+    // The instance's types, above it, because the hash in the name does not carry
+    // them and a reader of `--emit-c` needs them (panel 029 R5).
+    if !function.instance.is_empty() {
+        w.line(&format!(
+            "/* {}<{}> */",
+            function.name,
+            render_instance(ast, checked, src, &function.instance)
+        ));
+    }
+    w.line(&format!("{} {{", signature(function, ast, checked, src, names, module)));
     w.at_generated();
     let types = super::aggregate::Types { ast, checked, names, src };
     let live = reachable(function);

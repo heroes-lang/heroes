@@ -306,14 +306,18 @@ fn must_carries_its_failure_into_the_abort() {
 }
 
 
+/// The `generics` row retired at M6 step 6, and the test that made it fire now
+/// asserts the opposite — a row nobody can prove is gone is a row that comes back.
+///
+/// **This test cannot use `super::emitted`**, and the reason is the step's own
+/// resolution: monomorphisation is a *pass*, so a generic program is only
+/// emittable after it has run, and the helper stops at lowering. The end-to-end
+/// evidence is `tests/golden/run/generics.hero`; what is asserted here is the
+/// narrower claim that the gate no longer has anything to say about a type
+/// parameter.
 #[test]
-fn a_generic_function_is_refused() {
-    let (code, _) = refusal(
-        "function twice<A>(x: A, f: (function(A) -> A)) -> A\n    return f(f(x))\n\nfunction inc(n: int) -> int\n    return n + 1\n\nfunction main()\n    print(twice(1, inc))\n",
-    );
-    // The generic function and the function value are both refused; the earliest
-    // span wins, and it is the declaration.
-    assert!(code == "generics" || code == "function_value", "{code}");
+fn generics_are_no_longer_refused() {
+    assert!(!crate::emit::subset().contains("generic"));
 }
 
 /// The ffi-pragmatist's veto, as a test. §4.19's mechanism is the `#include`, and

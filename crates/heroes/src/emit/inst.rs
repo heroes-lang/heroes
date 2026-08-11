@@ -143,7 +143,13 @@ pub(super) fn emit(
                     Arg::InOut(place) => format!("&{}", read(types, function, place)),
                 })
                 .collect();
-            ops::call(w, program, function, checked, callee, args, &arguments, target, module);
+            // Which instance this call reaches, read from the table the pass read.
+            let instance = crate::ir::mono::instance_at(checked, inst.span)
+                .cloned()
+                .unwrap_or_default();
+            ops::call(
+                w, program, function, types, callee, args, &arguments, target, module, instance,
+            );
         }
         // One built-in, two runtime entry points: `len` on a `str` counts bytes and on
         // an array counts elements. The op is the same op, so the split is by operand

@@ -42,10 +42,61 @@ pub(super) fn check(
                 problems.push(at("a refcount operation before the ownership pass".to_string()));
             }
         }
+        // **No `Ty::Generic` survives monomorphisation**, and this is where that is
+        // asserted rather than hoped for. One that did would reach `is_refcounted`,
+        // which answers `false` for it — right for `T = int`, a leak for `T = str`
+        // (panel 029 R1). `mono::tests` makes it fire.
+        Phase::Mono => {
+            no_generic_survives(function, block, checked, at, problems);
+        }
         Phase::Owned => {
+            no_generic_survives(function, block, checked, at, problems);
             released_on_return(function, block, checked, at, problems);
             owning_temporaries_move_into_slots(block, checked, at, problems);
         }
+    }
+}
+
+/// Every type in this block is concrete.
+///
+/// Checked at `Mono` **and** at `Owned`, because the second is where a survivor
+/// would do its damage: the ownership pass asks `is_refcounted`, which reads a
+/// table that has no honest answer for a type parameter.
+fn no_generic_survives(
+    function: &Function,
+    block: &Block,
+    checked: &Checked,
+    at: &dyn Fn(String) -> String,
+    problems: &mut Vec<String>,
+) {
+    let mut complain = |ty: crate::types::TyId, what: &str| {
+        if mentions_generic(checked, ty) {
+            problems.push(at(format!("{what} still has a type parameter in it")));
+        }
+    };
+    for inst in &block.insts {
+        complain(inst.ty, "an instruction");
+    }
+    for slot in &function.slots {
+        complain(slot.ty, "a slot");
+    }
+    complain(function.result, "the result");
+}
+
+/// Does this type mention a `Ty::Generic` anywhere inside it?
+fn mentions_generic(checked: &Checked, ty: crate::types::TyId) -> bool {
+    match checked.types.get(ty) {
+        crate::types::Ty::Generic(_) => true,
+        crate::types::Ty::Array(element) => mentions_generic(checked, element),
+        crate::types::Ty::Fallible(inner) => mentions_generic(checked, inner),
+        crate::types::Ty::Map(key, value) => {
+            mentions_generic(checked, key) || mentions_generic(checked, value)
+        }
+        crate::types::Ty::Func { params, result } => {
+            checked.types.params_of(params).iter().any(|p| mentions_generic(checked, *p))
+                || mentions_generic(checked, result)
+        }
+        _ => false,
     }
 }
 

@@ -1,7 +1,7 @@
 # The list as it stands, and the file's job is to keep proving that all of it arrives
 # at once rather than one invocation at a time.
 #
-# Rewritten nine times, and each rewrite is the gate working — `str` and `f64` at M5b,
+# Rewritten ten times, and each rewrite is the gate working — `str` and `f64` at M5b,
 # `record` at M5c step 3, `array` at step 5, writing one element at step 6, `T?` and
 # `{K: V}` at M5d, and at M6 step 3 the three built-ins that used to stand here
 # (`sort`, `join`, `chars`) all acquired entry points. **Every type in the language
@@ -12,9 +12,12 @@
 #      unlike `range`, which became a real library function at M6 step 4;
 #   2. a built-in refused by OPERAND TYPE — `sort` orders `int`, `f64` and `str`, and
 #      a `[P]` has no order this backend has decided on (panel 027 R1);
-#   3. a GENERIC function, which monomorphisation lands later this milestone.
-#      Function values stopped being refusable at M6 step 5 — they are a plain C
-#      function pointer now, one typedef per distinct signature.
+#   3. an `extern` function, which waits for M7's header attachment — the one row
+#      whose reason is a veto rather than a milestone (§4.19: the mechanism is the
+#      `#include`, and an invented prototype verifies nothing).
+#      Function values stopped being refusable at M6 step 5 and generics at step 6:
+#      a function value is a plain C function pointer, and a generic is one copy
+#      per type tuple with no template left to refuse.
 #
 # Everything else stays in the file deliberately: the record, the array, the element
 # write, the map, the `T?` and the six built-ins that now emit all work, so their
@@ -31,8 +34,10 @@ function add(a: int, b: int) -> int
 function tag(p: P) -> int
     return p.x
 
-function first<T>(items: [T]) -> T   #~ generics #~ generics
+function first<T>(items: [T]) -> T
     return items[0]
+
+extern function labs(x: int) -> int   #~ extern
 
 function main()
     p = P(x: 1)
@@ -54,4 +59,4 @@ function main()
     f = add
     print(f(1, 2))
     print(len(map(ps, tag)))  #~ builtin
-    print(first(xs))
+    print(first(xs), labs(0 - 3))

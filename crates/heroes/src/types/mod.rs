@@ -211,8 +211,10 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
     }
     checker.out.diagnostics.sort_by_key(|d| d.span.start);
     // Last, because it is dense over the interner and nothing may intern a type
-    // after it: a `TyId` past the end of this table would read as uncounted, which
-    // is a leak that no test can see.
+    // after it *without saying so*: a `TyId` past the end of this table would read
+    // as uncounted, which is a leak that no test can see. Monomorphisation does
+    // intern — that is its job — and calls `extend_counted` for exactly this
+    // reason (panel 029 R3).
     checker.out.counted =
         counted::table(&checker.out.types, ast, &checker.out.written_types);
     checker.out
@@ -273,4 +275,13 @@ impl Checker {
         self.out.expr_types[at.0 as usize] = ty;
         ty
     }
+}
+
+/// Rebuild `counted` after a pass has interned new types.
+///
+/// The only sanctioned way to break the "nothing may intern after it" rule above,
+/// and the only caller is monomorphisation. It is a public entry point rather
+/// than a field assignment so the invariant has a name to be violated through.
+pub fn extend_counted(checked: &mut Checked, ast: &Ast) {
+    checked.counted = counted::extend(&checked.types, ast, &checked.written_types);
 }

@@ -302,12 +302,13 @@ fn build_honours_the_exit_code_contract() {
     assert_eq!(code(&heroes(&["build", "examples/gallery/00-first.hero"])), 0);
     assert_eq!(code(&heroes(&["build", "tests/golden/check/shadowing.hero"])), 1);
     // A correct program the backend cannot emit yet is **1**, not 2: the tool
-    // worked, and no edit to the file will help. This has now named three different
+    // worked, and no edit to the file will help. This has now named four different
     // files — `01-points.hero` until records emitted, `10-maps.hero` until `.must()`
-    // did — which is the assertion working rather than breaking: a row dies per step
-    // and the case follows it. `06-generics.hero` is the one left whose refusal is a
-    // capability rather than a hole.
-    assert_eq!(code(&heroes(&["build", "examples/gallery/06-generics.hero"])), 1);
+    // did, `06-generics.hero` until monomorphisation did — which is the assertion
+    // working rather than breaking: a row dies per step and the case follows it.
+    // `08-ffi.hero` is the one left, and its refusal is a veto rather than a
+    // milestone (§4.19: the mechanism is the `#include`).
+    assert_eq!(code(&heroes(&["build", "examples/gallery/08-ffi.hero"])), 1);
     assert_eq!(code(&heroes(&["build", "no/such/file.hero"])), 2);
     assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/gallery/00-first.hero"])), 2);
 }
