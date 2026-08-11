@@ -243,7 +243,6 @@ pub(super) fn call(
     args: crate::ir::Args,
     arguments: &[String],
     target: Option<String>,
-    module: &str,
     instance: Vec<crate::types::TyId>,
 ) {
     let (checked, ast, src) = (types.checked, types.ast, types.src);
@@ -264,7 +263,7 @@ pub(super) fn call(
                 .functions
                 .iter()
                 .find(|f| f.decl == decl && f.instance == instance)
-                .map(|f| super::decls::instance_name(f, ast, checked, src, module))
+                .map(|f| super::decls::instance_name(f, ast, checked, src))
                 .unwrap_or_else(|| "hero_unreachable".to_string());
             w.line(&format!("    {assign}{name}({});", arguments.join(", ")));
         }

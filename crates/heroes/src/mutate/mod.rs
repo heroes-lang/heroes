@@ -25,7 +25,6 @@
 //! run is reproducible from the compiler sha alone.
 
 use crate::resolve::resolve;
-use crate::source::Source;
 use crate::syntax::parse;
 use crate::types::check;
 
@@ -115,7 +114,12 @@ pub fn run(sources: &[(String, String)]) -> Vec<Score> {
 /// which is exactly what `check --permissive` does — the same function, so the
 /// arms cannot drift apart.
 fn fate(name: &str, text: &str, permissive: bool) -> Fate {
-    let src = Source::new(name.to_string(), text.to_string());
+    // **The whole compilation, not the one file.** `mutate` measures what the
+    // compiler catches, so it has to see what the compiler sees: the library and
+    // every module the file names. Measured on a bare `Source`, a module file
+    // scores 100% caught on one unrelated complaint about a `use` line nobody
+    // loaded — a number that is high and means nothing.
+    let src = crate::modules::load_text(name, text.to_string());
     let parsed = parse(&src);
     if !parsed.diagnostics.is_empty() {
         // A parse failure is an exclusion, not a kill: it measures the lexer.

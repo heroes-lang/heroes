@@ -70,6 +70,16 @@ pub fn uses_of(name: &str, text: &str) -> Vec<String> {
 /// *check*, which needs spans and lives in `graph.rs`.
 pub fn load(path: &str) -> Result<Source, String> {
     let root_text = read(path)?;
+    Ok(load_text(path, root_text))
+}
+
+/// The same, with the root's text supplied rather than read.
+///
+/// It exists for `heroes mutate`, which changes one byte of a file and asks the
+/// frontend what it thinks — and has to ask about the *whole compilation*, or a
+/// module file measures as "every mutant caught" by one unrelated diagnostic
+/// about a `use` line nobody loaded.
+pub fn load_text(path: &str, root_text: String) -> Source {
     let directory = PathBuf::from(path).parent().map(Path::to_path_buf).unwrap_or_default();
     let root_module = module_of(path);
 
@@ -116,7 +126,7 @@ pub fn load(path: &str) -> Result<Source, String> {
         text: crate::library::SOURCE.to_string(),
         is_library: true,
     });
-    Ok(Source::of(files))
+    Source::of(files)
 }
 
 fn read(path: &str) -> Result<String, String> {

@@ -36,7 +36,6 @@ pub(super) fn emit(
     types: &aggregate::Types,
     function: &crate::ir::Function,
     inst: &Inst,
-    module: &str,
 ) {
     // Unpacked once: the four references travel together everywhere in the backend
     // (they are what "what is this type called in C" needs), so they arrive as one
@@ -148,7 +147,7 @@ pub(super) fn emit(
                 .cloned()
                 .unwrap_or_default();
             ops::call(
-                w, program, function, types, callee, args, &arguments, target, module, instance,
+                w, program, function, types, callee, args, &arguments, target, instance,
             );
         }
         // One built-in, two runtime entry points: `len` on a `str` counts bytes and on
@@ -393,7 +392,10 @@ pub(super) fn emit(
                     .functions
                     .iter()
                     .find(|f| f.decl == decl)
-                    .map(|f| mangle::function(module, &f.name))
+                    // The callee's own module, which is the point of M8a: a
+                    // function value taken across a module boundary is the same
+                    // symbol the definition emitted.
+                    .map(|f| mangle::function(src.module_at(f.span.start), &f.name))
                     .unwrap_or_else(|| "hero_unreachable".to_string());
                 w.line(&format!("    {name} = {callee};"));
             }

@@ -144,7 +144,7 @@ pub(super) fn emitted(function: &Function, target: Target) -> bool {
 ///
 /// No test title reaches the C: the index is the whole protocol, and the titles
 /// stay in the compiler where they are already exact.
-pub(super) fn test_shim(w: &mut Writer, program: &Program, src: &Source, module: &str) {
+pub(super) fn test_shim(w: &mut Writer, program: &Program, src: &Source) {
     let tests: Vec<&Function> = program
         .functions
         .iter()
@@ -161,7 +161,10 @@ pub(super) fn test_shim(w: &mut Writer, program: &Program, src: &Source, module:
     // is what stops the two from drifting — the switch is the one place they meet.
     for (position, function) in tests.iter().enumerate() {
         w.line(&format!("    case {position}:"));
-        w.line(&format!("        {}();", mangle::test(module, function.decl as usize)));
+        w.line(&format!(
+            "        {}();",
+            mangle::test(src.module_at(function.span.start), function.decl as usize)
+        ));
         w.line("        break;");
     }
     w.line("    default:");
@@ -180,13 +183,12 @@ pub(super) fn prototype(
     checked: &Checked,
     src: &Source,
     names: &Names,
-    module: &str,
 ) {
     if !emitted(function, target) {
         return;
     }
     w.at_generated();
-    w.line(&format!("{};", signature(function, ast, checked, src, names, module)));
+    w.line(&format!("{};", signature(function, ast, checked, src, names)));
 }
 
 /// `int64_t h_mod_dist(int64_t h0_a, int64_t *ph1_b)`.
@@ -206,8 +208,8 @@ pub(super) fn instance_name(
     ast: &Ast,
     checked: &Checked,
     src: &Source,
-    module: &str,
 ) -> String {
+    let module = src.module_at(function.span.start);
     if function.kind == crate::ir::FnKind::Test {
         return mangle::test(module, function.decl as usize);
     }
@@ -239,9 +241,8 @@ fn signature(
     checked: &Checked,
     src: &Source,
     names: &Names,
-    module: &str,
 ) -> String {
-    let name = instance_name(function, ast, checked, src, module);
+    let name = instance_name(function, ast, checked, src);
     let result = c_result(names, checked, function.result);
     let mut params: Vec<String> = Vec::new();
     for slot in &function.params {
@@ -272,7 +273,6 @@ pub(super) fn definition(
     checked: &Checked,
     names: &Names,
     src: &Source,
-    module: &str,
 ) {
     if !emitted(function, target) {
         return;
@@ -290,7 +290,7 @@ pub(super) fn definition(
             render_instance(ast, checked, src, &function.instance)
         ));
     }
-    w.line(&format!("{} {{", signature(function, ast, checked, src, names, module)));
+    w.line(&format!("{} {{", signature(function, ast, checked, src, names)));
     w.at_generated();
     let types = super::aggregate::Types { ast, checked, names, src };
     let live = reachable(function);
@@ -302,7 +302,7 @@ pub(super) fn definition(
         }
         w.line(&format!("{}:", mangle::block(index)));
         for one in &block.insts {
-            inst::emit(w, program, &types, function, one, module);
+            inst::emit(w, program, &types, function, one);
         }
         term::emit(w, function, checked, &block.term);
     }
@@ -312,11 +312,14 @@ pub(super) fn definition(
 
 /// The shim. `main` itself is mangled, so this is the only function in the unit
 /// whose name C chose.
-pub(super) fn shim(w: &mut Writer, function: &Function, module: &str) {
+pub(super) fn shim(w: &mut Writer, function: &Function, src: &Source) {
     w.blank();
     w.at_generated();
     w.line("int main(void) {");
-    w.line(&format!("    {}();", mangle::function(module, &function.name)));
+    w.line(&format!(
+        "    {}();",
+        mangle::function(src.module_at(function.span.start), &function.name)
+    ));
     // The leak gate, and it is here because AddressSanitizer is **not** one on this
     // platform: `detect_leaks is not supported`, measured, with a 999-block leak
     // exiting 0 in silence. A live-block counter asserted at exit names a count

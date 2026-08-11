@@ -137,8 +137,13 @@ pub fn emit_for(
     if !refused.is_empty() {
         return Emitted { c: String::new(), diagnostics: refused };
     }
+    // The ROOT module, and it names exactly two things now: the generated `.c`
+    // in a `#line` directive, and the program-wide types the emitter invents
+    // (option structs, function-pointer typedefs), which belong to no
+    // declaration. Every name that comes from a declaration takes that
+    // declaration's own module instead — M8a's whole change to this file.
     let module = crate::source::module_of(&src.name);
-    let names = ctype::Names::new(&module, ast, src)
+    let names = ctype::Names::new(ast, src)
         .with_options(&module, checked)
         .with_functions(&module, checked, program);
     let mut w = writer::Writer::new(&src.name, &module);
@@ -162,19 +167,19 @@ pub fn emit_for(
         .filter(|f| !src.is_library(f.span.start) || used.contains(&f.decl))
         .collect();
     for function in &shown {
-        decls::prototype(&mut w, function, target, ast, checked, src, &names, &module);
+        decls::prototype(&mut w, function, target, ast, checked, src, &names);
     }
     for function in &shown {
-        decls::definition(&mut w, program, function, target, ast, checked, &names, src, &module);
+        decls::definition(&mut w, program, function, target, ast, checked, &names, src);
     }
     perfn::bodies(&mut w, ast, checked, &names, src);
     match target {
         Target::Program => {
             if let Some(index) = entry_point(program) {
-                decls::shim(&mut w, &program.functions[index], &module);
+                decls::shim(&mut w, &program.functions[index], src);
             }
         }
-        Target::Tests => decls::test_shim(&mut w, program, src, &module),
+        Target::Tests => decls::test_shim(&mut w, program, src),
     }
     Emitted { c: w.finish(), diagnostics: Vec::new() }
 }

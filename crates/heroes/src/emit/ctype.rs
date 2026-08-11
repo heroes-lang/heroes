@@ -58,11 +58,13 @@ pub(super) struct Names {
 }
 
 impl Names {
-    pub(super) fn new(module: &str, ast: &Ast, src: &Source) -> Names {
+    pub(super) fn new(ast: &Ast, src: &Source) -> Names {
         let mut aggregates = std::collections::BTreeMap::new();
         let mut cases = std::collections::BTreeMap::new();
         for (index, decl) in ast.decls.iter().enumerate() {
-            let name = mangle::ty(module, src.slice(decl.name));
+            // **Each type is named in its OWN module**, never the root's: two
+            // modules may each declare `Point`, and they are two C structs.
+            let name = mangle::ty(src.module_at(decl.name.start), src.slice(decl.name));
             match &decl.kind {
                 DeclKind::Record { .. } => {
                     aggregates.insert(index as u32, name);
