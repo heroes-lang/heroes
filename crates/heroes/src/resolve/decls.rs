@@ -92,7 +92,7 @@ fn generics(r: &mut Resolver, ast: &Ast, src: &Source, function: &Function) {
             r.push_diagnostic(diagnostic);
             continue;
         }
-        if let Some(&decl) = r.out.top.get(name) {
+        if let Some(decl) = r.top_visible(name) {
             // The library and the author's file share one `Source` and cannot
             // shadow each other (see `scope.rs` for the whole rule): the library's
             // `map<A, B>` must not collide with a user's `record A`.

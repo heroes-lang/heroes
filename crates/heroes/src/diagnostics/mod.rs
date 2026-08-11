@@ -120,6 +120,14 @@ impl Diagnostic {
         self
     }
 
+    /// The same, for a fix. Only `Certain` fixes are machine-applicable
+    /// (CLAUDE.md §8), and the constructor tagging one is the constructor that
+    /// knows whether applying it leaves a program that checks clean.
+    pub fn with_fix(mut self, fix: Fix) -> Diagnostic {
+        self.fixes.push(fix);
+        self
+    }
+
     /// Whether this code is one of the rules the *thesis* adds, as opposed to a
     /// rule without which the program has no meaning.
     ///

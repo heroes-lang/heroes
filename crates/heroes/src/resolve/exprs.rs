@@ -60,6 +60,15 @@ pub(super) fn expr(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
             arguments(r, ast, src, args);
         }
         ExprKind::Method { receiver, name: called, args } => {
+            // **A module in receiver position is not a value**, so it is decided
+            // before the receiver is resolved as one — otherwise `geom.dist2(a)`
+            // reports `geom` as an unknown name and never gets to the point.
+            // This is the disambiguation panel 031 Q2 asked for, and it is one
+            // branch: `use` binds the name, so the resolver already knows.
+            if super::qualified::qualified(r, ast, src, id, *receiver, *called) {
+                arguments(r, ast, src, args);
+                return;
+            }
             expr(r, ast, src, *receiver);
             arguments(r, ast, src, args);
             method(r, ast, src, id, *called);
@@ -139,7 +148,10 @@ fn name(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
         r.record(id, Ref::Local(local));
         return;
     }
-    if let Some(&decl) = r.out.top.get(text) {
+    // **This file's own declarations, then the library's, and no other
+    // file's.** One `top_visible` instead of a flat `get` is where "always
+    // qualified" is enforced.
+    if let Some(decl) = r.top_visible(text) {
         // A variant names a type, never a value: its cases are the values, and
         // they are written `.case` (§4.5's ⇐ mode).
         if matches!(ast.decls[decl as usize].kind, DeclKind::Variant { .. }) {
@@ -152,6 +164,18 @@ fn name(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
     }
     if let Some(builtin) = index_of(text) {
         r.record(id, Ref::Builtin(builtin));
+        return;
+    }
+    // A module name standing alone. It is not a value in any position — it can
+    // only be followed by a dot — and saying that is better than "unknown".
+    if r.out.is_used_module(&r.module, text) {
+        r.module_reads.insert((r.module.clone(), text.to_string()));
+        let diagnostic = errors::module_is_not_a_value(text, span);
+        r.push_diagnostic(diagnostic);
+        return;
+    }
+    if let Some(diagnostic) = super::qualified::elsewhere(r, text, span) {
+        r.push_diagnostic(diagnostic);
         return;
     }
     let candidates = value_candidates(r);
@@ -172,7 +196,7 @@ fn name(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
 /// each guessing half of it.
 fn method(r: &mut Resolver, ast: &Ast, src: &Source, at: ExprId, called: Span) {
     let text = src.slice(called);
-    if let Some(&decl) = r.out.top.get(text) {
+    if let Some(decl) = r.top_visible(text) {
         match &ast.decls[decl as usize].kind {
             DeclKind::Function(_) => r.record(at, Ref::Top(decl)),
             DeclKind::Record { .. } => {
@@ -197,6 +221,14 @@ fn method(r: &mut Resolver, ast: &Ast, src: &Source, at: ExprId, called: Span) {
     }
     if r.fields.contains(text) {
         return; // could be a function-valued field: M3c decides, with the type
+    }
+    // `p.dist2(o)` where `dist2` is imported. UFCS finds only this file's
+    // functions, and this is the message that says so — panel 031 R5 chose it
+    // over eleven spec tokens, on the ground that the error carries the repair
+    // and a sentence in the prompt carries only the rule.
+    if let Some(diagnostic) = super::qualified::elsewhere(r, text, called) {
+        r.push_diagnostic(diagnostic);
+        return;
     }
     let candidates = function_candidates(r, ast);
     let near = r.near_names(text, &candidates);
@@ -238,7 +270,7 @@ fn write_root(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
         r.out.locals[local as usize].writes += 1;
         return;
     }
-    if r.out.top.contains_key(text) {
+    if r.top_visible(text).is_some() {
         let diagnostic = errors::no_mutable_globals(text, "top-level declaration", span);
         r.push_diagnostic(diagnostic);
         return;
@@ -259,7 +291,7 @@ fn write_root(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
 /// applies — deterministic, and capped where it is printed.
 fn value_candidates(r: &Resolver) -> Vec<String> {
     let mut candidates = r.visible_locals();
-    candidates.extend(r.out.top.keys().cloned());
+    candidates.extend(r.out.names_in(&r.module).map(|(n, _)| n.to_string()));
     candidates.extend(BUILTINS.iter().map(|b| b.name.to_string()));
     candidates
 }
@@ -267,12 +299,9 @@ fn value_candidates(r: &Resolver) -> Vec<String> {
 fn function_candidates(r: &Resolver, ast: &Ast) -> Vec<String> {
     let mut candidates: Vec<String> = r
         .out
-        .top
-        .iter()
-        .filter(|(_, decl)| {
-            matches!(ast.decls[**decl as usize].kind, DeclKind::Function(_))
-        })
-        .map(|(name, _)| name.clone())
+        .names_in(&r.module)
+        .filter(|(_, decl)| matches!(ast.decls[*decl as usize].kind, DeclKind::Function(_)))
+        .map(|(name, _)| name.to_string())
         .collect();
     candidates.extend(BUILTINS.iter().map(|b| b.name.to_string()));
     candidates

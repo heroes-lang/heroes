@@ -195,6 +195,9 @@ fn name(
     span: Span,
 ) -> TyId {
     match resolved.use_at(id) {
+        // The resolver reported it (`module_is_not_a_value`); one mistake, one
+        // diagnostic, so nothing is said here.
+        Ref::Module => checker.error_ty(),
         Ref::Local(index) => checker.out.local_types[index as usize],
         Ref::Top(decl) => match &ast.decls[decl as usize].kind {
             // §4.13: a top-level function is a value, and its type is its

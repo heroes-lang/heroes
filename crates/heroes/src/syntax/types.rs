@@ -42,6 +42,23 @@ fn prefix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> TypeId {
     match cur.kind() {
         TokenKind::Ident => {
             let span = cur.bump().span;
+            // `geom.Point` — a type from another module (M8a). The node keeps
+            // one span covering both halves and the resolver splits it: a
+            // module name and a type name are both plain identifiers, so the
+            // dot between them is the only one there can be, and a second node
+            // kind would buy nothing but a match arm in every pass.
+            if cur.at(TokenKind::Dot) {
+                cur.bump();
+                if cur.at(TokenKind::Ident) {
+                    let name = cur.bump().span;
+                    return ast.push_type(TypeNode { kind: TypeKind::Named, span: span.to(name) });
+                }
+                let message = format!(
+                    "expected a type after `{}.`, — a qualified type is `module.Type`, as in `geom.Point`",
+                    src.slice(span)
+                );
+                cur.error("expected_qualified_type", message, cur.span());
+            }
             ast.push_type(TypeNode { kind: TypeKind::Named, span })
         }
         TokenKind::LBracket => array(cur, ast, src),

@@ -21,6 +21,11 @@ use crate::source::Span;
 
 use super::LocalKind;
 
+#[path = "errors_modules.rs"]
+mod modules;
+pub(super) use modules::*;
+
+
 // --- names that resolve to nothing -------------------------------------
 
 pub(super) fn unknown_name(name: &str, near: &[String], span: Span) -> Diagnostic {

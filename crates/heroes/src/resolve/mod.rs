@@ -25,6 +25,7 @@
 //! | `decls.rs`    | one declaration at a time: generics, signature, body |
 //! | `stmts.rs`    | statements: what binds, what reads, what writes |
 //! | `exprs.rs`    | expressions, patterns, and the root of a mutated place |
+//! | `qualified.rs`| `geom.f` — a module in receiver position, and what it is not |
 //! | `types.rs`    | written types against primitives, declarations, generics |
 //! | `errors.rs`   | the messages, and the one-candidate `Certain` rename |
 //!
@@ -49,6 +50,7 @@ mod builtins;
 mod decls;
 mod errors;
 mod exprs;
+mod qualified;
 mod scope;
 mod stmts;
 mod top;
@@ -80,6 +82,14 @@ pub enum Ref {
     Top(u32),
     /// Index into `BUILTINS`.
     Builtin(u32),
+    /// A module name in receiver position: `geom` in `geom.dist2(a, b)`.
+    ///
+    /// Recorded on the **receiver** expression, and it is what tells every later
+    /// pass that this dot is qualification and not UFCS. Those are the same
+    /// three tokens with two meanings, so the answer has to be recorded once —
+    /// this file's standing rule (see the module doc): a pass that decided it
+    /// again after Part 5 erased UFCS would give the erased call the other one.
+    Module,
 }
 
 /// What a written type name refers to. Dense over `Ast::types`, same reasons.
@@ -142,10 +152,20 @@ pub struct Resolved {
     /// One entry per node in `Ast::types`.
     pub type_uses: Vec<TypeRef>,
     pub locals: Vec<Local>,
-    /// Every top-level name, sorted — declaration order carries no meaning
-    /// (§4.2), so the table that holds them has no order either. The value is
-    /// an index into `Ast::decls`.
-    pub top: std::collections::BTreeMap<String, u32>,
+    /// Every top-level name, keyed by **(module, name)** and sorted —
+    /// declaration order carries no meaning (§4.2), so the table that holds them
+    /// has no order either. The value is an index into `Ast::decls`.
+    ///
+    /// The module is in the key because two modules may each declare `Point`
+    /// and they are two types (M8a). It is also what makes an unqualified name
+    /// see only its own file: `top_in` is asked for one module, never for all
+    /// of them, and that single fact is most of what "always qualified" costs
+    /// the resolver.
+    pub top: std::collections::BTreeMap<(String, String), u32>,
+    /// Every `use` line, keyed by (the module that wrote it, the module it
+    /// names). The value indexes `Ast::uses`, so a diagnostic can point at the
+    /// line itself.
+    pub module_uses: std::collections::BTreeMap<(String, String), u32>,
     /// True if the file contains a `???`. While it does, unused bindings and
     /// unused parameters are not reported (§4.16, normative — the section's own
     /// example binds a name that is read only inside the hole).
@@ -154,6 +174,34 @@ pub struct Resolved {
 }
 
 impl Resolved {
+    /// A top-level name, looked up in one module and nowhere else.
+    pub fn top_in(&self, module: &str, name: &str) -> Option<u32> {
+        self.top.get(&(module.to_string(), name.to_string())).copied()
+    }
+
+    /// Does `module` name a module that `from` said `use` about?
+    pub fn is_used_module(&self, from: &str, module: &str) -> bool {
+        self.module_uses.contains_key(&(from.to_string(), module.to_string()))
+    }
+
+    /// Every name one module declares, for the "did you mean" lists and for
+    /// `--dump-scopes`.
+    pub fn names_in<'a>(&'a self, module: &'a str) -> impl Iterator<Item = (&'a str, u32)> {
+        self.top
+            .iter()
+            .filter(move |((m, _), _)| m == module)
+            .map(|((_, n), d)| (n.as_str(), *d))
+    }
+
+    /// Which module declares `name`, if any does. Used by the diagnostics that
+    /// turn an unknown name into "it is in `geom`, write `geom.f`".
+    pub fn module_declaring(&self, name: &str) -> Option<&str> {
+        self.top
+            .iter()
+            .find(|((_, n), _)| n == name)
+            .map(|((m, _), _)| m.as_str())
+    }
+
     pub fn use_at(&self, id: ExprId) -> Ref {
         self.uses[id.0 as usize]
     }
@@ -171,6 +219,7 @@ pub fn resolve(ast: &Ast, src: &Source) -> Resolved {
             type_uses: vec![TypeRef::Unresolved; ast.types.len()],
             locals: Vec::new(),
             top: std::collections::BTreeMap::new(),
+            module_uses: std::collections::BTreeMap::new(),
             // A flat scan of the arena, not a walk: a hole suspends the unused
             // rule wherever it is, including inside a construct the walk gives
             // up on.
@@ -182,12 +231,16 @@ pub fn resolve(ast: &Ast, src: &Source) -> Resolved {
         fields: std::collections::BTreeSet::new(),
         suggested: std::collections::BTreeSet::new(),
         owner: 0,
+        module: String::new(),
+        module_reads: std::collections::BTreeSet::new(),
     };
     top::collect(&mut r, ast, src);
     for index in 0..ast.decls.len() {
         r.owner = index as u32;
+        r.module = src.module_at(ast.decls[index].name.start).to_string();
         decls::declaration(&mut r, ast, src, index);
     }
+    top::unused_uses(&mut r, ast, src);
     r.report_unused(src);
     // Within the pass, source order. Diagnostics from earlier stages stay ahead
     // of these (see `syntax::parse`): grouped by the stage that can explain
@@ -217,9 +270,42 @@ struct Resolver {
     /// counts that as a defect (the lexer and parser hold the same invariant).
     suggested: std::collections::BTreeSet<String>,
     owner: u32,
+    /// The module whose declaration is being resolved. Every unqualified name
+    /// is looked up in it and in nothing else, which is where "always
+    /// qualified" is actually enforced (M8a, panel 031).
+    module: String,
+    /// `use` lines that were read, keyed as `module_uses` is. What is left over
+    /// is what the unused rule reports — spec line 74 covers it for free,
+    /// because `use` *binds*.
+    module_reads: std::collections::BTreeSet<(String, String)>,
 }
 
 impl Resolver {
+    /// A top-level name an *unqualified* mention can reach: this module's own
+    /// declarations, then the library's.
+    ///
+    /// The library is the one module every file sees without naming it, and
+    /// that is not an exception to "always qualified" — its names are reserved
+    /// built-ins (§1.11 Tier 2), spent by the language rather than imported by
+    /// the file, which is why no `use` can name it and no program may redeclare
+    /// one. Panel 031 recorded it as one spec sentence and no
+    /// mechanism; this is the little mechanism that sentence stands for.
+    fn top_visible(&self, name: &str) -> Option<u32> {
+        self.out
+            .top_in(&self.module, name)
+            .or_else(|| self.out.top_in(crate::source::LIBRARY_MODULE, name))
+    }
+
+    /// The modules the file being resolved names, for a did-you-mean over it.
+    fn used_modules(&self) -> Vec<String> {
+        self.out
+            .module_uses
+            .keys()
+            .filter(|(from, _)| *from == self.module)
+            .map(|(_, named)| named.clone())
+            .collect()
+    }
+
     fn push_diagnostic(&mut self, diagnostic: Diagnostic) {
         self.out.diagnostics.push(diagnostic);
     }

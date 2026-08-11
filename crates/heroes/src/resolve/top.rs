@@ -46,6 +46,7 @@ pub(super) fn collect(r: &mut Resolver, ast: &Ast, src: &Source) {
             continue;
         }
         let name = src.slice(decl.name).to_string();
+        let module = src.module_at(decl.name.start).to_string();
         let in_library = src.is_library(decl.name.start);
         // Every built-in name is taken, in both of §1.11's tiers — the tier says
         // where the implementation comes from, not whether the name is free
@@ -67,12 +68,75 @@ pub(super) fn collect(r: &mut Resolver, ast: &Ast, src: &Source) {
             // signature: one mistake, one diagnostic.
             continue;
         }
-        if let Some(previous) = r.out.top.get(&name) {
+        // Keyed by module: two modules may each declare `Point`, and they are
+        // two types. Only a *second* declaration in the SAME module is the
+        // duplicate spec line 76 refuses.
+        if let Some(previous) = r.out.top.get(&(module.clone(), name.clone())) {
             let (line, _) = src.line_col(ast.decls[*previous as usize].name.start);
             let diagnostic = errors::declared_twice(&name, line, decl.name);
             r.push_diagnostic(diagnostic);
             continue;
         }
-        r.out.top.insert(name, index as u32);
+        r.out.top.insert((module, name), index as u32);
+    }
+    uses(r, ast, src);
+}
+
+/// Every `use` line, and the two things that make one wrong on its own.
+///
+/// **`use` binds** (panel 031 R3), so a module name is an ordinary name in its
+/// file: declaring something with that name is the shadowing error spec line 76
+/// already has, and never reading it is the unused error spec line 74 already
+/// has. Neither needed a word of specification; both need a table, and this is
+/// where it is built.
+fn uses(r: &mut Resolver, ast: &Ast, src: &Source) {
+    for (index, used) in ast.uses.iter().enumerate() {
+        let from = src.module_at(used.span.start).to_string();
+        let named = src.slice(used.name).to_string();
+        if from == named {
+            // A module using itself. `modules::graph` calls it a cycle, which it
+            // is; nothing more is owed here, and a second message would be a
+            // second diagnostic for one mistake.
+            continue;
+        }
+        if r.out.module_uses.contains_key(&(from.clone(), named.clone())) {
+            let diagnostic = errors::used_twice(&named, used.name);
+            r.push_diagnostic(diagnostic);
+            continue;
+        }
+        if let Some(&decl) = r.out.top.get(&(from.clone(), named.clone())) {
+            let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
+            let diagnostic = errors::use_shadows_a_declaration(&named, line, used.name);
+            r.push_diagnostic(diagnostic);
+            continue;
+        }
+        r.out.module_uses.insert((from, named), index as u32);
+    }
+}
+
+/// What no expression and no written type ever named. Runs after every body,
+/// because a `use` may be read anywhere in its file.
+pub(super) fn unused_uses(r: &mut Resolver, ast: &Ast, src: &Source) {
+    // §4.16's exemption applies here for the same reason it applies to a
+    // binding: a `???` is a program that is not finished, and the module it was
+    // going to reach may be the one the hole would have used.
+    if r.out.has_hole {
+        return;
+    }
+    let unread: Vec<(String, String)> = r
+        .out
+        .module_uses
+        .keys()
+        .filter(|key| !r.module_reads.contains(*key))
+        .cloned()
+        .collect();
+    for key in unread {
+        let index = r.out.module_uses[&key];
+        let used = &ast.uses[index as usize];
+        if src.is_library(used.span.start) {
+            continue;
+        }
+        let diagnostic = errors::unused_use(&key.1, used.name);
+        r.push_diagnostic(diagnostic);
     }
 }

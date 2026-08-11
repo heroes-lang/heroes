@@ -58,7 +58,7 @@ pub fn report(ast: &Ast, resolved: &Resolved, checked: &Checked, src: &Source) -
         }
         in_scope(ast, resolved, checked, src, hole.span.start, &mut out);
         fields_of(ast, checked, src, hole.expected, &mut out);
-        nearby(ast, resolved, checked, src, hole.expected, &mut out);
+        nearby(ast, resolved, checked, src, hole.expected, hole.span.start, &mut out);
     }
     out
 }
@@ -152,15 +152,19 @@ fn nearby(
     checked: &Checked,
     src: &Source,
     expected: super::TyId,
+    at: u32,
     out: &mut String,
 ) {
+    // The hole's own module: a name from anywhere else can only be written
+    // qualified, so that is how it is offered.
+    let here = src.module_at(at).to_string();
     if checked.types.get(expected) == Ty::Error {
         return;
     }
     let mut shown: Vec<String> = Vec::new();
     // `Resolved::top` is sorted by name, so the order is deterministic and does
     // not vary with where the declarations sit in the file.
-    for (name, decl) in &resolved.top {
+    for ((module, name), decl) in &resolved.top {
         let DeclKind::Function(function) = &ast.decls[*decl as usize].kind else { continue };
         if checked.result_type(*decl) != Some(expected) {
             continue;
@@ -177,7 +181,11 @@ fn nearby(
                 )
             })
             .collect();
-        let mut line = format!("{name}({})", params.join(", "));
+        // A name from another module is offered the only way it can be
+        // written: qualified. Offering `f` where only `geom.f` compiles is a
+        // suggestion the reader has to repair (§4.16 is output, not a guess).
+        let written = if module == &here { name.clone() } else { format!("{module}.{name}") };
+        let mut line = format!("{written}({})", params.join(", "));
         if let Some(doc) = ast.decls[*decl as usize].doc.first() {
             line.push_str(&format!("\n      {}", src.slice(*doc)));
         }

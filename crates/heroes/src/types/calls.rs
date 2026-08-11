@@ -106,6 +106,30 @@ pub(super) fn method(
     args: &[Arg],
 ) -> TyId {
     let span = ast.exprs[at.0 as usize].span;
+    // **`geom.dist2(a, b)` is a call with two arguments, not three.** The
+    // resolver marked the receiver as a module, and the check has to come before
+    // the receiver is synthesised: a module has no type, and asking for one is
+    // how the qualified form turns into an unknown name.
+    if resolved.use_at(receiver) == Ref::Module {
+        return match resolved.use_at(at) {
+            // The same three shapes `call` dispatches on, because a qualified
+            // name is an ordinary name that happens to say where it lives.
+            // `geom.Point(x: 3, y: 4)` is a CONSTRUCTION (§4.9), not a call, and
+            // routing it through `user_call` is how the emitter ends up asking
+            // clang to call a record.
+            Ref::Top(decl) => match &ast.decls[decl as usize].kind {
+                DeclKind::Record { .. } => {
+                    construct_record(checker, ast, resolved, src, decl, args, span)
+                }
+                DeclKind::Function(_) => {
+                    user_call(checker, ast, resolved, src, decl, args, None, span)
+                }
+                _ => checker.error_ty(),
+            },
+            // The resolver already said what is wrong with it.
+            _ => checker.error_ty(),
+        };
+    }
     let receiver_ty = exprs::synth(checker, ast, resolved, src, receiver);
     let name = src.slice(called);
     if let Some(field) = field_of_function_type(checker, ast, resolved, src, receiver_ty, name) {
@@ -130,7 +154,8 @@ pub(super) fn method(
         // The resolver stayed silent because the name *might* have been a field.
         // Now the receiver's type is known, so both halves fit one message —
         // which is what the compiler-engineer's panel-015 veto asked for.
-        Ref::Unresolved | Ref::Local(_) => {
+        // A module cannot be reached here: the branch above returns first.
+        Ref::Module | Ref::Unresolved | Ref::Local(_) => {
             if !checker.out.types.poisoned(receiver_ty) {
                 let holder = checker.show(ast, src, receiver_ty);
                 let diagnostic = errors::no_field_and_no_function(&holder, name, called);

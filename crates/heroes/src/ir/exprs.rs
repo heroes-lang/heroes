@@ -161,6 +161,10 @@ fn name(
     span: Span,
 ) -> ValueId {
     match resolved.use_at(id) {
+        // A module name standing alone is a resolver error, so a clean program
+        // never lowers one. It is a real `Ref`, though, so the arm is written
+        // rather than folded into `_`.
+        Ref::Module => b.emit(Op::Missing, ty, span),
         Ref::Local(local) => match b.slot_of_local(local) {
             Some(slot) => b.load(slot, span),
             None => b.emit(Op::Missing, ty, span),

@@ -76,7 +76,50 @@ fn named(r: &mut Resolver, ast: &Ast, src: &Source, id: TypeId) {
         r.out.type_uses[id.0 as usize] = TypeRef::Generic(*position);
         return;
     }
-    if let Some(&decl) = r.out.top.get(name) {
+    // A qualified type: `geom.Point`. The module has to be one this file names,
+    // exactly as for a value — there is no privacy and no re-export, so being
+    // reachable through some other module's `use` is not being reachable here.
+    if let Some((module, type_name)) = name.split_once('.') {
+        if !r.out.is_used_module(&r.module, module) {
+            let known: Vec<String> = r.used_modules();
+            let diagnostic = errors::not_a_module(module, &known, span);
+            r.push_diagnostic(diagnostic);
+            return;
+        }
+        r.module_reads.insert((r.module.clone(), module.to_string()));
+        match r.out.top_in(module, type_name) {
+            Some(decl)
+                if matches!(
+                    ast.decls[decl as usize].kind,
+                    DeclKind::Record { .. } | DeclKind::Variant { .. }
+                ) =>
+            {
+                r.out.type_uses[id.0 as usize] = TypeRef::Top(decl);
+            }
+            Some(_) => {
+                let diagnostic = errors::not_a_type(name, "not a type", span);
+                r.push_diagnostic(diagnostic);
+            }
+            None => {
+                let names: Vec<String> = r
+                    .out
+                    .names_in(module)
+                    .filter(|(_, decl)| {
+                        matches!(
+                            ast.decls[*decl as usize].kind,
+                            DeclKind::Record { .. } | DeclKind::Variant { .. }
+                        )
+                    })
+                    .map(|(n, _)| n.to_string())
+                    .collect();
+                let near = r.near_names(type_name, &names);
+                let diagnostic = errors::not_in_module(module, type_name, &near, span);
+                r.push_diagnostic(diagnostic);
+            }
+        }
+        return;
+    }
+    if let Some(decl) = r.top_visible(name) {
         match &ast.decls[decl as usize].kind {
             DeclKind::Record { .. } | DeclKind::Variant { .. } => {
                 r.out.type_uses[id.0 as usize] = TypeRef::Top(decl);
@@ -106,12 +149,12 @@ fn named(r: &mut Resolver, ast: &Ast, src: &Source, id: TypeId) {
 /// parameters in hand, then the file's own types, then the primitives.
 fn type_candidates(r: &Resolver, ast: &Ast) -> Vec<String> {
     let mut candidates: Vec<String> = r.generics.iter().map(|(n, _)| n.clone()).collect();
-    for (name, decl) in &r.out.top {
+    for (name, decl) in r.out.names_in(&r.module) {
         if matches!(
-            ast.decls[*decl as usize].kind,
+            ast.decls[decl as usize].kind,
             DeclKind::Record { .. } | DeclKind::Variant { .. }
         ) {
-            candidates.push(name.clone());
+            candidates.push(name.to_string());
         }
     }
     for prim in ["int", "f64", "bool", "str", "ptr", "cstr"] {

@@ -175,7 +175,7 @@ impl Resolver {
             self.push_diagnostic(diagnostic);
             return None;
         }
-        if let Some(&decl) = self.out.top.get(text) {
+        if let Some(decl) = self.top_visible(text) {
             // **The library and the author's file cannot shadow each other.** They
             // share one `Source` (§1.11, `crate::library`) and therefore one
             // table, but they are two programs: the library's `fold` has a local

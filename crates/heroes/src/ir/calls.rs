@@ -79,8 +79,9 @@ pub(super) fn call(
                 let run = lower_args(b, ast, resolved, checked, src, args);
                 return emit_call(b, Callee::Builtin(index), run, is_variadic(name), ty, span);
             }
-            // A local holding a function value (§4.13).
-            Ref::Local(_) | Ref::Unresolved => {}
+            // A local holding a function value (§4.13) — and `geom(...)`, which
+            // the checker refused, since lowering only runs on a clean program.
+            Ref::Module | Ref::Local(_) | Ref::Unresolved => {}
         }
     }
     let target = exprs::expr(b, ast, resolved, checked, src, callee);
@@ -108,6 +109,20 @@ pub(super) fn method(
     // The resolver filed the method name's meaning at the `Method` node itself:
     // the name after the dot has no `ExprId` of its own (`resolve::Ref`).
     let target = resolved.use_at(at);
+    // The qualified form, lowered as the plain call it is: the receiver names a
+    // module, which is erased here exactly as it is erased in the C.
+    if resolved.use_at(receiver) == Ref::Module {
+        if let Ref::Top(decl) = target {
+            let run = lower_args(b, ast, resolved, checked, src, args);
+            // A record is constructed, not called — the same split `call` makes,
+            // and the reason the module receiver is erased *here* rather than by
+            // pretending it was never written.
+            if matches!(ast.decls[decl as usize].kind, DeclKind::Record { .. }) {
+                return b.emit(Op::Construct { shape: Shape::Record(decl), args: run }, ty, span);
+            }
+            return emit_call(b, callee_of(ast, decl), run, false, ty, span);
+        }
+    }
     if let Ref::Builtin(index) = target {
         let builtin = BUILTINS[index as usize].name;
         // `.must()`, `.default(v)` and `.is_err()` are branches, not calls
@@ -131,7 +146,8 @@ pub(super) fn method(
         // `h.cb(n)` where `cb` is a field holding a function value: the dot is a
         // *field read*, not a receiver, so the arguments are only the written ones
         // (§4.11's first lookup, §4.13).
-        Ref::Local(_) | Ref::Unresolved => {
+        // A module receiver never reaches here — the branch above returns.
+        Ref::Module | Ref::Local(_) | Ref::Unresolved => {
             let owner = checked.expr_types[receiver.0 as usize];
             let base = exprs::expr(b, ast, resolved, checked, src, receiver);
             let field = layout::field_index(ast, checked, src, owner, name);
