@@ -86,12 +86,25 @@ impl Toolchain {
         ))
     }
 
-    /// The two runtime files' contents, which are half of every cache key.
+    /// The runtime's whole contents, which are half of every cache key.
+    ///
+    /// **Every file, not the two entry points.** `runtime.c` is one translation
+    /// unit assembled from `runtime/parts/`, so hashing only the file clang is
+    /// handed would let a part be edited with the cached object still used — and
+    /// a stale relink is silent, which is the one thing standing between a golden
+    /// test and passing for the wrong reason.
+    ///
+    /// Sorted, so the key is a function of the contents and not of readdir order.
     fn runtime_text(&self) -> String {
-        let header = std::fs::read_to_string(self.runtime.join("heroes_runtime.h"))
-            .unwrap_or_default();
-        let source = std::fs::read_to_string(self.runtime.join("runtime.c")).unwrap_or_default();
-        format!("{header}{source}")
+        let mut files: Vec<PathBuf> = Vec::new();
+        collect_sources(&self.runtime, &mut files);
+        files.sort();
+        let mut text = String::new();
+        for file in &files {
+            text.push_str(&std::fs::read_to_string(file).unwrap_or_default());
+            text.push('\u{1}');
+        }
+        text
     }
 
     /// Where this program's artifacts live: `build/<hash>/`.
@@ -170,6 +183,21 @@ impl Toolchain {
 /// `main`. What these two *do* catch is use-after-free and double-free, and they caught
 /// two real bugs in the panel's own hand-written C on their first run, which no output
 /// comparison would have.
+/// Every `.c` and `.h` under `dir`, one level of nesting deep — which is what
+/// `runtime/` is: the entry points beside a `parts/` directory. Recursive rather
+/// than hard-coded so that adding a part is not a second edit somewhere else.
+fn collect_sources(dir: &Path, into: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_sources(&path, into);
+        } else if matches!(path.extension().and_then(|e| e.to_str()), Some("c") | Some("h")) {
+            into.push(path);
+        }
+    }
+}
+
 fn sanitizers(sanitize: bool) -> Vec<String> {
     if sanitize {
         vec!["-fsanitize=address,undefined".to_string(), "-g".to_string()]

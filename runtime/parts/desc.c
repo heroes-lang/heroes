@@ -1,0 +1,87 @@
+/* parts/desc.c — the four scalar descriptors the compiler never declares.
+ *
+ * Written here rather than generated because there is no declaration in any
+ * source file to generate them from, and because there is exactly one right
+ * answer per scalar. Every other descriptor in a program is generated
+ * (`crates/heroes/src/emit/perfn.rs`).
+ *
+ * `hash` is present on all four and on every generated one, never null — a call
+ * through a null `hash` is a SEGV with no type name and no source line
+ * (panel 022). The struct has five members and gains no sixth; the reason is in
+ * design.md §4.20 and in panel 027.
+ */
+
+/* -- the descriptor ABI: the four scalars the compiler never declares --------
+ *
+ * Written here rather than generated because the compiler has no declaration to
+ * generate them from, and because there is exactly one right answer per scalar:
+ * a plain assignment, no drop, C's own `==`, and a hash that is a function of
+ * the bytes THAT MATTER — which for `f64` means going through the bit pattern,
+ * and for `bool` means normalising, since a `_Bool` can only be 0 or 1 but the
+ * padding around it in an array element cannot be assumed. */
+
+static void hero_copy_int(void *dst, const void *src) { *(int64_t *)dst = *(const int64_t *)src; }
+static void hero_drop_nothing(void *elem) { (void)elem; }
+static bool hero_eq_int(const void *a, const void *b) {
+    return *(const int64_t *)a == *(const int64_t *)b;
+}
+/* FNV-1a over the eight bytes: one function, and the same one `toolchain.rs`
+ * uses for the build cache, so there is one hash in this project rather than
+ * two that drift. */
+static uint64_t hero_hash_bytes(const void *p, size_t n) {
+    const unsigned char *b = p;
+    uint64_t h = UINT64_C(0xcbf29ce484222325);
+    for (size_t i = 0; i < n; i++) {
+        h ^= b[i];
+        h *= UINT64_C(0x100000001b3);
+    }
+    return h;
+}
+static uint64_t hero_hash_int(const void *elem) { return hero_hash_bytes(elem, sizeof(int64_t)); }
+
+static void hero_copy_f64(void *dst, const void *src) { *(double *)dst = *(const double *)src; }
+static bool hero_eq_f64(const void *a, const void *b) {
+    return *(const double *)a == *(const double *)b;
+}
+/* Through the bits, and NOT through the double: -0.0 == 0.0 is true while their
+ * bit patterns differ, so hashing the bytes of a double would give two equal
+ * values two hashes. Normalising the zero is what keeps eq and hash agreeing —
+ * the invariant a map depends on. */
+static uint64_t hero_hash_f64(const void *elem) {
+    double v = *(const double *)elem;
+    if (v == 0.0) v = 0.0; /* collapses -0.0 */
+    return hero_hash_bytes(&v, sizeof v);
+}
+
+static void hero_copy_bool(void *dst, const void *src) { *(bool *)dst = *(const bool *)src; }
+static bool hero_eq_bool(const void *a, const void *b) {
+    return *(const bool *)a == *(const bool *)b;
+}
+static uint64_t hero_hash_bool(const void *elem) {
+    unsigned char one = *(const bool *)elem ? 1u : 0u;
+    return hero_hash_bytes(&one, 1);
+}
+
+static void hero_copy_str(void *dst, const void *src) {
+    HeroStr s = *(const HeroStr *)src;
+    hero_str_incref(s);
+    *(HeroStr *)dst = s;
+}
+static void hero_drop_str(void *elem) { hero_str_decref(*(HeroStr *)elem); }
+static bool hero_eq_str(const void *a, const void *b) {
+    return hero_str_eq(*(const HeroStr *)a, *(const HeroStr *)b);
+}
+static uint64_t hero_hash_str(const void *elem) {
+    HeroStr s = *(const HeroStr *)elem;
+    hero_str_require(s);
+    return hero_hash_bytes(s.ptr, (size_t)s.len);
+}
+
+const HeroDesc hero_desc_int = {sizeof(int64_t), hero_copy_int, hero_drop_nothing,
+                                hero_eq_int, hero_hash_int};
+const HeroDesc hero_desc_f64 = {sizeof(double), hero_copy_f64, hero_drop_nothing,
+                                hero_eq_f64, hero_hash_f64};
+const HeroDesc hero_desc_bool = {sizeof(bool), hero_copy_bool, hero_drop_nothing,
+                                 hero_eq_bool, hero_hash_bool};
+const HeroDesc hero_desc_str = {sizeof(HeroStr), hero_copy_str, hero_drop_str,
+                                hero_eq_str, hero_hash_str};

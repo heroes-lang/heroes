@@ -373,3 +373,55 @@ fn a_hole_reports_what_belongs_there_and_the_build_exits_one() {
     // binary.
     assert_eq!(code(&heroes(&["build", "examples/gallery/09-holes.hero", "--dump-ir"])), 0);
 }
+
+/// **A runtime part edited alone must invalidate the cached object.**
+///
+/// The runtime became eleven files at M6 step 3, assembled into one translation
+/// unit by `runtime.c`. The cache key used to hash the two entry points, so a part
+/// could be edited and the *previous* `runtime-<key>.o` relinked — and a stale
+/// relink is silent: it prints yesterday's bytes at exit 0, which is exactly how
+/// panel 020 measured the hazard before the key covered the runtime at all.
+///
+/// The test edits a part (a comment, so behaviour cannot change), rebuilds, and
+/// asserts a new object appeared. It restores the file before asserting anything,
+/// so a failure cannot leave the tree dirty.
+#[test]
+fn editing_a_runtime_part_invalidates_the_cached_object() {
+    let part = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../runtime/parts/sort.c"
+    ))
+    .to_path_buf();
+    let objects = || {
+        let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../build"));
+        let Ok(entries) = std::fs::read_dir(dir) else { return 0 };
+        entries
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with("runtime-"))
+            .count()
+    };
+
+    let original = std::fs::read_to_string(&part).expect("the part is where runtime.c includes it");
+    assert_eq!(code(&heroes(&["build", "tests/golden/run/builtins.hero"])), 0);
+    let before = objects();
+
+    // The probe must be unique per run: `build/` persists between test runs, so a
+    // fixed comment would hash to a key whose object already exists and the count
+    // would not move — a test that passes for the wrong reason on the second run.
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("a clock")
+        .as_nanos();
+    std::fs::write(&part, format!("{original}\n/* cache-key probe {stamp} */\n"))
+        .expect("writable");
+    let built = heroes(&["build", "tests/golden/run/builtins.hero"]);
+    let after = objects();
+    std::fs::write(&part, &original).expect("restored");
+
+    assert_eq!(code(&built), 0, "the probe must not break the build");
+    assert!(
+        after > before,
+        "editing runtime/parts/sort.c reused the cached object ({before} -> {after}): \
+         the key hashes runtime.c and heroes_runtime.h only"
+    );
+}
