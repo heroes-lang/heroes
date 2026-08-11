@@ -423,14 +423,15 @@ never off the number.
 |---|---|---|---|
 | 1 | **M8a** | Modules — the namespace, one whole-program `.c` | closure list (§1.0) |
 | 2 | **M7** | FFI ladder, and the **route** for file I/O · `args()` · `exit(code)` | §1.11 + closure list |
-| 3 | **M8p** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
-| 4 | **M8b** | The port | v1 |
-| 5 | **M8c** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 6 | **M9** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list, second half |
-| 7 | **M10** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 8 | **M11** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 9 | **M12** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 10 | **M13** | `heroes lsp` | **scheduled, no warrant** |
+| 3 | **M8e** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
+| 4 | **M8p** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
+| 5 | **M8b** | The port | v1 |
+| 6 | **M8c** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 7 | **M9** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list, second half |
+| 8 | **M10** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 9 | **M11** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 10 | **M12** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 11 | **M13** | `heroes lsp` | **scheduled, no warrant** |
 
 `scheduled, no warrant` is not decoration. Part 7's preamble defers everything on
 its list until the closure list compiles itself, and **a milestone number is not
@@ -471,6 +472,46 @@ function wearing an `extern` hat (§4.20:1815 — no `extern` may return `str`
 without `hero_str_from_*`). The mortgage is **≥60 spec tokens**.
 **Acceptance:** SQLite open, query, close from Heroes, no shim.
 
+### M8e — The corpus: many whole programs, all of them run
+The one milestone whose deliverable is **programs rather than compiler**, and it
+sits here because every instrument this project owns reports on the programs it
+is given. The M6 audit found two live defects with *one* program
+(`run/closure-list.hero`), each reachable for three milestones with no test,
+"because nobody had written the program that meets them". This milestone writes
+them.
+
+- **`examples/` is reorganised as one directory per program.** `calculator.hero`
+  moves to `examples/calculator/` (which M8a will have split into modules
+  anyway), the gallery stays as the one-idea-per-file series it is, and each new
+  program gets its own directory with its source, its `test` blocks and a `README`
+  line saying what it demonstrates.
+- **Whole programs, not snippets**: the kind of thing other languages ship as
+  their tour — a JSON reader, a Markdown-to-text converter, a text adventure, a
+  spreadsheet evaluator, a maze solver, a tiny assembler, a log summariser, a
+  todo list over a file. Each ends in a state the language must actually reach:
+  reads its input (M7's file I/O), takes `args()`, exits with a code, and asserts
+  its own behaviour in `test` blocks.
+- **Every program is written from the task, never translated from a licensed
+  source.** The tours these are drawn from (Rosetta Code, *Go by Example*,
+  Nim's and Zig's example sets) carry licences; the *problem* is not copyrightable
+  and the Heroes program is written from the problem statement. No file arrives
+  by transcription, and CLAUDE.md §11's register applies to every line of prose in
+  them.
+- **All of them run, in three configurations** — `-O0`, `-O2`, `--sanitize` —
+  like `tests/golden/run/`, with the leak balance asserted, and they join
+  `heroes mutate`'s corpus, which is where CLAUDE.md §9 says an invariant belongs:
+  *asserted over the corpus rather than over cases somebody thought of*.
+
+**Acceptance:** `heroes test` green over every directory in `examples/`, in all
+three configurations, and a measured mutation rate over the enlarged corpus —
+with every defect the corpus finds getting a case named after it (§9's
+`fixedbugs` rule). A defect found here is the milestone working, not the
+milestone slipping.
+**Why before the probe and the port:** the probe measures what the language
+lacks, and a measurement taken on a compiler that still has reachable defects
+measures the defects too. The port then hangs from this net rather than from the
+68 cases it would otherwise have.
+
 ### M8p — The probe: measure before committing to the port
 The lexer (983 non-test lines) ported to Heroes **for real**, to find out what
 self-hosting still lacks — before the port, not during it.
@@ -497,8 +538,8 @@ generics is owed before M8b opens.
 above.
 
 ### M8b — The port
-Rust → Heroes into `selfhost/` (directory born here), file by file, goldens as
-the net, the `PORT-DEBT` count as the map. Every ordering-sensitive map walk
+Rust → Heroes into `selfhost/` (directory born here), file by file, **the goldens
+and M8e's corpus as the net**, the `PORT-DEBT` count as the map. Every ordering-sensitive map walk
 becomes an explicit `sort` (panel 006), or the fixpoint diff breaks.
 **Carried in as a defect, not a feature: `-g`.** design.md §2 and §3.1 both state
 that lldb breaks on and steps through `.hero` lines through the emitted `#line`
@@ -592,6 +633,10 @@ heroes run examples/gallery/00-first.hero                 # M5a: first native bi
 heroes test examples/calculator.hero           # M6: acceptance ✅
 heroes test examples/calculator/main.hero      # M8a: the same tests, across modules
 heroes run examples/ffi/sqlite.hero            # M7: acceptance — open, query, close
+heroes test examples/maze/main.hero            # M8e: one program (the harness runs them all,
+                                               #      in three configurations — a directory
+                                               #      argument is §10's question, not a given)
+heroes mutate                                  # M8e: the rate over the enlarged corpus
 heroes test selfhost/lexer.hero                # M8p: the ported lexer's own tests
 # M8c — the fixpoint, on generated C:
 cargo run -- build selfhost/heroes.hero -o A
