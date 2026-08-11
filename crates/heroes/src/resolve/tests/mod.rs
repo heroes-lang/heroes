@@ -9,6 +9,7 @@
 //! | `mutation.rs`   | what may be written, and what a write counts as |
 //! | `acceptance.rs` | design.md's whole appendix program, resolved clean |
 //! | `gallery.rs`    | `examples/gallery/`, nine programs written to be read |
+//! | `spec.rs`       | the built-in table against `spec/heroes-spec.md` itself |
 //!
 //! Two helpers, and the difference between them is the point: `diagnostics`
 //! renders what the compiler *says* (the deliverable, §4.17), `scopes` renders
@@ -20,6 +21,7 @@ mod gallery;
 mod mutation;
 mod names;
 mod scopes;
+mod spec;
 mod types;
 mod unused;
 
