@@ -140,8 +140,14 @@ prints the help, so they cannot disagree.
 
 ## 11. Language and conventions
 **Everything written is English** — code, comments, docs, commits, verdicts.
-Conversation with the author is Italian. `Heroes` in prose, `heroes` for the
-binary, `.hero` for files. ASCII-only syntax. Bowie belongs in prose and
+Conversation with the author is Italian. **One declared exception** (author
+instruction 2026-08-11): the two books, M16 (the journey) and M17 (the guide),
+are written in **Italian and English**, neither a machine translation of the
+other. The author studies from the Italian, so where the two diverge the Italian
+is fixed to be clearer rather than the English to be more faithful — and both are
+in the plain register of the `/where` skill, which assumes zero compiler
+knowledge. `Heroes` in prose, `heroes` for the binary, `.hero` for files.
+ASCII-only syntax. Bowie belongs in prose and
 packaging, never in error text or library names; the site's register and its
 rules live in `site/README.md` § Style guide.
 **Code is written to be read** (author instruction 2026-08-04): files stay

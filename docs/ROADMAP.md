@@ -432,6 +432,13 @@ never off the number.
 | 9 | **M11** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
 | 10 | **M12** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
 | 11 | **M13** | `heroes lsp` | **scheduled, no warrant** |
+| 12 | **M14** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 13 | **M15** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 14 | **M16** | The journey — how this language came to be | **scheduled, no warrant** |
+| 15 | **M17** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+
+Both books are **plain language, Italian and English** — the one declared
+exception to CLAUDE.md §11, recorded there.
 
 `scheduled, no warrant` is not decoration. Part 7's preamble defers everything on
 its list until the closure list compiles itself, and **a milestone number is not
@@ -614,7 +621,105 @@ deliberately handed to clang (DESIGN-LOG 2026-08-03, panel 001).
 ### M13 — `heroes lsp`
 **Scheduled, no warrant.** ~250 lines of JSON-RPC: diagnostics on save,
 formatting, hover, documentSymbol. It blocks nothing and could land any time
-after M3d; it is last by the author's choice.
+after M3d; it is here rather than earlier by the author's choice, and M14 is what
+consumes it.
+
+### M14 — The VS Code extension, complete
+**Scheduled, no warrant.** `editors/vscode/` already ships the TextMate grammar,
+the language configuration and the icon theme; this milestone makes it an
+extension somebody could install and forget about.
+
+- **The LSP client**, speaking to M13's `heroes lsp`: diagnostics as you type,
+  hover, go-to-definition, document symbols, formatting through `heroes fmt`.
+- **Code actions from the fixes that already exist.** §4.17's `Fix`es are tagged
+  `certain | guess` and `heroes check --apply` already applies the certain ones;
+  the extension surfaces exactly those as quick fixes and never the guesses. This
+  costs almost nothing and is the thesis made visible in the editor — the likeliest
+  mistake arrives with its repair pre-written.
+- **Debugging**, and the honest shape of it first: the emitted C carries `#line`
+  back to `.hero` (with `-g` repaired at M8b), so the debug info is ordinary DWARF
+  pointing at Heroes source. `lldb-dap` therefore composes with the generated
+  binary without this project writing a debug adapter — which is CLAUDE.md §10's
+  *"nothing if two existing invocations already compose to it"*. If a launch
+  configuration cannot be expressed that way, `heroes dap` enters under the
+  stopping rule like any other verb, with the reason recorded.
+  The known ceiling is design.md §2's: `p x` shows a mangled C temporary rather
+  than a Heroes value. Typed inspection is not in v1 and this milestone does not
+  smuggle it in.
+- **Packaging**: a `.vsix` that installs, with `heroes doctor` as the extension's
+  own health check.
+
+### M15 — The site: the whole language, anchored to programs that run
+**Scheduled, no warrant.** `site/` exists (`index.html`, its CNAME, and the
+register rules in `site/README.md` § Style guide, which stay in force — song
+titles as section nods, never lyrics; personality in the packaging, precision in
+the substrate).
+
+- **The language documented in full**, page by page, for someone who has not read
+  `spec/heroes-spec.md` — the spec is the control instrument, not the teaching
+  text, and it is budgeted precisely so that it can never become one.
+- **Every code block on the site is a file in `examples/`**, not a snippet typed
+  into HTML. M8e is what makes this possible, and it converts documentation drift
+  into a test failure: a check asserts that each block matches a program in the
+  repo that compiles and runs. Documentation that cannot rot is worth more than
+  documentation that is merely current.
+- **A history of the language**, distilled from `DESIGN-LOG.md`, `docs/panel/`
+  and the journals: what was decided, what was refused, and the U-turns —
+  including the ones that look bad in retrospect, which are the ones worth reading.
+- **Publishing stays a hard stop** (CLAUDE.md §14): the site is built here and
+  goes outward only when the author says so.
+
+### Two books, and one rule that governs both
+
+**They are written in simple, simple language** — the register of the `/where`
+skill, which explains this project assuming zero compiler knowledge. The author's
+instruction is the reason and it outranks elegance, brevity and completeness: he
+will read these to *study* what was built, so a sentence that needs a compiler
+course to parse is a sentence to rewrite.
+
+**Both exist in Italian and English, and this is the one declared exception** to
+CLAUDE.md §11's "everything written is English" (§11 now records it). Neither
+version is a machine translation of the other; the Italian is the one the author
+studies from, so where the two diverge, the Italian is fixed to be clearer rather
+than the English to be more faithful.
+
+**Both teach with M8e's programs** — code known to compile, run and pass its own
+tests in three configurations, rather than snippets that were true once.
+
+### M16 — The journey: how this language came to be
+**Scheduled, no warrant.** The narrative book: the itch, the design that met five
+hostile experts, the U-turns, the deleted darlings, the days the machine found the
+bug in the plan before we did — and what it was like to build a compiler with an
+AI assistant. `docs/book/README.md` has been collecting the raw material since M0
+and nothing extra needs maintaining: the journals are the spine, `DESIGN-LOG.md`
+the decisions, `docs/panel/` the arguments, `docs/book/beats.md` the human
+texture the technical records drop, the measurements the numbers, and
+`git checkout m2` re-opens any chapter's code.
+The rule from design.md's *The name* applies here and only here: **personality in
+the packaging, precision in the substrate** — Bowie belongs in this book, never in
+an error message.
+
+### M17 — The guide: the language, as a book you would find in a shop
+**Scheduled, no warrant.** The classic language guide — the K&R shape: read it
+front to back and you can write Heroes; open it in the middle and you find the
+thing you were looking for.
+
+- **Organised by subject, not by chronology**: values and types, bindings and
+  `@`, control flow, records and variants, `T?` and failure, generics, the
+  module, the FFI, the test blocks — each with the smallest program that shows it
+  and one that gets it wrong on purpose.
+- **It is not the spec, and it must never try to be.** `spec/heroes-spec.md` is
+  the control instrument, budgeted at 4096 tokens precisely so that it can never
+  become a teaching text; the guide is where the explanations, the worked
+  examples and the "why it is like this" live, at whatever length clarity needs.
+- **Its warrant is §1.1**, the only one after the fixpoint that has one:
+  comprehension is this project's objective, measured rather than asserted, and a
+  guide the author can read to rebuild the reasoning is that objective's final
+  artifact.
+- Where the guide and the spec disagree, **the spec wins and the guide has the
+  bug** (CLAUDE.md §12) — and where the guide and the *compiler* disagree, that
+  is a defect report on one of them, which is what the M15 check over `examples/`
+  is for.
 
 ## End-to-end verification (per milestone)
 

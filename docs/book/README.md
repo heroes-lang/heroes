@@ -1,4 +1,20 @@
-# The mini-book — "how this language came to be"
+# The books — the journey, and the guide
+
+**There are two of them** (author instruction 2026-08-11, ROADMAP M16 and M17),
+and this directory feeds both. **M16 — the journey**: how the language came to
+be, which is what the rest of this file describes and what `beats.md` exists for.
+**M17 — the guide**: the classic language book, organised by subject, the kind
+you would find in a shop — not the spec, which is a control instrument budgeted
+so that it can never become a teaching text.
+
+Two rules govern both. They are written in **plain, plain language** — the
+`/where` skill's register, assuming zero compiler knowledge, because the author
+reads them to study what was built. And they exist in **Italian and English**,
+the one declared exception to CLAUDE.md §11, neither version a translation of the
+other; where they diverge, the Italian is made clearer rather than the English
+made faithful.
+
+## The journey book — "how this language came to be"
 
 A declared goal of this project (author, 2026-08-03): at the end of the
 journey, write a mini-book telling **how the language came to be** — the
