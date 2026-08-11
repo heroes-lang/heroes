@@ -43,6 +43,9 @@ pub struct StmtId(pub u32);
 #[derive(Default)]
 pub struct Ast {
     pub decls: Vec<Decl>,
+    /// `use geom` lines, in source order (panel 031). Separate from `decls`
+    /// because a `use` lowers to nothing — see [`Use`].
+    pub uses: Vec<Use>,
     /// The type arena. Indexed directly (`ast.types[id.0 as usize]`) rather
     /// than through an accessor: a getter would have to return a reference,
     /// and the Cyclone rule keeps references to parameters only.
@@ -73,7 +76,7 @@ mod decls;
 mod exprs;
 mod types;
 
-pub use decls::{Case, Decl, DeclKind, Field, Function, Param};
+pub use decls::{Case, Decl, DeclKind, Field, Function, Param, Use};
 pub use exprs::{
     Arg, Arm, ArmBody, BinaryOp, Block, Branch, Expr, ExprKind, MapEntry, Pattern, PatternKind,
     Stmt, StmtKind, UnaryOp,

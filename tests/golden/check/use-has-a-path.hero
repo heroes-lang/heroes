@@ -1,0 +1,13 @@
+# UNVERIFIED — pending debrief
+# Adversarial case, M8a step 1 (panel 031).
+# The design space a bare identifier forecloses, refused at the point of the
+# attempt rather than in a spec sentence (panel 031 R5's principle applied to
+# syntax). Two spellings, one message: a dotted name and a slashed one.
+# Neither carries a fix — a `Certain` fix must leave a program that parses, and
+# there is no module name to fall back to that the author would recognise.
+use geom.shapes  #~ module_path_has_no_parts
+
+use shapes/geom  #~ module_path_has_no_parts
+
+function main()
+    print(0)

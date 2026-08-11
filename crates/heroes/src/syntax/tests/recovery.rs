@@ -17,22 +17,24 @@ fn the_old_shape_costs_one_diagnostic() {
         dump("MAX = constant: int\n    1\n"),
         "\
 file test.hero
-DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`MAX`) — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
+DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`MAX`) — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
 "
     );
 }
 
 /// An invented kind word gets the whole list: the keyword set is closed, so
-/// the message can enumerate everything a top-level line may start with.
+/// the message can enumerate everything a top-level line may start with — and
+/// when the set grows, as it did at M8a with `use`, the message grows with it
+/// because this test pins the enumeration rather than its length.
 /// (Replaces the `expected_entity` test — there is no `= entity` position
 /// left for an unknown word to sit in.)
 #[test]
-fn an_unknown_kind_word_names_the_six() {
+fn an_unknown_kind_word_names_them_all() {
     assert_eq!(
         dump("widget Point\n    x: int\n"),
         "\
 file test.hero
-DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`widget`) — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
+DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`widget`) — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
 "
     );
 }
@@ -167,7 +169,7 @@ fn a_stray_indented_block_does_not_derail_the_file() {
 file test.hero
   constant MAX: int
     expr 1
-DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found an indented block — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
+DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found an indented block — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
 "
     );
 }

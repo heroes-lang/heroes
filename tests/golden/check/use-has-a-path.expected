@@ -1,0 +1,2 @@
+tests/golden/check/use-has-a-path.hero:8:9: error[module_path_has_no_parts]: a module name is one word — `use geom`. There is no nesting: every `.hero` a program reads sits beside the file that names it
+tests/golden/check/use-has-a-path.hero:10:11: error[module_path_has_no_parts]: a module name is one word — `use shapes`. There is no nesting: every `.hero` a program reads sits beside the file that names it

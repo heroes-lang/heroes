@@ -1,2 +1,2 @@
 tests/golden/check/braces-as-block.hero:5:17: error[missing_body]: a `function` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
-tests/golden/check/braces-as-block.hero:7:1: error[expected_declaration]: expected a declaration, found `}` — every top-level line starts with its kind: `constant`, `function`, `record`, `variant`, `test "…"`, or `extern`
+tests/golden/check/braces-as-block.hero:7:1: error[expected_declaration]: expected a declaration, found `}` — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test "…"`, or `extern`

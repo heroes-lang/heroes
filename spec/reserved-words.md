@@ -24,7 +24,7 @@ renderer reads from it conceptually, the golden tests in `check/` pin it.
 | `null` / `nil` / `None` | error: there is no null in this language — absence is a fallible type:  `int?` |
 | `try` / `catch` / `throw` / `raise` | error: there are no exceptions in this language — errors are values:  `fail(code, msg)`, propagate with `?` |
 | `return` used as `return;` | error: `return` with no value only in functions returning `()` |
-| `import` / `use` / `include` | error: modules do not exist yet — one file is one program (v1) |
+| `import` / `include` | error: `import` and `include` are not words in this language — a module is named with `use`:  `use geom` |
 
 Also prescribed (design.md §4.17): `@name` in **prefix statement position**
 (Python/Ruby decorator prior) is always a syntax error with a note showing the
@@ -39,5 +39,5 @@ fails with a `Certain` fix that deletes it.
 
 Keywords of Heroes itself (cannot be identifiers): `constant` `function`
 `record` `variant` `match` `if` `else` `for` `while` `in` `break` `continue` `return`
-`test` `assert` `extern` `true` `false` `fail` — plus the two-character forms
+`test` `assert` `extern` `use` `true` `false` `fail` — plus the two-character forms
 `=>` `->` and the sigil `@`.

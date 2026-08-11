@@ -48,27 +48,79 @@ pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
     // back, and with `--in-place` it writes it into their file — so a formatter
     // that walked the whole `Source` would append the library to it, once per
     // run (§1.11, `crate::library`).
-    let decls: Vec<&crate::syntax::Decl> =
-        ast.decls.iter().filter(|d| !src.is_library(decl_start(src, d))).collect();
-    for (i, decl) in decls.into_iter().enumerate() {
-        let (line, _) = src.line_col(decl_start(src, decl));
-        if i > 0 {
-            fmt.blank_line();
+    let mut items: Vec<Item> = Vec::new();
+    for used in ast.uses.iter().filter(|u| !src.is_library(u.span.start)) {
+        items.push(Item::Use(used));
+    }
+    for decl in ast.decls.iter().filter(|d| !src.is_library(decl_start(src, d))) {
+        items.push(Item::Decl(decl));
+    }
+    // **Source order, not a canonical order.** A formatter that hoisted or
+    // sorted `use` lines would have to move the comments attached to them, and
+    // this one interleaves comments by line — so reordering is where a
+    // formatter starts deleting the author's remarks. gofmt sorts imports and
+    // can afford to; it has a comment model this one does not.
+    items.sort_by_key(|item| item.start(src));
+    let mut previous: Option<&Item> = None;
+    for item in &items {
+        let (line, _) = src.line_col(item.start(src));
+        // One blank line between top-level declarations — but not between two
+        // `use` lines, which are a block the way a run of fields is.
+        let after_use = matches!(previous, Some(Item::Use(_)));
+        if let Some(before) = previous {
+            if !(matches!(before, Item::Use(_)) && matches!(item, Item::Use(_))) {
+                fmt.blank_line();
+            }
         }
+        previous = Some(item);
         fmt.comments_before(src, comments, line, 0);
-        // A blank line between the comment group and this declaration is
-        // preserved exactly: it is what makes those comments ordinary remarks
-        // rather than the declaration's documentation (§4.1). The rule has to
-        // hold for the first declaration too — that is where a file's header
-        // block lives.
-        if fmt.last_line > 0 && line > fmt.last_line + 1 {
-            fmt.blank_line();
+        match item {
+            Item::Use(used) => {
+                // §4.1 again, and it is the file header that needs it: a blank
+                // line between a comment and the first `use` is what makes that
+                // comment a remark about the file instead of documentation for
+                // the line under it. Not between two `use` lines, though —
+                // there the run is one block and its internal gaps close.
+                if !after_use && fmt.last_line > 0 && line > fmt.last_line + 1 {
+                    fmt.blank_line();
+                }
+                fmt.line(0, &format!("use {}", src.slice(used.name)));
+                fmt.last_line = line;
+                fmt.trailing_comment(src, comments, line);
+            }
+            Item::Decl(decl) => {
+                // A blank line between the comment group and this declaration is
+                // preserved exactly: it is what makes those comments ordinary
+                // remarks rather than the declaration's documentation (§4.1). The
+                // rule has to hold for the first declaration too — that is where a
+                // file's header block lives.
+                if fmt.last_line > 0 && line > fmt.last_line + 1 {
+                    fmt.blank_line();
+                }
+                fmt.declaration(ast, src, comments, decl);
+            }
         }
-        fmt.declaration(ast, src, comments, decl);
     }
     // Comments after the last declaration still belong to the file.
     fmt.comments_before(src, comments, u32::MAX, 0);
     fmt.out
+}
+
+/// One top-level line, of the two kinds the file has. `use` lines live outside
+/// `Ast::decls` (they lower to nothing), and the formatter is one of the three
+/// places that has to put the two streams back into the order the author reads.
+enum Item<'a> {
+    Use(&'a crate::syntax::Use),
+    Decl(&'a Decl),
+}
+
+impl Item<'_> {
+    fn start(&self, src: &Source) -> u32 {
+        match self {
+            Item::Use(used) => used.span.start,
+            Item::Decl(decl) => decl_start(src, decl),
+        }
+    }
 }
 
 /// The line a declaration starts on. Since panel 018 every declaration

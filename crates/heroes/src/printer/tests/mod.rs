@@ -10,6 +10,15 @@
 //!    nothing and §4.15's "any textual difference is semantic" is false.
 //! 3. **It loses nothing.** Comments are not in the tree; a formatter that
 //!    drops them is a formatter nobody runs.
+//!
+//! | file | what it pins |
+//! |---|---|
+//! | `mod.rs` | the harness, the acceptance program, and the layout policies |
+//! | `comments.rs` | §4.1's adjacency rule and blank lines as content |
+//! | `modules.rs` | `use` lines: source order, one block, comments (panel 031) |
+
+mod comments;
+mod modules;
 
 use crate::source::Source;
 use crate::syntax::parse;
@@ -152,53 +161,6 @@ fn the_unit_result_is_never_written() {
     );
 }
 
-/// The load-bearing blank line: adjacency is what makes a comment
-/// documentation (§4.1), so the formatter may never open or close that gap.
-#[test]
-fn a_blank_line_between_comment_and_declaration_is_preserved() {
-    let doc = "# The limit.\nconstant MAX: int\n    64\n";
-    assert_eq!(format(doc), doc);
-    let remark = "# Just a remark.\n\nconstant MAX: int\n    64\n";
-    assert_eq!(format(remark), remark);
-}
-
-#[test]
-fn comments_inside_a_body_are_kept_where_they_were() {
-    let text = "\
-function main()
-    # Why this order matters.
-    print(1)
-    print(2)  # the second one
-";
-    assert_eq!(format(text), text);
-}
-
-/// One blank line always separates top-level declarations, and a run of them
-/// collapses to one.
-#[test]
-fn declarations_are_separated_by_exactly_one_blank_line() {
-    assert_eq!(
-        format("constant A: int\n    1\nconstant B: int\n    2\n"),
-        "constant A: int\n    1\n\nconstant B: int\n    2\n"
-    );
-    assert_eq!(
-        format("constant A: int\n    1\n\n\n\nconstant B: int\n    2\n"),
-        "constant A: int\n    1\n\nconstant B: int\n    2\n"
-    );
-}
-
-/// A blank line inside a body is content: it is the only grouping a body has,
-/// so one survives and a run collapses.
-#[test]
-fn one_blank_line_inside_a_body_survives() {
-    let text = "function main()\n    print(1)\n\n    print(2)\n";
-    assert_eq!(format(text), text);
-    assert_eq!(
-        format("function main()\n    print(1)\n\n\n\n    print(2)\n"),
-        text
-    );
-}
-
 /// §4.9: a list too long for one line breaks by **newline**, not by comma —
 /// and only inside its brackets, because panel 007 allows no other
 /// continuation.
@@ -304,22 +266,4 @@ fn statement_arm_bodies_are_canonical() {
     );
     assert_eq!(format(text), text);
     assert_canonical(text);
-}
-
-/// The doc comment a first prototype of panel 014 silently ate: the arm's span
-/// reaches its terminator, so a `last_line` one line too far made
-/// `trailing_comment` steal the *next* declaration's documentation and glue it
-/// to the arm, where §4.1 adjacency then demoted it to a remark.
-#[test]
-fn an_arm_does_not_steal_the_next_declarations_doc_comment() {
-    let text = "\
-function f(k: int) -> int
-    return match k
-        _ => 2
-
-# Doc for g.
-function g() -> int
-    return 1
-";
-    assert_eq!(format(text), text);
 }

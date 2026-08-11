@@ -45,7 +45,7 @@ mod types;
 pub use ast::{
     Arg, Arm, ArmBody, Ast, BinaryOp, Block, Branch, Case, Decl, DeclKind, Expr, ExprId, ExprKind,
     Field, Function, MapEntry, Param, Pattern, PatternKind, Stmt, StmtId, StmtKind, TypeId,
-    TypeKind, TypeNode, UnaryOp,
+    TypeKind, TypeNode, UnaryOp, Use,
 };
 
 use crate::diagnostics::Diagnostic;

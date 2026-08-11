@@ -26,6 +26,12 @@ use super::types::render_type;
 /// exception, and necessarily: the binary needs the definitions.
 pub fn dump_ast(ast: &Ast, src: &Source) -> String {
     let mut out = format!("file {}\n", src.name);
+    for used in &ast.uses {
+        if src.is_library(used.span.start) {
+            continue;
+        }
+        out.push_str(&format!("  use {}\n", src.slice(used.name)));
+    }
     for decl in &ast.decls {
         if src.is_library(decl.name.start) {
             continue;

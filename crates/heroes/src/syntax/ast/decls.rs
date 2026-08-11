@@ -56,6 +56,23 @@ pub struct Param {
     pub mutable: bool,
 }
 
+/// `use geom` — the module named, and the whole line (panel 031).
+///
+/// **Not a `DeclKind`**, and the reason is what the later passes must never
+/// see. A `use` declares nothing and lowers to nothing: the IR, the type
+/// checker and the emitter have no arm for it and should not be given one, or
+/// every exhaustive `match` in them grows a case that means "ignore me". It
+/// lives beside `decls` instead, read by exactly the three passes that care —
+/// discovery, the resolver, and the printers.
+///
+/// It still *binds* a name, which is the whole of panel 031 R3: `geom` enters
+/// the ordinary namespace, so "shadowing is a compile error" and "an unused
+/// binding is a compile error" cover it without a word of new specification.
+pub struct Use {
+    pub name: Span,
+    pub span: Span,
+}
+
 /// A record field, or a variant case's payload field.
 pub struct Field {
     pub name: Span,

@@ -27,6 +27,10 @@ pub(super) fn keyword(text: &str) -> Option<TokenKind> {
         "test" => TokenKind::KwTest,
         "assert" => TokenKind::KwAssert,
         "extern" => TokenKind::KwExtern,
+        // Panel 031. Until M8a this word was in `foreign_word` below, refused
+        // with "modules do not exist yet"; the two tables are the reason the
+        // change is one line in each.
+        "use" => TokenKind::KwUse,
         "true" => TokenKind::KwTrue,
         "false" => TokenKind::KwFalse,
         "fail" => TokenKind::KwFail,
@@ -57,7 +61,10 @@ pub(crate) fn foreign_word(text: &str) -> Option<(&'static str, Option<&'static 
         "case" => ("`case` is not a word in this language — a `match` arm is `.name => expr`", None),
         "null" | "nil" | "None" => ("there is no null in this language — absence is a fallible type: `int?`", None),
         "try" | "catch" | "throw" | "raise" => ("there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`", None),
-        "import" | "use" | "include" => ("modules do not exist yet — one file is one program (v1)", None),
+        // `use` left this table at panel 031 and became a keyword. Its two
+        // neighbours stay, and they gain what they never had: the repair is now
+        // a pure word-for-word swap, so it is `Certain` and machine-applicable.
+        "import" | "include" => ("`import` and `include` are not words in this language — a module is named with `use`: `use geom`", Some("use")),
         _ => return None,
     })
 }

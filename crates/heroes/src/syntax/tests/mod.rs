@@ -5,6 +5,7 @@
 //! | file           | what it pins |
 //! |----------------|--------------|
 //! | `entities.rs`  | the four entities, `extern`, `test`, generics, `@` params |
+//! | `modules.rs`   | `use geom`, and the two shapes it refuses (panel 031) |
 //! | `bodies.rs`    | statements, the precedence table, control flow |
 //! | `types.rs`     | the type grammar, including the panel-013 function type |
 //! | `docs.rs`      | §4.1's adjacency rule: which comment is documentation |
@@ -25,6 +26,7 @@ mod acceptance;
 mod bodies;
 mod docs;
 mod entities;
+mod modules;
 mod recovery;
 mod types;
 
