@@ -3,7 +3,7 @@
 **Convened** 2026-08-12, mid-M8a, by author instruction ("voglio risolvere adesso
 il tema delle cartelle... se no il self host parte molto disordinato").
 **Trigger** surface syntax and semantics, `spec/**` (CLAUDE.md §4).
-**Status** `provisional — author ratification pending`.
+**Status** `RATIFIED 2026-08-12` (was `provisional — author ratification pending`).
 
 ## The proposal, verbatim
 
@@ -230,3 +230,19 @@ layout this is modelled on runs 171 files in one directory today. What
 directories buy is the reader's answer to "where does this name live", which is
 real and is §1.3's own currency — and which is also exactly what a flat
 `syntax_decls.hero` buys, at +0 tokens and +0 lines.
+
+## Ratification — 2026-08-12, by author instruction
+
+**RATIFIED.** The author's instruction was a blanket one — *"ratifica anche tutto
+quello che c'è da ratificare"* — given after reading the session summary, not a
+clause-by-clause review of this file. It is recorded that way on purpose: this
+project's own rule is that a record must not say more than what happened.
+
+What it settles: the provisional resolution above **stands as the decision**, and
+work no longer proceeds on it as a default. Every resolution here had been
+load-bearing since the day it landed, so this changes the record's status rather
+than the compiler's behaviour.
+
+What it does **not** settle: anything this file keys to a measurement that has not
+been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
+and a blanket yes cannot make a number arrive.

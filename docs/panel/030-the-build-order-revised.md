@@ -1,7 +1,7 @@
 # Panel 030 — the build order revised, and the half of M8a that was never a language feature
 
 **Convened** 2026-08-11, after M6 close. **Trigger** architecture and design.md
-Part 10 (CLAUDE.md §4). **Status** `provisional — author ratification pending`.
+Part 10 (CLAUDE.md §4). **Status** `RATIFIED 2026-08-12` (was `provisional — author ratification pending`).
 
 ## The proposal, verbatim
 
@@ -272,3 +272,19 @@ allowed to fail before M7 rather than after.
 second and it decides the route for I/O/args/exit, a probe before the port,
 separate compilation and everything in Part 7 after the fixpoint | Part 10, §4.19,
 §1.0 | 030`
+
+## Ratification — 2026-08-12, by author instruction
+
+**RATIFIED.** The author's instruction was a blanket one — *"ratifica anche tutto
+quello che c'è da ratificare"* — given after reading the session summary, not a
+clause-by-clause review of this file. It is recorded that way on purpose: this
+project's own rule is that a record must not say more than what happened.
+
+What it settles: the provisional resolution above **stands as the decision**, and
+work no longer proceeds on it as a default. Every resolution here had been
+load-bearing since the day it landed, so this changes the record's status rather
+than the compiler's behaviour.
+
+What it does **not** settle: anything this file keys to a measurement that has not
+been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
+and a blanket yes cannot make a number arrive.

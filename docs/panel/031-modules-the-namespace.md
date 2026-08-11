@@ -275,3 +275,19 @@ not run since M5b, and panel 028 R6 declined to spend it.
 design.md line 2011 recorded cutting modules from v1 as returning ~60 tokens.
 +71 overdraws that by 11, and the overdraw is R2's legal example plus R4's
 transitivity rule — both bought on a judge's evidence rather than on taste.
+
+## Ratification — 2026-08-12, by author instruction
+
+**RATIFIED.** The author's instruction was a blanket one — *"ratifica anche tutto
+quello che c'è da ratificare"* — given after reading the session summary, not a
+clause-by-clause review of this file. It is recorded that way on purpose: this
+project's own rule is that a record must not say more than what happened.
+
+What it settles: the provisional resolution above **stands as the decision**, and
+work no longer proceeds on it as a default. Every resolution here had been
+load-bearing since the day it landed, so this changes the record's status rather
+than the compiler's behaviour.
+
+What it does **not** settle: anything this file keys to a measurement that has not
+been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
+and a blanket yes cannot make a number arrive.

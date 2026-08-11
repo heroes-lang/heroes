@@ -2,7 +2,7 @@
 
 **Convened** 2026-08-12, after M8a, following measurement 004.
 **Trigger** design.md Parts 1–11, and a proposed diagnostic *class* (CLAUDE.md §4).
-**Status** `provisional — author ratification pending`.
+**Status** `RATIFIED 2026-08-12` (was `provisional — author ratification pending`).
 
 ## What convened it
 
@@ -340,3 +340,19 @@ the module named, and which costs nothing at all.
 miscompilation — the same module leaking rooted at itself and clean rooted at its
 caller. That is the second panel in a row to find a live defect in code it was
 not looking at.
+
+## Ratification — 2026-08-12, by author instruction
+
+**RATIFIED.** The author's instruction was a blanket one — *"ratifica anche tutto
+quello che c'è da ratificare"* — given after reading the session summary, not a
+clause-by-clause review of this file. It is recorded that way on purpose: this
+project's own rule is that a record must not say more than what happened.
+
+What it settles: the provisional resolution above **stands as the decision**, and
+work no longer proceeds on it as a default. Every resolution here had been
+load-bearing since the day it landed, so this changes the record's status rather
+than the compiler's behaviour.
+
+What it does **not** settle: anything this file keys to a measurement that has not
+been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
+and a blanket yes cannot make a number arrive.
