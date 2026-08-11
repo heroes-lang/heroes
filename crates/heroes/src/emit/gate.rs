@@ -46,7 +46,7 @@ use crate::types::{render_ty, Checked, Ty, TyId};
 /// so they cannot disagree — panel 021 R10, and CLAUDE.md §10's own pattern ("one
 /// argv table parses and prints the help"). A hand-written enumeration beside a
 /// machine-readable table is a sentence that becomes a lie one milestone later.
-pub const EMITTED_BUILTINS: [&str; 6] = ["has", "len", "print", "push", "slice", "to_str"];
+pub const EMITTED_BUILTINS: [&str; 6] = ["keys", "len", "print", "push", "slice", "to_str"];
 
 /// What the backend does emit. Derived, not maintained: the type list is the arms of
 /// `check_type` that return without a note, and the built-in list is the constant

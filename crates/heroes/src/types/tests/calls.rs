@@ -378,7 +378,7 @@ fn the_builtins_know_their_shapes() {
         "[int]"
     );
     assert_eq!(
-        type_of_last("function f(m: {str: int}) -> bool\n    return m.has(\"a\")\n"),
+        type_of_last("function f(m: {str: int}) -> bool\n    return !m[\"a\"].is_err()\n"),
         "bool"
     );
     assert_eq!(

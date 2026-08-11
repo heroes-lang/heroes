@@ -278,9 +278,9 @@ pub(super) fn call(
                 "len" if first_is_map => "hero_map_len",
                 "len" if first_is_array => "hero_array_len",
                 "len" => "hero_str_len",
-                // `has(m, k)` takes its key by address: the runtime hashes and compares
-                // it through the key descriptor.
-                "has" => "hero_map_has",
+                // `keys(m)` hands back a fresh array whose keys are copied through the
+                // key descriptor, so it owns them and may outlive the map.
+                "keys" => "hero_map_keys",
                 "slice" => "hero_str_slice",
                 // `push` hands back a NEW array, always: `xs = [1,2,3]` leaves `xs`
                 // observable, its slot holds one reference, so a refcount of 1 means
@@ -304,7 +304,7 @@ pub(super) fn call(
             // `push`'s second argument is a *place*, not a value: the runtime copies
             // through the element descriptor, which is the only way one function can
             // append an `int` and a `Point`.
-            let written: Vec<String> = if matches!(BUILTINS[index as usize].name, "push" | "has") {
+            let written: Vec<String> = if matches!(BUILTINS[index as usize].name, "push") {
                 arguments
                     .iter()
                     .enumerate()

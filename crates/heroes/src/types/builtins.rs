@@ -39,7 +39,6 @@ pub(super) fn expectation(
     }
     match (name, checker.out.types.get(first), index) {
         ("push", Ty::Array(element), 1) => Some(element),
-        ("has", Ty::Map(key, _), 1) => Some(key),
         ("default", Ty::Fallible(inner), 1) => Some(inner),
         ("join", _, 1) => Some(checker.out.types.str()),
         ("slice", _, 1 | 2) => Some(checker.out.types.int()),
@@ -111,15 +110,12 @@ pub(super) fn call(
             let str_ty = checker.out.types.str();
             checker.out.types.intern(Ty::Array(str_ty))
         }
-        ("has", [map, key]) => match checker.out.types.get(*map) {
-            Ty::Map(k, _) if k == *key => checker.out.types.bool(),
-            Ty::Map(k, _) => {
-                let (want, got) = (checker.show(ast, src, k), checker.show(ast, src, *key));
-                let diagnostic = errors::mismatch(&want, &got, span);
-                checker.push_diagnostic(diagnostic);
-                return Some(checker.error_ty());
-            }
-            _ => return arg_error(checker, ast, src, "has", "`{K: V}`", *map, span),
+        // `keys(m) -> [K]`. `has` used to sit here and was struck (panel 026): map
+        // access returns `V?` always, so `has(m, k)` and `!m[k].is_err()` were two
+        // spellings of one predicate.
+        ("keys", [map]) => match checker.out.types.get(*map) {
+            Ty::Map(k, _) => checker.out.types.intern(Ty::Array(k)),
+            _ => return arg_error(checker, ast, src, "keys", "`{K: V}`", *map, span),
         },
         ("join", [parts, separator]) => {
             let str_ty = checker.out.types.str();

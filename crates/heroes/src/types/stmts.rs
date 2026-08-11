@@ -14,7 +14,7 @@
 
 use crate::resolve::Resolved;
 use crate::source::Source;
-use crate::syntax::{Ast, Block, ExprKind, StmtId, StmtKind};
+use crate::syntax::{Ast, Block, ExprId, ExprKind, StmtId, StmtKind};
 
 use super::table::Ty;
 use super::{errors, exprs, expect, lower, Checker, TyId};
@@ -49,6 +49,17 @@ pub(super) enum Want {
 
 /// A block: every statement checked, and — when `wants_value` — the type its last
 /// statement produces.
+/// The type a mutation target accepts, which differs from the type it *reads* in
+/// exactly one case: an index into a map.
+fn write_target(checker: &Checker, ast: &Ast, place: ExprId, read: TyId) -> TyId {
+    let ExprKind::Index { base, .. } = ast.exprs[place.0 as usize].kind else { return read };
+    let base_ty = checker.out.expr_types[base.0 as usize];
+    match (checker.out.types.get(base_ty), checker.out.types.get(read)) {
+        (Ty::Map(_, _), Ty::Fallible(value)) => value,
+        _ => read,
+    }
+}
+
 pub(super) fn block(
     checker: &mut Checker,
     ast: &Ast,
@@ -131,6 +142,13 @@ pub(super) fn statement(
         }
         StmtKind::Mutate { place, value } => {
             let target = exprs::synth(checker, ast, resolved, src, *place);
+            // **The write side of `m[k]` is `V`, not `V?`** (§4.9, panel 026). Reading a
+            // map yields a fallible because the key may be absent; *writing* one cannot
+            // fail, because `m[k] @ v` inserts — which is exactly where it diverges from
+            // `xs[i] @ v`, and the spec names the divergence. So the target type sheds
+            // one `Fallible` layer, and only for this shape: a `T?` cell assigned a `T?`
+            // is still a plain store.
+            let target = write_target(checker, ast, *place, target);
             expect::check(checker, ast, resolved, src, *value, target);
             (Flow::Falls, None)
         }

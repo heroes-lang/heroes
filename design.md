@@ -2589,7 +2589,7 @@ function expression(@p: Parse) -> Expr?
 
 # The value bound to a name, with a decent message if absent.
 function lookup(env: {str: int}, name: str) -> int?
-    if !env.has(name)
+    if env[name].is_err()
         return fail("unknown_name", "undefined variable: " + name)
     return ok(env[name].must())
 

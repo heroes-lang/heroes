@@ -45,7 +45,7 @@ fn text_and_floating_point_are_no_longer_refused() {
     // row dies. What the note still enumerates is the *built-ins*, which is where the
     // remaining rows are.
     assert!(crate::emit::subset().contains("every type in the language"));
-    assert!(crate::emit::subset().contains("`has`"));
+    assert!(crate::emit::subset().contains("`keys`"));
 }
 
 /// `s[i]` and `xs[i]` are the same instruction, and `len` is one built-in over both:
@@ -85,13 +85,13 @@ fn the_map_is_emitted_and_compares_without_regard_to_order() {
     let out = super::emitted(concat!(
         "function main()\n",
         "    m = {\"a\": 1, \"b\": 2}\n",
-        "    print(len(m), has(m, \"a\"))\n",
+        "    print(len(m), !m[\"a\"].is_err())\n",
         "    print(m == {\"b\": 2, \"a\": 1})\n",
     ));
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     assert!(out.c.contains("hero_map_new(&hero_desc_str, &hero_desc_int"), "{}", out.c);
     assert!(out.c.contains("hero_map_put"), "{}", out.c);
-    assert!(out.c.contains("hero_map_has"), "{}", out.c);
+    assert!(out.c.contains("hero_map_find"), "{}", out.c);
     // `hero_map_eq` is order-independent by construction — a pairwise walk of two entry
     // arrays would have made these two literals unequal.
     assert!(out.c.contains("hero_map_eq"), "{}", out.c);

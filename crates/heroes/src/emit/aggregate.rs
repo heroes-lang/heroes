@@ -343,6 +343,21 @@ pub(super) fn write_element(
                 }
             }
             Step::Index(index) => {
+                // **A map step ends the walk.** `m[k] @ v` inserts, so there is no
+                // element to descend into — a key that is absent is created by the
+                // store itself. A map step that is *not* last would mean writing
+                // through a value the map may not hold, which the checker refuses.
+                if let Ty::Map(_, _) = types.checked.types.get(ty) {
+                    if !last {
+                        return None;
+                    }
+                    lines.push(format!(
+                        "hero_map_set(&({lvalue}), &{}, &{});",
+                        mangle::value(index.0),
+                        mangle::value(value.0)
+                    ));
+                    return Some(lines);
+                }
                 let element = match types.checked.types.get(ty) {
                     Ty::Array(element) => element,
                     _ => return None,

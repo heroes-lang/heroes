@@ -733,10 +733,6 @@ const void *hero_map_find(const HeroMapHeader *m, const void *key) {
     return NULL;
 }
 
-bool hero_map_has(const HeroMapHeader *m, const void *key) {
-    return hero_map_find(m, key) != NULL;
-}
-
 bool hero_map_eq(const HeroMapHeader *a, const HeroMapHeader *b) {
     hero_map_require(a);
     hero_map_require(b);
@@ -791,4 +787,80 @@ _Noreturn void hero_panic_must(HeroFailure f) {
     fprintf(stderr, "panic: .must() on an error: %s: %s\n",
             hero_str_cstr(f.code), hero_str_cstr(f.msg));
     abort();
+}
+
+HeroArrayHeader *hero_map_keys(const HeroMapHeader *m) {
+    hero_map_require(m);
+    HeroArrayHeader *out = hero_array_new(m->key, m->len > 0 ? m->len : 1);
+    const unsigned char *states = hero_map_states_const(m);
+    unsigned char *data = (unsigned char *)(void *)(out + 1);
+    int64_t at = 0;
+    for (int64_t i = 0; i < m->cap; i++) {
+        if (states[i] == 0) continue;
+        /* Copied, not moved: the map keeps its own key and the array takes one. */
+        m->key->copy(data + (size_t)at * m->key->size, hero_map_key_at_const(m, i));
+        at += 1;
+    }
+    out->len = at;
+    return out;
+}
+
+/* Grow and re-probe, through the PUBLIC copy path.
+ *
+ * Written first as `memcpy` of the live entries plus `free` of the old block
+ * without dropping — the reasoning being that the references pass to the new block
+ * unchanged, so no descriptor should run. That reasoning is right about the
+ * references and wrong about everything else: it hand-rolls refcount bookkeeping in
+ * a second place, and the first program to grow a map and then read its keys
+ * panicked with `not a Heroes string block`, every printed answer correct and the
+ * failure at exit.
+ *
+ * This version copies through `hero_map_put` (+1 per entry, via the descriptors)
+ * and releases the old map through `hero_map_decref` (−1 per entry, via the same
+ * descriptors). Balanced by construction, with no arithmetic of mine in it. A
+ * growth costs one extra copy of every entry, and a rehash was already paying for
+ * one. */
+static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
+    HeroMapHeader *b = hero_map_new(m->key, m->val, m->len * 2 + 1);
+    const unsigned char *states = hero_map_states_const(m);
+    for (int64_t i = 0; i < m->cap; i++) {
+        if (states[i] == 0) continue;
+        hero_map_put(b, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i));
+    }
+    hero_map_decref(m);
+    return b;
+}
+
+void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
+    if (slot == NULL) hero_panic("store into no map — a compiler bug");
+    hero_map_require(*slot);
+    HeroMapHeader *m = *slot;
+    unsigned char *states = hero_map_states(m);
+    int64_t at = hero_map_slot_of(m, key);
+    for (int64_t probe = 0; probe < m->cap; probe++) {
+        int64_t i = (at + probe) & (m->cap - 1);
+        if (states[i] == 0) {
+            /* Load factor at most 1/2, the invariant `hero_map_new` establishes and
+             * this is the only place that can break it. Grow first, then retry from
+             * the top: the bucket for this key is different in the new table. */
+            if ((m->len + 1) * 2 > m->cap) {
+                *slot = hero_map_grown(m);
+                hero_map_set(slot, key, value);
+                return;
+            }
+            m->key->copy(hero_map_key_at(m, i), key);
+            m->val->copy(hero_map_val_at(m, i), value);
+            states[i] = 1;
+            m->len += 1;
+            return;
+        }
+        if (m->key->eq(hero_map_key_at_const(m, i), key)) {
+            /* Replace the value in place and keep the key that is there — they are
+             * equal, so which copy the map holds is unobservable. */
+            m->val->drop(hero_map_val_at(m, i));
+            m->val->copy(hero_map_val_at(m, i), value);
+            return;
+        }
+    }
+    hero_panic("map is full — this is a compiler bug, please report it");
 }

@@ -59,7 +59,7 @@ pub const BUILTINS: [Builtin; 23] = [
     Builtin { name: "filter", tier: Tier::Heroes },
     Builtin { name: "find", tier: Tier::Heroes },
     Builtin { name: "fold", tier: Tier::Heroes },
-    Builtin { name: "has", tier: Tier::Runtime },
+    Builtin { name: "keys", tier: Tier::Runtime },
     Builtin { name: "is_err", tier: Tier::Heroes },
     Builtin { name: "join", tier: Tier::Runtime },
     Builtin { name: "len", tier: Tier::Runtime },

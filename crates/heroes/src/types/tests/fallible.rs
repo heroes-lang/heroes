@@ -173,13 +173,13 @@ function f(s: str) -> int
 }
 
 /// §4.9: a map access is fallible, which is what makes a missing key a value
-/// rather than a crash — and `has` is the boolean test beside it.
+/// rather than a crash — and `keys` is the boolean test beside it.
 #[test]
 fn a_map_access_is_fallible() {
     assert_clean(
         "\
 function lookup(env: {str: int}, key: str) -> int?
-    if !env.has(key)
+    if !env[key].is_err()
         return fail(\"unknown_name\", \"undefined: \" + key)
     return ok(env[key].must())
 ",

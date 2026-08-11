@@ -19,7 +19,12 @@
 # confidence with nothing to read.
 #
 # `m[k]` is **not** `xs[i]`: it yields a `V?` and cannot abort (§4.9), with code
-# `missing_key` on a miss.
+# `missing_key` on a miss — and `m[k] @ v` **inserts**, which is where the two
+# diverge: `xs[i] @ v` aborts when the index is absent.
+#
+# `has(m, k)` used to be here and was struck (panel 026): map access returns `V?`
+# always, so `has(m, k)` and `!m[k].is_err()` were two spellings of one predicate.
+# The removal is what kept this amendment inside the budget rule.
 # Bulk regression case.
 
 record Point
@@ -29,7 +34,7 @@ record Point
 function main()
     m = {"a": 1, "b": 2, "c": 3}
     print(len(m))
-    print(has(m, "a"), has(m, "z"))
+    print(!m["a"].is_err(), !m["z"].is_err())
     print(m["b"].default(0))
     print(m["z"].default(-1))
     print(m["z"].is_err())
@@ -53,3 +58,21 @@ function main()
     e: {str: int} = {}
     print(len(e), e["a"].is_err())
     print(e == {})
+    # `m[k] @ v` INSERTS — which is where it diverges from `xs[i] @ v`, and that
+    # divergence is the whole reason it needed a spec sentence of its own.
+    w: {str: int} @ {}
+    w["x"] @ 1
+    w["y"] @ 2
+    w["x"] @ 9
+    print(len(w), w["x"].default(0), w["y"].default(0))
+    # And it GROWS, which an array store never does: the load factor invariant is
+    # maintained by `hero_map_new` and this is the only place that can break it.
+    big: {str: int} @ {}
+    i: int @ 0
+    while i < 40
+        big["k" + to_str(i)] @ i
+        i @ i + 1
+    total: int @ 0
+    for k in keys(big)
+        total @ total + big[k].default(0)
+    print(len(big), len(keys(big)), total)

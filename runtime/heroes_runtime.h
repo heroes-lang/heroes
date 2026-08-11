@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 6
+#define HERO_RUNTIME_ABI 7
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -308,7 +308,24 @@ int64_t hero_map_len(const HeroMapHeader *m);
  * "a": 2}` has to mean something and the later entry is what a reader expects. */
 void hero_map_put(HeroMapHeader *m, const void *key, const void *value);
 
-bool hero_map_has(const HeroMapHeader *m, const void *key);
+/* `keys(m) -> [K]` — a fresh array of the keys, in an order the spec declines to
+ * promise (panel 026). Iteration is this composed with the `for` and `sort` that
+ * already exist, which is why the language grew no loop form for a map: two
+ * invocations compose to it (CLAUDE.md §10).
+ *
+ * The keys are COPIED through the key descriptor, so the array owns its own
+ * references and outliving the map is safe. */
+HeroArrayHeader *hero_map_keys(const HeroMapHeader *m);
+
+/* `m[k] @ v` — insert or replace. Named `set` rather than `put` because `put` is
+ * the literal builder's private entry point and this is the language's.
+ *
+ * Unlike `hero_array_set` this one **grows**: a store may add an entry, so the
+ * table can fill, and unlike an array a map has no "index out of range" — spec
+ * says `xs[i] @ v` aborts when absent and `m[k] @ v` inserts. It takes `**` for
+ * the same reason every mutation primitive does: growth replaces the block, and a
+ * caller cannot forget to store a result that does not exist. */
+void hero_map_set(HeroMapHeader **slot, const void *key, const void *value);
 
 /* The value, or NULL when the key is absent. NULL rather than a `T?` because the
  * runtime cannot build one: the option struct is generated per payload type, so

@@ -67,7 +67,8 @@ x = 5              # immutable binding, type inferred
 v: int @ 0         # mutable declaration — the type is REQUIRED
 v @ v + 1          # mutation; only a declared @ name can be mutated
 ```
-`=` binds once, forever. `@` declares a mutable cell and re-binds it.
+`=` binds once, forever. `@` declares a mutable cell and re-binds it. `m[k] @ v` inserts or replaces;
+`keys(m) -> [K]` gives the keys, so `for k in sort(keys(m))` walks in order.
 Signatures are always explicit; inference is local only. Empty container
 literals need an annotation: `xs: [int] = []` · `m: {str: int} @ {}`.
 All bindings are initialised. An unused binding or parameter is a compile
@@ -146,7 +147,7 @@ use. There is no ternary; `if` is an expression, and so is `match`.
 separate elements by newline; single-line by comma.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `has` · `join` · `sort` · `to_int` (truncating; out of range aborts) ·
+`chars` · `keys` · `join` · `sort` · `to_int` (truncating; out of range aborts) ·
 `to_f64` · `to_str` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no

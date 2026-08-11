@@ -9,7 +9,7 @@ function score_of(scores: {str: int}, name: str) -> int
     return scores[name].default(0)
 
 function known(scores: {str: int}, name: str) -> bool
-    return has(scores, name)
+    return !scores[name].is_err()
 
 # `.is_err()` asks without extracting; the `match` extracts without aborting.
 function report(scores: {str: int}, name: str) -> str
