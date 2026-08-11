@@ -457,3 +457,37 @@ function f(n: int) -> f64
         "test.hero:4:17: error[type_mismatch]: expected `f64`, found `int`\n"
     );
 }
+
+/// **What a generic call instantiated at, recorded rather than recomputed.**
+///
+/// The checker binds these to type the call and used to drop them; the
+/// monomorphisation pass needs exactly them, and recomputing them at IR level
+/// would be a second answer to one question (panel 029 R2). One entry per
+/// generic call, keyed by the call's span; a monomorphic program records none.
+#[test]
+fn a_generic_call_records_what_it_instantiated_at() {
+    let (out, src) = super::checked(
+        "\
+function first<T>(xs: [T]) -> T
+    return xs[0]
+
+function main()
+    print(first([1, 2]))
+    print(first([\"a\"]))
+    print(len(\"plain\"))
+",
+    );
+    let parsed = crate::syntax::parse(&src);
+    let mut seen: Vec<String> = out
+        .instantiations
+        .values()
+        .map(|args| {
+            args.iter()
+                .map(|t| crate::types::render_ty(&out.types, &parsed.ast, &src, *t, &[]))
+                .collect::<Vec<String>>()
+                .join(", ")
+        })
+        .collect();
+    seen.sort();
+    assert_eq!(seen, vec!["int".to_string(), "str".to_string()]);
+}

@@ -256,6 +256,16 @@ fn user_call(
             bind(checker, ast, src, param, got, &mut bindings, at);
         }
     }
+    // **Recorded, not dropped.** The bindings were computed to type this call and
+    // used to be discarded here; monomorphisation needs exactly them, and
+    // recomputing them at IR level would be a second answer to one question
+    // (panel 029 R2). Only a generic call has any, so a monomorphic program adds
+    // no entries at all.
+    if generics > 0 {
+        let resolved_args: Vec<TyId> =
+            bindings.iter().map(|b| b.unwrap_or_else(|| checker.error_ty())).collect();
+        checker.out.instantiations.insert(span.start, resolved_args);
+    }
     substitute(checker, result, &bindings)
 }
 

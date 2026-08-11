@@ -104,6 +104,20 @@ pub struct Checked {
     /// this to the descriptor worklist's reachable subset: a total order
     /// restricted to a subset is still a total order.
     pub type_order: Vec<u32>,
+    /// What each call to a **generic** function instantiated it at, by the span of
+    /// the call (§4.12). Empty for every monomorphic call, so its size is the
+    /// number of generic calls and not the number of calls.
+    ///
+    /// **Recorded here rather than recomputed in the pass** (panel 029 R2). The
+    /// checker already binds these to type the call and used to drop them on the
+    /// floor; monomorphisation would otherwise have to redo `generics::bind` at IR
+    /// level, and `counted.rs` already ruled on that shape by name — "two answers
+    /// that disagree … is a refcount bug that reproduces once a week".
+    ///
+    /// Keyed by span because a span is what an IR instruction carries back to the
+    /// source, and two calls cannot share one: a span is a byte range, and the
+    /// ranges of two distinct calls differ.
+    pub instantiations: std::collections::BTreeMap<u32, Vec<TyId>>,
     /// One entry per interned type: does a value of it own a reference the compiler
     /// must count (§4.10, §4.20). Built by `counted.rs` after checking, because the
     /// question is transitive through a record's fields and a `TyId` carries a
@@ -161,6 +175,7 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
             expr_types: Vec::new(),
             holes: Vec::new(),
             type_order: Vec::new(),
+            instantiations: std::collections::BTreeMap::new(),
             counted: Vec::new(),
             diagnostics: Vec::new(),
         },
