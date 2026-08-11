@@ -28,7 +28,7 @@ pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
             cur.error(
                 "empty_record",
                 "a `record` needs at least one field, indented one level below it".to_string(),
-                cur.span(),
+                cur.here_or(src, keyword),
             );
         }
         cur.recover_to_next_decl();
@@ -58,7 +58,7 @@ pub(super) fn variant(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
             cur.error(
                 "empty_variant",
                 "a `variant` needs at least one case, indented one level below it".to_string(),
-                cur.span(),
+                cur.here_or(src, keyword),
             );
         }
         cur.recover_to_next_decl();

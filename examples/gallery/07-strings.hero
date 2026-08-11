@@ -7,7 +7,7 @@
 # Bytes, not characters: this counts the ASCII spaces.
 function space_count(s: str) -> int
     seen: int @ 0
-    for i in range(0, s.len())
+    for i in range(from: 0, to: s.len())
         if s[i] == ' '
             seen @ seen + 1
     return seen
@@ -24,7 +24,7 @@ function letters_of(s: str) -> [str]
 function words_of(s: str) -> [str]
     out: [str] @ []
     start: int @ 0
-    for i in range(0, s.len())
+    for i in range(from: 0, to: s.len())
         if s[i] == ' '
             if i > start
                 out @ out.push(s.slice(from: start, to: i))

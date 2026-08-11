@@ -66,6 +66,14 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
 /// Print a stage's diagnostics in the form the flags asked for, and say whether
 /// to stop. `None` means "nothing to report, carry on".
 fn report(diagnostics: &[Diagnostic], src: &Source, args: &Invocation) -> Option<Exit> {
+    // A diagnostic pointing into the library is the COMPILER being wrong, not the
+    // program: the line it names is in a file the author cannot open, so the
+    // message is unactionable however good it is. Exit 2 and say so
+    // (CLAUDE.md §10's contract; the class was panel 028 R5's).
+    if let Some(what) = heroes::library::misplaced(diagnostics, src) {
+        eprintln!("internal error: {what}");
+        return Some(Exit::Failed);
+    }
     let kept: Vec<&Diagnostic> = if args.has("--permissive") {
         diagnostics.iter().filter(|d| !d.is_thesis_rule()).collect()
     } else {
@@ -162,7 +170,11 @@ fn apply(diagnostics: &[&Diagnostic], src: &Source) -> String {
         }
     }
     edits.sort_by_key(|(start, _, _)| *start);
-    let mut text = src.text.clone();
+    // **The author's file, not the compilation.** The library is appended to
+    // every `Source` (§1.11, `heroes::library`), and `--apply` writes a program
+    // back — with `--in-place` it writes it into their file. Emitting the whole
+    // text would append the library to the user's source, once per invocation.
+    let mut text = src.user_text().to_string();
     for (start, end, replacement) in edits.into_iter().rev() {
         text.replace_range(start as usize..end as usize, &replacement);
     }

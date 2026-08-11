@@ -9,8 +9,10 @@ fn a_call_checks_its_arguments_and_its_arity() {
         "\
 function repeat(text: str, times: int) -> str
     out: str @ \"\"
-    for _ in range(0, times)
+    left: int @ times
+    while left > 0
         out @ out + text
+        left @ left - 1
     return out
 
 function main()
@@ -385,7 +387,6 @@ fn the_builtins_know_their_shapes() {
         type_of_last("function f(xs: [str]) -> str\n    return xs.join(\", \")\n"),
         "str"
     );
-    assert_eq!(type_of_last("function f() -> [int]\n    return range(0, 3)\n"), "[int]");
     assert_eq!(
         diagnostics("function f(n: int) -> int\n    return n.len()\n"),
         "test.hero:2:12: error[bad_operand]: `len` takes `str`, `[T]` or `{K: V}`, found `int`\n"

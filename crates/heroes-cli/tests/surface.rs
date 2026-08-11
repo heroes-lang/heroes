@@ -229,7 +229,10 @@ fn apply_repairs_the_program_with_certain_fixes_only() {
     let out = heroes(&["check", "tests/golden/check/certain-fixes.hero", "--apply"]);
     let repaired = String::from_utf8_lossy(&out.stdout).into_owned();
     assert!(repaired.contains("print(total)"), "the rename was applied: {repaired}");
-    assert!(repaired.contains("for _ in range(0, 3)"), "the loop variable: {repaired}");
+    assert!(repaired.contains("for _ in range(from: 0, to: 3)"), "the loop variable: {repaired}");
+    // The library is appended to every compilation and belongs to none of them:
+    // `--apply` with `--in-place` writes this text into the author's file.
+    assert!(!repaired.contains("The Heroes library"), "the library leaked into the repair");
     assert!(repaired.contains(".num _ => 1"), "the payload: {repaired}");
     assert_eq!(code(&out), 0, "a repair is not a failure");
     // A `guess` is never applied: this case's only fix is one, and the file comes

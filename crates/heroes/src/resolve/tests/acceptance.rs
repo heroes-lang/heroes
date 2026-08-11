@@ -12,7 +12,6 @@
 //! by running this.
 
 use crate::resolve::resolve;
-use crate::source::Source;
 use crate::syntax::parse;
 
 /// The appendix's code fence, straight out of design.md.
@@ -31,7 +30,7 @@ fn acceptance_program() -> String {
 
 #[test]
 fn the_acceptance_program_resolves_with_no_diagnostics() {
-    let src = Source::new("design.md appendix".to_string(), acceptance_program());
+    let src = crate::library::attach("design.md appendix".to_string(), acceptance_program());
     let parsed = parse(&src);
     assert!(parsed.diagnostics.is_empty(), "the appendix must parse clean first");
     let out = resolve(&parsed.ast, &src);
@@ -49,7 +48,7 @@ fn the_acceptance_program_resolves_with_no_diagnostics() {
 /// for the whole file — which is what makes its one unread parameter legal.
 #[test]
 fn the_acceptance_program_is_held_open_by_its_one_hole() {
-    let src = Source::new("design.md appendix".to_string(), acceptance_program());
+    let src = crate::library::attach("design.md appendix".to_string(), acceptance_program());
     let parsed = parse(&src);
     let out = resolve(&parsed.ast, &src);
     assert!(out.has_hole);

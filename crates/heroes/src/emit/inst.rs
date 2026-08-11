@@ -42,7 +42,6 @@ pub(super) fn emit(
     // (they are what "what is this type called in C" needs), so they arrive as one
     // bundle and are spread here rather than in every signature.
     let (checked, src) = (types.checked, types.src);
-    let (line, _) = src.line_col(inst.span.start);
     match inst.op {
         // §4.8's second half, and the only instruction that is *about* the calling
         // convention rather than about the program. It is housekeeping, so it is
@@ -58,7 +57,7 @@ pub(super) fn emit(
             ));
             return;
         }
-        _ => w.at_source(line),
+        _ => super::writer::at_span(w, src, inst.span.start),
     }
     let dest = inst.dest.filter(|_| !is_unit(checked, inst.ty));
     let target = dest.map(|d| mangle::value(d.0));

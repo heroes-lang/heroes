@@ -1,0 +1,32 @@
+# The Heroes library — Tier 2 of design.md §1.11, written in Heroes itself.
+#
+# This file is compiled with every program. It is not on disk beside the
+# compiler: it is `include_str!`d into the binary, so there is no discovery, no
+# `$HEROES_LIBRARY`, and no decoy — clang cannot type-check Heroes source, so a
+# file here would have no analogue of the runtime's `_Static_assert` guarding it
+# (panel 028 R3).
+#
+# Rules for anything added here:
+#   - it declares a name from the built-in inventory and nothing else. A helper
+#     outside that table would take a name a user program is entitled to;
+#   - it is ordinary Heroes, checked by the ordinary rules. That is the whole
+#     claim of Tier 2, and §4.11's label rule is the first place it bites:
+#     `range`'s two `int` parameters make its labels mandatory at every call
+#     site (panel 028 R1);
+#   - a diagnostic raised in this file is a COMPILER BUG, not a user error, and
+#     the pipeline reports it as one.
+
+# The integers from `from` up to but not including `to`, in order.
+#
+# `to` is excluded, matching `slice(from:, to:)` — the labels and the bound
+# answer each other, which is why the spec states both on one line.
+# An empty range is not an error: `range(from: 3, to: 3)` and
+# `range(from: 5, to: 2)` are both `[]`, so a loop over a range that has run out
+# runs zero times rather than aborting.
+function range(from: int, to: int) -> [int]
+    out: [int] @ []
+    i: int @ from
+    while i < to
+        out @ push(out, i)
+        i @ i + 1
+    return out

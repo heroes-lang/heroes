@@ -19,15 +19,29 @@ use crate::resolve::{LocalKind, Resolved};
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 
+
+/// The library is part of every compilation and part of no dump.
+///
+/// A `--dump-<stage>` answers "what does the compiler know about **the file I
+/// named**" (CLAUDE.md §10). The library is the same in every program, so it
+/// carries no information about this one — and printing it would bury the
+/// answer under a section the reader cannot change. The emitted C is the
+/// exception, and necessarily: the binary needs the definitions.
 pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
     let mut out = format!("file {}\n", src.name);
     out.push_str("symbols\n");
     for (name, decl) in &resolved.top {
+        if src.is_library(ast.decls[*decl as usize].name.start) {
+            continue;
+        }
         let (line, _) = src.line_col(ast.decls[*decl as usize].name.start);
         out.push_str(&format!("  {} {name} (line {line})\n", entity(ast, *decl)));
     }
     out.push_str("scopes\n");
     for (index, decl) in ast.decls.iter().enumerate() {
+        if src.is_library(decl.name.start) {
+            continue;
+        }
         let locals: Vec<&crate::resolve::Local> =
             resolved.locals.iter().filter(|l| l.owner == index as u32).collect();
         if locals.is_empty() {

@@ -1,7 +1,11 @@
 # Bulk regression case (assistant-written): the three declarations that need a
-# body and do not have one. Each is reported at the NEXT declaration's line.
+# body and do not have one. Each is reported at the NEXT declaration's line —
+# except the last, which has no next declaration in this file and falls back to
+# its own keyword. It used to point at the EOF line; the library appended to
+# every compilation (§1.11) made that "the library's first line", which is a
+# place the author cannot open, so `Cursor::here_or` clamps it here instead.
 constant MAX: int
 
 record Point  #~ missing_body
 
-variant Token  #~ empty_record #~v empty_variant
+variant Token  #~ empty_record #~ empty_variant

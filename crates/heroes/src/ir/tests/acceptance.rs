@@ -11,7 +11,6 @@
 
 use crate::ir::{dump, lower, verify};
 use crate::resolve::resolve;
-use crate::source::Source;
 use crate::syntax::parse;
 use crate::types::check;
 
@@ -31,7 +30,7 @@ fn acceptance_program() -> String {
 /// a test that only checked for the absence of diagnostics would pass on an IR
 /// whose blocks had two exits.
 fn lower_text(name: &str, text: &str) -> String {
-    let src = Source::new(name.to_string(), text.to_string());
+    let src = crate::library::attach(name.to_string(), text.to_string());
     let parsed = parse(&src);
     assert!(parsed.diagnostics.is_empty(), "{name} must parse clean");
     let resolved = resolve(&parsed.ast, &src);

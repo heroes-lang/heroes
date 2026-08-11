@@ -66,6 +66,25 @@ impl Cursor {
         self.tokens[self.pos].span
     }
 
+    /// The current token's span, **unless it is the library's** — in which case
+    /// the declaration this diagnostic is about.
+    ///
+    /// Three declarations report a missing body "at the NEXT declaration's
+    /// line", which reads well and locates the mistake exactly: the body should
+    /// have been between them. But the library is appended to every `Source`
+    /// (§1.11, `crate::library`), so a file ENDING in a bodyless declaration
+    /// would point at a line the author cannot open — and the pipeline would
+    /// then refuse the whole compilation as a compiler bug, which it is not.
+    /// Falling back to the declaration's own keyword keeps the message
+    /// actionable at the one place the nice form stops working.
+    pub(super) fn here_or(&self, src: &Source, fallback: Span) -> Span {
+        let span = self.span();
+        if src.is_library(span.start) {
+            return fallback;
+        }
+        span
+    }
+
     pub(super) fn at(&self, kind: TokenKind) -> bool {
         self.kind() == kind
     }

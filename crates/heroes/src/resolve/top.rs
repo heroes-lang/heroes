@@ -46,20 +46,32 @@ pub(super) fn collect(r: &mut Resolver, ast: &Ast, src: &Source) {
             continue;
         }
         let name = src.slice(decl.name).to_string();
+        let in_library = src.is_library(decl.name.start);
+        // Every built-in name is taken, in both of §1.11's tiers — the tier says
+        // where the implementation comes from, not whether the name is free
+        // (see `builtins.rs`). …except in the library itself, which is where
+        // those names get their implementations: it declares `range` because
+        // `range` is its job.
+        //
+        // **This runs BEFORE the duplicate check, and the order is the message.**
+        // Tier 2's implementations are real declarations now, so a user file
+        // declaring `range` collides with one — and reported as a duplicate it
+        // would say "the declaration at line 30", naming a line in a file the
+        // author cannot open. `builtin_name_taken` says the true thing: the
+        // language spent that name, wherever its body happens to live.
+        if index_of(&name).is_some() && !in_library {
+            let diagnostic = errors::builtin_name_taken(&name, decl.name);
+            r.push_diagnostic(diagnostic);
+            // The table keeps the library's entry rather than the author's, so
+            // every *call* in the file still resolves to something with the right
+            // signature: one mistake, one diagnostic.
+            continue;
+        }
         if let Some(previous) = r.out.top.get(&name) {
             let (line, _) = src.line_col(ast.decls[*previous as usize].name.start);
             let diagnostic = errors::declared_twice(&name, line, decl.name);
             r.push_diagnostic(diagnostic);
             continue;
-        }
-        // Every built-in name is taken, in both of §1.11's tiers — the tier says
-        // where the implementation comes from, not whether the name is free
-        // (see `builtins.rs`). The table is filled anyway, so the rest of the
-        // file resolves against what the author wrote rather than against a name
-        // it was just told not to use: one mistake, one diagnostic.
-        if index_of(&name).is_some() {
-            let diagnostic = errors::builtin_name_taken(&name, decl.name);
-            r.push_diagnostic(diagnostic);
         }
         r.out.top.insert(name, index as u32);
     }

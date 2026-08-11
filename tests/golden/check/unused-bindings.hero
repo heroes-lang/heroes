@@ -13,7 +13,7 @@ variant Token
 function describe(t: Token, verbose: bool) -> int  #~ unused_binding
     total: int @ 0  #~ unused_binding
     total @ 1
-    for i in range(0, 3)  #~ unused_binding
+    for i in range(from: 0, to: 3)  #~ unused_binding
         print("tick")
     return match t
         .num n => 1  #~ unused_binding

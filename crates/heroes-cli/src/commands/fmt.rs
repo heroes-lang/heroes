@@ -37,7 +37,7 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
         print!("{formatted}");
         return Exit::Ok;
     }
-    if formatted == src.text {
+    if formatted == src.user_text() {
         return Exit::Ok; // already canonical: no write, no mtime change
     }
     match std::fs::write(path, &formatted) {

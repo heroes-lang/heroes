@@ -189,6 +189,14 @@ fn report(diagnostics: &[Diagnostic], src: &Source) -> Result<(), Exit> {
     if diagnostics.is_empty() {
         return Ok(());
     }
+    // A diagnostic pointing into the library is the COMPILER being wrong, not the
+    // program: the line it names is in a file the author cannot open, so the
+    // message is unactionable however good it is. Exit 2 and say so
+    // (CLAUDE.md §10's contract; the class was panel 028 R5's).
+    if let Some(what) = heroes::library::misplaced(diagnostics, src) {
+        eprintln!("internal error: {what}");
+        return Err(Exit::Failed);
+    }
     let rendered: Vec<String> = diagnostics.iter().map(|d| render(d, src)).collect();
     eprint!("{}", rendered.join("\n"));
     Err(Exit::Diagnostics)

@@ -44,8 +44,28 @@ pub fn module_of(path: &str) -> String {
     kept
 }
 
+/// The module component the library's own functions get, whatever file is being
+/// compiled. `range` is `h_library_range` in every program.
+///
+/// The reason is M8a's, decided at panel 028 R3b with the evidence in hand: one
+/// `.c` per module, every Heroes function emitted with external linkage, and two
+/// modules that both call `range` are `ld: duplicate symbol` at every
+/// optimisation level. The rule is one definition and many prototypes — which
+/// only works if the definition has the *same* name everywhere, so the module
+/// component cannot be the user's file stem.
+pub const LIBRARY_MODULE: &str = "library";
+
 /// A Heroes function or constant.
+///
+/// **A function whose name is in the built-in inventory belongs to the library**,
+/// and that is not a heuristic: `resolve/top.rs` refuses a user declaration of
+/// any reserved name, and the library declares nothing else — a helper there
+/// would take a name a user program is entitled to. Both halves are asserted by
+/// `library::tests`, so the coupling is checked rather than assumed.
 pub fn function(module: &str, name: &str) -> String {
+    if crate::resolve::index_of(name).is_some() {
+        return format!("h_{LIBRARY_MODULE}_{name}");
+    }
     format!("h_{module}_{name}")
 }
 

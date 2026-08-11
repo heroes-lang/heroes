@@ -42,7 +42,6 @@ pub(super) fn expectation(
         ("default", Ty::Fallible(inner), 1) => Some(inner),
         ("join", _, 1) => Some(checker.out.types.str()),
         ("slice", _, 1 | 2) => Some(checker.out.types.int()),
-        ("range", _, 1) => Some(checker.out.types.int()),
         _ => None,
     }
 }
@@ -134,13 +133,6 @@ pub(super) fn call(
             Ty::Int | Ty::F64 | Ty::Bool | Ty::Str => checker.out.types.str(),
             _ => return arg_error(checker, ast, src, "to_str", "`int`, `f64`, `bool` or `str`", *one, span),
         },
-        ("range", [from, to]) => {
-            let int = checker.out.types.int();
-            if *from != int || *to != int {
-                return arg_error(checker, ast, src, "range", "two `int`s", *from, span);
-            }
-            checker.out.types.intern(Ty::Array(int))
-        }
         ("sort", [one]) => match checker.out.types.get(*one) {
             Ty::Array(_) => *one,
             _ => return arg_error(checker, ast, src, "sort", "`[T]`", *one, span),
@@ -165,7 +157,12 @@ pub(super) fn call(
             Ty::Fallible(_) => checker.out.types.bool(),
             _ => return arg_error(checker, ast, src, "is_err", "a fallible value", *one, span),
         },
-        // Tier 2 (§1.11): written in Heroes at M6, known by name until then.
+        // Tier 2 (§1.11): written in Heroes. `range` used to have a rule here and
+        // no longer does — it is a real declaration in `library/source.hero` from
+        // M6 step 4, and `resolve/exprs.rs` consults the top-level table before
+        // the built-in one, so no `Callee::Builtin(range)` is ever produced. The
+        // six below still have rules because they need generics and function
+        // values, which land later in this milestone.
         ("map", [items, f]) => return higher_order(checker, ast, src, "map", *items, *f, span, Shape::Map),
         ("filter", [items, f]) => {
             return higher_order(checker, ast, src, "filter", *items, *f, span, Shape::Keep)

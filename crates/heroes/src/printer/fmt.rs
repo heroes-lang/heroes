@@ -40,7 +40,17 @@ pub(super) const WIDTH: usize = 88;
 /// guesses would rewrite the author's file into the parser's guess.
 pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
     let mut fmt = Fmt { out: String::new(), next_comment: 0, last_line: 0 };
-    for (i, decl) in ast.decls.iter().enumerate() {
+    // The library's comments go with its declarations. Filtering only the decls
+    // would leave its header block behind, trailing every formatted file.
+    let kept: Vec<Span> = comments.iter().copied().filter(|c| !src.is_library(c.start)).collect();
+    let comments: &[Span] = &kept;
+    // **The author's declarations, never the library's.** `fmt` hands a program
+    // back, and with `--in-place` it writes it into their file — so a formatter
+    // that walked the whole `Source` would append the library to it, once per
+    // run (§1.11, `crate::library`).
+    let decls: Vec<&crate::syntax::Decl> =
+        ast.decls.iter().filter(|d| !src.is_library(decl_start(src, d))).collect();
+    for (i, decl) in decls.into_iter().enumerate() {
         let (line, _) = src.line_col(decl_start(src, decl));
         if i > 0 {
             fmt.blank_line();

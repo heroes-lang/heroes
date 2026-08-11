@@ -46,7 +46,14 @@ pub fn dump(program: &Program, ast: &Ast, checked: &Checked, src: &Source) -> St
         }
         out.push('\n');
     }
-    for (index, function) in program.functions.iter().enumerate() {
+    // The library is part of every compilation and part of no dump: a
+    // `--dump-<stage>` answers "what does the compiler know about the file I
+    // named" (CLAUDE.md §10), and the library is identical in every program, so
+    // it carries no information about this one. The emitted C is the exception,
+    // and necessarily — the binary needs the definitions.
+    let shown: Vec<&Function> =
+        program.functions.iter().filter(|f| !src.is_library(f.span.start)).collect();
+    for (index, function) in shown.into_iter().enumerate() {
         if index > 0 {
             out.push('\n');
         }

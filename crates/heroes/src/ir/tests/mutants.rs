@@ -23,7 +23,6 @@
 use crate::ir::{dump, lower, verify};
 use crate::mutate::{mutants, OPERATORS};
 use crate::resolve::resolve;
-use crate::source::Source;
 use crate::syntax::parse;
 use crate::types::check;
 
@@ -53,7 +52,7 @@ fn every_mutant_the_frontend_accepts_lowers_to_a_well_formed_ir() {
     for (name, text) in corpus() {
         for operator in OPERATORS {
             for mutant in mutants(operator.id, &name, &text) {
-                let src = Source::new(name.clone(), mutant);
+                let src = crate::library::attach(name.clone(), mutant);
                 let parsed = parse(&src);
                 if !parsed.diagnostics.is_empty() {
                     rejected += 1;
@@ -119,7 +118,7 @@ fn every_surviving_mutant_of_the_acceptance_program_lowers() {
     let mut accepted = 0;
     for operator in OPERATORS {
         for mutant in mutants(operator.id, "appendix", &program) {
-            let src = Source::new("appendix".to_string(), mutant);
+            let src = crate::library::attach("appendix".to_string(), mutant);
             let parsed = parse(&src);
             if !parsed.diagnostics.is_empty() {
                 continue;

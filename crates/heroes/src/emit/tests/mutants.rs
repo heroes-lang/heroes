@@ -23,7 +23,6 @@ use crate::emit::emit;
 use crate::ir::{lower, verify};
 use crate::mutate::{corpus, mutants, OPERATORS};
 use crate::resolve::resolve;
-use crate::source::Source;
 use crate::syntax::parse;
 use crate::types::check;
 
@@ -34,7 +33,7 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
     for (name, text) in corpus() {
         for operator in OPERATORS {
             for mutant in mutants(operator.id, &name, &text) {
-                let src = Source::new(name.clone(), mutant);
+                let src = crate::library::attach(name.clone(), mutant);
                 let parsed = parse(&src);
                 if !parsed.diagnostics.is_empty() {
                     continue;
@@ -79,6 +78,12 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
     // (measurement 002) — which is the thesis working, and it means this invariant runs
     // over the residue rather than over the corpus. It will grow with every gate row
     // M5b and M5c delete.
-    assert!(refused >= 10, "only {refused} mutants were refused — is the gate running?");
+    // **The refused count falls as the gate retires rows, and that is the point.**
+    // It was >= 10 when `sort`, `join`, `chars` and `range` were all refused; M6
+    // steps 3 and 4 gave four of them implementations, so what is left is
+    // `extern`, function values and generics — and most mutants of those files
+    // never reach the emitter, because the frontend catches them first. The floor
+    // is 1 rather than 0 because 0 would mean the gate never ran at all.
+    assert!(refused >= 1, "only {refused} mutants were refused — is the gate running?");
     assert!(emitted >= 3, "only {emitted} mutants were emitted — is the emitter running?");
 }

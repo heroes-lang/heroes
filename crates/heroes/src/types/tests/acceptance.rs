@@ -8,7 +8,6 @@
 //! has never been run.
 
 use crate::resolve::resolve;
-use crate::source::Source;
 use crate::syntax::parse;
 use crate::types::check;
 
@@ -26,7 +25,7 @@ fn acceptance_program() -> String {
 }
 
 fn check_text(name: &str, text: &str) -> Vec<String> {
-    let src = Source::new(name.to_string(), text.to_string());
+    let src = crate::library::attach(name.to_string(), text.to_string());
     let parsed = parse(&src);
     assert!(parsed.diagnostics.is_empty(), "{name} must parse clean");
     let resolved = resolve(&parsed.ast, &src);
@@ -50,7 +49,7 @@ fn the_acceptance_program_type_checks() {
 #[test]
 fn every_value_producing_expression_is_typed() {
     let text = acceptance_program();
-    let src = Source::new("design.md appendix".to_string(), text);
+    let src = crate::library::attach("design.md appendix".to_string(), text);
     let parsed = parse(&src);
     let resolved = resolve(&parsed.ast, &src);
     let out = check(&parsed.ast, &resolved, &src);

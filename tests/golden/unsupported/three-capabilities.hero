@@ -1,15 +1,15 @@
 # The list as it stands, and the file's job is to keep proving that all of it arrives
 # at once rather than one invocation at a time.
 #
-# Rewritten seven times, and each rewrite is the gate working — `str` and `f64` at M5b,
+# Rewritten eight times, and each rewrite is the gate working — `str` and `f64` at M5b,
 # `record` at M5c step 3, `array` at step 5, writing one element at step 6, `T?` and
 # `{K: V}` at M5d, and at M6 step 3 the three built-ins that used to stand here
 # (`sort`, `join`, `chars`) all acquired entry points. **Every type in the language
 # emits, and every Tier-1 built-in emits**, so what is left is three different KINDS of
 # refusal rather than three names:
 #
-#   1. a built-in refused by NAME — `range` is Tier 2 (§1.11), written in Heroes, so
-#      what it waits for is the prelude and not a runtime function;
+#   1. a built-in refused by NAME — `map` is Tier 2 (§1.11) and still has no body,
+#      unlike `range`, which became a real library function at M6 step 4;
 #   2. a built-in refused by OPERAND TYPE — `sort` orders `int`, `f64` and `str`, and
 #      a `[P]` has no order this backend has decided on (panel 027 R1);
 #   3. a function used as a value, which is the M6 step that lands C function pointers.
@@ -26,6 +26,9 @@ record P
 function add(a: int, b: int) -> int
     return a + b
 
+function tag(p: P) -> int
+    return p.x
+
 function main()
     p = P(x: 1)
     print(p.x)
@@ -34,12 +37,15 @@ function main()
     print(xs[0], len(xs))
     m = {"a": 1}
     print(!m["a"].is_err(), m["a"].default(0))
-    # These six emit now, and are here to prove the refusals are not about them.
+    # These emit now, and are here to prove the refusals are not about them —
+    # `range` among them, which is what step 4 changed.
     print(sort(xs)[0], join(chars("ab"), "-"), len(slice(xs, from: 0, to: 1)))
     print(to_int(1.5), to_f64(2), to_str(3))
+    print(len(range(from: 0, to: 2)))
     ps = [P(x: 2), P(x: 1)]
     print(len(sort(ps)))      #~ builtin
-    for i in range(0, 2)      #~ builtin
-        print(i)
+    # The function value comes first, so it is the line the capability is
+    # reported at: the gate names each capability once, at its first occurrence.
     f = add                   #~ function_value
     print(f(1, 2))
+    print(len(map(ps, tag)))  #~ builtin

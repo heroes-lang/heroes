@@ -8,10 +8,16 @@
 use crate::cli::Exit;
 use heroes::source::Source;
 
-/// The file as a `Source`, or the message to print and the code to exit with.
+/// The file as a `Source`, **with the library attached** — every command that
+/// resolves names needs Tier 2's source in scope (§1.11, `heroes::library`), and
+/// attaching it here rather than per command is what keeps `lex`, `parse`,
+/// `check`, `build`, `run` and `fmt` looking at the same text.
+///
+/// The library is appended, so every offset and line number the author can see
+/// is exactly what it would have been without it.
 pub fn read(path: &str) -> Result<Source, (String, Exit)> {
     match std::fs::read_to_string(path) {
-        Ok(text) => Ok(Source::new(path.to_string(), text)),
+        Ok(text) => Ok(heroes::library::attach(path.to_string(), text)),
         Err(e) => Err((format!("cannot read `{path}`: {e}"), Exit::Failed)),
     }
 }

@@ -10,7 +10,6 @@
 //! collision in code nobody wrote *for* the resolver.
 
 use crate::resolve::resolve;
-use crate::source::Source;
 use crate::syntax::parse;
 
 #[test]
@@ -27,7 +26,7 @@ fn every_gallery_program_resolves_clean() {
     for path in names {
         let text = std::fs::read_to_string(&path).expect("a readable .hero file");
         let short = path.rsplit('/').next().unwrap_or(&path).to_string();
-        let src = Source::new(short.clone(), text);
+        let src = crate::library::attach(short.clone(), text);
         let parsed = parse(&src);
         assert!(parsed.diagnostics.is_empty(), "{short} does not parse clean");
         let out = resolve(&parsed.ast, &src);

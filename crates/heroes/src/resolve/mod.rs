@@ -57,7 +57,7 @@ mod types;
 #[cfg(test)]
 mod tests;
 
-pub use builtins::{Builtin, Tier, BUILTINS};
+pub use builtins::{index_of, Builtin, Tier, BUILTINS};
 pub use types::Prim;
 
 use scope::Scopes;

@@ -18,7 +18,6 @@
 //! Resolution is checked next door in `resolve::tests::gallery`: it needs the
 //! resolver, and this module is the printer's.
 
-use crate::source::Source;
 use crate::syntax::parse;
 
 use super::tests::{assert_canonical, format};
@@ -48,7 +47,7 @@ pub(crate) fn gallery_files() -> Vec<(String, String)> {
 #[test]
 fn every_gallery_program_parses_clean() {
     for (name, text) in gallery_files() {
-        let src = Source::new(name.clone(), text);
+        let src = crate::library::attach(name.clone(), text);
         let out = parse(&src);
         let rendered: Vec<String> =
             out.diagnostics.iter().map(|d| d.render_line(&src)).collect();

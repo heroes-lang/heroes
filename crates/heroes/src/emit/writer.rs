@@ -44,6 +44,14 @@ pub(super) struct Writer {
     generated: String,
 }
 
+/// The name a `#line` gives the library's own source (§1.11's Tier 2).
+///
+/// It is not a path, and that is deliberate: there is no file to open. The
+/// library is embedded in the compiler (`crate::library`), so a clang error
+/// inside it must name something a reader can recognise as "not your program"
+/// rather than a path that does not exist on their disk.
+pub(super) const LIBRARY_FILE: &str = "<heroes library>";
+
 impl Writer {
     pub(super) fn new(source_path: &str, module: &str) -> Writer {
         Writer {
@@ -81,6 +89,20 @@ impl Writer {
         }
         let source = self.source.clone();
         self.directive(&source, line);
+    }
+
+    /// Point the next line at the library's own source.
+    ///
+    /// A library function must never claim the author's file: its line numbers
+    /// run past the end of what they wrote, so a clang error would be reported
+    /// against a line that does not exist — the compiler blaming the author for
+    /// its own code, which is the failure CLAUDE.md §8 exists to prevent.
+    pub(super) fn at_library(&mut self, line: u32) {
+        let line = line.max(1);
+        if self.claim == (Claim::At { file: LIBRARY_FILE.to_string(), line }) {
+            return;
+        }
+        self.directive(LIBRARY_FILE, line);
     }
 
     /// Point the next line at the generated file — around a prologue, a copy-out,
@@ -121,4 +143,18 @@ fn escape(path: &str) -> String {
         }
     }
     out
+}
+
+/// Point the next line at whichever source a span actually came from.
+///
+/// Every caller that has a span and a `Source` goes through here rather than
+/// choosing for itself, so "is this the author's code or the library's" is
+/// answered in one place (CLAUDE.md §11's rule about where a rule lives).
+pub(super) fn at_span(w: &mut Writer, src: &crate::source::Source, offset: u32) {
+    if src.is_library(offset) {
+        w.at_library(src.library_line_of(offset));
+    } else {
+        let (line, _) = src.line_col(offset);
+        w.at_source(line);
+    }
 }

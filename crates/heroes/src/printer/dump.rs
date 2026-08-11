@@ -16,9 +16,20 @@ use crate::syntax::{Ast, Block, Case, Decl, DeclKind, Field, Function};
 use super::bodies::write_block;
 use super::types::render_type;
 
+
+/// The library is part of every compilation and part of no dump.
+///
+/// A `--dump-<stage>` answers "what does the compiler know about **the file I
+/// named**" (CLAUDE.md §10). The library is the same in every program, so it
+/// carries no information about this one — and printing it would bury the
+/// answer under a section the reader cannot change. The emitted C is the
+/// exception, and necessarily: the binary needs the definitions.
 pub fn dump_ast(ast: &Ast, src: &Source) -> String {
     let mut out = format!("file {}\n", src.name);
     for decl in &ast.decls {
+        if src.is_library(decl.name.start) {
+            continue;
+        }
         declaration(ast, src, decl, &mut out);
     }
     out

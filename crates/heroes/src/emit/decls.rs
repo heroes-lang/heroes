@@ -184,8 +184,7 @@ pub(super) fn definition(
     w.blank();
     // The signature is pointed at the author's declaration: a clang error about a
     // parameter type has to land on the line that wrote it.
-    let (line, _) = src.line_col(function.span.start);
-    w.at_source(line);
+    super::writer::at_span(w, src, function.span.start);
     w.line(&format!("{} {{", signature(function, checked, names, module)));
     w.at_generated();
     let types = super::aggregate::Types { ast, checked, names, src };

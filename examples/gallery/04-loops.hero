@@ -45,7 +45,7 @@ function digits_in(n: int) -> int
 # uses, and the reason an unused name is never an accident here.
 function repeat_dash(times: int) -> str
     out: str @ ""
-    for _ in range(0, times)
+    for _ in range(from: 0, to: times)
         out @ out + "-"
     return out
 

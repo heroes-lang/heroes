@@ -109,10 +109,17 @@ pub fn emit(
     // The descriptors before any definition: an array literal names its element's
     // descriptor, so the object has to exist by the time a function body mentions it.
     perfn::descriptors(&mut w, checked, &names);
-    for function in &program.functions {
+    // The author's functions, plus exactly the library functions they reach.
+    let used = builtins::reachable(program, src);
+    let shown: Vec<&crate::ir::Function> = program
+        .functions
+        .iter()
+        .filter(|f| !src.is_library(f.span.start) || used.contains(&f.decl))
+        .collect();
+    for function in &shown {
         decls::prototype(&mut w, function, ast, checked, &names, &module);
     }
-    for function in &program.functions {
+    for function in &shown {
         decls::definition(&mut w, program, function, ast, checked, &names, src, &module);
     }
     perfn::bodies(&mut w, ast, checked, &names, src);

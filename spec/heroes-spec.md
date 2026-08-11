@@ -111,7 +111,7 @@ binding (`_ = f(x)`). It binds nothing, so it is never unused and may repeat.
 
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
 Loops: `while cond` and `for x in xs`; `break` and `continue` exist; ranges
-are `range(a, b) -> [int]`.
+are `range(from: a, to: b) -> [int]`, `to` excluded.
 
 ## Failure: `T?`
 A `T?` is a `T` or an error. Construct an error with `fail(code, msg)`; codes

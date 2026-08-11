@@ -15,7 +15,7 @@ function number_of(text: str) -> int?
     if text.len() == 0
         return fail("empty", "there is nothing to read")
     total: int @ 0
-    for i in range(0, text.len())
+    for i in range(from: 0, to: text.len())
         total @ total * 10 + digit_of(text[i])?
     return ok(total)
 

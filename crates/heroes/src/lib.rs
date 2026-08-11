@@ -18,6 +18,7 @@ pub mod diagnostics;
 pub mod emit;
 pub mod ir;
 pub mod lexer;
+pub mod library;
 pub mod measure;
 pub mod own;
 pub mod mutate;

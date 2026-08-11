@@ -161,17 +161,23 @@ impl Resolver {
             self.push_diagnostic(diagnostic);
             return None;
         }
-        if let Some(&decl) = self.out.top.get(text) {
-            let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
-            let diagnostic = errors::shadows_top_level(text, line, name);
-            self.push_diagnostic(diagnostic);
-            return None;
-        }
         // A built-in's name is taken everywhere, not only at the top level: a
         // local `ok` makes `ok(x)` on the next line mean the local, which is
         // precisely the bug the shadow ban exists to kill.
+        //
+        // **Before the top-level check, and the order is the message.** Tier 2's
+        // implementations are real declarations from M6 step 4, so a local named
+        // `range` shadows one — and reported that way it would say "the
+        // declaration at line 30", naming a line in a file the author cannot
+        // open (§1.11, `crate::library`).
         if index_of(text).is_some() {
             let diagnostic = errors::builtin_name_taken(text, name);
+            self.push_diagnostic(diagnostic);
+            return None;
+        }
+        if let Some(&decl) = self.out.top.get(text) {
+            let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
+            let diagnostic = errors::shadows_top_level(text, line, name);
             self.push_diagnostic(diagnostic);
             return None;
         }

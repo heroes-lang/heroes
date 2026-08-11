@@ -15,7 +15,10 @@
 //!
 //! Design: design.md §4.20 (the inventory), §1.11 (the two tiers), CLAUDE.md §7.
 
-use crate::ir::{Arg, Args, Function};
+use std::collections::BTreeSet;
+
+use crate::ir::{Arg, Args, Callee, Function, Op, Program};
+use crate::source::Source;
 use crate::types::{Checked, Ty};
 
 /// The built-ins the backend emits. The gate reads this list, the note that
@@ -138,4 +141,53 @@ pub(super) fn unsupported_operand(
         // message.
         _ => None,
     }
+}
+
+/// Which library functions this program actually reaches.
+///
+/// The library is compiled with every program (§1.11, `crate::library`), but a
+/// program that never calls `range` has no business carrying its definition:
+/// `--emit-c` is an artifact the author reads (CLAUDE.md §10), and seven unused
+/// definitions in every file would be seven pieces of noise about a library they
+/// cannot change. So the emitter walks the call graph from the author's own
+/// functions and emits what it finds.
+///
+/// A worklist rather than one pass, because a library function may call another —
+/// and the day one does, a single pass would emit the caller and drop the callee,
+/// which is an undefined symbol at link rather than a wrong answer, but still a
+/// failure this walk makes impossible.
+pub(super) fn reachable(program: &Program, src: &Source) -> BTreeSet<u32> {
+    let mut seen: BTreeSet<u32> = BTreeSet::new();
+    let mut work: Vec<u32> = Vec::new();
+    for function in &program.functions {
+        if !src.is_library(function.span.start) {
+            for callee in calls_of(function) {
+                work.push(callee);
+            }
+        }
+    }
+    while let Some(decl) = work.pop() {
+        if !seen.insert(decl) {
+            continue;
+        }
+        let Some(function) = program.functions.iter().find(|f| f.decl == decl) else { continue };
+        for callee in calls_of(function) {
+            work.push(callee);
+        }
+    }
+    seen
+}
+
+/// Every Heroes function this one names. Read off the instructions, never a count
+/// kept in step with them.
+fn calls_of(function: &Function) -> Vec<u32> {
+    let mut found = Vec::new();
+    for block in &function.blocks {
+        for inst in &block.insts {
+            if let Op::Call { callee: Callee::Heroes(decl), .. } = inst.op {
+                found.push(decl);
+            }
+        }
+    }
+    found
 }

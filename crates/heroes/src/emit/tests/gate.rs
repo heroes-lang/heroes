@@ -331,18 +331,35 @@ fn an_extern_is_refused_because_nothing_would_check_its_signature() {
 /// the failure class the gate exists to prevent.
 #[test]
 fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
-    // `range` has no entry point, and it is refused *by name* rather than by any type
-    // in the program: the row is keyed to the built-in list, so a built-in whose
-    // operands all emit is still refused until the implementation exists.
+    // **This row can no longer fire ALONE, and that is worth writing down rather
+    // than working around.** It used to be `sort`, then `range`. M6 step 3 gave
+    // `sort` an entry point and step 4 made `range` a real library function, so
+    // every built-in still without one — `map`, `filter`, `fold`, `find`, `any`,
+    // `all` — takes a *function value*, which the gate refuses by its own row. A
+    // single-capability example does not exist any more.
     //
-    // It used to be `sort` here, and the swap is the file's own rule working: M6 step
-    // 3 gave `sort` an entry point, so the test that made its row fire had to move to
-    // a name that still has none. `range` is Tier 2 (§1.11) — written in Heroes, so
-    // what it waits for is the prelude rather than a runtime function.
-    let (code, message) =
-        refusal("function main()\n    for i in range(0, 3)\n        print(i)\n");
-    assert_eq!(code, "builtin");
-    assert!(message.contains("`range`"), "the message must name it: {message}");
+    // So the assertion moves from "the first diagnostic" to "among them", and
+    // the file's rule holds in the other direction: a row nobody can make fire
+    // alone is still a row somebody must be able to make fire.
+    let out = emitted(concat!(
+        "function double(x: int) -> int\n",
+        "    return x * 2\n",
+        "\n",
+        "function main()\n",
+        "    xs = [1, 2]\n",
+        "    print(len(map(xs, double)))\n",
+    ));
+    assert!(out.c.is_empty(), "a refused program must emit no C at all");
+    let named: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
+    assert!(named.iter().any(|m| m.contains("`map`")), "{named:?}");
+    assert!(
+        out.diagnostics.iter().all(|d| d.kind == Kind::Unsupported),
+        "not errors: the program is fine, the backend is not"
+    );
+    assert!(
+        out.diagnostics.iter().all(|d| d.fixes.is_empty()),
+        "no edit to the file fixes a missing capability"
+    );
 }
 
 /// The other half of the row, and the one added at M6 step 3: a built-in whose
@@ -368,17 +385,26 @@ fn a_builtin_whose_operand_type_has_no_order_is_refused_by_operand() {
 
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
-    let out = emitted(
-        "record Point\n    x: int\n    y: int\n\nfunction main()\n    ps = [Point(x: 1, y: 2)]\n    \
-         print(len(sort(ps)))\n    for i in range(0, 3)\n        print(i)\n",
-    );
+    let out = emitted(concat!(
+        "record Point\n",
+        "    x: int\n",
+        "    y: int\n",
+        "\n",
+        "function pick(p: Point) -> bool\n",
+        "    return p.x > 0\n",
+        "\n",
+        "function main()\n",
+        "    ps = [Point(x: 1, y: 2)]\n",
+        "    print(len(sort(ps)))\n",
+        "    print(len(filter(ps, pick)))\n",
+    ));
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
     assert!(codes.contains(&"builtin"), "{codes:?}");
     // Two capabilities the backend lacks — one keyed to a name, one to an operand
     // type — and both are named, so the list arrives at once.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
     assert!(messages.iter().any(|m| m.contains("`sort`")), "{messages:?}");
-    assert!(messages.iter().any(|m| m.contains("`range`")), "{messages:?}");
+    assert!(messages.iter().any(|m| m.contains("`filter`")), "{messages:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
@@ -389,15 +415,29 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 
 #[test]
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
-    let out = emitted(
-        "function main()\n    for i in range(0, 1)\n        print(i)\n    \
-         for j in range(0, 2)\n        print(j)\n    for k in range(0, 3)\n        print(k)\n",
-    );
-    let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
+    let out = emitted(concat!(
+        "function odd(x: int) -> bool\n",
+        "    return x % 2 == 1\n",
+        "\n",
+        "function main()\n",
+        "    xs = [1, 2]\n",
+        "    print(len(filter(xs, odd)))\n",
+        "    print(len(filter(xs, odd)))\n",
+        "    print(len(filter(xs, odd)))\n",
+    ));
+    // Three calls, and `filter` is named ONCE. The second capability in the list
+    // is the function value `odd` — unavoidable now that every unemitted built-in
+    // takes one — and it is also named once, which is the same rule holding twice.
+    let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
     assert_eq!(
-        codes.len(),
+        messages.iter().filter(|m| m.contains("`filter`")).count(),
         1,
-        "a program that calls one unsupported built-in three times has one problem: {codes:?}"
+        "a program that calls one unsupported built-in three times has one problem: {messages:?}"
+    );
+    assert_eq!(
+        messages.len(),
+        messages.iter().collect::<std::collections::BTreeSet<_>>().len(),
+        "every capability appears exactly once: {messages:?}"
     );
 }
 

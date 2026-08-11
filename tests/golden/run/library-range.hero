@@ -1,0 +1,40 @@
+# `range` is the first Tier-2 built-in with a body: written in Heroes, in the
+# library the compiler carries, and compiled with every program (§1.11).
+#
+# What this pins, and each line is a decision panel 028 had to make:
+#   - `to` is EXCLUDED, so `range(from: 0, to: n)` has n elements and its last
+#     is n-1. Five of six off-by-one directions here are silent, which is why
+#     the spec states the bound rather than leaving it to a reader's prior.
+#   - the labels are MANDATORY, because two `int` parameters make them so
+#     (§4.11). That is the rule an implementation of `range` collided with, and
+#     obeying it is what the spec now writes.
+#   - an empty range is not an error: a loop over one runs zero times. Both
+#     `from == to` and `from > to` are empty, so a range that has run out does
+#     not abort — unlike an index, which does.
+#   - it returns an ordinary `[int]`: bindable, countable, indexable, sortable.
+#     That is the whole claim of Tier 2.
+# Bulk regression case.
+
+function main()
+    xs = range(from: 0, to: 4)
+    print(len(xs), xs[0], xs[3])
+
+    total: int @ 0
+    for i in range(from: 1, to: 6)
+        total @ total + i
+    print(total)
+
+    # Both empty forms, and neither aborts.
+    print(len(range(from: 3, to: 3)), len(range(from: 5, to: 2)))
+
+    # Negative bounds are ordinary integers.
+    print(join(map_str(range(from: 0 - 2, to: 2)), ","))
+
+    # An ordinary array: the built-ins that take one all work on it.
+    print(sort(range(from: 0, to: 3))[2], len(slice(range(from: 0, to: 5), from: 1, to: 3)))
+
+function map_str(xs: [int]) -> [str]
+    out: [str] @ []
+    for x in xs
+        out @ push(out, to_str(x))
+    return out
