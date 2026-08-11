@@ -28,7 +28,10 @@ use crate::resolve::resolve;
 use crate::syntax::parse;
 use crate::types::check;
 
+mod edits;
 mod operators;
+#[cfg(test)]
+mod tests;
 
 pub use operators::OPERATORS;
 
