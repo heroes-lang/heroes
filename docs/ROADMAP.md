@@ -427,9 +427,10 @@ never off the number.
 | 4 | **M8b** | The port | v1 |
 | 5 | **M8c** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
 | 6 | **M9** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list, second half |
-| 7 | **M10** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 8 | **M11** | QBE backend (Part 7.14) | **scheduled, no warrant** |
-| 9 | **M12** | `heroes lsp` | **scheduled, no warrant** |
+| 7 | **M10** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 8 | **M11** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 9 | **M12** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 10 | **M13** | `heroes lsp` | **scheduled, no warrant** |
 
 `scheduled, no warrant` is not decoration. Part 7's preamble defers everything on
 its list until the closure list compiles itself, and **a milestone number is not
@@ -499,6 +500,15 @@ above.
 Rust → Heroes into `selfhost/` (directory born here), file by file, goldens as
 the net, the `PORT-DEBT` count as the map. Every ordering-sensitive map walk
 becomes an explicit `sort` (panel 006), or the fixpoint diff breaks.
+**Carried in as a defect, not a feature: `-g`.** design.md §2 and §3.1 both state
+that lldb breaks on and steps through `.hero` lines through the emitted `#line`
+directives — and `-g` is passed to clang **only** under `--sanitize`
+(`toolchain.rs:203`, the file's one occurrence), so an ordinary build carries no
+DWARF and the claim has never been executed by anything. It is repaired here
+because this is the milestone that needs it: debugging a Heroes compiler written
+in Heroes is where the source mapping stops being a nicety. A golden runs lldb in
+batch mode and asserts that a breakpoint on a `.hero` line is hit (CLAUDE.md §9:
+every claim gets a test that makes it fire).
 
 ### M8c — Fixpoint — **v1**
 A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty (generated C, not binaries;
@@ -522,20 +532,48 @@ acceptance rows, and they are what lift the ffi-pragmatist's veto** (panel 030 R
 4. one two-module FFI-shaped golden with a wrong `extern` signature: **exit 1 in
    both TUs**, `#~` annotated.
 
-### M10 — Concurrency · M11 — QBE · M12 — `heroes lsp`
-**Scheduled, no warrant.** M10 is design.md Part 7.13 — isolated per-thread
-heaps, copying at the boundaries, OS threads, **no scheduler** — and its width
-(data parallelism alone, or the mailbox too) is a panel question when it opens.
+### M10 — Packages, and what stands in for a standard library
+**Scheduled, no warrant.** Not a decision to take later: design.md:637 already
+fixes the shape — *"No package manager exists before modules do; when it arrives
+it will be `heroes add`/`heroes fetch` — inside the same binary"* (never a second
+binary, CLAUDE.md §6 and §10). Its real prerequisite is **M9**, not M8a: without
+separate compilation, installing a package means recompiling the world on every
+build.
+**And this is where "a standard library that wraps C" goes.** §1.11 refuses a
+standard library permanently, and that refusal is the founding constraint rather
+than a shortage of effort — but what a standard library is *wanted* for arrives
+here in a form the constraint permits: **distributable bindings**, ordinary
+Heroes modules over real C headers, each with its link flag declared next to the
+`extern` that needs it (§3.5). The difference is not cosmetic: a binding is
+verified by clang against the header it names, and a standard library is verified
+by whoever wrote it.
+
+### M11 — Concurrency
+**Scheduled, no warrant.** design.md Part 7.13 — isolated per-thread heaps,
+copying at the boundaries, OS threads, **no scheduler** — and its width (data
+parallelism alone, or the mailbox too) is a panel question when it opens.
 **Before M8c the record must state whether the C11 backend can express the
 intended model at all** (stack switching in the runtime, or a CPS/state-machine
 transform): cfront, the direct ancestor of this architecture, was abandoned in
 1993 after a failed attempt to add exception support, having frozen around forms
 that could not carry non-local control flow. If the answer is "not yet known",
 the deferral is a bet and is logged as one (panel 030 R6).
-M11 is the QBE backend from the same IR (~500 lines) — proves IR agnosticism,
-restores the register-allocation lesson. M12 is `heroes lsp`, ~250 lines of
-JSON-RPC (diagnostics on save, formatting, hover, documentSymbol); it blocks
-nothing and could land any time after M3d, and it is last by the author's choice.
+
+### M12 — QBE: the proof that the IR is not C in disguise
+**Scheduled, no warrant**, and its warrant is stated here more honestly than
+"a second backend" ever did. Two things were bought when panel 001 replaced QBE
+with C emission, and one of them was never paid for: **as long as exactly one
+backend exists, "the IR is target-agnostic" is an assertion no artifact tests**,
+and the IR could be a C pre-processor wearing an abstraction's name without
+anything in this repo noticing. QBE from the same IR (~500 lines) is what turns
+that sentence into a measurement — and it restores the register-allocation and
+instruction-selection lesson, which is the half of a compiler this project
+deliberately handed to clang (DESIGN-LOG 2026-08-03, panel 001).
+
+### M13 — `heroes lsp`
+**Scheduled, no warrant.** ~250 lines of JSON-RPC: diagnostics on save,
+formatting, hover, documentSymbol. It blocks nothing and could land any time
+after M3d; it is last by the author's choice.
 
 ## End-to-end verification (per milestone)
 
