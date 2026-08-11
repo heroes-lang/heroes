@@ -1,0 +1,78 @@
+# The calculator — design.md's appendix program, split across modules. M6's
+# acceptance criterion was that it compiles, runs and its tests pass; M8a's is
+# that the same is true with the file cut into four, and that reading it tells
+# you where every name comes from.
+#
+# One difference from the appendix, and it is deliberate on both sides. There
+# the `simplify` function is a `???` under a "## To do" heading, because §4.16's
+# hole is a form the document has to demonstrate somewhere. Here it is written,
+# because a program with a hole produces no binary by design and this one has to
+# run. Everything else is the appendix, redistributed and qualified;
+# `resolve/tests/acceptance.rs` and `types/tests/acceptance.rs` still read
+# design.md's single-file copy, so the two are checked by different things and
+# neither is a copy nobody looks at.
+#
+# What it exercises: a recursive variant through `[Expr]`, a hand-written
+# tokeniser and recursive-descent parser, `T?` with `?` propagation, a map as an
+# environment, a user-declared generic, seven `test` blocks — and now a module
+# graph four deep, `main` → `eval` → `parse` → `lex`.
+#
+#     main.hero    the generic library, and the program
+#     eval.hero    the evaluator, the simplifier, the interface
+#     parse.hero   the syntax tree and recursive descent
+#     lex.hero     the tokeniser
+#
+# Grammar, increasing precedence:
+#
+#     expression := term ('+' term)*
+#     term       := factor ('*' factor)*
+#     factor     := number | name | '(' expression ')'
+
+use eval
+
+## Generic library
+
+# Applies `f` to every element, in order. Named `apply` rather than `map`
+# because `map` is a built-in name and no file may redeclare one (panel 015);
+# the point here is generics, and any name demonstrates them.
+function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
+    out: [B] @ []
+    for x in xs
+        out @ out.push(f(x))
+    return out
+
+# Reduces the sequence to one value, from the left. `fold` is a built-in name
+# too, so this one is `reduce`.
+function reduce<A, B>(xs: [A], initial: B, f: (function(B, A) -> B)) -> B
+    acc: B @ initial
+    for x in xs
+        acc @ f(acc, x)
+    return acc
+
+function plus(a: int, b: int) -> int
+    return a + b
+
+test "generics work across types"
+    assert [1, 2, 3].apply(double) == [2, 4, 6]
+    assert [1, 2, 3, 4].reduce(0, plus) == 10
+
+function double(n: int) -> int
+    return n * 2
+
+## Program
+
+function main()
+    env = {"x": 10, "y": 4}
+
+    cases = [
+        "2 + 3 * 4"
+        "(2 + 3) * 4"
+        "x * y + 2"
+        "z + 1"
+        "2 +"
+    ]
+
+    for c in cases
+        match eval.calculate(c, env)
+            .ok v  => print(c, " = ", v)
+            .err e => print(c, " -> ", e.code, ": ", e.msg)

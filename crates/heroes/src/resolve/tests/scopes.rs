@@ -247,6 +247,7 @@ function main(xs: [int])
         ),
         "\
 file test.hero
+module test
 symbols
   function main (line 1)
 scopes

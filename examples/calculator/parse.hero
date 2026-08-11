@@ -1,0 +1,91 @@
+# The parser: tokens in, a tree out. It names `lex`, and every name it takes
+# from there is written qualified — `lex.Token` in a signature, `lex.Token` in a
+# field. The case patterns stay bare (`.num n`), because which variant a case
+# belongs to comes from context and not from where the variant was declared.
+
+use lex
+
+## Syntax tree
+
+# A tree node. Children live in an array, which is the language's
+# only indirection: that is what makes the recursive type finite.
+variant Expr
+    num
+        v: int
+    variable
+        name: str
+    sum
+        children: [Expr]
+    product
+        children: [Expr]
+
+# Tokens and position. Travels through the parser as `@`.
+record Parse
+    ts: [lex.Token]
+    pos: int
+
+function parse_at_end(p: Parse) -> bool
+    return p.pos >= p.ts.len()
+
+function parse_here(p: Parse) -> lex.Token
+    return p.ts[p.pos]
+
+function parse_advance(@p: Parse)
+    p.pos @ p.pos + 1
+
+## Parser
+#
+# Recursive descent. The four functions call each other; declaration
+# order does not matter, so mutual recursion needs no forward
+# declarations — and that holds across modules too, since the whole
+# program is one compilation.
+
+# A number, a name, or a parenthesised expression.
+function factor(@p: Parse) -> Expr?
+    if p.parse_at_end()
+        return fail("unexpected_end", "the expression ends too soon")
+
+    t = p.parse_here()
+    parse_advance(@p)
+
+    return match t
+        .num n                   => ok(.num(v: n.v))
+        .name x                  => ok(.variable(name: x.s))
+        .lparen                  => group(@p)
+        .plus | .times | .rparen => fail("expected_factor", "found an operator")
+
+# An expression followed by its closing paren.
+function group(@p: Parse) -> Expr?
+    inner = expression(@p)?
+    if p.parse_at_end()
+        return fail("unclosed_paren", "missing closing paren")
+    if p.parse_here() != .rparen
+        return fail("unclosed_paren", "missing closing paren")
+    parse_advance(@p)
+    return ok(inner)
+
+# A product of one or more factors.
+function term(@p: Parse) -> Expr?
+    first = factor(@p)?
+    children: [Expr] @ [first]
+
+    while !p.parse_at_end() && p.parse_here() == .times
+        parse_advance(@p)
+        children @ children.push(factor(@p)?)
+
+    if children.len() == 1
+        return ok(first)
+    return ok(.product(children: children))
+
+# A sum of one or more terms.
+function expression(@p: Parse) -> Expr?
+    first = term(@p)?
+    children: [Expr] @ [first]
+
+    while !p.parse_at_end() && p.parse_here() == .plus
+        parse_advance(@p)
+        children @ children.push(term(@p)?)
+
+    if children.len() == 1
+        return ok(first)
+    return ok(.sum(children: children))

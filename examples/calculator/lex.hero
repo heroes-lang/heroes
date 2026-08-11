@@ -1,0 +1,93 @@
+# The lexer: text in, tokens out. It names nothing outside itself, which is why
+# it is the first module — a module with no `use` line is the base case of the
+# whole graph.
+
+## Tokens
+
+variant Token
+    num
+        v: int
+    name
+        s: str
+    plus
+    times
+    lparen
+    rparen
+
+# Text and position. Travels through the lexer as `@`.
+record Lex
+    text: str
+    pos: int
+
+function at_end(l: Lex) -> bool
+    return l.pos >= l.text.len()
+
+function here(l: Lex) -> int
+    return l.text[l.pos]
+
+function advance(@l: Lex)
+    l.pos @ l.pos + 1
+
+function is_digit(c: int) -> bool
+    return c >= '0' && c <= '9'
+
+function is_letter(c: int) -> bool
+    return c >= 'a' && c <= 'z'
+
+# Reads an integer, consuming it.
+function read_number(@l: Lex) -> int
+    v: int @ 0
+    while !l.at_end() && l.here().is_digit()
+        v @ v * 10 + (l.here() - '0')
+        advance(@l)
+    return v
+
+# Reads an identifier, consuming it.
+function read_name(@l: Lex) -> str
+    start = l.pos
+    while !l.at_end() && l.here().is_letter()
+        advance(@l)
+    return l.text.slice(from: start, to: l.pos)
+
+# Splits the text into tokens. Fails on the first unknown character.
+function tokenize(text: str) -> [Token]?
+    l: Lex @ Lex(text: text, pos: 0)
+    out: [Token] @ []
+
+    while !l.at_end()
+        c = l.here()
+
+        if c == ' '
+            advance(@l)
+        else if c.is_digit()
+            out @ out.push(.num(v: read_number(@l)))
+        else if c.is_letter()
+            out @ out.push(.name(s: read_name(@l)))
+        else if c == '+'
+            out @ out.push(.plus)
+            advance(@l)
+        else if c == '*'
+            out @ out.push(.times)
+            advance(@l)
+        else if c == '('
+            out @ out.push(.lparen)
+            advance(@l)
+        else if c == ')'
+            out @ out.push(.rparen)
+            advance(@l)
+        else
+            return fail("unknown_char", "at position " + l.pos.to_str())
+
+    return ok(out)
+
+test "tokenizes numbers, names and symbols"
+    ts = tokenize("12 + xy * (3)").must()
+    assert ts.len() == 7
+    assert ts[0] == .num(v: 12)
+    assert ts[1] == .plus
+    assert ts[2] == .name(s: "xy")
+
+test "tokenize rejects the unknown"
+    match tokenize("2 $ 3")
+        .ok _  => assert false
+        .err e => assert e.code == "unknown_char"

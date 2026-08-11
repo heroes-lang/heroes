@@ -1,0 +1,145 @@
+# The evaluator, the tree simplifier, and the one function that puts the whole
+# pipeline together. It names both modules below it, and this is the file where
+# the rule earns its keep: `parse.expression(@p)` says where the recursion lives
+# without opening another file, and so does `lex.tokenize`.
+
+use lex
+use parse
+
+## Evaluator
+
+# The value bound to a name, with a decent message if absent.
+function lookup(env: {str: int}, name: str) -> int?
+    if env[name].is_err()
+        return fail("unknown_name", "undefined variable: " + name)
+    return ok(env[name].must())
+
+function sum_of(children: [parse.Expr], env: {str: int}) -> int?
+    tot: int @ 0
+    for c in children
+        tot @ tot + evaluate(c, env)?
+    return ok(tot)
+
+function product_of(children: [parse.Expr], env: {str: int}) -> int?
+    tot: int @ 1
+    for c in children
+        tot @ tot * evaluate(c, env)?
+    return ok(tot)
+
+# The value of the tree. Fails on the first unknown name.
+function evaluate(e: parse.Expr, env: {str: int}) -> int?
+    return match e
+        .num n      => ok(n.v)
+        .variable x => env.lookup(x.name)
+        .sum s      => s.children.sum_of(env)
+        .product q  => q.children.product_of(env)
+
+# Every name appearing in the tree, with repetitions.
+function names_used(e: parse.Expr) -> [str]
+    return match e
+        .num _      => []
+        .variable x => [x.name]
+        .sum s      => names_of(s.children)
+        .product q  => names_of(q.children)
+
+function names_of(children: [parse.Expr]) -> [str]
+    out: [str] @ []
+    for c in children
+        for n in c.names_used()
+            out @ out.push(n)
+    return out
+
+## Interface
+
+# From text to result, in one call.
+function calculate(text: str, env: {str: int}) -> int?
+    ts = lex.tokenize(text)?
+    p: parse.Parse @ parse.Parse(ts: ts, pos: 0)
+    tree = parse.expression(@p)?
+    if !parse.parse_at_end(p)
+        return fail("trailing_tokens", "leftover input at the end")
+    return evaluate(tree, env)
+
+test "precedence and parens"
+    empty: {str: int} = {}
+    assert calculate("2 + 3 * 4", empty).must() == 14
+    assert calculate("(2 + 3) * 4", empty).must() == 20
+    assert calculate("2 * 3 * 4", empty).must() == 24
+
+test "variables from the environment"
+    env = {"x": 10, "y": 4}
+    assert calculate("x * y + 2", env).must() == 42
+
+test "errors reach the top"
+    empty: {str: int} = {}
+    match calculate("2 +", empty)
+        .ok _  => assert false
+        .err e => assert e.code == "unexpected_end"
+    match calculate("z + 1", empty)
+        .ok _  => assert false
+        .err e => assert e.code == "unknown_name"
+    match calculate("(2 + 3", empty)
+        .ok _  => assert false
+        .err e => assert e.code == "unclosed_paren"
+
+test "values are always copies"
+    a = [1, 2, 3]
+    b: [int] @ a
+    b @ b.push(4)
+    assert a.len() == 3
+    assert b.len() == 4
+
+## Simplifier
+
+# Simplify the tree: `x * 1` becomes `x`, `x + 0` becomes `x`.
+#
+# Bottom-up: every child is simplified before the node itself, so
+# `(x + 0) * 1` collapses in one pass. A node whose children all vanish
+# collapses to the identity it was built around — an empty `sum` is 0 and an
+# empty `product` is 1, which is the same rule `sum_of` and `product_of` use for
+# an empty list.
+function simplify(e: parse.Expr) -> parse.Expr
+    return match e
+        .num _      => e
+        .variable _ => e
+        .sum s      => rebuild(kept: keep_sum(s.children), zero: true)
+        .product q  => rebuild(kept: keep_product(q.children), zero: false)
+
+# The children of a sum that survive: each simplified, and the literal zeroes
+# dropped because adding one changes nothing.
+function keep_sum(children: [parse.Expr]) -> [parse.Expr]
+    out: [parse.Expr] @ []
+    for child in children
+        one = simplify(child)
+        if !is_literal(e: one, v: 0)
+            out @ out.push(one)
+    return out
+
+# The same for a product, dropping the ones.
+function keep_product(children: [parse.Expr]) -> [parse.Expr]
+    out: [parse.Expr] @ []
+    for child in children
+        one = simplify(child)
+        if !is_literal(e: one, v: 1)
+            out @ out.push(one)
+    return out
+
+# Is this node exactly the literal `v`?
+function is_literal(e: parse.Expr, v: int) -> bool
+    return match e
+        .num n      => n.v == v
+        .variable _ => false
+        .sum _      => false
+        .product _  => false
+
+# One child left is that child; none left is the operation's identity.
+function rebuild(kept: [parse.Expr], zero: bool) -> parse.Expr
+    if kept.len() == 1
+        return kept[0]
+    if kept.len() == 0
+        if zero
+            return .num(v: 0)
+        return .num(v: 1)
+    if zero
+        return .sum(children: kept)
+    return .product(children: kept)

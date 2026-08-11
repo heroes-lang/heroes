@@ -445,6 +445,40 @@ fn test_runs_each_block_and_reports_one_line_each() {
     assert_eq!(code(&out), 0);
 }
 
+/// **M8a's acceptance criterion**: the same program, cut into four modules, and
+/// the same seven tests.
+///
+/// It asserts more than "green". The tests come from *three* of the four files,
+/// so it is also the check that `heroes test` runs every module's blocks rather
+/// than the root's — the difference between `is_library` and `is_root`, which is
+/// a silent loss if taken the other way. And the four `use` lines make the
+/// graph four deep, `main` -> `eval` -> `parse` -> `lex`.
+#[test]
+fn the_split_calculator_passes_the_same_tests_across_four_modules() {
+    let out = heroes(&["test", "examples/calculator/main.hero"]);
+    let shown = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(shown.trim_end().ends_with("7 tests, all passed"), "{shown}");
+    // One from each file that has any: `main`, `eval`, `lex`.
+    assert!(shown.contains("ok   \"generics work across types\""), "{shown}");
+    assert!(shown.contains("ok   \"precedence and parens\""), "{shown}");
+    assert!(shown.contains("ok   \"tokenizes numbers, names and symbols\""), "{shown}");
+    assert_eq!(code(&out), 0);
+}
+
+/// The split program runs, and prints what the single-file one prints. Two
+/// spellings of one program is the claim M8a makes; this is the assertion.
+#[test]
+fn the_split_calculator_prints_what_the_single_file_one_prints() {
+    let split = heroes(&["run", "examples/calculator/main.hero"]);
+    let whole = heroes(&["run", "examples/calculator.hero"]);
+    assert_eq!(
+        String::from_utf8_lossy(&split.stdout),
+        String::from_utf8_lossy(&whole.stdout),
+        "the modules changed what the program does"
+    );
+    assert_eq!(code(&split), 0);
+}
+
 /// A failing test is the **program** being wrong: exit 1, the same code a
 /// diagnostic gets and for the same reason — the tool worked.
 ///
