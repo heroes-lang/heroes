@@ -38,7 +38,9 @@ Show the full pipeline with today's position marked. Use this fixed picture
 ```
 testo .hero → [M1 lexer] → [M2 parser] → [M3 controllo dei tipi] →
 [M4 semplificazione + IR] → [M5 emissione C + runtime] → binario nativo
-poi: [M6 zucchero+test+generici] [M7 FFI] [M8 self-hosting]
+poi: [M8a moduli] [M7 FFI] [M8p sonda] [M8b+M8c self-hosting] → v1
+  (gli identificatori NON sono in ordine: l'ordine è quello scritto qui —
+   docs/ROADMAP.md § What is left, panel 030)
 ```
 
 ### 2. «Dove siamo» — 3–6 sentences
