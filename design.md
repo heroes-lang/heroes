@@ -1941,8 +1941,13 @@ Two passes sit between type checking and emission, and they are **core obligatio
 | generics | monomorphisation on the IR, after type checking (§4.12) |
 | `range(a, b)` | library function |
 
-Everything in this table is gone **in the IR**: lowering erases it on the way in, and the erasure is
-inspectable with `heroes build --dump-ir`, one golden per row. Three rows used to say `match` where
+Everything in this table is gone **in the IR**, and the erasure is inspectable with
+`heroes build --dump-ir`, one golden per row. **All of it but one row is erased by lowering, on the
+way in** — the exception is generics, which the row above says so itself: monomorphisation is a
+*pass*, after type checking, so `Ty::Generic` is present in the IR until it runs (panel 029). The
+sentence used to claim lowering erased everything, which its own table contradicted two lines
+earlier; `ir/verify.rs` had documented the exception informally, which is how a false sentence
+survives — the truth was written somewhere nobody compares it against. Three rows used to say `match` where
 they meant *a branch*: `match` is the surface's only destructuring construct, and the IR has no
 `match` either — it has `switch` on a variant tag and `branch` on a `bool`.
 
