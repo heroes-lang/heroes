@@ -9,7 +9,67 @@ because tags say where you *are*, not what is *next* — and "what is next"
 must not live outside version control. Update the status line here at every
 milestone close (the checklist is in `/step`).
 
-**Status: M6 closed 2026-08-11, tag `m6` — the language is finished, and the
+**Status: M8a closed 2026-08-12, tag `m8a` — a program is many files, and the
+calculator is four of them.
+
+    $ heroes test examples/calculator/main.hero
+    7 tests, all passed
+
+`use geom` reads `geom.hero` beside the file that names it; every cross-module name
+is written qualified; the whole program is still **one `.c`**. The acceptance held on
+all three counts — `examples/calculator/` is `main` → `eval` → `parse` → `lex`, its
+stdout is byte-identical to the single file's, and no golden's emitted C changed
+shape. Three of §1.0's four remaining rows are still open (**file I/O · `args()` ·
+`exit(code)`**, whose route M7 decides); the fourth, **modules**, closes here.
+
+**Two panels, and both were decided by counting rather than by arguing.** Panel 031
+landed the spec at **+71** (2363 → 2434), and eleven of its thirteen resolutions cost
+zero tokens because `use` was made to *bind* — the spec's own verb — so "shadowing is
+a compile error" and "an unused binding is a compile error" already covered a local
+named after a module and a `use` nothing reads. Its wording was fixed by a judge that
+found the proposal's own example **illegal as the thing it demonstrated**:
+`geom.dist2(a, b)` has two same-typed parameters, so labels are mandatory, and that
+text is legal only as UFCS.
+
+**Panel 032 was convened by author instruction to add subdirectories, and refused
+them on a count.** A path buys **zero** `use` lines — 452 either way, because a path
+changes how a target is spelled and never whether a `use` is needed — and it forces
+the *same* renames, since 40 of the port's 119 files sit in 15 last-part collision
+groups the proposal's own clause refuses. Nim's compiler runs 171 files in one
+directory. "A directory is a module" was struck by three vetoes from three
+independent grounds, including the only **silent wrong program** in this project's
+panel record. The port starts flat; the decision is queued for ratification, and if
+overruled the form is fixed at +26.
+
+**Five defects, and three of them were found by running rather than by testing.** A
+diagnostic in a non-root module named the root file and a line nobody could find in
+it (the repair, `Source::locate`, then earned itself twice more). `geom.Point(x: 3,
+y: 4)` is a construction and not a call, and routing it through the call path put
+`hero_unreachable(t1, t2)` in the generated C. And two shipped defects were caught by
+a judge compiling something else: the mangler took the raw `use` name, so two legal
+modules produced one C symbol and **exit 2 saying the compiler is wrong**; and every
+non-root module's `#line` named the root file, which would have handed §4.19's
+guarantee to a file that does not contain the declaration. Each has a case named
+after it.
+
+**A measurement was wrong since M6 and repairing it lowered the number.** `heroes
+mutate` built a bare `Source` while the CLI has attached the library since M6, so the
+metric scored a frontend nobody runs. Corrected: **96% / 79%**, and the M6 line below
+records the old pair as what it was.
+
+414 crate tests (was 379 at M8a step 1), 13 golden harnesses, 32 CLI surface. Spec at
+**2434** of 4096, 1662 of headroom, now pinned by a test: panel 024's delta gate
+landed as `measure::gate`, so a spec change is red until the commit that made it true
+writes the new number down. `heroes mutate` runs 1148 mutants, up from 839 — the split
+calculator is corpus.
+
+**Runnable:** `heroes test examples/calculator/main.hero` · `heroes run
+examples/calculator/main.hero` · `heroes check examples/calculator/eval.hero
+--dump-scopes` (the `uses` section: every module the file names and every qualified
+name it may write, with the file and line each comes from) · `heroes build
+examples/calculator/main.hero --emit-c` (four files in the `#line` directives).
+
+**M6 closed 2026-08-11, tag `m6` — the language is finished, and the
 calculator's tests pass.
 
     $ heroes test examples/calculator.hero
@@ -53,7 +113,10 @@ v0 about `range`. Each has a case named after it.
 
 Spec at **2363** of 4096, 1733 of headroom. `heroes mutate` 97% / 81% over 839
 mutants — up from 96% / 79%, without this milestone adding a diagnostic: the labels
-`range` now requires make a whole class of mutation catchable.
+`range` now requires make a whole class of mutation catchable. **That pair is not a
+rate this compiler ever had**: `mutate` was scoring a `Source` with no library
+attached while every CLI invocation attaches one, and M8a made the two the same
+pipeline. The honest figure for the same corpus is 96% / 79%.
 
 **Runnable:** `heroes test examples/calculator.hero` · `heroes run
 tests/golden/run/closure-list.hero` · `heroes run tests/golden/run/generics.hero
@@ -421,7 +484,7 @@ never off the number.
 
 | order | id | what | warrant |
 |---|---|---|---|
-| 1 | **M8a** | Modules — the namespace, one whole-program `.c` | closure list (§1.0) |
+| 1 | **M8a** ✅ | Modules — the namespace, one whole-program `.c` | closure list (§1.0) |
 | 2 | **M7** | FFI ladder, and the **route** for file I/O · `args()` · `exit(code)` | §1.11 + closure list |
 | 3 | **M8e** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
 | 4 | **M8p** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
@@ -459,8 +522,11 @@ says *modules*; it never says translation units, and CLAUDE.md §13 forbids comp
 time as a justification (panel 030 R1). Panel 029 R5b therefore does **not** need
 answering here: whole-program monomorphisation still sees every instance, which
 matters because six of the library's seven functions are generic.
-**Acceptance:** `examples/calculator.hero` split across modules, `heroes test`
-still green, and no golden's emitted C changes shape.
+**Acceptance:** ✅ 2026-08-12 — `examples/calculator/`, four modules,
+`main` → `eval` → `parse` → `lex`, seven tests from three of them, stdout
+byte-identical to the single file's, and no golden's emitted C changed shape.
+**Subdirectories were refused** at panel 032, on a count: a path buys zero `use`
+lines and forces the same renames. The port starts flat.
 **Runnable:** `heroes build` and `heroes test` on the split calculator ·
 `--dump-scopes` showing qualified names.
 
