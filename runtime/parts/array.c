@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/array.c — `[T]`, and the operations that do not mutate.
  *
  * A pointer to a heap header followed by the elements IN-LINE. The array is

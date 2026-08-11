@@ -1,0 +1,22 @@
+Heroes
+Copyright 2026 Giuseppe Arici
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The Heroes C runtime (`runtime/`) carries the Heroes runtime exception: see
+LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes contains part of that
+runtime and owes nothing for it — no copy of the License, no reproduction of
+this NOTICE. Attribution is owed by whoever redistributes Heroes itself.
+
+Third-party material redistributed in this repository:
+
+  vendor/tokenizers/cl100k_base.tiktoken
+      The `cl100k_base` BPE table from OpenAI's `tiktoken` (MIT License).
+
+  vendor/tokenizers/claude-legacy.json
+      The published tokeniser table from `@anthropic-ai/tokenizer` (MIT
+      License), Anthropic's tokeniser for Claude 1 and 2.
+
+Both are vendored so that a spec measurement taken today is reproducible years
+from now, with no network and no dependency. Provenance and sha256 for each are
+recorded in vendor/tokenizers/README.md.

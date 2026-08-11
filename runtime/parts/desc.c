@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/desc.c — the four scalar descriptors the compiler never declares.
  *
  * Written here rather than generated because there is no declaration in any

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/map.c — `{K: V}`: the representation, and everything that reads it.
  *
  * Open addressing with linear probing and THREE PARALLEL REGIONS in one block —

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/map-write.c — the map's descriptor, `keys`, and everything that writes.
  *
  * Growth, the copy-on-write the map shipped without for one commit, and the

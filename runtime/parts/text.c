@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/text.c — where `str` and `[T]` meet: `chars` and `join`.
  *
  * `chars` is TOTAL over every byte string, and `join` is one allocation. The

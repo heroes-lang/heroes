@@ -10,6 +10,18 @@ today is reproducible in five years.
 | `claude-legacy.json` | 65k | `58dad83d85e9cd57be209172449ebfbc395df2b455c11fe8b7e5b661e6f462ad` | `@anthropic-ai/tokenizer` (`claude.json`) — Anthropic's own published tokeniser for Claude 1/2 |
 | `cl100k_base.tiktoken` | 100k | `223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7` | OpenAI `tiktoken`, `cl100k_base` |
 
+## Licensing — these are redistributed, so they are attributed
+
+Both tables ship inside the `heroes` binary (`measure` is in the one command,
+CLAUDE.md §10), which makes them part of what this project distributes rather
+than a development convenience. Their upstream terms are **MIT** in both cases —
+OpenAI's `tiktoken` for `cl100k_base.tiktoken`, and `@anthropic-ai/tokenizer`
+for `claude-legacy.json` — and both are named in the repository's `NOTICE` with
+the origins recorded in the table above. A formal re-check of both licence texts
+against their upstream repositories is a line item before anything is published
+(ROADMAP M18); until then, treat this paragraph as the project's stated
+understanding rather than as a verified audit.
+
 ## Why two
 
 **One instrument cannot detect its own drift.** Neither table is the

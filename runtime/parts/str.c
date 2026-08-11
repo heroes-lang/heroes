@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/str.c — `str`, its reference counting, and the live-block counter.
  *
  * A `str` is a fat pointer PASSED BY VALUE (`heroes_runtime.h` carries the

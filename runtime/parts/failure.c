@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/failure.c — the failure side of `T?`, and `.must()`'s abort.
  *
  * `HeroFailure` is the one record every `T?` in every program contains, which is

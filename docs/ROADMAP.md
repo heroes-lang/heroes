@@ -436,6 +436,7 @@ never off the number.
 | 13 | **M15** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
 | 14 | **M16** | The journey — how this language came to be | **scheduled, no warrant** |
 | 15 | **M17** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 16 | **M18** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -509,8 +510,17 @@ them.
   `heroes mutate`'s corpus, which is where CLAUDE.md §9 says an invariant belongs:
   *asserted over the corpus rather than over cases somebody thought of*.
 
+**And the CI is born here**, because a corpus is what makes it worth having:
+GitHub Actions over **Linux x86-64 as well as Darwin arm64**, running
+`cargo test` and the corpus in its three configurations. Everything this project
+knows about the machine it runs on it learned the hard way — ASan has no leak
+detector on Darwin arm64 (hence `hero_runtime_check_leaks`), `INT64_MIN % -1`
+does not trap there, Apple ARM64 passes variadics on the stack — and each of
+those is a place where the other platform can diverge in silence. Today nothing
+tests any of it.
 **Acceptance:** `heroes test` green over every directory in `examples/`, in all
-three configurations, and a measured mutation rate over the enlarged corpus —
+three configurations **and on both platforms**, and a measured mutation rate over
+the enlarged corpus —
 with every defect the corpus finds getting a case named after it (§9's
 `fixedbugs` rule). A defect found here is the milestone working, not the
 milestone slipping.
@@ -563,6 +573,13 @@ A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty (generated C, not binaries;
 clang version pinned and recorded). Then `crates/heroes` → `archive/bootstrap-rs/`:
 the third language dies here. **Cold cache by construction**, since M9 has not
 landed — which is what voids panel 030's prediction 7.
+**And the seed, decided here rather than discovered after the archive.** Once the
+Rust bootstrap is archived, a newcomer has no Heroes compiler and therefore no way
+to build one. The answer is the artifact the fixpoint already produces: **`B.c`,
+the generated C, is a release artifact** — any clang compiles it, and it is how Go
+shipped 1.4 and how Zig ships its bootstrap. It is tested from a clean checkout
+with nothing but a C compiler, and if that test is not written before the archive
+commit, the archive commit does not happen.
 
 ### M9 — Separate compilation
 One `.c` per module, prototypes across translation units, the per-module cache:
@@ -720,6 +737,40 @@ thing you were looking for.
   bug** (CLAUDE.md §12) — and where the guide and the *compiler* disagree, that
   is a defect report on one of them, which is what the M15 check over `examples/`
   is for.
+
+### M18 — Publication readiness: the last gate
+The repo is **private** today and publishing is a hard stop that only the author
+lifts (CLAUDE.md §14). This entry is the checklist that has to be true first, and
+it exists because most of its items get worse the longer they wait.
+
+**Already done, ahead of the milestone** (2026-08-11, because a repository
+accumulates history and history cannot be relicensed retroactively): `LICENSE`
+(Apache-2.0), `LICENSE-RUNTIME-EXCEPTION` — so a program compiled with Heroes
+owes nothing for the runtime inside it — `NOTICE`, `README.md`, SPDX headers
+across `runtime/`, and the attribution of the two vendored BPE tables.
+
+**Still owed here:**
+- **The thesis, measured.** Metric 2 has never run; §1.2's formula has two
+  factors and only one is audited. The site and both books will state the claim,
+  and stating it unmeasured publishes an opinion with a decimal point — the one
+  thing §12 forbids, the author included. Not delegable: the held-out tasks must
+  be author-written, or they measure the assistant's priors (panel 011).
+- **A compatibility policy.** What v1 promises to somebody who writes code
+  against it, in one honest paragraph. Silence reads as a promise.
+- **The licence re-check on vendored material**, against the upstream
+  repositories rather than against this project's recollection
+  (`vendor/tokenizers/README.md` § Licensing).
+- **The trademark question**, in the narrow form that actually applies: the name
+  is a common word and does not worry anybody, but `site/`'s Aladdin Sane bolt is
+  iconography attached to an actively managed estate. The style guide already
+  keeps lyrics out; this is the other half, and it is cheaper to answer before
+  publication than after.
+- **Contribution policy in force** — the README's current answer ("issues yes,
+  pull requests not yet") either stands or is replaced deliberately.
+- **One defect that shows up on the second page of any tour**: `main` cannot
+  fail, so a program that goes wrong still tells the shell it succeeded
+  (queued from panel 030). Whatever M7 decides for `exit(code)`, this must not be
+  true on the day the examples go up.
 
 ## End-to-end verification (per milestone)
 

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* parts/f64.c — canonical `f64` rendering, and the numeric conversions.
  *
  * Rendering is locale-independent by construction (`uselocale` with a C locale,

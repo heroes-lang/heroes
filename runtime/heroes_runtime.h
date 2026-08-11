@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
+ * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
+ * part of this runtime inside it and owes nothing for doing so. */
 /* heroes_runtime.h — the C runtime interface (design.md §4.20).
  *
  * Generated C #includes this header, so clang type-checks every runtime call
