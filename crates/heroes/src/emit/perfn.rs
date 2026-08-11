@@ -92,7 +92,7 @@ fn every_generated_type(
                     continue;
                 }
                 let payload = names.case_of(decl, at as u32).to_string();
-                out.push((payload, owns_case(checked, decl, at as u32)));
+                out.push((payload, owns_case(ast, checked, decl, at as u32)));
             }
         }
         out.push((name, owns(checked, decl)));
@@ -118,7 +118,7 @@ pub(super) fn bodies(
                     continue;
                 }
                 let payload = names.case_of(decl, at as u32).to_string();
-                if owns_case(checked, decl, at as u32) {
+                if owns_case(ast, checked, decl, at as u32) {
                     reference_body(w, checked, names, src, &payload, &case.fields, true);
                     reference_body(w, checked, names, src, &payload, &case.fields, false);
                 }
@@ -298,24 +298,29 @@ fn owns(checked: &Checked, decl: u32) -> bool {
     }
 }
 
-fn owns_case(checked: &Checked, decl: u32, case: u32) -> bool {
+fn owns_case(ast: &Ast, checked: &Checked, decl: u32, case: u32) -> bool {
     match checked.types.lookup(Ty::Case(decl, case)) {
         Some(id) => crate::ir::is_refcounted(checked, id),
-        // No `match` arm binds this payload, so no temporary of it exists — but the
-        // *variant*'s retain still has to reach the fields inside it, so the answer
-        // comes from the fields rather than from the interner.
-        None => case_fields_are_counted(checked, decl, case),
+        // No `match` arm binds this payload, so no *temporary* of it exists — but the
+        // variant is still built, copied and released, and its release has to reach
+        // the fields inside it. The answer therefore comes from the fields, never
+        // from the interner (panel 034 D1).
+        None => case_fields_are_counted(ast, checked, decl, case),
     }
 }
 
-/// The fallback for a payload no program named: ask the fields directly.
-fn case_fields_are_counted(checked: &Checked, decl: u32, case: u32) -> bool {
-    let _ = (decl, case);
-    // Reached only when the payload type is uninterned, which means nothing reads it.
-    // A retain that walks nothing is correct, and generating one that walks fields the
-    // program cannot see would be a function with no caller.
-    let _ = checked;
-    false
+/// The fallback for a payload no `match` arm binds: ask the fields directly.
+///
+/// This is the whole repair. `Ty::Case` is interned when a pattern *destructures*
+/// the payload, and a module may build `.name(s: …)` without ever destructuring it —
+/// which made the same declaration emit a walking `release` in one compilation and an
+/// empty one in another, purely because a *different* module happened to contain the
+/// `match`. The fields do not move between compilations; the interner does.
+fn case_fields_are_counted(ast: &Ast, checked: &Checked, decl: u32, case: u32) -> bool {
+    cases_of(ast, decl)[case as usize].fields.iter().any(|field| {
+        let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
+        crate::ir::is_refcounted(checked, ty)
+    })
 }
 
 /// The one call that retains or releases a counted value sitting at `place`.
@@ -407,7 +412,7 @@ fn variant_reference_body(
     }
     w.line("    switch (v->tag) {");
     for (at, case) in cases_of(ast, decl).iter().enumerate() {
-        if case.fields.is_empty() || !owns_case(checked, decl, at as u32) {
+        if case.fields.is_empty() || !owns_case(ast, checked, decl, at as u32) {
             continue;
         }
         let case_name = src.slice(case.name);

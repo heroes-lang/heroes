@@ -1,0 +1,53 @@
+# FIXED DEFECT, 2026-08-12, found by a judge in panel 034 while compiling something
+# else. Symptom: `heroes test examples/calculator/lex.hero` answered `panic: 1 heap
+# blocks still live at exit (a missing decref)` and failed a test that PASSED when the
+# same module was compiled as part of a larger program — byte-identical source, four
+# roots, one of them wrong.
+#
+# Cause, and it is the sharp part: `emit/perfn.rs::owns_case` asked the type interner
+# whether a variant case's payload owns a reference. `Ty::Case(decl, case)` is interned
+# when a `match` arm BINDS the payload — not when the case is built. So a module that
+# constructs `.name(s: …)` and never destructures it emitted
+#
+#     void h_lex_Token_release(h_lex_Token *v) { switch (v->tag) { default: break; } }
+#
+# an empty switch, while the very same declaration compiled beside a module holding the
+# `match` emitted the walking release. The retain was always emitted, so every copy
+# increfed and nothing decrefed. Fix: `case_fields_are_counted` asks the FIELDS, which
+# do not move between compilations, where the interner does.
+#
+# This program is that shape with nothing else in it: a case payload that owns a `str`,
+# built and copied and never matched on. The `str` must be computed — a literal is a
+# static block and cannot leak, which is why the corpus had 90 run cases and not one of
+# them met this.
+#
+# What makes it a test rather than an anecdote is the leak counter in the shim: exit 0
+# and correct output prove nothing here, because the defect produced both.
+
+variant Token
+    num
+        v: int
+    name
+        s: str
+
+# Never destructured anywhere in this file: that is the condition, not an omission.
+function label(text: str, from: int, to: int) -> Token
+    return .name(s: text.slice(from: from, to: to))
+
+function main()
+    out: [Token] @ []
+    out @ out.push(label("alphabet", from: 0, to: 5))
+    out @ out.push(.num(v: 12))
+
+    # A second reference to the same payload, so a release that runs once too few is
+    # as visible as one that never runs.
+    copy = out
+    out @ out.push(label("betamax", from: 0, to: 4))
+
+    print(out.len())
+    print(copy.len())
+
+    # The whole point of the shape: `==` on a variant carrying a computed `str`, which
+    # is what the calculator's own test does and what leaked.
+    print(out[0] == label("alphabetical", from: 0, to: 5))
+    print(out[0] == .num(v: 12))
