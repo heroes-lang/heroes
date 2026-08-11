@@ -1,0 +1,60 @@
+# The six higher-order built-ins, written in Heroes (§1.11's Tier 2).
+#
+# They needed both halves of this milestone: function values (step 5) to take a
+# callback, and generics (step 6) to be one function rather than one per type.
+# §4.12's claim made good — without them these were "seven special cases in the
+# type checker, each with hand-written rules", and `types/builtins.rs` lost 90
+# lines when they became declarations.
+#
+# **`fold` folds LEFT with the accumulator FIRST**, and both halves are now in the
+# spec because neither was derivable and the wrong guess was silent: with an
+# accumulator and an element of the same type — `sum`, `concat`, every string
+# builder — either order type-checks and the program prints a different answer.
+# The two lines below are what make that observable rather than arguable.
+# Bulk regression case.
+
+function double(n: int) -> int
+    return n * 2
+
+function odd(n: int) -> bool
+    return n % 2 == 1
+
+function big(n: int) -> bool
+    return n > 100
+
+function add(a: int, b: int) -> int
+    return a + b
+
+function label(n: int) -> str
+    return to_str(n)
+
+# The two that make the order and the direction observable. `sub` is not
+# commutative, so a swapped accumulator prints a different number; `glue` is not
+# associative in the reading that matters, so a right fold prints a different
+# string.
+function sub(acc: int, x: int) -> int
+    return acc - x
+
+function glue(acc: str, w: str) -> str
+    return acc + w
+
+function main()
+    xs = [1, 2, 3, 4]
+    print(join(map(xs, label), ","))
+    print(join(map(filter(xs, odd), label), ","))
+    print(fold(xs, 0, add))
+
+    # Left, accumulator first: ((0-1)-2)-3)-4 = -10. Right would be 2, and a
+    # swapped accumulator would be 4.
+    print(fold(xs, 0, sub))
+    # Left: "" + "a" + "b" + "c". Right would print "cba".
+    print(fold(["a", "b", "c"], "", glue))
+
+    print(find(xs, odd).default(0 - 1), find(xs, big).default(0 - 1))
+    print(any(xs, odd), all(xs, odd), any(xs, big))
+
+    # Empty is the identity of each: nothing to fold, nothing to find, `any` is
+    # false and `all` is vacuously true.
+    empty: [int] = []
+    print(len(map(empty, double)), fold(empty, 7, add))
+    print(any(empty, odd), all(empty, odd), find(empty, odd).is_err())

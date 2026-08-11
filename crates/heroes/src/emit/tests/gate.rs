@@ -333,36 +333,40 @@ fn an_extern_is_refused_because_nothing_would_check_its_signature() {
 /// `xs.len()` lowers to `call builtin len` while `for` lowers to `Op::Len`. Gating
 /// the op alone would leave an undefined symbol at link time — a linker error is
 /// the failure class the gate exists to prevent.
+/// **The by-name row can no longer fire, and the invariant replaces the example.**
+///
+/// Every one of the 23 reserved names is now accounted for: eleven have a C entry
+/// point, seven are declarations in `library/source.hero`, and five are lowered to
+/// something other than a call (`ok`, `fail`, `must`, `default`, `is_err`). So
+/// there is no program that reaches `callee_note`'s row.
+///
+/// The row stays — unlike `cow_check`, which was struck at M5b for the same
+/// symptom — because it is the net under a *mismatch*: a name added to `BUILTINS`
+/// with no entry point and no library body would otherwise be an undefined symbol
+/// at link. What replaces the example is this partition, asserted, which is a
+/// stronger check than any one program: an example proves one name is refused,
+/// and this proves none can be.
 #[test]
-fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
-    // **This row can no longer fire ALONE, and that is worth writing down rather
-    // than working around.** It used to be `sort`, then `range`. M6 step 3 gave
-    // `sort` an entry point and step 4 made `range` a real library function, so
-    // every built-in still without one — `map`, `filter`, `fold`, `find`, `any`,
-    // `all` — takes a *function value*, which the gate refuses by its own row. A
-    // single-capability example does not exist any more.
-    //
-    // So the assertion moves from "the first diagnostic" to "among them", and
-    // the file's rule holds in the other direction: a row nobody can make fire
-    // alone is still a row somebody must be able to make fire.
-    let out = emitted(concat!(
-        "function double(x: int) -> int\n",
-        "    return x * 2\n",
-        "\n",
-        "function main()\n",
-        "    xs = [1, 2]\n",
-        "    print(len(map(xs, double)))\n",
-    ));
-    assert!(out.c.is_empty(), "a refused program must emit no C at all");
-    let named: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
-    assert!(named.iter().any(|m| m.contains("`map`")), "{named:?}");
+fn every_reserved_name_is_emitted_lowered_or_written_in_heroes() {
+    use crate::resolve::BUILTINS;
+    // Lowered to something that is not a call: `ok`/`fail` are constructions,
+    // `must` is an abort, `default` and `is_err` are branches on a tag (§4.6).
+    const LOWERED: [&str; 5] = ["default", "fail", "is_err", "must", "ok"];
+    let library = crate::library::SOURCE;
+    let mut unaccounted: Vec<&str> = Vec::new();
+    for builtin in BUILTINS {
+        let emitted = super::super::EMITTED_BUILTINS.contains(&builtin.name);
+        let lowered = LOWERED.contains(&builtin.name);
+        let written = library.contains(&format!("function {}", builtin.name))
+            || library.contains(&format!("function {}<", builtin.name));
+        if !emitted && !lowered && !written {
+            unaccounted.push(builtin.name);
+        }
+    }
     assert!(
-        out.diagnostics.iter().all(|d| d.kind == Kind::Unsupported),
-        "not errors: the program is fine, the backend is not"
-    );
-    assert!(
-        out.diagnostics.iter().all(|d| d.fixes.is_empty()),
-        "no edit to the file fixes a missing capability"
+        unaccounted.is_empty(),
+        "these reserved names have no entry point, no library body and no lowering: \
+         {unaccounted:?} — each would be an undefined symbol at link"
     );
 }
 
@@ -394,13 +398,12 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
         "    x: int\n",
         "    y: int\n",
         "\n",
-        "function pick(p: Point) -> bool\n",
-        "    return p.x > 0\n",
+        "extern function labs(x: int) -> int\n",
         "\n",
         "function main()\n",
         "    ps = [Point(x: 1, y: 2)]\n",
         "    print(len(sort(ps)))\n",
-        "    print(len(filter(ps, pick)))\n",
+        "    print(labs(0 - 3))\n",
     ));
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
     assert!(codes.contains(&"builtin"), "{codes:?}");
@@ -408,7 +411,7 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
     // type — and both are named, so the list arrives at once.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
     assert!(messages.iter().any(|m| m.contains("`sort`")), "{messages:?}");
-    assert!(messages.iter().any(|m| m.contains("`filter`")), "{messages:?}");
+    assert!(messages.iter().any(|m| m.contains("`extern`")), "{messages:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
@@ -420,21 +423,19 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 #[test]
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
     let out = emitted(concat!(
-        "function odd(x: int) -> bool\n",
-        "    return x % 2 == 1\n",
+        "record Point\n",
+        "    x: int\n",
         "\n",
         "function main()\n",
-        "    xs = [1, 2]\n",
-        "    print(len(filter(xs, odd)))\n",
-        "    print(len(filter(xs, odd)))\n",
-        "    print(len(filter(xs, odd)))\n",
+        "    ps = [Point(x: 1)]\n",
+        "    print(len(sort(ps)))\n",
+        "    print(len(sort(ps)))\n",
+        "    print(len(sort(ps)))\n",
     ));
-    // Three calls, and `filter` is named ONCE. The second capability in the list
-    // is the function value `odd` — unavoidable now that every unemitted built-in
-    // takes one — and it is also named once, which is the same rule holding twice.
+    // Three calls, and `sort` on a record is named ONCE.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
     assert_eq!(
-        messages.iter().filter(|m| m.contains("`filter`")).count(),
+        messages.iter().filter(|m| m.contains("`sort`")).count(),
         1,
         "a program that calls one unsupported built-in three times has one problem: {messages:?}"
     );

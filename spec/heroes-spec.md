@@ -86,7 +86,8 @@ Shadowing is a compile error.
   `function advance(@l: Lex)` … `advance(@l)`. Semantics: copy in, copy
   out (copy-out always happens, including on early return and `?`). UFCS does
   not apply when the first parameter is `@`.
-- Top-level functions are values: `xs.fold(0, add)`. Function type syntax:
+- Top-level functions are values: `xs.fold(0, add)`, folding left with the
+  accumulator first. Function type syntax:
   `(function(A) -> B)`, `(function(A, B) -> C)`, `(function() -> C)` — the
   parentheses are mandatory.
 - Generics: on functions only, no constraints, always inferred, never written

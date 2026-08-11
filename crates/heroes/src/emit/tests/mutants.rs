@@ -53,7 +53,14 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
                 if !verify(&lowered.program, &checked).is_empty() {
                     continue; // `ir/tests/mutants.rs` owns that invariant.
                 }
-                let out = emit(&lowered.program, &parsed.ast, &resolved, &checked, &src);
+                // The emitter never sees a program without monomorphisation, so
+                // neither does this invariant (M6 step 6).
+                let mut program = lowered.program;
+                let mut checked = checked;
+                if !crate::ir::mono::run(&mut program, &mut checked, &parsed.ast, &src).is_empty() {
+                    continue;
+                }
+                let out = emit(&program, &parsed.ast, &resolved, &checked, &src);
                 if out.diagnostics.is_empty() {
                     emitted += 1;
                     assert!(

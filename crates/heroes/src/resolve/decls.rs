@@ -93,10 +93,16 @@ fn generics(r: &mut Resolver, ast: &Ast, src: &Source, function: &Function) {
             continue;
         }
         if let Some(&decl) = r.out.top.get(name) {
-            let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
-            let diagnostic = errors::shadows_top_level(name, line, *span);
-            r.push_diagnostic(diagnostic);
-            continue;
+            // The library and the author's file share one `Source` and cannot
+            // shadow each other (see `scope.rs` for the whole rule): the library's
+            // `map<A, B>` must not collide with a user's `record A`.
+            let declared_at = ast.decls[decl as usize].name.start;
+            if src.is_library(span.start) == src.is_library(declared_at) {
+                let (line, _) = src.line_col(declared_at);
+                let diagnostic = errors::shadows_top_level(name, line, *span);
+                r.push_diagnostic(diagnostic);
+                continue;
+            }
         }
         r.generics.push((name.to_string(), position as u32));
     }

@@ -176,10 +176,22 @@ impl Resolver {
             return None;
         }
         if let Some(&decl) = self.out.top.get(text) {
-            let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
-            let diagnostic = errors::shadows_top_level(text, line, name);
-            self.push_diagnostic(diagnostic);
-            return None;
+            // **The library and the author's file cannot shadow each other.** They
+            // share one `Source` (§1.11, `crate::library`) and therefore one
+            // table, but they are two programs: the library's `fold` has a local
+            // `total`, and a user file with a top-level `total` would be told its
+            // own declaration is shadowed by a line it cannot open.
+            //
+            // Only this direction needs the guard. A user local shadowing a
+            // library *declaration* is caught earlier and more precisely, because
+            // every name the library declares is a reserved built-in.
+            let declared_at = ast.decls[decl as usize].name.start;
+            if src.is_library(name.start) == src.is_library(declared_at) {
+                let (line, _) = src.line_col(declared_at);
+                let diagnostic = errors::shadows_top_level(text, line, name);
+                self.push_diagnostic(diagnostic);
+                return None;
+            }
         }
         let index = self.out.locals.len() as u32;
         self.out.locals.push(Local {

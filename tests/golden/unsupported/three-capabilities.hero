@@ -8,10 +8,13 @@
 # emits, and every Tier-1 built-in emits**, so what is left is three different KINDS of
 # refusal rather than three names:
 #
-#   1. a built-in refused by NAME — `map` is Tier 2 (§1.11) and still has no body,
-#      unlike `range`, which became a real library function at M6 step 4;
-#   2. a built-in refused by OPERAND TYPE — `sort` orders `int`, `f64` and `str`, and
-#      a `[P]` has no order this backend has decided on (panel 027 R1);
+#   1. a built-in refused by OPERAND TYPE — `sort` orders `int`, `f64` and `str`,
+#      and a `[P]` has no order this backend has decided on (panel 027 R1). The
+#      "refused by NAME" row can no longer fire at all: every one of the 23
+#      reserved names now has an entry point, a library body, or a lowering, and
+#      `emit/tests/gate.rs` asserts that partition instead of an example;
+#   2. a GENERIC function and the six higher-order built-ins, which all emit now —
+#      they are in the file to prove the two refusals are not about them;
 #   3. an `extern` function, which waits for M7's header attachment — the one row
 #      whose reason is a veto rather than a milestone (§4.19: the mechanism is the
 #      `#include`, and an invented prototype verifies nothing).
@@ -58,5 +61,5 @@ function main()
     # about it.
     f = add
     print(f(1, 2))
-    print(len(map(ps, tag)))  #~ builtin
+    print(len(map(ps, tag)))
     print(first(xs), labs(0 - 3))

@@ -92,6 +92,14 @@ impl Names {
     pub(super) fn with_options(mut self, module: &str, checked: &Checked) -> Names {
         for index in 0..checked.types.len() {
             let id = TyId(index as u32);
+            // **A type that still mentions a parameter has no C declaration**, and
+            // the arena still holds the templates': monomorphisation deletes the
+            // generic *functions*, not the `A?` their signatures interned. Emitting
+            // one gave `HeroValue ok;` — `error: unknown type name 'HeroValue'` —
+            // because `c_type`'s catch-all is the only arm a `Ty::Generic` reaches.
+            if mentions_generic(checked, id) {
+                continue;
+            }
             if matches!(checked.types.get(id), Ty::Fallible(_)) {
                 let at = self.options.len();
                 self.options.insert(id.0, format!("h_{module}_opt{at}"));
@@ -180,6 +188,28 @@ impl Names {
             .get(&decl)
             .map(|name| name.as_str())
             .expect("a Ty::Named always names a record or a variant")
+    }
+}
+
+/// Does this type mention a type parameter anywhere inside it?
+///
+/// Asked of every generated declaration, because the interner keeps the
+/// templates' types after monomorphisation has deleted the functions that used
+/// them. `ir/phases.rs` asserts no *instruction* carries one; this is the arena's
+/// half of the same claim.
+pub(super) fn mentions_generic(checked: &Checked, ty: TyId) -> bool {
+    match checked.types.get(ty) {
+        Ty::Generic(_) => true,
+        Ty::Array(element) => mentions_generic(checked, element),
+        Ty::Fallible(inner) => mentions_generic(checked, inner),
+        Ty::Map(key, value) => {
+            mentions_generic(checked, key) || mentions_generic(checked, value)
+        }
+        Ty::Func { params, result } => {
+            checked.types.params_of(params).iter().any(|p| mentions_generic(checked, *p))
+                || mentions_generic(checked, result)
+        }
+        _ => false,
     }
 }
 

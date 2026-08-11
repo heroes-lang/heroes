@@ -32,16 +32,32 @@ use crate::source::Source;
 use crate::syntax::Ast;
 use crate::types::{render_ty, Checked};
 
-use super::inst::{BlockId, SlotId, Term};
+use super::inst::{BlockId, Const, Op, SlotId, Term};
 use super::print_inst::{instruction, value_name};
 use super::{FnKind, Function, Program, SlotKind};
 
 /// The whole program, in source order.
 pub fn dump(program: &Program, ast: &Ast, checked: &Checked, src: &Source) -> String {
     let mut out = String::new();
-    if !program.strings.is_empty() {
+    // The strings the *shown* functions read. The table is program-wide, so the
+    // library's own literals live in it — `find`'s `fail("not_found", …)` — and a
+    // dump that listed them would be answering about a file the author cannot
+    // open. Indices are the real ones: this filters the list, it does not renumber
+    // it.
+    let mut live: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    for function in program.functions.iter().filter(|f| !src.is_library(f.span.start)) {
+        for block in &function.blocks {
+            for inst in &block.insts {
+                if let Op::Const(Const::Str(index)) = inst.op {
+                    live.insert(index.0);
+                }
+            }
+        }
+    }
+    if !live.is_empty() {
         out.push_str("strings\n");
-        for (index, text) in program.strings.iter().enumerate() {
+        for index in &live {
+            let text = &program.strings[*index as usize];
             out.push_str(&format!("    {index}  \"{}\"\n", escape(text)));
         }
         out.push('\n');

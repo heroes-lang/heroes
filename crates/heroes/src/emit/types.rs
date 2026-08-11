@@ -135,6 +135,9 @@ pub(super) fn generated(w: &mut Writer, checked: &Checked, names: &Names) {
     let mut wrote = false;
     for index in 0..checked.types.len() {
         let id = crate::types::TyId(index as u32);
+        if super::ctype::mentions_generic(checked, id) {
+            continue;
+        }
         match checked.types.get(id) {
             Ty::Fallible(payload) => {
                 option(w, checked, names, names.option_of(id), payload);

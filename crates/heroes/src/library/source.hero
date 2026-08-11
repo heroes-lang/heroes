@@ -30,3 +30,57 @@ function range(from: int, to: int) -> [int]
         out @ push(out, i)
         i @ i + 1
     return out
+
+# Each element, transformed. `map(xs, f)` — the signature the spec writes out at
+# line 93, which is why this one needs no explaining.
+function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
+    out: [B] @ []
+    for x in xs
+        out @ push(out, f(x))
+    return out
+
+# The elements `f` keeps.
+function filter<A>(xs: [A], f: (function(A) -> bool)) -> [A]
+    out: [A] @ []
+    for x in xs
+        if f(x)
+            out @ push(out, x)
+    return out
+
+# The elements combined into one value, FROM THE LEFT, with the accumulator
+# passed FIRST — `f(total, x)`, never `f(x, total)`.
+#
+# Both of those are decisions the spec now states (panel 029 R6) and this body is
+# what makes them true. They were undecidable from the spec and the wrong guess
+# was SILENT: with an accumulator and an element of the same type — `sum`,
+# `concat`, `max`, every string builder — either order type-checks and the program
+# prints a different answer.
+function fold<A, B>(xs: [A], start: B, f: (function(B, A) -> B)) -> B
+    total: B @ start
+    for x in xs
+        total @ f(total, x)
+    return total
+
+# The first element `f` accepts, or an error. `A?` rather than an index, so the
+# caller gets the thing rather than a way to look it up again.
+function find<A>(xs: [A], f: (function(A) -> bool)) -> A?
+    for x in xs
+        if f(x)
+            return ok(x)
+    return fail("not_found", "no element satisfies the test")
+
+# Does any element pass? Empty is false, which is the same rule as `fold` with a
+# `false` start.
+function any<A>(xs: [A], f: (function(A) -> bool)) -> bool
+    for x in xs
+        if f(x)
+            return true
+    return false
+
+# Do all of them? Empty is true — vacuously, and it is the answer that makes
+# `all(xs, f) == !any(xs, not_f)` hold at every length.
+function all<A>(xs: [A], f: (function(A) -> bool)) -> bool
+    for x in xs
+        if !f(x)
+            return false
+    return true

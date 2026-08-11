@@ -157,28 +157,15 @@ pub(super) fn call(
             Ty::Fallible(_) => checker.out.types.bool(),
             _ => return arg_error(checker, ast, src, "is_err", "a fallible value", *one, span),
         },
-        // Tier 2 (§1.11): written in Heroes. `range` used to have a rule here and
-        // no longer does — it is a real declaration in `library/source.hero` from
-        // M6 step 4, and `resolve/exprs.rs` consults the top-level table before
-        // the built-in one, so no `Callee::Builtin(range)` is ever produced. The
-        // six below still have rules because they need generics and function
-        // values, which land later in this milestone.
-        ("map", [items, f]) => return higher_order(checker, ast, src, "map", *items, *f, span, Shape::Map),
-        ("filter", [items, f]) => {
-            return higher_order(checker, ast, src, "filter", *items, *f, span, Shape::Keep)
-        }
-        ("find", [items, f]) => {
-            return higher_order(checker, ast, src, "find", *items, *f, span, Shape::Find)
-        }
-        ("any", [items, f]) => {
-            return higher_order(checker, ast, src, "any", *items, *f, span, Shape::Test)
-        }
-        ("all", [items, f]) => {
-            return higher_order(checker, ast, src, "all", *items, *f, span, Shape::Test)
-        }
-        ("fold", [items, start, f]) => {
-            return fold(checker, ast, src, *items, *start, *f, span)
-        }
+        // **Tier 2 has no rules here at all now.** `range` lost its rule at M6
+        // step 4 and the six higher-order ones at step 6: they are declarations in
+        // `library/source.hero`, checked by the ordinary rules like anything else,
+        // and `resolve/exprs.rs` consults the top-level table before this one — so
+        // no `Callee::Builtin` is ever produced for them.
+        //
+        // That is §4.12's claim made good: without generics these were "seven
+        // special cases in the type checker, each with hand-written rules", which
+        // is what `Shape`, `higher_order` and `fold` were. They are gone.
         // The arity is wrong, or the built-in is one this milestone does not
         // type yet. Either way the caller reports it, so that "how many
         // arguments" is answered in one place.
@@ -210,83 +197,4 @@ fn arg_error_named(
     let diagnostic = errors::bad_operand(name, allowed, got, span);
     checker.push_diagnostic(diagnostic);
     Some(checker.error_ty())
-}
-
-enum Shape {
-    /// `map([A], (function(A) -> B)) -> [B]`
-    Map,
-    /// `filter([A], (function(A) -> bool)) -> [A]`
-    Keep,
-    /// `find([A], (function(A) -> bool)) -> A?`
-    Find,
-    /// `any`/`all`
-    Test,
-}
-
-fn higher_order(
-    checker: &mut Checker,
-    ast: &Ast,
-    src: &Source,
-    name: &str,
-    items: TyId,
-    f: TyId,
-    span: Span,
-    shape: Shape,
-) -> Option<TyId> {
-    let Ty::Array(element) = checker.out.types.get(items) else {
-        return arg_error(checker, ast, src, name, "`[T]`", items, span);
-    };
-    let Ty::Func { params, result } = checker.out.types.get(f) else {
-        return arg_error(checker, ast, src, name, "a function", f, span);
-    };
-    let params = checker.out.types.params_of(params);
-    if params.len() != 1 || params[0] != element {
-        return arg_error(checker, ast, src, name, "a function of the element type", f, span);
-    }
-    let bool_ty = checker.out.types.bool();
-    let result = match shape {
-        Shape::Map => checker.out.types.intern(Ty::Array(result)),
-        Shape::Keep | Shape::Find | Shape::Test => {
-            if result != bool_ty {
-                return arg_error(checker, ast, src, name, "a function returning `bool`", f, span);
-            }
-            match shape {
-                Shape::Keep => items,
-                Shape::Find => checker.out.types.intern(Ty::Fallible(element)),
-                _ => bool_ty,
-            }
-        }
-    };
-    Some(result)
-}
-
-/// `fold([A], B, (function(B, A) -> B)) -> B`
-fn fold(
-    checker: &mut Checker,
-    ast: &Ast,
-    src: &Source,
-    items: TyId,
-    start: TyId,
-    f: TyId,
-    span: Span,
-) -> Option<TyId> {
-    let Ty::Array(element) = checker.out.types.get(items) else {
-        return arg_error(checker, ast, src, "fold", "`[T]`", items, span);
-    };
-    let Ty::Func { params, result } = checker.out.types.get(f) else {
-        return arg_error(checker, ast, src, "fold", "a function", f, span);
-    };
-    let params = checker.out.types.params_of(params);
-    if params.len() != 2 || params[0] != start || params[1] != element || result != start {
-        return arg_error(
-            checker,
-            ast,
-            src,
-            "fold",
-            "a function `(function(B, A) -> B)` matching the accumulator",
-            f,
-            span,
-        );
-    }
-    Some(start)
 }

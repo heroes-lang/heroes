@@ -40,7 +40,17 @@ fn named(name: &str, text: &str) -> Emitted {
     assert!(checked.diagnostics.is_empty(), "check: {}", checked.diagnostics[0].message);
     let out = lower(&parsed.ast, &resolved, &checked, &src);
     assert!(out.diagnostics.is_empty(), "lower: {}", out.diagnostics[0].message);
-    emit(&out.program, &parsed.ast, &resolved, &checked, &src)
+    // **Monomorphisation, because the emitter never sees a program without it.**
+    // The helper used to stop at lowering, which was harmless while the gate
+    // refused every generic; from M6 step 6 it lets them through, and a `T?`
+    // still holding a type parameter reaches `c_type` with no C name — the panic
+    // "every `T?` is named before anything can mention one", found by the mutant
+    // corpus rather than by a case anyone wrote.
+    let mut program = out.program;
+    let mut checked = checked;
+    let problems = crate::ir::mono::run(&mut program, &mut checked, &parsed.ast, &src);
+    assert!(problems.is_empty(), "mono: {}", problems[0].message);
+    emit(&program, &parsed.ast, &resolved, &checked, &src)
 }
 
 /// The C, asserting the gate had no objection. Most tests want this.
