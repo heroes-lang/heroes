@@ -2,7 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 8, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 9, "heroes_runtime.h is from another compiler");
 
 #line 8 "scalars.c"
 void h_scalars_main(void);

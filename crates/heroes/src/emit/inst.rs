@@ -321,9 +321,30 @@ pub(super) fn emit(
                 }
             }
         }
-        Op::Cast { .. }
+        // A function used as a value is the C function designator, which decays to
+        // a pointer on its own — `&` would be legal and redundant, and writing it
+        // would make the emitted C say something the language does not: that a
+        // function value is an address taken of something, rather than the
+        // function itself (§1.11's boundary: this eight-byte value IS a C
+        // callback).
+        Op::FuncRef(crate::ir::Callee::Heroes(decl)) => {
+            if let Some(name) = target {
+                let callee = program
+                    .functions
+                    .iter()
+                    .find(|f| f.decl == decl)
+                    .map(|f| mangle::function(module, &f.name))
+                    .unwrap_or_else(|| "hero_unreachable".to_string());
+                w.line(&format!("    {name} = {callee};"));
+            }
+        }
+        // An `extern` used as a value is M7's — the C callback case §4.19's ladder
+        // needs — and the gate refuses `extern` wholesale until the header that
+        // verifies it exists. A built-in or an indirection here is a lowering bug:
+        // neither has an address to take.
+        Op::FuncRef(_)
+        | Op::Cast { .. }
         | Op::Abort { .. }
-        | Op::FuncRef(_)
         | Op::Hole
         | Op::Missing => {
             w.line("    hero_unreachable(); /* the gate refuses this form */");

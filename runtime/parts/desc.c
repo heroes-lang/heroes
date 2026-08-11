@@ -85,3 +85,31 @@ const HeroDesc hero_desc_bool = {sizeof(bool), hero_copy_bool, hero_drop_nothing
                                  hero_eq_bool, hero_hash_bool};
 const HeroDesc hero_desc_str = {sizeof(HeroStr), hero_copy_str, hero_drop_str,
                                 hero_eq_str, hero_hash_str};
+
+/* -- the function pointer -------------------------------------------------
+ *
+ * ONE descriptor for every function type, the way `hero_desc_array` is one for
+ * every `[T]`: a Heroes function value is a bare C function pointer (§1.11 — no
+ * closures in v1, so nothing is captured and there is nothing to own), so copy is
+ * an assignment, drop is nothing, and equality is pointer identity.
+ *
+ * `HeroFn` is a generic function-pointer type used only as a *storage* shape.
+ * C guarantees round-tripping any function pointer through any other function
+ * pointer type (C11 6.3.2.3p8); what it forbids is CALLING through the wrong one,
+ * and nothing here calls. The emitter's typedefs are what a call goes through, so
+ * clang still type-checks every one.
+ */
+typedef void (*HeroFn)(void);
+
+static void hero_copy_func(void *dst, const void *src) {
+    *(HeroFn *)dst = *(const HeroFn *)src;
+}
+static bool hero_eq_func(const void *a, const void *b) {
+    return *(const HeroFn *)a == *(const HeroFn *)b;
+}
+static uint64_t hero_hash_func(const void *elem) {
+    return hero_hash_bytes(elem, sizeof(HeroFn));
+}
+
+const HeroDesc hero_desc_func = {sizeof(HeroFn), hero_copy_func, hero_drop_nothing,
+                                 hero_eq_func, hero_hash_func};

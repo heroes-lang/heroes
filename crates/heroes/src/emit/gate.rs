@@ -152,8 +152,10 @@ fn check_type(
         // A `T?` is a by-value tagged union from M5d. Its *operators* are not all here
         // — `.must()` is an `Op::Abort` with its own row — but the representation is.
         Ty::Fallible(_) | Ty::Failure => return,
-        // M6.
-        Ty::Func { .. } => ("function_value", "a function used as a value".to_string()),
+        // M6 step 5: a plain C function pointer, one typedef per distinct
+        // signature. The row is gone, which is what a milestone finishing looks
+        // like.
+        Ty::Func { .. } => return,
         Ty::Generic(_) => ("generics", "a generic type".to_string()),
         // M7 — §4.19's two opaque types arrive with the header that verifies them.
         Ty::Ptr | Ty::Cstr => {
@@ -212,9 +214,8 @@ fn check_op(
         // `len` counts bytes on a `str` and elements on an array; a map is the row
         // still standing, and it is refused by its own type before reaching here.
         Op::Len(_) => {}
-        Op::FuncRef(_) => {
-            note(found, "function_value", "a function used as a value".to_string(), span)
-        }
+        // A function designator, from M6 step 5.
+        Op::FuncRef(_) => {}
         Op::Abort { reason, .. } => {
             let (code, what) = match reason {
                 // `.must()` emits from M6 step 1.
@@ -281,8 +282,7 @@ fn callee_note(
                 note(found, "builtin", format!("the built-in `{name}`"), span);
             }
         }
-        Callee::Indirect(_) => {
-            note(found, "function_value", "a function used as a value".to_string(), span)
-        }
+        // A call through a function value emits from M6 step 5.
+        Callee::Indirect(_) => {}
     }
 }

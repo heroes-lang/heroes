@@ -1,0 +1,56 @@
+# Top-level functions are values (spec line 89), and a value is a plain C function
+# pointer — no captured environment, because v1 has no closures.
+#
+# That representation is the founding constraint working (§1.11): a Heroes
+# function value and a C callback are the same eight bytes, which is what makes
+# `qsort`'s comparator and raylib's callbacks expressible at M7 with no shim.
+# Panel 013 recorded the consequence in advance — the day closures arrive, a
+# capturing one is a record plus a pointer, so the type system must distinguish
+# capture-free AT THE BOUNDARY.
+#
+# What this pins:
+#   - a function bound to a name, and called through it;
+#   - a function passed as an argument and called there;
+#   - a zero-parameter, unit-returning one — the shape whose C typedef must say
+#     `(void)` rather than `()`, or a wrong-arity call becomes undefined
+#     behaviour instead of a compile error;
+#   - one stored in an array, which needs a descriptor: a function value owns
+#     nothing, so copy is an assignment and drop is nothing;
+#   - equality, which is pointer identity.
+#
+# `apply(add, x: 2, y: 3)` carries labels because §4.11's rule counts parameters
+# in the SIGNATURE, and two of `apply`'s three are `int`. The function value is
+# not one of them and needs no label — which is the rule being narrow rather than
+# blanket.
+# Bulk regression case.
+
+function add(a: int, b: int) -> int
+    return a + b
+
+function mul(a: int, b: int) -> int
+    return a * b
+
+function apply(f: (function(int, int) -> int), x: int, y: int) -> int
+    return f(x, y)
+
+function tick()
+    print("tick")
+
+function twice(f: (function() -> ()))
+    f()
+    f()
+
+function main()
+    g = add
+    print(g(2, 3), " ", apply(add, x: 2, y: 3), " ", apply(mul, x: 2, y: 3))
+
+    twice(tick)
+
+    # An array of them: the element descriptor is one shared by every function
+    # type, the way `hero_desc_array` is one for every `[T]`.
+    ops: [(function(int, int) -> int)] = [add, mul]
+    print(ops[0](4, 5), " ", ops[1](4, 5), " ", len(ops))
+
+    # Pointer identity, both ways.
+    h = add
+    print(g == h, " ", g == mul)

@@ -35,6 +35,9 @@ pub(super) fn pointer(checked: &Checked, names: &Names, ty: TyId) -> Option<Stri
         // One for all of them: see the module doc.
         Ty::Array(_) => Some("&hero_desc_array".to_string()),
         Ty::Map(_, _) => Some("&hero_desc_map".to_string()),
+        // One for every function type, like the array's: a function value owns
+        // nothing, so the four operations do not depend on the signature.
+        Ty::Func { .. } => Some("&hero_desc_func".to_string()),
         // Every `T?` needs its own, because its payload is by value — and so does the
         // failure side, which the runtime ships.
         Ty::Fallible(_) => Some(format!("&{}_desc", names.option_of(ty))),

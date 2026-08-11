@@ -32,9 +32,9 @@
 
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind, Field};
-use crate::types::Checked;
+use crate::types::{Checked, Ty};
 
-use super::ctype::{c_type, Names};
+use super::ctype::{c_result, c_type, Names};
 use super::mangle;
 use super::writer::Writer;
 
@@ -117,28 +117,99 @@ pub(super) fn definitions(
 /// comment above each typedef names the Heroes type — the struct is called `optN`
 /// because `int?` and `[int]?` sanitise to the same identifier and a collision here is
 /// two types sharing one C name.
-pub(super) fn options(
-    w: &mut Writer,
-    checked: &Checked,
-    names: &Names,
-) {
-    for (name, payload) in names.options(checked) {
-        let spelling = c_type(names, checked, payload);
-        w.at_generated();
-        w.line(&format!("typedef struct {name} {{"));
-        w.line("    int64_t tag;");
-        w.line("    union {");
-        // A unit payload has no declaration (`ctype.rs`'s unit rule), so `()?` carries
-        // nothing on its ok side and the union holds the failure alone.
-        if let Some(text) = &spelling {
-            w.line(&format!("        {text} ok;"));
+/// Every type the compiler generates a C declaration for, **in `TyId` order**.
+///
+/// Two kinds share this pass and must: a `T?` may hold a function
+/// (`(function(int) -> int)?`) and a function's signature may mention a `T?`
+/// (`(function(int) -> int?)`), so neither kind can be emitted wholesale before
+/// the other. Measured, when they were two passes: a function typedef naming an
+/// option that had not been declared yet parsed as an implicit-`int` function
+/// type, and clang reported `'const' qualifier on function type … has no effect`
+/// on a line about something else entirely.
+///
+/// **`TyId` order IS containment order**, and that is an invariant of the type
+/// table rather than a coincidence: the checker interns a composite only after
+/// the types it is built from, because it needs their ids to build it. So one
+/// ascending walk emits every declaration after everything it names.
+pub(super) fn generated(w: &mut Writer, checked: &Checked, names: &Names) {
+    let mut wrote = false;
+    for index in 0..checked.types.len() {
+        let id = crate::types::TyId(index as u32);
+        match checked.types.get(id) {
+            Ty::Fallible(payload) => {
+                option(w, checked, names, names.option_of(id), payload);
+                wrote = true;
+            }
+            // Only the ones the program uses as a type have a name; the rest are
+            // signatures the checker interned for declarations nobody takes the
+            // address of.
+            Ty::Func { params, result } => {
+                if let Some(name) = names.func_name(id) {
+                    function_type(w, checked, names, &name, params, result);
+                    wrote = true;
+                }
+            }
+            _ => {}
         }
-        w.line("        HeroFailure err;");
-        w.line("    } as;");
-        w.line(&format!("}} {name};"));
+    }
+    if wrote {
         w.blank();
     }
 }
+
+/// `typedef int64_t (*h_m_fn0)(int64_t, int64_t);` — a plain C function pointer,
+/// because a Heroes function value IS one (§1.11's founding constraint). That is
+/// what lets `qsort`'s comparator and raylib's callbacks be Heroes functions at
+/// M7 with no shim; design.md:1768 counts nine of ten ladder cases needing it.
+///
+/// A zero-parameter function is `(void)` and not `()`: an empty parameter list in
+/// C means "unspecified", which turns a wrong-arity call through the pointer from
+/// a compile error into undefined behaviour — the one thing this backend's whole
+/// "clang type-checks every call" property exists to prevent.
+fn function_type(
+    w: &mut Writer,
+    checked: &Checked,
+    names: &Names,
+    name: &str,
+    params: crate::types::Params,
+    result: crate::types::TyId,
+) {
+    let spelled: Vec<String> = checked
+        .types
+        .params_of(params)
+        .iter()
+        .map(|p| c_type(names, checked, *p).unwrap_or_else(|| "void".to_string()))
+        .collect();
+    let list = if spelled.is_empty() { "void".to_string() } else { spelled.join(", ") };
+    w.at_generated();
+    w.line(&format!("typedef {} (*{name})({list});", c_result(names, checked, result)));
+}
+
+/// One `T?`, as a by-value tagged union. Its error side is the runtime's own
+/// record, since §4.6 fixes that shape.
+fn option(
+    w: &mut Writer,
+    checked: &Checked,
+    names: &Names,
+    name: &str,
+    payload: crate::types::TyId,
+) {
+    let spelling = c_type(names, checked, payload);
+    w.at_generated();
+    w.line(&format!("typedef struct {name} {{"));
+    w.line("    int64_t tag;");
+    w.line("    union {");
+    // A unit payload has no declaration (`ctype.rs`'s unit rule), so `()?` carries
+    // nothing on its ok side and the union holds the failure alone.
+    if let Some(text) = &spelling {
+        w.line(&format!("        {text} ok;"));
+    }
+    w.line("        HeroFailure err;");
+    w.line("    } as;");
+    w.line(&format!("}} {name};"));
+    w.blank();
+}
+
 
 /// A variant: the tag enum, one payload struct per case that has one, then the tagged
 /// union itself (§4.2, panel 022 — spike 04's own shape).

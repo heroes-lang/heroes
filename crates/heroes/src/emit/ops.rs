@@ -280,9 +280,17 @@ pub(super) fn call(
             };
             w.line(&format!("    {assign}{entry}({});", written.join(", ")));
         }
+        // A call through a function value. The temporary already holds the
+        // pointer, so this is just C's own indirect call — no dereference, no
+        // cast, and clang type-checks the arguments against the typedef's
+        // parameter list, which is the property `(void)` on a zero-parameter
+        // typedef exists to keep (see `types::functions`).
+        Callee::Indirect(value) => {
+            w.line(&format!("    {assign}{}({});", mangle::value(value.0), arguments.join(", ")));
+        }
         // Refused by the gate. The arm exists so that adding a callee kind to the
         // IR breaks this file.
-        Callee::Builtin(_) | Callee::Extern(_) | Callee::Indirect(_) => {
+        Callee::Builtin(_) | Callee::Extern(_) => {
             w.line("    hero_unreachable(); /* the gate refuses this callee */");
         }
     }

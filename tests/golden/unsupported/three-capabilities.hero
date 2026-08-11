@@ -1,7 +1,7 @@
 # The list as it stands, and the file's job is to keep proving that all of it arrives
 # at once rather than one invocation at a time.
 #
-# Rewritten eight times, and each rewrite is the gate working — `str` and `f64` at M5b,
+# Rewritten nine times, and each rewrite is the gate working — `str` and `f64` at M5b,
 # `record` at M5c step 3, `array` at step 5, writing one element at step 6, `T?` and
 # `{K: V}` at M5d, and at M6 step 3 the three built-ins that used to stand here
 # (`sort`, `join`, `chars`) all acquired entry points. **Every type in the language
@@ -12,7 +12,9 @@
 #      unlike `range`, which became a real library function at M6 step 4;
 #   2. a built-in refused by OPERAND TYPE — `sort` orders `int`, `f64` and `str`, and
 #      a `[P]` has no order this backend has decided on (panel 027 R1);
-#   3. a function used as a value, which is the M6 step that lands C function pointers.
+#   3. a GENERIC function, which monomorphisation lands later this milestone.
+#      Function values stopped being refusable at M6 step 5 — they are a plain C
+#      function pointer now, one typedef per distinct signature.
 #
 # Everything else stays in the file deliberately: the record, the array, the element
 # write, the map, the `T?` and the six built-ins that now emit all work, so their
@@ -29,6 +31,9 @@ function add(a: int, b: int) -> int
 function tag(p: P) -> int
     return p.x
 
+function first<T>(items: [T]) -> T   #~ generics #~ generics
+    return items[0]
+
 function main()
     p = P(x: 1)
     print(p.x)
@@ -44,8 +49,9 @@ function main()
     print(len(range(from: 0, to: 2)))
     ps = [P(x: 2), P(x: 1)]
     print(len(sort(ps)))      #~ builtin
-    # The function value comes first, so it is the line the capability is
-    # reported at: the gate names each capability once, at its first occurrence.
-    f = add                   #~ function_value
+    # A function value emits now, and stays here to prove the refusals are not
+    # about it.
+    f = add
     print(f(1, 2))
     print(len(map(ps, tag)))  #~ builtin
+    print(first(xs))

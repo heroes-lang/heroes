@@ -1,23 +1,31 @@
-unsupported[builtin]: the built-in `sort` on elements other than `int`, `f64` or `str` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:46:15
+unsupported[generics]: a generic function is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:34:1
      |
-  46 |     print(len(sort(ps)))      #~ builtin
+  34 | function first<T>(items: [T]) -> T   #~ generics #~ generics
+     | ^
+  note: no change to this file will fix this
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
+
+unsupported[generics]: a generic type is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:34:1
+     |
+  34 | function first<T>(items: [T]) -> T   #~ generics #~ generics
+     | ^
+  note: no change to this file will fix this
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
+
+unsupported[builtin]: the built-in `sort` on elements other than `int`, `f64` or `str` is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:51:15
+     |
+  51 |     print(len(sort(ps)))      #~ builtin
      |               ^^^^^^^^
   note: no change to this file will fix this
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
 
-unsupported[function_value]: a function used as a value is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:49:5
-     |
-  49 |     f = add                   #~ function_value
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
-
 unsupported[builtin]: the built-in `map` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:51:15
+  at tests/golden/unsupported/three-capabilities.hero:56:15
      |
-  51 |     print(len(map(ps, tag)))  #~ builtin
+  56 |     print(len(map(ps, tag)))  #~ builtin
      |               ^^^^^^^^^^^^
   note: no change to this file will fix this
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet

@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 8
+#define HERO_RUNTIME_ABI 9
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -194,6 +194,11 @@ extern const HeroDesc hero_desc_str;
  * nothing about what the array holds. `[[int]]` and `[[str]]` share this. */
 extern const HeroDesc hero_desc_array;
 extern const HeroDesc hero_desc_failure;
+
+/* And ONE for every function type: a Heroes function value is a bare C function
+ * pointer (no closures in v1), so copy is an assignment, drop is nothing, and
+ * equality is pointer identity. Shared for the same reason the array's is. */
+extern const HeroDesc hero_desc_func;
 
 /* -- the array: `[T]` (design.md §4.20, spike 04) ---------------------------
  *

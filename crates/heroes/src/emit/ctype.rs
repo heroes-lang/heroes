@@ -41,6 +41,20 @@ pub(super) struct Names {
     /// The C type of one case's payload, by `(declaration, case)`. A separate table
     /// because `Ty::Case` is a real type in the IR and needs a real C name.
     cases: std::collections::BTreeMap<(u32, u32), String>,
+    /// The C typedef of each distinct function type, by the `TyId` of the whole
+    /// `(function(A) -> B)`.
+    ///
+    /// A typedef and not an inline spelling, because C puts the declarator's name
+    /// **inside** the type: `int64_t (*f)(int64_t)`. Every other type in this
+    /// backend is `<type> <name>`, and one exception would have to be threaded
+    /// through the prologue, the parameter list, the struct fields and the
+    /// temporaries. One `typedef` keeps the rule.
+    ///
+    /// Named by INDEX for the reason the options are: two different function types
+    /// sanitise to the same identifier, and a collision here is two types sharing
+    /// one C name. The index follows `TyId` order, which is a function of the
+    /// program, so the double-emit determinism test covers it.
+    funcs: std::collections::BTreeMap<u32, String>,
 }
 
 impl Names {
@@ -65,7 +79,12 @@ impl Names {
                 _ => {}
             }
         }
-        Names { aggregates, cases, options: std::collections::BTreeMap::new() }
+        Names {
+            aggregates,
+            cases,
+            options: std::collections::BTreeMap::new(),
+            funcs: std::collections::BTreeMap::new(),
+        }
     }
 
     /// Assigns a C name to every `T?` the program interned. Called once, after the
@@ -81,6 +100,52 @@ impl Names {
         self
     }
 
+    /// Assigns a C typedef name to every function type the program **uses as a
+    /// type** — a slot, a temporary, a parameter.
+    ///
+    /// Derived from the program, not walked over the interned arena, and for the
+    /// same reason `descriptors.rs` derives its set: the checker interns a
+    /// `Ty::Func` for *every* top-level declaration, so an arena walk emits a
+    /// typedef per function in the file, almost all of them named by nothing. An
+    /// unused typedef is not a warning the way an unused `static const` is, which
+    /// is exactly why it has to be deliberate — it would sit in `--emit-c`
+    /// forever with nothing to make it fall out.
+    pub(super) fn with_functions(
+        mut self,
+        module: &str,
+        checked: &Checked,
+        program: &crate::ir::Program,
+    ) -> Names {
+        let mut used: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+        for function in &program.functions {
+            for slot in &function.slots {
+                collect(checked, slot.ty, &mut used);
+            }
+            for value in &function.values {
+                collect(checked, *value, &mut used);
+            }
+        }
+        // Named in `TyId` order so the C is a function of the program and not of
+        // the walk — which is what the double-emit determinism test covers.
+        for id in &used {
+            let at = self.funcs.len();
+            self.funcs.insert(*id, format!("h_{module}_fn{at}"));
+        }
+        self
+    }
+
+    /// The typedef name, if this function type is one the program uses.
+    pub(super) fn func_name(&self, ty: TyId) -> Option<String> {
+        self.funcs.get(&ty.0).cloned()
+    }
+
+    pub(super) fn func_of(&self, ty: TyId) -> &str {
+        self.funcs
+            .get(&ty.0)
+            .map(|name| name.as_str())
+            .expect("every function type is named before anything can mention one")
+    }
+
     pub(super) fn option_of(&self, ty: TyId) -> &str {
         self.options
             .get(&ty.0)
@@ -88,7 +153,8 @@ impl Names {
             .expect("every `T?` is named before anything can mention one")
     }
 
-    /// Every `T?`, as `(name, the payload type)`, in emission order.
+    /// Every `T?`, as `(name, the payload type)`, in emission order — the
+    /// per-option generated functions walk this.
     pub(super) fn options(&self, checked: &Checked) -> Vec<(String, TyId)> {
         self.options
             .iter()
@@ -114,6 +180,31 @@ impl Names {
             .get(&decl)
             .map(|name| name.as_str())
             .expect("a Ty::Named always names a record or a variant")
+    }
+}
+
+/// Every function type reachable from `ty`, including `ty` itself.
+///
+/// Closed under nesting, because a `[(function(A) -> B)]` names the function type
+/// without being one, and so does `(function(A) -> B)?`.
+fn collect(checked: &Checked, ty: TyId, into: &mut std::collections::BTreeSet<u32>) {
+    match checked.types.get(ty) {
+        Ty::Func { params, result } => {
+            if !into.insert(ty.0) {
+                return;
+            }
+            for param in checked.types.params_of(params) {
+                collect(checked, param, into);
+            }
+            collect(checked, result, into);
+        }
+        Ty::Array(element) => collect(checked, element, into),
+        Ty::Fallible(inner) => collect(checked, inner, into),
+        Ty::Map(key, value) => {
+            collect(checked, key, into);
+            collect(checked, value, into);
+        }
+        _ => {}
     }
 }
 
@@ -156,8 +247,14 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         Ty::Failure => Some("HeroFailure".to_string()),
         // One pointer, like the array: a header with three parallel regions after it.
         Ty::Map(_, _) => Some("HeroMapHeader *".to_string()),
-        // §4.19's two opaque types reach C only through an `extern`, refused until M7,
-        // and the two the checker keeps for its own bookkeeping never reach here.
+        // A C function pointer, and nothing more — no captured environment, because
+        // v1 has no closures. panel 013 recorded the consequence in advance: a
+        // capturing closure is a record plus a pointer, so the day closures arrive
+        // the type system has to distinguish capture-free AT THE BOUNDARY. Until
+        // then a Heroes function value and a C callback are the same eight bytes,
+        // which is what makes `qsort` and every raylib callback expressible.
+        Ty::Func { .. } => Some(names.func_of(ty).to_string()),
+        // The two the checker keeps for its own bookkeeping never reach here.
         _ => Some("HeroValue".to_string()),
     }
 }
