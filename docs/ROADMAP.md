@@ -17,10 +17,17 @@ calculator's tests pass.
 
 That is the acceptance criterion this file has carried since M0. Nine of design.md
 §1.0's fourteen language rows and **every** library row are done; the four that are
-not — file I/O, `args()`, `exit(code)`, modules — are the four already assigned to
-M8a. `docs/measurements/003-closure-list-audit.md` is Principle 0's checkpoint, run
+not are **modules** (M8a, the namespace) and **file I/O · `args()` · `exit(code)`**,
+whose route — `extern`, shim, or built-in — M7 decides, because panel 030 R3
+refuted by compilation the audit's assumption that they are plain `extern`s.
+`docs/measurements/003-closure-list-audit.md` is Principle 0's checkpoint, run
 under panel 005's three riders and answered as a program rather than an argument:
 `tests/golden/run/closure-list.hero` exercises every entry and runs clean.
+
+**The order of what remains was revised by panel 030** — modules, then the FFI,
+then a probe, then the port and the fixpoint, with separate compilation and
+everything in Part 7 after it. The table is below under *What is left*, and the
+milestone identifiers are **not** chronological: read the order from the table.
 
 **Seven steps.** `.must()` carrying its failure · `m[k] @ v` and `keys(m)` (panel
 026) · the five Tier-1 built-ins that had no C (panel 027) · the library, embedded
@@ -402,27 +409,133 @@ until the harness measures them. **Still owed: the first *tests-pass* rates, bot
 arms** — the harness has not run since M5b, which is what leaves four panel
 predictions unscored and the tier phrase's −6 removal unresolved.
 
-### LSP — off the critical path
-`heroes lsp`, ~250 lines JSON-RPC: diagnostics on save, formatting, hover,
-documentSymbol. Any time after M3d; blocks nothing.
+## What is left, and in what order (panel 030)
 
-### M7 — FFI ladder
-`extern` + header name → clang verifies against the real header.
-printf → libm (spike 03 already proved it) → **SQLite** (the
-architecture-holds test) → raylib. `heroes cc` for C++ shims.
+**Milestone identifiers are not chronological — this table is.** They were
+assigned before panel 030 reordered the chain, and ~132 lines of panel
+predictions, DESIGN-LOG entries and source comments cite them with today's
+meaning; renumbering would rewrite the record to repair a sort order. RFC and PEP
+numbers are never reassigned for that reason, and LLVM, which renumbered once,
+still pays for it in permanent redirects (panel 030 R7). Read the order here,
+never off the number.
 
-### M8 — split: modules, port, fixpoint
-- **M8a — Modules:** mangler namespace live (`h_<module>_…`), one `.c` per
-  module, prototypes across TUs, per-module cache. File I/O + `args()` +
-  `exit` (now trivial: `<stdio.h>` + declarations).
-- **M8b — The port:** Rust → Heroes into `selfhost/` (directory born here),
-  file by file, goldens as the net, `PORT-DEBT` count as the map.
-- **M8c — Fixpoint:** A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty
-  (generated C, not binaries; clang version pinned and recorded). Then
-  `crates/heroes` → `archive/bootstrap-rs/`: the third language dies here.
+| order | id | what | warrant |
+|---|---|---|---|
+| 1 | **M8a** | Modules — the namespace, one whole-program `.c` | closure list (§1.0) |
+| 2 | **M7** | FFI ladder, and the **route** for file I/O · `args()` · `exit(code)` | §1.11 + closure list |
+| 3 | **M8p** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
+| 4 | **M8b** | The port | v1 |
+| 5 | **M8c** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 6 | **M9** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list, second half |
+| 7 | **M10** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 8 | **M11** | QBE backend (Part 7.14) | **scheduled, no warrant** |
+| 9 | **M12** | `heroes lsp` | **scheduled, no warrant** |
 
-**Post-fixpoint, scheduled:** the QBE backend from the same IR (~500 lines)
-— proves IR agnosticism, restores the register-allocation lesson.
+`scheduled, no warrant` is not decoration. Part 7's preamble defers everything on
+its list until the closure list compiles itself, and **a milestone number is not
+a warrant** — measurement 003 rider 3 is the standing precedent, where this file
+scheduled `outline` and `explain` and CLAUDE.md §10's stopping rule refused them.
+
+### M8a — Modules: the namespace, not the build architecture
+`use`, **always-qualified** cross-module names (never a glob import: `x.f(y)` is
+UFCS for `f(x, y)`, and an unqualified import makes `f` resolvable only from
+another file's import list — panel 030 R4), one module string per declaration
+through the mangler (`h_<module>_<name>`, `emit/mangle.rs` has anticipated it
+since M5a), N source files in one `Source`, and **the library becomes an ordinary
+module** — which deletes `is_library`, `library_line_of`, `LIBRARY_MODULE`,
+`writer::LIBRARY_FILE` and `emit/builtins.rs`'s 35-line reachability walk.
+**It emits one whole-program `.c`, exactly as today.** Principle 0's closure list
+says *modules*; it never says translation units, and CLAUDE.md §13 forbids compile
+time as a justification (panel 030 R1). Panel 029 R5b therefore does **not** need
+answering here: whole-program monomorphisation still sees every instance, which
+matters because six of the library's seven functions are generic.
+**Acceptance:** `examples/calculator.hero` split across modules, `heroes test`
+still green, and no golden's emitted C changes shape.
+**Runnable:** `heroes build` and `heroes test` on the split calculator ·
+`--dump-scopes` showing qualified names.
+
+### M7 — FFI ladder, and the route for the last three rows
+`extern` + header name → clang verifies against the real header. printf → libm
+(spike 03 already proved it) → **SQLite** (the architecture-holds test) → raylib.
+`heroes cc` for C++ shims. The emitter's gate row for `FnKind::Extern` dies here;
+the frontend is already built (`Ty::Ptr`, `Ty::Cstr`, 20 `extern` mentions in
+`syntax/decl.rs`).
+**And M7 decides the route for the closure list's last three rows — `extern`,
+shim, or built-in — and pays the measured spec cost of whichever it is.**
+Measurement 003 rider 3 assigned them plain `extern`s and concluded the spec
+gains nothing; panel 030 R3 refuted that by compiling it: `extern function
+exit(code: int)` is `conflicting types for 'exit'` (`int64_t` vs `int`), `fopen`
+and `fread` fail on `FILE *` and `size_t`, and `args() -> [str]` is a runtime
+function wearing an `extern` hat (§4.20:1815 — no `extern` may return `str`
+without `hero_str_from_*`). The mortgage is **≥60 spec tokens**.
+**Acceptance:** SQLite open, query, close from Heroes, no shim.
+
+### M8p — The probe: measure before committing to the port
+The lexer (983 non-test lines) ported to Heroes **for real**, to find out what
+self-hosting still lacks — before the port, not during it.
+
+> **M8p reports blockages, not wishes.** Every form the probe proposes arrives
+> with three things — the Heroes code that does the same job *without* it, that
+> code's line count, and the form's own spec cost quoted from `heroes measure` —
+> and a form whose workaround compiles is a Part 7 deferral by default,
+> overturned only by §1.0 compiler-need (nothing in Heroes expresses the case at
+> all) or a measured Part 11 effect. "The port would be easier with X" is
+> evidence for nothing: the workaround compiling is the proof that the compiler
+> did not need X.
+
+The lexer is the right first file for a specific reason: `lexer/scan.rs` reaches
+`as_bytes()` at seven sites and compares bytes, `types/ops.rs:54` refuses `<` on
+`str`, and the closure list has **no form** that replaces byte access — so the
+probe hits a missing-form wall on file one, cheaply. It is also why the findings
+are **a lower bound, not a measurement**: the lexer has zero `BTreeMap` and zero
+closures (`types/` has 14 BTree sites across 4,509 lines). If the byte wall is
+the only finding, a second file that exercises maps, recursive variants and
+generics is owed before M8b opens.
+**Acceptance:** the ported lexer passes the Rust lexer's own tests, and
+`docs/measurements/004-selfhost-readiness.md` states the gap list under the rule
+above.
+
+### M8b — The port
+Rust → Heroes into `selfhost/` (directory born here), file by file, goldens as
+the net, the `PORT-DEBT` count as the map. Every ordering-sensitive map walk
+becomes an explicit `sort` (panel 006), or the fixpoint diff breaks.
+
+### M8c — Fixpoint — **v1**
+A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty (generated C, not binaries;
+clang version pinned and recorded). Then `crates/heroes` → `archive/bootstrap-rs/`:
+the third language dies here. **Cold cache by construction**, since M9 has not
+landed — which is what voids panel 030's prediction 7.
+
+### M9 — Separate compilation
+One `.c` per module, prototypes across translation units, the per-module cache:
+the second half of the modules row, moved past the fixpoint because it costs
++700–1000 lines against the namespace's ~+330, because Nim has not finished its
+own per-module cache since 2018 and Rust shipped 1.52.1 to disable incremental,
+and because — measured — it is where §4.19's guarantee can quietly die. **Four
+acceptance rows, and they are what lift the ffi-pragmatist's veto** (panel 030 R2):
+
+1. the header travels with the extern into **every calling TU**, or externs are
+   module-private and the *type checker* refuses the qualified call;
+2. headers and link flags enter the cache key, with `runtime_text()` kept;
+3. every dependency's emitted interface enters the key — `-flto` does not catch
+   cross-TU signature skew and changes the answer;
+4. one two-module FFI-shaped golden with a wrong `extern` signature: **exit 1 in
+   both TUs**, `#~` annotated.
+
+### M10 — Concurrency · M11 — QBE · M12 — `heroes lsp`
+**Scheduled, no warrant.** M10 is design.md Part 7.13 — isolated per-thread
+heaps, copying at the boundaries, OS threads, **no scheduler** — and its width
+(data parallelism alone, or the mailbox too) is a panel question when it opens.
+**Before M8c the record must state whether the C11 backend can express the
+intended model at all** (stack switching in the runtime, or a CPS/state-machine
+transform): cfront, the direct ancestor of this architecture, was abandoned in
+1993 after a failed attempt to add exception support, having frozen around forms
+that could not carry non-local control flow. If the answer is "not yet known",
+the deferral is a bet and is logged as one (panel 030 R6).
+M11 is the QBE backend from the same IR (~500 lines) — proves IR agnosticism,
+restores the register-allocation lesson. M12 is `heroes lsp`, ~250 lines of
+JSON-RPC (diagnostics on save, formatting, hover, documentSymbol); it blocks
+nothing and could land any time after M3d, and it is last by the author's choice.
 
 ## End-to-end verification (per milestone)
 
@@ -439,6 +552,9 @@ heroes build ex.hero --emit-c                  # M5a — and the determinism dif
 heroes build ex.hero --emit-c -o a.c && heroes build ex.hero --emit-c -o b.c && diff a.c b.c
 heroes run examples/gallery/00-first.hero                 # M5a: first native binary (-O2)
 heroes test examples/calculator.hero           # M6: acceptance ✅
+heroes test examples/calculator/main.hero      # M8a: the same tests, across modules
+heroes run examples/ffi/sqlite.hero            # M7: acceptance — open, query, close
+heroes test selfhost/lexer.hero                # M8p: the ported lexer's own tests
 # M8c — the fixpoint, on generated C:
 cargo run -- build selfhost/heroes.hero -o A
 ./A build selfhost/heroes.hero --emit-c -o B.c && clang … B.c -o B

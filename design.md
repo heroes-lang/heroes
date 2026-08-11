@@ -2226,14 +2226,31 @@ than six months of design on paper.
 11. **Generics by monomorphisation.**
 12. **`???` output**, `test` runner, `assert` with source text, `outline`.
 13. **The library written in the language**: `map`, `filter`, `fold`, `range`, `join`.
-14. **FFI**, and one real C binding. **SQLite is the right acceptance test**: pure C, clean header,
+14. **Modules — the namespace, and only the namespace.** Qualified cross-module names, one module
+    string per declaration through the mangler, the library as an ordinary module — emitted as
+    **one whole-program `.c`**, exactly as a single file is. The closure list says *modules*; it
+    never says translation units, and one `.c` per module with prototypes across them and a
+    per-module cache is a **build architecture**, priced at 2–3× the namespace and deferred to
+    step 18 (panel 030 R1). Ordering note: this step precedes the FFI, which reverses revision 2's
+    order and is the author's call, taken with the panel's dissent on the record.
+15. **FFI**, and one real C binding. **SQLite is the right acceptance test**: pure C, clean header,
     immediate value — and now cheap, since clang verifies the declarations (§4.19). If
     `sqlite3_open`, a query and a close work without you having written a stdlib, the architecture
-    holds.
-15. Then the closure-list remainder, in order: I/O, args, modules — and the port to Heroes,
-    finished by the **fixpoint**: A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty, clang
-    version pinned and recorded. The bootstrap compiler is archived here. (Closures, being off the
-    closure list, wait for the fixpoint.)
+    holds. This step also **decides the route** for the closure list's last three rows — file I/O,
+    `args()`, `exit(code)` — because they do not bind as plain `extern`s: `void exit(int64_t)`
+    against `void exit(int)` is `conflicting types`, and the boundary lacks `c_int`, `size_t` and
+    `const` (Part 7 item 10, panel 030 R3). Whichever route wins pays its measured spec cost.
+16. **A probe before the port.** One representative file — the lexer — ported to Heroes for real,
+    to measure what self-hosting still lacks *before* committing to the whole port. It reports
+    blockages, not wishes: a form whose workaround compiles is deferred by default, because the
+    workaround compiling is the proof that the compiler did not need the form.
+17. Then the port to Heroes, finished by the **fixpoint**: A builds `B.c`, B builds `C.c`, `diff
+    B.c C.c` empty, clang version pinned and recorded. The bootstrap compiler is archived here.
+    (Closures, being off the closure list, wait for the fixpoint.)
+18. **Separate compilation** — one `.c` per module, prototypes across translation units, the
+    per-module cache. After the fixpoint, and never before it: the cache is where §4.19's
+    guarantee dies quietly, since a caller in another translation unit sees a generated prototype
+    rather than the header, and a cached object stops re-running the check the guarantee *is*.
 
 **Golden tests from step 1.** A directory of `.hero` files each with expected output, plus a script
 that compiles and diffs. This is the only thing that makes it possible to evolve the language without
