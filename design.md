@@ -647,7 +647,14 @@ the fixpoint (as Zig's contributors use Zig's build system while users type only
 
 ### 4.1 File structure
 
-One file, one program. **No modules in v1** (see Part 8 — deferred).
+One file is one **module**, and the file you compile holds `main`. `use geom`
+binds `geom` to the declarations in `geom.hero` beside it, written qualified
+(`geom.dist2(a: p, b: q)`, `p: geom.Point`); every module you name needs its own
+`use`, there are no aliases and no wildcard, and modules may not form a cycle.
+The whole program is still emitted as **one `.c`** — one `.c` per module with
+prototypes across them and a per-module cache is a build architecture, deferred
+to Part 10 step 18 (panel 030 R1, panel 031). This paragraph read "one file, one
+program, **no modules in v1**" until panel 031.
 
 ```
 ## Section title
@@ -2008,11 +2015,16 @@ are *on* the closure list.
 2. **File I/O** — `read_file(path) -> str?`, `write_file(path, s) -> ()?`. Two functions via FFI to
    `fopen`/`fread`. **Required for self-hosting.**
 3. **Command-line arguments** — `args() -> [str]`. One function. **Required for self-hosting.**
-4. **Modules** — `use "list"`, one file per module, always-qualified references (`list.map`), no
+4. **Modules** — ~~`use "list"`~~ **landed at panel 031 as `use list`**, a bare identifier rather
+   than a quoted path: one file per module, always-qualified references (`list.map`), no
    `import *`, no aliases, no package hierarchy. Qualification costs tokens but **buys locality**:
    seeing `list.map` tells you where it came from without searching. **Required for self-hosting** —
    a compiler is 5–8k lines and one file is masochism. Cut from v1 because self-hosting is not the
-   v1 goal; this returned ~60 spec tokens that paid for other additions.
+   v1 goal; this returned ~60 spec tokens that paid for other additions, and the return cost **+71
+   measured** to discharge — 11 over, on the legal example and the transitivity rule that two judges'
+   evidence bought. The spelling changed because Go's quoted path is the one form with a documented,
+   frozen defect (a file's imports cannot be resolved syntactically) while Nim's identifier rule
+   leaves adding strings additive.
 5. **`alias`** — `Env = alias` / `{str: int}`. Deferred on the strongest possible ground:
    **reversibility.** It is the only purely additive thing in the language — adding it in v2
    invalidates no existing code, changes no rule, touches no core. Precedent: Go shipped in 2012 and

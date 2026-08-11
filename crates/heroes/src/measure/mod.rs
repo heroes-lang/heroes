@@ -14,6 +14,7 @@
 //! | `pretokenize.rs` | cutting text into the pieces BPE merges within |
 //! | `bpe.rs` | the rank tables and the merge loop |
 //! | `mod.rs` | loading the vendored instruments, and the report |
+//! | `gate.rs` | the measured size, pinned, so a spec change is a red test |
 //!
 //! **Two instruments, and the maximum binds.** Neither is the tokeniser of
 //! the model that actually reads the spec — that one is unpublished. Two
@@ -21,6 +22,11 @@
 //! so the report prints both and the budget verdict uses the larger.
 
 mod bpe;
+/// The gate is a test and nothing else calls it, so it compiles only under
+/// `cfg(test)` — the recorded number is a record for a reader and an assertion
+/// for the harness, never an input to the tool.
+#[cfg(test)]
+mod gate;
 mod pretokenize;
 mod spec;
 
