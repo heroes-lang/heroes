@@ -264,43 +264,8 @@ pub(super) fn call(
             print(w, function, checked, args, arguments);
         }
         Callee::Builtin(index) if super::EMITTED_BUILTINS.contains(&BUILTINS[index as usize].name) => {
-            let first_is_map = matches!(
-                function.args_of(args).first(),
-                Some(Arg::Value(value))
-                    if matches!(checked.types.get(function.value_type(*value)), Ty::Map(_, _))
-            );
-            let first_is_array = matches!(
-                function.args_of(args).first(),
-                Some(Arg::Value(value))
-                    if matches!(checked.types.get(function.value_type(*value)), Ty::Array(_))
-            );
-            let entry = match BUILTINS[index as usize].name {
-                "len" if first_is_map => "hero_map_len",
-                "len" if first_is_array => "hero_array_len",
-                "len" => "hero_str_len",
-                // `keys(m)` hands back a fresh array whose keys are copied through the
-                // key descriptor, so it owns them and may outlive the map.
-                "keys" => "hero_map_keys",
-                "slice" => "hero_str_slice",
-                // `push` hands back a NEW array, always: `xs = [1,2,3]` leaves `xs`
-                // observable, its slot holds one reference, so a refcount of 1 means
-                // "only the slot has it" and appending in place would change what the
-                // slot sees. Value semantics has no reading in which the argument is
-                // consumed. §4.10's declared bill, in its smallest form.
-                "push" => "hero_array_push",
-                // `to_str` is one Heroes name over three C entry points, chosen by
-                // the argument's type — the same shape as `print`, for the same
-                // reason: the runtime is monomorphic and the emitter composes it.
-                _ => match function.args_of(args).first() {
-                    Some(Arg::Value(value)) => match checked.types.get(function.value_type(*value)) {
-                        Ty::F64 => "hero_f64_to_str",
-                        Ty::Bool => "hero_bool_to_str",
-                        Ty::Str => "hero_str_identity",
-                        _ => "hero_int_to_str",
-                    },
-                    _ => "hero_int_to_str",
-                },
-            };
+            let entry =
+                super::builtins::entry(BUILTINS[index as usize].name, function, checked, args);
             // `push`'s second argument is a *place*, not a value: the runtime copies
             // through the element descriptor, which is the only way one function can
             // append an `int` and a `Point`.

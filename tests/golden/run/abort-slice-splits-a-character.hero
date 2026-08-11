@@ -1,0 +1,26 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-11, panel 027): `slice("caffè", from: 0, to: 5)` exited **0**
+# and printed `caff` followed by one corrupt byte — the lead byte of `è` with its
+# continuation byte cut off. No error, no abort, no sanitiser report. The
+# llm-ergonomist, reading only the spec, wrote the same program by hand and
+# predicted "three lines and a fourth of garbage"; it was right.
+#
+# CAUSE: design.md:809 mandates "Slicing that lands mid-sequence is an error" and
+# the runtime never implemented it. `str` is indexed in BYTES (spec line 145), so
+# a `to:` counted in characters — the most natural misreading there is — silently
+# manufactures an invalid string.
+#
+# FIX: `hero_str_slice` rejects a cut whose byte is a UTF-8 continuation byte
+# (10xxxxxx). The abort is HERE and not at `chars`, which is only where the
+# symptom shows: this is the operation that breaks the string, so the message
+# points at the cause, and `chars` stays total over whatever bytes exist.
+# `s[i]` remains the byte-level escape hatch for a program that means bytes.
+# Bulk regression case.
+
+function main()
+    word = "caffè"
+    # In range: 6 bytes, and 4 is a boundary.
+    print(slice(word, from: 0, to: 4))
+    # Also in range — and it splits `è` in half.
+    print(slice(word, from: 0, to: 5))

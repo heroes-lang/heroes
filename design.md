@@ -136,7 +136,7 @@ exhaustive `match` · `[T]` · `{K: V}` (order unspecified, panel 026) · `str` 
 `bool` · `()` · `T?` with `?`/`.must()`/`.default()` · `=`/`@` bindings · `@` parameters ·
 `if`/`else if`/`else` · `while cond` / `for x in xs` (including over maps) / `break`/`continue` ·
 `return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
-`exit(code)` · modules. Library closure: `print`, `len`, `push`, `slice`, `chars`, `has`, `sort`,
+`exit(code)` · modules. Library closure: `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`,
 `join`/`Builder`, `to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
 `all`/`range` written in Heroes.
 
@@ -1854,14 +1854,29 @@ walk over the interned arena, because an unused descriptor is `-Wunused-const-va
 own flag set. C has no copy
 constructors, destructors, or generic comparison, but §4.3 demands structural `==` recursively and
 §4.10 demands value-semantics copies and drops. So the **type-descriptor pass** (Part 5) generates
-`h_T_copy` / `h_T_drop` / `h_T_eq` (and `h_T_hash` for map keys) for every reachable type, as plain
+`h_T_copy` / `h_T_drop` / `h_T_eq` / `h_T_hash` for every reachable type, as plain
 C the runtime calls through per-type descriptors. The alternative — a type-erased `void*` runtime —
 would void the "clang type-checks every call" property, and is rejected.
+
+`hash` is generated for **every** type and is never null, including types no map is keyed by:
+Go's cheaper rule (emit it only for map-key types) reintroduces a null function pointer, and a call
+through one is `SEGV on unknown address 0x0, pc 0x0` with no type name and no source line (panel 022).
+
+**The descriptor has five members and gains no sixth** (panel 027). The proposal that would have —
+a `cmp`, so `sort` could order every type — was vetoed on evidence rather than taste: C11 6.7.9p21
+zero-fills a short initialiser list, so every existing descriptor would silently carry `cmp = NULL`
+under this project's own flag set, and the call is the same `SEGV` the paragraph above exists to
+prevent. `-Wextra` sees it and `FLAGS` does not; `-Werror=missing-field-initializers` is blind to the
+designated form; and `_Static_assert(HERO_RUNTIME_ABI == N)` does **not** catch it, because a stale
+`.o` against a new header links at exit 0. Adding a *function* to this ABI is self-guarding — an
+undefined symbol at link — while adding a *struct field* is not, and that asymmetry is the rule for
+every future addition here. An operation on `T` that the descriptor does not carry is passed as a
+parameter (§4.12), which is also what the bootstrap's own four sorts need.
 
 Compile to a `.o` once, cache it, and always link it.
 
 The consolidated built-in inventory (Tier 1 in C, Tier 2 in Heroes) is Principle 0's library
-closure list (§1.0): `print`, `len`, `push`, `slice`, `chars`, `has`, `sort`, `join`/`Builder`,
+closure list (§1.0): `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`, `join`/`Builder`,
 `to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/`all`/`range` in
 Heroes.
 
@@ -2366,7 +2381,9 @@ more found when applying the rule exhaustively (`term`/`expression`'s variant-co
 returns, `sum_of`/`product_of`'s `return tot`, `evaluate`'s `.num` arm). `main`'s
 `print(c, " = ", v)` is legal under panel 006's contract (compiler form, `str`/`int`/`f64`/`bool`
 arguments, no separator, one trailing newline). Still open here: `lookup` keeps the
-`has`-then-`.must()` sentinel §4.9 wants gone, and the `err` payload (`e.code`, `e.msg`) is a
+test-then-`.must()` sentinel §4.9 wants gone — `has(m, k)` was struck at panel 026 and the shape
+survived it as `!env[name].is_err()` followed by `env[name].must()`, which is the same double
+lookup under a new spelling — and the `err` payload (`e.code`, `e.msg`) is a
 built-in shape (§4.6), not a user-declared record — the spec states its two fields and nothing
 more.
 

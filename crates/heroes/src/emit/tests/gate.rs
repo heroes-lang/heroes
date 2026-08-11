@@ -1,9 +1,12 @@
 //! What the backend refuses, and the two things it deliberately does not.
 //!
 //! Every row of `gate.rs`'s table has a test that makes it fire — LLVM's
-//! `test/Verifier` discipline, applied to the other direction (CLAUDE.md §9). When
-//! M5b lands, the `str` and `f64` tests here are the ones that must be deleted, and
-//! that is the point: a row nobody can make fire is a row nobody can retire.
+//! `test/Verifier` discipline, applied to the other direction (CLAUDE.md §9). A row
+//! nobody can make fire is a row nobody can retire, so the tests move as the rows
+//! die: M5b deleted the `str` and `f64` rows, and M6 step 3 sent the built-in row's
+//! example from `sort` to `range`, because `sort` acquired an entry point and stopped
+//! being able to demonstrate a refusal. **When a test here has to be rewritten, that
+//! is the milestone working**, not the test rotting.
 
 use crate::diagnostics::Kind;
 
@@ -328,25 +331,54 @@ fn an_extern_is_refused_because_nothing_would_check_its_signature() {
 /// the failure class the gate exists to prevent.
 #[test]
 fn a_builtin_with_no_runtime_entry_point_is_refused_by_name() {
-    // `sort` has no entry point yet, and it is refused *by name* rather than by any
-    // type in the program: the row is keyed to the built-in list, so a built-in whose
-    // operands all emit is still refused until the runtime has it.
-    let (code, message) = refusal("function main()\n    xs = [2, 1]\n    ys = sort(xs)\n    print(ys[0])\n");
+    // `range` has no entry point, and it is refused *by name* rather than by any type
+    // in the program: the row is keyed to the built-in list, so a built-in whose
+    // operands all emit is still refused until the implementation exists.
+    //
+    // It used to be `sort` here, and the swap is the file's own rule working: M6 step
+    // 3 gave `sort` an entry point, so the test that made its row fire had to move to
+    // a name that still has none. `range` is Tier 2 (§1.11) — written in Heroes, so
+    // what it waits for is the prelude rather than a runtime function.
+    let (code, message) =
+        refusal("function main()\n    for i in range(0, 3)\n        print(i)\n");
+    assert_eq!(code, "builtin");
+    assert!(message.contains("`range`"), "the message must name it: {message}");
+}
+
+/// The other half of the row, and the one added at M6 step 3: a built-in whose
+/// name emits and whose **operand type** has none.
+///
+/// `sort` orders `int`, `f64` and `str`. A `[Point]` is refused *here* rather
+/// than by the checker, because `{Point: int}` compiles and spec line 71 teaches
+/// `for k in sort(keys(m))` — a compile error would contradict the spec's own
+/// idiom, where a refusal only says this backend has not decided yet.
+#[test]
+fn a_builtin_whose_operand_type_has_no_order_is_refused_by_operand() {
+    let (code, message) = refusal(
+        "record Point\n    x: int\n    y: int\n\nfunction main()\n    ps = [Point(x: 1, y: 2)]\n    \
+         print(len(sort(ps)))\n",
+    );
     assert_eq!(code, "builtin");
     assert!(message.contains("`sort`"), "the message must name it: {message}");
+    assert!(
+        message.contains("`int`, `f64` or `str`"),
+        "and it must name what does work, or the reader has to guess: {message}"
+    );
 }
 
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
     let out = emitted(
-        "function main()\n    print(sort([2, 1])[0])\n    print(join([\"a\"], \"-\"))\n",
+        "record Point\n    x: int\n    y: int\n\nfunction main()\n    ps = [Point(x: 1, y: 2)]\n    \
+         print(len(sort(ps)))\n    for i in range(0, 3)\n        print(i)\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
     assert!(codes.contains(&"builtin"), "{codes:?}");
-    // Two built-ins with no entry point, and both are named — the list arrives at once.
+    // Two capabilities the backend lacks — one keyed to a name, one to an operand
+    // type — and both are named, so the list arrives at once.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
     assert!(messages.iter().any(|m| m.contains("`sort`")), "{messages:?}");
-    assert!(messages.iter().any(|m| m.contains("`join`")), "{messages:?}");
+    assert!(messages.iter().any(|m| m.contains("`range`")), "{messages:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
@@ -358,7 +390,8 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 #[test]
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
     let out = emitted(
-        "function main()\n    print(sort([1])[0])\n    print(sort([2])[0])\n    print(sort([3])[0])\n",
+        "function main()\n    for i in range(0, 1)\n        print(i)\n    \
+         for j in range(0, 2)\n        print(j)\n    for k in range(0, 3)\n        print(k)\n",
     );
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
     assert_eq!(

@@ -1,0 +1,2 @@
+bc
+!panic: string slice out of range

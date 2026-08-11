@@ -1,0 +1,46 @@
+# The five built-ins that reach C at M6 step 3, plus the array half of `slice`.
+# Bulk regression case.
+#
+# What each line pins:
+#   - `sort` is STABLE and ascending, on the three element types that have an
+#     order, and it returns a NEW array — the argument is still readable after.
+#   - `slice` on an array copies through the element descriptor, so a `[str]`
+#     slice owns its own references and the leak counter sees it.
+#   - `join` is one allocation, and the empty and single-element cases are the
+#     two a hand-rolled loop gets wrong.
+#   - `chars` is TOTAL, and the law it buys: `join(chars(s), "") == s`.
+#   - `to_int` truncates toward zero on both signs; `to_f64` renders with a point.
+
+function main()
+    xs = [3, 1, 2]
+    sorted = sort(xs)
+    print(sorted[0], sorted[1], sorted[2])
+    # A new array: the argument kept its order.
+    print(xs[0], xs[1], xs[2])
+
+    names = ["pearl", "aladdin", "sane", "aladdin"]
+    print(join(sort(names), "|"))
+
+    fs = [2.5, 0.5, 1.5]
+    print(sort(fs)[0], " ", sort(fs)[2])
+
+    # `slice` on an array, `to` excluded, and the empty slice at both ends.
+    tail = slice(names, from: 1, to: 3)
+    print(len(tail), join(tail, "-"))
+    print(len(slice(names, from: 0, to: 0)), len(slice(names, from: 4, to: 4)))
+
+    # `join` on nothing and on one, where an eager separator would show.
+    empty: [str] = []
+    print("[", join(empty, ","), "]")
+    print("[", join(["only"], ","), "]")
+
+    # `chars` yields one `str` per character, not per byte: `caffè` is 6 bytes.
+    word = "caffè"
+    print(len(word), " ", len(chars(word)))
+    print(join(chars(word), "."))
+    # The law, stated as a program: the pieces put back together are the string.
+    print(join(chars(word), "") == word)
+    print(join(chars(""), "") == "")
+
+    print(to_int(3.9), to_int(-3.9), to_int(0.0))
+    print(to_f64(3), " ", to_f64(-1))

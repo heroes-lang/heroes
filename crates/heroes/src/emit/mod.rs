@@ -41,6 +41,7 @@ use crate::syntax::Ast;
 use crate::types::Checked;
 
 mod aggregate;
+mod builtins;
 mod ctype;
 mod descriptors;
 mod decls;
@@ -56,7 +57,8 @@ mod writer;
 #[cfg(test)]
 mod tests;
 
-pub use gate::{subset, EMITTED_BUILTINS};
+pub use builtins::EMITTED as EMITTED_BUILTINS;
+pub use gate::subset;
 pub use mangle::module_of;
 
 /// What came out. Exactly one of the two is interesting: with any diagnostic the

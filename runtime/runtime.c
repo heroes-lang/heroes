@@ -151,9 +151,30 @@ int64_t hero_str_byte(HeroStr s, int64_t i) {
     return (int64_t)(unsigned char)s.ptr[i];
 }
 
+/* UTF-8 continuation bytes are 10xxxxxx. A cut at index `at` lands INSIDE a
+ * multi-byte sequence exactly when the byte there is one of them — the ends of
+ * the string are always boundaries, whatever the bytes are. */
+static bool hero_str_boundary(HeroStr s, int64_t at) {
+    if (at <= 0 || at >= s.len) return true;
+    unsigned char c = (unsigned char)s.ptr[at];
+    return c < 0x80 || c > 0xBF;
+}
+
+/* design.md:809 — "Slicing that lands mid-sequence is an error" — a mandate this
+ * runtime did not implement until panel 027 went looking for it:
+ * `slice("caffè", from: 0, to: 5)` exited 0 and printed a corrupt byte.
+ *
+ * The abort belongs HERE and not at `chars`, which is where the symptom shows.
+ * This is the operation that manufactures the broken string, so the message
+ * points at the cause one line earlier, and `chars` stays total over whatever
+ * bytes exist (panel 027 R4). `s[i]` remains the byte-level escape hatch: a
+ * program that means to walk bytes says so, and says it per byte. */
 HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to) {
     hero_str_require(s);
     if (from < 0 || to < from || to > s.len) hero_panic("string slice out of range");
+    if (!hero_str_boundary(s, from) || !hero_str_boundary(s, to)) {
+        hero_panic("string slice splits a character");
+    }
     if (to == from) return hero_str_empty();
     HeroStr r = hero_str_alloc(to - from);
     memcpy((char *)(void *)(uintptr_t)r.ptr, s.ptr + from, (size_t)(to - from));
@@ -284,6 +305,37 @@ HeroStr hero_str_identity(HeroStr s) {
     hero_str_incref(s);
     return s;
 }
+
+/* -- the numeric conversions (spec line 150) --------------------------------
+ *
+ * `(int64_t)v` where the truncated `v` is outside int64's range is UNDEFINED
+ * BEHAVIOUR (C11 6.3.1.4p1), which CLAUDE.md §7 forbids reaching — so this check
+ * is not a courtesy, it is the difference between an abort and whatever the
+ * hardware felt like. On arm64 `fcvtzs` SATURATES, so the unchecked version
+ * returns INT64_MAX for `inf` and 0 for NaN with no sanitiser saying a word.
+ *
+ * Three details, each of which a plausible rewrite gets wrong (panel 027 R7
+ * tested thirteen values rather than reasoning about them):
+ *
+ *   - NEGATED, so NaN needs no clause of its own: NaN compares false against
+ *     everything, so `!(...)` is true and it aborts.
+ *   - HEX FLOAT bounds, because they are exact. `(double)INT64_MAX` rounds UP to
+ *     2^63 and then reads as if it had not, so `v <= (double)INT64_MAX` ACCEPTS
+ *     2^63 and is UB.
+ *   - HALF-OPEN on the right, because 2^63-1 is not representable as a double:
+ *     the largest acceptable value is the double just below 2^63. */
+int64_t hero_f64_to_int(double v) {
+    if (!(v >= -0x1p63 && v < 0x1p63)) {
+        hero_panic("to_int of an f64 outside the range of int");
+    }
+    return (int64_t)v; /* truncates toward zero, as spec line 131 requires */
+}
+
+/* No range to check: every int64_t converts. It is lossy above 2^53 — round to
+ * nearest, which is defined behaviour rather than UB — and that loss is silent.
+ * Every language with these two types has it; Part 8 is where it belongs, and an
+ * abort is not, because the value that loses precision is a legitimate `int`. */
+double hero_int_to_f64(int64_t v) { return (double)v; }
 
 /* -- the descriptor ABI: the four scalars the compiler never declares --------
  *
@@ -461,6 +513,271 @@ bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b) {
         if (!a->elem->eq(da + (size_t)i * size, db + (size_t)i * size)) return false;
     }
     return true;
+}
+
+/* `slice(xs, from:, to:)` on an array — a NEW array, elements copied through the
+ * descriptor, and it ABORTS out of range with the same three-part test and the
+ * same shape of message as `hero_str_slice`.
+ *
+ * Abort rather than clamp (panel 027 R3): a clamping slice hands a shorter array
+ * to whatever comes next, and when that next thing is a length passed to C —
+ * §1.11's whole point — the mismatch is silent. Go, Rust's indexing form and Zig
+ * all abort; Python clamps, and nobody has ever documented what that cost. */
+HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_t to) {
+    hero_array_require(a);
+    if (from < 0 || to < from || to > a->len) hero_panic("array slice out of range");
+    int64_t n = to - from;
+    HeroArrayHeader *b = hero_array_new(a->elem, n);
+    const unsigned char *src = hero_array_data_const(a);
+    unsigned char *dst = hero_array_data(b);
+    size_t size = a->elem->size;
+    for (int64_t i = 0; i < n; i++) {
+        a->elem->copy(dst + (size_t)i * size, src + (size_t)(from + i) * size);
+    }
+    b->len = n;
+    return b;
+}
+
+/* -- sort: the three element types that have an order -----------------------
+ *
+ * The comparison is INTERNAL — this typedef is deliberately not in
+ * `heroes_runtime.h`. Nothing outside this file needs to name it, so changing it
+ * is not an ABI event and no generated unit has to agree with it. That is the
+ * whole shape of panel 027's veto: a sixth `HeroDesc` field would have been an
+ * ABI event, and C11 6.7.9p21 zero-fills a short initialiser list, so every
+ * descriptor that forgot it would carry a NULL and SEGV with no type name. */
+typedef int64_t (*HeroCmpFn)(const void *, const void *);
+
+static int64_t hero_cmp_int(const void *x, const void *y) {
+    int64_t a = *(const int64_t *)x, b = *(const int64_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0); /* never `a - b`: that overflows */
+}
+
+/* NaN ABORTS rather than being given an invented place, and that is the same
+ * answer §4.14 already gives every other arithmetic edge — overflow aborts,
+ * division by zero aborts. `<` is not a total order at NaN, so a comparison sort
+ * driven by it produces an ARBITRARY permutation: a wrong answer with no error,
+ * and one that can differ between two correct implementations, which the M8c
+ * fixpoint cannot have. IEEE 754 totalOrder (Rust's `total_cmp`, Go's NaN-first)
+ * is the other way to be deterministic here; it is silent where this is loud,
+ * and it would owe the spec a sentence about NaN, which the spec has never
+ * needed. `-0.0` and `0.0` tie, and the sort is stable, so their order is the
+ * input's. */
+static int64_t hero_cmp_f64(const void *x, const void *y) {
+    double a = *(const double *)x, b = *(const double *)y;
+    if (a != a || b != b) hero_panic("sort of an f64 array containing nan");
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+
+static int64_t hero_cmp_str(const void *x, const void *y) {
+    return hero_str_cmp(*(const HeroStr *)x, *(const HeroStr *)y);
+}
+
+/* Dispatch is POINTER IDENTITY against the three static descriptors, which is
+ * exact: every `[int]` in every program carries `&hero_desc_int`. A fourth
+ * descriptor arriving here means the gate let through a `sort` on an element
+ * type with no order, so the message says compiler bug rather than user error. */
+static HeroCmpFn hero_cmp_for(const HeroDesc *elem) {
+    if (elem == &hero_desc_int) return hero_cmp_int;
+    if (elem == &hero_desc_f64) return hero_cmp_f64;
+    if (elem == &hero_desc_str) return hero_cmp_str;
+    return NULL;
+}
+
+/* One stable merge of two adjacent runs. `< 0` on the right-hand element is what
+ * keeps the left run first on a tie — that is what stability means, and it is
+ * what makes the output a function of the input rather than of the merge order. */
+static void hero_merge_two(unsigned char *dst, const unsigned char *lo, int64_t nl,
+                           const unsigned char *hi, int64_t nh, size_t size,
+                           HeroCmpFn cmp) {
+    int64_t i = 0, j = 0, k = 0;
+    while (i < nl && j < nh) {
+        if (cmp(hi + (size_t)j * size, lo + (size_t)i * size) < 0) {
+            memcpy(dst + (size_t)k * size, hi + (size_t)j * size, size);
+            j += 1;
+        } else {
+            memcpy(dst + (size_t)k * size, lo + (size_t)i * size, size);
+            i += 1;
+        }
+        k += 1;
+    }
+    if (i < nl) memcpy(dst + (size_t)k * size, lo + (size_t)i * size, (size_t)(nl - i) * size);
+    if (j < nh) memcpy(dst + (size_t)k * size, hi + (size_t)j * size, (size_t)(nh - j) * size);
+}
+
+/* Bottom-up merge sort, and NOT `qsort`. Three reasons, heaviest first
+ * (panel 027 R6, all three measured rather than argued):
+ *
+ * 1. `qsort` is NOT STABLE and its algorithm differs per platform — Darwin's
+ *    returned `0/0 0/3 0/6 0/9 1/10 1/1 1/7 1/4` on equal keys. Two correct
+ *    hosts would then emit two different generated files, and the self-hosting
+ *    fixpoint compares bytes (panel 006's reason for the map's fixed seed).
+ * 2. `qsort`'s comparator is `int (*)(const void *, const void *)`. A Heroes
+ *    comparison returns `int64_t`, so passing one needs a cast between function
+ *    pointer types, and CALLING through the wrong type is C11 6.3.2.3p8
+ *    undefined behaviour — which `-fsanitize=function` does not catch.
+ * 3. `qsort` with an inconsistent comparator may run off the array; a merge sort
+ *    with the same comparator produces a wrong order and stays in bounds.
+ *
+ * The scratch buffer is one malloc/free pair balanced inside this call. It is
+ * not a Heroes block, so `hero_live_blocks` never sees it. */
+static void hero_sort_elems(unsigned char *base, int64_t n, size_t size, HeroCmpFn cmp) {
+    if (n < 2) return;
+    unsigned char *tmp = malloc((size_t)n * size);
+    if (tmp == NULL) hero_panic("out of memory");
+    unsigned char *src = base;
+    unsigned char *dst = tmp;
+    for (int64_t width = 1; width < n; width *= 2) {
+        if (width > INT64_MAX / 2) hero_panic("array too large to sort");
+        for (int64_t i = 0; i < n; i += width * 2) {
+            int64_t mid = i + width < n ? i + width : n;
+            int64_t end = i + width * 2 < n ? i + width * 2 : n;
+            hero_merge_two(dst + (size_t)i * size, src + (size_t)i * size, mid - i,
+                           src + (size_t)mid * size, end - mid, size, cmp);
+        }
+        unsigned char *swap = src;
+        src = dst;
+        dst = swap;
+    }
+    if (src != base) memcpy(base, src, (size_t)n * size);
+    free(tmp);
+}
+
+/* `sort(xs) -> [T]` — a NEW array, exactly as `push` returns one: §4.10 has no
+ * reading in which the argument is mutated, and `sort` is an expression. The
+ * elements are copied through the descriptor first, so a `[str]` result owns its
+ * own references; the merge then PERMUTES those copies with `memcpy`, which
+ * touches no refcount at all. */
+HeroArrayHeader *hero_array_sort(const HeroArrayHeader *a) {
+    hero_array_require(a);
+    HeroCmpFn cmp = hero_cmp_for(a->elem);
+    if (cmp == NULL) {
+        hero_panic("sort of an array whose element type has no order — "
+                   "this is a compiler bug, please report it");
+    }
+    HeroArrayHeader *b = hero_array_new(a->elem, a->len);
+    const unsigned char *src = hero_array_data_const(a);
+    unsigned char *dst = hero_array_data(b);
+    size_t size = a->elem->size;
+    for (int64_t i = 0; i < a->len; i++) {
+        a->elem->copy(dst + (size_t)i * size, src + (size_t)i * size);
+    }
+    b->len = a->len;
+    hero_sort_elems(dst, b->len, size, cmp);
+    return b;
+}
+
+/* -- where `str` and `[T]` meet: chars and join ------------------------------ */
+
+/* Unicode 15 Table 3-7, which is the only correct spelling of "well-formed": it
+ * rejects overlong forms, the surrogate range ED A0..BF, and everything above
+ * U+10FFFF. Returns the sequence length 1..4, or 0 for "no valid sequence starts
+ * here". The overlong check is not pedantry — non-shortest forms are Unicode
+ * Corrigendum #1's documented filter-bypass, where one process validates and
+ * another decodes. */
+static int hero_utf8_seq(const unsigned char *p, int64_t avail) {
+    unsigned char c = p[0];
+    if (c <= 0x7F) return 1;
+    if (c >= 0xC2 && c <= 0xDF) {
+        if (avail < 2 || p[1] < 0x80 || p[1] > 0xBF) return 0;
+        return 2;
+    }
+    if (c >= 0xE0 && c <= 0xEF) {
+        unsigned char lo = 0x80, hi = 0xBF;
+        if (c == 0xE0) lo = 0xA0; /* no overlong three-byte forms */
+        if (c == 0xED) hi = 0x9F; /* no surrogates U+D800..U+DFFF */
+        if (avail < 3) return 0;
+        if (p[1] < lo || p[1] > hi) return 0;
+        if (p[2] < 0x80 || p[2] > 0xBF) return 0;
+        return 3;
+    }
+    if (c >= 0xF0 && c <= 0xF4) {
+        unsigned char lo = 0x80, hi = 0xBF;
+        if (c == 0xF0) lo = 0x90; /* no overlong four-byte forms */
+        if (c == 0xF4) hi = 0x8F; /* nothing above U+10FFFF */
+        if (avail < 4) return 0;
+        if (p[1] < lo || p[1] > hi) return 0;
+        if (p[2] < 0x80 || p[2] > 0xBF) return 0;
+        if (p[3] < 0x80 || p[3] > 0xBF) return 0;
+        return 4;
+    }
+    return 0;
+}
+
+/* `chars(s) -> [str]`, and it is TOTAL: a byte that starts no well-formed
+ * sequence becomes a one-byte `str` rather than an abort (panel 027 R4).
+ *
+ * A Heroes `str` is arbitrary bytes and has to be, because `.cstr()` is §4.20's
+ * zero-copy handoff and C strings are arbitrary NUL-free bytes — a filename from
+ * `readdir`, a latin-1 column from SQLite (measured: a real `text` column
+ * returned `0xEF`, because SQLite does not validate UTF-8), a BLOB. So the rule
+ * that a `str` is well-formed lives at `hero_str_slice`, which is the only
+ * operation in the language that can BREAK one, and not here, which is merely
+ * where the symptom would show.
+ *
+ * What total buys is a law with no exceptions:
+ *     join(chars(s), "") == s   for every s
+ * assertable over `heroes mutate`'s whole corpus (CLAUDE.md §9). Under an abort
+ * the law is conditional, and a conditional law tests nothing. */
+HeroArrayHeader *hero_str_chars(HeroStr s) {
+    hero_str_require(s);
+    const unsigned char *p = (const unsigned char *)s.ptr;
+    int64_t count = 0;
+    for (int64_t i = 0; i < s.len;) {
+        int n = hero_utf8_seq(p + i, s.len - i);
+        i += n > 0 ? n : 1;
+        count += 1;
+    }
+    HeroArrayHeader *out = hero_array_new(&hero_desc_str, count);
+    unsigned char *data = hero_array_data(out);
+    int64_t at = 0;
+    for (int64_t i = 0; i < s.len;) {
+        int n = hero_utf8_seq(p + i, s.len - i);
+        int64_t take = n > 0 ? n : 1;
+        HeroStr one = hero_str_from_bytes(s.ptr + i, take);
+        memcpy(data + (size_t)at * sizeof(HeroStr), &one, sizeof(HeroStr));
+        at += 1;
+        i += take;
+    }
+    out->len = at;
+    return out;
+}
+
+/* `join(parts, sep) -> str` — design.md:1318's answer to O(n^2) concatenation:
+ * sum the lengths, allocate ONCE, copy once. The element check is pointer
+ * identity against the one static descriptor, so a `[int]` arriving here is
+ * named as a compiler bug rather than misread as text. */
+HeroStr hero_str_join(const HeroArrayHeader *parts, HeroStr sep) {
+    hero_array_require(parts);
+    hero_str_require(sep);
+    if (parts->elem != &hero_desc_str) {
+        hero_panic("join of an array that does not hold str — "
+                   "this is a compiler bug, please report it");
+    }
+    if (parts->len == 0) return hero_str_empty();
+    const HeroStr *items = (const HeroStr *)(const void *)hero_array_data_const(parts);
+    int64_t total = 0;
+    for (int64_t i = 0; i < parts->len; i++) {
+        hero_str_require(items[i]);
+        if (items[i].len > INT64_MAX - total) hero_panic("string length overflow");
+        total += items[i].len;
+    }
+    for (int64_t i = 1; i < parts->len; i++) {
+        if (sep.len > INT64_MAX - total) hero_panic("string length overflow");
+        total += sep.len;
+    }
+    if (total == 0) return hero_str_empty();
+    HeroStr r = hero_str_alloc(total);
+    char *w = (char *)(void *)(uintptr_t)r.ptr;
+    for (int64_t i = 0; i < parts->len; i++) {
+        if (i > 0 && sep.len > 0) {
+            memcpy(w, sep.ptr, (size_t)sep.len);
+            w += sep.len;
+        }
+        memcpy(w, items[i].ptr, (size_t)items[i].len);
+        w += items[i].len;
+    }
+    return r;
 }
 
 /* One descriptor for every `[T]`: these four reach the element type through the
@@ -831,9 +1148,38 @@ static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
     return b;
 }
 
+/* THE COPY-ON-WRITE THE MAP SHIPPED WITHOUT (M6 step 3).
+ *
+ * `hero_array_unshare`'s twin, and it was missing for one commit: M6 step 2 wrote
+ * `hero_map_set` to write in place with no refcount check, so `n = m` followed by
+ * `m["b"] @ 2` changed `n` as well — `2 2 2` where spec line 60 requires `1 2 -1`.
+ * ASan clean, leak counter zero, exit 0: a green harness on a program that
+ * violates "no aliasing exists anywhere", which is exactly the shape panel 022
+ * measured for arrays and exactly the container that landed after it.
+ *
+ * The copy goes through `hero_map_put`, which increfs every key and value through
+ * their descriptors — the same balanced-by-construction rule `hero_map_grown`
+ * learned the hard way. There is no per-step question here as there is for
+ * arrays: a map is only ever the LAST step of a place path (`emit/aggregate.rs`
+ * refuses a non-final map step), because there is no element to descend into. */
+static void hero_map_unshare(HeroMapHeader **slot) {
+    HeroMapHeader *m = *slot;
+    if (m->refcount == 1) return;
+    HeroMapHeader *copy = hero_map_new(m->key, m->val, m->len);
+    const unsigned char *states = hero_map_states_const(m);
+    for (int64_t i = 0; i < m->cap; i++) {
+        if (states[i] == 0) continue;
+        hero_map_put(copy, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i));
+    }
+    hero_map_decref(m);
+    *slot = copy;
+}
+
 void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
     if (slot == NULL) hero_panic("store into no map — a compiler bug");
+    if (value == NULL) hero_panic("store of no value — a compiler bug");
     hero_map_require(*slot);
+    hero_map_unshare(slot);
     HeroMapHeader *m = *slot;
     unsigned char *states = hero_map_states(m);
     int64_t at = hero_map_slot_of(m, key);
@@ -848,17 +1194,24 @@ void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
                 hero_map_set(slot, key, value);
                 return;
             }
+            /* The key is COPIED (the caller lends it) and the value is MOVED —
+             * `hero_array_set`'s rule, and the ownership pass's: `own.rs` increfs
+             * before an indexed store precisely so the primitive does not have to.
+             * Copying here instead increfs a second time, which is the leak M6
+             * step 2 shipped: `m["a"] @ "x" + "y"` printed `xy` and then
+             * `1 heap blocks still live at exit`. */
             m->key->copy(hero_map_key_at(m, i), key);
-            m->val->copy(hero_map_val_at(m, i), value);
+            memcpy(hero_map_val_at(m, i), value, m->val->size);
             states[i] = 1;
             m->len += 1;
             return;
         }
         if (m->key->eq(hero_map_key_at_const(m, i), key)) {
             /* Replace the value in place and keep the key that is there — they are
-             * equal, so which copy the map holds is unobservable. */
+             * equal, so which copy the map holds is unobservable. Release what was
+             * there, then move the caller's reference in. */
             m->val->drop(hero_map_val_at(m, i));
-            m->val->copy(hero_map_val_at(m, i), value);
+            memcpy(hero_map_val_at(m, i), value, m->val->size);
             return;
         }
     }

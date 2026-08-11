@@ -1,0 +1,32 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-11): `n = m` followed by `m["b"] @ 2` changed **n as well**.
+# The program below printed `2`, `2`, `2` where the spec requires `1`, `2`, `-1`.
+# Exit 0, ASan clean, leak counter zero: a green harness on a program that
+# violates spec line 60, "no aliasing exists anywhere".
+#
+# CAUSE: M6 step 2 landed the map's mutation half with NO copy-on-write.
+# `hero_map_set` wrote through `*slot` without ever looking at the refcount,
+# while `hero_array_set` had unshared since M5c step 6. Panel 022 measured this
+# exact failure for arrays and the container that landed AFTER it shipped
+# without the remedy.
+#
+# FIX: `hero_map_unshare`, `hero_array_unshare`'s twin, called at the top of
+# `hero_map_set`. There is no per-step question as there is for arrays: a map is
+# only ever the last step of a place path, because there is no element to
+# descend into.
+#
+# HOW IT WAS FOUND: writing the header comment for a different change. The
+# paragraph describing the map still said "READ-ONLY at M5d", so it had to be
+# rewritten, and the sentence "there is no `hero_map_unshare` here" was still
+# true one milestone after it stopped being safe.
+# Bulk regression case.
+
+function main()
+    m: {str: int} @ {}
+    m["a"] @ 1
+    n = m
+    m["b"] @ 2
+    print(len(n))
+    print(len(m))
+    print(n["b"].default(-1))

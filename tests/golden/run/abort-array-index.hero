@@ -1,0 +1,7 @@
+# The half of spec line 129 that has always been written down, and had no test.
+# Bulk regression case.
+
+function main()
+    xs = [10, 20, 30]
+    print(xs[2])
+    print(xs[5])

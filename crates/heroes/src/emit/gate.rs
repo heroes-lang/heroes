@@ -42,15 +42,14 @@ use crate::source::{Source, Span};
 use crate::syntax::Ast;
 use crate::types::{render_ty, Checked, Ty, TyId};
 
-/// The built-ins the backend emits. The gate reads this list and so does the note,
-/// so they cannot disagree — panel 021 R10, and CLAUDE.md §10's own pattern ("one
-/// argv table parses and prints the help"). A hand-written enumeration beside a
-/// machine-readable table is a sentence that becomes a lie one milestone later.
-pub const EMITTED_BUILTINS: [&str; 6] = ["keys", "len", "print", "push", "slice", "to_str"];
+use super::builtins::EMITTED as EMITTED_BUILTINS;
 
 /// What the backend does emit. Derived, not maintained: the type list is the arms of
-/// `check_type` that return without a note, and the built-in list is the constant
-/// above.
+/// `check_type` that return without a note, and the built-in list is
+/// `builtins::EMITTED`, which is also what `builtins::entry` is exhaustive over —
+/// panel 021 R10, and CLAUDE.md §10's own pattern ("one argv table parses and
+/// prints the help"). A hand-written enumeration beside a machine-readable table
+/// is a sentence that becomes a lie one milestone later.
 ///
 /// The second clause is the llm-ergonomist's, and it is load-bearing: without it, the
 /// rewrite the message *invites* ("use a byte loop instead of `chars()`") is itself a
@@ -246,17 +245,9 @@ fn check_op(
     }
 }
 
-/// A built-in whose *name* is emitted but whose **operand type** has no entry point.
-///
-/// `slice` is the case, and it was found by a judge pricing a spec sentence rather than
-/// by any test: `slice(xs, from: 1, to: 3)` on an array type-checks (exit 0) and then
-/// emits `hero_str_slice` on a `HeroArrayHeader *`, which clang rejects — reported as
-/// exit 2, the compiler blaming itself for a program the author is entitled to write.
-/// Spec line 148 lists `slice` without restricting it to `str`.
-///
-/// So the row splits by operand, exactly as `len` does, and the array half is refused
-/// until `hero_array_slice` exists. `len` needed no such row because both of its halves
-/// landed together; this is the shape of a built-in whose halves did not.
+/// A built-in whose *name* emits but whose **operand type** has no entry point.
+/// The rule itself lives in `builtins.rs`, beside the entry-point table it is the
+/// complement of; this is the walk that applies it.
 fn check_builtin_operand(
     found: &mut Vec<(String, String, Span)>,
     checked: &Checked,
@@ -265,13 +256,9 @@ fn check_builtin_operand(
     span: Span,
 ) {
     let Op::Call { callee: Callee::Builtin(index), args, .. } = op else { return };
-    if BUILTINS[index as usize].name != "slice" {
-        return;
-    }
-    let first = function.args_of(args).first().copied();
-    let Some(crate::ir::Arg::Value(value)) = first else { return };
-    if matches!(checked.types.get(function.value_type(value)), Ty::Array(_)) {
-        note(found, "builtin", "the built-in `slice` on an array".to_string(), span);
+    let name = BUILTINS[index as usize].name;
+    if let Some(what) = super::builtins::unsupported_operand(name, function, checked, args) {
+        note(found, "builtin", what, span);
     }
 }
 

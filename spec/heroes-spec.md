@@ -126,8 +126,8 @@ are stable snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 | `.is_err()` | boolean test |
 
 `?` on a non-fallible value is a compile error. Map access `m[k]` returns
-`V?` with code `missing_key`. An out-of-bounds array index
-aborts; integer overflow aborts; division by zero aborts. `/` and `%` truncate
+`V?` with code `missing_key`. An out-of-bounds index or slice
+aborts, and so does a slice that splits a character; integer overflow aborts; division by zero aborts. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
 ## Operators

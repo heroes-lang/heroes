@@ -1,0 +1,23 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-11): `m["a"] @ "x" + "y"` printed `xy` and then
+# `panic: 1 heap blocks still live at exit (a missing decref)`. Every answer
+# correct, the failure at the sweep — the fourth time in this milestone.
+#
+# CAUSE: an indexed store hands the value OVER. `own.rs` increfs before it
+# precisely so the primitive does not have to, which is why `hero_array_set`
+# MOVES with `memcpy` and does not copy. `hero_map_set` copied through the value
+# descriptor, increfing a second time. One leaked block per insert of a
+# refcounted value.
+#
+# WHY NO TEST SAW IT: `run/maps.hero` uses `{str: int}`, and an `int`'s copy is a
+# plain assignment — the double incref is invisible unless the VALUE owns a
+# block. The cheaper spelling of the test passes.
+# Bulk regression case.
+
+function main()
+    m: {str: str} @ {}
+    m["a"] @ "x" + "y"
+    m["a"] @ "z" + "w"
+    print(m["a"].default("?"))
+    print(len(m))

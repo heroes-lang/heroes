@@ -1,0 +1,8 @@
+# `slice` out of range on an array — the other half, and the one that could not
+# be written at all until M6 step 3, because `slice` on `[T]` did not emit.
+# Bulk regression case.
+
+function main()
+    xs = [10, 20, 30]
+    print(len(slice(xs, from: 1, to: 3)))
+    print(len(slice(xs, from: 1, to: 9)))

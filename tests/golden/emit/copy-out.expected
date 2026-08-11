@@ -2,7 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 7, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 8, "heroes_runtime.h is from another compiler");
 
 #line 8 "copyout.c"
 void h_copyout_count_down(int64_t *ph0_n, int64_t *ph1_seen);

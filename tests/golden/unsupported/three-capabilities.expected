@@ -1,23 +1,23 @@
-unsupported[builtin]: the built-in `sort` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:26:11
+unsupported[builtin]: the built-in `sort` on elements other than `int`, `f64` or `str` is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:41:15
      |
-  26 |     print(sort(xs)[0])        #~ builtin
-     |           ^^^^^^^^
+  41 |     print(len(sort(ps)))      #~ builtin
+     |               ^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `keys`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
 
-unsupported[builtin]: the built-in `join` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:27:11
+unsupported[builtin]: the built-in `range` is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:42:14
      |
-  27 |     print(join(["a"], "-"))   #~ builtin
-     |           ^^^^^^^^^^^^^^^^
+  42 |     for i in range(0, 2)      #~ builtin
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `keys`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
 
-unsupported[builtin]: the built-in `chars` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:28:11
+unsupported[function_value]: a function used as a value is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:44:5
      |
-  28 |     print(chars("ab")[0])     #~ builtin
-     |           ^^^^^^^^^^^
+  44 |     f = add                   #~ function_value
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `keys`, `len`, `print`, `push`, `slice`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet

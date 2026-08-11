@@ -11,25 +11,29 @@
 # entitled to write this: spec line 148 lists `slice` among the built-ins and does not
 # restrict it to `str`.
 #
-# CAUSE: `slice` is one built-in over two operand types and only the `str` half has a
+# CAUSE: `slice` is one built-in over two operand types and only the `str` half had a
 # runtime entry point. `len` has the same shape and needed no gate row, because both of
 # its halves landed in the same step; `slice`'s did not. The gate checked the built-in
 # by NAME, so the array half sailed through a list that was about names.
 #
-# FIX: the row splits by operand, exactly as `len`'s emission does. The array half is
-# refused until `hero_array_slice` exists (M6, with `sort`, `join`, `chars` and
-# `range`).
+# FIX, in two stages. M6 step 2 split the refusal by operand, so the program became a
+# loud `unsupported[builtin]` instead of exit 2. M6 step 3 landed `hero_array_slice`,
+# so it now RUNS — and the case moved from `unsupported/` to `run/` with its history,
+# which is what a fixed defect looks like when the fix is the capability rather than
+# the diagnostic.
 #
 # HOW IT WAS FOUND, which is the part worth keeping: a judge pricing a *spec sentence*
 # went to verify that "`slice` out of range aborts" was true, and discovered it was
 # unverifiable for one of the two types the sentence covers. No test in the project
-# looked here. The sentence was held back and the bug was filed instead.
+# looked here. The sentence was held back and the bug was filed instead; the sentence
+# landed at panel 027 R5, in the commit that made it checkable, and its abort now has
+# a golden on each operand type (`abort-str-slice`, `abort-array-slice`).
 # Bulk regression case.
 
 function main()
     xs = [1, 2, 3]
-    ys = slice(xs, from: 1, to: 3)     #~ builtin
+    ys = slice(xs, from: 1, to: 3)
     print(len(ys))
-    # The `str` half emits, and stays in the file so the refusal above is provably
-    # about the operand and not about the built-in's name.
+    print(ys[0], ys[1])
+    # The `str` half stays in the file, so the two are provably one built-in.
     print(slice("abcde", from: 1, to: 3))

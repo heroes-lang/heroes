@@ -1,0 +1,13 @@
+# `to_int` (truncating; out of range aborts) — spec line 150.
+#
+# The check is `!(v >= -0x1p63 && v < 0x1p63)`, and it is written that way because
+# two plausible spellings are WRONG: `v <= (double)INT64_MAX` accepts 2^63,
+# because that cast rounds UP, and `v > -9223372036854775809.0` rejects INT64_MIN.
+# On arm64 an unchecked cast does not trap — `fcvtzs` saturates — so the abort is
+# the only thing standing between this and a silent INT64_MAX.
+# Bulk regression case.
+
+function main()
+    print(to_int(1.5))
+    print(to_int(9223372036854774784.0))
+    print(to_int(9223372036854775808.0))

@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 7
+#define HERO_RUNTIME_ABI 8
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -83,6 +83,12 @@ bool hero_str_eq(HeroStr a, HeroStr b);
 int64_t hero_str_cmp(HeroStr a, HeroStr b); /* <0, 0, >0 — the six comparisons */
 int64_t hero_str_len(HeroStr s);
 int64_t hero_str_byte(HeroStr s, int64_t i);        /* aborts out of range */
+
+/* Aborts out of range, AND aborts on a cut that lands inside a multi-byte
+ * sequence — design.md:809's "slicing that lands mid-sequence is an error",
+ * which this runtime did not implement until panel 027 went looking for it.
+ * It is the only operation in the language that can break a `str`'s
+ * well-formedness, which is why the rule lives here rather than at `chars`. */
 HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to);
 void hero_print_str(HeroStr s);
 
@@ -104,6 +110,13 @@ HeroStr hero_f64_to_str(double v);
 HeroStr hero_int_to_str(int64_t v);
 HeroStr hero_bool_to_str(bool v);
 HeroStr hero_str_identity(HeroStr s);
+
+/* `to_int` truncates toward zero; out of range or NaN ABORTS, because
+ * `(int64_t)v` past int64's range is C11 6.3.1.4p1 undefined behaviour and
+ * arm64's `fcvtzs` saturates rather than trapping. `to_f64` cannot fail, and is
+ * lossy above 2^53 — defined, silent, and Part 8's to record. */
+int64_t hero_f64_to_int(double v);
+double hero_int_to_f64(int64_t v);
 
 /* -- the failure side of `T?` (design.md §4.6) -------------------------------
  *
@@ -223,6 +236,39 @@ HeroArrayHeader *hero_array_push(const HeroArrayHeader *a, const void *elem);
 /* Structural equality, element by element through the descriptor. */
 bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b);
 
+/* `slice(xs, from:, to:)` — a NEW array, elements copied through the descriptor.
+ * ABORTS out of range, with the same three-part test as `hero_str_slice`: a
+ * clamping slice hands a shorter array to whatever comes next, and when that is
+ * a length passed to C the mismatch is silent (panel 027 R3). */
+HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_t to);
+
+/* `sort(xs)` — a NEW array, STABLE, ascending.
+ *
+ * Works on `[int]`, `[f64]` and `[str]`, which is exactly the set with an order;
+ * the comparison lives inside `runtime.c` and is NOT part of this contract,
+ * because panel 027 vetoed putting a `cmp` in `HeroDesc`: C11 6.7.9p21
+ * zero-fills a short initialiser list, so every descriptor that forgot the field
+ * would carry a NULL and SEGV with no type name — panel 022's null-`hash`
+ * argument, one field over. A `sort` on any other element type is refused by the
+ * emitter's gate, so reaching here with one is a compiler bug and says so.
+ *
+ * NOT `qsort`: `qsort` is unstable and platform-dependent, and the M8c fixpoint
+ * compares generated C byte for byte. NaN in an `[f64]` aborts rather than being
+ * given an invented place. */
+HeroArrayHeader *hero_array_sort(const HeroArrayHeader *a);
+
+/* `chars(s) -> [str]` — one `str` per character, TOTAL over every byte string: a
+ * byte that starts no well-formed UTF-8 sequence becomes a one-byte `str`. The
+ * law that buys, and the reason it is not an abort:
+ *     join(chars(s), "") == s   for every s.
+ * Well-formedness is enforced at `hero_str_slice`, the one operation that can
+ * break it — not here, which is only where the symptom would show. */
+HeroArrayHeader *hero_str_chars(HeroStr s);
+
+/* `join(parts, sep)` — one allocation, design.md:1318's answer to O(n^2)
+ * concatenation. `parts` must hold `str`; anything else is a compiler bug. */
+HeroStr hero_str_join(const HeroArrayHeader *parts, HeroStr sep);
+
 /* -- copy-on-write (panel 022, and the veto that shaped it) ------------------
  *
  * `xs[i] @ v` mutates a place, and the place may be shared. So: make it unique
@@ -274,12 +320,13 @@ void hero_array_set(HeroArrayHeader **slot, int64_t index, const void *value);
  * byte-for-byte (panel 006). A seed that varied per run would make the compiler
  * produce two different correct outputs, and the fixpoint would never close.
  *
- * READ-ONLY at M5d, and deliberately: panel 022 struck the mutation half for
- * having zero reachable call sites — the spec's inventory has no `insert`, and
- * `for k in m` is `not_iterable`. So there is no `hero_map_unshare` here. A map is
- * a literal, `m[k]`, `has`, `len`, and `==`. The larger question the ROADMAP
- * carries: `{K: V}` may be deleted at M6's closure audit, which recovers 57 spec
- * tokens against 29 to fund `set` plus `for k in m`. */
+ * The mutation half landed at M6 step 2 (panel 026), and it is a **place store**
+ * rather than a `set(m, k, v)` call: `m[k] @ v` needed no new IR form, where a
+ * void builtin would have grown a special case in the checker, the ownership pass
+ * and the emitter. Iteration is `keys(m)` composed with the `for` and `sort` that
+ * already existed, so the language grew no loop form either. There is still no
+ * `hero_map_unshare`: a map is copied, not unshared, because nothing writes
+ * through a shared one — `m[k] @ v` goes through `hero_map_set` on the slot. */
 
 typedef struct HeroMapHeader {
     int64_t refcount;

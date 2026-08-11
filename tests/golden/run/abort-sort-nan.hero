@@ -1,0 +1,18 @@
+# `sort` on an `[f64]` holding a NaN aborts rather than inventing a place for it.
+#
+# NaN appears nowhere in the spec or in design.md, and it is reachable: "division
+# by zero aborts" is implemented for integers, so `0.0 / 0.0` is a NaN. `<` is not
+# a total order at NaN, so a comparison sort driven by it returns an ARBITRARY
+# permutation — a wrong answer with no error, and one that can differ between two
+# correct implementations, which the M8c fixpoint cannot have.
+#
+# The alternative was IEEE 754 totalOrder (Rust's `total_cmp`, Go's NaN-first).
+# It is deterministic too, and silent; this is the same answer §4.14 already gives
+# every other arithmetic edge — overflow aborts, division by zero aborts.
+# Bulk regression case.
+
+function main()
+    zero = 0.0
+    n = zero / zero
+    print(sort([2.0, 1.0])[0])
+    print(sort([2.0, n, 1.0])[0])
