@@ -36,7 +36,11 @@ use super::{errors, stmts, Ref, Resolver};
 pub(super) fn expr(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
     match &ast.exprs[id.0 as usize].kind {
         ExprKind::Name => name(r, ast, src, id),
-        ExprKind::Hole => r.out.has_hole = true,
+        // The module, not a flag: §4.16's suppression is file-wide, so a hole
+        // here must not quiet the unused rule in a module nobody is editing.
+        ExprKind::Hole => {
+            r.out.holes_in.insert(r.module.clone());
+        }
         ExprKind::Int
         | ExprKind::Float
         | ExprKind::Str

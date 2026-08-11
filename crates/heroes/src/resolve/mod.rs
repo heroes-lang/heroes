@@ -166,10 +166,16 @@ pub struct Resolved {
     /// names). The value indexes `Ast::uses`, so a diagnostic can point at the
     /// line itself.
     pub module_uses: std::collections::BTreeMap<(String, String), u32>,
-    /// True if the file contains a `???`. While it does, unused bindings and
-    /// unused parameters are not reported (§4.16, normative — the section's own
-    /// example binds a name that is read only inside the hole).
-    pub has_hole: bool,
+    /// Every module that contains a `???`. While one does, unused bindings and
+    /// unused parameters are not reported **in that module** (§4.16, normative:
+    /// *"The suppression is file-wide"* — the section's own example binds a name
+    /// that is read only inside the hole).
+    ///
+    /// A set rather than a flag, and the difference is a fixed defect: with one
+    /// `Ast` covering every module since M8a, a single `bool` made the exemption
+    /// program-wide, so an unfinished `geom.hero` silently suspended the rule in
+    /// a `main.hero` nobody was editing (panel 033 D1).
+    pub holes_in: std::collections::BTreeSet<String>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
@@ -191,6 +197,13 @@ impl Resolved {
             .iter()
             .filter(move |((m, _), _)| m == module)
             .map(|((_, n), d)| (n.as_str(), *d))
+    }
+
+    /// Does the module that owns `offset` contain a hole? The question every
+    /// §4.16 exemption asks, and it takes an offset rather than a module name
+    /// because every caller is holding a span it is about to report.
+    pub fn hole_covers(&self, src: &Source, offset: u32) -> bool {
+        self.holes_in.contains(&src.file(offset).module)
     }
 
     /// Which module declares `name`, if any does. Used by the diagnostics that
@@ -222,8 +235,13 @@ pub fn resolve(ast: &Ast, src: &Source) -> Resolved {
             module_uses: std::collections::BTreeMap::new(),
             // A flat scan of the arena, not a walk: a hole suspends the unused
             // rule wherever it is, including inside a construct the walk gives
-            // up on.
-            has_hole: ast.exprs.iter().any(|e| matches!(e.kind, ExprKind::Hole)),
+            // up on. The file table is what turns each one into a module.
+            holes_in: ast
+                .exprs
+                .iter()
+                .filter(|e| matches!(e.kind, ExprKind::Hole))
+                .map(|e| src.file(e.span.start).module.clone())
+                .collect(),
             diagnostics: Vec::new(),
         },
         scopes: Scopes::new(),

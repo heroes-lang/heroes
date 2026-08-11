@@ -31,8 +31,12 @@ const SUGGESTIONS: usize = 5;
 pub fn report(ast: &Ast, resolved: &Resolved, checked: &Checked, src: &Source) -> String {
     let mut out = String::new();
     for hole in &checked.holes {
-        let (line, col) = src.line_col(hole.span.start);
-        out.push_str(&format!("hole at {}:{line}:{col}\n", src.name));
+        // `Source::locate`, never `line_col` plus `src.name`: the hole report
+        // is not a `Diagnostic`, which is how it survived M8a's sweep still
+        // naming the root file and a line from the concatenated text
+        // (panel 033 D2).
+        let (file, line, col) = src.locate(hole.span.start);
+        out.push_str(&format!("hole at {file}:{line}:{col}\n"));
         let expected = checked.types.get(hole.expected);
         if expected == Ty::Error {
             // A hole in statement position: nothing is expected of it, and

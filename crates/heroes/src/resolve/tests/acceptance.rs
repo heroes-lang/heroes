@@ -51,7 +51,7 @@ fn the_acceptance_program_is_held_open_by_its_one_hole() {
     let src = crate::library::attach("design.md appendix".to_string(), acceptance_program());
     let parsed = parse(&src);
     let out = resolve(&parsed.ast, &src);
-    assert!(out.has_hole);
+    assert!(!out.holes_in.is_empty(), "the appendix has its one hole");
     let unread = out.locals.iter().filter(|l| l.reads == 0).count();
     assert_eq!(unread, 1, "only `simplify`'s parameter is unread");
 }

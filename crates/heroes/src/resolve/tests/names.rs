@@ -233,7 +233,8 @@ function f() -> int
     return ???
 ",
     );
-    assert!(out.has_hole);
+    // Named, not counted: the exemption is per module (§4.16, panel 033 D1).
+    assert!(out.holes_in.contains("test"), "{:?}", out.holes_in);
     assert!(out.diagnostics.is_empty());
 }
 

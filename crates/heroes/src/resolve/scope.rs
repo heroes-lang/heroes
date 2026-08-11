@@ -211,14 +211,16 @@ impl Resolver {
 
     /// §4.16's exemption is checked here, once, after the whole file has been
     /// walked: a hole at the bottom of the file suspends the rule at the top of
-    /// it, so this cannot be decided while walking.
+    /// it, so this cannot be decided while walking. It is asked **per module**,
+    /// against the binding's own file, because §4.16 makes the suppression
+    /// file-wide and one `Ast` has spanned every module since M8a.
     pub(super) fn report_unused(&mut self, src: &Source) {
-        if self.out.has_hole {
-            return;
-        }
         let mut diagnostics = Vec::new();
         for local in &self.out.locals {
             if local.reads > 0 {
+                continue;
+            }
+            if self.out.hole_covers(src, local.name.start) {
                 continue;
             }
             // The copy-out of an `@` parameter is observable by the caller

@@ -119,15 +119,14 @@ fn uses(r: &mut Resolver, ast: &Ast, src: &Source) {
 pub(super) fn unused_uses(r: &mut Resolver, ast: &Ast, src: &Source) {
     // §4.16's exemption applies here for the same reason it applies to a
     // binding: a `???` is a program that is not finished, and the module it was
-    // going to reach may be the one the hole would have used.
-    if r.out.has_hole {
-        return;
-    }
+    // going to reach may be the one the hole would have used. It is asked per
+    // *writing* module — `key.0` — because the suppression is file-wide.
     let unread: Vec<(String, String)> = r
         .out
         .module_uses
         .keys()
         .filter(|key| !r.module_reads.contains(*key))
+        .filter(|key| !r.out.holes_in.contains(&key.0))
         .cloned()
         .collect();
     for key in unread {

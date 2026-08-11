@@ -89,8 +89,13 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
             ));
         }
     }
-    if resolved.has_hole {
-        out.push_str("holes present: unused bindings are not reported\n");
+    // Named rather than counted: the suppression is file-wide (§4.16), so
+    // "holes present" without saying where would describe a rule the compiler
+    // no longer has.
+    for module in &resolved.holes_in {
+        out.push_str(&format!(
+            "holes in `{module}`: unused bindings are not reported there\n"
+        ));
     }
     out
 }

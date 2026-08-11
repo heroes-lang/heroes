@@ -213,3 +213,94 @@ fn two_modules_one_component_is_still_refused() {
     assert_eq!(said.len(), 1, "{said:?}");
     assert!(said[0].contains("module_names_collide"), "{said:?}");
 }
+
+/// The whole frontend over a set of real files, as a real invocation runs it:
+/// every diagnostic rendered one to a line, plus §4.16's hole report.
+///
+/// `graph` above answers only "is this set of modules well formed"; these two
+/// cases are about what the *resolver* and the *checker* say once it is, which
+/// is a different question and needs the rest of the pipeline.
+fn frontend(test: &str, files: &[(&str, &str)], root: &str) -> (Vec<String>, String) {
+    let dir = write(test, files);
+    let src = load(&dir.join(root).display().to_string()).expect("the root file reads");
+    let parsed = crate::syntax::parse(&src);
+    assert!(parsed.diagnostics.is_empty(), "the test's own input must parse");
+    let resolved = crate::resolve::resolve(&parsed.ast, &src);
+    let checked = crate::types::check(&parsed.ast, &resolved, &src);
+    let said = resolved
+        .diagnostics
+        .iter()
+        .chain(checked.diagnostics.iter())
+        .map(|d| d.render_line(&src))
+        .collect();
+    (said, crate::types::report_holes(&parsed.ast, &resolved, &checked, &src))
+}
+
+/// **fixedbugs, panel 033 D1, 2026-08-12.** Symptom: an unfinished `geom.hero`
+/// silenced §4.4's unused-binding rule in a `main.hero` nobody was editing —
+/// `heroes check main.hero` exit 0 with the hole, exit 1 with the same
+/// `main.hero` once the hole was filled. Cause: `Resolved::has_hole` was one
+/// `bool` over a flat scan of `ast.exprs`, and since M8a one `Ast` spans every
+/// module, so "the file contains a `???`" became "the program does". Fix:
+/// `Resolved::holes_in`, a set of modules, asked per binding through
+/// `hole_covers`.
+///
+/// design.md §4.16 is normative and was never ambiguous — *"The suppression is
+/// file-wide and lifts the moment the last hole is filled"* — so this is
+/// CLAUDE.md §12 exactly: the document was right and the compiler had the bug.
+/// It is also the reason panel 033 refused tier D's own thesis argument twice
+/// over: a top-level dead-code rule would have inherited this, and one
+/// unfinished module would have silenced it across a whole program.
+#[test]
+fn fixedbugs_a_hole_in_one_module_does_not_silence_the_unused_rule_in_another() {
+    let files = &[
+        ("main.hero", "use geom\n\nfunction main()\n    unused_here = 42\n    print(geom.area(w: 2, h: 3))\n"),
+        ("geom.hero", "function area(w: int, h: int) -> int\n    return ???\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-hole-scope", files, "main.hero");
+    assert!(
+        said.iter().any(|d| d.contains("unused_binding") && d.contains("unused_here")),
+        "the hole is in `geom`, so `main`'s unused binding is still an error: {said:?}"
+    );
+
+    // The other direction, which is the rule itself and must keep working: a
+    // hole in the binding's **own** module suspends it.
+    let files = &[
+        ("main.hero", "use geom\n\nfunction main()\n    unused_here = 42\n    print(geom.area(w: 2, h: 3))\n    print(???)\n"),
+        ("geom.hero", "function area(w: int, h: int) -> int\n    return w * h\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-hole-scope-own", files, "main.hero");
+    assert!(
+        !said.iter().any(|d| d.contains("unused_binding")),
+        "§4.16's exemption still applies inside the module that holds the hole: {said:?}"
+    );
+}
+
+/// **fixedbugs, panel 033 D2, 2026-08-12.** Symptom: `heroes check main.hero` on
+/// a program whose hole is in `geom.hero` answered `hole at main.hero:8:12` —
+/// the wrong file, and a line number past the end of the file it named
+/// (`main.hero` is five lines long). Cause: `types/holes.rs` assembled the
+/// location triple itself from `line_col` and `src.name`, which was the same
+/// answer while a `Source` held one file and a false one the moment it held
+/// several. Fix: `Source::locate`, the function `source/mod.rs` documents as
+/// mandatory for exactly this — *"there is one function and no caller assembles
+/// the triple itself."*
+///
+/// It survived M8a's sweep because the hole report is **not** a `Diagnostic`,
+/// and the sweep went through the diagnostics. That is the whole lesson: the
+/// invariant was enforced by convention over one type, and the one caller
+/// outside that type kept the defect.
+#[test]
+fn fixedbugs_a_hole_report_names_its_own_file_and_its_own_line() {
+    let files = &[
+        ("main.hero", "use geom\n\nfunction main()\n    print(geom.area(w: 2, h: 3))\n"),
+        ("geom.hero", "function area(w: int, h: int) -> int\n    return ???\n"),
+    ];
+    let (_, holes) = frontend("fixedbugs-hole-location", files, "main.hero");
+    // The path is the temp directory's, so the assertion is on the tail: the
+    // file that holds the hole, and **its own** line 2 — not a line counted
+    // through the concatenated text, which is what the defect reported.
+    let first = holes.lines().next().unwrap_or_default();
+    assert!(first.ends_with("geom.hero:2:12"), "the report reads: {first}");
+    assert!(!first.contains("main.hero"), "the root file is not where the hole is: {first}");
+}
