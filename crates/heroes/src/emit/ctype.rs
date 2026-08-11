@@ -64,7 +64,7 @@ impl Names {
         for (index, decl) in ast.decls.iter().enumerate() {
             // **Each type is named in its OWN module**, never the root's: two
             // modules may each declare `Point`, and they are two C structs.
-            let name = mangle::ty(src.module_at(decl.name.start), src.slice(decl.name));
+            let name = mangle::ty(src.component_at(decl.name.start), src.slice(decl.name));
             match &decl.kind {
                 DeclKind::Record { .. } => {
                     aggregates.insert(index as u32, name);

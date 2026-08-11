@@ -395,7 +395,7 @@ pub(super) fn emit(
                     // The callee's own module, which is the point of M8a: a
                     // function value taken across a module boundary is the same
                     // symbol the definition emitted.
-                    .map(|f| mangle::function(src.module_at(f.span.start), &f.name))
+                    .map(|f| mangle::function(src.component_at(f.span.start), &f.name))
                     .unwrap_or_else(|| "hero_unreachable".to_string());
                 w.line(&format!("    {name} = {callee};"));
             }

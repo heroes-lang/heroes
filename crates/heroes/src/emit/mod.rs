@@ -146,7 +146,7 @@ pub fn emit_for(
     let names = ctype::Names::new(ast, src)
         .with_options(&module, checked)
         .with_functions(&module, checked, program);
-    let mut w = writer::Writer::new(&src.name, &module);
+    let mut w = writer::Writer::new(&module);
     decls::prelude(&mut w, program, target, src);
     // Types before anything that can mention one: the typedefs in containment order
     // (`Checked::type_order`, filtered — panel 023 R3), then every per-type prototype,

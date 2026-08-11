@@ -163,7 +163,7 @@ pub(super) fn test_shim(w: &mut Writer, program: &Program, src: &Source) {
         w.line(&format!("    case {position}:"));
         w.line(&format!(
             "        {}();",
-            mangle::test(src.module_at(function.span.start), function.decl as usize)
+            mangle::test(src.component_at(function.span.start), function.decl as usize)
         ));
         w.line("        break;");
     }
@@ -209,7 +209,7 @@ pub(super) fn instance_name(
     checked: &Checked,
     src: &Source,
 ) -> String {
-    let module = src.module_at(function.span.start);
+    let module = src.component_at(function.span.start);
     if function.kind == crate::ir::FnKind::Test {
         return mangle::test(module, function.decl as usize);
     }
@@ -318,7 +318,7 @@ pub(super) fn shim(w: &mut Writer, function: &Function, src: &Source) {
     w.line("int main(void) {");
     w.line(&format!(
         "    {}();",
-        mangle::function(src.module_at(function.span.start), &function.name)
+        mangle::function(src.component_at(function.span.start), &function.name)
     ));
     // The leak gate, and it is here because AddressSanitizer is **not** one on this
     // platform: `detect_leaks is not supported`, measured, with a 999-block leak

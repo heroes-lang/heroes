@@ -158,3 +158,58 @@ fn a_well_formed_program_produces_no_graph_diagnostic() {
     );
     assert!(said.is_empty(), "{said:?}");
 }
+
+/// **fixedbugs, panel 032 D1, 2026-08-12.** Symptom: `heroes build` exit 2,
+/// `internal error: compiling the generated C failed: error: redefinition of
+/// 'h_print_inst_value_name'`, on a program with no mistake in it. Cause: the
+/// emitter mangled with `FileEntry.module`, the raw `use` name, so module
+/// `print` with `inst_value_name` and module `print_inst` with `value_name`
+/// produced one C symbol. `module_of` had always sanitised — the emitter simply
+/// was not asking it. Fix: `FileEntry.component`, taken by the mangler and by
+/// nothing else.
+///
+/// The pair is not invented: it is the one `emit/mangle.rs`'s own doc names as
+/// the reason the component is sanitised, and they are this compiler's own file
+/// names. Panel 031 R10 built a diagnostic for the neighbouring case and this
+/// one walked past it, because R10 compares module *names* and the collision is
+/// in the concatenation.
+#[test]
+fn fixedbugs_two_modules_whose_concatenations_collide_but_whose_components_do_not() {
+    let said = graph(
+        "fixedbugs-concat",
+        &[
+            ("main.hero", "use print_inst\n\nfunction inst_value_name() -> int\n    return 1\n\nfunction main()\n    print(inst_value_name() + print_inst.value_name())\n"),
+            ("print_inst.hero", "function value_name() -> int\n    return 2\n"),
+        ],
+    );
+    assert!(said.is_empty(), "there is nothing wrong with this program: {said:?}");
+
+    let src = load_root(
+        "fixedbugs-concat",
+        &[
+            ("main.hero", "use print_inst\n\nfunction inst_value_name() -> int\n    return 1\n\nfunction main()\n    print(inst_value_name() + print_inst.value_name())\n"),
+            ("print_inst.hero", "function value_name() -> int\n    return 2\n"),
+        ],
+    );
+    // The two components differ, which is the whole repair: `print` and
+    // `printinst`, so the symbols are `h_print_inst_value_name` and
+    // `h_printinst_value_name`.
+    let components: Vec<&str> = src.files().iter().map(|f| f.component.as_str()).collect();
+    assert_eq!(components, vec!["main", "printinst", "library"]);
+}
+
+/// The neighbouring case, still refused: two module names that sanitise to one
+/// component. R10's own case, and the one this file must keep firing.
+#[test]
+fn two_modules_one_component_is_still_refused() {
+    let said = graph(
+        "fixedbugs-component",
+        &[
+            ("main.hero", "use print_inst\nuse printinst\n\nfunction main()\n    print(print_inst.a() + printinst.b())\n"),
+            ("print_inst.hero", "function a() -> int\n    return 1\n"),
+            ("printinst.hero", "function b() -> int\n    return 2\n"),
+        ],
+    );
+    assert_eq!(said.len(), 1, "{said:?}");
+    assert!(said[0].contains("module_names_collide"), "{said:?}");
+}

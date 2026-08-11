@@ -40,25 +40,15 @@ pub(super) struct Writer {
     /// `pushed + 1`.
     pushed: u32,
     claim: Claim,
-    source: String,
     generated: String,
 }
 
-/// The name a `#line` gives the library's own source (§1.11's Tier 2).
-///
-/// It is not a path, and that is deliberate: there is no file to open. The
-/// library is embedded in the compiler (`crate::library`), so a clang error
-/// inside it must name something a reader can recognise as "not your program"
-/// rather than a path that does not exist on their disk.
-pub(super) const LIBRARY_FILE: &str = "<heroes library>";
-
 impl Writer {
-    pub(super) fn new(source_path: &str, module: &str) -> Writer {
+    pub(super) fn new(module: &str) -> Writer {
         Writer {
             out: String::new(),
             pushed: 0,
             claim: Claim::None,
-            source: source_path.to_string(),
             generated: format!("{module}.c"),
         }
     }
@@ -80,29 +70,27 @@ impl Writer {
 
     /// Point the next line at the author's source, if it is not already pointing
     /// there.
-    pub(super) fn at_source(&mut self, line: u32) {
-        // `#line 0` is invalid C11, and a zero here would mean a span the source
-        // map could not place. Clamp rather than emit invalid C.
-        let line = line.max(1);
-        if self.claim == (Claim::At { file: self.source.clone(), line }) {
-            return;
-        }
-        let source = self.source.clone();
-        self.directive(&source, line);
-    }
-
-    /// Point the next line at the library's own source.
+    /// Point the next line at a file of the compilation, at that file's own
+    /// line — which since M8a is not always the root's.
     ///
-    /// A library function must never claim the author's file: its line numbers
-    /// run past the end of what they wrote, so a clang error would be reported
-    /// against a line that does not exist — the compiler blaming the author for
-    /// its own code, which is the failure CLAUDE.md §8 exists to prevent.
-    pub(super) fn at_library(&mut self, line: u32) {
+    /// **One entry point, and it replaced two.** There used to be `at_source`,
+    /// which claimed the file the reader named, and `at_library`, which claimed
+    /// the library. With N modules that split is wrong in the ordinary case: a
+    /// `#line` for `geom.hero` claiming `main.hero` at a line past its end is
+    /// the compiler blaming the author for a file they did not write in, and at
+    /// M7 it hands §4.19's guarantee — clang checking an `extern` against the
+    /// real header — to a file that does not contain the declaration.
+    ///
+    /// The library keeps its own name for the reason it always had: its lines
+    /// are in a file the author cannot open, so a clang error against one must
+    /// not look like theirs. That is now the same rule as every other module's,
+    /// not an exception to it.
+    pub(super) fn at_file(&mut self, file: &str, line: u32) {
         let line = line.max(1);
-        if self.claim == (Claim::At { file: LIBRARY_FILE.to_string(), line }) {
+        if self.claim == (Claim::At { file: file.to_string(), line }) {
             return;
         }
-        self.directive(LIBRARY_FILE, line);
+        self.directive(file, line);
     }
 
     /// Point the next line at the generated file — around a prologue, a copy-out,
@@ -151,10 +139,8 @@ fn escape(path: &str) -> String {
 /// choosing for itself, so "is this the author's code or the library's" is
 /// answered in one place (CLAUDE.md §11's rule about where a rule lives).
 pub(super) fn at_span(w: &mut Writer, src: &crate::source::Source, offset: u32) {
-    if src.is_library(offset) {
-        w.at_library(src.file_line_of(offset));
-    } else {
-        let (line, _) = src.line_col(offset);
-        w.at_source(line);
-    }
+    // `locate`, and nothing else: the file that holds the offset and the line
+    // within it. The third caller in one milestone to need exactly this.
+    let (file, line, _) = src.locate(offset);
+    w.at_file(file, line);
 }

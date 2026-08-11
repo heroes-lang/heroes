@@ -479,6 +479,43 @@ fn the_split_calculator_prints_what_the_single_file_one_prints() {
     assert_eq!(code(&split), 0);
 }
 
+/// **fixedbugs, panel 032 D2, 2026-08-12.** Symptom: in the four-module
+/// calculator the emitted `#line` values reached 410 while `main.hero` is 78
+/// lines, and `lex.hero`, `parse.hero` and `eval.hero` appeared **zero times**
+/// in the C. Cause: `at_span` chose between two entry points — the file the
+/// reader named, and the library — a split that is right for two files and
+/// wrong for four. Fix: one `at_file`, fed by `Source::locate`.
+///
+/// It is not cosmetic. §4.19's whole guarantee is that clang checks an `extern`
+/// against the real header and reports it at the author's line; delivered to a
+/// file that does not contain the declaration, the guarantee is noise.
+#[test]
+fn fixedbugs_every_module_names_itself_in_the_emitted_c() {
+    let out = heroes(&["build", "examples/calculator/main.hero", "--emit-c"]);
+    let c = String::from_utf8_lossy(&out.stdout).into_owned();
+    for module in ["main", "lex", "parse", "eval"] {
+        assert!(
+            c.contains(&format!("examples/calculator/{module}.hero\"")),
+            "no `#line` names {module}.hero"
+        );
+    }
+    // And no line claims a file for a line it does not have: `main.hero` is
+    // shorter than the concatenated text, which is how the defect showed.
+    let main_lines = std::fs::read_to_string("../../examples/calculator/main.hero")
+        .expect("the module is there")
+        .lines()
+        .count();
+    for line in c.lines().filter(|l| l.contains("calculator/main.hero\"")) {
+        let number: usize = line
+            .split_whitespace()
+            .nth(1)
+            .and_then(|n| n.parse().ok())
+            .expect("a `#line` carries a number");
+        assert!(number <= main_lines, "{line} — main.hero has {main_lines} lines");
+    }
+    assert_eq!(code(&out), 0);
+}
+
 /// A failing test is the **program** being wrong: exit 1, the same code a
 /// diagnostic gets and for the same reason — the tool worked.
 ///

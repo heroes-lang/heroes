@@ -15,8 +15,21 @@ pub struct FileEntry {
     /// naming the same file differently print differently and that is correct:
     /// the reader is told the path they typed.
     pub name: String,
-    /// The module this file is, for qualified names and for the mangler.
+    /// The module this file is: what a qualified name writes before the dot.
+    /// The **raw** name, `_` and all, because that is what the author typed.
     pub module: String,
+    /// The same module as a C identifier component — `module_of` of the above,
+    /// so `print_inst` is `printinst`.
+    ///
+    /// **Two namespaces, and they are not the same namespace.** What the author
+    /// types before the dot and what reaches the linker have different collision
+    /// sets, and until panel 032 the emitter used the first for the second:
+    /// module `print` with `inst_value_name` and module `print_inst` with
+    /// `value_name` both emitted `h_print_inst_value_name`, and clang answered
+    /// `redefinition` — exit 2, *the compiler is wrong*, on a legal program.
+    /// That is the exact pair `emit/mangle.rs`'s own doc names as the reason the
+    /// component is sanitised, and the sanitising was being skipped.
+    pub component: String,
     /// Byte offset of this file's first byte in the concatenated text.
     pub start: u32,
     /// How many lines of the concatenated text come before it, so that
@@ -73,6 +86,14 @@ pub fn module_of(path: &str) -> String {
 /// definition and many prototypes — which only works if the definition has the
 /// *same* name everywhere, so the component cannot be a user file's stem.
 pub const LIBRARY_MODULE: &str = "library";
+
+/// What the library calls itself in a diagnostic and in a `#line`.
+///
+/// Not a path, and deliberately unopenable: a clang error against one of its
+/// lines must not look like an error in a file the author can edit. It lives
+/// here because this is where the name is *set* — the emitter used to carry its
+/// own copy for a `#line` case that no longer exists (panel 032 D2).
+pub const LIBRARY_FILE: &str = "<heroes library>";
 
 #[cfg(test)]
 mod tests {

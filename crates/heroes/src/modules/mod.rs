@@ -121,7 +121,7 @@ pub fn load_text(path: &str, root_text: String) -> Source {
     }
 
     files.push(InputFile {
-        name: "<heroes library>".to_string(),
+        name: crate::source::LIBRARY_FILE.to_string(),
         module: crate::source::LIBRARY_MODULE.to_string(),
         text: crate::library::SOURCE.to_string(),
         is_library: true,

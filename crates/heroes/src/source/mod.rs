@@ -24,7 +24,7 @@
 
 mod files;
 
-pub use files::{module_of, FileEntry, LIBRARY_MODULE};
+pub use files::{module_of, FileEntry, LIBRARY_FILE, LIBRARY_MODULE};
 
 /// Every file of one compilation, in one text.
 pub struct Source {
@@ -111,6 +111,7 @@ impl Source {
             let lines_before = starts_of(&text).len() as u32 - 1;
             table.push(FileEntry {
                 name: input.name,
+                component: module_of(&input.module),
                 module: input.module,
                 start,
                 lines_before,
@@ -127,7 +128,7 @@ impl Source {
         Source::of(vec![
             InputFile::user(name, user),
             InputFile {
-                name: "<heroes library>".to_string(),
+                name: LIBRARY_FILE.to_string(),
                 module: LIBRARY_MODULE.to_string(),
                 text: library,
                 is_library: true,
@@ -176,7 +177,13 @@ impl Source {
         self.file_of(offset) == 0
     }
 
-    /// The module an offset belongs to — what `h_<module>_<name>` uses, and what
+    /// The C identifier component for an offset's module — what
+    /// `h_<component>_<name>` uses. Never `module_at`: see [`FileEntry`].
+    pub fn component_at(&self, offset: u32) -> &str {
+        &self.file(offset).component
+    }
+
+    /// The module an offset belongs to — what a qualified name writes, and what
     /// a qualified name resolves against.
     pub fn module_at(&self, offset: u32) -> &str {
         &self.file(offset).module
