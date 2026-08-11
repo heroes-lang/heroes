@@ -955,8 +955,18 @@ correctness, not taste.
 **Errors carry a stable code plus a human message:** `fail(code, msg)`, and `e.code` / `e.msg`.
 **Rationale:** tests were asserting on prose (`assert e.msg == "negative stock for A1"`), which
 breaks when you reword a message and passes when you break the logic. The code is snake_case and
-stable; assert on `e.code`. This is acknowledged technical debt — typed errors would be better but
-cost generics and spec — but at least it is comparable.
+stable; assert on `e.code`.
+
+**What that costs is measured, not confessed** (panel 034). `heroes mutate`'s `typo-code` operator
+slips one character in a code — in the `fail` that builds it or the `e.code ==` that reads it back —
+and scores **25 mutants, 0 caught, in both arms**: the only zero in an eleven-row table where
+everything else catches 73–100% (`docs/measurements/004-error-codes.md`). The published magnitude is
+the same shape: Eghbali & Pradel, *No Strings Attached*, ASE '20 — 42% of 204 real string bugs are
+incorrect string literals, a widely used analyser finds 1 of 204, and 11% ever surface as an error
+message. **The remedy is `constant`, not a language feature**: write the codes as constants and
+compare `e.code == store.ERR_UNKNOWN_ITEM`, and a typo is `error[unknown_name]` today, locally, with
+the owning module named — zero spec tokens, zero compiler lines. Typed errors would be better still
+and their price is Part 8 wart 5's, not this section's.
 
 **`?` applied to a non-fallible value is a compile error.**
 
@@ -1997,6 +2007,8 @@ maximising locality satisfies two vertices of the triangle at once.
 | Literate source (code inside a markdown document) | breaks editors, explodes tokens, noisy diffs. `heroes doc` generates the document instead — one direction only |
 | Non-ASCII syntax | tokenises badly, untypeable on some layouts, encoding-fragile |
 | Style-insensitive identifiers (Nim's `fooBar` ≡ `foo_bar`) | two spellings for one thing, against §4.15's "exactly one correct way"; for a model it is pure confusion |
+| Private record fields | it is an *opaque type* wearing a field annotation's name: §4.9 makes field-named construction mandatory, so a hidden field makes the type unconstructible from outside, and §4.3's structural `==` compares a field the caller cannot name. The precedented form (Haskell 2010 §5.2, Ada 83) hides the **type**, never the field — and §4.20 makes a record a C struct by value, so a shim reads the "private" field at its offset anyway (panel 033) |
+| Private variant cases | it forces `_` to be legal on a variant whose hidden case the reader may not see, so a line's legality depends on a declaration nobody may read — and §4.7 bans `_` on variants precisely to keep exhaustiveness meaning something. Rust shipped this (`priv` variants), deleted it in 2014 as rarely used, re-added it per-**type** as `#[non_exhaustive]` in 1.40, and documents the price as the loss of exhaustiveness checking (panel 033) |
 
 ---
 
@@ -2107,7 +2119,24 @@ are *on* the closure list.
     compiled translation unit, so no inlining can smear refcount arithmetic across code that a
     thread-local counter would later have to change. M5c's array and map allocation is the first test
     of the first rule. Everything else in this item costs v1 nothing.
-14. **The QBE backend — scheduled, post-fixpoint.** Not "if and when": one backend proves nothing
+14. **Declaration visibility** — `private` on a top-level declaration, hiding it from every other
+    module. Costed and deferred at panel 033, where five judges produced no vote to adopt. It is
+    cheap — ~80 non-test lines, **zero** in the IR, the ownership pass, the emitter and the mangler,
+    because one whole-program translation unit gives visibility no linkage consequence — and the
+    landing form is fixed at **+18 measured** (the bare licence alone; the "not written on fields or
+    variant cases" clause is a prohibition, and Part 6 now carries both for free). It waits because
+    Principle 0's burden is unmet: not on §1.0's closure list, no Part 11 effect, and its offered
+    §1-argument — that `private` lets §4.4's unused rule reach the top level — is refuted by the
+    compiler, which already compiles one whole program and already proves that shape in
+    `unused_use` at zero tokens. **M8p is the instrument, not an exception to this Part's
+    preamble**: the probe reports blockages, and a blockage would put visibility on the closure
+    list, which is what excepts items 2–4. Absent that it waits like everything else here.
+    **Direction unresolved and left to a count**: default-private has the whole ancestry (Modula-2 →
+    Oberon, Nim, Go, Zig, Erlang; Rust RFC 0001 and Swift SE-0117 both reversed *towards* it, none
+    away), and three judges measured against it — 256 `private` markers against 355 `export` over
+    this compiler's own tree, and a binding module is public by construction, so `export` is 20/20
+    lines on libm and 287/287 on SQLite for zero bytes of object code.
+15. **The QBE backend — scheduled, post-fixpoint.** Not "if and when": one backend proves nothing
     about the IR's claimed agnosticism, and QBE carries the register-allocation and instruction-
     selection lesson this project originally wanted (~500 lines from the same IR; see §3.2 for what
     QBE is). Later still: LLVM textual `.ll`, or wasm (which brings sandboxing and the browser, and
@@ -2142,7 +2171,21 @@ visible rather than patched with a second form.
    `if` to save three lines per file.
 4. **Function type parens.** `(function(A) -> B)` needs its parens because declarations don't have any.
    Second price of the same decision.
-5. **Errors are codes plus strings, not types.** Weak. Mitigated by asserting on `e.code`.
+5. **Errors are codes plus strings, not types.** Weak, and now measured: `typo-code` catches
+   **0 of 25** (§4.6). Mitigated by asserting on `e.code`, and better mitigated by writing the codes
+   as `constant`s, which makes a typo an `unknown_name` error for nothing.
+   **This stays a wart and is deliberately not a Part 7 item** (panel 034): Part 7 admits what loses
+   *only* on simplicity, and typed errors lose on three vertices — §4.12's positive rule (generics on
+   functions only, **not on types**), Part 7 item 8's traits for any conversion, and the budget.
+   Filing them as deferred would turn a wart into a promise. The price, measured against real
+   `sqlite3.h` rather than argued: an error carrying what a C library actually reports
+   (`sqlite3_errmsg`, copied through `hero_str_from_bytes`) is **32 bytes and refcounted**, and
+   `ptr?SqlErr` is **40** — identical to today; the 16-byte win needs a payload-free error, which
+   cannot carry a message. `?` across two bindings stops being a struct copy and needs a
+   hand-written converter per *(from, to)* pair; `m[k]`'s runtime-built failure has no declared type
+   to be; and `record R { next: R? }` is unchanged either way. Swift shipped typed throws in 6.0,
+   a decade in and with full generics, and SE-0413 itself says *"Resist the temptation to use typed
+   throws"*.
 6. **The unrecoverable indentation case** (4.15). One accepted silent-error class.
 7. **A single-child node needs a one-element array**, because arrays are the only indirection.
 8. **String concatenation is O(n²)** under value semantics; needs `join`/`Builder` for compiler-scale

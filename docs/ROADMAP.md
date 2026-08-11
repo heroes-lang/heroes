@@ -63,6 +63,19 @@ landed as `measure::gate`, so a spec change is red until the commit that made it
 writes the new number down. `heroes mutate` runs 1148 mutants, up from 839 — the split
 calculator is corpus.
 
+**After the close, same day, panels 033 and 034**: 420 crate tests, 91 `run/`
+cases, and an **eleventh mutation operator**. `typo-code` slips a character in an
+error code and reads **25 mutants, 0 caught** — the only zero in the table — which
+moves the corpus-wide pair to **93% / 78% over 1173** with the killed counts
+*unchanged* at 1087 and 903: nothing got worse, twenty-five mistakes the harness
+could not see entered the denominator (`docs/measurements/004-error-codes.md`).
+**Three live defects, all found by judges compiling something else**: §4.16's hole
+exemption was program-wide since M8a, so an unfinished module silenced the unused
+rule in one nobody was editing; the hole report named the root file and a line
+that does not exist; and a variant case payload was never released when no `match`
+in the same compilation bound it — the same `lex.hero` leaking rooted at itself
+and clean rooted at `parse.hero`. Each has a case named after it.
+
 **Runnable:** `heroes test examples/calculator/main.hero` · `heroes run
 examples/calculator/main.hero` · `heroes check examples/calculator/eval.hero
 --dump-scopes` (the `uses` section: every module the file names and every qualified
@@ -509,6 +522,23 @@ its list until the closure list compiles itself, and **a milestone number is not
 a warrant** — measurement 003 rider 3 is the standing precedent, where this file
 scheduled `outline` and `explain` and CLAUDE.md §10's stopping rule refused them.
 
+**Two milestones were asked for on 2026-08-12 and neither was added; the table is
+unchanged and this paragraph is why** (panels 033 and 034). *Visibility*: three
+tiers, and two of them were never visibility questions — private record fields
+are an opaque type (§4.9 makes construction impossible from outside, and §4.20
+makes a shim read the field anyway) and private variant cases are
+`#[non_exhaustive]`, which Rust deleted in 2014, re-added per type in 2019 and
+documents as costing exhaustiveness. Both are now **Part 6, permanently**. The
+third, `private` on a declaration, is **Part 7 item 14** at a pre-fixed +18, and
+**M8p decides it**: a blockage there puts it on the closure list, a wish does not
+(the rule at *M8p reports blockages, not wishes*, below). *Errors*: the Rust shape
+landed at M5d — `T?` is `Result<T,E>`, `?` is `?`, `.must()` is `.unwrap()` — and
+the part Rust has that Heroes does not, the typed error, stays **Part 8 wart 5**
+rather than becoming a deferral, because it loses on §4.12's positive rule as well
+as on simplicity. What is real underneath the question is measured:
+`docs/measurements/004-error-codes.md`, **25 mutants, 0 caught**, and the answer is
+a `constant`, not a feature.
+
 ### M8a — Modules: the namespace, not the build architecture
 `use`, **always-qualified** cross-module names (never a glob import: `x.f(y)` is
 UFCS for `f(x, y)`, and an unqualified import makes `f` resolvable only from
@@ -584,6 +614,13 @@ detector on Darwin arm64 (hence `hero_runtime_check_leaks`), `INT64_MIN % -1`
 does not trap there, Apple ARM64 passes variadics on the stack — and each of
 those is a place where the other platform can diverge in silence. Today nothing
 tests any of it.
+- **Error codes become `constant`s across the corpus** (panel 034 R4), compared as
+  `store.ERR_UNKNOWN_ITEM` rather than as bare literals. Zero spec tokens and zero
+  compiler lines: a typo is `error[unknown_name]` today, locally, with the owning
+  module named. It arrives with its own measurement — re-run `heroes mutate` and
+  say what happened to `typo-code`'s row, including the awkward possibility that
+  it loses its sites rather than passing them.
+
 **Acceptance:** `heroes test` green over every directory in `examples/`, in all
 three configurations **and on both platforms**, and a measured mutation rate over
 the enlarged corpus —
@@ -656,7 +693,13 @@ and because — measured — it is where §4.19's guarantee can quietly die. **F
 acceptance rows, and they are what lift the ffi-pragmatist's veto** (panel 030 R2):
 
 1. the header travels with the extern into **every calling TU**, or externs are
-   module-private and the *type checker* refuses the qualified call;
+   module-private and the *type checker* refuses the qualified call. **Panel 033
+   found a third answer that costs nothing and is not a visibility rule**: *an
+   `extern` declaration is never callable across a module boundary; a qualified
+   call to one is a type error, and the route is a Heroes function in the
+   declaring module.* Compiled, linked and run — and the shape this row exists to
+   prevent reproduced exactly beside it (header only in the declaring TU: exit 1
+   there, **exit 0 in the caller**, `rc=0 db=open`, with the wrong signature);
 2. headers and link flags enter the cache key, with `runtime_text()` kept;
 3. every dependency's emitted interface enters the key — `-flto` does not catch
    cross-TU signature skew and changes the answer;
