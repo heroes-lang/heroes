@@ -20,6 +20,7 @@ pub mod ir;
 pub mod lexer;
 pub mod library;
 pub mod measure;
+pub mod modules;
 pub mod own;
 pub mod mutate;
 pub mod printer;

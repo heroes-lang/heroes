@@ -163,6 +163,19 @@ impl Source {
         self.file(offset).is_library
     }
 
+    /// Is this offset in the file the reader actually named?
+    ///
+    /// The distinction `is_library` used to be enough for, and is not any more.
+    /// A `--dump-<stage>` answers "what does the compiler know about **the file
+    /// I named**" (CLAUDE.md §10), and so does `fmt`, which writes one file
+    /// back — those ask this. Emission and `heroes test` are about the whole
+    /// program and ask `is_library` instead: a module's `test` blocks are its
+    /// own, and a compilation that ran only the root's tests would drop the rest
+    /// in silence, which is the class of loss this language exists to refuse.
+    pub fn is_root(&self, offset: u32) -> bool {
+        self.file_of(offset) == 0
+    }
+
     /// The module an offset belongs to — what `h_<module>_<name>` uses, and what
     /// a qualified name resolves against.
     pub fn module_at(&self, offset: u32) -> &str {
@@ -194,6 +207,21 @@ impl Source {
     pub fn file_line_of(&self, offset: u32) -> u32 {
         let (line, _) = self.line_col(offset);
         line.saturating_sub(self.file(offset).lines_before).max(1)
+    }
+
+    /// Where an offset is, **as a reader has to be told it**: the file that
+    /// contains it, the line within that file, and the column.
+    ///
+    /// Every diagnostic goes through here. Before M8a the two renderers each
+    /// printed `src.name` and `line_col` directly, which was the same answer
+    /// while there was one file and became a *false* one the moment there were
+    /// several — a diagnostic in `geom.hero` naming `main.hero` at a line number
+    /// from the concatenated text. Well-formed and wrong is the failure mode
+    /// this table exists to prevent, so there is one function and no caller
+    /// assembles the triple itself.
+    pub fn locate(&self, offset: u32) -> (&str, u32, u32) {
+        let (_, col) = self.line_col(offset);
+        (&self.file(offset).name, self.file_line_of(offset), col)
     }
 
     pub fn slice(&self, span: Span) -> &str {

@@ -27,13 +27,13 @@ use super::types::render_type;
 pub fn dump_ast(ast: &Ast, src: &Source) -> String {
     let mut out = format!("file {}\n", src.name);
     for used in &ast.uses {
-        if src.is_library(used.span.start) {
+        if !src.is_root(used.span.start) {
             continue;
         }
         out.push_str(&format!("  use {}\n", src.slice(used.name)));
     }
     for decl in &ast.decls {
-        if src.is_library(decl.name.start) {
+        if !src.is_root(decl.name.start) {
             continue;
         }
         declaration(ast, src, decl, &mut out);

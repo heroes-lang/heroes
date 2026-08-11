@@ -36,18 +36,23 @@ use super::{Certainty, Diagnostic};
 
 /// One diagnostic, in the rich form. No trailing blank line: the caller joins.
 pub fn render(diagnostic: &Diagnostic, src: &Source) -> String {
-    let (line, col) = src.line_col(diagnostic.span.start);
+    // Two line numbers, and they are not the same thing once a compilation has
+    // more than one file: `line` is what the reader is told, `absolute` is where
+    // the text actually is. Printing the second is a message that names a real
+    // file and a line nobody can find in it.
+    let (file, line, col) = src.locate(diagnostic.span.start);
+    let (absolute, _) = src.line_col(diagnostic.span.start);
     let mut out = format!(
         "{}[{}]: {}\n  at {}:{line}:{col}\n",
         diagnostic.kind.word(),
         diagnostic.code,
         diagnostic.message,
-        src.name
+        file
     );
     let number = format!("{line}");
     let gutter = " ".repeat(number.len());
     out.push_str(&format!("  {gutter} |\n"));
-    let text = source_line(src, line);
+    let text = source_line(src, absolute);
     out.push_str(&format!("  {number} | {text}\n"));
     out.push_str(&format!("  {gutter} | {}\n", caret(src, diagnostic, col)));
     for note in &diagnostic.notes {

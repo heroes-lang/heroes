@@ -149,12 +149,13 @@ impl Diagnostic {
         )
     }
 
-    /// `file:line:col: <kind>[code]: message`
+    /// `file:line:col: <kind>[code]: message` — the file and line being the
+    /// ones the reader can open, which is `Source::locate`'s whole job.
     pub fn render_line(&self, src: &Source) -> String {
-        let (line, col) = src.line_col(self.span.start);
+        let (file, line, col) = src.locate(self.span.start);
         format!(
             "{}:{}:{}: {}[{}]: {}",
-            src.name,
+            file,
             line,
             col,
             self.kind.word(),

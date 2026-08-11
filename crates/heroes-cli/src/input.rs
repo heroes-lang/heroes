@@ -8,16 +8,19 @@
 use crate::cli::Exit;
 use heroes::source::Source;
 
-/// The file as a `Source`, **with the library attached** — every command that
-/// resolves names needs Tier 2's source in scope (§1.11, `heroes::library`), and
-/// attaching it here rather than per command is what keeps `lex`, `parse`,
-/// `check`, `build`, `run` and `fmt` looking at the same text.
+/// The whole compilation as one `Source`: the file named, every module it
+/// reaches through `use`, and the library last (§1.11, `heroes::library`).
 ///
-/// The library is appended, so every offset and line number the author can see
-/// is exactly what it would have been without it.
+/// Doing it here rather than per command is what keeps `lex`, `parse`, `check`,
+/// `build`, `run`, `test` and `fmt` looking at the same text — and every offset
+/// and line number in the file the author named is exactly what it would have
+/// been if that file were alone, because nothing is ever prepended to it
+/// (`heroes::source`).
+///
+/// A module named by a `use` and missing from disk is **not** an error here:
+/// `heroes::modules::errors` reports it against this `Source`, with the caret on
+/// the `use` line. Failing to read the *root* is a different thing — the tool
+/// could not run at all — and leaves through `Exit::Failed`.
 pub fn read(path: &str) -> Result<Source, (String, Exit)> {
-    match std::fs::read_to_string(path) {
-        Ok(text) => Ok(heroes::library::attach(path.to_string(), text)),
-        Err(e) => Err((format!("cannot read `{path}`: {e}"), Exit::Failed)),
-    }
+    heroes::modules::load(path).map_err(|message| (message, Exit::Failed))
 }

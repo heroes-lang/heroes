@@ -45,7 +45,7 @@ pub fn dump(program: &Program, ast: &Ast, checked: &Checked, src: &Source) -> St
     // open. Indices are the real ones: this filters the list, it does not renumber
     // it.
     let mut live: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
-    for function in program.functions.iter().filter(|f| !src.is_library(f.span.start)) {
+    for function in program.functions.iter().filter(|f| src.is_root(f.span.start)) {
         for block in &function.blocks {
             for inst in &block.insts {
                 if let Op::Const(Const::Str(index)) = inst.op {
@@ -68,7 +68,7 @@ pub fn dump(program: &Program, ast: &Ast, checked: &Checked, src: &Source) -> St
     // it carries no information about this one. The emitted C is the exception,
     // and necessarily — the binary needs the definitions.
     let shown: Vec<&Function> =
-        program.functions.iter().filter(|f| !src.is_library(f.span.start)).collect();
+        program.functions.iter().filter(|f| src.is_root(f.span.start)).collect();
     for (index, function) in shown.into_iter().enumerate() {
         if index > 0 {
             out.push('\n');

@@ -80,6 +80,9 @@ pub fn compile_with_tests(
     };
     let parsed = parse(&src);
     report(&parsed.diagnostics, &src)?;
+    // Same stage, same reason, as `check`: the cause once beats the consequence
+    // nine times. A module that is not there is not a name error.
+    report(&heroes::modules::errors(&parsed.ast, &src), &src)?;
     let resolved = resolve(&parsed.ast, &src);
     report(&resolved.diagnostics, &src)?;
     let checked = check(&parsed.ast, &resolved, &src);

@@ -44,6 +44,12 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
     if let Some(exit) = report(&parsed.diagnostics, &src, args) {
         return exit;
     }
+    // The module graph, before any name is resolved: a missing module makes
+    // every qualified name into it an unknown name, and reporting the cause
+    // once beats reporting the consequence nine times (§4.17).
+    if let Some(exit) = report(&heroes::modules::errors(&parsed.ast, &src), &src, args) {
+        return exit;
+    }
     let resolved = resolve(&parsed.ast, &src);
     if let Some(exit) = report(&resolved.diagnostics, &src, args) {
         return exit;

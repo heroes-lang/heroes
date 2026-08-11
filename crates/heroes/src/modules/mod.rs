@@ -1,0 +1,127 @@
+//! Discovery: which files a compilation is made of, and in what order.
+//!
+//! `use geom` names `geom.hero` beside the file that names it (spec, "Files and
+//! layout"). This module starts at the root file, finds its `use` lines, reads
+//! what they name, and repeats — producing the ordered list `Source::of` turns
+//! into one text. **It emits one whole-program `.c` from that**: separate
+//! compilation is M9, and panel 030 R1 cut it out of M8a deliberately.
+//!
+//! **Discovery re-uses the real lexer** (panel 031 R8). The alternative was a
+//! prefix scanner, licensed by a spec rule that `use` lines come first — and it
+//! was refused, because a second grammar for the same text is two grammars that
+//! can disagree, which is the failure CLAUDE.md §7 is written against. Lexing a
+//! file twice is the price, and CLAUDE.md §13 forbids the compile-time argument
+//! that would have bought the rule.
+//!
+//! **Discovery does no diagnosis.** A module that does not exist and a cycle
+//! between modules are both reported by `graph.rs`, against the *finished*
+//! `Source`, because that is the only text whose offsets a `Span` may point
+//! into. Discovery's own job is to terminate and to be deterministic; it skips
+//! what it cannot read and lets the graph pass say so, with a caret.
+//!
+//! | file | idea |
+//! |---|---|
+//! | `mod.rs` | reading the files, in load order |
+//! | `graph.rs` | what is wrong with the set once it is one text |
+
+mod graph;
+
+pub use graph::errors;
+
+use std::path::{Path, PathBuf};
+
+use crate::lexer::{lex, TokenKind};
+use crate::source::{module_of, InputFile, Source};
+
+/// The module names a file's `use` lines name, in source order.
+///
+/// Scanned from the token stream rather than from the tree: discovery runs
+/// before there is a `Source` to parse against, and a `use` line is two tokens
+/// whose shape the lexer already settles. A malformed `use` is skipped here and
+/// diagnosed by the parser later, once — this function reports nothing.
+pub fn uses_of(name: &str, text: &str) -> Vec<String> {
+    let src = Source::new(name.to_string(), text.to_string());
+    let out = lex(&src);
+    let mut found = Vec::new();
+    let mut previous_was_use = false;
+    for token in &out.tokens {
+        match token.kind {
+            TokenKind::Comment => continue,
+            TokenKind::KwUse => previous_was_use = true,
+            TokenKind::Ident if previous_was_use => {
+                found.push(src.slice(token.span).to_string());
+                previous_was_use = false;
+            }
+            _ => previous_was_use = false,
+        }
+    }
+    found
+}
+
+/// Every file of the compilation rooted at `path`, in load order, with the
+/// library last.
+///
+/// **Depth-first in source order, each module loaded once.** The order is part
+/// of the compiler's output — it decides line numbers in every diagnostic and
+/// the order declarations reach the emitter — so it is fixed by the source text
+/// and never by a filesystem listing or a hash iteration.
+///
+/// The `seen` set is what makes this terminate on a cycle; it is not the cycle
+/// *check*, which needs spans and lives in `graph.rs`.
+pub fn load(path: &str) -> Result<Source, String> {
+    let root_text = read(path)?;
+    let directory = PathBuf::from(path).parent().map(Path::to_path_buf).unwrap_or_default();
+    let root_module = module_of(path);
+
+    let mut files = vec![InputFile::user(path.to_string(), root_text)];
+    let mut seen = vec![root_module];
+    // The frontier, as (module, text) already loaded and not yet scanned. An
+    // explicit stack rather than recursion: the port has no recursion limit to
+    // reason about, and a 5–8k-line compiler's module graph is deep enough that
+    // it matters more here than it looks.
+    let mut pending = vec![0usize];
+    while let Some(index) = pending.pop() {
+        let named = uses_of(&files[index].name, &files[index].text);
+        let mut added = Vec::new();
+        for module in named {
+            if seen.contains(&module) {
+                continue;
+            }
+            let candidate = directory.join(format!("{module}.hero"));
+            let Ok(text) = std::fs::read_to_string(&candidate) else {
+                // Not an error here: `graph::errors` says so with the caret on
+                // the `use` line, which is the file the author has open.
+                seen.push(module);
+                continue;
+            };
+            seen.push(module.clone());
+            files.push(InputFile {
+                name: candidate.display().to_string(),
+                module,
+                text,
+                is_library: false,
+            });
+            added.push(files.len() - 1);
+        }
+        // `files` is in source order; `pending` is reversed so that popping it
+        // scans in source order too. Both orders are output, not bookkeeping.
+        for new in added.into_iter().rev() {
+            pending.push(new);
+        }
+    }
+
+    files.push(InputFile {
+        name: "<heroes library>".to_string(),
+        module: crate::source::LIBRARY_MODULE.to_string(),
+        text: crate::library::SOURCE.to_string(),
+        is_library: true,
+    });
+    Ok(Source::of(files))
+}
+
+fn read(path: &str) -> Result<String, String> {
+    std::fs::read_to_string(path).map_err(|e| format!("cannot read `{path}`: {e}"))
+}
+
+#[cfg(test)]
+mod tests;

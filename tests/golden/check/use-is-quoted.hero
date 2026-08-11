@@ -6,6 +6,13 @@
 # The fix is `Certain` because it deletes two characters and leaves a program
 # that parses; `use "shapes/geom"` gets the same message and NO fix, which is
 # the case `use-has-a-path.hero` pins.
+#
+# It carried a `.fixed` until M8a step 3, and then discovery arrived: applying
+# the fix leaves `use geom` naming a module with no `geom.hero` beside it, so
+# the repaired program exits 1 on a DIFFERENT and true diagnostic. `.fixed`
+# asserts that a certain fix leaves a program that checks clean, and in a flat
+# directory of single-file cases this one cannot. It gets its `.fixed` back in
+# the multi-module golden directory, where `geom.hero` can sit beside it.
 use "geom"  #~ use_wants_a_name
 
 function main()

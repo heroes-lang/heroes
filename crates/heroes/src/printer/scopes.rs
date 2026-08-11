@@ -31,7 +31,7 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
     let mut out = format!("file {}\n", src.name);
     out.push_str("symbols\n");
     for (name, decl) in &resolved.top {
-        if src.is_library(ast.decls[*decl as usize].name.start) {
+        if !src.is_root(ast.decls[*decl as usize].name.start) {
             continue;
         }
         let (line, _) = src.line_col(ast.decls[*decl as usize].name.start);
@@ -39,7 +39,7 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
     }
     out.push_str("scopes\n");
     for (index, decl) in ast.decls.iter().enumerate() {
-        if src.is_library(decl.name.start) {
+        if !src.is_root(decl.name.start) {
             continue;
         }
         let locals: Vec<&crate::resolve::Local> =

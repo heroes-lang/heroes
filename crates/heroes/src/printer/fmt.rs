@@ -42,17 +42,17 @@ pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
     let mut fmt = Fmt { out: String::new(), next_comment: 0, last_line: 0 };
     // The library's comments go with its declarations. Filtering only the decls
     // would leave its header block behind, trailing every formatted file.
-    let kept: Vec<Span> = comments.iter().copied().filter(|c| !src.is_library(c.start)).collect();
+    let kept: Vec<Span> = comments.iter().copied().filter(|c| src.is_root(c.start)).collect();
     let comments: &[Span] = &kept;
     // **The author's declarations, never the library's.** `fmt` hands a program
     // back, and with `--in-place` it writes it into their file — so a formatter
     // that walked the whole `Source` would append the library to it, once per
     // run (§1.11, `crate::library`).
     let mut items: Vec<Item> = Vec::new();
-    for used in ast.uses.iter().filter(|u| !src.is_library(u.span.start)) {
+    for used in ast.uses.iter().filter(|u| src.is_root(u.span.start)) {
         items.push(Item::Use(used));
     }
-    for decl in ast.decls.iter().filter(|d| !src.is_library(decl_start(src, d))) {
+    for decl in ast.decls.iter().filter(|d| src.is_root(decl_start(src, d))) {
         items.push(Item::Decl(decl));
     }
     // **Source order, not a canonical order.** A formatter that hoisted or
