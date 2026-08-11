@@ -1,6 +1,12 @@
-/* SPDX-License-Identifier: Apache-2.0, with the Heroes runtime exception:
- * see LICENSE-RUNTIME-EXCEPTION. A program compiled with Heroes carries
- * part of this runtime inside it and owes nothing for doing so. */
+/* SPDX-FileCopyrightText: 2026 Giuseppe Arici
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * With the Heroes runtime exception (LICENSE-RUNTIME-EXCEPTION): a program
+ * compiled with Heroes carries part of this runtime inside it and owes nothing
+ * for doing so. The exception is stated here in prose rather than after a
+ * `WITH` in the tag above, because that operator takes an exception from
+ * SPDX's own registry and this one is not in it. */
+
 /* parts/cow.c — copy-on-write: the array primitives that mutate.
  *
  * `xs[i] @ v` mutates a place, and the place may be shared. So: make it unique
