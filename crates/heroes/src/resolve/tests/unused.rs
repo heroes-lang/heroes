@@ -107,7 +107,7 @@ function reset(@counts: {str: int})
 /// ffi-pragmatist's condition: a 40-extern binding file must compile.
 #[test]
 fn an_extern_parameter_is_never_unused() {
-    assert_clean("extern function sqrt(x: f64) -> f64\n");
+    assert_clean("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n");
 }
 
 /// `_` is the escape valve, and every language that enforces an unused rule

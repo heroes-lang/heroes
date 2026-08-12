@@ -129,11 +129,11 @@ DIAG test.hero:2:7: error[expected_field_type]: expected `:` and the field's typ
 #[test]
 fn an_extern_with_a_body_is_an_error() {
     assert_eq!(
-        dump("extern function sqrt(x: f64) -> f64\n    return x\n"),
+        dump("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n        return x\n"),
         "\
 file test.hero
-  extern function sqrt(x: f64) -> f64
-DIAG test.hero:2:1: error[extern_has_body]: an `extern` declaration has no body — it names a C function, and C provides the code
+  extern \"math.h\" function sqrt(x: f64) -> f64
+DIAG test.hero:3:1: error[extern_has_body]: an `extern` declaration has no body — it names a C function, and C provides the code
 "
     );
 }

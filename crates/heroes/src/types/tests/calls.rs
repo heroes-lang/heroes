@@ -439,7 +439,8 @@ function main()
 fn an_extern_is_called_like_any_other_function() {
     assert_clean(
         "\
-extern function sqrt(x: f64) -> f64
+extern \"math.h\"
+    function sqrt(x: f64) -> f64
 
 function hypotenuse(a: f64, b: f64) -> f64
     return sqrt(a * a + b * b)
@@ -448,13 +449,14 @@ function hypotenuse(a: f64, b: f64) -> f64
     assert_eq!(
         diagnostics(
             "\
-extern function sqrt(x: f64) -> f64
+extern \"math.h\"
+    function sqrt(x: f64) -> f64
 
 function f(n: int) -> f64
     return sqrt(n)
 "
         ),
-        "test.hero:4:17: error[type_mismatch]: expected `f64`, found `int`\n"
+        "test.hero:5:17: error[type_mismatch]: expected `f64`, found `int`\n"
     );
 }
 

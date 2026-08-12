@@ -62,18 +62,44 @@ pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
     // can afford to; it has a comment model this one does not.
     items.sort_by_key(|item| item.start(src));
     let mut previous: Option<&Item> = None;
+    // The `extern` group, rebuilt. The parser flattened it (§4.19, panel 036),
+    // so the canonical form is **a run of consecutive members sharing a head
+    // line** — which is what the author wrote, and the only rule that survives
+    // `fmt(fmt(x)) == fmt(x)`: printing one head per member would round-trip a
+    // two-signature group into two groups, and re-grouping non-adjacent members
+    // would move declarations past each other.
+    let mut open_group: Option<(&str, Option<&str>)> = None;
     for item in &items {
         let line = src.line_of(item.start(src));
+        let group = match item {
+            Item::Decl(decl) => extern_group(src, decl),
+            Item::Use(_) => None,
+        };
+        let continues = group.is_some() && group == open_group;
+        open_group = group;
+        // A group's first member is printed **under a head line the member's own
+        // span does not contain**, so the line every comment and blank-line rule
+        // keys on is the head's, not the signature's. Without this the §4.1 rule
+        // ("a blank line makes a comment a remark rather than documentation")
+        // fired on a gap that only exists because the head is in between, and
+        // `fmt` inserted a blank line the author had not written.
+        let line = match item {
+            Item::Decl(decl) if !continues => {
+                extern_header_span(decl).map_or(line, |span| src.line_of(span.start))
+            }
+            _ => line,
+        };
         // One blank line between top-level declarations — but not between two
         // `use` lines, which are a block the way a run of fields is.
         let after_use = matches!(previous, Some(Item::Use(_)));
         if let Some(before) = previous {
-            if !(matches!(before, Item::Use(_)) && matches!(item, Item::Use(_))) {
+            let run = (matches!(before, Item::Use(_)) && matches!(item, Item::Use(_))) || continues;
+            if !run {
                 fmt.blank_line();
             }
         }
         previous = Some(item);
-        fmt.comments_before(src, comments, line, 0);
+        fmt.comments_before(src, comments, line, if continues { 4 } else { 0 });
         match item {
             Item::Use(used) => {
                 // §4.1 again, and it is the file header that needs it: a blank
@@ -94,10 +120,10 @@ pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
                 // remarks rather than the declaration's documentation (§4.1). The
                 // rule has to hold for the first declaration too — that is where a
                 // file's header block lives.
-                if fmt.last_line > 0 && line > fmt.last_line + 1 {
+                if fmt.last_line > 0 && line > fmt.last_line + 1 && !continues {
                     fmt.blank_line();
                 }
-                fmt.declaration(ast, src, comments, decl);
+                fmt.declaration(ast, src, comments, decl, continues);
             }
         }
     }
@@ -201,7 +227,14 @@ impl Fmt {
         self.next_comment += 1;
     }
 
-    fn declaration(&mut self, ast: &Ast, src: &Source, comments: &[Span], decl: &Decl) {
+    fn declaration(
+        &mut self,
+        ast: &Ast,
+        src: &Source,
+        comments: &[Span],
+        decl: &Decl,
+        continues: bool,
+    ) {
         let name = src.slice(decl.name);
         let line = src.line_of(decl.name.start);
         match &decl.kind {
@@ -212,7 +245,17 @@ impl Fmt {
                 self.block(ast, src, comments, body, 4);
             }
             DeclKind::Function(function) => {
-                self.line(0, &signature(ast, src, name, function));
+                let indent = match function.header {
+                    Some(header) => {
+                        if !continues {
+                            self.line(0, &extern_head(src, function));
+                            self.last_line = src.line_of(header.start);
+                        }
+                        4
+                    }
+                    None => 0,
+                };
+                self.line(indent, &signature(ast, src, name, function));
                 self.last_line = line;
                 self.trailing_comment(src, comments, line);
                 if let Some(body) = &function.body {
@@ -270,11 +313,38 @@ impl Fmt {
 ///
 /// `-> ()` is never printed: a function that returns nothing writes no arrow
 /// (§4.2's `function main()`), so the canonical form has one spelling.
+/// `extern "sqlite3.h" link "sqlite3"` — the group's head line, rebuilt from any
+/// one of its members, since every member carries both spans (§4.19).
+fn extern_head(src: &Source, function: &Function) -> String {
+    let mut out = String::from("extern ");
+    if let Some(header) = function.header {
+        out.push_str(src.slice(header)); // quotes included
+    }
+    if let Some(link) = function.link {
+        out.push_str(" link ");
+        out.push_str(src.slice(link));
+    }
+    out
+}
+
+/// The header and library a declaration belongs to, as text — `None` for
+/// anything that is not an `extern`. Compared by **text, not by span**: two
+/// members of one group have different spans and the same words.
+fn extern_group<'a>(src: &'a Source, decl: &Decl) -> Option<(&'a str, Option<&'a str>)> {
+    let header = extern_header_span(decl)?;
+    let DeclKind::Function(function) = &decl.kind else { return None };
+    Some((src.slice(header), function.link.map(|span| src.slice(span))))
+}
+
+/// The head line's header string, as a span — where the group *begins*, which is
+/// earlier than any member's own span.
+fn extern_header_span(decl: &Decl) -> Option<Span> {
+    let DeclKind::Function(function) = &decl.kind else { return None };
+    function.header
+}
+
 fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
     let mut out = String::new();
-    if function.is_extern {
-        out.push_str("extern ");
-    }
     out.push_str("function ");
     out.push_str(name);
     if !function.generics.is_empty() {

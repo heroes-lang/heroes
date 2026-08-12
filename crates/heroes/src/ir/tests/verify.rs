@@ -203,7 +203,7 @@ fn a_return_of_the_wrong_type_is_caught() {
 #[test]
 fn an_extern_with_a_body_is_caught() {
     let (mut program, checked) = unverified(
-        "extern function sqrt(x: f64) -> f64\n\nfunction f() -> f64\n    return sqrt(2.0)\n",
+        "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nfunction f() -> f64\n    return sqrt(2.0)\n",
     );
     let body = program.functions[1].blocks.remove(0);
     program.functions[0].blocks.push(body);

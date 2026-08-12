@@ -15,9 +15,11 @@
 //! |---|---|
 //! | `mod.rs` | the harness, the acceptance program, and the layout policies |
 //! | `comments.rs` | §4.1's adjacency rule and blank lines as content |
+//! | `externs.rs` | the `extern` group, rebuilt from a run (§4.19, panel 036) |
 //! | `modules.rs` | `use` lines: source order, one block, comments (panel 031) |
 
 mod comments;
+mod externs;
 mod modules;
 
 use crate::source::Source;

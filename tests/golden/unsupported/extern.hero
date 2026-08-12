@@ -6,7 +6,8 @@
 # `-Weverything -pedantic`.
 # Bulk regression case.
 
-extern function labs(x: int) -> int     #~ extern
+extern "stdlib.h"
+    function labs(x: int) -> int     #~ extern
 
 function main()
     print(labs(0 - 3))

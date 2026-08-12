@@ -35,7 +35,7 @@ pub(super) fn file(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
             TokenKind::KwFunction => function_decl(cur, ast, src),
             TokenKind::KwRecord => record(cur, ast, src),
             TokenKind::KwVariant => variant(cur, ast, src),
-            TokenKind::KwExtern => extern_function(cur, ast, src),
+            TokenKind::KwExtern => extern_group(cur, ast, src),
             TokenKind::KwTest => test(cur, ast, src),
             TokenKind::KwUse => use_decl(cur, ast, src),
             _ => {
@@ -117,11 +117,22 @@ fn function_decl(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
     else {
         return;
     };
-    function_tail(cur, ast, src, keyword, doc, name, false);
+    function_tail(cur, ast, src, keyword, doc, name, Linkage::Heroes);
+}
+
+/// Where a signature's implementation comes from, and — when it comes from C —
+/// the two strings the group's head line carried (§4.19, panel 036).
+///
+/// A copy per member rather than a shared index: the group exists only in the
+/// source text, and every later pass sees N ordinary declarations.
+#[derive(Clone, Copy)]
+enum Linkage {
+    Heroes,
+    Extern { header: Span, link: Option<Span> },
 }
 
 /// Everything after a function's name: generics, the signature, and — for a
-/// non-extern — the body. Shared by `function` and `extern function`.
+/// non-extern — the body. Shared by `function` and a group's members.
 fn function_tail(
     cur: &mut Cursor,
     ast: &mut Ast,
@@ -129,8 +140,9 @@ fn function_tail(
     keyword: Span,
     doc: Vec<Span>,
     name: Span,
-    is_extern: bool,
+    linkage: Linkage,
 ) {
+    let is_extern = matches!(linkage, Linkage::Extern { .. });
     let generic_names = generics(cur, src);
     if !cur.at(TokenKind::LParen) {
         params(cur, ast, src); // reports the missing `(` with its own message
@@ -161,7 +173,11 @@ fn function_tail(
     };
     let end = match &body {
         Some(block) => block.span,
-        None => cur.span(),
+        None => cur.previous_span(),
+    };
+    let (header, link) = match linkage {
+        Linkage::Heroes => (None, None),
+        Linkage::Extern { header, link } => (Some(header), link),
     };
     let kind = DeclKind::Function(Function {
         generics: generic_names,
@@ -169,43 +185,154 @@ fn function_tail(
         result,
         body,
         is_extern,
+        header,
+        link,
     });
     ast.decls.push(Decl { name, doc, span: keyword.to(end), kind });
 }
 
-/// `extern function sqrt(x: f64) -> f64` (§4.19). Only a function can be
-/// `extern`: the implementation comes from C, and C has functions. The
-/// keyword carries the *kind* — when extern globals arrive with the FFI
-/// milestone, they will spell theirs (panel 018 watch list).
-fn extern_function(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
+/// ```text
+/// extern "sqlite3.h" link "sqlite3"
+///     function sqlite3_open(path: cstr, out: ptr) -> int
+///     function sqlite3_close(db: ptr) -> int
+/// ```
+///
+/// The head line names the header and, optionally, the library; the members are
+/// signatures with no bodies, because C provides the code (§4.19, panel 036).
+///
+/// **The header is not optional, and that is the point of the form.** §4.19's
+/// whole mechanism is the `#include` — clang checking a signature against the
+/// real declaration — so a headerless `extern` would emit a prototype that is
+/// self-consistent by construction and verified by nothing. Panel 030 measured
+/// what that costs: `void *fopen(const char *, const char *)` links by accident
+/// on arm64, silently.
+///
+/// `link` is matched as a word, not lexed as a keyword: reserving it would put
+/// it in the foreign-word registry, where §4.19's own open question already
+/// records that C headers use ordinary words as identifiers 571 times over.
+fn extern_group(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
     let keyword = cur.span();
     let doc = cur.take_docs(src, keyword);
     cur.bump(); // `extern`
-    if !cur.at(TokenKind::KwFunction) {
+    let Some(header) = extern_header(cur, src) else { return };
+    let link = extern_link(cur, src);
+    cur.skip_terminators();
+    if !cur.at(TokenKind::Indent) {
         if !cur.at_reported_error() {
-            let message = format!(
-                "only a `function` can be `extern`, found {} — `extern function sqrt(x: f64) -> f64` (§4.19)",
-                cur.found(src)
+            cur.error(
+                "expected_extern_block",
+                "an `extern` group's signatures are indented under it — `extern \"math.h\"` then `    function sqrt(x: f64) -> f64` (§4.19)"
+                    .to_string(),
+                cur.span(),
             );
-            cur.error("extern_not_function", message, cur.span());
         }
-        cur.recover_to_next_decl();
         return;
     }
-    cur.bump(); // `function`
-    if !cur.at(TokenKind::Ident) {
+    extern_members(cur, ast, src, doc, Linkage::Extern { header, link });
+}
+
+/// The head line's header string. A missing one is where the old headerless
+/// spelling lands, so the message repairs *that* program rather than describing
+/// the grammar.
+fn extern_header(cur: &mut Cursor, src: &Source) -> Option<Span> {
+    if cur.at(TokenKind::Str) {
+        return Some(cur.bump().span);
+    }
+    if !cur.at_reported_error() {
+        let message = if cur.at(TokenKind::KwFunction) {
+            "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (§4.19)".to_string()
+        } else {
+            format!(
+                "expected the header's name in quotes after `extern`, found {} — `extern \"sqlite3.h\"`",
+                cur.found(src)
+            )
+        };
+        cur.error("expected_extern_header", message, cur.span());
+    }
+    cur.recover_to_next_decl();
+    None
+}
+
+/// `link "sqlite3"` — optional, and matched by text.
+fn extern_link(cur: &mut Cursor, src: &Source) -> Option<Span> {
+    if !(cur.at(TokenKind::Ident) && src.slice(cur.span()) == "link") {
+        return None;
+    }
+    cur.bump(); // `link`
+    if !cur.at(TokenKind::Str) {
         if !cur.at_reported_error() {
             let message = format!(
-                "expected the C function's name, found {} — `extern function sqrt(x: f64) -> f64`",
+                "expected the library's name in quotes after `link`, found {} — `link \"sqlite3\"`, which is `-lsqlite3` to the linker",
                 cur.found(src)
             );
-            cur.error("expected_name", message, cur.span());
+            cur.error("expected_link_name", message, cur.span());
         }
-        cur.recover_to_next_decl();
-        return;
+        return None;
     }
-    let name = cur.bump().span;
-    function_tail(cur, ast, src, keyword, doc, name, true);
+    Some(cur.bump().span)
+}
+
+/// The indented signatures. Every one becomes its own declaration carrying the
+/// group's header and link — the flattening panel 036 made a condition.
+///
+/// Recovery here is `skip_line`, never `recover_to_next_decl`: inside a block,
+/// dropping "the rest of the declaration" would eat the members that follow, and
+/// `field_block` and `case_block` skip a line for the same reason.
+fn extern_members(
+    cur: &mut Cursor,
+    ast: &mut Ast,
+    src: &Source,
+    group_doc: Vec<Span>,
+    linkage: Linkage,
+) {
+    cur.bump(); // the Indent
+    let mut first = true;
+    loop {
+        cur.skip_terminators();
+        match cur.kind() {
+            TokenKind::Dedent => {
+                cur.bump();
+                return;
+            }
+            TokenKind::Eof => return,
+            TokenKind::KwFunction => {
+                let keyword = cur.span();
+                // The group's own doc comment documents its first signature;
+                // after that each line takes its own, exactly as a record's
+                // fields do.
+                let doc = if first { group_doc.clone() } else { cur.take_docs(src, keyword) };
+                first = false;
+                cur.bump(); // `function`
+                if !cur.at(TokenKind::Ident) {
+                    if !cur.at_reported_error() {
+                        let message = format!(
+                            "expected the C function's name, found {} — `function sqrt(x: f64) -> f64`",
+                            cur.found(src)
+                        );
+                        cur.error("expected_name", message, cur.span());
+                    }
+                    cur.skip_line();
+                    continue;
+                }
+                let name = cur.bump().span;
+                function_tail(cur, ast, src, keyword, doc, name, linkage);
+            }
+            _ => {
+                if !cur.at_reported_error() {
+                    let message = format!(
+                        "expected a `function` signature, found {} — an `extern` group holds signatures and nothing else, one per line",
+                        cur.found(src)
+                    );
+                    cur.error("expected_extern_signature", message, cur.span());
+                }
+                if cur.at(TokenKind::Indent) {
+                    cur.balanced_block();
+                } else {
+                    cur.skip_line();
+                }
+            }
+        }
+    }
 }
 
 /// An `extern` with a body is a mistake worth naming: the body would never

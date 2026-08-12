@@ -40,7 +40,8 @@ function tag(p: P) -> int
 function first<T>(items: [T]) -> T
     return items[0]
 
-extern function labs(x: int) -> int   #~ extern
+extern "stdlib.h"
+    function labs(x: int) -> int   #~ extern
 
 function main()
     p = P(x: 1)

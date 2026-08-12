@@ -4,16 +4,22 @@
 # files, sockets, databases: they arrive through `extern`, and clang checks
 # every declaration against the real header — a wrong type here is a
 # compile error, not a crash at runtime.
+#
+# A group names the header its signatures come from. That is not decoration:
+# the header is what clang checks against, and without one a declaration
+# would be verified by nothing at all.
 
-extern function sqrt(x: f64) -> f64
-
-extern function pow(base: f64, exponent: f64) -> f64
-
-extern function floor(x: f64) -> f64
+extern "math.h"
+    function sqrt(x: f64) -> f64
+    function pow(base: f64, exponent: f64) -> f64
+    function floor(x: f64) -> f64
 
 # `cstr` is a C string and `ptr` an opaque pointer. Neither is a `str`:
-# the boundary is visible in the type.
-extern function puts(s: cstr) -> int
+# the boundary is visible in the type. A second group, because this one
+# comes from a different header — and on macOS neither needs `link`, since
+# libm and libc are already there.
+extern "stdio.h"
+    function puts(s: cstr) -> int
 
 # The hypotenuse, in the language's own arithmetic plus one C call.
 #

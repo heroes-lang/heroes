@@ -102,8 +102,8 @@ function second(ys: [A]) -> int
 /// §4.19's two FFI names are types like any other.
 #[test]
 fn ptr_and_cstr_are_primitives() {
-    assert_clean("extern function puts(s: cstr) -> int\n");
-    let (out, _) = resolved("extern function malloc(n: int) -> ptr\n");
+    assert_clean("extern \"stdio.h\"\n    function puts(s: cstr) -> int\n");
+    let (out, _) = resolved("extern \"stdlib.h\"\n    function malloc(n: int) -> ptr\n");
     assert_eq!(out.type_at(TypeId(1)), TypeRef::Prim(Prim::Ptr));
 }
 

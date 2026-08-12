@@ -107,8 +107,8 @@ file test.hero
 #[test]
 fn extern_has_a_signature_and_no_body() {
     assert_eq!(
-        dump("extern function sqrt(x: f64) -> f64\n"),
-        "file test.hero\n  extern function sqrt(x: f64) -> f64\n"
+        dump("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n"),
+        "file test.hero\n  extern \"math.h\" function sqrt(x: f64) -> f64\n"
     );
 }
 

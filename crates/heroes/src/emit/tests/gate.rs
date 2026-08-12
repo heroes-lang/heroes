@@ -117,7 +117,7 @@ fn both_halves_of_a_shared_operation_now_emit_to_their_own_entry_point() {
 /// is here waiting for it. Queued.
 #[test]
 fn an_extern_is_still_refused_after_str_landed() {
-    let (code, _) = refusal("extern function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    let (code, _) = refusal("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
     assert_eq!(code, "extern");
 }
 
@@ -367,7 +367,7 @@ fn generics_are_no_longer_refused() {
 /// self-consistent by construction and clang would verify nothing.
 #[test]
 fn an_extern_is_refused_because_nothing_would_check_its_signature() {
-    let (code, message) = refusal("extern function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    let (code, message) = refusal("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
     assert_eq!(code, "extern");
     assert_eq!(message, "an `extern` function is not emitted yet");
 }
@@ -440,7 +440,7 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
         "    x: int\n",
         "    y: int\n",
         "\n",
-        "extern function labs(x: int) -> int\n",
+        "extern \"stdlib.h\"\n    function labs(x: int) -> int\n",
         "\n",
         "function main()\n",
         "    ps = [Point(x: 1, y: 2)]\n",

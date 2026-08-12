@@ -26,6 +26,7 @@ mod acceptance;
 mod bodies;
 mod docs;
 mod entities;
+mod externs;
 mod modules;
 mod recovery;
 mod types;

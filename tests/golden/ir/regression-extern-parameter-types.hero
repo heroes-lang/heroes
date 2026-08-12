@@ -7,9 +7,11 @@
 # It matters past the dump. M5a writes a C prototype from exactly these types, and
 # clang type-checks the call against the real header (§4.19) — a prototype built
 # from the error type would either not compile or, worse, compile wrong.
-extern function sqrt(x: f64) -> f64
+extern "math.h"
+    function sqrt(x: f64) -> f64
 
-extern function abs(n: int) -> int
+extern "stdlib.h"
+    function abs(n: int) -> int
 
 function hypotenuse(a: f64, b: f64) -> f64
     return sqrt(a * a + b * b)

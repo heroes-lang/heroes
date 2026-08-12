@@ -92,10 +92,21 @@ pub fn render_signature(ast: &Ast, src: &Source, decl: u32) -> String {
     }
 }
 
+/// **The group is not in the tree, so the dump does not print one.** The parser
+/// flattens `extern "math.h"` into one declaration per signature, each carrying
+/// the header (§4.19, panel 036) — and a dump that re-grouped them would show a
+/// structure no later pass can see. `heroes fmt` re-groups, because it hands the
+/// author their own program back; this prints what the tree holds.
 fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
     let mut out = String::new();
-    if function.is_extern {
+    if let Some(header) = function.header {
         out.push_str("extern ");
+        out.push_str(src.slice(header));
+        if let Some(link) = function.link {
+            out.push_str(" link ");
+            out.push_str(src.slice(link));
+        }
+        out.push(' ');
     }
     out.push_str("function ");
     out.push_str(name);

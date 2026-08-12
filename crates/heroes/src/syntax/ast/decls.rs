@@ -45,6 +45,22 @@ pub struct Function {
     /// `None` for an `extern`: the implementation comes from C (§4.19).
     pub body: Option<Block>,
     pub is_extern: bool,
+    /// The header this signature was declared under, quotes included, and the
+    /// library to link — both from the group's head line, **copied onto every
+    /// member** (§4.19, panel 036).
+    ///
+    /// The group is flattened here and nowhere else: one `Decl` per `extern
+    /// function`, so a declaration's index stays function identity for `Ref::Top`,
+    /// `ir::Function::decl`, `checked.result_type` and the mangler's name table.
+    /// A `DeclKind::ExternGroup` holding N functions would have broken that in
+    /// five modules, which is the whole reason the panel's condition was
+    /// "flatten in the parser, or it is core".
+    ///
+    /// `None` on both for an ordinary `function`, and on `header` never for an
+    /// `extern`: an `extern` without a header does not parse, because a signature
+    /// with no `#include` behind it is the accidental-link hazard §4.19 names.
+    pub header: Option<Span>,
+    pub link: Option<Span>,
 }
 
 pub struct Param {
