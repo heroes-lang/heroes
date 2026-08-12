@@ -66,7 +66,7 @@ is a full panel.
      ratification pending`, records what a veto would compel, and appends an
      item to `docs/debrief/QUEUE.md`. Work proceeds on the provisional
      default; the author's verdict is appended to this file when given (in
-     `/debrief` or whenever), with follow-up work if they overturn it.
+     `/unblock` or whenever), with follow-up work if they overturn it.
    - every judge's `prediction` is copied into a "Predictions to score"
      section with the milestone at which each becomes checkable. When the
      harness next runs, score them and append the results — judges accrue

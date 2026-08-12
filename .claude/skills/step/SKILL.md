@@ -1,12 +1,12 @@
 ---
 name: step
-description: Run one development step of the Heroes compiler autonomously — implement, test, queue comprehension items for /debrief, commit. Chains steps without stopping; use for every implementation step, including in unattended loops.
+description: Run one development step of the Heroes compiler autonomously — implement, test, queue what the author owes nobody (/learn) and what the compiler is waiting on (/unblock), commit. Chains steps without stopping; use for every implementation step, including in unattended loops.
 ---
 
 # /step [<milestone> <step>] — the development protocol
 
 The assistant implements; the author's learning is real but **post-hoc**: it
-happens in `/debrief`, on the author's clock, fed by the queue this skill
+happens in `/learn`, on the author's clock, fed by the queue this skill
 writes. Never stop mid-step to ask the author anything. (Learn-first mode —
 closed questions before implementing — only when the author explicitly asks
 for it before a step; no other ceremony attaches to it.)
@@ -27,7 +27,7 @@ the ROADMAP.
 ## 3. On failure
 Diagnose and fix autonomously. Record symptom → cause → fix in the milestone
 journal, and queue the **raw symptom only** (golden diff, clang error, panic)
-plus the fixing commit's hash — so the author can hypothesise in debrief
+plus the fixing commit's hash — so the author can hypothesise in `/learn`
 before reading the fix.
 
 ## 4. Queue comprehension — per new concept, not per step
@@ -48,7 +48,7 @@ Milestone close — the checklist (this is its only copy):
   and why**;
 - one story beat line in `docs/book/beats.md`;
 - a DESIGN-LOG line per decision made;
-- queue the milestone's debrief offers: walkthrough, golden ratification,
+- queue the milestone's `/learn` offers: walkthrough, golden ratification,
   mutation drill, exit-quiz (all optional, author's call);
 - append the closing block — the status paragraph and the milestone's chain entry —
   to `docs/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and

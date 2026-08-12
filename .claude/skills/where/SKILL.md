@@ -77,7 +77,7 @@ ONE concept (3–5 sentences max), tied to the current stage, with its analogy.
 End with a question the author can answer mentally to check they got it.
 If the concept has a `docs/glossary/` entry, link it; if the pillola resolves
 a fresh gap, distill it into a new glossary entry afterwards (a gap resolved
-is an artifact earned — see `/debrief`).
+is an artifact earned — see `/learn`).
 
 ## Canonical analogies (use these, always the same)
 

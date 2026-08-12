@@ -5,7 +5,8 @@ mistake is a compile error**. Bootstrap compiler in Rust, backend emits C11
 compiled by clang, self-hosting is the v1 finish line (fixpoint on generated
 C). `design.md` is the source of truth for the language; the milestone chain
 lives at `docs/ROADMAP.md`; the process lives in the skills (`/step`,
-`/debrief`, `/panel`, `/where`) — each rule is written in exactly one place,
+`/unblock`, `/learn`, `/panel`, `/where`) — each rule is written in exactly one
+place,
 everything else cites it. One person is learning compilers through this
 project; comprehension is the objective, but it runs **on the author's
 clock, never as a gate** (rule 3).
@@ -27,8 +28,14 @@ Neither → it waits, regardless of elegance.
 The assistant implements autonomously and never stops mid-step to ask.
 Everything that once gated progress (predictions, spot-checks, golden
 ratification, failure diagnosis, drills) becomes an entry in
-`docs/debrief/QUEUE.md`, processed in `/debrief` sessions when the author
-chooses. Learn-first (questions before implementing) only when the author
+`docs/debrief/QUEUE.md` — **read by two skills with opposite clocks** (author
+instruction 2026-08-12). `/unblock` takes the decisions the compiler is waiting
+on: fast, no teaching, every answer applied in the same session, and every item
+verified against the repository before it is put to the author. `/learn` takes
+the comprehension, **only when the author asks for it** — never convened by the
+assistant, never at a milestone close — and each question arrives with the code
+on screen and a preamble long enough to make it answerable. The queue's path
+keeps its name because every commit subject cites it. Learn-first (questions before implementing) only when the author
 explicitly asks before a step. The executable protocol lives in `/step` —
 its only home. Lessons stay impersonal: shapes and rules, never scores.
 
@@ -109,8 +116,10 @@ without opening another file (design.md §4.17).
 `UPDATE_GOLDEN=1` never turns a red test green without the diff being read and
 quoted in the commit body. It is **forbidden in `tests/golden/check/`** and in
 `tests/golden/ir/`. The assistant writes all cases; each milestone's 5
-adversarial cases stay marked `# UNVERIFIED — pending debrief` until ratified in
-`/debrief`; bulk regression cases are labelled as such.
+adversarial cases stay marked `# UNVERIFIED — pending debrief` until the author
+reads them in `/learn`; bulk regression cases are labelled as such. The marker
+keeps its wording — it is in 39 files and CLAUDE.md §14 does not rewrite a
+record.
 
 **Every diagnostic is annotated in the source that provokes it** — `#~ <code>`
 for this line, `#~v <code>` for the next — *in addition to* the `.expected`

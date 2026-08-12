@@ -1,9 +1,27 @@
-# Debrief queue — comprehension owed, never blocking
+# The queue — two kinds of item, two skills, opposite clocks
 
-Development appends; `/debrief` sessions tick off. Checked items stay (the
+Development appends; `/unblock` and `/learn` tick off. Checked items stay (the
 queue is also the record). Format:
 
 `- [ ] <origin> | <question / task> | <where to look> | <why it matters>`
+
+**Which skill reads an item is decided by what it asks** (author instruction
+2026-08-12, which split one skill in two):
+
+- it asks **what should be true** — `Decide:`, `Undecided:`, an open question, a
+  panel resolution awaiting a verdict → **`/unblock`**. The compiler goes on
+  behaving some way while it waits, so these have a clock. Every one is verified
+  against the repository before it is put to the author, because entries outlive
+  their causes, and every answer is applied in the same session.
+- it asks **what is true** — how a pass works, why a representation was chosen,
+  what a failure's cause was, what a golden guards against → **`/learn`**, and
+  **only when the author asks for it**. Never convened by the assistant, never at
+  a milestone close. Each question arrives with the code on screen and a preamble
+  long enough to make it answerable: a note written by someone who had the file
+  open is a riddle when read out loud.
+
+The file keeps its path. Every commit subject in this repository cites
+`docs/debrief/QUEUE.md`, and CLAUDE.md §14 does not rewrite a record.
 
 ## Open
 
