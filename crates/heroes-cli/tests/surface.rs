@@ -746,3 +746,21 @@ fn exit_forwards_the_programs_own_status() {
     assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stderr));
     assert_eq!(String::from_utf8_lossy(&out.stdout), "before\n");
 }
+
+/// **The ladder's fourth rung** (author instruction, 2026-08-12): a variadic and
+/// an enum return, which SQLite has neither of.
+///
+/// It asserts a prefix rather than the whole line, because `curl_version()`
+/// prints this machine's libcurl and that is not the compiler's business. What
+/// it pins is that the variadic call reached the library and the library
+/// answered — `curl_easy_strerror` maps a `CURLcode` the program never provoked
+/// to a message no table here contains.
+#[test]
+fn libcurl_takes_a_variadic_and_returns_an_enum() {
+    let out = heroes(&["run", "examples/curl/main.hero"]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.starts_with("libcurl: libcurl/"), "{stdout}");
+    assert!(stdout.contains("the url was accepted"), "{stdout}");
+    assert!(stdout.contains("code 1 means: Unsupported protocol"), "{stdout}");
+}

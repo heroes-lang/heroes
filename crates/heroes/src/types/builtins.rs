@@ -139,9 +139,17 @@ pub(super) fn call(
         // §4.20's inventory calls this one `.str()`; panel 017 renames it
         // `to_str`, so the three conversions share one scheme and a model can
         // derive the third from the two the spec already lists.
+        // `cstr` is here and not in a conversion of its own: §4.19's boundary has
+        // two directions, `.cstr()` out and this one back, and giving the return
+        // path a new name would have cost spec tokens for a conversion the three
+        // that exist already teach the shape of.
         ("to_str", [one]) => match checker.out.types.get(*one) {
-            Ty::Int | Ty::F64 | Ty::Bool | Ty::Str => checker.out.types.str(),
-            _ => return arg_error(checker, ast, src, "to_str", "`int`, `f64`, `bool` or `str`", *one, span),
+            Ty::Int | Ty::F64 | Ty::Bool | Ty::Str | Ty::Cstr => checker.out.types.str(),
+            _ => {
+                return arg_error(
+                    checker, ast, src, "to_str", "`int`, `f64`, `bool`, `str` or `cstr`", *one, span,
+                )
+            }
         },
         ("sort", [one]) => match checker.out.types.get(*one) {
             Ty::Array(_) => *one,

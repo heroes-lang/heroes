@@ -93,12 +93,21 @@ pub(super) fn entry(
         "join" => "hero_str_join",
         "to_int" => "hero_f64_to_int",
         "to_f64" => "hero_int_to_f64",
-        // `to_str` is one Heroes name over four C entry points, chosen by the
+        // `to_str` is one Heroes name over five C entry points, chosen by the
         // argument's type — the same shape as `print`, for the same reason.
+        //
+        // **`cstr` is the fifth, and it is the boundary's return path** (§4.19,
+        // M-ffi-ladder). `.cstr()` lends a `str` to C; this copies one back, through
+        // the `hero_str_from_*` primitives §4.20 says exist for exactly this —
+        // "without them no `extern function` may return `str` and §4.19's ladder is
+        // unwritable at step 3, read a result, because every C library returns
+        // strings as borrowed pointers". Predicted by panel 036's ffi-pragmatist
+        // before the ladder reached a library that returns one.
         "to_str" => match first {
             Some(Ty::F64) => "hero_f64_to_str",
             Some(Ty::Bool) => "hero_bool_to_str",
             Some(Ty::Str) => "hero_str_identity",
+            Some(Ty::Cstr) => "hero_str_from_cstr",
             _ => "hero_int_to_str",
         },
         _ => "hero_unreachable",

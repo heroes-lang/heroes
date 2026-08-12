@@ -1,0 +1,60 @@
+## The ladder's fourth rung: libcurl
+#
+# Author instruction, 2026-08-12, and it earned its place in the first minute.
+# SQLite is pure C with plain `int` returns; libcurl is where the boundary meets
+# the two things §4.19 had only argued about.
+#
+# **A variadic.** `curl_easy_setopt(CURL *, CURLoption, ...)` takes its value
+# through `...`, which is where Apple ARM64 passes arguments on the stack rather
+# than in registers (panel 013 named it; this is the first Heroes program to
+# depend on it). Heroes has no user variadics, and it does not need any: the
+# declaration names the arguments this call site passes, and clang checks them
+# against the real prototype.
+#
+# **An enum return.** `CURLcode` is an `enum`, and `_Generic` selects on an
+# enum's own type rather than on `int` — so the return-type assertion this
+# compiler writes refused *every enum-returning C function in existence* until
+# this program was compiled. Invisible against SQLite, which returns plain `int`.
+# The repair is in `emit/decls.rs`: unary `+` applies the integer promotions, and
+# the accepted set is every signed integer plus every unsigned one narrower than
+# 64 bits — which is exactly what fits in Heroes' `int` without losing a value,
+# and still leaves `size_t` firing.
+#
+# No request is made. A test that reaches the network is a test that fails on a
+# train, and everything interesting here is settled before the first byte.
+
+extern "curl/curl.h" link "curl"
+    function curl_version() -> cstr
+    function curl_easy_init() -> ptr
+    function curl_easy_setopt(handle: ptr, option: int, value: cstr) -> int
+    function curl_easy_strerror(code: int) -> cstr
+    function curl_easy_cleanup(handle: ptr)
+
+# From `curl.h`: `CURLOPT_URL` is `CURLOPTTYPE_STRINGPOINT + 2`, and
+# `CURLOPTTYPE_STRINGPOINT` is 10000. A `constant` rather than a literal at the
+# call site (panel 034 R4): a typo is `error[unknown_name]` here, locally, with
+# the name in the message.
+constant CURLOPT_URL: int
+    10002
+
+constant CURLE_OK: int
+    0
+
+constant CURLE_UNSUPPORTED_PROTOCOL: int
+    1
+
+function main()
+    print("libcurl: ", to_str(curl_version()))
+    handle = curl_easy_init()
+    # The variadic call. `CURLOPT_URL` takes a string, and that is a fact about
+    # this option rather than about the function — which is exactly what a
+    # variadic means and why the boundary cannot check it for you.
+    rc = curl_easy_setopt(handle, CURLOPT_URL, "https://example.invalid/".cstr())
+    if rc == CURLE_OK
+        print("the url was accepted")
+    else
+        print("setopt refused it: ", to_str(curl_easy_strerror(rc)))
+    # A code the library knows and this program never provokes: the point is
+    # that the message comes from libcurl, not from a table written here.
+    print("code 1 means: ", to_str(curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL)))
+    curl_easy_cleanup(handle)

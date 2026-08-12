@@ -185,7 +185,21 @@ fn extern_assertions(
     }
     // Defined here rather than in `heroes_runtime.h` so the generated unit stays
     // self-contained and the runtime's ABI stamp does not move for a macro.
-    w.line("#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, default:0)");
+    // **`+(c)` and the unsigned narrows, both found by binding libcurl** (author
+    // instruction, ladder rung 4). `CURLcode` is an `enum`, and `_Generic` selects
+    // on the enum's own type rather than on `int`, so the first version of this
+    // macro refused **every enum-returning C function in existence** — which is
+    // most of libcurl, OpenSSL and raylib, and was invisible against SQLite
+    // because SQLite returns plain `int`. Unary `+` applies the integer
+    // promotions, which is what turns an enum into the type it is compatible
+    // with.
+    //
+    // That promotion is `unsigned int` here, not `int`, because `CURLcode`'s
+    // values are all non-negative — so the accepted set is *every signed integer,
+    // plus every unsigned integer narrower than 64 bits*. That is exactly what
+    // fits in Heroes' `int64_t` without losing a value, and it leaves `size_t`
+    // (unsigned 64-bit) firing, which is panel 030 R3's third row.
+    w.line("#define HERO_RET_INT(c) _Generic(+(c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)");
     w.line("#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)");
     w.line("#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)");
     w.line("#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)");
