@@ -45,9 +45,11 @@ mod builtins;
 mod ctype;
 mod descriptors;
 mod decls;
+mod externs;
 pub mod ffi;
 mod gate;
 mod inst;
+mod main;
 mod mangle;
 mod ops;
 mod perfn;
@@ -222,10 +224,10 @@ pub fn emit_for(
     match target {
         Target::Program => {
             if let Some(index) = entry_point(program) {
-                decls::shim(&mut w, &program.functions[index], src);
+                main::shim(&mut w, &program.functions[index], src);
             }
         }
-        Target::Tests => decls::test_shim(&mut w, program, src),
+        Target::Tests => main::test_shim(&mut w, program, src),
     }
-    Emitted { c: w.finish(), diagnostics: Vec::new(), link: decls::libraries(program, ast, src) }
+    Emitted { c: w.finish(), diagnostics: Vec::new(), link: externs::libraries(program, ast, src) }
 }

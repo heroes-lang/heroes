@@ -26,10 +26,11 @@
 use crate::ir::{is_refcounted, Function, Program, SlotId, SlotKind};
 use crate::source::Source;
 use crate::syntax::Ast;
-use crate::types::{Checked, Ty, TyId};
+use crate::types::Checked;
 
 use super::Target;
 use super::ctype::{c_result, c_type, is_unit, Names};
+use super::externs;
 use super::mangle;
 use super::writer::Writer;
 use super::{inst, term};
@@ -65,7 +66,7 @@ pub(super) fn prelude(
     // diagnostics under `-Weverything`, and no `_Static_assert` can be written
     // against a header this compiler does not own. The author's own header is
     // found because `compile.rs` passes `-I<directory of the .hero source>`.
-    for header in headers(program, ast, src) {
+    for header in externs::headers(program, ast, src) {
         w.line(&format!("#include <{header}>"));
     }
     w.line("");
@@ -73,7 +74,7 @@ pub(super) fn prelude(
         "_Static_assert(HERO_RUNTIME_ABI == 10, \"heroes_runtime.h is from another compiler\");",
     );
     w.line("");
-    extern_assertions(w, program, ast, checked, src);
+    externs::extern_assertions(w, program, ast, checked, src);
     // Every decoded string literal **an emitted function actually reads**, as a
     // static block clang lays out: refcount −1 means "never freed", so a literal
     // allocates nothing and decrefing one is a no-op. The escapes were applied once,
@@ -101,217 +102,6 @@ pub(super) fn prelude(
     }
 }
 
-/// Every header a group named, without its quotes, deduplicated and in
-/// declaration order — which is deterministic, so the double-emit test holds.
-fn headers(program: &Program, ast: &Ast, src: &Source) -> Vec<String> {
-    // Two seeds, both unconditional. `math.h` for `HUGE_VAL`, which is how an
-    // infinite `f64` literal is spelled; `hero_os.h` because the generated `main`
-    // calls `hero_args_set` whether or not the program ever asks for `args()`.
-    // Seeded here rather than printed above so that a program which also *binds*
-    // one of them does not include it twice.
-    let mut seen: Vec<String> = vec!["math.h".to_string(), "hero_os.h".to_string()];
-    for function in &program.functions {
-        let Some(header) = extern_header(ast, src, function) else { continue };
-        if !seen.contains(&header) {
-            seen.push(header);
-        }
-    }
-    seen
-}
-
-/// Every library a group named, deduplicated and in declaration order. Reached
-/// from `Emitted`, so the one walk that knows about `link` lives beside the one
-/// that knows about `header`.
-pub(super) fn libraries(program: &Program, ast: &Ast, src: &Source) -> Vec<String> {
-    let mut seen: Vec<String> = Vec::new();
-    for function in &program.functions {
-        let (_, link) = extern_spans(ast, function);
-        let Some(link) = link else { continue };
-        let library = src.slice(link).trim_matches('"').to_string();
-        if !seen.contains(&library) {
-            seen.push(library);
-        }
-    }
-    seen
-}
-
-/// The header a signature was declared under, quotes stripped.
-fn extern_header(ast: &Ast, src: &Source, function: &Function) -> Option<String> {
-    let (header, _) = extern_spans(ast, function);
-    Some(src.slice(header?).trim_matches('"').to_string())
-}
-
-/// The header and library spans a declaration carries, whatever kind it is
-/// (§4.19, panel 038).
-///
-/// **The walks below ask this, never `FnKind`.** An `extern function` lowers to
-/// `FnKind::Extern` and an `extern constant` to `FnKind::Constant`, so a filter
-/// written as `kind == Extern` encodes a premise — *"only a function comes from a
-/// header"* — that this milestone falsifies, and its failure is silent: the
-/// `#include` disappears and clang blames the compiler for a name it was never
-/// given (CLAUDE.md §11). Asking the declaration is a fact about the value.
-fn extern_spans(ast: &Ast, function: &Function) -> (Option<crate::source::Span>, Option<crate::source::Span>) {
-    match &ast.decls[function.decl as usize].kind {
-        crate::syntax::DeclKind::Function(declared) => (declared.header, declared.link),
-        crate::syntax::DeclKind::Constant { header, link, .. } => (*header, *link),
-        _ => (None, None),
-    }
-}
-
-/// **The half of §4.19's guarantee that clang does not give for free.**
-///
-/// The emitter does not re-declare an `extern`'s signature — re-declaring is
-/// `conflicting types` five times out of five on SQLite, because Heroes' `int` is
-/// `int64_t` and every C entry point returns `int`. So the header declares the
-/// function and clang checks the *call*: the arguments, and nothing else. Panel
-/// 036 measured what that leaves open — four wrong bindings out of six compile
-/// clean, and `extern function sqrt(x: f64) -> int` exits 0 printing `1`.
-///
-/// One `_Static_assert` per `extern` closes it. The controlling expression of a
-/// `_Generic` is **not evaluated** (C11 6.5.1.1p3) but is type-checked, so a call
-/// with zero arguments of the declared types costs nothing at runtime and asks
-/// clang what the real header returns. Eleven of eleven correct ladder bindings
-/// pass; `strlen` declared `-> int` fires, because `size_t` is unsigned and the
-/// widening set admits only signed C integers.
-fn extern_assertions(
-    w: &mut Writer,
-    program: &Program,
-    ast: &Ast,
-    checked: &Checked,
-    src: &Source,
-) {
-    // Everything a header owns, whichever kind it lowered to — a signature is
-    // `FnKind::Extern`, a constant is `FnKind::Constant` with no blocks, and the
-    // question both answer is *does a header declare this* (see `extern_spans`).
-    let externs: Vec<&Function> =
-        program.functions.iter().filter(|f| extern_spans(ast, f).0.is_some()).collect();
-    if externs.is_empty() {
-        return;
-    }
-    // Defined here rather than in `heroes_runtime.h` so the generated unit stays
-    // self-contained and the runtime's ABI stamp does not move for a macro.
-    // **`+(c)` and the unsigned narrows, both found by binding libcurl** (author
-    // instruction, ladder rung 4). `CURLcode` is an `enum`, and `_Generic` selects
-    // on the enum's own type rather than on `int`, so the first version of this
-    // macro refused **every enum-returning C function in existence** — which is
-    // most of libcurl, OpenSSL and raylib, and was invisible against SQLite
-    // because SQLite returns plain `int`. Unary `+` applies the integer
-    // promotions, which is what turns an enum into the type it is compatible
-    // with.
-    //
-    // That promotion is `unsigned int` here, not `int`, because `CURLcode`'s
-    // values are all non-negative — so the accepted set is *every signed integer,
-    // plus every unsigned integer narrower than 64 bits*. That is exactly what
-    // fits in Heroes' `int64_t` without losing a value, and it leaves `size_t`
-    // (unsigned 64-bit) firing, which is panel 030 R3's third row.
-    w.line("#define HERO_RET_INT(c) _Generic(+(c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)");
-    w.line("#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)");
-    w.line("#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)");
-    w.line("#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)");
-    w.line("#define HERO_RET_UNIT(c) _Generic((c), void:1, default:0)");
-    // A pointer return is checked by its **negative** set: `_Generic` cannot say
-    // "any pointer", and `default:1` alone would check nothing. Listing what a
-    // pointer is not still catches the case that matters — a function returning an
-    // integer or a float declared as `ptr`.
-    w.line("#define HERO_RET_PTR(c) _Generic((c), signed char:0, short:0, int:0, long:0, long long:0, unsigned char:0, unsigned short:0, unsigned int:0, unsigned long:0, unsigned long long:0, float:0, double:0, long double:0, HeroStr:0, default:1)");
-    for function in externs {
-        let name = src.slice(ast.decls[function.decl as usize].name);
-        let Some(check) = return_check(checked, function.result) else { continue };
-        let declared_type = crate::types::render_ty(&checked.types, ast, src, function.result, &[]);
-        // **A constant is a token, not a call.** The same `_Generic` asks the same
-        // question of it — *what type does the header give this?* — with no
-        // argument list to build, and one more assertion nothing else needs: that
-        // the header gives it a **value** at all. `stdout` and `errno` are
-        // objects, and a zero-argument accessor over one would return a different
-        // value on two calls, which is the mutable global §4.2 forbids arriving
-        // through the back door.
-        if is_extern_constant(ast, function) {
-            w.line(&format!(
-                "_Static_assert({check}({name}), \"{}{name} {declared_type}\");",
-                super::ffi::ASSERTION
-            ));
-            // `__builtin_constant_p` is itself a constant expression even when its
-            // argument is not, so the failure stays a `_Static_assert` carrying
-            // *our* message. A `static const T probe = X;` would fail with clang's
-            // own words instead, and mapping those back to a `.hero` line would
-            // widen CLAUDE.md §7's named exception from a message to a generated
-            // line (panel 038, measured).
-            w.line(&format!(
-                "_Static_assert(__builtin_constant_p({name}), \"{}{name}\");",
-                super::ffi::CONSTANCY
-            ));
-            continue;
-        }
-        let zeros: Vec<String> = function
-            .params
-            .iter()
-            .map(|slot| {
-                let declared = &function.slots[slot.0 as usize];
-                // **An `@` parameter is a pointer parameter** (§4.8, CLAUDE.md §7),
-                // so its zero is a null of that pointer type. Writing the value's
-                // own zero instead was `-Wint-conversion` — a warning rather than
-                // an error under C11, which is exactly how it survived a green
-                // test run until the goldens were read.
-                let mutable = matches!(declared.kind, SlotKind::Param { mutable: true });
-                zero_of(checked, declared.ty, mutable)
-            })
-            .collect();
-        // The message is a **contract with `ffi::explain`**, not prose: it carries
-        // the marker, the C name and the declared Heroes type, so a failure can be
-        // mapped back to the author's line instead of printing generated C.
-        w.line(&format!(
-            "_Static_assert({check}({name}({})), \"{}{name} {declared_type}\");",
-            zeros.join(", "),
-            super::ffi::ASSERTION
-        ));
-    }
-    w.line("");
-}
-
-/// A `constant` whose value a header holds (§4.19, panel 038) — as opposed to an
-/// `extern function`, which is called, or an ordinary `constant`, which has a body.
-pub(super) fn is_extern_constant(ast: &Ast, function: &Function) -> bool {
-    matches!(
-        &ast.decls[function.decl as usize].kind,
-        crate::syntax::DeclKind::Constant { body: None, header: Some(_), .. }
-    )
-}
-
-/// Which assertion a declared result type asks for.
-fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
-    match checked.types.get(ty) {
-        Ty::Int => Some("HERO_RET_INT"),
-        Ty::F64 => Some("HERO_RET_F64"),
-        Ty::Bool => Some("HERO_RET_BOOL"),
-        Ty::Str => Some("HERO_RET_STR"),
-        Ty::Unit => Some("HERO_RET_UNIT"),
-        Ty::Ptr | Ty::Cstr => Some("HERO_RET_PTR"),
-        // No other type crosses the boundary: `ffi_type` refuses them in the
-        // checker, so this arm is where a new FFI type would have to declare
-        // what its assertion is rather than silently getting none.
-        _ => None,
-    }
-}
-
-/// A zero of the declared parameter type, cast so the call type-checks. It is
-/// never evaluated — it exists only to make the call expression well-formed.
-fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
-    let value = match checked.types.get(ty) {
-        Ty::Int => "int64_t",
-        Ty::F64 => "double",
-        Ty::Bool => "bool",
-        Ty::Str => "HeroStr",
-        Ty::Cstr => "const char *",
-        _ => "void *",
-    };
-    if mutable {
-        return format!("({value} *)0");
-    }
-    match checked.types.get(ty) {
-        Ty::Str => "(HeroStr){0}".to_string(),
-        _ => format!("({value})0"),
-    }
-}
 
 /// Which string literals an emitted function reads. A walk, because the answer must
 /// come from the instructions rather than from a count kept in step with them.
@@ -380,47 +170,6 @@ pub(super) fn emitted(function: &Function, target: Target) -> bool {
     }
 }
 
-/// `int main(int argc, char **argv)` for a test build: run the test whose index
-/// is `argv[1]`, and nothing else.
-///
-/// **One process per test**, which is what the argument is for. An `assert` is a
-/// panic (§4.18 and `runtime/parts/failure.c`), so a runner that called them in
-/// sequence would stop at the first failure and hide every test after it — the
-/// one thing a test runner must not do. `heroes test` therefore compiles once and
-/// executes the binary once per test.
-///
-/// No test title reaches the C: the index is the whole protocol, and the titles
-/// stay in the compiler where they are already exact.
-pub(super) fn test_shim(w: &mut Writer, program: &Program, src: &Source) {
-    let tests: Vec<&Function> = program
-        .functions
-        .iter()
-        .filter(|f| f.kind == crate::ir::FnKind::Test && !src.is_library(f.span.start))
-        .collect();
-    w.blank();
-    w.at_generated();
-    w.line("int main(int argc, char **argv) {");
-    w.line("    int64_t which = hero_test_index(argc, argv);");
-    w.line("    switch (which) {");
-    // The index is the test's POSITION, and the C name is its DECLARATION index:
-    // the first is the protocol `heroes test` counts in, the second is what makes
-    // the name unique in a file that also has functions. Keeping them apart here
-    // is what stops the two from drifting — the switch is the one place they meet.
-    for (position, function) in tests.iter().enumerate() {
-        w.line(&format!("    case {position}:"));
-        w.line(&format!(
-            "        {}();",
-            mangle::test(src.component_at(function.span.start), function.decl as usize)
-        ));
-        w.line("        break;");
-    }
-    w.line("    default:");
-    w.line("        hero_panic(\"no test with that index — this is a compiler bug\");");
-    w.line("    }");
-    w.line("    hero_runtime_check_leaks();");
-    w.line("    return 0;");
-    w.line("}");
-}
 
 pub(super) fn prototype(
     w: &mut Writer,
@@ -542,7 +291,7 @@ pub(super) fn definition(
     // body; a blockless function through that path emits a jump to a label that is
     // never printed. What it needs instead is one line — the C name, read where
     // the preprocessor can see it (§4.19, panel 038).
-    if is_extern_constant(ast, function) {
+    if externs::is_extern_constant(ast, function) {
         let name = src.slice(ast.decls[function.decl as usize].name);
         w.line(&format!("{} {{", signature(function, ast, checked, src, names)));
         w.at_generated();
@@ -571,30 +320,6 @@ pub(super) fn definition(
     w.line("}");
 }
 
-/// The shim. `main` itself is mangled, so this is the only function in the unit
-/// whose name C chose.
-pub(super) fn shim(w: &mut Writer, function: &Function, src: &Source) {
-    w.blank();
-    w.at_generated();
-    // **`argc`/`argv`, always, whether or not the program calls `args()`.** The
-    // alternative — two shims chosen by whether a name is reachable — is a
-    // condition that can be wrong, and the cost of the parameters is nothing.
-    // `hero_args_set` is called before the program's own `main` so that the
-    // arguments are there for the first statement (M-ffi-ladder, `hero_os.h`).
-    w.line("int main(int argc, char **argv) {");
-    w.line("    hero_args_set(argc, argv);");
-    w.line(&format!(
-        "    {}();",
-        mangle::function(src.component_at(function.span.start), &function.name)
-    ));
-    // The leak gate, and it is here because AddressSanitizer is **not** one on this
-    // platform: `detect_leaks is not supported`, measured, with a 999-block leak
-    // exiting 0 in silence. A live-block counter asserted at exit names a count
-    // instead of a stack, works everywhere, and is deterministic (panel 021 R9).
-    w.line("    hero_runtime_check_leaks();");
-    w.line("    return 0;");
-    w.line("}");
-}
 
 /// Which blocks are reachable. A block nothing jumps to is **omitted entirely** —
 /// not merely unlabelled, because C is physical and an unlabelled block would fall
