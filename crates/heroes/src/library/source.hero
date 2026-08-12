@@ -100,6 +100,14 @@ function all<A>(xs: [A], f: (function(A) -> bool)) -> bool
 # auto-imported module. What crosses to C is only what the language cannot say.
 
 extern "hero_os.h"
+    # The status codes the wrappers translate, named rather than copied. Before
+    # M-header-constants this file compared `status` against `0`, `1` and `2`, and
+    # `hero_os.h` says why they were chosen small: *"small integers rather than
+    # errno"* — a value picked so a Heroes reader could carry it across by hand.
+    # Now the header is the only place they are written, and renumbering them there
+    # cannot leave this file behind.
+    constant HERO_OS_OK: int
+    constant HERO_OS_NOT_FOUND: int
     function hero_file_read(path: cstr, @status: int) -> str
     function hero_file_write(path: cstr, text: str) -> int
     function hero_args_count() -> int
@@ -112,15 +120,15 @@ extern "hero_os.h"
 function read_file(path: str) -> str?
     status: int @ 0
     text = hero_file_read(path.cstr(), @status)
-    if status == 0
+    if status == HERO_OS_OK
         return ok(text)
-    if status == 1
+    if status == HERO_OS_NOT_FOUND
         return fail("file_not_found", "no file at " + path)
     return fail("read_failed", "could not read " + path)
 
 # The text, written whole, replacing whatever was there.
 function write_file(path: str, text: str) -> ()?
-    if hero_file_write(path.cstr(), text) == 0
+    if hero_file_write(path.cstr(), text) == HERO_OS_OK
         return ok()
     return fail("write_failed", "could not write " + path)
 

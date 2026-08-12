@@ -461,6 +461,7 @@ So a number met in the record resolves here, and only here.
 | `M-generics-library` | M6 | `m6` | sugar, `heroes test`, generics by monomorphisation, the library |
 | `M-module-namespace` | M8a | `m8a` | `use`, qualified names, one whole-program `.c` |
 | `M-ffi-ladder` | M7 | `m-ffi-ladder` | the FFI ladder, SQLite with no shim, and the last three closure-list rows |
+| `M-header-constants` | — | `m-header-constants` | a `constant` whose value is the header's, so the number leaves the file |
 | `M-program-corpus` | M8e | — | many whole programs, all of them run |
 | `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
 | `M-selfhost-port` | M8b | — | the port |

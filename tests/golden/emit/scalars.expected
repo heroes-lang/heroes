@@ -11,13 +11,17 @@ _Static_assert(HERO_RUNTIME_ABI == 10, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) _Generic((c), void:1, default:0)
 #define HERO_RET_PTR(c) _Generic((c), signed char:0, short:0, int:0, long:0, long long:0, unsigned char:0, unsigned short:0, unsigned int:0, unsigned long:0, unsigned long long:0, float:0, double:0, long double:0, HeroStr:0, default:1)
+_Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK int");
+_Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND int");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_STR(hero_file_read((const char *)0, (int64_t *)0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write((const char *)0, (HeroStr){0})), "heroes-ffi-return hero_file_write int");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count int");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 
-#line 21 "scalars.c"
+#line 25 "scalars.c"
 typedef struct h_scalars_0opt0 {
     int64_t tag;
     union {
@@ -46,7 +50,7 @@ void h_scalars_main(void);
 
 #line 5 "tests/golden/emit/scalars.hero"
 void h_scalars_main(void) {
-#line 50 "scalars.c"
+#line 54 "scalars.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -108,7 +112,7 @@ bb0:
     hero_print_int(t14);
     hero_print_end();
     return;
-#line 112 "scalars.c"
+#line 116 "scalars.c"
 }
 void h_scalars_0opt0_retain(const h_scalars_0opt0 *v) {
     if (v->tag == INT64_C(0)) {
