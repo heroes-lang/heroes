@@ -1,9 +1,0 @@
-# The mangler's own hash (emit/mangle.rs:66-71), written in Heroes.
-function fnv(text: str) -> int
-    h: int @ 14695981039346656037
-    for i in range(from: 0, to: len(text))
-        h @ h * 1099511628211
-    return h
-
-function main()
-    print(fnv("Point"))

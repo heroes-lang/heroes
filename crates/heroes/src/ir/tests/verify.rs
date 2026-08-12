@@ -353,7 +353,6 @@ fn an_owning_temporary_that_no_store_takes_is_caught() {
 #[test]
 #[should_panic(expected = "cannot go back")]
 fn the_phase_is_monotonic() {
-    let (mut program, checked, ast) = owned("function f() -> int\n    return 1\n");
-    let _ = &checked;
+    let (mut program, _checked, _ast) = owned("function f() -> int\n    return 1\n");
     program.advance_to(crate::ir::Phase::Owned);
 }
