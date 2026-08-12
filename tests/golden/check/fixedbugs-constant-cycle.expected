@@ -1,3 +1,3 @@
-tests/golden/check/fixedbugs-constant-cycle.hero:30:10: error[constant_cycle]: `constant A` is defined in terms of itself through `B`, so it has no value
-tests/golden/check/fixedbugs-constant-cycle.hero:36:10: error[constant_cycle]: `constant SELF` is defined as itself, so it has no value
-tests/golden/check/fixedbugs-constant-cycle.hero:39:10: error[constant_cycle]: `constant THROUGH` is defined in terms of itself through `depends`, so it has no value
+tests/golden/check/fixedbugs-constant-cycle.hero:37:10: error[constant_cycle]: `constant A` is defined in terms of itself through `B`, so it has no value
+tests/golden/check/fixedbugs-constant-cycle.hero:43:10: error[constant_cycle]: `constant SELF` is defined as itself, so it has no value
+tests/golden/check/fixedbugs-constant-cycle.hero:47:5: error[constant_body]: `constant THROUGH`'s body may not contain a call — it may only read literals and other constants

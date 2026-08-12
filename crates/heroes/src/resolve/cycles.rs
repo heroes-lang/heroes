@@ -1,4 +1,38 @@
-//! Definitional cycles: a `constant` whose value is its own (design.md §4.2).
+//! What a `constant`'s body may be: not circular, and not a computation that
+//! reaches the world (design.md §4.2, §4.16; panel 039).
+//!
+//! **The file keeps the name `cycles.rs`** although it now owns two checks, for the
+//! reason `docs/debrief/QUEUE.md` keeps its own name: dated records cite this path
+//! — DESIGN-LOG 2026-08-12, `docs/panel/039`, and a golden's header comment — and
+//! CLAUDE.md §14 does not rewrite a record to make a rename tidy. Both checks ask
+//! one question, *is this body a definition*, and answering it in one place is what
+//! keeps them from disagreeing.
+//!
+//! ## Why a body may contain no call
+//!
+//! Because without that rule a `constant` is not constant, measured 2026-08-12.
+//! `constant ARGC: int` with body `len(args())` printed `3` under `heroes run f.hero -- a b c` and `0` under `heroes run f.hero`
+//! — the same binary, two values — and a body calling a printing function printed
+//! once per read, because `FnKind::Constant` lowers to a zero-argument function and
+//! a read to a call. Panel 039's llm-ergonomist vetoed exactly this shape from the
+//! spec alone, without knowing it shipped: a construct whose evaluation time cannot
+//! be read off its own line.
+//!
+//! The rule is **syntactic on purpose**. A purity analysis would admit `len("abc")`
+//! and refuse `len(args())`, which is a better rule and a whole new pass; nothing in
+//! this tree has one. The syntactic rule buys the property outright: a call-free body
+//! reads only literals and other constants, and the cycle check below proves those
+//! are not circular, so its value is a deterministic function of the program text.
+//! Re-evaluation per read then costs time and nothing else — and `ir/mod.rs` already
+//! reserves folding as the emitter's optimisation.
+//!
+//! **A variant case is allowed and a record construction is not**, which is an
+//! asymmetry this file inherits rather than invents: §4.9 says record construction
+//! *is* a call, while `.plus` is a case whose type comes from context. It is panel
+//! 035's finding in miniature, and the author's v2 decision (Part 7 item 16) fixes
+//! both at once.
+//!
+//! ## Definitional cycles: a `constant` whose value is its own
 //!
 //! `constant A: int` with body `B` and `constant B: int` with body `A` used to
 //! pass every gate this compiler has. `heroes check` exited 0, the emitted C was
@@ -33,17 +67,114 @@
 
 use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::source::Source;
-use crate::syntax::{Ast, DeclKind};
+use crate::syntax::{Ast, DeclKind, ExprKind};
 
 use super::{Ref, Resolved};
 
-/// Report one diagnostic per distinct cycle that passes through a `constant`.
+/// Both checks, in the order a reader wants them: what the body *is*, then whether
+/// the bodies are circular.
 pub fn report(out: &mut Resolved, ast: &Ast, src: &Source) {
     let extent = extents(ast);
+    let refused = bodies(out, ast, src, &extent);
     let edges = edges(out, ast, &extent);
     for cycle in walk(ast, &edges) {
+        // **A cycle through a body that was already refused is a consequence, not a
+        // finding.** `constant THROUGH` / `depends()`, where `depends` returns
+        // `THROUGH`, is one mistake — a call in a body — and the cycle exists only
+        // because that call does. Reporting both is the two-diagnostics-for-one-
+        // mistake defect this compiler has fixed three times over. The body rule is
+        // the primary one: it names the line the author wrote.
+        if cycle.iter().any(|decl| refused.contains(decl)) {
+            continue;
+        }
         out.diagnostics.push(diagnose(ast, src, &cycle));
     }
+}
+
+/// Refuse the four expression kinds that would make a `constant` a computation
+/// rather than a definition.
+///
+/// Every arm is listed rather than folded into a catch-all — `sized.rs`'s rule and
+/// `ir/layout.rs`'s: an expression kind added to the language must not become
+/// silently legal here because a `_` arm answered for it.
+fn bodies(
+    out: &mut Resolved,
+    ast: &Ast,
+    src: &Source,
+    extent: &[(u32, u32, u32)],
+) -> std::collections::BTreeSet<u32> {
+    let mut found: Vec<(crate::source::Span, &str, u32)> = Vec::new();
+    let mut refused = std::collections::BTreeSet::new();
+    for expr in ast.exprs.iter() {
+        let what = match &expr.kind {
+            ExprKind::Call { .. } => "a call",
+            ExprKind::Method { .. } => "a call written with `.`",
+            ExprKind::Try(_) => "a `?`",
+            ExprKind::Hole => "a `???`",
+            // Everything a definition may be: literals, the containers built from
+            // them, names, operators, a field or element of one, and the two
+            // constructs that choose between values.
+            ExprKind::Int
+            | ExprKind::Float
+            | ExprKind::Str
+            | ExprKind::Char
+            | ExprKind::Bool
+            | ExprKind::NullPtr
+            | ExprKind::Name
+            | ExprKind::Unary { .. }
+            | ExprKind::Binary { .. }
+            | ExprKind::Field { .. }
+            | ExprKind::Index { .. }
+            | ExprKind::Case { .. }
+            | ExprKind::Array(_)
+            | ExprKind::Map(_)
+            | ExprKind::If { .. }
+            | ExprKind::Match { .. }
+            | ExprKind::Error => continue,
+        };
+        let Some(owner) = owner(extent, expr.span.start) else { continue };
+        if !is_valued_constant(ast, owner) {
+            continue;
+        }
+        found.push((expr.span, what, owner));
+    }
+    // **The outermost offender only.** `len(args())` is two calls and one mistake,
+    // and two diagnostics for one mistake is a defect this project has fixed three
+    // times (the lexer, the parser and the resolver each hold the invariant). An
+    // expression strictly inside another offender is that one's inside.
+    for (span, what, owner) in &found {
+        if found.iter().any(|(outer, _, _)| outer.start <= span.start && span.end < outer.end) {
+            continue;
+        }
+        let name = src.slice(ast.decls[*owner as usize].name);
+        out.diagnostics.push(body_diagnostic(name, what, *span));
+        refused.insert(*owner);
+    }
+    refused
+}
+
+/// The message. It names the constant, because the caret is on the call and the
+/// rule is about the declaration around it.
+fn body_diagnostic(name: &str, what: &str, span: crate::source::Span) -> Diagnostic {
+    Diagnostic::new(
+        "constant_body",
+        format!(
+            "`constant {name}`'s body may not contain {what} — it may only read literals \
+             and other constants"
+        ),
+        span,
+    )
+    .with_note(
+        "a `constant` is read by calling its accessor, so a body that can call \
+         anything is re-evaluated on every read — and `len(args())` made one whose \
+         value depended on the command line (panel 039)"
+            .to_string(),
+    )
+    .with_note(
+        "for a value that is computed, write a `function` and call it where the value \
+         is wanted"
+            .to_string(),
+    )
 }
 
 /// Every declaration's extent, sorted by where it starts.

@@ -233,9 +233,14 @@ fn a_constant_defined_in_terms_of_itself_is_refused() {
     let pair = "constant A: int\n    B\n\nconstant B: int\n    A\n\nfunction main()\n    print(A)\n";
     assert_eq!(codes(pair), vec!["constant_cycle".to_string()], "one diagnostic per cycle, not per constant");
 
+    // The cycle that escapes through a function is reported as `constant_body`, and
+    // the reason is worth stating: both rules find it — refusing the call does not
+    // remove the edge — so the *cycle* diagnostic is suppressed wherever the body
+    // was already refused. One mistake, one diagnostic. The general walk is kept:
+    // it is the loud direction, and what stays correct if the body rule is relaxed.
     let through =
         "constant A: int\n    f()\n\nfunction f() -> int\n    return A\n\nfunction main()\n    print(A)\n";
-    assert_eq!(codes(through), vec!["constant_cycle".to_string()], "the cycle escapes through a function");
+    assert_eq!(codes(through), vec!["constant_body".to_string()], "the body rule fires first");
 
     let legal = "constant START: int\n    2\n\nconstant CHAIN: int\n    START + 1\n\n\
                  function even(n: int) -> bool\n    if n == 0\n        return true\n    return odd(n - 1)\n\n\

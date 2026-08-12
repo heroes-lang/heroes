@@ -21,6 +21,13 @@
 # recur freely — §4.2 grants mutual recursion, and a function has arguments and a
 # base case where a constant's accessor has neither.
 #
+# APPENDED 2026-08-12, same day: `constant_body` landed hours later and the THROUGH
+# case now reports THAT instead. Both rules do find it — the body rule names the
+# call, and the cycle is still in the graph, because refusing the call does not
+# remove the edge. So the cycle diagnostic is SUPPRESSED where the body was already
+# refused: one mistake, one diagnostic. The case is kept to pin exactly that
+# ordering, which is the only thing here a future change could break silently.
+#
 # The last two declarations are the CONTROL, and they are the reason this file is
 # not three files: `chain` reads `START`, `even`/`odd` recur through each other,
 # and neither may be reported. A cycle check that fired on those would be worse
@@ -36,7 +43,7 @@ constant B: int
 constant SELF: int      #~ constant_cycle
     SELF
 
-constant THROUGH: int   #~ constant_cycle
+constant THROUGH: int   #~v constant_body
     depends()
 
 function depends() -> int
