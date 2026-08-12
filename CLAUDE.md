@@ -74,8 +74,14 @@ package binary: never.
 ## 7. Generated-C rules
 C11; `int64_t`/`double`/`bool`; `#include "heroes_runtime.h"` (clang
 type-checks every runtime call) and one `_Static_assert` on
-`HERO_RUNTIME_ABI`, so a decoy `runtime/` cannot silently replace the
-contract. `#line` when an instruction's line differs from the **current
+`HERO_RUNTIME_ABI`. **What that stamp catches is a header from another
+compiler, and not a decoy** — corrected 2026-08-12 (panel 034 R5, and panel
+037 measured it from the other side: two runtimes with changed *behaviour*
+kept the number at 10 and every generated unit accepted them). A decoy
+`runtime/` that copies the number passes; what protects a build against one
+is the **cache key**, which covers the whole runtime's contents. The stamp's
+real job is the version skew the search makes possible, and it is worth
+keeping for that alone. `#line` when an instruction's line differs from the **current
 effective line** (`#line N` anchors the *next* line), restored to the
 generated file around synthetic code — the restore carries the printer's own
 output line count. Emitter debugging is the test helper's job: `--no-line`
