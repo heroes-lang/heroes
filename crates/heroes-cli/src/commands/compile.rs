@@ -141,7 +141,17 @@ pub fn compile_with_tests(
         print!("{}", report_holes(&parsed.ast, &resolved, &checked, &src));
         let count = checked.holes.len();
         let unit = if count == 1 { "hole" } else { "holes" };
-        eprintln!("no binary: {count} {unit} in {}", src.name);
+        // The files the holes are actually in, not the file that was named on
+        // the command line: since M8a they are not the same thing, and a count
+        // attached to the wrong file sends the reader to the wrong file.
+        let mut files: Vec<&str> = Vec::new();
+        for hole in &checked.holes {
+            let (file, _, _) = src.locate(hole.span.start);
+            if !files.contains(&file) {
+                files.push(file);
+            }
+        }
+        eprintln!("no binary: {count} {unit} in {}", files.join(", "));
         return Err(Exit::Diagnostics);
     }
     let emitted =
@@ -158,7 +168,11 @@ pub fn compile_with_tests(
     // tests and no `main` is a legitimate thing to write, and `heroes test` is
     // where it runs.
     if options.target == Target::Program && entry_point(&lowered.program).is_none() {
-        let end = src.text.len() as u32;
+        // The root file's end, never the whole text's: since the library is
+        // appended, `text.len()` lands inside it and `library::misplaced` turns
+        // the user's own mistake into `internal error … exit 2` — the message
+        // panel 020 measured sending an agent to reinstall its toolchain.
+        let end = src.root_end();
         let diagnostic = Diagnostic::new(
             "no_entry_point",
             "this file declares no `function main()`, so it cannot become a binary".to_string(),

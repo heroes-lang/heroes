@@ -579,3 +579,70 @@ fn an_ordinary_build_ignores_test_blocks() {
     assert!(!c.contains("hero_panic_assert"), "a test block reached an ordinary build");
     assert_eq!(code(&out), 0);
 }
+
+/// **fixedbugs, 2026-08-12.** Symptom: the commonest possible mistake in the
+/// language — writing a file with no `main` and asking to build it — answered
+/// `internal error: a diagnostic landed inside the Heroes library, at its line
+/// 86: [no_entry_point] …` at **exit 2**, the code that means *the compiler is
+/// wrong*. Cause: the diagnostic's span was `src.text.len()-1 .. len`, and since
+/// M6 appended the library the whole text ends **inside it**, so
+/// `library::misplaced` swallowed the user's own error. Fix: `Source::root_end`.
+///
+/// Panel 020 settled the exit code by measurement: given 2, a judge checked the
+/// compiler's version, ran `doctor`, grepped for the identifier and told its user
+/// the toolchain was broken (`docs/panel/020-the-c-emitter.md`, `no_entry_point,
+/// exit 1`). The row was written and then contradicted by a span, and nothing
+/// tested it — `grep no_entry_point tests/` found nothing at all.
+#[test]
+fn fixedbugs_a_file_with_no_main_is_the_authors_error_not_the_compilers() {
+    for verb in ["build", "run"] {
+        let out = heroes(&[verb, "tests/golden/surface-fixtures/no-main.hero"]);
+        let said = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(code(&out), 1, "{verb}: the input has a mistake — exit 1 (CLAUDE.md §10)\n{said}");
+        assert!(said.contains("error[no_entry_point]"), "{verb}: {said}");
+        assert!(said.contains("no-main.hero"), "{verb}: the caret names the author's file\n{said}");
+        assert!(!said.contains("internal error"), "{verb}: the compiler must not blame itself\n{said}");
+        assert!(!said.contains("library"), "{verb}: nothing here is about the library\n{said}");
+    }
+}
+
+/// **fixedbugs, 2026-08-12.** Symptom: `check --json` reported a diagnostic in
+/// `geom.hero` as `"file": "main.hero"` with a line number counted through the
+/// concatenated text — the same defect the hole report had, in the one surface
+/// whose consumer cannot notice by eye. Cause: `json()` assembled the triple from
+/// `line_col` and `src.name` instead of `Source::locate`, which
+/// `source/mod.rs` documents as mandatory: *"there is one function and no caller
+/// assembles the triple itself."*
+///
+/// The generalisation, which is why this test asserts agreement rather than a
+/// literal: `locate` can only protect the location it is *asked* for. The text
+/// renderers had been fixed at M8a and this one was not, because the sweep went
+/// through `Diagnostic`'s renderer and `--json` is a second one.
+#[test]
+fn fixedbugs_json_and_text_agree_about_which_file_a_diagnostic_is_in() {
+    let root = "tests/golden/surface-fixtures/cross/main.hero";
+    let text = heroes(&["check", root, "--brief"]);
+    let json = heroes(&["check", root, "--json"]);
+    let text = String::from_utf8_lossy(&text.stderr).to_string();
+    // Both on stderr: `check` produces no artifact, so its diagnostics are the
+    // whole output and `--json` says only *how* to print them (CLAUDE.md §10).
+    let json = String::from_utf8_lossy(&json.stderr).to_string();
+    assert!(text.contains("geom.hero:5:"), "the text form names the module: {text}");
+    assert!(json.contains("\"file\": \"tests/golden/surface-fixtures/cross/geom.hero\"")
+            || json.contains("\"file\": \"geom.hero\""),
+            "the JSON form must name the same file:\n{json}");
+    assert!(json.contains("\"line\": 5,"), "and the same line, counted in that file:\n{json}");
+}
+
+/// **fixedbugs, 2026-08-12.** `no binary: N holes in <file>` named the file on
+/// the command line rather than the files the holes are in — since M8a not the
+/// same thing, and a count attached to the wrong file sends the reader there.
+#[test]
+fn fixedbugs_the_hole_count_names_the_files_the_holes_are_in() {
+    let out = heroes(&["build", "tests/golden/surface-fixtures/holes/main.hero"]);
+    let said = String::from_utf8_lossy(&out.stderr);
+    assert!(said.contains("no binary: 1 hole in "), "{said}");
+    assert!(said.contains("geom.hero"), "the hole is in geom.hero: {said}");
+    assert!(!said.trim_end().ends_with("main.hero"), "and not in main.hero: {said}");
+    assert_eq!(code(&out), 1);
+}

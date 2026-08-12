@@ -177,6 +177,23 @@ impl Source {
         self.file_of(offset) == 0
     }
 
+    /// The last offset **inside the root file** — where a diagnostic about the
+    /// file as a whole puts its caret.
+    ///
+    /// `text.len()` is not that offset and has not been since the library was
+    /// appended: it lands in whichever file happens to be last, which is how
+    /// `no_entry_point` came out as `internal error: a diagnostic landed inside
+    /// the Heroes library` at exit 2, for the commonest mistake in the language
+    /// (2026-08-12). A whole-file diagnostic needs the root's extent, and this
+    /// is the one place that computes it.
+    pub fn root_end(&self) -> u32 {
+        match self.files.get(1) {
+            // One before the next file's start: the blank line that joins them.
+            Some(next) => next.start.saturating_sub(1),
+            None => self.text.len() as u32,
+        }
+    }
+
     /// The C identifier component for an offset's module — what
     /// `h_<component>_<name>` uses. Never `module_at`: see [`FileEntry`].
     pub fn component_at(&self, offset: u32) -> &str {

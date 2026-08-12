@@ -1,0 +1,5 @@
+function area(side: int) -> int
+    return side * side
+
+function bad() -> int
+    return "x"  #~ type_mismatch

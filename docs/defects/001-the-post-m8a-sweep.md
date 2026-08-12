@@ -1,0 +1,139 @@
+# 001 — The post-M8a sweep: twenty defects, and the three shapes they came in
+
+Date: 2026-08-12, after panels 033 and 034. **Nothing here was found by reading.**
+
+## Why this file exists
+
+Panels 033 and 034 were convened about the *language* and each found a defect in
+code it was only reading as background — the second and third time in a row. That
+pattern was the author's instruction to stop and look properly: *"fai delle
+analisi ricorsive per scovare altri errori prima di andare avanti."*
+
+So the three defects those panels found were **generalised into hypotheses** and
+each hypothesis was given to a hunt with one rule: **compile and run; a defect you
+only reasoned about is not a finding.** Four hunts, four confirmations, and this
+inventory. Every entry below has a reproducer that was executed.
+
+The project already knew the lesson and had written it down at
+`crates/heroes/src/modules/tests.rs`: *"the invariant was enforced by convention
+over one type, and the one caller outside that type kept the defect."* What the
+sweep adds is that the sentence was **understated** — the convention leaks *inside*
+the type too, because a line number formatted into a `String` note is invisible to
+every guard the compiler has.
+
+## The three shapes
+
+**Shape A — the scope widened silently.** A `bool` or a set that meant *"this
+file"* when a `Source` held one file, and since M8a means *"this program"*. Fix:
+key it by module and ask per reported site — D1's `holes_in` + `hole_covers`.
+
+**Shape B — a position assembled by hand.** A caller that builds a location from
+`line_col` + `src.name` + `text.len()` instead of `Source::locate` /
+`file_line_of` / `root_end`. `source/mod.rs:229` already declares the one function
+mandatory. The convention is enforced by nothing.
+
+**Shape C — the emitter asked what the program *mentioned* where it needed what a
+declaration *is*.** D3's own shape. `emit/descriptors.rs::generated()` answers
+"which types did the program mention inside a container" while its three callers
+ask "which types does the function I am about to write name".
+
+## The inventory
+
+Severity: **★★★** a legal program is refused or miscompiled · **★★** a diagnostic
+is wrong or teaches a wrong program · **★** cosmetic or contract-level.
+
+### Fixed in this sweep
+
+| # | shape | what | severity |
+|---|---|---|---|
+| D1 | A | §4.16's hole exemption was program-wide: a `???` in one module silenced §4.4 in another | ★★ |
+| D2 | B | the hole report named the root file and a line past its end | ★★ |
+| D3 | C | a variant case payload was never released when no `match` in the same compilation bound it — same module, leaking rooted at itself, clean rooted at its caller | ★★★ |
+| D4 | — | `heroes fmt` was not idempotent on **its own output**: a call the 88-column rule breaks across lines grew a blank line on every re-format | ★★ |
+| D5 | B | `no_entry_point` spanned `text.len()`, which lands in the appended library, so the commonest mistake in the language answered `internal error … exit 2` — the compiler blaming itself | ★★★ |
+| D6 | B | `check --json` named the root file for a diagnostic in another module — D2's shape in the one consumer that cannot notice by eye | ★★ |
+| D7 | B | `no binary: N holes in <file>` named the file on the command line, not the files the holes are in | ★ |
+
+### Open, with reproducers
+
+**Shape C — the emitter, and one repair retires three.**
+
+| # | what | symptom | severity |
+|---|---|---|---|
+| E1 | `equality_body` has no row for `Ty::Map`, `Ty::Fallible`, `Ty::Failure`, `Ty::Func` | `record Box { m: {str: int} }` then `==` → `panic: entered unreachable code`, exit 134. **`hash` covers maps and `eq` does not**, so CLAUDE.md §7's "eq and hash agree" is broken in the loudest direction: `{Box: int}` inserts and then aborts on lookup | ★★★ |
+| E2 | `descriptors::generated()` is seeded from container elements only | `function grab() -> P?` for a record `P` → `use of undeclared identifier 'h_M_P_desc'`, exit 2. Adding `[P]` **anywhere in the program** fixes it, so the same file compiles under one root and not another | ★★★ |
+| E3 | the same, for a `T?`-typed field's `hash` | `use of undeclared identifier 'h_M_opt0_desc'` | ★★★ |
+| E4 | `descriptors::generated()` does not skip `mentions_generic` where its two sibling walks do | `[A?]` inside a generic → `thread 'main' panicked … every 'T?' is named before anything can mention one`, **exit 101**, which is outside §10's three codes | ★★★ |
+| E5 | declared aggregates are emitted before generated option/function typedefs, and each kind can contain the other | `record Box { v: int? }` → `unknown type name 'h_M_opt0'`, exit 2. **Not a swap**: the reverse dependency is in the same file. Needs one interleaved containment order over both | ★★★ |
+| E6 | a unit-typed record field | `void f_u;` → `field has incomplete type 'void'`, exit 2. CLAUDE.md §7 calls `void t0;` a hard error; the rule reached temporaries and not fields, and `emit/gate.rs` walks the IR and never a declaration's field list | ★★★ |
+| E7 | the emitter's synthesised names `opt<N>` / `fn<N>` are unreserved, and take the **root** module | `record opt0` plus any `T?` → `redefinition of 'h_M_opt0'`, exit 2 — and only under some roots. The residual panel 031 R10 closed for module names and left open for the names the emitter invents | ★★★ |
+| E8 | `builtins::reachable` matches `Op::Call` but never `Op::FuncRef` | a library function passed as a **value** is referenced and never defined → `use of undeclared identifier 'h_library_range'`, exit 2. One direct call from any module puts it back | ★★★ |
+| E9 | `descriptors::generated` walks the interner, which the checker filled from `test` blocks too | `warning: unused variable 'h_M_P_desc'` on an ordinary program build — the zero-warning rule, and precisely what that module's doc says its worklist exists to prevent | ★ |
+
+**Shape A — scope widened.**
+
+| # | what | symptom | severity |
+|---|---|---|---|
+| N1 | `missing_return`'s hole exemption is program-wide in the **checker** (`types/mod.rs:208`) | D1's twin in the pass D1's fix did not reach: an unfinished `geom.hero` suppresses `missing_return` in `main.hero` | ★★ |
+| N2 | `Resolver::suggested` is program-wide | a did-you-mean offered in module B exempts that name from the unused sweep in module A — a dropped spec-line-77 error | ★★ |
+| N3 | `Resolver::fields` is program-wide | a field name declared in `geom.hero` **removes a `certain` fix** from a diagnostic in `main.hero`. Another module decides whether a fix is machine-applicable (CLAUDE.md §8) | ★★ |
+
+**Shape B — position assembled by hand.**
+
+| # | what | symptom | severity |
+|---|---|---|---|
+| N4 | `check --apply` indexes concatenated-text spans into `user_text()` | `assertion failed: self.is_char_boundary(n)`, **exit 101**, on any multi-module program whose certain fix is outside the root — and `--apply` is what CI uses to assert `.fixed` files compile | ★★★ |
+| N5 | ten sites format a line number **into a message** | `note: declared at line 6` where the truth is `geom.hero:1`; `the cycle is: A.b: B (line 7)`; a `shadowed_binding` whose message points *forward past its own caret*. All ten build real `Diagnostic`s, so M8a's sweep saw them and fixed only the span. Sites: `resolve/top.rs:75,108`, `resolve/scope.rs:159,190`, `resolve/decls.rs:85,101`, `types/calls.rs:190`, `types/construct.rs:41,92`, `types/sized.rs:291` | ★★ |
+| N6 | `lex --dump-tokens` dumps the whole compilation | an 8-line program prints 470 lines including the library's, at concatenated line numbers, with no file marker. `--dump-ast` and `--dump-scopes` filter correctly | ★★ |
+| N7 | `measure` returns exit 1 where the tool could not run | a missing vendored tokeniser table is `Exit::Diagnostics`; §10 says 2. Two adjacent `Err` arms in one function disagree | ★ |
+| N8 | the tab diagnostic's caret is misaligned | `render.rs`'s doc says tabs cannot appear because the lexer rejects them — but the diagnostic *reporting* the tab prints the tabbed line | ★ |
+
+**Neither shape.**
+
+| # | what | symptom | severity |
+|---|---|---|---|
+| N9 | `Resolved::module_declaring` `.find()`s over a `BTreeMap` and so picks the **alphabetically first** module | with `use geom` written and both `alpha` and `geom` declaring `scale`, the compiler names `alpha` — a module the file cannot see — attaches a `guess` fix that produces `wrong_arity` if followed, and **cascades a false `unused_binding` telling the author to delete the `use geom` line that was the fix**. Rename `alpha.hero` to `zeta.hero` and the same program gets the right answer with a `certain` fix. It had exactly one possible answer when there was one module | ★★★ |
+| N10 | the hole report offers functions from modules the hole's file cannot name | a hole in `geom.hero` is offered `main.tally(x: int)`, which `geom` cannot `use` without a cycle. The code states the right principle two lines above and applies it halfway | ★★ |
+
+## What was cleared, stated plainly
+
+A hunt that finds nothing is a result. **The emitter is not root-dependent in the
+sense D3 was**: across the calculator's four roots, 277 shared C entities are
+byte-identical — every `retain`/`release`/`eq`/`hash`, every descriptor, every
+typedef — and the same holds for a purpose-built three-module corpus, for
+monomorphisation, and for diagnostics. D3's own fix recurses correctly through
+containers, nested payloads and every payload kind. `ir::is_refcounted` is
+genuinely one home. The mangler survives a program whose every identifier is a C
+keyword or libc symbol. `#line` is correct across modules and nothing bypasses the
+writer that counts lines. Exit codes are right on unreadable, directory,
+non-UTF-8, nonexistent, tab, BOM and missing-module inputs. `fmt`,
+`--dump-ast` and `--dump-scopes` are correctly root-filtered. `-0.0` is normalised
+before hashing. And `eq`/`hash` agree on every shape the language has **except**
+the four rows E1 names.
+
+One candidate was investigated and **is not a defect**: `check --json` printing to
+stderr. `check` produces no artifact, so its diagnostics are the whole output and
+`--json` says only *how* to print them (CLAUDE.md §10). The existing surface test
+already pinned it; a hunt nearly filed it, and reading the contract settled it.
+
+## What the sweep says about the instruments
+
+Three things, and none is about any individual defect.
+
+**The corpus is the instrument, and it had holes shaped like these defects.** D3
+needed a payload owning a *computed* `str` that no `match` binds; E1 needs a map
+inside an aggregate that something compares; E5 needs a record field typed `T?`.
+Ninety `run/` cases and seventeen examples contain none of the three. Every one of
+these is an ordinary program.
+
+**An invariant enforced by convention is enforced by nothing.** Shape B has eight
+entries and `source/mod.rs` has said *"there is one function and no caller
+assembles the triple itself"* since M8a. The honest repair is not another sweep: it
+is making `line_col` unavailable to callers that have no business with a
+concatenated line — the only legitimate consumers are `locate` itself and the
+printers' relative arithmetic.
+
+**A comment that argues correctly for the wrong world is worse than no comment.**
+D4's `spans_lines` was narrow *on purpose*, with the reason written out; the reason
+was about source a person writes, and the formatter started writing source. D3's
+fallback was the same. Both were read by reviewers who agreed with them.

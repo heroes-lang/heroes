@@ -121,11 +121,15 @@ fn json(diagnostics: &[&Diagnostic], src: &Source) -> String {
     let mut out = String::from("{\n  \"schema\": 1,\n  \"diagnostics\": [\n");
     let last = diagnostics.len() - 1;
     for (index, diagnostic) in diagnostics.iter().enumerate() {
-        let (line, col) = src.line_col(diagnostic.span.start);
+        // `Source::locate`, exactly as the two text renderers do. Assembling the
+        // triple here is what made the machine-readable surface the last place
+        // in the compiler still naming the root file for a diagnostic in another
+        // module — the one consumer that cannot notice by eye (2026-08-12).
+        let (file, line, col) = src.locate(diagnostic.span.start);
         out.push_str("    {\n");
         out.push_str(&format!("      \"code\": \"{}\",\n", diagnostic.code));
         out.push_str(&format!("      \"message\": {},\n", quote(&diagnostic.message)));
-        out.push_str(&format!("      \"file\": {},\n", quote(&src.name)));
+        out.push_str(&format!("      \"file\": {},\n", quote(file)));
         out.push_str(&format!("      \"line\": {line},\n      \"col\": {col},\n"));
         let notes: Vec<String> = diagnostic.notes.iter().map(|n| quote(n)).collect();
         out.push_str(&format!("      \"notes\": [{}],\n", notes.join(", ")));
