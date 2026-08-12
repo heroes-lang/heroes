@@ -17,6 +17,39 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
+**M-header-constants closed 2026-08-12, tag `m-header-constants` — a value that
+comes from a C header is named, never copied.**
+
+    $ heroes run tests/golden/run/ffi-constant.hero
+    3.141592653589793
+
+`constant SQLITE_OK: int` inside an `extern` group, with no body: the header holds
+the value, so there is no digit in the `.hero` file to be wrong. Panel 018
+committed the spelling *"at the FFI milestone at the latest"* and M-ffi-ladder
+closed without it, paying in five hand-copied numbers; §4.19 promised the
+capability in a sentence that was false. Both repaired here.
+
+Measured before the cure and after it, as a **site count** and never a rate:
+`heroes mutate`'s twelfth operator moves one digit of a `constant`'s value, and
+`examples/` went from **5 sites, 0 caught** to **0 sites**. The panel's spec-warden
+had the class sized inside the sitting — 267 int-literal sites in all, so this
+reaches five of them and the objection that says so stands un-withdrawn.
+
+Three refusals no other language makes together: a C **object** (`stdout`, `errno`)
+is not a constant, a `str` cannot come from a foreign header, and a declared type
+the header refutes is a diagnostic on the `.hero` line rather than an internal
+error. Plus one defect in shipped code and one in the specification, both found by
+judges compiling rather than reading.
+
+**458 crate tests · 46 CLI surface · 13 golden harnesses**, clippy clean, spec at
+**2588** of 4096, `heroes mutate` at **93% / 78% over 1253** across 19 programs.
+
+The record: `docs/journal/013-header-constants.md` ·
+`docs/panel/038-constants-from-headers.md` ·
+`docs/measurements/005-magic-constants.md`. Next: **M-program-corpus**.
+
+---
+
 **M-ffi-ladder closed 2026-08-12, tag `m-ffi-ladder` — Heroes calls C, and a wrong
 binding cannot compile.**
 
@@ -430,6 +463,7 @@ code. `git tag --list --sort=creatordate` gives the same order from git itself.
 | M-generics-library — the language is finished | 2026-08-11 | `m6` | [010](journal/010-sugar-tests-generics-library.md) |
 | M-module-namespace — a program is many files | 2026-08-12 | `m8a` | [011](journal/011-modules-the-namespace.md) |
 | M-ffi-ladder — Heroes calls C | 2026-08-12 | `m-ffi-ladder` | [012](journal/012-the-ffi-ladder.md) |
+| M-header-constants — the number leaves the file | 2026-08-12 | `m-header-constants` | [013](journal/013-header-constants.md) |
 
 ## The names
 
