@@ -28,6 +28,13 @@ const RECORD: &[&str] = &[
     "docs/measurements",
     "docs/defects",
     "docs/book",
+    // One dated note per reasoning session, historicized and never rewritten — the
+    // directory's own README says so. Its README is exempted with it, on the same
+    // footing as `docs/book/README.md`: a directory of dated records is one entry
+    // here, and the vocabulary that has moved since is mapped forward in that
+    // README's § A note on the vocabulary of 000–002 rather than edited into the
+    // notes (2026-08-12).
+    "docs/reasoning",
     "tests/golden",
     "DESIGN-LOG.md",
     "vendor",

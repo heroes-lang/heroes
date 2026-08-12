@@ -259,8 +259,8 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 - **Appending to a dated record uses that record's vocabulary**, with the new name
   in parentheses on first use — `scored at M8a close (M-module-namespace)`. The
   record is never rewritten: `docs/panel/`, `DESIGN-LOG.md`, `docs/journal/`,
-  `docs/measurements/`, `docs/defects/`, `docs/book/beats.md`, `tests/golden/`,
-  every commit subject and the twelve legacy tags keep the numbers.
+  `docs/measurements/`, `docs/defects/`, `docs/book/beats.md`, `docs/reasoning/`,
+  `tests/golden/`, every commit subject and the twelve legacy tags keep the numbers.
 
 ## Commands
 ```
