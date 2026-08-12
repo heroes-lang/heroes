@@ -42,22 +42,22 @@ fn says(problems: &[String], expected: &str) {
 /// version ever stopped verifying, every test in this file would be meaningless.
 #[test]
 fn the_undamaged_subject_verifies_clean() {
-    let (program, checked) = unverified(SUBJECT);
-    assert_eq!(verify(&program, &checked), Vec::<String>::new());
+    let (program, checked, ast) = unverified(SUBJECT);
+    assert_eq!(verify(&program, &checked, &ast), Vec::<String>::new());
 }
 
 #[test]
 fn a_block_with_no_terminator_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     program.functions[0].blocks[1].term = Term::Open;
-    says(&verify(&program, &checked), "no terminator");
+    says(&verify(&program, &checked, &ast), "no terminator");
 }
 
 #[test]
 fn a_jump_to_a_block_that_does_not_exist_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     program.functions[0].blocks[0].term = Term::Jump(crate::ir::BlockId(99));
-    says(&verify(&program, &checked), "jumps to bb99, which does not exist");
+    says(&verify(&program, &checked, &ast), "jumps to bb99, which does not exist");
 }
 
 /// The check that keeps `preds` honest, and the reason it exists: M-strings-ownership's cleanup
@@ -65,32 +65,32 @@ fn a_jump_to_a_block_that_does_not_exist_is_caught() {
 /// refcount bug waiting for a milestone.
 #[test]
 fn preds_that_disagree_with_the_terminators_are_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     program.functions[0].blocks[1].preds.clear();
-    says(&verify(&program, &checked), "jump here");
+    says(&verify(&program, &checked, &ast), "jump here");
 }
 
 /// `Op::Missing` is M-ir-lowering's scaffolding for a form the lowering does not handle. The
 /// verifier is what stops it reaching a golden or a backend.
 #[test]
 fn a_form_the_lowering_skipped_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     program.functions[0].blocks[0].insts[0].op = Op::Missing;
-    says(&verify(&program, &checked), "a form the lowering does not handle");
+    says(&verify(&program, &checked, &ast), "a form the lowering does not handle");
 }
 
 #[test]
 fn the_address_of_an_address_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     program.functions[0].blocks[0].insts[0].op = Op::FuncRef(Callee::Indirect(ValueId(1)));
-    says(&verify(&program, &checked), "the address of an address");
+    says(&verify(&program, &checked, &ast), "the address of an address");
 }
 
 /// An abort ends the program, so nothing may follow it — and its block must say
 /// `unreachable`, which is what becomes `hero_unreachable()` in C (CLAUDE.md §7).
 #[test]
 fn an_abort_with_instructions_after_it_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     let function = &mut program.functions[0];
     let unit = checked.types.unit();
     let args = crate::ir::Args { start: 0, len: 0 };
@@ -101,47 +101,47 @@ fn an_abort_with_instructions_after_it_is_caught() {
         span: function.span,
     };
     function.blocks[0].insts.insert(0, abort);
-    let problems = verify(&program, &checked);
+    let problems = verify(&program, &checked, &ast);
     says(&problems, "an abort with instructions after it");
     says(&problems, "does not end unreachable");
 }
 
 #[test]
 fn a_value_used_and_never_produced_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     // Delete the instruction that produced $t1, leaving the store that reads it.
     program.functions[0].blocks[0].insts.remove(0);
-    says(&verify(&program, &checked), "is used and never produced");
+    says(&verify(&program, &checked, &ast), "is used and never produced");
 }
 
 /// A temporary is assigned once *by construction* — this test is what proves the
 /// construction, not the intention.
 #[test]
 fn a_value_assigned_twice_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     let first = program.functions[0].blocks[0].insts[0];
     program.functions[0].blocks[0].insts.insert(1, first);
-    says(&verify(&program, &checked), "is assigned twice");
+    says(&verify(&program, &checked, &ast), "is assigned twice");
 }
 
 #[test]
 fn a_value_that_is_not_a_value_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     program.functions[0].blocks[0].insts[1].op = Op::Store {
         place: Place { root: crate::ir::SlotId(0), path: Steps { start: 0, len: 0 } },
         value: ValueId(999),
     };
-    says(&verify(&program, &checked), "which is not a value");
+    says(&verify(&program, &checked, &ast), "which is not a value");
 }
 
 #[test]
 fn a_slot_that_does_not_exist_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     program.functions[0].blocks[0].insts[1].op = Op::Store {
         place: Place { root: crate::ir::SlotId(99), path: Steps { start: 0, len: 0 } },
         value: ValueId(1),
     };
-    says(&verify(&program, &checked), "names slot 99, which does not exist");
+    says(&verify(&program, &checked, &ast), "names slot 99, which does not exist");
 }
 
 /// §4.8's "copy-out happens always", as a check that can fail. This is the invariant
@@ -149,12 +149,12 @@ fn a_slot_that_does_not_exist_is_caught() {
 /// this file exists for.
 #[test]
 fn a_return_that_forgets_to_copy_out_is_caught() {
-    let (mut program, checked) = unverified(MUTATING);
+    let (mut program, checked, ast) = unverified(MUTATING);
     let step = program.functions.iter_mut().find(|f| f.name == "step").expect("step");
     for block in &mut step.blocks {
         block.insts.retain(|inst| !matches!(inst.op, Op::CopyOut { .. }));
     }
-    says(&verify(&program, &checked), "returns after copying out 0 of 1");
+    says(&verify(&program, &checked, &ast), "returns after copying out 0 of 1");
 }
 
 /// **Copying one parameter out twice and the other not at all**, which is the
@@ -167,7 +167,7 @@ fn a_return_that_forgets_to_copy_out_is_caught() {
 /// identity; the check threw it away along with the params list.
 #[test]
 fn copying_one_parameter_out_twice_and_the_other_never_is_caught() {
-    let (mut program, checked) = unverified(TWO_MUTABLE);
+    let (mut program, checked, ast) = unverified(TWO_MUTABLE);
     let both = program.functions.iter_mut().find(|f| f.name == "both").expect("both");
     // Whichever slot the first copy-out names, make the second one name it too.
     let mut first: Option<Op> = None;
@@ -182,12 +182,12 @@ fn copying_one_parameter_out_twice_and_the_other_never_is_caught() {
             }
         }
     }
-    says(&verify(&program, &checked), "twice");
+    says(&verify(&program, &checked, &ast), "twice");
 }
 
 #[test]
 fn a_return_of_the_wrong_type_is_caught() {
-    let (mut program, checked) = unverified(MUTATING);
+    let (mut program, checked, ast) = unverified(MUTATING);
     let step = program.functions.iter_mut().find(|f| f.name == "step").expect("step");
     // $t1 is the record loaded from `r`; the function promised an `int`.
     for block in &mut step.blocks {
@@ -195,24 +195,24 @@ fn a_return_of_the_wrong_type_is_caught() {
             block.term = Term::Return(Some(ValueId(1)));
         }
     }
-    says(&verify(&program, &checked), "returns a value of the wrong type");
+    says(&verify(&program, &checked, &ast), "returns a value of the wrong type");
 }
 
 /// §4.19: an `extern`'s implementation is C's. Blocks on one would mean the emitter
 /// had two answers to "who defines this".
 #[test]
 fn an_extern_with_a_body_is_caught() {
-    let (mut program, checked) = unverified(
+    let (mut program, checked, ast) = unverified(
         "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nfunction f() -> f64\n    return sqrt(2.0)\n",
     );
     let body = program.functions[1].blocks.remove(0);
     program.functions[0].blocks.push(body);
-    says(&verify(&program, &checked), "an extern has a body");
+    says(&verify(&program, &checked, &ast), "what C provides has a body");
 }
 
 #[test]
 fn a_switch_with_no_cases_is_caught() {
-    let (mut program, checked) = unverified(
+    let (mut program, checked, ast) = unverified(
         "variant Step\n    stop\n    skip\n\nfunction f(s: Step) -> int\n    return match s\n        .stop => 0\n        .skip => 1\n",
     );
     for block in &mut program.functions[0].blocks {
@@ -220,7 +220,7 @@ fn a_switch_with_no_cases_is_caught() {
             block.term = Term::Switch { tag, cases: Vec::new() };
         }
     }
-    says(&verify(&program, &checked), "a switch with no cases");
+    says(&verify(&program, &checked, &ast), "a switch with no cases");
 }
 
 /// The message names the function and the block, because a dump of a large program
@@ -228,14 +228,14 @@ fn a_switch_with_no_cases_is_caught() {
 /// that says only *what* is wrong and not *where* costs the reader the whole file.
 #[test]
 fn a_problem_names_the_function_and_the_block() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     // The exit block, deliberately: it ends in a `return`, so opening its terminator
     // removes no edge and the damage stays one problem. Opening the loop body's
     // instead reports two — the missing terminator *and* the predecessor that
     // vanished with it, which is the verifier being right and the test being
     // careless.
     program.functions[0].blocks[3].term = Term::Open;
-    let problems = verify(&program, &checked);
+    let problems = verify(&program, &checked, &ast);
     assert_eq!(problems.len(), 1, "{problems:?}");
     // The phase is in the message from M-strings-ownership on, because "which pass produced this" is
     // the first question a violation raises and the compiler knows the answer.
@@ -252,7 +252,7 @@ fn a_problem_names_the_function_and_the_block() {
 /// path that skips the loop never passes through it.
 #[test]
 fn a_use_its_definition_does_not_dominate_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     let function = &mut program.functions[0];
     // Find the block that computes the addition, and the exit block that returns.
     let mut moved: Option<Inst> = None;
@@ -271,7 +271,7 @@ fn a_use_its_definition_does_not_dominate_is_caught() {
         .position(|b| matches!(b.term, Term::Return(_)))
         .expect("an exit block");
     function.blocks[exit].insts.insert(0, moved);
-    says(&verify(&program, &checked), "does not dominate it");
+    says(&verify(&program, &checked, &ast), "does not dominate it");
 }
 
 /// The same check, from the other side: a definition in the *entry* block dominates
@@ -281,10 +281,10 @@ fn a_use_its_definition_does_not_dominate_is_caught() {
 /// the comparison in the test block and reads them in the abort block.
 #[test]
 fn a_temporary_may_cross_a_block_when_its_definition_dominates() {
-    let (program, checked) = unverified(
+    let (program, checked, ast) = unverified(
         "function main()\n    assert 1 + 1 == 2\n",
     );
-    assert_eq!(verify(&program, &checked), Vec::<String>::new());
+    assert_eq!(verify(&program, &checked, &ast), Vec::<String>::new());
 }
 
 // --- M-strings-ownership: the invariants that depend on which pass has run (panel 021) --------
@@ -293,7 +293,7 @@ fn a_temporary_may_cross_a_block_when_its_definition_dominates() {
 /// pass's job — which would then do it again.
 #[test]
 fn a_refcount_before_the_ownership_pass_is_caught() {
-    let (mut program, checked) = unverified(SUBJECT);
+    let (mut program, checked, ast) = unverified(SUBJECT);
     let value = program.functions[0].values.len() as u32 - 1;
     let inst = Inst {
         dest: None,
@@ -302,9 +302,9 @@ fn a_refcount_before_the_ownership_pass_is_caught() {
         span: program.functions[0].span,
     };
     program.functions[0].blocks[0].insts.push(inst);
-    says(&verify(&program, &checked), "a refcount operation before the ownership pass");
+    says(&verify(&program, &checked, &ast), "a refcount operation before the ownership pass");
     // …and the message names the pass to suspect.
-    says(&verify(&program, &checked), "after lowering");
+    says(&verify(&program, &checked, &ast), "after lowering");
 }
 
 /// The `Owned` half: a returning block that does not release a slot it owns is a leak,
@@ -312,7 +312,7 @@ fn a_refcount_before_the_ownership_pass_is_caught() {
 /// slot.
 #[test]
 fn a_return_that_leaves_a_slot_unreleased_is_caught() {
-    let (mut program, checked) =
+    let (mut program, checked, ast) =
         owned("function f(n: str) -> str\n    s: str @ \"x\"\n    return s + n\n");
     let exit = program.functions[0]
         .blocks
@@ -326,8 +326,8 @@ fn a_return_that_leaves_a_slot_unreleased_is_caught() {
         .rposition(|inst| matches!(inst.op, Op::Decref(_)))
         .expect("the sweep released something");
     insts.remove(last);
-    says(&verify(&program, &checked), "a slot it owns");
-    says(&verify(&program, &checked), "after the ownership pass");
+    says(&verify(&program, &checked, &ast), "a slot it owns");
+    says(&verify(&program, &checked, &ast), "after the ownership pass");
 }
 
 /// And the invariant that replaces liveness: an owning temporary must be **moved** into
@@ -335,7 +335,7 @@ fn a_return_that_leaves_a_slot_unreleased_is_caught() {
 /// to live, which is what an end-of-block release would have had to guess about.
 #[test]
 fn an_owning_temporary_that_no_store_takes_is_caught() {
-    let (mut program, checked) = owned("function f(n: str) -> str\n    return n + n\n");
+    let (mut program, checked, ast) = owned("function f(n: str) -> str\n    return n + n\n");
     let function = &mut program.functions[0];
     for block in function.blocks.iter_mut() {
         // The pass's own move: a store whose value is a concatenation's result.
@@ -346,14 +346,14 @@ fn an_owning_temporary_that_no_store_takes_is_caught() {
             break;
         }
     }
-    says(&verify(&program, &checked), "never carries ownership across an edge");
+    says(&verify(&program, &checked, &ast), "never carries ownership across an edge");
 }
 
 /// The phase cannot go backwards, and a pass cannot run twice.
 #[test]
 #[should_panic(expected = "cannot go back")]
 fn the_phase_is_monotonic() {
-    let (mut program, checked) = owned("function f() -> int\n    return 1\n");
+    let (mut program, checked, ast) = owned("function f() -> int\n    return 1\n");
     let _ = &checked;
     program.advance_to(crate::ir::Phase::Owned);
 }

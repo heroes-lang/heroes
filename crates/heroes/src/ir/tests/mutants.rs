@@ -74,7 +74,7 @@ fn every_mutant_the_frontend_accepts_lowers_to_a_well_formed_ir() {
                 // compiler's bug.
                 accepted += 1;
                 let out = lower(&parsed.ast, &resolved, &checked, &src);
-                let problems = verify(&out.program, &checked);
+                let problems = verify(&out.program, &checked, &parsed.ast);
                 assert!(
                     problems.is_empty(),
                     "{} ({}): the frontend accepted this and the IR is malformed: {}\n{}",
@@ -133,7 +133,7 @@ fn every_surviving_mutant_of_the_acceptance_program_lowers() {
             }
             accepted += 1;
             let out = lower(&parsed.ast, &resolved, &checked, &src);
-            let problems = verify(&out.program, &checked);
+            let problems = verify(&out.program, &checked, &parsed.ast);
             assert!(
                 problems.is_empty(),
                 "appendix ({}): {}",

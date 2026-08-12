@@ -21,7 +21,7 @@ pub struct Operator {
     pub imitates: &'static str,
 }
 
-pub const OPERATORS: [Operator; 11] = [
+pub const OPERATORS: [Operator; 12] = [
     Operator { id: "swap-args", imitates: "classic LLM argument inversion" },
     Operator { id: "drop-case", imitates: "a forgotten variant case" },
     Operator { id: "forget-at-decl", imitates: "mutability confusion" },
@@ -33,6 +33,7 @@ pub const OPERATORS: [Operator; 11] = [
     Operator { id: "mix-int-float", imitates: "an implicit-conversion prior" },
     Operator { id: "shadow", imitates: "an inner-scope habit" },
     Operator { id: "drop-question", imitates: "forgotten error propagation" },
+    Operator { id: "typo-digit", imitates: "a one-digit slip in a number copied from elsewhere" },
 ];
 
 /// Every mutant one operator makes from one source.
@@ -55,6 +56,7 @@ pub fn apply(id: &str, name: &str, text: &str) -> Vec<String> {
         "mix-int-float" => edits::mix_int_float(ast, &src),
         "shadow" => edits::shadow(ast, &src),
         "drop-question" => edits::drop_question(ast, &src),
+        "typo-digit" => edits::typo_digit(ast, &src),
         _ => Vec::new(),
     }
 }

@@ -38,7 +38,7 @@ fn lowered(text: &str) -> (Program, Checked, String) {
     assert!(checked.diagnostics.is_empty(), "check: {:?}", checked.diagnostics[0].message);
     let out = lower(&parsed.ast, &resolved, &checked, &src);
     assert!(out.diagnostics.is_empty(), "lower: {:?}", out.diagnostics[0].message);
-    let problems = check_ir(&out.program, &checked);
+    let problems = check_ir(&out.program, &checked, &parsed.ast);
     assert!(problems.is_empty(), "verify: {}", problems.join("; "));
     let text = dump(&out.program, &parsed.ast, &checked, &src);
     (out.program, checked, text)
@@ -53,17 +53,17 @@ fn text(program: &str) -> String {
 /// Lowers **and runs the ownership pass**, for the tests about what must be true
 /// afterwards. Unverified, like `unverified`, because every caller is about to damage
 /// the result on purpose.
-fn owned(text: &str) -> (Program, Checked) {
-    let (mut program, checked) = unverified(text);
+fn owned(text: &str) -> (Program, Checked, crate::syntax::Ast) {
+    let (mut program, checked, ast) = unverified(text);
     crate::own::run(&mut program, &checked);
-    (program, checked)
+    (program, checked, ast)
 }
 
 /// Lowers **without** verifying, so a test can break an invariant on purpose and
 /// watch the verifier catch it. `verify.rs` is the only caller: everything else
 /// wants the checked version, because a test that skips the verifier would pass on
 /// an IR whose blocks had two exits.
-fn unverified(text: &str) -> (Program, Checked) {
+fn unverified(text: &str) -> (Program, Checked, crate::syntax::Ast) {
     let src = Source::new("test.hero".to_string(), text.to_string());
     let parsed = parse(&src);
     assert!(parsed.diagnostics.is_empty(), "parse: {:?}", parsed.diagnostics[0].message);
@@ -72,5 +72,7 @@ fn unverified(text: &str) -> (Program, Checked) {
     let checked = check(&parsed.ast, &resolved, &src);
     assert!(checked.diagnostics.is_empty(), "check: {:?}", checked.diagnostics[0].message);
     let out = lower(&parsed.ast, &resolved, &checked, &src);
-    (out.program, checked)
+    // The tree travels with the program: `verify` asks the declaration whether an
+    // implementation is C's, rather than inferring it from `FnKind` (panel 038).
+    (out.program, checked, parsed.ast)
 }

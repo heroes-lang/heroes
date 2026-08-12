@@ -1,0 +1,35 @@
+# fixedbugs, M-header-constants step 2, 2026-08-12.
+#
+# SYMPTOM: a misspelled C name was reported as a wrong *return type*:
+#
+#     error[ffi_return_type]: `sqlite3_openn` does not return `int");` — that
+#     is what `sqlite3.h` says, and clang read it
+#     note: … correct the result type, or name the header that declares this …
+#
+# Two defects in one line. The type is `int");` — text from clang's **echo of
+# the source line**, which repeats the assertion's own message and so matched
+# the marker. And the diagnosis is wrong: the name does not exist, and
+# correcting the result type cannot fix that (§4.17).
+#
+# CAUSE: `emit/ffi.rs` matched any stderr line containing the marker. The good
+# path was right by *ordering* — clang prints the message before the echo, and
+# the duplicate was dropped by span — which is a premise about clang's output
+# rather than a fact about the line in hand (CLAUDE.md §11).
+#
+# FIX: a line is one of ours only if it also says `static assertion failed`; and
+# `call to undeclared function` / `use of undeclared identifier`, for a name an
+# `extern` group declares, becomes `ffi_unknown_name` — carrying clang's own
+# typo correction as a `guess` fix, never `certain`, because it is a search over
+# the header's names and not a fact about this program (CLAUDE.md §8).
+#
+# Found by panel 038's ffi-pragmatist, compiling rather than reading.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a_misspelled_extern_name_says_the_header_has_no_such_name`.
+
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_openn(path: cstr, @out: ptr) -> int  #~ ffi_unknown_name
+
+function main()
+    db: ptr @ nullptr
+    print(sqlite3_openn(":memory:".cstr(), @db))

@@ -40,7 +40,7 @@ fn lower_text(name: &str, text: &str) -> String {
     let out = lower(&parsed.ast, &resolved, &checked, &src);
     let said: Vec<String> = out.diagnostics.iter().map(|d| d.render_line(&src)).collect();
     assert_eq!(said, Vec::<String>::new(), "{name} must lower clean");
-    let problems = verify(&out.program, &checked);
+    let problems = verify(&out.program, &checked, &parsed.ast);
     assert_eq!(problems, Vec::<String>::new(), "{name}'s IR must be well formed");
     dump(&out.program, &parsed.ast, &checked, &src)
 }

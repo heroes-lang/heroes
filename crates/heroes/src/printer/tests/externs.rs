@@ -69,6 +69,32 @@ extern \"math.h\"
     );
 }
 
+/// **The other side of that rule, and it was broken.** A comment above a group's
+/// *first member* documents the member, not the group — and it was being moved
+/// down onto the **second** member, because the caller keys a first member's
+/// comment rules on the head's line (it has to, per the test above) and nothing
+/// then flushed the comments between the head and the member. Whatever
+/// declaration came next printed them, at the wrong place.
+///
+/// Pre-existing: this case is functions only. Found by panel 038's
+/// compiler-engineer, and fixed before `examples/curl/main.hero` moved a four-line
+/// comment into exactly this position.
+#[test]
+fn a_comment_above_a_groups_first_member_stays_on_it() {
+    assert_canonical(
+        "extern \"math.h\"\n    # The one the program actually calls.\n    function sqrt(x: f64) -> f64\n    function pow(base: f64, exponent: f64) -> f64\n",
+    );
+}
+
+/// A `constant` member round-trips, and the head line is printed once for a group
+/// that mixes the two kinds (§4.19, panel 038).
+#[test]
+fn a_group_mixing_constants_and_functions_round_trips() {
+    assert_canonical(
+        "extern \"sqlite3.h\" link \"sqlite3\"\n    # From the header, so it cannot be copied wrong.\n    constant SQLITE_OK: int\n    constant SQLITE_ROW: int\n    function sqlite3_close(db: ptr) -> int\n",
+    );
+}
+
 /// A group beside ordinary declarations: the run must not swallow what follows.
 #[test]
 fn a_function_after_a_group_is_outside_it() {

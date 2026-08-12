@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 51] = [
+const ANNOTATED: [&str; 54] = [
     "bound_unit",
     "builtin",
     "builtin_as_value",
@@ -35,7 +35,13 @@ const ANNOTATED: [&str; 51] = [
     "expected_expression",
     "expected_pattern",
     "exponent_literal",
+    // None of the four is a thesis rule: a wrong FFI type, a wrong constant type,
+    // a C object named as a constant and a name no header declares are errors in
+    // every language that has an FFI, so `--permissive` must keep counting them.
+    "ffi_constant_type",
+    "ffi_not_constant",
     "ffi_type",
+    "ffi_unknown_name",
     "indentation_jump",
     "indentation_not_multiple_of_4",
     "int_out_of_range",

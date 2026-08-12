@@ -1,0 +1,34 @@
+# A value that comes from a header and is written nowhere in this file
+# (design.md §4.19, panel 038).
+#
+# Every number printed below is `math.h`'s or `stdio.h`'s. Nothing here can be
+# copied wrong, because nothing here is copied: the emitter reads the name where
+# the preprocessor can see it, and clang checks its type against the real header
+# with the same `_Static_assert` an `extern function` gets.
+#
+# Two headers on purpose. The `#include` walk used to ask `FnKind` whether a
+# declaration came from a header — and an `extern constant` lowers to
+# `FnKind::Constant`, not `FnKind::Extern`, so a group holding *only* constants
+# would have had its `#include` silently dropped. `stdio.h` here holds no
+# function, which is the shape that catches it.
+#
+# It is also the case that makes the double-emit determinism test non-vacuous for
+# this form: that test walks `tests/golden/emit` and `tests/golden/run` only
+# (`golden.rs`), so before this file the accessor and its two assertions were
+# emitted by nothing the test could see (panel 038, compiler-engineer's condition).
+
+extern "math.h"
+    constant M_PI: f64
+    function sqrt(x: f64) -> f64
+
+extern "stdio.h"
+    constant SEEK_SET: int
+    constant SEEK_END: int
+
+function main()
+    # `3.14159…` is in `math.h`, and the program says only its name.
+    print(M_PI)
+    print(sqrt(M_PI * M_PI))
+    # Two `int` macros, and the arithmetic is the language's own.
+    print(SEEK_SET)
+    print(SEEK_END - SEEK_SET)

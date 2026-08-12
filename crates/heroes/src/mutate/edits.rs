@@ -12,7 +12,7 @@
 //! plausible — they are programs someone could have typed.
 
 use crate::source::{Source, Span};
-use crate::syntax::{Arg, Ast, BinaryOp, ExprId, ExprKind, StmtKind};
+use crate::syntax::{Arg, Ast, BinaryOp, DeclKind, ExprId, ExprKind, StmtKind};
 
 /// Replace a span with new text.
 fn edit(src: &Source, span: Span, replacement: &str) -> String {
@@ -234,6 +234,54 @@ pub(super) fn mix_int_float(ast: &Ast, src: &Source) -> Vec<String> {
         }
     }
     out
+}
+
+/// A `constant`'s value, off by one digit.
+///
+/// The site is deliberately narrow, and the narrowing is a fact about the value
+/// rather than a premise about the program (CLAUDE.md §11): a number *inside an
+/// expression* is a choice this program is making, and nothing outside the file
+/// can contradict it — but a `constant` exists to **name** a number, and where
+/// that number was copied from somewhere else, the somewhere else is an authority
+/// the compiler could have consulted and did not. This row measures the gap.
+pub(super) fn typo_digit(ast: &Ast, src: &Source) -> Vec<String> {
+    let mut out = Vec::new();
+    for decl in &ast.decls {
+        // A constant with no body is an `extern constant`: its value is the
+        // header's, so there is no digit in this file to move — which is the
+        // whole point of the form, and the reason this operator's site count is
+        // the number to report (§4.19, panel 038).
+        let DeclKind::Constant { body: Some(body), .. } = &decl.kind else { continue };
+        // One statement, and it is an expression: a constant computed from
+        // several has no single number to be wrong about.
+        if body.stmts.len() != 1 {
+            continue;
+        }
+        let StmtKind::Expr(value) = &ast.stmts[body.stmts[0].0 as usize].kind else { continue };
+        let literal = &ast.exprs[value.0 as usize];
+        if !matches!(literal.kind, ExprKind::Int) {
+            continue;
+        }
+        if let Some(slipped) = neighbouring_digit(src.slice(literal.span)) {
+            out.push(edit(src, literal.span, &slipped));
+        }
+    }
+    out
+}
+
+/// The last digit, moved by one — and `9` goes *down* to `8` rather than carrying,
+/// because a carry changes how many digits the number has and that is a different
+/// mistake. `None` where the literal does not end in a digit, which keeps the
+/// operator off anything it does not understand.
+fn neighbouring_digit(text: &str) -> Option<String> {
+    let mut digits: Vec<char> = text.chars().collect();
+    let last = digits.last_mut()?;
+    *last = match *last {
+        '9' => '8',
+        d if d.is_ascii_digit() => char::from(d as u8 + 1),
+        _ => return None,
+    };
+    Some(digits.into_iter().collect())
 }
 
 pub(super) fn shadow(ast: &Ast, src: &Source) -> Vec<String> {

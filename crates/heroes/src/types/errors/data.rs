@@ -274,3 +274,18 @@ pub(in crate::types) fn ffi_type(name: &str, what: &str, span: Span) -> Diagnost
         span,
     )
 }
+
+/// A type that *can* cross the boundary but cannot be a **value a header holds**
+/// (§4.19, panel 038).
+///
+/// Separate from `ffi_type` because the reader's mistake is different: they did
+/// not reach for a type C has never heard of, they reached for one that works
+/// perfectly in a signature and cannot be a constant. So the message carries the
+/// reason rather than the list — the list would say the type is allowed.
+pub(in crate::types) fn ffi_constant_type(name: &str, why: &str, span: Span) -> Diagnostic {
+    Diagnostic::new(
+        "ffi_constant_type",
+        format!("an `extern constant` cannot be declared `{name}` — {why}"),
+        span,
+    )
+}

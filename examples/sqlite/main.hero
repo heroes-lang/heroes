@@ -25,6 +25,12 @@
 # type vocabulary §4.19 defers to Part 7 item 10.
 
 extern "sqlite3.h" link "sqlite3"
+    # SQLite's own result codes, from SQLite's own header. A typo is
+    # `error[unknown_name]` here, locally (panel 034 R4) — and since
+    # M-header-constants a *wrong number* is impossible rather than unnoticed,
+    # because there is no number: this file used to say `0` and `100`.
+    constant SQLITE_OK: int
+    constant SQLITE_ROW: int
     function sqlite3_open(filename: cstr, @out: ptr) -> int
     function sqlite3_close(db: ptr) -> int
     function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> int
@@ -32,14 +38,6 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_step(statement: ptr) -> int
     function sqlite3_column_int(statement: ptr, column: int) -> int
     function sqlite3_finalize(statement: ptr) -> int
-
-# SQLite's own result codes, as constants rather than as literals in the
-# comparisons (panel 034 R4). A typo is `error[unknown_name]` here, locally.
-constant SQLITE_OK: int
-    0
-
-constant SQLITE_ROW: int
-    100
 
 # One statement, run for its effect. The three pointers SQLite's callback
 # protocol takes are `nullptr`: §4.19 fixes a callback at `ptr` until the

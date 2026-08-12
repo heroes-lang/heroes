@@ -50,7 +50,7 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
                 if !lowered.diagnostics.is_empty() {
                     continue;
                 }
-                if !verify(&lowered.program, &checked).is_empty() {
+                if !verify(&lowered.program, &checked, &parsed.ast).is_empty() {
                     continue; // `ir/tests/mutants.rs` owns that invariant.
                 }
                 // The emitter never sees a program without monomorphisation, so

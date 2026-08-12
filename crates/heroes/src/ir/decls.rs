@@ -45,7 +45,7 @@ pub(super) fn declaration(
         DeclKind::Function(function) => {
             self_function(b, ast, resolved, checked, src, index, name, function)
         }
-        DeclKind::Constant { body, .. } => {
+        DeclKind::Constant { body: Some(body), .. } => {
             // The declared type is what the checker already checked the body
             // against, so it is the type of the value the body produces.
             let result = stmts::block_value_type(ast, checked, body);
@@ -55,6 +55,15 @@ pub(super) fn declaration(
             if !b.is_terminated() {
                 b.terminate(Term::Return(value));
             }
+            b.end();
+        }
+        // An `extern constant`: no body, so no blocks — the same shape an
+        // `extern function` has, and for the same reason. The result type comes
+        // from the checker's table rather than from a body that does not exist,
+        // and the emitter reads the C name off `Ast::decls` (§4.19, panel 038).
+        DeclKind::Constant { body: None, .. } => {
+            let result = checked.result_type(index).unwrap_or_else(|| checked.types.unit());
+            b.begin(name, index, FnKind::Constant, result, Vec::new(), decl.span);
             b.end();
         }
         DeclKind::Test { body } => {

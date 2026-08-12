@@ -11,6 +11,10 @@ _Static_assert(HERO_RUNTIME_ABI == 10, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) _Generic((c), void:1, default:0)
 #define HERO_RET_PTR(c) _Generic((c), signed char:0, short:0, int:0, long:0, long long:0, unsigned char:0, unsigned short:0, unsigned int:0, unsigned long:0, unsigned long long:0, float:0, double:0, long double:0, HeroStr:0, default:1)
+_Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK int");
+_Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
+_Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND int");
+_Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_STR(hero_file_read((const char *)0, (int64_t *)0)), "heroes-ffi-return hero_file_read str");
 _Static_assert(HERO_RET_INT(hero_file_write((const char *)0, (HeroStr){0})), "heroes-ffi-return hero_file_write int");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count int");
@@ -21,7 +25,7 @@ HERO_STR_STATIC(hero_str_0, "hi ");
 HERO_STR_STATIC(hero_str_1, "good day ");
 HERO_STR_STATIC(hero_str_2, "Ziggy");
 
-#line 25 "strings.c"
+#line 29 "strings.c"
 typedef struct h_strings_0opt0 {
     int64_t tag;
     union {
@@ -51,7 +55,7 @@ void h_strings_main(void);
 
 #line 7 "tests/golden/emit/strings.hero"
 HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
-#line 55 "strings.c"
+#line 59 "strings.c"
     HeroStr h2_prefix = {0};
     HeroStr h3_own3 = {0};
     HeroStr t1 = {0};
@@ -72,12 +76,12 @@ bb0:
 #line 8 "tests/golden/emit/strings.hero"
     t7 = h2_prefix;
 #line 8 "tests/golden/emit/strings.hero"
-#line 76 "strings.c"
+#line 80 "strings.c"
     hero_str_incref(t1);
 #line 8 "tests/golden/emit/strings.hero"
     h2_prefix = t1;
 #line 8 "tests/golden/emit/strings.hero"
-#line 81 "strings.c"
+#line 85 "strings.c"
     hero_str_decref(t7);
 #line 9 "tests/golden/emit/strings.hero"
     t2 = h1_formal;
@@ -94,20 +98,20 @@ bb1:
 #line 11 "tests/golden/emit/strings.hero"
     h3_own3 = t6;
 #line 11 "tests/golden/emit/strings.hero"
-#line 98 "strings.c"
+#line 102 "strings.c"
     hero_str_decref(t8);
 #line 11 "tests/golden/emit/strings.hero"
-#line 101 "strings.c"
+#line 105 "strings.c"
     hero_str_incref(t6);
 #line 11 "tests/golden/emit/strings.hero"
     t10 = h2_prefix;
 #line 11 "tests/golden/emit/strings.hero"
-#line 106 "strings.c"
+#line 110 "strings.c"
     hero_str_decref(t10);
 #line 11 "tests/golden/emit/strings.hero"
     t11 = h3_own3;
 #line 11 "tests/golden/emit/strings.hero"
-#line 111 "strings.c"
+#line 115 "strings.c"
     hero_str_decref(t11);
     return t6;
 bb2:
@@ -116,12 +120,12 @@ bb2:
 #line 10 "tests/golden/emit/strings.hero"
     t9 = h2_prefix;
 #line 10 "tests/golden/emit/strings.hero"
-#line 120 "strings.c"
+#line 124 "strings.c"
     hero_str_incref(t3);
 #line 10 "tests/golden/emit/strings.hero"
     h2_prefix = t3;
 #line 10 "tests/golden/emit/strings.hero"
-#line 125 "strings.c"
+#line 129 "strings.c"
     hero_str_decref(t9);
     goto bb1;
 bb3:
@@ -130,7 +134,7 @@ bb3:
 
 #line 13 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
-#line 134 "strings.c"
+#line 138 "strings.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     bool t2;
@@ -150,7 +154,7 @@ bb0:
 #line 14 "tests/golden/emit/strings.hero"
     h0_own0 = t3;
 #line 14 "tests/golden/emit/strings.hero"
-#line 154 "strings.c"
+#line 158 "strings.c"
     hero_str_decref(t4);
 #line 14 "tests/golden/emit/strings.hero"
     hero_print_str(t3);
@@ -158,7 +162,7 @@ bb0:
 #line 14 "tests/golden/emit/strings.hero"
     t5 = h0_own0;
 #line 14 "tests/golden/emit/strings.hero"
-#line 162 "strings.c"
+#line 166 "strings.c"
     hero_str_decref(t5);
     return;
 }

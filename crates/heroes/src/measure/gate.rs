@@ -32,7 +32,8 @@
 /// | 2434 | panel 031 | modules: `use`, qualification, the transitivity rule |
 /// | 2422 | panel 035 | the thirteen silences, closed **net −12**: one line deleted, four added |
 /// | 2560 | panel 036 | the FFI group and the program's edges, **net +138** against two removals worth −31 |
-pub const SPEC_TOKENS: usize = 2560;
+/// | 2588 | panel 038 | a group's `constant`, **+28** with no removal available: the two the record still listed had already been spent by `6a58d47`, so this is panel 012's *other* branch — a registered prediction (the llm-ergonomist's first-try rates, scored at M-program-corpus). +1 of the 28 is the `@out: ptr` repair, which fixed an example that ran to completion doing nothing |
+pub const SPEC_TOKENS: usize = 2588;
 
 /// The reserved-word registry's own size, gated separately — **not** part of
 /// §1.6's budget, and that is the ruling rather than an omission (panel 035 D).

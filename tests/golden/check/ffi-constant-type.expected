@@ -1,0 +1,2 @@
+tests/golden/check/ffi-constant-type.hero:15:30: error[ffi_constant_type]: an `extern constant` cannot be declared `str` — a `str` is built by this runtime, so no C header holds one: declare it `cstr` and convert with `to_str`, which copies (§4.20)
+tests/golden/check/ffi-constant-type.hero:19:19: error[ffi_constant_type]: an `extern constant` cannot be declared `()` — a `constant` names a value, and `()` is a type rather than a value

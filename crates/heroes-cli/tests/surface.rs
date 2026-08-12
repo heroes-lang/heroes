@@ -713,6 +713,117 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
     assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
 }
 
+/// **The spec's own FFI example, run.** Nothing in this project compiled the
+/// specification's examples, and that is how the most-copied FFI line in the
+/// document came to contradict the rule four lines below it: it declared
+/// `sqlite3_open(path: cstr, out: ptr)` while the prose said *"a C out-parameter is
+/// an `@` parameter"*.
+///
+/// The consequence was not a crash. Copied verbatim, that example compiled clean,
+/// linked, ran and **exited 0** printing `rc: 21` — `SQLITE_MISUSE`: the address
+/// of the handle was never passed, so no database was opened and the program
+/// reported success to the shell. A silent error inside the specification.
+///
+/// Found by panel 038's llm-ergonomist, which is given the document and nothing
+/// else, while it was being asked about constants. This is the instrument that
+/// would have found it without a judge: the example is read **out of the real spec
+/// file at test time**, so it cannot drift from what a reader copies.
+#[test]
+fn the_specs_own_ffi_example_opens_a_database() {
+    let spec = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../spec/heroes-spec.md"
+    ))
+    .expect("the spec is in the repo");
+    // The fenced block under `## FFI`, which is the one a reader copies.
+    let ffi = spec.split("## FFI").nth(1).expect("the spec has an FFI section");
+    let block = ffi.split("```").nth(1).expect("the FFI section shows a group");
+    assert!(block.contains("extern \"sqlite3.h\""), "the example moved: {block}");
+
+    // The example plus the smallest program that exercises what it declares. If
+    // the out-parameter is not an `@`, `db` stays `nullptr`, sqlite3_open returns
+    // SQLITE_MISUSE and this prints the wrong number — which is the whole point.
+    let program = format!(
+        "{block}\nfunction main()\n    db: ptr @ nullptr\n    print(sqlite3_open(\":memory:\".cstr(), @db))\n    _ = sqlite3_close(db)\n"
+    );
+    let dir = std::env::temp_dir().join("heroes-spec-ffi");
+    std::fs::create_dir_all(&dir).expect("a writable temp dir");
+    let path = dir.join("spec-ffi.hero");
+    std::fs::write(&path, program).expect("the program is written");
+
+    let out = heroes(&["run", &path.display().to_string()]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(code(&out), 0, "the spec's own example must compile and run:\n{stderr}");
+    // `0` is `SQLITE_OK`. `21` is `SQLITE_MISUSE`, which is what a missing `@`
+    // produces: it opens nothing and says so only through a number.
+    assert_eq!(String::from_utf8_lossy(&out.stdout), "0\n", "stderr:\n{stderr}");
+}
+
+/// An `extern constant` whose declared type the header refutes. The same
+/// `_Generic` as a signature's, asked of a token instead of a call — and a
+/// different code, because a function *returns* the wrong type and a constant
+/// **is** one (panel 038).
+///
+/// The silent route this closes was measured before the form existed: `int64_t
+/// f(void) { return M_PI; }` compiles clean under the project's flags and yields
+/// **3**.
+#[test]
+fn a_wrong_extern_constant_type_is_the_authors_error_not_the_compilers() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-constant-type.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_constant_type]"), "{stderr}");
+    assert!(stderr.contains("`M_PI` is not `int`"), "{stderr}");
+    assert!(stderr.contains("math.h"), "{stderr}");
+    // Not the function's diagnostic: a constant does not "return" anything.
+    assert!(!stderr.contains("does not return"), "{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("_Static_assert"), "it showed generated C:\n{stderr}");
+}
+
+/// A C **object** named as a constant. The refusal that no other language makes as
+/// a rule, and the one the historian predicted Heroes would need or else compile
+/// `stdout` at exit 0 in silence (panel 038).
+#[test]
+fn a_c_object_is_not_a_constant() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-not-constant.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_not_constant]"), "{stderr}");
+    assert!(stderr.contains("has `stdout`, but not as a constant"), "{stderr}");
+    // The note must carry *why* it is refused, not just that it is: the rule being
+    // enforced is §4.2's ban on mutable globals (§4.17).
+    assert!(stderr.contains("reading it twice could give two answers"), "{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("__builtin_constant_p"), "it showed generated C:\n{stderr}");
+}
+
+/// The other half of §7's named exception: a name the header does not have is
+/// **a different mistake** from a result type it refutes, and was being reported
+/// as that one (panel 038, rider A1).
+///
+/// This pins what the old message got wrong: the code, the fact that no text
+/// from clang's echo of the source line reaches the message, and the repair —
+/// clang's own typo correction, carried as a `guess` so `--apply` leaves it
+/// alone (CLAUDE.md §8).
+#[test]
+fn a_misspelled_extern_name_says_the_header_has_no_such_name() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-unknown-name.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_unknown_name]"), "{stderr}");
+    assert!(stderr.contains("declares no `sqlite3_openn`"), "{stderr}");
+    assert!(stderr.contains("sqlite3.h"), "{stderr}");
+    // clang knows what was meant, and the message says so without promising it.
+    assert!(stderr.contains("fix (guess)"), "{stderr}");
+    assert!(stderr.contains("`sqlite3_open`"), "{stderr}");
+    // The defect itself: no fragment of the echoed source line may appear.
+    assert!(!stderr.contains("ffi_return_type"), "the wrong diagnosis is back:\n{stderr}");
+    assert!(!stderr.contains("int\");"), "clang's echo reached the message:\n{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("_Static_assert"), "it showed generated C:\n{stderr}");
+}
+
 /// **The milestone's acceptance test, run** (design.md §4.19's ladder, rung 3):
 /// *if this works without you having written a standard library, the
 /// architecture holds*.

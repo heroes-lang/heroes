@@ -1,0 +1,37 @@
+# fixedbugs, M-header-constants, 2026-08-12.
+#
+# SYMPTOM: the language has no mutable globals (§4.2:673), and `constant stdout:
+# ptr` is one. On this platform `stdout` is `#define stdout __stdoutp` over an
+# `extern FILE *`, and `errno` is `(*__error())` — both are *objects*, so a
+# zero-argument accessor over one returns whatever it holds **at the time of the
+# call**. Two reads, two answers, from a declaration that says `constant`.
+#
+# Predicted by panel 038's historian before the form existed, and it named the
+# direction: without a check, Heroes' mechanism is *more* permissive than Zig's —
+# `errno` and `stdout` would compile, link, run and exit 0 with zero diagnostics,
+# because the preprocessor resolves them into perfectly valid expressions. A
+# failure in the quiet direction (CLAUDE.md §11).
+#
+# CAUSE: the type assertion asks what type the header gives a name, and both of
+# these have the right type. The question it does not ask is whether the header
+# gives it a **value**.
+#
+# FIX: `_Static_assert(__builtin_constant_p(X), "…")` per constant. The builtin is
+# itself a constant expression even when its argument is not, so the failure stays
+# an assertion carrying *our* message — which is what keeps `emit/ffi.rs` matching
+# only what this emitter writes. The alternative measured by the ffi-pragmatist, a
+# `static const T probe = X;` initializer, fails with clang's own words and would
+# have widened CLAUDE.md §7's named exception from a message to a generated line.
+#
+# Heroes appears to be the first language to refuse this as a language rule: Nim,
+# Swift and Go all accept naming a C object, and Zig refuses it by accident, as a
+# comptime-evaluation failure its own tracker calls a bug (sourced, panel 038).
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a_c_object_is_not_a_constant`.
+
+extern "stdio.h"
+    constant stdout: ptr  #~ ffi_not_constant
+
+function main()
+    print(stdout == nullptr)

@@ -23,11 +23,16 @@ pub(super) fn declaration(r: &mut Resolver, ast: &Ast, src: &Source, index: usiz
     let decl = &ast.decls[index];
     r.generics.clear();
     match &decl.kind {
-        DeclKind::Constant { ty, body } => {
+        DeclKind::Constant { ty, body, .. } => {
             types::resolve(r, ast, src, *ty);
-            r.open_scope();
-            stmts::block(r, ast, src, body);
-            r.close_scope();
+            // No body, no scope: an `extern constant` has nothing to resolve
+            // below its own type, exactly as an `extern function` has nothing
+            // below its signature (§4.19).
+            if let Some(body) = body {
+                r.open_scope();
+                stmts::block(r, ast, src, body);
+                r.close_scope();
+            }
         }
         DeclKind::Function(function) => function_decl(r, ast, src, function),
         DeclKind::Record { fields } => {

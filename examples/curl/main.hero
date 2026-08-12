@@ -20,28 +20,30 @@
 # 64 bits — which is exactly what fits in Heroes' `int` without losing a value,
 # and still leaves `size_t` firing.
 #
+# **Three enum constants**, since M-header-constants. `CURLOPT_URL` is a
+# `CURLoption` enumerator, so this program named it by hand as `10002` — with the
+# `CURLOPTTYPE_STRINGPOINT + 2` derivation in a comment above it and nothing on
+# either side checking the arithmetic. `heroes mutate` measured that: five copied
+# constants in `examples/`, none caught by anything. They are now group members
+# with no value, so the digits are not in this file to be wrong.
+#
 # No request is made. A test that reaches the network is a test that fails on a
 # train, and everything interesting here is settled before the first byte.
 
 extern "curl/curl.h" link "curl"
+    # The three values this program drives libcurl with. Their numbers are in
+    # `curl.h` and nowhere here, which is the whole point: `CURLOPT_URL` is
+    # `CURLOPTTYPE_STRINGPOINT + 2`, and the arithmetic is libcurl's business.
+    # This file used to say `10002`, with that derivation in a comment and nothing
+    # checking either (panel 038; `heroes mutate` scored it at 5 sites, 0 caught).
+    constant CURLOPT_URL: int
+    constant CURLE_OK: int
+    constant CURLE_UNSUPPORTED_PROTOCOL: int
     function curl_version() -> cstr
     function curl_easy_init() -> ptr
     function curl_easy_setopt(handle: ptr, option: int, value: cstr) -> int
     function curl_easy_strerror(code: int) -> cstr
     function curl_easy_cleanup(handle: ptr)
-
-# From `curl.h`: `CURLOPT_URL` is `CURLOPTTYPE_STRINGPOINT + 2`, and
-# `CURLOPTTYPE_STRINGPOINT` is 10000. A `constant` rather than a literal at the
-# call site (panel 034 R4): a typo is `error[unknown_name]` here, locally, with
-# the name in the message.
-constant CURLOPT_URL: int
-    10002
-
-constant CURLE_OK: int
-    0
-
-constant CURLE_UNSUPPORTED_PROTOCOL: int
-    1
 
 function main()
     print("libcurl: ", to_str(curl_version()))
