@@ -48,6 +48,7 @@ use crate::source::{Source, Span};
 use crate::syntax::{Ast, ExprId, ExprKind, TypeId};
 
 mod builtins;
+mod constbody;
 mod cycles;
 mod decls;
 mod errors;

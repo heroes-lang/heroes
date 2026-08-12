@@ -345,7 +345,7 @@ pub(super) fn call(
                 .functions
                 .iter()
                 .find(|f| f.decl == decl && f.instance == instance)
-                .map(|f| super::decls::instance_name(f, ast, checked, src))
+                .map(|f| super::signature::instance_name(f, ast, checked, src))
                 .unwrap_or_else(|| "hero_unreachable".to_string());
             w.line(&format!("    {assign}{name}({});", arguments.join(", ")));
         }

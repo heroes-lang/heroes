@@ -41,6 +41,7 @@ use crate::syntax::Ast;
 use crate::types::Checked;
 
 mod aggregate;
+mod body;
 mod builtins;
 mod ctype;
 mod descriptors;
@@ -51,6 +52,7 @@ mod gate;
 mod inst;
 mod main;
 mod mangle;
+mod signature;
 mod ops;
 mod perfn;
 mod term;
@@ -215,10 +217,10 @@ pub fn emit_for(
     // descriptor worklist's filter, so a `test` block's containers do not put
     // unused objects in an ordinary program (see `descriptors::generated`).
     for function in &shown {
-        decls::prototype(&mut w, function, target, ast, checked, src, &names);
+        signature::prototype(&mut w, function, target, ast, checked, src, &names);
     }
     for function in &shown {
-        decls::definition(&mut w, program, function, target, ast, checked, &names, src);
+        body::definition(&mut w, program, function, target, ast, checked, &names, src);
     }
     perfn::bodies(&mut w, ast, checked, &names, src);
     match target {
