@@ -307,9 +307,19 @@ pub(super) fn call(
         Callee::Indirect(value) => {
             w.line(&format!("    {assign}{}({});", mangle::value(value.0), arguments.join(", ")));
         }
+        // **Unmangled, by design** (CLAUDE.md §7). The name in the `.hero` file is
+        // the C function's own name, and the `#include` in the prelude is what
+        // declares it — so this call is checked against the real header rather
+        // than against a prototype this compiler invented. That is the whole of
+        // §4.19's guarantee on the argument side, and `decls::extern_assertions`
+        // is the other half, on the return side.
+        Callee::Extern(decl) => {
+            let name = src.slice(ast.decls[decl as usize].name);
+            w.line(&format!("    {assign}{name}({});", arguments.join(", ")));
+        }
         // Refused by the gate. The arm exists so that adding a callee kind to the
         // IR breaks this file.
-        Callee::Builtin(_) | Callee::Extern(_) => {
+        Callee::Builtin(_) => {
             w.line("    hero_unreachable(); /* the gate refuses this callee */");
         }
     }

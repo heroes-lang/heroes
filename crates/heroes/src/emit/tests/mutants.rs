@@ -85,12 +85,18 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
     // (measurement 002) — which is the thesis working, and it means this invariant runs
     // over the residue rather than over the corpus. It will grow with every gate row
     // M-strings-ownership and M-value-aggregates delete.
-    // **The refused count falls as the gate retires rows, and that is the point.**
-    // It was >= 10 when `sort`, `join`, `chars` and `range` were all refused; M-generics-library
-    // steps 3 and 4 gave four of them implementations, so what is left is
-    // `extern`, function values and generics — and most mutants of those files
-    // never reach the emitter, because the frontend catches them first. The floor
-    // is 1 rather than 0 because 0 would mean the gate never ran at all.
-    assert!(refused >= 1, "only {refused} mutants were refused — is the gate running?");
+    // **The refused count fell to zero at M-ffi-ladder, and that is the point.**
+    // It was >= 10 when `sort`, `join`, `chars` and `range` were all refused;
+    // M-generics-library gave four of them implementations, and step 5 of
+    // M-ffi-ladder retired `extern` — the last row any mutant of this corpus could
+    // reach. So the floor moves off the mutants, where it was measuring the gate's
+    // remaining rows rather than the gate, and onto one program that must be
+    // refused. Losing that assertion entirely would leave the loop below unable to
+    // tell "the gate accepted everything" from "the gate never ran".
+    let (refused_on_purpose, _) = super::gate::refusal(
+        "record P\n    x: int\n\nfunction main()\n    ps = [P(x: 1)]\n    print(len(sort(ps)))\n",
+    );
+    assert_eq!(refused_on_purpose, "builtin", "the gate did not run at all");
+    let _ = refused;
     assert!(emitted >= 3, "only {emitted} mutants were emitted — is the emitter running?");
 }

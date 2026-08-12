@@ -45,6 +45,7 @@ mod builtins;
 mod ctype;
 mod descriptors;
 mod decls;
+pub mod ffi;
 mod gate;
 mod inst;
 mod mangle;
@@ -82,6 +83,15 @@ pub fn tests_of(program: &Program) -> Vec<String> {
 pub struct Emitted {
     pub c: String,
     pub diagnostics: Vec<Diagnostic>,
+    /// The libraries every `link "…"` in the file named, deduplicated and in
+    /// declaration order (§4.19, panel 036).
+    ///
+    /// **Declared, not called**, which is the same rule design.md states for the
+    /// flag itself ("the link flag is declared next to the `extern` that needs
+    /// it"). The alternative — link only what a call reaches — would make the
+    /// linker's arguments depend on dead-code analysis, and a program that stops
+    /// calling one function of a library would stop linking it.
+    pub link: Vec<String>,
 }
 
 /// Where a program's `main` is, or nothing. A file with no entry point is a
@@ -136,7 +146,7 @@ pub fn emit_for(
 ) -> Emitted {
     let refused = gate::refuse(target, program, ast, resolved, checked, src);
     if !refused.is_empty() {
-        return Emitted { c: String::new(), diagnostics: refused };
+        return Emitted { c: String::new(), diagnostics: refused, link: Vec::new() };
     }
     // The ROOT module, and it names exactly two things now: the generated `.c`
     // in a `#line` directive, and the program-wide types the emitter invents
@@ -148,7 +158,7 @@ pub fn emit_for(
         .with_options(&module, checked)
         .with_functions(&module, checked, program);
     let mut w = writer::Writer::new(&module);
-    decls::prelude(&mut w, program, target, src);
+    decls::prelude(&mut w, program, target, ast, checked, src);
     // Types before anything that can mention one: **every** typedef in one
     // containment order — declared aggregates and the ones the emitter invents
     // together, because each kind can contain the other — then every per-type
@@ -198,5 +208,5 @@ pub fn emit_for(
         }
         Target::Tests => decls::test_shim(&mut w, program, src),
     }
-    Emitted { c: w.finish(), diagnostics: Vec::new() }
+    Emitted { c: w.finish(), diagnostics: Vec::new(), link: decls::libraries(program, ast, src) }
 }

@@ -15,12 +15,14 @@
 #      `emit/tests/gate.rs` asserts that partition instead of an example;
 #   2. a GENERIC function and the six higher-order built-ins, which all emit now —
 #      they are in the file to prove the two refusals are not about them;
-#   3. an `extern` function, which waits for M7's header attachment — the one row
-#      whose reason is a veto rather than a milestone (§4.19: the mechanism is the
-#      `#include`, and an invented prototype verifies nothing).
-#      Function values stopped being refusable at M6 step 5 and generics at step 6:
-#      a function value is a plain C function pointer, and a generic is one copy
-#      per type tuple with no template left to refuse.
+#   3. a UNIT-typed container element, which has no C declaration at all — `void t0;`
+#      is a hard error, so the type that occupies no storage is refused where a
+#      storage location is required.
+#      Three rows have stopped being refusable rather than been implemented around:
+#      function values at M6 step 5 (a plain C function pointer), generics at step 6
+#      (one copy per type tuple, no template left), and `extern` at M-ffi-ladder step 5 —
+#      the one whose reason was a veto rather than a milestone, and what lifted it
+#      was the `#include` arriving, exactly as §4.19 said it would.
 #
 # Everything else stays in the file deliberately: the record, the array, the element
 # write, the map, the `T?` and the six built-ins that now emit all work, so their
@@ -39,9 +41,6 @@ function tag(p: P) -> int
 
 function first<T>(items: [T]) -> T
     return items[0]
-
-extern "stdlib.h"
-    function labs(x: int) -> int   #~ extern
 
 function main()
     p = P(x: 1)
@@ -63,4 +62,6 @@ function main()
     f = add
     print(f(1, 2))
     print(len(map(ps, tag)))
-    print(first(xs), labs(0 - 3))
+    print(first(xs))
+    us: [()] @ []      #~ unit_element
+    print(len(us))

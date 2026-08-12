@@ -1,0 +1,27 @@
+# fixedbugs, M-ffi-ladder step 5, 2026-08-12.
+#
+# SYMPTOM: `extern function sqrt(x: f64) -> int` compiled clean, exited 0 and
+# printed `1`. Four wrong bindings out of six did — wrong return type on two
+# functions, wrong parameter type on a third, `ptr` where the header says
+# `const char *` — because the emitter does not re-declare the signature (that
+# is `conflicting types` five times out of five on SQLite) and clang therefore
+# checks only the call's arguments.
+#
+# CAUSE: §4.19's sentence — "clang verifies the declared signature against the
+# real header" — described a property nothing in the pipeline produced. The
+# `#include` gives it for arguments and for nothing else.
+#
+# FIX: one `_Static_assert` per `extern`, over a `_Generic` whose controlling
+# call C11 6.5.1.1p3 does not evaluate but does type-check. Zero runtime cost,
+# one line of generated C, and eleven of eleven correct ladder bindings pass.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a_wrong_extern_return_type_is_the_authors_error_not_the_compilers`, which
+# also pins the second half of the fix: the failure is reported against this
+# line, at exit 1, with no generated C in the message.
+
+extern "math.h"
+    function sqrt(x: f64) -> int
+
+function main()
+    print(sqrt(2.0))

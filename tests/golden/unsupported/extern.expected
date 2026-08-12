@@ -1,7 +1,0 @@
-unsupported[extern]: an `extern` function is not emitted yet
-  at tests/golden/unsupported/extern.hero:10:5
-     |
-  10 |     function labs(x: int) -> int     #~ extern
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet

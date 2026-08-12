@@ -87,8 +87,13 @@ pub(super) fn refuse(
         if function.kind == FnKind::Test && target != super::Target::Tests {
             continue;
         }
+        // The `extern` row died at M-ffi-ladder step 5. It was the one refusal whose
+        // reason was a veto rather than a milestone: with no header attachment the
+        // emitter would have had to invent a prototype, and an invented prototype
+        // is self-consistent by construction, so clang verified nothing. The group
+        // form supplies the header, the prelude emits `<header.h>`, and
+        // `decls::extern_assertions` covers the half a call site does not.
         if function.kind == FnKind::Extern {
-            note(&mut found, "extern", "an `extern` function".to_string(), function.span);
             continue;
         }
         // The `generics` row died at M-generics-library step 6: monomorphisation deleted every
@@ -359,10 +364,11 @@ fn callee_note(
     span: Span,
 ) {
     match callee {
-        Callee::Heroes(_) => {}
-        Callee::Extern(_) => {
+        // A call to C emits from M-ffi-ladder step 5: the group's header is in the
+        // prelude, so the name this call writes is declared by the real header
+        // rather than by a prototype this compiler invented.
+        Callee::Heroes(_) | Callee::Extern(_) => {
             let _ = (ast, src);
-            note(found, "extern", "an `extern` function".to_string(), span)
         }
         Callee::Builtin(index) => {
             let name = BUILTINS[index as usize].name;

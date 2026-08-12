@@ -187,6 +187,19 @@ impl Toolchain {
     }
 
     /// Compile one generated translation unit and link it with the runtime.
+    ///
+    /// **`include` comes after the runtime's own `-I`** (§4.19, panel 036). The
+    /// generated unit includes `<header.h>` for every `extern` group, and the
+    /// author's own header sits beside their `.hero` file rather than beside the
+    /// translation unit, which lives under `build/<hash>/`. Ordering matters in
+    /// one direction only: a source directory that happens to contain a file
+    /// named `heroes_runtime.h` must not win over the real one.
+    ///
+    /// `libraries` are the `link "…"` strings, passed as `-l<name>`. They are
+    /// **names, not flags**: the value is quoted in the source and reaches clang
+    /// with `-l` prefixed here, so no `.hero` file can hand clang an arbitrary
+    /// argument.
+    #[allow(clippy::too_many_arguments)] // PORT-DEBT: one call site, seven facts
     pub fn link(
         &self,
         c_file: &Path,
@@ -194,11 +207,19 @@ impl Toolchain {
         binary: &Path,
         level: &str,
         sanitize: bool,
+        include: Option<&Path>,
+        libraries: &[String],
     ) -> Result<(), String> {
         let mut clang = Command::new("clang");
         clang.args(FLAGS).arg(level).args(sanitizers(sanitize));
         clang.arg(c_file).arg(object);
         clang.arg("-I").arg(&self.runtime);
+        if let Some(directory) = include {
+            clang.arg("-I").arg(directory);
+        }
+        for library in libraries {
+            clang.arg(format!("-l{library}"));
+        }
         clang.arg("-o").arg(binary);
         run(clang, "compiling the generated C")
     }

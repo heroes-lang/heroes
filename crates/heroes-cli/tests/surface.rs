@@ -302,13 +302,14 @@ fn build_honours_the_exit_code_contract() {
     assert_eq!(code(&heroes(&["build", "examples/gallery/00-first.hero"])), 0);
     assert_eq!(code(&heroes(&["build", "tests/golden/check/shadowing.hero"])), 1);
     // A correct program the backend cannot emit yet is **1**, not 2: the tool
-    // worked, and no edit to the file will help. This has now named four different
+    // worked, and no edit to the file will help. This has now named five different
     // files — `01-points.hero` until records emitted, `10-maps.hero` until `.must()`
-    // did, `06-generics.hero` until monomorphisation did — which is the assertion
-    // working rather than breaking: a row dies per step and the case follows it.
-    // `08-ffi.hero` is the one left, and its refusal is a veto rather than a
-    // milestone (§4.19: the mechanism is the `#include`).
-    assert_eq!(code(&heroes(&["build", "examples/gallery/08-ffi.hero"])), 1);
+    // did, `06-generics.hero` until monomorphisation did, `08-ffi.hero` until the
+    // `#include` arrived at M-ffi-ladder — which is the assertion working rather than
+    // breaking: a row dies per step and the case follows it. **No gallery program
+    // is refused any more**, so it names the golden that exists to hold the last
+    // two rows.
+    assert_eq!(code(&heroes(&["build", "tests/golden/unsupported/three-capabilities.hero"])), 1);
     assert_eq!(code(&heroes(&["build", "no/such/file.hero"])), 2);
     assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/gallery/00-first.hero"])), 2);
 }
@@ -687,4 +688,27 @@ fn fixedbugs_dump_tokens_shows_the_file_that_was_named() {
     // Its own lines, not the concatenated text's.
     assert!(shown.starts_with("1:1 "), "{shown}");
     assert_eq!(code(&out), 0);
+}
+
+/// **A clang failure that is the author's, not the compiler's** — the one named
+/// exception to CLAUDE.md §7's rule that a clang failure exits 2 and blames the
+/// compiler (§4.19, panel 036 rider 3).
+///
+/// The return-type assertion is generated code whose whole purpose is to fail
+/// when the *author's* declaration disagrees with the real header. Left as an
+/// internal error it printed C the author never wrote, named a file under
+/// `build/<hash>/`, and blamed the compiler — so this pins all three of the
+/// things that make it a diagnostic instead: exit 1, the `.hero` line, and no
+/// generated C anywhere in the message.
+#[test]
+fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-return-type.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_return_type]"), "{stderr}");
+    assert!(stderr.contains("does not return `int`"), "{stderr}");
+    assert!(stderr.contains("math.h"), "{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("_Static_assert"), "it showed generated C:\n{stderr}");
+    assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
 }

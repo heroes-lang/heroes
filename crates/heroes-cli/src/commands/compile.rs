@@ -216,10 +216,36 @@ pub fn compile_with_tests(
         Some(target) => PathBuf::from(target),
         None => dir.join(&module),
     };
-    if let Err(message) = toolchain.link(&c_file, &object, &binary, options.level, options.sanitize) {
-        // clang's verdict on generated C is a statement about this compiler, so it
-        // speaks in the compiler's own vocabulary and exits 2 (panel 019's R1 rule
-        // reserves that for exactly here and for `--dump-ir`).
+    // The source's own directory, so an author's `extern "mylib.h"` finds a
+    // header beside the `.hero` file. It has to be passed explicitly: the
+    // translation unit lives under `build/<hash>/`, and an angled include searches
+    // the include path, never the source's directory (panel 036).
+    let include = std::path::Path::new(&src.name)
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .map(std::path::Path::to_path_buf);
+    if let Err(message) = toolchain.link(
+        &c_file,
+        &object,
+        &binary,
+        options.level,
+        options.sanitize,
+        include.as_deref(),
+        &emitted.link,
+    ) {
+        // **One class of clang failure is the author's**, and it is the only one:
+        // the return-type assertion §4.19 generates per `extern` exists to fail
+        // when a declaration disagrees with the real header. Reported as an
+        // internal error it would print C the author never wrote and blame the
+        // compiler for a mistake in a `.hero` file (panel 036 rider 3).
+        let theirs = heroes::emit::ffi::explain(&message, &parsed.ast, &src);
+        if !theirs.is_empty() {
+            report(&theirs, &src)?;
+            return Err(Exit::Diagnostics);
+        }
+        // Every other verdict on generated C is a statement about this compiler, so
+        // it speaks in the compiler's own vocabulary and exits 2 (panel 019's R1
+        // rule reserves that for exactly here and for `--dump-ir`).
         eprintln!("internal error: {message}");
         eprintln!("the generated C is at {}", c_file.display());
         return Err(Exit::Failed);

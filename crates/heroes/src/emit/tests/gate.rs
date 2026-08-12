@@ -14,7 +14,7 @@ use crate::diagnostics::Kind;
 use super::emitted;
 
 /// The refusal's shape, checked once so the other tests can be one line each.
-fn refusal(text: &str) -> (String, String) {
+pub(super) fn refusal(text: &str) -> (String, String) {
     let out = emitted(text);
     assert!(out.c.is_empty(), "a refused program must emit no C at all");
     let first = out.diagnostics.first().expect("a refusal");
@@ -106,19 +106,23 @@ fn both_halves_of_a_shared_operation_now_emit_to_their_own_entry_point() {
     assert!(!array.contains("hero_str_len"), "the wrong half was chosen:\n{array}");
 }
 
-/// `str`→`cstr` exists for one boundary and nothing consumes it before M-ffi-ladder, so
-/// landing `str` did **not** make the cast emittable — the gate's row for it is keyed
-/// to the FFI rather than to `str`.
+/// **The row the ffi-pragmatist vetoed at panel 020, retired at M-ffi-ladder step 5.**
 ///
-/// There is no end-to-end case, and the reason is worth recording rather than hiding
-/// behind a test that passes for the wrong reason: the checker refuses `puts("hi")`
-/// with `expected `cstr`, found `str``, so **`Op::Cast` is unreachable from source
-/// today**. The conversion arrives with M-ffi-ladder's header attachment, and the row
-/// is here waiting for it. Queued.
+/// What replaced it is not a promise but a mechanism: the group's header reaches
+/// the prelude as `#include <stdlib.h>`, so the name this call writes is declared
+/// by the real header — and the emitter writes no prototype of its own, because
+/// one built from Heroes' `int64_t` is `conflicting types` against every C entry
+/// point that returns `int`.
 #[test]
-fn an_extern_is_still_refused_after_str_landed() {
-    let (code, _) = refusal("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
-    assert_eq!(code, "extern");
+fn an_extern_call_is_emitted_against_the_real_header() {
+    let out = super::emitted("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
+    assert!(out.c.contains("#include <stdlib.h>"), "{}", out.c);
+    // Unmangled: the C name is what the author wrote (CLAUDE.md §7).
+    assert!(out.c.contains("labs("), "{}", out.c);
+    assert!(!out.c.contains("_labs"), "an extern must not be mangled:\n{}", out.c);
+    // And no invented prototype — the header is the declaration.
+    assert!(!out.c.contains("int64_t labs"), "the emitter re-declared it:\n{}", out.c);
 }
 
 #[test]
@@ -362,14 +366,17 @@ fn generics_are_no_longer_refused() {
     assert!(!crate::emit::subset().contains("generic"));
 }
 
-/// The ffi-pragmatist's veto, as a test. §4.19's mechanism is the `#include`, and
-/// there is no header attachment yet — so an emitted prototype would be
-/// self-consistent by construction and clang would verify nothing.
+/// The other half of §4.19's guarantee, which clang does not give for free: one
+/// `_Static_assert` per `extern`, over a `_Generic` whose controlling call C11
+/// 6.5.1.1p3 does not evaluate. Without it, `extern function sqrt(x: f64) -> int`
+/// compiles clean and prints `1` — measured at panel 036.
 #[test]
-fn an_extern_is_refused_because_nothing_would_check_its_signature() {
-    let (code, message) = refusal("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
-    assert_eq!(code, "extern");
-    assert_eq!(message, "an `extern` function is not emitted yet");
+fn every_extern_carries_a_return_type_assertion() {
+    let out = super::emitted("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    assert!(out.c.contains("_Static_assert(HERO_RET_INT(labs((int64_t)0))"), "{}", out.c);
+    // The message is the contract with `emit::ffi::explain`: marker, C name,
+    // declared type — so a failure names the author's line, not generated C.
+    assert!(out.c.contains("heroes-ffi-return labs int"), "{}", out.c);
 }
 
 /// `xs.len()` lowers to `call builtin len` while `for` lowers to `Op::Len`. Gating
@@ -440,12 +447,11 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
         "    x: int\n",
         "    y: int\n",
         "\n",
-        "extern \"stdlib.h\"\n    function labs(x: int) -> int\n",
-        "\n",
         "function main()\n",
         "    ps = [Point(x: 1, y: 2)]\n",
         "    print(len(sort(ps)))\n",
-        "    print(labs(0 - 3))\n",
+        "    us: [()] @ []\n",
+        "    print(len(us))\n",
     ));
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
     assert!(codes.contains(&"builtin"), "{codes:?}");
@@ -453,7 +459,7 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
     // type — and both are named, so the list arrives at once.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
     assert!(messages.iter().any(|m| m.contains("`sort`")), "{messages:?}");
-    assert!(messages.iter().any(|m| m.contains("`extern`")), "{messages:?}");
+    assert!(messages.iter().any(|m| m.contains("()")), "{messages:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();

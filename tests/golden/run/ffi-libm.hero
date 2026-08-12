@@ -1,0 +1,28 @@
+# The FFI ladder, rungs 1 and 2, as a program that runs (design.md §4.19).
+#
+# Rung 1 proves the ABI works at all; rung 2 proves `f64` passes in
+# floating-point registers. Both come from headers this machine already has, so
+# the case needs no library on the path — `link` is what a third-party library
+# would add, and SQLite is where it is exercised.
+#
+# What makes this a test rather than a demonstration: every one of these
+# signatures is checked against the real header by a `_Static_assert` the
+# emitter writes, and `fixedbugs-ffi-return-type` is the case that makes one
+# fire. A wrong declaration here would not print the wrong number — it would
+# refuse to compile.
+# Bulk regression case.
+
+extern "math.h"
+    function sqrt(x: f64) -> f64
+    function pow(base: f64, exponent: f64) -> f64
+
+extern "stdlib.h"
+    function labs(x: int) -> int
+
+function main()
+    print(sqrt(16.0))
+    print(pow(base: 2.0, exponent: 10.0))
+    print(labs(0 - 7))
+    # The C call composes with the language's own arithmetic, which is the
+    # whole point of §1.11: there is no seam at the call site.
+    print(sqrt(pow(base: 3.0, exponent: 4.0)))
