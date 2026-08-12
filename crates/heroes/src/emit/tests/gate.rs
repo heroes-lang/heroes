@@ -399,8 +399,10 @@ fn every_extern_carries_a_return_type_assertion() {
 fn every_reserved_name_is_emitted_lowered_or_written_in_heroes() {
     use crate::resolve::BUILTINS;
     // Lowered to something that is not a call: `ok`/`fail` are constructions,
-    // `must` is an abort, `default` and `is_err` are branches on a tag (§4.6).
-    const LOWERED: [&str; 5] = ["default", "fail", "is_err", "must", "ok"];
+    // `must` is an abort, `default` and `is_err` are branches on a tag (§4.6),
+    // and `cstr` is an `Op::Cast` — §4.3's no-implicit-conversions rule would be
+    // invisible in the dump if the conversion hid inside a call (M-ffi-ladder).
+    const LOWERED: [&str; 6] = ["cstr", "default", "fail", "is_err", "must", "ok"];
     let library = crate::library::SOURCE;
     let mut unaccounted: Vec<&str> = Vec::new();
     for builtin in BUILTINS {

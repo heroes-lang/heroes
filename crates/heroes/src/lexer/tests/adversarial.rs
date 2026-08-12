@@ -169,3 +169,31 @@ DIAG test.hero:1:7: error[reserved_operator]: `<<` is reserved for a future bitw
 "
     );
 }
+
+/// **The premise `is_line_ender` rests on, and the test that fires when it dies**
+/// (CLAUDE.md §11). The list is "every token that can end a statement", and a
+/// *value* keyword is the class that keeps being forgotten: `nullptr` was added
+/// to the language at M-ffi-ladder and missed here, so `p: ptr @ nullptr` planted
+/// no terminator and the next line was swallowed as a continuation — panel 007's
+/// trap, reopened by a new literal rather than by a new rule.
+///
+/// One line per value-producing spelling. A new one that is not added here will
+/// pass this test; a new one that is added here and NOT added to `is_line_ender`
+/// will fail it, which is the direction that matters — the list is what gets
+/// forgotten, not the test.
+#[test]
+fn every_value_keyword_ends_a_line() {
+    for literal in ["true", "false", "nullptr", "1", "1.5", "\"s\"", "'c'", "x", "???"] {
+        let dumped = dump(&format!("a = {literal}\nb = 2\n"));
+        assert!(
+            dumped.contains("terminator"),
+            "`{literal}` planted no terminator, so the next line continues this one:\n{dumped}"
+        );
+        // Two bindings, not one: the terminator has to fall BETWEEN them.
+        assert_eq!(
+            dumped.matches("terminator").count(),
+            2,
+            "`{literal}` did not end its own line:\n{dumped}"
+        );
+    }
+}

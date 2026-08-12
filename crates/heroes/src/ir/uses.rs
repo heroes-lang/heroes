@@ -90,3 +90,26 @@ pub(super) fn slots_of(function: &Function, op: Op) -> Vec<u32> {
         _ => Vec::new(),
     }
 }
+
+/// Every temporary some instruction or terminator **reads**, in the blocks that
+/// are reachable.
+///
+/// The emitter's counterpart to `decls::assigned`: a temporary that is written
+/// and never read is `-Wunused-but-set-variable`, and the case that produces one
+/// is `_ = f(x)` — §4.4's discard, which is also the ordinary way to ignore a C
+/// status code. So the noise landed on every FFI program that did the right
+/// thing.
+pub fn values_read(function: &Function) -> std::collections::BTreeSet<u32> {
+    let mut read = std::collections::BTreeSet::new();
+    for block in &function.blocks {
+        for one in &block.insts {
+            for value in operands(function, one.op) {
+                read.insert(value.0);
+            }
+        }
+        for value in terminator_operands(&block.term) {
+            read.insert(value.0);
+        }
+    }
+    read
+}

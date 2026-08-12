@@ -171,6 +171,7 @@ pub fn render_expr(ast: &Ast, id: ExprId, src: &Source) -> String {
         | ExprKind::Str
         | ExprKind::Char
         | ExprKind::Bool
+        | ExprKind::NullPtr
         | ExprKind::Name => src.slice(node.span).to_string(),
         ExprKind::Hole => "???".to_string(),
         ExprKind::Unary { op, operand } => {

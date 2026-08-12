@@ -35,6 +35,8 @@ pub(super) fn constant(value: Const) -> String {
         Const::Int(i64::MIN) => "INT64_MIN".to_string(),
         Const::Int(n) => format!("INT64_C({n})"),
         Const::Bool(b) => (if b { "true" } else { "false" }).to_string(),
+        // `NULL` would need a header; the cast needs none and is the same value.
+        Const::NullPtr => "((void *)0)".to_string(),
         // **A hex float, not a decimal one.** `%a` is round-trip-exact by
         // construction, where `%.17g` is exact only in practice — and design.md §3.1
         // has said "`f64` literals emitted round-trip-exact (`%a`)" since M-day-zero. This is

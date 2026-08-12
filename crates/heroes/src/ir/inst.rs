@@ -148,6 +148,10 @@ pub enum Const {
     Float(f64),
     Bool(bool),
     Str(StrId),
+    /// §4.19's `nullptr`. Its own case rather than `Int(0)`: a pointer's zero
+    /// is not an integer, and the emitter must not write one where a pointer
+    /// is required.
+    NullPtr,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

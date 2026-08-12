@@ -74,6 +74,8 @@ pub enum ExprKind {
     Str,
     Char,
     Bool,
+    /// `nullptr` — the one `ptr` value the language can write (§4.19).
+    NullPtr,
     /// A bare name: a local, a parameter, a top-level function or constant.
     /// Which one is the resolver's question (M-name-resolution).
     Name,

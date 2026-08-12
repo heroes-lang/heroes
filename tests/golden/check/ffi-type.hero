@@ -1,0 +1,22 @@
+# What may cross the FFI boundary, refused in the checker rather than by clang
+# (§4.19, M-ffi-ladder). An `extern`'s C counterpart is declared by a header, so
+# every type in its signature must be one C can spell.
+#
+# Before this check, `extern function weird(n: int) -> [int]` reached clang as
+# `call to undeclared function 'weird'` plus `incompatible integer to pointer
+# conversion` — exit 2, the compiler blaming itself for a mistake in a .hero
+# file, which is the one failure the FFI's own guarantee exists to prevent.
+# Bulk regression case.
+
+record Point
+    x: int
+
+extern "stdlib.h"
+    function weird(n: int) -> [int]     #~ ffi_type
+    function odder(p: Point) -> int     #~ ffi_type
+    function fine(n: int) -> ptr
+    function also_fine(s: cstr) -> str
+
+function main()
+    print(len(weird(1)))
+    print(odder(Point(x: 1)))

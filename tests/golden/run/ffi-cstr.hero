@@ -1,0 +1,24 @@
+# `s.cstr()` — §4.19's one conversion, and §4.20's highest-return decision
+# paying out. Every Heroes string allocates `len+1` and is NUL-terminated
+# (Zig's `[:0]u8` trick), so lending one to C is a field read rather than a
+# copy: `hero_str_cstr` returns the byte pointer and nothing is allocated.
+#
+# The `str` stays owned on this side and is decrefed at the end of the
+# statement, which is exactly why the borrow is good only for the duration of
+# the call. Run under `--sanitize`, this case is what would catch a `cstr` that
+# outlived its `str`.
+# Bulk regression case.
+
+extern "stdio.h"
+    function puts(s: cstr) -> int
+
+function shout(text: str) -> str
+    return text + "!"
+
+function main()
+    _ = puts("hello from C".cstr())
+    # Built, not literal: a computed string has a heap block behind it, so this
+    # is the case where the NUL terminator has to have been allocated rather
+    # than merely present in the source text.
+    _ = puts(shout("computed").cstr())
+    print("back in Heroes")

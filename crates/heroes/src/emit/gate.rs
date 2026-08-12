@@ -40,7 +40,7 @@ use crate::ir::{Abort, Callee, FnKind, Function, Op, Program};
 use crate::resolve::{Resolved, BUILTINS};
 use crate::source::{Source, Span};
 use crate::syntax::Ast;
-use crate::types::{render_ty, Checked, Ty, TyId};
+use crate::types::{Checked, Ty, TyId};
 
 use super::builtins::EMITTED as EMITTED_BUILTINS;
 
@@ -149,6 +149,19 @@ fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span:
 ///
 /// Until M-generics-library step 6 an author had to *write* `[ptr]` to reach it. After it they
 /// **infer** it: `map(nums, print)` infers `B := ()`.
+/// **The type table is empty of refusals as of M-ffi-ladder step 6, and this is
+/// what that looks like.** Every arm returns; what is left is descent into the
+/// types a container holds, because `()` as an *element* is still refused (a
+/// descriptor that does not exist) while `()` as a type in its own right is
+/// fine.
+///
+/// The rows died one milestone at a time, which was the file's whole design:
+/// `str` and `f64` at M-strings-ownership, records and variants at M-value-aggregates,
+/// `T?` and `{K: V}` at M-optional-map, function types and type parameters at
+/// M-generics-library, and §4.19's `ptr` and `cstr` here — the last two, and the
+/// only ones whose row was a veto rather than a schedule. A `ptr` local is what
+/// holds a C out-parameter, so refusing it would have refused the milestone's own
+/// acceptance test.
 fn check_type(
     found: &mut Vec<(String, String, Span)>,
     ast: &Ast,
@@ -158,50 +171,23 @@ fn check_type(
     ty: TyId,
     span: Span,
 ) {
-    let (code, what) = match checked.types.get(ty) {
-        // M-strings-ownership landed `str` and `f64`: the two rows that used to be here are gone,
-        // which is the gate's whole design — a row dies per milestone.
-        Ty::Int | Ty::Bool | Ty::F64 | Ty::Str => return,
-        // `()` has no C declaration at all (`ctype.rs`'s unit rule), which is right
-        // for a temporary and wrong for an element: `hero_array_new` would be handed
-        // a descriptor that does not exist. As a *type in its own right* it is fine,
-        // so the refusal is the container's, below.
-        Ty::Unit => return,
-        // M-value-aggregates — the descriptor pass, whose ABI spike 04 froze. The container emits;
-        // whether its ELEMENT does is the element's own row.
+    match checked.types.get(ty) {
+        // The container emits; whether its ELEMENT does is the element's own row.
         Ty::Array(element) => {
-            return check_element(found, ast, checked, src, function, element, span, "an array")
+            check_element(found, ast, checked, src, function, element, span, "an array")
         }
         Ty::Map(key, value) => {
             check_element(found, ast, checked, src, function, key, span, "a map key");
-            return check_element(found, ast, checked, src, function, value, span, "a map value");
+            check_element(found, ast, checked, src, function, value, span, "a map value");
         }
-        // Records and variants both emit from M-value-aggregates step 4. The row that split at step 3
-        // is gone: two capabilities became one again, which is what a milestone
-        // finishing looks like.
-        Ty::Named(_) | Ty::Case(_, _) => return,
-        // A `T?` is a by-value tagged union from M-optional-map. Its *operators* are not all here
-        // — `.must()` is an `Op::Abort` with its own row — but the representation is.
         Ty::Fallible(payload) => {
-            return check_element(found, ast, checked, src, function, payload, span, "a `T?`")
+            check_element(found, ast, checked, src, function, payload, span, "a `T?`")
         }
-        Ty::Failure => return,
-        // M-generics-library step 5: a plain C function pointer, one typedef per distinct
-        // signature. The row is gone, which is what a milestone finishing looks
-        // like.
-        Ty::Func { .. } => return,
-        // Same: a type parameter is gone by the time the emitter runs, and the
-        // verifier says so at `Phase::Mono` and again at `Phase::Owned`.
-        Ty::Generic(_) => return,
-        // M-ffi-ladder — §4.19's two opaque types arrive with the header that verifies them.
-        Ty::Ptr | Ty::Cstr => {
-            let name = render_ty(&checked.types, ast, src, ty, &function.generics);
-            ("ffi_type", format!("the C type `{name}`"))
-        }
-        // The checker reported this already; one mistake, one message.
-        Ty::Error => return,
-    };
-    note(found, code, what, span);
+        // Every other type in the language has a C representation (`ctype.rs`),
+        // including `Ty::Error`, which the checker has already reported — one
+        // mistake, one message.
+        _ => {}
+    }
 }
 
 /// `()` as the type of a **declared field**, which the walk above cannot see.
@@ -287,10 +273,10 @@ fn check_op(
         // Reading and writing a place both emit now: a field is a member access, and an
         // element write is copy-on-write, one unshare per array step with write-back.
         Op::Load(_) | Op::Store { .. } => {}
-        // `str`→`cstr` exists for one boundary and nothing consumes it before M-ffi-ladder:
-        // the row is keyed to the FFI rather than to `str`, which is why landing
-        // `str` did not make it emittable.
-        Op::Cast { .. } => note(found, "extern", "an `extern` function".to_string(), span),
+        // `str`→`cstr` emits from M-ffi-ladder step 6, which is when it acquired a
+        // producer: `s.cstr()`. The row was keyed to the FFI rather than to `str`,
+        // which is why landing `str` did not make it emittable.
+        Op::Cast { .. } => {}
         Op::Call { callee, args, .. } => {
             callee_note(found, ast, src, callee, span);
             let _ = args;

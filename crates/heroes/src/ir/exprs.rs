@@ -54,6 +54,7 @@ pub(super) fn expr(
             let value = src.slice(span) == "true";
             b.emit(Op::Const(Const::Bool(value)), ty, span)
         }
+        ExprKind::NullPtr => b.emit(Op::Const(Const::NullPtr), ty, span),
         ExprKind::Str => {
             let text = unescape(src, span);
             let id = b.intern(text);

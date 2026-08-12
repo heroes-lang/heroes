@@ -30,7 +30,11 @@
 function main()
     units: [()] @ []                #~ unit_element
     print(len(units))
-    handles: [ptr] @ []             #~ ffi_type
+    # `[ptr]` was the second half of this case and is legal as of M-ffi-ladder
+    # step 6 — §4.19's opaque types emit now that the header verifying them does.
+    # It stays, unannotated, because the *descent* is what the defect was about:
+    # a walk that stops at the container is wrong whether or not this line fires.
+    handles: [ptr] @ []
     print(len(handles))
     table: {str: ptr} @ {}
     print(len(table))

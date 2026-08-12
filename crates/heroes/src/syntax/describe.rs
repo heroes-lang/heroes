@@ -36,6 +36,7 @@ pub(super) fn describe(kind: TokenKind) -> &'static str {
         TokenKind::KwTest => "`test`",
         TokenKind::KwAssert => "`assert`",
         TokenKind::KwExtern => "`extern`",
+        TokenKind::KwNullPtr => "`nullptr`",
         TokenKind::KwUse => "`use`",
         TokenKind::KwTrue => "`true`",
         TokenKind::KwFalse => "`false`",

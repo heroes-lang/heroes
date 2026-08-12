@@ -26,6 +26,7 @@ pub(super) fn primary(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
         TokenKind::Str => ExprKind::Str,
         TokenKind::Char => ExprKind::Char,
         TokenKind::KwTrue | TokenKind::KwFalse => ExprKind::Bool,
+        TokenKind::KwNullPtr => ExprKind::NullPtr,
         TokenKind::Hole => ExprKind::Hole,
         // `fail` is a name like any other here: `fail(code, msg)` is a call,
         // and the compiler knows the callee (§4.6). Keeping it out of the

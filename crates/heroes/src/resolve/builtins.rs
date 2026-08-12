@@ -47,13 +47,14 @@ pub struct Builtin {
     pub tier: Tier,
 }
 
-/// Sorted by name, searched linearly. Twenty-three entries need no index, and a
+/// Sorted by name, searched linearly. Twenty-four entries need no index, and a
 /// sorted table prints in a deterministic order — §4.16's rule for hole
 /// suggestions, applied to every list the compiler shows.
-pub const BUILTINS: [Builtin; 23] = [
+pub const BUILTINS: [Builtin; 24] = [
     Builtin { name: "all", tier: Tier::Heroes },
     Builtin { name: "any", tier: Tier::Heroes },
     Builtin { name: "chars", tier: Tier::Runtime },
+    Builtin { name: "cstr", tier: Tier::Runtime },
     Builtin { name: "default", tier: Tier::Heroes },
     Builtin { name: "fail", tier: Tier::Runtime },
     Builtin { name: "filter", tier: Tier::Heroes },

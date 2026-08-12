@@ -27,6 +27,10 @@ pub(super) fn keyword(text: &str) -> Option<TokenKind> {
         "test" => TokenKind::KwTest,
         "assert" => TokenKind::KwAssert,
         "extern" => TokenKind::KwExtern,
+        // §4.19: `ptr`'s only literal. A keyword rather than a built-in so that
+        // it is a *value* a reader can write, not a call — and so the
+        // foreign-word registry's answer for `null` can point at it.
+        "nullptr" => TokenKind::KwNullPtr,
         // Panel 031. Until M-module-namespace this word was in `foreign_word` below, refused
         // with "modules do not exist yet"; the two tables are the reason the
         // change is one line in each.

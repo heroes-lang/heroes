@@ -36,6 +36,7 @@ pub(super) fn emit(
     types: &aggregate::Types,
     function: &crate::ir::Function,
     inst: &Inst,
+    live_values: &std::collections::BTreeSet<u32>,
 ) {
     // Unpacked once: the four references travel together everywhere in the backend
     // (they are what "what is this type called in C" needs), so they arrive as one
@@ -58,7 +59,16 @@ pub(super) fn emit(
         }
         _ => super::writer::at_span(w, src, inst.span.start),
     }
-    let dest = inst.dest.filter(|_| !is_unit(checked, inst.ty));
+    // **A call whose result nobody reads gets no temporary**, and no other op is
+    // treated this way. `_ = f(x)` is §4.4's discard and the ordinary way to
+    // ignore a C status code, and it emitted `int64_t t2; t2 = f(x);` —
+    // `-Wunused-but-set-variable` on every FFI program that did the right thing.
+    // Restricted to `Op::Call` on purpose: a pure op with an unused result may
+    // vanish, but an *aborting* one (an index, a division) must still run, and
+    // dropping its assignment would drop its check.
+    let discarded = matches!(inst.op, Op::Call { .. })
+        && inst.dest.is_some_and(|d| !live_values.contains(&d.0));
+    let dest = inst.dest.filter(|_| !is_unit(checked, inst.ty) && !discarded);
     let target = dest.map(|d| mangle::value(d.0));
     match inst.op {
         Op::Const(value) => {
@@ -400,12 +410,21 @@ pub(super) fn emit(
                 w.line(&format!("    {name} = {callee};"));
             }
         }
-        // An `extern` used as a value is M-ffi-ladder's — the C callback case §4.19's ladder
-        // needs — and the gate refuses `extern` wholesale until the header that
-        // verifies it exists. A built-in or an indirection here is a lowering bug:
-        // neither has an address to take.
+        // **`s.cstr()` is free, and that is §4.20's highest-return decision paying
+        // out.** Every Heroes string allocates `len+1` and is NUL-terminated, so
+        // handing C the byte pointer is a field read rather than a copy — Zig's
+        // `[:0]u8` trick. The `str` itself is still owned by the caller and still
+        // decrefed at the end of the statement, which is why the borrow is safe
+        // only *for the duration of the call* (§4.19).
+        Op::Cast { kind: crate::ir::CastKind::StrToCstr, operand } => {
+            let Some(name) = target else { return };
+            w.line(&format!("    {name} = hero_str_cstr({});", mangle::value(operand.0)));
+        }
+        // An `extern` used as a value is the C callback case §4.19's ladder needs,
+        // and it is `ptr` until a C-width type vocabulary exists (panel 013). A
+        // built-in or an indirection here is a lowering bug: neither has an
+        // address to take.
         Op::FuncRef(_)
-        | Op::Cast { .. }
         | Op::Hole
         | Op::Missing => {
             w.line("    hero_unreachable(); /* the gate refuses this form */");

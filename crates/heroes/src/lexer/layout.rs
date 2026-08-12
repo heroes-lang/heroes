@@ -26,6 +26,14 @@ use super::LexState;
 /// with an identifier, a literal, `return`, `break`, `continue`, `???`,
 /// postfix `?`, `)`, `]`, or `}`. `?` is the analogue of Go's `++`/`--`;
 /// panel 007 records why it is required, not merely safe.
+///
+/// **A keyword that is a value belongs here, and forgetting one is silent for a
+/// line and loud on the next.** `nullptr` arrived at M-ffi-ladder and was missed:
+/// `p: ptr @ nullptr` planted no terminator, so the following line was read as a
+/// continuation and the error landed on an innocent statement — panel 007's own
+/// trap, reopened by a new literal rather than by a new rule. The list is a
+/// premise about the language's value-producing tokens, so it owes a test that
+/// fires when the premise dies: `every_value_keyword_ends_a_line`.
 pub(super) fn is_line_ender(kind: TokenKind) -> bool {
     matches!(
         kind,
@@ -36,6 +44,7 @@ pub(super) fn is_line_ender(kind: TokenKind) -> bool {
             | TokenKind::Char
             | TokenKind::KwTrue
             | TokenKind::KwFalse
+            | TokenKind::KwNullPtr
             | TokenKind::KwReturn
             | TokenKind::KwBreak
             | TokenKind::KwContinue

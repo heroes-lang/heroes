@@ -23,7 +23,7 @@ use crate::syntax::{Arg as AstArg, Ast, DeclKind, ExprId, ExprKind};
 use crate::types::{Checked, Ty, TyId};
 
 use super::build::Lowering;
-use super::inst::{Arg, Args, Callee, Op, Shape, ValueId};
+use super::inst::{Arg, Args, Callee, CastKind, Op, Shape, ValueId};
 use super::{exprs, fallible, layout, places};
 
 /// A declaration as a call target. The `extern` split is not a detail: those
@@ -69,6 +69,15 @@ pub(super) fn call(
             }
             Ref::Builtin(index) => {
                 let name = BUILTINS[index as usize].name;
+                // `.cstr()` is a **cast**, not a call: the IR has carried
+                // `CastKind::StrToCstr` since M-ir-lowering with no producer, because
+                // §4.3's no-implicit-conversions rule would be invisible in the
+                // dump if the conversion were hidden inside a call (`inst.rs`'s
+                // own table says so). M-ffi-ladder is the milestone that gives it one.
+                if name == "cstr" {
+                    let operand = exprs::expr(b, ast, resolved, checked, src, args[0].value);
+                    return b.emit(Op::Cast { kind: CastKind::StrToCstr, operand }, ty, span);
+                }
                 // `ok`/`fail` build the two sides of a `T?` (§4.6, panel 002).
                 // They are built-ins so that a name resolves, and constructions
                 // here because that is what they do.
@@ -136,6 +145,14 @@ pub(super) fn method(
     match target {
         Ref::Builtin(index) => {
             let builtin = BUILTINS[index as usize].name;
+            // `s.cstr()` — the same cast the plain-call form makes, and the shape
+            // every program actually writes (§4.11's UFCS). Taken before the
+            // arguments are lowered, because a cast has exactly one operand and
+            // it is the receiver.
+            if builtin == "cstr" {
+                let operand = exprs::expr(b, ast, resolved, checked, src, receiver);
+                return b.emit(Op::Cast { kind: CastKind::StrToCstr, operand }, ty, span);
+            }
             let run = with_receiver(b, ast, resolved, checked, src, receiver, args);
             emit_call(b, Callee::Builtin(index), run, is_variadic(builtin), ty, span)
         }

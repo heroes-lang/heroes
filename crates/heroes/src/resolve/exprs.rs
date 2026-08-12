@@ -46,6 +46,7 @@ pub(super) fn expr(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
         | ExprKind::Str
         | ExprKind::Char
         | ExprKind::Bool
+        | ExprKind::NullPtr
         | ExprKind::Error => {}
         ExprKind::Unary { operand, .. } => expr(r, ast, src, *operand),
         ExprKind::Binary { left, right, .. } => {

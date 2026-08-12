@@ -124,6 +124,16 @@ pub(super) fn call(
             }
             str_ty
         }
+        // §4.19's one conversion: a `str` lent to C for the duration of a call.
+        // It is free rather than a copy, because every Heroes string allocates
+        // `len+1` and is NUL-terminated (§4.20) — Zig's `[:0]u8` trick, and the
+        // single highest-return decision in the string design.
+        ("cstr", [one]) if checker.out.types.get(*one) == Ty::Str => {
+            checker.out.types.intern(Ty::Cstr)
+        }
+        ("cstr", [one]) => {
+            return arg_error(checker, ast, src, "cstr", "`str`", *one, span)
+        }
         ("to_int", [one]) if checker.out.types.get(*one) == Ty::F64 => checker.out.types.int(),
         ("to_f64", [one]) if checker.out.types.get(*one) == Ty::Int => checker.out.types.f64(),
         // §4.20's inventory calls this one `.str()`; panel 017 renames it

@@ -47,6 +47,7 @@ pub(super) fn render(ast: &Ast, src: &Source, id: ExprId) -> String {
         | ExprKind::Str
         | ExprKind::Char
         | ExprKind::Bool
+        | ExprKind::NullPtr
         | ExprKind::Name => src.slice(node.span).to_string(),
         ExprKind::Hole => "???".to_string(),
         ExprKind::Unary { op, operand } => {

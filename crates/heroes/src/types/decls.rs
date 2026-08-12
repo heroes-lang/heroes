@@ -71,12 +71,29 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                     let diagnostic = errors::main_returns(&want, span);
                     checker.push_diagnostic(diagnostic);
                 }
+                // **What may cross the FFI boundary, checked here rather than
+                // discovered by clang** (§4.19, M-ffi-ladder). An `extern`'s C
+                // counterpart is declared by a header, so every type in its
+                // signature must be one C can spell: `int`, `f64`, `bool`, `ptr`,
+                // `cstr`, `str` (a `HeroStr` by value) and `()`. A `[int]` reached
+                // clang as `call to undeclared function` plus `incompatible
+                // integer to pointer conversion` — exit 2, the compiler blaming
+                // itself for a mistake in a `.hero` file, which is the failure the
+                // FFI's own guarantee exists to prevent.
                 checker.out.results.insert(index as u32, result);
                 checker.result = result;
                 checker.fallible = is_fallible(checker, result);
                 for param in &function.params {
                     let ty = lower::ty(checker, ast, resolved, param.ty);
                     checker.bind_local(param.name, ty);
+                }
+                // **After the parameters are lowered, never before**: the check
+                // reads `written_type`, and that table is what `lower::ty` fills.
+                // Asking first is silent — it finds nothing and passes — which is
+                // how the `Point` parameter in `tests/golden/check/ffi-type.hero`
+                // went unreported while the result beside it fired.
+                if function.is_extern {
+                    ffi_signature(checker, ast, src, function, result);
                 }
                 if let Some(body) = &function.body {
                     let (flow, _) = block(checker, ast, resolved, src, body, Want::Nothing);
@@ -133,4 +150,47 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
 
 fn is_fallible(checker: &Checker, ty: TyId) -> bool {
     matches!(checker.out.types.get(ty), Ty::Fallible(_))
+}
+
+/// Every type in an `extern`'s signature must be one a C header can declare
+/// (§4.19). The list is `ctype.rs`'s scalars plus §4.19's two opaque types, plus
+/// `()` for a function that returns nothing — and `str`, which is a `HeroStr` by
+/// value and reaches C only from a function that builds one (§4.20).
+///
+/// **The refusal is the loud direction** (CLAUDE.md §11). A container or a record
+/// in an `extern` has no header counterpart at all, so leaving it to clang costs
+/// an internal error naming generated C; refusing it costs one message naming the
+/// parameter.
+fn ffi_signature(
+    checker: &mut Checker,
+    ast: &Ast,
+    src: &Source,
+    function: &crate::syntax::Function,
+    result: TyId,
+) {
+    // Collected first, then checked: a closure that borrows the checker mutably
+    // cannot also read it (and CLAUDE.md §5 keeps stored closures out anyway).
+    let mut wanted: Vec<(TyId, crate::source::Span, &str)> =
+        vec![(result, ast.types[function.result.0 as usize].span, "an `extern`'s result")];
+    for param in &function.params {
+        if let Some(declared) = checker.out.written_type(param.ty) {
+            wanted.push((declared, ast.types[param.ty.0 as usize].span, "an `extern`'s parameter"));
+        }
+    }
+    for (ty, span, what) in wanted {
+        if crosses_the_boundary(checker, ty) {
+            continue;
+        }
+        let name = checker.show(ast, src, ty);
+        let diagnostic = errors::ffi_type(&name, what, span);
+        checker.push_diagnostic(diagnostic);
+    }
+}
+
+/// The seven types a C header can spell.
+fn crosses_the_boundary(checker: &Checker, ty: TyId) -> bool {
+    matches!(
+        checker.out.types.get(ty),
+        Ty::Int | Ty::F64 | Ty::Bool | Ty::Str | Ty::Ptr | Ty::Cstr | Ty::Unit | Ty::Error
+    )
 }

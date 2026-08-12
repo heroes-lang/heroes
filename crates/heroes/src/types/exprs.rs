@@ -36,6 +36,10 @@ pub(super) fn synth(
         ExprKind::Float => checker.out.types.f64(),
         ExprKind::Str => checker.out.types.str(),
         ExprKind::Bool => checker.out.types.bool(),
+        // §4.19: the one `ptr` a program can write. It has no `Want`, because
+        // there is nothing else it could be — `ptr` is opaque, so a null of one
+        // pointer type is a null of every pointer type.
+        ExprKind::NullPtr => checker.out.types.intern(Ty::Ptr),
         ExprKind::Error => checker.error_ty(),
         ExprKind::Name => name(checker, ast, resolved, src, id, span),
         // In value position a hole has no expected type to report — the ⇐ path

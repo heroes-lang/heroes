@@ -1,0 +1,2 @@
+tests/golden/check/ffi-type.hero:15:31: error[ffi_type]: `[int]` cannot cross the FFI boundary, and it is an `extern`'s result — a C header can declare `int`, `f64`, `bool`, `str`, `ptr` and `cstr`, and nothing else (§4.19)
+tests/golden/check/ffi-type.hero:16:23: error[ffi_type]: `Point` cannot cross the FFI boundary, and it is an `extern`'s parameter — a C header can declare `int`, `f64`, `bool`, `str`, `ptr` and `cstr`, and nothing else (§4.19)

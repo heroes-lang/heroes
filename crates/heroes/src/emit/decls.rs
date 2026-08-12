@@ -452,7 +452,8 @@ pub(super) fn definition(
     w.at_generated();
     let types = super::aggregate::Types { ast, checked, names, src };
     let live = reachable(function);
-    prologue(w, function, checked, names, &live);
+    let read = crate::ir::uses::values_read(function);
+    prologue(w, function, checked, names, &live, &read);
     w.line(&format!("    goto {};", mangle::block(0)));
     for (index, block) in function.blocks.iter().enumerate() {
         if !live[index] {
@@ -460,7 +461,7 @@ pub(super) fn definition(
         }
         w.line(&format!("{}:", mangle::block(index)));
         for one in &block.insts {
-            inst::emit(w, program, &types, function, one);
+            inst::emit(w, program, &types, function, one, &read);
         }
         term::emit(w, function, checked, &block.term);
     }
@@ -504,7 +505,14 @@ fn reachable(function: &Function) -> Vec<bool> {
     live
 }
 
-fn prologue(w: &mut Writer, function: &Function, checked: &Checked, names: &Names, live: &[bool]) {
+fn prologue(
+    w: &mut Writer,
+    function: &Function,
+    checked: &Checked,
+    names: &Names,
+    live: &[bool],
+    read: &std::collections::BTreeSet<u32>,
+) {
     for (index, slot) in function.slots.iter().enumerate() {
         // A parameter is already declared by the signature. A mutable one is
         // declared here instead: the pointer is the parameter, and the slot is the
@@ -539,6 +547,13 @@ fn prologue(w: &mut Writer, function: &Function, checked: &Checked, names: &Name
         if is_unit(checked, *ty) || !assigned(function, live, index as u32) {
             continue;
         }
+        // A discarded call's result is never assigned either (`inst::emit`), so
+        // declaring it here would be the unused variable this rule exists to
+        // stop. The two decisions have to agree, and they agree by reading the
+        // same set.
+        if discarded_call(function, live, index as u32, read) {
+            continue;
+        }
         if let Some(name) = c_type(names, checked, *ty) {
             let initialiser = if is_refcounted(checked, *ty) { " = {0}" } else { "" };
             w.line(&format!("    {name} {}{initialiser};", mangle::value(index as u32)));
@@ -569,6 +584,34 @@ fn assigned(function: &Function, live: &[bool], value: u32) -> bool {
         for one in &block.insts {
             if one.dest == Some(crate::ir::ValueId(value)) {
                 return true;
+            }
+        }
+    }
+    false
+}
+
+/// A temporary that a **call** writes and nothing reads: `_ = f(x)`.
+///
+/// The pair of this and `inst::emit`'s own test is what keeps the declaration and
+/// the assignment in step. Only a call qualifies, and the restriction is the
+/// point: a pure op's result may disappear, but an *aborting* op's must not, or
+/// dropping the assignment drops the bounds check with it.
+fn discarded_call(
+    function: &Function,
+    live: &[bool],
+    value: u32,
+    read: &std::collections::BTreeSet<u32>,
+) -> bool {
+    if read.contains(&value) {
+        return false;
+    }
+    for (index, block) in function.blocks.iter().enumerate() {
+        if !live[index] {
+            continue;
+        }
+        for one in &block.insts {
+            if one.dest == Some(crate::ir::ValueId(value)) {
+                return matches!(one.op, crate::ir::Op::Call { .. });
             }
         }
     }

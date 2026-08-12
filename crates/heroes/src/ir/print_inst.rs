@@ -202,6 +202,7 @@ fn constant(value: Const) -> String {
         // move with it — pre-registered rather than discovered.
         Const::Float(x) => format!("{x:?}"),
         Const::Bool(b) => format!("{b}"),
+        Const::NullPtr => "nullptr".to_string(),
         Const::Str(id) => format!("str {}", id.0),
     }
 }

@@ -72,7 +72,7 @@ mod print;
 mod print_inst;
 mod print_names;
 mod stmts;
-mod uses;
+pub mod uses;
 mod values;
 mod verify;
 
