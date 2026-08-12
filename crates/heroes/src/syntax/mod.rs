@@ -7,7 +7,9 @@
 //! | `ast.rs`      | the tree: arena of types, declarations that own their members |
 //! | `cursor.rs`   | movement, expectations, and where documentation comes from |
 //! | `recover.rs`  | what to drop after a mistake, and its landmarks |
-//! | `decl.rs`     | the top level: names, `constant`, `function`, `extern`, `test` |
+//! | `decl.rs`     | the top level: names, `constant`, `function`, `test` |
+//! | `externs.rs`  | the `extern` group, flattened into one declaration per signature |
+//! | `uses.rs`     | `use geom`, and the two shapes it refuses |
 //! | `data.rs`     | the two type declarations: `record` and `variant` |
 //! | `members.rs`  | generics, parameters, record fields, variant cases |
 //! | `stmt.rs`     | blocks and statements: the three line shapes of §4.4 |
@@ -35,12 +37,14 @@ mod cursor;
 mod data;
 mod decl;
 mod describe;
+mod externs;
 mod expr;
 mod members;
 mod primary;
 mod recover;
 mod stmt;
 mod types;
+mod uses;
 
 pub use ast::{
     Arg, Arm, ArmBody, Ast, BinaryOp, Block, Branch, Case, Decl, DeclKind, Expr, ExprId, ExprKind,
