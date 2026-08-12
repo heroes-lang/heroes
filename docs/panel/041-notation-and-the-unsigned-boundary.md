@@ -1,0 +1,330 @@
+# Panel 041 — the notation gap and the unsigned boundary
+
+**Convened** 2026-08-12, on the author's instruction (*"chiama il panel su 0x e
+unsigned"*). **Lane: full panel** — the charge touches surface syntax, the type
+vocabulary, a diagnostic class and the spec, so the soundness lane was never
+available. **Status: provisional — author ratification pending.**
+
+The sitting carries **two** questions by the author's own decision 1a
+(`docs/debrief/DECIDE.md`, third `/decide` session): the notation gap and the
+type-vocabulary gap are one reading of a C header apart, and a judge asked only
+about `u64` writes `0x` in its own example programme. That pairing paid: the
+llm-ergonomist, reading only a spec, found a live silent defect neither question
+was about.
+
+---
+
+## The proposal, verbatim as the judges received it
+
+### Q1 — hexadecimal integer literals (notation; no new type)
+
+Spec diff, § Types, one clause:
+
+```
++ - An `int` may be written in hexadecimal, lowercase, as exactly the 64 bits:
++   `0xff` is 255 and `0xffffffffffffffff` is `-1`. Decimal stays a value, so
++   `18446744073709551615` is still out of range.
+```
+
+**The sub-decision that matters is not the notation, it is the semantics.** A hex
+literal can denote a *value* (bounded by the signed range, as decimal is — Go,
+Rust, Zig) or a *bit pattern* (all 64 bits, so `0xffffffffffffffff` is `-1` —
+Java JLS 3.10.1, C# `unchecked`). The bit-pattern reading closes the all-ones-mask
+case **with no unsigned type at all**, and it is the same decision panel 040
+already took for `1 << 63` ("performed on the unsigned bit pattern and cast back").
+The value reading leaves `0xffffffffffffffff` as `int_out_of_range`, i.e. Q1 buys
+readability for small masks and closes nothing else.
+
+Sub-questions: lowercase digits only (§4.15's "exactly one spelling"), and whether
+`_` separators come too or are refused where they are written, as panel 035
+refused exponents.
+
+### Q2 — unsigned integers in the type vocabulary
+
+- **(a) nothing.** Part 7 item 10 stands ("never in v1"); `strlen` stays unbindable.
+- **(b) `u64` as an FFI-boundary type only** — the shape `cstr` and `ptr` already
+  have. Only in an `extern` group's signatures and constants: no literal, no
+  arithmetic, no comparison. `to_int(x)` aborts above the signed range,
+  `to_u64(n)` aborts below zero.
+- **(c) full sized integers** (`i8 u8 i32 u64` …) with conversion rules.
+- **(d) one first-class `u64`** with arithmetic and its own overflow rules.
+
+### Measured before the sitting, on this tree
+
+1. `x = 0xFFFF` → `error[expected_end_of_line] … found a name (xFFFF)` at col 10.
+2. `x = 18446744073709551615` → `int_out_of_range`, note naming the signed range.
+3. `extern constant SIZE_MAX: int` → `ffi_constant_type`, note *"correct the
+   declared type"* — **and no correct type exists to write.** Same `ULONG_MAX`.
+4. `extern function strlen(s: cstr) -> int` → `ffi_return_type`. **`strlen` cannot
+   be bound in Heroes today**, and §1.11 makes the FFI the standard library.
+5. `UINT_MAX` **is** bindable and prints `4294967295`. The boundary is exactly
+   2^63, not "unsigned".
+6. The four-rung ladder binds only `int`, `cstr`, `ptr`. It has no `size_t`
+   anywhere — it passed by binding the functions whose signatures have none.
+
+### Spec budget, `heroes measure`, not estimated
+
+| variant | tokens | delta |
+|---|---|---|
+| today | **2675** | — |
+| A: hex clause only | **2740** | **+65** |
+| B: hex + `u64` boundary clause | **2820** | **+145** (the `u64` half is +80) |
+
+---
+
+## The verdict table
+
+| judge | Q1 bit-pattern | Q1 value | Q2(a) | Q2(b) | Q2(c)/(d) |
+|---|---|---|---|---|---|
+| compiler-engineer | **object** | approve | approve | **VETO** | **VETO** |
+| llm-ergonomist | adopt-cond | adopt-cond | object | adopt-cond | — |
+| spec-warden | **VETO** | adopt-cond | adopt | adopt-cond | **VETO** |
+| ffi-pragmatist | adopt-cond | — | — | **object** | (d) veto |
+| historian (advisory) | approve, Java-only | approve | — | **object** | — |
+
+| judge | section | cost / delta | condition |
+|---|---|---|---|
+| compiler-engineer | §1.7, §1.1, §4.15; Part 5 | Q1 ~120 net Rust lines, **0 in `emit/`, 0 in `printer/`**; Q2(b) ~180–240 across 12+ files, a new confinement pass, and `HERO_RUNTIME_ABI` 10→11 | bit-pattern: a diagnostic that keeps the over-`i64::MAX` class catchable. (b): make `u64` **genuinely opaque like `ptr`** — no `to_int`, no `to_u64` — which collapses it to ~35 lines |
+| llm-ergonomist | — (spec only) | — | hex: **`0700` must be a compile error**. u64: say whether it may bind to a local; `to_int` on an `int` must be an error; reconcile `to_u64` with "no overloading" |
+| spec-warden | §1.0, §1.6, §4.15, Part 6, Part 7 preamble | tightened wordings **+42** (Q1) and **+50** (u64), against +65/+80 as proposed; **a −39 removal exists and is named** | Q1 adopts at ≤+42 **if** the reading is value **and** the −39 lands in the same commit. (b) adopts if M-selfhost-probe reports it as a *blockage* |
+| ffi-pragmatist | **§4.19** (two sentences, both against), §1.11, Part 7 item 10 | 13 C files compiled, 5 run | (b): either a **written LP64-only premise with the test that fires when it dies**, plus a `sizeof(...)==8` companion assertion; or a real binding where `int64_t`'s *bit pattern* is observably wrong |
+| historian | precedent | — | one sourced instance of a compiled AOT language with a single signed int that shipped FFI-only unsigned, no arithmetic, aborting conversion, and kept it 3+ years unchallenged |
+
+---
+
+## What the judges found that the proposal did not know
+
+**1. The `strlen` case and the `SIZE_MAX` case are not the same case, and no
+option closes both** (compiler-engineer). `strlen(s: cstr) -> u64` then `to_int`
+works — a real string length is under 2^63. `SIZE_MAX: u64` then `to_int`
+**always aborts**. Today `heroes` gives a compile error with a note; under (b) it
+gives a binary that traps. That is the thesis running backwards, and it is why
+(b) is vetoed rather than merely doubted.
+
+**2. The ABI was never the problem; the type check was** (ffi-pragmatist,
+`e4-abi.c`, run on arm64 *and* x86-64). `int64_t`↔`size_t` round-trips
+**losslessly** at all four edges in both directions, plus real `strlen`. So `u64`
+buys type-checking only — and buys it badly:
+
+- its `_Generic` **cannot be spelled with typedefs at all**: `uintptr_t` and
+  `size_t` in one generic association is a *hard clang error*, not a failed
+  assertion;
+- `-> u64` is a **compile error on i386 and armv7**, where `size_t` is
+  `unsigned int`, and Heroes has no conditional compilation. That would be the
+  first `.hero` declaration whose correctness depends on host word size;
+- on wasm32 `_Generic` **accepts a 32-bit `unsigned long` as `u64`** — the
+  assertion cannot verify its own name, so (b) needs a second `sizeof` assert
+  per extern.
+
+**3. There is a fix at one-tenth the cost, and it is compiled** (ffi-pragmatist,
+`e6-cheapest.c`, linked against the real `runtime/runtime.c`). Widening the
+existing `_Generic` return assertion by **one pair of generic associations**
+(`unsigned long`, `unsigned long long`, in the fundamental-type shape
+`emit/externs.rs:130` already uses) makes `strlen`, `SIZE_MAX` and `CURLAUTH_ANY`
+bind today: no new type, no conversions, no spec token, no ABI move, the mangled
+accessor unchanged — and **6/6 wrong signatures stay compile errors**
+(`e7-thesis.c`).
+
+**4. …and the historian pre-refuted it without knowing it existed.** The two
+sourced instances of option (b) are Python `ctypes` and **`dart:ffi`** — and Dart
+is Heroes' exact integer model (one 64-bit signed `int`, a real C FFI, unsigned
+refused). Dart shipped the marker-type shape ~7 years ago. The recorded
+complaints are not "we want arithmetic", they are ***"nobody told us the value
+went negative"*** ([dart-lang/sdk#46214](https://github.com/dart-lang/sdk/issues/46214),
+#46498, #35757). `e6-cheapest.c` has no marker at all, so it inherits that
+failure **more** exposed, not less: `print(SIZE_MAX)` would print `-1`.
+
+**5. Panel 035's R6 refusal applies unchanged, and the proposal's escape from it
+is false** (spec-warden). R6 refused exponent literals for "a new syntactic form
+for a type not on the closure list, with no Part 11 evidence"; the proposal
+negated the parenthetical by noting `int` *is* on the list. But **the closure list
+is a list of forms, not of types** — it enumerates `record`, `variant` +
+exhaustive `match`, `T?`, `@` parameters, UFCS. "`int` exists" no more carries hex
+notation than "`f64` exists" carried exponents. Both operative conjuncts of R6
+hold of Q1 unchanged, **and so does R6's repair**: today's
+`expected_end_of_line … found a name (xFFFF)` is a trap, and a `hex_literal`
+diagnostic that teaches costs **zero spec tokens**.
+
+**6. `fmt` has no canonical answer, and §4.15 is the section that hurts**
+(compiler-engineer). Both render paths echo the source slice
+(`printer/fmt_expr.rs:53`, `printer/bodies.rs:169`), so `255`, `0xff`, `0x00ff`
+and `0xFF` would be **four `fmt`-stable spellings of one program**, against
+§4.15's "any textual difference between two versions is semantic" and Part 6's
+own "two spellings for one thing". Chars already breach this (`'a'` vs `97`), so
+hex is not a new class — but hex adds *case* and *leading-zero* variation **within
+one notation**, which chars do not. The cheapest honest fix is to make the
+notation canonical **in the lexer** — a fact about the characters in hand, CLAUDE.md
+§11 — never to make `fmt` rewrite.
+
+**7. No language enforces hex digit case, and the only precedent is a formatter**
+(historian; searched Java, Go, Rust, Zig, C#, C, Julia — negative result).
+rustfmt's `hex_literal_case` is the instance, and it is `rustfmt`.
+
+**8. Two claims in the proposal were wrong and are corrected here.** C# is **not**
+a bit-pattern language: `0xFF_FF_FF_FF` is `uint` 4294967295 by C's own
+first-that-fits rule, and `-1` requires `unchecked((int)…)`. So the bit-pattern
+reading is **Java-only** among sourced languages — though Java is the one whose
+situation matches Heroes exactly. And C itself is a *third* answer (C11 6.4.4.1:
+hex and decimal get **different** type lists), which is the rule that bit the
+world: C90→C99 silently changed the signedness of `2147483648`.
+
+**9. The removal exists, and it is priced** (spec-warden). Spec lines 152–153 —
+*"Build a long string with `join`, not repeated `+`… each `+` copies both sides"* —
+are **−39 measured**, and they are the only paragraph in 191 lines that is neither
+syntax, semantics nor built-in library: they are **performance advice**, which
+CLAUDE.md §13 makes "a non-goal, never a justification". −39 funds a tightened Q1
+at +42 to a **net +3**. It does not fund Q2(b).
+
+**10. `heroes mutate` measures Q1 backwards** (compiler-engineer + spec-warden,
+independently). `neighbouring_digit` (`mutate/edits.rs:276-286`) returns `None` on
+a trailing `a`–`f`, so `0xff` gets **no** typo-digit mutant while `0x10` does —
+character-dependent, silent coverage loss in the twelfth operator. And
+`mix_int_float` appends `.0`, turning `0xff` into a **lexer** error, so an operator
+named for an implicit-conversion prior would silently measure the lexer instead.
+
+**11. Part 7 item 10's reason is mis-filed, and repairing it is free and owed**
+(spec-warden, and CLAUDE.md §12 now compels it). The item defers sized integers as
+*"needed for any binary format"*; the live case is the **FFI**, inside v1. That is
+exactly the defect panel 039 repaired in the `Macros` row. **Correcting a wrong
+reason is not granting an exception.** The falsifier to name is `strlen` — and
+per finding 1, `SIZE_MAX` is *not* a falsifier, because no option makes it
+readable.
+
+---
+
+## The two live defects this sitting found, which are not its question
+
+Both were found by the llm-ergonomist reading only a spec, and both were then
+**reproduced on this tree**:
+
+**D1 — `print(0700)` prints `700`.** A leading zero is decimal in Heroes. Every
+file-permission example a model has ever read writes `0700`, and here it silently
+means seven hundred: a wrong program that compiles, runs, and tests green against
+itself. This exists **today, with or without hex** — but Q1 makes it worse by
+raising the salience of number bases while closing the one that is dangerous.
+The judge predicts ≥20% of first tries at a permissions task contain a
+leading-zero literal, **in all three spec variants**.
+
+**D2 — a `constant`'s body may compute, so `~0` is already the all-bits mask.**
+`constant ALL_ONES: int` / `~0` prints `-1` today. The spec shows only `64` as a
+body and never says a body may compute, so the judge did not know it was legal —
+and this **weakens part of Q1's own warrant**: the all-ones mask has had a
+spelling since panel 040 landed `~`.
+
+---
+
+## Disagreements, stated plainly
+
+**The bit-pattern reading splits the panel, and the split is real.** The
+ffi-pragmatist adopts it because it matches panel 040's `1 << 63` decision exactly
+— the same bit pattern, the same cast back — and consistency inside one language
+is worth more than consistency with Go. The spec-warden **vetoes** it because it
+converts a compile error into a silent 16× wrong value: sixteen `f`s is `-1`,
+fifteen is 1152921504606846975, and both are legal. The compiler-engineer objects
+on the same ground and adds the one that decides it: `0xFFFFFFFF00000000` is a
+diagnostic today and would silently become `-4294967296`. **The veto stands and
+the conservative default takes the value reading** — but the ffi-pragmatist's
+consistency argument is not answered by that, it is only outweighed, and the
+author should know the language now has two rules for the sign bit: reachable by
+`<<`, unreachable by a literal.
+
+**The llm-ergonomist is the only judge who wanted `u64`, and that is information,
+not noise.** It reads only the spec — and from the spec, the sentence *"clang
+checks every signature and constant against that header, so a wrong FFI type is a
+compile error"* is **false at the integer boundary**, silently. It wrote
+`strlen(s: cstr) -> int` in two variants knowing it was wrong, because nothing
+else could be written and nothing would complain. The four judges who can see the
+repository all rejected (b) — but they rejected the *mechanism*, and none of them
+disputed the gap the ergonomist measured. **The spec's own promise is the thing
+that is wrong**, and no option on the menu repairs it.
+
+**The spec-warden and the ffi-pragmatist disagree about what Part 7 item 10 owes.**
+The warden says (a) plus a repaired reason. The pragmatist says design.md §4.19
+already named the missing thing and it is **`c_int` and `const`** — a *C-width*
+vocabulary — so `u64` is "a Heroes-width type wearing a C-width name", and
+adopting (b) would spend item 10 on the wrong vocabulary. That is the sharpest
+thing said about (b) and it is not a cost objection at all.
+
+---
+
+## Provisional resolution — the most conservative available
+
+Adopted while the author's verdict is pending. Nothing here changes the language.
+
+1. **Q1 bit-pattern reading: refused.** One veto (spec-warden), one objection
+   (compiler-engineer), and the sourced precedent is Java alone.
+2. **Q1 value reading: held, not adopted.** Every judge would take it, but the
+   spec-warden's R6 consistency argument is unanswered and its adoption is
+   conditional on the −39 removal landing in the same commit. Holding costs a
+   mask staying decimal; adopting on a 4–1 that has not answered its own strongest
+   objection costs more.
+3. **What ships instead, at zero spec tokens and with no judge against it: the
+   `hex_literal` diagnostic.** `x = 0xFFFF` must stop saying *"expected the end of
+   the line, found a name (`xFFFF`)"* — a message about a name, for a number. This
+   is panel 035 R6's shape exactly: refuse where it is written, and teach. It does
+   not decide Q1; it makes the current answer honest either way.
+4. **Q2 (b), (c) and (d): refused.** (b) carries a veto whose ground is measured —
+   a compile error becoming a runtime trap — and three independent failures on
+   non-LP64 targets. (c) and (d) carry two vetoes and Part 7 item 10's own words.
+5. **Q2 (a) adopted, with the repair CLAUDE.md §12 now compels**: Part 7 item 10
+   must name the program that would make it wrong, and that program is `strlen`.
+   Not `SIZE_MAX` — per finding 1, no option makes `SIZE_MAX` readable.
+6. **D1 (`0700`) is separated out and goes to the work list, not to the author.**
+   It is a defect, not a design question, and it does not wait on Q1.
+7. **`e6-cheapest.c` is recorded, not adopted.** It closes `strlen` for one pair of
+   generic associations — and per finding 4 it inherits Dart's exact reported
+   failure with no marker to soften it. It is the cheapest *mechanism* and the
+   panel does not know that it is the right *answer*; it goes to the author with
+   its counter-evidence attached.
+
+**What a ratification would compel.** If the author takes Q1's value reading: the
+−39 removal in the same commit, the lexer made canonical (lowercase, no leading
+zeros) rather than `fmt`, the two decoders in `types/exprs.rs:42` and
+`ir/exprs.rs:208` unified first, and `mutate/edits.rs` taught about hex digits. If
+the author takes the bit-pattern reading over the veto: additionally a diagnostic
+that keeps the over-`i64::MAX` class catchable, which is the compiler-engineer's
+stated price for withdrawing. If the author takes `e6-cheapest.c`: a written
+LP64-only premise **with the test that fires when it dies** — `e8-portable.c`
+under `-target i386-linux-gnu` is that test — and design.md §4.19's two sentences
+amended, because they currently book the refusal as an achievement.
+
+---
+
+## Predictions to score
+
+| # | judge | prediction | checkable at |
+|---|---|---|---|
+| 1 | compiler-engineer | If hex lands with the value reading, its commit touches **zero** lines in `crates/heroes/src/emit/` and **zero** in `crates/heroes/src/printer/`, ≤160 net lines total. Falsified if either directory changes at all | the hex commit |
+| 2 | compiler-engineer | If `u64` lands as (b), `grep -rc "Ty::U64" crates/heroes/src` exceeds **11** (today's measured `Ty::Cstr` count) and at least one new module exists for the confinement rule | M-selfhost-probe |
+| 3 | spec-warden | `docs/measurements/` at M-selfhost-probe lists **≥1** blockage shaped as `f64 → bits` / hex-digit *output* (`emit/ops.rs::hex_float`) and **exactly 0** naming a hex integer literal or `u64` | M-selfhost-probe |
+| 4 | spec-warden | If bit-pattern hex lands, a `typo-hex-digit` operator over `examples/` kills **0%** on both arms, and the corpus's copied-constant site count goes **0 → ≥1**, reversing measurement 005's 5→0 | first mutate run after |
+| 5 | llm-ergonomist | On a task binding a libc function whose C signature mentions `size_t`: today's spec produces `int` in **≥90%** of first tries and **0%** are diagnosed. With `u64`, **≥70%** produce `u64`, and **100%** of the residual fails loudly | harness run |
+| 6 | llm-ergonomist | On a permissions task, **≥20%** of first tries contain a leading-zero literal, **in every variant**. Since `0700` lexes as 700, every one is a silent wrong program | harness run |
+| 7 | llm-ergonomist | Given hex, the silent-wrong-value rate on an all-bits/transcribed-constant task drops from **≥15%** to **≤2%** — and **≥25%** of today's attempts already reach for hex unprompted. **If that last figure is under 10%, the hex case weakens sharply** | harness run |
+| 8 | ffi-pragmatist | Adopting (b) leaves `examples/sqlite/main.hero` at exactly **8 warnings, all `-Wincompatible-pointer-types` on `void **`, zero mentioning `size_t`** — so (b) removes none of the ladder's real warnings | next FFI rung |
+| 9 | ffi-pragmatist | `extern function strlen(s: cstr) -> u64` under `-target i386-linux-gnu` raises `ffi_return_type`, while `-> int` under the widened assertion raises nothing on any of six targets | next FFI rung |
+| 10 | historian | If (b) ships as written, within the next two FFI milestones a binding requires **comparing or equality-testing** a `u64` (a `*_MAX` sentinel or a flag mask) and the panel is asked to add comparison. Falsified if `u64` is used only in signatures and never inspected | +2 FFI milestones |
+
+Prediction **7** is the one to read: it is the falsifier for Q1 as a whole. If a
+model does not reach for hex unprompted, the notation is a road nobody takes and
+Principle 0 says it waits.
+
+---
+
+## Method note
+
+Full panel, five judges, differentiated inputs. The llm-ergonomist received three
+**label-stripped** spec variants (`spec-x/y/z`) and did the tasks before being
+told which was the status quo; it identified the ordering correctly *after* the
+experiment, which is the sequence that makes its numbers admissible. The
+spec-warden re-ran `heroes measure` on every file rather than accepting the
+proposal's table, confirmed all three numbers exactly, then produced cheaper
+wordings and measured those. The ffi-pragmatist compiled 13 C files and ran 5,
+across six targets. The historian returned **three** corrections to the proposal's
+own precedent claims and dropped four claims it could not source, which is the
+role working as intended.
+
+**The spec-warden also corrected its own standing brief on the record**: it
+believed the spec ceiling was 3000; design.md §1.6 says **4096** by author
+decision 2026-08-10 (panel 024). No budget veto was available on either variant
+and it did not reach for one.

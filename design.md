@@ -1919,6 +1919,20 @@ ladder bindings pass, and `size_t` — which has no signed C spelling — turns 
 compile error. **Clang verifies the declared signature against the real header** is therefore a
 true sentence, and this is the mechanism that makes it one.
 
+**Half of that paragraph was booking a hole as an achievement, and panel 041
+measured the other half.** A `size_t` return is a compile error and there is **no
+declaration that is not one**: `extern function strlen(s: cstr) -> int` raises
+`ffi_return_type` whose note says *"correct the result type"*, and no result type
+exists to correct it to — so the most basic function in C cannot be bound in this
+language by any spelling. What makes the paragraph above true is that the wrong
+binding is caught; what it does not say is that the right one is unwritable. The
+gap is **type-checking only** and not the ABI: `int64_t`↔`size_t` round-trips
+losslessly at all four edges on arm64 and x86-64, compiled both directions
+(panel 041, `e4-abi.c`). The four-rung ladder never met this because it binds only
+`int`, `cstr` and `ptr` returns — it passed by choosing the functions whose
+signatures have no unsigned in them, which is a fact about the corpus and not
+about the mechanism.
+
 **The remaining accepted loss:** no automatic binding *generation* — declarations are still written
 by hand, they are merely verified. C++ libraries are still reachable only through a shim.
 
@@ -2284,9 +2298,18 @@ are *on* the closure list.
    except for two names, and would unify into
    `sequence(@p, is_times, .product)` if a variant constructor could be passed as a value. This is
    the first place the language is measurably poorer than needed. Note it, don't fix it yet.
-10. **Sized integers** (`i8 u8 i32 u64`) — needed for any binary format, and the highest-risk
-    addition in the language because conversion rules are the most expensive spec item that exists
-    and the number-one error source in C. Design with care, never in v1.
+10. **Sized integers** (`i8 u8 i32 u64`) — the highest-risk addition in the language, because
+    conversion rules are the most expensive spec item that exists and the number-one error source
+    in C. Design with care, never in v1. **The reason was mis-filed and is corrected here**
+    (panel 041, 2026-08-12): this row read *"needed for any binary format"*, which is a v2 case,
+    when the live pressure is the **FFI** — §1.11's founding constraint, inside v1. Same shape as
+    the `Macros` row panel 039 repaired: a correct decision under a reason that does not describe
+    the real case. **The program that would make this row wrong is `strlen`**, not `SIZE_MAX`:
+    `extern function strlen(s: cstr) -> int` is `ffi_return_type` and no result type exists to
+    correct it to, whereas `SIZE_MAX` is unreadable under *every* option on panel 041's menu — a
+    `u64` that can only be converted aborts, so naming it as the falsifier would name a case no
+    addition closes. What §4.19 actually asked for is a **C-width** vocabulary (`c_int`, `const`),
+    which is this row; a Heroes-width `u64` wearing a C-width name is not.
 11. **A `raw` module for low-level access** — see Part 9.
 12. **Inline blocks (Kotlin-style)** — `repeat 3` / `with file("x")` where the last parameter is a
     block expanded at the call site rather than becoming a closure. This is the acceptable substitute
