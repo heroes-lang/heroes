@@ -88,3 +88,17 @@ or it breaches the 1500-token budget.
   compile-error bucket (ergonomist, 009): without it the thesis's central
   claim — that silent errors are what the design eliminates — has no
   instrument, and panels 008/009's predictions are untestable.
+- **The spec never says what a `constant`'s body may contain** (reasoning 003).
+  `spec/heroes-spec.md` shows a single literal (`constant MAX_DEPTH: int` / `64`)
+  and every `constant` in the corpus is one. The compiler accepts an arbitrary
+  block: arithmetic, a call to a user function, an `if`/`else`, a multi-statement
+  body, a `str` concatenation and an array literal all compile and run, verified
+  at `2ac0403`. No golden pins the difference, so a reader with only the spec
+  cannot know the form is general — panel 035's category exactly, and the
+  measurement of the sentence is owed before anyone decides whether the
+  generality is intended or accidental.
+- **Part 6 names `Macros` and is silent on compile-time evaluation** (reasoning
+  003). The mechanism appears once in the entire record, at design.md:1821, as a
+  remark about Zig. Recorded here so the silence is a known gap rather than an
+  invitation; the decision to convene panel **039** on it is in
+  `docs/debrief/DECIDE.md`.
