@@ -1,0 +1,22 @@
+# Exponent literals are refused, and refused where they are written (panel 035
+# refused the form; panel 037's session is where the message was owed).
+#
+# Before this, `1e300` lexed as the integer `1` followed by the identifier
+# `e300`, so the reader was told `expected ')', or ',' and another argument,
+# found a name (e300)` — a message about a parenthesis, for a number. §4.17's
+# standard is that the error carries what is needed without opening another
+# file, and a message that names the wrong construct fails it twice.
+#
+# The test is on the characters in hand: a digit, then `e`/`E`, then an optional
+# sign, then a digit. Never on what the parser was expecting.
+# Bulk regression case.
+
+function main()
+    print(1e300)         #~ exponent_literal
+    print(6.02E23)       #~ exponent_literal
+    print(1e-6)          #~ exponent_literal
+    # Not an exponent: a name that merely begins with `e`, and a number followed
+    # by one with a space between them. Both are ordinary programs and this case
+    # exists to prove the narrowing did not eat them.
+    e5 = 3
+    print(e5)

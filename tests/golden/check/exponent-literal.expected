@@ -1,0 +1,3 @@
+tests/golden/check/exponent-literal.hero:15:11: error[exponent_literal]: `1e300` is not a number in this language — there are no exponents. Write the digits out, or compute it: `1 * pow(base: 10.0, exponent: …)` through the FFI (§4.19)
+tests/golden/check/exponent-literal.hero:16:11: error[exponent_literal]: `6.02E23` is not a number in this language — there are no exponents. Write the digits out, or compute it: `6.02 * pow(base: 10.0, exponent: …)` through the FFI (§4.19)
+tests/golden/check/exponent-literal.hero:17:11: error[exponent_literal]: `1e-6` is not a number in this language — there are no exponents. Write the digits out, or compute it: `1 * pow(base: 10.0, exponent: …)` through the FFI (§4.19)

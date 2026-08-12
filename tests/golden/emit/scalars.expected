@@ -93,7 +93,7 @@ bb0:
     t10 = INT64_C(2);
 #line 8 "tests/golden/emit/scalars.hero"
     if (t10 == 0) hero_panic("division by zero");
-    if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow();
+    if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest int: the remainder is 0, but C reaches it through a quotient that has no int64");
     t11 = t9 % t10;
 #line 8 "tests/golden/emit/scalars.hero"
     hero_print_int(t11);

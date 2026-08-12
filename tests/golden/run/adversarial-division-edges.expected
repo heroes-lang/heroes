@@ -1,1 +1,1 @@
-!panic: integer overflow
+!panic: `%` by -1 at the smallest int: the remainder is 0, but C reaches it through a quotient that has no int64

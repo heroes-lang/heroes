@@ -211,8 +211,21 @@ pub(super) fn binary(
         BinOp::Div | BinOp::Rem if integral => {
             let operator = if op == BinOp::Div { "/" } else { "%" };
             w.line(&format!("    if ({r} == 0) hero_panic(\"division by zero\");"));
+            // **`INT64_MIN % -1` and `INT64_MIN / -1` are guarded together and
+            // reported apart** (panel 035's owed message). The guard is the same:
+            // arm64 does not trap on either, so both are UB that happens to look
+            // fine (CLAUDE.md §7). But the *reason* differs, and saying "integer
+            // overflow" for `%` was false — the remainder is 0 and overflows
+            // nothing; what has no representation is the quotient C computes on
+            // the way there. A refusal whose message misleads is worse than the
+            // form it refuses.
+            let abort = if op == BinOp::Div {
+                "hero_panic_overflow()".to_string()
+            } else {
+                "hero_panic(\"`%` by -1 at the smallest int: the remainder is 0, but C reaches it through a quotient that has no int64\")".to_string()
+            };
             w.line(&format!(
-                "    if ({l} == INT64_MIN && {r} == INT64_C(-1)) hero_panic_overflow();"
+                "    if ({l} == INT64_MIN && {r} == INT64_C(-1)) {abort};"
             ));
             w.line(&format!("    {name} = {l} {operator} {r};"));
         }
