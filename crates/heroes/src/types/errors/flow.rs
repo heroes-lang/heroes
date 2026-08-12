@@ -7,16 +7,33 @@
 //! branch falls off the end of a statement. Collapsing them would have let a
 //! binding take its value from nothing.
 
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::source::Span;
 
 
-pub(in crate::types) fn not_fallible(got: &str, span: Span) -> Diagnostic {
-    Diagnostic::new(
+/// `inner` is the operand's own span, so the fix deletes exactly what lies
+/// between the operand's end and the expression's — the `?`, and any space
+/// before it. Both extents come from the expression in hand; neither rests on
+/// the `?` being the last character (CLAUDE.md §11).
+///
+/// **The fix is `Certain` because the message already was.** Panel 036 deleted
+/// the spec's sentence about `?` on a non-fallible value on the grounds that the
+/// compiler says it better — and a message that says "remove the `?`" while
+/// `--apply` cannot is not saying it better, it is asking for the same edit twice
+/// (CLAUDE.md §8).
+pub(in crate::types) fn not_fallible(got: &str, span: Span, inner: Span) -> Diagnostic {
+    let mut diagnostic = Diagnostic::new(
         "not_fallible",
         format!("`?` propagates an error, and `{got}` cannot fail — remove the `?`"),
         span,
-    )
+    );
+    diagnostic.fixes.push(Fix {
+        title: "remove the `?`".to_string(),
+        replacement: String::new(),
+        span: Span { start: inner.end, end: span.end },
+        certainty: Certainty::Certain,
+    });
+    diagnostic
 }
 
 

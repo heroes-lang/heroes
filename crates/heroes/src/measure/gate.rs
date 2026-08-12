@@ -31,7 +31,8 @@
 /// | 2363 | M-generics-library | `range`'s labels, the tier phrase, panel 028's prelude |
 /// | 2434 | panel 031 | modules: `use`, qualification, the transitivity rule |
 /// | 2422 | panel 035 | the thirteen silences, closed **net −12**: one line deleted, four added |
-pub const SPEC_TOKENS: usize = 2422;
+/// | 2560 | panel 036 | the FFI group and the program's edges, **net +138** against two removals worth −31 |
+pub const SPEC_TOKENS: usize = 2560;
 
 /// The reserved-word registry's own size, gated separately — **not** part of
 /// §1.6's budget, and that is the ruling rather than an omission (panel 035 D).

@@ -69,7 +69,32 @@ fn binary(cur: &mut Cursor, ast: &mut Ast, src: &Source, min_power: u8) -> ExprI
             span,
         });
     }
+    reserved_pipe(cur, ast, src);
     left
+}
+
+/// `6 | 3` — the one member of the reserved bitwise set that the lexer cannot
+/// catch, because `|` is a real token: it joins patterns in a `match` (§4.7).
+/// Here, where an operator would have gone, it is the bitwise `or` somebody
+/// expected — and the message says so, in the words `lexer/mod.rs` uses for the
+/// other five (panel 036).
+///
+/// It **consumes the right-hand side** rather than returning, so the expression
+/// ends where the author thought it did and the caller reports nothing more:
+/// without that, `print(6 | 3)` also said "expected `)`", blaming a parenthesis
+/// that was exactly where it belonged.
+fn reserved_pipe(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
+    if !cur.at(TokenKind::Pipe) || cur.at_reported_error() {
+        return;
+    }
+    let span = cur.bump().span;
+    cur.error(
+        "reserved_operator",
+        "`|` joins patterns in a `match` and is not an operator — `& | ^ << >> ~` are all held for a future bitwise set, and none of them is one yet"
+            .to_string(),
+        span,
+    );
+    let _ = unary(cur, ast, src);
 }
 
 /// `-x` and `!x`. Both take exactly one operand and neither is overloadable;

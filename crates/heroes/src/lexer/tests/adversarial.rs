@@ -109,6 +109,11 @@ fn adversarial_single_ampersand_is_not_a_token() {
     // something else — and this is also the proof that an unknown
     // character costs exactly one skipped character, not the rest of the
     // file.
+    //
+    // The message changed at panel 036: the spec's sentence naming all six
+    // reserved spellings was deleted, and this diagnostic is what replaced it,
+    // so it now names the set rather than the character. `unexpected_character`
+    // survives for a character that is genuinely not in the syntax.
     assert_eq!(
         dump("x = 1 & 2\n"),
         "\
@@ -119,7 +124,48 @@ fn adversarial_single_ampersand_is_not_a_token() {
 1:9 int 2
 1:10 terminator
 2:1 eof
-DIAG test.hero:1:7: error[unexpected_character]: `&` is not part of the language's syntax (ASCII-only)
+DIAG test.hero:1:7: error[reserved_operator]: `&` is reserved for a future bitwise set and has no meaning yet — `& | ^ << >> ~` are all held, and none of them is an operator in this language
+"
+    );
+}
+
+/// `<<` reaches the lexer's two-character arm **only because no prefix operator
+/// starts with `<` or `>`** — the premise `scan.rs` writes down, and this is the
+/// test that fires when it dies (CLAUDE.md §11). If a later milestone gives `<`
+/// a prefix meaning, `1 << 2` becomes two comparisons over a prefix expression
+/// and the shift arm silently eats a legal program: this test fails first, and
+/// its name says what depends on it.
+#[test]
+fn a_shift_is_never_two_comparisons() {
+    // The prefix set, in full: `-` and `!` (syntax/expr.rs::unary). Neither is
+    // `<` or `>`, so `<` immediately followed by `<` cannot be a comparison
+    // against a prefixed operand — there is nothing for the second `<` to open.
+    assert_eq!(
+        dump("x = 1 << 2\n"),
+        "\
+1:1 ident x
+1:3 eq =
+1:5 int 1
+1:7 error <<
+1:10 int 2
+1:11 terminator
+2:1 eof
+DIAG test.hero:1:7: error[reserved_operator]: `<<` is reserved for a future bitwise set and has no meaning yet — `& | ^ << >> ~` are all held, and none of them is an operator in this language
+"
+    );
+    // The control: two comparisons that ARE legal stay legal, because they are
+    // not adjacent. `a < b` and `a > b` never meet, so the arm is unreachable
+    // from a well-formed program.
+    assert_eq!(
+        dump("x = a < b\n"),
+        "\
+1:1 ident x
+1:3 eq =
+1:5 ident a
+1:7 lt <
+1:9 ident b
+1:10 terminator
+2:1 eof
 "
     );
 }

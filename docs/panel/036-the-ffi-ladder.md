@@ -159,10 +159,20 @@ Recorded in the ledger; M-selfhost-probe decides it.
    ffi-pragmatist's `lib_dir`/`include_dir` (paths validated not to begin with
    `-`, so the form is closed rather than an arbitrary-flag hole) is the shape,
    and it lands when a rung needs it.
-7. **`ptr` gets exactly one literal, `null`, and a C out-parameter is an `@`
+7. **`ptr` gets exactly one literal, `nullptr`, and a C out-parameter is an `@`
    parameter** — CLAUDE.md §7 already makes `@` a pointer parameter. Without this
    the acceptance test is unwritable, which the ergonomist demonstrated by failing
    to write it.
+
+   **Amended the same session, by an instrument rather than a judge.** The rider
+   said `null`, and `measure::spec`'s gate — which asserts the spec never uses a
+   word the lexer rejects — turned red: `null` is in the foreign-word registry,
+   answered with *"there is no null in this language — absence is a fallible type:
+   `int?`"*. That rule is right and stays. What was wrong was the **message**,
+   which at a `ptr` site sends a binding author to `int?`, and no C out-parameter
+   can be one; it now names `nullptr` as a C pointer's zero. Five judges read the
+   proposal and none saw the collision, because none of them is a program that
+   checks the spec against the lexer.
 8. **The ladder gains a rung, by author instruction (2026-08-12): libcurl,
    between SQLite and raylib.** It is the rung that tests what the others do not —
    `curl_easy_setopt` is **variadic** (panel 013's Apple-ARM64 on-stack variadics)

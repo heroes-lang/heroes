@@ -175,6 +175,28 @@ impl LexState {
         self.last_significant = Some(kind);
     }
 
+    /// One of the six spellings held for a future bitwise set: `& | ^ << >> ~`.
+    ///
+    /// **The set is named, not just the character in hand** (panel 036). The spec
+    /// used to carry a sentence listing all six, and it was deleted in favour of
+    /// this message — so the message owes what the sentence said: a reader who
+    /// writes `x << 2` learns that `&` and `^` are unavailable too, without
+    /// discovering each one by collision. `|` is not lexed here, because it is a
+    /// real token in a `match` pattern; `syntax/expr.rs` reports it where an
+    /// operator would have gone.
+    fn reserved_operator(&mut self, src: &Source, start: usize, len: usize) {
+        self.pos = start + len;
+        let span = Span { start: start as u32, end: self.pos as u32 };
+        let text = &src.text[start..self.pos];
+        self.error_token(Diagnostic::new(
+            "reserved_operator",
+            format!(
+                "`{text}` is reserved for a future bitwise set and has no meaning yet — `& | ^ << >> ~` are all held, and none of them is an operator in this language"
+            ),
+            span,
+        ));
+    }
+
     /// Error recovery in one move: record why, emit an `Error` token over
     /// the same span, keep lexing.
     fn error_token(&mut self, diag: Diagnostic) {

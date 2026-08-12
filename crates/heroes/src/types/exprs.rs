@@ -129,7 +129,7 @@ pub(super) fn synth(
         }
         ExprKind::Try(inner) => {
             let inner_ty = synth(checker, ast, resolved, src, *inner);
-            try_type(checker, ast, src, inner_ty, span)
+            try_type(checker, ast, src, inner_ty, span, ast.exprs[inner.0 as usize].span)
         }
         ExprKind::If { branches, otherwise } => {
             let mut collected: Vec<Branch> = Vec::new();

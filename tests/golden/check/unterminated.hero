@@ -1,4 +1,6 @@
 function main()  #~v unterminated_string
     s = "never closes
     c = 'ab'  #~ char_literal
-    d = 1 & 2  #~ unexpected_character
+    d = 1 & 2  #~ reserved_operator
+    e = 1 << 2  #~ reserved_operator
+    f = 2;  #~ unexpected_character

@@ -59,7 +59,12 @@ pub(crate) fn foreign_word(text: &str) -> Option<(&'static str, Option<&'static 
         "elif" => ("`elif` is not a word in this language — write `else if`", Some("else if")),
         "switch" => ("`switch` is not a word in this language — use `match`", Some("match")),
         "case" => ("`case` is not a word in this language — a `match` arm is `.name => expr`", None),
-        "null" | "nil" | "None" => ("there is no null in this language — absence is a fallible type: `int?`", None),
+        // The FFI's `nullptr` is named here rather than left to be discovered,
+        // because this message is otherwise *wrong advice at a `ptr` site*: a
+        // binding author writing `db: ptr @ null` would be told to use `int?`,
+        // which no C out-parameter can be (panel 036 rider 7, amended when the
+        // spec gate found the collision).
+        "null" | "nil" | "None" => ("there is no null in this language — absence is a fallible type: `int?`, and a C pointer's zero is `nullptr`", None),
         "try" | "catch" | "throw" | "raise" => ("there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`", None),
         // `use` left this table at panel 031 and became a keyword. Its two
         // neighbours stay, and they gain what they never had: the repair is now

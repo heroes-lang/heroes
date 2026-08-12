@@ -149,13 +149,20 @@ fn expect_index(
 /// `e?` — hand the error to the caller (§4.6). Two conditions, and both are
 /// worth their own message: the value must be fallible, and the function must be
 /// able to fail.
-pub(super) fn try_type(checker: &mut Checker, ast: &Ast, src: &Source, inner: TyId, span: Span) -> TyId {
+pub(super) fn try_type(
+    checker: &mut Checker,
+    ast: &Ast,
+    src: &Source,
+    inner: TyId,
+    span: Span,
+    operand: Span,
+) -> TyId {
     if checker.out.types.poisoned(inner) {
         return checker.error_ty();
     }
     let Ty::Fallible(value) = checker.out.types.get(inner) else {
         let got = checker.show(ast, src, inner);
-        let diagnostic = errors::not_fallible(&got, span);
+        let diagnostic = errors::not_fallible(&got, span, operand);
         checker.push_diagnostic(diagnostic);
         return checker.error_ty();
     };

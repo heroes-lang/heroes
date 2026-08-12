@@ -128,7 +128,7 @@ snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 | `.default(v)` | extract or fall back |
 | `.is_err()` | boolean test |
 
-`?` on a non-fallible value is a compile error. Map access `m[k]` returns
+Map access `m[k]` returns
 `V?` with code `missing_key`. An out-of-bounds index or slice
 aborts, and so does a slice that splits a character; integer overflow aborts; integer division by zero aborts. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
@@ -141,8 +141,7 @@ comparison   == != < <= > >=
 boolean      && || !            (bool only; && and || short-circuit)
 ```
 Precedence, strongest first: call and `.` → unary `-` `!` → `* / %` → `+ -`
-→ comparisons → `&&` → `||`. `& | ^ << >> ~` are reserved for future bitwise
-use. There is no ternary; `if` is an expression, and so is `match`.
+→ comparisons → `&&` → `||`. There is no ternary; `if` is an expression, and so is `match`.
 
 ## Strings, arrays, maps
 `s[i]` yields an `int` in 0..255 (a byte); iterate characters with
@@ -156,6 +155,9 @@ Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
 separator and exactly one trailing newline. An `f64` prints a point or
 exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`.
+Files and the process, also provided: `read_file(path: str) -> str?` ·
+`write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
+after the program name) · `exit(code: int)` (ends the program).
 
 ## Tests and holes
 ```
@@ -170,9 +172,13 @@ reports what belongs there (the expected type, what is in scope). A program
 with holes type-checks everything else but produces no binary.
 
 ## FFI
-Anything beyond this document — files, sockets, maths, JSON — comes from C
-libraries:
+Anything beyond this document — sockets, maths, JSON, databases — comes from C
+libraries. A group names its header and its library, and clang checks every
+signature against that header, so a wrong FFI type is a compile error:
 ```
-extern function sqrt(x: f64) -> f64
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_open(path: cstr, out: ptr) -> int
+    function sqlite3_close(db: ptr) -> int
 ```
-`ptr` is an opaque pointer, `cstr` a C string.
+`ptr` is an opaque pointer whose only literal is `nullptr`, `cstr` a C string, and
+`s.cstr()` passes a `str` to C. A C out-parameter is an `@` parameter.

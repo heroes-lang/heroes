@@ -390,9 +390,23 @@ the `str` representation with concatenation and slicing, the array with `push` a
 the hash map, copy-on-write checks, `panic`, `print`, numeric conversions, `join`. A few hundred
 lines. See 4.20.
 
-*Tier 2 — written in Heroes itself*: `map`, `filter`, `fold`, `find`, `any`, `all`, `range`, and the
-`T?` helpers. This is the payoff from generics (4.12) — these are library code with `test` blocks,
-not compiler magic.
+*Tier 2 — written in Heroes itself*: `map`, `filter`, `fold`, `find`, `any`, `all`, `range`, the
+`T?` helpers, and — since panel 036 — **the program's three edges**: `read_file`, `write_file` and
+`args`, written over `extern`s against a `hero_os.h` this project ships. This is the payoff from
+generics (4.12) — these are library code with `test` blocks, not compiler magic.
+
+**Why the edges are Tier 2 and not built-ins**, which is the decision panel 036 spent its session
+on. §1.7's test is mechanical, and `read_file -> str?` fails it: a `T?` is a per-translation-unit
+generated struct named by index, so the C runtime has no name for one and cannot return it — the
+built-in route needs a second composition arm in the emitter and an ABI bump, and the Tier-2 route
+needs zero backend lines. The precedent runs the same way and is unusually clean: **Pascal
+predeclared file I/O, command-line access and termination; Kernighan's 1981 paper itemises all
+three as defects; Oberon predefines none of them.** Nim, whose surface this project copies, reaches
+the same ergonomics from an auto-imported module rather than from the compiler, and Odin could
+redesign `core:os` in 2025 *because it was a package*. The one edge that cannot be Tier 2 is
+`exit(code)`, which needs `_Noreturn` to survive C's flow analysis — C itself took 22 years and
+WG14 N1453 to admit that. **The spec names all four and their signatures, and says nothing about
+which tier they live in**, because that is not something a reader of a program can observe.
 
 **That is the whole standard library.** Everything below is explicitly *not* provided, and is
 expected to arrive via FFI:
@@ -1736,21 +1750,47 @@ The backend emits C (§3.1), so an `extern` declaration is Nim's `importc` desig
 plus the header it comes from, no external tool, no libclang, no generated binding files:
 
 ```
-extern function sqlite3_open(path: cstr, out: ptr) -> int      # header "sqlite3.h"
-extern function sqlite3_close(db: ptr) -> int                  # header "sqlite3.h"
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_open(path: cstr, out: ptr) -> int
+    function sqlite3_close(db: ptr) -> int
 ```
 
-(The exact header-attachment syntax is fixed at the FFI milestone; the mechanism is decided.) The
-emitter produces the `#include`, and **clang verifies the declared signature against the real
-header** — a wrong FFI type is a compile error, not a runtime disaster. That property is this
-project's thesis applied to the boundary. `ptr` is an opaque pointer, `cstr` a C-style string; the
-link flag is declared next to the `extern` that needs it. Macros, `inline` functions and `#define`
-constants are reachable because the C compiler sees the real header.
+**The header and the link flag attach to a group** (panel 036): a head line, then indented
+signatures — the shape `record` and `variant` already have, and the shape Rust's `#[link]` on an
+`extern` block, cgo's preamble, Odin's `foreign` block and D's `pragma(lib)` all converge on. The
+parser **flattens** it: one declaration per `extern function`, two spans on the signature, and no
+later pass ever learns the word "group", because a declaration's index is function identity across
+five modules. `ptr` is an opaque pointer whose only literal is `nullptr` — `null` belongs to the
+foreign-word registry and stays there — and a C out-parameter is an `@` parameter, which §4.8
+already compiles to a pointer. Macros, `inline` functions and `#define` constants are reachable
+because the C compiler sees the real header.
+
+**The emitter emits `<header.h>` and never `"header.h"`, and passes `-I<directory of the .hero
+source>` after the runtime's.** Measured, and it is not a preference: with a decoy `sqlite3.h`
+beside the generated unit in `build/<hash>/`, the quoted form read the decoy **with zero
+diagnostics under `-Weverything`** — panel 020's decoy-`runtime/` finding relocated to a header,
+where the `_Static_assert(HERO_RUNTIME_ABI)` that rescued it there cannot be written. The quoted
+form also fails the case it was chosen for, an author's own `mylib.h`, because the translation unit
+lives in `build/` and `""` searches the *including file's* directory.
+
+**Every `extern` carries a `_Static_assert` over a `_Generic` on its return type**, and without it
+§4.19's central promise is false. The emitter does **not** re-declare the signature — re-declaring
+gives `conflicting types` five times out of five on SQLite, since Heroes' `int` is `int64_t` and
+every entry point returns C `int` — so it emits the `#include` and the calls, which is what Nim's
+`importc` does. In that mode clang checks the *call* and nothing else, and four wrong bindings out
+of six compile clean: `extern function sqrt(x: f64) -> int` exits 0 and prints `1`. The assertion's
+controlling expression is a call that C11 6.5.1.1p3 does **not evaluate** but does type-check, so it
+costs one line per `extern` in the generated C and nothing at runtime; eleven of eleven correct
+ladder bindings pass, and `size_t` — which has no signed C spelling — turns from silent into a
+compile error. **Clang verifies the declared signature against the real header** is therefore a
+true sentence, and this is the mechanism that makes it one.
 
 **The remaining accepted loss:** no automatic binding *generation* — declarations are still written
 by hand, they are merely verified. C++ libraries are still reachable only through a shim.
 
-**For C++ and awkward struct-passing, write a thin C shim** (compiled by `heroes cc`, linked in):
+**For C++ and awkward struct-passing, write a thin C shim** (how it is compiled is **undecided** —
+panel 036 deferred both candidates, `heroes cc` and a `compile "shim.c"` clause, on the grounds that
+the acceptance test needs no shim and neither candidate has a test until one does):
 a `.c` file that exposes plain functions taking scalars and opaque pointers.
 
 ```c
@@ -1802,8 +1842,16 @@ the first is the one that proves the project's premise:
 2. **`libm`** — `sqrt`, `sin`, `pow`. Proves `f64` passing in floating-point registers.
 3. **SQLite** — open a database, run a query, read a result, close. Pure C, clean header, immediate
    value. **If this works without you having written a standard library, the architecture holds.**
-4. **raylib** — opens a window and draws. Proves the toolchain handles a library with real struct
-   passing and framework linking on macOS, and it is disproportionately motivating to see.
+4. **libcurl** — fetch a URL (author instruction, 2026-08-12). It is the rung that tests what the
+   others do not: `curl_easy_setopt` is **variadic**, which is where Apple ARM64 passes arguments on
+   the stack rather than in registers, and `CURLOPT_WRITEFUNCTION` is a callback, which §4.19 fixes
+   at `ptr` until a C-width type vocabulary exists.
+5. **raylib** — opens a window and draws. Proves the toolchain handles a library with real struct
+   passing and framework linking on macOS, and it is disproportionately motivating to see. Measured
+   before it was needed: the homebrew **dylib** links with `-I`/`-L` and **no framework at all**;
+   the static archive needs five. So what the group head lacks is **search paths**, not a framework
+   keyword — and both are paths, validated not to begin with `-`, so the form stays closed rather
+   than becoming an arbitrary-flag hole.
 
 
 ### 4.20 The runtime, in C

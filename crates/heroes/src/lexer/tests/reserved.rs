@@ -36,7 +36,7 @@ fn null_family_and_exceptions_share_their_messages() {
 1:5 error None
 2:1 error try
 3:1 eof
-DIAG test.hero:1:5: error[reserved_word]: there is no null in this language — absence is a fallible type: `int?`
+DIAG test.hero:1:5: error[reserved_word]: there is no null in this language — absence is a fallible type: `int?`, and a C pointer's zero is `nullptr`
 DIAG test.hero:2:1: error[reserved_word]: there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`
 "
     );

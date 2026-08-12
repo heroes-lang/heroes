@@ -272,6 +272,17 @@ impl LexState {
             (b'>', Some(b'='), _) => (TokenKind::Ge, 2),
             (b'&', Some(b'&'), _) => (TokenKind::AndAnd, 2),
             (b'|', Some(b'|'), _) => (TokenKind::OrOr, 2),
+            // The reserved bitwise set, caught here rather than left to the
+            // fallback below (panel 036). `<<` and `>>` are two characters and
+            // reach this arm only because **no prefix operator starts with `<`
+            // or `>`** — the falsifiable claim, and `a_shift_is_never_two_
+            // comparisons` in `tests/punct.rs` is what fails if a later
+            // milestone adds one.
+            (b'<', Some(b'<'), _) => return self.reserved_operator(src, start, 2),
+            (b'>', Some(b'>'), _) => return self.reserved_operator(src, start, 2),
+            (b'&', _, _) | (b'^', _, _) | (b'~', _, _) => {
+                return self.reserved_operator(src, start, 1)
+            }
             (b'=', _, _) => (TokenKind::Eq, 1),
             (b'@', _, _) => (TokenKind::At, 1),
             (b':', _, _) => (TokenKind::Colon, 1),
@@ -297,9 +308,13 @@ impl LexState {
                 let ch = src.text[start..].chars().next().unwrap_or('\u{FFFD}');
                 self.pos += ch.len_utf8();
                 let span = Span { start: start as u32, end: self.pos as u32 };
+                // Not "(ASCII-only)": that read as an encoding fault for `&`,
+                // which is ASCII, and sent the reader hunting for one (panel
+                // 036). The syntax is ASCII-only, and this character is not in
+                // it — two different claims, and only the second is the error.
                 self.error_token(Diagnostic::new(
                     "unexpected_character",
-                    format!("`{ch}` is not part of the language's syntax (ASCII-only)"),
+                    format!("`{ch}` is not part of the language's syntax"),
                     span,
                 ));
                 return;
