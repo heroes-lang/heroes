@@ -3,7 +3,7 @@ name: step
 description: Run one development step of the Heroes compiler autonomously — implement, test, queue comprehension items for /debrief, commit. Chains steps without stopping; use for every implementation step, including in unattended loops.
 ---
 
-# /step [<milestone.step>] — the development protocol
+# /step [<milestone> <step>] — the development protocol
 
 The assistant implements; the author's learning is real but **post-hoc**: it
 happens in `/debrief`, on the author's clock, fed by the queue this skill
@@ -38,7 +38,8 @@ among structures, an output value) to `docs/debrief/QUEUE.md`:
 Plumbing steps — CLI, harness, refactors, bulk cases — add nothing.
 
 ## 5. Close
-Every step ends with a commit: `M<n> step <k>: <what>`.
+Every step ends with a commit: `M-<name> step <k>: <what>`. The naming algorithm
+for `<name>` is CLAUDE.md §14 — its only home.
 
 Milestone close — the checklist (this is its only copy):
 - goldens pass (ASan-clean where applicable); determinism diff empty (M5a+);
@@ -49,5 +50,12 @@ Milestone close — the checklist (this is its only copy):
 - a DESIGN-LOG line per decision made;
 - queue the milestone's debrief offers: walkthrough, golden ratification,
   mutation drill, exit-quiz (all optional, author's call);
-- update `docs/ROADMAP.md` status; tag `m<n>`, push `--follow-tags`;
+- append the closing block — the status paragraph and the milestone's chain entry —
+  to `docs/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
+  leave `docs/ROADMAP.md` § Status at **≤15 lines**. The ROADMAP says what is
+  *next*; a closed milestone's record is its journal. (It reached 935 lines before
+  this rule existed, growing ~66 per close, and the reader met 512 lines about the
+  past before the first line about the future.)
+- update `docs/ROADMAP.md` § Status and § The order; tag `m-<name>`, push
+  `--follow-tags`;
 - site build log: only when the author asks (`site/README.md`).

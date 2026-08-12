@@ -288,3 +288,51 @@ than the compiler's behaviour.
 What it does **not** settle: anything this file keys to a measurement that has not
 been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
 and a blanket yes cannot make a number arrive.
+
+## Amendment to R7 — 2026-08-12, by author instruction
+
+R7 was ratified earlier the same day, so this is an amendment to a **ratified**
+resolution, not a verdict on a provisional one. It is taken by author instruction
+under CLAUDE.md §4, which reserves the panel for the language — `spec/**`,
+design.md Parts 1–11, surface syntax or semantics, a diagnostic class, architecture
+— and amends the process by instruction. A milestone identifier is process: it
+appears in no program, no diagnostic and no artifact.
+
+**R7's prohibition stands, and its scope narrows: milestone identifiers stop being
+numbers.** `M8a` becomes `M-module-namespace`, `M7` becomes `M-ffi-ladder`, `M8c`
+becomes `M-selfhost-fixpoint`; the full map is `docs/ROADMAP.md` § The names, and
+the algorithm that assigns the next one is CLAUDE.md §14.
+
+**Why this is not the thing R7 refused.** R7's three precedents are exact against
+*reassigning* a number: RFC numbers are never reassigned, PEP numbers "once
+assigned are never changed", and LLVM pays permanent rent in redirects. What all
+three share is that a reassigned identifier **still resolves, to the wrong thing** —
+silently. A rename into a disjoint namespace fails in the opposite direction:
+`M8a` in this file resolves to nothing in any living document and to exactly one
+row in the alias table. It fails **loudly**, and unlike a number a name cannot be
+handed to a different milestone later. The record is therefore not rewritten — this
+file, `DESIGN-LOG.md`, `docs/journal/`, `docs/measurements/`, `docs/defects/`,
+`docs/book/beats.md`, the golden fixtures, every commit subject and the twelve tags
+`m0`–`m6` and `m8a` all keep the numbers they were written with.
+
+**R7's condition survives and is strengthened.** The explicit execution-order table
+stays where R7 put it. What goes is the paragraph above it: a name makes no claim
+about position, so there is nothing left to apologise for, and R7's own objection —
+that "file order is chronological" is *"a rule a reader has to be told twice"* —
+is retired rather than restated. The ROADMAP said it three times.
+
+**The alternative that was evaluated and refused: a numbered RFC/PEP-style series**
+(`HEP-001`), which is the scheme R7 cited approvingly. Refused because the event
+that broke this project's numbering was a **reorder**, not an insertion — this panel
+moved M8a ahead of M7 — and no identifier that encodes order survives a reorder;
+gapped numbering covers insertions only. Reorders remain likely: nine of the
+sixteen rows carry `scheduled, no warrant`, which is this file saying they may be
+reordered or dropped. And a number invites the order inference the apology existed
+to deny, where a name does not. The one real advantage of numbers, tags that sort,
+is `git tag --list --sort=creatordate`. The numbered scheme keeps the place where it
+fits: `docs/panel/NNN-slug.md`, gaps included, because panel order *is* creation
+order and is never revised.
+
+**Appending to this file, or to any dated record, uses the vocabulary it was
+written in** — with the new name in parentheses on first use. The prediction rows
+below are scored as `M8a close (M-module-namespace)`.

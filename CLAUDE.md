@@ -88,7 +88,7 @@ success (panel 022). Every name through the
 mangler (`h_<module>_<name>[_<typehash>]`; fields, variant cases and labels
 too; the module component sanitised to `[A-Za-z0-9]` so the first `_` ends it;
 `extern` FFI names pass through unmangled by design, and `extern` reaches no
-binary before M7 because only the `#include` verifies it). **The double-emit
+binary before M-ffi-ladder because only the `#include` verifies it). **The double-emit
 determinism test stays green at all times**, and the emitted C never mentions
 the output path.
 
@@ -122,7 +122,8 @@ thought of (`llvm-opt-fuzzer`'s `verifyModule`).
 ## 10. One command
 Any new capability is a `heroes` subcommand or flag. Never a second binary,
 never a script, never a Makefile. Declared exception with an expiry date:
-`cargo build`/`cargo test` build the compiler until the fixpoint (M8c).
+`cargo build`/`cargo test` build the compiler until the fixpoint
+(M-selfhost-fixpoint).
 
 **The stopping rule** (panel 016): a capability enters the surface only if the
 fixpoint invocation, the golden harness or the Part 11 harness must type it, or
@@ -141,7 +142,7 @@ prints the help, so they cannot disagree.
 ## 11. Language and conventions
 **Everything written is English** — code, comments, docs, commits, verdicts.
 Conversation with the author is Italian. **One declared exception** (author
-instruction 2026-08-11): the two books, M16 (the journey) and M17 (the guide),
+instruction 2026-08-11): the two books, M-journey-book and M-guide-book,
 are written in **Italian and English**, neither a machine translation of the
 other. The author studies from the Italian, so where the two diverge the Italian
 is fixed to be clearer rather than the English to be more faithful — and both are
@@ -186,12 +187,35 @@ in design.md Part 6. Anything in Part 7 before the closure list compiles
 itself.
 
 ## 14. Documentation duty + git
-A step is not done without a commit (`M<n> step <k>: <what>`). Per milestone:
+A step is not done without a commit (`M-<name> step <k>: <what>`). Per milestone:
 journal (3 sections) + one story beat in `docs/book/beats.md` + a tag (pushed
 `--follow-tags`) + ROADMAP status. Per decision: a DESIGN-LOG line. The
 milestone-close checklist lives in `/step` — its only copy. The repo pushes
 to `origin` (github.com/giuseppearici/heroes-lang). Hard stops that remain:
 publishing the site or anything else outward-facing, and destructive ops.
+
+**Milestone identifiers are names, not numbers** (author instruction 2026-08-12;
+panel 030 R7 as amended — the argument lives there). This is the algorithm's only
+home; `docs/ROADMAP.md` § The names carries the map and cites this.
+- **Two words**, `M-<what-it-delivers>`, hyphenated and lowercase after the `M-`;
+  the tag is the same string lowercased (`m-ffi-ladder`).
+- **Name the deliverable, never the area** — the area must stay free for the second
+  milestone that touches it, and one already exists: `M-module-namespace` and
+  `M-separate-compilation` are both about modules. A one-word name appropriates a
+  topic, and an identifier must make no claim a later milestone can falsify.
+- Prefer a phrase the ROADMAP entry or the milestone's own journal slug already
+  uses over an invented one.
+- **An id is never renamed once it is in the record.** A milestone that changes
+  shape gets a *new* id; the old one is retired in § The names.
+- **Order lives in the ROADMAP's order table and nowhere else** — the id claims
+  nothing about position. `git tag --list --sort=creatordate` gives the chronology.
+- An id never reaches a diagnostic or any user-visible output (§8, asserted by
+  `emit/tests/gate.rs`).
+- **Appending to a dated record uses that record's vocabulary**, with the new name
+  in parentheses on first use — `scored at M8a close (M-module-namespace)`. The
+  record is never rewritten: `docs/panel/`, `DESIGN-LOG.md`, `docs/journal/`,
+  `docs/measurements/`, `docs/defects/`, `docs/book/beats.md`, `tests/golden/`,
+  every commit subject and the twelve legacy tags keep the numbers.
 
 ## Commands
 ```
