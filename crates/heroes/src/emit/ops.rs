@@ -428,8 +428,19 @@ pub(super) fn call(
             if from_high > high {
                 tests.push(format!("{value} <= {high}{}", if from.signed() { "LL" } else { "ULL" }));
             }
-            let condition =
-                if tests.is_empty() { "1".to_string() } else { tests.join(" && ") };
+            // **Unreachable, and loud rather than `"1"`** (panel 043). An empty
+            // test list means every value of the source fits the target — which
+            // the `to.contains(from)` early return above already took. Measured
+            // over all 64 pairs: zero emissions reach here. `"1"` would have
+            // emitted `if (1)`, a silently correct answer that hides a `contains`
+            // that has stopped agreeing with `range()`; CLAUDE.md §11 wants the
+            // fallback in the loud direction, and `contains_agrees_with_range`
+            // is the test that fires if the two ever part.
+            if tests.is_empty() {
+                w.line(&format!("    {into} = hero_unreachable();"));
+                return;
+            }
+            let condition = tests.join(" && ");
             // `lookup`, not `intern`: the checker already made this `T?` when it
             // typed the call, so a miss here would mean the two passes disagree
             // about the result type rather than that a type is missing.

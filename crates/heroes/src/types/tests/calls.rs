@@ -410,7 +410,7 @@ function main(p: Point)
     print(p)
 "
         ),
-        "test.hero:5:5: error[bad_operand]: `print` takes `i64`, `f64`, `bool` or `str`, found `Point`\n"
+        "test.hero:5:5: error[bad_operand]: `print` takes any integer, `f64`, `bool` or `str`, found `Point`\n"
     );
 }
 

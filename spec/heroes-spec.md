@@ -158,11 +158,11 @@ Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → 
 `s.chars()`, which yields single-character `str`. Multi-line literals
 separate elements by newline; single-line by comma.
 
-Build a long string with `join`, not repeated `+`, and a long array in chunks:
-each `+` copies both sides and each `push` copies the array.
+Value semantics has a price: `+` on `str` copies both sides and `push` copies the
+array, so accumulating either in a loop is quadratic. `join` is linear.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join` · `sort` · `to_i64` (truncating; out of range aborts) ·
+`chars` · `keys` · `join(xs, sep)` · `sort` · `to_i64` (truncating; out of range aborts) ·
 `to_f64` · `to_str` · `fit_i8` `fit_i16` `fit_i32` `fit_i64` `fit_u8` `fit_u16`
 `fit_u32` `fit_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.

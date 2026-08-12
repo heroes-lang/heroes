@@ -253,3 +253,37 @@ fn the_prelude_ids_match_their_accessors() {
         );
     }
 }
+
+/// **`IntKind::contains` and `IntKind::range` must agree, at all 64 pairs.**
+///
+/// Two answers to one question live in `table.rs`: `contains` decides whether a
+/// conversion can fail, and `range` decides what the emitted test compares. The
+/// emitter trusts them to agree — it skips the test entirely when `contains` says
+/// so, and `emit/ops.rs`'s fallback for "no test needed" is `hero_unreachable`
+/// rather than `if (1)` precisely because a disagreement must not be survivable.
+///
+/// If this fires, three things depend on it: the `fit_` arm in `types/builtins.rs`
+/// (which returns `T` or `T?` from `contains`), the emission branch in
+/// `emit/ops.rs` (which builds its test from `range`), and every `.must()` a
+/// Heroes programme did *not* write because a widening was infallible. A
+/// `contains` that says yes where the ranges say no is a silent truncation.
+#[test]
+fn contains_agrees_with_range() {
+    for target in crate::types::INT_KINDS {
+        for source in crate::types::INT_KINDS {
+            let (t_low, t_high) = target.range();
+            let (s_low, s_high) = source.range();
+            let by_range = s_low >= t_low && s_high <= t_high;
+            assert_eq!(
+                target.contains(source),
+                by_range,
+                "`{}::contains({})` says {} and the ranges say {} — {}..{} against {}..{}. \
+                 `types/builtins.rs` decides `T` vs `T?` from the first and `emit/ops.rs` \
+                 builds its range test from the second; where they part, a narrowing is \
+                 emitted with no check and truncates in silence.",
+                target.name(), source.name(), target.contains(source), by_range,
+                s_low, s_high, t_low, t_high
+            );
+        }
+    }
+}

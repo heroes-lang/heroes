@@ -828,11 +828,21 @@ forward declarations, mutual recursion is free, and the model can emit functions
 | `T?` | fallible: a `T`, or an error |
 | `()` | no value — the return type of functions that return nothing |
 
-**One integer type only.** No `i8`, `u32`, `usize`. No choice, no width conversions, no conversion
-bugs. This single decision also removes a whole family of ambiguities elsewhere (see 4.5 on
-inference). Sized integers are the highest-risk future addition — they bring conversion rules, which
-are the most expensive spec item that exists and the number-one error source in C. Keep them out of
-v1 without debate.
+**Eight integer types** (author decision 2026-08-12, `docs/panel/042`; landed at
+`M-sized-integers`): `i8 i16 i32 i64` signed, `u8 u16 u32 u64` unsigned. `int` is **not** a word in
+this language — it carries forty years of conflicting widths, so a reader must know the platform to
+know what it means, where `i64` is ambiguous to nobody. A literal takes the width its context asks
+for and is an `i64` where nothing asks; overflow aborts at every width; `s[i]` is a `u8`;
+`fit_<width>` converts, returning `T?` where the value may not fit and `T` where it cannot.
+
+**This paragraph said the opposite until 2026-08-12 and the correction is the record, not a
+rewrite** (panel 043). It read *"One integer type only. No `i8`, `u32`, `usize`… Keep them out of v1
+without debate"*, and the fear behind it was real but misdirected: what makes widths expensive is
+C's **promotion lattice**, the silent conversion that decides what `a + b` means before either name
+is read. §4.3 forbids implicit conversions outright and always did, so there was no lattice to
+specify — the whole addition came to **+188 spec tokens**, against the "most expensive spec item
+that exists" this paragraph warned of. The half that was true is preserved above: conversion rules
+are where the errors live, which is why every one of them is written and none is inferred.
 
 **No implicit conversions.** `1 + 2.0` is a compile error. Convert explicitly: `to_f64(x)`,
 `to_i64(x)`.

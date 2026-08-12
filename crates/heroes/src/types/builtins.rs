@@ -1,7 +1,7 @@
 //! The built-ins' type rules (design.md §4.20's inventory, §1.11's two tiers).
 //!
 //! Hand-written rather than driven by a signature table, and that is the honest
-//! shape: `print` takes any number of arguments of four types, `len` works on
+//! shape: `print` takes any number of arguments of four kinds, `len` works on
 //! three, `must` is generic over one. A signature table would need a type
 //! language richer than Heroes has — which is precisely why these are
 //! **built-ins** and not library declarations.
@@ -68,9 +68,16 @@ pub(super) fn call(
             for (index, arg) in args.iter().enumerate() {
                 if !matches!(checker.out.types.get(*arg), Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str) {
                     let got = checker.show(ast, src, args[index]);
+                    // **The message names the set the arm above actually tests.**
+                    // It said "`i64`, `f64`, `bool` or `str`" while `Ty::Int(_)`
+                    // accepts all eight widths — measured at panel 043, in the
+                    // milestone that added them: `u8`, `i16` and `u64` all print
+                    // and none was listed. A message enumerating a set the code
+                    // does not have is worse than no enumeration, because a
+                    // reader who believes it converts for nothing.
                     let diagnostic = errors::bad_operand(
                         "print",
-                        "`i64`, `f64`, `bool` or `str`",
+                        "any integer, `f64`, `bool` or `str`",
                         &got,
                         span,
                     );
@@ -195,7 +202,7 @@ pub(super) fn call(
         // §4.6's three readers of a fallible value.
         ("must", [one]) => match checker.out.types.get(*one) {
             Ty::Fallible(inner) => inner,
-            _ => return arg_error(checker, ast, src, "must", "a fallible value", *one, span),
+            _ => return unwrapping_nothing(checker, ast, src, "must", *one, span),
         },
         ("default", [one, fallback]) => match checker.out.types.get(*one) {
             Ty::Fallible(inner) if inner == *fallback => inner,
@@ -206,7 +213,7 @@ pub(super) fn call(
                 checker.push_diagnostic(diagnostic);
                 return Some(checker.error_ty());
             }
-            _ => return arg_error(checker, ast, src, "default", "a fallible value", *one, span),
+            _ => return unwrapping_nothing(checker, ast, src, "default", *one, span),
         },
         ("is_err", [one]) => match checker.out.types.get(*one) {
             Ty::Fallible(_) => checker.out.types.bool(),
@@ -227,6 +234,53 @@ pub(super) fn call(
         _ => return None,
     };
     Some(result)
+}
+
+/// `.must()` or `.default(v)` on a value that cannot fail, with the repair
+/// attached (panel 043's load-bearing condition).
+///
+/// **This is what pays for `fit_<width>`'s extra hop.** A widening returns `T`
+/// rather than `T?`, so a reader carrying the uniform habit writes a `.must()`
+/// that has nothing to unwrap — a §1.3 cost. Left as a bare diagnostic it is a
+/// §1.2 round-trip: read, understand, edit. With a `certain` fix it is
+/// `heroes check --in-place`, and the rule is better on §1.2 rather than worse.
+///
+/// The replacement is computed **from the characters in hand** — the call's own
+/// source text, minus a trailing `.must()` — never from a premise about what the
+/// caller looks like (CLAUDE.md §11). Where the text does not end that way, UFCS
+/// was not used and there is nothing certain to offer, so nothing is offered.
+fn unwrapping_nothing(
+    checker: &mut Checker,
+    ast: &Ast,
+    src: &Source,
+    name: &str,
+    got: TyId,
+    span: Span,
+) -> Option<TyId> {
+    let shown = checker.show(ast, src, got);
+    let mut diagnostic = errors::bad_operand(
+        name,
+        "a fallible value",
+        &shown,
+        span,
+    )
+    .with_note(format!(
+        "`{shown}` cannot fail, so there is no error case to handle — this is the shape a `fit_<width>` that widens hands back, because a widening cannot fail"
+    ));
+    let text = src.slice(span);
+    let suffix = format!(".{name}(");
+    if let Some(at) = text.rfind(&suffix) {
+        if text.ends_with(')') {
+            diagnostic.fixes.push(crate::diagnostics::Fix {
+                title: format!("remove the `.{name}(…)`"),
+                replacement: text[..at].to_string(),
+                span,
+                certainty: crate::diagnostics::Certainty::Certain,
+            });
+        }
+    }
+    checker.push_diagnostic(diagnostic);
+    Some(checker.error_ty())
 }
 
 fn arg_error(

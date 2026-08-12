@@ -68,10 +68,15 @@ pub const BUILTINS: [Builtin; 36] = [
     // a name (`try_into`), and neither changed the incumbent's return type.
     //
     // The name says the question: `fit_u8(x)` asks whether `x` fits in a `u8`.
-    // Widening returns `T?` too, which the llm-ergonomist argued against — and
-    // the uniform rule wins because the alternative reintroduces the very thing
-    // Q2 was about: `fit_u32` would return `u32` for a `u8` argument and `u32?`
-    // for a `u64` one, which is one name with two result types.
+    //
+    // **A widening returns `T`, not `T?`** (step 7, pending author ratification;
+    // `docs/panel/043`). This comment asserted the opposite for one step, having
+    // been written at step 6 and left behind when step 7 changed the rule — which
+    // is CLAUDE.md §11's named failure mode, committed inside the milestone that
+    // found three instances of it elsewhere. It also credited the ground to panel
+    // 042 Q2, and panel 043's compiler-engineer — who cast that veto — records
+    // that 042 never ruled on a widening at all: its Q2 chose among *names*. The
+    // ruling being bent is the author's, and only the author's.
     Builtin { name: "fit_i16", tier: Tier::Runtime },
     Builtin { name: "fit_i32", tier: Tier::Runtime },
     Builtin { name: "fit_i64", tier: Tier::Runtime },

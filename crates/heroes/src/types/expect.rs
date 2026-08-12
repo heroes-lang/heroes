@@ -195,7 +195,25 @@ fn compare(
         return;
     }
     let (a, b) = (checker.show(ast, src, expected), checker.show(ast, src, got));
-    let diagnostic = errors::mismatch(&a, &b, span);
+    let mut diagnostic = errors::mismatch(&a, &b, span);
+    // **A `T?` where a `T` was wanted has one obvious repair, and it is a guess**
+    // (panel 043). `.must()` aborts on the error case, and whether that is what
+    // the author wants is theirs to say — `?`, `.default(v)` and a `match` are
+    // the other three answers §4.6 gives. So the fix is offered and not applied,
+    // which is exactly CLAUDE.md §8's line between `certain` and `guess`.
+    //
+    // This is the other half of the `fit_<width>` repair: the widening case gets
+    // a `certain` fix removing a `.must()`, the narrowing case gets a `guess`
+    // adding one, and between them the extra hop the rule costs is answered in
+    // the diagnostic rather than in the reader's head.
+    if checker.out.types.get(got) == crate::types::Ty::Fallible(expected) {
+        diagnostic.fixes.push(crate::diagnostics::Fix {
+            title: format!("`.must()` — abort on the error case, giving `{a}`"),
+            replacement: format!("{}.must()", src.slice(span)),
+            span,
+            certainty: crate::diagnostics::Certainty::Guess,
+        });
+    }
     checker.push_diagnostic(diagnostic);
 }
 
