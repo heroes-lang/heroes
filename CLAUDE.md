@@ -230,10 +230,14 @@ itself.
 ## 14. Documentation duty + git
 A step is not done without a commit (`M-<name> step <k>: <what>`). Per milestone:
 journal (3 sections) + one story beat in `docs/book/beats.md` + a tag (pushed
-`--follow-tags`) + ROADMAP status. Per decision: a DESIGN-LOG line. The
-milestone-close checklist lives in `/step` — its only copy. The repo pushes
-to `origin` (github.com/giuseppearici/heroes-lang). Hard stops that remain:
-publishing the site or anything else outward-facing, and destructive ops.
+`--follow-tags`) + ROADMAP status. Per decision: a DESIGN-LOG line. Per
+reasoning session — a conversation whose work is questions about the project,
+with no file of code, spec or design modified: a note in `docs/reasoning/`
+(its rules, its template and what does *not* qualify live in that directory's
+README, their only copy) + its own commit. The milestone-close checklist lives
+in `/step` — its only copy. The repo pushes to `origin`
+(github.com/giuseppearici/heroes-lang). Hard stops that remain: publishing the
+site or anything else outward-facing, and destructive ops.
 
 **Milestone identifiers are names, not numbers** (author instruction 2026-08-12;
 panel 030 R7 as amended — the argument lives there). This is the algorithm's only
