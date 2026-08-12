@@ -114,6 +114,20 @@ const char *hero_str_cstr(HeroStr s);
  * string does the same. Landing one in a Heroes str slot requires an owning
  * COPY, and the emitter must never fabricate a HeroStr from a raw C pointer:
  * decref would compute a header from foreign memory. */
+/* Is this byte range well-formed UTF-8?
+ *
+ * **Exported so a binding can branch instead of dying.** `hero_str_from_bytes`
+ * aborts on ill-formed input, which is right for the *program's* own bytes and
+ * wrong for the *environment's*: a Latin-1 `PATH`, a PNG, a SQLite TEXT column
+ * another program wrote. Without this, a binding author's only alternatives were
+ * to let it abort or to copy the validator — two validators that can silently
+ * disagree (ffi-pragmatist, panel 035 item 4). One entry point, single-sourced.
+ *
+ * Adding a *function* to this ABI is self-guarding: an old runtime is an
+ * undefined symbol at link. Adding a struct field is not, which is panel 027's
+ * own asymmetry. */
+bool hero_utf8_valid(const char *p, int64_t len);
+
 HeroStr hero_str_from_bytes(const char *p, int64_t len);
 HeroStr hero_str_from_cstr(const char *p); /* strlen, then from_bytes */
 

@@ -62,7 +62,7 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
         if !src.is_root(ast.decls[*decl as usize].name.start) {
             continue;
         }
-        let (line, _) = src.line_col(ast.decls[*decl as usize].name.start);
+        let line = src.line_of(ast.decls[*decl as usize].name.start);
         out.push_str(&format!("  {} {name} (line {line})\n", entity(ast, *decl)));
     }
     out.push_str("scopes\n");

@@ -63,7 +63,7 @@ pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
     items.sort_by_key(|item| item.start(src));
     let mut previous: Option<&Item> = None;
     for item in &items {
-        let (line, _) = src.line_col(item.start(src));
+        let line = src.line_of(item.start(src));
         // One blank line between top-level declarations — but not between two
         // `use` lines, which are a block the way a run of fields is.
         let after_use = matches!(previous, Some(Item::Use(_)));
@@ -166,7 +166,7 @@ impl Fmt {
     ) {
         while self.next_comment < comments.len() {
             let span = comments[self.next_comment];
-            let (comment_line, _) = src.line_col(span.start);
+            let comment_line = src.line_of(span.start);
             if comment_line >= line {
                 return;
             }
@@ -186,7 +186,7 @@ impl Fmt {
             return;
         }
         let span = comments[self.next_comment];
-        let (comment_line, _) = src.line_col(span.start);
+        let comment_line = src.line_of(span.start);
         if comment_line != line {
             return;
         }
@@ -203,7 +203,7 @@ impl Fmt {
 
     fn declaration(&mut self, ast: &Ast, src: &Source, comments: &[Span], decl: &Decl) {
         let name = src.slice(decl.name);
-        let (line, _) = src.line_col(decl.name.start);
+        let line = src.line_of(decl.name.start);
         match &decl.kind {
             DeclKind::Constant { ty, body } => {
                 self.line(0, &format!("constant {name}: {}", render_type(ast, *ty, src)));
@@ -244,7 +244,7 @@ impl Fmt {
     }
 
     fn field(&mut self, ast: &Ast, src: &Source, comments: &[Span], field: &Field, indent: usize) {
-        let (line, _) = src.line_col(field.name.start);
+        let line = src.line_of(field.name.start);
         self.comments_before(src, comments, line, indent);
         self.line(
             indent,
@@ -255,7 +255,7 @@ impl Fmt {
     }
 
     fn case(&mut self, ast: &Ast, src: &Source, comments: &[Span], case: &Case) {
-        let (line, _) = src.line_col(case.name.start);
+        let line = src.line_of(case.name.start);
         self.comments_before(src, comments, line, 4);
         self.line(4, src.slice(case.name));
         self.last_line = line;

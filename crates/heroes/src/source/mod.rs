@@ -291,6 +291,18 @@ impl Source {
         self.line_starts[line]
     }
 
+    /// The 1-based line in the **whole text**, which is what a printer's relative
+    /// arithmetic needs and what almost every caller of `line_col` was after.
+    ///
+    /// It exists so that nobody reaches for a column by accident: sweep 001 found
+    /// eight callers building a user-visible location by hand under a doc comment
+    /// that has said *"there is one function and no caller assembles the triple
+    /// itself"* since M8a. `locate` answers the reader's question; this answers
+    /// the printer's; `line_col` is `pub(crate)` and answers neither on its own.
+    pub fn line_of(&self, offset: u32) -> u32 {
+        self.line_col(offset).0
+    }
+
     /// 1-based (line, column) in the whole text; **the column counts characters**.
     ///
     /// It counted bytes until 2026-08-12, justified by a consumer that does not
@@ -301,7 +313,7 @@ impl Source {
     /// caret's padding was converted to characters by the tab repair, so the two
     /// halves of one message disagreed: `at f.hero:2:21` under a caret standing
     /// at column 18. Every other caller wants the line and discards this.
-    pub fn line_col(&self, offset: u32) -> (u32, u32) {
+    pub(crate) fn line_col(&self, offset: u32) -> (u32, u32) {
         let line = match self.line_starts.binary_search(&offset) {
             Ok(i) => i,
             Err(i) => i - 1,

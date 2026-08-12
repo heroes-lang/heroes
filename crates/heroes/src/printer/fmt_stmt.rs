@@ -27,7 +27,7 @@ impl Fmt {
     ) {
         for (i, id) in block.stmts.iter().enumerate() {
             let stmt = &ast.stmts[id.0 as usize];
-            let (line, _) = src.line_col(stmt.span.start);
+            let line = src.line_of(stmt.span.start);
             self.comments_before(src, comments, line, indent);
             // A blank line the author left between two statements survives —
             // it is the only grouping a body has. Never before the *first*
@@ -98,7 +98,7 @@ impl Fmt {
             }
             StmtKind::While { cond, block } => {
                 self.line(indent, &format!("{head}while {}", render(ast, src, *cond)));
-                self.last_line = src.line_col(ast.exprs[cond.0 as usize].span.end).0;
+                self.last_line = src.line_of(ast.exprs[cond.0 as usize].span.end);
                 self.block(ast, src, comments, block, indent + 4);
             }
             StmtKind::ForIn { name, iterable, block } => {
@@ -108,7 +108,7 @@ impl Fmt {
                     render(ast, src, *iterable)
                 );
                 self.line(indent, &head);
-                self.last_line = src.line_col(ast.exprs[iterable.0 as usize].span.end).0;
+                self.last_line = src.line_of(ast.exprs[iterable.0 as usize].span.end);
                 self.block(ast, src, comments, block, indent + 4);
             }
             StmtKind::Expr(value) => self.valued(ast, src, comments, head, *value, indent),
@@ -135,7 +135,7 @@ impl Fmt {
                     let keyword = if i == 0 { head.to_string() } else { "else ".to_string() };
                     let cond = render(ast, src, branch.cond);
                     self.line(indent, &format!("{keyword}if {cond}"));
-                    self.last_line = src.line_col(ast.exprs[branch.cond.0 as usize].span.end).0;
+                    self.last_line = src.line_of(ast.exprs[branch.cond.0 as usize].span.end);
                     self.block(ast, src, comments, &branch.block, indent + 4);
                 }
                 if let Some(block) = otherwise {
@@ -146,7 +146,7 @@ impl Fmt {
             ExprKind::Match { scrutinee, arms } => {
                 let head = format!("{head}match {}", render(ast, src, *scrutinee));
                 self.line(indent, &head);
-                self.last_line = src.line_col(ast.exprs[scrutinee.0 as usize].span.end).0;
+                self.last_line = src.line_of(ast.exprs[scrutinee.0 as usize].span.end);
                 let lefts = arm_heads(ast, src, arms);
                 let pads = arm_alignment(ast, src, arms, &lefts, indent + 4);
                 // A blank line between arms is content, exactly as it is between
@@ -163,7 +163,7 @@ impl Fmt {
                 let mut previous_end: Option<u32> = None;
                 for (index, arm) in arms.iter().enumerate() {
                     let left = &lefts[index];
-                    let (line, _) = src.line_col(arm.span.start);
+                    let line = src.line_of(arm.span.start);
                     self.comments_before(src, comments, line, indent + 4);
                     if let Some(previous) = previous_end {
                         if line > previous + 1 {
@@ -315,8 +315,8 @@ fn arm_alignment(
     let mut run: Vec<(usize, usize)> = Vec::new();
     let mut previous_end = 0u32;
     for (index, arm) in arms.iter().enumerate() {
-        let (line, _) = src.line_col(arm.span.start);
-        let (end, _) = src.line_col(arm.span.end.saturating_sub(1));
+        let line = src.line_of(arm.span.start);
+        let end = src.line_of(arm.span.end.saturating_sub(1));
         // **Will this arm print on one line?** — the printer's own question,
         // asked with the printer's own test, and not "were these two adjacent in
         // the source". `spans_lines`'s twin, three hundred lines up in this
@@ -427,8 +427,8 @@ fn spans_lines(ast: &Ast, src: &Source, value: ExprId) -> bool {
     if matches!(expr.kind, ExprKind::If { .. } | ExprKind::Match { .. }) {
         return false;
     }
-    let (first, _) = src.line_col(expr.span.start);
-    let (last, _) = src.line_col(expr.span.end.saturating_sub(1));
+    let first = src.line_of(expr.span.start);
+    let last = src.line_of(expr.span.end.saturating_sub(1));
     last > first
 }
 

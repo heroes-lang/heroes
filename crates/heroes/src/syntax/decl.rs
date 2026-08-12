@@ -272,8 +272,8 @@ fn use_decl(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
             // line's* first word. Naming it would blame an innocent
             // declaration, so the caret goes on the keyword and the found
             // token is quoted only when it really is on this line.
-            let (keyword_line, _) = src.line_col(keyword.start);
-            let (found_line, _) = src.line_col(cur.span().start);
+            let keyword_line = src.line_of(keyword.start);
+            let found_line = src.line_of(cur.span().start);
             let message = if keyword_line == found_line {
                 format!(
                     "expected the module's name after `use`, found {} — `use geom`, which reads `geom.hero` beside this file",
@@ -289,7 +289,7 @@ fn use_decl(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
         // innocent declaration whole — the failure panel 018's keyword-first
         // shape exists to prevent. It reappears here because `use` is not in
         // panel 007's ender list, so a bare `use` plants no terminator.
-        if src.line_col(cur.span().start).0 == src.line_col(keyword.start).0 {
+        if src.line_of(cur.span().start) == src.line_of(keyword.start) {
             cur.recover_to_next_decl();
         }
         return;

@@ -93,7 +93,20 @@ fn unary(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
 /// read left to right.
 fn postfix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
     let mut base = primary(cur, ast, src);
+    // **A suffix never reaches across a block that just closed.**
+    //
+    // `.ok v => match v` with the inner arms indented under it: the inner
+    // `match` consumes its own arms and its `Dedent`, and then this loop saw the
+    // `.` of the *next outer arm* and read it as a field. The error landed on
+    // `_` of `.err _ =>` — the following arm, a line the author did nothing
+    // wrong on — while the real message is that the body was written in a shape
+    // §4.7 does not have. Carried open since M4; five lines
+    // (panel 035, compiler-engineer, who prototyped it).
+    let closed_a_block = cur.previous_kind() == TokenKind::Dedent;
     loop {
+        if closed_a_block && cur.at(TokenKind::Dot) {
+            return base;
+        }
         match cur.kind() {
             // `x.f(y)` is UFCS, `x.f` is a field read: the `(` decides
             // (§4.11).

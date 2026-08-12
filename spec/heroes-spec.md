@@ -47,13 +47,12 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `int` | 64-bit signed integer (the only integer type) |
 | `f64` | 64-bit float |
 | `bool` | `true` / `false` |
-| `str` | immutable UTF-8 string, indexed in bytes |
+| `str` | immutable UTF-8 string, indexed and measured in bytes |
 | `[T]` | dynamic array, indices from 0 |
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
 
 - No implicit conversions: `1 + 2.0` is an error; write `to_f64(x)`, `to_int(x)`.
-- No null. Absence is a different type (`T?`).
 - Character literals are `int`: `'a'`, `'0'`, `' '`.
 - Five escapes, and no others: `\n` `\t` `\\` `\"` in a string, `\'` instead of
   `\"` in a character literal. Any other escape is a compile error.
@@ -118,8 +117,8 @@ Loops: `while cond` and `for x in xs`; `break` and `continue` exist; ranges
 are `range(from: a, to: b) -> [int]`, `to` excluded.
 
 ## Failure: `T?`
-A `T?` is a `T` or an error. Construct an error with `fail(code, msg)`; codes
-are stable snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
+A `T?` is a `T` or an error: `ok(v)` or `fail(code, msg)`. Codes are stable
+snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 
 | Operation | Meaning |
 |---|---|
@@ -131,7 +130,7 @@ are stable snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 
 `?` on a non-fallible value is a compile error. Map access `m[k]` returns
 `V?` with code `missing_key`. An out-of-bounds index or slice
-aborts, and so does a slice that splits a character; integer overflow aborts; division by zero aborts. `/` and `%` truncate
+aborts, and so does a slice that splits a character; integer overflow aborts; integer division by zero aborts. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
 ## Operators
@@ -155,8 +154,8 @@ Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded
 `to_f64` · `to_str` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
-separator and exactly one trailing newline. An `f64` always prints a point or
-exponent: `1.0`, `0.1`, `1e-06`, `1e+23`.
+separator and exactly one trailing newline. An `f64` prints a point or
+exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`.
 
 ## Tests and holes
 ```

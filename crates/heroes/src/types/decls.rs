@@ -54,6 +54,23 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                     .map(|span| src.slice(*span).to_string())
                     .collect();
                 let result = lower::ty(checker, ast, resolved, function.result);
+                // **`main` produces nothing, and that is enforced rather than
+                // assumed.** `function main() -> int?` returning `fail(…)`
+                // compiled, printed nothing and exited **0** — the shell told
+                // that the program succeeded, with no diagnostic anywhere. It is
+                // the only failure in this language with no instrument at all
+                // (panel 035, spec-warden; panel 030 had reported the weaker half
+                // of it). The refusal stands until M7 decides `exit(code)`, which
+                // is what a fallible `main` would have to mean.
+                if src.is_root(declaration.name.start)
+                    && src.slice(declaration.name) == "main"
+                    && result != checker.out.types.unit()
+                {
+                    let want = checker.show(ast, src, result);
+                    let span = ast.types[function.result.0 as usize].span;
+                    let diagnostic = errors::main_returns(&want, span);
+                    checker.push_diagnostic(diagnostic);
+                }
                 checker.out.results.insert(index as u32, result);
                 checker.result = result;
                 checker.fallible = is_fallible(checker, result);

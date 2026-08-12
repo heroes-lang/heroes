@@ -184,7 +184,8 @@ void hero_print_str(HeroStr s) {
  * It is a loop over the length rather than a promise in a comment, because the
  * cost is paid once at the boundary and the alternative is a corrupt `str` that
  * every later abort blames on the author. */
-static bool hero_utf8_ok(const char *p, int64_t len) {
+bool hero_utf8_valid(const char *p, int64_t len) {
+    if (p == NULL) return len == 0;
     int64_t i = 0;
     while (i < len) {
         unsigned char c = (unsigned char)p[i];
@@ -221,7 +222,7 @@ static bool hero_utf8_ok(const char *p, int64_t len) {
 HeroStr hero_str_from_bytes(const char *p, int64_t len) {
     if (p == NULL) hero_panic("hero_str_from_bytes: NULL pointer from C");
     if (len < 0) hero_panic("hero_str_from_bytes: negative length from C");
-    if (!hero_utf8_ok(p, len)) hero_panic("hero_str_from_bytes: not well-formed UTF-8");
+    if (!hero_utf8_valid(p, len)) hero_panic("hero_str_from_bytes: not well-formed UTF-8");
     if (len == 0) return hero_str_empty();
     HeroStr r = hero_str_alloc(len);
     memcpy((char *)(void *)(uintptr_t)r.ptr, p, (size_t)len);

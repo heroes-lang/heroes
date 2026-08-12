@@ -61,6 +61,26 @@ pub(in crate::types) fn not_bool(what: &str, got: &str, span: Span) -> Diagnosti
 
 /// Panel 003: a non-`()` expression alone on a line is an error, and the fix is
 /// machine-applicable because it preserves meaning exactly.
+/// `main` has no result, and a program that fails has to say so some other way.
+///
+/// Not a style rule: with a result type, `return fail(…)` from `main` printed
+/// nothing and exited 0, so the one thing a shell can read said the program had
+/// worked. Refused here rather than at emission because `heroes check` is where
+/// a reader looks (panel 035).
+pub(in crate::types) fn main_returns(got: &str, span: Span) -> Diagnostic {
+    Diagnostic::new(
+        "main_returns",
+        format!(
+            "`main` produces nothing, and this one is declared `-> {got}` — a program reports failure by what it prints, not by what it returns"
+        ),
+        span,
+    )
+    .with_note(
+        "drop the result type; a value `main` computed and returned would have nowhere to go"
+            .to_string(),
+    )
+}
+
 pub(in crate::types) fn discarded_value(got: &str, span: Span) -> Diagnostic {
     let mut diagnostic = Diagnostic::new(
         "discarded_value",

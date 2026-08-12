@@ -214,6 +214,18 @@ pub(super) fn binary(
             ));
             w.line(&format!("    {name} = {l} {operator} {r};"));
         }
+        // `%` on two `f64` is `fmod`, not C's `%`, which takes integers only:
+        // `t3 = t1 % t2` on two `double`s is `error: invalid operands to binary
+        // expression`, exit 2, on a program spec line 139 explicitly allows
+        // (`f64 with f64`). It reached clang because the fallthrough arm below
+        // spells every operator the same way (panel 035, compiler-engineer).
+        //
+        // `fmod` truncates toward zero, which is the rule spec line 135 already
+        // states for `/` and `%` — so the C function and the sentence agree
+        // without either being changed.
+        _ if op == BinOp::Rem => {
+            w.line(&format!("    {name} = fmod({l}, {r});"));
+        }
         _ => {
             let operator = match op {
                 BinOp::Add => "+",

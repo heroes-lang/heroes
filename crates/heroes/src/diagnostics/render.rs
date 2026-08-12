@@ -41,7 +41,7 @@ pub fn render(diagnostic: &Diagnostic, src: &Source) -> String {
     // the text actually is. Printing the second is a message that names a real
     // file and a line nobody can find in it.
     let (file, line, col) = src.locate(diagnostic.span.start);
-    let (absolute, _) = src.line_col(diagnostic.span.start);
+    let absolute = src.line_of(diagnostic.span.start);
     let mut out = format!(
         "{}[{}]: {}\n  at {}:{line}:{col}\n",
         diagnostic.kind.word(),
@@ -96,7 +96,7 @@ fn source_line(src: &Source, line: u32) -> String {
 /// setting (2026-08-12).
 fn caret(src: &Source, diagnostic: &Diagnostic, col: u32) -> String {
     let (end_line, end_col) = src.line_col(diagnostic.span.end);
-    let (start_line, _) = src.line_col(diagnostic.span.start);
+    let start_line = src.line_of(diagnostic.span.start);
     // Characters, because `line_col`'s column is characters — the underline was
     // one `^` per *byte* of the span, so `return "ààà"` was underlined eight
     // wide for five columns (2026-08-12, sweep 001 audit S5).
