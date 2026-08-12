@@ -300,6 +300,18 @@ growth; it does not subtract.
 Historical calibration: Wirth's **Oberon report** is sixteen pages, and an entire operating system
 was written in Oberon. That is the right order of magnitude for one person.
 
+**The spec has a budget; the compiler does not, and that is now a decision rather than a gap**
+(author 2026-08-12, taken in `/decide`; recorded by panel 020's compiler-engineer as an open
+question). Measured the same day: `crates/heroes/src` is **25,482 non-test lines**, 27,399 across
+both crates — against Pascal-P4's ~4,000 — and 21 files are over CLAUDE.md §11's ~300. A global
+ceiling was considered and refused, for a reason worth stating so nobody re-derives it as an
+oversight: the bootstrap compiler is **scaffolding with an expiry date** (CLAUDE.md §10's declared
+exception, M-selfhost-fixpoint), and a number that constrained it would constrain the artifact the
+project is about to archive. What "does it fit one person" measures is the **Heroes** compiler, and
+that number does not exist yet — M-selfhost-probe is what produces its first estimate. Until then
+the only live ceiling is the per-file one, which is enforced per file, is read every time somebody
+opens a file, and has caught two real breaches this way.
+
 ### 1.7 Core plus elaboration
 
 A well-designed language is not a set of features. It is a **tiny core** plus a set of
@@ -2272,6 +2284,21 @@ are *on* the closure list.
     QBE is). Later still: LLVM textual `.ll`, or wasm (which brings sandboxing and the browser, and
     the genuinely instructive relooper problem). Emitting C, QBE and `.ll` in parallel is also the
     best way to understand what they have in common.
+16. **Symmetric variant syntax — v2** (panel 035's historian; author decision 2026-08-12, taken in
+    `/decide` over the alternative). Today the language is **asymmetric**: `.case(field: value)`
+    builds and `.case name` matches. ML, Haskell, OCaml and Rust all use one syntax for both, which
+    is why none of them *can* leave construction unstated — the rule that describes matching
+    describes building. Heroes can, and did: variant construction is one of the silences panel 035
+    counted, and it is the only one whose cause is structural rather than an omission somebody could
+    have noticed. The two ways to remove the *possibility* rather than this instance were an **EBNF
+    appendix in Wirth's manner** — every form stated once, mechanically, so a silence is a missing
+    production rather than a missing paragraph — and **restoring the symmetry in v2**. The second is
+    chosen: an appendix is spec tokens spent on a grammar a reader would then have to reconcile with
+    the prose, and this project's own precedent is that the prose plus a compiler diagnostic beats a
+    second description (panel 035's mechanism). **What that costs until v2 is stated rather than
+    hidden**: construction stays unspecified, so a program written from the spec alone cannot build a
+    variant, and Part 11's first-try measurement should expect exactly that failure and attribute it
+    here rather than to the writer.
 
 ---
 
