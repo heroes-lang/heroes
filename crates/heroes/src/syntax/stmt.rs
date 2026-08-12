@@ -142,7 +142,9 @@ fn finish(
     kind: StmtKind,
     failed: bool,
 ) -> StmtId {
-    let span = start.to(cur.previous_span());
+    // The last significant token, never a trailing comment: the span is what
+    // the caret underlines (§4.17).
+    let span = start.to(cur.previous_significant_span());
     // A statement that already failed has said what is wrong: the rest of
     // its line is debris, not a second mistake — and so is any block hanging
     // off it, which is how a depth-zero line continuation (illegal, panel 007)

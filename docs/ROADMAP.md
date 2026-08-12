@@ -72,8 +72,10 @@ could not see entered the denominator (`docs/measurements/004-error-codes.md`).
 **Three live defects, all found by judges compiling something else** — and then,
 by author instruction, those three were **generalised into hypotheses and hunted
 recursively**: four hunts, one rule (compile and run; a defect you only reasoned
-about is not a finding), **twenty defects, all fixed**
-(`docs/defects/001-the-post-m8a-sweep.md`).
+about is not a finding), **twenty defects, all fixed**. Then the rule those
+twenty produced — *a narrowing asks the value, never the world* (CLAUDE.md §11)
+— was turned on the compiler and found **twenty more**, of which nineteen were
+repaired and one was cleared by testing it (`docs/defects/001-the-post-m8a-sweep.md`).
 
 They came in three shapes, and the shapes are the finding. **The scope widened
 silently**: a flag or a set that meant *this file* when a `Source` held one file

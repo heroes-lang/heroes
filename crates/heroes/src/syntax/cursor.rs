@@ -121,6 +121,31 @@ impl Cursor {
         self.tokens[at].span
     }
 
+    /// The last span a **reader can see** — walking back over the tokens that
+    /// are layout or annotation rather than program text.
+    ///
+    /// A statement's own extent is built from this, and the extent is what
+    /// §4.17's caret underlines. Built from `previous_span` it reached the
+    /// line's `Terminator`, whose position is past any trailing comment: `f()
+    /// # a note` was underlined twenty-three columns wide for a three-column
+    /// statement, so the part of the message that says *where* pointed at
+    /// something the author cannot fix (2026-08-12, carried open since M5a).
+    pub(super) fn previous_significant_span(&self) -> Span {
+        let mut at = if self.pos == 0 { 0 } else { self.pos - 1 };
+        while at > 0
+            && matches!(
+                self.tokens[at].kind,
+                TokenKind::Comment
+                    | TokenKind::Terminator
+                    | TokenKind::Indent
+                    | TokenKind::Dedent
+            )
+        {
+            at -= 1;
+        }
+        self.tokens[at].span
+    }
+
     /// True where the lexer already reported the problem: say nothing more.
     pub(super) fn at_reported_error(&self) -> bool {
         self.at(TokenKind::Error)
