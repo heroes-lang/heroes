@@ -475,11 +475,11 @@ during implementation the milestone stops and the panel reconvenes, because pane
 | llm-ergonomist | under today's spec ≥50% of compiling attempts at task 2 carry a wrong `CURLOPT_URL` and 0% are diagnosed; under the candidate 0% carry any literal | the Part 11 harness at M-program-corpus |
 | llm-ergonomist | task-2 first-try X − Y ≥ +0.40; under +0.15 the diff is cosmetic and it downgrades to a shrug | the Part 11 harness at M-program-corpus |
 | llm-ergonomist | under today's spec, ≥50% of readers answer that a group `constant` is already legal | the Part 11 harness at M-program-corpus |
-| compiler-engineer | `heroes fmt` moves `examples/curl/main.hero`'s four-line comment off the migrated constant unless `printer/fmt.rs`'s first-member path is fixed first | M-header-constants close |
-| compiler-engineer | the milestone lands >221 Rust lines and `emit/decls.rs` finishes ≥750 with no split | M-header-constants close |
+| compiler-engineer | `heroes fmt` moves `examples/curl/main.hero`'s four-line comment off the migrated constant unless `printer/fmt.rs`'s first-member path is fixed first | **scored: the condition was met.** Reproduced with functions alone, fixed in step 3, `a_comment_above_a_groups_first_member_stays_on_it` pins it, and the migration moved nothing |
+| compiler-engineer | the milestone lands >221 Rust lines and `emit/decls.rs` finishes ≥750 with no split | **scored: CORRECT on both halves.** Net **707** Rust lines; `emit/decls.rs` at **768**, from 717, unsplit. §11's ~300 is breached by 2.5×, the breach predates this milestone and this milestone made it worse — queued with the number rather than argued away |
 | ffi-pragmatist | a raylib binding naming all 110 `KEY_*` enumerators plus three flags compiles, links and runs with no shim and no number in any `.hero`, so rung 5's residual shim need is struct passing alone | §4.19's ladder rung 5 |
-| ffi-pragmatist | `constant RAYWHITE: T` fails for all seven `T` with an exit-1 Heroes diagnostic, never exit 2 | M-header-constants' golden set |
-| historian | naming `errno` or `stdout` compiles and runs at exit 0 with zero diagnostics **unless** a constancy check exists — Heroes' mechanism is otherwise more permissive than Zig's, failing in the quiet direction | M-header-constants' golden set |
+| ffi-pragmatist | `constant RAYWHITE: T` fails for all seven `T` with an exit-1 Heroes diagnostic, never exit 2 | not tested here: no raylib golden exists, and adding one puts a third-party library on the harness's link line. Rung 5 |
+| historian | naming `errno` or `stdout` compiles and runs at exit 0 with zero diagnostics **unless** a constancy check exists — Heroes' mechanism is otherwise more permissive than Zig's, failing in the quiet direction | **scored: CORRECT, and it is why the check exists.** `constant stdout: ptr` is `ffi_not_constant` at exit 1 on the `.hero` line (`fixedbugs/ffi-not-constant.hero`, `a_c_object_is_not_a_constant`). Without the second assertion it compiles and runs |
 
 ## Conditions on the record
 
