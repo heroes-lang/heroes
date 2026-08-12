@@ -2,7 +2,8 @@
 //!
 //! `line_body` walks one physical line and dispatches on the first byte of
 //! each token: `#` comment, `"` string, `'` char, digit, letter, or
-//! punctuation. Every scanner follows the same contract:
+//! punctuation. A digit goes to `number.rs`, which owns everything about how
+//! a number is written; every other scanner is here. Every scanner follows the same contract:
 //!
 //! - it advances `self.pos` past exactly what it consumed;
 //! - on success it calls `push` (which also tracks bracket depth);
@@ -198,63 +199,6 @@ impl LexState {
             });
         }
         self.error_token(diag);
-    }
-
-    /// Digits, then optionally `.` digits. The dot only makes a float when
-    /// digits follow: `1.5` is one token; `1.str()` is Int Dot Ident (UFCS
-    /// must keep working on number literals).
-    fn number(&mut self, src: &Source) {
-        let text = src.text.as_bytes();
-        let start = self.pos;
-        while text.get(self.pos).is_some_and(|b| b.is_ascii_digit()) {
-            self.pos += 1;
-        }
-        let mut kind = TokenKind::Int;
-        if text.get(self.pos) == Some(&b'.')
-            && text.get(self.pos + 1).is_some_and(|b| b.is_ascii_digit())
-        {
-            self.pos += 1;
-            while text.get(self.pos).is_some_and(|b| b.is_ascii_digit()) {
-                self.pos += 1;
-            }
-            kind = TokenKind::Float;
-        }
-        // **An exponent is refused, and it is refused where it is written**
-        // (panel 035). `1e300` used to lex as `1` then the identifier `e300`, so
-        // the reader was told `expected ')' … found a name (e300)` — a message
-        // about a parenthesis, for a number. Panel 035 refused exponent literals;
-        // this is the other half of refusing them, and CLAUDE.md §8's standard is
-        // that the error carries what is needed without opening another file.
-        //
-        // The test is on the characters in hand — a digit, then `e`/`E`, then an
-        // optional sign, then a digit — and never on what the parser is expecting.
-        let exponent = matches!(text.get(self.pos), Some(b'e') | Some(b'E'))
-            && match text.get(self.pos + 1) {
-                Some(b'+') | Some(b'-') => text.get(self.pos + 2).is_some_and(|b| b.is_ascii_digit()),
-                Some(b) => b.is_ascii_digit(),
-                None => false,
-            };
-        if exponent {
-            let digits = &src.text[start..self.pos];
-            self.pos += 1;
-            if matches!(text.get(self.pos), Some(b'+') | Some(b'-')) {
-                self.pos += 1;
-            }
-            while text.get(self.pos).is_some_and(|b| b.is_ascii_digit()) {
-                self.pos += 1;
-            }
-            let span = Span { start: start as u32, end: self.pos as u32 };
-            let written = &src.text[start..self.pos];
-            self.error_token(Diagnostic::new(
-                "exponent_literal",
-                format!(
-                    "`{written}` is not a number in this language — there are no exponents. Write the digits out, or compute it: `{digits} * pow(base: 10.0, exponent: …)` through the FFI (§4.19)"
-                ),
-                span,
-            ));
-            return;
-        }
-        self.push(kind, start);
     }
 
     /// A word: Heroes keyword, foreign reserved word (loud failure with the

@@ -83,20 +83,22 @@ Next: **M-program-corpus**.
 
 | order | id | what | warrant |
 |---|---|---|---|
-| 1 | **M-program-corpus** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
-| 2 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
-| 3 | **M-selfhost-port** | The port | v1 |
-| 4 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 5 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
-| 6 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 7 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 8 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 9 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
-| 10 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
-| 11 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
-| 12 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
-| 13 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
-| 14 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
+| 1 | **M-literal-bases** | `0x` `0o` `0b`, the `_` separator, and a leading zero refused | author decision 2026-08-12, over panel 041's provisional refusal |
+| 2 | **M-sized-integers** | `i8 i16 i32 i64 u8 u16 u32 u64` and the conversions between them | author decision 2026-08-12, over panel 041's veto; Part 7 item 10 is retired by it |
+| 3 | **M-program-corpus** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
+| 4 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
+| 5 | **M-selfhost-port** | The port | v1 |
+| 6 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 7 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
+| 8 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 9 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 10 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 11 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
+| 12 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 13 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 14 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
+| 15 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 16 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -504,6 +506,8 @@ So a number met in the record resolves here, and only here.
 | `M-module-namespace` | M8a | `m8a` | `use`, qualified names, one whole-program `.c` |
 | `M-ffi-ladder` | M7 | `m-ffi-ladder` | the FFI ladder, SQLite with no shim, and the last three closure-list rows |
 | `M-header-constants` | — | `m-header-constants` | a `constant` whose value is the header's, so the number leaves the file |
+| `M-literal-bases` | — | — | `0x` `0o` `0b`, the `_` separator, and a leading zero that is no longer decimal |
+| `M-sized-integers` | — | — | the integer widths, signed and unsigned, and the conversions between them |
 | `M-program-corpus` | M8e | — | many whole programs, all of them run |
 | `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
 | `M-selfhost-port` | M8b | — | the port |

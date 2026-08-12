@@ -50,8 +50,12 @@ fn power(ast: &Ast, id: ExprId) -> u8 {
 pub(super) fn render(ast: &Ast, src: &Source, id: ExprId) -> String {
     let node = &ast.exprs[id.0 as usize];
     match &node.kind {
-        ExprKind::Int
-        | ExprKind::Float
+        // The one literal `fmt` rewrites, and only in its digits' case: a mask
+        // copied from a C header arrives as `0xFF` and the lexer accepts it,
+        // so §4.15's one-spelling rule is settled here rather than by refusing
+        // the paste (`lexer/number.rs::canonical_int`).
+        ExprKind::Int => crate::lexer::canonical_int(src.slice(node.span)),
+        ExprKind::Float
         | ExprKind::Str
         | ExprKind::Char
         | ExprKind::Bool

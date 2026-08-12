@@ -1,0 +1,37 @@
+# fixedbugs, M-literal-bases step 1, 2026-08-12 (CLAUDE.md §9: a fixed defect
+# gets a case named after it, carrying symptom, cause and date).
+#
+# SYMPTOM: `print(0700)` printed `700`. Not a diagnostic, not a wrong type — a
+# wrong VALUE, from the most-copied constant form in Unix. Every file-permission
+# example a model has ever read writes `0700` and means 448, so the program
+# compiled, ran, and would have tested green against its own wrong answer. That
+# is the thesis inverted, in the exact class this language exists to kill.
+#
+# CAUSE: the scanner consumed a run of decimal digits and never asked what the
+# first one was. The leading zero carried no meaning here, and the language had
+# never said so — in C, Go, and everything that copied them it means octal.
+# Found by panel 041's llm-ergonomist, which was reading only the specification
+# and reached for `0700` while writing a permissions task; reproduced on the
+# tree the same afternoon. Nothing in the compiler was wrong about a rule it
+# had: the rule did not exist.
+#
+# FIX: a run of more than one decimal digit beginning with `0` is refused where
+# it is written, and the note names BOTH readings. **Neither fix is `certain`**,
+# which is the point — the compiler does not know whether the author meant 448
+# or 700, and CLAUDE.md §8 makes only a `certain` fix machine-applicable. A
+# `certain` fix here would silently pick one of the two wrong answers, which is
+# the defect wearing a repair's clothes.
+#
+# `0o700` is the octal that used to be unwritable; it lives in
+# `tests/golden/run/literal-bases.hero` and prints 448.
+#
+# The float is not a defect and is here to hold the boundary: a leading zero
+# before a decimal point means nothing anywhere, including in C, so `07.5` stays
+# legal and the rule does not creep.
+
+function main()
+    mode = 0700     #~ leading_zero
+    zeros = 00      #~ leading_zero
+    spaced = 0_7    #~ leading_zero
+    fine = 07.5
+    print(mode, zeros, spaced, fine)

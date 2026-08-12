@@ -1,0 +1,4 @@
+tests/golden/check/literal-out-of-range.hero:22:9: error[int_out_of_range]: `0xffffffffffffffff` does not fit in an `int`
+tests/golden/check/literal-out-of-range.hero:23:9: error[int_out_of_range]: `0xffffffff00000000` does not fit in an `int`
+tests/golden/check/literal-out-of-range.hero:24:9: error[int_out_of_range]: `18446744073709551615` does not fit in an `int`
+tests/golden/check/literal-out-of-range.hero:25:9: error[int_out_of_range]: `0b1111111111111111111111111111111111111111111111111111111111111111` does not fit in an `int`

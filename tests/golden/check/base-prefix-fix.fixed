@@ -1,0 +1,14 @@
+# UNVERIFIED — pending debrief
+#
+# The one `certain` fix in M-literal-bases, alone in its own file because
+# `--apply` must leave a program that checks clean (CLAUDE.md §8), and a file
+# whose other diagnostics carry no fix could not show that.
+#
+# The fix is `certain` and not a guess, which is the whole difference from
+# `leading-zero.hero` next door: `0X10` has exactly one reading, so lowering the
+# prefix cannot change what the author meant. `0700` has two, so its fixes are
+# both `guess` and `--apply` leaves it alone.
+
+function main()
+    mask = 0xFF   #~ base_prefix_case
+    print(mask)

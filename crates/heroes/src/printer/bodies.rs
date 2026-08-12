@@ -166,8 +166,8 @@ pub fn render_expr(ast: &Ast, id: ExprId, src: &Source) -> String {
     match &node.kind {
         // Literals and names are their own text: the source is the only place
         // that stores it (`Source` owns every byte).
-        ExprKind::Int
-        | ExprKind::Float
+        ExprKind::Int => crate::lexer::canonical_int(src.slice(node.span)),
+        ExprKind::Float
         | ExprKind::Str
         | ExprKind::Char
         | ExprKind::Bool

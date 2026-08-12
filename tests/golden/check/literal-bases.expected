@@ -1,0 +1,5 @@
+tests/golden/check/literal-bases.hero:38:9: error[base_prefix_case]: `0X10` writes the base in uppercase — this language spells it `0x`
+tests/golden/check/literal-bases.hero:39:12: error[digit_not_in_base]: `2` is not a binary digit
+tests/golden/check/literal-bases.hero:40:11: error[digit_not_in_base]: `8` is not an octal digit
+tests/golden/check/literal-bases.hero:41:9: error[empty_base_literal]: `0x` names a base and then stops — a number needs digits
+tests/golden/check/literal-bases.hero:42:10: error[misplaced_separator]: `_` groups digits, so it goes between two of them

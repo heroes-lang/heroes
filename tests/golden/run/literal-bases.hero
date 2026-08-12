@@ -1,0 +1,60 @@
+# The four bases and the digit separator, running (§4.3, §4.15; panel 041,
+# author ratification 2026-08-12).
+#
+# The reading is by VALUE, not by bit pattern: `0xff` is 255 and there is no
+# spelling of a literal that reaches past `int`'s range. `0xffffffffffffffff` is
+# `int_out_of_range`, exactly as its decimal twin `18446744073709551615` is —
+# the panel vetoed the bit-pattern reading because it would delete a compile
+# error, turning `0xFFFFFFFF00000000` silently into -4294967296.
+#
+# What each line here is FOR:
+#
+# - the masks are the reason the notation exists at all. Panel 040 landed
+#   `& | ^ ~ << >>` on the argument that a flag union spelled `+` is a silent
+#   wrong answer, and then a mask had to be written in decimal — the one
+#   notation no C header uses, so a reader comparing a header to a `.hero` file
+#   converted by hand and no compiler could check the arithmetic.
+# - `0o700` is 448, and that number is the whole of `check/leading-zero.hero`.
+# - the separator groups digits and changes no value, which is what `1_000_000`
+#   and `0xdead_beef` assert together.
+# - `0xff.to_str()` pins UFCS on a based literal: the dot makes a float only
+#   when a digit follows, and that rule was written for `1.str()` before any
+#   literal had a prefix.
+# - the last two lines are the boundary from both sides: the largest `int` in
+#   hexadecimal, and `~0` — which has been the all-bits mask since panel 040,
+#   and is the reason the bit-pattern reading was not needed to reach one.
+
+function main()
+    print("hex ", 0xff)
+    print("HEX ", 0xFF)
+    print("oct ", 0o700)
+    print("bin ", 0b1010)
+    print("sep ", 1_000_000)
+    print("mix ", 0xdead_beef)
+    print("same ", 255 == 0xff, " ", 0o777 == 0b111111111)
+    print("ufcs ", 0xff.to_str())
+    print("mask ", 0xf0 & 0x3c, " ", 0b1010 | 0b0101, " ", 0xff ^ 0x0f)
+    print("max ", 0x7fffffffffffffff)
+    print("all ", ~0)
+
+test "a base is a spelling, never a value"
+    assert 0xff == 255
+    assert 0o700 == 448
+    assert 0b1010 == 10
+    assert 0x10 == 16
+    assert 1_0_0 == 100
+
+test "the separator is invisible to the value"
+    assert 1_000_000 == 1000000
+    assert 0xdead_beef == 0xdeadbeef
+    assert 0b1010_1010 == 0xaa
+
+test "case is not meaning"
+    assert 0xFF == 0xff
+    assert 0xAbCdEf == 0xabcdef
+
+test "the masks the notation exists for"
+    assert 0xf0 & 0x0f == 0
+    assert 0xf0 | 0x0f == 0xff
+    assert ~0 == -1
+    assert 1 << 8 == 0x100

@@ -21,8 +21,15 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 56] = [
+const ANNOTATED: [&str; 61] = [
     "bad_operand",
+    // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
+    // is `exponent_literal` two lines below `empty_base_literal`: a lexical
+    // refusal leaves no program for `--permissive`'s control arm to compare, so
+    // both arms must reject together. `leading_zero` is the one worth pausing on
+    // — it reads like a thesis rule, and Python 3 and JS strict mode reject
+    // `0700` too, so it is a rule about the notation rather than about the model.
+    "base_prefix_case",
     "bound_unit",
     "builtin",
     "builtin_as_value",
@@ -31,7 +38,9 @@ const ANNOTATED: [&str; 56] = [
     "char_literal",
     "constant_body",
     "constant_cycle",
+    "digit_not_in_base",
     "discarded_value",
+    "empty_base_literal",
     "empty_record",
     "escape_not_needed",
     "expected_declaration",
@@ -48,6 +57,8 @@ const ANNOTATED: [&str; 56] = [
     "indentation_jump",
     "indentation_not_multiple_of_4",
     "int_out_of_range",
+    "leading_zero",
+    "misplaced_separator",
     "missing_body",
     "missing_label",
     "missing_return",

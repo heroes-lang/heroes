@@ -228,8 +228,16 @@ pub(super) fn mix_int_float(ast: &Ast, src: &Source) -> Vec<String> {
         let ExprKind::Binary { left, right, .. } = &expr.kind else { continue };
         for side in [left, right] {
             let operand = &ast.exprs[side.0 as usize];
-            if matches!(operand.kind, ExprKind::Int) {
-                out.push(edit(src, operand.span, &format!("{}.0", src.slice(operand.span))));
+            // A **decimal** `int` only. Appending `.0` to `0xff` produces
+            // `0xff.0`, which dies in the lexer — so an operator named for an
+            // implicit-conversion prior would have been measuring the scanner
+            // instead, and scoring a kill it did not earn (panel 041, and the
+            // narrowing is a fact about the characters in hand rather than a
+            // premise about the corpus: CLAUDE.md §11).
+            let text = src.slice(operand.span);
+            let based = text.len() > 1 && text.as_bytes()[0] == b'0';
+            if matches!(operand.kind, ExprKind::Int) && !based {
+                out.push(edit(src, operand.span, &format!("{text}.0")));
             }
         }
     }
@@ -269,18 +277,35 @@ pub(super) fn typo_digit(ast: &Ast, src: &Source) -> Vec<String> {
     out
 }
 
-/// The last digit, moved by one — and `9` goes *down* to `8` rather than carrying,
-/// because a carry changes how many digits the number has and that is a different
-/// mistake. `None` where the literal does not end in a digit, which keeps the
-/// operator off anything it does not understand.
+/// The last digit, moved by one — and the **top** digit of the base goes *down*
+/// rather than carrying, because a carry changes how many digits the number has
+/// and that is a different mistake.
+///
+/// The base has to be read, not assumed. Before M-literal-bases this function
+/// tested `is_ascii_digit` and returned `None` on anything else, which was right
+/// while `9` was the only top digit — and would have gone silently wrong the day
+/// hexadecimal arrived: `0x10` would have been mutated and `0xff` skipped, so the
+/// operator's coverage would have depended on which characters a mask happened to
+/// end in, and its site count is the number panel 038 made the deliverable. A
+/// separator is stepped over, and `None` where the literal does not end in a
+/// digit of its own base.
 fn neighbouring_digit(text: &str) -> Option<String> {
-    let mut digits: Vec<char> = text.chars().collect();
-    let last = digits.last_mut()?;
-    *last = match *last {
-        '9' => '8',
-        d if d.is_ascii_digit() => char::from(d as u8 + 1),
-        _ => return None,
+    // The prefix is lowercase because that is the only spelling the lexer
+    // accepts, so a mutant built here is a program the lexer would also accept.
+    let (prefix, radix) = match text.as_bytes() {
+        [b'0', b'x', ..] => (2, 16),
+        [b'0', b'o', ..] => (2, 8),
+        [b'0', b'b', ..] => (2, 2),
+        _ => (0, 10),
     };
+    let mut digits: Vec<char> = text.chars().collect();
+    let at = digits.iter().rposition(|c| *c != '_')?;
+    if at < prefix {
+        return None;
+    }
+    let value = digits[at].to_digit(radix)?;
+    let moved = if value + 1 == radix { value - 1 } else { value + 1 };
+    digits[at] = char::from_digit(moved, radix)?;
     Some(digits.into_iter().collect())
 }
 

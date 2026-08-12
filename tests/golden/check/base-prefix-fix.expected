@@ -1,0 +1,1 @@
+tests/golden/check/base-prefix-fix.hero:13:12: error[base_prefix_case]: `0XFF` writes the base in uppercase — this language spells it `0x`

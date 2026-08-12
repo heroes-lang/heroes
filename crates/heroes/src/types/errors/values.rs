@@ -290,10 +290,10 @@ pub(in crate::types) fn builtin_shape(name: &str, given: usize, span: Span) -> D
 /// The message names the range because `int` is the only integer type (§4.3):
 /// there is no wider one to suggest, so the fix is a different number and the
 /// compiler should not pretend otherwise.
+/// Built in `lexer/number.rs`, with the decoder that decides when it fires and
+/// the base table that lets it answer in the notation the question was asked in
+/// — the frontend and the lowering both raise this diagnostic, and before panel
+/// 041 they each spelled it out by hand.
 pub(in crate::types) fn int_out_of_range(text: &str, span: Span) -> Diagnostic {
-    Diagnostic::new("int_out_of_range", format!("`{text}` does not fit in an `int`"), span)
-        .with_note(
-            "`int` is a 64-bit signed integer and the only integer type, so it holds -9223372036854775808 through 9223372036854775807"
-                .to_string(),
-        )
+    crate::lexer::int_out_of_range(text, span)
 }

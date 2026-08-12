@@ -54,6 +54,9 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 
 - No implicit conversions: `1 + 2.0` is an error; write `to_f64(x)`, `to_int(x)`.
 - Character literals are `int`: `'a'`, `'0'`, `' '`.
+- One `int` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
+  A leading zero is an error, never octal. Every base writes a value, so
+  `0xffffffffffffffff` does not fit and is refused.
 - Five escapes, and no others: `\n` `\t` `\\` `\"` in a string, `\'` instead of
   `\"` in a character literal. Any other escape is a compile error.
 - `==` is structural equality on everything — ints, strings, records,

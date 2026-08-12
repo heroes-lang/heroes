@@ -39,7 +39,7 @@ pub(super) fn synth(
         // so the frontend is where the question belongs (M-ffi-ladder, from
         // panel 019's watch list).
         ExprKind::Int => {
-            if src.slice(span).parse::<i64>().is_err() {
+            if crate::lexer::decode_int(src.slice(span)).is_none() {
                 let diagnostic = errors::int_out_of_range(src.slice(span), span);
                 checker.push_diagnostic(diagnostic);
             }

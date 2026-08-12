@@ -1,0 +1,43 @@
+# UNVERIFIED — pending debrief
+#
+# The five adversarial cases for M-literal-bases (§4.3, §4.15; panel 041). Each
+# one is a way of writing a number that a model has good reason to produce and
+# this language refuses — and the refusal is judged by whether the message tells
+# the reader what to write instead, not by whether it fires.
+#
+# 1. `0X10` — uppercase prefix. This is the one rule here NO other language has:
+#    the historian searched Java, Go, Rust, Zig, C#, C and Julia and found none
+#    that enforces case anywhere in a literal (panel 041, a sourced negative
+#    result). Heroes refuses the PREFIX only, because §4.15 wants one spelling
+#    and `0O` is genuinely misreadable as `00` — and accepts either case in the
+#    DIGITS, because a mask copied out of a C header arrives as `0xFF` and
+#    refusing that would defeat the reason the notation exists. `fmt` settles
+#    the digits instead, which is the division rustfmt makes.
+#
+# 2. `0b12` — a digit outside its base. The loud direction matters more than the
+#    message: the old scanner would have handed the parser `0b1` and then `2` as
+#    a separate token, and `print(0b12)` would have died about a parenthesis.
+#
+# 3. `0o8` — the same mistake in the base where it is most likely, because octal
+#    is the one base whose digit set a reader does not carry in their head.
+#
+# 4. `0x` — a prefix and no digits. Reachable by truncation, and by a model that
+#    knows a hexadecimal literal starts with `0x` and stops to think.
+#
+# 5. `1__0` — a doubled separator. Rust accepts this and Java does not; Heroes
+#    takes the strict reading, because a separator that groups nothing is a typo
+#    rather than a grouping, and the rule "between two digits" is one sentence.
+#
+# The out-of-range boundary is NOT here, and the reason is worth writing down:
+# the stages are gated, so a lexical refusal on line 37 means the type checker
+# never runs and `int_out_of_range` — which is the frontend's, not the lexer's —
+# could not fire in the same file however the case were written. It has its own,
+# `check/literal-out-of-range.hero`.
+
+function main()
+    a = 0X10                #~ base_prefix_case
+    b = 0b12                #~ digit_not_in_base
+    c = 0o8                 #~ digit_not_in_base
+    d = 0x                  #~ empty_base_literal
+    e = 1__0                #~ misplaced_separator
+    print(a, b, c, d, e)

@@ -1,0 +1,26 @@
+# UNVERIFIED — pending debrief
+#
+# A literal out of range is answered **in the notation it was asked in** (§4.3,
+# CLAUDE.md §8; panel 041).
+#
+# This is the case that pins the panel's decision against the bit-pattern
+# reading. Under that reading `0xffffffffffffffff` would be a legal way to write
+# `-1` and `0xffffffff00000000` a legal way to write `-4294967296` — so the two
+# lines below would compile, and a mask copied one `f` short of correct would be
+# a silently wrong number instead of an error. The value reading keeps them both
+# refused, exactly as the decimal twin on the third line is refused.
+#
+# The note is the deliverable, not the code: a reader who wrote sixteen `f`s and
+# is handed `9223372036854775807` has been told the answer to a question they
+# did not ask. They are told `0x7fffffffffffffff`.
+#
+# All four are the frontend's, so they are all reported at once — `heroes check`
+# and `heroes build` agree about which programs have diagnostics, which is what
+# put this check in the frontend at M-ffi-ladder.
+
+function main()
+    a = 0xffffffffffffffff        #~ int_out_of_range
+    b = 0xffffffff00000000        #~ int_out_of_range
+    c = 18446744073709551615      #~ int_out_of_range
+    d = 0b1111111111111111111111111111111111111111111111111111111111111111  #~ int_out_of_range
+    print(a, b, c, d)

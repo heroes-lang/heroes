@@ -3,7 +3,9 @@
 **Convened** 2026-08-12, on the author's instruction (*"chiama il panel su 0x e
 unsigned"*). **Lane: full panel** — the charge touches surface syntax, the type
 vocabulary, a diagnostic class and the spec, so the soundness lane was never
-available. **Status: provisional — author ratification pending.**
+available. **Status: RATIFIED 2026-08-12 — the author overturned both refusals;
+the verdict is the last section of this file, and the objections above stand as
+the judges wrote them.**
 
 The sitting carries **two** questions by the author's own decision 1a
 (`docs/debrief/DECIDE.md`, third `/decide` session): the notation gap and the
@@ -328,3 +330,86 @@ role working as intended.
 believed the spec ceiling was 3000; design.md §1.6 says **4096** by author
 decision 2026-08-10 (panel 024). No budget veto was available on either variant
 and it did not reach for one.
+
+---
+
+## The author's verdict, 2026-08-12 — both refusals overturned
+
+Given the same day the panel sat, in conversation, after the synthesis was read.
+**Two vetoes are overruled and one provisional hold is lifted.** CLAUDE.md §4
+makes this the panel's closing act, not a new sitting: the verdict is appended,
+the record is not rewritten, and the objections above stand exactly as the judges
+wrote them.
+
+**On notation — adopted in full, and widened.** *"Se sono interi sono interi,
+quindi gli interi possono essere espressi sia con la notazione decimale sia con
+la notazione ottale sia con la notazione binaria sia con la notazione
+esadecimale, come in tutti i grossi linguaggi. Su questo io non transigerei."*
+
+So the deliverable is not `0x` alone: it is **all four bases and the `_`
+separator**. The spec-warden's R6 consistency argument is answered rather than
+ignored, and the answer is the disanalogy the panel accepted too fast — **an
+exponent creates values that do not otherwise exist; a base creates none.** Every
+number a hexadecimal literal can write, decimal can write too. R6's two conjuncts
+were "a new syntactic form" and "for a type not on the closure list"; a base is a
+form for writing an existing value of an existing type, which is not what
+exponents were. The historian's search stands behind it: nine languages have this
+and none regrets it.
+
+The **value** reading is kept, so the bit-pattern veto survives the ratification
+— the one judge's finding that changed nothing is the one that was right.
+
+**And octal earns its place twice**, which is the thing the panel did not see:
+the sitting's own D1 defect (`print(0700)` printing `700`) has two possible
+repairs, and the panel offered only the narrow one. Giving octal a real spelling
+closes it *and* delivers the notation: `0o700` is 448, and the bare leading zero
+becomes an error. That is Python 3's answer, Rust's, and Go's `0o` — the modern
+consensus, arrived at because the bare leading zero is a trap.
+
+**On unsigned — the veto is overruled, and the ask is bigger than the menu.**
+*"Vorrei che procedessi anche con la parte di unsigned di tutti i vari tipi …
+poi un sistema di tipi fatto bene, almeno quelli base … molto simile a Rust
+sostanzialmente."*
+
+That is **not option (b), and not option (c) as the panel priced it**. The panel
+judged a menu whose expensive end it described in one line and refused in one
+line. What is asked for is the Rust shape: `i8 i16 i32 i64` and `u8 u16 u32 u64`,
+first-class, with explicit conversions and no implicit ones — which Heroes
+already forbids, so half the conversion-rule cost design.md calls "the most
+expensive spec item that exists" is already paid by §4.3.
+
+The judges' objections are **not** thereby answered, and three of them survive
+into the implementation as work rather than as doubt:
+
+- the compiler-engineer's measured point that `Ty::Cstr` appears 11 times across
+  9 files with **9 of them silent `_` arms** — every new `Ty` variant inherits
+  that, and CLAUDE.md §11 makes each silent arm a defect;
+- the ffi-pragmatist's compiled finding that `_Generic` **cannot be spelled with
+  typedefs** (`size_t` and `uintptr_t` in one association is a hard clang error),
+  so the FFI half must use fundamental types, and that a width-named type needs a
+  `sizeof` companion assertion or it cannot verify its own name;
+- the historian's Kotlin precedent, now pointing the other way: the KEEP's
+  motivation **#1** for unsigned types was *hexadecimal literals that overflow
+  the signed type* — which is this ratification's two halves, in the order they
+  are being built.
+
+**Consequences recorded now, so they are not rediscovered as surprises.** Part 7
+item 10 says *"never in v1"* and is **retired**, not reinterpreted — this
+overrides it, exactly as panel 040 overrode §4.14's own sentence, and the
+milestone that retires it is the one that must say so. Panel 041's finding 1
+still holds and is not fixed by this: `SIZE_MAX` becomes **readable** under a
+first-class `u64`, which is the thing no option on the menu could do — so the
+falsifier design.md Part 7 item 10 was given this morning (`strlen`, never
+`SIZE_MAX`) was the right one for the menu and is now superseded by both.
+
+**Two milestones, in this order** (`docs/ROADMAP.md` § The order, rows 1 and 2):
+`M-literal-bases` then `M-sized-integers`. They are deliberately **not** one
+milestone: decision 1a made the cheap question hostage to the expensive one this
+morning and said so in its own words, and folding the notation into the type
+system would be the same trap a third time.
+
+**Predictions 1, 4, 6 and 7 become checkable early** and are scored at
+`M-literal-bases` close rather than at the milestones written above. Prediction 3
+is unaffected. Predictions 2, 8, 9 and 10 were written about option (b), which is
+not what is being built; they are **retired unscored**, and the reason is recorded
+rather than the numbers quietly dropped.

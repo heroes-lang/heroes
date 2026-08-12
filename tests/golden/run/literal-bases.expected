@@ -1,0 +1,11 @@
+hex 255
+HEX 255
+oct 448
+bin 10
+sep 1000000
+mix 3735928559
+same true true
+ufcs 255
+mask 48 15 240
+max 9223372036854775807
+all -1

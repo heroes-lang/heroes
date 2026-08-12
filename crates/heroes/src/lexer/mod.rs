@@ -12,7 +12,9 @@
 //! | `token.rs`    | the vocabulary: `TokenKind`, `Token`, `kind_name` |
 //! | `keywords.rs` | the word tables: Heroes keywords, foreign words with prescribed errors |
 //! | `layout.rs`   | shape: rigid indentation, terminator insertion (panel 007) |
-//! | `scan.rs`     | words: comments, literals, identifiers, punctuation |
+//! | `scan.rs`     | words: comments, strings, characters, identifiers, punctuation |
+//! | `number.rs`   | numbers: which characters are a literal, in four bases (panel 041) |
+//! | `digits.rs`   | numbers: what those characters mean — the base table and the one decoder |
 //! | `escape.rs`   | escape sequences: the table, validation, decoding (panel 008) |
 //! | `tests/`      | snapshot tests, grouped the same way |
 //!
@@ -29,12 +31,15 @@
 mod tests;
 
 mod escape;
+mod digits;
 mod keywords;
 mod layout;
+mod number;
 mod scan;
 mod token;
 
 pub use escape::unescape;
+pub(crate) use digits::{canonical_int, decode_int, int_out_of_range};
 pub use token::{kind_name, Token, TokenKind};
 
 use crate::diagnostics::Diagnostic;
@@ -181,6 +186,17 @@ impl LexState {
     fn error_token(&mut self, diag: Diagnostic) {
         let span = diag.span;
         self.diagnostics.push(diag);
+        self.tokens.push(Token { kind: TokenKind::Error, span });
+        self.last_significant = Some(TokenKind::Error);
+    }
+
+    /// The same recovery for a scanner that has **already** pushed its
+    /// diagnostic — the run that found a misplaced `_` or a digit outside its
+    /// base reports on the offending characters, which is a narrower span than
+    /// the literal, and then the literal as a whole still has to become an
+    /// `Error` token so the parser is not handed a number nobody decoded.
+    fn error_token_at(&mut self, start: usize) {
+        let span = Span { start: start as u32, end: self.pos as u32 };
         self.tokens.push(Token { kind: TokenKind::Error, span });
         self.last_significant = Some(TokenKind::Error);
     }

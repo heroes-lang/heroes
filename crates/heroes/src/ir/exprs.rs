@@ -17,7 +17,6 @@
 //! not operators at all — they short-circuit, so they are control flow
 //! (`control.rs`).
 
-use crate::diagnostics::Diagnostic;
 use crate::lexer::unescape;
 use crate::resolve::{Ref, Resolved};
 use crate::source::{Source, Span};
@@ -205,19 +204,10 @@ fn is_constant(ast: &Ast, decl: u32) -> bool {
 /// fix is a different number and the compiler should not pretend otherwise.
 fn int_literal(b: &mut Lowering, src: &Source, span: Span) -> i64 {
     let text = src.slice(span);
-    match text.parse::<i64>() {
-        Ok(value) => value,
-        Err(_) => {
-            let diagnostic = Diagnostic::new(
-                "int_out_of_range",
-                format!("`{text}` does not fit in an `int`"),
-                span,
-            )
-            .with_note(
-                "`int` is a 64-bit signed integer and the only integer type, so it holds -9223372036854775808 through 9223372036854775807"
-                    .to_string(),
-            );
-            b.push_diagnostic(diagnostic);
+    match crate::lexer::decode_int(text) {
+        Some(value) => value,
+        None => {
+            b.push_diagnostic(crate::lexer::int_out_of_range(text, span));
             0
         }
     }
