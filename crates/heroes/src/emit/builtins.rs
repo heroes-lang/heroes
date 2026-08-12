@@ -29,9 +29,14 @@ use crate::types::{Checked, Ty};
 /// Tier 2 (§1.11) is absent by construction: `map`, `filter`, `fold`, `find`,
 /// `any`, `all` and `range` are written in Heroes, so they have no entry point
 /// to name here — they arrive as source, in the prelude.
-pub const EMITTED: [&str; 11] = [
+pub const EMITTED: [&str; 19] = [
     "chars", "join", "keys", "len", "print", "push", "slice", "sort", "to_f64", "to_i64",
     "to_str",
+    // The eight width conversions. They are on this list and NOT in `entry`
+    // below, because `entry` answers with the name of a C entry point and a
+    // `fit_<width>` has none: it builds a `T?`, which is a union generated for
+    // that result type. `ops::call` writes it inline, the way it writes `print`.
+    "fit_i8", "fit_i16", "fit_i32", "fit_i64", "fit_u8", "fit_u16", "fit_u32", "fit_u64",
 ];
 
 /// The type of a call's first argument, where there is one and it is a value.

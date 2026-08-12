@@ -4,4 +4,4 @@ unsupported[builtin]: the built-in `sort` on elements other than `i64`, `f64` or
   24 |     ordered = sort(ps)                  #~ builtin
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_i64`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_i64`, `to_str`, `fit_i8`, `fit_i16`, `fit_i32`, `fit_i64`, `fit_u8`, `fit_u16`, `fit_u32`, `fit_u64` — no other built-in is emitted yet

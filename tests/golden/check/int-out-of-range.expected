@@ -1,1 +1,1 @@
-tests/golden/check/int-out-of-range.hero:17:11: error[int_out_of_range]: `99999999999999999999` does not fit in an `i64`
+tests/golden/check/int-out-of-range.hero:17:11: error[int_out_of_range]: `99999999999999999999` does not fit an `i64`

@@ -368,6 +368,82 @@ pub(super) fn call(
         Callee::Builtin(index) if BUILTINS[index as usize].name == "print" => {
             print(w, function, checked, args, arguments);
         }
+        // `fit_<width>` is not a call, which is why it is here and not in
+        // `builtins::entry`: that function answers with the NAME of a C entry
+        // point, and this one has to build a `T?` — a tagged union generated for
+        // this result type, which no runtime function can return.
+        //
+        // The range test is written against the SOURCE's C type and the target's
+        // bounds, and both halves matter. Comparing an unsigned source against a
+        // negative lower bound is a warning and a constant answer, so the low
+        // test is omitted where the source cannot be negative; comparing a narrow
+        // source against a wider target's top is likewise always true. Emitting
+        // `true &&` instead of nothing would be simpler and would turn every such
+        // conversion into a `-Wtautological-constant-out-of-range-compare`, which
+        // §7 compiles with `-Werror`-adjacent flags.
+        Callee::Builtin(index)
+            if BUILTINS[index as usize].name.starts_with("fit_") && target.is_some() =>
+        {
+            let into = target.expect("just matched");
+            let result = function.value_type(match function.args_of(args).first() {
+                Some(crate::ir::Arg::Value(v)) => *v,
+                _ => return,
+            });
+            let from = match checked.types.get(result) {
+                Ty::Int(kind) => kind,
+                _ => return,
+            };
+            let name = BUILTINS[index as usize].name;
+            let to = *crate::types::INT_KINDS
+                .iter()
+                .find(|k| k.name() == &name[4..])
+                .expect("the name was checked into existence by `resolve`");
+            let (low, high) = to.range();
+            let value = &arguments[0];
+            let mut tests: Vec<String> = Vec::new();
+            if from.signed() && low >= 0 {
+                tests.push(format!("{value} >= 0"));
+            }
+            // The top test is needed only where the source can hold more than the
+            // target. `bits` and `signed` together decide that, and asking them is
+            // a fact about the two widths rather than a guess about the program.
+            let source_top = if from.signed() { from.bits() - 1 } else { from.bits() };
+            let target_top = if to.signed() { to.bits() - 1 } else { to.bits() };
+            if source_top > target_top {
+                tests.push(format!(
+                    "{value} <= {}{}",
+                    high,
+                    if to.signed() { "LL" } else { "ULL" }
+                ));
+            }
+            if from.signed() && !to.signed() && low == 0 && !tests.iter().any(|t| t.ends_with(">= 0"))
+            {
+                tests.push(format!("{value} >= 0"));
+            }
+            let condition =
+                if tests.is_empty() { "1".to_string() } else { tests.join(" && ") };
+            // `lookup`, not `intern`: the checker already made this `T?` when it
+            // typed the call, so a miss here would mean the two passes disagree
+            // about the result type rather than that a type is missing.
+            let union = match checked
+                .types
+                .lookup(Ty::Int(to))
+                .and_then(|inner| checked.types.lookup(Ty::Fallible(inner)))
+            {
+                Some(id) => types.names.option_of(id),
+                None => return,
+            };
+            w.line(&format!("    if ({condition}) {{"));
+            w.line(&format!(
+                "        {into} = ({union}){{.tag = INT64_C(0), .as.ok = ({}){value}}};",
+                to.c_type()
+            ));
+            w.line("    } else {");
+            w.line(&format!(
+                "        {into} = ({union}){{.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}};"
+            ));
+            w.line("    }");
+        }
         Callee::Builtin(index) if super::EMITTED_BUILTINS.contains(&BUILTINS[index as usize].name) => {
             let entry =
                 super::builtins::entry(BUILTINS[index as usize].name, function, checked, args);

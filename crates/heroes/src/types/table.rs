@@ -91,6 +91,14 @@ impl IntKind {
         }
     }
 
+    /// `an i64`, `a u8`. The article follows how the name is *said* — the signed
+    /// ones begin with a vowel sound and the unsigned ones do not — and it is
+    /// derived from `signed()` rather than tabulated, so a ninth width gets it
+    /// right without a second edit.
+    pub fn a_name(self) -> String {
+        format!("{} `{}`", if self.signed() { "an" } else { "a" }, self.name())
+    }
+
     /// How many bits, and whether the top one is a sign. Together they are the
     /// whole of what a width *is*, and every question below is derived from them
     /// rather than tabulated again — a table per question is a table per chance

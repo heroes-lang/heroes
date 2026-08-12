@@ -141,23 +141,41 @@ pub(crate) fn int_out_of_range(text: &str, span: Span) -> Diagnostic {
 /// not fit the `u8` you declared" are the same finding with a different number
 /// in it. A second code would have split one class in two on the accident of
 /// whether the reader had written the type down.
-pub(crate) fn out_of_range(text: &str, span: Span, kind: Option<crate::types::IntKind>) -> Diagnostic {
+pub(crate) fn out_of_range(
+    text: &str,
+    span: Span,
+    kind: Option<crate::types::IntKind>,
+) -> Diagnostic {
+    let width = kind.unwrap_or(crate::types::IntKind::I64);
+    let (low, high) = width.range();
     let (base, _) = split_base(text);
-    let largest = match base {
-        Base::Decimal => i64::MAX.to_string(),
-        Base::Binary => format!("0b{:b}", i64::MAX),
-        Base::Octal => format!("0o{:o}", i64::MAX),
-        Base::Hexadecimal => format!("0x{:x}", i64::MAX),
+    // The boundary is given **in the base the reader used**, because being handed
+    // a decimal limit for a hexadecimal mistake is the second half of the same
+    // error (CLAUDE.md §8: what is needed to fix the program, without opening
+    // another file).
+    let top = match base {
+        Base::Decimal => high.to_string(),
+        Base::Binary => format!("0b{high:b}"),
+        Base::Octal => format!("0o{high:o}"),
+        Base::Hexadecimal => format!("0x{high:x}"),
     };
-    let note = if base == Base::Decimal {
-        "`i64` is a 64-bit signed integer and the only integer type, so it holds -9223372036854775808 through 9223372036854775807".to_string()
-    } else {
-        format!(
-            "`i64` is a 64-bit signed integer and the only integer type, so the largest one {} literal can write is `{largest}` (9223372036854775807)",
+    let a_width = width.a_name();
+    let note = match (kind.is_some(), base == Base::Decimal) {
+        // The reader wrote the type: name it, and say the repair has two ends.
+        (true, _) => format!(
+            "{a_width} holds {low} through {high}. Widen the type, or write a number in range — this language never truncates one silently"
+        ),
+        // No annotation, so the width is the default one and that is worth saying:
+        // otherwise the message names a type the reader never mentioned.
+        (false, true) => format!(
+            "a literal with nothing to take a width from is {a_width}, which holds {low} through {high}"
+        ),
+        (false, false) => format!(
+            "a literal with nothing to take a width from is {a_width}, so the largest one {} literal can write is `{top}`",
             base.a_name()
-        )
+        ),
     };
-    Diagnostic::new("int_out_of_range", format!("`{text}` does not fit in an `i64`"), span)
+    Diagnostic::new("int_out_of_range", format!("`{text}` does not fit {a_width}"), span)
         .with_note(note)
 }
 

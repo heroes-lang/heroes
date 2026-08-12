@@ -135,6 +135,23 @@ pub(super) fn call(
             return arg_error(checker, ast, src, "cstr", "`str`", *one, span)
         }
         ("to_i64", [one]) if checker.out.types.get(*one) == Ty::F64 => checker.out.types.int(),
+        // `fit_<width>(x) -> <width>?`. The source must be an integer of some
+        // width — converting an `f64` is `to_i64`'s job and aborts, which is a
+        // different question with a different answer (panel 042 Q2).
+        (name, [one])
+            if name.starts_with("fit_")
+                && crate::types::INT_KINDS.iter().any(|k| k.name() == &name[4..]) =>
+        {
+            if !matches!(checker.out.types.get(*one), Ty::Int(_)) {
+                return arg_error(checker, ast, src, name, "an integer", *one, span);
+            }
+            let kind = *crate::types::INT_KINDS
+                .iter()
+                .find(|k| k.name() == &name[4..])
+                .expect("just matched");
+            let target = checker.out.types.intern(Ty::Int(kind));
+            checker.out.types.intern(Ty::Fallible(target))
+        }
         ("to_f64", [one]) if matches!(checker.out.types.get(*one), Ty::Int(_)) => checker.out.types.f64(),
         // §4.20's inventory calls this one `.str()`; panel 017 renames it
         // `to_str`, so the three conversions share one scheme and a model can

@@ -173,6 +173,7 @@ uint64_t hero_failure_hash(const void *elem);
  * allocates nothing — which matters because a miss is the common case in a
  * `.default(v)` chain. */
 HeroFailure hero_failure_missing_key(void);
+HeroFailure hero_failure_does_not_fit(void);
 
 /* `.must()` on an error (§4.6). Takes the failure, because the useful half of the
  * message is the `code` and `msg` the author wrote — a panic saying only that a

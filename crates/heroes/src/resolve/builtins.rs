@@ -47,10 +47,10 @@ pub struct Builtin {
     pub tier: Tier,
 }
 
-/// Sorted by name, searched linearly. Twenty-eight entries need no index, and a
+/// Sorted by name, searched linearly. Thirty-six entries need no index, and a
 /// sorted table prints in a deterministic order — §4.16's rule for hole
 /// suggestions, applied to every list the compiler shows.
-pub const BUILTINS: [Builtin; 28] = [
+pub const BUILTINS: [Builtin; 36] = [
     Builtin { name: "all", tier: Tier::Heroes },
     Builtin { name: "args", tier: Tier::Heroes },
     Builtin { name: "any", tier: Tier::Heroes },
@@ -60,6 +60,26 @@ pub const BUILTINS: [Builtin; 28] = [
     Builtin { name: "exit", tier: Tier::Heroes },
     Builtin { name: "fail", tier: Tier::Runtime },
     Builtin { name: "filter", tier: Tier::Heroes },
+    // **One `fit_<width>` per width, and they are not `to_<width>`** (panel 042
+    // Q2, author ruling 3). `to_i64` and `to_f64` are the number-KIND pair and
+    // they abort; these are the width pair and they return `T?`, because a value
+    // may simply not fit. Two names rather than one overloaded name is what every
+    // language that has both does — Swift added a label (`exactly:`), Rust added
+    // a name (`try_into`), and neither changed the incumbent's return type.
+    //
+    // The name says the question: `fit_u8(x)` asks whether `x` fits in a `u8`.
+    // Widening returns `T?` too, which the llm-ergonomist argued against — and
+    // the uniform rule wins because the alternative reintroduces the very thing
+    // Q2 was about: `fit_u32` would return `u32` for a `u8` argument and `u32?`
+    // for a `u64` one, which is one name with two result types.
+    Builtin { name: "fit_i16", tier: Tier::Runtime },
+    Builtin { name: "fit_i32", tier: Tier::Runtime },
+    Builtin { name: "fit_i64", tier: Tier::Runtime },
+    Builtin { name: "fit_i8", tier: Tier::Runtime },
+    Builtin { name: "fit_u16", tier: Tier::Runtime },
+    Builtin { name: "fit_u32", tier: Tier::Runtime },
+    Builtin { name: "fit_u64", tier: Tier::Runtime },
+    Builtin { name: "fit_u8", tier: Tier::Runtime },
     Builtin { name: "find", tier: Tier::Heroes },
     Builtin { name: "fold", tier: Tier::Heroes },
     Builtin { name: "keys", tier: Tier::Runtime },

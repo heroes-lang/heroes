@@ -56,6 +56,21 @@ const HeroDesc hero_desc_failure = {sizeof(HeroFailure), hero_copy_failure,
                                     hero_drop_failure, hero_eq_failure,
                                     hero_failure_hash};
 
+/* The one failure `fit_<width>` produces. Static, like `missing_key`: a
+ * conversion that does not fit allocates nothing, so the check is free to sit in
+ * a loop (M-sized-integers, panel 042). */
+HeroFailure hero_failure_does_not_fit(void) {
+    static const struct { HeroStrHeader h; char b[13]; } code = {
+        {-1, HERO_STR_MAGIC}, "does_not_fit"};
+    static const struct { HeroStrHeader h; char b[40]; } msg = {
+        {-1, HERO_STR_MAGIC}, "the value is outside the target's range"};
+    /* `sizeof(b) - 1`, never a typed number — the rule the sibling below earned
+     * the hard way, and the reason its comment is worth reading before touching
+     * either message. */
+    return (HeroFailure){{code.b, (int64_t)sizeof(code.b) - 1},
+                         {msg.b, (int64_t)sizeof(msg.b) - 1}};
+}
+
 HeroFailure hero_failure_missing_key(void) {
     static const struct { HeroStrHeader h; char b[12]; } code = {
         {-1, HERO_STR_MAGIC}, "missing_key"};

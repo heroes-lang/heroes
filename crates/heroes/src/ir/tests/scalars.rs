@@ -113,9 +113,10 @@ fn an_out_of_range_int_literal_is_reported_by_the_checker() {
     let checked = crate::types::check(&parsed.ast, &resolved, &src);
     assert_eq!(checked.diagnostics.len(), 1, "the checker owns this one");
     assert_eq!(checked.diagnostics[0].code, "int_out_of_range");
-    assert!(checked.diagnostics[0].message.contains("does not fit in an `i64`"));
-    // The message names the range rather than a wider type: `i64` is the only
-    // integer type (§4.3), so the repair is a different number.
+    assert!(checked.diagnostics[0].message.contains("does not fit an `i64`"));
+    // The message names the range, and says the width came from nowhere — a
+    // literal with no annotation is an `i64`, and after M-sized-integers that is
+    // a *choice* the reader can override rather than the only type there is.
     assert!(checked.diagnostics[0].notes[0].contains("9223372036854775807"));
     // And the boundary values are not swept up with it.
     let fine = crate::source::Source::new(

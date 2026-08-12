@@ -44,7 +44,8 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 ## Types
 | Type | Meaning |
 |---|---|
-| `i64` | 64-bit signed integer (the only integer type) |
+| `i8` `i16` `i32` `i64` | signed integers, of that many bits |
+| `u8` `u16` `u32` `u64` | unsigned integers |
 | `f64` | 64-bit float |
 | `bool` | `true` / `false` |
 | `str` | immutable UTF-8 string, indexed and measured in bytes |
@@ -52,7 +53,12 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
 
-- No implicit conversions: `1 + 2.0` is an error; write `to_f64(x)`, `to_i64(x)`.
+- No implicit conversions, widths included: `a + b` needs both the same type, and
+  `1 + 2.0` is an error. `to_f64(x)` and `to_i64(x)` convert between kinds of
+  number and abort out of range; `fit_i8(x)` … `fit_u64(x)` convert between
+  widths and return `T?`, because a value may not fit.
+- A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
+  `u8` — otherwise `i64`. Overflow aborts at every width.
 - Character literals are `i64`: `'a'`, `'0'`, `' '`.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so
@@ -157,7 +163,8 @@ each `+` copies both sides and each `push` copies the array.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
 `chars` · `keys` · `join` · `sort` · `to_i64` (truncating; out of range aborts) ·
-`to_f64` · `to_str` — and, written in
+`to_f64` · `to_str` · `fit_i8` `fit_i16` `fit_i32` `fit_i64` `fit_u8` `fit_u16`
+`fit_u32` `fit_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
 separator and exactly one trailing newline. An `f64` prints a point or
