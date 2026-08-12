@@ -15,7 +15,7 @@
 //! declaration by name from the same tree that generated them. Anything else in
 //! clang's output stays what it was: a statement about this compiler.
 
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 
@@ -23,36 +23,122 @@ use crate::syntax::{Ast, DeclKind};
 /// between `decls::extern_assertions` and this file. One string, two readers.
 pub const ASSERTION: &str = "heroes-ffi-return ";
 
-/// Every `extern` whose declared result type the header refutes, as diagnostics
-/// pointing at the `.hero` line rather than at generated C.
+/// What clang prints on the line of a `_Static_assert` that failed. Required
+/// before a line is read as one of ours, because clang **echoes the source line
+/// under its diagnostic** — and that echo contains the assertion's message text
+/// verbatim, marker and all.
+///
+/// Without this the echo parsed as a second, malformed report of the same
+/// failure: `` `sqlite3_openn` does not return `int");` ``. It was invisible
+/// because the message line comes first and the duplicate was dropped by span —
+/// so the good path was right by ordering rather than by matching, which is a
+/// premise about clang's output order rather than a fact about the line in hand
+/// (CLAUDE.md §11). Found by panel 038's ffi-pragmatist, compiling.
+const FAILED: &str = "static assertion failed";
+
+/// Every `extern` a clang failure blames the author for, as diagnostics pointing
+/// at the `.hero` line rather than at generated C. Two classes, both narrow:
+/// a declared result type the header refutes, and a name the header does not
+/// have.
 ///
 /// Empty when clang failed for any other reason — which is the common case and
 /// still means the compiler is wrong.
 pub fn explain(stderr: &str, ast: &Ast, src: &Source) -> Vec<Diagnostic> {
     let mut found: Vec<Diagnostic> = Vec::new();
     for line in stderr.lines() {
-        let Some(rest) = line.split(ASSERTION).nth(1) else { continue };
-        // `<name> <type>"` — written by the emitter, so the split is on its own
-        // format rather than on a guess about clang's.
-        let mut parts = rest.split_whitespace();
-        let (Some(name), Some(declared)) = (parts.next(), parts.next()) else { continue };
-        let declared = declared.trim_end_matches(['"', ',', ')']);
-        let Some((span, header)) = declaration(ast, src, name) else { continue };
-        let mut diagnostic = Diagnostic::new(
-            "ffi_return_type",
-            format!(
-                "`{name}` does not return `{declared}` — that is what `{header}` says, and clang read it"
-            ),
-            span,
-        );
-        diagnostic = diagnostic.with_note(format!(
-            "an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `{name}`"
-        ));
-        if !found.iter().any(|d: &Diagnostic| d.span == span) {
-            found.push(diagnostic);
+        if let Some(diagnostic) = wrong_return_type(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = unknown_name(line, stderr, ast, src) {
+            push(&mut found, diagnostic);
         }
     }
     found
+}
+
+/// One diagnostic per `.hero` line: clang reports a translation unit, and one
+/// mistake in it can produce several lines that all mean the same thing.
+fn push(found: &mut Vec<Diagnostic>, diagnostic: Diagnostic) {
+    if !found.iter().any(|d: &Diagnostic| d.span == diagnostic.span) {
+        found.push(diagnostic);
+    }
+}
+
+/// `_Static_assert(HERO_RET_INT(sqrt(…)), "heroes-ffi-return sqrt int")` failed:
+/// the header disagrees with the declared result type.
+fn wrong_return_type(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    if !line.contains(FAILED) {
+        return None;
+    }
+    let rest = line.split(ASSERTION).nth(1)?;
+    // `<name> <type>` — written by the emitter, so the split is on its own
+    // format rather than on a guess about clang's.
+    let mut parts = rest.split_whitespace();
+    let (name, declared) = (parts.next()?, parts.next()?);
+    let (span, header) = declaration(ast, src, name)?;
+    let diagnostic = Diagnostic::new(
+        "ffi_return_type",
+        format!(
+            "`{name}` does not return `{declared}` — that is what `{header}` says, and clang read it"
+        ),
+        span,
+    );
+    Some(diagnostic.with_note(format!(
+        "an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `{name}`"
+    )))
+}
+
+/// The header has no such name at all. A different mistake from the one above and
+/// it was being reported as that one — *"`sqlite3_openn` does not return `int`"*,
+/// whose remedy, correcting the result type, cannot fix a name that does not
+/// exist (§4.17: the error carries what is needed to repair the program).
+///
+/// Two spellings, because C has two: a name used as a call is an undeclared
+/// *function*, a name used as a value is an undeclared *identifier* — which is
+/// what a misspelled `constant` produces.
+fn unknown_name(line: &str, stderr: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    let quoted = ["call to undeclared function '", "use of undeclared identifier '"]
+        .iter()
+        .find_map(|marker| line.split(marker).nth(1))?;
+    let name = quoted.split('\'').next()?;
+    let (span, header) = declaration(ast, src, name)?;
+    let mut diagnostic = Diagnostic::new(
+        "ffi_unknown_name",
+        format!("`{header}` declares no `{name}` — clang read the header and could not find it"),
+        span,
+    );
+    diagnostic = diagnostic.with_note(format!(
+        "an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `{name}`"
+    ));
+    // clang's own typo correction, when it offered one. A `Guess`: it is a
+    // suggestion from a search over the header's names, not a fact about this
+    // program, so `--apply` must not take it (CLAUDE.md §8).
+    if let Some(meant) = did_you_mean(stderr, name) {
+        let Some(at) = name_span(ast, src, name) else { return Some(diagnostic) };
+        diagnostic.fixes.push(Fix {
+            title: format!("the header declares `{meant}`"),
+            replacement: meant,
+            span: at,
+            certainty: Certainty::Guess,
+        });
+    }
+    Some(diagnostic)
+}
+
+/// The name clang suggested instead. Read from the whole of stderr rather than
+/// from one line, because the note sits on a line of its own under the error.
+fn did_you_mean(stderr: &str, name: &str) -> Option<String> {
+    for line in stderr.lines() {
+        if !line.contains(&format!("'{name}'")) && !line.contains("did you mean") {
+            continue;
+        }
+        let Some(rest) = line.split("did you mean '").nth(1) else { continue };
+        let meant = rest.split('\'').next()?;
+        if meant != name {
+            return Some(meant.to_string());
+        }
+    }
+    None
 }
 
 /// The `extern` declaration with this C name, and the header it was declared
@@ -66,5 +152,15 @@ fn declaration(ast: &Ast, src: &Source, name: &str) -> Option<(crate::source::Sp
             return None;
         }
         Some((decl.span, src.slice(header).trim_matches('"').to_string()))
+    })
+}
+
+/// The span of the *name* alone, which is what a fix replaces — the declaration's
+/// own span covers the whole signature.
+fn name_span(ast: &Ast, src: &Source, name: &str) -> Option<crate::source::Span> {
+    ast.decls.iter().find_map(|decl| {
+        let DeclKind::Function(function) = &decl.kind else { return None };
+        function.header?;
+        (src.slice(decl.name) == name).then_some(decl.name)
     })
 }

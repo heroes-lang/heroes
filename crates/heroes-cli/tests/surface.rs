@@ -713,6 +713,32 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
     assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
 }
 
+/// The other half of §7's named exception: a name the header does not have is
+/// **a different mistake** from a result type it refutes, and was being reported
+/// as that one (panel 038, rider A1).
+///
+/// This pins what the old message got wrong: the code, the fact that no text
+/// from clang's echo of the source line reaches the message, and the repair —
+/// clang's own typo correction, carried as a `guess` so `--apply` leaves it
+/// alone (CLAUDE.md §8).
+#[test]
+fn a_misspelled_extern_name_says_the_header_has_no_such_name() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-unknown-name.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_unknown_name]"), "{stderr}");
+    assert!(stderr.contains("declares no `sqlite3_openn`"), "{stderr}");
+    assert!(stderr.contains("sqlite3.h"), "{stderr}");
+    // clang knows what was meant, and the message says so without promising it.
+    assert!(stderr.contains("fix (guess)"), "{stderr}");
+    assert!(stderr.contains("`sqlite3_open`"), "{stderr}");
+    // The defect itself: no fragment of the echoed source line may appear.
+    assert!(!stderr.contains("ffi_return_type"), "the wrong diagnosis is back:\n{stderr}");
+    assert!(!stderr.contains("int\");"), "clang's echo reached the message:\n{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("_Static_assert"), "it showed generated C:\n{stderr}");
+}
+
 /// **The milestone's acceptance test, run** (design.md §4.19's ladder, rung 3):
 /// *if this works without you having written a standard library, the
 /// architecture holds*.
