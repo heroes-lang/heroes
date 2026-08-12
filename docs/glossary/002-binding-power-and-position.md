@@ -1,6 +1,6 @@
 # 002 — Binding power and position: the half of the precedence table nobody writes down
 
-**Origin.** Debrief of 2026-08-04, on M2's formatter. The question was why
+**Origin.** Debrief of 2026-08-04, on M-syntax-tree's formatter. The question was why
 `heroes fmt` turns `2 + (3 * 4)` into `2 + 3 * 4` but leaves `a - (b - c)`
 exactly as written. The rule "parentheses survive when the inner operator
 binds looser than the outer one" explains the first case and gets the second

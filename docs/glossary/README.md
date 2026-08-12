@@ -10,8 +10,8 @@ note. An entry is born one of two ways:
   so it never has to be reinvented.
 - **Prerequisite** — the two planned notes are queued as author exercises in
   `docs/debrief/QUEUE.md` and will be born from those sessions:
-  bidirectional-type-checking (before M3b) and core-vs-sugar (before M4).
-  basic-block (M0) already **landed** — see index.
+  bidirectional-type-checking (before M-checker-core) and core-vs-sugar (before M-ir-lowering).
+  basic-block (M-day-zero) already **landed** — see index.
 
 ## Rules
 

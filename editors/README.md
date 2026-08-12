@@ -3,7 +3,7 @@
 `vscode/` is a complete, minimal VS Code extension: a language declaration,
 an editor configuration, and a TextMate grammar (the format VS Code,
 Sublime and Zed all read). `vsix/` holds the two manifests needed to
-package it. It is the M1 bonus deliverable from `docs/ROADMAP.md`.
+package it. It is the M-token-stream bonus deliverable from `docs/ROADMAP.md`.
 
 It highlights what the spec defines — and one thing more: **the foreign
 reserved words of `spec/reserved-words.md` are scoped `invalid.illegal`**,

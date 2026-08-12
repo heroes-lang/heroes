@@ -7,7 +7,7 @@
 
   | file | what it shows |
   |------|---------------|
-  | `00-first.hero`     | the compiler's first program — M5a's target, and spike 01 is its hand-written C shape |
+  | `00-first.hero`     | the compiler's first program — M-scalars-run's target, and spike 01 is its hand-written C shape |
   | `01-points.hero`    | records, named construction, UFCS |
   | `02-tokens.hero`    | a variant with payloads, and exhaustive `match` |
   | `03-fallible.hero`  | `T?`, `fail`/`ok`, `?`, `.must()`, `.default()` |
@@ -32,4 +32,4 @@
 - The **calculator** — the acceptance program — lives in design.md's appendix
   ("A complete example program"), its single source. The copy that sat here
   was 70% duplicate and drifted (pruned 2026-08-03). It returns as a real
-  file at M6, generated from the appendix, when `heroes test` can run it.
+  file at M-generics-library, generated from the appendix, when `heroes test` can run it.

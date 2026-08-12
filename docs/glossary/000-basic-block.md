@@ -26,7 +26,7 @@ name at every house, only at intersections. Forks (jumps) exist only
 Everything else glues together. That is why `i = 0` and `total = 0` share
 one block — no rule forces a cut between them — and likewise
 `print(total)` + `return`. **The number of blocks is not chosen: it is
-deduced.** This is also why the M4 station (lowering to IR) can be written
+deduced.** This is also why the M-ir-lowering station (lowering to IR) can be written
 without aesthetic taste: there are no decisions to make, only rules to
 apply.
 
@@ -93,7 +93,7 @@ block graph**. In the spike, the two arrows entering bb1 *are* the loop.
 Historicized note from prediction 000: the "test at the bottom of the body"
 shape predicted there really exists — it is *loop rotation* (do-while
 form + a guard block), which optimising compilers produce on their own.
-Heroes' M4 station deliberately emits the naive shape — the test in its own
+Heroes' M-ir-lowering station deliberately emits the naive shape — the test in its own
 block, two incoming arrows — because it is uniform to emit and easy to
 verify; clang rotates it by itself at `-O2`.
 

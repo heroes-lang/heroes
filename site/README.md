@@ -21,7 +21,7 @@ of the process's few remaining hard stops.
   design.md §"The name": personality in the packaging, precision in the
   substrate). If a nod needs explaining, cut it. Puns stay on this page.
 - Every claim on the page must match design.md's current state.
-- Ideas bank: M8 bootstrap retirement → "Ashes to Ashes"; a 1.0 →
+- Ideas bank: M-selfhost-fixpoint bootstrap retirement → "Ashes to Ashes"; a 1.0 →
   "Golden Years".
 
 ## Keeping it current — on demand, not per milestone

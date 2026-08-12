@@ -17,7 +17,7 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M8a closed 2026-08-12, tag `m8a` — a program is many files, and the calculator
+**M-module-namespace closed 2026-08-12, tag `m8a` — a program is many files, and the calculator
 is four of them.**
 
     $ heroes test examples/calculator/main.hero
@@ -28,7 +28,7 @@ sweeps that fixed **thirty-nine** defects between them — nine of which refused
 miscompiled an *ordinary* program. **437 crate tests · 37 CLI surface · 13 golden
 harnesses**, clippy clean, spec at **2434** of 4096, `heroes mutate` at **93% / 78%
 over 1173**. Three of §1.0's fourteen rows remain: **file I/O · `args()` ·
-`exit(code)`**, whose route `M7` decides — and it is next.
+`exit(code)`**, whose route `M-ffi-ladder` decides — and it is next.
 
 The record: `docs/journal/011-modules-the-namespace.md` ·
 `docs/defects/001-the-post-m8a-sweep.md` · `docs/measurements/004-error-codes.md`.
@@ -37,21 +37,21 @@ The record: `docs/journal/011-modules-the-namespace.md` ·
 
 | order | id | what | warrant |
 |---|---|---|---|
-| 1 | **M7** | FFI ladder, and the **route** for file I/O · `args()` · `exit(code)` | §1.11 + closure list |
-| 2 | **M8e** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
-| 3 | **M8p** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
-| 4 | **M8b** | The port | v1 |
-| 5 | **M8c** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 6 | **M9** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
-| 7 | **M10** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 8 | **M11** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 9 | **M12** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 10 | **M13** | `heroes lsp` | **scheduled, no warrant** |
-| 11 | **M14** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
-| 12 | **M15** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
-| 13 | **M16** | The journey — how this language came to be | **scheduled, no warrant** |
-| 14 | **M17** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
-| 15 | **M18** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
+| 1 | **M-ffi-ladder** | FFI ladder, and the **route** for file I/O · `args()` · `exit(code)` | §1.11 + closure list |
+| 2 | **M-program-corpus** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
+| 3 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
+| 4 | **M-selfhost-port** | The port | v1 |
+| 5 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 6 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
+| 7 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 8 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 9 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 10 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
+| 11 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 12 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 13 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
+| 14 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 15 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -69,9 +69,9 @@ makes a shim read the field anyway) and private variant cases are
 `#[non_exhaustive]`, which Rust deleted in 2014, re-added per type in 2019 and
 documents as costing exhaustiveness. Both are now **Part 6, permanently**. The
 third, `private` on a declaration, is **Part 7 item 14** at a pre-fixed +18, and
-**M8p decides it**: a blockage there puts it on the closure list, a wish does not
-(the rule at *M8p reports blockages, not wishes*, below). *Errors*: the Rust shape
-landed at M5d — `T?` is `Result<T,E>`, `?` is `?`, `.must()` is `.unwrap()` — and
+**M-selfhost-probe decides it**: a blockage there puts it on the closure list, a wish does not
+(the rule at *M-selfhost-probe reports blockages, not wishes*, below). *Errors*: the Rust shape
+landed at M-optional-map — `T?` is `Result<T,E>`, `?` is `?`, `.must()` is `.unwrap()` — and
 the part Rust has that Heroes does not, the typed error, stays **Part 8 wart 5**
 rather than becoming a deferral, because it loses on §4.12's positive rule as well
 as on simplicity. What is real underneath the question is measured:
@@ -80,13 +80,13 @@ a `constant`, not a feature.
 
 ## What each one is
 
-### M7 — FFI ladder, and the route for the last three rows
+### M-ffi-ladder — FFI ladder, and the route for the last three rows
 `extern` + header name → clang verifies against the real header. printf → libm
 (spike 03 already proved it) → **SQLite** (the architecture-holds test) → raylib.
 `heroes cc` for C++ shims. The emitter's gate row for `FnKind::Extern` dies here;
 the frontend is already built (`Ty::Ptr`, `Ty::Cstr`, 20 `extern` mentions in
 `syntax/decl.rs`).
-**And M7 decides the route for the closure list's last three rows — `extern`,
+**And M-ffi-ladder decides the route for the closure list's last three rows — `extern`,
 shim, or built-in — and pays the measured spec cost of whichever it is.**
 Measurement 003 rider 3 assigned them plain `extern`s and concluded the spec
 gains nothing; panel 030 R3 refuted that by compiling it: `extern function
@@ -96,16 +96,16 @@ function wearing an `extern` hat (§4.20:1815 — no `extern` may return `str`
 without `hero_str_from_*`). The mortgage is **≥60 spec tokens**.
 **Acceptance:** SQLite open, query, close from Heroes, no shim.
 
-### M8e — The corpus: many whole programs, all of them run
+### M-program-corpus — The corpus: many whole programs, all of them run
 The one milestone whose deliverable is **programs rather than compiler**, and it
 sits here because every instrument this project owns reports on the programs it
-is given. The M6 audit found two live defects with *one* program
+is given. The M-generics-library audit found two live defects with *one* program
 (`run/closure-list.hero`), each reachable for three milestones with no test,
 "because nobody had written the program that meets them". This milestone writes
 them.
 
 - **`examples/` is reorganised as one directory per program.** `calculator.hero`
-  moves to `examples/calculator/` (which M8a will have split into modules
+  moves to `examples/calculator/` (which M-module-namespace will have split into modules
   anyway), the gallery stays as the one-idea-per-file series it is, and each new
   program gets its own directory with its source, its `test` blocks and a `README`
   line saying what it demonstrates.
@@ -113,7 +113,7 @@ them.
   their tour — a JSON reader, a Markdown-to-text converter, a text adventure, a
   spreadsheet evaluator, a maze solver, a tiny assembler, a log summariser, a
   todo list over a file. Each ends in a state the language must actually reach:
-  reads its input (M7's file I/O), takes `args()`, exits with a code, and asserts
+  reads its input (M-ffi-ladder's file I/O), takes `args()`, exits with a code, and asserts
   its own behaviour in `test` blocks.
 - **Every program is written from the task, never translated from a licensed
   source.** The tours these are drawn from (Rosetta Code, *Go by Example*,
@@ -152,11 +152,11 @@ lacks, and a measurement taken on a compiler that still has reachable defects
 measures the defects too. The port then hangs from this net rather than from the
 68 cases it would otherwise have.
 
-### M8p — The probe: measure before committing to the port
+### M-selfhost-probe — The probe: measure before committing to the port
 The lexer (983 non-test lines) ported to Heroes **for real**, to find out what
 self-hosting still lacks — before the port, not during it.
 
-> **M8p reports blockages, not wishes.** Every form the probe proposes arrives
+> **M-selfhost-probe reports blockages, not wishes.** Every form the probe proposes arrives
 > with three things — the Heroes code that does the same job *without* it, that
 > code's line count, and the form's own spec cost quoted from `heroes measure` —
 > and a form whose workaround compiles is a Part 7 deferral by default,
@@ -172,14 +172,14 @@ probe hits a missing-form wall on file one, cheaply. It is also why the findings
 are **a lower bound, not a measurement**: the lexer has zero `BTreeMap` and zero
 closures (`types/` has 14 BTree sites across 4,509 lines). If the byte wall is
 the only finding, a second file that exercises maps, recursive variants and
-generics is owed before M8b opens.
+generics is owed before M-selfhost-port opens.
 **Acceptance:** the ported lexer passes the Rust lexer's own tests, and
 `docs/measurements/004-selfhost-readiness.md` states the gap list under the rule
 above.
 
-### M8b — The port
+### M-selfhost-port — The port
 Rust → Heroes into `selfhost/` (directory born here), file by file, **the goldens
-and M8e's corpus as the net**, the `PORT-DEBT` count as the map. Every ordering-sensitive map walk
+and M-program-corpus's corpus as the net**, the `PORT-DEBT` count as the map. Every ordering-sensitive map walk
 becomes an explicit `sort` (panel 006), or the fixpoint diff breaks.
 **Carried in as a defect, not a feature: `-g`.** design.md §2 and §3.1 both state
 that lldb breaks on and steps through `.hero` lines through the emitted `#line`
@@ -191,10 +191,10 @@ in Heroes is where the source mapping stops being a nicety. A golden runs lldb i
 batch mode and asserts that a breakpoint on a `.hero` line is hit (CLAUDE.md §9:
 every claim gets a test that makes it fire).
 
-### M8c — Fixpoint — **v1**
+### M-selfhost-fixpoint — Fixpoint — **v1**
 A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty (generated C, not binaries;
 clang version pinned and recorded). Then `crates/heroes` → `archive/bootstrap-rs/`:
-the third language dies here. **Cold cache by construction**, since M9 has not
+the third language dies here. **Cold cache by construction**, since M-separate-compilation has not
 landed — which is what voids panel 030's prediction 7.
 **And the seed, decided here rather than discovered after the archive.** Once the
 Rust bootstrap is archived, a newcomer has no Heroes compiler and therefore no way
@@ -204,7 +204,7 @@ shipped 1.4 and how Zig ships its bootstrap. It is tested from a clean checkout
 with nothing but a C compiler, and if that test is not written before the archive
 commit, the archive commit does not happen.
 
-### M9 — Separate compilation
+### M-separate-compilation — Separate compilation
 One `.c` per module, prototypes across translation units, the per-module cache:
 the second half of the modules row, moved past the fixpoint because it costs
 +700–1000 lines against the namespace's ~+330, because Nim has not finished its
@@ -226,11 +226,11 @@ acceptance rows, and they are what lift the ffi-pragmatist's veto** (panel 030 R
 4. one two-module FFI-shaped golden with a wrong `extern` signature: **exit 1 in
    both TUs**, `#~` annotated.
 
-### M10 — Packages, and what stands in for a standard library
+### M-package-manager — Packages, and what stands in for a standard library
 **Scheduled, no warrant.** Not a decision to take later: design.md:637 already
 fixes the shape — *"No package manager exists before modules do; when it arrives
 it will be `heroes add`/`heroes fetch` — inside the same binary"* (never a second
-binary, CLAUDE.md §6 and §10). Its real prerequisite is **M9**, not M8a: without
+binary, CLAUDE.md §6 and §10). Its real prerequisite is **M-separate-compilation**, not M-module-namespace: without
 separate compilation, installing a package means recompiling the world on every
 build.
 **And this is where "a standard library that wraps C" goes.** §1.11 refuses a
@@ -242,18 +242,18 @@ Heroes modules over real C headers, each with its link flag declared next to the
 verified by clang against the header it names, and a standard library is verified
 by whoever wrote it.
 
-### M11 — Concurrency
+### M-isolated-threads — Concurrency
 **Scheduled, no warrant.** design.md Part 7.13 — isolated per-thread heaps,
 copying at the boundaries, OS threads, **no scheduler** — and its width (data
 parallelism alone, or the mailbox too) is a panel question when it opens.
-**Before M8c the record must state whether the C11 backend can express the
+**Before M-selfhost-fixpoint the record must state whether the C11 backend can express the
 intended model at all** (stack switching in the runtime, or a CPS/state-machine
 transform): cfront, the direct ancestor of this architecture, was abandoned in
 1993 after a failed attempt to add exception support, having frozen around forms
 that could not carry non-local control flow. If the answer is "not yet known",
 the deferral is a bet and is logged as one (panel 030 R6).
 
-### M12 — QBE: the proof that the IR is not C in disguise
+### M-qbe-backend — QBE: the proof that the IR is not C in disguise
 **Scheduled, no warrant**, and its warrant is stated here more honestly than
 "a second backend" ever did. Two things were bought when panel 001 replaced QBE
 with C emission, and one of them was never paid for: **as long as exactly one
@@ -264,18 +264,18 @@ that sentence into a measurement — and it restores the register-allocation and
 instruction-selection lesson, which is the half of a compiler this project
 deliberately handed to clang (DESIGN-LOG 2026-08-03, panel 001).
 
-### M13 — `heroes lsp`
+### M-lsp-server — `heroes lsp`
 **Scheduled, no warrant.** ~250 lines of JSON-RPC: diagnostics on save,
 formatting, hover, documentSymbol. It blocks nothing and could land any time
-after M3d; it is here rather than earlier by the author's choice, and M14 is what
+after M-rich-diagnostics; it is here rather than earlier by the author's choice, and M-vscode-extension is what
 consumes it.
 
-### M14 — The VS Code extension, complete
+### M-vscode-extension — The VS Code extension, complete
 **Scheduled, no warrant.** `editors/vscode/` already ships the TextMate grammar,
 the language configuration and the icon theme; this milestone makes it an
 extension somebody could install and forget about.
 
-- **The LSP client**, speaking to M13's `heroes lsp`: diagnostics as you type,
+- **The LSP client**, speaking to M-lsp-server's `heroes lsp`: diagnostics as you type,
   hover, go-to-definition, document symbols, formatting through `heroes fmt`.
 - **Code actions from the fixes that already exist.** §4.17's `Fix`es are tagged
   `certain | guess` and `heroes check --apply` already applies the certain ones;
@@ -283,7 +283,7 @@ extension somebody could install and forget about.
   costs almost nothing and is the thesis made visible in the editor — the likeliest
   mistake arrives with its repair pre-written.
 - **Debugging**, and the honest shape of it first: the emitted C carries `#line`
-  back to `.hero` (with `-g` repaired at M8b), so the debug info is ordinary DWARF
+  back to `.hero` (with `-g` repaired at M-selfhost-port), so the debug info is ordinary DWARF
   pointing at Heroes source. `lldb-dap` therefore composes with the generated
   binary without this project writing a debug adapter — which is CLAUDE.md §10's
   *"nothing if two existing invocations already compose to it"*. If a launch
@@ -295,7 +295,7 @@ extension somebody could install and forget about.
 - **Packaging**: a `.vsix` that installs, with `heroes doctor` as the extension's
   own health check.
 
-### M15 — The site: the whole language, anchored to programs that run
+### M-documentation-site — The site: the whole language, anchored to programs that run
 **Scheduled, no warrant.** `site/` exists (`index.html`, its CNAME, and the
 register rules in `site/README.md` § Style guide, which stay in force — song
 titles as section nods, never lyrics; personality in the packaging, precision in
@@ -305,7 +305,7 @@ the substrate).
   `spec/heroes-spec.md` — the spec is the control instrument, not the teaching
   text, and it is budgeted precisely so that it can never become one.
 - **Every code block on the site is a file in `examples/`**, not a snippet typed
-  into HTML. M8e is what makes this possible, and it converts documentation drift
+  into HTML. M-program-corpus is what makes this possible, and it converts documentation drift
   into a test failure: a check asserts that each block matches a program in the
   repo that compiles and runs. Documentation that cannot rot is worth more than
   documentation that is merely current.
@@ -329,14 +329,14 @@ version is a machine translation of the other; the Italian is the one the author
 studies from, so where the two diverge, the Italian is fixed to be clearer rather
 than the English to be more faithful.
 
-**Both teach with M8e's programs** — code known to compile, run and pass its own
+**Both teach with M-program-corpus's programs** — code known to compile, run and pass its own
 tests in three configurations, rather than snippets that were true once.
 
-### M16 — The journey: how this language came to be
+### M-journey-book — The journey: how this language came to be
 **Scheduled, no warrant.** The narrative book: the itch, the design that met five
 hostile experts, the U-turns, the deleted darlings, the days the machine found the
 bug in the plan before we did — and what it was like to build a compiler with an
-AI assistant. `docs/book/README.md` has been collecting the raw material since M0
+AI assistant. `docs/book/README.md` has been collecting the raw material since M-day-zero
 and nothing extra needs maintaining: the journals are the spine, `DESIGN-LOG.md`
 the decisions, `docs/panel/` the arguments, `docs/book/beats.md` the human
 texture the technical records drop, the measurements the numbers, and
@@ -345,7 +345,7 @@ The rule from design.md's *The name* applies here and only here: **personality i
 the packaging, precision in the substrate** — Bowie belongs in this book, never in
 an error message.
 
-### M17 — The guide: the language, as a book you would find in a shop
+### M-guide-book — The guide: the language, as a book you would find in a shop
 **Scheduled, no warrant.** The classic language guide — the K&R shape: read it
 front to back and you can write Heroes; open it in the middle and you find the
 thing you were looking for.
@@ -364,10 +364,10 @@ thing you were looking for.
   artifact.
 - Where the guide and the spec disagree, **the spec wins and the guide has the
   bug** (CLAUDE.md §12) — and where the guide and the *compiler* disagree, that
-  is a defect report on one of them, which is what the M15 check over `examples/`
+  is a defect report on one of them, which is what the M-documentation-site check over `examples/`
   is for.
 
-### M18 — Publication readiness: the last gate
+### M-publication-gate — Publication readiness: the last gate
 The repo is **private** today and publishing is a hard stop that only the author
 lifts (CLAUDE.md §14). This entry is the checklist that has to be true first, and
 it exists because most of its items get worse the longer they wait.
@@ -398,7 +398,7 @@ across `runtime/`, and the attribution of the two vendored BPE tables.
   pull requests not yet") either stands or is replaced deliberately.
 - **One defect that shows up on the second page of any tour**: `main` cannot
   fail, so a program that goes wrong still tells the shell it succeeded
-  (queued from panel 030). Whatever M7 decides for `exit(code)`, this must not be
+  (queued from panel 030). Whatever M-ffi-ladder decides for `exit(code)`, this must not be
   true on the day the examples go up.
 
 ## Done
@@ -408,42 +408,42 @@ code. `git tag --list --sort=creatordate` gives the same order from git itself.
 
 | milestone | closed | tag | journal |
 |---|---|---|---|
-| M0 — day zero | 2026-08-03 | `m0` | [000](journal/000-setup.md) |
-| M1 — the lexer | 2026-08-04 | `m1` | [001](journal/001-lexer.md) |
-| M2 — parser, tree, formatter | 2026-08-04 | `m2` | [002](journal/002-parser.md) |
-| M3a — the resolver | 2026-08-04 | `m3a` | [003](journal/003-resolver.md) |
-| M3, M3b–M3d — the frontend complete | 2026-08-04 | `m3` | [004](journal/004-checker.md) |
-| M4 — desugar and the IR | 2026-08-04 | `m4` | [005](journal/005-lowering.md) |
-| M5, M5a — the first native binary | 2026-08-04 | `m5a` | [006](journal/006-scalars-run.md) |
-| M5b — `str`, and the ownership pass | 2026-08-05 | `m5b` | [007](journal/007-strings-and-ownership.md) |
-| M5c — records and variants by value | 2026-08-10 | `m5c` | [008](journal/008-aggregates.md) |
-| M5d — `T?` and `{K: V}` | 2026-08-10 | `m5d` | [009](journal/009-the-map-and-the-fallible.md) |
-| M6 — the language is finished | 2026-08-11 | `m6` | [010](journal/010-sugar-tests-generics-library.md) |
-| M8a — a program is many files | 2026-08-12 | `m8a` | [011](journal/011-modules-the-namespace.md) |
+| M-day-zero — day zero | 2026-08-03 | `m0` | [000](journal/000-setup.md) |
+| M-token-stream — the lexer | 2026-08-04 | `m1` | [001](journal/001-lexer.md) |
+| M-syntax-tree — parser, tree, formatter | 2026-08-04 | `m2` | [002](journal/002-parser.md) |
+| M-name-resolution — the resolver | 2026-08-04 | `m3a` | [003](journal/003-resolver.md) |
+| M-typed-frontend, M-checker-core–M-rich-diagnostics — the frontend complete | 2026-08-04 | `m3` | [004](journal/004-checker.md) |
+| M-ir-lowering — desugar and the IR | 2026-08-04 | `m4` | [005](journal/005-lowering.md) |
+| M-native-backend, M-scalars-run — the first native binary | 2026-08-04 | `m5a` | [006](journal/006-scalars-run.md) |
+| M-strings-ownership — `str`, and the ownership pass | 2026-08-05 | `m5b` | [007](journal/007-strings-and-ownership.md) |
+| M-value-aggregates — records and variants by value | 2026-08-10 | `m5c` | [008](journal/008-aggregates.md) |
+| M-optional-map — `T?` and `{K: V}` | 2026-08-10 | `m5d` | [009](journal/009-the-map-and-the-fallible.md) |
+| M-generics-library — the language is finished | 2026-08-11 | `m6` | [010](journal/010-sugar-tests-generics-library.md) |
+| M-module-namespace — a program is many files | 2026-08-12 | `m8a` | [011](journal/011-modules-the-namespace.md) |
 
 ## End-to-end verification (per milestone)
 
 ```sh
-heroes doctor                                  # M0
-cargo build && cargo test                      # M1+
-heroes lex ex.hero --dump-tokens [--json]      # M1
-heroes parse ex.hero --dump-ast                # M2
-heroes fmt ex.hero [--in-place]                # M2 (the flag was --write until panel 016)
-heroes check ex.hero --json [--permissive]     # M3a–d
-heroes build ex.hero                           # M4: lowers, verifies, says so
-heroes build ex.hero --dump-ir                 # M4 (M5b: increfs visible)
-heroes build ex.hero --emit-c                  # M5a — and the determinism diff:
+heroes doctor                                  # M-day-zero
+cargo build && cargo test                      # from M-token-stream on
+heroes lex ex.hero --dump-tokens [--json]      # M-token-stream
+heroes parse ex.hero --dump-ast                # M-syntax-tree
+heroes fmt ex.hero [--in-place]                # M-syntax-tree (the flag was --write until panel 016)
+heroes check ex.hero --json [--permissive]     # M-typed-frontend
+heroes build ex.hero                           # M-ir-lowering: lowers, verifies, says so
+heroes build ex.hero --dump-ir                 # M-ir-lowering (M-strings-ownership: increfs visible)
+heroes build ex.hero --emit-c                  # M-scalars-run — and the determinism diff:
 heroes build ex.hero --emit-c -o a.c && heroes build ex.hero --emit-c -o b.c && diff a.c b.c
-heroes run examples/gallery/00-first.hero                 # M5a: first native binary (-O2)
-heroes test examples/calculator.hero           # M6: acceptance ✅
-heroes test examples/calculator/main.hero      # M8a: the same tests, across modules
-heroes run examples/ffi/sqlite.hero            # M7: acceptance — open, query, close
-heroes test examples/maze/main.hero            # M8e: one program (the harness runs them all,
+heroes run examples/gallery/00-first.hero                 # M-scalars-run: first native binary (-O2)
+heroes test examples/calculator.hero           # M-generics-library: acceptance ✅
+heroes test examples/calculator/main.hero      # M-module-namespace: the same tests, across modules
+heroes run examples/ffi/sqlite.hero            # M-ffi-ladder: acceptance — open, query, close
+heroes test examples/maze/main.hero            # M-program-corpus: one program (the harness runs them all,
                                                #      in three configurations — a directory
                                                #      argument is §10's question, not a given)
-heroes mutate                                  # M8e: the rate over the enlarged corpus
-heroes test selfhost/lexer.hero                # M8p: the ported lexer's own tests
-# M8c — the fixpoint, on generated C:
+heroes mutate                                  # M-program-corpus: the rate over the enlarged corpus
+heroes test selfhost/lexer.hero                # M-selfhost-probe: the ported lexer's own tests
+# M-selfhost-fixpoint — the fixpoint, on generated C:
 cargo run -- build selfhost/heroes.hero -o A
 ./A build selfhost/heroes.hero --emit-c -o B.c && clang … B.c -o B
 ./B build selfhost/heroes.hero --emit-c -o C.c && diff B.c C.c

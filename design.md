@@ -125,7 +125,7 @@ Neither → it waits, regardless of elegance. This gives the design a **stopping
 language designs normally lack, and it makes Part 7's ordering non-negotiable until the closure
 list compiles itself. Ratified by panel 005 (2026-08-03) — with the historian's honesty clause on
 record: no verified language ever used self-hosting as a feature freeze; this is a deliberate
-departure. The closure-list audit runs at the M6 checkpoint, under three riders: it is mechanical
+departure. The closure-list audit runs at the M-generics-library checkpoint, under three riders: it is mechanical
 (grep of the appendix plus a representative compiler pass, not opinion), it audits **spec
 coverage** and arrives with named cuts (modules, file I/O, `args()`, `exit` are on this list but
 not yet in the spec — mortgaged budget), and it assigns `file I/O`/`args()`/`exit(code)` a
@@ -493,7 +493,7 @@ Part 2 rules out as a justification.
   {str: Scope} }` compiles at 8 bytes, and `record R { next: R? }` is `field has incomplete type`
   because a `T?` is by value and therefore **transparent** — it propagates the edge into `T` rather
   than breaking it. The property gets every row right without naming one, and it cannot drift when
-  M6 adds function values. A cycle over these edges is `no_size` (§4.17's class, panel 023); the
+  M-generics-library adds function values. A cycle over these edges is `no_size` (§4.17's class, panel 023); the
   same walk yields the order, so the checker computes it and the emitter only filters it.
 - **Name mangling.** A Heroes identifier can collide with a C keyword (`default`, `register`) or a
   libc symbol (`index`, `y1`). Every user name becomes `h_<module>_<name>[_<typehash>]`; fields,
@@ -638,7 +638,7 @@ in the source next to the `extern` that needs it. No package manager exists befo
 it arrives it will be `heroes add`/`heroes fetch` — inside the same binary.
 
 One declared exception with an expiry date: `cargo build`/`cargo test` build *the compiler* until
-the fixpoint (as Zig's contributors use Zig's build system while users type only `zig`); after M8c,
+the fixpoint (as Zig's contributors use Zig's build system while users type only `zig`); after M-selfhost-fixpoint,
 `heroes` is the only command for compiler development too.
 
 ---
@@ -1184,7 +1184,7 @@ m = { "mario": 30, "anna": 25 }
   order would not have given it. Every ordering-sensitive walk is still marked `// ORDER:` at
   the write site, and there are **zero** such marks in the tree today, so nothing exercised the
   guarantee that has just been withdrawn. It becomes an explicit `sort` in the Heroes port, or
-  the M8 fixpoint diff breaks.
+  the M-selfhost-fixpoint diff breaks.
 - Multi-line literals separate by **newline**, not comma. Single-line literals use commas. The
   canonical formatter picks based on length, so the model never chooses.
 
@@ -1215,7 +1215,7 @@ comma-separated list of `str`/`int`/`f64`/`bool` values, each rendered by its ca
 no separator between values, exactly one trailing newline. This was bought by trading away string
 interpolation (Part 7 item 7); Pascal's `WriteLn` is the fifty-year precedent.
 
-**Canonical `f64` rendering** (fixed at M5b, panel 021). Deterministic, locale-independent, and
+**Canonical `f64` rendering** (fixed at M-strings-ownership, panel 021). Deterministic, locale-independent, and
 **round-trip-exact — never "shortest"**: the algorithm is `snprintf("%.*g")` at increasing
 precision until `strtod` reads back the same bits, starting at 1 for a subnormal and at `DBL_DIG`
 otherwise, which is what gnulib's `ftoastr` ships. It is not the shortest decimal, and the
@@ -1418,7 +1418,7 @@ Rules that keep the cost low:
   `Ty::Generic` survives. No theory, a few hundred lines.
 
   *Amended by panel 019 (2026-08-04).* This paragraph used to say "textual substitution on the AST
-  before type checking", and M3 had already falsified it: the bidirectional checker checks a generic
+  before type checking", and M-typed-frontend had already falsified it: the bidirectional checker checks a generic
   body **once, polymorphically**, with `Ty::Generic(i)` in the type table. Substituting first would
   mean checking every instantiation and reporting the same mistake once per instantiation — and it
   has no success story: rustc creates no monomorphised MIR at all (monomorphisation is "the first
@@ -1920,12 +1920,12 @@ Two passes sit between type checking and emission, and they are **core obligatio
 
 - **The type-descriptor pass** generates `copy`/`drop`/`eq`/`hash` per reachable type (§4.20) —
   C has none of them and §4.3/§4.10 require all of them.
-- **The ownership pass** is the first **IR→IR** pass (amended at M5b, panel 021: "during lowering"
+- **The ownership pass** is the first **IR→IR** pass (amended at M-strings-ownership, panel 021: "during lowering"
   was the original wording, and a separate pass is what makes `--dump-ir` show the result and keeps
   the emitter a printer). It inserts `incref`/`decref` as *real instructions* — Swift's SIL is the
   precedent, and LLVM D92808 records what happens when refcount pairing lives only in the backend:
-  passes separate the calls from their markers. `cow_check` joins them at **M5c**, where `push`
-  gives it a call site; at M5b it would have none, and an instruction nothing emits is an arm that
+  passes separate the calls from their markers. `cow_check` joins them at **M-value-aggregates**, where `push`
+  gives it a call site; at M-strings-ownership it would have none, and an instruction nothing emits is an arm that
   rots. **Five rules, each with a compiled counterexample** (panel 021 R2): a plain parameter is
   *borrowed* and excluded from the sweep, which covers local and synthetic slots only; an `@`
   parameter is *moved in and moved out*, its copy-out replacing the decref; a store increfs the new
@@ -2117,7 +2117,7 @@ are *on* the closure list.
     `str` primitives in `runtime/runtime.c` — and keep refcount operations behind a **narrow,
     never-inlined boundary**: `hero_str_incref`/`hero_str_decref` are calls into a separately
     compiled translation unit, so no inlining can smear refcount arithmetic across code that a
-    thread-local counter would later have to change. M5c's array and map allocation is the first test
+    thread-local counter would later have to change. M-value-aggregates's array and map allocation is the first test
     of the first rule. Everything else in this item costs v1 nothing.
 14. **Declaration visibility** — `private` on a top-level declaration, hiding it from every other
     module. Costed and deferred at panel 033, where five judges produced no vote to adopt. It is
@@ -2128,7 +2128,7 @@ are *on* the closure list.
     Principle 0's burden is unmet: not on §1.0's closure list, no Part 11 effect, and its offered
     §1-argument — that `private` lets §4.4's unused rule reach the top level — is refuted by the
     compiler, which already compiles one whole program and already proves that shape in
-    `unused_use` at zero tokens. **M8p is the instrument, not an exception to this Part's
+    `unused_use` at zero tokens. **M-selfhost-probe is the instrument, not an exception to this Part's
     preamble**: the probe reports blockages, and a blockage would put visibility on the closure
     list, which is what excepts items 2–4. Absent that it waits like everything else here.
     **Direction unresolved and left to a count**: default-private has the whole ancestry (Modula-2 →
@@ -2451,7 +2451,7 @@ the *current* syntax and has not been validated by any implementation — treat 
 in this document, and flag them.
 
 **Discrepancies resolved (panels 002/006, decided 2026-08-03; a twelfth found by the checker
-itself at M3b, 2026-08-04 — `tokenize`'s own `return out`):** the `T`-where-`T?` sites are now
+itself at M-checker-core, 2026-08-04 — `tokenize`'s own `return out`):** the `T`-where-`T?` sites are now
 written `ok(...)` — twelve in all: the six originally flagged (`factor`'s `.num`/`.variable` arms,
 `group`'s `return inner`, `term`'s and `expression`'s `return first`, `lookup`'s tail) plus five
 more found when applying the rule exhaustively (`term`/`expression`'s variant-construction
@@ -2799,6 +2799,6 @@ the AST for a small program and let them predict the generated C before you emit
 Do not build the whole language before running anything.
 
 *Status note: this project is underway. The scaffolding, spikes, spec v0 and measurement baseline
-exist (M0); this document is kept current with every decided amendment — history is in git, open
+exist (M-day-zero); this document is kept current with every decided amendment — history is in git, open
 questions are marked inline as `OPEN QUESTION (panel NNN)`, and the session records live in
 `docs/panel/`.*
