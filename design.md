@@ -1782,12 +1782,63 @@ extern "sqlite3.h" link "sqlite3"
 **The header and the link flag attach to a group** (panel 036): a head line, then indented
 signatures — the shape `record` and `variant` already have, and the shape Rust's `#[link]` on an
 `extern` block, cgo's preamble, Odin's `foreign` block and D's `pragma(lib)` all converge on. The
-parser **flattens** it: one declaration per `extern function`, two spans on the signature, and no
+parser **flattens** it: one declaration per member, two spans on each, and no
 later pass ever learns the word "group", because a declaration's index is function identity across
 five modules. `ptr` is an opaque pointer whose only literal is `nullptr` — `null` belongs to the
 foreign-word registry and stays there — and a C out-parameter is an `@` parameter, which §4.8
-already compiles to a pointer. Macros, `inline` functions and `#define` constants are reachable
+already compiles to a pointer. Macros and `inline` functions are reachable
 because the C compiler sees the real header.
+
+**A `constant` is the group's second kind of member, and its value is the header's**
+(panel 038). It carries no body — inside a group a declaration is a *signature, not a
+definition*, so `function` gives up its code and `constant` gives up its value:
+
+```
+extern "curl/curl.h" link "curl"
+    constant CURLOPT_URL: int
+    function curl_easy_setopt(handle: ptr, option: int, value: cstr) -> int
+```
+
+Until M-header-constants the sentence above said `#define` constants were *reachable*, which
+was true of the C compiler and false of the author: nothing in the surface could name
+one, so `examples/curl/main.hero` wrote `10002` with the `CURLOPTTYPE_STRINGPOINT + 2`
+derivation in a comment and nothing checking either. `heroes mutate`'s twelfth operator
+scored that at **five sites in `examples/`, none caught by anything** — the same shape as
+panel 036 rider 3, one milestone later, in this section.
+
+The mechanism is the assertion §4.19 already emits, asked of a token instead of a call,
+plus one more that only a value needs:
+
+- `_Static_assert(HERO_RET_INT(CURLOPT_URL), …)` — the **same** `_Generic` macro set,
+  unchanged; 17 of 18 real header constants pass it as written. Declaring `M_PI` as `int`
+  would otherwise convert `double` to `int64_t` on the way out of the accessor and make
+  the constant **3**, silently, with every flag in CLAUDE.md §7 satisfied.
+- `_Static_assert(__builtin_constant_p(CURLOPT_URL), …)` — the header must hold a
+  **value**, not an object. `stdout` is `#define stdout __stdoutp` over an `extern FILE *`
+  and `errno` is `(*__error())`; a zero-argument accessor over either returns whatever it
+  holds *at the time of the call*, which is the mutable global §4.2 forbids arriving
+  through the back door. Nim, Swift and Go all accept naming a C object; Zig refuses it by
+  accident, as a comptime failure its own tracker calls a bug. Refusing it as a *rule*
+  appears to be new (panel 038's historian, sourced). The builtin is itself a constant
+  expression even when its argument is not, which is what keeps the failure inside an
+  assertion carrying *our* message.
+- **The accessor is mangled**, and this is the one exception to CLAUDE.md §7's rule that
+  `extern` names pass through unmangled. Unmangled, `int64_t SQLITE_OK(void) { return
+  SQLITE_OK; }` has the macro eat its own definition. A linker name must survive; a
+  preprocessor name must not appear.
+
+Two of the seven boundary types are refused in the checker, and both reasons are facts
+about Heroes rather than about any header: a `str` carries the runtime's own magic word
+(declare it `cstr` and convert with `to_str`, §4.20), and `()` is a type rather than a
+value. `bool` is **not** refused there — under `-std=c11` `stdbool.h` spells `true` as
+`#define true 1`, so its type is `int`, but that is a premise about the world and the
+per-constant assertion asks the token instead (CLAUDE.md §11).
+
+What this does not buy: a wrong *number* is now impossible rather than unnoticed, and a
+wrong **name** is still the dominant remaining FFI mistake once a binding names a hundred
+constants — which is why a name no header declares became its own diagnostic
+(`ffi_unknown_name`) in the same milestone, carrying clang's own typo correction as a
+`guess`.
 
 **The emitter emits `<header.h>` and never `"header.h"`, and passes `-I<directory of the .hero
 source>` after the runtime's.** Measured, and it is not a preference: with a decoy `sqlite3.h`

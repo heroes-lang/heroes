@@ -174,11 +174,13 @@ with holes type-checks everything else but produces no binary.
 ## FFI
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
 libraries. A group names its header and its library, and clang checks every
-signature against that header, so a wrong FFI type is a compile error:
+signature and constant against that header, so a wrong FFI type is a compile error:
 ```
 extern "sqlite3.h" link "sqlite3"
-    function sqlite3_open(path: cstr, out: ptr) -> int
+    constant SQLITE_OK: int
+    function sqlite3_open(path: cstr, @out: ptr) -> int
     function sqlite3_close(db: ptr) -> int
 ```
-`ptr` is an opaque pointer whose only literal is `nullptr`, `cstr` a C string, and
-`s.cstr()` passes a `str` to C. A C out-parameter is an `@` parameter.
+A group's `constant` has no body: the header holds the value. `ptr` is an opaque
+pointer whose only literal is `nullptr`, `cstr` a C string, and `s.cstr()` passes a
+`str` to C. A C out-parameter is an `@` parameter.

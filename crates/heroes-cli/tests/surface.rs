@@ -713,6 +713,52 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
     assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
 }
 
+/// **The spec's own FFI example, run.** Nothing in this project compiled the
+/// specification's examples, and that is how the most-copied FFI line in the
+/// document came to contradict the rule four lines below it: it declared
+/// `sqlite3_open(path: cstr, out: ptr)` while the prose said *"a C out-parameter is
+/// an `@` parameter"*.
+///
+/// The consequence was not a crash. Copied verbatim, that example compiled clean,
+/// linked, ran and **exited 0** printing `rc: 21` — `SQLITE_MISUSE`: the address
+/// of the handle was never passed, so no database was opened and the program
+/// reported success to the shell. A silent error inside the specification.
+///
+/// Found by panel 038's llm-ergonomist, which is given the document and nothing
+/// else, while it was being asked about constants. This is the instrument that
+/// would have found it without a judge: the example is read **out of the real spec
+/// file at test time**, so it cannot drift from what a reader copies.
+#[test]
+fn the_specs_own_ffi_example_opens_a_database() {
+    let spec = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../spec/heroes-spec.md"
+    ))
+    .expect("the spec is in the repo");
+    // The fenced block under `## FFI`, which is the one a reader copies.
+    let ffi = spec.split("## FFI").nth(1).expect("the spec has an FFI section");
+    let block = ffi.split("```").nth(1).expect("the FFI section shows a group");
+    assert!(block.contains("extern \"sqlite3.h\""), "the example moved: {block}");
+
+    // The example plus the smallest program that exercises what it declares. If
+    // the out-parameter is not an `@`, `db` stays `nullptr`, sqlite3_open returns
+    // SQLITE_MISUSE and this prints the wrong number — which is the whole point.
+    let program = format!(
+        "{block}\nfunction main()\n    db: ptr @ nullptr\n    print(sqlite3_open(\":memory:\".cstr(), @db))\n    _ = sqlite3_close(db)\n"
+    );
+    let dir = std::env::temp_dir().join("heroes-spec-ffi");
+    std::fs::create_dir_all(&dir).expect("a writable temp dir");
+    let path = dir.join("spec-ffi.hero");
+    std::fs::write(&path, program).expect("the program is written");
+
+    let out = heroes(&["run", &path.display().to_string()]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(code(&out), 0, "the spec's own example must compile and run:\n{stderr}");
+    // `0` is `SQLITE_OK`. `21` is `SQLITE_MISUSE`, which is what a missing `@`
+    // produces: it opens nothing and says so only through a number.
+    assert_eq!(String::from_utf8_lossy(&out.stdout), "0\n", "stderr:\n{stderr}");
+}
+
 /// An `extern constant` whose declared type the header refutes. The same
 /// `_Generic` as a signature's, asked of a token instead of a call — and a
 /// different code, because a function *returns* the wrong type and a constant
