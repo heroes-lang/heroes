@@ -234,8 +234,8 @@ fn option_bodies(w: &mut Writer, checked: &Checked, names: &Names) {
 /// is the price of a generic runtime in C, and it is paid **once per type here**
 /// rather than at every call site: `retain`/`release` take a typed pointer so that
 /// the emitter's own calls are checked, and only the descriptor erases them.
-pub(super) fn descriptors(w: &mut Writer, checked: &Checked, names: &Names) {
-    let wanted = super::descriptors::generated(checked);
+pub(super) fn descriptors(w: &mut Writer, ast: &Ast, checked: &Checked, names: &Names) {
+    let wanted = super::descriptors::generated(ast, checked);
     if wanted.is_empty() {
         return;
     }
@@ -576,10 +576,25 @@ fn equality_body(
             Ty::Int | Ty::Bool | Ty::F64 => format!("a->{member} == b->{member}"),
             Ty::Str => format!("hero_str_eq(a->{member}, b->{member})"),
             Ty::Array(_) => format!("hero_array_eq(a->{member}, b->{member})"),
+            // The three rows this table went without until 2026-08-12, each one a
+            // field kind the checker has always accepted. `hash_body` routes
+            // through `descriptors::hash_call`, which covers all three — so the
+            // gap broke CLAUDE.md §7's "eq and hash agree" in the loudest
+            // direction: `{Box: int}` inserted fine and aborted on lookup.
+            Ty::Map(_, _) => format!("hero_map_eq(a->{member}, b->{member})"),
+            Ty::Fallible(_) => {
+                format!("{}_eq(&a->{member}, &b->{member})", names.option_of(ty))
+            }
+            // A function value is a bare C function pointer, and panel 029 made
+            // its equality pointer identity.
+            Ty::Func { .. } => format!("a->{member} == b->{member}"),
             Ty::Named(inner) => format!("{}_eq(&a->{member}, &b->{member})", names.of(inner)),
             Ty::Case(inner, case) => {
                 format!("{}_eq(&a->{member}, &b->{member})", names.case_of(inner, case))
             }
+            // Still loud, and it must stay loud: `Ty::Failure` has no surface
+            // spelling (`types/render.rs`), so a field of that type is a
+            // compiler bug rather than a program.
             _ => "(hero_unreachable(), false)".to_string(),
         };
         // One early return per field rather than a chain of `&&`: the same short

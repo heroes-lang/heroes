@@ -280,12 +280,15 @@ fn a_fallible_value_is_emitted_as_a_tagged_union_by_value() {
     );
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     // One generated struct per distinct `T?`, named by index because `int?` and
-    // `[int]?` sanitise to the same identifier.
-    assert!(out.c.contains("typedef struct h_scratch_opt0"), "{}", out.c);
+    // `[int]?` sanitise to the same identifier — and by a **leading digit**,
+    // which a Heroes identifier cannot carry, so no `record opt0` can spell it
+    // (2026-08-12; before that it was `h_scratch_opt0` and a user type of that
+    // name gave `redefinition`, exit 2, on a legal program).
+    assert!(out.c.contains("typedef struct h_scratch_0opt0"), "{}", out.c);
     assert!(out.c.contains("int64_t tag;"), "{}", out.c);
     assert!(out.c.contains("HeroFailure err;"), "{}", out.c);
     // Every `T?` is counted whatever `T` is, because the error side is two `str`s.
-    assert!(out.c.contains("h_scratch_opt0_release"), "{}", out.c);
+    assert!(out.c.contains("h_scratch_0opt0_release"), "{}", out.c);
     assert!(out.c.contains("hero_failure_release"), "{}", out.c);
 }
 

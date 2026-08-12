@@ -51,6 +51,7 @@ mod mangle;
 mod ops;
 mod perfn;
 mod term;
+mod typeorder;
 mod types;
 mod writer;
 
@@ -148,17 +149,15 @@ pub fn emit_for(
         .with_functions(&module, checked, program);
     let mut w = writer::Writer::new(&module);
     decls::prelude(&mut w, program, target, src);
-    // Types before anything that can mention one: the typedefs in containment order
-    // (`Checked::type_order`, filtered — panel 023 R3), then every per-type prototype,
-    // then the ordinary function prototypes.
-    types::definitions(&mut w, ast, checked, &names, src);
-    // Options and function typedefs together, in `TyId` order: each kind can name
-    // the other, so neither can be emitted wholesale first.
-    types::generated(&mut w, checked, &names);
+    // Types before anything that can mention one: **every** typedef in one
+    // containment order — declared aggregates and the ones the emitter invents
+    // together, because each kind can contain the other — then every per-type
+    // prototype, then the ordinary function prototypes.
+    typeorder::definitions(&mut w, ast, checked, &names, src);
     perfn::prototypes(&mut w, ast, checked, &names, src);
     // The descriptors before any definition: an array literal names its element's
     // descriptor, so the object has to exist by the time a function body mentions it.
-    perfn::descriptors(&mut w, checked, &names);
+    perfn::descriptors(&mut w, ast, checked, &names);
     // The author's functions, plus exactly the library functions they reach.
     let used = builtins::reachable(program, src);
     let shown: Vec<&crate::ir::Function> = program

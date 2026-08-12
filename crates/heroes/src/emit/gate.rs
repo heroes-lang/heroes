@@ -79,6 +79,7 @@ pub(super) fn refuse(
 ) -> Vec<Diagnostic> {
     let mut found: Vec<(String, String, Span)> = Vec::new();
     let _ = resolved;
+    unit_fields(&mut found, ast, checked, src);
     for function in &program.functions {
         // §4.18: `heroes test` enters these and ordinary builds ignore them. Under
         // `heroes test` they ARE the program, so the gate walks them like any
@@ -196,6 +197,45 @@ fn check_type(
         Ty::Error => return,
     };
     note(found, code, what, span);
+}
+
+/// `()` as the type of a **declared field**, which the walk above cannot see.
+///
+/// Everything else in this file reads the IR — slots, instruction types,
+/// parameters, results — and a declaration's field list is in none of those. So
+/// `record Box { u: () }` walked straight past the gate and reached clang as
+/// `void f_u;`: `error: field has incomplete type 'void'`, exit 2, the compiler
+/// blaming itself for the author's program, which `check_op`'s own comment calls
+/// the one failure the gate exists to prevent (2026-08-12).
+///
+/// It is `check_element`'s rule at the other end of the same argument: `()` is a
+/// perfectly good type and no kind of *member*. CLAUDE.md §7 already says a
+/// unit-typed temporary is never declared at all and `void t0;` is a hard error;
+/// the rule reached temporaries and not fields.
+fn unit_fields(
+    found: &mut Vec<(String, String, Span)>,
+    ast: &Ast,
+    checked: &Checked,
+    src: &Source,
+) {
+    for decl in super::types::aggregates(ast, checked) {
+        let owner = src.slice(ast.decls[decl as usize].name).to_string();
+        let mut fields: Vec<&crate::syntax::Field> = super::types::fields_of(ast, decl).iter().collect();
+        for case in super::types::cases_of(ast, decl) {
+            fields.extend(case.fields.iter());
+        }
+        for field in fields {
+            if checked.written_type(field.ty) != Some(checked.types.unit()) {
+                continue;
+            }
+            note(
+                found,
+                "unit_field",
+                format!("`()` as the type of `{owner}.{}`", src.slice(field.name)),
+                field.name,
+            );
+        }
+    }
 }
 
 /// What a container holds, which is a narrower question than what a type is.

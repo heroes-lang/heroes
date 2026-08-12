@@ -54,9 +54,9 @@ is wrong or teaches a wrong program · **★** cosmetic or contract-level.
 | D6 | B | `check --json` named the root file for a diagnostic in another module — D2's shape in the one consumer that cannot notice by eye | ★★ |
 | D7 | B | `no binary: N holes in <file>` named the file on the command line, not the files the holes are in | ★ |
 
-### Open, with reproducers
+### Fixed in this sweep — the emitter (2026-08-12, second pass)
 
-**Shape C — the emitter, and one repair retires three.**
+**Shape C, and one repair did retire three.**
 
 | # | what | symptom | severity |
 |---|---|---|---|
@@ -68,7 +68,9 @@ is wrong or teaches a wrong program · **★** cosmetic or contract-level.
 | E6 | a unit-typed record field | `void f_u;` → `field has incomplete type 'void'`, exit 2. CLAUDE.md §7 calls `void t0;` a hard error; the rule reached temporaries and not fields, and `emit/gate.rs` walks the IR and never a declaration's field list | ★★★ |
 | E7 | the emitter's synthesised names `opt<N>` / `fn<N>` are unreserved, and take the **root** module | `record opt0` plus any `T?` → `redefinition of 'h_M_opt0'`, exit 2 — and only under some roots. The residual panel 031 R10 closed for module names and left open for the names the emitter invents | ★★★ |
 | E8 | `builtins::reachable` matches `Op::Call` but never `Op::FuncRef` | a library function passed as a **value** is referenced and never defined → `use of undeclared identifier 'h_library_range'`, exit 2. One direct call from any module puts it back | ★★★ |
-| E9 | `descriptors::generated` walks the interner, which the checker filled from `test` blocks too | `warning: unused variable 'h_M_P_desc'` on an ordinary program build — the zero-warning rule, and precisely what that module's doc says its worklist exists to prevent | ★ |
+| E9 | `descriptors::generated` walks the interner, which the checker filled from `test` blocks too | `warning: unused variable 'h_M_P_desc'` on an ordinary program build — the zero-warning rule, and precisely what that module's doc says its worklist exists to prevent. **STILL OPEN**: needs the seed restricted to what the *emitted* functions name, which is a target-dependent question the pass does not ask today | ★ |
+
+### Open, with reproducers
 
 **Shape A — scope widened.**
 

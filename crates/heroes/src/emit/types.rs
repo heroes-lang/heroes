@@ -32,7 +32,7 @@
 
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind, Field};
-use crate::types::{Checked, Ty};
+use crate::types::Checked;
 
 use super::ctype::{c_result, c_type, Names};
 use super::mangle;
@@ -78,31 +78,30 @@ pub(super) fn member(checked: &Checked, names: &Names, src: &Source, field: &Fie
     format!("    {spelling} {};", mangle::field(src.slice(field.name)))
 }
 
-/// The `typedef struct`s, in containment order.
-pub(super) fn definitions(
+/// One declared aggregate's `typedef struct`.
+pub(super) fn declared(
     w: &mut Writer,
     ast: &Ast,
     checked: &Checked,
     names: &Names,
     src: &Source,
+    decl: u32,
 ) {
-    for decl in aggregates(ast, checked) {
-        let name = names.of(decl).to_string();
-        w.at_generated();
-        if is_variant(ast, decl) {
-            variant_definition(w, ast, checked, names, src, decl, &name);
-            continue;
-        }
-        // The struct tag repeats the typedef name. C keeps tags in their own
-        // namespace, so this is legal and it is what makes a clang diagnostic name
-        // something the reader can grep for.
-        w.line(&format!("typedef struct {name} {{"));
-        for field in fields_of(ast, decl) {
-            w.line(&member(checked, names, src, field));
-        }
-        w.line(&format!("}} {name};"));
-        w.blank();
+    let name = names.of(decl).to_string();
+    w.at_generated();
+    if is_variant(ast, decl) {
+        variant_definition(w, ast, checked, names, src, decl, &name);
+        return;
     }
+    // The struct tag repeats the typedef name. C keeps tags in their own
+    // namespace, so this is legal and it is what makes a clang diagnostic name
+    // something the reader can grep for.
+    w.line(&format!("typedef struct {name} {{"));
+    for field in fields_of(ast, decl) {
+        w.line(&member(checked, names, src, field));
+    }
+    w.line(&format!("}} {name};"));
+    w.blank();
 }
 
 /// One `typedef` per distinct `T?` (design.md §4.6).
@@ -117,49 +116,6 @@ pub(super) fn definitions(
 /// comment above each typedef names the Heroes type — the struct is called `optN`
 /// because `int?` and `[int]?` sanitise to the same identifier and a collision here is
 /// two types sharing one C name.
-/// Every type the compiler generates a C declaration for, **in `TyId` order**.
-///
-/// Two kinds share this pass and must: a `T?` may hold a function
-/// (`(function(int) -> int)?`) and a function's signature may mention a `T?`
-/// (`(function(int) -> int?)`), so neither kind can be emitted wholesale before
-/// the other. Measured, when they were two passes: a function typedef naming an
-/// option that had not been declared yet parsed as an implicit-`int` function
-/// type, and clang reported `'const' qualifier on function type … has no effect`
-/// on a line about something else entirely.
-///
-/// **`TyId` order IS containment order**, and that is an invariant of the type
-/// table rather than a coincidence: the checker interns a composite only after
-/// the types it is built from, because it needs their ids to build it. So one
-/// ascending walk emits every declaration after everything it names.
-pub(super) fn generated(w: &mut Writer, checked: &Checked, names: &Names) {
-    let mut wrote = false;
-    for index in 0..checked.types.len() {
-        let id = crate::types::TyId(index as u32);
-        if super::ctype::mentions_generic(checked, id) {
-            continue;
-        }
-        match checked.types.get(id) {
-            Ty::Fallible(payload) => {
-                option(w, checked, names, names.option_of(id), payload);
-                wrote = true;
-            }
-            // Only the ones the program uses as a type have a name; the rest are
-            // signatures the checker interned for declarations nobody takes the
-            // address of.
-            Ty::Func { params, result } => {
-                if let Some(name) = names.func_name(id) {
-                    function_type(w, checked, names, &name, params, result);
-                    wrote = true;
-                }
-            }
-            _ => {}
-        }
-    }
-    if wrote {
-        w.blank();
-    }
-}
-
 /// `typedef int64_t (*h_m_fn0)(int64_t, int64_t);` — a plain C function pointer,
 /// because a Heroes function value IS one (§1.11's founding constraint). That is
 /// what lets `qsort`'s comparator and raylib's callbacks be Heroes functions at
@@ -169,7 +125,7 @@ pub(super) fn generated(w: &mut Writer, checked: &Checked, names: &Names) {
 /// C means "unspecified", which turns a wrong-arity call through the pointer from
 /// a compile error into undefined behaviour — the one thing this backend's whole
 /// "clang type-checks every call" property exists to prevent.
-fn function_type(
+pub(super) fn function_type(
     w: &mut Writer,
     checked: &Checked,
     names: &Names,
@@ -190,7 +146,7 @@ fn function_type(
 
 /// One `T?`, as a by-value tagged union. Its error side is the runtime's own
 /// record, since §4.6 fixes that shape.
-fn option(
+pub(super) fn option(
     w: &mut Writer,
     checked: &Checked,
     names: &Names,

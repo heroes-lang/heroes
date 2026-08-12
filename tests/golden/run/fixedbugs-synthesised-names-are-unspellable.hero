@@ -1,0 +1,37 @@
+# FIXED DEFECT, 2026-08-12. Symptom: `error: redefinition of 'h_M_opt0'`, exit 2,
+# on a legal program that declares `record opt0` and uses any `T?` — and only
+# under some roots, because a user type is named in ITS OWN module while the
+# emitter's invented types took the root's.
+#
+# Cause: the option and function typedefs belong to no declaration, and their
+# names were `h_<module>_opt<N>` and `h_<module>_fn<N>` — which a user
+# declaration of that name spells exactly. Panel 031 R10 reserved the module
+# namespace against collisions and left the emitter's own vocabulary unreserved.
+#
+# Fix: a leading digit, which `h_<component>_<name>` can carry and a Heroes
+# identifier cannot (`0foo` is `error[expected_name]` in the lexer). Closed by
+# construction rather than by a check, so there is no diagnostic to write and
+# nothing to keep in step.
+
+record opt0
+    x: int
+
+record fn0
+    y: int
+
+function bump(n: int) -> int
+    return n + 1
+
+function call(f: (function(int) -> int)) -> int
+    return f(41)
+
+function half(n: int) -> int?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail("odd", "not even")
+
+function main()
+    print(opt0(x: 7).x)
+    print(fn0(y: 8).y)
+    print(call(bump))
+    print(half(10).default(0))

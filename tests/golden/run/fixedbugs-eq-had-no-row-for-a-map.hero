@@ -1,0 +1,38 @@
+# FIXED DEFECT, 2026-08-12, found by a judge in panel 034's hunt. Symptom:
+# `panic: entered unreachable code — this is a compiler bug`, exit 134, on a
+# record holding a map that anything compares. Cause: `equality_body`'s type
+# dispatch listed `Int|Bool|F64|Str|Array|Named|Case` and fell through to
+# `(hero_unreachable(), false)` for everything else — so `Ty::Map`,
+# `Ty::Fallible` and `Ty::Func` were **missing rows**, three field kinds the
+# checker has always accepted.
+#
+# What makes it the loud kind of wrong: `hash_body` routes through
+# `descriptors::hash_call`, which covers all three. So `hash` worked and `eq`
+# aborted, which is CLAUDE.md §7's "eq and hash agree" broken in the direction
+# that hurts most — a map keyed by such a record INSERTS fine and then aborts on
+# the lookup, because insertion hashes and lookup compares.
+#
+# `reference_body` next door has the `Ty::Map` row, which is why reading the file
+# did not show the gap.
+
+record Box
+    m: {str: int}
+    o: int?
+    f: (function(int) -> int)
+
+function bump(n: int) -> int
+    return n + 1
+
+function main()
+    a = Box(m: {"x": 1}, o: ok(2), f: bump)
+    b = Box(m: {"x": 1}, o: ok(2), f: bump)
+    c = Box(m: {"x": 9}, o: ok(2), f: bump)
+    print(a == b)
+    print(a == c)
+
+    # The sharp one: a record with a map inside it, used as a map KEY. The
+    # insert hashes and the lookup compares, so the defect needed both halves.
+    seen: {Box: int} @ {}
+    seen[a] @ 1
+    print(seen[b].default(0))
+    print(seen[c].default(0))

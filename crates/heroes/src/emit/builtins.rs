@@ -180,12 +180,21 @@ pub(super) fn reachable(program: &Program, src: &Source) -> BTreeSet<u32> {
 
 /// Every Heroes function this one names. Read off the instructions, never a count
 /// kept in step with them.
+///
+/// **Names**, not calls. `Op::FuncRef` is the other way a function's symbol reaches
+/// the C — §4.13's "top-level functions are values" — and until 2026-08-12 this
+/// walk matched only `Op::Call`, so a library function passed as a value was
+/// referenced and never defined: `use of undeclared identifier 'h_library_range'`,
+/// exit 2, on a legal program. One *direct* call from any module in the program
+/// put the definition back, which is what made it root-dependent as well as wrong.
 fn calls_of(function: &Function) -> Vec<u32> {
     let mut found = Vec::new();
     for block in &function.blocks {
         for inst in &block.insts {
-            if let Op::Call { callee: Callee::Heroes(decl), .. } = inst.op {
-                found.push(decl);
+            match inst.op {
+                Op::Call { callee: Callee::Heroes(decl), .. }
+                | Op::FuncRef(Callee::Heroes(decl)) => found.push(decl),
+                _ => {}
             }
         }
     }

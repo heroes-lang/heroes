@@ -20,6 +20,7 @@
 
 use std::collections::BTreeSet;
 
+use crate::syntax::Ast;
 use crate::types::{Checked, Ty, TyId};
 
 use super::ctype::Names;
@@ -66,43 +67,93 @@ pub(super) fn hash_call(checked: &Checked, names: &Names, ty: TyId, place: &str)
     }
 }
 
-/// Every *generated* descriptor the program needs: the aggregate element types,
-/// closed under nesting, as `TyId`s.
+/// Every *generated* descriptor the program needs, as `TyId`s.
+///
+/// **The question is "which descriptors does the emitter name", not "which types
+/// did the program mention inside a container".** Those were the same set while
+/// arrays and maps were the only things that reached a descriptor, and they
+/// stopped being the same set when `option_bodies` started naming one and
+/// `hash_body` started routing fields through `pointer`. Asking the old question
+/// produced `use of undeclared identifier 'h_M_P_desc'` at exit 2 on
+/// `function grab() -> P?` — with the tell that adding `[P]` *anywhere in the
+/// program*, in any module, made it compile (2026-08-12).
+///
+/// Three sources, and each one is a place the emitter writes `&…_desc`:
+///
+/// 1. **Container elements** — an array its element, a map its key *and* its
+///    value, since the runtime reaches all three through descriptors. No second
+///    pass is needed for nesting: an inner `[T]` is itself an interned array
+///    type, which is why `[[Point]]` reaches `Point` without descending.
+/// 2. **Every `T?`'s payload**, because `option_bodies` writes
+///    `(&{payload}_desc)->eq(…)` and `->hash(…)` for *every* option it emits.
+/// 3. **Every field of every aggregate**, because `hash_body` sends a field whose
+///    type is not itself an aggregate through `hash_call` → `pointer`.
+///
+/// A type that still mentions a type parameter is skipped, exactly as the two
+/// sibling walks in `ctype.rs` and `types.rs` do: monomorphisation deletes the
+/// generic *functions*, not the `A?` their signatures interned, and asking
+/// `Names::option_of` for one panicked the compiler at exit 101 — a code
+/// CLAUDE.md §10 does not have.
 ///
 /// Sorted and deduplicated, because the emitted order has to be a function of the
 /// program and not of the interner's insertion order — the double-emit determinism
 /// test (CLAUDE.md §7) is what that buys.
-pub(super) fn generated(checked: &Checked) -> Vec<TyId> {
+pub(super) fn generated(ast: &Ast, checked: &Checked) -> Vec<TyId> {
     let mut wanted: BTreeSet<u32> = BTreeSet::new();
-    // Every container in the program contributes what it holds. No second pass is
-    // needed for nesting: an inner `[T]` is itself an interned array type, so it is
-    // already in the list below — which is why `[[Point]]` reaches `Point` without the
-    // walk ever descending.
-    // Both containers contribute: an array its element, a map its key *and* its
-    // value, since the runtime reaches all three through descriptors.
-    let mut queue: Vec<TyId> = (0..checked.types.len())
-        .map(|index| TyId(index as u32))
-        .filter(|id| matches!(checked.types.get(*id), Ty::Array(_) | Ty::Map(_, _)))
-        .collect();
-    while let Some(id) = queue.pop() {
-        let elements: Vec<TyId> = match checked.types.get(id) {
-            Ty::Array(element) => vec![element],
-            Ty::Map(key, value) => vec![key, value],
-            _ => Vec::new(),
-        };
-        for element in elements {
-            match checked.types.get(element) {
-                // The scalars and `str` are the runtime's, and an array's descriptor
-                // is the one shared row — none of the three is generated.
-                Ty::Int | Ty::F64 | Ty::Bool | Ty::Str => {}
-                Ty::Array(_) | Ty::Map(_, _) | Ty::Failure => {}
-                // A `T?` element needs its own descriptor, and so does an aggregate.
-                Ty::Named(_) | Ty::Case(_, _) | Ty::Fallible(_) => {
-                    wanted.insert(element.0);
-                }
-                // Refused by the gate until the step that lands it.
-                _ => {}
+    let mut queue: Vec<TyId> = Vec::new();
+    for index in 0..checked.types.len() {
+        let id = TyId(index as u32);
+        if super::ctype::mentions_generic(checked, id) {
+            continue;
+        }
+        match checked.types.get(id) {
+            Ty::Array(element) => queue.push(element),
+            Ty::Map(key, value) => {
+                queue.push(key);
+                queue.push(value);
             }
+            Ty::Fallible(payload) => queue.push(payload),
+            _ => {}
+        }
+    }
+    for decl in super::types::aggregates(ast, checked) {
+        let mut field_types = Vec::new();
+        for field in super::types::fields_of(ast, decl) {
+            field_types.push(field.ty);
+        }
+        for case in super::types::cases_of(ast, decl) {
+            for field in &case.fields {
+                field_types.push(field.ty);
+            }
+        }
+        for written in field_types {
+            // Only a `T?` field. `hash_call` sends `Ty::Named` and `Ty::Case`
+            // straight to `{name}_hash`, and every other field kind reaches one
+            // of the runtime's five shared rows — so pushing them all generates
+            // descriptors nothing points at, which is
+            // `-Wunused-const-variable` under §3.1's flags and the exact warning
+            // this worklist exists to avoid.
+            let Some(ty) = checked.written_type(written) else { continue };
+            if matches!(checked.types.get(ty), Ty::Fallible(_)) {
+                queue.push(ty);
+            }
+        }
+    }
+    while let Some(id) = queue.pop() {
+        if super::ctype::mentions_generic(checked, id) {
+            continue;
+        }
+        match checked.types.get(id) {
+            // The scalars and `str` are the runtime's, and one shared row serves
+            // every array, every map and every function type — none is generated.
+            // `Ty::Named` and `Ty::Case` reached as a *field* go through
+            // `{name}_hash` directly rather than through a descriptor, but they
+            // still need one when they are an element or an option's payload, and
+            // an unused-descriptor warning is cheaper than a missing one.
+            Ty::Named(_) | Ty::Case(_, _) | Ty::Fallible(_) => {
+                wanted.insert(id.0);
+            }
+            _ => {}
         }
     }
     wanted.into_iter().map(TyId).collect()

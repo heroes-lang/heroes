@@ -1,0 +1,57 @@
+# FIXED DEFECT, 2026-08-12. Symptom: `use of undeclared identifier
+# 'h_M_P_desc'`, exit 2, on `function grab() -> P?` for an ordinary record `P` —
+# with the tell that adding `[P]` ANYWHERE in the program, in any module, made
+# the same file compile. And, separately, `thread 'main' panicked … every 'T?' is
+# named before anything can mention one`, **exit 101**, a code CLAUDE.md §10 does
+# not have, on `[A?]` inside a generic.
+#
+# One cause. `descriptors::generated()` answered "which types did the program
+# mention inside a container" while its three callers ask "which types does the
+# function I am about to write name" — and `option_bodies` names
+# `(&{payload}_desc)->eq(…)` for EVERY `T?` it emits, container or not. It also
+# skipped the `mentions_generic` guard its two sibling walks in `ctype.rs` and
+# `types.rs` both have.
+#
+# It is D3's defect one level up: asking what was *mentioned* where the answer
+# has to come from what is *declared*. Fixing the question retired three
+# symptoms at once.
+
+record P
+    x: int
+
+variant Shape
+    dot
+    box
+        w: int
+
+function grab(f: bool) -> P?
+    if f
+        return ok(P(x: 1))
+    return fail("no", "none")
+
+function shape_of(f: bool) -> Shape?
+    if f
+        return ok(.box(w: 2))
+    return fail("no", "none")
+
+# The generic that panicked: `[A?]` interns a `Ty::Fallible` over a parameter,
+# which monomorphisation deletes the function for and leaves the type behind.
+function count<A>(xs: [A?]) -> int
+    return xs.len()
+
+function width_of(s: Shape) -> int
+    return match s
+        .dot   => 0
+        .box b => b.w
+
+function width(f: bool) -> int
+    return match shape_of(f)
+        .ok s  => width_of(s)
+        .err _ => 0 - 1
+
+function main()
+    print(grab(true).must().x)
+    print(grab(false).is_err())
+    print(width(true))
+    ys: [int?] = []
+    print(count(ys))

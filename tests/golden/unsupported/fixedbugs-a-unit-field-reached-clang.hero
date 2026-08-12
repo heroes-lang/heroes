@@ -1,0 +1,21 @@
+# FIXED DEFECT, 2026-08-12. Symptom: `error: field has incomplete type 'void'`,
+# exit 2 — the compiler blaming itself for the author's program, which
+# `gate.rs`'s own comment calls the one failure the gate exists to prevent.
+#
+# Cause: the gate walks the **IR** — slots, instruction types, parameters,
+# results — and a declaration's field list is in none of those. `check_element`
+# had refused `()` as a container element since M5c on exactly this reasoning
+# ("a perfectly good type and no kind of element"), and CLAUDE.md §7 had called
+# `void t0;` a hard error for temporaries; neither reached a field.
+#
+# Fix: `unit_fields`, one sweep over the declarations, before the IR walk.
+
+record Box
+    u: ()               #~ unit_field
+
+variant Reply
+    empty
+        nothing: ()     #~ unit_field
+
+function main()
+    print(1)

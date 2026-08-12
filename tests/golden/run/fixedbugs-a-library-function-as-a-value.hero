@@ -1,0 +1,27 @@
+# FIXED DEFECT, 2026-08-12. Symptom: `use of undeclared identifier
+# 'h_library_range'`, exit 2, on passing a library function as a value — with the
+# control that one DIRECT call to `range` anywhere in the program put the
+# definition back and made it compile.
+#
+# Cause: `builtins::reachable` walks what each function *calls*, and `calls_of`
+# matched only `Op::Call`. §4.13 makes top-level functions values, so
+# `Op::FuncRef` is the other way a symbol reaches the C — and the walk could not
+# see it. The library is emitted by reachability (a program that never calls
+# `range` must not carry it into `--emit-c`), so being referenced and never
+# called meant being declared and never defined.
+#
+# Root-dependent as well as wrong, which is the signature this sweep kept
+# finding: the answer depended on what some other module happened to contain.
+
+function call_it(f: (function(int, int) -> [int])) -> int
+    return f(0, 3).len()
+
+function pick(f: (function(int) -> int), n: int) -> int
+    return f(n)
+
+function main()
+    print(call_it(range))
+    print(pick(twice, 21))
+
+function twice(n: int) -> int
+    return n * 2

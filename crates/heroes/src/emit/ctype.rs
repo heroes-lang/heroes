@@ -57,6 +57,25 @@ pub(super) struct Names {
     funcs: std::collections::BTreeMap<u32, String>,
 }
 
+/// What separates a name the **emitter invents** from a name an author could
+/// write: a leading digit, which `h_<component>_<name>` can carry and a Heroes
+/// identifier cannot.
+///
+/// The option and function typedefs belong to no declaration, so they are named
+/// `h_<module>_<N>opt<N>` rather than after anything in the source — and until
+/// 2026-08-12 they were `h_<module>_opt<N>`, which a `record opt0` in the same
+/// module spells exactly. Measured: `redefinition of 'h_m_opt0'`, exit 2, on a
+/// legal program — and only under some roots, since a user type is named in *its
+/// own* module while these take the root's.
+///
+/// This is panel 031 R10's rule extended to the names the compiler makes up.
+/// R10 refuses two module names that sanitise to one component; the residual it
+/// left open is that the emitter's own vocabulary was never reserved at all. A
+/// leading digit closes it by construction rather than by a check: `0foo` is
+/// `error[expected_name]` in the lexer, so there is nothing to collide with and
+/// no diagnostic to write.
+const SYNTHETIC: &str = "0";
+
 impl Names {
     pub(super) fn new(ast: &Ast, src: &Source) -> Names {
         let mut aggregates = std::collections::BTreeMap::new();
@@ -104,7 +123,7 @@ impl Names {
             }
             if matches!(checked.types.get(id), Ty::Fallible(_)) {
                 let at = self.options.len();
-                self.options.insert(id.0, format!("h_{module}_opt{at}"));
+                self.options.insert(id.0, format!("h_{module}_{SYNTHETIC}opt{at}"));
             }
         }
         self
@@ -139,7 +158,7 @@ impl Names {
         // the walk — which is what the double-emit determinism test covers.
         for id in &used {
             let at = self.funcs.len();
-            self.funcs.insert(*id, format!("h_{module}_fn{at}"));
+            self.funcs.insert(*id, format!("h_{module}_{SYNTHETIC}fn{at}"));
         }
         self
     }
