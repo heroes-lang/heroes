@@ -1556,9 +1556,39 @@ web: binary format parsing, network protocols, masks, flags, UTF-8 encoding, has
 are occupied by booleans that territory is closed forever, or you pay an awkward notation
 (`x.bit_and(0xFF)`) precisely in the code that uses it most.
 
-So: **`&&` `||` `!` for booleans; `&` `|` `^` `<<` `>>` `~` reserved for bits** and not implemented
-in v1. This is the C/Go/Rust/Java/JS convention — "the usual characters", done precisely. Costs one
-character per operator and closes nothing.
+So: **`&&` `||` `!` for booleans; `&` `|` `^` `<<` `>>` `~` for bits.** This is the
+C/Go/Rust/Java/JS convention — "the usual characters", done precisely. Costs one character per
+operator and closes nothing.
+
+**Reserved-but-unimplemented until 2026-08-12, when they became real** (author decision in
+`/decide`; the record is `docs/panel/040`, a retro-record sitting). The deferral was not wrong when
+it was made and it stopped being right the day the FFI arrived: with no `|`, a flag union had to be
+written `FLAG_A + FLAG_B`, which is correct only while the bits are disjoint and **silently wrong**
+otherwise — measured, `O_RDWR|O_ACCMODE` is 3 where `+` gives 5, and `S_IRWXU|S_IRUSR` is 448 where
+`+` gives 704. Panel 039 found it from two directions in one sitting: the llm-ergonomist wrote the
+`+` form from the spec alone and flagged its own premise, and the ffi-pragmatist compiled the
+overlapping case. Four decisions came with the implementation, each of which is a rule rather than a
+detail:
+
+- **`int` only.** A float's bits are not its value, and `bool` is excluded for this section's own
+  reason — one of `&&`/`&` short-circuits and the other does not, so admitting both on `bool` would
+  invite the reader to believe they are one operator.
+- **`&` binds tighter than `==`**, which is where C's table is on record as wrong (`x & 1 == 0`
+  means `x & (1 == 0)` in C). Each of the six gets its own precedence level, so
+  `a | b ^ c & d` groups as it does in every language that copied C without copying that.
+- **`1 << 63` is `INT64_MIN`, not an abort.** The shift is done on the unsigned bit pattern and cast
+  back — defined for every input, where C leaves a signed left shift into the sign bit undefined.
+  Without the sign bit reachable, a mask set cannot name its own top flag, which is the whole use.
+- **A shift count outside `0..63` aborts**, because C6.5.7p3 makes it undefined and CLAUDE.md §7
+  admits no C UB. `>>` is arithmetic, written explicitly rather than relying on C's
+  implementation-defined choice.
+
+`|` now carries two meanings — the match-pattern join (§4.7) and bitwise or — disambiguated by
+position, exactly as `-` is unary minus and subtraction. That dual life cost one silent defect on
+the day it arrived: a literal pattern was parsed with the full expression parser, so
+`1 | 2 => "small"` became the expression `3` and matched nothing. The premise that made the old code
+safe — *no binary operator can follow a literal in pattern position* — had never been written down,
+which is §4.15's rule about premises paying for itself again.
 
 `&&` and `||` short-circuit and accept only `bool`. There is **no truthiness**, so `&&` on a
 non-bool, or `!` on a non-bool, is a compile error. No operator overloading. No ternary operator

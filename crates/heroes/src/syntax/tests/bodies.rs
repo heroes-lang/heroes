@@ -403,3 +403,38 @@ file test.hero
 "
     );
 }
+
+/// **A pattern's `|` is the join, never bitwise or** (§4.7 against §4.14).
+///
+/// The premise that died on 2026-08-12: until the bitwise set became real, no
+/// binary operator could follow a literal in pattern position, so `pattern` parsed
+/// its literal with the full expression parser and nobody wrote the premise down.
+/// `|` can follow one, and `1 | 2 => "small"` silently became the expression `3` —
+/// so `name(1)` matched nothing, fell through to `_`, and printed `big`. The
+/// compiler was right about every rule it knew and wrong about the program, which
+/// is the class this language spends tokens to avoid.
+///
+/// The dump is the instrument: two patterns on the arm, and **no** parenthesised
+/// binary expression, which is what `1 | 2` would render as.
+#[test]
+fn a_pattern_join_is_not_bitwise_or() {
+    let dumped = dump(
+        "\
+function name(n: int) -> str
+    return match n
+        1 | 2  => \"small\"
+        _      => \"big\"
+",
+    );
+    // Two patterns on the arm. Under the defect this rendered `(1 | 2) => …`,
+    // one pattern holding a parenthesised binary expression.
+    assert!(dumped.contains("1 | 2 => expr"), "two patterns joined: {dumped}");
+    assert!(
+        !dumped.contains("(1 | 2)"),
+        "the join must not have been parsed as an operator: {dumped}"
+    );
+
+    // The control, on the same character: in expression position it IS the
+    // operator, and the dump says so.
+    assert_eq!(stmt("x = 1 | 2"), "    bind x = (1 | 2)\n");
+}

@@ -178,6 +178,7 @@ pub fn render_expr(ast: &Ast, id: ExprId, src: &Source) -> String {
             let op = match op {
                 UnaryOp::Neg => "-",
                 UnaryOp::Not => "!",
+                UnaryOp::BitNot => "~",
             };
             format!("({op}{})", render_expr(ast, *operand, src))
         }
@@ -255,6 +256,11 @@ fn render_args(ast: &Ast, src: &Source, args: &[Arg]) -> String {
 
 fn binary_op(op: BinaryOp) -> &'static str {
     match op {
+        BinaryOp::BitAnd => "&",
+        BinaryOp::BitOr => "|",
+        BinaryOp::BitXor => "^",
+        BinaryOp::Shl => "<<",
+        BinaryOp::Shr => ">>",
         BinaryOp::Add => "+",
         BinaryOp::Sub => "-",
         BinaryOp::Mul => "*",

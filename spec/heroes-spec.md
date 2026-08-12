@@ -139,9 +139,10 @@ arithmetic   + - * / %          (int with int, f64 with f64 — never mixed)
              +                  (str with str: concatenation)
 comparison   == != < <= > >=
 boolean      && || !            (bool only; && and || short-circuit)
+bitwise      & | ^ ~ << >>      (int only; shift count 0..63 or it aborts)
 ```
-Precedence, strongest first: call and `.` → unary `-` `!` → `* / %` → `+ -`
-→ comparisons → `&&` → `||`. There is no ternary; `if` is an expression, and so is `match`.
+Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → `+ -`
+→ `<<` `>>` → `&` → `^` → `|` → comparisons → `&&` → `||`. There is no ternary; `if` is an expression, and so is `match`.
 
 ## Strings, arrays, maps
 `s[i]` yields an `int` in 0..255 (a byte); iterate characters with

@@ -102,6 +102,9 @@ pub(super) fn unary(
                 w.line(&format!("    {name} = -{value};"));
             }
         }
+        // Every `int64_t` has a complement, `INT64_MIN` included, so unlike `Neg`
+        // this one cannot abort and carries no guard.
+        UnOp::BitNot => w.line(&format!("    {name} = ~{value};")),
     }
 }
 
@@ -174,9 +177,15 @@ pub(super) fn binary(
             BinOp::Ge => format!("hero_str_cmp({l}, {r}) >= 0"),
             // `- * / %` on `str` do not type-check (§4.14), so this is unreachable
             // by construction rather than by hope.
-            BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Rem => {
-                "0 /* not an operation on str */".to_string()
-            }
+            BinOp::Sub
+            | BinOp::Mul
+            | BinOp::Div
+            | BinOp::Rem
+            | BinOp::BitAnd
+            | BinOp::BitOr
+            | BinOp::BitXor
+            | BinOp::Shl
+            | BinOp::Shr => "0 /* not an operation on str */".to_string(),
         };
         w.line(&format!("    {name} = {call};"));
         return;
@@ -229,6 +238,45 @@ pub(super) fn binary(
             ));
             w.line(&format!("    {name} = {l} {operator} {r};"));
         }
+        // **The three that are pure bit patterns**: no guard, because every pair of
+        // `int64_t`s has an and, an or and an xor. C's `&`, `|` and `^` on two
+        // signed values of the same width are fully defined — it is the *shifts*
+        // that are not.
+        BinOp::BitAnd | BinOp::BitOr | BinOp::BitXor => {
+            let operator = match op {
+                BinOp::BitAnd => "&",
+                BinOp::BitOr => "|",
+                _ => "^",
+            };
+            w.line(&format!("    {name} = {l} {operator} {r};"));
+        }
+        // **The two that can abort, and they abort for C's reasons rather than for
+        // Heroes'** (CLAUDE.md §7: never C UB). A shift count that is negative or
+        // ≥ 64 is undefined in C6.5.7p3, and a left shift that moves bits into or
+        // past the sign bit of a *signed* operand is undefined too. So: the count is
+        // checked, and the shift itself is done on the unsigned bit pattern and cast
+        // back, which is defined for every input and is what makes `1 << 63`
+        // `INT64_MIN` rather than a trap. Without the sign bit reachable a mask set
+        // cannot name its own top flag, which is the whole use.
+        //
+        // `>>` is **arithmetic**: the operand is signed, so the sign propagates, and
+        // C's implementation-defined right shift is replaced by an explicit one.
+        BinOp::Shl | BinOp::Shr if integral => {
+            w.line(&format!(
+                "    if ({r} < 0 || {r} > 63) hero_panic(\"shift count outside 0..63\");"
+            ));
+            if op == BinOp::Shl {
+                w.line(&format!(
+                    "    {name} = (int64_t)((uint64_t){l} << (uint64_t){r});"
+                ));
+            } else {
+                // Arithmetic shift, written so no implementation-defined behaviour
+                // is relied on: shift the magnitude, then put the sign bits back.
+                w.line(&format!(
+                    "    {name} = ({l} < 0) ? ~(int64_t)((~(uint64_t){l}) >> (uint64_t){r}) : (int64_t)((uint64_t){l} >> (uint64_t){r});"
+                ));
+            }
+        }
         // `%` on two `f64` is `fmod`, not C's `%`, which takes integers only:
         // `t3 = t1 % t2` on two `double`s is `error: invalid operands to binary
         // expression`, exit 2, on a program spec line 139 explicitly allows
@@ -254,6 +302,13 @@ pub(super) fn binary(
                 BinOp::Le => "<=",
                 BinOp::Gt => ">",
                 BinOp::Ge => ">=",
+                // Unreachable: the arms above take every bitwise op on `int`, and
+                // the checker admits them on nothing else (§4.14).
+                BinOp::BitAnd
+                | BinOp::BitOr
+                | BinOp::BitXor
+                | BinOp::Shl
+                | BinOp::Shr => return w.line("    hero_unreachable();"),
             };
             w.line(&format!("    {name} = {l} {operator} {r};"));
         }

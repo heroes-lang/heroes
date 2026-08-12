@@ -120,6 +120,8 @@ pub enum UnaryOp {
     Neg,
     /// `!x` — `bool` only, there is no truthiness (§4.14).
     Not,
+    /// `~x` — the bitwise complement, `int` only (§4.14).
+    BitNot,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -138,6 +140,13 @@ pub enum BinaryOp {
     /// `&&` and `||` short-circuit and take `bool` only (§4.14).
     And,
     Or,
+    /// The bitwise set, `int` only and **not** short-circuiting (§4.14). `|` is the
+    /// same token as the match-pattern join; position tells them apart.
+    BitAnd,
+    BitOr,
+    BitXor,
+    Shl,
+    Shr,
 }
 
 /// One argument of a call. `name` is present when written `name: value`,

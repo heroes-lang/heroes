@@ -1,0 +1,5 @@
+tests/golden/check/bitwise-type.hero:14:9: error[bad_operand]: `&` takes `int`, found `f64`
+tests/golden/check/bitwise-type.hero:15:9: error[bad_operand]: `|` takes `int`, found `bool`
+tests/golden/check/bitwise-type.hero:16:9: error[bad_operand]: `~` takes `int`, found `f64`
+tests/golden/check/bitwise-type.hero:17:9: error[bad_operand]: `^` takes `int`, found `str`
+tests/golden/check/bitwise-type.hero:18:9: error[bad_operand]: `<<` takes `int`, found `f64`

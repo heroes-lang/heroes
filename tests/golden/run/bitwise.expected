@@ -1,0 +1,15 @@
+O_RDWR|O_ACCMODE = 3
+S_IRWXU|S_IRUSR  = 448
+and = 2
+xor = 5
+not = -1
+notmin = 9223372036854775807
+shl = 1024
+signbit = -9223372036854775808
+shr = 128
+asr = -4
+mask = true
+chain = 3
+every = 7
+has write = true
+cleared = 5

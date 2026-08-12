@@ -110,21 +110,20 @@ fn adversarial_single_ampersand_is_not_a_token() {
     // character costs exactly one skipped character, not the rest of the
     // file.
     //
-    // The message changed at panel 036: the spec's sentence naming all six
-    // reserved spellings was deleted, and this diagnostic is what replaced it,
-    // so it now names the set rather than the character. `unexpected_character`
-    // survives for a character that is genuinely not in the syntax.
+    // `&` was `reserved_operator` from M-token-stream until 2026-08-12, when the
+    // bitwise set became real (author decision) and that diagnostic was deleted
+    // for want of anything to fire on — §9's rule read backwards.
+    // `unexpected_character` survives for a character genuinely not in the syntax.
     assert_eq!(
         dump("x = 1 & 2\n"),
         "\
 1:1 ident x
 1:3 eq =
 1:5 int 1
-1:7 error &
+1:7 amp &
 1:9 int 2
 1:10 terminator
 2:1 eof
-DIAG test.hero:1:7: error[reserved_operator]: `&` is reserved for a future bitwise set and has no meaning yet — `& | ^ << >> ~` are all held, and none of them is an operator in this language
 "
     );
 }
@@ -146,11 +145,10 @@ fn a_shift_is_never_two_comparisons() {
 1:1 ident x
 1:3 eq =
 1:5 int 1
-1:7 error <<
+1:7 shl <<
 1:10 int 2
 1:11 terminator
 2:1 eof
-DIAG test.hero:1:7: error[reserved_operator]: `<<` is reserved for a future bitwise set and has no meaning yet — `& | ^ << >> ~` are all held, and none of them is an operator in this language
 "
     );
     // The control: two comparisons that ARE legal stay legal, because they are

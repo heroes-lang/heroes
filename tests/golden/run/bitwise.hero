@@ -1,0 +1,48 @@
+# The bitwise set (§4.14), real since 2026-08-12 by author decision.
+#
+# WHY IT LANDED: `&` `|` `^` `~` `<<` `>>` were reserved and unimplemented, so a
+# flag union had to be written `FLAG_A + FLAG_B` — which is right only when the
+# bits are disjoint, and silently wrong otherwise. Panel 039 found that from two
+# directions on the same day: the llm-ergonomist wrote the `+` form from the spec
+# alone and flagged its own premise, and the ffi-pragmatist compiled the
+# overlapping case. The first two lines below are its two measured numbers.
+#
+# WHAT IS PINNED HERE, and each line is a decision rather than an example:
+#   - `|` unions overlapping bits correctly, where `+` did not
+#   - `~0` is -1, and `~` never aborts: every int64 has a complement, INT64_MIN too
+#   - `1 << 63` is INT64_MIN, so the SIGN BIT IS REACHABLE — without it a mask set
+#     cannot name its own top flag, which is the whole use of these operators
+#   - `>>` is ARITHMETIC: the operand is signed, so the sign propagates
+#   - `&` binds tighter than `==`, so `6 & 1 == 0` is `(6 & 1) == 0`. This is
+#     C's own recorded mistake and Heroes does not inherit it
+#   - each operator has its own precedence level, so `1 | 2 ^ 3 & 4` groups the
+#     way it does in C, Go, Rust, Java and JavaScript
+# Bulk regression case.
+
+function main()
+    # The two the panel measured. Under `+` these were 5 and 704.
+    print("O_RDWR|O_ACCMODE = ", 2 | 3)
+    print("S_IRWXU|S_IRUSR  = ", 448 | 256)
+
+    print("and = ", 6 & 3)
+    print("xor = ", 6 ^ 3)
+    print("not = ", ~0)
+    print("notmin = ", ~(0 - 9223372036854775807 - 1))
+
+    print("shl = ", 1 << 10)
+    print("signbit = ", 1 << 63)
+    print("shr = ", 1024 >> 3)
+    print("asr = ", 0 - 8 >> 1)
+
+    # `&` above `==`, and the whole chain in one expression.
+    print("mask = ", 6 & 1 == 0)
+    print("chain = ", 1 | 2 ^ 3 & 4 << 1)
+
+    # A mask set, written the way it could not be written yesterday.
+    read = 1 << 0
+    write = 1 << 1
+    exec = 1 << 2
+    every = read | write | exec
+    print("every = ", every)
+    print("has write = ", every & write == write)
+    print("cleared = ", every & ~write)

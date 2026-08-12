@@ -51,6 +51,28 @@ pub(super) fn binary(
             }
             checker.out.types.bool()
         }
+        // **`int` only, and both sides** (§4.14). A bit pattern is what these
+        // operate on, and `f64`'s bits are not its value — `1.5 & 1` would be a
+        // question about an IEEE encoding the language never exposes. `bool` is
+        // excluded for the reason §4.14 gives for keeping `&&` and `&` apart: one
+        // short-circuits and the other does not, and a language where both work on
+        // `bool` invites the reader to assume they are the same operator.
+        BinaryOp::BitAnd
+        | BinaryOp::BitOr
+        | BinaryOp::BitXor
+        | BinaryOp::Shl
+        | BinaryOp::Shr => {
+            let int = checker.out.types.int();
+            for side in [left, right] {
+                if side != int {
+                    let got = checker.show(ast, src, side);
+                    let diagnostic = errors::bad_operand(name(op), "`int`", &got, span);
+                    checker.push_diagnostic(diagnostic);
+                    return checker.error_ty();
+                }
+            }
+            int
+        }
         BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge => {
             let ordered = matches!(checker.out.types.get(left), Ty::Int | Ty::F64);
             if !ordered {
@@ -161,6 +183,16 @@ pub(super) fn unary(
             checker.push_diagnostic(diagnostic);
             checker.error_ty()
         }
+        UnaryOp::BitNot => {
+            let int = checker.out.types.int();
+            if operand == int {
+                return int;
+            }
+            let got = checker.show(ast, src, operand);
+            let diagnostic = errors::bad_operand("~", "`int`", &got, span);
+            checker.push_diagnostic(diagnostic);
+            checker.error_ty()
+        }
     }
 }
 
@@ -182,6 +214,11 @@ fn name(op: BinaryOp) -> &'static str {
         BinaryOp::Le => "<=",
         BinaryOp::Gt => ">",
         BinaryOp::Ge => ">=",
+        BinaryOp::BitAnd => "&",
+        BinaryOp::BitOr => "|",
+        BinaryOp::BitXor => "^",
+        BinaryOp::Shl => "<<",
+        BinaryOp::Shr => ">>",
         BinaryOp::And => "&&",
         BinaryOp::Or => "||",
     }

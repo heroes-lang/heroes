@@ -198,7 +198,9 @@ fn pattern(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Option<Pattern> {
             Some(Pattern { kind: PatternKind::Wildcard, span: start })
         }
         TokenKind::Int | TokenKind::Str | TokenKind::Char | TokenKind::Minus => {
-            let value = expr(cur, ast, src);
+            // `pattern_operand`, never `expr`: `|` is the join here and an operator
+            // there, and the full parser eats the join (see its doc comment).
+            let value = super::expr::pattern_operand(cur, ast, src);
             Some(Pattern { kind: PatternKind::Literal(value), span: start.to(cur.previous_span()) })
         }
         _ => {

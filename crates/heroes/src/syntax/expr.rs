@@ -43,14 +43,44 @@ fn binary_op(kind: TokenKind) -> Option<(BinaryOp, u8)> {
         TokenKind::Le => (BinaryOp::Le, 3),
         TokenKind::Gt => (BinaryOp::Gt, 3),
         TokenKind::Ge => (BinaryOp::Ge, 3),
-        TokenKind::Plus => (BinaryOp::Add, 4),
-        TokenKind::Minus => (BinaryOp::Sub, 4),
-        TokenKind::Star => (BinaryOp::Mul, 5),
-        TokenKind::Slash => (BinaryOp::Div, 5),
-        TokenKind::Percent => (BinaryOp::Rem, 5),
+        // **The bitwise three sit between the comparisons and the shifts, each on
+        // its own level** — C's order, which Go, Rust, Java and JavaScript all
+        // kept. C's own mistake here is the *other* one: `&` binding looser than
+        // `==`, so `x & 1 == 0` means `x & (1 == 0)`. Heroes does not inherit it,
+        // because `&` is tighter than `==` in this table. Each operator gets a
+        // level of its own rather than sharing one, which is what makes
+        // `a | b ^ c & d` parse the way every other language parses it.
+        TokenKind::Pipe => (BinaryOp::BitOr, 4),
+        TokenKind::Caret => (BinaryOp::BitXor, 5),
+        TokenKind::Amp => (BinaryOp::BitAnd, 6),
+        TokenKind::Shl => (BinaryOp::Shl, 7),
+        TokenKind::Shr => (BinaryOp::Shr, 7),
+        TokenKind::Plus => (BinaryOp::Add, 8),
+        TokenKind::Minus => (BinaryOp::Sub, 8),
+        TokenKind::Star => (BinaryOp::Mul, 9),
+        TokenKind::Slash => (BinaryOp::Div, 9),
+        TokenKind::Percent => (BinaryOp::Rem, 9),
         _ => return None,
     };
     Some((op, power))
+}
+
+/// A pattern's operand: a literal, or a literal with a leading `-`.
+///
+/// **Deliberately not `expr`**, and the reason is a premise that expired silently.
+/// Until the bitwise set landed on 2026-08-12, no binary operator could follow a
+/// literal in pattern position, so parsing a pattern with the full expression
+/// parser was safe and nobody wrote the premise down. `|` can follow one — it is
+/// the pattern join (§4.7) — and `1 | 2 => "small"` quietly became the expression
+/// `3`, so `name(1)` matched nothing and fell through to `_`. A silent wrong
+/// answer, which is the class this language spends tokens to avoid.
+///
+/// Calling `unary` rather than `binary` is what makes the join unreachable from
+/// here: no binary operator is ever consumed in a pattern, whatever the table
+/// grows. `a_pattern_join_is_not_bitwise_or` is the test that fires if this is
+/// ever widened back.
+pub(super) fn pattern_operand(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
+    unary(cur, ast, src)
 }
 
 /// Everything at `min_power` or tighter. All of Heroes' binary operators are
@@ -69,32 +99,7 @@ fn binary(cur: &mut Cursor, ast: &mut Ast, src: &Source, min_power: u8) -> ExprI
             span,
         });
     }
-    reserved_pipe(cur, ast, src);
     left
-}
-
-/// `6 | 3` — the one member of the reserved bitwise set that the lexer cannot
-/// catch, because `|` is a real token: it joins patterns in a `match` (§4.7).
-/// Here, where an operator would have gone, it is the bitwise `or` somebody
-/// expected — and the message says so, in the words `lexer/mod.rs` uses for the
-/// other five (panel 036).
-///
-/// It **consumes the right-hand side** rather than returning, so the expression
-/// ends where the author thought it did and the caller reports nothing more:
-/// without that, `print(6 | 3)` also said "expected `)`", blaming a parenthesis
-/// that was exactly where it belonged.
-fn reserved_pipe(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
-    if !cur.at(TokenKind::Pipe) || cur.at_reported_error() {
-        return;
-    }
-    let span = cur.bump().span;
-    cur.error(
-        "reserved_operator",
-        "`|` joins patterns in a `match` and is not an operator — `& | ^ << >> ~` are all held for a future bitwise set, and none of them is one yet"
-            .to_string(),
-        span,
-    );
-    let _ = unary(cur, ast, src);
 }
 
 /// `-x` and `!x`. Both take exactly one operand and neither is overloadable;
@@ -104,6 +109,7 @@ fn unary(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
     let op = match cur.kind() {
         TokenKind::Minus => UnaryOp::Neg,
         TokenKind::Bang => UnaryOp::Not,
+        TokenKind::Tilde => UnaryOp::BitNot,
         _ => return postfix(cur, ast, src),
     };
     let start = cur.bump().span;

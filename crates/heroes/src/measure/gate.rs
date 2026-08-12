@@ -34,7 +34,8 @@
 /// | 2560 | panel 036 | the FFI group and the program's edges, **net +138** against two removals worth −31 |
 /// | 2588 | panel 038 | a group's `constant`, **+28** with no removal available: the two the record still listed had already been spent by `6a58d47`, so this is panel 012's *other* branch — a registered prediction (the llm-ergonomist's first-try rates, scored at M-program-corpus). +1 of the 28 is the `@out: ptr` repair, which fixed an example that ran to completion doing nothing |
 /// | 2627 | panel 037 | the cost of building a string or an array, **+39**, panel 012's registered-prediction branch again — the prediction is written into `docs/panel/037-array-growth.md` § Ratification and scored at M-program-corpus. The clause the ergonomist asked for was the `join` half at +23; the extra 16 buy `push`'s copy, without which the sentence would send a reader to build the `[str]` quadratically instead of the `str` |
-pub const SPEC_TOKENS: usize = 2627;
+/// | 2675 | author decision, `docs/panel/040` | the bitwise set becomes real, **+48** — a row in the operator fence and five levels in the precedence chain. Panel 012's registered-prediction branch: no removal was available, because panel 036 had already deleted the spec's own sentence naming the six reserved spellings. The prediction is in the panel file and scored at the next FFI rung |
+pub const SPEC_TOKENS: usize = 2675;
 
 /// The reserved-word registry's own size, gated separately — **not** part of
 /// §1.6's budget, and that is the ruling rather than an omission (panel 035 D).

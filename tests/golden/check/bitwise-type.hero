@@ -1,0 +1,19 @@
+# The bitwise set is `int` only (§4.14), and this is what says so.
+#
+# `f64` is excluded because a float's BITS are not its value: `1.5 & 1` would be a
+# question about an IEEE encoding this language never exposes. `bool` is excluded
+# for the reason §4.14 gives for keeping `&&` and `&` apart — one short-circuits
+# and the other does not, and a language where both work on `bool` invites the
+# reader to believe they are one operator.
+#
+# The shift count is checked at RUN time, not here: it is a value, not a type
+# (`tests/golden/run/bitwise.hero` reaches the abort).
+# Bulk regression case.
+
+function main()
+    a = 1.5 & 1        #~ bad_operand
+    b = true | false   #~ bad_operand
+    c = ~1.5           #~ bad_operand
+    d = "x" ^ 2        #~ bad_operand
+    e = 1 << 1.0       #~ bad_operand
+    print(a, b, c, d, e)

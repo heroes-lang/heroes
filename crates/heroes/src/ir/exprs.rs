@@ -74,6 +74,7 @@ pub(super) fn expr(
             let op = match op {
                 UnaryOp::Neg => UnOp::Neg,
                 UnaryOp::Not => UnOp::Not,
+                UnaryOp::BitNot => UnOp::BitNot,
             };
             b.emit(Op::Unary { op, operand: value }, ty, span)
         }
@@ -235,6 +236,11 @@ fn binary(op: BinaryOp) -> BinOp {
         BinaryOp::Le => BinOp::Le,
         BinaryOp::Gt => BinOp::Gt,
         BinaryOp::Ge => BinOp::Ge,
+        BinaryOp::BitAnd => BinOp::BitAnd,
+        BinaryOp::BitOr => BinOp::BitOr,
+        BinaryOp::BitXor => BinOp::BitXor,
+        BinaryOp::Shl => BinOp::Shl,
+        BinaryOp::Shr => BinOp::Shr,
         // Handled one level up: they branch.
         BinaryOp::And | BinaryOp::Or => BinOp::Eq,
     }

@@ -15,6 +15,11 @@ use crate::lexer::TokenKind;
 
 pub(super) fn describe(kind: TokenKind) -> &'static str {
     match kind {
+        TokenKind::Amp => "`&`",
+        TokenKind::Caret => "`^`",
+        TokenKind::Tilde => "`~`",
+        TokenKind::Shl => "`<<`",
+        TokenKind::Shr => "`>>`",
         TokenKind::Ident => "a name",
         TokenKind::Int => "a number",
         TokenKind::Float => "a number",

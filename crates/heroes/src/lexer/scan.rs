@@ -307,17 +307,16 @@ impl LexState {
             (b'>', Some(b'='), _) => (TokenKind::Ge, 2),
             (b'&', Some(b'&'), _) => (TokenKind::AndAnd, 2),
             (b'|', Some(b'|'), _) => (TokenKind::OrOr, 2),
-            // The reserved bitwise set, caught here rather than left to the
-            // fallback below (panel 036). `<<` and `>>` are two characters and
-            // reach this arm only because **no prefix operator starts with `<`
-            // or `>`** — the falsifiable claim, and `a_shift_is_never_two_
-            // comparisons` in `tests/punct.rs` is what fails if a later
-            // milestone adds one.
-            (b'<', Some(b'<'), _) => return self.reserved_operator(src, start, 2),
-            (b'>', Some(b'>'), _) => return self.reserved_operator(src, start, 2),
-            (b'&', _, _) | (b'^', _, _) | (b'~', _, _) => {
-                return self.reserved_operator(src, start, 1)
-            }
+            // The bitwise set (§4.14), real since 2026-08-12. `<<` and `>>` are two
+            // characters and are matched here only because **no prefix operator
+            // starts with `<` or `>`** — the falsifiable claim, and
+            // `a_shift_is_never_two_comparisons` in `tests/punct.rs` is what fails
+            // if a later milestone adds one.
+            (b'<', Some(b'<'), _) => (TokenKind::Shl, 2),
+            (b'>', Some(b'>'), _) => (TokenKind::Shr, 2),
+            (b'&', _, _) => (TokenKind::Amp, 1),
+            (b'^', _, _) => (TokenKind::Caret, 1),
+            (b'~', _, _) => (TokenKind::Tilde, 1),
             (b'=', _, _) => (TokenKind::Eq, 1),
             (b'@', _, _) => (TokenKind::At, 1),
             (b':', _, _) => (TokenKind::Colon, 1),

@@ -28,14 +28,22 @@ fn power(ast: &Ast, id: ExprId) -> u8 {
             | BinaryOp::Le
             | BinaryOp::Gt
             | BinaryOp::Ge => 3,
-            BinaryOp::Add | BinaryOp::Sub => 4,
-            BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem => 5,
+            // The same numbers as `syntax/expr.rs`'s table, and they have to be:
+            // this decides where `heroes fmt` prints a parenthesis, so a scale that
+            // disagreed with the parser's would print a program that parses
+            // differently from the one it read.
+            BinaryOp::BitOr => 4,
+            BinaryOp::BitXor => 5,
+            BinaryOp::BitAnd => 6,
+            BinaryOp::Shl | BinaryOp::Shr => 7,
+            BinaryOp::Add | BinaryOp::Sub => 8,
+            BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem => 9,
         },
-        ExprKind::Unary { .. } => 6,
+        ExprKind::Unary { .. } => 10,
         // A control form spans lines; treating it as the loosest thing there
         // is keeps a parenthesis from ever being printed around it.
         ExprKind::If { .. } | ExprKind::Match { .. } => 0,
-        _ => 7,
+        _ => 11,
     }
 }
 
@@ -54,8 +62,9 @@ pub(super) fn render(ast: &Ast, src: &Source, id: ExprId) -> String {
             let op = match op {
                 UnaryOp::Neg => "-",
                 UnaryOp::Not => "!",
+                UnaryOp::BitNot => "~",
             };
-            format!("{op}{}", wrapped(ast, src, *operand, 6))
+            format!("{op}{}", wrapped(ast, src, *operand, 10))
         }
         ExprKind::Binary { op, left, right } => {
             let mine = power(ast, id);
@@ -150,6 +159,11 @@ pub(super) fn arg_text(ast: &Ast, src: &Source, arg: &Arg) -> String {
 
 fn binary_op(op: BinaryOp) -> &'static str {
     match op {
+        BinaryOp::BitAnd => "&",
+        BinaryOp::BitOr => "|",
+        BinaryOp::BitXor => "^",
+        BinaryOp::Shl => "<<",
+        BinaryOp::Shr => ">>",
         BinaryOp::Add => "+",
         BinaryOp::Sub => "-",
         BinaryOp::Mul => "*",

@@ -66,6 +66,7 @@ fn operation(
             let word = match op {
                 UnOp::Neg => "neg",
                 UnOp::Not => "not",
+                UnOp::BitNot => "bitnot",
             };
             let bang = if op == UnOp::Neg && inst.ty == int { "!" } else { "" };
             format!("{word}{bang} {}", value_name(operand))
@@ -220,6 +221,11 @@ fn word_of(op: BinOp) -> &'static str {
         BinOp::Le => "le",
         BinOp::Gt => "gt",
         BinOp::Ge => "ge",
+        BinOp::BitAnd => "and",
+        BinOp::BitOr => "or",
+        BinOp::BitXor => "xor",
+        BinOp::Shl => "shl",
+        BinOp::Shr => "shr",
     }
 }
 

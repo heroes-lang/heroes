@@ -59,8 +59,10 @@ pub enum TokenKind {
     Arrow,
     /// `=>` — match-arm arrow.
     FatArrow,
-    /// `|` — match-pattern join; single `&`/`^`/`~` are NOT tokens
-    /// (reserved for future bitwise use, design.md §4.14).
+    /// `|` — **two meanings, disambiguated by position**: the match-pattern join
+    /// and bitwise or (§4.7, §4.14). The same dual life `-` has as unary minus and
+    /// subtraction, and the parser decides it the same way — a pattern position
+    /// reads a join, an expression position reads an operator.
     Pipe,
     LParen,
     RParen,
@@ -84,6 +86,13 @@ pub enum TokenKind {
     AndAnd,
     OrOr,
     Bang,
+    /// The bitwise set (§4.14), real since 2026-08-12 — reserved but unimplemented
+    /// from M-token-stream until then, so `6 & 3` was `reserved_operator`.
+    Amp,
+    Caret,
+    Tilde,
+    Shl,
+    Shr,
 
     // --- Trivia and layout ---------------------------------------------
     /// `# …` to end of line, RETAINED: a comment directly above a
@@ -170,6 +179,11 @@ pub fn kind_name(kind: TokenKind) -> &'static str {
         TokenKind::AndAnd => "and_and",
         TokenKind::OrOr => "or_or",
         TokenKind::Bang => "bang",
+        TokenKind::Amp => "amp",
+        TokenKind::Caret => "caret",
+        TokenKind::Tilde => "tilde",
+        TokenKind::Shl => "shl",
+        TokenKind::Shr => "shr",
         TokenKind::Comment => "comment",
         TokenKind::Terminator => "terminator",
         TokenKind::Indent => "indent",
