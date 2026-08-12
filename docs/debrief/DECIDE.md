@@ -43,7 +43,6 @@ the file is still over the limit.
 
 ## Open
 
-- [ ] panel 039 / process | **Should a Part 6 row be falsifiable by the compiler?** The spec-warden's proposal, queued rather than adopted because the panel was not convened on it and amending CLAUDE.md or Part 0 is author instruction. The gap is real: Principle 0 (§1.0) is a burden on what **enters**, so a *permanent rejection* is the one design act in this project subject to no stated burden of proof — the cheapest possible way to make an expensive commitment. The proposed rule: a Part 6 row must name the program or the compiler fact that would make it wrong, turning the preamble's two asserted properties into a test. It has teeth already — under it, Part 6's preamble is false of **four** of its own rows (`Subtyping`, `Higher-kinded types, dependent types`, `Coroutines`, `Metatables`), all cost-only rejections sitting under *"Each violates locality"* | docs/panel/039 § The resolution item 6 · design.md:2126 | the historian's sourced warning is that CLAUDE.md §14 forbids rewriting a dated record, which makes Part 6 the PEP-3103 case (still reading `Rejected` about a language that shipped the feature) rather than the Go-FAQ case
 
 ## Closed by panel 039
 

@@ -219,7 +219,11 @@ twice.
 ## 12. Precedence when artifacts disagree
 Spec beats compiler (the compiler has the bug). Measurement beats opinion —
 including the author's and the panel's: comprehension is the objective (§1.1)
-and it is measured, not asserted.
+and it is measured, not asserted. **And a refusal is held to the same standard as
+a feature**: a design.md Part 6 row must name the program or the compiler fact
+that would make it wrong (author decision 2026-08-12, panel 039; the rule's home
+and its argument are Part 6's own preamble). Principle 0 binds what *enters*, so
+without this a permanent rejection was the one design act under no burden of proof.
 
 ## 13. Where not to go
 Performance (a non-goal, never a justification — **and never a licence either**:

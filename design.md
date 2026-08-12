@@ -2170,8 +2170,23 @@ function in tests.
 
 ## Part 6 — Rejected permanently
 
-Do not add these. Each violates locality, and each is also expensive to implement — which is why
-maximising locality satisfies two vertices of the triangle at once.
+Do not add these. **Most violate locality, and most are also expensive to implement** — which is
+why maximising locality satisfies two vertices of the triangle at once. *Most*, not each: the claim
+used to read "each" and was false of four of its own rows. `Subtyping`, `Higher-kinded types,
+dependent types`, `Coroutines` and `Metatables / dynamic dispatch` are refused on **cost alone** and
+say so in their own reasons, which is a legitimate refusal — §1.1 makes simplicity the ceiling — and
+was being contradicted by the sentence above them (corrected 2026-08-12, panel 039).
+
+**A row here must be falsifiable by the compiler** (author decision 2026-08-12, from panel 039's
+spec-warden). Every row must name the program or the compiler fact that would make it wrong, so a
+reader can check it rather than trust it. The rule exists because of an asymmetry nothing else in
+this project covers: Principle 0 (§1.0) is a burden on what **enters** the language, so a *permanent
+rejection* was the one design act here subject to no burden of proof at all — the cheapest possible
+way to make the most expensive kind of commitment. Panel 039 is what proved the rule has teeth
+before it was written: a proposed row rejecting compile-time evaluation was refuted by the emitted C
+of *every* Heroes program, each of which carries two `_Static_assert(__builtin_constant_p(…))`, and
+the preamble's own "each" died the same afternoon. Where a row's falsifier is a program, it belongs
+in `tests/golden/`; where it is a measurement, it belongs in `docs/measurements/`.
 
 | Feature | Why not |
 |---|---|
