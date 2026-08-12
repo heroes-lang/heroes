@@ -764,3 +764,24 @@ fn libcurl_takes_a_variadic_and_returns_an_enum() {
     assert!(stdout.contains("the url was accepted"), "{stdout}");
     assert!(stdout.contains("code 1 means: Unsupported protocol"), "{stdout}");
 }
+
+/// `heroes run f.hero -- a b` — a separator, not a trailing operand (author
+/// instruction 2026-08-12).
+///
+/// The alternative is unreadable in the case that matters: `heroes run f.hero
+/// --sanitize` would have to mean the flag and `heroes run f.hero -o x` the
+/// flag's value, so a program taking `-o` could never be run at all. And `--`
+/// anywhere but `run` is a named refusal rather than a silent no-op, because
+/// nothing else executes a program to forward to.
+#[test]
+fn run_passes_arguments_to_the_program_after_a_separator() {
+    let out = heroes(&["run", "tests/golden/run/edges-file-args-exit.hero", "--", "alpha", "beta"]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("arguments: 2"), "{stdout}");
+
+    let refused = heroes(&["check", "examples/gallery/00-first.hero", "--", "x"]);
+    assert_eq!(code(&refused), 2);
+    let said = String::from_utf8_lossy(&refused.stderr);
+    assert!(said.contains("only `heroes run` does"), "{said}");
+}

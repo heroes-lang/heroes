@@ -79,7 +79,7 @@ pub fn commands() -> Vec<Command> {
                 valued("-o", "keep the binary here as well as running it"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
             ],
-            summary: "compile at -O2 and execute (the dev loop)".to_string(),
+            summary: "compile at -O2 and execute (the dev loop); `-- a b` passes a and b to the program".to_string(),
         },
         Command {
             tag: Tag::Test,

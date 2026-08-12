@@ -129,6 +129,18 @@ tests any of it.
   say what happened to `typo-code`'s row, including the awkward possibility that
   it loses its sites rather than passing them.
 
+- **The Part 11 harness runs here** (author instruction 2026-08-12). It has not
+  run since M-strings-ownership, and four panel predictions, `outline`/`explain`'s
+  admissibility and panel 036's four first-try rates all wait on it. Here rather
+  than before the port, because the corpus is what the measurement is taken over
+  and a bigger corpus is a better number.
+- **At least one corpus program does not end in `exit(code)`** (author instruction
+  2026-08-12). `exit` bypasses `hero_runtime_check_leaks()` by design — a program
+  asking to stop now is not asking for an audit, and running the gate there would
+  report a leak for every live value in every frame the exit unwinds past — but on
+  Darwin arm64 that counter is the *only* leak instrument there is. So the
+  exemption stands and the corpus keeps a path that still crosses the gate.
+
 **Acceptance:** `heroes test` green over every directory in `examples/`, in all
 three configurations **and on both platforms**, and a measured mutation rate over
 the enlarged corpus —
@@ -161,6 +173,15 @@ are **a lower bound, not a measurement**: the lexer has zero `BTreeMap` and zero
 closures (`types/` has 14 BTree sites across 4,509 lines). If the byte wall is
 the only finding, a second file that exercises maps, recursive variants and
 generics is owed before M-selfhost-port opens.
+**And it prices the closure list's fifteenth row: spawning a process** (author
+instruction 2026-08-12 — *the self-hosted compiler must be complete*). After the
+archive `heroes build` and `heroes run` are Heroes programs and they invoke
+clang; `int64_t system(const char *)` is `conflicting types for 'system'`, panel
+030 R3's wall on a row the audit could not find, because measurement 003 is
+mechanical and audits only what is already on the list. The shape is a
+`hero_spawn` in `hero_os.h` beside the file and argument rows it already carries;
+what the probe owes is the measured cost and the signature.
+
 **Acceptance:** the ported lexer passes the Rust lexer's own tests, and
 `docs/measurements/004-selfhost-readiness.md` states the gap list under the rule
 above.

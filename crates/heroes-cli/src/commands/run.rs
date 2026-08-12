@@ -36,7 +36,7 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
     };
     // No line of our own before the program's output: stdout is the program's from
     // here, and a progress line on stderr would still interleave in a terminal.
-    let status = match std::process::Command::new(&binary).status() {
+    let status = match std::process::Command::new(&binary).args(&args.program_args).status() {
         Ok(status) => status,
         Err(e) => {
             eprintln!("error: cannot execute {}: {e}", binary.display());

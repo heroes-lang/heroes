@@ -107,6 +107,15 @@ impl Exit {
 pub struct Invocation {
     pub tag: Tag,
     pub file: Option<String>,
+    /// Everything after `--`, handed to the program verbatim (`run` only).
+    ///
+    /// **A separator rather than a trailing operand**, because the alternative is
+    /// unreadable in exactly the case that matters: `heroes run f.hero --sanitize`
+    /// would have to mean the flag, and `heroes run f.hero -o x` the flag's value,
+    /// so a program taking `-o` could never be run. `--` is what every tool that
+    /// hit this settled on, and it is the only spelling with no ambiguity left in
+    /// it (author instruction 2026-08-12).
+    pub program_args: Vec<String>,
     /// The flags that were present, in the order the table lists them, each with
     /// its value if it takes one.
     flags: Vec<(String, Option<String>)>,
@@ -127,14 +136,14 @@ impl Invocation {
 /// "unknown flag" learns nothing.
 pub fn parse(args: &[String]) -> Result<Invocation, String> {
     let Some(word) = args.first() else {
-        return Ok(Invocation { tag: Tag::Help, file: None, flags: Vec::new() });
+        return Ok(Invocation { tag: Tag::Help, file: None, flags: Vec::new(), program_args: Vec::new() });
     };
     match word.as_str() {
         "--version" | "-V" => {
-            return Ok(Invocation { tag: Tag::Version, file: None, flags: Vec::new() })
+            return Ok(Invocation { tag: Tag::Version, file: None, flags: Vec::new(), program_args: Vec::new() })
         }
         "--help" | "-h" | "help" => {
-            return Ok(Invocation { tag: Tag::Help, file: None, flags: Vec::new() })
+            return Ok(Invocation { tag: Tag::Help, file: None, flags: Vec::new(), program_args: Vec::new() })
         }
         _ => {}
     }
@@ -148,8 +157,22 @@ pub fn parse(args: &[String]) -> Result<Invocation, String> {
     };
     let mut file: Option<String> = None;
     let mut flags: Vec<(String, Option<String>)> = Vec::new();
+    let mut program_args: Vec<String> = Vec::new();
     let mut rest = args[1..].iter();
     while let Some(arg) = rest.next() {
+        if arg == "--" {
+            // Only `run` executes anything, so only `run` has a program to
+            // forward to. Anywhere else the separator is a mistake worth naming
+            // rather than a no-op that silently drops what follows it.
+            if command.tag != Tag::Run {
+                return Err(format!(
+                    "`--` passes arguments to the program, and `{}` does not run one — only `heroes run` does",
+                    command.name
+                ));
+            }
+            program_args.extend(rest.cloned());
+            break;
+        }
         if arg.starts_with('-') {
             if let Some(known) = command.flags.iter().find(|f| f.spelling == *arg) {
                 let value = if known.value {
@@ -192,7 +215,7 @@ pub fn parse(args: &[String]) -> Result<Invocation, String> {
             command.name, command.name
         ));
     }
-    Ok(Invocation { tag: command.tag, file, flags })
+    Ok(Invocation { tag: command.tag, file, flags, program_args })
 }
 
 /// The enumerating error the llm-ergonomist asked for: every wrong flag is one

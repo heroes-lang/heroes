@@ -136,7 +136,13 @@ exhaustive `match` · `[T]` · `{K: V}` (order unspecified, panel 026) · `str` 
 `bool` · `()` · `T?` with `?`/`.must()`/`.default()` · `=`/`@` bindings · `@` parameters ·
 `if`/`else if`/`else` · `while cond` / `for x in xs` (including over maps) / `break`/`continue` ·
 `return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
-`exit(code)` · modules. Library closure: `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`,
+`exit(code)` · modules · **spawning a process** (author instruction 2026-08-12: *the self-hosted
+compiler must be complete*). The last row is the one the audit could not find: measurement 003 is
+mechanical, so it audits what is *on* this list and structurally cannot see what is absent from it.
+After the archive `heroes build` and `heroes run` are Heroes programs and they invoke clang, and
+`int64_t system(const char *)` is `conflicting types for 'system'` — panel 030 R3's wall on a row
+nobody had counted (panel 036). M-selfhost-probe prices it; the shape is a `hero_spawn` in
+`hero_os.h`, beside the file and argument rows it already carries. Library closure: `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`,
 `join`/`Builder`, `to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
 `all`/`range` written in Heroes.
 

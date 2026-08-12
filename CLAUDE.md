@@ -188,7 +188,12 @@ including the author's and the panel's: comprehension is the objective (§1.1)
 and it is measured, not asserted.
 
 ## 13. Where not to go
-Performance (a non-goal, never a justification). A standard library. Anything
+Performance (a non-goal, never a justification — **and never a licence either**:
+author instruction 2026-08-12, *"le prestazioni non sono un goal ma non devono
+essere nemmeno un limite"*. The rule forbids reaching for speed as a **reason**;
+it does not make slowness acceptable as a **ceiling**. Where a cost stops a
+program the closure list needs from running at all, that is §1.0 compiler-need
+and it goes to the panel, not to this line). A standard library. Anything
 in design.md Part 6. Anything in Part 7 before the closure list compiles
 itself.
 
