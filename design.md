@@ -1352,8 +1352,26 @@ rough edge of the data model and it is left visible rather than patched.
 
 **Known performance consequence to plan for:** `s + t` copies, so building compiler output by
 successive concatenation is O(n²). Not a concern in principle, but on a hundred thousand lines of
-generated C it becomes real waiting. Provide `join([str]) -> str` or a small `Builder`. This is the
-one place where copy-on-write elegance presents a bill.
+generated C it becomes real waiting. Provide `join([str]) -> str` or a small `Builder`.
+
+**And the remedy is incomplete as it stands — corrected here rather than left to be discovered
+(panel 037).** `join`'s argument is a `[str]`, and `[str]` is built with `push`, which allocates a
+fresh array and copies every element: **the array is O(n²) too, so `join` is reached through exactly
+the cost it was funded to remove.** Measured 2026-08-12: 50 000 pushes 2.0 s, 100 000 pushes 7.8 s,
+1 000 000 pushes 806 s. Two judges found this independently and from opposite directions, and it had
+been written down wrong here and in Part 8 wart 8 since the sentence was first drafted.
+
+The answer that works today, measured, needs no language change: **accumulate in chunks.** Keep a
+short `[str]` per declaration, push the joined chunk into an outer `[[str]]`, and join once at the
+end — 527 000 output lines cost 0.5 s that way against 403 s in one flat array. What does *not* work
+is making `push` append in place when the refcount is 1: panel 037 implemented it and the gate never
+fires (the ownership pass's own slot makes the count 2 at every accumulator push), and where it does
+fire it grows an array nested inside another one behind its holder's back, with every instrument in
+this project reporting success. The sound form is a **place store** — `p @ push(p, v)` recognised at
+lowering, uniqueness taken from the place rather than guessed from a count — and it waits for
+M-selfhost-probe to measure whether anything needs it.
+
+This is the one place where copy-on-write elegance presents a bill.
 
 ### 4.11 UFCS
 
@@ -2242,8 +2260,10 @@ visible rather than patched with a second form.
    throws"*.
 6. **The unrecoverable indentation case** (4.15). One accepted silent-error class.
 7. **A single-child node needs a one-element array**, because arrays are the only indirection.
-8. **String concatenation is O(n²)** under value semantics; needs `join`/`Builder` for compiler-scale
-   output.
+8. **String concatenation is O(n²)** under value semantics — **and so is the `[str]` you build to
+   hand `join`** (panel 037, measured: 1 000 000 pushes 806 s). The remedy that works today is
+   chunked accumulation, not a language change; §4.10 carries the numbers and the refused
+   alternative. Needs `join`/`Builder` for compiler-scale output.
 9. **UFCS is the one deliberate duplication**: `f(x)` and `x.f()` both work. Kept for chains,
    acknowledged as the exception to "one way only".
 10. **`?` combined with `@` copy-out** needed an explicit rule (copy-out always happens) because it
