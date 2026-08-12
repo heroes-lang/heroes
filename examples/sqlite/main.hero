@@ -1,0 +1,79 @@
+## The architecture test: SQLite, from Heroes, with no shim
+#
+# design.md §4.19 puts it plainly — *if this works without you having written a
+# standard library, the architecture holds*. Nothing here is a wrapper this
+# project wrote: `sqlite3.h` is the SDK's, clang reads it, and every signature
+# below is checked against it.
+#
+# Four things had to exist before this file could:
+#
+#   - the group, so a signature has a header behind it;
+#   - `<sqlite3.h>` in the generated C, so clang sees the real declarations;
+#   - `nullptr` and `@`, so a C out-parameter has something to write into;
+#   - `.cstr()`, so a Heroes string can be lent to C for the length of a call.
+#
+# What is NOT here is as much of the point: no marshalling, no glue layer, no
+# generated binding file, and no `sqlite3.c` of our own.
+#
+# **This program builds with four warnings, and they are true.** `ptr` is C's
+# `void *`, so an out-parameter is `void **` where the header wants `sqlite3 **`
+# — and C converts `void *` to any object pointer implicitly but does not
+# convert `void **`. clang says so on every build, and the warning is forwarded
+# rather than silenced: what it reports is a real limit of `ptr`, which erases
+# the type SQLite would otherwise have checked. The repair is not a cast the
+# emitter inserts — that compiles clean and hides the fact — it is the C-width
+# type vocabulary §4.19 defers to Part 7 item 10.
+
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_open(filename: cstr, @out: ptr) -> int
+    function sqlite3_close(db: ptr) -> int
+    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> int
+    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: int, @statement: ptr, @tail: ptr) -> int
+    function sqlite3_step(statement: ptr) -> int
+    function sqlite3_column_int(statement: ptr, column: int) -> int
+    function sqlite3_finalize(statement: ptr) -> int
+
+# SQLite's own result codes, as constants rather than as literals in the
+# comparisons (panel 034 R4). A typo is `error[unknown_name]` here, locally.
+constant SQLITE_OK: int
+    0
+
+constant SQLITE_ROW: int
+    100
+
+# One statement, run for its effect. The three pointers SQLite's callback
+# protocol takes are `nullptr`: §4.19 fixes a callback at `ptr` until the
+# boundary has a C-width type vocabulary, and this program needs none.
+function run(db: ptr, sql: str) -> int
+    error: ptr @ nullptr
+    return sqlite3_exec(db: db, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @error)
+
+# The first column of the first row, which is the whole of "read a result".
+function first_int(db: ptr, sql: str) -> int
+    statement: ptr @ nullptr
+    tail: ptr @ nullptr
+    rc = sqlite3_prepare_v2(
+        db: db,
+        sql: sql.cstr(),
+        length: 0 - 1,
+        statement: @statement,
+        tail: @tail
+    )
+    if rc != SQLITE_OK
+        return 0 - 1
+    value: int @ 0 - 1
+    if sqlite3_step(statement) == SQLITE_ROW
+        value @ sqlite3_column_int(statement, 0)
+    _ = sqlite3_finalize(statement)
+    return value
+
+function main()
+    db: ptr @ nullptr
+    if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
+        print("cannot open the database")
+        return
+    _ = run(db, "create table note(body text)")
+    _ = run(db, "insert into note(body) values ('hello'), ('from'), ('sqlite')")
+    print("rows: ", first_int(db, "select count(*) from note"))
+    print("longest: ", first_int(db, "select max(length(body)) from note"))
+    _ = sqlite3_close(db)

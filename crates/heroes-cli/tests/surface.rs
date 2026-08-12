@@ -712,3 +712,20 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
     assert!(!stderr.contains("_Static_assert"), "it showed generated C:\n{stderr}");
     assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
 }
+
+/// **The milestone's acceptance test, run** (design.md §4.19's ladder, rung 3):
+/// *if this works without you having written a standard library, the
+/// architecture holds*.
+///
+/// Open a database, create a table, insert, prepare, step, read a column,
+/// finalize, close — from Heroes, against the SDK's own `sqlite3.h`, with **no
+/// shim**. It is a surface test rather than a `run/` golden because it needs a
+/// third-party library on the link line, which is the one thing the golden
+/// harness cannot assume on a machine it has not met.
+#[test]
+fn sqlite_opens_queries_and_closes_with_no_shim() {
+    let out = heroes(&["run", "examples/sqlite/main.hero"]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert_eq!(stdout, "rows: 3\nlongest: 6\n", "{stdout}");
+}
