@@ -896,3 +896,53 @@ fn run_passes_arguments_to_the_program_after_a_separator() {
     let said = String::from_utf8_lossy(&refused.stderr);
     assert!(said.contains("only `heroes run` does"), "{said}");
 }
+
+/// `heroes mutate` refuses a corpus that does not compile (author decision
+/// 2026-08-12, panel 038 § The digit class).
+///
+/// This is metric 3's one number that can be wrong in the **flattering**
+/// direction: every mutant of a program that is already refused is killed by the
+/// diagnostic that was already there, so the run reports a perfect defence it
+/// never mounted. The witness is the one that found it — `crates/heroes/src/library/`
+/// is refused by `heroes check` because the library *is* the built-ins, and it
+/// used to score 100%.
+#[test]
+fn mutate_refuses_a_corpus_that_does_not_compile() {
+    let out = heroes(&["mutate", "crates/heroes/src/library/"]);
+    assert_eq!(code(&out), 2, "a corpus it cannot use is exit 2, not a quiet exclusion");
+    assert!(out.stdout.is_empty(), "no table when the corpus is refused");
+    let said = String::from_utf8_lossy(&out.stderr);
+    assert!(said.contains("this corpus does not compile"), "{said}");
+    assert!(said.contains("library/source.hero"), "it names the file: {said}");
+
+    // And the corpus that does compile still runs.
+    assert_eq!(code(&heroes(&["mutate", "examples/gallery"])), 0);
+}
+
+/// `--survivors` prints the mutants behind a rate, and `--operator` narrows to one.
+///
+/// Measurement 002 recorded two per-operator rates that moved between runs and
+/// declined to explain either, because attributing a delta needs the mutants and
+/// the tool printed rates alone (CLAUDE.md §12: a number nobody can attribute is
+/// an opinion with a decimal point).
+#[test]
+fn mutate_can_print_the_survivors_of_one_operator() {
+    let out = heroes(&["mutate", "examples/gallery", "--operator", "swap-args", "--survivors"]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("| swap-args |"), "the table is still the measurement: {stdout}");
+    assert!(!stdout.contains("| typo-ident |"), "--operator scores one row: {stdout}");
+    // A survivor is printed as its site and the two lines, so it can be opened.
+    let survivors = stdout.split("Never pool these").nth(1).expect("the survivor section");
+    assert!(
+        survivors.contains(".hero:") && survivors.contains("    - ") && survivors.contains("    + "),
+        "a survivor names file:line and both lines: {survivors}"
+    );
+
+    // An unknown operator is exit 2 and names the twelve, like every other
+    // strictness failure on this surface.
+    let wrong = heroes(&["mutate", "--operator", "swapargs"]);
+    assert_eq!(code(&wrong), 2);
+    let said = String::from_utf8_lossy(&wrong.stderr);
+    assert!(said.contains("no operator `swapargs`") && said.contains("swap-args"), "{said}");
+}

@@ -12,7 +12,9 @@
 //! acceptance program is included by the caller passing `design.md`'s fence — the
 //! harness does that; this command's default is the directory.
 
-use heroes::mutate::{report, run as run_operators};
+use heroes::mutate::{
+    OPERATORS, base_checks_clean, report, scored, survivor_report,
+};
 
 use crate::cli::Exit;
 
@@ -44,8 +46,48 @@ fn collect(
     Ok(())
 }
 
-pub fn run(dir: Option<&str>) -> Exit {
+/// Every program in the corpus must compile *before* anything is mutated.
+///
+/// The refusal is exit 2 and not a quiet exclusion, by author decision
+/// 2026-08-12: a corpus this command cannot use is a mistake in the invocation,
+/// which is what exit 2 means, and a run that silently dropped half its input
+/// would print a rate over a corpus nobody named. Every offending file is listed
+/// rather than the first, because a corpus is usually wrong in one way and fixing
+/// it one error per run is the slowest possible loop.
+fn refuse_a_corpus_that_does_not_compile(sources: &[(String, String)]) -> Option<String> {
+    let refused: Vec<&String> = sources
+        .iter()
+        .filter(|(name, text)| !base_checks_clean(name, text))
+        .map(|(name, _)| name)
+        .collect();
+    if refused.is_empty() {
+        return None;
+    }
+    let mut message = format!(
+        "this corpus does not compile, so its kill rate would be meaningless\n  \
+         {} of {} programs are already refused by `heroes check`:\n",
+        refused.len(),
+        sources.len()
+    );
+    for name in refused {
+        message.push_str(&format!("    {name}\n"));
+    }
+    message.push_str(
+        "  every mutant of a program that is already wrong is killed by the\n  \
+         diagnostic that was already there — run `heroes check` on each",
+    );
+    Some(message)
+}
+
+pub fn run(dir: Option<&str>, survivors: bool, operator: Option<&str>) -> Exit {
     let dir = dir.unwrap_or("examples");
+    if let Some(id) = operator {
+        if !OPERATORS.iter().any(|o| o.id == id) {
+            let known: Vec<&str> = OPERATORS.iter().map(|o| o.id).collect();
+            eprintln!("error: no operator `{id}`\n  the twelve are: {}", known.join(", "));
+            return Exit::Failed;
+        }
+    }
     let sources = match corpus(dir) {
         Ok(sources) => sources,
         Err(message) => {
@@ -57,7 +99,15 @@ pub fn run(dir: Option<&str>) -> Exit {
         eprintln!("error: no `.hero` files under {dir}");
         return Exit::Failed;
     }
+    if let Some(message) = refuse_a_corpus_that_does_not_compile(&sources) {
+        eprintln!("error: {message}");
+        return Exit::Failed;
+    }
     println!("corpus: {} programs under {dir}\n", sources.len());
-    print!("{}", report(&run_operators(&sources)));
+    let (scores, survived) = scored(&sources, operator);
+    print!("{}", report(&scores));
+    if survivors {
+        print!("{}", survivor_report(&survived));
+    }
     Exit::Ok
 }

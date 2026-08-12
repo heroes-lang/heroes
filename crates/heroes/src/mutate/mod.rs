@@ -30,10 +30,12 @@ use crate::types::check;
 
 mod edits;
 mod operators;
+mod survivors;
 #[cfg(test)]
 mod tests;
 
 pub use operators::OPERATORS;
+pub use survivors::{Survivor, report as survivor_report};
 
 /// Every mutant one operator makes of one source.
 ///
@@ -82,10 +84,28 @@ impl Score {
 /// `sources` are programs that **check clean today** — the gallery and the
 /// acceptance program. Mutating a program that is already wrong would measure
 /// nothing: the compiler would reject the mutant for the mistake that was already
-/// there.
+/// there. That sentence was a convention until 2026-08-12 and is now enforced by
+/// the caller, over `base_checks_clean` below.
 pub fn run(sources: &[(String, String)]) -> Vec<Score> {
+    scored(sources, None).0
+}
+
+/// The same run, keeping the survivors and optionally narrowed to one operator.
+///
+/// **Two returns rather than two passes.** A survivor is discovered by the loop
+/// that scores it, so re-deriving the list would mean running the whole frontend
+/// over every mutant a second time — and, worse, would let the printed survivors
+/// and the printed rate come from two different traversals. They must not be able
+/// to disagree, which is `mod.rs`'s reason for having one `fate` for both arms.
+///
+/// `only` is the operator id from `--operator`; `None` runs the twelve.
+pub fn scored(sources: &[(String, String)], only: Option<&str>) -> (Vec<Score>, Vec<Survivor>) {
     let mut scores: Vec<Score> = Vec::new();
+    let mut survived: Vec<Survivor> = Vec::new();
     for operator in OPERATORS {
+        if only.is_some_and(|id| id != operator.id) {
+            continue;
+        }
         let mut score = Score {
             operator: operator.id.to_string(),
             mutants: 0,
@@ -104,13 +124,29 @@ pub fn run(sources: &[(String, String)]) -> Vec<Score> {
                             score.killed_permissive += 1;
                         }
                     }
-                    Fate::Survived => {}
+                    Fate::Survived => {
+                        survived.extend(Survivor::locate(operator.id, name, text, &mutant));
+                    }
                 }
             }
         }
         scores.push(score);
     }
-    scores
+    (scores, survived)
+}
+
+/// Whether a corpus program is one this measurement may use: it compiles, today,
+/// with nothing to report.
+///
+/// **The same pipeline that judges the mutants judges the base**, deliberately.
+/// `heroes mutate` pointed at `crates/heroes/src/library/` reported 77 sites and
+/// 100% killed while `heroes check` refused that very corpus (`range` is a
+/// built-in, because the library *is* the built-ins) — every mutant killed by a
+/// diagnostic that was already there. Metric 3's one number that can be wrong in
+/// the flattering direction, found by a scaffold rather than by the harness
+/// (panel 038; author decision 2026-08-12: refuse, do not silently exclude).
+pub fn base_checks_clean(name: &str, text: &str) -> bool {
+    fate(name, text, false) == Fate::Survived
 }
 
 /// One mutant through the real frontend. `permissive` drops the thesis rules,

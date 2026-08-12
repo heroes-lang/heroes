@@ -165,3 +165,39 @@ fn today_nothing_catches_a_slipped_code() {
         "a slipped error code is now caught — update this test in the commit that did it"
     );
 }
+
+/// A survivor's site is derived from the two texts, not carried from the edit —
+/// so it must land on the line the operator actually changed.
+#[test]
+fn a_survivor_names_the_line_the_operator_changed() {
+    let original = "function main()\n    x = 1\n    print(x)\n";
+    let mutant = "function main()\n    x = 1\n    print(y)\n";
+    let found = super::Survivor::locate("typo-ident", "t.hero", original, mutant)
+        .expect("the two texts differ");
+    assert_eq!(found.line, 3);
+    assert_eq!(found.before.as_deref(), Some("    print(x)"));
+    assert_eq!(found.after.as_deref(), Some("    print(y)"));
+
+    // A deletion still differs first at the line it deleted (`drop-case`).
+    let shorter = "function main()\n    print(1)\n";
+    let deleted = super::Survivor::locate("drop-case", "t.hero", original, shorter)
+        .expect("a deletion is a difference");
+    assert_eq!(deleted.line, 2);
+    assert_eq!(deleted.after.as_deref(), Some("    print(1)"));
+
+    // Identical texts have no site, and inventing one would be worse than none.
+    assert!(super::Survivor::locate("x", "t.hero", original, original).is_none());
+}
+
+/// The base program must compile before anything is mutated, and the check is the
+/// same `fate` the mutants get — two pipelines could not drift apart if they
+/// wanted to.
+#[test]
+fn a_corpus_program_that_does_not_check_is_refused() {
+    assert!(super::base_checks_clean("t.hero", "function main()\n    print(1)\n"));
+    // `range` is a built-in, which is exactly what refused the library corpus.
+    assert!(!super::base_checks_clean(
+        "t.hero",
+        "function range(from: int, to: int) -> [int]\n    return []\n\nfunction main()\n    print(1)\n"
+    ));
+}

@@ -109,7 +109,10 @@ pub fn commands() -> Vec<Command> {
             tag: Tag::Mutate,
             name: "mutate".to_string(),
             operand: Operand::Optional,
-            flags: Vec::new(),
+            flags: vec![
+                flag("--survivors", "print the mutants the compiler accepted, not only the rates"),
+                valued("--operator", "score this operator alone, by its id"),
+            ],
             summary:
                 "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)"
                     .to_string(),
