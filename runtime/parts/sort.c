@@ -106,7 +106,7 @@ static void hero_merge_two(unsigned char *dst, const unsigned char *lo, int64_t 
  * not a Heroes block, so `hero_live_blocks` never sees it. */
 static void hero_sort_elems(unsigned char *base, int64_t n, size_t size, HeroCmpFn cmp) {
     if (n < 2) return;
-    unsigned char *tmp = malloc((size_t)n * size);
+    unsigned char *tmp = hero_alloc((size_t)n * size);
     if (tmp == NULL) hero_panic("out of memory");
     unsigned char *src = base;
     unsigned char *dst = tmp;
@@ -123,7 +123,7 @@ static void hero_sort_elems(unsigned char *base, int64_t n, size_t size, HeroCmp
         dst = swap;
     }
     if (src != base) memcpy(base, src, (size_t)n * size);
-    free(tmp);
+    hero_release(tmp);
 }
 
 /* `sort(xs) -> [T]` — a NEW array, exactly as `push` returns one: §4.10 has no

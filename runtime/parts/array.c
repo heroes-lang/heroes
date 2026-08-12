@@ -52,13 +52,11 @@ HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap) {
     if ((uint64_t)cap > (SIZE_MAX - sizeof(HeroArrayHeader)) / elem->size) {
         hero_panic("array too large");
     }
-    HeroArrayHeader *a = malloc(sizeof(HeroArrayHeader) + (size_t)cap * elem->size);
-    if (a == NULL) hero_panic("out of memory");
+    HeroArrayHeader *a = hero_alloc_block(sizeof(HeroArrayHeader) + (size_t)cap * elem->size);
     a->refcount = 1;
     a->len = 0;
     a->cap = cap;
     a->elem = elem;
-    hero_live_blocks += 1;
     return a;
 }
 
@@ -75,8 +73,7 @@ void hero_array_decref(HeroArrayHeader *a) {
     for (int64_t i = 0; i < a->len; i++) {
         a->elem->drop(data + (size_t)i * a->elem->size);
     }
-    hero_live_blocks -= 1;
-    free(a);
+    hero_release_block(a);
 }
 
 int64_t hero_array_len(const HeroArrayHeader *a) {

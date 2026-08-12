@@ -36,6 +36,13 @@ const RECORD: &[&str] = &[
     "target",
     "build",
     ".git",
+    // **A nested checkout is not a living file of this tree.** A git worktree
+    // under `.claude/worktrees/` is a whole second copy of the repository at some
+    // other commit, and walking into it made this invariant report the *other*
+    // tree's names as this one's — three aliases that do not exist here and five
+    // numbered milestones that were retired here. The names it found were real;
+    // the tree they were in was not ours (2026-08-12).
+    ".claude/worktrees",
 ];
 
 /// Files whose milestone identifiers are **quotations of the retired spelling**, kept

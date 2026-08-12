@@ -7,17 +7,16 @@
  * `WITH` in the tag above, because that operator takes an exception from
  * SPDX's own registry and this one is not in it. */
 
-/* parts/str.c — `str`, its reference counting, and the live-block counter.
+/* parts/str.c — `str` and its reference counting.
  *
  * A `str` is a fat pointer PASSED BY VALUE (`heroes_runtime.h` carries the
  * layout argument). `ptr == NULL` is the one non-value, which is what lets a
  * slot be zero-initialised while a read of an unassigned one stays a loud panic.
  *
- * `hero_live_blocks` lives here rather than in `panic.c` because `str` is the
- * first thing that allocates. It is `static`, and that is the leak gate's
- * foundation: AddressSanitizer has no leak detector on Darwin arm64 (panel 021,
- * measured), so this counter is the instrument, and nothing outside this
- * translation unit can touch it.
+ * The live-block counter used to live here, because `str` was the first thing
+ * that allocated. It moved to `parts/alloc.c` with every other `malloc` in the
+ * runtime, which is what §4.20 has asked for since day zero and what this file
+ * had been standing in for.
  *
  * design.md §4.20, §4.10, panel 021.
  */
@@ -44,26 +43,11 @@ static void hero_str_require(HeroStr s) {
     }
 }
 
-/* live heap-block balance: the leak detector that works on this platform */
-static int64_t hero_live_blocks = 0;
-int64_t hero_runtime_live(void) { return hero_live_blocks; }
-void hero_runtime_check_leaks(void) {
-    if (hero_live_blocks != 0) {
-        fflush(stdout);
-        fprintf(stderr, "panic: %lld heap blocks still live at exit "
-                        "(a missing decref) — this is a compiler bug\n",
-                (long long)hero_live_blocks);
-        abort();
-    }
-}
-
 static HeroStr hero_str_alloc(int64_t len) {
     if (len < 0) hero_panic("negative string length");
-    HeroStrHeader *h = malloc(sizeof(HeroStrHeader) + (size_t)len + 1);
-    if (h == NULL) hero_panic("out of memory");
+    HeroStrHeader *h = hero_alloc_block(sizeof(HeroStrHeader) + (size_t)len + 1);
     h->refcount = 1;
     h->magic = HERO_STR_MAGIC;
-    hero_live_blocks += 1;
     char *b = (char *)(void *)(h + 1);
     b[len] = '\0';
     return (HeroStr){b, len};
@@ -92,8 +76,7 @@ void hero_str_decref(HeroStr s) {
     if (h->refcount < 0) return; /* static literal */
     h->refcount -= 1;
     if (h->refcount == 0) {
-        hero_live_blocks -= 1;
-        free(h);
+        hero_release_block(h);
     }
 }
 

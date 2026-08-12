@@ -109,7 +109,7 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     size_t states = hero_map_round_up((size_t)cap);
     size_t keys = hero_map_round_up((size_t)cap * key->size);
     size_t vals = (size_t)cap * val->size;
-    HeroMapHeader *m = malloc(head + states + keys + vals);
+    HeroMapHeader *m = hero_alloc_block(head + states + keys + vals);
     if (m == NULL) hero_panic("out of memory");
     m->refcount = 1;
     m->len = 0;
@@ -120,7 +120,6 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     m->keys = head + states;
     m->vals = head + states + keys;
     memset(hero_map_states(m), 0, (size_t)cap);
-    hero_live_blocks += 1;
     return m;
 }
 
@@ -139,8 +138,7 @@ void hero_map_decref(HeroMapHeader *m) {
         m->key->drop(hero_map_key_at(m, i));
         m->val->drop(hero_map_val_at(m, i));
     }
-    hero_live_blocks -= 1;
-    free(m);
+    hero_release_block(m);
 }
 
 int64_t hero_map_len(const HeroMapHeader *m) {

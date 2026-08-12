@@ -60,6 +60,10 @@
 /* Aborting and printing: no dependencies, and everything below may abort. */
 #include "parts/panic.c"
 
+/* The single allocation point and the live-block counter (design.md §4.20).
+ * First after `panic.c`, because everything that allocates needs both. */
+#include "parts/alloc.c"
+
 /* `str`, the reference counting, and the live-block counter that all three
  * containers below increment. */
 #include "parts/str.c"

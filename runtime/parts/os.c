@@ -57,20 +57,16 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
         *status = HERO_OS_FAILED;
         return hero_str_from_bytes("", 0);
     }
-    char *buffer = malloc((size_t)size + 1);
-    if (buffer == NULL) {
-        fclose(file);
-        hero_panic("out of memory reading a file");
-    }
+    char *buffer = hero_alloc((size_t)size + 1);
     size_t got = fread(buffer, 1, (size_t)size, file);
     fclose(file);
     if (got != (size_t)size) {
-        free(buffer);
+        hero_release(buffer);
         *status = HERO_OS_FAILED;
         return hero_str_from_bytes("", 0);
     }
     HeroStr text = hero_str_from_bytes(buffer, (int64_t)got);
-    free(buffer);
+    hero_release(buffer);
     *status = HERO_OS_OK;
     return text;
 }

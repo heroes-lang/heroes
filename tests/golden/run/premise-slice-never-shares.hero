@@ -1,0 +1,38 @@
+# THE PREMISE, AS A TEST THAT FIRES WHEN IT DIES (CLAUDE.md §11, panel 037).
+#
+# The premise: **a slice never shares a buffer with its source.** It is true
+# today — `hero_array_slice` and `hero_str_slice` each allocate and copy — and
+# nothing in the language says it must stay true.
+#
+# What depends on it is not obvious from any one file, which is why it is written
+# down here. Panel 037's historian searched the record for corruption cases under
+# value semantics and found that every one needs the same shape: **a second
+# header over one buffer, with its own length.** D's array stomping and its
+# `assumeSafeAppend` escape hatch, V's issues #119 and #6569 — all of them. Heroes
+# has no such shape, and the place store that panel 037 adopted (`p @ push(p, v)`
+# appending in place) is sound *because* it has none. The day `slice` returns a
+# view instead of a copy, that soundness argument dies silently and this case is
+# what says so.
+#
+# Read the failure this way: if this case ever fails, the place store's premise is
+# gone, and D's used-length high-water mark is the design that replaces it.
+# Bulk regression case.
+
+function main()
+    # An array, sliced, then the source replaced element by element.
+    xs: [int] @ [10, 20, 30, 40]
+    part = slice(xs, from: 1, to: 3)
+    xs[1] @ 99
+    xs[2] @ 98
+    print(part[0], " ", part[1])          # 20 30, not 99 98
+    # And the other direction: growing the source must not reach the slice.
+    xs @ push(xs, 50)
+    print(len(part), " ", len(xs))        # 2 5
+
+    # A string, the same question. `str` is the one carrying a heap buffer that
+    # `.cstr()` hands to C, so a shared slice would be visible from outside the
+    # language as well as inside it.
+    s = "abcdef"
+    mid = slice(s, from: 2, to: 4)
+    joined = s + "!"
+    print(mid, " ", joined)               # cd abcdef!

@@ -1883,7 +1883,14 @@ the first is the one that proves the project's premise:
 A few hundred lines, written once. It ships a header, **`heroes_runtime.h`, which generated C
 includes — so clang type-checks every runtime call.** Contents:
 
-- the allocator (a wrapper over `malloc`) — and **a single point**, which today is literally one
+- the allocator (a wrapper over `malloc`) — and **a single point**, which is `runtime/parts/alloc.c`
+  and has been since M-ffi-ladder. It was not before: the sentence below claimed one `malloc` and one
+  `free` inside the `str` primitives while there were **eleven calls across five files**, and the
+  claim went on reading as true because it was the design rather than the code. Two pairs, not one,
+  and the split is the leak gate's: `hero_alloc_block`/`hero_release_block` count what the language
+  owns, `hero_alloc`/`hero_release` do not, because a scratch buffer freed inside one runtime call is
+  not a leak and counting it invites a report of one that is not. The old wording follows, since the
+  reason it gave is still the reason: which today is literally one
   `malloc` and one `free`, both inside the `str` primitives. Not tidiness: Part 7.13's per-thread
   heaps need one place to change, and a second allocation site discovered later is a redesign.
 - `incref` / `decref` — **behind a narrow, never-inlined boundary**, i.e. calls into this separately
