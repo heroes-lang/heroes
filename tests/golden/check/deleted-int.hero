@@ -1,0 +1,24 @@
+# UNVERIFIED — pending debrief
+#
+# `int` is not a word in this language, and this is the case that says so
+# (author decision 2026-08-12, `docs/panel/042`'s verdict section).
+#
+# It is the word every model reaches for and the one this milestone deleted.
+# The reason is the thesis rather than taste: `int` carries forty years of
+# conflicting widths — sixteen bits, thirty-two, sixty-four, arbitrary — so a
+# reader must know the platform to know what it means, while `i64` is ambiguous
+# to nobody. Panel 042's compiler-engineer vetoed the ALIAS on §4.15 grounds;
+# deleting the word dissolved the veto rather than answering it, because with no
+# alias there is no second spelling for `fmt` to choose between.
+#
+# The repair is a pure word-for-word swap, so it is `certain` and machine-
+# applicable: `heroes check --in-place` migrates a whole file. That is not a
+# convenience — 565 occurrences across 125 files were migrated by it during this
+# milestone.
+#
+# Alone in its own file because the stages are gated: a lexer refusal stops the
+# pipeline, so a file mixing this with a type error would only ever show this.
+
+function main()
+    n: int @ 1              #~ reserved_word
+    print(n)

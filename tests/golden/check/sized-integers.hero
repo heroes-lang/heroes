@@ -1,0 +1,36 @@
+# UNVERIFIED — pending debrief
+#
+# The five adversarial cases for M-sized-integers (§4.3; panel 042). Each is a
+# habit a model carries from C, Rust or Go, and each one this language refuses.
+# What is judged is whether the message says what to write instead.
+#
+# 1. `int` is NOT here, and the reason is worth writing down: it is a *lexer*
+#    refusal, the stages are gated, and a file containing it would report that
+#    one error and stop before the type checker ever ran. It has its own case,
+#    `check/deleted-int.hero`. The same split was needed at M-literal-bases and
+#    for the same reason.
+#
+# 2. A literal past its declared width. C truncates here and says nothing; this
+#    is the single mistake sized integers exist to catch, so the note names the
+#    range and says the language never truncates one silently.
+#
+# 3. Mixed widths in arithmetic. Every language with widths promotes silently;
+#    §4.3 forbids implicit conversions and does not carve out an exception for
+#    integers, so `a + b` with different widths is the same error as `1 + 2.0`.
+#
+# 4. An implicit widening. It cannot lose a value, which is exactly why a reader
+#    expects it to be free — and it is free, but it must be WRITTEN: `fit_i64(b)`
+#    returns an `i64` and not an `i64?`, because it cannot fail.
+#
+# 5. A narrowing used as if it could not fail. `fit_u8` hands back a `u8?` and
+#    the `?`, `.must()` or a `match` is the reader's choice of what to do about
+#    it. Forgetting it is a type error rather than a truncation.
+
+function main()
+    b: u8 @ 300             #~ int_out_of_range
+    c: u8 @ 255
+    d: i64 @ 7
+    e = c + d               #~ mixed_arithmetic
+    f: i64 @ c              #~ type_mismatch
+    g: u8 @ fit_u8(300)     #~ type_mismatch
+    print(b, c, d, e, f, g)

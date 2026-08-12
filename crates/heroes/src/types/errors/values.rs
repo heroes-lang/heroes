@@ -23,12 +23,12 @@ pub(in crate::types) fn mixed_arithmetic(op: &str, left: &str, right: &str, span
     let mut diagnostic = Diagnostic::new(
         "mixed_arithmetic",
         format!(
-            "`{op}` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `{left}` and `{right}`"
+            "`{op}` takes two of one type — two integers of the SAME width, or two `f64` — and found `{left}` and `{right}`"
         ),
         span,
     );
     diagnostic.fixes.push(Fix {
-        title: "convert one side: `to_f64(x)` or `to_i64(x)`".to_string(),
+        title: "convert one side: `to_f64(x)`, `to_i64(x)`, or `fit_<width>(x)` between widths".to_string(),
         replacement: String::new(),
         span,
         certainty: Certainty::Guess,

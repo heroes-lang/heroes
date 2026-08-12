@@ -1,0 +1,1 @@
+tests/golden/check/deleted-int.hero:23:8: error[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`

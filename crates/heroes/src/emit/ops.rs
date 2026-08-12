@@ -405,27 +405,28 @@ pub(super) fn call(
                 w.line(&format!("    {into} = ({}){};", to.c_type(), arguments[0]));
                 return;
             }
+            // **Both bounds are asked of the two RANGES, not of the two shapes.**
+            // A first version derived them from `signed()` and `bits()` by hand
+            // and got `fit_i8(-129)` wrong: it emitted a low test only when the
+            // target's floor was zero, so a *signed narrower* target — whose
+            // floor is -128, not 0 — was checked at the top and nowhere else,
+            // and -129 walked through. Found by this milestone's own adversarial
+            // case, which is what §9's five exist for.
+            //
+            // Comparing the ranges says exactly what is needed and cannot drift:
+            // a bound is tested when the source can reach past it, and omitted
+            // when it cannot — omitted rather than emitted as a tautology,
+            // because `-Wtautological-constant-out-of-range-compare` would make
+            // every widening a warning.
             let (low, high) = to.range();
+            let (from_low, from_high) = from.range();
             let value = &arguments[0];
             let mut tests: Vec<String> = Vec::new();
-            if from.signed() && low >= 0 {
-                tests.push(format!("{value} >= 0"));
+            if from_low < low {
+                tests.push(format!("{value} >= {low}{}", if from.signed() { "LL" } else { "ULL" }));
             }
-            // The top test is needed only where the source can hold more than the
-            // target. `bits` and `signed` together decide that, and asking them is
-            // a fact about the two widths rather than a guess about the program.
-            let source_top = if from.signed() { from.bits() - 1 } else { from.bits() };
-            let target_top = if to.signed() { to.bits() - 1 } else { to.bits() };
-            if source_top > target_top {
-                tests.push(format!(
-                    "{value} <= {}{}",
-                    high,
-                    if to.signed() { "LL" } else { "ULL" }
-                ));
-            }
-            if from.signed() && !to.signed() && low == 0 && !tests.iter().any(|t| t.ends_with(">= 0"))
-            {
-                tests.push(format!("{value} >= 0"));
+            if from_high > high {
+                tests.push(format!("{value} <= {high}{}", if from.signed() { "LL" } else { "ULL" }));
             }
             let condition =
                 if tests.is_empty() { "1".to_string() } else { tests.join(" && ") };

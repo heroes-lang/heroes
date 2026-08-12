@@ -1,0 +1,72 @@
+# The eight widths, running (§4.3; panel 042, author ratification 2026-08-12).
+#
+# Part 7 item 10 called sized integers "the highest-risk addition in the
+# language… never in v1", and the author overturned that on 2026-08-12. What is
+# checked here is the half that made the row nervous: the CONVERSIONS, which
+# design.md:833 calls "the most expensive spec item that exists and the
+# number-one error source in C". Half of that cost was already paid, because
+# §4.3 forbids implicit conversions outright — so there is no promotion lattice,
+# which is the part of C's rules that does the damage.
+#
+# What each block is FOR:
+#
+# - the declarations: a literal takes the width its context asks for, and `-128`
+#   proves the sign is folded in before the range is checked — `128` alone does
+#   not fit an `i8`, so a check that saw them apart would refuse the only way to
+#   write that type's lowest value.
+# - `u64`'s top: the one value no `int64_t` holds, printed correctly. Panel 041
+#   concluded `SIZE_MAX` was unreadable under every option on its menu; it is
+#   readable now, and this line is that claim.
+# - the conversions: `fit_` is fallible exactly when it can fail. Widening a
+#   `u8` into an `i64` cannot, so it hands back an `i64`; narrowing can, so it
+#   hands back an `i64?`.
+# - `s[i]`: the byte source says byte, which is what gives `[u8]` a producer.
+# - the aborts are in `check/`, not here — an abort ends the program and a run golden
+#   has to reach its last line.
+
+function main()
+    a: u8 @ 200
+    b: i8 @ -128
+    c: i32 @ -70000
+    d: u16 @ 65535
+    print("small ", a, " ", b, " ", c, " ", d)
+
+    top: u64 @ 18446744073709551615
+    hex: u64 @ 0xffffffffffffffff
+    print("top ", top, " ", hex, " ", top == hex)
+
+    byte: u8 @ 7
+    print("widen ", fit_i64(byte) * 100)
+    print("narrow ", fit_u8(300).is_err(), " ", fit_u8(42).must())
+    print("signed ", fit_u8(-1).is_err())
+
+    text = "A9"
+    print("bytes ", text[0], " ", text[1], " ", text[0] == 'A')
+
+test "a literal takes the width its context asks for"
+    small: u8 @ 255
+    edge: i8 @ -128
+    assert fit_i64(small) == 255
+    assert fit_i64(edge) == -128
+
+test "a widening cannot fail and says so"
+    b: u8 @ 9
+    w: i64 = fit_i64(b)
+    assert w == 9
+
+test "a narrowing can fail and says so"
+    assert fit_u8(255).must() == 255
+    assert fit_u8(256).is_err()
+    assert fit_i8(-129).is_err()
+    assert fit_i8(-128).must() == -128
+
+test "unsigned is not signed"
+    assert fit_u8(-1).is_err()
+    assert fit_u32(-1).is_err()
+    top: u64 @ 18446744073709551615
+    assert fit_i64(top).is_err()
+
+test "a byte is a byte"
+    s = "hi"
+    assert s[0] == 'h'
+    assert s.len() == 2

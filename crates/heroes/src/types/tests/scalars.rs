@@ -20,7 +20,7 @@ fn arithmetic_is_monomorphic_and_says_so() {
     assert_clean("function f(a: f64, b: f64) -> f64\n    return a * b\n");
     assert_eq!(
         diagnostics("function f(a: i64, b: f64) -> i64\n    return a + b\n"),
-        "test.hero:2:12: error[mixed_arithmetic]: `+` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `i64` and `f64`\n"
+        "test.hero:2:12: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two `f64` — and found `i64` and `f64`\n"
     );
 }
 
@@ -40,7 +40,7 @@ fn plus_joins_two_strings_and_only_plus() {
     // The conversion is named in the message, because the repair is the point.
     assert_eq!(
         diagnostics("function f(a: str, n: i64) -> str\n    return a + n\n"),
-        "test.hero:2:12: error[mixed_arithmetic]: `+` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `str` and `i64`\n"
+        "test.hero:2:12: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two `f64` — and found `str` and `i64`\n"
     );
 }
 
