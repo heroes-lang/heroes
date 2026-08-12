@@ -95,6 +95,75 @@ const HeroDesc hero_desc_bool = {sizeof(bool), hero_copy_bool, hero_drop_nothing
 const HeroDesc hero_desc_str = {sizeof(HeroStr), hero_copy_str, hero_drop_str,
                                 hero_eq_str, hero_hash_str};
 
+
+/* -- the seven other integer widths (M-sized-integers, panel 042) ---------
+ *
+ * One descriptor apiece, and they may NOT share `hero_desc_int`: `sort.c`
+ * dispatches on a descriptor's *pointer identity* to pick a comparison, and a
+ * shared descriptor would also carry `sizeof(int64_t)` — so a `[u8]` would copy,
+ * compare and hash eight bytes where it owns one. The emitter's arm for this is
+ * an exhaustive `match` on the width for exactly that reason.
+ *
+ * `hash` goes through the value's own bytes at its own width, never through a
+ * widened `int64_t`: CLAUDE.md §7 requires eq and hash to agree, and two `u8`s
+ * that are equal must hash equal whatever sits in the seven bytes beside them. */
+static void hero_copy_i8(void *dst, const void *src) { *(int8_t *)dst = *(const int8_t *)src; }
+static bool hero_eq_i8(const void *a, const void *b) { return *(const int8_t *)a == *(const int8_t *)b; }
+static uint64_t hero_hash_i8(const void *elem) {
+    int8_t v = *(const int8_t *)elem;
+    return hero_hash_bytes(&v, sizeof v);
+}
+const HeroDesc hero_desc_i8 = {sizeof(int8_t), hero_copy_i8, hero_drop_nothing,
+                                hero_eq_i8, hero_hash_i8};
+static void hero_copy_i16(void *dst, const void *src) { *(int16_t *)dst = *(const int16_t *)src; }
+static bool hero_eq_i16(const void *a, const void *b) { return *(const int16_t *)a == *(const int16_t *)b; }
+static uint64_t hero_hash_i16(const void *elem) {
+    int16_t v = *(const int16_t *)elem;
+    return hero_hash_bytes(&v, sizeof v);
+}
+const HeroDesc hero_desc_i16 = {sizeof(int16_t), hero_copy_i16, hero_drop_nothing,
+                                hero_eq_i16, hero_hash_i16};
+static void hero_copy_i32(void *dst, const void *src) { *(int32_t *)dst = *(const int32_t *)src; }
+static bool hero_eq_i32(const void *a, const void *b) { return *(const int32_t *)a == *(const int32_t *)b; }
+static uint64_t hero_hash_i32(const void *elem) {
+    int32_t v = *(const int32_t *)elem;
+    return hero_hash_bytes(&v, sizeof v);
+}
+const HeroDesc hero_desc_i32 = {sizeof(int32_t), hero_copy_i32, hero_drop_nothing,
+                                hero_eq_i32, hero_hash_i32};
+static void hero_copy_u8(void *dst, const void *src) { *(uint8_t *)dst = *(const uint8_t *)src; }
+static bool hero_eq_u8(const void *a, const void *b) { return *(const uint8_t *)a == *(const uint8_t *)b; }
+static uint64_t hero_hash_u8(const void *elem) {
+    uint8_t v = *(const uint8_t *)elem;
+    return hero_hash_bytes(&v, sizeof v);
+}
+const HeroDesc hero_desc_u8 = {sizeof(uint8_t), hero_copy_u8, hero_drop_nothing,
+                                hero_eq_u8, hero_hash_u8};
+static void hero_copy_u16(void *dst, const void *src) { *(uint16_t *)dst = *(const uint16_t *)src; }
+static bool hero_eq_u16(const void *a, const void *b) { return *(const uint16_t *)a == *(const uint16_t *)b; }
+static uint64_t hero_hash_u16(const void *elem) {
+    uint16_t v = *(const uint16_t *)elem;
+    return hero_hash_bytes(&v, sizeof v);
+}
+const HeroDesc hero_desc_u16 = {sizeof(uint16_t), hero_copy_u16, hero_drop_nothing,
+                                hero_eq_u16, hero_hash_u16};
+static void hero_copy_u32(void *dst, const void *src) { *(uint32_t *)dst = *(const uint32_t *)src; }
+static bool hero_eq_u32(const void *a, const void *b) { return *(const uint32_t *)a == *(const uint32_t *)b; }
+static uint64_t hero_hash_u32(const void *elem) {
+    uint32_t v = *(const uint32_t *)elem;
+    return hero_hash_bytes(&v, sizeof v);
+}
+const HeroDesc hero_desc_u32 = {sizeof(uint32_t), hero_copy_u32, hero_drop_nothing,
+                                hero_eq_u32, hero_hash_u32};
+static void hero_copy_u64(void *dst, const void *src) { *(uint64_t *)dst = *(const uint64_t *)src; }
+static bool hero_eq_u64(const void *a, const void *b) { return *(const uint64_t *)a == *(const uint64_t *)b; }
+static uint64_t hero_hash_u64(const void *elem) {
+    uint64_t v = *(const uint64_t *)elem;
+    return hero_hash_bytes(&v, sizeof v);
+}
+const HeroDesc hero_desc_u64 = {sizeof(uint64_t), hero_copy_u64, hero_drop_nothing,
+                                hero_eq_u64, hero_hash_u64};
+
 /* -- the function pointer -------------------------------------------------
  *
  * ONE descriptor for every function type, the way `hero_desc_array` is one for

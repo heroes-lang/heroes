@@ -10,7 +10,7 @@ function describe(s: Shape, c: Colour) -> str
         $t1: Shape = load s
         store $s0 <- $t1
         $t2: Shape = load $s0
-        $t3: int = tag $t2
+        $t3: i64 = tag $t2
         switch $t3 case 0 -> bb2, case 1 -> bb3
     bb1  match: join    preds bb4, bb7
         $t16: str = load $r0
@@ -26,13 +26,13 @@ function describe(s: Shape, c: Colour) -> str
         $t4: Colour = load c
         store $s1 <- $t4
         $t5: Colour = load $s1
-        $t6: int = tag $t5
+        $t6: i64 = tag $t5
         switch $t6 case 0 -> bb5, case 1 -> bb6
     bb3  match: arm    preds bb0
         $t10: Colour = load c
         store $s2 <- $t10
         $t11: Colour = load $s2
-        $t12: int = tag $t11
+        $t12: i64 = tag $t11
         switch $t12 case 0 -> bb8, case 1 -> bb9
     bb4  match: join    preds bb5, bb6
         $t9: str = load $r1

@@ -1,20 +1,20 @@
 strings
     0  "add(a: 2, b: 3) == 5"
 
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     bb0  entry
-        $t1: int = load a
-        $t2: int = load b
-        $t3: int = add! $t1, $t2
+        $t1: i64 = load a
+        $t2: i64 = load b
+        $t3: i64 = add! $t1, $t2
         return $t3
 
 test "addition holds"
     bb0  entry
         $t1: str = const str 0
-        $t2: int = const 2
-        $t3: int = const 3
-        $t4: int = call heroes add($t2, $t3)
-        $t5: int = const 5
+        $t2: i64 = const 2
+        $t3: i64 = const 3
+        $t4: i64 = call heroes add($t2, $t3)
+        $t5: i64 = const 5
         $t6: bool = eq $t4, $t5
         branch $t6 -> bb1 else bb2
     bb1  assert: held    preds bb0

@@ -56,14 +56,56 @@ static int64_t hero_cmp_str(const void *x, const void *y) {
     return hero_str_cmp(*(const HeroStr *)x, *(const HeroStr *)y);
 }
 
-/* Dispatch is POINTER IDENTITY against the three static descriptors, which is
- * exact: every `[i64]` in every program carries `&hero_desc_int`. A fourth
- * descriptor arriving here means the gate let through a `sort` on an element
- * type with no order, so the message says compiler bug rather than user error. */
+/* The other seven widths. Each compares AT ITS OWN WIDTH, and the unsigned ones
+ * must: read as `int64_t`, a `u64` of 2^63 is negative and sorts before zero.
+ * That is the whole reason these are seven functions rather than a widening
+ * cast into `hero_cmp_int` (M-sized-integers, panel 042). */
+static int64_t hero_cmp_i8(const void *x, const void *y) {
+    int8_t a = *(const int8_t *)x, b = *(const int8_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+static int64_t hero_cmp_i16(const void *x, const void *y) {
+    int16_t a = *(const int16_t *)x, b = *(const int16_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+static int64_t hero_cmp_i32(const void *x, const void *y) {
+    int32_t a = *(const int32_t *)x, b = *(const int32_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+static int64_t hero_cmp_u8(const void *x, const void *y) {
+    uint8_t a = *(const uint8_t *)x, b = *(const uint8_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+static int64_t hero_cmp_u16(const void *x, const void *y) {
+    uint16_t a = *(const uint16_t *)x, b = *(const uint16_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+static int64_t hero_cmp_u32(const void *x, const void *y) {
+    uint32_t a = *(const uint32_t *)x, b = *(const uint32_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+static int64_t hero_cmp_u64(const void *x, const void *y) {
+    uint64_t a = *(const uint64_t *)x, b = *(const uint64_t *)y;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+
+/* Dispatch is POINTER IDENTITY against the static descriptors, which is exact:
+ * every `[i64]` in every program carries `&hero_desc_int`, and after
+ * M-sized-integers every `[u8]` carries `&hero_desc_u8`. A descriptor arriving
+ * here that is on none of these rows means the gate let through a `sort` on an
+ * element type with no order, so the message says compiler bug rather than user
+ * error. */
 static HeroCmpFn hero_cmp_for(const HeroDesc *elem) {
     if (elem == &hero_desc_int) return hero_cmp_int;
     if (elem == &hero_desc_f64) return hero_cmp_f64;
     if (elem == &hero_desc_str) return hero_cmp_str;
+    if (elem == &hero_desc_i8) return hero_cmp_i8;
+    if (elem == &hero_desc_i16) return hero_cmp_i16;
+    if (elem == &hero_desc_i32) return hero_cmp_i32;
+    if (elem == &hero_desc_u8) return hero_cmp_u8;
+    if (elem == &hero_desc_u16) return hero_cmp_u16;
+    if (elem == &hero_desc_u32) return hero_cmp_u32;
+    if (elem == &hero_desc_u64) return hero_cmp_u64;
     return NULL;
 }
 

@@ -3,41 +3,41 @@ strings
     1  "one"
     2  "many"
 
-function first_even_after(xs: [int], floor: int) -> int
-    slots  i: int · v: int
+function first_even_after(xs: [i64], floor: i64) -> i64
+    slots  i: i64 · v: i64
     bb0  entry
-        $t1: int = const 0
+        $t1: i64 = const 0
         store i <- $t1
         jump bb1
     bb1  while: test    preds bb0, bb5
-        $t2: int = load i
-        $t3: [int] = load xs
-        $t4: int = call builtin len($t3)
+        $t2: i64 = load i
+        $t3: [i64] = load xs
+        $t4: i64 = call builtin len($t3)
         $t5: bool = lt $t2, $t4
         branch $t5 -> bb2 else bb3
     bb2  while: body    preds bb1
-        $t6: [int] = load xs
-        $t7: int = load i
-        $t8: int = index! $t6, $t7
+        $t6: [i64] = load xs
+        $t7: i64 = load i
+        $t8: i64 = index! $t6, $t7
         store v <- $t8
-        $t9: int = load i
-        $t10: int = const 1
-        $t11: int = add! $t9, $t10
+        $t9: i64 = load i
+        $t10: i64 = const 1
+        $t11: i64 = add! $t9, $t10
         store i <- $t11
-        $t12: int = load v
-        $t13: int = load floor
+        $t12: i64 = load v
+        $t13: i64 = load floor
         $t14: bool = le $t12, $t13
         branch $t14 -> bb5 else bb6
     bb3  while: exit    preds bb1, bb7
-        $t21: int = const 0
-        $t22: int = const 1
-        $t23: int = sub! $t21, $t22
+        $t21: i64 = const 0
+        $t22: i64 = const 1
+        $t23: i64 = sub! $t21, $t22
         return $t23
     bb4  if: join    preds bb6
-        $t15: int = load v
-        $t16: int = const 2
-        $t17: int = rem! $t15, $t16
-        $t18: int = const 0
+        $t15: i64 = load v
+        $t16: i64 = const 2
+        $t17: i64 = rem! $t15, $t16
+        $t18: i64 = const 0
         $t19: bool = eq $t17, $t18
         branch $t19 -> bb8 else bb9
     bb5  if: then    preds bb2
@@ -47,18 +47,18 @@ function first_even_after(xs: [int], floor: int) -> int
     bb7  if: join    preds bb9
         jump bb3
     bb8  if: then    preds bb4
-        $t20: int = load v
+        $t20: i64 = load v
         return $t20
     bb9  if: else    preds bb4
         jump bb7
 
-function named(n: int) -> str
-    slots  $s0: int · $r0: str
+function named(n: i64) -> str
+    slots  $s0: i64 · $r0: str
     bb0  entry
-        $t1: int = load n
+        $t1: i64 = load n
         store $s0 <- $t1
-        $t2: int = load $s0
-        $t3: int = const 0
+        $t2: i64 = load $s0
+        $t3: i64 = const 0
         $t4: bool = eq $t2, $t3
         branch $t4 -> bb2 else bb3
     bb1  match: join    preds bb2, bb4, bb6
@@ -75,8 +75,8 @@ function named(n: int) -> str
         decref $t12
         jump bb1
     bb3  match: test    preds bb0
-        $t5: int = load $s0
-        $t6: int = const 1
+        $t5: i64 = load $s0
+        $t6: i64 = const 1
         $t7: bool = eq $t5, $t6
         branch $t7 -> bb4 else bb5
     bb4  match: arm    preds bb3

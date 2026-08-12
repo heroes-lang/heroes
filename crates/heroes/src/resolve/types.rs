@@ -22,7 +22,7 @@ use super::{Resolver, TypeRef};
 /// named `i64` is a name collision and not a syntax error.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Prim {
-    Int,
+    Int(crate::types::IntKind),
     F64,
     Bool,
     Str,
@@ -34,7 +34,12 @@ pub enum Prim {
 
 pub(super) fn primitive(name: &str) -> Option<Prim> {
     Some(match name {
-        "i64" => Prim::Int,
+        // Every width, from the one array that lists them (`types::INT_KINDS`), so
+        // the resolver's table and the type table cannot disagree about what
+        // exists. A width added there is writable here with no second edit.
+        name if crate::types::INT_KINDS.iter().any(|k| k.name() == name) => Prim::Int(
+            *crate::types::INT_KINDS.iter().find(|k| k.name() == name).expect("just matched"),
+        ),
         "f64" => Prim::F64,
         "bool" => Prim::Bool,
         "str" => Prim::Str,
@@ -157,7 +162,10 @@ fn type_candidates(r: &Resolver, ast: &Ast) -> Vec<String> {
             candidates.push(name.to_string());
         }
     }
-    for prim in ["i64", "f64", "bool", "str", "ptr", "cstr"] {
+    for kind in crate::types::INT_KINDS {
+        candidates.push(kind.name().to_string());
+    }
+    for prim in ["f64", "bool", "str", "ptr", "cstr"] {
         candidates.push(prim.to_string());
     }
     candidates

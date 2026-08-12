@@ -39,7 +39,7 @@ function f(m: {str: [Point]?}) -> i64
         out.type_uses.iter().copied().filter(|t| *t != TypeRef::Unresolved).collect();
     // `i64` (the field), then str · Point inside the map, then the record and
     // the `-> i64`: every *named* node, and only those.
-    assert!(answers.contains(&TypeRef::Prim(Prim::Int)));
+    assert!(answers.contains(&TypeRef::Prim(Prim::Int(crate::types::IntKind::I64))));
     assert!(answers.contains(&TypeRef::Prim(Prim::Str)));
     assert!(answers.contains(&TypeRef::Top(0)));
     assert!(out.diagnostics.is_empty());

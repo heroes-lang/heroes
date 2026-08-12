@@ -151,6 +151,39 @@ pub(super) fn extern_assertions(
     // width must never reuse this macro (panel 042; `M-sized-integers` owes its
     // own row per width).
     w.line("#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)");
+    // **The seven other widths, and they cannot reuse the row above** (panel 042,
+    // ffi-pragmatist, compiled against real headers on five targets). Three facts
+    // decide the shape:
+    //
+    // - **No unary `+`.** It applies the integer promotions, so `+(c)` on a
+    //   `signed char` is an `int` and the narrow rows would either reject every
+    //   correct binding or check nothing at all. The `+` also broke pointer
+    //   returns outright, which is `tests/golden/fixedbugs/ffi-pointer-return.hero`.
+    // - **Fundamental types, never typedefs.** `size_t` and `uintptr_t` in one
+    //   `_Generic` is a *hard clang error* — they are the same type on this
+    //   target — so the class test lists the thirteen fundamental integer types,
+    //   which C guarantees are pairwise distinct.
+    // - **`sizeof` is load-bearing, not belt-and-braces.** Without it, i386 and
+    //   wasm32 ACCEPT a 32-bit `unsigned long` as `u64`: `_Generic` can say what
+    //   kind a type is and cannot say how wide it is. Measured, both targets.
+    //
+    // `char`'s signedness is implementation-defined, so it is asked rather than
+    // assumed: `(char)-1 > 0` is the question, answered at compile time.
+    w.line("#define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)");
+    w.line("#define HERO_C_UNSIGNED(c) _Generic((c), unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)");
+    for (name, signed_test, bytes) in [
+        ("HERO_RET_I8", "!HERO_C_UNSIGNED(c)", 1),
+        ("HERO_RET_I16", "!HERO_C_UNSIGNED(c)", 2),
+        ("HERO_RET_I32", "!HERO_C_UNSIGNED(c)", 4),
+        ("HERO_RET_U8", "HERO_C_UNSIGNED(c)", 1),
+        ("HERO_RET_U16", "HERO_C_UNSIGNED(c)", 2),
+        ("HERO_RET_U32", "HERO_C_UNSIGNED(c)", 4),
+        ("HERO_RET_U64", "HERO_C_UNSIGNED(c)", 8),
+    ] {
+        w.line(&format!(
+            "#define {name}(c) (HERO_C_INTEGER(c) && {signed_test} && sizeof(c) == {bytes})"
+        ));
+    }
     w.line("#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)");
     w.line("#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)");
     w.line("#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)");
@@ -232,6 +265,13 @@ fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
         // accept a C `long` for an `i32` and truncate in silence (panel 042).
         Ty::Int(kind) => Some(match kind {
             IntKind::I64 => "HERO_RET_INT",
+            IntKind::I8 => "HERO_RET_I8",
+            IntKind::I16 => "HERO_RET_I16",
+            IntKind::I32 => "HERO_RET_I32",
+            IntKind::U8 => "HERO_RET_U8",
+            IntKind::U16 => "HERO_RET_U16",
+            IntKind::U32 => "HERO_RET_U32",
+            IntKind::U64 => "HERO_RET_U64",
         }),
         Ty::F64 => Some("HERO_RET_F64"),
         Ty::Bool => Some("HERO_RET_BOOL"),

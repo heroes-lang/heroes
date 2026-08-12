@@ -1,48 +1,48 @@
-function evens_in(xs: [int]) -> int
-    slots  count: int · $xs0: [int] · $i0: int · x: int
+function evens_in(xs: [i64]) -> i64
+    slots  count: i64 · $xs0: [i64] · $i0: i64 · x: i64
     bb0  entry
-        $t1: int = const 0
+        $t1: i64 = const 0
         store count <- $t1
-        $t2: [int] = load xs
-        $t23: [int] = load $xs0
+        $t2: [i64] = load xs
+        $t23: [i64] = load $xs0
         incref $t2
         store $xs0 <- $t2
         decref $t23
-        $t3: int = const 0
+        $t3: i64 = const 0
         store $i0 <- $t3
         jump bb1
     bb1  for: test    preds bb0, bb3
-        $t4: int = load $i0
-        $t5: [int] = load $xs0
-        $t6: int = len $t5
+        $t4: i64 = load $i0
+        $t5: [i64] = load $xs0
+        $t6: i64 = len $t5
         $t7: bool = lt $t4, $t6
         branch $t7 -> bb2 else bb4
     bb2  for: body    preds bb1
-        $t8: [int] = load $xs0
-        $t9: int = load $i0
-        $t10: int = index! $t8, $t9
+        $t8: [i64] = load $xs0
+        $t9: i64 = load $i0
+        $t10: i64 = index! $t8, $t9
         store x <- $t10
-        $t11: int = load x
-        $t12: int = const 2
-        $t13: int = rem! $t11, $t12
-        $t14: int = const 1
+        $t11: i64 = load x
+        $t12: i64 = const 2
+        $t13: i64 = rem! $t11, $t12
+        $t14: i64 = const 1
         $t15: bool = eq $t13, $t14
         branch $t15 -> bb6 else bb7
     bb3  for: step    preds bb6, bb5
-        $t19: int = load $i0
-        $t20: int = const 1
-        $t21: int = add! $t19, $t20
+        $t19: i64 = load $i0
+        $t20: i64 = const 1
+        $t21: i64 = add! $t19, $t20
         store $i0 <- $t21
         jump bb1
     bb4  for: exit    preds bb1
-        $t22: int = load count
-        $t24: [int] = load $xs0
+        $t22: i64 = load count
+        $t24: [i64] = load $xs0
         decref $t24
         return $t22
     bb5  if: join    preds bb7
-        $t16: int = load count
-        $t17: int = const 1
-        $t18: int = add! $t16, $t17
+        $t16: i64 = load count
+        $t17: i64 = const 1
+        $t18: i64 = add! $t16, $t17
         store count <- $t18
         jump bb3
     bb6  if: then    preds bb2

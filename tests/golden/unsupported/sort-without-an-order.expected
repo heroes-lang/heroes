@@ -1,4 +1,4 @@
-unsupported[builtin]: the built-in `sort` on elements other than `int`, `f64` or `str` is not emitted yet
+unsupported[builtin]: the built-in `sort` on elements other than `i64`, `f64` or `str` is not emitted yet
   at tests/golden/unsupported/sort-without-an-order.hero:24:15
      |
   24 |     ordered = sort(ps)                  #~ builtin

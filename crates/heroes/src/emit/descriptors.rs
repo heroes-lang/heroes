@@ -43,6 +43,13 @@ pub(super) fn pointer(checked: &Checked, names: &Names, ty: TyId) -> Option<Stri
         Ty::Int(kind) => Some(
             match kind {
                 IntKind::I64 => "&hero_desc_int",
+                IntKind::I8 => "&hero_desc_i8",
+                IntKind::I16 => "&hero_desc_i16",
+                IntKind::I32 => "&hero_desc_i32",
+                IntKind::U8 => "&hero_desc_u8",
+                IntKind::U16 => "&hero_desc_u16",
+                IntKind::U32 => "&hero_desc_u32",
+                IntKind::U64 => "&hero_desc_u64",
             }
             .to_string(),
         ),

@@ -1,3 +1,3 @@
-tests/golden/check/no-implicit-fallible.hero:11:12: error[type_mismatch]: expected `int?`, found `int`
+tests/golden/check/no-implicit-fallible.hero:11:12: error[type_mismatch]: expected `i64?`, found `i64`
 tests/golden/check/no-implicit-fallible.hero:14:12: error[cannot_infer]: `ok(…)` builds a fallible value, and which one comes from the context — return it, bind it with an annotation, or pass it where a `T?` is expected
-tests/golden/check/no-implicit-fallible.hero:17:12: error[try_in_infallible]: `?` hands the error to the caller, so this function's result must be fallible — it is `int`, not `int?`
+tests/golden/check/no-implicit-fallible.hero:17:12: error[try_in_infallible]: `?` hands the error to the caller, so this function's result must be fallible — it is `i64`, not `i64?`

@@ -1,25 +1,25 @@
-function moved(p: Point, by: int) -> Point
+function moved(p: Point, by: i64) -> Point
     bb0  entry
         $t1: Point = load p
-        $t2: int = field $t1.x
-        $t3: int = load by
-        $t4: int = add! $t2, $t3
+        $t2: i64 = field $t1.x
+        $t3: i64 = load by
+        $t4: i64 = add! $t2, $t3
         $t5: Point = load p
-        $t6: int = field $t5.y
+        $t6: i64 = field $t5.y
         $t7: Point = construct Point($t4, $t6)
         return $t7
 
-function copy_between(from: int, to: int) -> int
+function copy_between(from: i64, to: i64) -> i64
     bb0  entry
-        $t1: int = load to
-        $t2: int = load from
-        $t3: int = sub! $t1, $t2
+        $t1: i64 = load to
+        $t2: i64 = load from
+        $t3: i64 = sub! $t1, $t2
         return $t3
 
 function main()
     bb0  entry
-        $t1: int = const 1
-        $t2: int = const 4
-        $t3: int = call heroes copy_between($t1, $t2)
+        $t1: i64 = const 1
+        $t2: i64 = const 4
+        $t3: i64 = call heroes copy_between($t1, $t2)
         call builtin print($t3) variadic
         return

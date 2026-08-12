@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 10
+#define HERO_RUNTIME_ABI 11
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -39,6 +39,7 @@ _Noreturn void hero_unreachable(void);
 int64_t hero_test_index(int argc, char **argv);
 
 void hero_print_int(int64_t v);
+void hero_print_uint(uint64_t v);
 void hero_print_bool(bool v);
 void hero_print_end(void);
 
@@ -135,6 +136,7 @@ HeroStr hero_str_from_cstr(const char *p); /* strlen, then from_bytes */
 void hero_print_f64(double v);
 HeroStr hero_f64_to_str(double v);
 HeroStr hero_int_to_str(int64_t v);
+HeroStr hero_uint_to_str(uint64_t v);
 HeroStr hero_bool_to_str(bool v);
 HeroStr hero_str_identity(HeroStr s);
 
@@ -220,6 +222,16 @@ struct HeroDesc {
 /* The scalars and `str`, so the compiler never writes a descriptor for a type it
  * did not declare. `str`'s copy increfs; a scalar's is a plain assignment. */
 extern const HeroDesc hero_desc_int;
+/* The other seven widths. Separate descriptors, never aliases of the one above:
+ * each carries its own `size`, and `sort.c` picks a comparison by pointer
+ * identity (M-sized-integers, panel 042). */
+extern const HeroDesc hero_desc_i8;
+extern const HeroDesc hero_desc_i16;
+extern const HeroDesc hero_desc_i32;
+extern const HeroDesc hero_desc_u8;
+extern const HeroDesc hero_desc_u16;
+extern const HeroDesc hero_desc_u32;
+extern const HeroDesc hero_desc_u64;
 extern const HeroDesc hero_desc_f64;
 extern const HeroDesc hero_desc_bool;
 extern const HeroDesc hero_desc_str;

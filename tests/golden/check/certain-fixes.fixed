@@ -8,10 +8,10 @@
 # mixing a name mistake with a type mistake would only ever show the first.
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function label_of(t: Token) -> int
+function label_of(t: Token) -> i64
     return match t
         .num _ => 1  #~ unused_binding
         .plus  => 2

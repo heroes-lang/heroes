@@ -1,29 +1,29 @@
-function value_of(t: Token) -> int
-    slots  $s0: Token · $r0: int · n: Token.num
+function value_of(t: Token) -> i64
+    slots  $s0: Token · $r0: i64 · n: Token.num
     bb0  entry
         $t1: Token = load t
         store $s0 <- $t1
         $t2: Token = load $s0
-        $t3: int = tag $t2
+        $t3: i64 = tag $t2
         switch $t3 case 0 -> bb2, case 1 -> bb3
     bb1  match: join    preds bb2, bb3
-        $t9: int = load $r0
+        $t9: i64 = load $r0
         return $t9
     bb2  match: arm    preds bb0
         $t4: Token = load $s0
         $t5: Token.num = payload $t4 .num
         store n <- $t5
         $t6: Token.num = load n
-        $t7: int = field $t6.v
+        $t7: i64 = field $t6.v
         store $r0 <- $t7
         jump bb1
     bb3  match: arm    preds bb0
-        $t8: int = const 0
+        $t8: i64 = const 0
         store $r0 <- $t8
         jump bb1
 
 function one() -> Token
     bb0  entry
-        $t1: int = const 1
+        $t1: i64 = const 1
         $t2: Token = construct Token.num($t1)
         return $t2

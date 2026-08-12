@@ -18,7 +18,7 @@
 #
 # FIX: the `+` is deleted. It was one of two changes made together at
 # M-ffi-ladder to accept enum-returning C functions, and measurement showed the
-# other one — widening the accepted set to `unsigned i64` and its narrower
+# other one — widening the accepted set to `unsigned int` and its narrower
 # siblings — was sufficient on its own, because C11 6.5.1.1 selects an enum's
 # compatible integer type. See `an_enum_returning_extern_needs_no_unary_plus`,
 # which is the test that fires if that premise ever comes back.

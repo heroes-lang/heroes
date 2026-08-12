@@ -116,6 +116,18 @@ HeroStr hero_int_to_str(int64_t v) {
     return r;
 }
 
+/* `u64` is the one width that does not widen into an `int64_t` without losing a
+ * value: 18446744073709551615 read as signed is -1, which is exactly what
+ * `print(SIZE_MAX)` produced before this existed (panel 042, measured). The other
+ * six narrow widths widen losslessly and go on using `hero_int_to_str`. */
+HeroStr hero_uint_to_str(uint64_t v) {
+    char buf[24];
+    int n = snprintf(buf, sizeof buf, "%llu", (unsigned long long)v);
+    HeroStr r = hero_str_alloc(n);
+    memcpy((char *)(void *)(uintptr_t)r.ptr, buf, (size_t)n);
+    return r;
+}
+
 HeroStr hero_bool_to_str(bool v) {
     /* static blocks: to_str of a bool allocates nothing */
     static const struct { HeroStrHeader h; char b[5]; } t = {{-1, HERO_STR_MAGIC}, "true"};
@@ -151,7 +163,7 @@ HeroStr hero_str_identity(HeroStr s) {
  *     the largest acceptable value is the double just below 2^63. */
 int64_t hero_f64_to_int(double v) {
     if (!(v >= -0x1p63 && v < 0x1p63)) {
-        hero_panic("to_i64 of an f64 outside the range of int");
+        hero_panic("to_i64 of an f64 outside the range of i64");
     }
     return (int64_t)v; /* truncates toward zero, as spec line 131 requires */
 }

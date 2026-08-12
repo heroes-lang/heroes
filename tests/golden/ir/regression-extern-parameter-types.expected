@@ -1,7 +1,7 @@
 extern function sqrt(x: f64) -> f64
     no body — C provides it
 
-extern function abs(n: int) -> int
+extern function abs(n: i64) -> i64
     no body — C provides it
 
 function hypotenuse(a: f64, b: f64) -> f64
@@ -16,10 +16,10 @@ function hypotenuse(a: f64, b: f64) -> f64
         $t8: f64 = call extern sqrt($t7)
         return $t8
 
-function distance(a: int, b: int) -> int
+function distance(a: i64, b: i64) -> i64
     bb0  entry
-        $t1: int = load a
-        $t2: int = load b
-        $t3: int = sub! $t1, $t2
-        $t4: int = call extern abs($t3)
+        $t1: i64 = load a
+        $t2: i64 = load b
+        $t3: i64 = sub! $t1, $t2
+        $t4: i64 = call extern abs($t3)
         return $t4

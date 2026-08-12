@@ -1,70 +1,70 @@
-function widen(v: int?) -> int
-    slots  $f0: int? · $f1: int? · $r0: int · $f2: int?
+function widen(v: i64?) -> i64
+    slots  $f0: i64? · $f1: i64? · $r0: i64 · $f2: i64?
     bb0  entry
-        $t1: int? = load v
-        $t24: int? = load $f0
+        $t1: i64? = load v
+        $t24: i64? = load $f0
         incref $t1
         store $f0 <- $t1
         decref $t24
-        $t2: int? = load $f0
-        $t3: int = tag $t2
-        $t4: int = const 1
+        $t2: i64? = load $f0
+        $t3: i64 = tag $t2
+        $t4: i64 = const 1
         $t5: bool = eq $t3, $t4
         branch $t5 -> bb2 else bb3
     bb1  if: join    preds bb3
-        $t15: int? = load v
-        $t25: int? = load $f2
+        $t15: i64? = load v
+        $t25: i64? = load $f2
         incref $t15
         store $f2 <- $t15
         decref $t25
-        $t16: int? = load $f2
-        $t17: int = tag $t16
-        $t18: int = const 0
+        $t16: i64? = load $f2
+        $t17: i64 = tag $t16
+        $t18: i64 = const 0
         $t19: bool = eq $t17, $t18
         branch $t19 -> bb7 else bb8
     bb2  if: then    preds bb0
-        $t6: int? = load v
-        $t26: int? = load $f1
+        $t6: i64? = load v
+        $t26: i64? = load $f1
         incref $t6
         store $f1 <- $t6
         decref $t26
-        $t7: int? = load $f1
-        $t8: int = tag $t7
-        $t9: int = const 0
+        $t7: i64? = load $f1
+        $t8: i64 = tag $t7
+        $t9: i64 = const 0
         $t10: bool = eq $t8, $t9
         branch $t10 -> bb4 else bb5
     bb3  if: else    preds bb0
         jump bb1
     bb4  default: ok    preds bb2
-        $t11: int? = load $f1
-        $t12: int = payload $t11 .ok
+        $t11: i64? = load $f1
+        $t12: i64 = payload $t11 .ok
         store $r0 <- $t12
         jump bb6
     bb5  default: else    preds bb2
-        $t13: int = const 0
+        $t13: i64 = const 0
         store $r0 <- $t13
         jump bb6
     bb6  default: join    preds bb4, bb5
-        $t14: int = load $r0
-        $t27: int? = load $f0
+        $t14: i64 = load $r0
+        $t27: i64? = load $f0
         decref $t27
-        $t28: int? = load $f1
+        $t28: i64? = load $f1
         decref $t28
-        $t29: int? = load $f2
+        $t29: i64? = load $f2
         decref $t29
         return $t14
     bb7  must: ok    preds bb1
-        $t22: int? = load $f2
-        $t23: int = payload $t22 .ok
-        $t30: int? = load $f0
+        $t22: i64? = load $f2
+        $t23: i64 = payload $t22 .ok
+        $t30: i64? = load $f0
         decref $t30
-        $t31: int? = load $f1
+        $t31: i64? = load $f1
         decref $t31
-        $t32: int? = load $f2
+        $t32: i64? = load $f2
         decref $t32
         return $t23
     bb8  must: abort    preds bb1
-        $t20: int? = load $f2
+        $t20: i64? = load $f2
         $t21: the error (`code`, `msg`) = payload $t20 .err
         abort must($t21)
         unreachable

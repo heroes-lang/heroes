@@ -328,8 +328,20 @@ pub(super) fn emit(
                             // `-1`. A new width needs its own runtime entry point
                             // and an ABI bump, and this arm is where that is
                             // discovered rather than in the output.
+                            // Six of the seven narrow widths widen into an
+                            // `int64_t` without losing a value, so they share the
+                            // signed entry point. `u64` does not: 2^64-1 read as
+                            // signed is -1, which is what `print(SIZE_MAX)`
+                            // produced before `hero_uint_to_str` existed.
                             Ty::Int(kind) => match kind {
-                                IntKind::I64 => "hero_int_to_str",
+                                IntKind::U64 => "hero_uint_to_str",
+                                IntKind::I8
+                                | IntKind::I16
+                                | IntKind::I32
+                                | IntKind::I64
+                                | IntKind::U8
+                                | IntKind::U16
+                                | IntKind::U32 => "hero_int_to_str",
                             },
                             Ty::F64 => "hero_f64_to_str",
                             Ty::Bool => "hero_bool_to_str",

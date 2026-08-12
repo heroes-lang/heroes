@@ -9,7 +9,7 @@ fn the_first_program_has_the_shape_spike_01_froze() {
     let text = c(FIRST);
     // The prelude, and the stamp that makes a decoy runtime a compile error.
     assert!(text.contains("#include \"heroes_runtime.h\""));
-    assert!(text.contains("_Static_assert(HERO_RUNTIME_ABI == 10"));
+    assert!(text.contains("_Static_assert(HERO_RUNTIME_ABI == 11"));
     // One prototype before any definition, and the mangled name.
     let prototype = text.find("void h_scratch_main(void);").expect("a prototype");
     let definition = text.find("void h_scratch_main(void) {").expect("a definition");

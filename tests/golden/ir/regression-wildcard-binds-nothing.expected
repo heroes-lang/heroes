@@ -1,56 +1,56 @@
-function kind_of(t: Token) -> int
-    slots  $s0: Token · $r0: int
+function kind_of(t: Token) -> i64
+    slots  $s0: Token · $r0: i64
     bb0  entry
         $t1: Token = load t
         store $s0 <- $t1
         $t2: Token = load $s0
-        $t3: int = tag $t2
+        $t3: i64 = tag $t2
         switch $t3 case 0 -> bb2, case 1 -> bb3
     bb1  match: join    preds bb2, bb3
-        $t6: int = load $r0
+        $t6: i64 = load $r0
         return $t6
     bb2  match: arm    preds bb0
-        $t4: int = const 0
+        $t4: i64 = const 0
         store $r0 <- $t4
         jump bb1
     bb3  match: arm    preds bb0
-        $t5: int = const 1
+        $t5: i64 = const 1
         store $r0 <- $t5
         jump bb1
 
-function count_of(xs: [int]) -> int
-    slots  n: int · $xs0: [int] · $i0: int
+function count_of(xs: [i64]) -> i64
+    slots  n: i64 · $xs0: [i64] · $i0: i64
     bb0  entry
-        $t1: int = const 0
+        $t1: i64 = const 0
         store n <- $t1
-        $t2: [int] = load xs
-        $t15: [int] = load $xs0
+        $t2: [i64] = load xs
+        $t15: [i64] = load $xs0
         incref $t2
         store $xs0 <- $t2
         decref $t15
-        $t3: int = const 0
+        $t3: i64 = const 0
         store $i0 <- $t3
         jump bb1
     bb1  for: test    preds bb0, bb3
-        $t4: int = load $i0
-        $t5: [int] = load $xs0
-        $t6: int = len $t5
+        $t4: i64 = load $i0
+        $t5: [i64] = load $xs0
+        $t6: i64 = len $t5
         $t7: bool = lt $t4, $t6
         branch $t7 -> bb2 else bb4
     bb2  for: body    preds bb1
-        $t8: int = load n
-        $t9: int = const 1
-        $t10: int = add! $t8, $t9
+        $t8: i64 = load n
+        $t9: i64 = const 1
+        $t10: i64 = add! $t8, $t9
         store n <- $t10
         jump bb3
     bb3  for: step    preds bb2
-        $t11: int = load $i0
-        $t12: int = const 1
-        $t13: int = add! $t11, $t12
+        $t11: i64 = load $i0
+        $t12: i64 = const 1
+        $t13: i64 = add! $t11, $t12
         store $i0 <- $t13
         jump bb1
     bb4  for: exit    preds bb1
-        $t14: int = load n
-        $t16: [int] = load $xs0
+        $t14: i64 = load n
+        $t16: [i64] = load $xs0
         decref $t16
         return $t14

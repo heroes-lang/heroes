@@ -45,8 +45,29 @@ pub struct Params {
 /// is false the arm must be exhaustive instead.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum IntKind {
+    I8,
+    I16,
+    I32,
     I64,
+    U8,
+    U16,
+    U32,
+    U64,
 }
+
+/// Every width, in declaration order, for the places that must enumerate them —
+/// the prelude, the resolver's name table, and the did-you-mean list. One array
+/// so those three cannot disagree about what exists.
+pub const INT_KINDS: [IntKind; 8] = [
+    IntKind::I8,
+    IntKind::I16,
+    IntKind::I32,
+    IntKind::I64,
+    IntKind::U8,
+    IntKind::U16,
+    IntKind::U32,
+    IntKind::U64,
+];
 
 impl IntKind {
     /// The surface spelling, which is also what a diagnostic prints.
@@ -59,14 +80,64 @@ impl IntKind {
     /// means, while `i64` is ambiguous to nobody.
     pub fn name(self) -> &'static str {
         match self {
+            IntKind::I8 => "i8",
+            IntKind::I16 => "i16",
+            IntKind::I32 => "i32",
             IntKind::I64 => "i64",
+            IntKind::U8 => "u8",
+            IntKind::U16 => "u16",
+            IntKind::U32 => "u32",
+            IntKind::U64 => "u64",
+        }
+    }
+
+    /// How many bits, and whether the top one is a sign. Together they are the
+    /// whole of what a width *is*, and every question below is derived from them
+    /// rather than tabulated again — a table per question is a table per chance
+    /// to disagree.
+    pub fn bits(self) -> u32 {
+        match self {
+            IntKind::I8 | IntKind::U8 => 8,
+            IntKind::I16 | IntKind::U16 => 16,
+            IntKind::I32 | IntKind::U32 => 32,
+            IntKind::I64 | IntKind::U64 => 64,
+        }
+    }
+
+    pub fn signed(self) -> bool {
+        match self {
+            IntKind::I8 | IntKind::I16 | IntKind::I32 | IntKind::I64 => true,
+            IntKind::U8 | IntKind::U16 | IntKind::U32 | IntKind::U64 => false,
+        }
+    }
+
+    /// The closed range a literal must fall in. `u64`'s top is above `i64::MAX`,
+    /// so the high end is a `u64` and the low end an `i64` — the one pair of
+    /// numbers in this language that does not fit a single Rust integer either.
+    pub fn range(self) -> (i64, u64) {
+        if self.signed() {
+            let top = (1u64 << (self.bits() - 1)) - 1;
+            (-(top as i64) - 1, top)
+        } else if self.bits() == 64 {
+            (0, u64::MAX)
+        } else {
+            (0, (1u64 << self.bits()) - 1)
         }
     }
 
     /// The C type the emitter writes for it.
+    /// The C type the emitter writes. Fixed-width by name, so the generated C
+    /// says what the Heroes source says and clang checks the rest.
     pub fn c_type(self) -> &'static str {
         match self {
+            IntKind::I8 => "int8_t",
+            IntKind::I16 => "int16_t",
+            IntKind::I32 => "int32_t",
             IntKind::I64 => "int64_t",
+            IntKind::U8 => "uint8_t",
+            IntKind::U16 => "uint16_t",
+            IntKind::U32 => "uint32_t",
+            IntKind::U64 => "uint64_t",
         }
     }
 }
@@ -173,6 +244,12 @@ impl Types {
             Ty::Failure,
         ] {
             types.intern(ty);
+        }
+        // The other seven widths go **after** the nine above and never among
+        // them: `int()`, `failure()` and their siblings return hardcoded ids, and
+        // `the_prelude_ids_match_their_accessors` says so in its failure message.
+        for kind in INT_KINDS {
+            types.intern(Ty::Int(kind));
         }
         types
     }

@@ -2,26 +2,26 @@ strings
     0  "empty"
     1  "no first element"
 
-function first_of(xs: [int]) -> int?
-    slots  $own1: int? · $own2: int?
+function first_of(xs: [i64]) -> i64?
+    slots  $own1: i64? · $own2: i64?
     bb0  entry
-        $t1: [int] = load xs
-        $t2: int = call builtin len($t1)
-        $t3: int = const 0
+        $t1: [i64] = load xs
+        $t2: i64 = call builtin len($t1)
+        $t3: i64 = const 0
         $t4: bool = eq $t2, $t3
         branch $t4 -> bb2 else bb3
     bb1  if: join    preds bb3
-        $t8: [int] = load xs
-        $t9: int = const 0
-        $t10: int = index! $t8, $t9
-        $t11: int? = construct ok($t10)
-        $t12: int? = load $own1
+        $t8: [i64] = load xs
+        $t9: i64 = const 0
+        $t10: i64 = index! $t8, $t9
+        $t11: i64? = construct ok($t10)
+        $t12: i64? = load $own1
         store $own1 <- $t11
         decref $t12
         incref $t11
-        $t14: int? = load $own1
+        $t14: i64? = load $own1
         decref $t14
-        $t15: int? = load $own2
+        $t15: i64? = load $own2
         decref $t15
         return $t11
     bb2  if: then    preds bb0
@@ -29,77 +29,77 @@ function first_of(xs: [int]) -> int?
         $t6: str = const str 1
         incref $t5
         incref $t6
-        $t7: int? = construct fail($t5, $t6)
-        $t13: int? = load $own2
+        $t7: i64? = construct fail($t5, $t6)
+        $t13: i64? = load $own2
         store $own2 <- $t7
         decref $t13
         incref $t7
-        $t16: int? = load $own1
+        $t16: i64? = load $own1
         decref $t16
-        $t17: int? = load $own2
+        $t17: i64? = load $own2
         decref $t17
         return $t7
     bb3  if: else    preds bb0
         jump bb1
 
-function step(@r: Reader, xs: [int]) -> int?
-    slots  $f0: int? · v: int · $own4: int? · $own5: int? · $own6: int?
+function step(@r: Reader, xs: [i64]) -> i64?
+    slots  $f0: i64? · v: i64 · $own4: i64? · $own5: i64? · $own6: i64?
     bb0  entry
-        $t1: [int] = load xs
-        $t2: int? = call heroes first_of($t1)
-        $t18: int? = load $own4
+        $t1: [i64] = load xs
+        $t2: i64? = call heroes first_of($t1)
+        $t18: i64? = load $own4
         store $own4 <- $t2
         decref $t18
-        $t19: int? = load $f0
+        $t19: i64? = load $f0
         incref $t2
         store $f0 <- $t2
         decref $t19
-        $t3: int? = load $f0
-        $t4: int = tag $t3
-        $t5: int = const 0
+        $t3: i64? = load $f0
+        $t4: i64 = tag $t3
+        $t5: i64 = const 0
         $t6: bool = eq $t4, $t5
         branch $t6 -> bb1 else bb2
     bb1  ?: ok    preds bb0
-        $t10: int? = load $f0
-        $t11: int = payload $t10 .ok
+        $t10: i64? = load $f0
+        $t11: i64 = payload $t10 .ok
         store v <- $t11
         $t12: Reader = load r
-        $t13: int = field $t12.pos
-        $t14: int = const 1
-        $t15: int = add! $t13, $t14
+        $t13: i64 = field $t12.pos
+        $t14: i64 = const 1
+        $t15: i64 = add! $t13, $t14
         store r.pos <- $t15
-        $t16: int = load v
-        $t17: int? = construct ok($t16)
-        $t20: int? = load $own5
+        $t16: i64 = load v
+        $t17: i64? = construct ok($t16)
+        $t20: i64? = load $own5
         store $own5 <- $t17
         decref $t20
         copyout r
         incref $t17
-        $t22: int? = load $f0
+        $t22: i64? = load $f0
         decref $t22
-        $t23: int? = load $own4
+        $t23: i64? = load $own4
         decref $t23
-        $t24: int? = load $own5
+        $t24: i64? = load $own5
         decref $t24
-        $t25: int? = load $own6
+        $t25: i64? = load $own6
         decref $t25
         return $t17
     bb2  ?: propagate    preds bb0
-        $t7: int? = load $f0
+        $t7: i64? = load $f0
         $t8: the error (`code`, `msg`) = payload $t7 .err
         incref $t8
-        $t9: int? = construct err($t8)
-        $t21: int? = load $own6
+        $t9: i64? = construct err($t8)
+        $t21: i64? = load $own6
         store $own6 <- $t9
         decref $t21
         copyout r
         incref $t9
-        $t26: int? = load $f0
+        $t26: i64? = load $f0
         decref $t26
-        $t27: int? = load $own4
+        $t27: i64? = load $own4
         decref $t27
-        $t28: int? = load $own5
+        $t28: i64? = load $own5
         decref $t28
-        $t29: int? = load $own6
+        $t29: i64? = load $own6
         decref $t29
         return $t9

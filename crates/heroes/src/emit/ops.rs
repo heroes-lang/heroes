@@ -237,7 +237,7 @@ pub(super) fn binary(
             let abort = if op == BinOp::Div {
                 "hero_panic_overflow()".to_string()
             } else {
-                "hero_panic(\"`%` by -1 at the smallest int: the remainder is 0, but C reaches it through a quotient that has no int64\")".to_string()
+                "hero_panic(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\")".to_string()
             };
             w.line(&format!(
                 "    if ({l} == INT64_MIN && {r} == INT64_C(-1)) {abort};"

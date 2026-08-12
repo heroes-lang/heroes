@@ -1,54 +1,54 @@
 strings
     0  "ada"
 
-function score_of(scores: {str: int}, name: str) -> int
-    slots  $f0: int? · $r0: int · $own4: int?
+function score_of(scores: {str: i64}, name: str) -> i64
+    slots  $f0: i64? · $r0: i64 · $own4: i64?
     bb0  entry
-        $t1: {str: int} = load scores
+        $t1: {str: i64} = load scores
         $t2: str = load name
-        $t3: int? = mapget $t1, $t2
-        $t12: int? = load $own4
+        $t3: i64? = mapget $t1, $t2
+        $t12: i64? = load $own4
         store $own4 <- $t3
         decref $t12
-        $t13: int? = load $f0
+        $t13: i64? = load $f0
         incref $t3
         store $f0 <- $t3
         decref $t13
-        $t4: int? = load $f0
-        $t5: int = tag $t4
-        $t6: int = const 0
+        $t4: i64? = load $f0
+        $t5: i64 = tag $t4
+        $t6: i64 = const 0
         $t7: bool = eq $t5, $t6
         branch $t7 -> bb1 else bb2
     bb1  default: ok    preds bb0
-        $t8: int? = load $f0
-        $t9: int = payload $t8 .ok
+        $t8: i64? = load $f0
+        $t9: i64 = payload $t8 .ok
         store $r0 <- $t9
         jump bb3
     bb2  default: else    preds bb0
-        $t10: int = const 0
+        $t10: i64 = const 0
         store $r0 <- $t10
         jump bb3
     bb3  default: join    preds bb1, bb2
-        $t11: int = load $r0
-        $t14: int? = load $f0
+        $t11: i64 = load $r0
+        $t14: i64? = load $f0
         decref $t14
-        $t15: int? = load $own4
+        $t15: i64? = load $own4
         decref $t15
         return $t11
 
-function first_of(xs: [int]) -> int
+function first_of(xs: [i64]) -> i64
     bb0  entry
-        $t1: [int] = load xs
-        $t2: int = const 0
-        $t3: int = index! $t1, $t2
+        $t1: [i64] = load xs
+        $t2: i64 = const 0
+        $t3: i64 = index! $t1, $t2
         return $t3
 
-function both(scores: {str: int}, xs: [int]) -> int
+function both(scores: {str: i64}, xs: [i64]) -> i64
     bb0  entry
-        $t1: {str: int} = load scores
+        $t1: {str: i64} = load scores
         $t2: str = const str 0
-        $t3: int = call heroes score_of($t1, $t2)
-        $t4: [int] = load xs
-        $t5: int = call heroes first_of($t4)
-        $t6: int = add! $t3, $t5
+        $t3: i64 = call heroes score_of($t1, $t2)
+        $t4: [i64] = load xs
+        $t5: i64 = call heroes first_of($t4)
+        $t6: i64 = add! $t3, $t5
         return $t6

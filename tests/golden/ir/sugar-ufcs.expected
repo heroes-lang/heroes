@@ -1,22 +1,22 @@
-function double(n: int) -> int
+function double(n: i64) -> i64
     bb0  entry
-        $t1: int = load n
-        $t2: int = const 2
-        $t3: int = mul! $t1, $t2
+        $t1: i64 = load n
+        $t2: i64 = const 2
+        $t3: i64 = mul! $t1, $t2
         return $t3
 
 function main()
-    slots  $own0: [int]
+    slots  $own0: [i64]
     bb0  entry
-        $t1: int = const 1
-        $t2: int = const 2
-        $t3: [int] = construct array($t1, $t2)
-        $t6: [int] = load $own0
+        $t1: i64 = const 1
+        $t2: i64 = const 2
+        $t3: [i64] = construct array($t1, $t2)
+        $t6: [i64] = load $own0
         store $own0 <- $t3
         decref $t6
-        $t4: int = call builtin len($t3)
-        $t5: int = call heroes double($t4)
+        $t4: i64 = call builtin len($t3)
+        $t5: i64 = call heroes double($t4)
         call builtin print($t5) variadic
-        $t7: [int] = load $own0
+        $t7: [i64] = load $own0
         decref $t7
         return

@@ -1,1 +1,1 @@
-tests/golden/check/arm-pattern.hero:6:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, a literal, or `_` (on `int`/`str` only)
+tests/golden/check/arm-pattern.hero:6:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, a literal, or `_` (on `i64`/`str` only)

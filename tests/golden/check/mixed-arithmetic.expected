@@ -1,3 +1,3 @@
-tests/golden/check/mixed-arithmetic.hero:8:12: error[mixed_arithmetic]: `+` takes `int` with `int` or `f64` with `f64`, never mixed — found `int` and `f64`
-tests/golden/check/mixed-arithmetic.hero:11:12: error[mixed_arithmetic]: `<` takes `int` with `int` or `f64` with `f64`, never mixed — found `int` and `f64`
-tests/golden/check/mixed-arithmetic.hero:14:12: error[mixed_arithmetic]: `+` takes `int` with `int` or `f64` with `f64`, never mixed — found `str` and `int`
+tests/golden/check/mixed-arithmetic.hero:8:12: error[mixed_arithmetic]: `+` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `i64` and `f64`
+tests/golden/check/mixed-arithmetic.hero:11:12: error[mixed_arithmetic]: `<` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `i64` and `f64`
+tests/golden/check/mixed-arithmetic.hero:14:12: error[mixed_arithmetic]: `+` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `str` and `i64`

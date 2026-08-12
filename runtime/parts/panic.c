@@ -28,6 +28,8 @@ _Noreturn void hero_unreachable(void) {
 }
 
 void hero_print_int(int64_t v) { printf("%lld", (long long)v); }
+/* See `hero_uint_to_str`: `u64` above 2^63 prints negative through the signed one. */
+void hero_print_uint(uint64_t v) { printf("%llu", (unsigned long long)v); }
 void hero_print_bool(bool v) { fputs(v ? "true" : "false", stdout); }
 void hero_print_end(void) { putchar('\n'); }
 

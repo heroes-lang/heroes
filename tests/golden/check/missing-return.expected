@@ -1,1 +1,1 @@
-tests/golden/check/missing-return.hero:14:26: error[missing_return]: `sign` must return `int`, and one path through it returns nothing
+tests/golden/check/missing-return.hero:14:26: error[missing_return]: `sign` must return `i64`, and one path through it returns nothing
