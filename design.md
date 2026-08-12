@@ -2133,7 +2133,7 @@ maximising locality satisfies two vertices of the triangle at once.
 | Inheritance | understanding `this.save()` requires walking a class chain you cannot see |
 | Operator overloading | `a + b` can do anything, defined elsewhere |
 | Function overloading | which one runs depends on resolution you cannot see on the line |
-| Macros | the code you read is not the code that runs |
+| Macros | user code that expands into other code, or extends the syntax: the code you read is not the code that runs |
 | Implicit conversions | `f(x)` works for an invisible reason |
 | Global mutable state | meaning depends on ambient context |
 | Shadowing | the model believes it refers to one variable and hits another |
@@ -2151,6 +2151,30 @@ maximising locality satisfies two vertices of the triangle at once.
 | Style-insensitive identifiers (Nim's `fooBar` ≡ `foo_bar`) | two spellings for one thing, against §4.15's "exactly one correct way"; for a model it is pure confusion |
 | Private record fields | it is an *opaque type* wearing a field annotation's name: §4.9 makes field-named construction mandatory, so a hidden field makes the type unconstructible from outside, and §4.3's structural `==` compares a field the caller cannot name. The precedented form (Haskell 2010 §5.2, Ada 83) hides the **type**, never the field — and §4.20 makes a record a C struct by value, so a shim reads the "private" field at its offset anyway (panel 033) |
 | Private variant cases | it forces `_` to be legal on a variant whose hidden case the reader may not see, so a line's legality depends on a declaration nobody may read — and §4.7 bans `_` on variants precisely to keep exhaustiveness meaning something. Rust shipped this (`priv` variants), deleted it in 2014 as rarely used, re-added it per-**type** as `#[non_exhaustive]` in 1.40, and documents the price as the loss of exhaustiveness checking (panel 033) |
+
+**Compile-time evaluation (`comptime`, `constexpr`, CTFE) is examined and
+deliberately *unplaced* — it is neither on this list nor on Part 7's** (panel 039,
+2026-08-12; the long form is `docs/reasoning/003-comptime-and-macros.md`). This
+paragraph exists so the word is greppable: an answer reachable only from a
+reasoning note is uncitable under CLAUDE.md §1, and that is exactly how the
+question came to be asked twice. The row above does **not** cover it — three
+judges found that reason false of comptime, and its author is the source: Zig has
+comptime *so that* macros are unnecessary, which runs the implication the other
+way. Nothing on the closure list (§1.0) needs it; the strongest case in a language
+with no standard library is the header constant, and §4.19's `extern constant`
+answers that by **computing nothing** — the preprocessor evaluates, `_Generic`
+type-checks, an accessor returns. Neither list took it: Part 6 was refused because
+a one-line rejection here is falsified by this compiler's own output (every
+emitted unit asserts `__builtin_constant_p` twice, with no `extern` in the
+program), and Part 7 was vetoed because its preamble claims its items lose *only*
+on simplicity, which is false of a pass that would duplicate 1,754 lines of
+runtime semantics and contradict `ir/mono.rs`'s structural refusal of a depth
+limit. **Three conditions return it to the table, jointly**: a measured Part 11
+effect that `extern constant` does not already close · a *structural* termination
+argument of `mono.rs:24-33`'s standard, never a quota (Rust shipped one and
+removed it in 1.72; Zig's is bypassed by generic types into a compiler segfault) ·
+and a named deletion, because §1.7's test is subtraction and generics passed it
+where this does not.
 
 ---
 

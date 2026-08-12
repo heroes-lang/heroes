@@ -228,3 +228,34 @@ verdict.
 - **The §4.12 arithmetic** — that generics made the compiler *smaller* — is the
   only admissible argument for or against comptime, and it is a subtraction.
   → `docs/debrief/LEARN.md`
+
+---
+
+## Appended 2026-08-12 — what the record did with this note's four hand-offs
+
+This note is a dated record and is not rewritten (CLAUDE.md §14). All four items
+in § What stayed open were closed or placed the same day, three of them in one
+`/decide` session, and the spec-warden of panel 039 found this section still
+claiming otherwise while reading it as evidence.
+
+- **Part 6's `Macros` row** → **panel 039**, convened by author decision. Five
+  judges, no option surviving: the row's reason was **repaired** (it names source
+  generation and syntax extension now, because three seats found the old reason
+  false of comptime), and compile-time evaluation is **examined and unplaced**,
+  with a greppable paragraph in Part 6 naming the three conditions that return it.
+  This note's guess that the cheapest outcome was "one Part 6 row at zero spec
+  tokens" was **refused by the warden**: costing nothing to write is not costing
+  nothing, and a permanent rejection is the one design act under no stated burden
+  of proof.
+- **`docs/reasoning/` adoption** → adopted by the author in `463aaef`, with notes
+  `000`–`002` recovered and the vocabulary mapped forward rather than rewritten.
+- **The two mutually recursive `constant`s** → **fixed the same day in `7ca621d`**,
+  `error[constant_cycle]`, with a golden that carries its own control. This
+  section still says undiagnosed; that sentence was true when written and is the
+  reason the append exists rather than an edit.
+- **The `constant` body's contents** → still open, and **worse than this note
+  knew**. Panel 039's llm-ergonomist, reading only the spec, could not tell
+  whether a call in a `constant` body ran at compile time or at start-up. The
+  answer is neither: it runs on **every read**, effects are legal inside it, and
+  `constant ARGC: int` / `len(args())` prints `3` with three arguments and `0`
+  with none, from the same binary. Queued as a defect.
