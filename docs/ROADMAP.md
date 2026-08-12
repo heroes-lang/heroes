@@ -41,12 +41,18 @@ the header refutes is a diagnostic on the `.hero` line rather than an internal
 error. Plus one defect in shipped code and one in the specification, both found by
 judges compiling rather than reading.
 
-**458 crate tests · 46 CLI surface · 13 golden harnesses**, clippy clean, spec at
-**2588** of 4096, `heroes mutate` at **93% / 78% over 1252** across 19 programs.
+At the close: **458 crate tests · 46 CLI surface · 13 golden harnesses**, clippy
+clean, spec at **2588** of 4096, `heroes mutate` at **93% / 78% over 1252** across
+19 programs.
+
+**Since, in one `/decide` session (2026-08-12): 461 · 49 · 13, spec 2627** — sixteen
+open decisions answered and applied, `docs/debrief/QUEUE.md` for what each was, and
+panel **039** now sitting on Part 6 and comptime.
 
 The record: `docs/journal/013-header-constants.md` ·
 `docs/panel/038-constants-from-headers.md` ·
-`docs/measurements/005-magic-constants.md`. Next: **M-program-corpus**.
+`docs/measurements/005-magic-constants.md` · `docs/debrief/QUEUE.md`.
+Next: **M-program-corpus**.
 
 ---
 
