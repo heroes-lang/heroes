@@ -63,18 +63,41 @@ landed as `measure::gate`, so a spec change is red until the commit that made it
 writes the new number down. `heroes mutate` runs 1148 mutants, up from 839 — the split
 calculator is corpus.
 
-**After the close, same day, panels 033 and 034**: 420 crate tests, 91 `run/`
-cases, and an **eleventh mutation operator**. `typo-code` slips a character in an
+**After the close, same day, panels 033 and 034 and sweep 001**: 427 crate tests,
+37 CLI surface, 95 `run/` cases, and an **eleventh mutation operator**. `typo-code` slips a character in an
 error code and reads **25 mutants, 0 caught** — the only zero in the table — which
 moves the corpus-wide pair to **93% / 78% over 1173** with the killed counts
 *unchanged* at 1087 and 903: nothing got worse, twenty-five mistakes the harness
 could not see entered the denominator (`docs/measurements/004-error-codes.md`).
-**Three live defects, all found by judges compiling something else**: §4.16's hole
-exemption was program-wide since M8a, so an unfinished module silenced the unused
-rule in one nobody was editing; the hole report named the root file and a line
-that does not exist; and a variant case payload was never released when no `match`
-in the same compilation bound it — the same `lex.hero` leaking rooted at itself
-and clean rooted at `parse.hero`. Each has a case named after it.
+**Three live defects, all found by judges compiling something else** — and then,
+by author instruction, those three were **generalised into hypotheses and hunted
+recursively**: four hunts, one rule (compile and run; a defect you only reasoned
+about is not a finding), **twenty defects, all fixed**
+(`docs/defects/001-the-post-m8a-sweep.md`).
+
+They came in three shapes, and the shapes are the finding. **The scope widened
+silently**: a flag or a set that meant *this file* when a `Source` held one file
+and means *this program* since M8a — four of them, including §4.16's hole
+exemption in two different passes. **A position was assembled by hand**: eight
+callers building a location from `line_col` and `src.name` under a doc comment
+that has said *"there is one function and no caller assembles the triple itself"*
+since M8a — and the sharpened lesson is that `locate` can only protect the
+location it is **asked** for, so a line number formatted into a `String` note is
+outside every guard the compiler has, which is why M8a's own sweep walked past
+ten of them. **And the emitter asked what the program *mentioned* where it needed
+what a declaration *is*** — D3's shape, nine times, one repair retiring three.
+
+Nine of the twenty refused or miscompiled an **ordinary** program: `record Box {
+v: int? }` was exit 2, a map inside a record aborted on `==` while its `hash`
+worked, `heroes build` on a file with no `main` blamed the compiler, and `check
+--apply` panicked at 101 on any multi-module program. **No golden moved** — the
+corpus was compiling none of these shapes, which is the same sentence D3 wrote
+with ninety `run/` cases and the reason each fix ships with a case named after it.
+The one expectation that changed was a sentence M8a had made false:
+`declared_twice` said *"one file is one program"*.
+
+Eighteen panel sessions were ratified the same day, 013 through 034, each
+recording **what kind** of ratification it was.
 
 **Runnable:** `heroes test examples/calculator/main.hero` · `heroes run
 examples/calculator/main.hero` · `heroes check examples/calculator/eval.hero
