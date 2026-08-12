@@ -66,7 +66,23 @@ static void hero_map_require(const HeroMapHeader *m) {
  * generated C, reproducible across runs (panel 006). */
 #define HERO_MAP_SEED UINT64_C(0x9e3779b97f4a7c15)
 
+/* A KEY MUST EQUAL ITSELF, and it is checked here because every probe starts
+ * here — insert, lookup and the growth rebuild all call this before touching a
+ * bucket.
+ *
+ * The premise the probe rests on is reflexivity, not the `eq ⇒ same hash` rule
+ * the `-0.0` normalisation in `desc.c` defends. Nothing enforced it: `{K: V}`
+ * accepts any key type, and `0.0 / 0.0` is a legal Heroes expression, so a NaN
+ * key inserted twice made `len` 2, the lookup that follows returned
+ * `missing_key`, and `{nan: 1} == {nan: 1}` was false — at exit 0, ASan clean,
+ * leak counter balanced. Every instrument this project owns reported success,
+ * which is the class §1.2 exists to eliminate (2026-08-12, sweep 001 audit S1).
+ *
+ * It aborts rather than inventing an order, exactly as `sort` does one file
+ * over, and for the reason written there: a wrong answer with no error is what
+ * the M8c fixpoint cannot have. */
 static int64_t hero_map_slot_of(const HeroMapHeader *m, const void *key) {
+    if (!m->key->eq(key, key)) hero_panic("a map key that is not equal to itself (nan)");
     uint64_t h = m->key->hash(key) ^ HERO_MAP_SEED;
     return (int64_t)(h & (uint64_t)(m->cap - 1));
 }
@@ -74,6 +90,7 @@ static int64_t hero_map_slot_of(const HeroMapHeader *m, const void *key) {
 HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t entries) {
     if (key == NULL || val == NULL) hero_panic("map with no descriptor — a compiler bug");
     if (key->hash == NULL) hero_panic("map key descriptor with no hash — a compiler bug");
+    if (key->eq == NULL) hero_panic("map key descriptor with no eq — a compiler bug");
     if (entries < 0) hero_panic("negative map size");
     /* Load factor at most 1/2, and never zero buckets: linear probing needs a hole
      * to terminate on, and `cap > len` is what guarantees one exists. */

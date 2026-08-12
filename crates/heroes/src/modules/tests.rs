@@ -451,3 +451,93 @@ fn fixedbugs_a_hole_is_only_offered_what_its_own_file_can_name() {
         "`geom` cannot `use main` without a cycle, so it is not an answer: {holes}"
     );
 }
+
+/// **fixedbugs, sweep 001 audit S2, 2026-08-12.** A user file named
+/// `library.hero` had its declarations resolvable **unqualified** from every
+/// module: `square(3)` compiled and ran, while the same program with the file
+/// renamed `util.hero` was correctly refused with `needs_qualifying`. Rename a
+/// file, change the answer — N9's shape, reached through a different door.
+///
+/// Cause: four sites identify the library **by module name** rather than by the
+/// `is_library` flag — `resolve/mod.rs`'s unqualified fallback, its type twin,
+/// `qualified.rs`, and `types/holes.rs`'s suggestion filter — and the collision
+/// check next door skips a pair whose modules are *equal*, which leaves a hole
+/// exactly at identity. Identity is reachable, because the library is appended
+/// to every compilation under that name.
+///
+/// Refused once here rather than filtered at all four: one refusal keeps them
+/// honest, four filters are four places to forget.
+#[test]
+fn fixedbugs_a_user_module_may_not_be_called_library() {
+    let said = graph(
+        "fixedbugs-library-name",
+        &[
+            ("main.hero", "use library\n\nfunction main()\n    print(square(3))\n"),
+            ("library.hero", "function square(n: int) -> int\n    return n * n\n"),
+        ],
+    );
+    assert_eq!(said.len(), 1, "{said:?}");
+    assert!(said[0].contains("module_name_reserved"), "{said:?}");
+    assert!(said[0].contains("library.hero"), "it names the file to rename: {said:?}");
+
+    // The control, and the reason this is a defect rather than a preference: the
+    // identical program under any other stem is refused for the right reason.
+    let files = &[
+        ("main.hero", "use util\n\nfunction main()\n    print(square(3))\n"),
+        ("util.hero", "function square(n: int) -> int\n    return n * n\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-library-name-control", files, "main.hero");
+    assert!(
+        said.iter().any(|d| d.contains("needs_qualifying")),
+        "an unqualified cross-module name is always an error: {said:?}"
+    );
+}
+
+/// **fixedbugs, sweep 001 audit L1, 2026-08-12.** The lexer walked to
+/// `src.text.len()` under a doc comment saying "one source file" — true until
+/// M8a made a `Source` N files concatenated. After that the indent stack and the
+/// open-bracket list crossed the boundary between files, so:
+///
+/// - an unclosed `(` in `main.hero` **swallowed the whole of `geom.hero`** and
+///   reported itself inside the appended library, which `library::misplaced`
+///   turned into `internal error … exit 2`;
+/// - and so did `y =` — a half-written line, the commonest state a file is ever
+///   in while somebody is editing it. The compiler answered *the compiler is
+///   wrong* for the most ordinary thing there is.
+///
+/// Panel 007 had already fixed the rule's shape: continuation lives inside
+/// brackets only, and an unclosed opener is a diagnostic rather than a silent
+/// swallow. A file boundary is where that rule has to be applied, because
+/// nothing in one file may continue a line in another.
+#[test]
+fn fixedbugs_a_bracket_opened_in_one_file_does_not_reach_the_next() {
+    // Not through `frontend`: this input deliberately does not parse, which is
+    // the whole case.
+    let dir = write(
+        "fixedbugs-bracket-boundary",
+        &[
+            ("main.hero", "use geom\n\nfunction main()\n    print((geom.f()\n"),
+            ("geom.hero", "function f() -> int\n    return 7\n"),
+        ],
+    );
+    let src = load(&dir.join("main.hero").display().to_string()).expect("the root file reads");
+    let parsed = crate::syntax::parse(&src);
+    let said: Vec<String> = parsed.diagnostics.iter().map(|d| d.render_line(&src)).collect();
+    assert!(
+        said.iter().any(|d| d.contains("unclosed_bracket") && d.contains("main.hero")),
+        "the opener is reported in the file that opened it: {said:?}"
+    );
+    assert!(
+        !said.iter().any(|d| d.contains("<heroes library>")),
+        "and nothing lands in the library: {said:?}"
+    );
+
+    // `geom.hero` is still lexed as itself — the swallow is what is fixed, not
+    // the reading of the file that was being swallowed.
+    let files = &[
+        ("main.hero", "use geom\n\nfunction main()\n    print(geom.f())\n"),
+        ("geom.hero", "function f() -> int\n    return 7\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-bracket-boundary-ok", files, "main.hero");
+    assert!(said.is_empty(), "the well-formed pair still says nothing: {said:?}");
+}

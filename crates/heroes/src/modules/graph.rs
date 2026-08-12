@@ -58,8 +58,41 @@ fn unknown_modules(ast: &Ast, src: &Source, out: &mut Vec<Diagnostic>) {
     }
 }
 
-/// Two modules whose names differ and whose C components do not.
+/// Two modules whose names differ and whose C components do not — and the one
+/// name a user module may not have.
+///
+/// **`library` is taken.** The loop below skips a pair whose modules are equal,
+/// which is right for the collision it was written for and leaves a hole exactly
+/// at identity — and identity is reachable, because the library is appended to
+/// every compilation under that name. Measured: a user file called
+/// `library.hero` had its declarations resolvable **unqualified** from every
+/// module, so `square(3)` compiled and ran while the same program with the file
+/// renamed `util.hero` was correctly refused. Rename a file, change the answer
+/// (2026-08-12, sweep 001 audit S2).
+///
+/// It is refused here rather than filtered at each of the four sites that ask
+/// "is this the library" by name (`resolve/mod.rs`'s `top_visible` fallback and
+/// its type twin, `qualified.rs`, `types/holes.rs`): one refusal keeps the four
+/// honest, where four filters would be four places to forget.
 fn collisions(src: &Source, out: &mut Vec<Diagnostic>) {
+    for file in src.files() {
+        if file.is_library || file.module != crate::source::LIBRARY_MODULE {
+            continue;
+        }
+        out.push(
+            Diagnostic::new(
+                "module_name_reserved",
+                format!(
+                    "`{}` would be the module `library`, and that name is the language's own — §1.11's Tier 2 is compiled into every program under it",
+                    file.name
+                ),
+                crate::source::Span { start: file.start, end: file.start },
+            )
+            .with_note(
+                "rename the file: any other stem will do, and nothing else in the language is reserved this way".to_string(),
+            ),
+        );
+    }
     for (index, file) in src.files().iter().enumerate() {
         for earlier in &src.files()[..index] {
             if earlier.module == file.module || module_of(&earlier.module) != module_of(&file.module)

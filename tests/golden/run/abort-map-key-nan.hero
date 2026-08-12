@@ -1,0 +1,14 @@
+# `sort`'s rule, at the other place an f64 order is assumed: a key that is not
+# equal to itself aborts rather than being given an invented bucket. See
+# `fixedbugs-a-map-key-that-is-not-itself.hero` for what it was doing before.
+# Bulk regression case.
+
+function nan() -> f64
+    return 0.0 / 0.0
+
+function main()
+    m: {f64: int} @ {}
+    m[1.5] @ 1
+    print(len(m))
+    m[nan()] @ 2
+    print(len(m))

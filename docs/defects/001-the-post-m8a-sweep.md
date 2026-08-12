@@ -146,3 +146,48 @@ printers' relative arithmetic.
 D4's `spans_lines` was narrow *on purpose*, with the reason written out; the reason
 was about source a person writes, and the formatter started writing source. D3's
 fallback was the same. Both were read by reviewers who agreed with them.
+
+
+## The premise audit, and the five roots (2026-08-12, same day)
+
+The rule the sweep produced — *a narrowing asks the value, never the world* — was
+then turned on the compiler and asked of every load-bearing premise in it. **Nine
+more live defects, eleven latent**, and they group into five roots rather than
+twenty problems, which is the useful half.
+
+**Fixed here:**
+
+| # | what | why it was silent |
+|---|---|---|
+| **S1** | a **NaN as a map key**. `{f64: int}` is legal, `0.0 / 0.0` is legal, and the probe rests on the key's `eq` being reflexive — which nothing said, and which `desc.c` does not defend (it defends the neighbouring rule, *equal keys hash equally*, which is what the `-0.0` normalisation is for). Inserted twice, `len` was 2; the lookup answered `missing_key`; `{nan: 1} == {nan: 1}` was false. **Exit 0, ASan clean, leak counter balanced** — every instrument reported success. Now aborts, as `sort` already did for the same value | ★★★ |
+| **L1** | the lexer walked to `text.len()` under a doc comment saying *"one source file"*. Since M8a the indent stack and the open-bracket list **crossed the file boundary**: an unclosed `(` in `main.hero` swallowed all of `geom.hero` and reported itself inside the library, and so did `y =` — a half-written line. The commonest state a file is ever in answered `internal error … exit 2` | ★★★ |
+| **S2** | a user file named **`library.hero`** had its declarations resolvable *unqualified* from every module; renaming it `util.hero` refused the same program correctly. Four sites identify the library by module *name* rather than by the `is_library` flag, and the collision check skips a pair whose modules are equal — a hole exactly at identity | ★★★ |
+
+**Still open, with reproducers, and grouped by root:**
+
+- **"one byte is one column"** — S4 (`fmt`'s 88-column test uses `.len()`), S5
+  (the caret's width, whose padding the tab fix already converted to chars), and
+  the already-filed N8. `fmt_stmt.rs` contradicts itself internally: `.len()` at
+  one line, `.chars().count()` at another. One test kills all three: format and
+  diagnose a program whose only non-ASCII is inside a string literal.
+- **"the printer's input adjacency is its output adjacency"** — S3, the fixed
+  `spans_lines` defect's twin three hundred lines away in the same file: an
+  arm-alignment run is cut when two arms are not on consecutive *source* lines.
+- **"the runtime may trust its caller"** — S7 (`argv[1]` unvalidated), S11 (`slice`
+  assumes well-formed UTF-8, and `from_bytes` validates nothing — **this one dies
+  at M7**), L3 (`val->hash` never null-checked where `key->hash` is), L5 (growth
+  frees a block the caller still holds a pointer into). The largest cluster, and
+  every one of them asks about *the world that produced the value*.
+- **counting as a proxy for identity** — S8: `ir/verify.rs` counts `CopyOut`s and
+  compares to the number of `@` params, while `CopyOut { param }` carries the
+  identity and the params list is thrown away. `phases.rs` already records that
+  counting was rejected as a proxy for decrefs, twenty lines away.
+- **hand-maintained lists** — S12 (literal lengths typed by hand where
+  `HERO_STR_LIT` exists), S13 (`is_thesis_rule`'s 13 codes, where the surface test
+  cannot detect a *missing* entry), S6 (a lone `\r` swallowed unconditionally),
+  S9, S10, L2, L4.
+
+**What the roots say.** Twenty premises, five claims. A premise depended on in
+three places is **one thing to test, not three** — which is the shape
+`a_declared_type_cannot_contain_a_type_parameter` already takes, and the reason
+the remaining work is five tests rather than eleven fixes.

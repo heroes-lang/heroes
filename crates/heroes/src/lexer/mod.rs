@@ -45,9 +45,62 @@ pub struct LexOutput {
     pub diagnostics: Vec<Diagnostic>,
 }
 
-/// Run the lexer over one source file. Never fails: errors are in
-/// `diagnostics`, and the token stream is always complete through `Eof`.
+/// Run the lexer over a compilation. Never fails: errors are in `diagnostics`,
+/// and the token stream is always complete through `Eof`.
+///
+/// **One file at a time, and that is the repair.** This function used to walk to
+/// `src.text.len()` under a doc comment saying "one source file" — true until
+/// M8a made a `Source` N files concatenated, after which the indent stack and
+/// the open-bracket list crossed the boundary between them. Measured: an
+/// unclosed `(` in `main.hero` swallowed the whole of `geom.hero` and reported
+/// itself **inside the library** at exit 2, so the commonest state a file is
+/// ever in — a half-written line, `y =` — answered *the compiler is wrong*
+/// (2026-08-12, sweep 001 audit L1).
+///
+/// Panel 007 already fixed the shape of the rule: continuation lives inside
+/// brackets only, and an opener that never closes is a diagnostic rather than a
+/// silent swallow. A file boundary is where that rule has to be applied, because
+/// nothing in one file may continue a line in another.
 pub fn lex(src: &Source) -> LexOutput {
+    let mut tokens: Vec<Token> = Vec::new();
+    let mut diagnostics: Vec<Diagnostic> = Vec::new();
+    for index in 0..src.files().len() {
+        let offset = src.files()[index].start;
+        // Each file lexed as its own text, then the spans moved back into the
+        // compilation's coordinates. Bounding the existing walk instead would
+        // mean threading an end through every `as_bytes()` read in `scan.rs`,
+        // and the interesting state — `level`, `open_brackets` — is exactly what
+        // must not survive the boundary anyway.
+        let one = Source::new(src.files()[index].name.clone(), src.text_of(index).to_string());
+        let out = lex_one(&one);
+        for mut token in out.tokens {
+            if token.kind == TokenKind::Eof {
+                continue;
+            }
+            token.span.start += offset;
+            token.span.end += offset;
+            tokens.push(token);
+        }
+        for mut diagnostic in out.diagnostics {
+            diagnostic.span.start += offset;
+            diagnostic.span.end += offset;
+            diagnostics.push(diagnostic);
+        }
+    }
+    // **`Eof` sits at the end of the ROOT file, not of the text.** Every parser
+    // diagnostic that runs out of input anchors here, and the text ends inside
+    // the appended library — so `expected_args_close` on an unclosed `(` landed
+    // in a file the author cannot open and `library::misplaced` threw the whole
+    // batch away as a compiler bug. Same rule as `no_entry_point`'s caret
+    // (`Source::root_end`): a diagnostic about the input as a whole belongs to
+    // the file the reader named.
+    let at = src.root_end();
+    tokens.push(Token { kind: TokenKind::Eof, span: Span { start: at, end: at } });
+    LexOutput { tokens, diagnostics }
+}
+
+/// One file's tokens, in that file's own coordinates.
+fn lex_one(src: &Source) -> LexOutput {
     let mut st = LexState {
         pos: 0,
         level: 0,

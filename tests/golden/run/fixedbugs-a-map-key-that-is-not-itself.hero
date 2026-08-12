@@ -1,0 +1,43 @@
+# FIXED DEFECT, 2026-08-12, sweep 001 audit S1 — and the one where **every
+# instrument this project owns reported success**.
+#
+# Symptom: `{f64: int}` is a legal program and `0.0 / 0.0` is a legal
+# expression, so a NaN reached a map as a key. Inserted twice it made `len` 2;
+# the lookup that followed answered `missing_key`; and `{nan: 1} == {nan: 1}`
+# was `false` while the map plainly held one. Exit 0, ASan clean, leak counter
+# balanced, no diagnostic anywhere. §1.2's whole formula is about the mistakes
+# that cost a rewrite round rather than a compile error, and this one costs a
+# reading of the runtime.
+#
+# Cause: the probe rests on the key's `eq` being **reflexive**, and nothing said
+# so. `desc.c` defends the neighbouring rule — equal keys hash equally, which is
+# why `-0.0` is normalised before hashing — and that is a different premise. The
+# spec constrains `K` nowhere.
+#
+# Fix: `hero_map_slot_of` asks `eq(key, key)` and aborts, which is what `sort`
+# already does for the same value ("a wrong answer with no error … which the M8c
+# fixpoint cannot have"). One check at the one place every probe starts.
+#
+# This file is the ordinary side: the keys that must keep working, including the
+# `-0.0` control that isolates reflexivity from the hashing rule. The abort has
+# its own case beside `abort-sort-nan.hero`.
+
+function main()
+    m: {f64: int} @ {}
+    m[1.5] @ 1
+    m[0.0 - 0.0] @ 2
+    m[2.5] @ 3
+    print(len(m))
+
+    # `-0.0` and `0.0` are one key: `eq` says so, and the descriptor normalises
+    # the zero before hashing so the two agree.
+    print(m[0.0].default(0))
+    print(m[1.5].default(0))
+    print(m[9.5].is_err())
+
+    # And a map is still equal to a map with the same contents.
+    n: {f64: int} @ {}
+    n[2.5] @ 3
+    n[1.5] @ 1
+    n[0.0] @ 2
+    print(m == n)
