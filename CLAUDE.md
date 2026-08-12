@@ -74,7 +74,13 @@ hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
 `*p_l = l;`). `hero_unreachable()` at every type-system-proven-unreachable
 point. Compile flags: `-Wall -Werror=return-type -Werror=uninitialized
 -Werror=format -Werror=conditional-uninitialized -fno-strict-aliasing`; a clang
-failure is exit 2 and says the *compiler* is wrong. **A refcounted slot is the
+failure is exit 2 and says the *compiler* is wrong, **with one named exception**
+(author instruction 2026-08-12, panel 036): the `_Generic` return assertion §4.19
+emits per `extern` exists to fail when the *author's* declaration disagrees with
+the real header, so it is exit 1 and a `ffi_return_type` diagnostic on the
+`.hero` line — `emit/ffi.rs` matches only the assertion messages this emitter
+writes, and every other verdict on generated C is still the compiler's.
+**A refcounted slot is the
 one exception to the no-initialisation rule** — zero-initialised so cleanup is
 unconditional, with `ptr == NULL` as the non-value every runtime entry point
 rejects (panel 021). `--sanitize` adds `-fsanitize=address,undefined`, which

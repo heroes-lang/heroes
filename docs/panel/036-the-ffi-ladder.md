@@ -4,7 +4,7 @@
 whose acceptance test is a real C library).
 **Trigger** `spec/**`, design.md §4.19 and §1.11, surface syntax, and the tool
 surface (CLAUDE.md §4).
-**Status** `provisional — author ratification pending`.
+**Status** `ratified — 2026-08-12, blanket author instruction` (see § Ratification).
 
 ## The proposal, verbatim
 
@@ -247,3 +247,40 @@ predefines both `HALT` and `ASSERT`. Reading Wirth's report directly, **only
 `ASSERT` is predefined**. The correction is kept here because it is the shape
 CLAUDE.md §1 exists for: the summary was fluent and wrong, and only the primary
 source said so.
+\n
+## Ratification — 2026-08-12, by author instruction
+
+**RATIFIED.** The instruction was a blanket one — *"ratifica tutto"* — given
+after the session summary, not a clause-by-clause reading of this file. It is
+recorded that way on purpose: this project's rule is that a record must not say
+more than what happened, and the shape of a yes is part of what happened.
+
+What it settles: the provisional resolution above **stands as the decision**, and
+work no longer proceeds on it as a default. Every resolution here was already
+load-bearing, so this moves the record's status rather than the compiler's
+behaviour.
+
+What it does **not** settle: anything this file keys to a measurement nobody has
+taken. Those stay open on their own terms in `docs/debrief/QUEUE.md`, and a
+blanket yes cannot make a number arrive.
+
+Open here after ratification, and each one for a reason a verdict cannot reach:
+
+- **the llm-ergonomist's four first-try rates.** They are predictions about what a
+  model does, and the Part 11 harness has not run. A yes to the design is not a
+  number.
+- **the historian's condition on P4** — one language that made *runtime* file
+  reading a compiler built-in and shipped it five years without regret. It found
+  none; nobody has looked since.
+- **`compile "shim.c"` and `framework "…"`**, which were not refused on their
+  merits but deferred for want of an acceptance test. They wait on a rung that
+  needs a shim, not on the author.
+- **`heroes cc`**, which is therefore still *unbuilt and undecided* — two different
+  things, and design.md §4.19 now says so where it used to promise the command.
+
+Scored at close, and all four right: the compiler-engineer's file split (479
+lines, over its 420), the spec-warden's token count (exact on its own draft) and
+its `-> ()?` failure (no spelling worked at all), and the ffi-pragmatist's
+`cstr`→`str` need. The historian's `exit` prediction did **not** fire, and the
+reason is on the record: `hero_exit` is `_Noreturn`, so clang's flow analysis
+never needed the emitter's help.

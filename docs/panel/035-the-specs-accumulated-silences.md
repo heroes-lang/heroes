@@ -4,7 +4,7 @@
 tutto prima del prossimo step").
 **Trigger** `spec/**`, design.md Parts 1–11, and two diagnostic classes
 (CLAUDE.md §4).
-**Status** `provisional — author ratification pending`.
+**Status** `ratified — 2026-08-12, blanket author instruction` (see § Ratification).
 
 ## Why they were taken together
 
@@ -236,3 +236,24 @@ language"* — and thirteen silences falsify **that claim**, not its length. Sor
 into Wirth's two classes, most of the thirteen are class one: derivable, and the
 compiler says so loudly at the moment of the mistake. The residue that fits
 neither class is the real defect count, and it was **four**.
+\n
+## Ratification — 2026-08-12, by author instruction
+
+**RATIFIED.** The instruction was a blanket one — *"ratifica tutto"* — given
+after the session summary, not a clause-by-clause reading of this file. It is
+recorded that way on purpose: this project's rule is that a record must not say
+more than what happened, and the shape of a yes is part of what happened.
+
+What it settles: the provisional resolution above **stands as the decision**, and
+work no longer proceeds on it as a default. Every resolution here was already
+load-bearing, so this moves the record's status rather than the compiler's
+behaviour.
+
+What it does **not** settle: anything this file keys to a measurement nobody has
+taken. Those stay open on their own terms in `docs/debrief/QUEUE.md`, and a
+blanket yes cannot make a number arrive.
+
+Open here after ratification: the historian's structural condition on variant
+construction (whether v2 restores the symmetry or the spec gains an EBNF
+appendix), and the two messages this session found owed — `1e300` and the `%`
+abort's name. Both are queued as work rather than as decisions.
