@@ -45,9 +45,11 @@ At the close: **458 crate tests · 46 CLI surface · 13 golden harnesses**, clip
 clean, spec at **2588** of 4096, `heroes mutate` at **93% / 78% over 1252** across
 19 programs.
 
-**Since, in one `/decide` session (2026-08-12): 461 · 49 · 13, spec 2627** — sixteen
-open decisions answered and applied, `docs/debrief/QUEUE.md` for what each was, and
-panel **039** now sitting on Part 6 and comptime.
+**Since, in two `/decide` sessions (2026-08-12): 463 · 49 · 13, spec 2675** —
+twenty-one open decisions answered and applied, `docs/debrief/QUEUE.md` for what
+each was. Panels **039** (comptime, examined and unplaced) and **040** (the bitwise
+set, a retro-record) both landed; a `constant` is constant again, `& | ^ ~ << >>`
+are real, and the port can compute its own mangled names.
 
 The record: `docs/journal/013-header-constants.md` ·
 `docs/panel/038-constants-from-headers.md` ·
