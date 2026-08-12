@@ -249,7 +249,7 @@ pub enum Op {
     /// verifier allows it and the emitter (M-scalars-run) refuses it, which is how "no
     /// binary" is enforced without making a hole an error.
     Hole,
-    /// M-ir-lowering-step-2 scaffolding: a form the lowering does not handle yet. The
+    /// M-ir-lowering step 2 scaffolding: a form the lowering does not handle yet. The
     /// verifier rejects it, so it cannot reach a golden or a backend. Deleted
     /// when the last sugar row lands.
     Missing,

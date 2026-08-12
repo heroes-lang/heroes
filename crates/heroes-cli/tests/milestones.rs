@@ -149,6 +149,77 @@ fn walk_all(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+/// Every `M-<name>` written anywhere resolves to a row of the alias table.
+///
+/// **This is the one check nothing else can do.** A misspelling — `M-modues`,
+/// `M-sep-comp`, `M-value-aggregate` — breaks no test, passes every other guard here,
+/// and reads plausibly, because a name carries its own meaning in a way `M5c` never
+/// did. That readability is exactly what makes a typo survive review, so the set of
+/// names in use is compared against the map rather than eyeballed.
+///
+/// The map is parsed out of `docs/ROADMAP.md` § The names, so the table cannot drift
+/// from the tree in either direction: a new milestone with no row fails here, and so
+/// does a row nobody uses being the only place a name exists.
+#[test]
+fn every_name_in_use_has_a_row_in_the_alias_table() {
+    let root = repo();
+    let roadmap = std::fs::read_to_string(root.join("docs/ROADMAP.md")).expect("the ROADMAP");
+    let table: Vec<String> = roadmap
+        .lines()
+        .filter_map(|l| l.strip_prefix("| `M-"))
+        .filter_map(|l| l.split('`').next())
+        .map(|n| format!("M-{n}"))
+        .collect();
+    assert_eq!(table.len(), 31, "the alias table has {} rows, not 31: {table:?}", table.len());
+
+    // The one name that is deliberately written without being a milestone: the runner-up
+    // § The names records as refused, so the reasoning survives the decision.
+    let refused = ["M-language"];
+
+    let mut files = Vec::new();
+    walk(&root, &root, &mut files);
+    let mut unknown = Vec::new();
+    for file in &files {
+        let Ok(text) = std::fs::read_to_string(file) else { continue };
+        for name in names_used(&text) {
+            if !table.contains(&name) && !refused.contains(&name.as_str()) {
+                let rel = file.strip_prefix(&root).expect("inside the repo");
+                unknown.push(format!("{}: {name}", rel.display()));
+            }
+        }
+    }
+    assert!(unknown.is_empty(), "a name with no row in the alias table:\n{}", unknown.join("\n"));
+}
+
+/// Every `M-<lowercase…>` token, at the same word boundary the rename used.
+fn names_used(text: &str) -> Vec<String> {
+    let bytes = text.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        let opens = bytes[i] == b'M'
+            && (i == 0 || {
+                let p = bytes[i - 1];
+                !p.is_ascii_alphanumeric() && p != b'_' && p != b'-'
+            })
+            && bytes.get(i + 1) == Some(&b'-')
+            && bytes.get(i + 2).is_some_and(u8::is_ascii_lowercase);
+        if opens {
+            let mut end = i + 2;
+            while end < bytes.len() && (bytes[end].is_ascii_lowercase() || bytes[end] == b'-') {
+                end += 1;
+            }
+            // A trailing hyphen belongs to the prose, not to the name.
+            let name = String::from_utf8_lossy(&bytes[i..end]).trim_end_matches('-').to_string();
+            out.push(name);
+            i = end;
+        } else {
+            i += 1;
+        }
+    }
+    out
+}
+
 /// The boundary rule has a test that makes it fire, in both directions (CLAUDE.md §9).
 /// The negatives are the ones that matter: they are strings this repository really
 /// contains, and a check that flagged them would be deleted by whoever it blocked.
