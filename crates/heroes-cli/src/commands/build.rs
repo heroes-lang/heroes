@@ -17,7 +17,7 @@ use crate::cli::{Exit, Invocation};
 
 use heroes::emit::Target;
 
-use super::compile::{compile, Options};
+use super::compile::{compile, level_from, Options};
 
 pub fn run(path: &str, args: &Invocation) -> Exit {
     if args.has("--dump-ir") && args.has("--emit-c") {
@@ -29,11 +29,16 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
         );
         return Exit::Failed;
     }
+    // `-O0` is `build`'s default: the dev loop's compile time, and the level at
+    // which `-Werror=uninitialized` sees the emitter's own output most clearly.
+    // `-O2` is a flag away since 2026-08-12, which is what closed panel 021's
+    // asymmetry — the level and the sanitisers are both flags now.
+    let level = match level_from(args, "-O0") {
+        Ok(level) => level,
+        Err(exit) => return exit,
+    };
     let options = Options {
-        // `-O0` for `build`: the dev loop's compile time, and the level at which
-        // `-Werror=uninitialized` sees the emitter's own output most clearly. `run`
-        // is where `-O2` lives.
-        level: "-O0",
+        level,
         dump_ir: args.has("--dump-ir"),
         emit_c: args.has("--emit-c"),
         output: args.value_of("-o"),

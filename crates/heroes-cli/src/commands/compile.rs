@@ -34,14 +34,20 @@ use heroes::source::{Source, Span};
 use heroes::syntax::parse;
 use heroes::types::{check, report_holes};
 
-use crate::cli::Exit;
+use crate::cli::{Exit, Invocation};
 use crate::input;
 
 use super::toolchain::Toolchain;
 
 pub struct Options {
-    /// `-O0` for `build`, `-O2` for `run`. Part of the cache key, because two
-    /// levels sharing one directory is one configuration pretending to be two.
+    /// The clang optimisation level. Part of the cache key, because two levels
+    /// sharing one directory is one configuration pretending to be two.
+    ///
+    /// Chosen by the **verb's default and a flag that overrides it** — see
+    /// `level_from`. Until 2026-08-12 the verb was the only way to say it, which
+    /// panel 021 recorded as an asymmetry visible in `--help`: sanitising was a
+    /// flag and the level was a subcommand, so `build` could not be asked for the
+    /// level the golden harness runs at.
     pub level: &'static str,
     pub dump_ir: bool,
     pub emit_c: bool,
@@ -58,6 +64,29 @@ pub struct Options {
 }
 
 /// `Ok(None)` — it stopped at a dump. `Ok(Some(path))` — that binary exists now.
+/// The optimisation level this invocation asked for, or the verb's default.
+///
+/// **Two levels and no others**, which is CLAUDE.md §10's stopping rule applied to
+/// a flag rather than to a verb: the `run/` golden harness types `-O0` and `-O2`
+/// (every case runs at both), and nothing types `-O1`, `-O3` or `-Os`. A level the
+/// harness does not need is surface nobody must type.
+///
+/// Spelled attached, as clang spells it, so the flag a reader already knows is the
+/// flag that works. Both at once is refused rather than resolved by precedence —
+/// the same reading `build` gives `--dump-ir --emit-c`: an invocation that asked
+/// two questions gets an error, not an answer to one of them.
+pub fn level_from(args: &Invocation, default: &'static str) -> Result<&'static str, Exit> {
+    match (args.has("-O0"), args.has("-O2")) {
+        (true, true) => {
+            eprintln!("error: `-O0` and `-O2` are one choice — ask for one level at a time");
+            Err(Exit::Failed)
+        }
+        (true, false) => Ok("-O0"),
+        (false, true) => Ok("-O2"),
+        (false, false) => Ok(default),
+    }
+}
+
 pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
     compile_with_tests(path, options).map(|pair| pair.map(|(binary, _)| binary))
 }

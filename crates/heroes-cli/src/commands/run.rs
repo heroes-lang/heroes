@@ -18,11 +18,15 @@ use crate::cli::{Exit, Invocation};
 
 use heroes::emit::Target;
 
-use super::compile::{compile, Options};
+use super::compile::{compile, level_from, Options};
 
 pub fn run(path: &str, args: &Invocation) -> Exit {
+    let level = match level_from(args, "-O2") {
+        Ok(level) => level,
+        Err(exit) => return exit,
+    };
     let options = Options {
-        level: "-O2",
+        level,
         dump_ir: false,
         emit_c: false,
         output: args.value_of("-o"),

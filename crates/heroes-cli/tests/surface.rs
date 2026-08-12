@@ -946,3 +946,41 @@ fn mutate_can_print_the_survivors_of_one_operator() {
     let said = String::from_utf8_lossy(&wrong.stderr);
     assert!(said.contains("no operator `swapargs`") && said.contains("swap-args"), "{said}");
 }
+
+/// The optimisation level is a flag as well as a verb's default (author decision
+/// 2026-08-12, closing panel 021's asymmetry).
+///
+/// Panel 021 recorded it as visible in `--help`: sanitising was a flag and the
+/// level was a subcommand, so `build` could not be asked for the level the `run/`
+/// golden harness runs every case at. Two levels and no others — CLAUDE.md §10's
+/// stopping rule applied to a flag: the harness types `-O0` and `-O2`, and nothing
+/// types `-O1`.
+#[test]
+fn the_optimisation_level_is_a_flag_with_the_verbs_default() {
+    // Both verbs reach both levels, and the cache key separates them: `level` is
+    // in the digest, so the two binaries are two directories.
+    let at_two = heroes(&["build", "examples/gallery/00-first.hero", "-O2"]);
+    assert_eq!(code(&at_two), 0, "{}", String::from_utf8_lossy(&at_two.stderr));
+    let at_zero = heroes(&["build", "examples/gallery/00-first.hero", "-O0"]);
+    assert_eq!(code(&at_zero), 0);
+    assert_ne!(
+        String::from_utf8_lossy(&at_two.stderr),
+        String::from_utf8_lossy(&at_zero.stderr),
+        "two levels are two build directories, not one"
+    );
+    assert_eq!(code(&heroes(&["run", "examples/gallery/00-first.hero", "-O0"])), 0);
+
+    // Both at once is refused rather than resolved by precedence — the reading
+    // `build` already gives `--dump-ir --emit-c`.
+    let both = heroes(&["build", "examples/gallery/00-first.hero", "-O0", "-O2"]);
+    assert_eq!(code(&both), 2);
+    let said = String::from_utf8_lossy(&both.stderr);
+    assert!(said.contains("one level at a time"), "{said}");
+
+    // A level the harness does not need is not on the surface, and the strictness
+    // error names what is.
+    let unknown = heroes(&["build", "examples/gallery/00-first.hero", "-O1"]);
+    assert_eq!(code(&unknown), 2);
+    let names = String::from_utf8_lossy(&unknown.stderr);
+    assert!(names.contains("-O0, -O2"), "{names}");
+}

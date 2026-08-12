@@ -68,6 +68,8 @@ pub fn commands() -> Vec<Command> {
                 flag("--emit-c", "print the generated C11 and stop, instead of compiling it"),
                 valued("-o", "write the artifact here instead of under build/"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
+                flag("-O0", "compile at -O0 (the default here)"),
+                flag("-O2", "compile at -O2"),
             ],
             summary: "compile to a native binary".to_string(),
         },
@@ -78,14 +80,20 @@ pub fn commands() -> Vec<Command> {
             flags: vec![
                 valued("-o", "keep the binary here as well as running it"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
+                flag("-O0", "compile at -O0"),
+                flag("-O2", "compile at -O2 (the default here)"),
             ],
-            summary: "compile at -O2 and execute (the dev loop); `-- a b` passes a and b to the program".to_string(),
+            summary: "compile and execute (the dev loop, -O2); `-- a b` passes a and b to the program".to_string(),
         },
         Command {
             tag: Tag::Test,
             name: "test".to_string(),
             operand: Operand::File,
-            flags: vec![flag("--sanitize", "compile with -fsanitize=address,undefined")],
+            flags: vec![
+                flag("--sanitize", "compile with -fsanitize=address,undefined"),
+                flag("-O0", "compile at -O0 (the default here)"),
+                flag("-O2", "compile at -O2"),
+            ],
             summary: "run the file's `test` blocks".to_string(),
         },
         Command {
