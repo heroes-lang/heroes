@@ -250,6 +250,6 @@ fn ffi_constant(
 fn crosses_the_boundary(checker: &Checker, ty: TyId) -> bool {
     matches!(
         checker.out.types.get(ty),
-        Ty::Int | Ty::F64 | Ty::Bool | Ty::Str | Ty::Ptr | Ty::Cstr | Ty::Unit | Ty::Error
+        Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str | Ty::Ptr | Ty::Cstr | Ty::Unit | Ty::Error
     )
 }

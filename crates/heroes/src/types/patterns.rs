@@ -178,7 +178,7 @@ pub(super) fn exhaustive(
         }
         // `int` and `str` cannot be enumerated, so `_` is how they are finished —
         // and its absence is the error.
-        Ty::Int | Ty::Str => {
+        Ty::Int(_) | Ty::Str => {
             let diagnostic = errors::needs_wildcard(span);
             checker.push_diagnostic(diagnostic);
         }

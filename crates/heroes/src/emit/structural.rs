@@ -53,7 +53,7 @@ pub(super) fn equality_body(
         let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
         let member = mangle::field(src.slice(field.name));
         let test = match checked.types.get(ty) {
-            Ty::Int | Ty::Bool | Ty::F64 => format!("a->{member} == b->{member}"),
+            Ty::Int(_) | Ty::Bool | Ty::F64 => format!("a->{member} == b->{member}"),
             Ty::Str => format!("hero_str_eq(a->{member}, b->{member})"),
             Ty::Array(_) => format!("hero_array_eq(a->{member}, b->{member})"),
             // The three rows this table went without until 2026-08-12, each one a

@@ -277,7 +277,7 @@ fn collect(checked: &Checked, ty: TyId, into: &mut std::collections::BTreeSet<u3
 pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<String> {
     match checked.types.get(ty) {
         Ty::Unit => None,
-        Ty::Int => Some("int64_t".to_string()),
+        Ty::Int(kind) => Some(kind.c_type().to_string()),
         Ty::Bool => Some("bool".to_string()),
         Ty::F64 => Some("double".to_string()),
         // A fat pointer, passed BY VALUE (§4.20, panel 021): 16 bytes, two

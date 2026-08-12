@@ -66,7 +66,7 @@ pub(super) fn call(
         // rendering, no separator, one trailing newline.
         ("print", args) => {
             for (index, arg) in args.iter().enumerate() {
-                if !matches!(checker.out.types.get(*arg), Ty::Int | Ty::F64 | Ty::Bool | Ty::Str) {
+                if !matches!(checker.out.types.get(*arg), Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str) {
                     let got = checker.show(ast, src, args[index]);
                     let diagnostic = errors::bad_operand(
                         "print",
@@ -135,7 +135,7 @@ pub(super) fn call(
             return arg_error(checker, ast, src, "cstr", "`str`", *one, span)
         }
         ("to_int", [one]) if checker.out.types.get(*one) == Ty::F64 => checker.out.types.int(),
-        ("to_f64", [one]) if checker.out.types.get(*one) == Ty::Int => checker.out.types.f64(),
+        ("to_f64", [one]) if matches!(checker.out.types.get(*one), Ty::Int(_)) => checker.out.types.f64(),
         // §4.20's inventory calls this one `.str()`; panel 017 renames it
         // `to_str`, so the three conversions share one scheme and a model can
         // derive the third from the two the spec already lists.
@@ -144,7 +144,7 @@ pub(super) fn call(
         // path a new name would have cost spec tokens for a conversion the three
         // that exist already teach the shape of.
         ("to_str", [one]) => match checker.out.types.get(*one) {
-            Ty::Int | Ty::F64 | Ty::Bool | Ty::Str | Ty::Cstr => checker.out.types.str(),
+            Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str | Ty::Cstr => checker.out.types.str(),
             _ => {
                 return arg_error(
                     checker, ast, src, "to_str", "`int`, `f64`, `bool`, `str` or `cstr`", *one, span,

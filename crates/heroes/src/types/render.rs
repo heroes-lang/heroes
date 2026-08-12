@@ -25,7 +25,7 @@ pub fn render_ty(
     generics: &[String],
 ) -> String {
     match types.get(id) {
-        Ty::Int => "int".to_string(),
+        Ty::Int(kind) => kind.name().to_string(),
         Ty::F64 => "f64".to_string(),
         Ty::Bool => "bool".to_string(),
         Ty::Str => "str".to_string(),

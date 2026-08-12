@@ -142,7 +142,7 @@ pub(super) fn unsupported_operand(
     match first_type(function, checked, args) {
         // Exactly the three types `hero_cmp_for` can dispatch on.
         Some(Ty::Array(element)) => match checked.types.get(element) {
-            Ty::Int | Ty::F64 | Ty::Str => None,
+            Ty::Int(_) | Ty::F64 | Ty::Str => None,
             _ => Some("the built-in `sort` on elements other than `int`, `f64` or `str`"
                 .to_string()),
         },

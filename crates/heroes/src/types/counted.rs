@@ -85,7 +85,7 @@ fn counts(types: &Types, ast: &Ast, written: &Written, answer: &[bool], ty: TyId
         Ty::Fallible(_) | Ty::Failure => true,
         // Scalars, the FFI's opaque types, a function pointer, and the two the
         // checker uses for its own bookkeeping.
-        Ty::Int | Ty::F64 | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,
+        Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,
         Ty::Func { .. } | Ty::Generic(_) | Ty::Error => false,
     }
 }

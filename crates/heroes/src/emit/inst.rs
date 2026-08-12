@@ -22,7 +22,7 @@
 //! site.
 
 use crate::ir::{Arg, Inst, Op, Place, Program};
-use crate::types::Ty;
+use crate::types::{IntKind, Ty};
 
 use super::aggregate;
 use super::container;
@@ -322,7 +322,15 @@ pub(super) fn emit(
                     Arg::Value(value) => {
                         let ty = checked.types.get(function.value_type(*value));
                         let entry = match ty {
-                            Ty::Int => "hero_int_to_str",
+                            // Exhaustive: `hero_int_to_str` takes an `int64_t`,
+                            // so a `u64` above 2^63 would print as a negative
+                            // number — measured at panel 042, `SIZE_MAX` printing
+                            // `-1`. A new width needs its own runtime entry point
+                            // and an ABI bump, and this arm is where that is
+                            // discovered rather than in the output.
+                            Ty::Int(kind) => match kind {
+                                IntKind::I64 => "hero_int_to_str",
+                            },
                             Ty::F64 => "hero_f64_to_str",
                             Ty::Bool => "hero_bool_to_str",
                             Ty::Str => "hero_str_identity",

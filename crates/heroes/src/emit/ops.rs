@@ -93,7 +93,7 @@ pub(super) fn unary(
     match op {
         UnOp::Not => w.line(&format!("    {name} = !{value};")),
         UnOp::Neg => {
-            if checked.types.get(function.value_type(operand)) == Ty::Int {
+            if matches!(checked.types.get(function.value_type(operand)), Ty::Int(_)) {
                 // `-INT64_MIN` is overflow, and it is the one negation that is.
                 w.line(&format!(
                     "    if (__builtin_sub_overflow(INT64_C(0), {value}, &{name})) hero_panic_overflow();"
@@ -205,7 +205,13 @@ pub(super) fn binary(
         w.line(&format!("    {name} = {text};"));
         return;
     }
-    let integral = operands == Ty::Int;
+    // **This line is why the width lives inside the variant** (panel 042). As
+    // `operands == Ty::Int` it decided whether to emit `__builtin_*_overflow`,
+    // and with one variant per width a `u8` would simply have made it `false`:
+    // the guard would be dropped, `t0 = l + r` emitted bare, and "overflow aborts
+    // at every width" would be silently untrue at exit 0. Measured as a rustc
+    // error here and as nothing at all under the other shape.
+    let integral = matches!(operands, Ty::Int(_));
     match op {
         BinOp::Add | BinOp::Sub | BinOp::Mul if integral => {
             let builtin = match op {

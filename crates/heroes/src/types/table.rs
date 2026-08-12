@@ -28,9 +28,52 @@ pub struct Params {
     pub len: u32,
 }
 
+/// How wide an integer is, and whether it carries a sign (§4.3; panel 042,
+/// author ratification 2026-08-12).
+///
+/// **This enum exists so that a width cannot be forgotten.** The alternative was
+/// one `Ty` variant per width, and it was measured rather than argued: eight unit
+/// variants produced **2** rustc errors and left **18** silent sites, one of them
+/// `emit/ops.rs`'s `operands == Ty::Int`, which for a `u8` is simply `false` — so
+/// the overflow check would be omitted and *"overflow aborts at every width"*
+/// would be silently untrue at exit 0. With the width inside the variant, every
+/// site that dispatches on it is an exhaustive `match` and a new width is a
+/// compile error there (panel 042; CLAUDE.md §11's loud-fallback rule).
+///
+/// A site that does **not** care about the width writes `Ty::Int(_)`, and that is
+/// a claim: it says this question has the same answer at every width. Where that
+/// is false the arm must be exhaustive instead.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum IntKind {
+    I64,
+}
+
+impl IntKind {
+    /// The surface spelling, which is also what a diagnostic prints.
+    ///
+    /// **Still `int` at this step, and that is deliberate.** The author deleted
+    /// `int` on 2026-08-12 in favour of `i64` — no alias, one spelling — but the
+    /// rename is its own step. This one only moves the width *into* the variant,
+    /// and it is worth something precisely because it changes no output: with the
+    /// suite green here, anything that breaks at the rename is the rename, and
+    /// anything that breaks when the other seven widths arrive is the widths.
+    pub fn name(self) -> &'static str {
+        match self {
+            IntKind::I64 => "int",
+        }
+    }
+
+    /// The C type the emitter writes for it.
+    pub fn c_type(self) -> &'static str {
+        match self {
+            IntKind::I64 => "int64_t",
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Ty {
-    Int,
+    Int(IntKind),
     F64,
     Bool,
     Str,
@@ -121,7 +164,7 @@ impl Types {
         for ty in [
             Ty::Error,
             Ty::Unit,
-            Ty::Int,
+            Ty::Int(IntKind::I64),
             Ty::F64,
             Ty::Bool,
             Ty::Str,
@@ -142,6 +185,11 @@ impl Types {
         TyId(1)
     }
 
+    /// `i64`. The prelude's fixed order makes this a constant rather than a
+    /// lookup, and `the_prelude_ids_match_their_accessors` is what keeps the
+    /// constant honest — the numbers below are hardcoded against `new()`'s list,
+    /// so a width inserted into the middle of it would silently re-point every
+    /// one of them.
     pub fn int(&self) -> TyId {
         TyId(2)
     }

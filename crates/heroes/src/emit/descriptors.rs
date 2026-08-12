@@ -27,7 +27,7 @@
 use std::collections::BTreeSet;
 
 use crate::syntax::Ast;
-use crate::types::{Checked, Ty, TyId};
+use crate::types::{Checked, IntKind, Ty, TyId};
 
 use super::ctype::Names;
 use super::writer::Writer;
@@ -36,7 +36,16 @@ use super::writer::Writer;
 /// backend has no representation for it yet — which `gate.rs` has already refused.
 pub(super) fn pointer(checked: &Checked, names: &Names, ty: TyId) -> Option<String> {
     match checked.types.get(ty) {
-        Ty::Int => Some("&hero_desc_int".to_string()),
+        // Exhaustive on the width, not `Ty::Int(_)`: a descriptor is a runtime
+        // object with a size in it, and `runtime/parts/sort.c` dispatches on the
+        // pointer's identity — so a second width silently sharing this one would
+        // compare and sort the wrong number of bytes (panel 042).
+        Ty::Int(kind) => Some(
+            match kind {
+                IntKind::I64 => "&hero_desc_int",
+            }
+            .to_string(),
+        ),
         Ty::F64 => Some("&hero_desc_f64".to_string()),
         Ty::Bool => Some("&hero_desc_bool".to_string()),
         Ty::Str => Some("&hero_desc_str".to_string()),

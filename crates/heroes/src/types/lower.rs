@@ -20,7 +20,7 @@
 use crate::resolve::{Prim, Resolved, TypeRef};
 use crate::syntax::{Ast, TypeId, TypeKind};
 
-use super::table::Ty;
+use super::table::{IntKind, Ty};
 use super::{Checker, TyId};
 
 pub(super) fn ty(
@@ -70,7 +70,7 @@ fn named(checker: &mut Checker, resolved: &Resolved, id: TypeId) -> TyId {
     match resolved.type_at(id) {
         TypeRef::Prim(prim) => {
             let ty = match prim {
-                Prim::Int => Ty::Int,
+                Prim::Int => Ty::Int(IntKind::I64),
                 Prim::F64 => Ty::F64,
                 Prim::Bool => Ty::Bool,
                 Prim::Str => Ty::Str,

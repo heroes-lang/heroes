@@ -1,6 +1,7 @@
 //! Literals, operators, `if`, and where a value is not allowed (§4.14, §4.3).
 
 use super::{assert_clean, diagnostics, type_of_last};
+use crate::types::{IntKind, Ty, TyId, Types};
 
 #[test]
 fn the_five_literal_kinds_get_their_types() {
@@ -209,4 +210,44 @@ fn an_assert_takes_a_bool() {
         diagnostics("test \"it holds\"\n    assert 1 + 1\n"),
         "test.hero:2:12: error[not_bool]: an `assert` must be `bool`, found `int` — there is no truthiness in this language\n"
     );
+}
+
+/// **The prelude's fixed ids, asserted against the prelude itself.**
+///
+/// `Types::new` interns nine scalars in a fixed order so their ids are constants
+/// the whole pass can name without a lookup — `int()` is `TyId(2)`, `failure()`
+/// is `TyId(8)`, written out as literals. That is a premise about the order of a
+/// list twenty lines away, and `M-sized-integers` is about to add seven more
+/// integers to this table: inserting one into the *middle* of that list would
+/// silently re-point every accessor below it, and nothing here or anywhere else
+/// would go red (panel 042's compiler-engineer named this site).
+///
+/// So the premise gets the test CLAUDE.md §11 owes it. The failure message names
+/// what depends on it, because the symptom would otherwise be unrecognisable: a
+/// program whose `str` had quietly become a `ptr`.
+#[test]
+fn the_prelude_ids_match_their_accessors() {
+    let mut types = Types::new();
+    let expected: [(&str, TyId, Ty); 8] = [
+        ("error", types.error(), Ty::Error),
+        ("unit", types.unit(), Ty::Unit),
+        ("int", types.int(), Ty::Int(IntKind::I64)),
+        ("f64", types.f64(), Ty::F64),
+        ("bool", types.bool(), Ty::Bool),
+        ("str", types.str(), Ty::Str),
+        ("failure", types.failure(), Ty::Failure),
+        // `ptr` and `cstr` have no accessor and are interned on demand; they are
+        // here so the list below is the whole prelude and a reader can check it.
+        ("ptr", types.intern(Ty::Ptr), Ty::Ptr),
+    ];
+    for (name, id, ty) in expected {
+        assert_eq!(
+            types.get(id),
+            ty,
+            "`Types::{name}()` returns a hardcoded id and the prelude in `Types::new` no longer \
+             puts {ty:?} there. Every accessor after the inserted entry is now off by one, and \
+             nothing else in this compiler checks that — a new width belongs at the END of \
+             `new()`'s list, never in the middle of it."
+        );
+    }
 }

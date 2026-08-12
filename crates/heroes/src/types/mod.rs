@@ -74,7 +74,7 @@ mod tests;
 
 pub use holes::report as report_holes;
 pub use render::render_ty;
-pub use table::{Params, Ty, TyId, Types};
+pub use table::{IntKind, Params, Ty, TyId, Types};
 
 pub struct Checked {
     pub types: Types,

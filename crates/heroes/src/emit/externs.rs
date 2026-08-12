@@ -20,7 +20,7 @@
 use crate::ir::{Function, Program, SlotKind};
 use crate::source::Source;
 use crate::syntax::Ast;
-use crate::types::{Checked, Ty, TyId};
+use crate::types::{Checked, IntKind, Ty, TyId};
 
 use super::writer::Writer;
 
@@ -226,7 +226,13 @@ pub(super) fn is_extern_constant(ast: &Ast, function: &Function) -> bool {
 /// Which assertion a declared result type asks for.
 fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
     match checked.types.get(ty) {
-        Ty::Int => Some("HERO_RET_INT"),
+        // Exhaustive: `HERO_RET_INT` accepts every signed C integer plus every
+        // unsigned one narrower than 64 bits, and that set is a fact about
+        // `i64`'s range and about nothing else. A second width reusing it would
+        // accept a C `long` for an `i32` and truncate in silence (panel 042).
+        Ty::Int(kind) => Some(match kind {
+            IntKind::I64 => "HERO_RET_INT",
+        }),
         Ty::F64 => Some("HERO_RET_F64"),
         Ty::Bool => Some("HERO_RET_BOOL"),
         Ty::Str => Some("HERO_RET_STR"),
@@ -243,7 +249,7 @@ fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
 /// never evaluated — it exists only to make the call expression well-formed.
 fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
     let value = match checked.types.get(ty) {
-        Ty::Int => "int64_t",
+        Ty::Int(kind) => kind.c_type(),
         Ty::F64 => "double",
         Ty::Bool => "bool",
         Ty::Str => "HeroStr",

@@ -74,7 +74,7 @@ pub(super) fn binary(
             int
         }
         BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge => {
-            let ordered = matches!(checker.out.types.get(left), Ty::Int | Ty::F64);
+            let ordered = matches!(checker.out.types.get(left), Ty::Int(_) | Ty::F64);
             if !ordered {
                 let got = checker.show(ast, src, left);
                 let diagnostic = errors::bad_operand(name(op), "`int` or `f64`", &got, span);
@@ -127,7 +127,7 @@ fn arithmetic(
         checker.push_diagnostic(diagnostic);
         return checker.error_ty();
     }
-    if both && matches!(kind, Ty::Int | Ty::F64) {
+    if both && matches!(kind, Ty::Int(_) | Ty::F64) {
         return left;
     }
     // Two operands the operator accepts, of different types: name both, because
@@ -197,7 +197,7 @@ pub(super) fn unary(
 }
 
 fn numeric(checker: &Checker, ty: TyId) -> bool {
-    matches!(checker.out.types.get(ty), Ty::Int | Ty::F64)
+    matches!(checker.out.types.get(ty), Ty::Int(_) | Ty::F64)
 }
 
 /// The operator as written, for the message.
