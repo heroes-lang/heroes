@@ -206,13 +206,29 @@ impl Resolved {
         self.holes_in.contains(&src.file(offset).module)
     }
 
-    /// Which module declares `name`, if any does. Used by the diagnostics that
-    /// turn an unknown name into "it is in `geom`, write `geom.f`".
-    pub fn module_declaring(&self, name: &str) -> Option<&str> {
-        self.top
-            .iter()
-            .find(|((_, n), _)| n == name)
+    /// Which module declares `name`, if any does — **preferring one that `from`
+    /// can actually see**. Used by the diagnostics that turn an unknown name into
+    /// "it is in `geom`, write `geom.f`".
+    ///
+    /// The preference is the whole function. `top` is a `BTreeMap` keyed by
+    /// `(module, name)`, so a bare `find` returns the **alphabetically first**
+    /// module of however many declare that name — which had exactly one possible
+    /// answer while a program was one file, and since M8a picks by sort order.
+    /// Measured (2026-08-12): with `use geom` written and both `alpha` and `geom`
+    /// declaring `scale`, the compiler named `alpha` — a module the file cannot
+    /// see — attached a `guess` fix that gives `wrong_arity` if followed, and
+    /// **cascaded a false `unused_binding` telling the author to delete the
+    /// `use geom` line that was the real fix**. Renaming `alpha.hero` to
+    /// `zeta.hero` produced the right answer with a `certain` fix.
+    ///
+    /// Ties within each group are still broken by sort order, which is
+    /// deterministic and is what the double-emit and golden tests need.
+    pub fn module_declaring(&self, from: &str, name: &str) -> Option<&str> {
+        let declaring = || self.top.iter().filter(move |((_, n), _)| n == name);
+        declaring()
             .map(|((m, _), _)| m.as_str())
+            .find(|module| *module == from || self.is_used_module(from, module))
+            .or_else(|| declaring().map(|((m, _), _)| m.as_str()).next())
     }
 
     pub fn use_at(&self, id: ExprId) -> Ref {
@@ -281,12 +297,12 @@ struct Resolver {
     /// the unknown-function error off `h.cb(n)` where `cb` is a field holding
     /// a function value (§4.13), which §4.11's algorithm resolves by looking at
     /// the receiver's *type* and M3a has none. See `exprs::method`.
-    fields: std::collections::BTreeSet<String>,
+    fields: std::collections::BTreeSet<(String, String)>,
     /// Names the compiler has offered as the repair for an unknown name. They
     /// are exempt from the unused sweep: applying the fix would read them, so
     /// reporting both would be two diagnostics for one typo — and this project
     /// counts that as a defect (the lexer and parser hold the same invariant).
-    suggested: std::collections::BTreeSet<String>,
+    suggested: std::collections::BTreeSet<(String, String)>,
     owner: u32,
     /// The module whose declaration is being resolved. Every unqualified name
     /// is looked up in it and in nothing else, which is where "always
@@ -328,12 +344,34 @@ impl Resolver {
         self.out.diagnostics.push(diagnostic);
     }
 
+    /// Is `text` a field name this file could legitimately be reaching?
+    ///
+    /// Its own module's fields, plus those of every module it `use`s — because
+    /// this file may hold a `geom.Point` and write `p.x`, and may not hold
+    /// anything from a module it never named. The set used to be keyed by bare
+    /// name over the whole program, so a field declared in `geom.hero`
+    /// **removed a `certain` fix** from a diagnostic in `main.hero`: another
+    /// module decided whether a repair was machine-applicable (CLAUDE.md §8,
+    /// 2026-08-12).
+    fn field_in_reach(&self, text: &str) -> bool {
+        self.fields.iter().any(|(module, name)| {
+            name == text
+                && (module == &self.module
+                    || module == crate::source::LIBRARY_MODULE
+                    || self.out.is_used_module(&self.module, module))
+        })
+    }
+
     /// The candidates for a name that resolved to nothing, remembered so the
     /// unused sweep can stay quiet about them.
     fn near_names(&mut self, name: &str, candidates: &[String]) -> Vec<String> {
         let near = errors::nearest(name, candidates);
         for candidate in &near {
-            self.suggested.insert(candidate.clone());
+            // Keyed by the module that was offered the repair. A did-you-mean in
+            // `geom.hero` used to exempt that bare name from the unused sweep in
+            // `main.hero`, which dropped a spec-line-77 error outright
+            // (2026-08-12).
+            self.suggested.insert((self.module.clone(), candidate.clone()));
         }
         near
     }

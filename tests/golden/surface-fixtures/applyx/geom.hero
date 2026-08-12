@@ -1,0 +1,3 @@
+function area(side: int) -> int
+    totl = side * side
+    return total  #~ unknown_name

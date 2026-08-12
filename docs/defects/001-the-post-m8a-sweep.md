@@ -70,7 +70,7 @@ is wrong or teaches a wrong program · **★** cosmetic or contract-level.
 | E8 | `builtins::reachable` matches `Op::Call` but never `Op::FuncRef` | a library function passed as a **value** is referenced and never defined → `use of undeclared identifier 'h_library_range'`, exit 2. One direct call from any module puts it back | ★★★ |
 | E9 | `descriptors::generated` walks the interner, which the checker filled from `test` blocks too | `warning: unused variable 'h_M_P_desc'` on an ordinary program build — the zero-warning rule, and precisely what that module's doc says its worklist exists to prevent. **STILL OPEN**: needs the seed restricted to what the *emitted* functions name, which is a target-dependent question the pass does not ask today | ★ |
 
-### Open, with reproducers
+### Fixed in this sweep — the resolver and the checker (third pass)
 
 **Shape A — scope widened.**
 
@@ -80,7 +80,7 @@ is wrong or teaches a wrong program · **★** cosmetic or contract-level.
 | N2 | `Resolver::suggested` is program-wide | a did-you-mean offered in module B exempts that name from the unused sweep in module A — a dropped spec-line-77 error | ★★ |
 | N3 | `Resolver::fields` is program-wide | a field name declared in `geom.hero` **removes a `certain` fix** from a diagnostic in `main.hero`. Another module decides whether a fix is machine-applicable (CLAUDE.md §8) | ★★ |
 
-**Shape B — position assembled by hand.**
+**Shape B — position assembled by hand.** N4 fixed; N5–N8 still open.
 
 | # | what | symptom | severity |
 |---|---|---|---|
@@ -94,7 +94,7 @@ is wrong or teaches a wrong program · **★** cosmetic or contract-level.
 
 | # | what | symptom | severity |
 |---|---|---|---|
-| N9 | `Resolved::module_declaring` `.find()`s over a `BTreeMap` and so picks the **alphabetically first** module | with `use geom` written and both `alpha` and `geom` declaring `scale`, the compiler names `alpha` — a module the file cannot see — attaches a `guess` fix that produces `wrong_arity` if followed, and **cascades a false `unused_binding` telling the author to delete the `use geom` line that was the fix**. Rename `alpha.hero` to `zeta.hero` and the same program gets the right answer with a `certain` fix. It had exactly one possible answer when there was one module | ★★★ |
+| N9 | **fixed** — `Resolved::module_declaring` `.find()`s over a `BTreeMap` and so picks the **alphabetically first** module | with `use geom` written and both `alpha` and `geom` declaring `scale`, the compiler names `alpha` — a module the file cannot see — attaches a `guess` fix that produces `wrong_arity` if followed, and **cascades a false `unused_binding` telling the author to delete the `use geom` line that was the fix**. Rename `alpha.hero` to `zeta.hero` and the same program gets the right answer with a `certain` fix. It had exactly one possible answer when there was one module | ★★★ |
 | N10 | the hole report offers functions from modules the hole's file cannot name | a hole in `geom.hero` is offered `main.tally(x: int)`, which `geom` cannot `use` without a cycle. The code states the right principle two lines above and applies it halfway | ★★ |
 
 ## What was cleared, stated plainly

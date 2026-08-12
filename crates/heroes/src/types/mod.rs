@@ -205,9 +205,25 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
     // unusable for the case design.md's own appendix uses it for
     // (`function simplify(e: Expr) -> Expr` / `???`). Found by this check firing on
     // the appendix within an hour of being written.
-    if checker.out.holes.is_empty() {
-        let pending = std::mem::take(&mut checker.missing_returns);
-        checker.out.diagnostics.extend(pending);
+    //
+    // **Per module, not per program** (2026-08-12). This test was
+    // `holes.is_empty()`, and since M8a one `Checked` spans every module — so an
+    // unfinished `geom.hero` held back `missing_return` in a `main.hero` nobody
+    // was editing. It is D1's defect in the pass D1's fix did not reach, and the
+    // sentence above already said "file-wide" while the code asked about the
+    // program.
+    let held: std::collections::BTreeSet<&str> = checker
+        .out
+        .holes
+        .iter()
+        .map(|hole| src.file(hole.span.start).module.as_str())
+        .collect();
+    let pending = std::mem::take(&mut checker.missing_returns);
+    for diagnostic in pending {
+        if held.contains(src.file(diagnostic.span.start).module.as_str()) {
+            continue;
+        }
+        checker.out.diagnostics.push(diagnostic);
     }
     checker.out.diagnostics.sort_by_key(|d| d.span.start);
     // Last, because it is dense over the interner and nothing may intern a type

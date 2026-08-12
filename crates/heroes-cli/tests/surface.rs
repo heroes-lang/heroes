@@ -646,3 +646,27 @@ fn fixedbugs_the_hole_count_names_the_files_the_holes_are_in() {
     assert!(!said.trim_end().ends_with("main.hero"), "and not in main.hero: {said}");
     assert_eq!(code(&out), 1);
 }
+
+/// **fixedbugs, sweep 001 N4, 2026-08-12.** Symptom: `assertion failed:
+/// self.is_char_boundary(n)`, **exit 101** — a code CLAUDE.md §10 does not have
+/// — on any multi-module program whose certain fix is outside the root. Cause: a
+/// fix's span is an offset into the whole compilation and `--apply` writes back
+/// the root file alone, so `replace_range` indexed past the end of the string.
+///
+/// It matters more than an ordinary panic: `--apply` is what CI uses to assert
+/// that a `.fixed` golden checks clean, so the one flag whose job is to prove
+/// fixes work could not be pointed at a program with more than one file.
+///
+/// The repair says out loud what it skipped. Dropping those fixes silently would
+/// be worse than the panic — the flag's contract is *every* certain fix.
+#[test]
+fn fixedbugs_apply_does_not_panic_on_a_fix_in_another_module() {
+    let out = heroes(&["check", "tests/golden/surface-fixtures/applyx/main.hero", "--apply"]);
+    let said = String::from_utf8_lossy(&out.stderr);
+    let program = String::from_utf8_lossy(&out.stdout);
+    assert_eq!(code(&out), 0, "{said}");
+    assert!(said.contains("another module"), "it says what it skipped: {said}");
+    assert!(said.contains("geom.hero"), "and names it: {said}");
+    assert!(program.contains("use geom"), "the root file comes back whole: {program}");
+    assert!(!program.contains("function area"), "and only the root file: {program}");
+}

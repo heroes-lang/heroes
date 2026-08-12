@@ -232,7 +232,8 @@ impl Resolver {
             // Already spoken for: the compiler offered this name as the repair
             // for a name that resolved to nothing, and applying that repair
             // reads it. One typo, one diagnostic.
-            if self.suggested.contains(name) {
+            let module = src.file(local.name.start).module.clone();
+            if self.suggested.contains(&(module, name.to_string())) {
                 continue;
             }
             diagnostics.push(errors::unused(name, local.kind, local.writes, local.name));

@@ -71,7 +71,7 @@ pub(super) fn qualified(
 /// The name is real and lives somewhere else. Panel 031 R5's diagnostic, which
 /// is what the spec buys instead of a sentence about qualification.
 pub(super) fn elsewhere(r: &mut Resolver, text: &str, span: Span) -> Option<Diagnostic> {
-    let module = r.out.module_declaring(text)?.to_string();
+    let module = r.out.module_declaring(&r.module, text)?.to_string();
     if module == r.module || module == crate::source::LIBRARY_MODULE {
         return None;
     }

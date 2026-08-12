@@ -304,3 +304,76 @@ fn fixedbugs_a_hole_report_names_its_own_file_and_its_own_line() {
     assert!(first.ends_with("geom.hero:2:12"), "the report reads: {first}");
     assert!(!first.contains("main.hero"), "the root file is not where the hole is: {first}");
 }
+
+/// **fixedbugs, sweep 001 N1, 2026-08-12.** D1's twin, in the pass D1's fix did
+/// not reach: the checker held `missing_return` back while `checked.holes` was
+/// non-empty, and since M8a one `Checked` spans every module — so an unfinished
+/// `geom.hero` suppressed the error in a `main.hero` nobody was editing.
+/// design.md §4.16 says *"the suppression is file-wide"* and the code's own
+/// comment said so too, three lines above the test that asked about the program.
+#[test]
+fn fixedbugs_a_hole_in_one_module_does_not_hold_back_missing_return_in_another() {
+    let files = &[
+        ("main.hero", "use geom\n\nfunction pick(f: bool) -> int\n    if f\n        return 1\n\nfunction main()\n    print(pick(true) + geom.f())\n"),
+        ("geom.hero", "function f() -> int\n    return ???\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-missing-return-scope", files, "main.hero");
+    assert!(
+        said.iter().any(|d| d.contains("missing_return")),
+        "the hole is in `geom`, so `main`'s missing return still fires: {said:?}"
+    );
+
+    // And the rule itself, which must keep working: a hole in the same module.
+    let files = &[
+        ("main.hero", "function pick(f: bool) -> int\n    if f\n        return 1\n\nfunction main()\n    print(pick(true))\n    print(???)\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-missing-return-own", files, "main.hero");
+    assert!(!said.iter().any(|d| d.contains("missing_return")), "{said:?}");
+}
+
+/// **fixedbugs, sweep 001 N2, 2026-08-12.** `Resolver::suggested` was a set of
+/// bare names over the whole program, so a did-you-mean offered in one module
+/// exempted that name from the unused sweep in another — dropping a spec-line-77
+/// error outright, with nothing to show it had happened.
+#[test]
+fn fixedbugs_a_repair_offered_in_one_module_does_not_excuse_another() {
+    let files = &[
+        ("main.hero", "use geom\n\nfunction main()\n    total = 1\n    print(geom.f())\n"),
+        ("geom.hero", "function f() -> int\n    total = 3\n    return totl\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-suggested-scope", files, "main.hero");
+    assert!(
+        said.iter().any(|d| d.contains("unused_binding") && d.contains("main.hero")),
+        "`main`'s unused `total` is still an error: {said:?}"
+    );
+}
+
+/// **fixedbugs, sweep 001 N9, 2026-08-12.** `module_declaring` was a `find` over
+/// a `BTreeMap` keyed by `(module, name)`, so it answered with the
+/// **alphabetically first** module of however many declare that name. It had
+/// exactly one possible answer while a program was one file.
+///
+/// Three failures at once, all reproduced: it named a module the file cannot
+/// see, attached a `guess` fix that gives `wrong_arity` if followed, and
+/// cascaded a false `unused_binding` telling the author to delete the `use geom`
+/// line that was the real fix. Renaming `alpha.hero` to `zeta.hero` — a file
+/// nobody mentions — produced the right answer with a `certain` fix, which is
+/// what made it a sort-order artifact rather than a lookup bug.
+#[test]
+fn fixedbugs_the_module_a_name_is_in_is_one_this_file_can_see() {
+    let files = &[
+        ("main.hero", "use geom\nuse beta\n\nfunction main()\n    print(scale(2) + beta.b())\n"),
+        ("geom.hero", "function scale(n: int) -> int\n    return n * 10\n"),
+        ("beta.hero", "use alpha\n\nfunction b() -> int\n    return alpha.scale(a: 1, b: 2)\n"),
+        ("alpha.hero", "function scale(a: int, b: int) -> int\n    return a * b\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-module-declaring", files, "main.hero");
+    let named: Vec<&String> =
+        said.iter().filter(|d| d.contains("needs_qualifying") || d.contains("needs_a_use")).collect();
+    assert_eq!(named.len(), 1, "{said:?}");
+    assert!(named[0].contains("`geom`"), "the module this file can see: {said:?}");
+    assert!(
+        !said.iter().any(|d| d.contains("unused_binding")),
+        "and no cascade telling the author to delete the fix: {said:?}"
+    );
+}

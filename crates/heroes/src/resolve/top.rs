@@ -28,13 +28,15 @@ pub(super) fn collect(r: &mut Resolver, ast: &Ast, src: &Source) {
         match &decl.kind {
             DeclKind::Record { fields } => {
                 for field in fields {
-                    r.fields.insert(src.slice(field.name).to_string());
+                    let module = src.file(field.name.start).module.clone();
+                    r.fields.insert((module, src.slice(field.name).to_string()));
                 }
             }
             DeclKind::Variant { cases } => {
                 for case in cases {
                     for field in &case.fields {
-                        r.fields.insert(src.slice(field.name).to_string());
+                        let module = src.file(field.name.start).module.clone();
+                        r.fields.insert((module, src.slice(field.name).to_string()));
                     }
                 }
             }

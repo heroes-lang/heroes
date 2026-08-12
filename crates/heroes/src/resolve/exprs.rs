@@ -223,7 +223,7 @@ fn method(r: &mut Resolver, ast: &Ast, src: &Source, at: ExprId, called: Span) {
         r.record(at, Ref::Builtin(builtin));
         return;
     }
-    if r.fields.contains(text) {
+    if r.field_in_reach(text) {
         return; // could be a function-valued field: M3c decides, with the type
     }
     // `p.dist2(o)` where `dist2` is imported. UFCS finds only this file's

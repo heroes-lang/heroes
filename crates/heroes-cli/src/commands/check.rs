@@ -172,12 +172,39 @@ fn quote(text: &str) -> String {
 /// program's meaning on the author's behalf.
 fn apply(diagnostics: &[&Diagnostic], src: &Source) -> String {
     let mut edits: Vec<(u32, u32, String)> = Vec::new();
+    // **Fixes outside the file being written are skipped, and said out loud.**
+    // A fix's span is an offset into the whole compilation, and the text below is
+    // the root file alone — so a certain fix in a `use`d module indexed past the
+    // end of the string and `replace_range` panicked: `assertion failed:
+    // self.is_char_boundary(n)`, **exit 101**, a code CLAUDE.md §10 does not
+    // have, on every multi-module program with a fixable mistake outside the root
+    // (2026-08-12). Silently dropping them would be worse than the panic: this
+    // flag's contract is *every* certain fix, and CI asserts `.fixed` files check
+    // clean afterwards.
+    let root_end = src.root_end();
+    let mut elsewhere: Vec<String> = Vec::new();
     for diagnostic in diagnostics {
         for fix in &diagnostic.fixes {
-            if fix.certainty == Certainty::Certain {
-                edits.push((fix.span.start, fix.span.end, fix.replacement.clone()));
+            if fix.certainty != Certainty::Certain {
+                continue;
             }
+            if fix.span.end > root_end {
+                let (file, line, _) = src.locate(fix.span.start);
+                let at = format!("{file}:{line}");
+                if !elsewhere.contains(&at) {
+                    elsewhere.push(at);
+                }
+                continue;
+            }
+            edits.push((fix.span.start, fix.span.end, fix.replacement.clone()));
         }
+    }
+    if !elsewhere.is_empty() {
+        eprintln!(
+            "note: {} certain fix(es) are in another module and were not applied: {}",
+            elsewhere.len(),
+            elsewhere.join(", ")
+        );
     }
     edits.sort_by_key(|(start, _, _)| *start);
     // **The author's file, not the compilation.** The library is appended to

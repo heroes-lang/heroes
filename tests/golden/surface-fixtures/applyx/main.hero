@@ -1,0 +1,4 @@
+use geom
+
+function main()
+    print(geom.area(side: 3))
