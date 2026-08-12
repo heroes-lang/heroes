@@ -19,13 +19,22 @@ here, never in code.
 | mix-int-float | `1 + 2.0` at one site | implicit-conversion prior | no implicit conversions (§4.3) |
 | shadow | Redeclare an in-scope name | inner-scope habit | shadowing ban (§4.4) |
 | drop-question | Remove one `?` from a fallible call in fallible context | forgotten propagation | type mismatch `T?` vs `T` (§4.6) |
+| typo-digit | Move the last digit of a `constant`'s value by one | 1-digit slip in a number copied from a header or a table | **nothing** — a number in the file has no authority to be checked against, and this row measures the subset where one exists (a C constant, §4.19) |
 
 Sites are found syntactically; one mutant per site; mutants that fail to parse
 are excluded (they measure the lexer, not the thesis).
 
 **An operator may name no killing mechanism.** Ten of these rows point at a rule
-the design already installed, and measure whether it holds; `typo-code` points at
-a gap, and measures how wide it is. Both directions belong here — an instrument
-whose every row can only report success is not measuring, it is confirming. When
-a rule closes the gap, the row gains its mechanism and the number moves; that
-movement is the evidence the rule was worth its cost.
+the design already installed, and measure whether it holds; `typo-code` and
+`typo-digit` point at a gap, and measure how wide it is. Both directions belong
+here — an instrument whose every row can only report success is not measuring, it
+is confirming. When a rule closes the gap, the row gains its mechanism and the
+number moves; that movement is the evidence the rule was worth its cost.
+
+**A row may also lose its sites, and that is not the same as passing.** A rule
+that removes the *form* the operator edits leaves the row with nothing to mutate,
+and a harness reporting per-operator rates cannot tell a defence from an empty
+denominator (`mod.rs`'s rule 3 and `tests.rs`'s opening note). Where that happens
+the site count is the number to report, not the rate: `typo-digit` on a C constant
+goes to zero sites under §4.19's header-valued form, because there is no longer a
+digit in the file — and *that* is the claim, stated as a count.

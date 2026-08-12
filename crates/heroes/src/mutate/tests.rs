@@ -46,6 +46,32 @@ function main()
     print(classify('x').default(0))
 "#;
 
+/// Two constants a C header owns and one the program owns. The operator cannot
+/// tell them apart — nothing in the file says which number has an authority
+/// behind it — and that inability is exactly what the row measures.
+const NUMBERS: &str = r#"constant SQLITE_ROW: int
+    100
+
+constant MAX_DEPTH: int
+    64
+
+function deep(n: int) -> bool
+    return n > MAX_DEPTH || n == SQLITE_ROW
+
+function main()
+    print(deep(9))
+"#;
+
+/// A constant whose body is not one literal. There is no single digit to move, so
+/// the site is skipped rather than mutated into something arbitrary.
+const COMPUTED: &str = r#"constant LIMIT: int
+    base = 100
+    base * 2
+
+function main()
+    print(LIMIT)
+"#;
+
 #[test]
 fn the_code_a_fail_builds_is_mutated() {
     let out = mutants("typo-code", "codes.hero", CODES);
@@ -70,6 +96,51 @@ fn the_code_a_comparison_reads_is_mutated_on_either_side() {
 #[test]
 fn an_escape_is_not_a_code_site() {
     assert!(mutants("typo-code", "escaped.hero", ESCAPED).is_empty());
+}
+
+#[test]
+fn a_constants_last_digit_is_moved() {
+    let out = mutants("typo-digit", "numbers.hero", NUMBERS);
+    assert!(
+        out.iter().any(|m| m.contains("    101")),
+        "no mutant moved SQLITE_ROW's last digit: {out:#?}"
+    );
+    assert!(
+        out.iter().any(|m| m.contains("    65")),
+        "no mutant moved MAX_DEPTH's last digit: {out:#?}"
+    );
+}
+
+#[test]
+fn a_computed_constant_is_not_a_digit_site() {
+    assert!(mutants("typo-digit", "computed.hero", COMPUTED).is_empty());
+}
+
+/// **The second finding, pinned, and the reason this operator exists.** A number
+/// copied out of a C header is checked by nothing: the mutant is a legal program
+/// that calls the wrong option, compares against the wrong code, and says so
+/// nowhere. `SQLITE_ROW` here is `100` because `sqlite3.h` says so, and `101`
+/// type-checks exactly as well.
+///
+/// When §4.19's header-valued `constant` lands, the honest outcome is not that
+/// this rate improves: it is that the **site disappears**, because the digit is
+/// no longer in the file. This test then measures the program's own constant
+/// only — which still survives, and correctly, since nothing outside the program
+/// knows what `MAX_DEPTH` should be.
+#[test]
+fn today_nothing_catches_a_wrong_constant() {
+    let sources = vec![("numbers.hero".to_string(), NUMBERS.to_string())];
+    let scores = run(&sources);
+    let score = scores
+        .iter()
+        .find(|s| s.operator == "typo-digit")
+        .expect("the operator table carries typo-digit");
+    assert_eq!(score.mutants, 2, "both constants are sites");
+    assert_eq!(score.excluded, 0, "a moved digit still parses");
+    assert_eq!(
+        score.killed_strict, 0,
+        "a wrong constant is now caught — update this test in the commit that did it"
+    );
 }
 
 /// **The finding, pinned.** §4.6's code is a bare `str`, so a slip at one end of
