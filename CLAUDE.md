@@ -39,6 +39,14 @@ keeps its name because every commit subject cites it. Learn-first (questions bef
 explicitly asks before a step. The executable protocol lives in `/step` —
 its only home. Lessons stay impersonal: shapes and rules, never scores.
 
+**In a `/loop`, a wakeup is at most three minutes and every one of them writes
+a recap** (author instruction 2026-08-12). The recap is the point, not the
+schedule: an unattended session that works for an hour and then reports once has
+made an hour of decisions the author could not have redirected. Short intervals
+buy interruption points. Each recap says what advanced, what was verified as
+already closed, and what was deliberately not done and why — the last is the one
+that is easy to omit and the only one that lets the author disagree.
+
 ## 4. Panel — path-based triggers, asynchronous
 Convene `/panel` before changing the *language*: `spec/**`, design.md Parts
 1–11, surface syntax or semantics (`crates/heroes/src/{lexer,syntax,types}/`

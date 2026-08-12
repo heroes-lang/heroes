@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 50] = [
+const ANNOTATED: [&str; 51] = [
     "bound_unit",
     "builtin",
     "builtin_as_value",
@@ -38,6 +38,7 @@ const ANNOTATED: [&str; 50] = [
     "ffi_type",
     "indentation_jump",
     "indentation_not_multiple_of_4",
+    "int_out_of_range",
     "missing_body",
     "missing_label",
     "missing_return",

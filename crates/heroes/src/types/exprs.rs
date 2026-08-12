@@ -30,7 +30,21 @@ pub(super) fn synth(
 ) -> TyId {
     let span = ast.exprs[id.0 as usize].span;
     let ty = match &ast.exprs[id.0 as usize].kind {
-        ExprKind::Int => checker.out.types.int(),
+        // **The range is checked here, not only where the value is decoded.**
+        // `heroes check` is the command whose whole job is "does this program
+        // have diagnostics", and it exited **0** on `print(99999999999999999999)`
+        // while `build` exited 1 on the same file — a program that checks clean
+        // and fails to build, which is what an editor and `--apply` both trust.
+        // The literal's text and the only integer type are both frontend facts,
+        // so the frontend is where the question belongs (M-ffi-ladder, from
+        // panel 019's watch list).
+        ExprKind::Int => {
+            if src.slice(span).parse::<i64>().is_err() {
+                let diagnostic = errors::int_out_of_range(src.slice(span), span);
+                checker.push_diagnostic(diagnostic);
+            }
+            checker.out.types.int()
+        }
         // §4.3: a character literal *is* an `int`.
         ExprKind::Char => checker.out.types.int(),
         ExprKind::Float => checker.out.types.f64(),

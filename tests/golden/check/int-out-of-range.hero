@@ -1,0 +1,23 @@
+# A literal no `int` holds — and the reason this case is in `check/` rather than
+# in `unsupported/` is the defect it records.
+#
+# `heroes check` used to exit **0** on this file while `heroes build` exited 1 on
+# the same bytes: the range was tested where the value is *decoded*, in lowering,
+# and `check` never gets that far. A program that checks clean and fails to build
+# is what an editor trusts, what `--apply` trusts, and what §10's exit-code
+# contract says cannot happen.
+#
+# The literal's text and the fact that `int` is the only integer type are both
+# frontend facts, so the frontend is where the question belongs. Lowering keeps
+# its own copy as a net: it only runs on an accepted program, so a literal
+# arriving there out of range is a compiler bug rather than a user's.
+# Bulk regression case.
+
+function main()
+    print(99999999999999999999)          #~ int_out_of_range
+    # The boundaries themselves, which must NOT fire. The negative one is written
+    # as a subtraction because `-9223372036854775808` is unary minus applied to a
+    # positive literal that does not fit — the one number whose spelling the
+    # range rule cannot take at face value.
+    print(9223372036854775807)
+    print(0 - 9223372036854775807 - 1)

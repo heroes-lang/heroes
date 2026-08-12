@@ -90,9 +90,20 @@ fn a_constant_is_a_function_and_reading_it_is_a_call() {
 
 /// The one diagnostic this pass owns. Nothing before M-ir-lowering needed an `int` literal's
 /// *value* — the lexer accepted the shape and the checker gave it a type — so an
-/// out-of-range literal was invisible until the pass that has to represent it.
+/// **The checker owns this one, and lowering keeps a net** (M-ffi-ladder).
+///
+/// It was the other way round, and the cost was an exit code: `heroes check`
+/// returned **0** on `print(99999999999999999999)` while `heroes build` returned
+/// 1 on the same bytes, because the range was tested where the value is decoded
+/// and `check` never gets that far. A program that checks clean and fails to
+/// build is what an editor trusts and what §10's contract says cannot happen.
+///
+/// Lowering's copy stays, and this asserts it is unreachable rather than absent:
+/// lowering only runs on an accepted program, so a literal arriving there out of
+/// range is a *compiler* bug. A net that has never fired is indistinguishable
+/// from no net, which is why the test names both halves.
 #[test]
-fn an_out_of_range_int_literal_is_reported_here() {
+fn an_out_of_range_int_literal_is_reported_by_the_checker() {
     let src = crate::source::Source::new(
         "test.hero".to_string(),
         "function f() -> int\n    return 99999999999999999999\n".to_string(),
@@ -100,13 +111,21 @@ fn an_out_of_range_int_literal_is_reported_here() {
     let parsed = crate::syntax::parse(&src);
     let resolved = crate::resolve::resolve(&parsed.ast, &src);
     let checked = crate::types::check(&parsed.ast, &resolved, &src);
-    assert!(checked.diagnostics.is_empty(), "the checker has nothing to say about it");
-    let out = crate::ir::lower(&parsed.ast, &resolved, &checked, &src);
-    assert_eq!(out.diagnostics.len(), 1, "lowering owns this one");
-    assert!(out.diagnostics[0].message.contains("does not fit in an `int`"));
+    assert_eq!(checked.diagnostics.len(), 1, "the checker owns this one");
+    assert_eq!(checked.diagnostics[0].code, "int_out_of_range");
+    assert!(checked.diagnostics[0].message.contains("does not fit in an `int`"));
     // The message names the range rather than a wider type: `int` is the only
     // integer type (§4.3), so the repair is a different number.
-    assert!(out.diagnostics[0].notes[0].contains("9223372036854775807"));
+    assert!(checked.diagnostics[0].notes[0].contains("9223372036854775807"));
+    // And the boundary values are not swept up with it.
+    let fine = crate::source::Source::new(
+        "test.hero".to_string(),
+        "function f() -> int\n    return 9223372036854775807\n".to_string(),
+    );
+    let parsed = crate::syntax::parse(&fine);
+    let resolved = crate::resolve::resolve(&parsed.ast, &fine);
+    let checked = crate::types::check(&parsed.ast, &resolved, &fine);
+    assert!(checked.diagnostics.is_empty(), "the largest int is an int");
 }
 
 /// Statements after a `return` are not lowered. They cannot execute, and a dump

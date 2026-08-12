@@ -279,3 +279,21 @@ pub(in crate::types) fn builtin_shape(name: &str, given: usize, span: Span) -> D
         span,
     )
 }
+
+/// `99999999999999999999` — a literal no `int` holds.
+///
+/// **The code is snake_case like every other in this compiler.** It was
+/// `int-literal-out-of-range`, hyphenated, and it was the only one: a
+/// user-visible identifier that did not match its family, in a project whose
+/// thesis is that a reader can predict what the compiler says.
+///
+/// The message names the range because `int` is the only integer type (§4.3):
+/// there is no wider one to suggest, so the fix is a different number and the
+/// compiler should not pretend otherwise.
+pub(in crate::types) fn int_out_of_range(text: &str, span: Span) -> Diagnostic {
+    Diagnostic::new("int_out_of_range", format!("`{text}` does not fit in an `int`"), span)
+        .with_note(
+            "`int` is a 64-bit signed integer and the only integer type, so it holds -9223372036854775808 through 9223372036854775807"
+                .to_string(),
+        )
+}

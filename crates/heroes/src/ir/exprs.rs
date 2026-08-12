@@ -191,7 +191,13 @@ fn is_constant(ast: &Ast, decl: u32) -> bool {
     matches!(ast.decls[decl as usize].kind, crate::syntax::DeclKind::Constant { .. })
 }
 
-/// Decodes an `int` literal, and owns the one diagnostic this pass produces.
+/// Decodes an `int` literal.
+///
+/// **The checker reports the range first, so this is the net rather than the
+/// gate** (M-ffi-ladder). Lowering only runs on a program the frontend accepted,
+/// so a literal reaching here out of range is a frontend bug — the diagnostic
+/// stays, spelled identically, because a net that has never fired is
+/// indistinguishable from no net.
 ///
 /// The message speaks in the syntax the author wrote and names the range, because
 /// `int` is the only integer type (§4.3): there is no wider one to suggest, so the
@@ -202,7 +208,7 @@ fn int_literal(b: &mut Lowering, src: &Source, span: Span) -> i64 {
         Ok(value) => value,
         Err(_) => {
             let diagnostic = Diagnostic::new(
-                "int-literal-out-of-range",
+                "int_out_of_range",
                 format!("`{text}` does not fit in an `int`"),
                 span,
             )
