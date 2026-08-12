@@ -13,7 +13,7 @@ record Reader
 function at_end(r: Reader) -> bool
     return r.pos >= r.text.len()
 
-function here(r: Reader) -> i64
+function here(r: Reader) -> u8
     return r.text[r.pos]
 
 # The `@` is the whole signature's news: this one moves.

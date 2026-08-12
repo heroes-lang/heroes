@@ -22,23 +22,23 @@ record Lex
 function at_end(l: Lex) -> bool
     return l.pos >= l.text.len()
 
-function here(l: Lex) -> i64
+function here(l: Lex) -> u8
     return l.text[l.pos]
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-function is_digit(c: i64) -> bool
+function is_digit(c: u8) -> bool
     return c >= '0' && c <= '9'
 
-function is_letter(c: i64) -> bool
+function is_letter(c: u8) -> bool
     return c >= 'a' && c <= 'z'
 
 # Reads an integer, consuming it.
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + (l.here() - '0')
+        v @ v * 10 + fit_i64(l.here() - '0')
         advance(@l)
     return v
 

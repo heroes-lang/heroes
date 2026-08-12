@@ -56,7 +56,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 - No implicit conversions, widths included: `a + b` needs both the same type, and
   `1 + 2.0` is an error. `to_f64(x)` and `to_i64(x)` convert between kinds of
   number and abort out of range; `fit_i8(x)` … `fit_u64(x)` convert between
-  widths and return `T?`, because a value may not fit.
+  widths and return `T?` — or `T`, where the value cannot fail to fit.
 - A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
   `u8` — otherwise `i64`. Overflow aborts at every width.
 - Character literals are `i64`: `'a'`, `'0'`, `' '`.
@@ -154,7 +154,7 @@ Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → 
 → `<<` `>>` → `&` → `^` → `|` → comparisons → `&&` → `||`. There is no ternary; `if` is an expression, and so is `match`.
 
 ## Strings, arrays, maps
-`s[i]` yields an `i64` in 0..255 (a byte); iterate characters with
+`s[i]` yields a `u8`; iterate characters with
 `s.chars()`, which yields single-character `str`. Multi-line literals
 separate elements by newline; single-line by comma.
 

@@ -119,6 +119,21 @@ impl IntKind {
         }
     }
 
+    /// Whether **every** value of `other` is a value of `self` — i.e. whether a
+    /// conversion from `other` into `self` can fail.
+    ///
+    /// The four cases are not symmetric and the asymmetry is the point: an
+    /// unsigned source needs a *strictly* wider signed target, because the target
+    /// spends a bit on a sign it will never use; and a signed source never fits
+    /// an unsigned target at all, however wide, because -1 is a value.
+    pub fn contains(self, other: IntKind) -> bool {
+        match (self.signed(), other.signed()) {
+            (true, true) | (false, false) => self.bits() >= other.bits(),
+            (true, false) => self.bits() > other.bits(),
+            (false, true) => false,
+        }
+    }
+
     /// The closed range a literal must fall in. `u64`'s top is above `i64::MAX`,
     /// so the high end is a `u64` and the low end an `i64` — the one pair of
     /// numbers in this language that does not fit a single Rust integer either.

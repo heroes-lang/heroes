@@ -77,7 +77,7 @@ function main()
     // where nothing can be inverted.
     assert_clean(
         "\
-function at(text: str, index: i64) -> i64
+function at(text: str, index: i64) -> u8
     return text[index]
 
 function main()

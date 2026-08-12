@@ -149,8 +149,28 @@ pub(super) fn call(
                 .iter()
                 .find(|k| k.name() == &name[4..])
                 .expect("just matched");
+            let source = match checker.out.types.get(*one) {
+                Ty::Int(k) => k,
+                _ => unreachable!("refused above"),
+            };
             let target = checker.out.types.intern(Ty::Int(kind));
-            checker.out.types.intern(Ty::Fallible(target))
+            // **A widening returns `T`, not `T?`** (pending author ratification;
+            // the author's ruling was `T?` for every conversion, and the cost of
+            // taking that literally showed up on the language's own acceptance
+            // programme: `v * 10 + fit_i64(l.here() - '0').must()` in the
+            // calculator's lexer, a `.must()` on something that cannot fail, at
+            // the hottest line of the shape the closure list is made of).
+            //
+            // Panel 042's Q2 refused *one name with two result types*, and the
+            // reason was unpredictability. This is not that: the result is a
+            // function of the argument's width, the compiler knows it, and it is
+            // fallible exactly when it can fail. The llm-ergonomist asked for this
+            // and was overruled for uniformity; the measurement went its way.
+            if kind.contains(source) {
+                target
+            } else {
+                checker.out.types.intern(Ty::Fallible(target))
+            }
         }
         ("to_f64", [one]) if matches!(checker.out.types.get(*one), Ty::Int(_)) => checker.out.types.f64(),
         // §4.20's inventory calls this one `.str()`; panel 017 renames it

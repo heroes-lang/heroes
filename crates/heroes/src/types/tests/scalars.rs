@@ -178,7 +178,9 @@ function main()
 
 #[test]
 fn indexing_knows_its_three_containers() {
-    assert_eq!(type_of_last("function f(s: str) -> i64\n    return s[0]\n"), "i64");
+    // `s[i]` is a `u8` after M-sized-integers: the language's byte source says
+    // byte, which is what gives `[u8]` a producer (panel 042, author ruling).
+    assert_eq!(type_of_last("function f(s: str) -> u8\n    return s[0]\n"), "u8");
     assert_eq!(
         type_of_last("function f(xs: [str]) -> str\n    return xs[0]\n"),
         "str"

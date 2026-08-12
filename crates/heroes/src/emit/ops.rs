@@ -398,6 +398,13 @@ pub(super) fn call(
                 .iter()
                 .find(|k| k.name() == &name[4..])
                 .expect("the name was checked into existence by `resolve`");
+            // A widening cannot fail, so it is an assignment and not an option:
+            // no union, no tag, no branch. The C is the cast the type already
+            // says, which is also why this arm has to ask before building one.
+            if to.contains(from) {
+                w.line(&format!("    {into} = ({}){};", to.c_type(), arguments[0]));
+                return;
+            }
             let (low, high) = to.range();
             let value = &arguments[0];
             let mut tests: Vec<String> = Vec::new();

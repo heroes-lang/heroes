@@ -861,7 +861,7 @@ silently truncates every C call and voids §4.20's guarantee that `.cstr()` is f
 `\t` is legal, so the path silently becomes `C:<TAB>emp`. Every language with C-style escapes
 carries this; the remedy is raw string literals, which are not v1 material. Recorded in Part 8.
 
-**Strings** are immutable UTF-8, **indexed in bytes**. `s[i]` yields an `i64` in 0..255. Iterate
+**Strings** are immutable UTF-8, **indexed in bytes**. `s[i]` yields a `u8`. Iterate
 characters with `s.chars()`, which yields single-character `str`. Slicing that lands mid-sequence is
 an error. Do **not** introduce an indexable `char` type — that is the trap Python 3 fell into. (The
 `byte` type was removed: it existed only to index strings, and `i64` does the job. One fewer base
@@ -1131,7 +1131,7 @@ function advance(@l: Lex)
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + (l.here() - '0')
+        v @ v * 10 + fit_i64(l.here() - '0')
         advance(@l)
     return v
 ```
@@ -2417,7 +2417,7 @@ Do not hide these. Each was noticed by writing real programs in the language, an
 visible rather than patched with a second form.
 
 1. **The header is still heavier than a one-line body deserves.** Panel 018 shrank it —
-   `function is_digit(c: i64) -> bool` lost `= …:` and reads like the call site — but a realistic
+   `function is_digit(c: u8) -> bool` lost `= …:` and reads like the call site — but a realistic
    file still has nine one-line predicates whose header outweighs the body. On a real function
    like `tokenize` the proportion is right; on a one-line predicate it is not. This remains the
    strongest argument for pulling closures forward — those helpers exist mostly to be passed
@@ -2793,23 +2793,23 @@ record Lex
 function at_end(l: Lex) -> bool
     return l.pos >= l.text.len()
 
-function here(l: Lex) -> i64
+function here(l: Lex) -> u8
     return l.text[l.pos]
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-function is_digit(c: i64) -> bool
+function is_digit(c: u8) -> bool
     return c >= '0' && c <= '9'
 
-function is_letter(c: i64) -> bool
+function is_letter(c: u8) -> bool
     return c >= 'a' && c <= 'z'
 
 # Reads an integer, consuming it.
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + (l.here() - '0')
+        v @ v * 10 + fit_i64(l.here() - '0')
         advance(@l)
     return v
 

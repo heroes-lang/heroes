@@ -104,11 +104,21 @@ pub(super) fn index_type(
     }
     let int = checker.out.types.int();
     match checker.out.types.get(base) {
-        // `s[i]` is a byte (§4.3), which is why iterating characters is a
-        // different call.
+        // **`s[i]` is a `u8`** — a byte, and now a byte is a type (§4.3, author
+        // ruling 2026-08-12: *"u8, o comunque il dato preciso"* — a value takes
+        // the type that describes it, not the widest type that holds it).
+        //
+        // This is what gives `[u8]` a producer. Before the widths, the language's
+        // only byte source handed back its widest integer, so a byte array was
+        // describable and unbuildable — panel 042's llm-ergonomist found that by
+        // writing the task the widths exist for and running out of language.
+        //
+        // The INDEX is still an `i64` and deliberately not narrowed: Rust accepts
+        // only `usize` there, and the historian reported the `as usize` tax as
+        // the single most-complained-of integer decision in its whole survey.
         Ty::Str => {
             expect_index(checker, ast, src, index, int, span);
-            int
+            checker.out.types.intern(Ty::Int(crate::types::IntKind::U8))
         }
         Ty::Array(element) => {
             expect_index(checker, ast, src, index, int, span);

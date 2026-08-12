@@ -5,10 +5,10 @@
 # general way to look.
 
 # Parses a decimal digit. Fails on anything else.
-function digit_of(c: i64) -> i64?
+function digit_of(c: u8) -> i64?
     if c < '0' || c > '9'
         return fail("not_a_digit", "expected 0-9")
-    return ok(c - '0')
+    return ok(fit_i64(c - '0'))
 
 # Reads a whole non-negative number. Empty input is an error, not a zero.
 function number_of(text: str) -> i64?

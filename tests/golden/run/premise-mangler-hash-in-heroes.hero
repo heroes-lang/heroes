@@ -24,7 +24,7 @@
 function typehash(rendered: str) -> i64
     h: i64 @ 0
     for i in range(from: 0, to: len(rendered))
-        h @ (h * 131 + rendered[i]) % 2147483647
+        h @ (h * 131 + fit_i64(rendered[i])) % 2147483647
     return h
 
 function main()
