@@ -1,0 +1,6 @@
+function double(x: int) -> int
+    return x * 2
+
+function main()
+    xs = [1, 2, 3]
+    print(len(map(xs, double)))

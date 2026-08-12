@@ -61,16 +61,40 @@ use crate::source::LIBRARY_MODULE;
 /// the same public spelling, which is exactly the deficiency RFC 2603 records
 /// against Rust's legacy scheme. The information the hash loses is given back for
 /// free — the emitter writes `/* map<int, str> */` above each instance.
+///
+/// **And it must be reproducible in Heroes, which FNV-1a was not** (author decision
+/// 2026-08-12). This function used to be FNV-1a, and its own comment said the port
+/// must reproduce it exactly — while all three of FNV's ingredients are
+/// inexpressible here, measured: the offset basis `14695981039346656037` is
+/// `int_out_of_range` because Heroes' `int` is signed, `hash.wrapping_mul(…)` is
+/// `panic: integer overflow` because §4.3 makes overflow an abort, and `^` is
+/// `reserved_operator`. The closure list (§1.0) has no hashing row, no bitwise row
+/// and no wrapping row, so measurement 003's audit could not see this — the second
+/// time that blind spot has fired, after `system()` at panel 036.
+///
+/// So: a **polynomial hash, modulus 2^31 − 1**, whose every intermediate fits an
+/// `int` with three orders of magnitude to spare — `(M − 1) × B + 255 ≈ 2.8e11`
+/// against `int`'s `9.2e18`. It is written the way the port will write it, and
+/// `tests/golden/run/premise-mangler-hash-in-heroes.hero` computes the same value
+/// in Heroes and asserts it, so the day this stops being portable is a red test
+/// rather than a discovery at the fixpoint (CLAUDE.md §11).
+///
+/// A collision is **loud**: two instances mangling alike emit two C definitions of
+/// one name, which is a clang error and exit 2. That is what makes 31 bits enough
+/// where a silent collision would not be.
 pub fn instance(rendered: &str) -> String {
-    // FNV-1a over the rendering: short, stable, and written out rather than taken
-    // from a crate, because the port must reproduce it exactly.
-    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut hash: i64 = 0;
     for byte in rendered.bytes() {
-        hash ^= u64::from(byte);
-        hash = hash.wrapping_mul(0x100_0000_01b3);
+        hash = (hash * HASH_BASE + i64::from(byte)) % HASH_MODULUS;
     }
-    format!("{:x}", hash & 0xffff_ffff)
+    format!("{hash:x}")
 }
+
+/// The two numbers `premise-mangler-hash-in-heroes.hero` copies. Named rather than
+/// inlined because a test in another language is the only thing holding them, and a
+/// literal it had to guess at would be the wrong kind of duplication.
+const HASH_BASE: i64 = 131;
+const HASH_MODULUS: i64 = 2_147_483_647;
 
 /// A Heroes function or constant.
 ///

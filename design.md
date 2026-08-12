@@ -142,7 +142,24 @@ mechanical, so it audits what is *on* this list and structurally cannot see what
 After the archive `heroes build` and `heroes run` are Heroes programs and they invoke clang, and
 `int64_t system(const char *)` is `conflicting types for 'system'` — panel 030 R3's wall on a row
 nobody had counted (panel 036). M-selfhost-probe prices it; the shape is a `hero_spawn` in
-`hero_os.h`, beside the file and argument rows it already carries. Library closure: `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`,
+`hero_os.h`, beside the file and argument rows it already carries.
+
+**A second absent row, found the same way and closed on the spot** (2026-08-12,
+panel 039's verification; author decision in `/decide`): **the mangler's typehash**.
+`h_library_map_<typehash>` reaches the generated C of any program that uses a
+generic, and the fixpoint compares that C byte for byte, so the port must compute
+the identical number — which `emit/mangle.rs` said in a comment while being FNV-1a,
+whose every ingredient is inexpressible in Heroes: an unsigned offset basis
+(`int_out_of_range`, because `int` is signed), a wrapping multiply (`panic: integer
+overflow`, because §4.3 makes overflow an abort), and `^` (`reserved_operator`).
+The hash is now a polynomial modulo 2^31 − 1 whose intermediates fit an `int` with
+three orders of magnitude to spare, and
+`tests/golden/run/premise-mangler-hash-in-heroes.hero` computes it in Heroes so the
+premise has the test CLAUDE.md §11 asks for. **The lesson is the audit's, not the
+hash's**: measurement 003 is mechanical over this list, so a requirement absent
+from the list is invisible to it — twice now, and both times the missing row was
+something the *compiler itself does* rather than something a Heroes program
+contains. Library closure: `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`,
 `join`/`Builder`, `to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
 `all`/`range` written in Heroes.
 

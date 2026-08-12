@@ -1,0 +1,36 @@
+# A PREMISE, written as a test that fires when it dies (CLAUDE.md §11).
+#
+# THE PREMISE: `emit/mangle.rs::instance` says the port must reproduce the
+# typehash exactly, because `h_library_map_<typehash>` appears in the generated C
+# and M-selfhost-fixpoint compares that C byte for byte.
+#
+# HOW IT DIED THE FIRST TIME (2026-08-12, panel 039's verification): the hash was
+# FNV-1a, and all three of its ingredients are inexpressible in Heroes —
+# `14695981039346656037` is `int_out_of_range` because `int` is signed,
+# `hash * 1099511628211` is `panic: integer overflow` because §4.3 makes overflow
+# an abort, and `^` is `reserved_operator`. The comment claiming portability had
+# been sitting above code that was not portable, and nothing said so: the closure
+# list has no hashing row, so measurement 003's audit could not see it.
+#
+# WHAT THIS FILE IS: the same hash, written the way the port will write it. If the
+# mangler's hash ever changes to something Heroes cannot compute, this file's
+# output stops matching `emit/mangle.rs` and the Rust test
+# `the_typehash_is_computable_in_heroes` says so by name.
+#
+# The two numbers are `mangle::HASH_BASE` and `mangle::HASH_MODULUS`. Every
+# intermediate fits: (M - 1) * B + 255 is about 2.8e11 against `int`'s 9.2e18.
+# Bulk regression case.
+
+function typehash(rendered: str) -> int
+    h: int @ 0
+    for i in range(from: 0, to: len(rendered))
+        h @ (h * 131 + rendered[i]) % 2147483647
+    return h
+
+function main()
+    print(typehash("map<int, str>"))
+    print(typehash("fold<int, int>"))
+    # The two renderings that would collide under a readable suffix — the reason
+    # `instance` is a hash at all (panel 029 R5). They must not collide here.
+    print(typehash("pair<int, str_x>"))
+    print(typehash("pair<int_str, x>"))

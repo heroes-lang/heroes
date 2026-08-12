@@ -195,3 +195,47 @@ fn a_literal_only_a_test_mentions_is_not_emitted() {
         out.c
     );
 }
+
+/// **The typehash is computable in Heroes**, which is what makes the port able to
+/// reproduce a name the fixpoint compares byte for byte.
+///
+/// The premise this pins used to be false. `mangle::instance` was FNV-1a and its
+/// own comment said the port must reproduce it exactly, while every ingredient was
+/// inexpressible: an unsigned offset basis (`int_out_of_range`), a wrapping
+/// multiply (`panic: integer overflow`), and `^` (`reserved_operator`). Found by
+/// panel 039's verification, on a closure-list row that does not exist — which is
+/// why nothing mechanical could have caught it.
+///
+/// The other half of the pair is `tests/golden/run/premise-mangler-hash-in-heroes.hero`,
+/// which computes these same four values **in Heroes** and prints them in decimal.
+/// Either side moving alone is a red test.
+#[test]
+fn the_typehash_is_computable_in_heroes() {
+    // Rendering → the decimal the `.hero` golden prints. Hex is what the mangler
+    // writes into a name; decimal is what `print` can produce, so the test carries
+    // both and the conversion is the assertion.
+    for (rendered, decimal) in [
+        ("map<int, str>", 1_726_907_847_u64),
+        ("fold<int, int>", 75_036_336),
+        ("pair<int, str_x>", 353_437_510),
+        ("pair<int_str, x>", 1_143_528_872),
+    ] {
+        assert_eq!(
+            super::super::mangle::instance(rendered),
+            format!("{decimal:x}"),
+            "the mangler and the Heroes golden must agree on `{rendered}`"
+        );
+    }
+
+    // Every intermediate must fit an `int`, with the margin the golden's comment
+    // claims: (M - 1) * B + 255 against i64::MAX.
+    let worst = (2_147_483_646_i64) * 131 + 255;
+    assert!(worst < i64::MAX / 1_000_000, "the margin is three orders of magnitude, not one");
+
+    // A readable suffix would collide on these two; a hash must not.
+    assert_ne!(
+        super::super::mangle::instance("pair<int, str_x>"),
+        super::super::mangle::instance("pair<int_str, x>"),
+        "panel 029 R5's non-injectivity case"
+    );
+}
