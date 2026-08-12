@@ -89,7 +89,7 @@ pub(super) fn prelude(
     // The index is kept: `hero_str_7` stays `hero_str_7` whether or not 0..6 are
     // emitted, so the name is a function of the literal and not of what surrounds it —
     // which is what keeps `--emit-c` stable when a `test` block is added to a file.
-    let live = live_strings(program, target);
+    let live = live_strings(program, target, src);
     for (index, text) in program.strings.iter().enumerate() {
         if !live.contains(&(index as u32)) {
             continue;
@@ -104,7 +104,12 @@ pub(super) fn prelude(
 /// Every header a group named, without its quotes, deduplicated and in
 /// declaration order — which is deterministic, so the double-emit test holds.
 fn headers(program: &Program, ast: &Ast, src: &Source) -> Vec<String> {
-    let mut seen: Vec<String> = vec!["math.h".to_string()];
+    // Two seeds, both unconditional. `math.h` for `HUGE_VAL`, which is how an
+    // infinite `f64` literal is spelled; `hero_os.h` because the generated `main`
+    // calls `hero_args_set` whether or not the program ever asks for `args()`.
+    // Seeded here rather than printed above so that a program which also *binds*
+    // one of them does not include it twice.
+    let mut seen: Vec<String> = vec!["math.h".to_string(), "hero_os.h".to_string()];
     for function in &program.functions {
         if function.kind != crate::ir::FnKind::Extern {
             continue;
@@ -196,7 +201,16 @@ fn extern_assertions(
         let zeros: Vec<String> = function
             .params
             .iter()
-            .map(|slot| zero_of(checked, function.slots[slot.0 as usize].ty))
+            .map(|slot| {
+                let declared = &function.slots[slot.0 as usize];
+                // **An `@` parameter is a pointer parameter** (§4.8, CLAUDE.md §7),
+                // so its zero is a null of that pointer type. Writing the value's
+                // own zero instead was `-Wint-conversion` — a warning rather than
+                // an error under C11, which is exactly how it survived a green
+                // test run until the goldens were read.
+                let mutable = matches!(declared.kind, SlotKind::Param { mutable: true });
+                zero_of(checked, declared.ty, mutable)
+            })
             .collect();
         // The message is a **contract with `ffi::explain`**, not prose: it carries
         // the marker, the C name and the declared Heroes type, so a failure can be
@@ -229,23 +243,46 @@ fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
 
 /// A zero of the declared parameter type, cast so the call type-checks. It is
 /// never evaluated — it exists only to make the call expression well-formed.
-fn zero_of(checked: &Checked, ty: TyId) -> String {
+fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
+    let value = match checked.types.get(ty) {
+        Ty::Int => "int64_t",
+        Ty::F64 => "double",
+        Ty::Bool => "bool",
+        Ty::Str => "HeroStr",
+        Ty::Cstr => "const char *",
+        _ => "void *",
+    };
+    if mutable {
+        return format!("({value} *)0");
+    }
     match checked.types.get(ty) {
-        Ty::Int => "(int64_t)0".to_string(),
-        Ty::F64 => "(double)0".to_string(),
-        Ty::Bool => "(bool)0".to_string(),
         Ty::Str => "(HeroStr){0}".to_string(),
-        Ty::Cstr => "(const char *)0".to_string(),
-        _ => "(void *)0".to_string(),
+        _ => format!("({value})0"),
     }
 }
 
 /// Which string literals an emitted function reads. A walk, because the answer must
 /// come from the instructions rather than from a count kept in step with them.
-fn live_strings(program: &Program, target: Target) -> std::collections::BTreeSet<u32> {
+fn live_strings(
+    program: &Program,
+    target: Target,
+    src: &Source,
+) -> std::collections::BTreeSet<u32> {
+    // **The same set `emit_for` emits**, and it has to be: a library function the
+    // program never reaches is dropped there, so counting its literals here left
+    // them defined and unreferenced — `-Wunused-const-variable`, which is the
+    // warning this walk exists to prevent.
+    //
+    // Invisible until M-ffi-ladder because no library function had a string in it.
+    // `read_file` and `write_file` are the first, and they have four between them:
+    // a program that reads a file and never writes one printed two warnings.
+    let used = super::builtins::reachable(program, src);
     let mut live = std::collections::BTreeSet::new();
     for function in &program.functions {
         if !emitted(function, target) {
+            continue;
+        }
+        if src.is_library(function.span.start) && !used.contains(&function.decl) {
             continue;
         }
         for block in &function.blocks {
@@ -452,7 +489,7 @@ pub(super) fn definition(
     w.at_generated();
     let types = super::aggregate::Types { ast, checked, names, src };
     let live = reachable(function);
-    let read = crate::ir::uses::values_read(function);
+    let read = emitted_reads(function, checked);
     prologue(w, function, checked, names, &live, &read);
     w.line(&format!("    goto {};", mangle::block(0)));
     for (index, block) in function.blocks.iter().enumerate() {
@@ -474,7 +511,13 @@ pub(super) fn definition(
 pub(super) fn shim(w: &mut Writer, function: &Function, src: &Source) {
     w.blank();
     w.at_generated();
-    w.line("int main(void) {");
+    // **`argc`/`argv`, always, whether or not the program calls `args()`.** The
+    // alternative — two shims chosen by whether a name is reachable — is a
+    // condition that can be wrong, and the cost of the parameters is nothing.
+    // `hero_args_set` is called before the program's own `main` so that the
+    // arguments are there for the first statement (M-ffi-ladder, `hero_os.h`).
+    w.line("int main(int argc, char **argv) {");
+    w.line("    hero_args_set(argc, argv);");
     w.line(&format!(
         "    {}();",
         mangle::function(src.component_at(function.span.start), &function.name)
@@ -547,11 +590,10 @@ fn prologue(
         if is_unit(checked, *ty) || !assigned(function, live, index as u32) {
             continue;
         }
-        // A discarded call's result is never assigned either (`inst::emit`), so
-        // declaring it here would be the unused variable this rule exists to
-        // stop. The two decisions have to agree, and they agree by reading the
-        // same set.
-        if discarded_call(function, live, index as u32, read) {
+        // A discarded result is never assigned either (`inst::emit`), so declaring
+        // it here would be the unused variable this rule exists to stop. The two
+        // decisions have to agree, and they agree by reading the same set.
+        if discarded(function, live, index as u32, read) {
             continue;
         }
         if let Some(name) = c_type(names, checked, *ty) {
@@ -590,13 +632,14 @@ fn assigned(function: &Function, live: &[bool], value: u32) -> bool {
     false
 }
 
-/// A temporary that a **call** writes and nothing reads: `_ = f(x)`.
+/// A temporary that a call, a load or a constant writes and nothing reads:
+/// `_ = f(x)`, and the load `r.must()` leaves behind when the payload is `()`.
 ///
 /// The pair of this and `inst::emit`'s own test is what keeps the declaration and
-/// the assignment in step. Only a call qualifies, and the restriction is the
-/// point: a pure op's result may disappear, but an *aborting* op's must not, or
-/// dropping the assignment drops the bounds check with it.
-fn discarded_call(
+/// the assignment in step — they agree because they ask the same question of the
+/// same set. The three ops are the safe ones: a pure result may disappear, but an
+/// *aborting* op's must not, or dropping the assignment drops the check.
+fn discarded(
     function: &Function,
     live: &[bool],
     value: u32,
@@ -611,9 +654,50 @@ fn discarded_call(
         }
         for one in &block.insts {
             if one.dest == Some(crate::ir::ValueId(value)) {
-                return matches!(one.op, crate::ir::Op::Call { .. });
+                return matches!(
+                    one.op,
+                    crate::ir::Op::Call { .. } | crate::ir::Op::Load(_) | crate::ir::Op::Const(_)
+                );
             }
         }
     }
     false
+}
+
+/// What the **emitted C** reads, which is not what the IR references.
+///
+/// An instruction whose result is unit emits nothing at all (`is_unit` in
+/// `inst::emit`), so its operands are referenced by the IR and read by no C. The
+/// case that produced this is `()?`: `r.must()` lowers to a load and a payload
+/// extraction, the extraction's result is `()`, and the load was left assigned
+/// and unread — `-Wunused-but-set-variable` on a correct program.
+///
+/// **One pass, not a fixpoint, and the limit is stated rather than discovered.**
+/// A suppressed reader whose own operand is produced by another suppressed
+/// reader would still leave a warning; no such chain exists today, because the
+/// only suppressed ops are the one-step extractions above. If one appears, this
+/// is where it is answered, and the answer is a worklist.
+fn emitted_reads(
+    function: &Function,
+    checked: &Checked,
+) -> std::collections::BTreeSet<u32> {
+    let mut read = std::collections::BTreeSet::new();
+    for block in &function.blocks {
+        for one in &block.insts {
+            // A pure op with a unit result prints nothing, so it reads nothing.
+            let silent = one.dest.is_some()
+                && is_unit(checked, one.ty)
+                && !matches!(one.op, crate::ir::Op::Call { .. } | crate::ir::Op::Abort { .. });
+            if silent {
+                continue;
+            }
+            for value in crate::ir::uses::operands(function, one.op) {
+                read.insert(value.0);
+            }
+        }
+        for value in crate::ir::uses::terminator_operands(&block.term) {
+            read.insert(value.0);
+        }
+    }
+    read
 }

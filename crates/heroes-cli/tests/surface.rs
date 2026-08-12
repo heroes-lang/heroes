@@ -729,3 +729,20 @@ fn sqlite_opens_queries_and_closes_with_no_shim() {
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert_eq!(stdout, "rows: 3\nlongest: 6\n", "{stdout}");
 }
+
+/// **The defect the ROADMAP called "the second page of any tour", closed.**
+///
+/// A Heroes program could not tell the shell it had failed: `main` may not
+/// declare a result — the checker refuses it, because a fallible `main` returning
+/// `fail(…)` printed nothing and exited **0** — so every program said it had
+/// succeeded. `exit(code)` is the answer, and it is written in Heroes over a
+/// `_Noreturn` C function (§1.11 Tier 2, M-ffi-ladder).
+///
+/// The `run/` golden asserts the output and stops there, because that harness
+/// compares stdout. This asserts the half a shell actually reads.
+#[test]
+fn exit_forwards_the_programs_own_status() {
+    let out = heroes(&["run", "tests/golden/run/exit-status.hero"]);
+    assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stderr));
+    assert_eq!(String::from_utf8_lossy(&out.stdout), "before\n");
+}

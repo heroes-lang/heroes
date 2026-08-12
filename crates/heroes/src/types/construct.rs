@@ -125,12 +125,28 @@ pub(super) fn fallible_constructor(
         return Some(checker.error_ty());
     };
     if name == "ok" {
-        if args.len() != 1 {
-            let diagnostic = errors::arity("ok", 1, args.len(), None, span);
+        // **`ok()` is how a `()?` succeeds, and before M-ffi-ladder there was no
+        // way at all.** Measured: `ok(())` is `expected_expression` (`()` is a
+        // type, not a value, so it never parses), `ok()` was `wrong_arity`, and a
+        // bare `return` is `missing_value` — three spellings, three refusals, and
+        // a `()?` that no function could construct. `write_file(path, text) -> ()?`
+        // is the first signature in the language that needs one (panel 036, the
+        // spec-warden's condition, predicted before it was met).
+        //
+        // The arity rule is therefore *derived from the payload* rather than
+        // fixed: `ok` carries as many arguments as its payload has values, and
+        // `()` has none. Zero spec tokens — the spec says `ok(v)`, and `()` has no
+        // `v` to write.
+        let unit = checker.out.types.unit();
+        let wanted = usize::from(inner != unit);
+        if args.len() != wanted {
+            let diagnostic = errors::arity("ok", wanted, args.len(), None, span);
             checker.push_diagnostic(diagnostic);
             return Some(checker.error_ty());
         }
-        expect::check(checker, ast, resolved, src, args[0].value, inner);
+        if wanted == 1 {
+            expect::check(checker, ast, resolved, src, args[0].value, inner);
+        }
         return Some(expected);
     }
     if args.len() != 2 {

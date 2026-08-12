@@ -15,7 +15,7 @@ use super::Function;
 
 /// Every value an operation reads. One function, so a new `Op` variant that forgets
 /// to list its operands fails the exhaustiveness check rather than the verifier.
-pub(super) fn operands(function: &Function, op: Op) -> Vec<ValueId> {
+pub fn operands(function: &Function, op: Op) -> Vec<ValueId> {
     match op {
         Op::Const(_) | Op::Hole | Op::Missing | Op::CopyOut { .. } | Op::FuncRef(_) => Vec::new(),
         Op::Load(place) => path_values(function, place),
@@ -45,7 +45,7 @@ pub(super) fn operands(function: &Function, op: Op) -> Vec<ValueId> {
     }
 }
 
-pub(super) fn terminator_operands(term: &Term) -> Vec<ValueId> {
+pub fn terminator_operands(term: &Term) -> Vec<ValueId> {
     match term {
         Term::Branch { cond, .. } => vec![*cond],
         Term::Switch { tag, .. } => vec![*tag],
@@ -89,27 +89,4 @@ pub(super) fn slots_of(function: &Function, op: Op) -> Vec<u32> {
         Op::CopyOut { param } => vec![param.0],
         _ => Vec::new(),
     }
-}
-
-/// Every temporary some instruction or terminator **reads**, in the blocks that
-/// are reachable.
-///
-/// The emitter's counterpart to `decls::assigned`: a temporary that is written
-/// and never read is `-Wunused-but-set-variable`, and the case that produces one
-/// is `_ = f(x)` — §4.4's discard, which is also the ordinary way to ignore a C
-/// status code. So the noise landed on every FFI program that did the right
-/// thing.
-pub fn values_read(function: &Function) -> std::collections::BTreeSet<u32> {
-    let mut read = std::collections::BTreeSet::new();
-    for block in &function.blocks {
-        for one in &block.insts {
-            for value in operands(function, one.op) {
-                read.insert(value.0);
-            }
-        }
-        for value in terminator_operands(&block.term) {
-            read.insert(value.0);
-        }
-    }
-    read
 }

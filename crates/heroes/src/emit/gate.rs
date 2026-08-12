@@ -180,7 +180,11 @@ fn check_type(
             check_element(found, ast, checked, src, function, key, span, "a map key");
             check_element(found, ast, checked, src, function, value, span, "a map value");
         }
-        Ty::Fallible(payload) => {
+        // **A `()?` is representable and the other containers are not.** An array
+        // or a map needs a descriptor for its element and `()` has none; a `T?` is
+        // a tagged union, and a union whose ok side carries nothing is just a tag.
+        // `write_file(path, text) -> ()?` is the signature that needed it.
+        Ty::Fallible(payload) if checked.types.get(payload) != Ty::Unit => {
             check_element(found, ast, checked, src, function, payload, span, "a `T?`")
         }
         // Every other type in the language has a C representation (`ctype.rs`),

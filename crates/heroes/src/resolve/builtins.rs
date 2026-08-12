@@ -47,15 +47,17 @@ pub struct Builtin {
     pub tier: Tier,
 }
 
-/// Sorted by name, searched linearly. Twenty-four entries need no index, and a
+/// Sorted by name, searched linearly. Twenty-eight entries need no index, and a
 /// sorted table prints in a deterministic order — §4.16's rule for hole
 /// suggestions, applied to every list the compiler shows.
-pub const BUILTINS: [Builtin; 24] = [
+pub const BUILTINS: [Builtin; 28] = [
     Builtin { name: "all", tier: Tier::Heroes },
+    Builtin { name: "args", tier: Tier::Heroes },
     Builtin { name: "any", tier: Tier::Heroes },
     Builtin { name: "chars", tier: Tier::Runtime },
     Builtin { name: "cstr", tier: Tier::Runtime },
     Builtin { name: "default", tier: Tier::Heroes },
+    Builtin { name: "exit", tier: Tier::Heroes },
     Builtin { name: "fail", tier: Tier::Runtime },
     Builtin { name: "filter", tier: Tier::Heroes },
     Builtin { name: "find", tier: Tier::Heroes },
@@ -70,11 +72,13 @@ pub const BUILTINS: [Builtin; 24] = [
     Builtin { name: "print", tier: Tier::Runtime },
     Builtin { name: "push", tier: Tier::Runtime },
     Builtin { name: "range", tier: Tier::Heroes },
+    Builtin { name: "read_file", tier: Tier::Heroes },
     Builtin { name: "slice", tier: Tier::Runtime },
     Builtin { name: "sort", tier: Tier::Runtime },
     Builtin { name: "to_f64", tier: Tier::Runtime },
     Builtin { name: "to_int", tier: Tier::Runtime },
     Builtin { name: "to_str", tier: Tier::Runtime },
+    Builtin { name: "write_file", tier: Tier::Heroes },
 ];
 
 pub fn index_of(name: &str) -> Option<u32> {

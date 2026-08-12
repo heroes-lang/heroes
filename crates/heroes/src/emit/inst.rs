@@ -59,15 +59,20 @@ pub(super) fn emit(
         }
         _ => super::writer::at_span(w, src, inst.span.start),
     }
-    // **A call whose result nobody reads gets no temporary**, and no other op is
-    // treated this way. `_ = f(x)` is §4.4's discard and the ordinary way to
-    // ignore a C status code, and it emitted `int64_t t2; t2 = f(x);` —
+    // **A temporary nobody reads gets no declaration and no assignment**, for the
+    // three ops where that is safe. `_ = f(x)` is §4.4's discard and the ordinary
+    // way to ignore a C status code, and it emitted `int64_t t2; t2 = f(x);` —
     // `-Wunused-but-set-variable` on every FFI program that did the right thing.
-    // Restricted to `Op::Call` on purpose: a pure op with an unused result may
-    // vanish, but an *aborting* one (an index, a division) must still run, and
-    // dropping its assignment would drop its check.
-    let discarded = matches!(inst.op, Op::Call { .. })
-        && inst.dest.is_some_and(|d| !live_values.contains(&d.0));
+    // `()?` added a second shape: `r.must()` loads the fallible and extracts a
+    // payload that emits nothing, leaving the load unread.
+    //
+    // The list is `Call`, `Load` and `Const` on purpose, and the exclusion is the
+    // point: a *pure* op with an unused result may vanish, but an **aborting** one
+    // (an index, a division, an overflowing add) must still run, and dropping its
+    // assignment would drop its check with it. A call stays in because it is
+    // called for its effect.
+    let discardable = matches!(inst.op, Op::Call { .. } | Op::Load(_) | Op::Const(_));
+    let discarded = discardable && inst.dest.is_some_and(|d| !live_values.contains(&d.0));
     let dest = inst.dest.filter(|_| !is_unit(checked, inst.ty) && !discarded);
     let target = dest.map(|d| mangle::value(d.0));
     match inst.op {

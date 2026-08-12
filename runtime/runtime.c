@@ -94,3 +94,11 @@
 /* The map's descriptor and everything that writes: `keys`, growth, the unshare
  * the map shipped without, and the place store. Needs `[T]` for `keys`. */
 #include "parts/map-write.c"
+
+/* The program's three edges: files, arguments, exit status (M-ffi-ladder). Last,
+ * because it needs `str` and nothing needs it. Its declarations live in their own
+ * header, `hero_os.h`, which the **Heroes library** binds with `extern` — these
+ * are Tier 2, not built-ins, and the header exists so that clang checks them the
+ * same way it checks a binding against `<sqlite3.h>`. */
+#include "hero_os.h"
+#include "parts/os.c"

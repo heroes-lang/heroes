@@ -1,0 +1,100 @@
+/* os.c — the program's three edges, in C because the language cannot reach them
+ * (design.md §1.11 Tier 1, `hero_os.h` for why they are not built-ins).
+ *
+ * Included by `runtime.c` into the one translation unit, like every other part.
+ * Nothing here is generic and nothing here allocates outside `str`: the file
+ * reader builds its result with `hero_str_from_bytes`, which is the single
+ * allocation point §4.20 insists on.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+/* The arguments, as the generated `main` received them. Static, like every other
+ * piece of runtime state, so a decoy runtime linked beside this one cannot reach
+ * them (runtime.c's own reason for one translation unit). */
+static int hero_argc = 0;
+static char **hero_argv = NULL;
+
+void hero_args_set(int argc, char **argv) {
+    hero_argc = argc;
+    hero_argv = argv;
+}
+
+/* argv[0] is the program's own name, and `args()` promises "the arguments after
+ * the program name" — the off-by-one that every language's first CLI program
+ * gets wrong, answered once, here. */
+int64_t hero_args_count(void) {
+    return hero_argc > 0 ? (int64_t)hero_argc - 1 : 0;
+}
+
+HeroStr hero_args_at(int64_t index) {
+    if (index < 0 || index >= hero_args_count()) {
+        hero_panic("argument index out of range");
+    }
+    return hero_str_from_cstr(hero_argv[index + 1]);
+}
+
+/* The whole file, read with `fseek`/`ftell`/`fread`.
+ *
+ * A binary read (`"rb"`), because a `str` is bytes: §4.3 measures and indexes a
+ * string in bytes, so translating CRLF here would make `len` disagree with the
+ * file on one platform and not the other. */
+HeroStr hero_file_read(const char *path, int64_t *status) {
+    FILE *file = fopen(path, "rb");
+    if (file == NULL) {
+        *status = HERO_OS_NOT_FOUND;
+        return hero_str_from_bytes("", 0);
+    }
+    if (fseek(file, 0, SEEK_END) != 0) {
+        fclose(file);
+        *status = HERO_OS_FAILED;
+        return hero_str_from_bytes("", 0);
+    }
+    long size = ftell(file);
+    if (size < 0 || fseek(file, 0, SEEK_SET) != 0) {
+        fclose(file);
+        *status = HERO_OS_FAILED;
+        return hero_str_from_bytes("", 0);
+    }
+    char *buffer = malloc((size_t)size + 1);
+    if (buffer == NULL) {
+        fclose(file);
+        hero_panic("out of memory reading a file");
+    }
+    size_t got = fread(buffer, 1, (size_t)size, file);
+    fclose(file);
+    if (got != (size_t)size) {
+        free(buffer);
+        *status = HERO_OS_FAILED;
+        return hero_str_from_bytes("", 0);
+    }
+    HeroStr text = hero_str_from_bytes(buffer, (int64_t)got);
+    free(buffer);
+    *status = HERO_OS_OK;
+    return text;
+}
+
+int64_t hero_file_write(const char *path, HeroStr text) {
+    FILE *file = fopen(path, "wb");
+    if (file == NULL) {
+        return HERO_OS_FAILED;
+    }
+    int64_t len = hero_str_len(text);
+    if (len > 0) {
+        size_t put = fwrite(hero_str_cstr(text), 1, (size_t)len, file);
+        if (put != (size_t)len) {
+            fclose(file);
+            return HERO_OS_FAILED;
+        }
+    }
+    return fclose(file) == 0 ? HERO_OS_OK : HERO_OS_FAILED;
+}
+
+/* The truncation is deliberate and is the reason `exit` is not a plain `extern`:
+ * C's `exit` takes an `int`, Heroes' `int` is `int64_t`, and binding one to the
+ * other is `conflicting types for 'exit'` (panel 030 R3, reproduced on clang 21).
+ * A shell reads the low 8 bits anyway. */
+_Noreturn void hero_exit(int64_t code) {
+    exit((int)code);
+}

@@ -154,24 +154,21 @@ pub fn emit_for(
     // declaration. Every name that comes from a declaration takes that
     // declaration's own module instead — M-module-namespace's whole change to this file.
     let module = crate::source::module_of(&src.name);
-    let names = ctype::Names::new(ast, src)
-        .with_options(&module, checked)
-        .with_functions(&module, checked, program);
-    let mut w = writer::Writer::new(&module);
-    decls::prelude(&mut w, program, target, ast, checked, src);
-    // Types before anything that can mention one: **every** typedef in one
-    // containment order — declared aggregates and the ones the emitter invents
-    // together, because each kind can contain the other — then every per-type
-    // prototype, then the ordinary function prototypes.
-    typeorder::definitions(&mut w, ast, checked, &names, src);
-    perfn::prototypes(&mut w, ast, checked, &names, src);
-    // The descriptors before any definition: an array literal names its element's
-    // descriptor, so the object has to exist by the time a function body mentions it.
-    // Every type the functions this build will actually emit mention — the
-    // descriptor worklist's filter, so a `test` block's containers do not put
-    // unused objects in an ordinary program (see `descriptors::generated`).
+    // The author's functions, plus exactly the library functions they reach —
+    // computed **before** the type walk, because the types a pruned function
+    // mentions are not reachable either. Until M-ffi-ladder no library function
+    // mentioned a type the program did not already have; `read_file -> str?` and
+    // `write_file -> ()?` are the first, and unfiltered they put two option
+    // structs and eight per-type functions into every translation unit in the
+    // language, including one that only adds two integers.
+    let used = builtins::reachable(program, src);
+    let shown: Vec<&crate::ir::Function> = program
+        .functions
+        .iter()
+        .filter(|f| !src.is_library(f.span.start) || used.contains(&f.decl))
+        .collect();
     let mut reachable: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
-    for function in &program.functions {
+    for function in &shown {
         if function.kind == crate::ir::FnKind::Test && target != Target::Tests {
             continue;
         }
@@ -185,14 +182,36 @@ pub fn emit_for(
             }
         }
     }
+    // **Transitively**, because a type names the types it holds: `[int?]` is one
+    // slot type and two declarations, and naming only the outer one left the
+    // inner `int?` unnamed under a rule that asserts every `T?` is named before
+    // anything mentions one (`ctype.rs`). Found by the mutant corpus, which is
+    // where CLAUDE.md §9 says an invariant belongs.
+    let mut frontier: Vec<u32> = reachable.iter().copied().collect();
+    while let Some(id) = frontier.pop() {
+        for inner in checked.types.contained(crate::types::TyId(id)) {
+            if reachable.insert(inner.0) {
+                frontier.push(inner.0);
+            }
+        }
+    }
+    let names = ctype::Names::new(ast, src)
+        .with_options(&module, checked)
+        .with_functions(&module, checked, program);
+    let mut w = writer::Writer::new(&module);
+    decls::prelude(&mut w, program, target, ast, checked, src);
+    // Types before anything that can mention one: **every** typedef in one
+    // containment order — declared aggregates and the ones the emitter invents
+    // together, because each kind can contain the other — then every per-type
+    // prototype, then the ordinary function prototypes.
+    typeorder::definitions(&mut w, ast, checked, &names, src);
+    perfn::prototypes(&mut w, ast, checked, &names, src);
     perfn::descriptors(&mut w, ast, checked, &names, &reachable);
-    // The author's functions, plus exactly the library functions they reach.
-    let used = builtins::reachable(program, src);
-    let shown: Vec<&crate::ir::Function> = program
-        .functions
-        .iter()
-        .filter(|f| !src.is_library(f.span.start) || used.contains(&f.decl))
-        .collect();
+    // The descriptors before any definition: an array literal names its element's
+    // descriptor, so the object has to exist by the time a function body mentions it.
+    // Every type the functions this build will actually emit mention — the
+    // descriptor worklist's filter, so a `test` block's containers do not put
+    // unused objects in an ordinary program (see `descriptors::generated`).
     for function in &shown {
         decls::prototype(&mut w, function, target, ast, checked, src, &names);
     }

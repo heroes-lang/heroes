@@ -87,6 +87,26 @@ impl Default for Types {
 }
 
 impl Types {
+    /// The types this one holds, one level down — an array's element, a map's key
+    /// and value, a fallible's payload, a function type's parameters and result.
+    ///
+    /// Exists for the emitter's reachability walk: a slot of type `[int?]` names
+    /// two declarations, and a walk that stops at the outer one leaves the inner
+    /// `T?` unnamed (`emit/ctype.rs` asserts that never happens).
+    pub fn contained(&self, id: TyId) -> Vec<TyId> {
+        match self.get(id) {
+            Ty::Array(element) => vec![element],
+            Ty::Fallible(payload) => vec![payload],
+            Ty::Map(key, value) => vec![key, value],
+            Ty::Func { params, result } => {
+                let mut out: Vec<TyId> = self.params_of(params).to_vec();
+                out.push(result);
+                out
+            }
+            _ => Vec::new(),
+        }
+    }
+
     /// The scalars are interned first, in a fixed order, so their ids are
     /// constants the whole pass can name without a lookup — and `Error` is
     /// **id 0**, which is what lets `expr_types` be a dense array whose default

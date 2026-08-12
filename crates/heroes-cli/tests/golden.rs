@@ -583,7 +583,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
         let expected_path = case.with_extension("expected");
         let text = std::fs::read_to_string(&expected_path)
             .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
-        let (expected, panic) = split_expectation(&text);
+        let (expected, ending) = split_expectation(&text);
         let name = case.file_stem().expect("a stem").to_string_lossy().into_owned();
 
         // -O0: `build` writes a binary, and the harness runs it itself.
@@ -601,7 +601,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             String::from_utf8_lossy(&built.stderr)
         );
         let ran = std::process::Command::new(&binary).output().expect("the program runs");
-        check(relative, "-O0", &ran, &expected, &panic);
+        check(relative, "-O0", &ran, &expected, &ending);
 
         // -O2: `run` compiles and executes, and forwards the program's own status.
         let at_o2 = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
@@ -609,7 +609,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             .args(["run", &relative.display().to_string()])
             .output()
             .expect("the heroes binary runs");
-        check(relative, "-O2", &at_o2, &expected, &panic);
+        check(relative, "-O2", &at_o2, &expected, &ending);
 
         // The third configuration: `-fsanitize=address,undefined`. **Not** a leak
         // gate — AddressSanitizer's is missing on Darwin arm64, and a 999-block leak
@@ -628,7 +628,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             "{} tripped a sanitiser:\n{noise}",
             relative.display()
         );
-        check(relative, "--sanitize", &sanitised, &expected, &panic);
+        check(relative, "--sanitize", &sanitised, &expected, &ending);
     }
 }
 
@@ -640,12 +640,20 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
 /// program that overflows must **stop**, and the wrong emitter does not crash, it
 /// prints a wrapped number at exit 0. That behaviour is only a golden if the harness
 /// can spell it.
-fn split_expectation(text: &str) -> (String, Option<String>) {
+fn split_expectation(text: &str) -> (String, Option<Expectation>) {
     let mut lines: Vec<&str> = text.lines().collect();
-    let mut panic = None;
+    let mut ending = None;
     if let Some(last) = lines.last() {
         if let Some(message) = last.strip_prefix("!panic: ") {
-            panic = Some(message.to_string());
+            ending = Some(Expectation::Panic(message.to_string()));
+            lines.pop();
+        // `!exit: N` — a program that ends deliberately rather than by aborting.
+        // It arrived with `exit(code)` at M-ffi-ladder, and it is a *second* line
+        // the harness can spell rather than a relaxation of the first: a case
+        // without one still has to exit 0, so a program that starts exiting by
+        // accident is still a failure.
+        } else if let Some(code) = last.strip_prefix("!exit: ") {
+            ending = Some(Expectation::Exit(code.trim().parse().expect("an exit code")));
             lines.pop();
         }
     }
@@ -653,7 +661,15 @@ fn split_expectation(text: &str) -> (String, Option<String>) {
     if !stdout.is_empty() {
         stdout.push('\n');
     }
-    (stdout, panic)
+    (stdout, ending)
+}
+
+/// How a case ends, when it does not end at exit 0 with nothing on stderr.
+enum Expectation {
+    /// `!panic: <message>` — an abort, and the message stderr must carry.
+    Panic(String),
+    /// `!exit: <code>` — `exit(code)`, and the status the shell must see.
+    Exit(i32),
 }
 
 fn check(
@@ -661,7 +677,7 @@ fn check(
     level: &str,
     output: &std::process::Output,
     expected: &str,
-    panic: &Option<String>,
+    ending: &Option<Expectation>,
 ) {
     assert_eq!(
         String::from_utf8_lossy(&output.stdout),
@@ -669,14 +685,20 @@ fn check(
         "{} prints something else at {level} — the same corpus, one configuration apart",
         case.display()
     );
-    match panic {
+    match ending {
         None => assert_eq!(
             output.status.code(),
             Some(0),
             "{} did not exit 0 at {level}",
             case.display()
         ),
-        Some(message) => {
+        Some(Expectation::Exit(code)) => assert_eq!(
+            output.status.code(),
+            Some(*code),
+            "{} did not exit {code} at {level}",
+            case.display()
+        ),
+        Some(Expectation::Panic(message)) => {
             let said = String::from_utf8_lossy(&output.stderr);
             assert!(
                 said.contains(message),

@@ -110,6 +110,20 @@ impl Names {
 
     /// Assigns a C name to every `T?` the program interned. Called once, after the
     /// aggregates, because it needs the type table rather than the syntax.
+    /// **Walked over the interned arena, unlike `with_functions` below**, and
+    /// M-ffi-ladder is when that started to cost something: `read_file -> str?` and
+    /// `write_file -> ()?` are the first library functions with a `T?` in their
+    /// signatures, so every translation unit in the language now carries two
+    /// option structs and eight per-type functions — including one that only adds
+    /// two integers.
+    ///
+    /// **Deriving the set from the emitted functions was tried and reverted.** A
+    /// walk over slots, results and instruction types misses a `T?` reached
+    /// through a declared record's field, and a missing name is
+    /// `every `T?` is named before anything can mention one` — a hard error, found
+    /// by the mutant corpus rather than by any case somebody wrote. The honest
+    /// filter needs the declaration graph as well as the IR, and it is queued
+    /// rather than half-done.
     pub(super) fn with_options(mut self, module: &str, checked: &Checked) -> Names {
         for index in 0..checked.types.len() {
             let id = TyId(index as u32);

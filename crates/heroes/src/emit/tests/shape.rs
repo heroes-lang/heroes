@@ -27,10 +27,14 @@ fn the_first_program_has_the_shape_spike_01_froze() {
     assert!(text.contains("hero_print_int(t"));
     assert!(text.contains("    hero_print_end();"));
     // The shim, not a mangler exception.
-    // The shim also asserts the leak balance, because AddressSanitizer's leak
-    // detector does not exist on this platform (panel 021 R9).
+    //
+    // It takes `argc`/`argv` and hands them to the runtime **whether or not the
+    // program calls `args()`** (M-ffi-ladder): two shims chosen by whether a name
+    // is reachable would be a condition that can be wrong, and the parameters cost
+    // nothing. The shim also asserts the leak balance, because AddressSanitizer's
+    // leak detector does not exist on this platform (panel 021 R9).
     assert!(text.contains(
-        "int main(void) {\n    h_scratch_main();\n    hero_runtime_check_leaks();\n    return 0;\n}"
+        "int main(int argc, char **argv) {\n    hero_args_set(argc, argv);\n    h_scratch_main();\n    hero_runtime_check_leaks();\n    return 0;\n}"
     ), "{text}");
 }
 

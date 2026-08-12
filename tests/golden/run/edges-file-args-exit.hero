@@ -1,0 +1,34 @@
+# The program's three edges, round-tripped (§1.11, panel 036).
+#
+# `read_file`, `write_file`, `args` and `exit` are written in Heroes, in
+# `crates/heroes/src/library/source.hero`, over `extern` declarations against
+# `hero_os.h` — the same door SQLite and libm come through. So this case is not
+# only about file I/O: it is the proof that Tier 2 reaches the operating system
+# without a single new built-in and without a second composition form in the
+# emitter.
+#
+# The path is absolute, and that is the harness talking: the three configurations
+# run the binary from two different working directories (the crate's, and the
+# repository root), so a relative path is a different file in each — measured,
+# and the first version of this case failed on exactly that. `/tmp` is assumed,
+# which is true of both platforms the CI will cover.
+# Bulk regression case.
+
+constant PATH: str
+    "/tmp/heroes-golden-edges.txt"
+
+function main()
+    match write_file(path: PATH, text: "one\ntwo\nthree\n")
+        .ok _  => print("wrote it")
+        .err e => print("write failed: ", e.code)
+    match read_file(PATH)
+        .ok text => print("read ", len(text), " bytes")
+        .err e   => print("read failed: ", e.code)
+    # The error side, which is the half a happy-path test never reaches. The
+    # code is a stable snake_case string (§4.6), so it can be asserted.
+    match read_file("/tmp/heroes-no-such-file-at-all")
+        .ok _  => print("unexpected")
+        .err e => print("missing: ", e.code)
+    # `args()` gives what follows the program's name, and the golden harness
+    # runs the binary with none — the off-by-one answered once, in the runtime.
+    print("arguments: ", len(args()))
