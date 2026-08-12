@@ -98,13 +98,14 @@ mod tests {
     /// notional. Panel 024's own arithmetic put the justified total at 3181.
     #[test]
     fn the_headroom_the_remaining_mortgages_need_is_still_there() {
-        // M-ffi-ladder's floor for file I/O, `args()` and `exit(code)` — panel 030 R3, which
-        // refuted "they are plain externs" by compiling it.
-        let m7_floor = 60;
+        // The floor for file I/O, `args()` and `exit(code)` — panel 030 R3, which
+        // refuted "they are plain externs" by compiling it. The floor belongs to the
+        // FFI, not to the milestone that pays it, so the name says so.
+        let ffi_floor = 60;
         assert!(
-            SPEC_TOKENS + m7_floor < 4096,
-            "modules plus M-ffi-ladder's floor is {} against 4096",
-            SPEC_TOKENS + m7_floor
+            SPEC_TOKENS + ffi_floor < 4096,
+            "modules plus the FFI floor is {} against 4096",
+            SPEC_TOKENS + ffi_floor
         );
     }
 }

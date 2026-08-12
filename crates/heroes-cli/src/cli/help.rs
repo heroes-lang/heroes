@@ -4,6 +4,16 @@
 //! them, and `$HEROES_RUNTIME` is printed because it is the one input channel
 //! outside the argv table — a channel nobody can discover is a channel that will be
 //! discovered by reading the source.
+//!
+//! **No milestone identifier appears here.** This footer used to read
+//! `lsp outline explain (M6+) · cc doc (M7)`, which was wrong three ways at once:
+//! `emit/gate.rs`'s rule is that user-visible text names the capability and never the
+//! milestone — measured, because a reader given `(M5b)` grepped the repository and
+//! concluded the toolchain was broken — `(M6+)` had been in the past for a milestone
+//! already; and `outline`, `explain` and `doc` were **refused** by §10's stopping
+//! rule for want of a measurement, so the help was advertising verbs the project had
+//! decided not to build. What is left is the two commands that are genuinely
+//! scheduled, with no date attached to them.
 
 use super::{commands, Operand};
 
@@ -31,8 +41,7 @@ pub fn help() -> String {
          \x20        2 the tool could not run. `run` forwards the program's own status.\n\
          env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n\
          \x20        under the working directory or beside the compiler.\n\n\
-         More commands arrive with each milestone:\n\
-         lsp outline explain (M6+) · cc doc (M7)\n",
+         Commands not built yet: lsp · cc\n",
     );
     out
 }

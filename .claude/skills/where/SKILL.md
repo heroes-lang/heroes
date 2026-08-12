@@ -36,11 +36,19 @@ Show the full pipeline with today's position marked. Use this fixed picture
 (✅ done · 🔨 in progress · ⬜ not started), one line per stage:
 
 ```
-testo .hero → [M1 lexer] → [M2 parser] → [M3 controllo dei tipi] →
-[M4 semplificazione + IR] → [M5 emissione C + runtime] → binario nativo
-poi: [M8a moduli ✅] [M7 FFI] [M8e corpus] [M8p sonda]
-     [M8b+M8c self-hosting] → v1
-  (l'ordine è quello scritto qui — docs/ROADMAP.md § The order)
+testo .hero
+  → [M-token-stream    lexer]
+  → [M-syntax-tree     parser]
+  → [M-typed-frontend  controllo dei tipi]
+  → [M-ir-lowering     semplificazione + IR]
+  → [M-native-backend  emissione C + runtime]
+  → binario nativo
+
+poi: [M-module-namespace moduli] → [M-ffi-ladder FFI]
+  → [M-program-corpus corpus] → [M-selfhost-probe sonda]
+  → [M-selfhost-port port] → [M-selfhost-fixpoint fixpoint] = v1
+  (l'ordine è quello scritto in docs/ROADMAP.md § The order; il nome
+   non promette una posizione)
 ```
 
 ### 2. «Dove siamo» — 3–6 sentences

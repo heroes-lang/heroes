@@ -3,10 +3,11 @@
 //! Every row of `gate.rs`'s table has a test that makes it fire — LLVM's
 //! `test/Verifier` discipline, applied to the other direction (CLAUDE.md §9). A row
 //! nobody can make fire is a row nobody can retire, so the tests move as the rows
-//! die: M5b deleted the `str` and `f64` rows, and M6 step 3 sent the built-in row's
-//! example from `sort` to `range`, because `sort` acquired an entry point and stopped
-//! being able to demonstrate a refusal. **When a test here has to be rewritten, that
-//! is the milestone working**, not the test rotting.
+//! die: M-strings-ownership deleted the `str` and `f64` rows, and
+//! M-generics-library step 3 sent the built-in row's example from `sort` to `range`,
+//! because `sort` acquired an entry point and stopped being able to demonstrate a
+//! refusal. **When a test here has to be rewritten, that is the milestone working**,
+//! not the test rotting.
 
 use crate::diagnostics::Kind;
 
@@ -28,25 +29,62 @@ fn refusal(text: &str) -> (String, String) {
         "the note that answers `what can I do instead` is missing"
     );
     assert!(
-        !first.message.contains("M5") && !first.message.contains("M6") && !first.message.contains("M7"),
+        !names_a_milestone(&first.message),
         "a milestone identifier reached the message: {}",
         first.message
     );
     (first.code.clone(), first.message.clone())
 }
 
-/// M5b deleted the `str` and `f64` rows, which is the gate's whole design: a row dies
-/// per milestone. The test that used to assert they were refused now asserts they are
-/// **not** — a row nobody can prove is gone is a row that comes back.
+/// Does this text name a milestone? Both spellings, so the check cannot go stale.
+///
+/// It used to be three string literals — `"M5"`, `"M6"`, `"M7"` — which guarded the
+/// milestones that happened to exist the day it was written and would have guarded
+/// only retired ones after the rename to names. The rule it enforces is
+/// `emit/gate.rs`'s: **the message names the capability, never the milestone.** Its
+/// cost was measured — given `(M5b)`, the panel's llm-ergonomist read an internal
+/// tracker id, grepped the repository for it, and told its user the toolchain was
+/// broken, a sentence it recorded as false.
+///
+/// **The name form is the more tempting mistake**, which is why it is refused too:
+/// `(M-strings-ownership)` reads plausibly out of context in a way `(M5b)` never
+/// did, so it is likelier to survive a review. §4.17's standard is unchanged —
+/// everything needed without opening another file — and a milestone id is a
+/// pointer into `docs/ROADMAP.md`, which the reader does not have.
+///
+/// A boundary check, so `ARM64` and `INT64_MIN` are not milestones.
+pub(crate) fn names_a_milestone(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    bytes.iter().enumerate().any(|(i, &b)| {
+        if b != b'M' {
+            return false;
+        }
+        // The `M` must start a word: nothing alphanumeric, `_` or `-` before it.
+        let opens = i == 0 || {
+            let p = bytes[i - 1];
+            !p.is_ascii_alphanumeric() && p != b'_' && p != b'-'
+        };
+        opens
+            && match bytes.get(i + 1) {
+                Some(&n) if n.is_ascii_digit() => true,
+                Some(&b'-') => bytes.get(i + 2).is_some_and(u8::is_ascii_lowercase),
+                _ => false,
+            }
+    })
+}
+
+/// M-strings-ownership deleted the `str` and `f64` rows, which is the gate's whole
+/// design: a row dies per milestone. The test that used to assert they were refused now
+/// asserts they are **not** — a row nobody can prove is gone is a row that comes back.
 #[test]
 fn text_and_floating_point_are_no_longer_refused() {
     let text = super::c("function main()\n    print(\"hi\")\n    x = 1.5\n    print(x)\n");
     assert!(text.contains("hero_print_str"), "{text}");
     assert!(text.contains("hero_print_f64"), "{text}");
-    // …and the note now says every type in the language, because at M5d that is the
-    // truth and enumerating them would be a list that only ever gets re-checked when a
-    // row dies. What the note still enumerates is the *built-ins*, which is where the
-    // remaining rows are.
+    // …and the note now says every type in the language, because at M-optional-map that
+    // is the truth and enumerating them would be a list that only ever gets re-checked
+    // when a row dies. What the note still enumerates is the *built-ins*, which is
+    // where the remaining rows are.
     assert!(crate::emit::subset().contains("every type in the language"));
     assert!(crate::emit::subset().contains("`keys`"));
 }
@@ -60,23 +98,23 @@ fn both_halves_of_a_shared_operation_now_emit_to_their_own_entry_point() {
     assert!(text.contains("hero_str_byte"), "{text}");
     assert!(text.contains("hero_str_len"), "{text}");
     // `s[i]` and `xs[i]` are one op, and `len` one built-in: the split is by operand
-    // type, and at M5c step 5 both sides have somewhere to go. Each keeps its own
-    // bounds check in the runtime.
+    // type, and at M-value-aggregates step 5 both sides have somewhere to go. Each
+    // keeps its own bounds check in the runtime.
     let array = super::c("function main()\n    xs = [1, 2]\n    print(xs[0])\n    print(len(xs))\n");
     assert!(array.contains("hero_array_at"), "{array}");
     assert!(array.contains("hero_array_len"), "{array}");
     assert!(!array.contains("hero_str_len"), "the wrong half was chosen:\n{array}");
 }
 
-/// `str`→`cstr` exists for one boundary and nothing consumes it before M7, so landing
-/// `str` did **not** make the cast emittable — the gate's row for it is keyed to the
-/// FFI rather than to `str`.
+/// `str`→`cstr` exists for one boundary and nothing consumes it before M-ffi-ladder, so
+/// landing `str` did **not** make the cast emittable — the gate's row for it is keyed
+/// to the FFI rather than to `str`.
 ///
 /// There is no end-to-end case, and the reason is worth recording rather than hiding
 /// behind a test that passes for the wrong reason: the checker refuses `puts("hi")`
 /// with `expected `cstr`, found `str``, so **`Op::Cast` is unreachable from source
-/// today**. The conversion arrives with M7's header attachment, and the row is here
-/// waiting for it. Queued.
+/// today**. The conversion arrives with M-ffi-ladder's header attachment, and the row
+/// is here waiting for it. Queued.
 #[test]
 fn an_extern_is_still_refused_after_str_landed() {
     let (code, _) = refusal("extern function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
@@ -292,9 +330,9 @@ fn a_fallible_value_is_emitted_as_a_tagged_union_by_value() {
     assert!(out.c.contains("hero_failure_release"), "{}", out.c);
 }
 
-/// `.must()` emits from M6 step 1, and the row that mattered is the ARGUMENT: the
-/// failure travels with the abort, so the panic names the code and msg the author wrote
-/// rather than only that a `.must()` failed.
+/// `.must()` emits from M-generics-library step 1, and the row that mattered is the
+/// ARGUMENT: the failure travels with the abort, so the panic names the code and msg
+/// the author wrote rather than only that a `.must()` failed.
 #[test]
 fn must_carries_its_failure_into_the_abort() {
     let out = super::emitted(
@@ -309,8 +347,9 @@ fn must_carries_its_failure_into_the_abort() {
 }
 
 
-/// The `generics` row retired at M6 step 6, and the test that made it fire now
-/// asserts the opposite — a row nobody can prove is gone is a row that comes back.
+/// The `generics` row retired at M-generics-library step 6, and the test that made it
+/// fire now asserts the opposite — a row nobody can prove is gone is a row that comes
+/// back.
 ///
 /// **This test cannot use `super::emitted`**, and the reason is the step's own
 /// resolution: monomorphisation is a *pass*, so a generic program is only
@@ -343,12 +382,12 @@ fn an_extern_is_refused_because_nothing_would_check_its_signature() {
 /// something other than a call (`ok`, `fail`, `must`, `default`, `is_err`). So
 /// there is no program that reaches `callee_note`'s row.
 ///
-/// The row stays — unlike `cow_check`, which was struck at M5b for the same
-/// symptom — because it is the net under a *mismatch*: a name added to `BUILTINS`
-/// with no entry point and no library body would otherwise be an undefined symbol
-/// at link. What replaces the example is this partition, asserted, which is a
-/// stronger check than any one program: an example proves one name is refused,
-/// and this proves none can be.
+/// The row stays — unlike `cow_check`, which was struck at M-strings-ownership for the
+/// same symptom — because it is the net under a *mismatch*: a name added to `BUILTINS`
+/// with no entry point and no library body would otherwise be an undefined symbol at
+/// link. What replaces the example is this partition, asserted, which is a stronger
+/// check than any one program: an example proves one name is refused, and this proves
+/// none can be.
 #[test]
 fn every_reserved_name_is_emitted_lowered_or_written_in_heroes() {
     use crate::resolve::BUILTINS;
@@ -373,8 +412,8 @@ fn every_reserved_name_is_emitted_lowered_or_written_in_heroes() {
     );
 }
 
-/// The other half of the row, and the one added at M6 step 3: a built-in whose
-/// name emits and whose **operand type** has none.
+/// The other half of the row, and the one added at M-generics-library step 3: a
+/// built-in whose name emits and whose **operand type** has none.
 ///
 /// `sort` orders `int`, `f64` and `str`. A `[Point]` is refused *here* rather
 /// than by the checker, because `{Point: int}` compiles and spec line 71 teaches
@@ -450,8 +489,8 @@ fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
 }
 
 /// A `test` block is **skipped**, not refused: `ir/mod.rs` says ordinary builds
-/// ignore it, and refusing it would make a file unbuildable at M5a and still
-/// unbuildable after M5b and M5c.
+/// ignore it, and refusing it would make a file unbuildable at M-scalars-run and still
+/// unbuildable after M-strings-ownership and M-value-aggregates.
 #[test]
 fn a_test_block_does_not_stop_the_build_and_does_not_reach_the_c() {
     let out = emitted("function double(n: int) -> int\n    return n * 2\n\ntest \"doubling\"\n    assert double(2) == 4\n\nfunction main()\n    print(double(3))\n");
@@ -485,4 +524,32 @@ pub(super) fn program_of(text: &str) -> crate::ir::Program {
     let resolved = resolve(&parsed.ast, &src);
     let checked = check(&parsed.ast, &resolved, &src);
     lower(&parsed.ast, &resolved, &checked, &src).program
+}
+
+/// The guard above has a test that makes it fire, in both spellings and in the
+/// negative direction (CLAUDE.md §9). The negatives are the ones that matter: they
+/// are strings this compiler really emits, and a guard that flagged them would be
+/// retired by the first person it inconvenienced.
+#[test]
+fn a_milestone_identifier_is_recognised_in_either_spelling() {
+    for named in [
+        "the backend cannot emit this yet (M5b)",
+        "the backend cannot emit this yet (M-strings-ownership)",
+        "scheduled for M8c",
+        "scheduled for M-selfhost-fixpoint",
+        "M0 did not exist",
+    ] {
+        assert!(names_a_milestone(named), "not caught: {named}");
+    }
+    for clean in [
+        "the backend emits int64_t, double and bool",
+        "INT64_MIN % -1 does not trap on ARM64",
+        "hero_str_from_bytes rejected the input",
+        "expected ')' but found a name",
+        "a MODULE name may not be a keyword",
+        "MAX is not a builtin",
+        "h_geom_dist2 is declared twice",
+    ] {
+        assert!(!names_a_milestone(clean), "false positive: {clean}");
+    }
 }

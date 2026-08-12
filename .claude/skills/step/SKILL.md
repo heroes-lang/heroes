@@ -21,7 +21,7 @@ the ROADMAP.
   asynchronous: adopt the conservative default, queue the ratification.
 - Write the code and the golden cases. Mark the milestone's 5 adversarial
   cases `# UNVERIFIED — pending debrief`; label bulk regression cases.
-- Run `cargo test` and `cargo clippy`; from M5a also the double-emit
+- Run `cargo test` and `cargo clippy`; from M-scalars-run also the double-emit
   determinism diff and the ASan `run/` goldens.
 
 ## 3. On failure
@@ -42,7 +42,7 @@ Every step ends with a commit: `M-<name> step <k>: <what>`. The naming algorithm
 for `<name>` is CLAUDE.md §14 — its only home.
 
 Milestone close — the checklist (this is its only copy):
-- goldens pass (ASan-clean where applicable); determinism diff empty (M5a+);
+- goldens pass (ASan-clean where applicable); determinism diff empty (from M-scalars-run on);
 - journal `docs/journal/NNN-<slug>.md`, 3 sections: **goal** · **what
   surprised** (impersonal — shapes and rules, never scores) · **what broke
   and why**;
