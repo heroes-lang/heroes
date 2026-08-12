@@ -171,8 +171,57 @@ void hero_print_str(HeroStr s) {
     fwrite(s.ptr, 1, (size_t)s.len, stdout);
 }
 
+/* THE ONE PLACE FOREIGN BYTES BECOME A HEROES `str`, and therefore the one place
+ * that can promise what every reader of a `str` assumes: **well-formed UTF-8**.
+ *
+ * `slice` aborts when it would split a character, `chars` walks continuation
+ * bytes, and `len` is documented in bytes over a valid encoding — three rules
+ * resting on a premise nothing checked. It held only because §4.19's gate refuses
+ * `extern` today, so no foreign byte has ever reached here; M7 is the milestone
+ * that kills it, and a check that arrives after the first binding arrives too
+ * late (2026-08-12, sweep 001 audit S11).
+ *
+ * It is a loop over the length rather than a promise in a comment, because the
+ * cost is paid once at the boundary and the alternative is a corrupt `str` that
+ * every later abort blames on the author. */
+static bool hero_utf8_ok(const char *p, int64_t len) {
+    int64_t i = 0;
+    while (i < len) {
+        unsigned char c = (unsigned char)p[i];
+        int64_t extra;
+        unsigned long lowest;
+        unsigned long value;
+        if (c < 0x80) {
+            i += 1;
+            continue;
+        } else if ((c & 0xE0) == 0xC0) {
+            extra = 1; lowest = 0x80; value = c & 0x1FUL;
+        } else if ((c & 0xF0) == 0xE0) {
+            extra = 2; lowest = 0x800; value = c & 0x0FUL;
+        } else if ((c & 0xF8) == 0xF0) {
+            extra = 3; lowest = 0x10000; value = c & 0x07UL;
+        } else {
+            return false; /* a continuation byte or 0xF8..0xFF as a leader */
+        }
+        if (i + extra >= len) return false; /* truncated at the end of the buffer */
+        for (int64_t k = 1; k <= extra; k++) {
+            unsigned char n = (unsigned char)p[i + k];
+            if ((n & 0xC0) != 0x80) return false;
+            value = (value << 6) | (unsigned long)(n & 0x3F);
+        }
+        /* Overlong encodings, surrogates and past U+10FFFF are all ill-formed. */
+        if (value < lowest) return false;
+        if (value >= 0xD800 && value <= 0xDFFF) return false;
+        if (value > 0x10FFFF) return false;
+        i += extra + 1;
+    }
+    return true;
+}
+
 HeroStr hero_str_from_bytes(const char *p, int64_t len) {
     if (p == NULL) hero_panic("hero_str_from_bytes: NULL pointer from C");
+    if (len < 0) hero_panic("hero_str_from_bytes: negative length from C");
+    if (!hero_utf8_ok(p, len)) hero_panic("hero_str_from_bytes: not well-formed UTF-8");
     if (len == 0) return hero_str_empty();
     HeroStr r = hero_str_alloc(len);
     memcpy((char *)(void *)(uintptr_t)r.ptr, p, (size_t)len);

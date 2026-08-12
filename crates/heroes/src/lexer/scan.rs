@@ -36,7 +36,24 @@ impl LexState {
                     ));
                     self.pos += 1;
                 }
-                Some(b'\r') => self.pos += 1, // tolerated only as part of \r\n
+                // A carriage return is tolerated **only as part of `\r\n`**, which
+                // is what this line already claimed and did not do: a lone `\r`
+                // was swallowed unconditionally, so `print(1)\rprint(2)` became
+                // two statements the compiler reported as being on one line —
+                // and the source line it printed above the caret showed them
+                // merged, because a terminal eats the `\r` too. A tab gets a
+                // diagnostic; this got silence (2026-08-12, sweep 001 audit S6).
+                Some(b'\r') => {
+                    if text.get(self.pos + 1) != Some(&b'\n') {
+                        let span = Span { start: self.pos as u32, end: self.pos as u32 + 1 };
+                        self.diagnostics.push(Diagnostic::new(
+                            "stray_carriage_return",
+                            "a carriage return that is not part of a line ending — delete it, or end the line".to_string(),
+                            span,
+                        ));
+                    }
+                    self.pos += 1;
+                }
                 Some(b'\n') => {
                     self.maybe_terminator();
                     self.pos += 1;

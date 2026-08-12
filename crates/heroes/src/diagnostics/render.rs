@@ -97,12 +97,15 @@ fn source_line(src: &Source, line: u32) -> String {
 fn caret(src: &Source, diagnostic: &Diagnostic, col: u32) -> String {
     let (end_line, end_col) = src.line_col(diagnostic.span.end);
     let (start_line, _) = src.line_col(diagnostic.span.start);
+    // Characters, because `line_col`'s column is characters — the underline was
+    // one `^` per *byte* of the span, so `return "ààà"` was underlined eight
+    // wide for five columns (2026-08-12, sweep 001 audit S5).
     let width = if end_line == start_line && end_col > col {
         (end_col - col) as usize
     } else {
         1
     };
-    let start = diagnostic.span.start as usize + 1 - col as usize;
+    let start = src.line_start_of(diagnostic.span.start) as usize;
     let before = &src.text[start..diagnostic.span.start as usize];
     let padding: String =
         before.chars().map(|c| if c == '\t' { '\t' } else { ' ' }).collect();

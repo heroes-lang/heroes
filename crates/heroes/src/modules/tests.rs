@@ -541,3 +541,43 @@ fn fixedbugs_a_bracket_opened_in_one_file_does_not_reach_the_next() {
     let (said, _) = frontend("fixedbugs-bracket-boundary-ok", files, "main.hero");
     assert!(said.is_empty(), "the well-formed pair still says nothing: {said:?}");
 }
+
+/// **fixedbugs, sweep 001 audit L2, 2026-08-12.** The root file's module was
+/// stored **sanitised** while every `use`d module's was stored raw — two rules
+/// for one namespace, where `FileEntry.module` documents itself as *"the RAW
+/// name, `_` and all, because that is what the author typed"*.
+///
+/// A root called `a_b.hero` was therefore the module `ab`, so `use ab` in it was
+/// skipped by discovery as already-seen and answered **`modules may not form a
+/// cycle: ab uses ab`** — a message about a file using itself, for a file that
+/// does not, naming a module the author never wrote. `ab.hero` was never loaded.
+///
+/// The true answer is the one panel 031 R10 already built: the two C *components*
+/// collide, and that is a different namespace from the one the author types.
+#[test]
+fn fixedbugs_a_root_file_keeps_the_name_the_author_typed() {
+    let dir = write(
+        "fixedbugs-root-stem",
+        &[
+            ("a_b.hero", "use ab\n\nfunction main()\n    print(ab.g())\n"),
+            ("ab.hero", "function g() -> int\n    return 2\n"),
+        ],
+    );
+    let src = load(&dir.join("a_b.hero").display().to_string()).expect("the root file reads");
+    let parsed = crate::syntax::parse(&src);
+    let said: Vec<String> =
+        errors(&parsed.ast, &src).iter().map(|d| d.render_line(&src)).collect();
+    assert_eq!(said.len(), 1, "{said:?}");
+    assert!(said[0].contains("module_names_collide"), "{said:?}");
+    assert!(!said[0].contains("cycle"), "nothing here is a cycle: {said:?}");
+
+    // And the ordinary case: a root whose stem needs sanitising, next to a module
+    // whose component does not collide with it, just works.
+    let files = &[
+        ("a_b.hero", "use cd\n\nfunction main()\n    print(cd.g())\n"),
+        ("cd.hero", "function g() -> int\n    return 2\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-root-stem-ok", files, "a_b.hero");
+    assert!(said.is_empty(), "{said:?}");
+    let _ = &files;
+}

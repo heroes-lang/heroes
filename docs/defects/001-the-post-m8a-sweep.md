@@ -163,29 +163,52 @@ twenty problems, which is the useful half.
 | **L1** | the lexer walked to `text.len()` under a doc comment saying *"one source file"*. Since M8a the indent stack and the open-bracket list **crossed the file boundary**: an unclosed `(` in `main.hero` swallowed all of `geom.hero` and reported itself inside the library, and so did `y =` — a half-written line. The commonest state a file is ever in answered `internal error … exit 2` | ★★★ |
 | **S2** | a user file named **`library.hero`** had its declarations resolvable *unqualified* from every module; renaming it `util.hero` refused the same program correctly. Four sites identify the library by module *name* rather than by the `is_library` flag, and the collision check skips a pair whose modules are equal — a hole exactly at identity | ★★★ |
 
-**Still open, with reproducers, and grouped by root:**
+**Then all of the rest, the same day, grouped by root — because that is how they were fixed:**
 
-- **"one byte is one column"** — S4 (`fmt`'s 88-column test uses `.len()`), S5
-  (the caret's width, whose padding the tab fix already converted to chars), and
-  the already-filed N8. `fmt_stmt.rs` contradicts itself internally: `.len()` at
-  one line, `.chars().count()` at another. One test kills all three: format and
-  diagnose a program whose only non-ASCII is inside a string literal.
+- **"one byte is one column"** — three faces, one fix. S4: `fmt`'s 88-column test
+  counted bytes, so a **56-column** line of 96 bytes was broken across four lines
+  by a formatter whose own constant is called `WIDTH`. S5: the caret was one `^`
+  per byte, underlining `return "ààà"` eight wide for five columns. And the third,
+  which the tab repair had created: `line_col`'s column was bytes while the
+  caret's padding had become characters, so a message named column 21 above a
+  caret standing at 18. `line_col` counts characters now — its doc justified
+  bytes by *"how the generated C's `#line` … reports positions"*, and `#line`
+  carries a file and a line and **never a column**, so the premise defending the
+  premise was dead too.
 - **"the printer's input adjacency is its output adjacency"** — S3, the fixed
-  `spans_lines` defect's twin three hundred lines away in the same file: an
-  arm-alignment run is cut when two arms are not on consecutive *source* lines.
-- **"the runtime may trust its caller"** — S7 (`argv[1]` unvalidated), S11 (`slice`
-  assumes well-formed UTF-8, and `from_bytes` validates nothing — **this one dies
-  at M7**), L3 (`val->hash` never null-checked where `key->hash` is), L5 (growth
-  frees a block the caller still holds a pointer into). The largest cluster, and
-  every one of them asks about *the world that produced the value*.
-- **counting as a proxy for identity** — S8: `ir/verify.rs` counts `CopyOut`s and
-  compares to the number of `@` params, while `CopyOut { param }` carries the
-  identity and the params list is thrown away. `phases.rs` already records that
-  counting was rejected as a proxy for decrefs, twenty lines away.
-- **hand-maintained lists** — S12 (literal lengths typed by hand where
-  `HERO_STR_LIT` exists), S13 (`is_thesis_rule`'s 13 codes, where the surface test
-  cannot detect a *missing* entry), S6 (a lone `\r` swallowed unconditionally),
-  S9, S10, L2, L4.
+  `spans_lines` defect's twin three hundred lines away in the same file. Run
+  membership is decided by the printer's own one-line test now, which is the only
+  answer that survives the round trip.
+- **"the runtime may trust its caller"** — the largest cluster, and every one of
+  them asked about *the world that produced the value*. S11: `hero_str_from_bytes`
+  validated nothing, while `slice` aborts on a split character, `chars` walks
+  continuation bytes and `len` is documented over a valid encoding — three rules
+  on an unchecked premise, which held only because the gate refuses `extern`
+  today and **dies at M7**. It validates UTF-8 now, at the one place foreign bytes
+  become a `str`. L5: growth freed the old block before the retry re-read the
+  caller's key and value; the caller releases it after. L3: `key->hash` was
+  guarded and `val->hash` was not, though `hero_map_hash` calls it. S7: every
+  digit of the test index was validated and the accumulation was not — signed
+  overflow, which is UB and which CLAUDE.md §7 forbids in the generated code.
+- **counting as a proxy for identity** — S8. `phases.rs` had rejected counting for
+  the decref sweep twenty lines away, and `check_copy_out` still counted: two
+  copy-outs of one parameter and none of the other read as "2 of 2". It compares
+  the multiset now, and `copying_one_parameter_out_twice_and_the_other_never_is_caught`
+  is the case §9 asks for.
+- **hand-maintained lists** — S13 is the interesting one. `is_thesis_rule`'s codes
+  are what `--permissive` drops, so a **missing** entry silently understates the
+  very number the thesis is argued from, and nothing could see it. The set of
+  codes the golden corpus annotates is now pinned to a constant, `measure::gate`'s
+  shape: adding a diagnostic turns it red until somebody writes the code down and
+  decides which side of the control arm it is on. **It fired on its first day** —
+  S6's new golden — which is the only evidence worth having. S12: hand-typed
+  literal lengths became `sizeof(b) - 1`. S9: a null `newlocale` aborts instead of
+  silently rendering `3,5`. S10: the key array's fill is bounded. S6: a lone `\r`
+  is a diagnostic like a tab. L2: the root's module was stored **sanitised** while
+  every other module's was raw, so `a_b.hero` saying `use ab` answered *"modules
+  may not form a cycle: ab uses ab"*.
+- **L4 is not a defect**, tested and stated: `to_str` on a `bool` prints `true`,
+  and the `_ =>` entry-point fallback is genuinely enforced by `types/builtins.rs`.
 
 **What the roots say.** Twenty premises, five claims. A premise depended on in
 three places is **one thing to test, not three** — which is the shape

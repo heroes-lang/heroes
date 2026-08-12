@@ -28,6 +28,9 @@ const SUBJECT: &str = "function f(n: int) -> int\n    total: int @ 0\n    i: int
 /// A function with a mutable parameter, for the copy-out checks.
 const MUTATING: &str = "record R\n    pos: int\n\nfunction step(@r: R, n: int) -> int\n    r.pos @ r.pos + n\n    return n\n";
 
+/// **Two** mutable parameters — the shape that separates counting from checking.
+const TWO_MUTABLE: &str = "record R\n    pos: int\n\nfunction both(@a: R, @b: R, n: int) -> int\n    a.pos @ a.pos + n\n    b.pos @ b.pos + n\n    return n\n";
+
 fn says(problems: &[String], expected: &str) {
     assert!(
         problems.iter().any(|p| p.contains(expected)),
@@ -152,6 +155,34 @@ fn a_return_that_forgets_to_copy_out_is_caught() {
         block.insts.retain(|inst| !matches!(inst.op, Op::CopyOut { .. }));
     }
     says(&verify(&program, &checked), "returns after copying out 0 of 1");
+}
+
+/// **Copying one parameter out twice and the other not at all**, which is the
+/// wrong program §4.8 refuses and which the check could not see while it counted
+/// `CopyOut`s and compared the number to the number of `@` parameters: two and
+/// two, so it said nothing (2026-08-12, sweep 001 audit S8).
+///
+/// `phases.rs` had already rejected counting as a proxy for the decref sweep,
+/// twenty lines away and for the same reason. `CopyOut` carries the parameter's
+/// identity; the check threw it away along with the params list.
+#[test]
+fn copying_one_parameter_out_twice_and_the_other_never_is_caught() {
+    let (mut program, checked) = unverified(TWO_MUTABLE);
+    let both = program.functions.iter_mut().find(|f| f.name == "both").expect("both");
+    // Whichever slot the first copy-out names, make the second one name it too.
+    let mut first: Option<Op> = None;
+    for block in &mut both.blocks {
+        for inst in &mut block.insts {
+            if !matches!(inst.op, Op::CopyOut { .. }) {
+                continue;
+            }
+            match first {
+                None => first = Some(inst.op),
+                Some(op) => inst.op = op,
+            }
+        }
+    }
+    says(&verify(&program, &checked), "twice");
 }
 
 #[test]

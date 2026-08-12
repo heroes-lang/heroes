@@ -43,7 +43,14 @@ int64_t hero_test_index(int argc, char **argv) {
     int64_t n = 0;
     for (const char *p = argv[1]; *p != '\0'; p++) {
         if (*p < '0' || *p > '9') hero_panic("bad test index — this is a compiler bug");
-        n = n * 10 + (*p - '0');
+        /* Signed overflow is UB, and CLAUDE.md §7's rule for the generated code
+         * is that arithmetic aborts through `__builtin_*_overflow` rather than
+         * wrapping — the runtime's own arithmetic owes the same. Every digit was
+         * validated and the accumulation was not (2026-08-12, sweep 001). */
+        if (__builtin_mul_overflow(n, (int64_t)10, &n)
+            || __builtin_add_overflow(n, (int64_t)(*p - '0'), &n)) {
+            hero_panic("bad test index — this is a compiler bug");
+        }
     }
     return n;
 }

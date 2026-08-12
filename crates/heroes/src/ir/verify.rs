@@ -177,6 +177,15 @@ fn check_instructions(
 /// §4.8: **copy-out happens always.** Every block that returns must write back
 /// every `@` parameter, and this is the check that says so — one per exit edge, no
 /// exceptions for early `return` or for the error side of `?`.
+/// **Which** parameters, not how many.
+///
+/// This counted `CopyOut`s and compared the number to the number of `@`
+/// parameters — so two copy-outs of one parameter and none of the other passed,
+/// which is precisely the wrong program §4.8 exists to refuse. `CopyOut` carries
+/// the identity in `param`, and the check threw it away along with the params
+/// list (`let _ = function;`). `phases.rs` twenty lines up already records that
+/// counting was rejected as a proxy for the decref sweep, for the same reason, on
+/// the same kind of evidence (2026-08-12, sweep 001 audit S8).
 fn check_copy_out(
     function: &Function,
     block: &Block,
@@ -187,13 +196,57 @@ fn check_copy_out(
     if !matches!(block.term, Term::Return(_)) || mutable == 0 {
         return;
     }
-    let written = block.insts.iter().filter(|inst| matches!(inst.op, Op::CopyOut { .. })).count();
-    if written != mutable {
-        problems.push(at(format!(
-            "returns after copying out {written} of {mutable} `@` parameters"
-        )));
+    let mut written: Vec<u32> = block
+        .insts
+        .iter()
+        .filter_map(|inst| match inst.op {
+            Op::CopyOut { param } => Some(param.0),
+            _ => None,
+        })
+        .collect();
+    written.sort_unstable();
+    let mut owed: Vec<u32> = function
+        .params
+        .iter()
+        .filter(|slot| {
+            matches!(function.slots[slot.0 as usize].kind, SlotKind::Param { mutable: true })
+        })
+        .map(|slot| slot.0)
+        .collect();
+    owed.sort_unstable();
+    if written != owed {
+        let missing: Vec<String> = owed
+            .iter()
+            .filter(|slot| !written.contains(slot))
+            .map(|slot| format!("s{slot}"))
+            .collect();
+        // A duplicate is an adjacent pair once sorted — multiplicity, not
+        // membership: copying `s0` out twice and `s1` never is two writes for
+        // two parameters, which is exactly what counting could not see.
+        let mut extra: Vec<String> = Vec::new();
+        for pair in written.windows(2) {
+            if pair[0] == pair[1] && !extra.contains(&format!("s{}", pair[0])) {
+                extra.push(format!("s{}", pair[0]));
+            }
+        }
+        for slot in &written {
+            if !owed.contains(slot) {
+                let name = format!("s{slot}");
+                if !extra.contains(&name) {
+                    extra.push(name);
+                }
+            }
+        }
+        let mut said =
+            format!("returns after copying out {} of {mutable} `@` parameters", written.len());
+        if !missing.is_empty() {
+            said.push_str(&format!(" — never {}", missing.join(", ")));
+        }
+        if !extra.is_empty() {
+            said.push_str(&format!(" — twice {}", extra.join(", ")));
+        }
+        problems.push(at(said));
     }
-    let _ = function;
 }
 
 fn check_return_type(

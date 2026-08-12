@@ -24,7 +24,7 @@
 
 mod files;
 
-pub use files::{module_of, FileEntry, LIBRARY_FILE, LIBRARY_MODULE};
+pub use files::{module_of, stem_of, FileEntry, LIBRARY_FILE, LIBRARY_MODULE};
 
 /// Every file of one compilation, in one text.
 pub struct Source {
@@ -66,9 +66,12 @@ pub struct InputFile {
 }
 
 impl InputFile {
-    /// An ordinary Heroes file, its module taken from its path.
+    /// An ordinary Heroes file, its module taken from its path — the **raw**
+    /// stem, which is what `FileEntry.module` promises and what a `use` line
+    /// spells. The C component is derived from it later, by `module_of`, which
+    /// is the other namespace.
     pub fn user(name: String, text: String) -> InputFile {
-        let module = module_of(&name);
+        let module = stem_of(&name);
         InputFile { name, module, text, is_library: false }
     }
 }
@@ -278,14 +281,34 @@ impl Source {
         &self.text[span.start as usize..span.end as usize]
     }
 
-    /// 1-based (line, column) in the whole text; the column counts bytes,
-    /// matching how the generated C's `#line` and clang both report positions.
+    /// Byte offset of the first byte of the line containing `offset`. The one
+    /// caller is the caret, which pads with the line's own leading whitespace.
+    pub fn line_start_of(&self, offset: u32) -> u32 {
+        let line = match self.line_starts.binary_search(&offset) {
+            Ok(i) => i,
+            Err(i) => i - 1,
+        };
+        self.line_starts[line]
+    }
+
+    /// 1-based (line, column) in the whole text; **the column counts characters**.
+    ///
+    /// It counted bytes until 2026-08-12, justified by a consumer that does not
+    /// consume columns: `#line` carries a file and a line and never a column, so
+    /// the reason written here was already dead when it was written. What does
+    /// consume the column is the reader — `locate`'s triple, and the caret drawn
+    /// under the source line — and for both of those a byte is not a column. The
+    /// caret's padding was converted to characters by the tab repair, so the two
+    /// halves of one message disagreed: `at f.hero:2:21` under a caret standing
+    /// at column 18. Every other caller wants the line and discards this.
     pub fn line_col(&self, offset: u32) -> (u32, u32) {
         let line = match self.line_starts.binary_search(&offset) {
             Ok(i) => i,
             Err(i) => i - 1,
         };
-        (line as u32 + 1, offset - self.line_starts[line] + 1)
+        let start = self.line_starts[line] as usize;
+        let column = self.text[start..offset as usize].chars().count() as u32 + 1;
+        (line as u32 + 1, column)
     }
 }
 

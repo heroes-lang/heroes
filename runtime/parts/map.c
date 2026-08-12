@@ -91,6 +91,12 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     if (key == NULL || val == NULL) hero_panic("map with no descriptor — a compiler bug");
     if (key->hash == NULL) hero_panic("map key descriptor with no hash — a compiler bug");
     if (key->eq == NULL) hero_panic("map key descriptor with no eq — a compiler bug");
+    /* The VALUE's too, and symmetrically: `hero_map_hash` calls `val->hash` and
+     * `hero_map_eq` calls `val->eq`, so a null there is the same crash with no
+     * type name in it that panel 022 wrote the key's guard for. One side was
+     * checked and the other was not (2026-08-12, sweep 001 audit L3). */
+    if (val->hash == NULL) hero_panic("map value descriptor with no hash — a compiler bug");
+    if (val->eq == NULL) hero_panic("map value descriptor with no eq — a compiler bug");
     if (entries < 0) hero_panic("negative map size");
     /* Load factor at most 1/2, and never zero buckets: linear probing needs a hole
      * to terminate on, and `cap > len` is what guarantees one exists. */

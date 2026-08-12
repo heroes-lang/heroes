@@ -359,3 +359,54 @@ fn hero_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
     out.sort();
     out
 }
+
+/// **fixedbugs, sweep 001 audit S3/S4, 2026-08-12.** Two premises, one root, and
+/// one program that kills both.
+///
+/// **S3** — `spans_lines`'s twin, three hundred lines away in the same file. An
+/// arm-alignment run was cut where two arms were not on consecutive *source*
+/// lines, so pass one aligned three arms because the source had them adjacent
+/// and pass two did not, because the first now occupied six lines. `fmt(fmt(x))
+/// != fmt(x)` again, in a shape no corpus file has. Membership is now decided by
+/// the printer's own one-line test, which survives the round trip.
+///
+/// **S4** — the 88-column rule counted **bytes**. A 56-column line of 96 bytes
+/// was broken across four lines by a formatter whose own constant is named
+/// `WIDTH`. The same file counted characters twenty lines away.
+#[test]
+fn fixedbugs_alignment_and_width_are_decided_in_columns_and_in_output_order() {
+    // S3: the first arm's body is broken by the width rule, so it leaves the run
+    // and the other two align to each other — the same answer both passes.
+    assert_canonical(
+        "\
+variant Token
+    number
+        value: int
+    word
+        text: str
+    plus
+
+function join_four(a: str, b: str, c: str, d: str) -> str
+    return a + b + c + d
+
+function name_of(t: Token) -> str
+    return match t
+        .number _ => join_four(\"aaaaaaaaaaaa\", \"bbbbbbbbbbbb\", \"cccccccccccc\", \"dddddddddddd\")
+        .word _ => \"a word\"
+        .plus => \"plus\"
+
+function main()
+    print(name_of(.plus))
+",
+    );
+
+    // S4: 40 `à` is 80 bytes and 40 columns, so the line is 96 bytes and 56
+    // columns. It must come back unbroken.
+    let wide = format!("function main()\n    print(\"{}\", 1)\n", "à".repeat(40));
+    let once = format(&wide);
+    assert!(
+        once.lines().count() == 2,
+        "a 56-column line must not be broken because it is 96 bytes:\n{once}"
+    );
+    assert_canonical(&wide);
+}

@@ -15,7 +15,7 @@
 //! 2. **A mutant that fails to parse is excluded.** It measures the lexer, not the
 //!    thesis. Reported separately so the exclusion is visible rather than
 //!    convenient.
-//! 3. **Two arms.** `check` and `check --permissive`, the second with the twelve
+//! 3. **Two arms.** `check` and `check --permissive`, the second with the thirteen
 //!    thesis rules dropped (`Diagnostic::is_thesis_rule`). The difference between
 //!    the two columns *is* the measured effect of the design — a language that
 //!    rejects everything maximises kill rate and proves nothing, which is why

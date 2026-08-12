@@ -45,11 +45,19 @@
  * AND strtod at once. PEP 331 is the shape of the hazard: CPython never called
  * setlocale, GTK+ did, CPython broke anyway. */
 
-/* Created once, never destroyed: the process needs exactly one. */
+/* Created once, never destroyed: the process needs exactly one.
+ *
+ * A failure here is not survivable and must not be silent. The caller's guard
+ * was `if (c != 0) previous = uselocale(c);` — so if `newlocale` ever returned
+ * zero the render would run in the ambient locale and emit `3,5`, which is the
+ * exact defect this file exists to prevent and which its own comment says the
+ * round-trip check cannot catch. Aborting is the honest answer: the alternative
+ * is a number that is not a number in any locale (2026-08-12, sweep 001 S9). */
 static locale_t hero_c_locale(void) {
     static locale_t cached = (locale_t)0;
     if (cached == (locale_t)0) {
         cached = newlocale(LC_ALL_MASK, "C", (locale_t)0);
+        if (cached == (locale_t)0) hero_panic("cannot create the C locale for rendering");
     }
     return cached;
 }

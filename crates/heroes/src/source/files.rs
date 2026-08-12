@@ -64,6 +64,20 @@ pub struct FileEntry {
 /// It lives in `source` rather than in the emitter because at M8a a module is a
 /// language-level thing — it is what a qualified name names — and the C symbol
 /// is downstream of it. `emit::mangle` calls this.
+/// The module a source path stands for, **as the author typed it** — the stem,
+/// with its underscores, before any sanitising.
+///
+/// `FileEntry.module` documents itself as the raw name and `InputFile::user`
+/// stored `module_of` instead, so the root file's module was the *sanitised*
+/// stem while every `use`d module's was raw: two rules for one namespace. A root
+/// called `a_b.hero` was therefore the module `ab`, and `use ab` in it answered
+/// **`modules may not form a cycle: ab uses ab`** — a message about a file using
+/// itself, for a file that does not (2026-08-12, sweep 001 audit L2).
+pub fn stem_of(path: &str) -> String {
+    let file = path.rsplit(['/', '\\']).next().unwrap_or(path);
+    file.split('.').next().unwrap_or(file).to_string()
+}
+
 pub fn module_of(path: &str) -> String {
     let file = path.rsplit(['/', '\\']).next().unwrap_or(path);
     let stem = file.split('.').next().unwrap_or(file);

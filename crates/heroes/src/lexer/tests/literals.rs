@@ -186,13 +186,19 @@ fn a_multibyte_character_after_the_backslash_does_not_panic() {
     // character's UTF-8 LENGTH, not by one byte. Advancing by a fixed two
     // bytes would leave `pos` mid-character and the next slice would panic
     // on a non-char-boundary — a crash, not a diagnostic.
+    //
+    // The terminator's column reads **11 and not 12** from 2026-08-12: a column
+    // counts characters, and `è` is two bytes. This test was the only thing in
+    // the tree pinning the old answer, and it was pinning it by accident — it
+    // is about the validator's stride, and it happened to also record a column
+    // that no reader could have matched against the line above it.
     assert_eq!(
         dump("s = \"a\\èb\"\n"),
         "\
 1:1 ident s
 1:3 eq =
 1:5 str \"a\\èb\"
-1:12 terminator
+1:11 terminator
 2:1 eof
 DIAG test.hero:1:7: error[unknown_escape]: `\\è` is not an escape sequence — the escapes are \\n \\t \\\\ \\\"; write `\\\\` for a literal backslash
 "

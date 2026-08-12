@@ -61,7 +61,13 @@ HeroFailure hero_failure_missing_key(void) {
         {-1, HERO_STR_MAGIC}, "missing_key"};
     static const struct { HeroStrHeader h; char b[12]; } msg = {
         {-1, HERO_STR_MAGIC}, "no such key"};
-    return (HeroFailure){{code.b, 11}, {msg.b, 11}};
+    /* `sizeof(b) - 1`, never a typed number. The lengths were `11` and `11`,
+     * correct and unchecked: shortening either message would have shipped a
+     * `str` claiming bytes past its own text, silently, while lengthening it is
+     * a clang error — so the two directions failed differently and only one of
+     * them loudly (2026-08-12, sweep 001 S12). */
+    return (HeroFailure){{code.b, (int64_t)sizeof(code.b) - 1},
+                         {msg.b, (int64_t)sizeof(msg.b) - 1}};
 }
 
 _Noreturn void hero_panic_must(HeroFailure f) {

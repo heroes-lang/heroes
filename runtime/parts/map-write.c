@@ -62,6 +62,12 @@ HeroArrayHeader *hero_map_keys(const HeroMapHeader *m) {
     int64_t at = 0;
     for (int64_t i = 0; i < m->cap; i++) {
         if (states[i] == 0) continue;
+        /* The array was sized from `m->len` and this loop fills from `states`.
+         * They agree — every write to either goes through this file — but the
+         * agreement is a premise, and the failure it guards is a heap write past
+         * the end of a block in a build with no sanitiser. One comparison, at the
+         * place that would otherwise do the writing (2026-08-12, sweep 001 S10). */
+        if (at >= out->cap) hero_panic("map length disagrees with its buckets — a compiler bug");
         /* Copied, not moved: the map keeps its own key and the array takes one. */
         m->key->copy(data + (size_t)at * m->key->size, hero_map_key_at_const(m, i));
         at += 1;
@@ -85,6 +91,13 @@ HeroArrayHeader *hero_map_keys(const HeroMapHeader *m) {
  * descriptors). Balanced by construction, with no arithmetic of mine in it. A
  * growth costs one extra copy of every entry, and a rehash was already paying for
  * one. */
+/* The old block is NOT released here, and that is the whole signature of this
+ * function. Releasing it was safe only if the caller's `key` and `value` never
+ * pointed into the map being written — a premise about the *caller*, enforced two
+ * crates away by `emit/aggregate.rs` passing SSA temporaries and by nothing here.
+ * `hero_map_set` reads both again on the retry, after the growth; with the free
+ * inside, `m["k"] @ m["k"].must()` at the load factor would read freed memory.
+ * The caller releases, after the retry (2026-08-12, sweep 001 audit L5). */
 static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
     HeroMapHeader *b = hero_map_new(m->key, m->val, m->len * 2 + 1);
     const unsigned char *states = hero_map_states_const(m);
@@ -92,7 +105,6 @@ static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
         if (states[i] == 0) continue;
         hero_map_put(b, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i));
     }
-    hero_map_decref(m);
     return b;
 }
 
@@ -139,7 +151,10 @@ void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
              * the top: the bucket for this key is different in the new table. */
             if ((m->len + 1) * 2 > m->cap) {
                 *slot = hero_map_grown(m);
+                /* `m` is still alive here, so `key` and `value` are still
+                 * readable even if they point into it. Released after. */
                 hero_map_set(slot, key, value);
+                hero_map_decref(m);
                 return;
             }
             /* The key is COPIED (the caller lends it) and the value is MOVED —

@@ -1,0 +1,1 @@
+tests/golden/check/stray-carriage-return.hero:12:13: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line

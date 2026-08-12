@@ -148,7 +148,7 @@ impl Fmt {
                 self.line(indent, &head);
                 self.last_line = src.line_col(ast.exprs[scrutinee.0 as usize].span.end).0;
                 let lefts = arm_heads(ast, src, arms);
-                let pads = arm_alignment(src, arms, &lefts);
+                let pads = arm_alignment(ast, src, arms, &lefts, indent + 4);
                 // A blank line between arms is content, exactly as it is between
                 // statements: it is how a long `match` shows which cases belong
                 // together, and it is what stops the alignment run — so deleting
@@ -202,7 +202,7 @@ impl Fmt {
             }
             _ => {
                 let text = one_line(ast, src, head, value);
-                if indent + text.len() <= WIDTH && !spans_lines(ast, src, value) {
+                if indent + text.chars().count() <= WIDTH && !spans_lines(ast, src, value) {
                     return self.line(indent, &text);
                 }
                 self.broken(ast, src, head, value, indent);
@@ -302,30 +302,100 @@ fn arm_heads(ast: &Ast, src: &Source, arms: &[crate::syntax::Arm]) -> Vec<String
 /// nothing to align with) and at a **blank line** between arms, because blank
 /// lines are content in this formatter and a group the author separated is two
 /// groups. Every other arm in the run is padded to the widest left side in it.
-fn arm_alignment(src: &Source, arms: &[crate::syntax::Arm], lefts: &[String]) -> Vec<usize> {
+fn arm_alignment(
+    ast: &Ast,
+    src: &Source,
+    arms: &[crate::syntax::Arm],
+    lefts: &[String],
+    indent: usize,
+) -> Vec<usize> {
     let mut pads = vec![0usize; arms.len()];
-    let mut run: Vec<usize> = Vec::new();
-    let mut previous_line = 0u32;
+    // (index, the one-line length with this arm's OWN head) — the second is
+    // what `close_run` needs to know whether widening it stays inside the margin.
+    let mut run: Vec<(usize, usize)> = Vec::new();
+    let mut previous_end = 0u32;
     for (index, arm) in arms.iter().enumerate() {
         let (line, _) = src.line_col(arm.span.start);
+        let (end, _) = src.line_col(arm.span.end.saturating_sub(1));
+        // **Will this arm print on one line?** — the printer's own question,
+        // asked with the printer's own test, and not "were these two adjacent in
+        // the source". `spans_lines`'s twin, three hundred lines up in this
+        // file: an arm whose body the 88-column rule is about to break has
+        // nothing to line up with, and deciding from source adjacency made
+        // `fmt(fmt(x)) != fmt(x)` — pass one aligned three arms because the
+        // source had them consecutive, pass two did not because the first now
+        // occupied six lines (2026-08-12, sweep 001 audit S3).
+        //
+        // The answer survives the round trip, which is what makes it stable: an
+        // arm that gets broken reads back as a multi-line value, and
+        // `spans_lines` then says the same thing the width test said the first
+        // time.
         let inline = matches!(arm.body, ArmBody::Stmt(_));
-        let joined = !run.is_empty() && line == previous_line + 1;
-        if !inline || !joined {
-            close_run(&run, lefts, &mut pads);
+        let width = if inline {
+            fits_on_one_line(ast, src, arm, lefts[index].chars().count(), indent)
+        } else {
+            None
+        };
+        let joined = !run.is_empty() && line == previous_end + 1;
+        if width.is_none() || !joined {
+            close_run(&run, lefts, indent, &mut pads);
             run.clear();
         }
-        if inline {
-            run.push(index);
+        if let Some(len) = width {
+            run.push((index, len));
         }
-        previous_line = line;
+        previous_end = end;
     }
-    close_run(&run, lefts, &mut pads);
+    close_run(&run, lefts, indent, &mut pads);
     pads
 }
 
-fn close_run(run: &[usize], lefts: &[String], pads: &mut [usize]) {
-    let widest = run.iter().map(|i| lefts[*i].chars().count()).max().unwrap_or(0);
-    for index in run {
+/// The printer's one-line test for an arm, with the arm's own unpadded head —
+/// and, when it passes, the length that test measured.
+fn fits_on_one_line(
+    ast: &Ast,
+    src: &Source,
+    arm: &crate::syntax::Arm,
+    left: usize,
+    indent: usize,
+) -> Option<usize> {
+    let ArmBody::Stmt(id) = arm.body else { return None };
+    let (StmtKind::Expr(value) | StmtKind::Return(Some(value))) =
+        ast.stmts[id.0 as usize].kind
+    else {
+        // Any other statement shape prints on its own line by construction, so
+        // it is in the run and its length is its head's.
+        return Some(indent + left + 4);
+    };
+    if spans_lines(ast, src, value) {
+        return None;
+    }
+    // `left` spaces for the pattern, then ` => `.
+    let head = " ".repeat(left + 4);
+    let len = one_line(ast, src, &head, value).chars().count();
+    if indent + len <= WIDTH {
+        Some(len)
+    } else {
+        None
+    }
+}
+
+/// Pad every member to the widest left side — **unless doing so pushes one of
+/// them past the margin**, in which case the run gets no padding at all.
+///
+/// Without that clause the alignment could break the very line it was widening,
+/// and the next format would see a broken value and drop the arm from the run:
+/// the same non-idempotence one door down.
+fn close_run(run: &[(usize, usize)], lefts: &[String], indent: usize, pads: &mut [usize]) {
+    let widest = run.iter().map(|(i, _)| lefts[*i].chars().count()).max().unwrap_or(0);
+    let fits = run.iter().all(|(index, len)| {
+        let grown = widest - lefts[*index].chars().count();
+        indent + len + grown <= WIDTH
+    });
+    if !fits {
+        return;
+    }
+    for (index, _) in run {
         pads[*index] = widest;
     }
 }

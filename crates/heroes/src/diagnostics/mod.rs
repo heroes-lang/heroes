@@ -11,7 +11,10 @@
 
 use crate::source::{Source, Span};
 
-mod render;
+pub(crate) mod render;
+
+#[cfg(test)]
+mod tests;
 
 pub use render::{render, render_all};
 

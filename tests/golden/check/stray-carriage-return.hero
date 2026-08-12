@@ -1,0 +1,12 @@
+# FIXED DEFECT, 2026-08-12, sweep 001 audit S6. A carriage return that is not
+# part of `\r\n` was swallowed unconditionally, under a comment saying "tolerated
+# only as part of \\r\\n" — so `print(1)\rprint(2)` became two statements the
+# compiler reported as being on one line, and the source line printed above the
+# caret showed them merged, because a terminal eats the `\r` too. A tab gets a
+# diagnostic; this got silence.
+#
+# One `\r` followed by a space rather than by a newline: the line still holds one
+# statement, so the case is the stray return alone and not its cascade.
+
+function main()
+    print(1)  #~ stray_carriage_return

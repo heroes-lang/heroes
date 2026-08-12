@@ -31,7 +31,7 @@ pub use graph::errors;
 use std::path::{Path, PathBuf};
 
 use crate::lexer::{lex, TokenKind};
-use crate::source::{module_of, InputFile, Source};
+use crate::source::{stem_of, InputFile, Source};
 
 /// The module names a file's `use` lines name, in source order.
 ///
@@ -81,7 +81,11 @@ pub fn load(path: &str) -> Result<Source, String> {
 /// about a `use` line nobody loaded.
 pub fn load_text(path: &str, root_text: String) -> Source {
     let directory = PathBuf::from(path).parent().map(Path::to_path_buf).unwrap_or_default();
-    let root_module = module_of(path);
+    // The RAW stem, the same rule `InputFile::user` follows and the same rule a
+    // `use` line spells. Seeding this with the sanitised name made `use ab` in
+    // `a_b.hero` look already-seen, so `ab.hero` was never loaded and the
+    // compiler reported a cycle of one file with itself (sweep 001 audit L2).
+    let root_module = stem_of(path);
 
     let mut files = vec![InputFile::user(path.to_string(), root_text)];
     let mut seen = vec![root_module];
