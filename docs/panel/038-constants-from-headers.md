@@ -5,7 +5,7 @@
 by hand — can `extern` not carry them too? It is important, full stop.*
 **Trigger** CLAUDE.md §4 — surface syntax, a diagnostic class, and spec tokens.
 Full five judges: the soundness lane panel 037 opened is excluded by all three.
-**Status** `provisional — author ratification pending`
+**Status** `ratified — 2026-08-12, author decision in /decide` (see § Ratification)
 
 ## Why it was convened at all, when the record had already decided it
 
@@ -516,3 +516,28 @@ opposite directions; a live defect in shipped diagnostics; and a **silent error 
 the specification itself**, on the line every FFI program starts from. Three of
 the four were found by compiling rather than by reading, which is now the third
 sitting in a row where that was true.
+
+## Ratification — 2026-08-12, by author decision in `/decide`
+
+**RATIFIED in block**, with the spec-warden's objection left standing on the
+record rather than dissolved by the yes.
+
+The components put to the author, each ratified: a bodyless `constant` inside an
+`extern` group · the value never written in Heroes · `DeclKind::Constant` widened
+rather than a sixth variant · the **mangled accessor** as CLAUDE.md §7's first
+named exception to unmangled `extern` names · `__builtin_constant_p` as the
+constancy check · the four diagnostics (`ffi_type` extended, `ffi_constant_type`,
+`ffi_not_constant`, `ffi_unknown_name`) · the spec at **+28** · the `@out: ptr`
+repair.
+
+**What the yes does not do is retire the objection.** The warden sized the digit
+class inside the sitting — 267 int-literal sites in the corpus, of which this
+milestone reaches five — and the objection was that a capability answering 2% of
+a class it is argued from is not carried by its own verdict. It is not carried by
+this ratification either. What carries it is the author's instruction, and the
+record says so in both places (the resolution above, and here) because the
+alternative is a file that reads as though a judge had been persuaded.
+
+The scored prediction stays as it was written: this is the first sitting where a
+judge's prediction was pre-registered and scored inside the same session, and it
+did not go the proposal's way.

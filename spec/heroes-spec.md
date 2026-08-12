@@ -148,6 +148,9 @@ Precedence, strongest first: call and `.` → unary `-` `!` → `* / %` → `+ -
 `s.chars()`, which yields single-character `str`. Multi-line literals
 separate elements by newline; single-line by comma.
 
+Build a long string with `join`, not repeated `+`, and a long array in chunks:
+each `+` copies both sides and each `push` copies the array.
+
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
 `chars` · `keys` · `join` · `sort` · `to_int` (truncating; out of range aborts) ·
 `to_f64` · `to_str` — and, written in

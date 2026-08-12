@@ -83,7 +83,11 @@ kept the number at 10 and every generated unit accepted them). A decoy
 `runtime/` that copies the number passes; what protects a build against one
 is the **cache key**, which covers the whole runtime's contents. The stamp's
 real job is the version skew the search makes possible, and it is worth
-keeping for that alone. `#line` when an instruction's line differs from the **current
+keeping for that alone — **so it is not extended to cover behaviour** (author
+decision 2026-08-12, closing panel 037's open condition: a second guard over
+what the cache key already hashes buys nothing, and the guard that would have
+been asked to grow is the one that cannot see a decoy at all).
+`#line` when an instruction's line differs from the **current
 effective line** (`#line N` anchors the *next* line), restored to the
 generated file around synthetic code — the restore carries the printer's own
 output line count. Emitter debugging is the test helper's job: `--no-line`

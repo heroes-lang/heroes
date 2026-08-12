@@ -2,7 +2,7 @@
 
 **Convened** 2026-08-12, by author instruction after `/debrief doubts` question 1.
 **Trigger** architecture (the runtime's mutation primitives) — CLAUDE.md §4.
-**Status** `provisional — author ratification pending`.
+**Status** `ratified — 2026-08-12, author decision in /decide` (see § Ratification).
 
 ## Why it was convened at all
 
@@ -214,3 +214,56 @@ returned both vetoes, the measurement and the place-store answer, and left the
 other three judges out. The ergonomist's finding would have been lost, which is
 the lane's stated cost: it is chosen when the question has no reader-facing half,
 and this one did.
+
+## Ratification — 2026-08-12, by author decision in `/decide`
+
+**RATIFIED in block.** Not a blanket instruction this time: the five components
+were put to the author individually in `/decide`, with the measurement beside
+each, and the answer was *ratify in block* — which is recorded as the reading it
+was, because the second component is a decision to **wait** and a yes to waiting
+is easy to mistake for a yes to nothing happening.
+
+What it settles, one line each:
+
+- **The proposal is refused**, on two compiled vetoes rather than on argument.
+  This is the first sitting whose proposal was refuted by implementing it.
+- **The place store is the shape**, and it is **deferred to M-selfhost-probe**,
+  which measures whether anything needs it. The warden's rule carries it:
+  *soundness without need still waits*. The premise it rests on already has its
+  test — `tests/golden/run/premise-slice-never-shares.hero`, which fires on the
+  day a slice starts sharing a buffer with its source.
+- **design.md §4.10's `join` gap is corrected** (landed, §4.10:1358-1365).
+- **`/panel`'s soundness lane** stands as a lane.
+- **The spec clause is adopted**, which is the one thing this ratification
+  *changes* rather than confirms — see below.
+
+### The spec clause, adopted at +39 with its prediction registered
+
+The queued clause was the llm-ergonomist's, and it asked for one sentence naming
+`join`. The author took the longer form (measured: `join` alone +23, `join` plus
+`push`'s copy +39 → **2627**), because the short one is true and incomplete in
+the direction that matters: a reader told to build the `str` with `join` and left
+to build the `[str]` with `push` has moved the quadratic cost rather than removed
+it, which is exactly what §4.10:1358 says.
+
+    Build a long string with `join`, not repeated `+`, and a long array in chunks:
+    each `+` copies both sides and each `push` copies the array.
+
+The wording honours the ergonomist's **pre-veto**: it explains no copy-on-write,
+so no line's cost depends on whether some other binding is live fifty lines away.
+
+**Panel 012's registered prediction, pre-registered here and scored at
+M-program-corpus** — the spec is above the soft 2000 and no removal was available:
+
+> In the next spec-only writing experiment, **no program builds a long string by
+> repeated `+` in a loop**, and no reader records the hesitation this sitting
+> measured (*"the document does not fail to state the cost; it states semantics
+> whose literal reading gives the quadratic answer, and I overrode it on a
+> hunch"*). If a program still does it, the clause bought nothing and is the
+> first candidate at the next budget squeeze.
+
+**The clause is dated, and says so here rather than in the spec.** It states a
+cost that is true today and that the deferred place store would change. If
+M-selfhost-probe measures a need and the place store lands, this sentence becomes
+false — and CLAUDE.md §12 makes a false spec the compiler's bug, so amending it
+is part of that milestone's cost, not a discovery to be made later.
