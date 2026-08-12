@@ -35,6 +35,7 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 009 | [the map and the fallible](009-the-map-and-the-fallible.md) | M5d — `T?` and `{K: V}` | 2026-08-10 | `m5d` |
 | 010 | [sugar, tests, generics, library](010-sugar-tests-generics-library.md) | M6 — the language is finished | 2026-08-11 | `m6` |
 | 011 | [modules, the namespace](011-modules-the-namespace.md) | M8a — a program is many files | 2026-08-12 | `m8a` |
+| 012 | [the FFI ladder](012-the-ffi-ladder.md) | M-ffi-ladder — Heroes calls C | 2026-08-12 | `m-ffi-ladder` |
 
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what

@@ -17,41 +17,45 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-module-namespace closed 2026-08-12, tag `m8a` — a program is many files, and the calculator
-is four of them.**
+**M-ffi-ladder closed 2026-08-12, tag `m-ffi-ladder` — Heroes calls C, and a wrong
+binding cannot compile.**
 
-    $ heroes test examples/calculator/main.hero
-    7 tests, all passed
+    $ heroes run examples/sqlite/main.hero
+    rows: 3
+    longest: 6
 
-Then, the same day: panels 033, 034 and 035, measurement 004, and two defect
-sweeps that fixed **thirty-nine** defects between them — nine of which refused or
-miscompiled an *ordinary* program. **437 crate tests · 37 CLI surface · 13 golden
-harnesses**, clippy clean, spec at **2434** of 4096, `heroes mutate` at **93% / 78%
-over 1173**. Three of §1.0's fourteen rows remain: **file I/O · `args()` ·
-`exit(code)`**, whose route `M-ffi-ladder` decides — and it is next.
+The ladder, all four rungs: printf/libm, **SQLite with no shim** (§4.19's own
+acceptance: *if this works without you having written a standard library, the
+architecture holds*), and libcurl — a variadic and an enum return, added on the
+author's instruction, which broke the milestone's newest check in its first
+compile. The closure list's last three rows land as **Tier 2** over
+`runtime/hero_os.h`, so §1.0's fourteen rows are complete and the language's own
+list is closed.
 
-The record: `docs/journal/011-modules-the-namespace.md` ·
-`docs/defects/001-the-post-m8a-sweep.md` · `docs/measurements/004-error-codes.md`.
+**452 crate tests · 41 CLI surface · 13 golden harnesses**, clippy clean, spec at
+**2560** of 4096, `heroes mutate` at **93% / 78% over 1253** across 19 programs.
+
+The record: `docs/journal/012-the-ffi-ladder.md` · `docs/panel/036-the-ffi-ladder.md`.
+Next: **M-program-corpus**.
 
 ## The order
 
 | order | id | what | warrant |
 |---|---|---|---|
-| 1 | **M-ffi-ladder** | FFI ladder, and the **route** for file I/O · `args()` · `exit(code)` | §1.11 + closure list |
-| 2 | **M-program-corpus** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
-| 3 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
-| 4 | **M-selfhost-port** | The port | v1 |
-| 5 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 6 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
-| 7 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 8 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 9 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 10 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
-| 11 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
-| 12 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
-| 13 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
-| 14 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
-| 15 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
+| 1 | **M-program-corpus** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
+| 2 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
+| 3 | **M-selfhost-port** | The port | v1 |
+| 4 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 5 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
+| 6 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 7 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 8 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 9 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
+| 10 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 11 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 12 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
+| 13 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 14 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -79,22 +83,6 @@ as on simplicity. What is real underneath the question is measured:
 a `constant`, not a feature.
 
 ## What each one is
-
-### M-ffi-ladder — FFI ladder, and the route for the last three rows
-`extern` + header name → clang verifies against the real header. printf → libm
-(spike 03 already proved it) → **SQLite** (the architecture-holds test) → raylib.
-`heroes cc` for C++ shims. The emitter's gate row for `FnKind::Extern` dies here;
-the frontend is already built (`Ty::Ptr`, `Ty::Cstr`, 20 `extern` mentions in
-`syntax/decl.rs`).
-**And M-ffi-ladder decides the route for the closure list's last three rows — `extern`,
-shim, or built-in — and pays the measured spec cost of whichever it is.**
-Measurement 003 rider 3 assigned them plain `extern`s and concluded the spec
-gains nothing; panel 030 R3 refuted that by compiling it: `extern function
-exit(code: int)` is `conflicting types for 'exit'` (`int64_t` vs `int`), `fopen`
-and `fread` fail on `FILE *` and `size_t`, and `args() -> [str]` is a runtime
-function wearing an `extern` hat (§4.20:1815 — no `extern` may return `str`
-without `hero_str_from_*`). The mortgage is **≥60 spec tokens**.
-**Acceptance:** SQLite open, query, close from Heroes, no shim.
 
 ### M-program-corpus — The corpus: many whole programs, all of them run
 The one milestone whose deliverable is **programs rather than compiler**, and it
@@ -420,6 +408,7 @@ code. `git tag --list --sort=creatordate` gives the same order from git itself.
 | M-optional-map — `T?` and `{K: V}` | 2026-08-10 | `m5d` | [009](journal/009-the-map-and-the-fallible.md) |
 | M-generics-library — the language is finished | 2026-08-11 | `m6` | [010](journal/010-sugar-tests-generics-library.md) |
 | M-module-namespace — a program is many files | 2026-08-12 | `m8a` | [011](journal/011-modules-the-namespace.md) |
+| M-ffi-ladder — Heroes calls C | 2026-08-12 | `m-ffi-ladder` | [012](journal/012-the-ffi-ladder.md) |
 
 ## The names
 
@@ -450,7 +439,7 @@ So a number met in the record resolves here, and only here.
 | `M-optional-map` | M5d | `m5d` | `T?` and `{K: V}` — the last two types |
 | `M-generics-library` | M6 | `m6` | sugar, `heroes test`, generics by monomorphisation, the library |
 | `M-module-namespace` | M8a | `m8a` | `use`, qualified names, one whole-program `.c` |
-| `M-ffi-ladder` | M7 | — | the FFI ladder, and the route for file I/O · `args()` · `exit(code)` |
+| `M-ffi-ladder` | M7 | `m-ffi-ladder` | the FFI ladder, SQLite with no shim, and the last three closure-list rows |
 | `M-program-corpus` | M8e | — | many whole programs, all of them run |
 | `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
 | `M-selfhost-port` | M8b | — | the port |
