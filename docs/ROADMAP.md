@@ -421,6 +421,74 @@ code. `git tag --list --sort=creatordate` gives the same order from git itself.
 | M-generics-library — the language is finished | 2026-08-11 | `m6` | [010](journal/010-sugar-tests-generics-library.md) |
 | M-module-namespace — a program is many files | 2026-08-12 | `m8a` | [011](journal/011-modules-the-namespace.md) |
 
+## The names
+
+Milestones were numbered until 2026-08-12 and are named now. The algorithm that
+assigns the next one is **CLAUDE.md §14** — its only home; this section is only the
+map, and it exists because **the record was not rewritten**. `docs/panel/`,
+`DESIGN-LOG.md`, `docs/journal/`, `docs/measurements/`, `docs/defects/`,
+`docs/book/beats.md`, `tests/golden/`, every commit subject and all twelve tags keep
+the identifiers they were written with. Panel 030 R7, as amended, is the argument.
+
+So a number met in the record resolves here, and only here.
+
+| name | was | tag | what it delivered |
+|---|---|---|---|
+| `M-day-zero` | M0 | `m0` | git, the workspace, Cyclone tooling, four hand-written C targets |
+| `M-token-stream` | M1 | `m1` | the lexer, complete, and `--dump-tokens` |
+| `M-syntax-tree` | M2 | `m2` | parser, AST, the canonical formatter |
+| `M-typed-frontend` | M3 | `m3` | the frontend complete: names, types, errors as a product |
+| `M-name-resolution` | M3a | `m3a` | scopes, no shadowing, order-free top level |
+| `M-checker-core` | M3b | — | bidirectional ⇐/⇒, one shared join |
+| `M-data-declarations` | M3c | — | records, variants with payload |
+| `M-rich-diagnostics` | M3d | — | §4.17's rich form |
+| `M-ir-lowering` | M4 | `m4` | desugaring, and the three-address IR with basic blocks |
+| `M-native-backend` | M5 | *(never tagged)* | the parent of the four backend milestones |
+| `M-scalars-run` | M5a | `m5a` | the first native binary |
+| `M-strings-ownership` | M5b | `m5b` | `str` in C, and the ownership pass |
+| `M-value-aggregates` | M5c | `m5c` | records and variants by value, with copy-on-write |
+| `M-optional-map` | M5d | `m5d` | `T?` and `{K: V}` — the last two types |
+| `M-generics-library` | M6 | `m6` | sugar, `heroes test`, generics by monomorphisation, the library |
+| `M-module-namespace` | M8a | `m8a` | `use`, qualified names, one whole-program `.c` |
+| `M-ffi-ladder` | M7 | — | the FFI ladder, and the route for file I/O · `args()` · `exit(code)` |
+| `M-program-corpus` | M8e | — | many whole programs, all of them run |
+| `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
+| `M-selfhost-port` | M8b | — | the port |
+| `M-selfhost-fixpoint` | M8c | — | the fixpoint — **v1** |
+| `M-separate-compilation` | M9 | — | one `.c` per module, prototypes across TUs, the cache |
+| `M-package-manager` | M10 | — | `heroes add`/`heroes fetch`, bindings in place of a standard library |
+| `M-isolated-threads` | M11 | — | Part 7.13: per-thread heaps, copying at the boundaries, no scheduler |
+| `M-qbe-backend` | M12 | — | Part 7.14: the proof that the IR is not C in disguise |
+| `M-lsp-server` | M13 | — | `heroes lsp` |
+| `M-vscode-extension` | M14 | — | the extension, complete |
+| `M-documentation-site` | M15 | — | the site |
+| `M-journey-book` | M16 | — | the journey |
+| `M-guide-book` | M17 | — | the guide |
+| `M-publication-gate` | M18 | — | the last gate before anything goes outward |
+
+**`M8` has no row, because it meant three different things.** It was an umbrella that
+predates the a/b/c/e/p split and no heading has carried it since. In the record it
+reads as the **fixpoint** (panels 006, 027 ×2, 028, 029), as the **port**
+(panel 022 — "instruction lists at M8"), and as the **whole span**
+(panel 005 — "all of M0–M8"). Read the sentence, not the number. Its two living
+sites were resolved by hand to `M-selfhost-fixpoint`.
+
+**`M10`–`M13` resolve two ways, and the date decides which.** Packages were inserted
+ahead of concurrency after the chain was first written down, so everything from
+`DESIGN-LOG.md`'s *"the post-fixpoint order, by author instruction"* row onward uses
+the table above. Two earlier sites use the superseded numbering, where **M10 was
+concurrency, M11 QBE and M12 `lsp`**: `DESIGN-LOG.md`'s build-order row and
+panel 030's own body. This ambiguity predates the rename and is exactly the failure
+mode R7's precedent warns about — a number that still resolves, to the wrong thing.
+A name cannot do it, which is the whole reason for this section.
+
+**Two names are not the deliverable's obvious one, and the reason is on the record.**
+`M-generics-library` covers four concerns (sugar, tests, generics, library); the
+runner-up `M-language` was refused because four of §1.0's rows were still open, so it
+overclaimed. `M-strings-ownership` names both halves rather than just `str`, because
+the ownership pass is the architecturally load-bearing one and the milestone's journal
+slug names both too.
+
 ## End-to-end verification (per milestone)
 
 ```sh
