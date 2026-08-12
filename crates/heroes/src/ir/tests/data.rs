@@ -8,7 +8,7 @@ use super::{lowered, text};
 use crate::ir::{Op, Term};
 
 /// A record construction is **one instruction**, not an expansion. The layout
-/// decision belongs to M5c's descriptor pass, and lowering that spelled it out
+/// decision belongs to M-value-aggregates's descriptor pass, and lowering that spelled it out
 /// field by field would have taken it.
 #[test]
 fn a_record_construction_is_one_instruction() {
@@ -123,7 +123,7 @@ fn is_err_needs_no_branch_and_must_needs_one() {
 
 /// `assert` carries the source text **and both sides** (§4.18, and the spec's own
 /// line 157). Lowering it without them would guarantee this function is rewritten
-/// at M6, which is §1.2's cost formula turned on the compiler's own source.
+/// at M-generics-library, which is §1.2's cost formula turned on the compiler's own source.
 #[test]
 fn assert_carries_its_source_text_and_both_sides() {
     let (program, _, dumped) = lowered(
@@ -144,7 +144,7 @@ fn assert_carries_its_source_text_and_both_sides() {
     assert_eq!(operands, Some(3), "text, left, right");
 }
 
-/// A `test` is a zero-argument function, entered only by `heroes test` (M6). The
+/// A `test` is a zero-argument function, entered only by `heroes test` (M-generics-library). The
 /// name is the title, quotes and all: it is a string literal, not an identifier.
 #[test]
 fn a_test_block_is_a_zero_argument_function() {
@@ -168,7 +168,7 @@ fn a_wildcard_payload_binds_nothing() {
 }
 
 /// A hole lowers to an instruction rather than stopping the pass: §4.16 says a file
-/// with `???` type-checks everything else, so it must reach the IR — and M5a is
+/// with `???` type-checks everything else, so it must reach the IR — and M-scalars-run is
 /// what refuses to emit for it.
 #[test]
 fn a_hole_lowers_to_an_instruction() {

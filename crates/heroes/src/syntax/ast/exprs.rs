@@ -15,7 +15,7 @@ use super::{ExprId, StmtId, TypeId};
 /// A block is also an *expression*: its value is its last statement, when
 /// that statement is an expression (§4.7 — one rule seen in two places,
 /// `if` as an expression and long `match` arms). Nothing in the parser
-/// enforces that; it is the checker's judgment at M3.
+/// enforces that; it is the checker's judgment at M-typed-frontend.
 pub struct Block {
     pub span: Span,
     pub stmts: Vec<StmtId>,
@@ -53,7 +53,7 @@ pub enum StmtKind {
     ForIn { name: Span, iterable: ExprId, block: Block },
     /// An expression alone on a line. Its type must be `()` (§4.14, panel
     /// 003) — a *type* judgment, not a parse error, so the parser accepts
-    /// it and M3 rejects `xs.push(4)` with the `_ =` fix.
+    /// it and M-typed-frontend rejects `xs.push(4)` with the `_ =` fix.
     Expr(ExprId),
     Error,
 }
@@ -75,7 +75,7 @@ pub enum ExprKind {
     Char,
     Bool,
     /// A bare name: a local, a parameter, a top-level function or constant.
-    /// Which one is the resolver's question (M3a).
+    /// Which one is the resolver's question (M-name-resolution).
     Name,
     /// `???` — the typed hole (§4.16). Not an error: the compiler reports
     /// what belongs here.
@@ -188,7 +188,7 @@ pub enum PatternKind {
     Case { name: Span, binding: Option<Span> },
     /// `_` — the catch-all, legal only where exhaustiveness is impossible
     /// (`int`, `str`). Rejecting it on variants is the checker's job at
-    /// M3c: the parser records what was written.
+    /// M-data-declarations: the parser records what was written.
     Wildcard,
     /// An `int` or `str` literal arm.
     Literal(ExprId),

@@ -11,7 +11,7 @@
  *
  * Rendering is locale-independent by construction (`uselocale` with a C locale,
  * not `setlocale`), because a program that prints `1,5` in one environment and
- * `1.5` in another cannot be a golden test — and the M8c fixpoint compares
+ * `1.5` in another cannot be a golden test — and the M-selfhost-fixpoint fixpoint compares
  * generated C byte for byte.
  *
  * `to_int`'s range check is the one piece of arithmetic in this runtime that

@@ -184,7 +184,7 @@ pub fn report(scores: &[Score]) -> String {
 /// not disagree about what the corpus is.
 ///
 /// The second directory is the point. `examples/gallery/` is what `heroes mutate`
-/// scores, and at M5a exactly one of its programs was inside the backend's subset,
+/// scores, and at M-scalars-run exactly one of its programs was inside the backend's subset,
 /// so mutating it produced **zero** emitted mutants and the invariant asserted
 /// nothing.
 #[cfg(test)]

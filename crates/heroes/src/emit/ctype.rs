@@ -10,10 +10,10 @@
 //! is `return;`. The panel's compiler-engineer measured this one before any line of
 //! the emitter existed.
 //!
-//! Only `int`, `bool` and `()` occur here at M5a. The rest of the table is present
+//! Only `int`, `bool` and `()` occur here at M-scalars-run. The rest of the table is present
 //! because `gate.rs` — not this file — is where a form is refused: a type that has
 //! a C spelling but no runtime support yet is the gate's business, and keeping the
-//! spellings here means M5b and M5c delete gate rows instead of adding cases.
+//! spellings here means M-strings-ownership and M-value-aggregates delete gate rows instead of adding cases.
 
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
@@ -275,7 +275,7 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         // required`, which is inexpressible rather than wrong.
         Ty::Str => Some("HeroStr".to_string()),
         // §4.19's two opaque types. They reach C only through an `extern`, which
-        // this backend refuses until M7.
+        // this backend refuses until M-ffi-ladder.
         Ty::Ptr => Some("void *".to_string()),
         Ty::Cstr => Some("const char *".to_string()),
         // A record is a C struct BY VALUE and a variant a tagged union by value

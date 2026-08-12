@@ -1,4 +1,4 @@
-//! The module diagnostics (M8a, panel 031).
+//! The module diagnostics (M-module-namespace, panel 031).
 //!
 //! Four of them exist only because **`use` binds**: naming a module twice,
 //! naming one the file also declares, never reading one, and writing a module

@@ -3,7 +3,7 @@
 //! **Flattening is the whole job.** `x = 2 + 3 * 4` is a tree in the syntax and
 //! three instructions here, each naming temporaries and nothing nested. That is
 //! what makes the C emitter a printer rather than a second compiler, and what
-//! makes the ownership pass (M5b) able to point at a single instruction and say
+//! makes the ownership pass (M-strings-ownership) able to point at a single instruction and say
 //! "this one produced a value somebody owns".
 //!
 //! Literals are decoded *here*, and that is a first: nothing before this pass

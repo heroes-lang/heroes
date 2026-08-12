@@ -36,7 +36,7 @@ pub(super) fn emit(w: &mut Writer, function: &Function, checked: &Checked, term:
             ));
         }
         // A `match` on a variant. The cases are **dense over the declaration** and
-        // exhaustive by the time they get here (M3c), so there is no default edge in
+        // exhaustive by the time they get here (M-data-declarations), so there is no default edge in
         // the IR — but C needs one, and `hero_unreachable()` is the honest spelling: a
         // tag outside the range is the compiler being wrong, not the program.
         //

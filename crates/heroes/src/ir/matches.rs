@@ -2,7 +2,7 @@
 //! (design.md §4.7, §4.6's `.ok`/`.err`, panel 017 A on a diverging arm).
 //!
 //! **There is no `match` in the IR.** There is a `switch` on a variant's tag,
-//! which is exhaustive by the time it gets here (M3c proved it) and therefore
+//! which is exhaustive by the time it gets here (M-data-declarations proved it) and therefore
 //! needs no default edge; and there is a chain of two-way branches for `int` and
 //! `str` arms, where exhaustiveness is impossible and `_` is the only way to close
 //! the match (§4.7). Two shapes, because C has exactly the same two: a `switch` on
@@ -136,7 +136,7 @@ fn tagged(
         bodies.push((block, index, bound_case));
     }
 
-    // M3c proved exhaustiveness, so an unclaimed case cannot happen — and saying so
+    // M-data-declarations proved exhaustiveness, so an unclaimed case cannot happen — and saying so
     // with `unreachable` is CLAUDE.md §7's rule rather than a safety net.
     let unclaimed = edges.iter().any(|edge| edge.is_none());
     let orphan = if unclaimed { Some(b.block("match: unclaimed")) } else { None };

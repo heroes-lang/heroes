@@ -177,7 +177,7 @@ void hero_print_str(HeroStr s) {
  * `slice` aborts when it would split a character, `chars` walks continuation
  * bytes, and `len` is documented in bytes over a valid encoding — three rules
  * resting on a premise nothing checked. It held only because §4.19's gate refuses
- * `extern` today, so no foreign byte has ever reached here; M7 is the milestone
+ * `extern` today, so no foreign byte has ever reached here; M-ffi-ladder is the milestone
  * that kills it, and a check that arrives after the first binding arrives too
  * late (2026-08-12, sweep 001 audit S11).
  *

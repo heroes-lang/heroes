@@ -303,7 +303,7 @@ function main()
 ///
 /// CLAUDE.md §9's rule — assert an invariant over the corpus rather than over
 /// cases — applied to the two properties this module's doc opens with. It is
-/// here because the property was *stated* at M2 and *tested* on one program, and
+/// here because the property was *stated* at M-syntax-tree and *tested* on one program, and
 /// the two files that violated it sat in `tests/golden/run/` for two milestones
 /// being compiled and executed by a harness that never formatted them.
 #[test]

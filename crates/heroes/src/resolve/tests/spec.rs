@@ -1,6 +1,6 @@
 //! The spec and the built-in table, held to saying the same thing.
 //!
-//! This file exists because of a defect it would have caught. M6 step 2 struck
+//! This file exists because of a defect it would have caught. M-generics-library step 2 struck
 //! `has` (panel 026 R7): the resolver lost the name, `design.md` recorded the
 //! removal, the built-in *inventory* line in the spec lost its entry — and the
 //! sentence that taught it, three sections earlier, stayed. A program written

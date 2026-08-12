@@ -1,4 +1,4 @@
-/* Spike 1 — the hand-written target for the compiler's first program (M5a).
+/* Spike 1 — the hand-written target for the compiler's first program (M-scalars-run).
  *
  * Heroes source this C corresponds to (examples/gallery/00-first.hero):
  *
@@ -6,7 +6,7 @@
  *         print((2 + 3) * 4)
  *
  * This file defines the SHAPE of what the emitter must produce, before the
- * emitter exists. In M5a we diff the generated C against this by eye.
+ * emitter exists. In M-scalars-run we diff the generated C against this by eye.
  *
  * Shape rules (CLAUDE.md § "Generated-C rules"):
  *   - #line points every step at the .hero source, so clang errors and lldb

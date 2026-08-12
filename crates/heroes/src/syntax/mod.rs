@@ -1,4 +1,4 @@
-//! The parser: tokens → syntax tree (design.md Part 10 step 2, ROADMAP M2).
+//! The parser: tokens → syntax tree (design.md Part 10 step 2, ROADMAP M-syntax-tree).
 //!
 //! Recursive descent, one file per idea:
 //!

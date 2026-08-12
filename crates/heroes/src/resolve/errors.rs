@@ -10,7 +10,7 @@
 //! - **`Guess`**, prose for the reader: everything whose repair depends on
 //!   intent — removing a parameter (its call sites are elsewhere), deleting a
 //!   binding, or writing the type on a cell the resolver cannot infer, because
-//!   at M3a no type exists yet.
+//!   at M-name-resolution no type exists yet.
 //!
 //! Wording follows the lexer's house style: what is wrong, then an em-dash
 //! clause that teaches the rule, then the repair. No section numbers — the
@@ -193,7 +193,7 @@ pub(super) fn not_mutable(name: &str, kind: LocalKind, span: Span) -> Diagnostic
     };
     let mut diagnostic = Diagnostic::new("not_mutable", message, span);
     if matches!(kind, LocalKind::Bind) {
-        // The type is the missing half and M3a has no types: prose, not a fix
+        // The type is the missing half and M-name-resolution has no types: prose, not a fix
         // a tool may apply (§4.17).
         diagnostic.fixes.push(Fix {
             title: format!("declare `{name}` as a cell: `{name}: <type> @ <value>`"),

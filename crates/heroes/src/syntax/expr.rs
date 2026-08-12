@@ -73,7 +73,7 @@ fn binary(cur: &mut Cursor, ast: &mut Ast, src: &Source, min_power: u8) -> ExprI
 }
 
 /// `-x` and `!x`. Both take exactly one operand and neither is overloadable;
-/// `!` accepts only `bool`, which is a type judgment at M3 (§4.14: there is
+/// `!` accepts only `bool`, which is a type judgment at M-typed-frontend (§4.14: there is
 /// no truthiness).
 fn unary(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
     let op = match cur.kind() {
@@ -100,7 +100,7 @@ fn postfix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
     // `.` of the *next outer arm* and read it as a field. The error landed on
     // `_` of `.err _ =>` — the following arm, a line the author did nothing
     // wrong on — while the real message is that the body was written in a shape
-    // §4.7 does not have. Carried open since M4; five lines
+    // §4.7 does not have. Carried open since M-ir-lowering; five lines
     // (panel 035, compiler-engineer, who prototyped it).
     let closed_a_block = cur.previous_kind() == TokenKind::Dedent;
     loop {
@@ -165,7 +165,7 @@ fn postfix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
             }
             // `e?` — propagate. The caller's return type must be fallible,
             // and `?` on a non-fallible value is a compile error (§4.6):
-            // both are checked at M3.
+            // both are checked at M-typed-frontend.
             TokenKind::Question => {
                 let question = cur.bump().span;
                 let span = ast.exprs[base.0 as usize].span.to(question);

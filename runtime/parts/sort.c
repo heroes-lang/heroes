@@ -40,7 +40,7 @@ static int64_t hero_cmp_int(const void *x, const void *y) {
  * answer §4.14 already gives every other arithmetic edge — overflow aborts,
  * division by zero aborts. `<` is not a total order at NaN, so a comparison sort
  * driven by it produces an ARBITRARY permutation: a wrong answer with no error,
- * and one that can differ between two correct implementations, which the M8c
+ * and one that can differ between two correct implementations, which the M-selfhost-fixpoint
  * fixpoint cannot have. IEEE 754 totalOrder (Rust's `total_cmp`, Go's NaN-first)
  * is the other way to be deterministic here; it is silent where this is loud,
  * and it would owe the spec a sentence about NaN, which the spec has never

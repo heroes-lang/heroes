@@ -8,7 +8,7 @@
 //! whole design, and the reason the milestone names live in the comments here
 //! rather than in the message.
 //!
-//! **The message names the capability, never the milestone.** `(M5b)` resolves
+//! **The message names the capability, never the milestone.** `(M-strings-ownership)` resolves
 //! only in `docs/ROADMAP.md`, which the reader does not have; the panel's
 //! llm-ergonomist read it as an internal tracker id, grepped the repository for
 //! it, and then reported to its user that the toolchain was broken — a sentence it
@@ -30,7 +30,7 @@
 //!   types`. §4.19's mechanism is the `#include`, not the declaration.
 //! - **`test` functions are skipped, not refused.** `ir/mod.rs` already says
 //!   ordinary builds ignore them; refusing them would make a file unbuildable at
-//!   M5a *and* after M5b and M5c, for a block nothing emits.
+//!   M-scalars-run *and* after M-strings-ownership and M-value-aggregates, for a block nothing emits.
 //! - **one diagnostic per capability**, at its first occurrence, sorted by span.
 //!   Three unsupported forms should not be three invocations — `cli.rs`'s own rule
 //!   about carrying the list, applied to the backend.
@@ -91,7 +91,7 @@ pub(super) fn refuse(
             note(&mut found, "extern", "an `extern` function".to_string(), function.span);
             continue;
         }
-        // The `generics` row died at M6 step 6: monomorphisation deleted every
+        // The `generics` row died at M-generics-library step 6: monomorphisation deleted every
         // template and left one concrete copy per type tuple, so a generic
         // function no longer reaches this backend at all. A survivor is a pass
         // failure, and `ir/phases.rs` asserts it at two phases rather than here.
@@ -133,7 +133,7 @@ fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span:
 }
 
 /// A type the runtime has no representation for yet. One row per §4.3 table entry,
-/// so M5b and M5c delete rows rather than discovering cases.
+/// so M-strings-ownership and M-value-aggregates delete rows rather than discovering cases.
 ///
 /// **It descends into element and payload types**, and that was a filed defect
 /// rather than a design: `Ty::Array(_) => return` did not look at what the array
@@ -142,7 +142,7 @@ fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span:
 /// unreachable code — this is a compiler bug`. The generated C said so itself —
 /// `hero_unreachable(); /* not an array */` — and nobody read it (panel 029 R4b).
 ///
-/// Until M6 step 6 an author had to *write* `[ptr]` to reach it. After it they
+/// Until M-generics-library step 6 an author had to *write* `[ptr]` to reach it. After it they
 /// **infer** it: `map(nums, print)` infers `B := ()`.
 fn check_type(
     found: &mut Vec<(String, String, Span)>,
@@ -154,7 +154,7 @@ fn check_type(
     span: Span,
 ) {
     let (code, what) = match checked.types.get(ty) {
-        // M5b landed `str` and `f64`: the two rows that used to be here are gone,
+        // M-strings-ownership landed `str` and `f64`: the two rows that used to be here are gone,
         // which is the gate's whole design — a row dies per milestone.
         Ty::Int | Ty::Bool | Ty::F64 | Ty::Str => return,
         // `()` has no C declaration at all (`ctype.rs`'s unit rule), which is right
@@ -162,7 +162,7 @@ fn check_type(
         // a descriptor that does not exist. As a *type in its own right* it is fine,
         // so the refusal is the container's, below.
         Ty::Unit => return,
-        // M5c — the descriptor pass, whose ABI spike 04 froze. The container emits;
+        // M-value-aggregates — the descriptor pass, whose ABI spike 04 froze. The container emits;
         // whether its ELEMENT does is the element's own row.
         Ty::Array(element) => {
             return check_element(found, ast, checked, src, function, element, span, "an array")
@@ -171,24 +171,24 @@ fn check_type(
             check_element(found, ast, checked, src, function, key, span, "a map key");
             return check_element(found, ast, checked, src, function, value, span, "a map value");
         }
-        // Records and variants both emit from M5c step 4. The row that split at step 3
+        // Records and variants both emit from M-value-aggregates step 4. The row that split at step 3
         // is gone: two capabilities became one again, which is what a milestone
         // finishing looks like.
         Ty::Named(_) | Ty::Case(_, _) => return,
-        // A `T?` is a by-value tagged union from M5d. Its *operators* are not all here
+        // A `T?` is a by-value tagged union from M-optional-map. Its *operators* are not all here
         // — `.must()` is an `Op::Abort` with its own row — but the representation is.
         Ty::Fallible(payload) => {
             return check_element(found, ast, checked, src, function, payload, span, "a `T?`")
         }
         Ty::Failure => return,
-        // M6 step 5: a plain C function pointer, one typedef per distinct
+        // M-generics-library step 5: a plain C function pointer, one typedef per distinct
         // signature. The row is gone, which is what a milestone finishing looks
         // like.
         Ty::Func { .. } => return,
         // Same: a type parameter is gone by the time the emitter runs, and the
         // verifier says so at `Phase::Mono` and again at `Phase::Owned`.
         Ty::Generic(_) => return,
-        // M7 — §4.19's two opaque types arrive with the header that verifies them.
+        // M-ffi-ladder — §4.19's two opaque types arrive with the header that verifies them.
         Ty::Ptr | Ty::Cstr => {
             let name = render_ty(&checked.types, ast, src, ty, &function.generics);
             ("ffi_type", format!("the C type `{name}`"))
@@ -282,7 +282,7 @@ fn check_op(
         // Reading and writing a place both emit now: a field is a member access, and an
         // element write is copy-on-write, one unshare per array step with write-back.
         Op::Load(_) | Op::Store { .. } => {}
-        // `str`→`cstr` exists for one boundary and nothing consumes it before M7:
+        // `str`→`cstr` exists for one boundary and nothing consumes it before M-ffi-ladder:
         // the row is keyed to the FFI rather than to `str`, which is why landing
         // `str` did not make it emittable.
         Op::Cast { .. } => note(found, "extern", "an `extern` function".to_string(), span),
@@ -290,7 +290,7 @@ fn check_op(
             callee_note(found, ast, src, callee, span);
             let _ = args;
         }
-        // **Every construction emits from M5d**: records, variant cases, both
+        // **Every construction emits from M-optional-map**: records, variant cases, both
         // containers, and all three sides of a `T?`. The arm holds no rows rather than
         // being deleted, so adding a shape to the IR is still a compile error here —
         // the gate's own reason for enumerating instead of defaulting.
@@ -306,12 +306,12 @@ fn check_op(
         // `len` counts bytes on a `str` and elements on an array; a map is the row
         // still standing, and it is refused by its own type before reaching here.
         Op::Len(_) => {}
-        // A function designator, from M6 step 5.
+        // A function designator, from M-generics-library step 5.
         Op::FuncRef(_) => {}
         // **Both aborts emit, and the second row is retired rather than defended.**
-        // `.must()` landed at M6 step 1. `assert` was kept at M5d "only because
+        // `.must()` landed at M-generics-library step 1. `assert` was kept at M-optional-map "only because
         // the step that lands `heroes test` needs the row already written" — that
-        // step is M6 step 7, and what it needed turned out to be the *emission*,
+        // step is M-generics-library step 7, and what it needed turned out to be the *emission*,
         // not the refusal. An ordinary build never reaches a `test` block, and a
         // test build emits it, so no program can make this row fire. The arm holds
         // no rows rather than being deleted, which is the gate's own design: adding
@@ -370,7 +370,7 @@ fn callee_note(
                 note(found, "builtin", format!("the built-in `{name}`"), span);
             }
         }
-        // A call through a function value emits from M6 step 5.
+        // A call through a function value emits from M-generics-library step 5.
         Callee::Indirect(_) => {}
     }
 }

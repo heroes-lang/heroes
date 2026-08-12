@@ -73,14 +73,14 @@ mod tests {
         let text = spec();
         let start = text.find("Built-ins:").expect("the built-in list must exist");
         // The list ends where its own terminating sentence begins. Using the blank
-        // line instead would swallow the prose after it, and at M5b that prose names
+        // line instead would swallow the prose after it, and at M-strings-ownership that prose names
         // a *type* in a code span ("An `f64` always prints a point or exponent").
         let end = text[start..]
             .find("None of these names")
             .or_else(|| text[start..].find("\n\n"))
             .map_or(text.len(), |at| start + at);
         // Parenthesised prose *outside* a code span is not part of the list — the
-        // `slice(from:, to:)` entry gained "(`to` excluded)" at M5b (panel 021), and
+        // `slice(from:, to:)` entry gained "(`to` excluded)" at M-strings-ownership (panel 021), and
         // `to` is a word about the built-in rather than the name of one. Code spans
         // are kept whole, so `print(...)` survives.
         let paragraph = without_prose_parentheses(&text[start..end]);

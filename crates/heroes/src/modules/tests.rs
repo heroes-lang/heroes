@@ -127,7 +127,7 @@ fn a_module_with_no_file_is_named_along_with_the_file_it_wanted() {
     assert!(said[0].contains("`geom.hero`"), "it names what it looked for: {said:?}");
 }
 
-/// Panel 031 R10, and the case `mangle.rs` claimed M8a would make impossible.
+/// Panel 031 R10, and the case `mangle.rs` claimed M-module-namespace would make impossible.
 /// Two legal module names, one C component, and clang's version of this message
 /// is exit 2 saying the compiler has a bug.
 #[test]
@@ -249,7 +249,7 @@ fn frontend(test: &str, files: &[(&str, &str)], root: &str) -> (Vec<String>, Str
 /// silenced §4.4's unused-binding rule in a `main.hero` nobody was editing —
 /// `heroes check main.hero` exit 0 with the hole, exit 1 with the same
 /// `main.hero` once the hole was filled. Cause: `Resolved::has_hole` was one
-/// `bool` over a flat scan of `ast.exprs`, and since M8a one `Ast` spans every
+/// `bool` over a flat scan of `ast.exprs`, and since M-module-namespace one `Ast` spans every
 /// module, so "the file contains a `???`" became "the program does". Fix:
 /// `Resolved::holes_in`, a set of modules, asked per binding through
 /// `hole_covers`.
@@ -295,7 +295,7 @@ fn fixedbugs_a_hole_in_one_module_does_not_silence_the_unused_rule_in_another() 
 /// mandatory for exactly this — *"there is one function and no caller assembles
 /// the triple itself."*
 ///
-/// It survived M8a's sweep because the hole report is **not** a `Diagnostic`,
+/// It survived M-module-namespace's sweep because the hole report is **not** a `Diagnostic`,
 /// and the sweep went through the diagnostics. That is the whole lesson: the
 /// invariant was enforced by convention over one type, and the one caller
 /// outside that type kept the defect.
@@ -316,7 +316,7 @@ fn fixedbugs_a_hole_report_names_its_own_file_and_its_own_line() {
 
 /// **fixedbugs, sweep 001 N1, 2026-08-12.** D1's twin, in the pass D1's fix did
 /// not reach: the checker held `missing_return` back while `checked.holes` was
-/// non-empty, and since M8a one `Checked` spans every module — so an unfinished
+/// non-empty, and since M-module-namespace one `Checked` spans every module — so an unfinished
 /// `geom.hero` suppressed the error in a `main.hero` nobody was editing.
 /// design.md §4.16 says *"the suppression is file-wide"* and the code's own
 /// comment said so too, three lines above the test that asked about the program.
@@ -390,12 +390,12 @@ fn fixedbugs_the_module_a_name_is_in_is_one_this_file_can_see() {
 /// **fixedbugs, sweep 001 N5, 2026-08-12.** Ten sites formatted a line number
 /// **into a message** — `note: declared at line 6`, `the cycle is: A.b: B
 /// (line 7)`, `already declared at line 6` — from `line_col`, naming no file.
-/// Correct while `lines_before` was zero for everything; after M8a, a line that
+/// Correct while `lines_before` was zero for everything; after M-module-namespace, a line that
 /// is not in the file the reader is looking at. One of them was internally
 /// consistent and wrong in both halves: a `shadowed_binding` whose note said
 /// "line 8" while its own caret sat on `geom.hero:8`.
 ///
-/// The reason M8a's sweep walked past all ten is the finding, not the fix: they
+/// The reason M-module-namespace's sweep walked past all ten is the finding, not the fix: they
 /// build real `Diagnostic`s, and the sweep fixed where a diagnostic's **span**
 /// is rendered. A location formatted into a `String` note is outside every guard
 /// this compiler has, so `Source::locate` could not protect it — which is why
@@ -495,7 +495,7 @@ fn fixedbugs_a_user_module_may_not_be_called_library() {
 
 /// **fixedbugs, sweep 001 audit L1, 2026-08-12.** The lexer walked to
 /// `src.text.len()` under a doc comment saying "one source file" — true until
-/// M8a made a `Source` N files concatenated. After that the indent stack and the
+/// M-module-namespace made a `Source` N files concatenated. After that the indent stack and the
 /// open-bracket list crossed the boundary between files, so:
 ///
 /// - an unclosed `(` in `main.hero` **swallowed the whole of `geom.hero`** and

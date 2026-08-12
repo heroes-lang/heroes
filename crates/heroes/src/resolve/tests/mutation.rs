@@ -23,7 +23,7 @@ function count(n: int) -> int
 }
 
 /// The error teaches the rule and hands over the shape of the repair, but the
-/// type is the missing half and M3a has none: prose, not a fix a tool applies.
+/// type is the missing half and M-name-resolution has none: prose, not a fix a tool applies.
 #[test]
 fn an_immutable_binding_cannot_be_written() {
     assert_eq!(

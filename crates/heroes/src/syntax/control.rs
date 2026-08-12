@@ -8,7 +8,7 @@
 //! carries indentation.
 //!
 //! Two rules the parser records but does not enforce — both are the
-//! checker's at M3c, and both are the reason `match` exists:
+//! checker's at M-data-declarations, and both are the reason `match` exists:
 //! exhaustiveness, and the ban on `_` as a whole arm over a variant (§4.7:
 //! with `_` allowed, adding a case would stop breaking compilation, and
 //! exhaustiveness becomes theatre).
@@ -23,7 +23,7 @@ use super::stmt::{block, eat_python_colon, statement};
 
 /// `if cond` + block, then any number of `else if`, then an optional `else`.
 /// No parentheses around the condition (§4.15) and no truthiness: the
-/// condition must be `bool`, checked at M3.
+/// condition must be `bool`, checked at M-typed-frontend.
 pub(super) fn if_expr(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
     let start = cur.bump().span; // `if`
     let mut branches: Vec<Branch> = Vec::new();

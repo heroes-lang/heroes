@@ -109,7 +109,7 @@ DIAG test.hero:1:1: error[expected_module_name]: `use` names one module and this
 
 /// `import` and `include` kept the foreign-word treatment when `use` left it,
 /// and they gained what they never had: the repair is now a pure word-for-word
-/// swap, so it is `Certain`. Before M8a the message said "modules do not exist
+/// swap, so it is `Certain`. Before M-module-namespace the message said "modules do not exist
 /// yet" and carried no fix, because there was nothing to point at.
 #[test]
 fn import_is_repaired_into_use() {

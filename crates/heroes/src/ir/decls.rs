@@ -14,12 +14,12 @@
 //! - an **`extern`** has no body and no blocks; what it contributes is a
 //!   signature and a linkage the emitter must not mangle;
 //! - a **`test`** is a zero-argument function entered only by `heroes test`
-//!   (§4.18, M6). Lowering it here rather than at M6 is deliberate: the
+//!   (§4.18, M-generics-library). Lowering it here rather than at M-generics-library is deliberate: the
 //!   milestone's own witness is design.md's appendix, which holds six `test`
 //!   blocks and about twenty-five `assert`s, so a lowering that skipped them
 //!   would have nothing to prove itself against (panel 019 point 6).
 //!
-//! `record` and `variant` declare *types*. They produce no function; M5c's
+//! `record` and `variant` declare *types*. They produce no function; M-value-aggregates's
 //! descriptor pass is what turns them into `copy`/`drop`/`eq`/`hash`.
 
 use crate::resolve::Resolved;
@@ -122,7 +122,7 @@ fn self_function(
 /// result and is a *program* error otherwise. The frontend does not reject it
 /// today (there is no reachability analysis), so lowering does not invent a
 /// value: it emits the copy-out chain and `return`, and CLAUDE.md §7's
-/// `-Werror=return-type` is the net that catches the non-unit case at M5a. That
+/// `-Werror=return-type` is the net that catches the non-unit case at M-scalars-run. That
 /// division is queued as a diagnostic class of its own.
 fn close(b: &mut Lowering, checked: &Checked) {
     if b.is_terminated() {

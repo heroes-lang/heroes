@@ -37,7 +37,7 @@ pub enum Tier {
     /// canonically (panel 006), and the emitter recognises it by name.
     Runtime,
     /// Tier 2 — written in Heroes itself, and the payoff from generics
-    /// (§4.12). They arrive as real source at M6, in one prelude; a *user*
+    /// (§4.12). They arrive as real source at M-generics-library, in one prelude; a *user*
     /// file still may not redeclare them.
     Heroes,
 }

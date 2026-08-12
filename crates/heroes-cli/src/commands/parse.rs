@@ -1,4 +1,4 @@
-//! `heroes parse <file.hero> [--dump-ast]` — the syntax (M2).
+//! `heroes parse <file.hero> [--dump-ast]` — the syntax (M-syntax-tree).
 //!
 //! Without the flag it is a syntax check: silent on success. With it, the tree —
 //! but only when the file is clean, because a tree built out of recovery guesses

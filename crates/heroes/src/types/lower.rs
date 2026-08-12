@@ -11,7 +11,7 @@
 //! about.
 //!
 //! Every answer is **recorded** in `Checked::written_types`, keyed by the arena node
-//! it came from. M4 needs it for a reason worth stating: an `extern`'s parameters
+//! it came from. M-ir-lowering needs it for a reason worth stating: an `extern`'s parameters
 //! have no *locals* — there is no body to use them in, so the resolver makes none —
 //! and lowering still has to know their types, because the emitter writes a C
 //! prototype from them. Asking the locals table gave `?`, which is how this was

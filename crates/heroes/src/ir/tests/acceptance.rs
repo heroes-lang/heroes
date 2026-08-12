@@ -1,9 +1,9 @@
 //! The whole corpus, lowered: design.md's appendix and `examples/gallery/`.
 //!
 //! The appendix is this milestone's real acceptance criterion, and it has now paid
-//! four times: M2's parser found `.var` and `=> assert false`, M3a's resolver found
-//! the `map`/`fold` collision, M3b's checker found a twelfth `T`-where-`T?` site.
-//! M4's turn produced no new defect in the program — every one of its 320 lines
+//! four times: M-syntax-tree's parser found `.var` and `=> assert false`, M-name-resolution's resolver found
+//! the `map`/`fold` collision, M-checker-core's checker found a twelfth `T`-where-`T?` site.
+//! M-ir-lowering's turn produced no new defect in the program — every one of its 320 lines
 //! lowers and verifies — which is itself the datum: the frontend's answers were
 //! complete enough for a pass that reads them rather than the tree. It did correct
 //! one *count*: panel 019's record says the appendix holds six `test` blocks, and

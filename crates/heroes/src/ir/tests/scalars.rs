@@ -3,7 +3,7 @@
 use super::{lowered, text};
 
 /// `x = 2 + 3 * 4` is a tree in the syntax and four instructions here, in the
-/// order the precedence table decided at M2. Nothing is nested: that is the
+/// order the precedence table decided at M-syntax-tree. Nothing is nested: that is the
 /// invariant panel 019 restated, and it is what makes the emitter a printer.
 #[test]
 fn an_expression_becomes_a_line_per_operation() {
@@ -88,7 +88,7 @@ fn a_constant_is_a_function_and_reading_it_is_a_call() {
     assert!(dumped.contains("call heroes LIMIT()"), "{dumped}");
 }
 
-/// The one diagnostic this pass owns. Nothing before M4 needed an `int` literal's
+/// The one diagnostic this pass owns. Nothing before M-ir-lowering needed an `int` literal's
 /// *value* — the lexer accepted the shape and the checker gave it a type — so an
 /// out-of-range literal was invisible until the pass that has to represent it.
 #[test]

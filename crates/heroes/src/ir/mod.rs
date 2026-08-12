@@ -18,7 +18,7 @@
 //! loads it at the join. The decisive precedent is LLVM's own advice to frontend
 //! authors ("we strongly recommend … alloca + load/store … unless there is an
 //! extremely good reason not to"; clang does it for local mutable variables),
-//! and the local reason is M5b: with slots, "release live locals and copy out `@`
+//! and the local reason is M-strings-ownership: with slots, "release live locals and copy out `@`
 //! parameters on every exit edge" is a walk over a fixed table, where phi would
 //! make "who owns this value on this edge" a dataflow problem.
 //!
@@ -92,7 +92,7 @@ pub use verify::verify;
 ///
 /// A `constant` becomes a zero-argument function because its body is a block
 /// whose value is its last expression (§4.2) — there are no mutable globals to
-/// initialise, so the only shape that needs no new machinery is a call. M5a may
+/// initialise, so the only shape that needs no new machinery is a call. M-scalars-run may
 /// emit a C initialiser where the body is a literal; that is the emitter's
 /// optimisation, not the IR's concern.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -101,7 +101,7 @@ pub enum FnKind {
     Constant,
     /// §4.19: no body, and the name reaches C **unmangled**.
     Extern,
-    /// §4.18: entered only by `heroes test` (M6). Ordinary builds ignore it.
+    /// §4.18: entered only by `heroes test` (M-generics-library). Ordinary builds ignore it.
     Test,
 }
 
@@ -141,15 +141,15 @@ pub struct Block {
 }
 
 pub struct Function {
-    /// The source name, unmangled. The mangler is M5a's, and it needs the module
-    /// this came from, which does not exist until M8a.
+    /// The source name, unmangled. The mangler is M-scalars-run's, and it needs the module
+    /// this came from, which does not exist until M-module-namespace.
     pub name: String,
     /// Index into `Ast::decls` — the link back to everything the frontend knows.
     pub decl: u32,
     pub kind: FnKind,
     /// The type-parameter letters, in order, so the dump prints what the author
     /// wrote. A body lowers **polymorphically**: `Ty::Generic(i)` survives into
-    /// the IR and monomorphisation is an IR→IR pass at M6 (§4.12, amended by
+    /// the IR and monomorphisation is an IR→IR pass at M-generics-library (§4.12, amended by
     /// panel 019).
     pub generics: Vec<String>,
     pub params: Vec<SlotId>,

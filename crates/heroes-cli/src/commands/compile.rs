@@ -142,7 +142,7 @@ pub fn compile_with_tests(
         let count = checked.holes.len();
         let unit = if count == 1 { "hole" } else { "holes" };
         // The files the holes are actually in, not the file that was named on
-        // the command line: since M8a they are not the same thing, and a count
+        // the command line: since M-module-namespace they are not the same thing, and a count
         // attached to the wrong file sends the reader to the wrong file.
         let mut files: Vec<&str> = Vec::new();
         for hole in &checked.holes {

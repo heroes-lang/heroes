@@ -1,4 +1,4 @@
-//! `heroes lex <file.hero> [--dump-tokens] [--json]` — the token stream (M1).
+//! `heroes lex <file.hero> [--dump-tokens] [--json]` — the token stream (M-token-stream).
 //!
 //! Without a flag it is a lexical check: silent on success, diagnostics on
 //! stderr. `--dump-tokens` prints the stream (design.md §3.5's own spelling), and

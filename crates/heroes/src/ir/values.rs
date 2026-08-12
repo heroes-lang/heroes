@@ -4,7 +4,7 @@
 //! Split out of `verify.rs` when the dominance check pushed it past CLAUDE.md §11's
 //! ceiling, and the seam is real rather than convenient: everything left in that file
 //! is about a block's *structure* (one terminator, `preds` agreeing, copy-out on every
-//! exit edge), and everything here is about a value's *lifetime*. M5b's ownership pass
+//! exit edge), and everything here is about a value's *lifetime*. M-strings-ownership's ownership pass
 //! reads the second question and not the first.
 //!
 //! Why the emitter needs dominance. Every temporary is hoisted to the C function's
@@ -44,7 +44,7 @@ pub(super) fn check(
 /// **A definition dominates every use of it** (panel 020, R4.10).
 ///
 /// The check above says a value is produced *somewhere*; this one says it is produced
-/// on **every** path that reads it. Nothing asserted that until M5a, and the emitter
+/// on **every** path that reads it. Nothing asserted that until M-scalars-run, and the emitter
 /// is what makes it matter: temporaries are hoisted to the C prologue and left
 /// uninitialised, so a use its definition does not dominate reads an uninitialised
 /// local. `-Werror=uninitialized` catches it and reports `variable 't3' is used
@@ -52,7 +52,7 @@ pub(super) fn check(
 /// wearing a user diagnostic (design.md §8's wart 13). Failing here instead means the
 /// message says the compiler is wrong, in the IR's own words.
 ///
-/// It lands before M6, because monomorphisation is the first pass that copies blocks.
+/// It lands before M-generics-library, because monomorphisation is the first pass that copies blocks.
 fn dominance(
     function: &Function,
     defined_in: &[Option<usize>],

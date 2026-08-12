@@ -30,11 +30,11 @@ pub mod syntax;
 pub mod types;
 
 // Pipeline modules land one milestone at a time (see docs/ROADMAP.md):
-//   source/ diagnostics/          M1 (landed, step 1)
-//   lexer/                        M1 (landed, step 1)
-//   syntax/ printer/              M2 (landed)
-//   resolve/                      M3a (landing)
-//   types/                        M3b (landing), M3c–M3d
-//   desugar/ ir/                  M4
-//   own/                          M5b (landing) · descriptors/  M5c
-//   emit/                         M5a (landing)
+//   source/ diagnostics/          M-token-stream (landed, step 1)
+//   lexer/                        M-token-stream (landed, step 1)
+//   syntax/ printer/              M-syntax-tree (landed)
+//   resolve/                      M-name-resolution (landing)
+//   types/                        M-checker-core (landing), M-data-declarations–M-rich-diagnostics
+//   desugar/ ir/                  M-ir-lowering
+//   own/                          M-strings-ownership (landing) · descriptors/  M-value-aggregates
+//   emit/                         M-scalars-run (landing)

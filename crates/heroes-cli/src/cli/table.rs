@@ -1,7 +1,7 @@
 //! Every command, as data (panel 016) — the table that both parses argv and
 //! prints `--help`, so the two cannot disagree.
 //!
-//! Split out of `cli.rs` at M5a, when the file passed CLAUDE.md §11's ~300 lines.
+//! Split out of `cli.rs` at M-scalars-run, when the file passed CLAUDE.md §11's ~300 lines.
 //! The split is along the seam the design already had: this file is *what the
 //! surface is*, `cli.rs` is *how a line is read against it*, and `help.rs` is how
 //! it is shown. A new command touches exactly one of the three.
@@ -128,7 +128,7 @@ pub fn commands() -> Vec<Command> {
 /// A retired spelling names its replacement — the same treatment the *language*
 /// gives a foreign keyword (`fn` → `function`).
 ///
-/// Empty since M5a: `run` was the only entry, and it has stopped being retired and
+/// Empty since M-scalars-run: `run` was the only entry, and it has stopped being retired and
 /// become the dev loop. The function stays because the *next* rename needs somewhere
 /// to live, and because its emptiness is the record of that one having completed.
 pub fn retired(word: &str) -> Option<&'static str> {
@@ -136,7 +136,7 @@ pub fn retired(word: &str) -> Option<&'static str> {
     None
 }
 
-/// `--write` shipped from M2 to M3; panel 016 renamed it because "write" is read as
+/// `--write` shipped from M-syntax-tree to M-typed-frontend; panel 016 renamed it because "write" is read as
 /// "write the output somewhere", i.e. the *non*-destructive meaning, which makes the
 /// plausible misreading the one that overwrites a file.
 ///

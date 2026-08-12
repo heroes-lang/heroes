@@ -5,8 +5,8 @@
 //! type gets exactly one `TyId`, so `a == b` on two `TyId`s *is* type equality —
 //! no recursive comparison anywhere in the compiler, one place that decides what
 //! "the same type" means, and a number that later passes can use as a key: the
-//! descriptor pass (M5c) needs one `copy`/`drop`/`eq`/`hash` per reachable type,
-//! and monomorphisation (M6) needs to know it has already seen `(int, int)`.
+//! descriptor pass (M-value-aggregates) needs one `copy`/`drop`/`eq`/`hash` per reachable type,
+//! and monomorphisation (M-generics-library) needs to know it has already seen `(int, int)`.
 //!
 //! `Ty` is `Copy`, which is why a function type keeps its parameters in a
 //! side arena (`Types::params`) as a run rather than a `Vec`: the Cyclone rule

@@ -4,7 +4,7 @@
 //! mechanically: it answers a different question about the same input, and its
 //! artifact class is different — `build` produces a binary, `run` produces a
 //! process, `test` produces a verdict per test. design.md's own verification list
-//! has written `heroes test examples/calculator.hero` since M0.
+//! has written `heroes test examples/calculator.hero` since M-day-zero.
 //!
 //! **One process per test**, which is the whole reason this file is not a loop
 //! inside the generated `main`. An `assert` failure is a panic (§4.18), so a

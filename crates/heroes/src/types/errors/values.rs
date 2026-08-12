@@ -233,7 +233,7 @@ pub(in crate::types) fn record_name_alone(name: &str, span: Span) -> Diagnostic 
 
 /// A built-in used as a value rather than called.
 ///
-/// **Found by M6's closure-list audit, on its first program**, and it was silent
+/// **Found by M-generics-library's closure-list audit, on its first program**, and it was silent
 /// in the worst way: `exprs.rs` answered `error_ty()` with no diagnostic, and an
 /// error type with nothing reported is poison that flows into the emitter.
 /// `map(xs, to_str)` type-checked at exit 0 and then produced

@@ -79,7 +79,7 @@ fn and_evaluates_its_right_side_on_one_edge() {
 }
 
 /// `match` over a variant is a `switch` on the tag: dense over the declaration's
-/// cases and with **no default edge**, because M3c proved it exhaustive. A `|` arm
+/// cases and with **no default edge**, because M-data-declarations proved it exhaustive. A `|` arm
 /// is two tags pointing at one block.
 #[test]
 fn a_match_over_a_variant_is_a_dense_switch() {

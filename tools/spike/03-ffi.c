@@ -6,7 +6,7 @@
  * VERIFIES the call against the real header, which is the project's thesis
  * ("plausible mistakes become compile errors") applied to the FFI.
  *
- * The Heroes surface for this (M7, importc-style):
+ * The Heroes surface for this (M-ffi-ladder, importc-style):
  *
  *     extern function sqrt(x: f64) -> f64        # header "math.h"
  *

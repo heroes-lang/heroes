@@ -13,7 +13,7 @@
 //! | `flow.rs`   | `return`, jumps, `?`, and branches without a value |
 //! | `sizes.rs`  | a type that would have to contain itself at every depth |
 //!
-//! The rich renderer is M3d's deliverable. These messages are written so the
+//! The rich renderer is M-rich-diagnostics's deliverable. These messages are written so the
 //! one-line form already carries the two types and the repair — a message that
 //! only said "type mismatch" would be the anti-thesis.
 

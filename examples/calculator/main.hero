@@ -1,5 +1,5 @@
-# The calculator — design.md's appendix program, split across modules. M6's
-# acceptance criterion was that it compiles, runs and its tests pass; M8a's is
+# The calculator — design.md's appendix program, split across modules. M-generics-library's
+# acceptance criterion was that it compiles, runs and its tests pass; M-module-namespace's is
 # that the same is true with the file cut into four, and that reading it tells
 # you where every name comes from.
 #

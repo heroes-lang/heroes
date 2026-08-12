@@ -71,14 +71,14 @@ impl Writer {
     /// Point the next line at the author's source, if it is not already pointing
     /// there.
     /// Point the next line at a file of the compilation, at that file's own
-    /// line — which since M8a is not always the root's.
+    /// line — which since M-module-namespace is not always the root's.
     ///
     /// **One entry point, and it replaced two.** There used to be `at_source`,
     /// which claimed the file the reader named, and `at_library`, which claimed
     /// the library. With N modules that split is wrong in the ordinary case: a
     /// `#line` for `geom.hero` claiming `main.hero` at a line past its end is
     /// the compiler blaming the author for a file they did not write in, and at
-    /// M7 it hands §4.19's guarantee — clang checking an `extern` against the
+    /// M-ffi-ladder it hands §4.19's guarantee — clang checking an `extern` against the
     /// real header — to a file that does not contain the declaration.
     ///
     /// The library keeps its own name for the reason it always had: its lines

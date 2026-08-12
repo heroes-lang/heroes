@@ -42,7 +42,7 @@ fn prefix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> TypeId {
     match cur.kind() {
         TokenKind::Ident => {
             let span = cur.bump().span;
-            // `geom.Point` — a type from another module (M8a). The node keeps
+            // `geom.Point` — a type from another module (M-module-namespace). The node keeps
             // one span covering both halves and the resolver splits it: a
             // module name and a type name are both plain identifiers, so the
             // dot between them is the only one there can be, and a second node

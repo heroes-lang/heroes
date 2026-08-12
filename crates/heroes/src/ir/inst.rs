@@ -98,7 +98,7 @@ pub enum Callee {
     /// (CLAUDE.md §7) — which is exactly why the two cannot share a variant.
     Extern(u32),
     /// A built-in: index into `resolve::BUILTINS`. The runtime provides tier 1
-    /// and M6's prelude provides tier 2.
+    /// and M-generics-library's prelude provides tier 2.
     Builtin(u32),
     /// A function value (§4.13): a C function pointer in a temporary.
     Indirect(ValueId),
@@ -106,7 +106,7 @@ pub enum Callee {
 
 /// What a `Construct` builds. Every one of these is a surface form Part 5 calls
 /// sugar and the IR still needs a single instruction for, because expanding it
-/// here would put the layout decision in the wrong pass (M5c owns it).
+/// here would put the layout decision in the wrong pass (M-value-aggregates owns it).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Shape {
     /// `Point(x: 3, y: 4)` — a `record`, fields in **declared** order, the named
@@ -138,7 +138,7 @@ pub enum Abort {
     Must,
     /// `assert e` failed (§4.18). Carries the source text of `e`, and both sides
     /// when `e` is a comparison — the spec promises both, so lowering carries both
-    /// rather than leaving M6 to rewrite this.
+    /// rather than leaving M-generics-library to rewrite this.
     Assert,
 }
 
@@ -166,7 +166,7 @@ pub enum BinOp {
     Div,
     Rem,
     /// Structural, on everything, recursively (§4.3). One instruction carrying a
-    /// `TyId`; M5c's descriptor pass turns it into a `HeroDesc.eq` call rather
+    /// `TyId`; M-value-aggregates's descriptor pass turns it into a `HeroDesc.eq` call rather
     /// than lowering expanding it field by field.
     Eq,
     Ne,
@@ -194,7 +194,7 @@ pub enum Op {
     Binary { op: BinOp, left: ValueId, right: ValueId },
     Cast { kind: CastKind, operand: ValueId },
     /// `variadic` is set for the one call shape clang verifies nothing about
-    /// (`print` today, `TextFormat` and `sqlite3_mprintf` at M7). The
+    /// (`print` today, `TextFormat` and `sqlite3_mprintf` at M-ffi-ladder). The
     /// ffi-pragmatist measured it: a wrong argument count compiles, runs, and
     /// prints garbage, with no diagnostic anywhere.
     Call { callee: Callee, args: Args, variadic: bool },
@@ -229,7 +229,7 @@ pub enum Op {
     /// The program stops here. What follows in the block is nothing: the
     /// terminator is `unreachable`.
     Abort { reason: Abort, args: Args },
-    /// One reference more, one reference fewer (M5b, panel 021). Inserted by the
+    /// One reference more, one reference fewer (M-strings-ownership, panel 021). Inserted by the
     /// **ownership pass**, never by lowering — which is why they are real
     /// instructions rather than something the emitter does on its own: Swift's SIL
     /// has `strong_retain`/`strong_release` for the same reason, and LLVM D92808
@@ -240,16 +240,16 @@ pub enum Op {
     /// a `Decref`, which keeps one form instead of two and makes the dominance
     /// check cover it for free.
     ///
-    /// `cow_check` is not here. It would have zero call sites until M5c gives it
+    /// `cow_check` is not here. It would have zero call sites until M-value-aggregates gives it
     /// `push`, and an arm in four exhaustive matches that nothing emits is the arm
     /// that rots (panel 021 R1).
     Incref(ValueId),
     Decref(ValueId),
     /// `???` (§4.16). A hole type-checks, so lowering must produce something; the
-    /// verifier allows it and the emitter (M5a) refuses it, which is how "no
+    /// verifier allows it and the emitter (M-scalars-run) refuses it, which is how "no
     /// binary" is enforced without making a hole an error.
     Hole,
-    /// M4-step-2 scaffolding: a form the lowering does not handle yet. The
+    /// M-ir-lowering-step-2 scaffolding: a form the lowering does not handle yet. The
     /// verifier rejects it, so it cannot reach a golden or a backend. Deleted
     /// when the last sugar row lands.
     Missing,
@@ -265,7 +265,7 @@ pub enum Term {
     /// two-target branch as a silent wrong answer.
     Branch { cond: ValueId, then: BlockId, otherwise: BlockId },
     /// `match` on a variant: dense over the declaration's cases, exhaustive by
-    /// the time it gets here (M3c), so there is no default edge.
+    /// the time it gets here (M-data-declarations), so there is no default edge.
     Switch { tag: ValueId, cases: Vec<BlockId> },
     Return(Option<ValueId>),
     /// A point the type system proves unreachable. Becomes `hero_unreachable()`

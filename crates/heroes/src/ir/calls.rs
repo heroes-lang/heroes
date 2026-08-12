@@ -59,7 +59,7 @@ pub(super) fn call(
             Ref::Top(decl) => {
                 // Record construction *is* a call with named arguments (§4.9), so
                 // the surface needs no node of its own — but the IR does, because
-                // the layout decision belongs to M5c's descriptor pass.
+                // the layout decision belongs to M-value-aggregates's descriptor pass.
                 if matches!(ast.decls[decl as usize].kind, DeclKind::Record { .. }) {
                     let run = lower_args(b, ast, resolved, checked, src, args);
                     return b.emit(Op::Construct { shape: Shape::Record(decl), args: run }, ty, span);
@@ -153,7 +153,7 @@ pub(super) fn method(
             let field = layout::field_index(ast, checked, src, owner, name);
             // The field's own type is a function type, and nothing here can intern
             // one: `Checked` is read-only by design. It is typed with the call's
-            // result for now — function values land at M6, which is where this
+            // result for now — function values land at M-generics-library, which is where this
             // path is first exercised (§4.13).
             let function_ty = ty;
             let target = match field {
@@ -262,7 +262,7 @@ fn with_receiver(
     b.args(&lowered)
 }
 
-/// The one call shape clang verifies nothing about (§4.19). `print` today; at M7
+/// The one call shape clang verifies nothing about (§4.19). `print` today; at M-ffi-ladder
 /// it is `TextFormat` and `sqlite3_mprintf`, where the ffi-pragmatist measured a
 /// wrong argument count compiling, running, and printing garbage.
 fn is_variadic(name: &str) -> bool {

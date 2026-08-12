@@ -21,8 +21,8 @@ fn first_hero_end_to_end() {
         "\
 1:1 comment ## First
 2:1 comment #
-3:1 comment # The smallest program worth compiling — the M5a acceptance input.
-4:1 comment # Its hand-written C target is tools/spike/01-first.c; in M5a the emitter's
+3:1 comment # The smallest program worth compiling — the M-scalars-run acceptance input.
+4:1 comment # Its hand-written C target is tools/spike/01-first.c; in M-scalars-run the emitter's
 5:1 comment # output is compared against that file by eye.
 7:1 kw_function function
 7:10 ident main

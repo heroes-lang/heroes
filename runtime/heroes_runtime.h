@@ -12,8 +12,8 @@
  * Generated C #includes this header, so clang type-checks every runtime call
  * against it. Keep declarations exact: this file IS the contract.
  *
- * M5b scope: `str` with reference counting, canonical `f64` rendering, and the
- * live-block counter. M5c adds the descriptor ABI and `[T]`, with the
+ * M-strings-ownership scope: `str` with reference counting, canonical `f64` rendering, and the
+ * live-block counter. M-value-aggregates adds the descriptor ABI and `[T]`, with the
  * representation spike 04 froze — the map and COW's write-back follow.
  *
  * HERO_RUNTIME_ABI is 3 because the declarations changed shape (CLAUDE.md §7):
@@ -292,7 +292,7 @@ HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_
  * argument, one field over. A `sort` on any other element type is refused by the
  * emitter's gate, so reaching here with one is a compiler bug and says so.
  *
- * NOT `qsort`: `qsort` is unstable and platform-dependent, and the M8c fixpoint
+ * NOT `qsort`: `qsort` is unstable and platform-dependent, and the M-selfhost-fixpoint fixpoint
  * compares generated C byte for byte. NaN in an `[f64]` aborts rather than being
  * given an invented place. */
 HeroArrayHeader *hero_array_sort(const HeroArrayHeader *a);
@@ -360,7 +360,7 @@ void hero_array_set(HeroArrayHeader **slot, int64_t index, const void *value);
  * byte-for-byte (panel 006). A seed that varied per run would make the compiler
  * produce two different correct outputs, and the fixpoint would never close.
  *
- * The mutation half landed at M6 step 2 (panel 026), and it is a **place store**
+ * The mutation half landed at M-generics-library step 2 (panel 026), and it is a **place store**
  * rather than a `set(m, k, v)` call: `m[k] @ v` needed no new IR form, where a
  * void builtin would have grown a special case in the checker, the ownership pass
  * and the emitter. Iteration is `keys(m)` composed with the `for` and `sort` that

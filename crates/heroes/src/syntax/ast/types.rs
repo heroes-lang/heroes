@@ -16,7 +16,7 @@ pub struct TypeNode {
 pub enum TypeKind {
     /// `int`, `str`, `Point`, `A` — a bare name. Whether it is built-in,
     /// user-declared or a generic parameter is the resolver's question
-    /// (M3a); the parser only records that a name stood here.
+    /// (M-name-resolution); the parser only records that a name stood here.
     Named,
     /// `()` — no value (§4.3). Also the result of a function written
     /// without `->`.

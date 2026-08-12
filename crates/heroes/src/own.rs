@@ -21,7 +21,7 @@
 //!    heap-use-after-free.
 //! 2. **An `@` parameter is moved in and moved out.** The prologue's copy-in takes no
 //!    reference and the copy-out (`*p_s = s`) replaces the decref, so the callee's
-//!    copy-in consumes the caller's reference and the copy-out hands one back. M5a's
+//!    copy-in consumes the caller's reference and the copy-out hands one back. M-scalars-run's
 //!    pointer ABI is unchanged.
 //! 3. **A store increfs the new value before decrefing the old.** `s @ s` otherwise
 //!    frees the buffer and then increfs a dead one. Without the decref, a

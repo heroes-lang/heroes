@@ -1,6 +1,6 @@
 //! `heroes parse --dump-ast`: the tree as text.
 //!
-//! Not the formatter (that is `heroes fmt`, M2 step 4) — this is the tree
+//! Not the formatter (that is `heroes fmt`, M-syntax-tree step 4) — this is the tree
 //! *seen*, one node per line, so that "what the parser understood" is
 //! readable without a debugger. Two deliberate differences from Heroes
 //! source keep the two apart at a glance: the dump indents by **2** spaces,

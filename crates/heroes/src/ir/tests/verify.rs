@@ -60,7 +60,7 @@ fn a_jump_to_a_block_that_does_not_exist_is_caught() {
     says(&verify(&program, &checked), "jumps to bb99, which does not exist");
 }
 
-/// The check that keeps `preds` honest, and the reason it exists: M5b's cleanup
+/// The check that keeps `preds` honest, and the reason it exists: M-strings-ownership's cleanup
 /// chains walk edges, so a `preds` list that disagrees with the terminators is a
 /// refcount bug waiting for a milestone.
 #[test]
@@ -70,7 +70,7 @@ fn preds_that_disagree_with_the_terminators_are_caught() {
     says(&verify(&program, &checked), "jump here");
 }
 
-/// `Op::Missing` is M4's scaffolding for a form the lowering does not handle. The
+/// `Op::Missing` is M-ir-lowering's scaffolding for a form the lowering does not handle. The
 /// verifier is what stops it reaching a golden or a backend.
 #[test]
 fn a_form_the_lowering_skipped_is_caught() {
@@ -237,12 +237,12 @@ fn a_problem_names_the_function_and_the_block() {
     program.functions[0].blocks[3].term = Term::Open;
     let problems = verify(&program, &checked);
     assert_eq!(problems.len(), 1, "{problems:?}");
-    // The phase is in the message from M5b on, because "which pass produced this" is
+    // The phase is in the message from M-strings-ownership on, because "which pass produced this" is
     // the first question a violation raises and the compiler knows the answer.
     assert_eq!(problems[0], "f (after lowering): bb3: no terminator");
 }
 
-/// **Dominance** (panel 020, M5a). A value read in a block its definition does not
+/// **Dominance** (panel 020, M-scalars-run). A value read in a block its definition does not
 /// dominate becomes, in the emitted C, a read of an uninitialised prologue local —
 /// which `-Werror=uninitialized` reports as `variable 't3' is used uninitialized`
 /// against the *author's* line. The verifier says it first, and says whose fault it
@@ -287,7 +287,7 @@ fn a_temporary_may_cross_a_block_when_its_definition_dominates() {
     assert_eq!(verify(&program, &checked), Vec::<String>::new());
 }
 
-// --- M5b: the invariants that depend on which pass has run (panel 021) --------
+// --- M-strings-ownership: the invariants that depend on which pass has run (panel 021) --------
 
 /// A refcount operation before the ownership pass is a lowering that has done the
 /// pass's job — which would then do it again.

@@ -119,7 +119,7 @@ pub(super) fn declared(
 /// `typedef int64_t (*h_m_fn0)(int64_t, int64_t);` — a plain C function pointer,
 /// because a Heroes function value IS one (§1.11's founding constraint). That is
 /// what lets `qsort`'s comparator and raylib's callbacks be Heroes functions at
-/// M7 with no shim; design.md:1768 counts nine of ten ladder cases needing it.
+/// M-ffi-ladder with no shim; design.md:1768 counts nine of ten ladder cases needing it.
 ///
 /// A zero-parameter function is `(void)` and not `()`: an empty parameter list in
 /// C means "unspecified", which turns a wrong-arity call through the pointer from

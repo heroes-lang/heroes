@@ -119,7 +119,7 @@ pub(super) fn entry(
 /// `keys(m)` can be `[Point]`, and spec line 71 teaches `for k in sort(keys(m))`
 /// as *the* idiom for walking a map in order. A checker rule would make the
 /// spec's own sentence a compile error; the gate says "this backend does not emit
-/// it", which is the true state — the element-type question belongs to M6's
+/// it", which is the true state — the element-type question belongs to M-generics-library's
 /// closure-list audit, which has to answer `sort_by` first (panel 027 R1).
 pub(super) fn unsupported_operand(
     name: &str,

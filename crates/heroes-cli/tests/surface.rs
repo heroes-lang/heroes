@@ -127,7 +127,7 @@ fn a_missing_file_operand_is_named_with_the_shape_that_works() {
 fn the_help_text_states_the_exit_codes_and_the_streams() {
     let out = heroes(&["--help"]);
     let shown = String::from_utf8_lossy(&out.stdout);
-    // The gloss on 1 widened at M5a: an unsupported form is a diagnostic about the
+    // The gloss on 1 widened at M-scalars-run: an unsupported form is a diagnostic about the
     // *compiler* and still exits 1, because 2 sends a reader to reinstall the
     // toolchain (panel 020, measured).
     assert!(shown.contains("1 diagnostics were reported, no artifact was produced"));
@@ -159,7 +159,7 @@ fn measure_states_its_default() {
     assert_eq!(code(&heroes(&["measure"])), 0);
 }
 
-// --- M3d: diagnostics as a product -----------------------------------
+// --- M-rich-diagnostics: diagnostics as a product -----------------------------------
 
 /// §4.17's whole argument, executable: the message, the line as written, the span
 /// underlined, the note that carries the other end of the mistake, and the fixes
@@ -313,7 +313,7 @@ fn build_honours_the_exit_code_contract() {
     assert_eq!(code(&heroes(&["build", "--dump-ast", "examples/gallery/00-first.hero"])), 2);
 }
 
-/// `run` stops being a retired spelling and becomes the dev loop (M5a). It compiles
+/// `run` stops being a retired spelling and becomes the dev loop (M-scalars-run). It compiles
 /// at `-O2`, executes, and forwards the program's own exit status — the program is
 /// the artifact, so its verdict is the command's.
 #[test]
@@ -380,7 +380,7 @@ fn a_hole_reports_what_belongs_there_and_the_build_exits_one() {
 
 /// **A runtime part edited alone must invalidate the cached object.**
 ///
-/// The runtime became eleven files at M6 step 3, assembled into one translation
+/// The runtime became eleven files at M-generics-library step 3, assembled into one translation
 /// unit by `runtime.c`. The cache key used to hash the two entry points, so a part
 /// could be edited and the *previous* `runtime-<key>.o` relinked — and a stale
 /// relink is silent: it prints yesterday's bytes at exit 0, which is exactly how
@@ -445,7 +445,7 @@ fn test_runs_each_block_and_reports_one_line_each() {
     assert_eq!(code(&out), 0);
 }
 
-/// **M8a's acceptance criterion**: the same program, cut into four modules, and
+/// **M-module-namespace's acceptance criterion**: the same program, cut into four modules, and
 /// the same seven tests.
 ///
 /// It asserts more than "green". The tests come from *three* of the four files,
@@ -466,7 +466,7 @@ fn the_split_calculator_passes_the_same_tests_across_four_modules() {
 }
 
 /// The split program runs, and prints what the single-file one prints. Two
-/// spellings of one program is the claim M8a makes; this is the assertion.
+/// spellings of one program is the claim M-module-namespace makes; this is the assertion.
 #[test]
 fn the_split_calculator_prints_what_the_single_file_one_prints() {
     let split = heroes(&["run", "examples/calculator/main.hero"]);
@@ -585,7 +585,7 @@ fn an_ordinary_build_ignores_test_blocks() {
 /// `internal error: a diagnostic landed inside the Heroes library, at its line
 /// 86: [no_entry_point] …` at **exit 2**, the code that means *the compiler is
 /// wrong*. Cause: the diagnostic's span was `src.text.len()-1 .. len`, and since
-/// M6 appended the library the whole text ends **inside it**, so
+/// M-generics-library appended the library the whole text ends **inside it**, so
 /// `library::misplaced` swallowed the user's own error. Fix: `Source::root_end`.
 ///
 /// Panel 020 settled the exit code by measurement: given 2, a judge checked the
@@ -616,7 +616,7 @@ fn fixedbugs_a_file_with_no_main_is_the_authors_error_not_the_compilers() {
 ///
 /// The generalisation, which is why this test asserts agreement rather than a
 /// literal: `locate` can only protect the location it is *asked* for. The text
-/// renderers had been fixed at M8a and this one was not, because the sweep went
+/// renderers had been fixed at M-module-namespace and this one was not, because the sweep went
 /// through `Diagnostic`'s renderer and `--json` is a second one.
 #[test]
 fn fixedbugs_json_and_text_agree_about_which_file_a_diagnostic_is_in() {
@@ -635,7 +635,7 @@ fn fixedbugs_json_and_text_agree_about_which_file_a_diagnostic_is_in() {
 }
 
 /// **fixedbugs, 2026-08-12.** `no binary: N holes in <file>` named the file on
-/// the command line rather than the files the holes are in — since M8a not the
+/// the command line rather than the files the holes are in — since M-module-namespace not the
 /// same thing, and a count attached to the wrong file sends the reader there.
 #[test]
 fn fixedbugs_the_hole_count_names_the_files_the_holes_are_in() {

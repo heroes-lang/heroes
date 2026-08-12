@@ -1,5 +1,5 @@
 //! Crate-internal snapshot tests for token dumps, grouped like the lexer
-//! itself (the plan's M1 test strategy: goldens are for rendered
+//! itself (the plan's M-token-stream test strategy: goldens are for rendered
 //! diagnostics and program output; token dumps are pinned here).
 //!
 //! | file             | what it pins |
@@ -8,7 +8,7 @@
 //! | `layout.rs`      | indentation, terminators, panel-007 behaviour |
 //! | `literals.rs`    | numbers, operators, strings, char literals |
 //! | `reserved.rs`    | foreign words and their prescribed errors |
-//! | `adversarial.rs` | M1's five adversarial cases (UNVERIFIED — pending debrief) |
+//! | `adversarial.rs` | M-token-stream's five adversarial cases (UNVERIFIED — pending debrief) |
 //!
 //! Dump format, one token per line: `line:col kind [text]` — layout tokens
 //! (terminator/indent/dedent/eof) carry no text. Diagnostics follow, each

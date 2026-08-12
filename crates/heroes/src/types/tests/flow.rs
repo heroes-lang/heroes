@@ -209,10 +209,10 @@ function f(xs: [int]) -> int
 
 // --- §4.7: a function that runs off its end (panel 020) ---------------
 
-/// The class did not exist until M5a, and the reason it was invisible is that a
+/// The class did not exist until M-scalars-run, and the reason it was invisible is that a
 /// function body is checked with `Want::Nothing`: its value comes from `return`
 /// statements, so nothing ever compared the *tail* against the declared result.
-/// Verified before writing it — this exact program checked clean through all of M4.
+/// Verified before writing it — this exact program checked clean through all of M-ir-lowering.
 #[test]
 fn a_function_that_can_run_off_its_end_is_rejected() {
     let said = diagnostics("function sign(x: int) -> int\n    if x > 0\n        return 1\n");

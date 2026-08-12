@@ -44,7 +44,7 @@ pub(super) struct Scopes {
 }
 
 /// What is being bound, as one value: its kind, whether it may be written, and
-/// the syntax M3b will want back (see `Local`).
+/// the syntax M-checker-core will want back (see `Local`).
 pub(super) struct Binding {
     kind: LocalKind,
     mutable: bool,
@@ -76,7 +76,7 @@ impl Binding {
     }
 
     /// `.num n` — the payload's type comes from the case the pattern names, so
-    /// neither half is known until M3c.
+    /// neither half is known until M-data-declarations.
     pub(super) fn payload() -> Binding {
         Binding { kind: LocalKind::Payload, mutable: false, ty: None, value: None }
     }
@@ -166,7 +166,7 @@ impl Resolver {
         // precisely the bug the shadow ban exists to kill.
         //
         // **Before the top-level check, and the order is the message.** Tier 2's
-        // implementations are real declarations from M6 step 4, so a local named
+        // implementations are real declarations from M-generics-library step 4, so a local named
         // `range` shadows one — and reported that way it would say "the
         // declaration at line 30", naming a line in a file the author cannot
         // open (§1.11, `crate::library`).
@@ -213,7 +213,7 @@ impl Resolver {
     /// walked: a hole at the bottom of the file suspends the rule at the top of
     /// it, so this cannot be decided while walking. It is asked **per module**,
     /// against the binding's own file, because §4.16 makes the suppression
-    /// file-wide and one `Ast` has spanned every module since M8a.
+    /// file-wide and one `Ast` has spanned every module since M-module-namespace.
     pub(super) fn report_unused(&mut self, src: &Source) {
         let mut diagnostics = Vec::new();
         for local in &self.out.locals {

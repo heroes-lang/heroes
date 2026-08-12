@@ -1,4 +1,4 @@
-//! `heroes fmt <file.hero> [--in-place]` — the canonical form (M2, §4.15).
+//! `heroes fmt <file.hero> [--in-place]` — the canonical form (M-syntax-tree, §4.15).
 //!
 //! Prints to stdout by default, like `gofmt`; `--in-place` rewrites the file and
 //! prints nothing. The flag was `--write` until panel 016: "write" is read as

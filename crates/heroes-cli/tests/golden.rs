@@ -4,9 +4,9 @@
 //! this project and the least delegable". The tree lives at the workspace root:
 //!
 //!   tests/golden/check/       <name>.hero + <name>.expected  (rendered diagnostics)
-//!   tests/golden/ir/          <name>.hero + <name>.expected  (the lowered IR, M4)
-//!   tests/golden/emit/        <name>.hero + <name>.expected  (the generated C11, M5a)
-//!   tests/golden/unsupported/ <name>.hero + <name>.expected  (what the backend refuses, M5a)
+//!   tests/golden/ir/          <name>.hero + <name>.expected  (the lowered IR, M-ir-lowering)
+//!   tests/golden/emit/        <name>.hero + <name>.expected  (the generated C11, M-scalars-run)
+//!   tests/golden/unsupported/ <name>.hero + <name>.expected  (what the backend refuses, M-scalars-run)
 //!   tests/golden/run/         <name>.hero + <name>.expected  (program output at -O0 AND -O2)
 //!
 //! Discipline (CLAUDE.md § "Golden discipline"):
@@ -21,8 +21,8 @@
 //!     `# UNVERIFIED — pending debrief` until the author ratifies them;
 //!     assistant-written bulk regression cases are marked as such.
 //!
-//! M0: both directories exist and are empty; the harness passes with zero cases.
-//! From M1 on, each case is executed through the compiler and diffed.
+//! M-day-zero: both directories exist and are empty; the harness passes with zero cases.
+//! From M-token-stream on, each case is executed through the compiler and diffed.
 
 use std::path::{Path, PathBuf};
 
@@ -67,13 +67,13 @@ fn collect_cases(dir: &Path) -> Vec<PathBuf> {
     cases
 }
 
-/// The deepest frontend stage that exists today: `lex` at M1, `parse` at M2,
-/// `check` from M3a. `check/` cases run through it and pin every diagnostic it
+/// The deepest frontend stage that exists today: `lex` at M-token-stream, `parse` at M-syntax-tree,
+/// `check` from M-name-resolution. `check/` cases run through it and pin every diagnostic it
 /// renders — which is why the stage moves rather than the cases: a case written
 /// for the lexer must keep saying the same thing when a later stage starts
 /// reading the same file.
 ///
-/// The name stops moving here. M3b–M3d deepen `check` without renaming it, and
+/// The name stops moving here. M-checker-core–M-rich-diagnostics deepen `check` without renaming it, and
 /// the move to it changed **nothing**: all twelve inherited cases hold a lexer
 /// or parser mistake, and `check` declines to resolve a tree built out of
 /// recovery guesses, so it prints exactly what `parse` printed (verified
@@ -384,7 +384,7 @@ fn annotations(text: &str) -> Vec<(u32, String)> {
 /// `<file>:<line>:<col>: <kind>[<code>]: <message>`, and §4.17's rich form, whose
 /// code and location are on consecutive lines (`<kind>[<code>]: …` then `  at
 /// <file>:<line>:<col>`). The **kind** is read rather than assumed: `error` was the
-/// only one until M5a added `unsupported`, and hard-coding it would have quietly
+/// only one until M-scalars-run added `unsupported`, and hard-coding it would have quietly
 /// exempted the new kind from the invariant.
 fn diagnostics(expected: &str) -> Vec<(u32, String)> {
     let mut found = Vec::new();
@@ -438,7 +438,7 @@ fn kind_and_code(line: &str) -> Option<String> {
 /// character. GCC has printed `sorry, unimplemented:` since version 2.5.8 and exits
 /// `FATAL_EXIT_CODE`, which is `EXIT_FAILURE` — 1. The panel's llm-ergonomist
 /// measured the other choice: given exit 2 its first action was `heroes --version &&
-/// heroes doctor`, its second `grep -rn "M5b" .`, and its third a message to the
+/// heroes doctor`, its second `grep -rn "M-strings-ownership" .`, and its third a message to the
 /// user saying "The Heroes toolchain looks broken" — a sentence it reported verbatim
 /// as false.
 #[test]
@@ -512,7 +512,7 @@ fn golden_emit_cases_produce_their_c() {
 ///
 /// The ancestor is named rather than invented: GCC's bootstrap compares stage2 and
 /// stage3 objects, and its manual says a mismatch "normally indicates that the
-/// stage2 compiler has compiled GCC incorrectly" — the M8c fixpoint, thirty years
+/// stage2 compiler has compiled GCC incorrectly" — the M-selfhost-fixpoint fixpoint, thirty years
 /// earlier. The stronger property is checked too: the C is identical whether it goes
 /// to stdout or through `-o`, because the emitted text never mentions the output
 /// path.
@@ -739,7 +739,7 @@ fn the_generated_c_compiles_without_a_single_warning() {
 /// They exist because they decided things before any compiler code did — the target
 /// shape (01), loops as `goto`+labels (02), the FFI (03), the container and
 /// descriptor ABI (04) — and CLAUDE.md keeps calling 01 "the shape the emitter must
-/// produce". But their expected output lived in a **C comment**, so when M5a moved
+/// produce". But their expected output lived in a **C comment**, so when M-scalars-run moved
 /// print's newline out of `hero_print_int` and into `hero_print_end`, spike 04's
 /// three readable lines silently collapsed to `10-42` and nothing failed. Now each
 /// one has a checked `.expected`, and the frozen ABI is checked by compiling against

@@ -50,7 +50,7 @@ pub struct LexOutput {
 ///
 /// **One file at a time, and that is the repair.** This function used to walk to
 /// `src.text.len()` under a doc comment saying "one source file" — true until
-/// M8a made a `Source` N files concatenated, after which the indent stack and
+/// M-module-namespace made a `Source` N files concatenated, after which the indent stack and
 /// the open-bracket list crossed the boundary between them. Measured: an
 /// unclosed `(` in `main.hero` swallowed the whole of `geom.hero` and reported
 /// itself **inside the library** at exit 2, so the commonest state a file is

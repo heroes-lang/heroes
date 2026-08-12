@@ -60,7 +60,7 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                 // that the program succeeded, with no diagnostic anywhere. It is
                 // the only failure in this language with no instrument at all
                 // (panel 035, spec-warden; panel 030 had reported the weaker half
-                // of it). The refusal stands until M7 decides `exit(code)`, which
+                // of it). The refusal stands until M-ffi-ladder decides `exit(code)`, which
                 // is what a fallible `main` would have to mean.
                 if src.is_root(declaration.name.start)
                     && src.slice(declaration.name) == "main"
@@ -84,9 +84,9 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                     // because its value comes from `return` statements rather than
                     // from being a value block — so nothing here ever compared the
                     // *tail* with the declared result, and a function that runs off
-                    // its end checked clean all the way through M4.
+                    // its end checked clean all the way through M-ir-lowering.
                     //
-                    // The plan had been `-Werror=return-type` at M5a. Two facts
+                    // The plan had been `-Werror=return-type` at M-scalars-run. Two facts
                     // killed it: modern clang calls it `-Wreturn-mismatch`, so the
                     // named net was not the real one, and what the author would see
                     // is a clang error about `h_module_sign` at a `#line`-mapped

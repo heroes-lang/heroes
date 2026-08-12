@@ -39,12 +39,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* -- the descriptor ABI and the array now SHIP (M5c step 5) ------------------
+/* -- the descriptor ABI and the array now SHIP (M-value-aggregates step 5) ------------------
  *
  * This spike declared `HeroDesc` and `HeroArrayHeader` itself, plus a hand-rolled
  * `hero_array_*`, because it ran before any of it existed — that was the point:
  * fix the representation before writing the compiler. Panel 022 scheduled the
- * move, and M5c step 5 made it: both types and every array primitive are in
+ * move, and M-value-aggregates step 5 made it: both types and every array primitive are in
  * `heroes_runtime.h`, so keeping local copies here is now
  * `error: redefinition of 'HeroDesc'`.
  *
@@ -60,7 +60,7 @@
  * pushes below hand over borrowed values and the locals are dropped after.
  */
 
-/* -- the generated shape for `Expr` (hand-written here, M5c generates it) -- */
+/* -- the generated shape for `Expr` (hand-written here, M-value-aggregates generates it) -- */
 
 typedef enum { H_EXPR_NUM, H_EXPR_SUM } h_Expr_tag;
 
@@ -74,7 +74,7 @@ typedef struct {
 
 static const HeroDesc h_Expr_desc; /* forward: elements reference their type */
 
-/* SHALLOW plus incref, amended at M5c by panel 022.
+/* SHALLOW plus incref, amended at M-value-aggregates by panel 022.
  *
  * This function used to deep-copy, and that was the real contradiction between this
  * spike and the descriptor pass — not the variant's boxing, which the spike had
@@ -86,7 +86,7 @@ static const HeroDesc h_Expr_desc; /* forward: elements reference their type */
  * checked `.expected`: the copy now shares its children, so mutating the original's
  * array is observable through the copy *within this file*, which has no COW at the
  * mutation site. The second printed line changes from 0 to 1 and that change is the
- * amendment, not a regression. A real M5c program cannot see it. */
+ * amendment, not a regression. A real M-value-aggregates program cannot see it. */
 static void h_Expr_copy(void *dst_v, const void *src_v) {
     const h_Expr *src = src_v;
     h_Expr *dst = dst_v;
@@ -168,7 +168,7 @@ int main(void) {
     h_Expr tree = expr_sum2(expr_num(1), expr_sum2(expr_num(2), expr_num(3)));
 
     /* COW preview: a plain `b = a` in Heroes is incref-only — the deep copy
-     * below is what the COW machinery performs at first mutation (M5c). */
+     * below is what the COW machinery performs at first mutation (M-value-aggregates). */
     hero_array_incref(tree.as.sum.children);
     hero_array_decref(tree.as.sum.children);
 
@@ -188,7 +188,7 @@ int main(void) {
      * this file admitting it is hand-compiling something the emitter would not. */
     h_Expr *leaf = (h_Expr *)(void *)hero_array_at(inner->as.sum.children, 0);
     leaf->as.num.v = 99;
-    /* → 1 since M5c: the copy SHARES this array, and this file has no COW at the
+    /* → 1 since M-value-aggregates: the copy SHARES this array, and this file has no COW at the
      * mutation site, so the mutation is visible through both. A real Heroes program
      * cannot see it — `xs[i] @ v` unshares first, per step. */
     hero_print_int(h_Expr_eq(&tree, &copy) ? 1 : 0); /* → 1 */

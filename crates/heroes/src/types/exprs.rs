@@ -218,7 +218,7 @@ fn name(
         // "only reachable as a callee" and it was false: `f = to_str` and
         // `map(xs, to_str)` both reach it, and an `error_ty()` with no diagnostic
         // is poison — it flowed to the emitter and produced `typedef HeroValue
-        // (*h_m_fn0)(int64_t)`, exit 2. Found by M6's closure-list audit.
+        // (*h_m_fn0)(int64_t)`, exit 2. Found by M-generics-library's closure-list audit.
         Ref::Builtin(index) => {
             let what = crate::resolve::BUILTINS[index as usize].name;
             let diagnostic = errors::builtin_as_value(what, span);

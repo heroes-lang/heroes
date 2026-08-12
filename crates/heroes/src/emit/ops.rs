@@ -1,7 +1,7 @@
 //! One operation as C: a literal, an operator, a call, and `print` (design.md §4.14,
 //! §4.20; panels 006, 020).
 //!
-//! Split from `inst.rs` when M5c step 3 pushed that file to 450 lines, well past
+//! Split from `inst.rs` when M-value-aggregates step 3 pushed that file to 450 lines, well past
 //! CLAUDE.md §11's ceiling. The line between them is a real one rather than a
 //! line count: `inst.rs` answers **which** operation an instruction is and where its
 //! result goes, and this answers **what** one operation is in C. The dispatch is a
@@ -37,7 +37,7 @@ pub(super) fn constant(value: Const) -> String {
         Const::Bool(b) => (if b { "true" } else { "false" }).to_string(),
         // **A hex float, not a decimal one.** `%a` is round-trip-exact by
         // construction, where `%.17g` is exact only in practice — and design.md §3.1
-        // has said "`f64` literals emitted round-trip-exact (`%a`)" since M0. This is
+        // has said "`f64` literals emitted round-trip-exact (`%a`)" since M-day-zero. This is
         // the *literal*; how a value **prints** is `hero_print_f64`'s question and a
         // different answer (§4.9).
         Const::Float(x) => hex_float(x),

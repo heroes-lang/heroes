@@ -11,13 +11,13 @@
 //! what makes the scheme injective. Without it `h_<module>_<name>` is ambiguous
 //! wherever both halves may contain `_`: module `print` with name
 //! `inst_value_name` and module `print_inst` with name `value_name` are the same
-//! symbol — and those are this compiler's own file names, so M8a met it
+//! symbol — and those are this compiler's own file names, so M-module-namespace met it
 //! immediately. With the module alphanumeric, the first `_` after `h_` ends it.
 //! Nim reserves `__` for the same purpose and can do so because its identifiers
 //! forbid it; Heroes does not forbid `__`, so the separator cannot be widened and
 //! the *component* is narrowed instead.
 //!
-//! **This paragraph used to end "at M8a a module is a declared name rather than
+//! **This paragraph used to end "at M-module-namespace a module is a declared name rather than
 //! a file stem, so the shape stops being a stem-sanitising question at all", and
 //! that was false** — panel 031 had it compiled. A module name is an identifier,
 //! identifiers admit `_`, and modules `geo_m` and `geom` still produce one
@@ -27,12 +27,12 @@
 //! naming both files (panel 031 R10), because the collision is a property of a
 //! set of modules and belongs where that set is known.
 //!
-//! **`module_of` and `LIBRARY_MODULE` live in `crate::source`** since M8a. A
+//! **`module_of` and `LIBRARY_MODULE` live in `crate::source`** since M-module-namespace. A
 //! module is a language-level thing now — it is what a qualified name names —
 //! and the C symbol is downstream of it, so the file table owns the answer and
 //! this file spends it.
 //!
-//! `_<typehash>` arrives at M6 step 6 with monomorphisation: two copies of one
+//! `_<typehash>` arrives at M-generics-library step 6 with monomorphisation: two copies of one
 //! generic declaration are two C functions, so the type arguments have to be in
 //! the name. `instance` below carries the reasoning, which three judges shaped.
 
@@ -52,7 +52,7 @@ use crate::source::LIBRARY_MODULE;
 /// instantiated signature is already in the message.
 ///
 /// **Not a hash of the `TyId` sequence.** `TyId` is an interning-order artifact,
-/// and the M8c fixpoint compares generated C byte for byte — a `TyId`-derived hash
+/// and the M-selfhost-fixpoint fixpoint compares generated C byte for byte — a `TyId`-derived hash
 /// would require the Rust bootstrap and the Heroes port to intern in *identical*
 /// order. `source::module_of` already refuses a path-dependent name for the same
 /// reason.

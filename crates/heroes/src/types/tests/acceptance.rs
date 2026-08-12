@@ -2,8 +2,8 @@
 //!
 //! This is the milestone's real acceptance criterion, and it has already paid
 //! for itself: checking the appendix found a **twelfth** `T`-where-`T?` site that
-//! panels 002 and 006 had missed (`tokenize`'s own `return out`), after M3a's
-//! resolver had found the `map`/`fold` collision and M2's parser had found
+//! panels 002 and 006 had missed (`tokenize`'s own `return out`), after M-name-resolution's
+//! resolver had found the `map`/`fold` collision and M-syntax-tree's parser had found
 //! `.var` and `=> assert false`. Four milestones, four defects, one program that
 //! has never been run.
 
@@ -41,7 +41,7 @@ fn the_acceptance_program_type_checks() {
 }
 
 /// Every expression that *produces a value* gets a type — which is the invariant
-/// M4 depends on, since lowering reads `expr_types` rather than the tree. The
+/// M-ir-lowering depends on, since lowering reads `expr_types` rather than the tree. The
 /// exceptions are stated rather than counted: a `???` has no type by definition
 /// (§4.16), and the name of a built-in or a record used as a callee is not a
 /// value at all (there are no built-in function values, and a record name is a

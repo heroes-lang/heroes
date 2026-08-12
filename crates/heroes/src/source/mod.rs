@@ -12,8 +12,8 @@
 //! `Span` past 8 bytes, and forces `Span::to` to assert that both ends come from
 //! the same file — a check with nothing useful to do when it fails.
 //!
-//! The shape was already here. M5b appended the library to the user's file and
-//! carried one boundary offset; M8a keeps exactly that arrangement and lets the
+//! The shape was already here. M-strings-ownership appended the library to the user's file and
+//! carried one boundary offset; M-module-namespace keeps exactly that arrangement and lets the
 //! table have more than two rows. The library becomes the last row and stops
 //! being a special case in the data — though not in the rules, since a
 //! diagnostic pointing into it is still a compiler bug (`files.rs`).
@@ -190,7 +190,7 @@ impl Source {
     /// **into a message** is a `String` by the time any renderer sees it, so it
     /// is outside every guard this compiler has. Ten sites built one by hand from
     /// `line_col` and named no file at all — correct while `lines_before` was
-    /// zero for everything, and after M8a pointing at a line that is not there.
+    /// zero for everything, and after M-module-namespace pointing at a line that is not there.
     /// One of them was internally consistent and wrong in both halves: a
     /// `shadowed_binding` whose note said "line 8" while its own caret sat on
     /// `geom.hero:8` (2026-08-12).
@@ -265,7 +265,7 @@ impl Source {
     /// Where an offset is, **as a reader has to be told it**: the file that
     /// contains it, the line within that file, and the column.
     ///
-    /// Every diagnostic goes through here. Before M8a the two renderers each
+    /// Every diagnostic goes through here. Before M-module-namespace the two renderers each
     /// printed `src.name` and `line_col` directly, which was the same answer
     /// while there was one file and became a *false* one the moment there were
     /// several — a diagnostic in `geom.hero` naming `main.hero` at a line number
@@ -297,7 +297,7 @@ impl Source {
     /// It exists so that nobody reaches for a column by accident: sweep 001 found
     /// eight callers building a user-visible location by hand under a doc comment
     /// that has said *"there is one function and no caller assembles the triple
-    /// itself"* since M8a. `locate` answers the reader's question; this answers
+    /// itself"* since M-module-namespace. `locate` answers the reader's question; this answers
     /// the printer's; `line_col` is `pub(crate)` and answers neither on its own.
     pub fn line_of(&self, offset: u32) -> u32 {
         self.line_col(offset).0

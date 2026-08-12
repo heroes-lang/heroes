@@ -129,7 +129,7 @@ impl Cursor {
     /// line's `Terminator`, whose position is past any trailing comment: `f()
     /// # a note` was underlined twenty-three columns wide for a three-column
     /// statement, so the part of the message that says *where* pointed at
-    /// something the author cannot fix (2026-08-12, carried open since M5a).
+    /// something the author cannot fix (2026-08-12, carried open since M-scalars-run).
     pub(super) fn previous_significant_span(&self) -> Span {
         let mut at = if self.pos == 0 { 0 } else { self.pos - 1 };
         while at > 0

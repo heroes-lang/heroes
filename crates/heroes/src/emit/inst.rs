@@ -17,7 +17,7 @@
 //! mattering: **`__builtin_*_overflow` decides overflow against the destination
 //! type, not the operands.** `sub_overflow(false, true)` into a `bool` reports
 //! overflow; into an `int64_t` it does not. Heroes never does `bool` arithmetic, so
-//! M5a is safe — but §4.19's `c_int` (Part 7) will introduce a 32-bit destination
+//! M-scalars-run is safe — but §4.19's `c_int` (Part 7) will introduce a 32-bit destination
 //! and move the abort threshold from 2⁶³ to 2³¹ with nothing changing at the call
 //! site.
 
@@ -164,7 +164,7 @@ pub(super) fn emit(
             }
         }
         // `s[i]`: a byte as an `int`, aborting out of range (spec line 142). The
-        // array case is the same op and waits for M5c.
+        // array case is the same op and waits for M-value-aggregates.
         Op::Index { base, index } if checked.types.get(function.value_type(base)) == Ty::Str => {
             if let Some(name) = target {
                 w.line(&format!(
@@ -175,7 +175,7 @@ pub(super) fn emit(
             }
         }
         // Every remaining form is refused by `gate.rs` at this milestone. The arm is
-        // here rather than in a catch-all so that M5c and M6 are compile errors
+        // here rather than in a catch-all so that M-value-aggregates and M-generics-library are compile errors
         // until they are written, not silent omissions.
         // `Point(x: 1, y: 2)` and `.num(v: 7)`. The container shapes and `T?` are
         // still refused, and each stays a named arm so that landing one is a compile
@@ -392,7 +392,7 @@ pub(super) fn emit(
                     .functions
                     .iter()
                     .find(|f| f.decl == decl)
-                    // The callee's own module, which is the point of M8a: a
+                    // The callee's own module, which is the point of M-module-namespace: a
                     // function value taken across a module boundary is the same
                     // symbol the definition emitted.
                     .map(|f| mangle::function(src.component_at(f.span.start), &f.name))
@@ -400,7 +400,7 @@ pub(super) fn emit(
                 w.line(&format!("    {name} = {callee};"));
             }
         }
-        // An `extern` used as a value is M7's — the C callback case §4.19's ladder
+        // An `extern` used as a value is M-ffi-ladder's — the C callback case §4.19's ladder
         // needs — and the gate refuses `extern` wholesale until the header that
         // verifies it exists. A built-in or an indirection here is a lowering bug:
         // neither has an address to take.
@@ -414,7 +414,7 @@ pub(super) fn emit(
     }
 }
 
-/// A place, as a C lvalue. At M5a a place is its root: a path means a field or an
+/// A place, as a C lvalue. At M-scalars-run a place is its root: a path means a field or an
 /// element, and `gate.rs` refuses both until the descriptor pass exists.
 fn read(types: &aggregate::Types, function: &crate::ir::Function, place: Place) -> String {
     aggregate::place(types, function, place)

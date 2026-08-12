@@ -311,7 +311,7 @@ file test.hero
 }
 
 /// `_` is a catch-all arm, legal only where exhaustiveness is impossible
-/// (`int`, `str`). The parser records it; M3c decides whether it was allowed.
+/// (`int`, `str`). The parser records it; M-data-declarations decides whether it was allowed.
 #[test]
 fn a_wildcard_arm_is_recorded_not_judged() {
     assert_eq!(

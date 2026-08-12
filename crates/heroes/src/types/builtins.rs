@@ -157,7 +157,7 @@ pub(super) fn call(
             Ty::Fallible(_) => checker.out.types.bool(),
             _ => return arg_error(checker, ast, src, "is_err", "a fallible value", *one, span),
         },
-        // **Tier 2 has no rules here at all now.** `range` lost its rule at M6
+        // **Tier 2 has no rules here at all now.** `range` lost its rule at M-generics-library
         // step 4 and the six higher-order ones at step 6: they are declarations in
         // `library/source.hero`, checked by the ordinary rules like anything else,
         // and `resolve/exprs.rs` consults the top-level table before this one — so

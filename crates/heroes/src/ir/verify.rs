@@ -16,7 +16,7 @@
 //!   `goto`+label per basic block, so a block with no exit is C that falls through
 //!   a label;
 //! - **`preds` agrees with the terminators**, recomputed from the same
-//!   `successors` the builder used, because M5b's cleanup chains walk edges;
+//!   `successors` the builder used, because M-strings-ownership's cleanup chains walk edges;
 //! - **every exit edge copies out every `@` parameter** — §4.8's "copy-out happens
 //!   always", which panel 000 named as the place this project would actually stall.
 //!
@@ -25,11 +25,11 @@
 //! 019's R1 rule, which reserves IR words for the dump and for exit-2 messages).
 //!
 //! One check deliberately absent: no `Ty::Generic` in a lowered body. A generic
-//! body lowers polymorphically at M4 by design (§4.12, amended by panel 019), and
-//! it is *monomorphisation* — the IR→IR pass at M6 — plus the ownership pass and
+//! body lowers polymorphically at M-ir-lowering by design (§4.12, amended by panel 019), and
+//! it is *monomorphisation* — the IR→IR pass at M-generics-library — plus the ownership pass and
 //! the emitter that must assert its absence.
 //!
-//! What an instruction *reads* lives in `uses.rs`, because M5b needs the same
+//! What an instruction *reads* lives in `uses.rs`, because M-strings-ownership needs the same
 //! answer: an ownership pass is a walk over definitions and uses, and there must be
 //! exactly one table saying which is which. What a *value* must satisfy — assigned
 //! once, and its definition dominating every use — lives in `values.rs`, which is
@@ -269,7 +269,7 @@ fn check_return_type(
         // A body that runs off its end returns nothing. That is right for a `()`
         // result and a *program* error otherwise, which the frontend does not
         // reject yet — so the verifier does not either: `-Werror=return-type` is
-        // the net at M5a (CLAUDE.md §7), and the diagnostic class is queued.
+        // the net at M-scalars-run (CLAUDE.md §7), and the diagnostic class is queued.
         Term::Return(None) => {
             let _ = unit;
         }

@@ -1,7 +1,7 @@
 //! `heroes build <file.hero> [--dump-ir | --emit-c] [-o <path>]` — the verb that
-//! produces a binary (M5a).
+//! produces a binary (M-scalars-run).
 //!
-//! At M4 this command lowered and said what it could not do yet; from M5a it
+//! At M-ir-lowering this command lowered and said what it could not do yet; from M-scalars-run it
 //! compiles. What it says on success is candidate (ii) of the panel's experiment,
 //! and it was chosen by measurement rather than taste: given `wrote build/<hash>/f`
 //! the llm-ergonomist wrote `heroes build f.hero && ./build/<hash>/f` correctly on

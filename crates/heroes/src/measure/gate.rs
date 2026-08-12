@@ -28,7 +28,7 @@
 /// | value | when | what moved it |
 /// |---|---|---|
 /// | 2231 | panel 023 | the `[T]` clause §1.6 says must survive a raise |
-/// | 2363 | M6 | `range`'s labels, the tier phrase, panel 028's prelude |
+/// | 2363 | M-generics-library | `range`'s labels, the tier phrase, panel 028's prelude |
 /// | 2434 | panel 031 | modules: `use`, qualification, the transitivity rule |
 /// | 2422 | panel 035 | the thirteen silences, closed **net −12**: one line deleted, four added |
 pub const SPEC_TOKENS: usize = 2422;
@@ -43,7 +43,7 @@ pub const SPEC_TOKENS: usize = 2422;
 /// a prompt, so it cannot spend a prompt's budget.
 ///
 /// It gets a number anyway, because it grew **+85 across eight milestones with
-/// no commit ever naming a delta** — 831 at M0, 916 today — for the plain reason
+/// no commit ever naming a delta** — 831 at M-day-zero, 916 today — for the plain reason
 /// that `heroes measure` defaults to the other file. Gate it, do not merge it.
 pub const RESERVED_WORDS_TOKENS: usize = 916;
 
@@ -98,12 +98,12 @@ mod tests {
     /// notional. Panel 024's own arithmetic put the justified total at 3181.
     #[test]
     fn the_headroom_the_remaining_mortgages_need_is_still_there() {
-        // M7's floor for file I/O, `args()` and `exit(code)` — panel 030 R3, which
+        // M-ffi-ladder's floor for file I/O, `args()` and `exit(code)` — panel 030 R3, which
         // refuted "they are plain externs" by compiling it.
         let m7_floor = 60;
         assert!(
             SPEC_TOKENS + m7_floor < 4096,
-            "modules plus M7's floor is {} against 4096",
+            "modules plus M-ffi-ladder's floor is {} against 4096",
             SPEC_TOKENS + m7_floor
         );
     }

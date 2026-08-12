@@ -61,7 +61,7 @@ pub struct FileEntry {
 /// checked where the module table is built, not here, because the collision is a
 /// property of a *set* of files and this function knows about one.
 ///
-/// It lives in `source` rather than in the emitter because at M8a a module is a
+/// It lives in `source` rather than in the emitter because at M-module-namespace a module is a
 /// language-level thing — it is what a qualified name names — and the C symbol
 /// is downstream of it. `emit::mangle` calls this.
 /// The module a source path stands for, **as the author typed it** — the stem,
@@ -122,7 +122,7 @@ mod tests {
     }
 
     /// The sanitising rule, and the residual it leaves — asserted rather than
-    /// described, because the comment above claimed the opposite until M8a.
+    /// described, because the comment above claimed the opposite until M-module-namespace.
     #[test]
     fn the_component_is_alphanumeric_and_that_is_not_injective() {
         assert_eq!(module_of("print_inst.hero"), "printinst");

@@ -53,7 +53,7 @@ pub(super) fn expr(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
             expr(r, ast, src, *right);
         }
         // `p.x` — the base is a value, the field name is not a name in any
-        // scope. Which record it belongs to is M3c's question.
+        // scope. Which record it belongs to is M-data-declarations's question.
         ExprKind::Field { base, .. } => expr(r, ast, src, *base),
         ExprKind::Index { base, index } => {
             expr(r, ast, src, *base);
@@ -194,7 +194,7 @@ fn name(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
 /// a function value.
 ///
 /// That third case is why the entry is left `Unresolved` rather than reported
-/// when the name is a field somewhere in the file. M3c finishes the job with the
+/// when the name is a field somewhere in the file. M-data-declarations finishes the job with the
 /// receiver's type in hand, and §4.17 gets the whole answer in one message
 /// ("no field `cb` on `Holder`, and no function `cb`") instead of two passes
 /// each guessing half of it.
@@ -224,7 +224,7 @@ fn method(r: &mut Resolver, ast: &Ast, src: &Source, at: ExprId, called: Span) {
         return;
     }
     if r.field_in_reach(text) {
-        return; // could be a function-valued field: M3c decides, with the type
+        return; // could be a function-valued field: M-data-declarations decides, with the type
     }
     // `p.dist2(o)` where `dist2` is imported. UFCS finds only this file's
     // functions, and this is the message that says so — panel 031 R5 chose it

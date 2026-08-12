@@ -118,7 +118,7 @@ function main()
 
 /// The compiler-engineer's veto in panel 015, now a test: a field can hold a
 /// function value (§4.13) and §4.11 resolves the dot by looking at the
-/// receiver's *type* first. M3a has no types, so it must stay silent.
+/// receiver's *type* first. M-name-resolution has no types, so it must stay silent.
 #[test]
 fn a_field_that_could_hold_a_function_is_left_to_the_checker() {
     assert_clean(

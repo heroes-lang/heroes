@@ -1,7 +1,7 @@
 ## First
 #
-# The smallest program worth compiling — the M5a acceptance input.
-# Its hand-written C target is tools/spike/01-first.c; in M5a the emitter's
+# The smallest program worth compiling — the M-scalars-run acceptance input.
+# Its hand-written C target is tools/spike/01-first.c; in M-scalars-run the emitter's
 # output is compared against that file by eye.
 
 function main()

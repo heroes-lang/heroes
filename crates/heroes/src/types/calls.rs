@@ -63,7 +63,7 @@ pub(super) fn call(
                 DeclKind::Function(_) => {
                     // The callee is a value in its own right (§4.13), so it gets
                     // its signature recorded even when it is called directly —
-                    // M4's lowering reads `expr_types`, not the tree.
+                    // M-ir-lowering's lowering reads `expr_types`, not the tree.
                     let signature = signature_of(checker, ast, resolved, decl);
                     checker.record(callee, signature);
                     return user_call(checker, ast, resolved, src, decl, args, None, span);

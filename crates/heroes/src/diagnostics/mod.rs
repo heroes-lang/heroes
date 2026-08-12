@@ -98,9 +98,9 @@ impl Diagnostic {
     }
 
     /// A form the backend cannot emit yet. The message names the **capability**
-    /// and never the milestone: `(M5b)` resolves only in `docs/ROADMAP.md`, a
+    /// and never the milestone: `(M-strings-ownership)` resolves only in `docs/ROADMAP.md`, a
     /// file the reader does not have, and §4.17's standard is everything needed
-    /// without opening another file. The panel's llm-ergonomist read `(M5b)` as
+    /// without opening another file. The panel's llm-ergonomist read `(M-strings-ownership)` as
     /// an internal tracker id, grepped the repository for it, and then told its
     /// user the toolchain was broken.
     /// The `code` names the *capability*, so a harness can count which one blocked

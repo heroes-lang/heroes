@@ -2,8 +2,8 @@
 //! source expression and both sides").
 //!
 //! Part 5's row reads "`if` plus `panic`, with source text attached", and the
-//! **and both sides** half is what makes lowering it at M4 rather than M6 worth
-//! doing. The spans have existed since M2; a lowering that emitted only the text
+//! **and both sides** half is what makes lowering it at M-ir-lowering rather than M-generics-library worth
+//! doing. The spans have existed since M-syntax-tree; a lowering that emitted only the text
 //! would have to be rewritten when the test runner arrives, which is §1.2's cost
 //! formula turned on this compiler's own source. So the abort carries three
 //! operands where the asserted expression is a comparison — the text, the left
@@ -39,11 +39,11 @@ pub(super) fn assert(
     //
     // The two sides are computed here, in the test block, and read over there, in the
     // failure block — which is the whole reason they are named at all. For an `int`
-    // that is free. For a `str` it is a use-after-free, because M5b's ownership pass
+    // that is free. For a `str` it is a use-after-free, because M-strings-ownership's ownership pass
     // releases an owning temporary at the end of the block that defines it, and a
     // block-crossing read is precisely what it cannot see.
     //
-    // Panel 021 predicted this and scheduled the repair for M6, with `Abort::Assert`.
+    // Panel 021 predicted this and scheduled the repair for M-generics-library, with `Abort::Assert`.
     // It arrived early: the verifier's `Owned` invariant fired on
     // `examples/gallery/07-strings.hero`, on `assert sentence_of([…]) == "one two"`.
     // A synthetic slot is the fix the panel named, and it costs two instructions on a

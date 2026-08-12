@@ -174,7 +174,7 @@ pub(super) fn if_expr(
         b.switch_to(next);
     }
     // No `else` means the fall-through *is* the missing arm. An `if` used as a
-    // value always has one (§4.7, checked at M3b), so that only happens in
+    // value always has one (§4.7, checked at M-checker-core), so that only happens in
     // statement position.
     if let Some(block) = otherwise {
         let value = stmts::block(b, ast, resolved, checked, src, block, wants_value);

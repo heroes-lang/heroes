@@ -1,9 +1,9 @@
-//! `heroes run <file.hero> [-o <path>]` — compile at `-O2` and execute (M5a).
+//! `heroes run <file.hero> [-o <path>]` — compile at `-O2` and execute (M-scalars-run).
 //!
 //! The dev loop, and the verb CLAUDE.md §6 sanctions by name (`nim r` → `heroes
 //! run`). It is a **subcommand** rather than a flag because it answers a different
 //! question with a different artifact class: `build` produces a file, `run` produces
-//! a process. Panel 020 struck the warrant originally offered for it — the M8c
+//! a process. Panel 020 struck the warrant originally offered for it — the M-selfhost-fixpoint
 //! fixpoint invocation does *not* contain `run` — and kept the verb on the honest
 //! one: design.md §3.5 names it, and the `run/` golden harness needs the
 //! compile-and-execute leg at `-O2`.

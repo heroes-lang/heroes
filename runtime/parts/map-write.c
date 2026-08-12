@@ -108,9 +108,9 @@ static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
     return b;
 }
 
-/* THE COPY-ON-WRITE THE MAP SHIPPED WITHOUT (M6 step 3).
+/* THE COPY-ON-WRITE THE MAP SHIPPED WITHOUT (M-generics-library step 3).
  *
- * `hero_array_unshare`'s twin, and it was missing for one commit: M6 step 2 wrote
+ * `hero_array_unshare`'s twin, and it was missing for one commit: M-generics-library step 2 wrote
  * `hero_map_set` to write in place with no refcount check, so `n = m` followed by
  * `m["b"] @ 2` changed `n` as well — `2 2 2` where spec line 60 requires `1 2 -1`.
  * ASan clean, leak counter zero, exit 0: a green harness on a program that
@@ -160,7 +160,7 @@ void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
             /* The key is COPIED (the caller lends it) and the value is MOVED —
              * `hero_array_set`'s rule, and the ownership pass's: `own.rs` increfs
              * before an indexed store precisely so the primitive does not have to.
-             * Copying here instead increfs a second time, which is the leak M6
+             * Copying here instead increfs a second time, which is the leak M-generics-library
              * step 2 shipped: `m["a"] @ "x" + "y"` printed `xy` and then
              * `1 heap blocks still live at exit`. */
             m->key->copy(hero_map_key_at(m, i), key);

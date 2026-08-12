@@ -5,8 +5,8 @@
 //! top level is order-free and mutual recursion needs no forward declarations
 //! (§4.2); C's does not work that way. So every prototype is emitted before every
 //! definition, in source order — deterministic, and it needs no topological sort at
-//! M5a because there are no `typedef struct`s yet: aggregates arrive with the
-//! descriptor pass at M5c, and their containment cycles with them.
+//! M-scalars-run because there are no `typedef struct`s yet: aggregates arrive with the
+//! descriptor pass at M-value-aggregates, and their containment cycles with them.
 //!
 //! **The prologue exists because `goto` may not jump over an initialisation.**
 //! Every slot and every temporary is declared at the top of the function, and
@@ -120,7 +120,7 @@ fn escape_c(text: &str) -> String {
 }
 
 /// Whether this function reaches C at all. A `test` block does not: §4.18 says
-/// ordinary builds ignore it, and `heroes test` (M6) is what enters it.
+/// ordinary builds ignore it, and `heroes test` (M-generics-library) is what enters it.
 pub(super) fn emitted(function: &Function, target: Target) -> bool {
     use crate::ir::FnKind;
     match function.kind {
@@ -201,7 +201,7 @@ pub(super) fn prototype(
 ///
 /// The rendering that is hashed is the *canonical* one — `render_instance` — so
 /// the port reproduces the same symbol from the same public spelling, and the
-/// M8c fixpoint does not depend on two implementations interning in the same
+/// M-selfhost-fixpoint fixpoint does not depend on two implementations interning in the same
 /// order.
 pub(super) fn instance_name(
     function: &Function,

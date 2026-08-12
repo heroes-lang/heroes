@@ -54,7 +54,7 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
                     continue; // `ir/tests/mutants.rs` owns that invariant.
                 }
                 // The emitter never sees a program without monomorphisation, so
-                // neither does this invariant (M6 step 6).
+                // neither does this invariant (M-generics-library step 6).
                 let mut program = lowered.program;
                 let mut checked = checked;
                 if !crate::ir::mono::run(&mut program, &mut checked, &parsed.ast, &src).is_empty() {
@@ -84,9 +84,9 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
     // are small because the *frontend* catches 96% of mutants before this point
     // (measurement 002) — which is the thesis working, and it means this invariant runs
     // over the residue rather than over the corpus. It will grow with every gate row
-    // M5b and M5c delete.
+    // M-strings-ownership and M-value-aggregates delete.
     // **The refused count falls as the gate retires rows, and that is the point.**
-    // It was >= 10 when `sort`, `join`, `chars` and `range` were all refused; M6
+    // It was >= 10 when `sort`, `join`, `chars` and `range` were all refused; M-generics-library
     // steps 3 and 4 gave four of them implementations, so what is left is
     // `extern`, function values and generics — and most mutants of those files
     // never reach the emitter, because the frontend catches them first. The floor

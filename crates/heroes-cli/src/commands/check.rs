@@ -1,4 +1,4 @@
-//! `heroes check <file.hero> [flags]` — names and types (M3).
+//! `heroes check <file.hero> [flags]` — names and types (M-typed-frontend).
 //!
 //! The command the golden `check/` cases run through, and where every frontend
 //! stage's diagnostics come out. The stages are ordered, not interleaved: **each

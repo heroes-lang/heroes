@@ -1,7 +1,7 @@
 //! §4.16: what the compiler already knew, and used to throw away.
 //!
 //! The hole is not an error and never was. What these tests pin is that the
-//! *expected type* reaches it — which is the whole deliverable, since M3d's
+//! *expected type* reaches it — which is the whole deliverable, since M-rich-diagnostics's
 //! output is built from `Checked::holes` and can only say what the checker
 //! recorded here.
 

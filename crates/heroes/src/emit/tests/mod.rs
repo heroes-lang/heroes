@@ -42,7 +42,7 @@ fn named(name: &str, text: &str) -> Emitted {
     assert!(out.diagnostics.is_empty(), "lower: {}", out.diagnostics[0].message);
     // **Monomorphisation, because the emitter never sees a program without it.**
     // The helper used to stop at lowering, which was harmless while the gate
-    // refused every generic; from M6 step 6 it lets them through, and a `T?`
+    // refused every generic; from M-generics-library step 6 it lets them through, and a `T?`
     // still holding a type parameter reaches `c_type` with no C name — the panic
     // "every `T?` is named before anything can mention one", found by the mutant
     // corpus rather than by a case anyone wrote.

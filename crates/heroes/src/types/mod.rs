@@ -1,5 +1,5 @@
 //! The checker: every expression gets a type, or a diagnostic says why not
-//! (design.md Part 10 step 5, §4.5 bidirectional checking; ROADMAP M3b–M3c).
+//! (design.md Part 10 step 5, §4.5 bidirectional checking; ROADMAP M-checker-core–M-data-declarations).
 //!
 //! **Bidirectional, and the two modes are the whole design** (§4.5). Signatures
 //! are always explicit and inference is local, so the checker never solves
@@ -79,7 +79,7 @@ pub use table::{Params, Ty, TyId, Types};
 pub struct Checked {
     pub types: Types,
     /// The type of every local, indexed as `Resolved::locals` is — kept because
-    /// §4.16's hole output has to say what is in scope, and M4's lowering will
+    /// §4.16's hole output has to say what is in scope, and M-ir-lowering's lowering will
     /// ask the same question.
     pub local_types: Vec<TyId>,
     /// Each function declaration's result type, by index into `Ast::decls`.
@@ -92,7 +92,7 @@ pub struct Checked {
     /// unreported-error expression carries `Types::error()`.
     pub expr_types: Vec<TyId>,
     /// What the checker expected where a `???` stands, in source order. §4.16's
-    /// output is built from this at M3d, and the cap of 5 is applied there.
+    /// output is built from this at M-rich-diagnostics, and the cap of 5 is applied there.
     pub holes: Vec<Hole>,
     /// `record` and `variant` declarations in an order where every by-value
     /// dependency precedes its user — C needs every struct complete before it is
@@ -207,7 +207,7 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
     // the appendix within an hour of being written.
     //
     // **Per module, not per program** (2026-08-12). This test was
-    // `holes.is_empty()`, and since M8a one `Checked` spans every module — so an
+    // `holes.is_empty()`, and since M-module-namespace one `Checked` spans every module — so an
     // unfinished `geom.hero` held back `missing_return` in a `main.hero` nobody
     // was editing. It is D1's defect in the pass D1's fix did not reach, and the
     // sentence above already said "file-wide" while the code asked about the

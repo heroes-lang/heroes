@@ -2,7 +2,7 @@
  *
  * ============================================================================
  * This spike carried the author's first uncued prediction: draw the
- * control-flow graph before reading the code, then compare. Done at M0;
+ * control-flow graph before reading the code, then compare. Done at M-day-zero;
  * the divergence and its lesson live in docs/journal/000-setup.md §3 and
  * docs/glossary/000-basic-block.md.
  * ============================================================================
@@ -17,7 +17,7 @@
  *             i @ i + 1
  *         print(total)                # → 10
  *
- * The lowering (M4) reduces all control flow to labels and conditional jumps:
+ * The lowering (M-ir-lowering) reduces all control flow to labels and conditional jumps:
  * one goto+label per basic block, no while/for reconstruction. This file is
  * that exact shape, hand-written.
  *

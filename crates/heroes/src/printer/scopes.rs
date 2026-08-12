@@ -33,7 +33,7 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
     out.push_str(&format!("module {here}\n"));
     // What this file may write qualified, and what each module offers it. It is
     // the half of "what does the compiler know about this file" that the symbol
-    // table cannot show, because those names are not in it (M8a).
+    // table cannot show, because those names are not in it (M-module-namespace).
     let named: Vec<&String> = resolved
         .module_uses
         .keys()

@@ -16,7 +16,7 @@
  *
  * ONE TRANSLATION UNIT, ELEVEN FILES, and the arrangement is deliberate.
  *
- * The runtime passed 1200 lines at M6 step 3, four times CLAUDE.md §11's ceiling
+ * The runtime passed 1200 lines at M-generics-library step 3, four times CLAUDE.md §11's ceiling
  * — "the author must be able to open any file and read it without drowning".
  * `runtime/parts/` is that file split by concern, and this file includes them in
  * dependency order so the result is still exactly one translation unit.

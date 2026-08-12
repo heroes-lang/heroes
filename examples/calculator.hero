@@ -1,4 +1,4 @@
-# The calculator — design.md's appendix program, and M6's acceptance criterion:
+# The calculator — design.md's appendix program, and M-generics-library's acceptance criterion:
 # it compiles, it runs, its tests pass.
 #
 # One difference from the appendix, and it is deliberate on both sides. There the

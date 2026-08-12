@@ -32,7 +32,7 @@ pub fn report(ast: &Ast, resolved: &Resolved, checked: &Checked, src: &Source) -
     let mut out = String::new();
     for hole in &checked.holes {
         // `Source::locate`, never `line_col` plus `src.name`: the hole report
-        // is not a `Diagnostic`, which is how it survived M8a's sweep still
+        // is not a `Diagnostic`, which is how it survived M-module-namespace's sweep still
         // naming the root file and a line from the concatenated text
         // (panel 033 D2).
         let (file, line, col) = src.locate(hole.span.start);

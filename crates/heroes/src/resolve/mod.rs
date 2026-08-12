@@ -1,5 +1,5 @@
 //! The resolver: every name, and what it means (design.md Part 10 step 4,
-//! §4.4 bindings, §4.16 the hole exemption; ROADMAP M3a).
+//! §4.4 bindings, §4.16 the hole exemption; ROADMAP M-name-resolution).
 //!
 //! One pass over a *clean* tree answers four questions the checker would
 //! otherwise have to answer while it is also doing arithmetic:
@@ -127,7 +127,7 @@ pub enum LocalKind {
 /// make the unused rule blind to every cell in the language.
 ///
 /// `ty` and `value` are the syntax's own answer to "what is this local", kept
-/// because M3b would otherwise re-walk the tree to find it: a parameter and a
+/// because M-checker-core would otherwise re-walk the tree to find it: a parameter and a
 /// cell always carry a written type (§4.4), a plain `x = e` carries only its
 /// value (§4.5 — inference is local), and a loop variable carries the iterable
 /// it draws elements from.
@@ -157,7 +157,7 @@ pub struct Resolved {
     /// has no order either. The value is an index into `Ast::decls`.
     ///
     /// The module is in the key because two modules may each declare `Point`
-    /// and they are two types (M8a). It is also what makes an unqualified name
+    /// and they are two types (M-module-namespace). It is also what makes an unqualified name
     /// see only its own file: `top_in` is asked for one module, never for all
     /// of them, and that single fact is most of what "always qualified" costs
     /// the resolver.
@@ -172,7 +172,7 @@ pub struct Resolved {
     /// that is read only inside the hole).
     ///
     /// A set rather than a flag, and the difference is a fixed defect: with one
-    /// `Ast` covering every module since M8a, a single `bool` made the exemption
+    /// `Ast` covering every module since M-module-namespace, a single `bool` made the exemption
     /// program-wide, so an unfinished `geom.hero` silently suspended the rule in
     /// a `main.hero` nobody was editing (panel 033 D1).
     pub holes_in: std::collections::BTreeSet<String>,
@@ -213,7 +213,7 @@ impl Resolved {
     /// The preference is the whole function. `top` is a `BTreeMap` keyed by
     /// `(module, name)`, so a bare `find` returns the **alphabetically first**
     /// module of however many declare that name — which had exactly one possible
-    /// answer while a program was one file, and since M8a picks by sort order.
+    /// answer while a program was one file, and since M-module-namespace picks by sort order.
     /// Measured (2026-08-12): with `use geom` written and both `alpha` and `geom`
     /// declaring `scale`, the compiler named `alpha` — a module the file cannot
     /// see — attached a `guess` fix that gives `wrong_arity` if followed, and
@@ -296,7 +296,7 @@ struct Resolver {
     /// variant payload fields alike. It exists for one narrow purpose: to keep
     /// the unknown-function error off `h.cb(n)` where `cb` is a field holding
     /// a function value (§4.13), which §4.11's algorithm resolves by looking at
-    /// the receiver's *type* and M3a has none. See `exprs::method`.
+    /// the receiver's *type* and M-name-resolution has none. See `exprs::method`.
     fields: std::collections::BTreeSet<(String, String)>,
     /// Names the compiler has offered as the repair for an unknown name. They
     /// are exempt from the unused sweep: applying the fix would read them, so
@@ -306,7 +306,7 @@ struct Resolver {
     owner: u32,
     /// The module whose declaration is being resolved. Every unqualified name
     /// is looked up in it and in nothing else, which is where "always
-    /// qualified" is actually enforced (M8a, panel 031).
+    /// qualified" is actually enforced (M-module-namespace, panel 031).
     module: String,
     /// `use` lines that were read, keyed as `module_uses` is. What is left over
     /// is what the unused rule reports — spec line 74 covers it for free,

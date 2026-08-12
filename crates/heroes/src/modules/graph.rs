@@ -10,7 +10,7 @@
 //! - **a cycle.** Refused (panel 031 R6), and refused with no sentence in the
 //!   spec: the error is loud and it names the ring, which is more than a
 //!   sentence could carry. Refusing is the reversible direction — relaxing later
-//!   breaks nothing, while tightening at M9, where the per-module cache needs a
+//!   breaks nothing, while tightening at M-separate-compilation, where the per-module cache needs a
 //!   topological order, would break the port.
 //! - **two modules that mangle to one C name.** `module_of` sanitises to
 //!   `[A-Za-z0-9]`, so `geo_m` and `geom` are one component and clang answers

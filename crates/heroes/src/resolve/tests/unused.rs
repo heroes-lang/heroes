@@ -162,7 +162,7 @@ function describe(t: Token) -> int
 
 /// §4.16, normative and file-wide: the hole suspends the rule for the whole
 /// file, including parameters, and lifts when the last hole is filled. The
-/// ffi-pragmatist's condition — the M6 witness's `simplify` depends on it.
+/// ffi-pragmatist's condition — the M-generics-library witness's `simplify` depends on it.
 #[test]
 fn one_hole_anywhere_suspends_the_rule_for_the_whole_file() {
     assert_clean(

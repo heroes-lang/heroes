@@ -93,7 +93,7 @@ pub fn measure(text: &str, vendor_dir: &Path) -> Result<Measurement, String> {
 
 /// The repo root, resolved at compile time so the command works from any
 /// directory during development. Declared exception with the same expiry
-/// as `cargo` itself (CLAUDE.md § One command): at M8c the self-hosted
+/// as `cargo` itself (CLAUDE.md § One command): at M-selfhost-fixpoint the self-hosted
 /// `measure` reads its tables through Heroes' own file I/O.
 pub fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -155,7 +155,7 @@ mod tests {
     fn the_two_instruments_agree_within_their_error_bar() {
         // Panel 011 measured spec **v0** at 1989 (claude-legacy) / 2048 (cl100k),
         // and that pair is what retired the 1.33-tokens-per-word heuristic: the
-        // estimate had said 1496. Those numbers are history — v1 landed at M3d —
+        // estimate had said 1496. Those numbers are history — v1 landed at M-rich-diagnostics —
         // so what is asserted here is the property that survives an amendment:
         // the instruments disagree by a small, published margin, and one of them
         // is the binding number.

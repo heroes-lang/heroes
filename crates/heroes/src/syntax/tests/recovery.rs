@@ -24,7 +24,7 @@ DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a
 
 /// An invented kind word gets the whole list: the keyword set is closed, so
 /// the message can enumerate everything a top-level line may start with — and
-/// when the set grows, as it did at M8a with `use`, the message grows with it
+/// when the set grows, as it did at M-module-namespace with `use`, the message grows with it
 /// because this test pins the enumeration rather than its length.
 /// (Replaces the `expected_entity` test — there is no `= entity` position
 /// left for an unknown word to sit in.)

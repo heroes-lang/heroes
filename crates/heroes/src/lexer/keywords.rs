@@ -27,7 +27,7 @@ pub(super) fn keyword(text: &str) -> Option<TokenKind> {
         "test" => TokenKind::KwTest,
         "assert" => TokenKind::KwAssert,
         "extern" => TokenKind::KwExtern,
-        // Panel 031. Until M8a this word was in `foreign_word` below, refused
+        // Panel 031. Until M-module-namespace this word was in `foreign_word` below, refused
         // with "modules do not exist yet"; the two tables are the reason the
         // change is one line in each.
         "use" => TokenKind::KwUse,

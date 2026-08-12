@@ -295,7 +295,7 @@ fn every_accepted_program_has_a_real_topological_order() {
     // mutation operator that silently stops producing anything fails here instead of
     // making this test quietly assert nothing.
     //
-    // MEASURED, and the number moved once already: at M5c step 1 this corpus held 66
+    // MEASURED, and the number moved once already: at M-value-aggregates step 1 this corpus held 66
     // accepted programs and only **14** ordered aggregates, because it predated
     // aggregates being emittable and almost nothing in it declared a record. The same
     // coverage hole `emit/tests/mutants.rs` wrote down when it produced zero mutants on

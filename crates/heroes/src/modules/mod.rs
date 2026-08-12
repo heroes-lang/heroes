@@ -4,7 +4,7 @@
 //! layout"). This module starts at the root file, finds its `use` lines, reads
 //! what they name, and repeats — producing the ordered list `Source::of` turns
 //! into one text. **It emits one whole-program `.c` from that**: separate
-//! compilation is M9, and panel 030 R1 cut it out of M8a deliberately.
+//! compilation is M-separate-compilation, and panel 030 R1 cut it out of M-module-namespace deliberately.
 //!
 //! **Discovery re-uses the real lexer** (panel 031 R8). The alternative was a
 //! prefix scanner, licensed by a spec rule that `use` lines come first — and it

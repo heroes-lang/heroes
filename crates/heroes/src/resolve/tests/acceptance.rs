@@ -1,6 +1,6 @@
 //! The acceptance program, resolved.
 //!
-//! design.md's appendix is the M6 target and has one source — the appendix
+//! design.md's appendix is the M-generics-library target and has one source — the appendix
 //! itself — so this test reads design.md and extracts the fence, exactly as
 //! `syntax::tests::acceptance` does for parsing. Two stages, one witness.
 //!

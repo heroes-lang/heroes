@@ -69,7 +69,7 @@ fn position<'a>(mut names: impl Iterator<Item = &'a str>, wanted: &str) -> Optio
 }
 
 /// Whether a value of this type carries a reference the compiler must count
-/// (M5b, panel 021; extended to aggregates at M5c).
+/// (M-strings-ownership, panel 021; extended to aggregates at M-value-aggregates).
 ///
 /// **One home for this question**, and that is still the whole reason it is here:
 /// the ownership pass, the prologue's zero-initialisation, the exit sweep and the

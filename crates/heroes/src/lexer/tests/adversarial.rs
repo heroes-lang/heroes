@@ -1,4 +1,4 @@
-//! M1's five adversarial cases (ROADMAP) — written to *break* the lexer,
+//! M-token-stream's five adversarial cases (ROADMAP) — written to *break* the lexer,
 //! not to exercise it. Ratified by the author in the debrief of 2026-08-04;
 //! what each one guards against is stated on the case itself.
 //!

@@ -15,7 +15,7 @@
  * per-bucket layout would need padding this code computes, while parallel
  * regions need only each region aligned once.
  *
- * The seed is FIXED, and it is not a style choice: the M8c fixpoint compares
+ * The seed is FIXED, and it is not a style choice: the M-selfhost-fixpoint fixpoint compares
  * generated C byte for byte, and a seed that varied per run would make the
  * compiler produce two different correct outputs.
  *
@@ -80,7 +80,7 @@ static void hero_map_require(const HeroMapHeader *m) {
  *
  * It aborts rather than inventing an order, exactly as `sort` does one file
  * over, and for the reason written there: a wrong answer with no error is what
- * the M8c fixpoint cannot have. */
+ * the M-selfhost-fixpoint fixpoint cannot have. */
 static int64_t hero_map_slot_of(const HeroMapHeader *m, const void *key) {
     if (!m->key->eq(key, key)) hero_panic("a map key that is not equal to itself (nan)");
     uint64_t h = m->key->hash(key) ^ HERO_MAP_SEED;

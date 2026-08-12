@@ -142,7 +142,7 @@ pub fn emit_for(
     // in a `#line` directive, and the program-wide types the emitter invents
     // (option structs, function-pointer typedefs), which belong to no
     // declaration. Every name that comes from a declaration takes that
-    // declaration's own module instead — M8a's whole change to this file.
+    // declaration's own module instead — M-module-namespace's whole change to this file.
     let module = crate::source::module_of(&src.name);
     let names = ctype::Names::new(ast, src)
         .with_options(&module, checked)

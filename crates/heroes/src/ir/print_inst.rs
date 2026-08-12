@@ -198,7 +198,7 @@ fn arguments(
 fn constant(value: Const) -> String {
     match value {
         Const::Int(n) => format!("{n}"),
-        // Canonical `f64` rendering is M5b's (panel 006), and the goldens here will
+        // Canonical `f64` rendering is M-strings-ownership's (panel 006), and the goldens here will
         // move with it — pre-registered rather than discovered.
         Const::Float(x) => format!("{x:?}"),
         Const::Bool(b) => format!("{b}"),

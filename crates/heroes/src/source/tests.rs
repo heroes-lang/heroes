@@ -1,6 +1,6 @@
 //! What the file table has to get right.
 //!
-//! Every property here was a one-file assumption until M8a, and each one is a
+//! Every property here was a one-file assumption until M-module-namespace, and each one is a
 //! way for a diagnostic to point at the wrong line in the wrong file — the class
 //! of defect that is invisible in a green test suite, because the message is
 //! well-formed and merely false.
@@ -112,7 +112,7 @@ fn user_text_is_the_root_file_and_nothing_else() {
     assert_eq!(alone.user_text(), alone.text);
 }
 
-/// The library arrangement M5b built, still exactly itself — now expressed as
+/// The library arrangement M-strings-ownership built, still exactly itself — now expressed as
 /// two rows of the general table rather than as a boundary offset.
 #[test]
 fn with_library_is_two_files() {

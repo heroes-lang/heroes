@@ -5,7 +5,7 @@
 //! `match`, so an `Op` variant added without listing its operands is a **compile**
 //! error rather than a verifier that quietly stops checking it.
 //!
-//! Split out of `verify.rs` because it is not only the verifier's question. M5b's
+//! Split out of `verify.rs` because it is not only the verifier's question. M-strings-ownership's
 //! ownership pass inserts `incref`/`decref` by walking definitions and uses, and two
 //! tables that disagree about which is which would be a refcount bug that reproduces
 //! once a week. There is one table, and it is this file.

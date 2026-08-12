@@ -17,7 +17,7 @@
 //! 2. **One exit-code contract**, the same for every command: **0** clean · **1**
 //!    diagnostics were reported and no artifact was produced · **2** the tool could
 //!    not do its job. That is POSIX's own shape (`grep`, `diff`) and javac has
-//!    shipped it since JDK 1.x. The gloss on 1 widened at M5a: an unsupported form
+//!    shipped it since JDK 1.x. The gloss on 1 widened at M-scalars-run: an unsupported form
 //!    is a diagnostic about the *compiler*, and it exits 1 because 2 sends an agent
 //!    to reinstall its toolchain (panel 020, measured).
 //! 3. **`Tag`, not a name string.** Dispatch is an exhaustive `match` on this enum,
