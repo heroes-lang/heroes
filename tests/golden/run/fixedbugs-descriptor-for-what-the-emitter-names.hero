@@ -17,12 +17,12 @@
 # symptoms at once.
 
 record P
-    x: int
+    x: i64
 
 variant Shape
     dot
     box
-        w: int
+        w: i64
 
 function grab(f: bool) -> P?
     if f
@@ -36,15 +36,15 @@ function shape_of(f: bool) -> Shape?
 
 # The generic that panicked: `[A?]` interns a `Ty::Fallible` over a parameter,
 # which monomorphisation deletes the function for and leaves the type behind.
-function count<A>(xs: [A?]) -> int
+function count<A>(xs: [A?]) -> i64
     return xs.len()
 
-function width_of(s: Shape) -> int
+function width_of(s: Shape) -> i64
     return match s
         .dot   => 0
         .box b => b.w
 
-function width(f: bool) -> int
+function width(f: bool) -> i64
     return match shape_of(f)
         .ok s  => width_of(s)
         .err _ => 0 - 1
@@ -53,5 +53,5 @@ function main()
     print(grab(true).must().x)
     print(grab(false).is_err())
     print(width(true))
-    ys: [int?] = []
+    ys: [i64?] = []
     print(count(ys))

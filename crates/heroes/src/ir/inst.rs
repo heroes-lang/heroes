@@ -160,7 +160,7 @@ pub enum UnOp {
     /// marks it `!`.
     Neg,
     Not,
-    /// `~x` — the bitwise complement, `int` only. It cannot abort: every `int64_t`
+    /// `~x` — the bitwise complement, `i64` only. It cannot abort: every `int64_t`
     /// has a complement, including `INT64_MIN`, which is what makes it unlike `Neg`.
     BitNot,
 }
@@ -181,7 +181,7 @@ pub enum BinOp {
     Le,
     Gt,
     Ge,
-    /// The bitwise set (§4.14), `int` only. `Shl` and `Shr` are the two that can
+    /// The bitwise set (§4.14), `i64` only. `Shl` and `Shr` are the two that can
     /// abort — a shift count outside 0..63 is UB in C, so the emitter guards it the
     /// way it guards division (CLAUDE.md §7: never C UB).
     BitAnd,

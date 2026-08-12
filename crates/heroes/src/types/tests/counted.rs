@@ -1,7 +1,7 @@
 //! Which types own a reference the compiler must count (§4.10, §4.20).
 //!
 //! The question is transitive, and that is the whole reason it has a table: a
-//! `record` of two `int`s owns nothing and needs no zero-initialisation, no store
+//! `record` of two `i64`s owns nothing and needs no zero-initialisation, no store
 //! incref and no exit sweep, while the same record with one `str` in it needs all
 //! three. Wrong in the cheap direction is a leak; in the other, a use-after-free.
 //!
@@ -49,23 +49,23 @@ fn owns(text: &str, wanted: &str) -> bool {
 /// Every record is a parameter of something, so every one of them is interned.
 const PROGRAM: &str = "\
 record Plain
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 record Holder
     name: str
 
 record Nested
     inner: Holder
-    n: int
+    n: i64
 
-function a(p: Plain) -> int
+function a(p: Plain) -> i64
     return p.x
 
 function b(h: Holder) -> str
     return h.name
 
-function c(n: Nested) -> int
+function c(n: Nested) -> i64
     return n.n
 
 function main()
@@ -98,11 +98,11 @@ fn a_variant_is_counted_when_one_case_carries_a_reference() {
     let text = "\
 variant Token
     num
-        v: int
+        v: i64
     word
         text: str
 
-function kind(t: Token) -> int
+function kind(t: Token) -> i64
     return match t
         .num n  => n.v
         .word _ => 0
@@ -121,9 +121,9 @@ fn a_variant_of_scalars_owns_nothing() {
 variant Shape
     dot
     line
-        len: int
+        len: i64
 
-function size(s: Shape) -> int
+function size(s: Shape) -> i64
     return match s
         .dot    => 0
         .line l => l.len

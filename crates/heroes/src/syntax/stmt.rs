@@ -7,7 +7,7 @@
 //!
 //! ```text
 //! x = 5            name  =        immutable binding
-//! v: int @ 0       name  :        declaration (the type is mandatory)
+//! v: i64 @ 0       name  :        declaration (the type is mandatory)
 //! v @ v + 1        place @        mutation
 //! ```
 //!
@@ -250,7 +250,7 @@ fn bind(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
     StmtKind::Bind { name, ty: None, value: expr(cur, ast, src) }
 }
 
-/// `v: int @ 0` — a mutable cell, type mandatory. `xs: [int] = []` — an
+/// `v: i64 @ 0` — a mutable cell, type mandatory. `xs: [i64] = []` — an
 /// immutable binding that needs its annotation because an empty literal
 /// cannot say what it holds (§4.5).
 fn annotated(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
@@ -265,7 +265,7 @@ fn annotated(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
     }
     if !cur.at_reported_error() {
         let message = format!(
-            "expected `@` to declare a mutable, or `=` to bind, found {} — `v: int @ 0` declares a cell, `xs: [int] = []` binds once",
+            "expected `@` to declare a mutable, or `=` to bind, found {} — `v: i64 @ 0` declares a cell, `xs: [i64] = []` binds once",
             cur.found(src)
         );
         cur.error("expected_binding_symbol", message, cur.span());

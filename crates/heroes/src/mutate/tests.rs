@@ -10,7 +10,7 @@ use super::{mutants, run};
 
 /// Both ends of §4.6's error-code contract in one file: the `fail` that builds
 /// the code, and the comparison that reads it back.
-const CODES: &str = r#"function classify(c: int) -> int?
+const CODES: &str = r#"function classify(c: i64) -> i64?
     if c < '0' || c > '9'
         return fail("unknown_char", "that byte is not a digit")
     return ok(c - '0')
@@ -23,7 +23,7 @@ function main()
 
 /// The same comparison written the other way round. A reader who writes the
 /// literal first is writing the same program, and the operator has to see it.
-const REVERSED: &str = r#"function classify(c: int) -> int?
+const REVERSED: &str = r#"function classify(c: i64) -> i64?
     if c < '0' || c > '9'
         return fail("unknown_char", "that byte is not a digit")
     return ok(c - '0')
@@ -37,7 +37,7 @@ function main()
 /// A code carrying an escape. Dropping the middle character of `\n` measures the
 /// lexer, which `mod.rs`'s rule 2 excludes — so the site is skipped outright
 /// rather than counted and then excluded.
-const ESCAPED: &str = r#"function classify(c: int) -> int?
+const ESCAPED: &str = r#"function classify(c: i64) -> i64?
     if c < '0' || c > '9'
         return fail("a\nb", "an escape, not a code")
     return ok(c - '0')
@@ -49,13 +49,13 @@ function main()
 /// Two constants a C header owns and one the program owns. The operator cannot
 /// tell them apart — nothing in the file says which number has an authority
 /// behind it — and that inability is exactly what the row measures.
-const NUMBERS: &str = r#"constant SQLITE_ROW: int
+const NUMBERS: &str = r#"constant SQLITE_ROW: i64
     100
 
-constant MAX_DEPTH: int
+constant MAX_DEPTH: i64
     64
 
-function deep(n: int) -> bool
+function deep(n: i64) -> bool
     return n > MAX_DEPTH || n == SQLITE_ROW
 
 function main()
@@ -64,7 +64,7 @@ function main()
 
 /// A constant whose body is not one literal. There is no single digit to move, so
 /// the site is skipped rather than mutated into something arbitrary.
-const COMPUTED: &str = r#"constant LIMIT: int
+const COMPUTED: &str = r#"constant LIMIT: i64
     base = 100
     base * 2
 
@@ -198,6 +198,6 @@ fn a_corpus_program_that_does_not_check_is_refused() {
     // `range` is a built-in, which is exactly what refused the library corpus.
     assert!(!super::base_checks_clean(
         "t.hero",
-        "function range(from: int, to: int) -> [int]\n    return []\n\nfunction main()\n    print(1)\n"
+        "function range(from: i64, to: i64) -> [i64]\n    return []\n\nfunction main()\n    print(1)\n"
     ));
 }

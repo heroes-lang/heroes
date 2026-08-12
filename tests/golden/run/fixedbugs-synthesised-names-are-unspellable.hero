@@ -14,18 +14,18 @@
 # nothing to keep in step.
 
 record opt0
-    x: int
+    x: i64
 
 record fn0
-    y: int
+    y: i64
 
-function bump(n: int) -> int
+function bump(n: i64) -> i64
     return n + 1
 
-function call(f: (function(int) -> int)) -> int
+function call(f: (function(i64) -> i64)) -> i64
     return f(41)
 
-function half(n: int) -> int?
+function half(n: i64) -> i64?
     if n % 2 == 0
         return ok(n / 2)
     return fail("odd", "not even")

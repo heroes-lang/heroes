@@ -4,12 +4,12 @@
 # every time round, which is a different program with the same output — until
 # the call has a side effect, and then it is a different program with a
 # different output. The slot is what makes the difference visible in the dump.
-function numbers() -> [int]
+function numbers() -> [i64]
     print("built")
     return [1, 2, 3]
 
-function total() -> int
-    sum: int @ 0
+function total() -> i64
+    sum: i64 @ 0
     for n in numbers()
         sum @ sum + n
     return sum

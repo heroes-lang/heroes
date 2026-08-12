@@ -20,7 +20,7 @@
 //! | `h_T_eq` | always | `==`, **field by field** |
 //!
 //! **`eq` walks fields, never bytes**, and panel 022 found the reason by compiling
-//! it: `record Flag { n: int, on: bool }` carries 7 bytes of padding, so two
+//! it: `record Flag { n: i64, on: bool }` carries 7 bytes of padding, so two
 //! `==`-equal records differ under `memcmp` with no warning, no error and no
 //! sanitiser report. The same argument retires `memcpy`-shaped thinking everywhere in
 //! this file.
@@ -108,13 +108,13 @@ pub(super) fn declared(
 ///
 /// A tagged union by value, exactly like a variant with two cases — but generated from
 /// a *type* rather than a declaration, because no `record` in the source describes it.
-/// The tag is a plain `int64_t` rather than an enum: `Op::Tag`'s result is an `int` in
+/// The tag is a plain `int64_t` rather than an enum: `Op::Tag`'s result is an `i64` in
 /// the IR and lowering already compares it against `const 0`, so an enum here would be
 /// a name the switch could not use.
 ///
 /// `ok` is case 0 and `err` is case 1, which is `ir/inst.rs`'s own numbering, and the
 /// comment above each typedef names the Heroes type — the struct is called `optN`
-/// because `int?` and `[int]?` sanitise to the same identifier and a collision here is
+/// because `int?` and `[i64]?` sanitise to the same identifier and a collision here is
 /// two types sharing one C name.
 /// `typedef int64_t (*h_m_fn0)(int64_t, int64_t);` — a plain C function pointer,
 /// because a Heroes function value IS one (§1.11's founding constraint). That is

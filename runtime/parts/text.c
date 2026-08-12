@@ -95,7 +95,7 @@ HeroArrayHeader *hero_str_chars(HeroStr s) {
 
 /* `join(parts, sep) -> str` — design.md:1318's answer to O(n^2) concatenation:
  * sum the lengths, allocate ONCE, copy once. The element check is pointer
- * identity against the one static descriptor, so a `[int]` arriving here is
+ * identity against the one static descriptor, so a `[i64]` arriving here is
  * named as a compiler bug rather than misread as text. */
 HeroStr hero_str_join(const HeroArrayHeader *parts, HeroStr sep) {
     hero_array_require(parts);

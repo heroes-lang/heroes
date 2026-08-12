@@ -19,7 +19,7 @@ use super::{Resolver, TypeRef};
 
 /// The primitive types (§4.3, plus §4.19's two FFI names). Not keywords: they
 /// are ordinary identifiers the resolver knows, which is why a type parameter
-/// named `int` is a name collision and not a syntax error.
+/// named `i64` is a name collision and not a syntax error.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Prim {
     Int,
@@ -34,7 +34,7 @@ pub enum Prim {
 
 pub(super) fn primitive(name: &str) -> Option<Prim> {
     Some(match name {
-        "int" => Prim::Int,
+        "i64" => Prim::Int,
         "f64" => Prim::F64,
         "bool" => Prim::Bool,
         "str" => Prim::Str,
@@ -157,7 +157,7 @@ fn type_candidates(r: &Resolver, ast: &Ast) -> Vec<String> {
             candidates.push(name.to_string());
         }
     }
-    for prim in ["int", "f64", "bool", "str", "ptr", "cstr"] {
+    for prim in ["i64", "f64", "bool", "str", "ptr", "cstr"] {
         candidates.push(prim.to_string());
     }
     candidates

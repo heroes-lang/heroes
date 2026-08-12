@@ -5,7 +5,7 @@ use crate::source::Span;
 
 use super::TypeId;
 
-/// A written type. `span` covers the whole type as written (`[int]` includes
+/// A written type. `span` covers the whole type as written (`[i64]` includes
 /// its brackets); for `Named` the span *is* the name, so the text never
 /// needs copying.
 pub struct TypeNode {
@@ -14,7 +14,7 @@ pub struct TypeNode {
 }
 
 pub enum TypeKind {
-    /// `int`, `str`, `Point`, `A` — a bare name. Whether it is built-in,
+    /// `i64`, `str`, `Point`, `A` — a bare name. Whether it is built-in,
     /// user-declared or a generic parameter is the resolver's question
     /// (M-name-resolution); the parser only records that a name stood here.
     Named,

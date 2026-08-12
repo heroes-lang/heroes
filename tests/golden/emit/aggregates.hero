@@ -23,7 +23,7 @@
 
 record Outer
     inner: Inner
-    n: int
+    n: i64
 
 record Inner
     name: str
@@ -32,9 +32,9 @@ variant Shape
     dot
     line
         from: Inner
-        len: int
+        len: i64
 
-function width(s: Shape) -> int
+function width(s: Shape) -> i64
     return match s
         .dot    => 0
         .line l => l.len

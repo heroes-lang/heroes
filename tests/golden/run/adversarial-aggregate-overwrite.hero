@@ -19,7 +19,7 @@
 
 record Cell
     tag: str
-    n: int
+    n: i64
 
 variant Slot
     empty
@@ -30,14 +30,14 @@ function main()
     # A counted record overwritten in a loop: the store's decref must release the
     # previous one every iteration, or the count grows without bound.
     c: Cell @ Cell(tag: "seed", n: 0)
-    i: int @ 0
+    i: i64 @ 0
     while i < 4
         c @ Cell(tag: "n" + to_str(i), n: i)
         i @ i + 1
     print(c.tag)
     # A counted variant overwritten in a loop, through both cases.
     s: Slot @ .empty
-    j: int @ 0
+    j: i64 @ 0
     while j < 3
         s @ .full(item: Cell(tag: "x" + to_str(j), n: j))
         s @ .empty

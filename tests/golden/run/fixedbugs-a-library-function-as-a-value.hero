@@ -13,15 +13,15 @@
 # Root-dependent as well as wrong, which is the signature this sweep kept
 # finding: the answer depended on what some other module happened to contain.
 
-function call_it(f: (function(int, int) -> [int])) -> int
+function call_it(f: (function(i64, i64) -> [i64])) -> i64
     return f(0, 3).len()
 
-function pick(f: (function(int) -> int), n: int) -> int
+function pick(f: (function(i64) -> i64), n: i64) -> i64
     return f(n)
 
 function main()
     print(call_it(range))
     print(pick(twice, 21))
 
-function twice(n: int) -> int
+function twice(n: i64) -> i64
     return n * 2

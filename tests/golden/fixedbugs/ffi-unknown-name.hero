@@ -2,11 +2,11 @@
 #
 # SYMPTOM: a misspelled C name was reported as a wrong *return type*:
 #
-#     error[ffi_return_type]: `sqlite3_openn` does not return `int");` — that
+#     error[ffi_return_type]: `sqlite3_openn` does not return `i64");` — that
 #     is what `sqlite3.h` says, and clang read it
 #     note: … correct the result type, or name the header that declares this …
 #
-# Two defects in one line. The type is `int");` — text from clang's **echo of
+# Two defects in one line. The type is `i64");` — text from clang's **echo of
 # the source line**, which repeats the assertion's own message and so matched
 # the marker. And the diagnosis is wrong: the name does not exist, and
 # correcting the result type cannot fix that (§4.17).
@@ -28,7 +28,7 @@
 # `a_misspelled_extern_name_says_the_header_has_no_such_name`.
 
 extern "sqlite3.h" link "sqlite3"
-    function sqlite3_openn(path: cstr, @out: ptr) -> int  #~ ffi_unknown_name
+    function sqlite3_openn(path: cstr, @out: ptr) -> i64  #~ ffi_unknown_name
 
 function main()
     db: ptr @ nullptr

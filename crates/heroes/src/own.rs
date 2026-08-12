@@ -93,7 +93,7 @@ fn rewrite(function: &mut Function, checked: &Checked) {
             if let Op::Store { place, value } = inst.op {
                 // The *stored value's* type, not the root slot's: for a whole-slot
                 // store they are the same, and for a path store only the value's is
-                // right. `p.cells @ [7, 8]` writes a counted `[int]` into a `Row` slot
+                // right. `p.cells @ [7, 8]` writes a counted `[i64]` into a `Row` slot
                 // that is itself counted for a different reason, and reading the root's
                 // type answered a question nobody asked.
                 let ty = function.value_type(value);
@@ -249,7 +249,7 @@ fn plain(dest: Option<crate::ir::ValueId>, op: Op, ty: TyId, span: Span) -> Inst
 /// leak counter said `3 heap blocks still live at exit` on the first program with a
 /// string in it, and all three traced to one missing row. The concatenation is a
 /// `Binary`, which reads like arithmetic and is a constructor — the operator table
-/// (§4.14) puts `+` on `str` in the same row as `+` on `int`, and only the *result
+/// (§4.14) puts `+` on `str` in the same row as `+` on `i64`, and only the *result
 /// type* tells them apart. This function is called only when the result is
 /// refcounted, so `Op::Binary` here can be nothing else.
 pub(crate) fn allocates(op: Op) -> bool {

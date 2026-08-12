@@ -5,8 +5,8 @@
 
 # A position on the integer grid.
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 # A rectangle, by two corners.
 record Rect
@@ -18,7 +18,7 @@ record Rect
 # Both parameters are `Point`, so §4.9 makes the names mandatory at every call
 # site: `a.dist2(b: c)` cannot be silently the other way round. That is the rule
 # that spends tokens exactly where argument inversion happens.
-function dist2(a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> i64
     dx = a.x - b.x
     dy = a.y - b.y
     return dx * dx + dy * dy
@@ -27,7 +27,7 @@ function dist2(a: Point, b: Point) -> int
 function midpoint(a: Point, b: Point) -> Point
     return Point(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
 
-function area(r: Rect) -> int
+function area(r: Rect) -> i64
     return r.extent.x * r.extent.y
 
 # Reads as a sentence, and it is one function call: `translate(r, by)`.

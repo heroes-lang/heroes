@@ -16,7 +16,7 @@ function main()
     s @ s + s
     print(s)
     out: str @ ""
-    i: int @ 0
+    i: i64 @ 0
     while i < 50
         out @ out + to_str(i % 10)
         i @ i + 1

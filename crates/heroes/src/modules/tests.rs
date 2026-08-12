@@ -60,9 +60,9 @@ fn load_order_is_source_order_depth_first_with_the_library_last() {
         "order",
         &[
             ("main.hero", "use lex\nuse parse\n\nfunction main()\n    print(0)\n"),
-            ("lex.hero", "function tokens() -> int\n    return 1\n"),
-            ("parse.hero", "use tree\n\nfunction go() -> int\n    return 2\n"),
-            ("tree.hero", "function node() -> int\n    return 3\n"),
+            ("lex.hero", "function tokens() -> i64\n    return 1\n"),
+            ("parse.hero", "use tree\n\nfunction go() -> i64\n    return 2\n"),
+            ("tree.hero", "function node() -> i64\n    return 3\n"),
         ],
     );
     let modules: Vec<&str> = src.files().iter().map(|f| f.module.as_str()).collect();
@@ -77,9 +77,9 @@ fn a_module_reached_twice_is_loaded_once() {
         "diamond",
         &[
             ("main.hero", "use lex\nuse parse\n\nfunction main()\n    print(0)\n"),
-            ("lex.hero", "use tree\n\nfunction tokens() -> int\n    return 1\n"),
-            ("parse.hero", "use tree\n\nfunction go() -> int\n    return 2\n"),
-            ("tree.hero", "function node() -> int\n    return 3\n"),
+            ("lex.hero", "use tree\n\nfunction tokens() -> i64\n    return 1\n"),
+            ("parse.hero", "use tree\n\nfunction go() -> i64\n    return 2\n"),
+            ("tree.hero", "function node() -> i64\n    return 3\n"),
         ],
     );
     let trees = src.files().iter().filter(|f| f.module == "tree").count();
@@ -94,8 +94,8 @@ fn a_cycle_terminates_discovery_and_is_refused_by_name() {
         "cycle",
         &[
             ("main.hero", "use a\n\nfunction main()\n    print(0)\n"),
-            ("a.hero", "use b\n\nfunction f() -> int\n    return 1\n"),
-            ("b.hero", "use a\n\nfunction g() -> int\n    return 2\n"),
+            ("a.hero", "use b\n\nfunction f() -> i64\n    return 1\n"),
+            ("b.hero", "use a\n\nfunction g() -> i64\n    return 2\n"),
         ],
     );
     assert_eq!(said.len(), 1, "one cycle, one diagnostic: {said:?}");
@@ -136,8 +136,8 @@ fn two_modules_that_mangle_to_one_name_are_refused_here_rather_than_by_clang() {
         "collide",
         &[
             ("main.hero", "use geom\nuse geo_m\n\nfunction main()\n    print(0)\n"),
-            ("geom.hero", "function a() -> int\n    return 1\n"),
-            ("geo_m.hero", "function b() -> int\n    return 2\n"),
+            ("geom.hero", "function a() -> i64\n    return 1\n"),
+            ("geo_m.hero", "function b() -> i64\n    return 2\n"),
         ],
     );
     assert_eq!(said.len(), 1, "{said:?}");
@@ -153,7 +153,7 @@ fn a_well_formed_program_produces_no_graph_diagnostic() {
         "clean",
         &[
             ("main.hero", "use geom\n\nfunction main()\n    print(0)\n"),
-            ("geom.hero", "function dist() -> int\n    return 1\n"),
+            ("geom.hero", "function dist() -> i64\n    return 1\n"),
         ],
     );
     assert!(said.is_empty(), "{said:?}");
@@ -178,8 +178,8 @@ fn fixedbugs_two_modules_whose_concatenations_collide_but_whose_components_do_no
     let said = graph(
         "fixedbugs-concat",
         &[
-            ("main.hero", "use print_inst\n\nfunction inst_value_name() -> int\n    return 1\n\nfunction main()\n    print(inst_value_name() + print_inst.value_name())\n"),
-            ("print_inst.hero", "function value_name() -> int\n    return 2\n"),
+            ("main.hero", "use print_inst\n\nfunction inst_value_name() -> i64\n    return 1\n\nfunction main()\n    print(inst_value_name() + print_inst.value_name())\n"),
+            ("print_inst.hero", "function value_name() -> i64\n    return 2\n"),
         ],
     );
     assert!(said.is_empty(), "there is nothing wrong with this program: {said:?}");
@@ -187,8 +187,8 @@ fn fixedbugs_two_modules_whose_concatenations_collide_but_whose_components_do_no
     let src = load_root(
         "fixedbugs-concat",
         &[
-            ("main.hero", "use print_inst\n\nfunction inst_value_name() -> int\n    return 1\n\nfunction main()\n    print(inst_value_name() + print_inst.value_name())\n"),
-            ("print_inst.hero", "function value_name() -> int\n    return 2\n"),
+            ("main.hero", "use print_inst\n\nfunction inst_value_name() -> i64\n    return 1\n\nfunction main()\n    print(inst_value_name() + print_inst.value_name())\n"),
+            ("print_inst.hero", "function value_name() -> i64\n    return 2\n"),
         ],
     );
     // The two components differ, which is the whole repair: `print` and
@@ -206,8 +206,8 @@ fn two_modules_one_component_is_still_refused() {
         "fixedbugs-component",
         &[
             ("main.hero", "use print_inst\nuse printinst\n\nfunction main()\n    print(print_inst.a() + printinst.b())\n"),
-            ("print_inst.hero", "function a() -> int\n    return 1\n"),
-            ("printinst.hero", "function b() -> int\n    return 2\n"),
+            ("print_inst.hero", "function a() -> i64\n    return 1\n"),
+            ("printinst.hero", "function b() -> i64\n    return 2\n"),
         ],
     );
     assert_eq!(said.len(), 1, "{said:?}");
@@ -264,7 +264,7 @@ fn frontend(test: &str, files: &[(&str, &str)], root: &str) -> (Vec<String>, Str
 fn fixedbugs_a_hole_in_one_module_does_not_silence_the_unused_rule_in_another() {
     let files = &[
         ("main.hero", "use geom\n\nfunction main()\n    unused_here = 42\n    print(geom.area(w: 2, h: 3))\n"),
-        ("geom.hero", "function area(w: int, h: int) -> int\n    return ???\n"),
+        ("geom.hero", "function area(w: i64, h: i64) -> i64\n    return ???\n"),
     ];
     let (said, _) = frontend("fixedbugs-hole-scope", files, "main.hero");
     assert!(
@@ -276,7 +276,7 @@ fn fixedbugs_a_hole_in_one_module_does_not_silence_the_unused_rule_in_another() 
     // hole in the binding's **own** module suspends it.
     let files = &[
         ("main.hero", "use geom\n\nfunction main()\n    unused_here = 42\n    print(geom.area(w: 2, h: 3))\n    print(???)\n"),
-        ("geom.hero", "function area(w: int, h: int) -> int\n    return w * h\n"),
+        ("geom.hero", "function area(w: i64, h: i64) -> i64\n    return w * h\n"),
     ];
     let (said, _) = frontend("fixedbugs-hole-scope-own", files, "main.hero");
     assert!(
@@ -303,7 +303,7 @@ fn fixedbugs_a_hole_in_one_module_does_not_silence_the_unused_rule_in_another() 
 fn fixedbugs_a_hole_report_names_its_own_file_and_its_own_line() {
     let files = &[
         ("main.hero", "use geom\n\nfunction main()\n    print(geom.area(w: 2, h: 3))\n"),
-        ("geom.hero", "function area(w: int, h: int) -> int\n    return ???\n"),
+        ("geom.hero", "function area(w: i64, h: i64) -> i64\n    return ???\n"),
     ];
     let (_, holes) = frontend("fixedbugs-hole-location", files, "main.hero");
     // The path is the temp directory's, so the assertion is on the tail: the
@@ -323,8 +323,8 @@ fn fixedbugs_a_hole_report_names_its_own_file_and_its_own_line() {
 #[test]
 fn fixedbugs_a_hole_in_one_module_does_not_hold_back_missing_return_in_another() {
     let files = &[
-        ("main.hero", "use geom\n\nfunction pick(f: bool) -> int\n    if f\n        return 1\n\nfunction main()\n    print(pick(true) + geom.f())\n"),
-        ("geom.hero", "function f() -> int\n    return ???\n"),
+        ("main.hero", "use geom\n\nfunction pick(f: bool) -> i64\n    if f\n        return 1\n\nfunction main()\n    print(pick(true) + geom.f())\n"),
+        ("geom.hero", "function f() -> i64\n    return ???\n"),
     ];
     let (said, _) = frontend("fixedbugs-missing-return-scope", files, "main.hero");
     assert!(
@@ -334,7 +334,7 @@ fn fixedbugs_a_hole_in_one_module_does_not_hold_back_missing_return_in_another()
 
     // And the rule itself, which must keep working: a hole in the same module.
     let files = &[
-        ("main.hero", "function pick(f: bool) -> int\n    if f\n        return 1\n\nfunction main()\n    print(pick(true))\n    print(???)\n"),
+        ("main.hero", "function pick(f: bool) -> i64\n    if f\n        return 1\n\nfunction main()\n    print(pick(true))\n    print(???)\n"),
     ];
     let (said, _) = frontend("fixedbugs-missing-return-own", files, "main.hero");
     assert!(!said.iter().any(|d| d.contains("missing_return")), "{said:?}");
@@ -348,7 +348,7 @@ fn fixedbugs_a_hole_in_one_module_does_not_hold_back_missing_return_in_another()
 fn fixedbugs_a_repair_offered_in_one_module_does_not_excuse_another() {
     let files = &[
         ("main.hero", "use geom\n\nfunction main()\n    total = 1\n    print(geom.f())\n"),
-        ("geom.hero", "function f() -> int\n    total = 3\n    return totl\n"),
+        ("geom.hero", "function f() -> i64\n    total = 3\n    return totl\n"),
     ];
     let (said, _) = frontend("fixedbugs-suggested-scope", files, "main.hero");
     assert!(
@@ -372,9 +372,9 @@ fn fixedbugs_a_repair_offered_in_one_module_does_not_excuse_another() {
 fn fixedbugs_the_module_a_name_is_in_is_one_this_file_can_see() {
     let files = &[
         ("main.hero", "use geom\nuse beta\n\nfunction main()\n    print(scale(2) + beta.b())\n"),
-        ("geom.hero", "function scale(n: int) -> int\n    return n * 10\n"),
-        ("beta.hero", "use alpha\n\nfunction b() -> int\n    return alpha.scale(a: 1, b: 2)\n"),
-        ("alpha.hero", "function scale(a: int, b: int) -> int\n    return a * b\n"),
+        ("geom.hero", "function scale(n: i64) -> i64\n    return n * 10\n"),
+        ("beta.hero", "use alpha\n\nfunction b() -> i64\n    return alpha.scale(a: 1, b: 2)\n"),
+        ("alpha.hero", "function scale(a: i64, b: i64) -> i64\n    return a * b\n"),
     ];
     let (said, _) = frontend("fixedbugs-module-declaring", files, "main.hero");
     let named: Vec<&String> =
@@ -409,7 +409,7 @@ fn fixedbugs_the_module_a_name_is_in_is_one_this_file_can_see() {
 fn fixedbugs_the_other_end_of_a_mistake_names_its_file_when_it_is_elsewhere() {
     let files = &[
         ("main.hero", "use geom\n\nfunction main()\n    print(geom.area(3, 4))\n"),
-        ("geom.hero", "function area(side: int) -> int\n    return side * side\n"),
+        ("geom.hero", "function area(side: i64) -> i64\n    return side * side\n"),
     ];
     let (said, _) = frontend("fixedbugs-other-end-cross", files, "main.hero");
     let arity: Vec<&String> = said.iter().filter(|d| d.contains("wrong_arity")).collect();
@@ -420,7 +420,7 @@ fn fixedbugs_the_other_end_of_a_mistake_names_its_file_when_it_is_elsewhere() {
     // Same file, same rule, terse — the case that must not become noisier.
     let files = &[(
         "main.hero",
-        "function f() -> int\n    return 1\n\nfunction f() -> int\n    return 2\n\nfunction main()\n    print(f())\n",
+        "function f() -> i64\n    return 1\n\nfunction f() -> i64\n    return 2\n\nfunction main()\n    print(f())\n",
     )];
     let (said, _) = frontend("fixedbugs-other-end-same", files, "main.hero");
     let twice: Vec<&String> = said.iter().filter(|d| d.contains("declared_twice")).collect();
@@ -431,7 +431,7 @@ fn fixedbugs_the_other_end_of_a_mistake_names_its_file_when_it_is_elsewhere() {
 
 /// **fixedbugs, sweep 001 N10, 2026-08-12.** §4.16's hole report offered
 /// functions from modules the hole's own file cannot name: a hole in `geom.hero`
-/// was handed `main.tally(x: int)`, and `geom` cannot `use main` without a
+/// was handed `main.tally(x: i64)`, and `geom` cannot `use main` without a
 /// module cycle — so writing the suggestion is three errors.
 ///
 /// The code stated the right principle two lines above and applied it halfway:
@@ -441,8 +441,8 @@ fn fixedbugs_the_other_end_of_a_mistake_names_its_file_when_it_is_elsewhere() {
 #[test]
 fn fixedbugs_a_hole_is_only_offered_what_its_own_file_can_name() {
     let files = &[
-        ("main.hero", "use geom\n\nfunction tally(x: int) -> int\n    return x\n\nfunction main()\n    print(geom.f())\n"),
-        ("geom.hero", "function f() -> int\n    return ???\n"),
+        ("main.hero", "use geom\n\nfunction tally(x: i64) -> i64\n    return x\n\nfunction main()\n    print(geom.f())\n"),
+        ("geom.hero", "function f() -> i64\n    return ???\n"),
     ];
     let (_, holes) = frontend("fixedbugs-hole-reach", files, "main.hero");
     assert!(holes.contains("hole at"), "{holes}");
@@ -473,7 +473,7 @@ fn fixedbugs_a_user_module_may_not_be_called_library() {
         "fixedbugs-library-name",
         &[
             ("main.hero", "use library\n\nfunction main()\n    print(square(3))\n"),
-            ("library.hero", "function square(n: int) -> int\n    return n * n\n"),
+            ("library.hero", "function square(n: i64) -> i64\n    return n * n\n"),
         ],
     );
     assert_eq!(said.len(), 1, "{said:?}");
@@ -484,7 +484,7 @@ fn fixedbugs_a_user_module_may_not_be_called_library() {
     // identical program under any other stem is refused for the right reason.
     let files = &[
         ("main.hero", "use util\n\nfunction main()\n    print(square(3))\n"),
-        ("util.hero", "function square(n: int) -> int\n    return n * n\n"),
+        ("util.hero", "function square(n: i64) -> i64\n    return n * n\n"),
     ];
     let (said, _) = frontend("fixedbugs-library-name-control", files, "main.hero");
     assert!(
@@ -517,7 +517,7 @@ fn fixedbugs_a_bracket_opened_in_one_file_does_not_reach_the_next() {
         "fixedbugs-bracket-boundary",
         &[
             ("main.hero", "use geom\n\nfunction main()\n    print((geom.f()\n"),
-            ("geom.hero", "function f() -> int\n    return 7\n"),
+            ("geom.hero", "function f() -> i64\n    return 7\n"),
         ],
     );
     let src = load(&dir.join("main.hero").display().to_string()).expect("the root file reads");
@@ -536,7 +536,7 @@ fn fixedbugs_a_bracket_opened_in_one_file_does_not_reach_the_next() {
     // the reading of the file that was being swallowed.
     let files = &[
         ("main.hero", "use geom\n\nfunction main()\n    print(geom.f())\n"),
-        ("geom.hero", "function f() -> int\n    return 7\n"),
+        ("geom.hero", "function f() -> i64\n    return 7\n"),
     ];
     let (said, _) = frontend("fixedbugs-bracket-boundary-ok", files, "main.hero");
     assert!(said.is_empty(), "the well-formed pair still says nothing: {said:?}");
@@ -560,7 +560,7 @@ fn fixedbugs_a_root_file_keeps_the_name_the_author_typed() {
         "fixedbugs-root-stem",
         &[
             ("a_b.hero", "use ab\n\nfunction main()\n    print(ab.g())\n"),
-            ("ab.hero", "function g() -> int\n    return 2\n"),
+            ("ab.hero", "function g() -> i64\n    return 2\n"),
         ],
     );
     let src = load(&dir.join("a_b.hero").display().to_string()).expect("the root file reads");
@@ -575,7 +575,7 @@ fn fixedbugs_a_root_file_keeps_the_name_the_author_typed() {
     // whose component does not collide with it, just works.
     let files = &[
         ("a_b.hero", "use cd\n\nfunction main()\n    print(cd.g())\n"),
-        ("cd.hero", "function g() -> int\n    return 2\n"),
+        ("cd.hero", "function g() -> i64\n    return 2\n"),
     ];
     let (said, _) = frontend("fixedbugs-root-stem-ok", files, "a_b.hero");
     assert!(said.is_empty(), "{said:?}");

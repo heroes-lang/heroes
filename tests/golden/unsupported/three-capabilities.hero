@@ -8,7 +8,7 @@
 # emits, and every Tier-1 built-in emits**, so what is left is three different KINDS of
 # refusal rather than three names:
 #
-#   1. a built-in refused by OPERAND TYPE — `sort` orders `int`, `f64` and `str`,
+#   1. a built-in refused by OPERAND TYPE — `sort` orders `i64`, `f64` and `str`,
 #      and a `[P]` has no order this backend has decided on (panel 027 R1). The
 #      "refused by NAME" row can no longer fire at all: every one of the 23
 #      reserved names now has an entry point, a library body, or a lowering, and
@@ -31,12 +31,12 @@
 # Bulk regression case.
 
 record P
-    x: int
+    x: i64
 
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     return a + b
 
-function tag(p: P) -> int
+function tag(p: P) -> i64
     return p.x
 
 function first<T>(items: [T]) -> T
@@ -45,7 +45,7 @@ function first<T>(items: [T]) -> T
 function main()
     p = P(x: 1)
     print(p.x)
-    xs: [int] @ [1, 2]
+    xs: [i64] @ [1, 2]
     xs[0] @ 7
     print(xs[0], len(xs))
     m = {"a": 1}
@@ -53,7 +53,7 @@ function main()
     # These emit now, and are here to prove the refusals are not about them —
     # `range` among them, which is what step 4 changed.
     print(sort(xs)[0], join(chars("ab"), "-"), len(slice(xs, from: 0, to: 1)))
-    print(to_int(1.5), to_f64(2), to_str(3))
+    print(to_i64(1.5), to_f64(2), to_str(3))
     print(len(range(from: 0, to: 2)))
     ps = [P(x: 2), P(x: 1)]
     print(len(sort(ps)))      #~ builtin

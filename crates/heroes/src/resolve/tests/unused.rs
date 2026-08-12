@@ -29,7 +29,7 @@ fn a_cell_that_is_written_and_never_read_is_unused() {
         diagnostics(
             "\
 function main()
-    total: int @ 0
+    total: i64 @ 0
     total @ 1
     print(2)
 "
@@ -47,7 +47,7 @@ fn the_initialiser_is_not_a_write() {
         diagnostics(
             "\
 function main()
-    total: int @ 0
+    total: i64 @ 0
     print(2)
 "
         ),
@@ -64,7 +64,7 @@ fn a_field_write_is_a_write_and_not_a_read() {
         diagnostics(
             "\
 record Counter
-    n: int
+    n: i64
 
 function main()
     c: Counter @ Counter(n: 0)
@@ -82,7 +82,7 @@ fn a_parameter_nobody_reads_is_an_error() {
     assert_eq!(
         diagnostics(
             "\
-function f(a: int, b: int) -> int
+function f(a: i64, b: i64) -> i64
     return a
 "
         ),
@@ -97,7 +97,7 @@ function f(a: int, b: int) -> int
 fn a_write_through_a_mutable_parameter_is_a_use() {
     assert_clean(
         "\
-function reset(@counts: {str: int})
+function reset(@counts: {str: i64})
     counts @ {}
 ",
     );
@@ -117,7 +117,7 @@ fn an_extern_parameter_is_never_unused() {
 fn the_wildcard_binds_nothing_anywhere() {
     assert_clean(
         "\
-function render(page: str, _: int, _: bool) -> str
+function render(page: str, _: i64, _: bool) -> str
     return page
 
 function main()
@@ -147,10 +147,10 @@ function main()
         "\
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function describe(t: Token) -> int
+function describe(t: Token) -> i64
     return match t
         .num n => 1
         .plus => 2
@@ -167,11 +167,11 @@ function describe(t: Token) -> int
 fn one_hole_anywhere_suspends_the_rule_for_the_whole_file() {
     assert_clean(
         "\
-function f(a: int, b: int) -> int
+function f(a: i64, b: i64) -> i64
     unused = 1
     return a
 
-function simplify(e: int) -> int
+function simplify(e: i64) -> i64
     ???
 ",
     );
@@ -184,12 +184,12 @@ fn a_hole_suspends_nothing_but_the_unused_rule() {
     assert_eq!(
         diagnostics(
             "\
-function f(a: int) -> int
+function f(a: i64) -> i64
     x = 1
     print(nope)
     return a
 
-function g() -> int
+function g() -> i64
     ???
 "
         ),
@@ -203,7 +203,7 @@ function g() -> int
 fn an_uncalled_declaration_is_not_unused() {
     assert_clean(
         "\
-function helper() -> int
+function helper() -> i64
     return 1
 
 function main()

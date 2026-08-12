@@ -3,11 +3,11 @@
 # `strings.hero` moved at M5b.
 #
 # A `T?` is a tagged union BY VALUE: an `int64_t` tag, then a union of the payload and
-# `HeroFailure`. Two `HeroStr` is 32 bytes, which is what makes an `int?` 40 — and 40 is
+# `HeroFailure`. Two `HeroStr` is 32 bytes, which is what makes an `i64?` 40 — and 40 is
 # the number *while `T` fits in 32*, not for every `T` (panel 023 measured
 # `sizeof(Big?)` at 48 for a 40-byte record).
 #
-# So **every** `T?` is reference-counted whatever `T` is, `int?` included, because its
+# So **every** `T?` is reference-counted whatever `T` is, `i64?` included, because its
 # error side owns two strings. The release switches on the tag: touching the other side
 # of the union would read a member that was never written.
 #
@@ -15,7 +15,7 @@
 # representation, and it keeps its own refusal row.
 # Bulk regression case.
 
-function half(n: int) -> int?
+function half(n: i64) -> i64?
     if n % 2 == 0
         return ok(n / 2)
     return fail("odd", "not divisible by two")

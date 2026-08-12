@@ -19,18 +19,18 @@
 #   - equality, which is pointer identity.
 #
 # `apply(add, x: 2, y: 3)` carries labels because §4.11's rule counts parameters
-# in the SIGNATURE, and two of `apply`'s three are `int`. The function value is
+# in the SIGNATURE, and two of `apply`'s three are `i64`. The function value is
 # not one of them and needs no label — which is the rule being narrow rather than
 # blanket.
 # Bulk regression case.
 
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     return a + b
 
-function mul(a: int, b: int) -> int
+function mul(a: i64, b: i64) -> i64
     return a * b
 
-function apply(f: (function(int, int) -> int), x: int, y: int) -> int
+function apply(f: (function(i64, i64) -> i64), x: i64, y: i64) -> i64
     return f(x, y)
 
 function tick()
@@ -48,7 +48,7 @@ function main()
 
     # An array of them: the element descriptor is one shared by every function
     # type, the way `hero_desc_array` is one for every `[T]`.
-    ops: [(function(int, int) -> int)] = [add, mul]
+    ops: [(function(i64, i64) -> i64)] = [add, mul]
     print(ops[0](4, 5), " ", ops[1](4, 5), " ", len(ops))
 
     # Pointer identity, both ways.

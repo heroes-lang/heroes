@@ -254,7 +254,7 @@ pub(in crate::types) fn non_exhaustive(missing: &[String], span: Span) -> Diagno
 pub(in crate::types) fn needs_wildcard(span: Span) -> Diagnostic {
     Diagnostic::new(
         "non_exhaustive",
-        "matching on `int` or `str` cannot be exhaustive, so it needs a `_` arm".to_string(),
+        "matching on `i64` or `str` cannot be exhaustive, so it needs a `_` arm".to_string(),
         span,
     )
 }
@@ -269,7 +269,7 @@ pub(in crate::types) fn ffi_type(name: &str, what: &str, span: Span) -> Diagnost
     Diagnostic::new(
         "ffi_type",
         format!(
-            "`{name}` cannot cross the FFI boundary, and it is {what} — a C header can declare `int`, `f64`, `bool`, `str`, `ptr` and `cstr`, and nothing else (§4.19)"
+            "`{name}` cannot cross the FFI boundary, and it is {what} — a C header can declare `i64`, `f64`, `bool`, `str`, `ptr` and `cstr`, and nothing else (§4.19)"
         ),
         span,
     )

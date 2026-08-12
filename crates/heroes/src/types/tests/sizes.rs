@@ -39,7 +39,7 @@ fn the_recursive_variant_from_the_design_has_a_size() {
     let text = "\
 variant Expr
     num
-        v: int
+        v: i64
     sum
         children: [Expr]
 
@@ -60,7 +60,7 @@ record Scope
     vars: {str: Scope}
 
 record Handler
-    on_next: (function(Handler) -> int)
+    on_next: (function(Handler) -> i64)
 
 function main()
     print(1)
@@ -74,8 +74,8 @@ function main()
 fn two_fields_of_one_type_are_not_a_cycle() {
     let text = "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 record Rect
     a: Point
@@ -150,7 +150,7 @@ record Middle
     inner: Inner
 
 record Inner
-    v: int
+    v: i64
 
 function main()
     print(1)
@@ -174,7 +174,7 @@ record B
     a: A
 
 record Loose
-    v: int
+    v: i64
 
 function main()
     print(1)

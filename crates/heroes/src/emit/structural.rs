@@ -9,7 +9,7 @@
 //! one diff shows both.
 //!
 //! **Fields, never bytes**, for both, and panel 022 found the reason by compiling it:
-//! `record Flag { n: int, on: bool }` carries 7 bytes of padding whose contents are
+//! `record Flag { n: i64, on: bool }` carries 7 bytes of padding whose contents are
 //! whatever was there before, so `memcmp` reports two `==`-equal records as different and
 //! a byte hash gives them different hashes — with no warning, no error and no sanitiser
 //! report. `hash` is generated for **every** aggregate rather than only for map-key
@@ -20,7 +20,7 @@
 //! table went without three rows until 2026-08-12 — `Ty::Map`, `Ty::Fallible`,
 //! `Ty::Func` — while `hash` routed through `descriptors::hash_call`, which covered all
 //! three; the disagreement broke CLAUDE.md §7 in the loudest available direction,
-//! `{Box: int}` inserting fine and aborting on lookup.
+//! `{Box: i64}` inserting fine and aborting on lookup.
 
 use crate::source::Source;
 use crate::syntax::{Ast, Field};
@@ -60,7 +60,7 @@ pub(super) fn equality_body(
             // field kind the checker has always accepted. `hash_body` routes
             // through `descriptors::hash_call`, which covers all three — so the
             // gap broke CLAUDE.md §7's "eq and hash agree" in the loudest
-            // direction: `{Box: int}` inserted fine and aborted on lookup.
+            // direction: `{Box: i64}` inserted fine and aborted on lookup.
             Ty::Map(_, _) => format!("hero_map_eq(a->{member}, b->{member})"),
             Ty::Fallible(_) => {
                 format!("{}_eq(&a->{member}, &b->{member})", names.option_of(ty))
@@ -135,7 +135,7 @@ pub(super) fn variant_equality_body(
 /// rule — emit it only for map-key types — reintroduces exactly that.
 ///
 /// Fields, never bytes, and the reason is sharper here than for `eq`: two records
-/// that compare equal must hash equal, and `record Flag { n: int, on: bool }` has 7
+/// that compare equal must hash equal, and `record Flag { n: i64, on: bool }` has 7
 /// padding bytes whose contents are whatever was there before. Hashing them makes
 /// `eq` and `hash` disagree, which is a map that loses a key it contains.
 ///

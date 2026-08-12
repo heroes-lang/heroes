@@ -132,7 +132,7 @@ not yet in the spec — mortgaged budget), and it assigns `file I/O`/`args()`/`e
 runtime tier (§4.20 Tier 1 vs plain externs).
 
 **The closure list** (what writing this compiler in Heroes requires): `record` · `variant` +
-exhaustive `match` · `[T]` · `{K: V}` (order unspecified, panel 026) · `str` · `int` ·
+exhaustive `match` · `[T]` · `{K: V}` (order unspecified, panel 026) · `str` · `i64` ·
 `bool` · `()` · `T?` with `?`/`.must()`/`.default()` · `=`/`@` bindings · `@` parameters ·
 `if`/`else if`/`else` · `while cond` / `for x in xs` (including over maps) / `break`/`continue` ·
 `return` · UFCS · function values · generics on functions · `test`+`assert` · file I/O · `args()` ·
@@ -150,9 +150,9 @@ panel 039's verification; author decision in `/decide`): **the mangler's typehas
 generic, and the fixpoint compares that C byte for byte, so the port must compute
 the identical number — which `emit/mangle.rs` said in a comment while being FNV-1a,
 whose every ingredient is inexpressible in Heroes: an unsigned offset basis
-(`int_out_of_range`, because `int` is signed), a wrapping multiply (`panic: integer
+(`int_out_of_range`, because `i64` is signed), a wrapping multiply (`panic: integer
 overflow`, because §4.3 makes overflow an abort), and `^` (`reserved_operator`).
-The hash is now a polynomial modulo 2^31 − 1 whose intermediates fit an `int` with
+The hash is now a polynomial modulo 2^31 − 1 whose intermediates fit an `i64` with
 three orders of magnitude to spare, and
 `tests/golden/run/premise-mangler-hash-in-heroes.hero` computes it in Heroes so the
 premise has the test CLAUDE.md §11 asks for. **The lesson is the audit's, not the
@@ -160,7 +160,7 @@ hash's**: measurement 003 is mechanical over this list, so a requirement absent
 from the list is invisible to it — twice now, and both times the missing row was
 something the *compiler itself does* rather than something a Heroes program
 contains. Library closure: `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`,
-`join`/`Builder`, `to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
+`join`/`Builder`, `to_i64`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/
 `all`/`range` written in Heroes.
 
 One pattern deserves stating now because the whole self-hosted compiler will be written in it:
@@ -736,25 +736,25 @@ kind NAME …
 ```
 
 `constant` declares a value, so its name takes `: type`; a `function`'s parameter list attaches
-directly to its name, as at the call site (`function dist2(a: Point, b: Point) -> int`).
+directly to its name, as at the call site (`function dist2(a: Point, b: Point) -> i64`).
 `record` and `variant` *are* type definitions rather than values, so nothing follows the name.
 
 ```
-constant MAX_DEPTH: int
+constant MAX_DEPTH: i64
     64
 
-function dist2(a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> i64
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy
 
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 variant Token
     num
-        v: int
+        v: i64
     name
         s: str
     plus
@@ -779,7 +779,7 @@ two). The `=` iteration had litigated only what *follows* the keyword; which sid
 sits on was a first visit, and the evidence all pointed one way. `name = entity` made `=` carry two
 productions, left `test "…"` and `extern` outside the shape, and kept two headers ending in
 non-enders (the panel-007 terminator patch existed only for them). Keyword-first with the parameter
-list attached to the name (`function dist2(a: Point, b: Point) -> int`) deletes three compiler
+list attached to the name (`function dist2(a: Point, b: Point) -> i64`) deletes three compiler
 special cases, keeps `=` mono-semantic ("binds once, forever" is now globally true), unifies all six
 top-level heads, measures −8 spec tokens, won the blind experiment (pre-registered 55% vs 45%
 whole-file first-try), and is the Pascal→Go→Carbon mainline — while `keyword = name` is attested in
@@ -819,7 +819,7 @@ forward declarations, mutual recursion is free, and the model can emit functions
 
 | Type | Meaning |
 |---|---|
-| `int` | 64-bit signed integer |
+| `i64` | 64-bit signed integer |
 | `f64` | 64-bit float |
 | `bool` | `true` / `false` |
 | `str` | immutable UTF-8 string |
@@ -835,9 +835,9 @@ are the most expensive spec item that exists and the number-one error source in 
 v1 without debate.
 
 **No implicit conversions.** `1 + 2.0` is a compile error. Convert explicitly: `to_f64(x)`,
-`to_int(x)`.
+`to_i64(x)`.
 
-**Character literals are `int`.** `'+'`, `'0'`, `' '`. No new type, no conversion, ~70 lines in the
+**Character literals are `i64`.** `'+'`, `'0'`, `' '`. No new type, no conversion, ~70 lines in the
 lexer (the original text said "one line"; the measured cost is on record in panel 008).
 **Rationale:** the first lexer written in this language contained `c == 43`, `c >= 48 && c <= 57`,
 `c == 40` — seven magic numbers in twenty lines, and writing `43` for `+` is an error no compiler
@@ -861,10 +861,10 @@ silently truncates every C call and voids §4.20's guarantee that `.cstr()` is f
 `\t` is legal, so the path silently becomes `C:<TAB>emp`. Every language with C-style escapes
 carries this; the remedy is raw string literals, which are not v1 material. Recorded in Part 8.
 
-**Strings** are immutable UTF-8, **indexed in bytes**. `s[i]` yields an `int` in 0..255. Iterate
+**Strings** are immutable UTF-8, **indexed in bytes**. `s[i]` yields an `i64` in 0..255. Iterate
 characters with `s.chars()`, which yields single-character `str`. Slicing that lands mid-sequence is
 an error. Do **not** introduce an indexable `char` type — that is the trap Python 3 fell into. (The
-`byte` type was removed: it existed only to index strings, and `int` does the job. One fewer base
+`byte` type was removed: it existed only to index strings, and `i64` does the job. One fewer base
 type; the memory waste is irrelevant here.)
 
 **Structural equality on everything.** `==` works on ints, strings, records, variants, arrays, maps,
@@ -878,7 +878,7 @@ Two symbols, and **no assignment operator exists**.
 
 ```
 x = 5                 # immutable binding, type inferred
-v: int @ 0            # mutable declaration — type REQUIRED
+v: i64 @ 0            # mutable declaration — type REQUIRED
 v @ v + 1             # mutation — never has a type
 vv @ v + 1            # ERROR: `vv` was never declared
 ```
@@ -907,7 +907,7 @@ you are *declaring* or *mutating* — you'd have to scan the enclosing block, vi
 this hole lets typos through silently:
 
 ```
-total: int @ 0
+total: i64 @ 0
 for x in xs
     totl @ total + x      # would declare a new variable
 ```
@@ -918,7 +918,7 @@ shapes become visually distinct, and **you pay tokens only at the declaration si
 exactly where 1.5 says to pay them.
 
 **All bindings must be initialised.** This is not a style rule — it **deletes an entire analysis
-from the compiler.** In languages where `var x: int` can be declared without a value, the compiler
+from the compiler.** In languages where `var x: i64` can be declared without a value, the compiler
 must chase every control-flow path to verify `x` is assigned before use: that is dataflow analysis
 (the same family as move checking). With mandatory initialisation the problem does not exist. One of
 the cheapest decisions in the language.
@@ -942,8 +942,8 @@ Because there is one integer type, no implicit conversions, and mandatory initia
 is almost always derivable. **Exactly two cases are not**, and both are "empty container":
 
 ```
-xs: [int] = []
-m: {str: int} @ {}
+xs: [i64] = []
+m: {str: i64} @ {}
 ```
 
 Handle this in character with the rest of the language — the annotation is not a feature to learn,
@@ -952,7 +952,7 @@ it is something **the compiler asks for by name**:
 ```
 error: cannot infer the type of `result` at line 3
   the map literal is empty, so there is nothing to infer from
-  write:  result: {str: int} @ {}
+  write:  result: {str: i64} @ {}
 ```
 
 ~15 tokens of spec, and the model doesn't have to *decide* anything: either it works, or the
@@ -960,7 +960,7 @@ compiler dictates the fix.
 
 ### 4.6 Fallibility: `T?`
 
-**There is no `null`.** An `int` is always a valid integer. Absence is a different type.
+**There is no `null`.** An `i64` is always a valid integer. Absence is a different type.
 
 An earlier draft had *two* fallible types: `T?` for "normal absence" and `T!` for "something went
 wrong", with separate constructors (`empty`, `fail`) and separate match arms. They were collapsed
@@ -973,7 +973,7 @@ negation.
 A `T?` is a built-in variant with two cases, `ok` and `err`:
 
 ```
-function find(xs: [int], target: int) -> int?
+function find(xs: [i64], target: i64) -> i64?
     for i in range(0, xs.len())
         if xs[i] == target
             return i
@@ -1052,7 +1052,7 @@ value = match e
 - **`_` as a catch-all arm is forbidden on variants.** Rationale: exhaustiveness exists so that
   *adding a variant breaks compilation*. With `_` allowed, the new case falls into the catch-all and
   nothing breaks — exhaustiveness becomes theatre. `_` remains allowed where exhaustiveness is
-  impossible (matching on `int`, on `str`).
+  impossible (matching on `i64`, on `str`).
 - **`_` as a payload *name* is allowed.** `.num _ => []` is fine; `_ => []` is not. This distinction
   is not obvious and must be in the spec.
 - **`|` in patterns is allowed:** `.plus | .times | .rparen => fail(...)`. This was deferred, but
@@ -1068,7 +1068,7 @@ value = match e
   produce no value; the `match`'s type comes from the arms that can. They must
   **not** be typed `()` — RFC 1216 records that exact wrong turn ("some code in
   the compiler assigns type `()` to diverging expressions because it doesn't
-  have a sensible type to assign to them"), and under `()` an `int`-valued
+  have a sensible type to assign to them"), and under `()` an `i64`-valued
   `match` with a `return` arm would become a type error. Rust types them `!`,
   Kotlin `Nothing`.
 - **A `match` used as a value requires every arm to produce a value *or jump*.**
@@ -1109,7 +1109,7 @@ for x in xs
     ...
 ```
 
-Ranges use `range(a, b)`, a library function returning `[int]` — not `a..b` syntax. One fewer
+Ranges use `range(a, b)`, a library function returning `[i64]` — not `a..b` syntax. One fewer
 syntactic form. `break` and `continue` exist. No loop labels.
 
 **Blocks are expressions**; a block's value is its last expression. This is one rule seen in two
@@ -1128,8 +1128,8 @@ second negation form when `if !x` exists.
 function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-function read_number(@l: Lex) -> int
-    v: int @ 0
+function read_number(@l: Lex) -> i64
+    v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
         v @ v * 10 + (l.here() - '0')
         advance(@l)
@@ -1241,10 +1241,10 @@ m = { "mario": 30, "anna": 25 }
 
 ```
 function copy(from: str, to: str) -> bool
-function save(id: int, name: str) -> bool
+function save(id: i64, name: str) -> bool
 
 copy(from: "/tmp/x", to: "/tmp/y")    # mandatory
-save(42, "mario")                      # free: int and str can't be confused
+save(42, "mario")                      # free: i64 and str can't be confused
 ```
 
 **Rationale, and this is the most original construct in the language.** One of the most classic LLM
@@ -1260,7 +1260,7 @@ its type parameters collapse.
 
 No default parameter values, no overloading, no user variadics. The one variadic-looking form is
 `print`, and it is **compiler-known, not a function value** (panel 006, decided 2026-08-03): a
-comma-separated list of `str`/`int`/`f64`/`bool` values, each rendered by its canonical `to_str`,
+comma-separated list of `str`/`i64`/`f64`/`bool` values, each rendered by its canonical `to_str`,
 no separator between values, exactly one trailing newline. This was bought by trading away string
 interpolation (Part 7 item 7); Pascal's `WriteLn` is the fifty-year precedent.
 
@@ -1271,7 +1271,7 @@ otherwise, which is what gnulib's `ftoastr` ships. It is not the shortest decima
 distinction is not pedantic: `5e-324` renders `4.94065645841247e-324`, which round-trips, and Java
 shipped `1.9999999999999998E23` for eighteen years before Schubfach. A value with no fractional
 part still prints a point (`1.0`, not `1`) — under `1`, `print(price * to_f64(count))` and
-`print(5 * 2)` emit identical bytes, so an accidental `int`→`f64` drift would stay green in every
+`print(5 * 2)` emit identical bytes, so an accidental `i64`→`f64` drift would stay green in every
 golden, which is exactly what §4.3's no-implicit-conversions rule exists to prevent. Lua made the
 same choice when it gained a second numeric type; Rust prints `1` from `Display` and needed `Debug`
 to recover the distinction.
@@ -1369,7 +1369,7 @@ implementer should not be surprised by it.
 ```
 variant Expr
     num
-        v: int
+        v: i64
     sum
         children: [Expr]
 ```
@@ -1474,13 +1474,13 @@ Rules that keep the cost low:
   (`Stack<T>`, `[T]`, `Option<T>`) are perfectly comprehensible to an LLM; advanced ones (multiple
   constraints, variance, associated types, higher-kinded) are a leading error source *and* 90% of the
   implementation cost. Cut exactly on that line.
-- **Always inferred at the use site.** Write `map(nums, plus)`, never `map<int,int>(nums, plus)`.
+- **Always inferred at the use site.** Write `map(nums, plus)`, never `map<i64,i64>(nums, plus)`.
   The token cost of generics is at use sites, so pay nothing there. And because there are no
   constraints, inference is trivial — look at argument types, deduce `T`. **Rust's turbofish
   (`collect::<Vec<i32>>()`) cannot exist in this language**, because there is no syntax to specify
   type arguments manually. That is deliberate: it tokenises terribly, being a very rare sequence.
-- **Monomorphisation.** On seeing `map(nums, plus)` with `nums: [int]`, generate a copy of the
-  function with `A := int`. **This is substitution on the IR, after type checking** — an IR→IR pass
+- **Monomorphisation.** On seeing `map(nums, plus)` with `nums: [i64]`, generate a copy of the
+  function with `A := i64`. **This is substitution on the IR, after type checking** — an IR→IR pass
   that runs before the ownership pass and before the emitter, both of which assert that no
   `Ty::Generic` survives. No theory, a few hundred lines.
 
@@ -1511,7 +1511,7 @@ underneath it remains this section's, unchanged:
 pointer — no environment to allocate, no refcounting interaction.
 
 ```
-function plus(a: int, b: int) -> int
+function plus(a: i64, b: i64) -> i64
     return a + b
 
 total = values.fold(0, plus)
@@ -1521,7 +1521,7 @@ Function type syntax: `(function(A, B) -> C)`, **parens mandatory**, and the mar
 that declares a function — one word, one meaning, everywhere (panel 013, 2026-08-04: `fn` is a
 reserved-word error under §4.17, and spelling it inside a type made that error's `certain` fix wrong
 in the one position where the word was required). The parameter list mirrors a signature's: two
-parameters are `(function(int, int) -> bool)`, none is `(function() -> C)`. Honest note on why the
+parameters are `(function(i64, i64) -> bool)`, none is `(function() -> C)`. Honest note on why the
 parens: having removed parens
 from declarations, `f: fn A -> B -> [B]` would be ambiguous. This is the second price of dropping
 parens (the first being the four-line inline `if`), and it is left visible rather than papered over.
@@ -1570,7 +1570,7 @@ otherwise — measured, `O_RDWR|O_ACCMODE` is 3 where `+` gives 5, and `S_IRWXU|
 overlapping case. Four decisions came with the implementation, each of which is a rule rather than a
 detail:
 
-- **`int` only.** A float's bits are not its value, and `bool` is excluded for this section's own
+- **`i64` only.** A float's bits are not its value, and `bool` is excluded for this section's own
   reason — one of `&&`/`&` short-circuits and the other does not, so admitting both on `bool` would
   invite the reader to believe they are one operator.
 - **`&` binds tighter than `==`**, which is where C's table is on record as wrong (`x & 1 == 0`
@@ -1666,7 +1666,7 @@ there.
 
 ```
 function centroid(ps: [Point]) -> Point
-    sx: int @ 0
+    sx: i64 @ 0
     for p in ps
         ???
     return Point(x: sx / ps.len(), y: ???)
@@ -1678,15 +1678,15 @@ hole at line 4
   in scope:
     ps: [Point]
     p:  Point
-    sx: int (mutable)
-  fields of Point: x: int, y: int
+    sx: i64 (mutable)
+  fields of Point: x: i64, y: i64
   nearby functions:
-    dist2(a: Point, b: Point) -> int
+    dist2(a: Point, b: Point) -> i64
       "Squared distance. Avoids sqrt to preserve precision."
 
 hole at line 6
-  expected type: int
-  in scope: ps: [Point], sx: int (mutable)
+  expected type: i64
+  in scope: ps: [Point], sx: i64 (mutable)
 ```
 
 A program containing holes does not produce a binary, but **it type-checks everything else.**
@@ -1731,7 +1731,7 @@ understand. Three conversational turns for a comma.
 error: incompatible types
   at line 12:  save(user.id, user.name)
 
-  save expects:  (id: int, name: str)
+  save expects:  (id: i64, name: str)
   you passed:    (id: str, name: str)
                   ^^^^^^^^
 
@@ -1742,7 +1742,7 @@ error: incompatible types
           name: str
 
   possible fixes:
-    - convert:  to_int(user.id)
+    - convert:  to_i64(user.id)
     - change save's signature to accept a str id
 ```
 
@@ -1750,7 +1750,7 @@ The signature, the record definition, where it lives, and two concrete routes. T
 **in one turn**, without opening anything.
 
 **Fixes are tagged `certain | guess`, and only `certain` fixes are machine-applicable.** The
-example above shows why: "convert: `to_int(user.id)`" may be right, but "change save's signature to
+example above shows why: "convert: `to_i64(user.id)`" may be right, but "change save's signature to
 accept a str id" is usually the *wrong* repair — and a model will apply whatever the compiler
 blesses. A `certain` fix (insert the missing type annotation the checker just computed, rename to
 the one in-scope candidate) may be applied mechanically; a `guess` is prose for the reader. The
@@ -1787,7 +1787,7 @@ anyone.
 ignores them entirely.
 
 ```
-function dist2(a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> i64
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy
@@ -1834,8 +1834,8 @@ plus the header it comes from, no external tool, no libclang, no generated bindi
 
 ```
 extern "sqlite3.h" link "sqlite3"
-    function sqlite3_open(path: cstr, out: ptr) -> int
-    function sqlite3_close(db: ptr) -> int
+    function sqlite3_open(path: cstr, out: ptr) -> i64
+    function sqlite3_close(db: ptr) -> i64
 ```
 
 **The header and the link flag attach to a group** (panel 036): a head line, then indented
@@ -1854,8 +1854,8 @@ definition*, so `function` gives up its code and `constant` gives up its value:
 
 ```
 extern "curl/curl.h" link "curl"
-    constant CURLOPT_URL: int
-    function curl_easy_setopt(handle: ptr, option: int, value: cstr) -> int
+    constant CURLOPT_URL: i64
+    function curl_easy_setopt(handle: ptr, option: i64, value: cstr) -> i64
 ```
 
 Until M-header-constants the sentence above said `#define` constants were *reachable*, which
@@ -1869,7 +1869,7 @@ The mechanism is the assertion §4.19 already emits, asked of a token instead of
 plus one more that only a value needs:
 
 - `_Static_assert(HERO_RET_INT(CURLOPT_URL), …)` — the **same** `_Generic` macro set,
-  unchanged; 17 of 18 real header constants pass it as written. Declaring `M_PI` as `int`
+  unchanged; 17 of 18 real header constants pass it as written. Declaring `M_PI` as `i64`
   would otherwise convert `double` to `int64_t` on the way out of the accessor and make
   the constant **3**, silently, with every flag in CLAUDE.md §7 satisfied.
 - `_Static_assert(__builtin_constant_p(CURLOPT_URL), …)` — the header must hold a
@@ -1890,7 +1890,7 @@ Two of the seven boundary types are refused in the checker, and both reasons are
 about Heroes rather than about any header: a `str` carries the runtime's own magic word
 (declare it `cstr` and convert with `to_str`, §4.20), and `()` is a type rather than a
 value. `bool` is **not** refused there — under `-std=c11` `stdbool.h` spells `true` as
-`#define true 1`, so its type is `int`, but that is a premise about the world and the
+`#define true 1`, so its type is `i64`, but that is a premise about the world and the
 per-constant assertion asks the token instead (CLAUDE.md §11).
 
 What this does not buy: a wrong *number* is now impossible rather than unnoticed, and a
@@ -1909,10 +1909,10 @@ lives in `build/` and `""` searches the *including file's* directory.
 
 **Every `extern` carries a `_Static_assert` over a `_Generic` on its return type**, and without it
 §4.19's central promise is false. The emitter does **not** re-declare the signature — re-declaring
-gives `conflicting types` five times out of five on SQLite, since Heroes' `int` is `int64_t` and
-every entry point returns C `int` — so it emits the `#include` and the calls, which is what Nim's
+gives `conflicting types` five times out of five on SQLite, since Heroes' `i64` is `int64_t` and
+every entry point returns C `i64` — so it emits the `#include` and the calls, which is what Nim's
 `importc` does. In that mode clang checks the *call* and nothing else, and four wrong bindings out
-of six compile clean: `extern function sqrt(x: f64) -> int` exits 0 and prints `1`. The assertion's
+of six compile clean: `extern function sqrt(x: f64) -> i64` exits 0 and prints `1`. The assertion's
 controlling expression is a call that C11 6.5.1.1p3 does **not evaluate** but does type-check, so it
 costs one line per `extern` in the generated C and nothing at runtime; eleven of eleven correct
 ladder bindings pass, and `size_t` — which has no signed C spelling — turns from silent into a
@@ -1921,7 +1921,7 @@ true sentence, and this is the mechanism that makes it one.
 
 **Half of that paragraph was booking a hole as an achievement, and panel 041
 measured the other half.** A `size_t` return is a compile error and there is **no
-declaration that is not one**: `extern function strlen(s: cstr) -> int` raises
+declaration that is not one**: `extern function strlen(s: cstr) -> i64` raises
 `ffi_return_type` whose note says *"correct the result type"*, and no result type
 exists to correct it to — so the most basic function in C cannot be bound in this
 language by any spelling. What makes the paragraph above true is that the wrong
@@ -1929,7 +1929,7 @@ binding is caught; what it does not say is that the right one is unwritable. The
 gap is **type-checking only** and not the ABI: `int64_t`↔`size_t` round-trips
 losslessly at all four edges on arm64 and x86-64, compiled both directions
 (panel 041, `e4-abi.c`). The four-rung ladder never met this because it binds only
-`int`, `cstr` and `ptr` returns — it passed by choosing the functions whose
+`i64`, `cstr` and `ptr` returns — it passed by choosing the functions whose
 signatures have no unsigned in them, which is a fact about the corpus and not
 about the mechanism.
 
@@ -1949,7 +1949,7 @@ void *hero_sqlite_open(const char *path) {
     if (sqlite3_open(path, &db) != SQLITE_OK) return NULL;
     return db;
 }
-int hero_sqlite_exec(void *db, const char *sql) {
+i64 hero_sqlite_exec(void *db, const char *sql) {
     return sqlite3_exec(db, sql, NULL, NULL, NULL);
 }
 ```
@@ -1968,8 +1968,8 @@ shim function.
 
 **FFI callbacks are `ptr` until a C-width type vocabulary exists** (panel 013, verified by
 compiling against the real headers). §4.13's function type is a Heroes-internal feature and must
-never be presented as the FFI callback spelling: Heroes' `int` is `int64_t` while every real
-callback takes C `int` and `const` pointers, so a *typed* callback is a hard clang error —
+never be presented as the FFI callback spelling: Heroes' `i64` is `int64_t` while every real
+callback takes C `i64` and `const` pointers, so a *typed* callback is a hard clang error —
 `qsort`, `sqlite3_exec`, `sqlite3_busy_handler` and all six raylib callback typedefs fail, 9 out of
 9. `cb: ptr` compiles, links and runs (SQLite needs no shim). What the boundary lacks is `c_int`
 and `const`, not a marker — see Part 7 item 10. Two things stay forbidden meanwhile: the emitter
@@ -2065,7 +2065,7 @@ includes — so clang type-checks every runtime call.** Contents:
 
 **Per-type functions are generated by the compiler, not written in the runtime.** Four rules,
 each of which panel 022 found by compiling rather than by reading: `eq` and `hash` walk **fields**,
-never bytes (`record Flag { n: int, on: bool }` carries 7 padding bytes, so two `==`-equal records
+never bytes (`record Flag { n: i64, on: bool }` carries 7 padding bytes, so two `==`-equal records
 hash differently under `memcmp` with no warning and no sanitiser report); `hash` is generated for
 **every** type and is never null (a call through a null one is `SEGV on unknown address 0x0, pc 0x0`
 — no type name, no source line); a **payload-free variant case is omitted from the union**, because
@@ -2097,7 +2097,7 @@ Compile to a `.o` once, cache it, and always link it.
 
 The consolidated built-in inventory (Tier 1 in C, Tier 2 in Heroes) is Principle 0's library
 closure list (§1.0): `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`, `join`/`Builder`,
-`to_int`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/`all`/`range` in
+`to_i64`/`to_f64`/`to_str`, `panic`, plus `map`/`filter`/`fold`/`find`/`any`/`all`/`range` in
 Heroes.
 
 ---
@@ -2279,12 +2279,12 @@ are *on* the closure list.
    evidence bought. The spelling changed because Go's quoted path is the one form with a documented,
    frozen defect (a file's imports cannot be resolved syntactically) while Nim's identifier rule
    leaves adding strings additive.
-5. **`alias`** — `Env = alias` / `{str: int}`. Deferred on the strongest possible ground:
+5. **`alias`** — `Env = alias` / `{str: i64}`. Deferred on the strongest possible ground:
    **reversibility.** It is the only purely additive thing in the language — adding it in v2
    invalidates no existing code, changes no rule, touches no core. Precedent: Go shipped in 2012 and
    added transparent type aliases in 1.9, in 2017. Five years, nobody died. When added, make it
    **transparent** (not a new type, fully interchangeable) and make **errors expand the alias**
-   (`expects: Env = {str: int}`), which restores the locality the indirection costs. Call it `alias`,
+   (`expects: Env = {str: i64}`), which restores the locality the indirection costs. Call it `alias`,
    not `type`: `type` suggests you are creating a type (misread, same family as
    `enumeration`/`variant`), and `type` is far too common an identifier to burn. Keeping `type` free
    also leaves the door open for v2 **distinct types** (`UserId` and `PostId` both ints but not
@@ -2305,7 +2305,7 @@ are *on* the closure list.
     when the live pressure is the **FFI** — §1.11's founding constraint, inside v1. Same shape as
     the `Macros` row panel 039 repaired: a correct decision under a reason that does not describe
     the real case. **The program that would make this row wrong is `strlen`**, not `SIZE_MAX`:
-    `extern function strlen(s: cstr) -> int` is `ffi_return_type` and no result type exists to
+    `extern function strlen(s: cstr) -> i64` is `ffi_return_type` and no result type exists to
     correct it to, whereas `SIZE_MAX` is unreadable under *every* option on panel 041's menu — a
     `u64` that can only be converted aborts, so naming it as the falsifier would name a case no
     addition closes. What §4.19 actually asked for is a **C-width** vocabulary (`c_int`, `const`),
@@ -2330,7 +2330,7 @@ are *on* the closure list.
       shared arena and therefore no lock on allocation.
     - **A message is any Heroes value.** No message type, no envelope, no serialisation format. This
       falls straight out of §4.10: a value holds no pointer to data it does not own and no shared
-      reference, so it is already a self-contained thing. An `int`, a `str`, a `[f64]`, a record, a
+      reference, so it is already a self-contained thing. An `i64`, a `str`, a `[f64]`, a record, a
       map — all equally valid, all handled by one rule.
     - **The transport is a mailbox** — one queue per thread; the sender copies into the receiver's
       heap and appends to the tail, the receiver pops from the head when it is ready. Deliberately
@@ -2417,7 +2417,7 @@ Do not hide these. Each was noticed by writing real programs in the language, an
 visible rather than patched with a second form.
 
 1. **The header is still heavier than a one-line body deserves.** Panel 018 shrank it —
-   `function is_digit(c: int) -> bool` lost `= …:` and reads like the call site — but a realistic
+   `function is_digit(c: i64) -> bool` lost `= …:` and reads like the call site — but a realistic
    file still has nine one-line predicates whose header outweighs the body. On a real function
    like `tokenize` the proportion is right; on a one-line predicate it is not. This remains the
    strongest argument for pulling closures forward — those helpers exist mostly to be passed
@@ -2498,7 +2498,7 @@ The principle: **low-level access is a marked, bounded region, not a scattering 
 ```
 use raw
 
-function read_u32(b: [int], off: int) -> int
+function read_u32(b: [i64], off: i64) -> i64
     return raw.load_u32(b, off)
 ```
 
@@ -2536,7 +2536,7 @@ than six months of design on paper.
 6. **Lowering** to a three-address internal IR with explicit basic blocks. This is the heart. Flatten
    every expression into temporaries; reduce control flow to labels and conditional jumps. Pass
    order matters: named-argument checking (§4.9) runs **before** monomorphisation, or generic
-   collapse (`A := B := int`) spuriously triggers the same-typed-argument rule.
+   collapse (`A := B := i64`) spuriously triggers the same-typed-argument rule.
 7. **C emission from the IR** — `goto`+labels, prototypes and topologically-sorted typedefs,
    the mangler, `#line` from day one, the `-Werror` set, `hero_unreachable`, and the double-emit
    determinism diff (green forever after). **First running program.** Celebrate here.
@@ -2724,7 +2724,7 @@ written `ok(...)` — twelve in all: the six originally flagged (`factor`'s `.nu
 `group`'s `return inner`, `term`'s and `expression`'s `return first`, `lookup`'s tail) plus five
 more found when applying the rule exhaustively (`term`/`expression`'s variant-construction
 returns, `sum_of`/`product_of`'s `return tot`, `evaluate`'s `.num` arm). `main`'s
-`print(c, " = ", v)` is legal under panel 006's contract (compiler form, `str`/`int`/`f64`/`bool`
+`print(c, " = ", v)` is legal under panel 006's contract (compiler form, `str`/`i64`/`f64`/`bool`
 arguments, no separator, one trailing newline). Still open here: `lookup` keeps the
 test-then-`.must()` sentinel §4.9 wants gone — `has(m, k)` was struck at panel 026 and the shape
 survived it as `!env[name].is_err()` followed by `env[name].must()`, which is the same double
@@ -2763,21 +2763,21 @@ function reduce<A, B>(xs: [A], initial: B, f: (function(B, A) -> B)) -> B
         acc @ f(acc, x)
     return acc
 
-function plus(a: int, b: int) -> int
+function plus(a: i64, b: i64) -> i64
     return a + b
 
 test "generics work across types"
     assert [1, 2, 3].apply(double) == [2, 4, 6]
     assert [1, 2, 3, 4].reduce(0, plus) == 10
 
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
 ## Tokens
 
 variant Token
     num
-        v: int
+        v: i64
     name
         s: str
     plus
@@ -2788,26 +2788,26 @@ variant Token
 # Text and position. Travels through the lexer as `@`.
 record Lex
     text: str
-    pos: int
+    pos: i64
 
 function at_end(l: Lex) -> bool
     return l.pos >= l.text.len()
 
-function here(l: Lex) -> int
+function here(l: Lex) -> i64
     return l.text[l.pos]
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-function is_digit(c: int) -> bool
+function is_digit(c: i64) -> bool
     return c >= '0' && c <= '9'
 
-function is_letter(c: int) -> bool
+function is_letter(c: i64) -> bool
     return c >= 'a' && c <= 'z'
 
 # Reads an integer, consuming it.
-function read_number(@l: Lex) -> int
-    v: int @ 0
+function read_number(@l: Lex) -> i64
+    v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
         v @ v * 10 + (l.here() - '0')
         advance(@l)
@@ -2869,7 +2869,7 @@ test "tokenize rejects the unknown"
 # only indirection: that is what makes the recursive type finite.
 variant Expr
     num
-        v: int
+        v: i64
     variable
         name: str
     sum
@@ -2880,7 +2880,7 @@ variant Expr
 # Tokens and position. Travels through the parser as `@`.
 record Parse
     ts: [Token]
-    pos: int
+    pos: i64
 
 function parse_at_end(p: Parse) -> bool
     return p.pos >= p.ts.len()
@@ -2950,25 +2950,25 @@ function expression(@p: Parse) -> Expr?
 ## Evaluator
 
 # The value bound to a name, with a decent message if absent.
-function lookup(env: {str: int}, name: str) -> int?
+function lookup(env: {str: i64}, name: str) -> i64?
     if env[name].is_err()
         return fail("unknown_name", "undefined variable: " + name)
     return ok(env[name].must())
 
-function sum_of(children: [Expr], env: {str: int}) -> int?
-    tot: int @ 0
+function sum_of(children: [Expr], env: {str: i64}) -> i64?
+    tot: i64 @ 0
     for c in children
         tot @ tot + evaluate(c, env)?
     return ok(tot)
 
-function product_of(children: [Expr], env: {str: int}) -> int?
-    tot: int @ 1
+function product_of(children: [Expr], env: {str: i64}) -> i64?
+    tot: i64 @ 1
     for c in children
         tot @ tot * evaluate(c, env)?
     return ok(tot)
 
 # The value of the tree. Fails on the first unknown name.
-function evaluate(e: Expr, env: {str: int}) -> int?
+function evaluate(e: Expr, env: {str: i64}) -> i64?
     return match e
         .num n      => ok(n.v)
         .variable x => env.lookup(x.name)
@@ -2993,7 +2993,7 @@ function names_of(children: [Expr]) -> [str]
 ## Interface
 
 # From text to result, in one call.
-function calculate(text: str, env: {str: int}) -> int?
+function calculate(text: str, env: {str: i64}) -> i64?
     ts = tokenize(text)?
     p: Parse @ Parse(ts: ts, pos: 0)
     tree = expression(@p)?
@@ -3002,7 +3002,7 @@ function calculate(text: str, env: {str: int}) -> int?
     return evaluate(tree, env)
 
 test "precedence and parens"
-    empty: {str: int} = {}
+    empty: {str: i64} = {}
     assert calculate("2 + 3 * 4", empty).must() == 14
     assert calculate("(2 + 3) * 4", empty).must() == 20
     assert calculate("2 * 3 * 4", empty).must() == 24
@@ -3012,7 +3012,7 @@ test "variables from the environment"
     assert calculate("x * y + 2", env).must() == 42
 
 test "errors reach the top"
-    empty: {str: int} = {}
+    empty: {str: i64} = {}
     match calculate("2 +", empty)
         .ok _  => assert false
         .err e => assert e.code == "unexpected_end"
@@ -3025,7 +3025,7 @@ test "errors reach the top"
 
 test "values are always copies"
     a = [1, 2, 3]
-    b: [int] @ a
+    b: [i64] @ a
     b @ b.push(4)
     assert a.len() == 3
     assert b.len() == 4

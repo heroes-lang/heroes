@@ -45,7 +45,7 @@ pub(super) fn synth(
             }
             checker.out.types.int()
         }
-        // §4.3: a character literal *is* an `int`.
+        // §4.3: a character literal *is* an `i64`.
         ExprKind::Char => checker.out.types.int(),
         ExprKind::Float => checker.out.types.f64(),
         ExprKind::Str => checker.out.types.str(),

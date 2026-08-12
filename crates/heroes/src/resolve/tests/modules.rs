@@ -27,10 +27,10 @@ fn program(main: &str, geom: &str) -> Vec<String> {
 
 const GEOM: &str = "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
-function dist2(a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> i64
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy
@@ -48,7 +48,7 @@ fn a_qualified_call_and_a_qualified_construction_resolve() {
 #[test]
 fn a_qualified_type_resolves_in_a_signature_and_in_an_annotation() {
     let said = program(
-        "use geom\n\nfunction go(p: geom.Point) -> int\n    q: geom.Point = p\n    return geom.dist2(a: p, b: q)\n\nfunction main()\n    print(go(p: geom.Point(x: 1, y: 1)))\n",
+        "use geom\n\nfunction go(p: geom.Point) -> i64\n    q: geom.Point = p\n    return geom.dist2(a: p, b: q)\n\nfunction main()\n    print(go(p: geom.Point(x: 1, y: 1)))\n",
         GEOM,
     );
     assert!(said.is_empty(), "{said:?}");
@@ -106,7 +106,7 @@ fn a_use_nothing_reads_is_the_unused_binding_error() {
 #[test]
 fn a_use_that_collides_with_a_declaration_is_the_shadowing_error() {
     let said = program(
-        "use geom\n\nfunction geom() -> int\n    return 1\n\nfunction main()\n    print(geom())\n",
+        "use geom\n\nfunction geom() -> i64\n    return 1\n\nfunction main()\n    print(geom())\n",
         GEOM,
     );
     assert!(said.iter().any(|d| d.contains("shadowed_binding")), "{said:?}");

@@ -7,9 +7,9 @@
 //!
 //! Three shapes:
 //!
-//! - **arithmetic** `+ - * / %` — `int` with `int`, `f64` with `f64`, and (panel
+//! - **arithmetic** `+ - * / %` — `i64` with `i64`, `f64` with `f64`, and (panel
 //!   017 B) `+` also joins two `str`. Nothing else, and never mixed.
-//! - **comparison** `< <= > >=` — `int` and `f64` only. Ordering on `str` is not
+//! - **comparison** `< <= > >=` — `i64` and `f64` only. Ordering on `str` is not
 //!   offered: it would need a collation the language does not specify, and a
 //!   rejection can be relaxed later.
 //! - **equality** `== !=` — any two values of *the same* type, because §4.3
@@ -51,7 +51,7 @@ pub(super) fn binary(
             }
             checker.out.types.bool()
         }
-        // **`int` only, and both sides** (§4.14). A bit pattern is what these
+        // **`i64` only, and both sides** (§4.14). A bit pattern is what these
         // operate on, and `f64`'s bits are not its value — `1.5 & 1` would be a
         // question about an IEEE encoding the language never exposes. `bool` is
         // excluded for the reason §4.14 gives for keeping `&&` and `&` apart: one
@@ -66,7 +66,7 @@ pub(super) fn binary(
             for side in [left, right] {
                 if side != int {
                     let got = checker.show(ast, src, side);
-                    let diagnostic = errors::bad_operand(name(op), "`int`", &got, span);
+                    let diagnostic = errors::bad_operand(name(op), "`i64`", &got, span);
                     checker.push_diagnostic(diagnostic);
                     return checker.error_ty();
                 }
@@ -77,7 +77,7 @@ pub(super) fn binary(
             let ordered = matches!(checker.out.types.get(left), Ty::Int(_) | Ty::F64);
             if !ordered {
                 let got = checker.show(ast, src, left);
-                let diagnostic = errors::bad_operand(name(op), "`int` or `f64`", &got, span);
+                let diagnostic = errors::bad_operand(name(op), "`i64` or `f64`", &got, span);
                 checker.push_diagnostic(diagnostic);
                 return checker.error_ty();
             }
@@ -123,7 +123,7 @@ fn arithmetic(
             return checker.out.types.str();
         }
         let diagnostic =
-            errors::bad_operand(name(op), "`int` or `f64`", "str", span);
+            errors::bad_operand(name(op), "`i64` or `f64`", "str", span);
         checker.push_diagnostic(diagnostic);
         return checker.error_ty();
     }
@@ -143,9 +143,9 @@ fn arithmetic(
     }
     let got = checker.show(ast, src, if acceptable(left) { right } else { left });
     let allowed = if op == BinaryOp::Add {
-        "`int` with `int`, `f64` with `f64`, or `str` with `str`"
+        "`i64` with `i64`, `f64` with `f64`, or `str` with `str`"
     } else {
-        "`int` with `int` or `f64` with `f64`"
+        "`i64` with `i64` or `f64` with `f64`"
     };
     let diagnostic = errors::bad_operand(name(op), allowed, &got, span);
     checker.push_diagnostic(diagnostic);
@@ -169,7 +169,7 @@ pub(super) fn unary(
                 return operand;
             }
             let got = checker.show(ast, src, operand);
-            let diagnostic = errors::bad_operand("-", "`int` or `f64`", &got, span);
+            let diagnostic = errors::bad_operand("-", "`i64` or `f64`", &got, span);
             checker.push_diagnostic(diagnostic);
             checker.error_ty()
         }
@@ -189,7 +189,7 @@ pub(super) fn unary(
                 return int;
             }
             let got = checker.show(ast, src, operand);
-            let diagnostic = errors::bad_operand("~", "`int`", &got, span);
+            let diagnostic = errors::bad_operand("~", "`i64`", &got, span);
             checker.push_diagnostic(diagnostic);
             checker.error_ty()
         }

@@ -139,7 +139,7 @@ fn by_value_target(ast: &Ast, resolved: &Resolved, ty: TypeId) -> Option<u32> {
         // the worst order with zero forward declarations.
         TypeKind::Array(_) | TypeKind::Map(_, _) => None,
         // A function value is a C function pointer: `record R { f:
-        // (function(R) -> int) }` compiles and runs, measured. M-generics-library owns the
+        // (function(R) -> i64) }` compiles and runs, measured. M-generics-library owns the
         // emission; the edge set already has the right answer.
         TypeKind::Func { .. } => None,
         // No bytes, and a type the parser could not read — the diagnostic for

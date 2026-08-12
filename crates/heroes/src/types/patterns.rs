@@ -12,7 +12,7 @@
 //! |---------|----------|-----|
 //! | a `variant` | `.case [binding]` | forbidden — the cases are countable |
 //! | a `T?` | `.ok x`, `.err e` | forbidden — it is a two-case variant |
-//! | `int`, `str` | literals | **required**: the values are not countable |
+//! | `i64`, `str` | literals | **required**: the values are not countable |
 
 use crate::resolve::Resolved;
 use crate::source::{Source, Span};
@@ -176,7 +176,7 @@ pub(super) fn exhaustive(
                 checker.push_diagnostic(diagnostic);
             }
         }
-        // `int` and `str` cannot be enumerated, so `_` is how they are finished —
+        // `i64` and `str` cannot be enumerated, so `_` is how they are finished —
         // and its absence is the error.
         Ty::Int(_) | Ty::Str => {
             let diagnostic = errors::needs_wildcard(span);

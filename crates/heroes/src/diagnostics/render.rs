@@ -10,12 +10,12 @@
 //! The shape, and every part of it is load-bearing:
 //!
 //! ```text
-//! error[type_mismatch]: expected `int`, found `str`
+//! error[type_mismatch]: expected `i64`, found `str`
 //!   at examples/gallery/00-first.hero:5:12
 //!    |
 //!  5 |     return "x"
 //!    |            ^^^
-//!   note: `half` is declared `-> int` at line 1
+//!   note: `half` is declared `-> i64` at line 1
 //!   fix (certain): rename to `total`
 //! ```
 //!

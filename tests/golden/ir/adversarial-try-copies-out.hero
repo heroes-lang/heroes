@@ -5,14 +5,14 @@
 # owes `@r` a copy-out. Missing the one on the `?` edge would lose the caller's
 # mutation only on the failing path, which is the shape of bug that ships.
 record Reader
-    pos: int
+    pos: i64
 
-function parsed(s: str) -> int?
+function parsed(s: str) -> i64?
     if s.len() == 0
         return fail("empty", "nothing to parse")
     return ok(s.len())
 
-function advance_over(@r: Reader, s: str) -> int?
+function advance_over(@r: Reader, s: str) -> i64?
     n = parsed(s)?
     if n == 0
         return ok(0)

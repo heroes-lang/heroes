@@ -138,7 +138,7 @@ HeroStr hero_int_to_str(int64_t v);
 HeroStr hero_bool_to_str(bool v);
 HeroStr hero_str_identity(HeroStr s);
 
-/* `to_int` truncates toward zero; out of range or NaN ABORTS, because
+/* `to_i64` truncates toward zero; out of range or NaN ABORTS, because
  * `(int64_t)v` past int64's range is C11 6.3.1.4p1 undefined behaviour and
  * arm64's `fcvtzs` saturates rather than trapping. `to_f64` cannot fail, and is
  * lossy above 2^53 — defined, silent, and Part 8's to record. */
@@ -204,7 +204,7 @@ _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right
  * type name, no source line — and Go's cheaper rule (emit it only for map-key
  * types) reintroduces exactly that (panel 022).
  *
- * `eq` and `hash` walk FIELDS, never bytes. `record Flag { n: int, on: bool }`
+ * `eq` and `hash` walk FIELDS, never bytes. `record Flag { n: i64, on: bool }`
  * carries 7 padding bytes, so two `==`-equal records hash differently under
  * memcmp with no warning, no error and no sanitiser report. */
 
@@ -226,7 +226,7 @@ extern const HeroDesc hero_desc_str;
 
 /* And ONE for every `[T]`, whatever T is: copy/drop/eq on an array value work
  * through the header's own `elem`, so the descriptor of an array needs to know
- * nothing about what the array holds. `[[int]]` and `[[str]]` share this. */
+ * nothing about what the array holds. `[[i64]]` and `[[str]]` share this. */
 extern const HeroDesc hero_desc_array;
 extern const HeroDesc hero_desc_failure;
 
@@ -284,7 +284,7 @@ HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_
 
 /* `sort(xs)` — a NEW array, STABLE, ascending.
  *
- * Works on `[int]`, `[f64]` and `[str]`, which is exactly the set with an order;
+ * Works on `[i64]`, `[f64]` and `[str]`, which is exactly the set with an order;
  * the comparison lives inside `runtime.c` and is NOT part of this contract,
  * because panel 027 vetoed putting a `cmp` in `HeroDesc`: C11 6.7.9p21
  * zero-fills a short initialiser list, so every descriptor that forgot the field

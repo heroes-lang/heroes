@@ -1,4 +1,4 @@
-# A literal no `int` holds — and the reason this case is in `check/` rather than
+# A literal no `i64` holds — and the reason this case is in `check/` rather than
 # in `unsupported/` is the defect it records.
 #
 # `heroes check` used to exit **0** on this file while `heroes build` exited 1 on
@@ -7,7 +7,7 @@
 # is what an editor trusts, what `--apply` trusts, and what §10's exit-code
 # contract says cannot happen.
 #
-# The literal's text and the fact that `int` is the only integer type are both
+# The literal's text and the fact that `i64` is the only integer type are both
 # frontend facts, so the frontend is where the question belongs. Lowering keeps
 # its own copy as a net: it only runs on an accepted program, so a literal
 # arriving there out of range is a compiler bug rather than a user's.

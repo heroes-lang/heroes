@@ -154,7 +154,7 @@ static bool hero_eq_array(const void *a, const void *b) {
     return hero_array_eq(*(HeroArrayHeader *const *)a, *(HeroArrayHeader *const *)b);
 }
 /* An array is hashable so that a descriptor's `hash` is never null (panel 022),
- * not because an array can be a map key — `{[int]: v}` is a question §4.9 has
+ * not because an array can be a map key — `{[i64]: v}` is a question §4.9 has
  * not answered. Order matters, because `==` on an array is order-sensitive. */
 static uint64_t hero_hash_array(const void *elem) {
     const HeroArrayHeader *a = *(const HeroArrayHeader *const *)elem;

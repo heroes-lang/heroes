@@ -2,7 +2,7 @@
 #
 # SYMPTOM (the class, before this milestone): `M_PI` was unspellable, so a program
 # that wanted it wrote `3.14159265358979` and nothing checked the digits. The
-# moment it became spellable, a second silent route opened: declare it `int` and
+# moment it became spellable, a second silent route opened: declare it `i64` and
 # C converts `double` to `int64_t` on the way out of the accessor, quietly, so the
 # constant is **3** and every stage of the toolchain agrees.
 #
@@ -19,7 +19,7 @@
 # mistake is different: a function *returns* the wrong type, a constant **is** one.
 #
 # This is also where `bool` is refused. `stdbool.h` spells `true` as
-# `#define true 1`, so under `-std=c11` its type is `int` — but that is a fact
+# `#define true 1`, so under `-std=c11` its type is `i64` — but that is a fact
 # about this token rather than a claim about every header, which is why the
 # checker does not carry a `bool` rule (CLAUDE.md §11).
 #
@@ -27,7 +27,7 @@
 # `a_wrong_extern_constant_type_is_the_authors_error_not_the_compilers`.
 
 extern "math.h"
-    constant M_PI: int  #~ ffi_constant_type
+    constant M_PI: i64  #~ ffi_constant_type
 
 function main()
     print(M_PI)

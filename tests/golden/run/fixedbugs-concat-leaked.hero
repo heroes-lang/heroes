@@ -2,7 +2,7 @@
 # missing decref)` on the first Heroes program that contained a string. Cause: the
 # ownership pass classified a value as owning by looking at its defining operation,
 # and `+` on a `str` is an `Op::Binary` — it reads like arithmetic and it is a
-# constructor. §4.14's operator table puts `str + str` in the same row as `int + int`,
+# constructor. §4.14's operator table puts `str + str` in the same row as `i64 + i64`,
 # so only the RESULT TYPE tells them apart. Fix: `own.rs::allocates` returns true for
 # `Binary`, which it can only reach when the result is refcounted.
 #
@@ -22,7 +22,7 @@ function main()
     s = "ab"
     print(s + s)
     out: str @ ""
-    i: int @ 0
+    i: i64 @ 0
     while i < 200
         out @ out + "x"
         i @ i + 1

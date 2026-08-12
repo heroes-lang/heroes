@@ -1,6 +1,6 @@
 # fixedbugs, M-ffi-ladder step 5, 2026-08-12.
 #
-# SYMPTOM: `extern function sqrt(x: f64) -> int` compiled clean, exited 0 and
+# SYMPTOM: `extern function sqrt(x: f64) -> i64` compiled clean, exited 0 and
 # printed `1`. Four wrong bindings out of six did — wrong return type on two
 # functions, wrong parameter type on a third, `ptr` where the header says
 # `const char *` — because the emitter does not re-declare the signature (that
@@ -21,7 +21,7 @@
 # line, at exit 1, with no generated C in the message.
 
 extern "math.h"
-    function sqrt(x: f64) -> int
+    function sqrt(x: f64) -> i64
 
 function main()
     print(sqrt(2.0))

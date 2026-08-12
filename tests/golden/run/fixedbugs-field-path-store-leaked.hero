@@ -9,7 +9,7 @@
 # that is the same question as the stored value's type, so it had been right for two
 # milestones. For a path store it is a different question: the slot is a `Row`, which
 # is counted because it *contains* an array, while the place being written is the
-# `[int]` itself. The store was therefore treated as uncounted: the new array was
+# `[i64]` itself. The store was therefore treated as uncounted: the new array was
 # never increfed and the old one never released.
 #
 # FIX: rule 3 reads the stored value's type. An *index* path is deliberately not
@@ -21,7 +21,7 @@
 # the instrument that sees exactly that.
 
 record Row
-    cells: [int]
+    cells: [i64]
 
 record Pair
     left: Row

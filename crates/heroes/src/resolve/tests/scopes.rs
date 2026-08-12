@@ -8,12 +8,12 @@ use super::{assert_clean, diagnostics, scopes};
 fn declaration_order_never_matters() {
     assert_clean(
         "\
-function even(n: int) -> bool
+function even(n: i64) -> bool
     if n == 0
         return true
     return odd(n - 1)
 
-function odd(n: int) -> bool
+function odd(n: i64) -> bool
     if n == 0
         return false
     return even(n - 1)
@@ -26,10 +26,10 @@ fn two_declarations_of_one_name_collide() {
     assert_eq!(
         diagnostics(
             "\
-function f() -> int
+function f() -> i64
     return 1
 
-function f() -> int
+function f() -> i64
     return 2
 "
         ),
@@ -44,7 +44,7 @@ fn a_record_and_a_variant_of_the_same_name_collide() {
         diagnostics(
             "\
 record Token
-    x: int
+    x: i64
 
 variant Token
     plus
@@ -75,7 +75,7 @@ fn a_local_may_not_shadow_a_parameter() {
     assert_eq!(
         diagnostics(
             "\
-function f(n: int) -> int
+function f(n: i64) -> i64
     n = 2
     return n
 "
@@ -91,7 +91,7 @@ fn a_local_may_not_shadow_a_top_level_declaration() {
     assert_eq!(
         diagnostics(
             "\
-constant MAX: int
+constant MAX: i64
     64
 
 function main()
@@ -110,7 +110,7 @@ fn a_builtin_name_is_taken_in_every_position() {
     assert_eq!(
         diagnostics(
             "\
-function len() -> int
+function len() -> i64
     return 1
 "
         ),
@@ -119,7 +119,7 @@ function len() -> int
     assert_eq!(
         diagnostics(
             "\
-function f(ok: int) -> int
+function f(ok: i64) -> i64
     return ok
 "
         ),
@@ -144,8 +144,8 @@ function main()
 fn sibling_scopes_may_reuse_a_name() {
     assert_clean(
         "\
-function sum_both(xs: [int], ys: [int]) -> int
-    total: int @ 0
+function sum_both(xs: [i64], ys: [i64]) -> i64
+    total: i64 @ 0
     for x in xs
         total @ total + x
     for x in ys
@@ -163,7 +163,7 @@ function sum_both(xs: [int], ys: [int]) -> int
 fn a_binding_below_a_block_does_not_reach_back_into_it() {
     assert_clean(
         "\
-function f(flag: bool) -> int
+function f(flag: bool) -> i64
     if flag
         w = 1
         print(w)
@@ -180,11 +180,11 @@ fn each_arm_is_its_own_scope() {
         "\
 variant Shape
     circle
-        r: int
+        r: i64
     square
-        side: int
+        side: i64
 
-function area(s: Shape) -> int
+function area(s: Shape) -> i64
     return match s
         .circle n => n.r * 3
         .square n => n.side * n.side
@@ -195,11 +195,11 @@ function area(s: Shape) -> int
             "\
 variant Shape
     circle
-        r: int
+        r: i64
     square
-        r: int
+        r: i64
 
-function first(s: Shape) -> int
+function first(s: Shape) -> i64
     return match s
         .circle n | .square n => n.r
 "
@@ -223,11 +223,11 @@ function first<A, A>(xs: [A]) -> A
     assert_eq!(
         diagnostics(
             "\
-function first<int>(xs: [int]) -> int
+function first<i64>(xs: [i64]) -> i64
     return xs[0]
 "
         ),
-        "test.hero:1:16: error[builtin_name_taken]: `int` is a built-in of the language, so the name is taken everywhere — pick another name\n"
+        "test.hero:1:16: error[builtin_name_taken]: `i64` is a built-in of the language, so the name is taken everywhere — pick another name\n"
     );
 }
 
@@ -238,8 +238,8 @@ fn the_dump_shows_the_table_and_the_nesting() {
     assert_eq!(
         scopes(
             "\
-function main(xs: [int])
-    total: int @ 0
+function main(xs: [i64])
+    total: i64 @ 0
     for x in xs
         total @ total + x
     print(total)

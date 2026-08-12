@@ -57,7 +57,7 @@ static int64_t hero_cmp_str(const void *x, const void *y) {
 }
 
 /* Dispatch is POINTER IDENTITY against the three static descriptors, which is
- * exact: every `[int]` in every program carries `&hero_desc_int`. A fourth
+ * exact: every `[i64]` in every program carries `&hero_desc_int`. A fourth
  * descriptor arriving here means the gate let through a `sort` on an element
  * type with no order, so the message says compiler bug rather than user error. */
 static HeroCmpFn hero_cmp_for(const HeroDesc *elem) {

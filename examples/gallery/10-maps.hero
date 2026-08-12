@@ -5,32 +5,32 @@
 # is no null to forget to check.
 
 # The four ways to read a `V?`, on one line each (§4.6).
-function score_of(scores: {str: int}, name: str) -> int
+function score_of(scores: {str: i64}, name: str) -> i64
     return scores[name].default(0)
 
-function known(scores: {str: int}, name: str) -> bool
+function known(scores: {str: i64}, name: str) -> bool
     return !scores[name].is_err()
 
 # `.is_err()` asks without extracting; the `match` extracts without aborting.
-function report(scores: {str: int}, name: str) -> str
+function report(scores: {str: i64}, name: str) -> str
     got = scores[name]
     if got.is_err()
         return name + " has no score"
     return name + " scored " + got.must().to_str()
 
 # The general way, and the only one that names the error: `match` on `.ok`/`.err`.
-function describe(scores: {str: int}, name: str) -> str
+function describe(scores: {str: i64}, name: str) -> str
     return match scores[name]
         .ok v  => v.to_str()
         .err e => e.code
 
 # A map is built as a literal. There is no insert in the built-in inventory
 # (§4.20) — `push` is for arrays — so this table is written, not accumulated.
-function table() -> {str: int}
+function table() -> {str: i64}
     return {"ada": 10, "grace": 9, "alan": 8}
 
-function total_of(scores: {str: int}, names: [str]) -> int
-    sum: int @ 0
+function total_of(scores: {str: i64}, names: [str]) -> i64
+    sum: i64 @ 0
     for name in names
         sum @ sum + score_of(scores, name)
     return sum

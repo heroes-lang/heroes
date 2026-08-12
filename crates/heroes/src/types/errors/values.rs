@@ -23,12 +23,12 @@ pub(in crate::types) fn mixed_arithmetic(op: &str, left: &str, right: &str, span
     let mut diagnostic = Diagnostic::new(
         "mixed_arithmetic",
         format!(
-            "`{op}` takes `int` with `int` or `f64` with `f64`, never mixed — found `{left}` and `{right}`"
+            "`{op}` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `{left}` and `{right}`"
         ),
         span,
     );
     diagnostic.fixes.push(Fix {
-        title: "convert one side: `to_f64(x)` or `to_int(x)`".to_string(),
+        title: "convert one side: `to_f64(x)` or `to_i64(x)`".to_string(),
         replacement: String::new(),
         span,
         certainty: Certainty::Guess,
@@ -162,7 +162,7 @@ pub(in crate::types) fn cannot_infer_empty(what: &str, span: Span) -> Diagnostic
         span,
     );
     diagnostic.fixes.push(Fix {
-        title: "annotate the binding: `xs: [int] = []`".to_string(),
+        title: "annotate the binding: `xs: [i64] = []`".to_string(),
         replacement: String::new(),
         span,
         certainty: Certainty::Guess,
@@ -280,14 +280,14 @@ pub(in crate::types) fn builtin_shape(name: &str, given: usize, span: Span) -> D
     )
 }
 
-/// `99999999999999999999` — a literal no `int` holds.
+/// `99999999999999999999` — a literal no `i64` holds.
 ///
 /// **The code is snake_case like every other in this compiler.** It was
 /// `int-literal-out-of-range`, hyphenated, and it was the only one: a
 /// user-visible identifier that did not match its family, in a project whose
 /// thesis is that a reader can predict what the compiler says.
 ///
-/// The message names the range because `int` is the only integer type (§4.3):
+/// The message names the range because `i64` is the only integer type (§4.3):
 /// there is no wider one to suggest, so the fix is a different number and the
 /// compiler should not pretend otherwise.
 /// Built in `lexer/number.rs`, with the decoder that decides when it fires and

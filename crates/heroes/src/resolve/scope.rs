@@ -5,7 +5,7 @@
 //! One flat vector of `(name, local)` plus a vector of marks saying where each
 //! open scope begins. Closing a scope truncates. That is the whole structure —
 //! no tree, no parent pointers, nothing the Cyclone rule forbids, and the port
-//! to Heroes reads it as `[(str, int)]` and `[int]`.
+//! to Heroes reads it as `[(str, int)]` and `[i64]`.
 //!
 //! Four rules are decided here rather than in the walk, because all four are
 //! about the *stack* and not about any one statement:
@@ -26,7 +26,7 @@
 //!   same error order-*insensitive*: §1.3 says locality is the currency, and a
 //!   legality rule that reads downwards spends it.
 //! - **A write through an `@` parameter is a use.** §4.8's copy-out always
-//!   happens, so `function reset(@counts: {str: int})` whose whole body is
+//!   happens, so `function reset(@counts: {str: i64})` whose whole body is
 //!   `counts @ {}` is a complete function, not an unused binding (panel 015,
 //!   llm-ergonomist). Every other write is not a use: only a read is.
 
@@ -58,13 +58,13 @@ impl Binding {
         Binding { kind: LocalKind::Param, mutable, ty: Some(ty), value: None }
     }
 
-    /// `x = e`, or `xs: [int] = []` where the empty literal needs the
+    /// `x = e`, or `xs: [i64] = []` where the empty literal needs the
     /// annotation (§4.5).
     pub(super) fn bind(ty: Option<TypeId>, value: ExprId) -> Binding {
         Binding { kind: LocalKind::Bind, mutable: false, ty, value: Some(value) }
     }
 
-    /// `v: int @ 0` — the type is mandatory, which is what makes the third line
+    /// `v: i64 @ 0` — the type is mandatory, which is what makes the third line
     /// shape distinguishable from a mutation (§4.4).
     pub(super) fn cell(ty: TypeId, value: ExprId) -> Binding {
         Binding { kind: LocalKind::Cell, mutable: true, ty: Some(ty), value: Some(value) }

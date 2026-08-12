@@ -7,7 +7,7 @@ function nan() -> f64
     return 0.0 / 0.0
 
 function main()
-    m: {f64: int} @ {}
+    m: {f64: i64} @ {}
     m[1.5] @ 1
     print(len(m))
     m[nan()] @ 2

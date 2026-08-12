@@ -16,11 +16,11 @@
 # is a property and not a list: an edge is a field C lays out by value.
 #
 # Measured alongside it, and all three compile: `record P { kids: [P?] }` is 8
-# bytes, `record Q { kids: [Q]? }` is 40, `record S { m: {int: S?} }` is 8. The
+# bytes, `record Q { kids: [Q]? }` is 40, `record S { m: {i64: S?} }` is 8. The
 # `T?` is not the problem — being reached by value is.
 
 record Node
-    value: int
+    value: i64
     next: Node?    #~ no_size
 
 function main()

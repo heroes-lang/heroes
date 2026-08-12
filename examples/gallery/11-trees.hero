@@ -7,7 +7,7 @@
 
 variant Expr
     number
-        v: int
+        v: i64
     add
         parts: [Expr]
     multiply
@@ -17,42 +17,42 @@ variant Expr
 
 # Recursion over a variant is one `match` and one `for` — and the `match` is
 # exhaustive or it does not compile.
-function value_of(e: Expr) -> int
+function value_of(e: Expr) -> i64
     return match e
         .number n   => n.v
         .add a      => sum_of(a.parts)
         .multiply m => product_of(m.parts)
         .negate g   => 0 - first_value(g.inner)
 
-function sum_of(parts: [Expr]) -> int
-    total: int @ 0
+function sum_of(parts: [Expr]) -> i64
+    total: i64 @ 0
     for part in parts
         total @ total + value_of(part)
     return total
 
-function product_of(parts: [Expr]) -> int
-    total: int @ 1
+function product_of(parts: [Expr]) -> i64
+    total: i64 @ 1
     for part in parts
         total @ total * value_of(part)
     return total
 
 # An empty child list is not an error here, so absence gets an answer instead
 # of an abort: the neutral element.
-function first_value(parts: [Expr]) -> int
+function first_value(parts: [Expr]) -> i64
     for part in parts
         return value_of(part)
     return 0
 
 # How deep does it go? The same shape again, one level up.
-function depth_of(e: Expr) -> int
+function depth_of(e: Expr) -> i64
     return match e
         .number _   => 1
         .add a      => 1 + deepest(a.parts)
         .multiply m => 1 + deepest(m.parts)
         .negate g   => 1 + deepest(g.inner)
 
-function deepest(parts: [Expr]) -> int
-    best: int @ 0
+function deepest(parts: [Expr]) -> i64
+    best: i64 @ 0
     for part in parts
         d = depth_of(part)
         if d > best

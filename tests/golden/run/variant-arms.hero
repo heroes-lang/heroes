@@ -18,7 +18,7 @@
 # Bulk regression case.
 
 record P
-    n: int
+    n: i64
     f: f64
 
 variant Sign
@@ -26,7 +26,7 @@ variant Sign
     zero
     pos
 
-function classify(n: int) -> Sign
+function classify(n: i64) -> Sign
     if n < 0
         return .neg
     else if n == 0

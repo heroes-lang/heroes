@@ -71,7 +71,7 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                     .collect();
                 let result = lower::ty(checker, ast, resolved, function.result);
                 // **`main` produces nothing, and that is enforced rather than
-                // assumed.** `function main() -> int?` returning `fail(…)`
+                // assumed.** `function main() -> i64?` returning `fail(…)`
                 // compiled, printed nothing and exited **0** — the shell told
                 // that the program succeeded, with no diagnostic anywhere. It is
                 // the only failure in this language with no instrument at all
@@ -90,8 +90,8 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                 // **What may cross the FFI boundary, checked here rather than
                 // discovered by clang** (§4.19, M-ffi-ladder). An `extern`'s C
                 // counterpart is declared by a header, so every type in its
-                // signature must be one C can spell: `int`, `f64`, `bool`, `ptr`,
-                // `cstr`, `str` (a `HeroStr` by value) and `()`. A `[int]` reached
+                // signature must be one C can spell: `i64`, `f64`, `bool`, `ptr`,
+                // `cstr`, `str` (a `HeroStr` by value) and `()`. A `[i64]` reached
                 // clang as `call to undeclared function` plus `incompatible
                 // integer to pointer conversion` — exit 2, the compiler blaming
                 // itself for a mistake in a `.hero` file, which is the failure the

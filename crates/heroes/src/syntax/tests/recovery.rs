@@ -14,7 +14,7 @@ use super::dump;
 #[test]
 fn the_old_shape_costs_one_diagnostic() {
     assert_eq!(
-        dump("MAX = constant: int\n    1\n"),
+        dump("MAX = constant: i64\n    1\n"),
         "\
 file test.hero
 DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`MAX`) — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
@@ -31,7 +31,7 @@ DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a
 #[test]
 fn an_unknown_kind_word_names_them_all() {
     assert_eq!(
-        dump("widget Point\n    x: int\n"),
+        dump("widget Point\n    x: i64\n"),
         "\
 file test.hero
 DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a name (`widget`) — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
@@ -45,11 +45,11 @@ DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a
 #[test]
 fn a_broken_head_does_not_swallow_the_next_declaration() {
     assert_eq!(
-        dump("constant MAX\nrecord Point\n    x: int\n"),
+        dump("constant MAX\nrecord Point\n    x: i64\n"),
         "\
 file test.hero
   record Point
-    field x: int
+    field x: i64
 DIAG test.hero:1:13: error[expected_constant_type]: expected `:` and the constant's type — a `constant` declares a value, so it has one, found end of line
 "
     );
@@ -60,7 +60,7 @@ DIAG test.hero:1:13: error[expected_constant_type]: expected `:` and the constan
 #[test]
 fn a_foreign_entity_word_is_reported_once() {
     assert_eq!(
-        dump("struct Point\n    x: int\n"),
+        dump("struct Point\n    x: i64\n"),
         "\
 file test.hero
 DIAG test.hero:1:1: error[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
@@ -71,7 +71,7 @@ DIAG test.hero:1:1: error[reserved_word]: `struct` is not a word in this languag
 #[test]
 fn a_declaration_without_a_body_says_so() {
     assert_eq!(
-        dump("constant MAX: int\n"),
+        dump("constant MAX: i64\n"),
         "\
 file test.hero
 DIAG test.hero:2:1: error[missing_body]: a `constant` needs an indented body — one level deeper, exactly 4 spaces (found end of file)
@@ -88,10 +88,10 @@ DIAG test.hero:2:1: error[missing_body]: a `constant` needs an indented body —
 #[test]
 fn an_empty_record_does_not_eat_the_next_declaration() {
     assert_eq!(
-        dump("record Point\nconstant MAX: int\n    1\n"),
+        dump("record Point\nconstant MAX: i64\n    1\n"),
         "\
 file test.hero
-  constant MAX: int
+  constant MAX: i64
     expr 1
 DIAG test.hero:2:1: error[empty_record]: a `record` needs at least one field, indented one level below it
 "
@@ -114,12 +114,12 @@ DIAG test.hero:2:1: error[empty_variant]: a `variant` needs at least one case, i
 #[test]
 fn a_broken_field_line_loses_only_that_field() {
     assert_eq!(
-        dump("record Point\n    x int\n    y: int\n"),
+        dump("record Point\n    x i64\n    y: i64\n"),
         "\
 file test.hero
   record Point
-    field y: int
-DIAG test.hero:2:7: error[expected_field_type]: expected `:` and the field's type, found a name (`int`)
+    field y: i64
+DIAG test.hero:2:7: error[expected_field_type]: expected `:` and the field's type, found a name (`i64`)
 "
     );
 }
@@ -164,10 +164,10 @@ DIAG test.hero:3:5: error[expected_params_close]: expected `)`, or `,` and anoth
 #[test]
 fn a_stray_indented_block_does_not_derail_the_file() {
     assert_eq!(
-        dump("    x = 1\nconstant MAX: int\n    1\n"),
+        dump("    x = 1\nconstant MAX: i64\n    1\n"),
         "\
 file test.hero
-  constant MAX: int
+  constant MAX: i64
     expr 1
 DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found an indented block — every top-level line starts with its kind: `use`, `constant`, `function`, `record`, `variant`, `test \"…\"`, or `extern`
 "
@@ -185,8 +185,8 @@ DIAG test.hero:1:1: error[expected_declaration]: expected a declaration, found a
 #[test]
 fn a_failed_arm_with_a_body_terminates() {
     assert_eq!(
-        dump("function f(k: int) -> int\n    return match k\n        + => 1\n            print(k)\n        _ => 0\n"),
-        "file test.hero\n  function f(k: int) -> int\n    return match k\n      _ => expr 0\nDIAG test.hero:3:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, a literal, or `_` (on `int`/`str` only)\n"
+        dump("function f(k: i64) -> i64\n    return match k\n        + => 1\n            print(k)\n        _ => 0\n"),
+        "file test.hero\n  function f(k: i64) -> i64\n    return match k\n      _ => expr 0\nDIAG test.hero:3:9: error[expected_pattern]: expected a pattern, found `+` — `.case`, `.case name`, a literal, or `_` (on `i64`/`str` only)\n"
     );
 }
 
@@ -198,7 +198,7 @@ fn a_failed_arm_with_a_body_terminates() {
 #[test]
 fn a_broken_arm_body_reports_once() {
     assert_eq!(
-        dump("function f(k: int) -> int\n    return match k\n        1 => x = = 2\n        _ => 0\n"),
-        "file test.hero\n  function f(k: int) -> int\n    return match k\n      1 => bind x = <?>\n      _ => expr 0\nDIAG test.hero:3:18: error[expected_expression]: expected an expression, found `=` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
+        dump("function f(k: i64) -> i64\n    return match k\n        1 => x = = 2\n        _ => 0\n"),
+        "file test.hero\n  function f(k: i64) -> i64\n    return match k\n      1 => bind x = <?>\n      _ => expr 0\nDIAG test.hero:3:18: error[expected_expression]: expected an expression, found `=` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`\n"
     );
 }

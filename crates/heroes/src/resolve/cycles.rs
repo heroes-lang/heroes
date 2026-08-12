@@ -10,7 +10,7 @@
 //!
 //! ## Definitional cycles: a `constant` whose value is its own
 //!
-//! `constant A: int` with body `B` and `constant B: int` with body `A` used to
+//! `constant A: i64` with body `B` and `constant B: i64` with body `A` used to
 //! pass every gate this compiler has. `heroes check` exited 0, the emitted C was
 //! two mutually recursive zero-argument accessors, and the program died by
 //! **SIGSEGV at `-O0`** and **hung at `-O2`** — one program with two failure modes,
@@ -20,7 +20,7 @@
 //!
 //! **The edge is "this body reads that declaration", and it is not restricted to
 //! constants.** A cycle can leave the constants and come back: `constant A` with
-//! body `f()`, where `function f() -> int` returns `A`, is the same defect wearing
+//! body `f()`, where `function f() -> i64` returns `A`, is the same defect wearing
 //! a function, and it was accepted too. So the graph is every top-level
 //! declaration, and the *filter* is on the cycle rather than on the edges:
 //!

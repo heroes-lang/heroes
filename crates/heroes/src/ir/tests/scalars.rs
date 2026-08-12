@@ -7,34 +7,34 @@ use super::{lowered, text};
 /// invariant panel 019 restated, and it is what makes the emitter a printer.
 #[test]
 fn an_expression_becomes_a_line_per_operation() {
-    let dumped = text("function f() -> int\n    x = 2 + 3 * 4\n    return x\n");
-    assert!(dumped.contains("$t1: int = const 2"), "{dumped}");
-    assert!(dumped.contains("$t2: int = const 3"), "{dumped}");
-    assert!(dumped.contains("$t3: int = const 4"), "{dumped}");
+    let dumped = text("function f() -> i64\n    x = 2 + 3 * 4\n    return x\n");
+    assert!(dumped.contains("$t1: i64 = const 2"), "{dumped}");
+    assert!(dumped.contains("$t2: i64 = const 3"), "{dumped}");
+    assert!(dumped.contains("$t3: i64 = const 4"), "{dumped}");
     // `3 * 4` first, then the addition — the multiplication binds tighter.
-    assert!(dumped.contains("$t4: int = mul! $t2, $t3"), "{dumped}");
-    assert!(dumped.contains("$t5: int = add! $t1, $t4"), "{dumped}");
+    assert!(dumped.contains("$t4: i64 = mul! $t2, $t3"), "{dumped}");
+    assert!(dumped.contains("$t5: i64 = add! $t1, $t4"), "{dumped}");
 }
 
 /// The `!` is not decoration: it marks an instruction that can stop the program.
-/// `int` arithmetic aborts on overflow (§4.3) and `f64` arithmetic cannot, so the
+/// `i64` arithmetic aborts on overflow (§4.3) and `f64` arithmetic cannot, so the
 /// mark is a type distinction as well as a warning — and a reader who does not see
 /// it will write a pass that assumes one exit per block.
 #[test]
 fn only_the_operations_that_can_abort_are_marked() {
     let dumped = text(
-        "function f(a: f64, b: f64) -> f64\n    return a * b\n\nfunction g(a: int, b: int) -> bool\n    return a < b\n",
+        "function f(a: f64, b: f64) -> f64\n    return a * b\n\nfunction g(a: i64, b: i64) -> bool\n    return a < b\n",
     );
     assert!(dumped.contains("= mul $t"), "f64 multiplication cannot abort: {dumped}");
     assert!(!dumped.contains("mul!"), "{dumped}");
     assert!(dumped.contains("= lt $t"), "a comparison cannot abort: {dumped}");
 }
 
-/// §4.3: a character literal *is* an `int`, decoded with the same five escapes the
+/// §4.3: a character literal *is* an `i64`, decoded with the same five escapes the
 /// lexer applies (panel 008).
 #[test]
 fn a_character_literal_is_an_int() {
-    let dumped = text("function f() -> int\n    return 'a'\n");
+    let dumped = text("function f() -> i64\n    return 'a'\n");
     assert!(dumped.contains("const 97"), "{dumped}");
 }
 
@@ -83,12 +83,12 @@ fn an_extern_has_a_signature_and_no_blocks() {
 /// there are no mutable globals, so there is nothing else to read).
 #[test]
 fn a_constant_is_a_function_and_reading_it_is_a_call() {
-    let dumped = text("constant LIMIT: int\n    64\n\nfunction f() -> int\n    return LIMIT\n");
-    assert!(dumped.contains("constant LIMIT: int"), "{dumped}");
+    let dumped = text("constant LIMIT: i64\n    64\n\nfunction f() -> i64\n    return LIMIT\n");
+    assert!(dumped.contains("constant LIMIT: i64"), "{dumped}");
     assert!(dumped.contains("call heroes LIMIT()"), "{dumped}");
 }
 
-/// The one diagnostic this pass owns. Nothing before M-ir-lowering needed an `int` literal's
+/// The one diagnostic this pass owns. Nothing before M-ir-lowering needed an `i64` literal's
 /// *value* — the lexer accepted the shape and the checker gave it a type — so an
 /// **The checker owns this one, and lowering keeps a net** (M-ffi-ladder).
 ///
@@ -106,33 +106,33 @@ fn a_constant_is_a_function_and_reading_it_is_a_call() {
 fn an_out_of_range_int_literal_is_reported_by_the_checker() {
     let src = crate::source::Source::new(
         "test.hero".to_string(),
-        "function f() -> int\n    return 99999999999999999999\n".to_string(),
+        "function f() -> i64\n    return 99999999999999999999\n".to_string(),
     );
     let parsed = crate::syntax::parse(&src);
     let resolved = crate::resolve::resolve(&parsed.ast, &src);
     let checked = crate::types::check(&parsed.ast, &resolved, &src);
     assert_eq!(checked.diagnostics.len(), 1, "the checker owns this one");
     assert_eq!(checked.diagnostics[0].code, "int_out_of_range");
-    assert!(checked.diagnostics[0].message.contains("does not fit in an `int`"));
-    // The message names the range rather than a wider type: `int` is the only
+    assert!(checked.diagnostics[0].message.contains("does not fit in an `i64`"));
+    // The message names the range rather than a wider type: `i64` is the only
     // integer type (§4.3), so the repair is a different number.
     assert!(checked.diagnostics[0].notes[0].contains("9223372036854775807"));
     // And the boundary values are not swept up with it.
     let fine = crate::source::Source::new(
         "test.hero".to_string(),
-        "function f() -> int\n    return 9223372036854775807\n".to_string(),
+        "function f() -> i64\n    return 9223372036854775807\n".to_string(),
     );
     let parsed = crate::syntax::parse(&fine);
     let resolved = crate::resolve::resolve(&parsed.ast, &fine);
     let checked = crate::types::check(&parsed.ast, &resolved, &fine);
-    assert!(checked.diagnostics.is_empty(), "the largest int is an int");
+    assert!(checked.diagnostics.is_empty(), "the largest i64 is an i64");
 }
 
 /// Statements after a `return` are not lowered. They cannot execute, and a dump
 /// that showed them would be showing code that does not exist.
 #[test]
 fn nothing_after_a_return_is_lowered() {
-    let dumped = text("function f() -> int\n    return 1\n    x = 2\n    print(x)\n");
+    let dumped = text("function f() -> i64\n    return 1\n    x = 2\n    print(x)\n");
     assert!(!dumped.contains("const 2"), "{dumped}");
     assert!(!dumped.contains("print"), "{dumped}");
 }

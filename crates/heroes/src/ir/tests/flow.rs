@@ -11,7 +11,7 @@ use super::text;
 #[test]
 fn a_while_loop_is_three_blocks_and_continue_re_enters_the_test() {
     let dumped = text(
-        "function f(n: int) -> int\n    i: int @ 0\n    while i < n\n        i @ i + 1\n        continue\n    return i\n",
+        "function f(n: i64) -> i64\n    i: i64 @ 0\n    while i < n\n        i @ i + 1\n        continue\n    return i\n",
     );
     assert!(dumped.contains("while: test"), "{dumped}");
     assert!(dumped.contains("while: body"), "{dumped}");
@@ -28,7 +28,7 @@ fn a_while_loop_is_three_blocks_and_continue_re_enters_the_test() {
 #[test]
 fn a_for_loop_steps_on_the_continue_path() {
     let dumped = text(
-        "function f(xs: [int]) -> int\n    n: int @ 0\n    for x in xs\n        if x < 0\n            continue\n        n @ n + x\n    return n\n",
+        "function f(xs: [i64]) -> i64\n    n: i64 @ 0\n    for x in xs\n        if x < 0\n            continue\n        n @ n + x\n    return n\n",
     );
     for note in ["for: test", "for: body", "for: step", "for: exit"] {
         assert!(dumped.contains(note), "missing {note}: {dumped}");
@@ -47,7 +47,7 @@ fn a_for_loop_steps_on_the_continue_path() {
 #[test]
 fn a_for_loop_evaluates_its_iterable_once() {
     let dumped = text(
-        "function ns() -> [int]\n    return [1, 2]\n\nfunction f() -> int\n    n: int @ 0\n    for x in ns()\n        n @ n + x\n    return n\n",
+        "function ns() -> [i64]\n    return [1, 2]\n\nfunction f() -> i64\n    n: i64 @ 0\n    for x in ns()\n        n @ n + x\n    return n\n",
     );
     assert_eq!(dumped.matches("call heroes ns()").count(), 1, "{dumped}");
     assert!(dumped.contains("store $xs0 <-"), "the sequence is held in a slot: {dumped}");
@@ -58,9 +58,9 @@ fn a_for_loop_evaluates_its_iterable_once() {
 #[test]
 fn an_if_with_a_value_uses_a_join_slot() {
     let dumped = text(
-        "function f(n: int) -> int\n    v = if n > 0\n        1\n    else\n        0\n    return v\n",
+        "function f(n: i64) -> i64\n    v = if n > 0\n        1\n    else\n        0\n    return v\n",
     );
-    assert!(dumped.contains("$r0: int"), "the join slot is synthetic: {dumped}");
+    assert!(dumped.contains("$r0: i64"), "the join slot is synthetic: {dumped}");
     assert_eq!(dumped.matches("store $r0 <-").count(), 2, "one per arm: {dumped}");
     assert_eq!(dumped.matches("load $r0").count(), 1, "loaded once, at the join: {dumped}");
 }
@@ -84,7 +84,7 @@ fn and_evaluates_its_right_side_on_one_edge() {
 #[test]
 fn a_match_over_a_variant_is_a_dense_switch() {
     let dumped = text(
-        "variant Token\n    num\n        v: int\n    plus\n    times\n\nfunction f(t: Token) -> int\n    return match t\n        .num n         => n.v\n        .plus | .times => 0\n",
+        "variant Token\n    num\n        v: i64\n    plus\n    times\n\nfunction f(t: Token) -> i64\n    return match t\n        .num n         => n.v\n        .plus | .times => 0\n",
     );
     let line = dumped.lines().find(|l| l.contains("switch")).expect("a switch");
     for case in 0..3 {
@@ -93,13 +93,13 @@ fn a_match_over_a_variant_is_a_dense_switch() {
     assert_eq!(edge_of(line, 1), edge_of(line, 2), "a `|` arm is one block: {line}");
 }
 
-/// `match` over `int` is a chain of comparisons, because C has no `switch` over
-/// arbitrary equality and exhaustiveness over `int` is impossible — `_` is what
+/// `match` over `i64` is a chain of comparisons, because C has no `switch` over
+/// arbitrary equality and exhaustiveness over `i64` is impossible — `_` is what
 /// closes it (§4.7).
 #[test]
 fn a_match_over_literals_is_a_chain_of_comparisons() {
     let dumped = text(
-        "function f(n: int) -> str\n    return match n\n        0 => \"zero\"\n        1 => \"one\"\n        _ => \"many\"\n",
+        "function f(n: i64) -> str\n    return match n\n        0 => \"zero\"\n        1 => \"one\"\n        _ => \"many\"\n",
     );
     assert!(!dumped.contains("switch"), "{dumped}");
     assert_eq!(dumped.matches("= eq ").count(), 2, "one test per literal arm: {dumped}");
@@ -112,7 +112,7 @@ fn a_match_over_literals_is_a_chain_of_comparisons() {
 #[test]
 fn a_match_whose_arms_all_jump_leaves_an_unreachable_join() {
     let dumped = text(
-        "variant Step\n    stop\n    skip\n\nfunction f(xs: [Step]) -> int\n    for s in xs\n        match s\n            .stop => break\n            .skip => continue\n    return 0\n",
+        "variant Step\n    stop\n    skip\n\nfunction f(xs: [Step]) -> i64\n    for s in xs\n        match s\n            .stop => break\n            .skip => continue\n    return 0\n",
     );
     let join = block_named(&dumped, "match: join");
     assert!(preds_of(&dumped, join).is_empty(), "nothing reaches it: {dumped}");

@@ -20,7 +20,7 @@
 
 function main()
     # An array, sliced, then the source replaced element by element.
-    xs: [int] @ [10, 20, 30, 40]
+    xs: [i64] @ [10, 20, 30, 40]
     part = slice(xs, from: 1, to: 3)
     xs[1] @ 99
     xs[2] @ 98

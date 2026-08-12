@@ -4,7 +4,7 @@
 # its own keyword. It used to point at the EOF line; the library appended to
 # every compilation (§1.11) made that "the library's first line", which is a
 # place the author cannot open, so `Cursor::here_or` clamps it here instead.
-constant MAX: int
+constant MAX: i64
 
 record Point  #~ missing_body
 

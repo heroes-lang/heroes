@@ -83,7 +83,7 @@ fn the_acceptance_program_is_canonical_and_unchanged_by_formatting() {
 #[test]
 fn a_run_of_inline_arms_aligns_its_arrows() {
     let text = "\
-function f(n: int) -> int
+function f(n: i64) -> i64
     return match n
         0     => 10
         1     => 20
@@ -209,7 +209,7 @@ fn control_forms_and_type_declarations_round_trip() {
     let text = "\
 variant Token
     num
-        v: int
+        v: i64
     plus
 
 function state(t: Token) -> str
@@ -235,7 +235,7 @@ function state(t: Token) -> str
 #[test]
 fn an_arm_whose_body_is_a_control_form_keeps_its_blocks() {
     let text = "\
-function g(x: int) -> int
+function g(x: i64) -> i64
     return match x
         0 => if x > 0
             1
@@ -251,8 +251,8 @@ function g(x: int) -> int
 #[test]
 fn statement_arm_bodies_are_canonical() {
     let text = concat!(
-        "function f(ts: [int]) -> int?\n",
-        "    total: int @ 0\n",
+        "function f(ts: [i64]) -> i64?\n",
+        "    total: i64 @ 0\n",
         "    for t in ts\n",
         "        match t\n",
         "            0 => break\n",
@@ -290,7 +290,7 @@ fn fixedbugs_formatting_twice_does_not_grow_a_blank_line() {
     // Over 88 columns, so the formatter itself is what puts it on four lines.
     assert_canonical(
         "\
-function nested(a: bool, b: bool) -> int
+function nested(a: bool, b: bool) -> i64
     return 1
 
 function main()
@@ -383,7 +383,7 @@ fn fixedbugs_alignment_and_width_are_decided_in_columns_and_in_output_order() {
         "\
 variant Token
     number
-        value: int
+        value: i64
     word
         text: str
     plus

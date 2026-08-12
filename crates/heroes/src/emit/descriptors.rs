@@ -15,7 +15,7 @@
 //! **Five come from the runtime and are shared.** The four scalars, and — the one
 //! worth stating — a single descriptor for **every** `[T]`, whatever `T` is:
 //! `copy`, `drop`, `eq` and `hash` on an array value all reach the element type
-//! through the header's own `elem`, so `[[int]]` and `[[str]]` need one descriptor
+//! through the header's own `elem`, so `[[i64]]` and `[[str]]` need one descriptor
 //! between them rather than one each.
 //!
 //! The file answers three questions about descriptors and then **writes them**

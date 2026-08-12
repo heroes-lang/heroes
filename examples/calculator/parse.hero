@@ -11,7 +11,7 @@ use lex
 # only indirection: that is what makes the recursive type finite.
 variant Expr
     num
-        v: int
+        v: i64
     variable
         name: str
     sum
@@ -22,7 +22,7 @@ variant Expr
 # Tokens and position. Travels through the parser as `@`.
 record Parse
     ts: [lex.Token]
-    pos: int
+    pos: i64
 
 function parse_at_end(p: Parse) -> bool
     return p.pos >= p.ts.len()

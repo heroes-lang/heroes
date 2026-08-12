@@ -3,10 +3,10 @@
 # function whose address is taken, `call indirect` names the temporary holding
 # it, and `call heroes` names a direct call. That distinction is panel 019's
 # most expensive finding, in miniature.
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
-function apply_twice(n: int, f: (function(int) -> int)) -> int
+function apply_twice(n: i64, f: (function(i64) -> i64)) -> i64
     return f(f(n))
 
 function main()

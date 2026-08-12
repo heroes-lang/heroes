@@ -13,7 +13,7 @@
 //! 3. **Is anything declared twice, or never read?** §4.4 makes both an error;
 //!    §4.16 suspends the second one file-wide while a `???` is still in the
 //!    file.
-//! 4. **Which written type is which?** `int` the primitive, `Point` the
+//! 4. **Which written type is which?** `i64` the primitive, `Point` the
 //!    record, `A` the generic parameter — `Resolved::type_uses`, indexed by the
 //!    arena the parser already built.
 //!
@@ -114,7 +114,7 @@ pub enum LocalKind {
     Param,
     /// `x = 5` — binds once, forever.
     Bind,
-    /// `v: int @ 0` — a mutable cell.
+    /// `v: i64 @ 0` — a mutable cell.
     Cell,
     /// `for x in xs` — bound afresh per element, never mutable.
     Loop,

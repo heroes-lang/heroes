@@ -10,7 +10,7 @@
 # descriptor, increfing a second time. One leaked block per insert of a
 # refcounted value.
 #
-# WHY NO TEST SAW IT: `run/maps.hero` uses `{str: int}`, and an `int`'s copy is a
+# WHY NO TEST SAW IT: `run/maps.hero` uses `{str: i64}`, and an `i64`'s copy is a
 # plain assignment — the double incref is invisible unless the VALUE owns a
 # block. The cheaper spelling of the test passes.
 # Bulk regression case.

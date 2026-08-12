@@ -2,10 +2,10 @@
 # this language has (§4.10). Five element kinds in one file, because each reaches the
 # runtime through a different descriptor:
 #
-#   [int]      the runtime's `hero_desc_int`, nothing generated
+#   [i64]      the runtime's `hero_desc_int`, nothing generated
 #   [str]      the runtime's, whose copy increfs
 #   [Point]    ONE generated `h_m_Point_desc`, with void* adapters
-#   [[int]]    the single shared `hero_desc_array` — copy/drop/eq on an array value
+#   [[i64]]    the single shared `hero_desc_array` — copy/drop/eq on an array value
 #              reach the element type through the header, so every `[T]` shares one
 #
 # `push` hands back a NEW array, always. `xs = [1,2,3]` leaves `xs` observable and its
@@ -19,11 +19,11 @@
 # Bulk regression case.
 
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
-function total(xs: [int]) -> int
-    sum: int @ 0
+function total(xs: [i64]) -> i64
+    sum: i64 @ 0
     for n in xs
         sum @ sum + n
     return sum

@@ -7,7 +7,7 @@
 # same-typed-argument rule) — the marker and the label sit together: `n: @n`.
 # Bulk regression case.
 
-function count_down(@n: int, @seen: int)
+function count_down(@n: i64, @seen: i64)
     while n > 0
         seen @ seen + 1
         n @ n - 1
@@ -15,8 +15,8 @@ function count_down(@n: int, @seen: int)
             return
 
 function main()
-    n: int @ 10
-    seen: int @ 0
+    n: i64 @ 10
+    seen: i64 @ 0
     count_down(n: @n, seen: @seen)
     print(n)
     print(seen)

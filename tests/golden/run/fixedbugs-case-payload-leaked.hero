@@ -26,12 +26,12 @@
 
 variant Token
     num
-        v: int
+        v: i64
     name
         s: str
 
 # Never destructured anywhere in this file: that is the condition, not an omission.
-function label(text: str, from: int, to: int) -> Token
+function label(text: str, from: i64, to: i64) -> Token
     return .name(s: text.slice(from: from, to: to))
 
 function main()

@@ -4,8 +4,8 @@
 # advance on that path and this function would loop forever on the first odd
 # element. Nothing in the type system can catch that — the program compiles and
 # hangs — so the block a `continue` jumps to is pinned here.
-function evens_in(xs: [int]) -> int
-    count: int @ 0
+function evens_in(xs: [i64]) -> i64
+    count: i64 @ 0
     for x in xs
         if x % 2 == 1
             continue

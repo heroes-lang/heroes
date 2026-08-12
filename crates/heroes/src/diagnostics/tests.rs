@@ -165,14 +165,14 @@ fn the_thesis_rules_are_counted_where_they_are_described() {
 fn the_caret_is_measured_in_columns_and_so_is_the_column() {
     let src = crate::source::Source::new(
         "t.hero".to_string(),
-        "function f() -> int\n    return \"ààà\"\n".to_string(),
+        "function f() -> i64\n    return \"ààà\"\n".to_string(),
     );
     // The span of the string literal: five columns, eight bytes.
     let start = src.text.find('"').expect("the literal") as u32;
     let end = src.text.rfind('"').expect("the literal") as u32 + 1;
     let diagnostic = Diagnostic::new(
         "type_mismatch",
-        "expected `int`, found `str`".to_string(),
+        "expected `i64`, found `str`".to_string(),
         crate::source::Span { start, end },
     );
     let shown = super::render::render(&diagnostic, &src);

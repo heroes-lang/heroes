@@ -7,11 +7,11 @@
 # That is the escape valve three judges said the rule cannot ship without.
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function describe(t: Token, verbose: bool) -> int  #~ unused_binding
-    total: int @ 0  #~ unused_binding
+function describe(t: Token, verbose: bool) -> i64  #~ unused_binding
+    total: i64 @ 0  #~ unused_binding
     total @ 1
     for i in range(from: 0, to: 3)  #~ unused_binding
         print("tick")

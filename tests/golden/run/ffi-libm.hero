@@ -17,7 +17,7 @@ extern "math.h"
     function pow(base: f64, exponent: f64) -> f64
 
 extern "stdlib.h"
-    function labs(x: int) -> int
+    function labs(x: i64) -> i64
 
 function main()
     print(sqrt(16.0))

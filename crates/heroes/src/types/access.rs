@@ -5,7 +5,7 @@
 //! - **a field** belongs to a record, to a *case* of a variant (§4.2: a case with
 //!   fields is a small record), or to the error payload — and to nothing else, so
 //!   a variant's own name has no fields and the message says where to look;
-//! - **an index** is `str` → `int`, `[T]` → `T`, and `{K: V}` → **`V?`**, which is
+//! - **an index** is `str` → `i64`, `[T]` → `T`, and `{K: V}` → **`V?`**, which is
 //!   what makes a missing key a value rather than a crash (§4.9);
 //! - **`?`** needs two things and each gets its own message: the value must be
 //!   fallible, and the enclosing function must be able to fail (§4.6).

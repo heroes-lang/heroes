@@ -180,7 +180,7 @@ pub(super) fn emit(
                 w.line(&format!("    {name} = {counter}({});", mangle::value(value.0)));
             }
         }
-        // `s[i]`: a byte as an `int`, aborting out of range (spec line 142). The
+        // `s[i]`: a byte as an `i64`, aborting out of range (spec line 142). The
         // array case is the same op and waits for M-value-aggregates.
         Op::Index { base, index } if checked.types.get(function.value_type(base)) == Ty::Str => {
             if let Some(name) = target {

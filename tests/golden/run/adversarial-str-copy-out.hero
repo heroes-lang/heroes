@@ -10,8 +10,8 @@
 # wrong the other way — incref on copy-in — and the counter says a block leaked. The
 # early `return` inside the loop is the edge that makes both reachable.
 
-function extend(@s: str, times: int)
-    i: int @ 0
+function extend(@s: str, times: i64)
+    i: i64 @ 0
     while i < times
         s @ s + "!"
         i @ i + 1

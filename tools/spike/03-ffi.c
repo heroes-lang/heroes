@@ -25,7 +25,7 @@
 int main(void) {
     double r = sqrt(2.0);
     /* No implicit conversions in Heroes (§4.3): the truncation to int is an
-     * explicit to_int(x) at the surface, so the C spells the cast out too. */
+     * explicit to_i64(x) at the surface, so the C spells the cast out too. */
     hero_print_int((int64_t)r);
     hero_print_end();
     return 0;

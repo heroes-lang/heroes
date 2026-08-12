@@ -11,10 +11,10 @@ extern "math.h"
     function sqrt(x: f64) -> f64
 
 extern "stdlib.h"
-    function abs(n: int) -> int
+    function abs(n: i64) -> i64
 
 function hypotenuse(a: f64, b: f64) -> f64
     return sqrt(a * a + b * b)
 
-function distance(a: int, b: int) -> int
+function distance(a: i64, b: i64) -> i64
     return abs(a - b)

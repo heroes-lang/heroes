@@ -3,10 +3,10 @@
 # `switch` on the tag: dense, no default edge, because M3c proved it exhaustive.
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function value_of(t: Token) -> int
+function value_of(t: Token) -> i64
     return match t
         .num n => n.v
         .plus  => 0

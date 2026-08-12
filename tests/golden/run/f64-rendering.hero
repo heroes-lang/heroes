@@ -2,7 +2,7 @@
 # and every line of it is a decision panel 021 had to make.
 #
 # `1.0` rather than `1`: under `1`, this program and one printing `print(5 * 2)`
-# would emit identical bytes, and an accidental int→f64 drift would stay green in
+# would emit identical bytes, and an accidental i64→f64 drift would stay green in
 # every golden — which is what §4.3's no-implicit-conversions rule exists to prevent.
 #
 # `0.1` rather than `0.10000000000000001`: round-trip-exact, not `%.17g`.

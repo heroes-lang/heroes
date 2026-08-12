@@ -7,16 +7,16 @@
 # may a `payload` or an element read that nobody consumes.
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function kind_of(t: Token) -> int
+function kind_of(t: Token) -> i64
     return match t
         .num _ => 0
         .plus  => 1
 
-function count_of(xs: [int]) -> int
-    n: int @ 0
+function count_of(xs: [i64]) -> i64
+    n: i64 @ 0
     for _ in xs
         n @ n + 1
     return n

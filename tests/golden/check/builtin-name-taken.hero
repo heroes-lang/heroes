@@ -7,6 +7,6 @@
 function map<A>(xs: [A]) -> [A]  #~ builtin_name_taken
     return xs
 
-function count(range: int, ok: bool) -> int  #~ builtin_name_taken builtin_name_taken
+function count(range: i64, ok: bool) -> i64  #~ builtin_name_taken builtin_name_taken
     len = 1  #~ builtin_name_taken
     return range + len

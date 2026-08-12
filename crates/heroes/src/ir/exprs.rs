@@ -7,7 +7,7 @@
 //! "this one produced a value somebody owns".
 //!
 //! Literals are decoded *here*, and that is a first: nothing before this pass
-//! ever needed an `int` literal's value, so an out-of-range one was invisible
+//! ever needed an `i64` literal's value, so an out-of-range one was invisible
 //! until now. It is the one diagnostic this pass owns, and panel 019 recorded it
 //! as a new class needing a panel of its own.
 //!
@@ -60,7 +60,7 @@ pub(super) fn expr(
             b.emit(Op::Const(Const::Str(id)), ty, span)
         }
         ExprKind::Char => {
-            // §4.3: a character literal *is* an `int`. The five escapes were
+            // §4.3: a character literal *is* an `i64`. The five escapes were
             // decided by panel 008 and applied by the same function the lexer uses.
             let text = unescape(src, span);
             let value = text.chars().next().map(|c| c as i64).unwrap_or(0);
@@ -191,7 +191,7 @@ fn is_constant(ast: &Ast, decl: u32) -> bool {
     matches!(ast.decls[decl as usize].kind, crate::syntax::DeclKind::Constant { .. })
 }
 
-/// Decodes an `int` literal.
+/// Decodes an `i64` literal.
 ///
 /// **The checker reports the range first, so this is the net rather than the
 /// gate** (M-ffi-ladder). Lowering only runs on a program the frontend accepted,
@@ -200,7 +200,7 @@ fn is_constant(ast: &Ast, decl: u32) -> bool {
 /// indistinguishable from no net.
 ///
 /// The message speaks in the syntax the author wrote and names the range, because
-/// `int` is the only integer type (§4.3): there is no wider one to suggest, so the
+/// `i64` is the only integer type (§4.3): there is no wider one to suggest, so the
 /// fix is a different number and the compiler should not pretend otherwise.
 fn int_literal(b: &mut Lowering, src: &Source, span: Span) -> i64 {
     let text = src.slice(span);

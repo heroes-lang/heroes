@@ -30,7 +30,7 @@ extern \"math.h\"
 #[test]
 fn the_library_survives_the_round_trip() {
     assert_canonical(
-        "extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_open(path: cstr, out: ptr) -> int\n    function sqlite3_close(db: ptr) -> int\n",
+        "extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_open(path: cstr, out: ptr) -> i64\n    function sqlite3_close(db: ptr) -> i64\n",
     );
 }
 
@@ -40,13 +40,13 @@ fn the_library_survives_the_round_trip() {
 #[test]
 fn a_new_header_opens_a_new_group() {
     assert_eq!(
-        format("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nextern \"stdio.h\"\n    function puts(s: cstr) -> int\n"),
+        format("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nextern \"stdio.h\"\n    function puts(s: cstr) -> i64\n"),
         "\
 extern \"math.h\"
     function sqrt(x: f64) -> f64
 
 extern \"stdio.h\"
-    function puts(s: cstr) -> int
+    function puts(s: cstr) -> i64
 "
     );
 }
@@ -91,7 +91,7 @@ fn a_comment_above_a_groups_first_member_stays_on_it() {
 #[test]
 fn a_group_mixing_constants_and_functions_round_trips() {
     assert_canonical(
-        "extern \"sqlite3.h\" link \"sqlite3\"\n    # From the header, so it cannot be copied wrong.\n    constant SQLITE_OK: int\n    constant SQLITE_ROW: int\n    function sqlite3_close(db: ptr) -> int\n",
+        "extern \"sqlite3.h\" link \"sqlite3\"\n    # From the header, so it cannot be copied wrong.\n    constant SQLITE_OK: i64\n    constant SQLITE_ROW: i64\n    function sqlite3_close(db: ptr) -> i64\n",
     );
 }
 

@@ -4,10 +4,10 @@
 # call site, there are no mutable globals, and a loop variable is bound afresh
 # per element. Every name here is read as well as written, so each mistake
 # produces exactly one diagnostic.
-constant MAX: int
+constant MAX: i64
     64
 
-function main(n: int, xs: [int])
+function main(n: i64, xs: [i64])
     x = 1
     x @ 2  #~ not_mutable
     print(x)

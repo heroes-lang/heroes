@@ -3,13 +3,13 @@
 # label in Heroes never reorders anything, it annotates the position it is
 # written at (§4.9), so erasing it means not carrying it.
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
-function moved(p: Point, by: int) -> Point
+function moved(p: Point, by: i64) -> Point
     return Point(x: p.x + by, y: p.y)
 
-function copy_between(from: int, to: int) -> int
+function copy_between(from: i64, to: i64) -> i64
     return to - from
 
 function main()

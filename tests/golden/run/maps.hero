@@ -28,8 +28,8 @@
 # Bulk regression case.
 
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     m = {"a": 1, "b": 2, "c": 3}
@@ -55,24 +55,24 @@ function main()
     print(got.default(Point(x: -1, y: -1)).x)
     print(ps == {"unit": Point(x: 1, y: 1), "origin": Point(x: 0, y: 0)})
     # An empty map: `len` is 0, every lookup misses, and the drop loop runs zero times.
-    e: {str: int} = {}
+    e: {str: i64} = {}
     print(len(e), e["a"].is_err())
     print(e == {})
     # `m[k] @ v` INSERTS — which is where it diverges from `xs[i] @ v`, and that
     # divergence is the whole reason it needed a spec sentence of its own.
-    w: {str: int} @ {}
+    w: {str: i64} @ {}
     w["x"] @ 1
     w["y"] @ 2
     w["x"] @ 9
     print(len(w), w["x"].default(0), w["y"].default(0))
     # And it GROWS, which an array store never does: the load factor invariant is
     # maintained by `hero_map_new` and this is the only place that can break it.
-    big: {str: int} @ {}
-    i: int @ 0
+    big: {str: i64} @ {}
+    i: i64 @ 0
     while i < 40
         big["k" + to_str(i)] @ i
         i @ i + 1
-    total: int @ 0
+    total: i64 @ 0
     for k in keys(big)
         total @ total + big[k].default(0)
     print(len(big), len(keys(big)), total)

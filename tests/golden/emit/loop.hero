@@ -3,8 +3,8 @@
 # Bulk regression case.
 
 function main()
-    n: int @ 0
-    total: int @ 0
+    n: i64 @ 0
+    total: i64 @ 0
     while n < 5
         total @ total + n * n
         n @ n + 1

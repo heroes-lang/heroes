@@ -112,10 +112,10 @@ fn both_halves_of_a_shared_operation_now_emit_to_their_own_entry_point() {
 /// the prelude as `#include <stdlib.h>`, so the name this call writes is declared
 /// by the real header — and the emitter writes no prototype of its own, because
 /// one built from Heroes' `int64_t` is `conflicting types` against every C entry
-/// point that returns `int`.
+/// point that returns `i64`.
 #[test]
 fn an_extern_call_is_emitted_against_the_real_header() {
-    let out = super::emitted("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    let out = super::emitted("extern \"stdlib.h\"\n    function labs(x: i64) -> i64\n\nfunction main()\n    print(labs(0 - 3))\n");
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     assert!(out.c.contains("#include <stdlib.h>"), "{}", out.c);
     // Unmangled: the C name is what the author wrote (CLAUDE.md §7).
@@ -166,7 +166,7 @@ fn a_map_lookup_wraps_the_value_in_a_fallible() {
 #[test]
 fn writing_one_element_unshares_once_per_array_step() {
     let out = super::emitted(
-        "function main()\n    xs: [int] @ [1, 2]\n    xs[0] @ 7\n    print(xs[0])\n",
+        "function main()\n    xs: [i64] @ [1, 2]\n    xs[0] @ 7\n    print(xs[0])\n",
     );
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     assert!(out.c.contains("hero_array_set(&(h0_xs)"), "{}", out.c);
@@ -180,7 +180,7 @@ fn writing_one_element_unshares_once_per_array_step() {
     // copied.
     let nested = concat!(
         "record Row\n",
-        "    cells: [int]\n",
+        "    cells: [i64]\n",
         "\n",
         "record Grid\n",
         "    rows: [Row]\n",
@@ -217,7 +217,7 @@ fn an_array_is_emitted_with_a_descriptor_for_its_element() {
 #[test]
 fn an_aggregate_element_gets_one_generated_descriptor() {
     let out = emitted(
-        "record P\n    x: int\n\nfunction main()\n    ps = [P(x: 1), P(x: 2)]\n    print(ps[1].x)\n",
+        "record P\n    x: i64\n\nfunction main()\n    ps = [P(x: 1), P(x: 2)]\n    print(ps[1].x)\n",
     );
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     assert_eq!(
@@ -240,12 +240,12 @@ fn a_variant_and_a_match_on_it_are_emitted() {
     let text = concat!(
         "variant Token\n",
         "    num\n",
-        "        v: int\n",
+        "        v: i64\n",
         "    word\n",
         "        text: str\n",
         "    end\n",
         "\n",
-        "function size(t: Token) -> int\n",
+        "function size(t: Token) -> i64\n",
         "    return match t\n",
         "        .num n  => n.v\n",
         "        .word w => len(w.text)\n",
@@ -276,7 +276,7 @@ fn a_variant_with_no_payloads_emits_no_union() {
         "    red\n",
         "    green\n",
         "\n",
-        "function pick(c: Color) -> int\n",
+        "function pick(c: Color) -> i64\n",
         "    return match c\n",
         "        .red   => 0\n",
         "        .green => 1\n",
@@ -294,7 +294,7 @@ fn a_variant_with_no_payloads_emits_no_union() {
 /// record is emitted" is the claim, and the only way to state it is to run one.
 #[test]
 fn a_record_is_emitted() {
-    let out = emitted("record P\n    x: int\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n");
+    let out = emitted("record P\n    x: i64\n\nfunction main()\n    p = P(x: 1)\n    print(p.x)\n");
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     assert!(out.c.contains("typedef struct h_scratch_P"), "no typedef:\n{}", out.c);
     assert!(out.c.contains("h_scratch_P_eq"), "no generated eq:\n{}", out.c);
@@ -318,11 +318,11 @@ fn a_record_holding_a_str_gets_a_retain_and_a_release() {
 #[test]
 fn a_fallible_value_is_emitted_as_a_tagged_union_by_value() {
     let out = super::emitted(
-        "function half(n: int) -> int?\n    if n % 2 == 0\n        return ok(n / 2)\n    return fail(\"odd\", \"not even\")\n\nfunction main()\n    print(half(4).default(0))\n",
+        "function half(n: i64) -> i64?\n    if n % 2 == 0\n        return ok(n / 2)\n    return fail(\"odd\", \"not even\")\n\nfunction main()\n    print(half(4).default(0))\n",
     );
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     // One generated struct per distinct `T?`, named by index because `int?` and
-    // `[int]?` sanitise to the same identifier — and by a **leading digit**,
+    // `[i64]?` sanitise to the same identifier — and by a **leading digit**,
     // which a Heroes identifier cannot carry, so no `record opt0` can spell it
     // (2026-08-12; before that it was `h_scratch_opt0` and a user type of that
     // name gave `redefinition`, exit 2, on a legal program).
@@ -340,7 +340,7 @@ fn a_fallible_value_is_emitted_as_a_tagged_union_by_value() {
 #[test]
 fn must_carries_its_failure_into_the_abort() {
     let out = super::emitted(
-        "function half(n: int) -> int?\n    return ok(n / 2)\n\nfunction main()\n    print(half(4).must())\n",
+        "function half(n: i64) -> i64?\n    return ok(n / 2)\n\nfunction main()\n    print(half(4).must())\n",
     );
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics);
     assert!(out.c.contains("hero_panic_must("), "{}", out.c);
@@ -368,15 +368,15 @@ fn generics_are_no_longer_refused() {
 
 /// The other half of §4.19's guarantee, which clang does not give for free: one
 /// `_Static_assert` per `extern`, over a `_Generic` whose controlling call C11
-/// 6.5.1.1p3 does not evaluate. Without it, `extern function sqrt(x: f64) -> int`
+/// 6.5.1.1p3 does not evaluate. Without it, `extern function sqrt(x: f64) -> i64`
 /// compiles clean and prints `1` — measured at panel 036.
 #[test]
 fn every_extern_carries_a_return_type_assertion() {
-    let out = super::emitted("extern \"stdlib.h\"\n    function labs(x: int) -> int\n\nfunction main()\n    print(labs(0 - 3))\n");
+    let out = super::emitted("extern \"stdlib.h\"\n    function labs(x: i64) -> i64\n\nfunction main()\n    print(labs(0 - 3))\n");
     assert!(out.c.contains("_Static_assert(HERO_RET_INT(labs((int64_t)0))"), "{}", out.c);
     // The message is the contract with `emit::ffi::explain`: marker, C name,
     // declared type — so a failure names the author's line, not generated C.
-    assert!(out.c.contains("heroes-ffi-return labs int"), "{}", out.c);
+    assert!(out.c.contains("heroes-ffi-return labs i64"), "{}", out.c);
 }
 
 /// `xs.len()` lowers to `call builtin len` while `for` lowers to `Op::Len`. Gating
@@ -424,20 +424,20 @@ fn every_reserved_name_is_emitted_lowered_or_written_in_heroes() {
 /// The other half of the row, and the one added at M-generics-library step 3: a
 /// built-in whose name emits and whose **operand type** has none.
 ///
-/// `sort` orders `int`, `f64` and `str`. A `[Point]` is refused *here* rather
-/// than by the checker, because `{Point: int}` compiles and spec line 71 teaches
+/// `sort` orders `i64`, `f64` and `str`. A `[Point]` is refused *here* rather
+/// than by the checker, because `{Point: i64}` compiles and spec line 71 teaches
 /// `for k in sort(keys(m))` — a compile error would contradict the spec's own
 /// idiom, where a refusal only says this backend has not decided yet.
 #[test]
 fn a_builtin_whose_operand_type_has_no_order_is_refused_by_operand() {
     let (code, message) = refusal(
-        "record Point\n    x: int\n    y: int\n\nfunction main()\n    ps = [Point(x: 1, y: 2)]\n    \
+        "record Point\n    x: i64\n    y: i64\n\nfunction main()\n    ps = [Point(x: 1, y: 2)]\n    \
          print(len(sort(ps)))\n",
     );
     assert_eq!(code, "builtin");
     assert!(message.contains("`sort`"), "the message must name it: {message}");
     assert!(
-        message.contains("`int`, `f64` or `str`"),
+        message.contains("`i64`, `f64` or `str`"),
         "and it must name what does work, or the reader has to guess: {message}"
     );
 }
@@ -446,8 +446,8 @@ fn a_builtin_whose_operand_type_has_no_order_is_refused_by_operand() {
 fn every_unsupported_capability_is_reported_not_only_the_first() {
     let out = emitted(concat!(
         "record Point\n",
-        "    x: int\n",
-        "    y: int\n",
+        "    x: i64\n",
+        "    y: i64\n",
         "\n",
         "function main()\n",
         "    ps = [Point(x: 1, y: 2)]\n",
@@ -474,7 +474,7 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
     let out = emitted(concat!(
         "record Point\n",
-        "    x: int\n",
+        "    x: i64\n",
         "\n",
         "function main()\n",
         "    ps = [Point(x: 1)]\n",
@@ -501,7 +501,7 @@ fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
 /// unbuildable after M-strings-ownership and M-value-aggregates.
 #[test]
 fn a_test_block_does_not_stop_the_build_and_does_not_reach_the_c() {
-    let out = emitted("function double(n: int) -> int\n    return n * 2\n\ntest \"doubling\"\n    assert double(2) == 4\n\nfunction main()\n    print(double(3))\n");
+    let out = emitted("function double(n: i64) -> i64\n    return n * 2\n\ntest \"doubling\"\n    assert double(2) == 4\n\nfunction main()\n    print(double(3))\n");
     assert!(out.diagnostics.is_empty(), "{:?}", out.diagnostics[0].message);
     assert!(!out.c.contains("doubling"), "a test block reached the translation unit");
     assert!(out.c.contains("h_scratch_double"));
@@ -512,11 +512,11 @@ fn a_test_block_does_not_stop_the_build_and_does_not_reach_the_c() {
 /// point belongs to the driver.
 #[test]
 fn a_file_with_no_main_emits_a_unit_with_no_shim() {
-    let out = emitted("function double(n: int) -> int\n    return n * 2\n");
+    let out = emitted("function double(n: i64) -> i64\n    return n * 2\n");
     assert!(out.diagnostics.is_empty());
     assert!(out.c.contains("h_scratch_double"));
     assert!(!out.c.contains("int main(void)"));
-    assert!(crate::emit::entry_point(&crate::emit::tests::gate::program_of("function double(n: int) -> int\n    return n * 2\n")).is_none());
+    assert!(crate::emit::entry_point(&crate::emit::tests::gate::program_of("function double(n: i64) -> i64\n    return n * 2\n")).is_none());
 }
 
 /// The helper the test above needs: `entry_point` answers over a `Program`, and the

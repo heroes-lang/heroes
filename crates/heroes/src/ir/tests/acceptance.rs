@@ -88,7 +88,7 @@ fn a_source_name_can_never_look_like_a_temporary() {
     // condition rather than a preference.
     let dumped = lower_text(
         "probe",
-        "function scale(n: int) -> int\n    t0: int @ 0\n    t1: int @ 1\n    t0 @ t0 + t1 * n\n    return t0\n",
+        "function scale(n: i64) -> i64\n    t0: i64 @ 0\n    t1: i64 @ 1\n    t0 @ t0 + t1 * n\n    return t0\n",
     );
     for line in dumped.lines() {
         for word in line.split(|c: char| !(c.is_alphanumeric() || c == '$' || c == '_')) {
@@ -105,7 +105,7 @@ fn a_source_name_can_never_look_like_a_temporary() {
             }
         }
     }
-    assert!(dumped.contains("$t1: int = const 0"), "{dumped}");
+    assert!(dumped.contains("$t1: i64 = const 0"), "{dumped}");
 }
 
 #[test]

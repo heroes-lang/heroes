@@ -4,7 +4,7 @@
 # checked clean at exit 0 and then failed to compile as C —
 #
 #   typedef HeroValue (*h_m_fn0)(int64_t);
-#   error: type specifier missing, defaults to 'int'
+#   error: type specifier missing, defaults to 'i64'
 #
 # — reported as exit 2, which CLAUDE.md §7 reserves for the compiler being wrong.
 #

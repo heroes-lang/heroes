@@ -7,11 +7,11 @@
 
 record Entry
     name: str
-    calories: int
+    calories: i64
 
 # Written, tested, done.
-function total_calories(entries: [Entry]) -> int
-    total: int @ 0
+function total_calories(entries: [Entry]) -> i64
+    total: i64 @ 0
     for e in entries
         total @ total + e.calories
     return total

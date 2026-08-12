@@ -23,13 +23,13 @@ use crate::ir::{verify, Abort, Callee, Inst, Op, Place, Steps, Term, ValueId};
 
 /// A one-function program with a loop, a branch and a return — enough structure for
 /// most of the damage below.
-const SUBJECT: &str = "function f(n: int) -> int\n    total: int @ 0\n    i: int @ 0\n    while i < n\n        total @ total + i\n        i @ i + 1\n    return total\n";
+const SUBJECT: &str = "function f(n: i64) -> i64\n    total: i64 @ 0\n    i: i64 @ 0\n    while i < n\n        total @ total + i\n        i @ i + 1\n    return total\n";
 
 /// A function with a mutable parameter, for the copy-out checks.
-const MUTATING: &str = "record R\n    pos: int\n\nfunction step(@r: R, n: int) -> int\n    r.pos @ r.pos + n\n    return n\n";
+const MUTATING: &str = "record R\n    pos: i64\n\nfunction step(@r: R, n: i64) -> i64\n    r.pos @ r.pos + n\n    return n\n";
 
 /// **Two** mutable parameters — the shape that separates counting from checking.
-const TWO_MUTABLE: &str = "record R\n    pos: int\n\nfunction both(@a: R, @b: R, n: int) -> int\n    a.pos @ a.pos + n\n    b.pos @ b.pos + n\n    return n\n";
+const TWO_MUTABLE: &str = "record R\n    pos: i64\n\nfunction both(@a: R, @b: R, n: i64) -> i64\n    a.pos @ a.pos + n\n    b.pos @ b.pos + n\n    return n\n";
 
 fn says(problems: &[String], expected: &str) {
     assert!(
@@ -189,7 +189,7 @@ fn copying_one_parameter_out_twice_and_the_other_never_is_caught() {
 fn a_return_of_the_wrong_type_is_caught() {
     let (mut program, checked, ast) = unverified(MUTATING);
     let step = program.functions.iter_mut().find(|f| f.name == "step").expect("step");
-    // $t1 is the record loaded from `r`; the function promised an `int`.
+    // $t1 is the record loaded from `r`; the function promised an `i64`.
     for block in &mut step.blocks {
         if matches!(block.term, Term::Return(Some(_))) {
             block.term = Term::Return(Some(ValueId(1)));
@@ -213,7 +213,7 @@ fn an_extern_with_a_body_is_caught() {
 #[test]
 fn a_switch_with_no_cases_is_caught() {
     let (mut program, checked, ast) = unverified(
-        "variant Step\n    stop\n    skip\n\nfunction f(s: Step) -> int\n    return match s\n        .stop => 0\n        .skip => 1\n",
+        "variant Step\n    stop\n    skip\n\nfunction f(s: Step) -> i64\n    return match s\n        .stop => 0\n        .skip => 1\n",
     );
     for block in &mut program.functions[0].blocks {
         if let Term::Switch { tag, .. } = block.term {
@@ -353,6 +353,6 @@ fn an_owning_temporary_that_no_store_takes_is_caught() {
 #[test]
 #[should_panic(expected = "cannot go back")]
 fn the_phase_is_monotonic() {
-    let (mut program, _checked, _ast) = owned("function f() -> int\n    return 1\n");
+    let (mut program, _checked, _ast) = owned("function f() -> i64\n    return 1\n");
     program.advance_to(crate::ir::Phase::Owned);
 }

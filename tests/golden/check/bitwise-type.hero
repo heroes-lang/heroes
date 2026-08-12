@@ -1,4 +1,4 @@
-# The bitwise set is `int` only (§4.14), and this is what says so.
+# The bitwise set is `i64` only (§4.14), and this is what says so.
 #
 # `f64` is excluded because a float's BITS are not its value: `1.5 & 1` would be a
 # question about an IEEE encoding this language never exposes. `bool` is excluded

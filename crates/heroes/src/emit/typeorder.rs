@@ -9,7 +9,7 @@
 //! `typedef struct T T;` does not rescue a by-value field — measured, the same two
 //! clang errors with and without it. So the sequence is a real containment order,
 //! and it has to span both kinds at once, because each can contain the other:
-//! `record Box { v: int? }` needs the option first and `function grab() -> P?`
+//! `record Box { v: i64? }` needs the option first and `function grab() -> P?`
 //! needs the record first. Both are ordinary programs; the two-pass version
 //! answered the first with `error: unknown type name 'h_M_0opt0'` at exit 2.
 
@@ -25,7 +25,7 @@ use super::writer::Writer;
 ///
 /// Two kinds and **one order**, which is the whole point. A declared aggregate
 /// may hold a `T?` or a function value, and a `T?` may hold a declared aggregate:
-/// `record Box { v: int? }` needs the option first, `function grab() -> P?` needs
+/// `record Box { v: i64? }` needs the option first, `function grab() -> P?` needs
 /// the record first, and both are ordinary programs. Emitting the declared ones
 /// wholesale and then the generated ones — which is what this file did until
 /// 2026-08-12 — answers the first with `error: unknown type name 'h_M_0opt0'`,

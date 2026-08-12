@@ -8,14 +8,14 @@
 # Bulk regression case.
 
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 record Pair
     one: Point
     two: Point
 
-function dist2(a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> i64
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy

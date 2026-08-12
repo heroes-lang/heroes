@@ -1,11 +1,11 @@
 # Bulk regression case (assistant-written): a type name that resolves to
 # nothing, and one that resolves to something that is not a type.
 record Point
-    x: int
+    x: i64
 
-function dist(p: Poimt) -> int  #~ unknown_type
+function dist(p: Poimt) -> i64  #~ unknown_type
     return p.x
 
-function use_it(f: dist) -> int  #~ not_a_type
+function use_it(f: dist) -> i64  #~ not_a_type
     print(f)
     return 0

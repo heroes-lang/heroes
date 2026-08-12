@@ -26,32 +26,32 @@
 
 variant Expr
     number
-        v: int
+        v: i64
     add
         parts: [Expr]
     negate
         inner: [Expr]
 
-function value_of(e: Expr) -> int
+function value_of(e: Expr) -> i64
     return match e
         .number n => n.v
         .add a    => sum_of(a.parts)
         .negate g => 0 - sum_of(g.inner)
 
-function sum_of(parts: [Expr]) -> int
-    total: int @ 0
+function sum_of(parts: [Expr]) -> i64
+    total: i64 @ 0
     for part in parts
         total @ total + value_of(part)
     return total
 
-function depth_of(e: Expr) -> int
+function depth_of(e: Expr) -> i64
     return match e
         .number _ => 1
         .add a    => 1 + deepest(a.parts)
         .negate g => 1 + deepest(g.inner)
 
-function deepest(parts: [Expr]) -> int
-    best: int @ 0
+function deepest(parts: [Expr]) -> i64
+    best: i64 @ 0
     for part in parts
         d = depth_of(part)
         if d > best

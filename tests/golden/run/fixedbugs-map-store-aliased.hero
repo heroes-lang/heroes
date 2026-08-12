@@ -23,7 +23,7 @@
 # Bulk regression case.
 
 function main()
-    m: {str: int} @ {}
+    m: {str: i64} @ {}
     m["a"] @ 1
     n = m
     m["b"] @ 2

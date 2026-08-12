@@ -11,7 +11,7 @@
 # remembers.
 
 function main()
-    low: int @ 0 - 9223372036854775807
+    low: i64 @ 0 - 9223372036854775807
     low @ low - 1
-    minus: int @ 0 - 1
+    minus: i64 @ 0 - 1
     print(low % minus)

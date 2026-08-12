@@ -2,7 +2,7 @@
 # author ratification 2026-08-12).
 #
 # The reading is by VALUE, not by bit pattern: `0xff` is 255 and there is no
-# spelling of a literal that reaches past `int`'s range. `0xffffffffffffffff` is
+# spelling of a literal that reaches past `i64`'s range. `0xffffffffffffffff` is
 # `int_out_of_range`, exactly as its decimal twin `18446744073709551615` is —
 # the panel vetoed the bit-pattern reading because it would delete a compile
 # error, turning `0xFFFFFFFF00000000` silently into -4294967296.
@@ -20,7 +20,7 @@
 # - `0xff.to_str()` pins UFCS on a based literal: the dot makes a float only
 #   when a digit follows, and that rule was written for `1.str()` before any
 #   literal had a prefix.
-# - the last two lines are the boundary from both sides: the largest `int` in
+# - the last two lines are the boundary from both sides: the largest `i64` in
 #   hexadecimal, and `~0` — which has been the all-bits mask since panel 040,
 #   and is the reason the bit-pattern reading was not needed to reach one.
 

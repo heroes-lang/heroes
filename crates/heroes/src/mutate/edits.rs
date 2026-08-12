@@ -82,7 +82,7 @@ pub(super) fn forget_at_decl(ast: &Ast, src: &Source) -> Vec<String> {
     let mut out = Vec::new();
     for stmt in &ast.stmts {
         let StmtKind::Declare { name, value, .. } = &stmt.kind else { continue };
-        // `v: int @ 0` becomes `v = 0`: the annotation and the marker go, and the
+        // `v: i64 @ 0` becomes `v = 0`: the annotation and the marker go, and the
         // later `v @ …` lines are left alone, which is the mistake.
         let value_span = ast.exprs[value.0 as usize].span;
         let span = Span { start: name.start, end: value_span.start };
@@ -228,7 +228,7 @@ pub(super) fn mix_int_float(ast: &Ast, src: &Source) -> Vec<String> {
         let ExprKind::Binary { left, right, .. } = &expr.kind else { continue };
         for side in [left, right] {
             let operand = &ast.exprs[side.0 as usize];
-            // A **decimal** `int` only. Appending `.0` to `0xff` produces
+            // A **decimal** `i64` only. Appending `.0` to `0xff` produces
             // `0xff.0`, which dies in the lexer — so an operator named for an
             // implicit-conversion prior would have been measuring the scanner
             // instead, and scoring a kill it did not earn (panel 041, and the

@@ -29,25 +29,25 @@ extern "sqlite3.h" link "sqlite3"
     # `error[unknown_name]` here, locally (panel 034 R4) — and since
     # M-header-constants a *wrong number* is impossible rather than unnoticed,
     # because there is no number: this file used to say `0` and `100`.
-    constant SQLITE_OK: int
-    constant SQLITE_ROW: int
-    function sqlite3_open(filename: cstr, @out: ptr) -> int
-    function sqlite3_close(db: ptr) -> int
-    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> int
-    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: int, @statement: ptr, @tail: ptr) -> int
-    function sqlite3_step(statement: ptr) -> int
-    function sqlite3_column_int(statement: ptr, column: int) -> int
-    function sqlite3_finalize(statement: ptr) -> int
+    constant SQLITE_OK: i64
+    constant SQLITE_ROW: i64
+    function sqlite3_open(filename: cstr, @out: ptr) -> i64
+    function sqlite3_close(db: ptr) -> i64
+    function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> i64
+    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i64, @statement: ptr, @tail: ptr) -> i64
+    function sqlite3_step(statement: ptr) -> i64
+    function sqlite3_column_int(statement: ptr, column: i64) -> i64
+    function sqlite3_finalize(statement: ptr) -> i64
 
 # One statement, run for its effect. The three pointers SQLite's callback
 # protocol takes are `nullptr`: §4.19 fixes a callback at `ptr` until the
 # boundary has a C-width type vocabulary, and this program needs none.
-function run(db: ptr, sql: str) -> int
+function run(db: ptr, sql: str) -> i64
     error: ptr @ nullptr
     return sqlite3_exec(db: db, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @error)
 
 # The first column of the first row, which is the whole of "read a result".
-function first_int(db: ptr, sql: str) -> int
+function first_int(db: ptr, sql: str) -> i64
     statement: ptr @ nullptr
     tail: ptr @ nullptr
     rc = sqlite3_prepare_v2(
@@ -59,7 +59,7 @@ function first_int(db: ptr, sql: str) -> int
     )
     if rc != SQLITE_OK
         return 0 - 1
-    value: int @ 0 - 1
+    value: i64 @ 0 - 1
     if sqlite3_step(statement) == SQLITE_ROW
         value @ sqlite3_column_int(statement, 0)
     _ = sqlite3_finalize(statement)

@@ -43,6 +43,6 @@ function main()
     print(len(deep))
     # And the containers themselves emit, which is what makes the rows above
     # about the element rather than about the container.
-    fine: [int] @ []
-    nested: {str: [int]} @ {}
+    fine: [i64] @ []
+    nested: {str: [i64]} @ {}
     print(len(fine), len(nested))

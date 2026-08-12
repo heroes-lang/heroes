@@ -94,7 +94,7 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
     // refused. Losing that assertion entirely would leave the loop below unable to
     // tell "the gate accepted everything" from "the gate never ran".
     let (refused_on_purpose, _) = super::gate::refusal(
-        "record P\n    x: int\n\nfunction main()\n    ps = [P(x: 1)]\n    print(len(sort(ps)))\n",
+        "record P\n    x: i64\n\nfunction main()\n    ps = [P(x: 1)]\n    print(len(sort(ps)))\n",
     );
     assert_eq!(refused_on_purpose, "builtin", "the gate did not run at all");
     let _ = refused;

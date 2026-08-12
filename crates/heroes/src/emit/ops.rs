@@ -308,7 +308,7 @@ pub(super) fn binary(
                 BinOp::Le => "<=",
                 BinOp::Gt => ">",
                 BinOp::Ge => ">=",
-                // Unreachable: the arms above take every bitwise op on `int`, and
+                // Unreachable: the arms above take every bitwise op on `i64`, and
                 // the checker admits them on nothing else (§4.14).
                 BinOp::BitAnd
                 | BinOp::BitOr
@@ -363,7 +363,7 @@ pub(super) fn call(
                 super::builtins::entry(BUILTINS[index as usize].name, function, checked, args);
             // `push`'s second argument is a *place*, not a value: the runtime copies
             // through the element descriptor, which is the only way one function can
-            // append an `int` and a `Point`.
+            // append an `i64` and a `Point`.
             let written: Vec<String> = if matches!(BUILTINS[index as usize].name, "push") {
                 arguments
                     .iter()

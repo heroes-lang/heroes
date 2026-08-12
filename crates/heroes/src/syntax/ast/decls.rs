@@ -22,14 +22,14 @@ pub struct Decl {
 }
 
 pub enum DeclKind {
-    /// `constant MAX: int` + body (§4.2), or — inside an `extern` group —
-    /// `constant SQLITE_OK: int` with **no** body, whose value is the header's
+    /// `constant MAX: i64` + body (§4.2), or — inside an `extern` group —
+    /// `constant SQLITE_OK: i64` with **no** body, whose value is the header's
     /// (§4.19, panel 038).
     ///
     /// One variant rather than two, and the reason is a measurement rather than
     /// taste: `ir/exprs.rs`'s `is_constant` is a `matches!`, not an exhaustive
     /// `match`, so a sixth `DeclKind` would leave it answering `false` and lower a
-    /// header constant to `Op::FuncRef` — a function pointer where an `int` is
+    /// header constant to `Op::FuncRef` — a function pointer where an `i64` is
     /// wanted, silently. The variant that breaks more call sites at compile time
     /// is worse at the one site that decides correctness.
     ///

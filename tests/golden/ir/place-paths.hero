@@ -4,13 +4,13 @@
 # visible: the field after an index printed as `.0` until the path started
 # carrying each field's own type forward.
 record Row
-    cells: [int]
+    cells: [i64]
 
 record Grid
     rows: [Row]
 
-function set_cell(@g: Grid, r: int, c: int, v: int)
+function set_cell(@g: Grid, r: i64, c: i64, v: i64)
     g.rows[r].cells[c] @ v
 
-function cell_of(g: Grid, r: int, c: int) -> int
+function cell_of(g: Grid, r: i64, c: i64) -> i64
     return g.rows[r].cells[c]

@@ -47,7 +47,7 @@ pub(super) fn generics(cur: &mut Cursor, src: &Source) -> Vec<Span> {
     names
 }
 
-/// `(a: int, @l: Lex)` — always parenthesised, `()` when empty. A parameter
+/// `(a: i64, @l: Lex)` — always parenthesised, `()` when empty. A parameter
 /// marked `@` is in-out: copy in, copy out (§4.8).
 pub(super) fn params(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Vec<Param> {
     let mut params: Vec<Param> = Vec::new();

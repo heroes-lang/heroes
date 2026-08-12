@@ -25,7 +25,7 @@ variant Node
 
 record Holder
     node: Node
-    count: int
+    count: i64
 
 function label_of(n: Node) -> str
     return match n

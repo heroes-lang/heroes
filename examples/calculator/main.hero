@@ -49,14 +49,14 @@ function reduce<A, B>(xs: [A], initial: B, f: (function(B, A) -> B)) -> B
         acc @ f(acc, x)
     return acc
 
-function plus(a: int, b: int) -> int
+function plus(a: i64, b: i64) -> i64
     return a + b
 
 test "generics work across types"
     assert [1, 2, 3].apply(double) == [2, 4, 6]
     assert [1, 2, 3, 4].reduce(0, plus) == 10
 
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
 ## Program

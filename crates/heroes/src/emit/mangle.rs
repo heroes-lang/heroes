@@ -66,15 +66,15 @@ use crate::source::LIBRARY_MODULE;
 /// 2026-08-12). This function used to be FNV-1a, and its own comment said the port
 /// must reproduce it exactly — while all three of FNV's ingredients are
 /// inexpressible here, measured: the offset basis `14695981039346656037` is
-/// `int_out_of_range` because Heroes' `int` is signed, `hash.wrapping_mul(…)` is
+/// `int_out_of_range` because Heroes' `i64` is signed, `hash.wrapping_mul(…)` is
 /// `panic: integer overflow` because §4.3 makes overflow an abort, and `^` is
 /// `reserved_operator`. The closure list (§1.0) has no hashing row, no bitwise row
 /// and no wrapping row, so measurement 003's audit could not see this — the second
 /// time that blind spot has fired, after `system()` at panel 036.
 ///
 /// So: a **polynomial hash, modulus 2^31 − 1**, whose every intermediate fits an
-/// `int` with three orders of magnitude to spare — `(M − 1) × B + 255 ≈ 2.8e11`
-/// against `int`'s `9.2e18`. It is written the way the port will write it, and
+/// `i64` with three orders of magnitude to spare — `(M − 1) × B + 255 ≈ 2.8e11`
+/// against `i64`'s `9.2e18`. It is written the way the port will write it, and
 /// `tests/golden/run/premise-mangler-hash-in-heroes.hero` computes the same value
 /// in Heroes and asserts it, so the day this stops being portable is a red test
 /// rather than a discovery at the fixpoint (CLAUDE.md §11).

@@ -5,24 +5,24 @@
 # general way to look.
 
 # Parses a decimal digit. Fails on anything else.
-function digit_of(c: int) -> int?
+function digit_of(c: i64) -> i64?
     if c < '0' || c > '9'
         return fail("not_a_digit", "expected 0-9")
     return ok(c - '0')
 
 # Reads a whole non-negative number. Empty input is an error, not a zero.
-function number_of(text: str) -> int?
+function number_of(text: str) -> i64?
     if text.len() == 0
         return fail("empty", "there is nothing to read")
-    total: int @ 0
+    total: i64 @ 0
     for i in range(from: 0, to: text.len())
         total @ total * 10 + digit_of(text[i])?
     return ok(total)
 
 # The `?` above is the whole point: three lines, no error handling in sight,
 # and the first bad character stops everything.
-function average_of(parts: [str]) -> int?
-    sum: int @ 0
+function average_of(parts: [str]) -> i64?
+    sum: i64 @ 0
     for p in parts
         sum @ sum + number_of(p)?
     if parts.len() == 0
@@ -35,7 +35,7 @@ function report(text: str) -> str
         .ok v  => return "read " + v.to_str()
         .err e => return "failed: " + e.code + " (" + e.msg + ")"
 
-function first_or_zero(parts: [str]) -> int
+function first_or_zero(parts: [str]) -> i64
     return number_of(parts[0]).default(0)
 
 test "a good number and a bad one"

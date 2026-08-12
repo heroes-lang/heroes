@@ -4,8 +4,8 @@
 # and the fix is certain: a `:` is never legal at a block boundary, so
 # dropping it can never repair the wrong program.
 record Point:  #~ trailing_colon
-    x: int
-    y: int
+    x: i64
+    y: i64
 
-function double(n: int) -> int:  #~ trailing_colon
+function double(n: i64) -> i64:  #~ trailing_colon
     return n * 2

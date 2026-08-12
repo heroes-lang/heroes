@@ -8,7 +8,7 @@ fn a_record_field_is_read_by_name() {
         type_of_last(
             "\
 record Point
-    x: int
+    x: i64
     y: f64
 
 function f(p: Point) -> f64
@@ -21,10 +21,10 @@ function f(p: Point) -> f64
         diagnostics(
             "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
-function f(p: Point) -> int
+function f(p: Point) -> i64
     return p.z
 "
         ),
@@ -40,10 +40,10 @@ fn two_records_with_the_same_fields_are_different_types() {
         diagnostics(
             "\
 record Point
-    x: int
+    x: i64
 
 record Size
-    x: int
+    x: i64
 
 function f(p: Point) -> Size
     return p
@@ -61,11 +61,11 @@ fn a_payload_binding_has_the_case_type() {
         "\
 variant Shape
     circle
-        r: int
+        r: i64
     square
-        side: int
+        side: i64
 
-function area(s: Shape) -> int
+function area(s: Shape) -> i64
     return match s
         .circle c => c.r * 3
         .square q => q.side * q.side
@@ -76,11 +76,11 @@ function area(s: Shape) -> int
             "\
 variant Shape
     circle
-        r: int
+        r: i64
     square
-        side: int
+        side: i64
 
-function area(s: Shape) -> int
+function area(s: Shape) -> i64
     return match s
         .circle c => c.side
         .square q => q.side
@@ -97,9 +97,9 @@ fn a_variants_fields_are_reached_through_match() {
             "\
 variant Shape
     circle
-        r: int
+        r: i64
 
-function f(s: Shape) -> int
+function f(s: Shape) -> i64
     return s.r
 "
         ),
@@ -115,11 +115,11 @@ fn a_match_over_a_variant_is_exhaustive_or_names_what_is_missing() {
             "\
 variant Token
     num
-        v: int
+        v: i64
     plus
     times
 
-function f(t: Token) -> int
+function f(t: Token) -> i64
     return match t
         .num n => n.v
 "
@@ -137,10 +137,10 @@ fn a_wildcard_arm_is_forbidden_on_a_variant() {
             "\
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function f(t: Token) -> int
+function f(t: Token) -> i64
     return match t
         .num n => n.v
         _      => 0
@@ -150,13 +150,13 @@ function f(t: Token) -> int
     );
 }
 
-/// …and on `int` or `str` it is the opposite: exhaustiveness is impossible, so
+/// …and on `i64` or `str` it is the opposite: exhaustiveness is impossible, so
 /// the wildcard is required.
 #[test]
 fn matching_an_int_needs_a_wildcard() {
     assert_clean(
         "\
-function f(n: int) -> str
+function f(n: i64) -> str
     return match n
         0 => \"zero\"
         1 => \"one\"
@@ -166,13 +166,13 @@ function f(n: int) -> str
     assert_eq!(
         diagnostics(
             "\
-function f(n: int) -> str
+function f(n: i64) -> str
     return match n
         0 => \"zero\"
         1 => \"one\"
 "
         ),
-        "test.hero:2:12: error[non_exhaustive]: matching on `int` or `str` cannot be exhaustive, so it needs a `_` arm\n"
+        "test.hero:2:12: error[non_exhaustive]: matching on `i64` or `str` cannot be exhaustive, so it needs a `_` arm\n"
     );
 }
 
@@ -183,10 +183,10 @@ fn an_unknown_case_lists_the_ones_that_exist() {
             "\
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function f(t: Token) -> int
+function f(t: Token) -> i64
     return match t
         .num n  => n.v
         .plus   => 0
@@ -204,10 +204,10 @@ fn a_case_covered_twice_is_reported() {
             "\
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function f(t: Token) -> int
+function f(t: Token) -> i64
     return match t
         .num n => n.v
         .plus  => 0
@@ -225,13 +225,13 @@ fn a_literal_arm_matches_the_subjects_type() {
     assert_eq!(
         diagnostics(
             "\
-function f(n: int) -> int
+function f(n: i64) -> i64
     return match n
         \"zero\" => 0
         _      => 1
 "
         ),
-        "test.hero:3:9: error[type_mismatch]: expected `int`, found `str`\n"
+        "test.hero:3:9: error[type_mismatch]: expected `i64`, found `str`\n"
     );
 }
 
@@ -242,10 +242,10 @@ fn a_case_is_constructed_against_the_expected_type() {
         "\
 variant Token
     num
-        v: int
+        v: i64
     plus
 
-function make(n: int) -> Token
+function make(n: i64) -> Token
     return .num(v: n)
 
 function plus_token() -> Token
@@ -257,9 +257,9 @@ function plus_token() -> Token
             "\
 variant Token
     num
-        v: int
+        v: i64
 
-function make(n: int) -> Token
+function make(n: i64) -> Token
     return .num(value: n)
 "
         ),
@@ -270,13 +270,13 @@ function make(n: int) -> Token
             "\
 variant Token
     num
-        v: int
+        v: i64
 
-function make(n: int) -> int
+function make(n: i64) -> i64
     return .num(v: n)
 "
         ),
-        "test.hero:6:12: error[type_mismatch]: expected `int`, found the case `.num`\n"
+        "test.hero:6:12: error[type_mismatch]: expected `i64`, found the case `.num`\n"
     );
 }
 

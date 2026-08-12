@@ -6,15 +6,15 @@
 # ban would just be an inconvenience.
 variant Token
     num
-        v: int
+        v: i64
     plus
     times
 
-function missing(t: Token) -> int
+function missing(t: Token) -> i64
     return match t  #~ non_exhaustive
         .num n => n.v
 
-function lazy(t: Token) -> int
+function lazy(t: Token) -> i64
     return match t
         .num n => n.v
         _      => 0  #~ wildcard_on_variant

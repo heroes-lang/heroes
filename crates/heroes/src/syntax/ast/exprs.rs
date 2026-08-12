@@ -29,10 +29,10 @@ pub struct Stmt {
 }
 
 pub enum StmtKind {
-    /// `x = 5`, or `xs: [int] = []` where an empty literal needs the
+    /// `x = 5`, or `xs: [i64] = []` where an empty literal needs the
     /// annotation (§4.5). Binds once, forever.
     Bind { name: Span, ty: Option<TypeId>, value: ExprId },
-    /// `v: int @ 0` — declares a mutable cell. The type is **required**
+    /// `v: i64 @ 0` — declares a mutable cell. The type is **required**
     /// (§4.4): without it, `x @ 5` would not say whether it declares or
     /// mutates, and a typo would silently declare a new variable.
     Declare { name: Span, ty: TypeId, value: ExprId },
@@ -120,7 +120,7 @@ pub enum UnaryOp {
     Neg,
     /// `!x` — `bool` only, there is no truthiness (§4.14).
     Not,
-    /// `~x` — the bitwise complement, `int` only (§4.14).
+    /// `~x` — the bitwise complement, `i64` only (§4.14).
     BitNot,
 }
 
@@ -140,7 +140,7 @@ pub enum BinaryOp {
     /// `&&` and `||` short-circuit and take `bool` only (§4.14).
     And,
     Or,
-    /// The bitwise set, `int` only and **not** short-circuiting (§4.14). `|` is the
+    /// The bitwise set, `i64` only and **not** short-circuiting (§4.14). `|` is the
     /// same token as the match-pattern join; position tells them apart.
     BitAnd,
     BitOr,
@@ -198,10 +198,10 @@ pub enum PatternKind {
     /// not, on a variant (§4.7).
     Case { name: Span, binding: Option<Span> },
     /// `_` — the catch-all, legal only where exhaustiveness is impossible
-    /// (`int`, `str`). Rejecting it on variants is the checker's job at
+    /// (`i64`, `str`). Rejecting it on variants is the checker's job at
     /// M-data-declarations: the parser records what was written.
     Wildcard,
-    /// An `int` or `str` literal arm.
+    /// An `i64` or `str` literal arm.
     Literal(ExprId),
     Error,
 }

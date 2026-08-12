@@ -19,21 +19,21 @@ a `function`'s parameter list attaches to its name; `record` and `variant`
 declare types, so nothing follows their name.
 
 ```
-constant MAX_DEPTH: int
+constant MAX_DEPTH: i64
     64
 
-function dist2(a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> i64
     dx = a.x - b.x
     dy = a.y - b.y
     return dx*dx + dy*dy
 
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 variant Token
     num
-        v: int
+        v: i64
     plus
     lparen
 ```
@@ -44,7 +44,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 ## Types
 | Type | Meaning |
 |---|---|
-| `int` | 64-bit signed integer (the only integer type) |
+| `i64` | 64-bit signed integer (the only integer type) |
 | `f64` | 64-bit float |
 | `bool` | `true` / `false` |
 | `str` | immutable UTF-8 string, indexed and measured in bytes |
@@ -52,9 +52,9 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
 
-- No implicit conversions: `1 + 2.0` is an error; write `to_f64(x)`, `to_int(x)`.
-- Character literals are `int`: `'a'`, `'0'`, `' '`.
-- One `int` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
+- No implicit conversions: `1 + 2.0` is an error; write `to_f64(x)`, `to_i64(x)`.
+- Character literals are `i64`: `'a'`, `'0'`, `' '`.
+- One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so
   `0xffffffffffffffff` does not fit and is refused.
 - Five escapes, and no others: `\n` `\t` `\\` `\"` in a string, `\'` instead of
@@ -69,13 +69,13 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 ## Bindings
 ```
 x = 5              # immutable binding, type inferred
-v: int @ 0         # mutable declaration — the type is REQUIRED
+v: i64 @ 0         # mutable declaration — the type is REQUIRED
 v @ v + 1          # mutation; only a declared @ name can be mutated
 ```
 `=` binds once, forever. `@` declares a mutable cell and re-binds it. `m[k] @ v` inserts or replaces;
 `keys(m) -> [K]` gives the keys, so `for k in sort(keys(m))` walks in order.
 Signatures are always explicit; inference is local only. Empty container
-literals need an annotation: `xs: [int] = []` · `m: {str: int} @ {}`.
+literals need an annotation: `xs: [i64] = []` · `m: {str: i64} @ {}`.
 All bindings are initialised. An unused binding or parameter is a compile
 error; a read is a use and a write is not, except through an `@` parameter.
 Shadowing is a compile error.
@@ -106,7 +106,7 @@ value = match e
     .sum s  => sum_of(s.children)
 ```
 - Exhaustive or compile error. `_` as a catch-all arm is FORBIDDEN on
-  variants (allowed on `int`/`str`, where exhaustiveness is impossible).
+  variants (allowed on `i64`/`str`, where exhaustiveness is impossible).
 - `_` names anything you do not use: a payload (`.num _ => 0`), a parameter, a
 binding (`_ = f(x)`). It binds nothing, so it is never unused and may repeat.
 - `|` joins patterns: `.plus | .times => f()`.
@@ -117,7 +117,7 @@ binding (`_ = f(x)`). It binds nothing, so it is never unused and may repeat.
 
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
 Loops: `while cond` and `for x in xs`; `break` and `continue` exist; ranges
-are `range(from: a, to: b) -> [int]`, `to` excluded.
+are `range(from: a, to: b) -> [i64]`, `to` excluded.
 
 ## Failure: `T?`
 A `T?` is a `T` or an error: `ok(v)` or `fail(code, msg)`. Codes are stable
@@ -138,17 +138,17 @@ toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
 ## Operators
 ```
-arithmetic   + - * / %          (int with int, f64 with f64 — never mixed)
+arithmetic   + - * / %          (i64 with i64, f64 with f64 — never mixed)
              +                  (str with str: concatenation)
 comparison   == != < <= > >=
 boolean      && || !            (bool only; && and || short-circuit)
-bitwise      & | ^ ~ << >>      (int only; shift count 0..63 or it aborts)
+bitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)
 ```
 Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → `+ -`
 → `<<` `>>` → `&` → `^` → `|` → comparisons → `&&` → `||`. There is no ternary; `if` is an expression, and so is `match`.
 
 ## Strings, arrays, maps
-`s[i]` yields an `int` in 0..255 (a byte); iterate characters with
+`s[i]` yields an `i64` in 0..255 (a byte); iterate characters with
 `s.chars()`, which yields single-character `str`. Multi-line literals
 separate elements by newline; single-line by comma.
 
@@ -156,7 +156,7 @@ Build a long string with `join`, not repeated `+`, and a long array in chunks:
 each `+` copies both sides and each `push` copies the array.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join` · `sort` · `to_int` (truncating; out of range aborts) ·
+`chars` · `keys` · `join` · `sort` · `to_i64` (truncating; out of range aborts) ·
 `to_f64` · `to_str` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
@@ -164,7 +164,7 @@ separator and exactly one trailing newline. An `f64` prints a point or
 exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`.
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
-after the program name) · `exit(code: int)` (ends the program).
+after the program name) · `exit(code: i64)` (ends the program).
 
 ## Tests and holes
 ```
@@ -184,9 +184,9 @@ libraries. A group names its header and its library, and clang checks every
 signature and constant against that header, so a wrong FFI type is a compile error:
 ```
 extern "sqlite3.h" link "sqlite3"
-    constant SQLITE_OK: int
-    function sqlite3_open(path: cstr, @out: ptr) -> int
-    function sqlite3_close(db: ptr) -> int
+    constant SQLITE_OK: i64
+    function sqlite3_open(path: cstr, @out: ptr) -> i64
+    function sqlite3_close(db: ptr) -> i64
 ```
 A group's `constant` has no body: the header holds the value. `ptr` is an opaque
 pointer whose only literal is `nullptr`, `cstr` a C string, and `s.cstr()` passes a

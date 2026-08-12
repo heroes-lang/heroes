@@ -88,7 +88,7 @@ int64_t hero_file_write(const char *path, HeroStr text) {
 }
 
 /* The truncation is deliberate and is the reason `exit` is not a plain `extern`:
- * C's `exit` takes an `int`, Heroes' `int` is `int64_t`, and binding one to the
+ * C's `exit` takes an `i64`, Heroes' `i64` is `int64_t`, and binding one to the
  * other is `conflicting types for 'exit'` (panel 030 R3, reproduced on clang 21).
  * A shell reads the low 8 bits anyway. */
 _Noreturn void hero_exit(int64_t code) {

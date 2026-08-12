@@ -9,25 +9,25 @@ use parse
 ## Evaluator
 
 # The value bound to a name, with a decent message if absent.
-function lookup(env: {str: int}, name: str) -> int?
+function lookup(env: {str: i64}, name: str) -> i64?
     if env[name].is_err()
         return fail("unknown_name", "undefined variable: " + name)
     return ok(env[name].must())
 
-function sum_of(children: [parse.Expr], env: {str: int}) -> int?
-    tot: int @ 0
+function sum_of(children: [parse.Expr], env: {str: i64}) -> i64?
+    tot: i64 @ 0
     for c in children
         tot @ tot + evaluate(c, env)?
     return ok(tot)
 
-function product_of(children: [parse.Expr], env: {str: int}) -> int?
-    tot: int @ 1
+function product_of(children: [parse.Expr], env: {str: i64}) -> i64?
+    tot: i64 @ 1
     for c in children
         tot @ tot * evaluate(c, env)?
     return ok(tot)
 
 # The value of the tree. Fails on the first unknown name.
-function evaluate(e: parse.Expr, env: {str: int}) -> int?
+function evaluate(e: parse.Expr, env: {str: i64}) -> i64?
     return match e
         .num n      => ok(n.v)
         .variable x => env.lookup(x.name)
@@ -52,7 +52,7 @@ function names_of(children: [parse.Expr]) -> [str]
 ## Interface
 
 # From text to result, in one call.
-function calculate(text: str, env: {str: int}) -> int?
+function calculate(text: str, env: {str: i64}) -> i64?
     ts = lex.tokenize(text)?
     p: parse.Parse @ parse.Parse(ts: ts, pos: 0)
     tree = parse.expression(@p)?
@@ -61,7 +61,7 @@ function calculate(text: str, env: {str: int}) -> int?
     return evaluate(tree, env)
 
 test "precedence and parens"
-    empty: {str: int} = {}
+    empty: {str: i64} = {}
     assert calculate("2 + 3 * 4", empty).must() == 14
     assert calculate("(2 + 3) * 4", empty).must() == 20
     assert calculate("2 * 3 * 4", empty).must() == 24
@@ -71,7 +71,7 @@ test "variables from the environment"
     assert calculate("x * y + 2", env).must() == 42
 
 test "errors reach the top"
-    empty: {str: int} = {}
+    empty: {str: i64} = {}
     match calculate("2 +", empty)
         .ok _  => assert false
         .err e => assert e.code == "unexpected_end"
@@ -84,7 +84,7 @@ test "errors reach the top"
 
 test "values are always copies"
     a = [1, 2, 3]
-    b: [int] @ a
+    b: [i64] @ a
     b @ b.push(4)
     assert a.len() == 3
     assert b.len() == 4
@@ -125,7 +125,7 @@ function keep_product(children: [parse.Expr]) -> [parse.Expr]
     return out
 
 # Is this node exactly the literal `v`?
-function is_literal(e: parse.Expr, v: int) -> bool
+function is_literal(e: parse.Expr, v: i64) -> bool
     return match e
         .num n      => n.v == v
         .variable _ => false

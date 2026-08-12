@@ -10,7 +10,7 @@
 # Bulk regression case.
 
 extern "stdio.h"
-    function puts(s: cstr) -> int
+    function puts(s: cstr) -> i64
 
 function shout(text: str) -> str
     return text + "!"

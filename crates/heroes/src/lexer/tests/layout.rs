@@ -61,7 +61,7 @@ fn nesting_indents_and_dedents() {
 #[test]
 fn record_and_variant_headers_earn_a_terminator() {
     assert_eq!(
-        dump("record Point\n    x: int\nvariant Token\n    plus\n"),
+        dump("record Point\n    x: i64\nvariant Token\n    plus\n"),
         "\
 1:1 kw_record record
 1:8 ident Point
@@ -69,7 +69,7 @@ fn record_and_variant_headers_earn_a_terminator() {
 2:1 indent
 2:5 ident x
 2:6 colon :
-2:8 ident int
+2:8 ident i64
 2:11 terminator
 3:1 dedent
 3:1 kw_variant variant

@@ -8,7 +8,7 @@
 //!
 //! Each rule states the shape it accepts and nothing else. Where a rule is
 //! narrower than design.md's inventory promises, the narrowing is a rejection
-//! that can be relaxed (`to_int` on a `str` is not offered, because parsing can
+//! that can be relaxed (`to_i64` on a `str` is not offered, because parsing can
 //! fail and the spec does not say what it returns).
 //!
 //! `ok` and `fail` are absent: they are ⇐-only (panel 002) and live in
@@ -70,7 +70,7 @@ pub(super) fn call(
                     let got = checker.show(ast, src, args[index]);
                     let diagnostic = errors::bad_operand(
                         "print",
-                        "`int`, `f64`, `bool` or `str`",
+                        "`i64`, `f64`, `bool` or `str`",
                         &got,
                         span,
                     );
@@ -98,7 +98,7 @@ pub(super) fn call(
             let int = checker.out.types.int();
             if *from != int || *to != int {
                 let got = checker.show(ast, src, if *from == int { *to } else { *from });
-                return arg_error_named(checker, "slice", "`int` bounds", &got, span);
+                return arg_error_named(checker, "slice", "`i64` bounds", &got, span);
             }
             match checker.out.types.get(*subject) {
                 Ty::Str | Ty::Array(_) => *subject,
@@ -134,7 +134,7 @@ pub(super) fn call(
         ("cstr", [one]) => {
             return arg_error(checker, ast, src, "cstr", "`str`", *one, span)
         }
-        ("to_int", [one]) if checker.out.types.get(*one) == Ty::F64 => checker.out.types.int(),
+        ("to_i64", [one]) if checker.out.types.get(*one) == Ty::F64 => checker.out.types.int(),
         ("to_f64", [one]) if matches!(checker.out.types.get(*one), Ty::Int(_)) => checker.out.types.f64(),
         // §4.20's inventory calls this one `.str()`; panel 017 renames it
         // `to_str`, so the three conversions share one scheme and a model can
@@ -147,7 +147,7 @@ pub(super) fn call(
             Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str | Ty::Cstr => checker.out.types.str(),
             _ => {
                 return arg_error(
-                    checker, ast, src, "to_str", "`int`, `f64`, `bool`, `str` or `cstr`", *one, span,
+                    checker, ast, src, "to_str", "`i64`, `f64`, `bool`, `str` or `cstr`", *one, span,
                 )
             }
         },

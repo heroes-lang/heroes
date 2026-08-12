@@ -12,7 +12,7 @@
 //!
 //! 1. **The destination is always left of `=` or `<-`.** LLVM's `store` is
 //!    value-first, so a dest-first `store total, $t0` is a coin flip for any
-//!    reader who has seen LLVM — and `t0: int @ 0` is legal Heroes, so the
+//!    reader who has seen LLVM — and `t0: i64 @ 0` is legal Heroes, so the
 //!    namespace luck that made the sample readable does not hold in general.
 //! 2. **`$` on every temporary and every synthetic slot.** The character is not in
 //!    the language, so a name here can collide with nothing the author wrote — and
@@ -23,7 +23,7 @@
 //!    pass over every block in the function.
 //! 5. **`!` on every instruction that can abort** (§4.3's overflow, §4.9's bounds,
 //!    division by zero). Three blocks of the sample had exits the reader did not
-//!    see; `add!` also distinguishes `int` arithmetic from `f64`, which cannot
+//!    see; `add!` also distinguishes `i64` arithmetic from `f64`, which cannot
 //!    abort.
 //!
 //! Indentation is four spaces per level, like the language itself (§4.1).

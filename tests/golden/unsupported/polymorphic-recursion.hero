@@ -24,7 +24,7 @@ function wrap<T>(x: T) -> [T]
     out: [T] @ []
     return out.push(x)
 
-function depth<T>(x: T, n: int) -> int
+function depth<T>(x: T, n: i64) -> i64
     if n <= 0
         return 0
     return 1 + depth(wrap(x), n - 1)   #~ polymorphic_recursion

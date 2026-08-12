@@ -13,26 +13,26 @@
 # The two lines below are what make that observable rather than arguable.
 # Bulk regression case.
 
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
-function odd(n: int) -> bool
+function odd(n: i64) -> bool
     return n % 2 == 1
 
-function big(n: int) -> bool
+function big(n: i64) -> bool
     return n > 100
 
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     return a + b
 
-function label(n: int) -> str
+function label(n: i64) -> str
     return to_str(n)
 
 # The two that make the order and the direction observable. `sub` is not
 # commutative, so a swapped accumulator prints a different number; `glue` is not
 # associative in the reading that matters, so a right fold prints a different
 # string.
-function sub(acc: int, x: int) -> int
+function sub(acc: i64, x: i64) -> i64
     return acc - x
 
 function glue(acc: str, w: str) -> str
@@ -55,6 +55,6 @@ function main()
 
     # Empty is the identity of each: nothing to fold, nothing to find, `any` is
     # false and `all` is vacuously true.
-    empty: [int] = []
+    empty: [i64] = []
     print(len(map(empty, double)), fold(empty, 7, add))
     print(any(empty, odd), all(empty, odd), find(empty, odd).is_err())

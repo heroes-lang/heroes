@@ -2,13 +2,13 @@
 # Adversarial case. Guards the rule with the widest blast radius in the type
 # system: **no implicit conversions**, ever (§4.3, §4.14). `1 + 2.0` is the
 # habit every other language in a model's training set allows, and the whole
-# reason `int` and `f64` are separate words here. The message must name the
+# reason `i64` and `f64` are separate words here. The message must name the
 # conversion, because a rule without a repair is a wall.
-function mix(n: int, x: f64) -> f64
+function mix(n: i64, x: f64) -> f64
     return n + x  #~ mixed_arithmetic
 
-function compare(n: int, x: f64) -> bool
+function compare(n: i64, x: f64) -> bool
     return n < x  #~ mixed_arithmetic
 
-function concat(s: str, n: int) -> str
+function concat(s: str, n: i64) -> str
     return s + n  #~ mixed_arithmetic

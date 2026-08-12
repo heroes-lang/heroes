@@ -30,7 +30,7 @@ use crate::types::{Checked, Ty};
 /// `any`, `all` and `range` are written in Heroes, so they have no entry point
 /// to name here — they arrive as source, in the prelude.
 pub const EMITTED: [&str; 11] = [
-    "chars", "join", "keys", "len", "print", "push", "slice", "sort", "to_f64", "to_int",
+    "chars", "join", "keys", "len", "print", "push", "slice", "sort", "to_f64", "to_i64",
     "to_str",
 ];
 
@@ -91,7 +91,7 @@ pub(super) fn entry(
         "sort" => "hero_array_sort",
         "chars" => "hero_str_chars",
         "join" => "hero_str_join",
-        "to_int" => "hero_f64_to_int",
+        "to_i64" => "hero_f64_to_int",
         "to_f64" => "hero_int_to_f64",
         // `to_str` is one Heroes name over five C entry points, chosen by the
         // argument's type — the same shape as `print`, for the same reason.
@@ -124,7 +124,7 @@ pub(super) fn entry(
 /// carries `sort`, and it is the same shape for a different reason.
 ///
 /// **`sort` is refused here rather than rejected by the checker**, and the
-/// difference is the message. `{Point: int}` compiles and runs today, so
+/// difference is the message. `{Point: i64}` compiles and runs today, so
 /// `keys(m)` can be `[Point]`, and spec line 71 teaches `for k in sort(keys(m))`
 /// as *the* idiom for walking a map in order. A checker rule would make the
 /// spec's own sentence a compile error; the gate says "this backend does not emit
@@ -143,7 +143,7 @@ pub(super) fn unsupported_operand(
         // Exactly the three types `hero_cmp_for` can dispatch on.
         Some(Ty::Array(element)) => match checked.types.get(element) {
             Ty::Int(_) | Ty::F64 | Ty::Str => None,
-            _ => Some("the built-in `sort` on elements other than `int`, `f64` or `str`"
+            _ => Some("the built-in `sort` on elements other than `i64`, `f64` or `str`"
                 .to_string()),
         },
         // Not an array at all: the checker reported that, and one mistake gets one

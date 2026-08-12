@@ -1,7 +1,7 @@
 # Part 5, row 4: `.must()`, `.default(v)` and `.is_err()`. All three read the
 # tag of a `T?` (row 5: a built-in variant, `ok` at 0 and `err` at 1) — and
 # only two of them need an edge, which is why `is_err` is the cheap one.
-function widen(v: int?) -> int
+function widen(v: i64?) -> i64
     if v.is_err()
         return v.default(0)
     return v.must()

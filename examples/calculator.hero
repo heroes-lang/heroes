@@ -43,21 +43,21 @@ function reduce<A, B>(xs: [A], initial: B, f: (function(B, A) -> B)) -> B
         acc @ f(acc, x)
     return acc
 
-function plus(a: int, b: int) -> int
+function plus(a: i64, b: i64) -> i64
     return a + b
 
 test "generics work across types"
     assert [1, 2, 3].apply(double) == [2, 4, 6]
     assert [1, 2, 3, 4].reduce(0, plus) == 10
 
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
 ## Tokens
 
 variant Token
     num
-        v: int
+        v: i64
     name
         s: str
     plus
@@ -68,26 +68,26 @@ variant Token
 # Text and position. Travels through the lexer as `@`.
 record Lex
     text: str
-    pos: int
+    pos: i64
 
 function at_end(l: Lex) -> bool
     return l.pos >= l.text.len()
 
-function here(l: Lex) -> int
+function here(l: Lex) -> i64
     return l.text[l.pos]
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-function is_digit(c: int) -> bool
+function is_digit(c: i64) -> bool
     return c >= '0' && c <= '9'
 
-function is_letter(c: int) -> bool
+function is_letter(c: i64) -> bool
     return c >= 'a' && c <= 'z'
 
 # Reads an integer, consuming it.
-function read_number(@l: Lex) -> int
-    v: int @ 0
+function read_number(@l: Lex) -> i64
+    v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
         v @ v * 10 + (l.here() - '0')
         advance(@l)
@@ -149,7 +149,7 @@ test "tokenize rejects the unknown"
 # only indirection: that is what makes the recursive type finite.
 variant Expr
     num
-        v: int
+        v: i64
     variable
         name: str
     sum
@@ -160,7 +160,7 @@ variant Expr
 # Tokens and position. Travels through the parser as `@`.
 record Parse
     ts: [Token]
-    pos: int
+    pos: i64
 
 function parse_at_end(p: Parse) -> bool
     return p.pos >= p.ts.len()
@@ -230,25 +230,25 @@ function expression(@p: Parse) -> Expr?
 ## Evaluator
 
 # The value bound to a name, with a decent message if absent.
-function lookup(env: {str: int}, name: str) -> int?
+function lookup(env: {str: i64}, name: str) -> i64?
     if env[name].is_err()
         return fail("unknown_name", "undefined variable: " + name)
     return ok(env[name].must())
 
-function sum_of(children: [Expr], env: {str: int}) -> int?
-    tot: int @ 0
+function sum_of(children: [Expr], env: {str: i64}) -> i64?
+    tot: i64 @ 0
     for c in children
         tot @ tot + evaluate(c, env)?
     return ok(tot)
 
-function product_of(children: [Expr], env: {str: int}) -> int?
-    tot: int @ 1
+function product_of(children: [Expr], env: {str: i64}) -> i64?
+    tot: i64 @ 1
     for c in children
         tot @ tot * evaluate(c, env)?
     return ok(tot)
 
 # The value of the tree. Fails on the first unknown name.
-function evaluate(e: Expr, env: {str: int}) -> int?
+function evaluate(e: Expr, env: {str: i64}) -> i64?
     return match e
         .num n      => ok(n.v)
         .variable x => env.lookup(x.name)
@@ -273,7 +273,7 @@ function names_of(children: [Expr]) -> [str]
 ## Interface
 
 # From text to result, in one call.
-function calculate(text: str, env: {str: int}) -> int?
+function calculate(text: str, env: {str: i64}) -> i64?
     ts = tokenize(text)?
     p: Parse @ Parse(ts: ts, pos: 0)
     tree = expression(@p)?
@@ -282,7 +282,7 @@ function calculate(text: str, env: {str: int}) -> int?
     return evaluate(tree, env)
 
 test "precedence and parens"
-    empty: {str: int} = {}
+    empty: {str: i64} = {}
     assert calculate("2 + 3 * 4", empty).must() == 14
     assert calculate("(2 + 3) * 4", empty).must() == 20
     assert calculate("2 * 3 * 4", empty).must() == 24
@@ -292,7 +292,7 @@ test "variables from the environment"
     assert calculate("x * y + 2", env).must() == 42
 
 test "errors reach the top"
-    empty: {str: int} = {}
+    empty: {str: i64} = {}
     match calculate("2 +", empty)
         .ok _  => assert false
         .err e => assert e.code == "unexpected_end"
@@ -305,7 +305,7 @@ test "errors reach the top"
 
 test "values are always copies"
     a = [1, 2, 3]
-    b: [int] @ a
+    b: [i64] @ a
     b @ b.push(4)
     assert a.len() == 3
     assert b.len() == 4
@@ -344,7 +344,7 @@ function keep_product(children: [Expr]) -> [Expr]
     return out
 
 # Is this node exactly the literal `v`?
-function is_literal(e: Expr, v: int) -> bool
+function is_literal(e: Expr, v: i64) -> bool
     return match e
         .num n      => n.v == v
         .variable _ => false

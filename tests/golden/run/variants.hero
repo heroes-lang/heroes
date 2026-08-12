@@ -11,12 +11,12 @@
 
 variant Token
     num
-        v: int
+        v: i64
     word
         text: str
     end
 
-function size(t: Token) -> int
+function size(t: Token) -> i64
     return match t
         .num n  => n.v
         .word w => len(w.text)

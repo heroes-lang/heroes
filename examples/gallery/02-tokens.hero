@@ -6,7 +6,7 @@
 
 variant Token
     number
-        value: int
+        value: i64
     word
         text: str
     plus
@@ -25,7 +25,7 @@ function name_of(t: Token) -> str
         .close    => "`)`"
 
 # Binding power, strongest first (§4.14's table, in miniature).
-function power_of(t: Token) -> int
+function power_of(t: Token) -> i64
     return match t
         .times         => 2
         .plus          => 1

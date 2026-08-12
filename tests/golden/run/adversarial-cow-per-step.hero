@@ -29,13 +29,13 @@
 # `# UNVERIFIED — pending debrief` (adversarial case 5 of 5 for M5c).
 
 record Row
-    cells: [int]
+    cells: [i64]
 
 record Grid
     rows: [Row]
 
 record Node
-    label: int
+    label: i64
     children: [Node]
 
 function main()
@@ -67,7 +67,7 @@ function main()
     print(m.rows[0].cells[0], m.rows[1].cells[0])
 
     # A single step, for the boundary: no descent, `set` unshares by itself.
-    xs: [int] @ [1, 2, 3]
+    xs: [i64] @ [1, 2, 3]
     ys = xs
     xs[1] @ 9
     print(xs[1], ys[1])

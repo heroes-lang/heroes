@@ -7,9 +7,9 @@ use super::{assert_clean, diagnostics, type_of_last};
 fn a_call_checks_its_arguments_and_its_arity() {
     assert_clean(
         "\
-function repeat(text: str, times: int) -> str
+function repeat(text: str, times: i64) -> str
     out: str @ \"\"
-    left: int @ times
+    left: i64 @ times
     while left > 0
         out @ out + text
         left @ left - 1
@@ -22,7 +22,7 @@ function main()
     assert_eq!(
         diagnostics(
             "\
-function repeat(text: str, times: int) -> str
+function repeat(text: str, times: i64) -> str
     print(times)
     return text
 
@@ -35,7 +35,7 @@ function main()
     assert_eq!(
         diagnostics(
             "\
-function repeat(text: str, times: int) -> str
+function repeat(text: str, times: i64) -> str
     print(times)
     return text
 
@@ -43,7 +43,7 @@ function main()
     print(repeat(\"ab\", \"two\"))
 "
         ),
-        "test.hero:6:24: error[type_mismatch]: expected `int`, found `str`\n"
+        "test.hero:6:24: error[type_mismatch]: expected `i64`, found `str`\n"
     );
 }
 
@@ -54,7 +54,7 @@ function main()
 fn two_parameters_of_one_type_must_be_named_at_the_call_site() {
     assert_clean(
         "\
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     return a + b
 
 function main()
@@ -64,20 +64,20 @@ function main()
     assert_eq!(
         diagnostics(
             "\
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     return a + b
 
 function main()
     print(add(1, 2))
 "
         ),
-        "test.hero:5:15: error[needs_label]: two of `add`'s parameters are `int`, so every one of them is named at the call site — this one is `a`\ntest.hero:5:18: error[needs_label]: two of `add`'s parameters are `int`, so every one of them is named at the call site — this one is `b`\n"
+        "test.hero:5:15: error[needs_label]: two of `add`'s parameters are `i64`, so every one of them is named at the call site — this one is `a`\ntest.hero:5:18: error[needs_label]: two of `add`'s parameters are `i64`, so every one of them is named at the call site — this one is `b`\n"
     );
     // …and where the types differ, a label is optional — the rule spends nothing
     // where nothing can be inverted.
     assert_clean(
         "\
-function at(text: str, index: int) -> int
+function at(text: str, index: i64) -> i64
     return text[index]
 
 function main()
@@ -89,9 +89,9 @@ function main()
     assert_clean(
         "\
 record Point
-    x: int
+    x: i64
 
-function dist(a: Point, b: Point) -> int
+function dist(a: Point, b: Point) -> i64
     return a.x - b.x
 
 function main(p: Point, q: Point)
@@ -107,10 +107,10 @@ fn ufcs_is_argument_reordering_and_nothing_else() {
     assert_clean(
         "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
-function sum_of(p: Point) -> int
+function sum_of(p: Point) -> i64
     return p.x + p.y
 
 function main(p: Point)
@@ -128,7 +128,7 @@ fn the_mutable_marker_is_checked_on_both_sides() {
     assert_clean(
         "\
 record Lex
-    pos: int
+    pos: i64
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
@@ -143,7 +143,7 @@ function main()
         diagnostics(
             "\
 record Lex
-    pos: int
+    pos: i64
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
@@ -160,7 +160,7 @@ function main()
         diagnostics(
             "\
 record Lex
-    pos: int
+    pos: i64
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
@@ -181,8 +181,8 @@ fn a_record_is_built_with_every_field_named() {
     assert_clean(
         "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     p = Point(x: 1, y: 2)
@@ -193,8 +193,8 @@ function main()
         diagnostics(
             "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     p = Point(x: 1)
@@ -207,8 +207,8 @@ function main()
         diagnostics(
             "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     p = Point(1, 2)
@@ -224,8 +224,8 @@ fn a_wrong_label_names_the_right_one_and_offers_the_rename() {
     let (out, _) = super::checked(
         "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     p = Point(x: 1, z: 2)
@@ -254,11 +254,11 @@ fn generics_are_inferred_from_the_arguments() {
 function first<A>(xs: [A]) -> A
     return xs[0]
 
-function head() -> int
+function head() -> i64
     return first([1, 2, 3])
 "
         ),
-        "int"
+        "i64"
     );
     assert_clean(
         "\
@@ -268,7 +268,7 @@ function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
         out @ out.push(f(x))
     return out
 
-function label(n: int) -> str
+function label(n: i64) -> str
     return n.to_str()
 
 function main()
@@ -292,7 +292,7 @@ function main()
     print(pair(a: 1, b: \"two\"))
 "
         ),
-        "test.hero:6:25: error[type_mismatch]: expected `int`, found `str`\n"
+        "test.hero:6:25: error[type_mismatch]: expected `i64`, found `str`\n"
     );
 }
 
@@ -303,30 +303,30 @@ fn a_function_is_a_value_of_its_signature_type() {
     assert_eq!(
         type_of_last(
             "\
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
-function twice() -> int
+function twice() -> i64
     f = double
     return f(2)
 "
         ),
-        "int"
+        "i64"
     );
     assert_eq!(
         diagnostics(
             "\
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
-function takes(f: (function(str) -> int)) -> int
+function takes(f: (function(str) -> i64)) -> i64
     return f(\"a\")
 
 function main()
     print(takes(double))
 "
         ),
-        "test.hero:8:17: error[type_mismatch]: expected `(function(str) -> int)`, found `(function(int) -> int)`\n"
+        "test.hero:8:17: error[type_mismatch]: expected `(function(str) -> i64)`, found `(function(i64) -> i64)`\n"
     );
 }
 
@@ -337,9 +337,9 @@ fn a_function_valued_field_is_called_through_the_dot() {
     assert_clean(
         "\
 record Holder
-    cb: (function(int) -> int)
+    cb: (function(i64) -> i64)
 
-function run(h: Holder, n: int) -> int
+function run(h: Holder, n: i64) -> i64
     return h.cb(n)
 ",
     );
@@ -355,12 +355,12 @@ fn neither_a_field_nor_a_function_is_one_message() {
         diagnostics(
             "\
 record Point
-    x: int
+    x: i64
 
 record Widget
-    handler: (function(int) -> int)
+    handler: (function(i64) -> i64)
 
-function f(p: Point) -> int
+function f(p: Point) -> i64
     return p.handler(1)
 "
         ),
@@ -370,17 +370,17 @@ function f(p: Point) -> int
 
 #[test]
 fn the_builtins_know_their_shapes() {
-    assert_eq!(type_of_last("function f(s: str) -> int\n    return s.len()\n"), "int");
+    assert_eq!(type_of_last("function f(s: str) -> i64\n    return s.len()\n"), "i64");
     assert_eq!(
         type_of_last("function f(s: str) -> [str]\n    return s.chars()\n"),
         "[str]"
     );
     assert_eq!(
-        type_of_last("function f(xs: [int]) -> [int]\n    return xs.push(4)\n"),
-        "[int]"
+        type_of_last("function f(xs: [i64]) -> [i64]\n    return xs.push(4)\n"),
+        "[i64]"
     );
     assert_eq!(
-        type_of_last("function f(m: {str: int}) -> bool\n    return !m[\"a\"].is_err()\n"),
+        type_of_last("function f(m: {str: i64}) -> bool\n    return !m[\"a\"].is_err()\n"),
         "bool"
     );
     assert_eq!(
@@ -388,8 +388,8 @@ fn the_builtins_know_their_shapes() {
         "str"
     );
     assert_eq!(
-        diagnostics("function f(n: int) -> int\n    return n.len()\n"),
-        "test.hero:2:12: error[bad_operand]: `len` takes `str`, `[T]` or `{K: V}`, found `int`\n"
+        diagnostics("function f(n: i64) -> i64\n    return n.len()\n"),
+        "test.hero:2:12: error[bad_operand]: `len` takes `str`, `[T]` or `{K: V}`, found `i64`\n"
     );
 }
 
@@ -398,19 +398,19 @@ fn the_builtins_know_their_shapes() {
 #[test]
 fn print_takes_any_number_of_the_four_printable_types() {
     assert_clean(
-        "function main(n: int, x: f64, b: bool, s: str)\n    print(s, n, x, b, \"\\n\")\n",
+        "function main(n: i64, x: f64, b: bool, s: str)\n    print(s, n, x, b, \"\\n\")\n",
     );
     assert_eq!(
         diagnostics(
             "\
 record Point
-    x: int
+    x: i64
 
 function main(p: Point)
     print(p)
 "
         ),
-        "test.hero:5:5: error[bad_operand]: `print` takes `int`, `f64`, `bool` or `str`, found `Point`\n"
+        "test.hero:5:5: error[bad_operand]: `print` takes `i64`, `f64`, `bool` or `str`, found `Point`\n"
     );
 }
 
@@ -423,7 +423,7 @@ fn a_builtin_argument_can_be_a_contextual_form() {
         "\
 variant Token
     num
-        v: int
+        v: i64
     plus
 
 function main()
@@ -452,11 +452,11 @@ function hypotenuse(a: f64, b: f64) -> f64
 extern \"math.h\"
     function sqrt(x: f64) -> f64
 
-function f(n: int) -> f64
+function f(n: i64) -> f64
     return sqrt(n)
 "
         ),
-        "test.hero:5:17: error[type_mismatch]: expected `f64`, found `int`\n"
+        "test.hero:5:17: error[type_mismatch]: expected `f64`, found `i64`\n"
     );
 }
 
@@ -491,5 +491,5 @@ function main()
         })
         .collect();
     seen.sort();
-    assert_eq!(seen, vec!["int".to_string(), "str".to_string()]);
+    assert_eq!(seen, vec!["i64".to_string(), "str".to_string()]);
 }

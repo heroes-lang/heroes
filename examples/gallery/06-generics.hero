@@ -28,16 +28,16 @@ function combine<A, B>(xs: [A], start: B, step: (function(B, A) -> B)) -> B
     return total
 
 # The functions passed above are ordinary declarations. No lambdas exist.
-function double(n: int) -> int
+function double(n: i64) -> i64
     return n * 2
 
-function is_positive(n: int) -> bool
+function is_positive(n: i64) -> bool
     return n > 0
 
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     return a + b
 
-function label(n: int) -> str
+function label(n: i64) -> str
     return n.to_str()
 
 test "one generic, three element types"

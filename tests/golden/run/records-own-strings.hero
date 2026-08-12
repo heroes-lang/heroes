@@ -15,7 +15,7 @@
 
 record Person
     name: str
-    age: int
+    age: i64
 
 record Pair
     one: Person

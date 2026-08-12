@@ -7,7 +7,7 @@
 //!
 //! | file       | nodes |
 //! |------------|-------|
-//! | `types.rs` | written types: `int`, `[T]`, `{K: V}`, `T?`, `(function(A) -> B)` |
+//! | `types.rs` | written types: `i64`, `[T]`, `{K: V}`, `T?`, `(function(A) -> B)` |
 //! | `decls.rs` | the top level: the four entities, their parameters, fields, cases |
 //! | `exprs.rs` | bodies: blocks, statements, expressions, patterns |
 //!
@@ -15,7 +15,7 @@
 //! what the port to Heroes will need — design.md §4.10: "the array is the
 //! only indirection":
 //!
-//! - **Types are recursive** (`[{str: int}?]`), so they all live in one
+//! - **Types are recursive** (`[{str: i64}?]`), so they all live in one
 //!   arena, `Ast::types`, and point at each other with `TypeId` — an index,
 //!   never a pointer. The port reads `types: [TypeNode]` unchanged.
 //! - **Declarations are not recursive**, so each one owns its parameters,

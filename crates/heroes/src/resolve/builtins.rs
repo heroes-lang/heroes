@@ -76,7 +76,7 @@ pub const BUILTINS: [Builtin; 28] = [
     Builtin { name: "slice", tier: Tier::Runtime },
     Builtin { name: "sort", tier: Tier::Runtime },
     Builtin { name: "to_f64", tier: Tier::Runtime },
-    Builtin { name: "to_int", tier: Tier::Runtime },
+    Builtin { name: "to_i64", tier: Tier::Runtime },
     Builtin { name: "to_str", tier: Tier::Runtime },
     Builtin { name: "write_file", tier: Tier::Heroes },
 ];

@@ -97,7 +97,7 @@ fn every_restore_directive_names_its_own_next_line() {
 
 #[test]
 fn a_mutable_parameter_is_a_pointer_and_copies_in_and_out() {
-    let text = c("function bump(@n: int)\n    n @ n + 1\n\nfunction main()\n    v: int @ 1\n    bump(@v)\n    print(v)\n");
+    let text = c("function bump(@n: i64)\n    n @ n + 1\n\nfunction main()\n    v: i64 @ 1\n    bump(@v)\n    print(v)\n");
     assert!(text.contains("void h_scratch_bump(int64_t *ph0_n);"), "{text}");
     assert!(text.contains("    h0_n = *ph0_n;"), "copy-in:\n{text}");
     assert!(text.contains("    *ph0_n = h0_n;"), "copy-out:\n{text}");
@@ -109,7 +109,7 @@ fn a_mutable_parameter_is_a_pointer_and_copies_in_and_out() {
 /// emitter's own bugs with it.
 #[test]
 fn a_block_nothing_jumps_to_is_omitted_entirely() {
-    let text = c("function sign(x: int) -> int\n    if x > 0\n        return 1\n    else\n        return 0\n\nfunction main()\n    print(sign(3))\n");
+    let text = c("function sign(x: i64) -> i64\n    if x > 0\n        return 1\n    else\n        return 0\n\nfunction main()\n    print(sign(3))\n");
     let labels = text.matches("bb").filter(|_| true).count();
     assert!(labels > 0);
     // The join after two returning arms has no predecessors, so it is not emitted:
@@ -137,7 +137,7 @@ fn division_carries_both_guards_and_the_remainder_carries_them_too() {
 
 #[test]
 fn the_smallest_integer_is_emitted_as_a_macro_c_can_parse() {
-    let text = c("function main()\n    x: int @ 0 - 9223372036854775807\n    x @ x - 1\n    print(x)\n");
+    let text = c("function main()\n    x: i64 @ 0 - 9223372036854775807\n    x @ x - 1\n    print(x)\n");
     assert!(text.contains("INT64_C(9223372036854775807)"), "{text}");
 }
 
@@ -149,7 +149,7 @@ fn a_bool_prints_through_its_own_segment_printer() {
 
 #[test]
 fn a_branch_writes_both_edges_so_adjacency_carries_no_meaning() {
-    let text = c("function main()\n    n: int @ 0\n    while n < 3\n        n @ n + 1\n    print(n)\n");
+    let text = c("function main()\n    n: i64 @ 0\n    while n < 3\n        n @ n + 1\n    print(n)\n");
     assert!(text.contains("else goto bb"), "both edges are written:\n{text}");
 }
 
@@ -215,10 +215,10 @@ fn the_typehash_is_computable_in_heroes() {
     // writes into a name; decimal is what `print` can produce, so the test carries
     // both and the conversion is the assertion.
     for (rendered, decimal) in [
-        ("map<int, str>", 1_726_907_847_u64),
-        ("fold<int, int>", 75_036_336),
-        ("pair<int, str_x>", 353_437_510),
-        ("pair<int_str, x>", 1_143_528_872),
+        ("map<i64, str>", 452_710_609_u64),
+        ("fold<i64, i64>", 947_353_345),
+        ("pair<i64, str_x>", 1_680_613_593),
+        ("pair<i64_str, x>", 323_221_308),
     ] {
         assert_eq!(
             super::super::mangle::instance(rendered),
@@ -227,15 +227,15 @@ fn the_typehash_is_computable_in_heroes() {
         );
     }
 
-    // Every intermediate must fit an `int`, with the margin the golden's comment
+    // Every intermediate must fit an `i64`, with the margin the golden's comment
     // claims: (M - 1) * B + 255 against i64::MAX.
     let worst = (2_147_483_646_i64) * 131 + 255;
     assert!(worst < i64::MAX / 1_000_000, "the margin is three orders of magnitude, not one");
 
     // A readable suffix would collide on these two; a hash must not.
     assert_ne!(
-        super::super::mangle::instance("pair<int, str_x>"),
-        super::super::mangle::instance("pair<int_str, x>"),
+        super::super::mangle::instance("pair<i64, str_x>"),
+        super::super::mangle::instance("pair<i64_str, x>"),
         "panel 029 R5's non-injectivity case"
     );
 }

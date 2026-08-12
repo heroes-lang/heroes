@@ -9,7 +9,7 @@
 //! ## Why a body may contain no call
 //!
 //! Because without that rule a `constant` is not constant, measured 2026-08-12.
-//! `constant ARGC: int` with body `len(args())` printed `3` under `heroes run
+//! `constant ARGC: i64` with body `len(args())` printed `3` under `heroes run
 //! f.hero -- a b c` and `0` under `heroes run f.hero` — the same binary, two values
 //! — and a body calling a printing function printed once per read, because
 //! `FnKind::Constant` lowers to a zero-argument function and a read to a call.

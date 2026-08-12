@@ -51,15 +51,15 @@ pub enum IntKind {
 impl IntKind {
     /// The surface spelling, which is also what a diagnostic prints.
     ///
-    /// **Still `int` at this step, and that is deliberate.** The author deleted
-    /// `int` on 2026-08-12 in favour of `i64` — no alias, one spelling — but the
-    /// rename is its own step. This one only moves the width *into* the variant,
-    /// and it is worth something precisely because it changes no output: with the
-    /// suite green here, anything that breaks at the rename is the rename, and
-    /// anything that breaks when the other seven widths arrive is the widths.
+    /// **There is no `i64`.** The author deleted it 2026-08-12 rather than
+    /// aliasing it (panel 042's verdict section): one spelling per width, and
+    /// `i64` is a foreign word with a `certain` fix to `i64`. The reason is the
+    /// thesis rather than taste — `i64` is a word carrying forty years of
+    /// conflicting widths, and a reader has to know the platform to know what it
+    /// means, while `i64` is ambiguous to nobody.
     pub fn name(self) -> &'static str {
         match self {
-            IntKind::I64 => "int",
+            IntKind::I64 => "i64",
         }
     }
 
@@ -118,7 +118,7 @@ pub struct Types {
     params: Vec<TyId>,
     /// Structure → id. This is what makes the ids canonical.
     index: BTreeMap<Ty, TyId>,
-    /// A parameter run → where it starts, so `(function(int) -> int)` written
+    /// A parameter run → where it starts, so `(function(int) -> i64)` written
     /// twice interns to one id rather than two runs of equal content.
     runs: BTreeMap<Vec<TyId>, u32>,
 }

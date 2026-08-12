@@ -18,7 +18,7 @@ pub enum TokenKind {
     /// escapes of `escape.rs` (`\n \t \\ \"`; `'` is bare here).
     Str,
     /// `'…'` — exactly ONE character: one ASCII character or one escape
-    /// (`\n \t \\ \'`; `"` is bare here). Its value is an `int`
+    /// (`\n \t \\ \'`; `"` is bare here). Its value is an `i64`
     /// (design.md §4.3: char literals exist to kill magic numbers), so
     /// `'\n'` is four source bytes and one character.
     Char,

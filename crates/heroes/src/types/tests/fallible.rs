@@ -9,31 +9,31 @@ use super::{assert_clean, diagnostics, type_of_last};
 fn ok_and_fail_are_checked_against_the_expected_type() {
     assert_clean(
         "\
-function half(n: int) -> int?
+function half(n: i64) -> i64?
     if n < 0
         return fail(\"negative\", \"n must not be negative\")
     return ok(n / 2)
 ",
     );
     assert_eq!(
-        diagnostics("function f(n: int) -> int?\n    return n\n"),
-        "test.hero:2:12: error[type_mismatch]: expected `int?`, found `int`\n"
+        diagnostics("function f(n: i64) -> i64?\n    return n\n"),
+        "test.hero:2:12: error[type_mismatch]: expected `i64?`, found `i64`\n"
     );
     assert_eq!(
-        diagnostics("function f(n: int) -> int\n    return ok(n)\n"),
-        "test.hero:2:12: error[type_mismatch]: `ok(…)` builds a fallible value, and `int` is not one — no `T` is ever promoted to a `T?`\n"
+        diagnostics("function f(n: i64) -> i64\n    return ok(n)\n"),
+        "test.hero:2:12: error[type_mismatch]: `ok(…)` builds a fallible value, and `i64` is not one — no `T` is ever promoted to a `T?`\n"
     );
 }
 
 #[test]
 fn ok_carries_the_inner_type_and_fail_two_strings() {
     assert_eq!(
-        diagnostics("function f(s: str) -> int?\n    return ok(s)\n"),
-        "test.hero:2:15: error[type_mismatch]: expected `int`, found `str`\n"
+        diagnostics("function f(s: str) -> i64?\n    return ok(s)\n"),
+        "test.hero:2:15: error[type_mismatch]: expected `i64`, found `str`\n"
     );
     assert_eq!(
-        diagnostics("function f() -> int?\n    return fail(\"code\", 42)\n"),
-        "test.hero:2:25: error[type_mismatch]: expected `str`, found `int`\n"
+        diagnostics("function f() -> i64?\n    return fail(\"code\", 42)\n"),
+        "test.hero:2:25: error[type_mismatch]: expected `str`, found `i64`\n"
     );
 }
 
@@ -43,10 +43,10 @@ fn ok_carries_the_inner_type_and_fail_two_strings() {
 fn the_question_mark_needs_a_fallible_value_and_a_fallible_caller() {
     assert_clean(
         "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
-function twice(s: str) -> int?
+function twice(s: str) -> i64?
     n = read(s)?
     return ok(n * 2)
 ",
@@ -54,19 +54,19 @@ function twice(s: str) -> int?
     assert_eq!(
         diagnostics(
             "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
-function twice(s: str) -> int
+function twice(s: str) -> i64
     n = read(s)?
     return n * 2
 "
         ),
-        "test.hero:5:9: error[try_in_infallible]: `?` hands the error to the caller, so this function's result must be fallible — it is `int`, not `int?`\n"
+        "test.hero:5:9: error[try_in_infallible]: `?` hands the error to the caller, so this function's result must be fallible — it is `i64`, not `i64?`\n"
     );
     assert_eq!(
-        diagnostics("function f(n: int) -> int?\n    return ok(n?)\n"),
-        "test.hero:2:15: error[not_fallible]: `?` propagates an error, and `int` cannot fail — remove the `?`\n"
+        diagnostics("function f(n: i64) -> i64?\n    return ok(n?)\n"),
+        "test.hero:2:15: error[not_fallible]: `?` propagates an error, and `i64` cannot fail — remove the `?`\n"
     );
 }
 
@@ -76,7 +76,7 @@ function twice(s: str) -> int
 fn a_fallible_is_matched_on_ok_and_err() {
     assert_clean(
         "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
 function report(s: str) -> str
@@ -88,7 +88,7 @@ function report(s: str) -> str
     assert_eq!(
         diagnostics(
             "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
 function report(s: str) -> str
@@ -107,7 +107,7 @@ fn the_error_has_exactly_two_fields() {
     assert_eq!(
         diagnostics(
             "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
 function report(s: str) -> str
@@ -125,31 +125,31 @@ fn the_three_readers_have_the_types_the_table_says() {
     assert_eq!(
         type_of_last(
             "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
-function f(s: str) -> int
+function f(s: str) -> i64
     return read(s).must()
 "
         ),
-        "int"
+        "i64"
     );
     assert_eq!(
         type_of_last(
             "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
-function f(s: str) -> int
+function f(s: str) -> i64
     return read(s).default(0)
 "
         ),
-        "int"
+        "i64"
     );
     assert_eq!(
         type_of_last(
             "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
 function f(s: str) -> bool
@@ -161,14 +161,14 @@ function f(s: str) -> bool
     assert_eq!(
         diagnostics(
             "\
-function read(s: str) -> int?
+function read(s: str) -> i64?
     return ok(s.len())
 
-function f(s: str) -> int
+function f(s: str) -> i64
     return read(s).default(\"none\")
 "
         ),
-        "test.hero:5:28: error[type_mismatch]: expected `int`, found `str`\n"
+        "test.hero:5:28: error[type_mismatch]: expected `i64`, found `str`\n"
     );
 }
 
@@ -178,7 +178,7 @@ function f(s: str) -> int
 fn a_map_access_is_fallible() {
     assert_clean(
         "\
-function lookup(env: {str: int}, key: str) -> int?
+function lookup(env: {str: i64}, key: str) -> i64?
     if !env[key].is_err()
         return fail(\"unknown_name\", \"undefined: \" + key)
     return ok(env[key].must())
@@ -187,10 +187,10 @@ function lookup(env: {str: int}, key: str) -> int?
     assert_eq!(
         diagnostics(
             "\
-function f(env: {str: int}, key: str) -> int
+function f(env: {str: i64}, key: str) -> i64
     return env[key]
 "
         ),
-        "test.hero:2:12: error[type_mismatch]: expected `int`, found `int?`\n"
+        "test.hero:2:12: error[type_mismatch]: expected `i64`, found `i64?`\n"
     );
 }

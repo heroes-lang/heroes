@@ -127,7 +127,7 @@ impl LexState {
     }
 
     /// `'a'` — exactly ONE character: one ASCII byte, or one escape
-    /// sequence. Its value is an `int` (design.md §4.3). `'\n'` is four
+    /// sequence. Its value is an `i64` (design.md §4.3). `'\n'` is four
     /// source bytes and one character — source length stopped being the
     /// rule when escapes landed (panel 008). Syntax is ASCII-only (§1.10),
     /// so a multi-byte character here is an error, not an interpretation.

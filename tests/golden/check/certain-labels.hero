@@ -3,8 +3,8 @@
 # which field it is, so the repair is not a guess — and applying both leaves a
 # program that checks clean, which is the property `x.fixed` exists to assert.
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     a = Point(x: 1, z: 2)  #~ wrong_label

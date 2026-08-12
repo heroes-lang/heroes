@@ -110,7 +110,7 @@ pub enum FnKind {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SlotKind {
     Param { mutable: bool },
-    /// `x = 5` or `v: int @ 0` — the surface distinction is the resolver's, and
+    /// `x = 5` or `v: i64 @ 0` — the surface distinction is the resolver's, and
     /// by here both are cells that hold a value.
     Local,
     /// One lowering invented: a loop index, a branch's join. Its name starts with
@@ -257,7 +257,7 @@ pub struct Lowered {
     pub program: Program,
     /// Lowering is not a checking pass and produces almost nothing here. The one
     /// class it owns is a literal that cannot be represented — nothing before this
-    /// pass ever needed an `int` literal's *value*, so an out-of-range one was
+    /// pass ever needed an `i64` literal's *value*, so an out-of-range one was
     /// invisible until now (panel 019 § Watch list, queued as its own trigger).
     pub diagnostics: Vec<Diagnostic>,
 }

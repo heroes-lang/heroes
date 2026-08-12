@@ -11,13 +11,13 @@ use super::{assert_clean, checked};
 fn a_hole_records_the_type_the_context_expects() {
     let (out, _) = checked(
         "\
-function f(n: int) -> str
+function f(n: i64) -> str
     return ???
 ",
     );
     assert!(out.diagnostics.is_empty(), "a hole is not an error");
     assert_eq!(out.holes.len(), 1);
-    let ty = super::super::render_ty(&out.types, &parse_of("function f(n: int) -> str\n    return ???\n").0, &parse_of("function f(n: int) -> str\n    return ???\n").1, out.holes[0].expected, &[]);
+    let ty = super::super::render_ty(&out.types, &parse_of("function f(n: i64) -> str\n    return ???\n").0, &parse_of("function f(n: i64) -> str\n    return ???\n").1, out.holes[0].expected, &[]);
     assert_eq!(ty, "str");
 }
 
@@ -27,7 +27,7 @@ function f(n: int) -> str
 fn each_hole_knows_its_own_expectation() {
     let (out, src) = checked(
         "\
-function add(a: int, b: str) -> int
+function add(a: i64, b: str) -> i64
     print(b)
     return a
 
@@ -44,7 +44,7 @@ function main()
             super::super::render_ty(&out.types, &parsed.ast, &src, hole.expected, &[])
         })
         .collect();
-    assert_eq!(shown, vec!["int".to_string(), "str".to_string()]);
+    assert_eq!(shown, vec!["i64".to_string(), "str".to_string()]);
 }
 
 /// A file with a hole still checks everything else — which is the sentence §4.16
@@ -53,10 +53,10 @@ function main()
 fn the_rest_of_the_file_is_still_checked() {
     let (out, _) = checked(
         "\
-function half(n: int) -> int
+function half(n: i64) -> i64
     return n / 2
 
-function later(n: int) -> str
+function later(n: i64) -> str
     ???
 ",
     );
@@ -71,8 +71,8 @@ fn a_hole_in_a_field_position_expects_the_fields_type() {
     assert_clean(
         "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function origin() -> Point
     return Point(x: 0, y: ???)

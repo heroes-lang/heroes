@@ -1,5 +1,5 @@
-function area(side: int) -> int
+function area(side: i64) -> i64
     return side * side
 
-function bad() -> int
+function bad() -> i64
     return "x"  #~ type_mismatch

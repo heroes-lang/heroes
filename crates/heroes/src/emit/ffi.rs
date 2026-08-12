@@ -142,7 +142,7 @@ fn not_constant(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
 }
 
 /// The header has no such name at all. A different mistake from the one above and
-/// it was being reported as that one — *"`sqlite3_openn` does not return `int`"*,
+/// it was being reported as that one — *"`sqlite3_openn` does not return `i64`"*,
 /// whose remedy, correcting the result type, cannot fix a name that does not
 /// exist (§4.17: the error carries what is needed to repair the program).
 ///

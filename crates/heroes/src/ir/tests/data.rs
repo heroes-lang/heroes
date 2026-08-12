@@ -13,7 +13,7 @@ use crate::ir::{Op, Term};
 #[test]
 fn a_record_construction_is_one_instruction() {
     let dumped = text(
-        "record Point\n    x: int\n    y: int\n\nfunction f() -> Point\n    return Point(x: 1, y: 2)\n",
+        "record Point\n    x: i64\n    y: i64\n\nfunction f() -> Point\n    return Point(x: 1, y: 2)\n",
     );
     assert!(dumped.contains("construct Point($t1, $t2)"), "{dumped}");
 }
@@ -25,7 +25,7 @@ fn a_record_construction_is_one_instruction() {
 #[test]
 fn a_label_is_not_carried_into_the_ir() {
     let dumped = text(
-        "function between(from: int, to: int) -> int\n    return to - from\n\nfunction f() -> int\n    return between(from: 1, to: 4)\n",
+        "function between(from: i64, to: i64) -> i64\n    return to - from\n\nfunction f() -> i64\n    return between(from: 1, to: 4)\n",
     );
     let call = dumped.lines().find(|line| line.contains("call heroes")).expect("the call");
     assert!(call.contains("call heroes between($t1, $t2)"), "{call}");
@@ -38,7 +38,7 @@ fn a_label_is_not_carried_into_the_ir() {
 #[test]
 fn a_field_read_is_an_index_printed_as_a_name() {
     let (program, _, dumped) = lowered(
-        "record Point\n    x: int\n    y: int\n\nfunction f(p: Point) -> int\n    return p.y\n",
+        "record Point\n    x: i64\n    y: i64\n\nfunction f(p: Point) -> i64\n    return p.y\n",
     );
     assert!(dumped.contains("field $t1.y"), "{dumped}");
     let reads: Vec<u32> = program.functions[0]
@@ -58,7 +58,7 @@ fn a_field_read_is_an_index_printed_as_a_name() {
 #[test]
 fn a_map_access_and_an_array_index_are_different_instructions() {
     let dumped = text(
-        "function f(xs: [int], m: {str: int}) -> int?\n    print(xs[0])\n    return m[\"a\"]\n",
+        "function f(xs: [i64], m: {str: i64}) -> i64?\n    print(xs[0])\n    return m[\"a\"]\n",
     );
     assert!(dumped.contains("index! $t"), "an array index can abort: {dumped}");
     assert!(dumped.contains("mapget $t"), "a map access cannot: {dumped}");
@@ -70,7 +70,7 @@ fn a_map_access_and_an_array_index_are_different_instructions() {
 #[test]
 fn a_mutation_writes_through_a_place() {
     let dumped = text(
-        "record Lex\n    pos: int\n\nfunction advance(@l: Lex)\n    l.pos @ l.pos + 1\n",
+        "record Lex\n    pos: i64\n\nfunction advance(@l: Lex)\n    l.pos @ l.pos + 1\n",
     );
     assert!(dumped.contains("store l.pos <- $t"), "{dumped}");
 }
@@ -82,7 +82,7 @@ fn a_mutation_writes_through_a_place() {
 #[test]
 fn every_exit_edge_copies_out_a_mutable_parameter() {
     let (program, _, dumped) = lowered(
-        "record R\n    pos: int\n\nfunction one(n: int) -> int?\n    if n == 0\n        return fail(\"zero\", \"no\")\n    return ok(n)\n\nfunction step(@r: R, n: int) -> int?\n    v = one(n)?\n    if v == 1\n        return ok(1)\n    r.pos @ r.pos + v\n    return ok(v)\n",
+        "record R\n    pos: i64\n\nfunction one(n: i64) -> i64?\n    if n == 0\n        return fail(\"zero\", \"no\")\n    return ok(n)\n\nfunction step(@r: R, n: i64) -> i64?\n    v = one(n)?\n    if v == 1\n        return ok(1)\n    r.pos @ r.pos + v\n    return ok(v)\n",
     );
     let step = program.functions.iter().find(|f| f.name == "step").expect("step");
     let returns = step
@@ -100,7 +100,7 @@ fn every_exit_edge_copies_out_a_mutable_parameter() {
 #[test]
 fn try_wraps_the_existing_failure() {
     let dumped = text(
-        "function one() -> int?\n    return ok(1)\n\nfunction f() -> int?\n    v = one()?\n    return ok(v + 1)\n",
+        "function one() -> i64?\n    return ok(1)\n\nfunction f() -> i64?\n    v = one()?\n    return ok(v + 1)\n",
     );
     assert!(dumped.contains("?: propagate"), "{dumped}");
     assert!(dumped.contains("payload $t"), "{dumped}");
@@ -111,11 +111,11 @@ fn try_wraps_the_existing_failure() {
 /// no edge at all. `.must()` and `.default(v)` need one each.
 #[test]
 fn is_err_needs_no_branch_and_must_needs_one() {
-    let cheap = text("function f(v: int?) -> bool\n    return v.is_err()\n");
+    let cheap = text("function f(v: i64?) -> bool\n    return v.is_err()\n");
     assert!(cheap.contains("= tag $t"), "{cheap}");
     assert!(!cheap.contains("branch"), "no edge is needed: {cheap}");
 
-    let costly = text("function f(v: int?) -> int\n    return v.must()\n");
+    let costly = text("function f(v: i64?) -> i64\n    return v.must()\n");
     assert!(costly.contains("must: abort"), "{costly}");
     assert!(costly.contains("abort must"), "{costly}");
     assert!(costly.contains("unreachable"), "an abort ends the block: {costly}");
@@ -127,7 +127,7 @@ fn is_err_needs_no_branch_and_must_needs_one() {
 #[test]
 fn assert_carries_its_source_text_and_both_sides() {
     let (program, _, dumped) = lowered(
-        "function add(a: int, b: int) -> int\n    return a + b\n\ntest \"it holds\"\n    assert add(a: 2, b: 3) == 5\n",
+        "function add(a: i64, b: i64) -> i64\n    return a + b\n\ntest \"it holds\"\n    assert add(a: 2, b: 3) == 5\n",
     );
     assert!(dumped.contains("\"add(a: 2, b: 3) == 5\""), "the text is interned: {dumped}");
     // Three operands: the text, the left value, the right value.
@@ -161,7 +161,7 @@ fn a_test_block_is_a_zero_argument_function() {
 #[test]
 fn a_wildcard_payload_binds_nothing() {
     let dumped = text(
-        "variant Token\n    num\n        v: int\n    plus\n\nfunction f(t: Token) -> int\n    return match t\n        .num _ => 0\n        .plus  => 1\n",
+        "variant Token\n    num\n        v: i64\n    plus\n\nfunction f(t: Token) -> i64\n    return match t\n        .num _ => 0\n        .plus  => 1\n",
     );
     assert!(!dumped.contains("store _ <-"), "{dumped}");
     assert!(!dumped.contains("payload"), "nothing is read: {dumped}");
@@ -172,6 +172,6 @@ fn a_wildcard_payload_binds_nothing() {
 /// what refuses to emit for it.
 #[test]
 fn a_hole_lowers_to_an_instruction() {
-    let dumped = text("function f() -> int\n    return ???\n");
+    let dumped = text("function f() -> i64\n    return ???\n");
     assert!(dumped.contains("= ???"), "{dumped}");
 }

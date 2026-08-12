@@ -8,13 +8,13 @@ fn a_cell_and_a_mutable_parameter_may_be_written() {
     assert_clean(
         "\
 record Lex
-    pos: int
+    pos: i64
 
 function advance(@l: Lex)
     l.pos @ l.pos + 1
 
-function count(n: int) -> int
-    total: int @ 0
+function count(n: i64) -> i64
+    total: i64 @ 0
     while total < n
         total @ total + 1
     return total
@@ -46,7 +46,7 @@ fn a_parameter_without_the_marker_cannot_be_written() {
     assert_eq!(
         diagnostics(
             "\
-function bump(n: int) -> int
+function bump(n: i64) -> i64
     n @ n + 1
     return n
 "
@@ -60,7 +60,7 @@ fn a_loop_variable_is_bound_afresh_and_is_not_a_cell() {
     assert_eq!(
         diagnostics(
             "\
-function main(xs: [int])
+function main(xs: [i64])
     for x in xs
         x @ x + 1
 "
@@ -74,7 +74,7 @@ fn there_are_no_mutable_globals() {
     assert_eq!(
         diagnostics(
             "\
-constant MAX: int
+constant MAX: i64
     64
 
 function main()
@@ -91,8 +91,8 @@ function main()
 fn the_index_of_an_element_write_is_a_read() {
     assert_clean(
         "\
-function main(n: int)
-    xs: [int] @ [0, 0]
+function main(n: i64)
+    xs: [i64] @ [0, 0]
     i = n
     xs[i] @ 1
     print(xs)
@@ -107,8 +107,8 @@ fn a_typo_on_the_left_of_a_mutation_is_an_unknown_name() {
     assert_eq!(
         diagnostics(
             "\
-function sum(xs: [int]) -> int
-    total: int @ 0
+function sum(xs: [i64]) -> i64
+    total: i64 @ 0
     for x in xs
         totl @ total + x
     return total

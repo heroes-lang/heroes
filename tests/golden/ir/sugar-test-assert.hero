@@ -3,7 +3,7 @@
 # the source text AND both sides — the spec promises both. The call is written
 # `add(a: 2, b: 3)` because §4.9 makes labels mandatory when two parameters
 # share a type: this case was written without them and the compiler refused it.
-function add(a: int, b: int) -> int
+function add(a: i64, b: i64) -> i64
     return a + b
 
 test "addition holds"

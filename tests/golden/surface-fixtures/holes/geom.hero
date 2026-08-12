@@ -1,2 +1,2 @@
-function f() -> int
+function f() -> i64
     return ???

@@ -3,7 +3,7 @@
 //!
 //! **There is no `match` in the IR.** There is a `switch` on a variant's tag,
 //! which is exhaustive by the time it gets here (M-data-declarations proved it) and therefore
-//! needs no default edge; and there is a chain of two-way branches for `int` and
+//! needs no default edge; and there is a chain of two-way branches for `i64` and
 //! `str` arms, where exhaustiveness is impossible and `_` is the only way to close
 //! the match (§4.7). Two shapes, because C has exactly the same two: a `switch` on
 //! an integer tag, and `if`-chains for everything else.
@@ -72,7 +72,7 @@ struct Plan {
 }
 
 /// The case names of whatever this `match` destructures, in tag order — or `None`
-/// where the subject is an `int` or a `str` and there are no cases to switch on.
+/// where the subject is an `i64` or a `str` and there are no cases to switch on.
 fn cases_of(ast: &Ast, checked: &Checked, src: &Source, subject: TyId) -> Option<Vec<String>> {
     match checked.types.get(subject) {
         Ty::Named(decl) => match &ast.decls[decl as usize].kind {
@@ -182,7 +182,7 @@ fn bind_payload(
     b.store(slot, payload, name);
 }
 
-/// A chain of equality tests: `int` and `str` arms, where exhaustiveness is
+/// A chain of equality tests: `i64` and `str` arms, where exhaustiveness is
 /// impossible and `_` closes the match (§4.7).
 fn literals(
     b: &mut Lowering,

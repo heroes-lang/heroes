@@ -67,7 +67,7 @@ fn prefix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> TypeId {
         _ => {
             if !cur.at_reported_error() {
                 let message = format!(
-                    "expected a type, found {} — a type is `int`, `f64`, `bool`, `str`, `[T]`, `{{K: V}}`, `T?`, `()`, or the name of a `record` or `variant`",
+                    "expected a type, found {} — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{{K: V}}`, `T?`, `()`, or the name of a `record` or `variant`",
                     cur.found(src)
                 );
                 cur.error("expected_type", message, cur.span());
@@ -189,14 +189,14 @@ fn function_params(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Vec<TypeId>
     params
 }
 
-/// `(function(x: int) -> int)` — the name that slipped in from the signature
+/// `(function(x: i64) -> i64)` — the name that slipped in from the signature
 /// it was copied from. The fix is `certain`: drop the name and the colon.
 fn named_parameter(cur: &mut Cursor, ast: &Ast, name: TypeId) {
     let name_span = ast.types[name.0 as usize].span;
     let colon = cur.bump().span;
     let mut diag = Diagnostic::new(
         "named_parameter_in_function_type",
-        "a function type lists types, not names — write `(function(int) -> int)`".to_string(),
+        "a function type lists types, not names — write `(function(i64) -> i64)`".to_string(),
         name_span.to(colon),
     );
     diag.fixes.push(Fix {

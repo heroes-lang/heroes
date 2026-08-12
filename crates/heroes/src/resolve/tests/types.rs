@@ -10,7 +10,7 @@ fn the_primitives_a_record_and_a_generic_all_resolve() {
     assert_clean(
         "\
 record Point
-    x: int
+    x: i64
     y: f64
 
 function first<A>(xs: [A], flag: bool, name: str) -> A
@@ -28,17 +28,17 @@ fn every_node_of_a_nested_type_is_answered() {
     let (out, _) = resolved(
         "\
 record Point
-    x: int
+    x: i64
 
-function f(m: {str: [Point]?}) -> int
+function f(m: {str: [Point]?}) -> i64
     print(m)
     return 0
 ",
     );
     let answers: Vec<TypeRef> =
         out.type_uses.iter().copied().filter(|t| *t != TypeRef::Unresolved).collect();
-    // `int` (the field), then str · Point inside the map, then the record and
-    // the `-> int`: every *named* node, and only those.
+    // `i64` (the field), then str · Point inside the map, then the record and
+    // the `-> i64`: every *named* node, and only those.
     assert!(answers.contains(&TypeRef::Prim(Prim::Int)));
     assert!(answers.contains(&TypeRef::Prim(Prim::Str)));
     assert!(answers.contains(&TypeRef::Top(0)));
@@ -51,9 +51,9 @@ fn an_unknown_type_names_the_nearest_candidate() {
         diagnostics(
             "\
 record Point
-    x: int
+    x: i64
 
-function f(p: Poimt) -> int
+function f(p: Poimt) -> i64
     return p.x
 "
         ),
@@ -68,10 +68,10 @@ fn a_function_in_type_position_is_told_what_it_is() {
     assert_eq!(
         diagnostics(
             "\
-function g() -> int
+function g() -> i64
     return 1
 
-function f(x: g) -> int
+function f(x: g) -> i64
     print(x)
     return 1
 "
@@ -90,7 +90,7 @@ fn a_type_parameter_does_not_escape_its_function() {
 function first<A>(xs: [A]) -> A
     return xs[0]
 
-function second(ys: [A]) -> int
+function second(ys: [A]) -> i64
     print(ys)
     return 0
 "
@@ -102,8 +102,8 @@ function second(ys: [A]) -> int
 /// §4.19's two FFI names are types like any other.
 #[test]
 fn ptr_and_cstr_are_primitives() {
-    assert_clean("extern \"stdio.h\"\n    function puts(s: cstr) -> int\n");
-    let (out, _) = resolved("extern \"stdlib.h\"\n    function malloc(n: int) -> ptr\n");
+    assert_clean("extern \"stdio.h\"\n    function puts(s: cstr) -> i64\n");
+    let (out, _) = resolved("extern \"stdlib.h\"\n    function malloc(n: i64) -> ptr\n");
     assert_eq!(out.type_at(TypeId(1)), TypeRef::Prim(Prim::Ptr));
 }
 
@@ -114,16 +114,16 @@ fn a_function_type_resolves_its_parameters_and_result() {
     assert_clean(
         "\
 record Point
-    x: int
+    x: i64
 
-function twice(f: (function(Point) -> int), p: Point) -> int
+function twice(f: (function(Point) -> i64), p: Point) -> i64
     return f(p) + f(p)
 ",
     );
     assert_eq!(
         diagnostics(
             "\
-function twice(f: (function(Poimt) -> int)) -> int
+function twice(f: (function(Poimt) -> i64)) -> i64
     return f(1)
 "
         ),
@@ -199,7 +199,7 @@ function main()
     // nothing else (§4.2) — so it is asked of `parse` rather than of `resolve`.
     let src = crate::source::Source::new(
         "test.hero".to_string(),
-        "record Box<A>\n    v: int\n\nfunction main()\n    print(1)\n".to_string(),
+        "record Box<A>\n    v: i64\n\nfunction main()\n    print(1)\n".to_string(),
     );
     let parsed = crate::syntax::parse(&src);
     assert!(
@@ -227,10 +227,10 @@ fn a_constant_defined_in_terms_of_itself_is_refused() {
             .collect()
     };
 
-    let direct = "constant A: int\n    A\n\nfunction main()\n    print(A)\n";
+    let direct = "constant A: i64\n    A\n\nfunction main()\n    print(A)\n";
     assert_eq!(codes(direct), vec!["constant_cycle".to_string()]);
 
-    let pair = "constant A: int\n    B\n\nconstant B: int\n    A\n\nfunction main()\n    print(A)\n";
+    let pair = "constant A: i64\n    B\n\nconstant B: i64\n    A\n\nfunction main()\n    print(A)\n";
     assert_eq!(codes(pair), vec!["constant_cycle".to_string()], "one diagnostic per cycle, not per constant");
 
     // The cycle that escapes through a function is reported as `constant_body`, and
@@ -239,12 +239,12 @@ fn a_constant_defined_in_terms_of_itself_is_refused() {
     // was already refused. One mistake, one diagnostic. The general walk is kept:
     // it is the loud direction, and what stays correct if the body rule is relaxed.
     let through =
-        "constant A: int\n    f()\n\nfunction f() -> int\n    return A\n\nfunction main()\n    print(A)\n";
+        "constant A: i64\n    f()\n\nfunction f() -> i64\n    return A\n\nfunction main()\n    print(A)\n";
     assert_eq!(codes(through), vec!["constant_body".to_string()], "the body rule fires first");
 
-    let legal = "constant START: int\n    2\n\nconstant CHAIN: int\n    START + 1\n\n\
-                 function even(n: int) -> bool\n    if n == 0\n        return true\n    return odd(n - 1)\n\n\
-                 function odd(n: int) -> bool\n    if n == 0\n        return false\n    return even(n - 1)\n\n\
+    let legal = "constant START: i64\n    2\n\nconstant CHAIN: i64\n    START + 1\n\n\
+                 function even(n: i64) -> bool\n    if n == 0\n        return true\n    return odd(n - 1)\n\n\
+                 function odd(n: i64) -> bool\n    if n == 0\n        return false\n    return even(n - 1)\n\n\
                  function main()\n    print(CHAIN)\n    print(even(4))\n";
     assert!(codes(legal).is_empty(), "a chain and mutual recursion are both legal (§4.2)");
 }

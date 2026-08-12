@@ -23,8 +23,8 @@ use super::decl::{function_tail, Linkage};
 
 /// ```text
 /// extern "sqlite3.h" link "sqlite3"
-///     function sqlite3_open(path: cstr, out: ptr) -> int
-///     function sqlite3_close(db: ptr) -> int
+///     function sqlite3_open(path: cstr, out: ptr) -> i64
+///     function sqlite3_close(db: ptr) -> i64
 /// ```
 ///
 /// The head line names the header and, optionally, the library; the members are
@@ -137,7 +137,7 @@ fn members(
                 if !cur.at(TokenKind::Ident) {
                     if !cur.at_reported_error() {
                         let shape = if is_constant {
-                            "`constant SQLITE_OK: int`"
+                            "`constant SQLITE_OK: i64`"
                         } else {
                             "`function sqrt(x: f64) -> f64`"
                         };
@@ -182,7 +182,7 @@ fn members(
 ///
 /// `kind` is what the member is, because the repair differs: a `function`'s code
 /// comes from C, a `constant`'s *value* does — and telling a reader who wrote
-/// `constant SQLITE_OK: int` with `0` under it that "it names a C function" sends
+/// `constant SQLITE_OK: i64` with `0` under it that "it names a C function" sends
 /// them looking for a function they never wrote (§4.17).
 pub(super) fn body_check(cur: &mut Cursor, kind: &str) {
     cur.skip_terminators();

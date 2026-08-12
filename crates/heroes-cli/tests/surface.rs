@@ -530,7 +530,7 @@ fn a_failing_test_shows_the_expression_and_both_sides() {
     std::fs::create_dir_all(dir.join("build")).expect("build/ is writable");
     std::fs::write(
         &file,
-        "function twice(n: int) -> int\n    return n * 2\n\n\
+        "function twice(n: i64) -> i64\n    return n * 2\n\n\
          test \"holds\"\n    assert twice(2) == 4\n\n\
          test \"fails\"\n    assert twice(2) == 5\n",
     )
@@ -706,7 +706,7 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
     assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("error[ffi_return_type]"), "{stderr}");
-    assert!(stderr.contains("does not return `int`"), "{stderr}");
+    assert!(stderr.contains("does not return `i64`"), "{stderr}");
     assert!(stderr.contains("math.h"), "{stderr}");
     assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
     assert!(!stderr.contains("_Static_assert"), "it showed generated C:\n{stderr}");
@@ -714,7 +714,7 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
 }
 
 /// **A pointer return was the one case that could not reach its own diagnostic**
-/// (panel 042, 2026-08-12). `extern function getenv(name: cstr) -> int` is an
+/// (panel 042, 2026-08-12). `extern function getenv(name: cstr) -> i64` is an
 /// ordinary mistake — `getenv` returns `char *` — and it answered `internal
 /// error … invalid argument type 'char *' to unary expression` at exit 2, which
 /// CLAUDE.md §7 makes a claim that the *compiler* is wrong.
@@ -827,7 +827,7 @@ fn a_wrong_extern_constant_type_is_the_authors_error_not_the_compilers() {
     assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("error[ffi_constant_type]"), "{stderr}");
-    assert!(stderr.contains("`M_PI` is not `int`"), "{stderr}");
+    assert!(stderr.contains("`M_PI` is not `i64`"), "{stderr}");
     assert!(stderr.contains("math.h"), "{stderr}");
     // Not the function's diagnostic: a constant does not "return" anything.
     assert!(!stderr.contains("does not return"), "{stderr}");

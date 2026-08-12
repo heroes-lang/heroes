@@ -4,7 +4,7 @@
 # way round type-checks perfectly and does the wrong thing, which is the classic
 # LLM inversion and metric 3's `swap-args` operator. The rule fires on the
 # *written* signature, before any generic is instantiated, so `pair(1, 2)` at
-# `A := int` is caught for the same reason.
+# `A := i64` is caught for the same reason.
 function copy_text(from: str, to: str) -> str
     return from + to
 

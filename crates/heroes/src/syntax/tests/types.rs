@@ -12,27 +12,27 @@ fn field(ty: &str) -> String {
 
 #[test]
 fn the_primitive_names_pass_through() {
-    for name in ["int", "f64", "bool", "str", "ptr", "cstr", "Point"] {
+    for name in ["i64", "f64", "bool", "str", "ptr", "cstr", "Point"] {
         assert_eq!(field(name), format!("file test.hero\n  record T\n    field f: {name}\n"));
     }
 }
 
 #[test]
 fn containers_nest() {
-    assert_eq!(field("[int]"), "file test.hero\n  record T\n    field f: [int]\n");
-    assert_eq!(field("{str: int}"), "file test.hero\n  record T\n    field f: {str: int}\n");
+    assert_eq!(field("[i64]"), "file test.hero\n  record T\n    field f: [i64]\n");
+    assert_eq!(field("{str: i64}"), "file test.hero\n  record T\n    field f: {str: i64}\n");
     assert_eq!(
-        field("{str: [{int: bool}]}"),
-        "file test.hero\n  record T\n    field f: {str: [{int: bool}]}\n"
+        field("{str: [{i64: bool}]}"),
+        "file test.hero\n  record T\n    field f: {str: [{i64: bool}]}\n"
     );
 }
 
 /// §4.6: `T?` is a `T` or an error, and it is the only postfix type.
 #[test]
 fn fallible_applies_to_whatever_precedes_it() {
-    assert_eq!(field("int?"), "file test.hero\n  record T\n    field f: int?\n");
-    assert_eq!(field("[int]?"), "file test.hero\n  record T\n    field f: [int]?\n");
-    assert_eq!(field("{str: int}?"), "file test.hero\n  record T\n    field f: {str: int}?\n");
+    assert_eq!(field("i64?"), "file test.hero\n  record T\n    field f: i64?\n");
+    assert_eq!(field("[i64]?"), "file test.hero\n  record T\n    field f: [i64]?\n");
+    assert_eq!(field("{str: i64}?"), "file test.hero\n  record T\n    field f: {str: i64}?\n");
 }
 
 /// §4.6 refuses the `T??` level ambiguity in the language, so the parser
@@ -41,11 +41,11 @@ fn fallible_applies_to_whatever_precedes_it() {
 #[test]
 fn fallible_does_not_nest() {
     assert_eq!(
-        field("int??"),
+        field("i64??"),
         "\
 file test.hero
   record T
-    field f: int?
+    field f: i64?
 DIAG test.hero:2:12: error[nested_fallible]: a fallible type cannot be fallible twice — `T?` already carries the error case (§4.6)
 "
     );
@@ -56,20 +56,20 @@ DIAG test.hero:2:12: error[nested_fallible]: a fallible type cannot be fallible 
 #[test]
 fn function_types_take_any_arity() {
     assert_eq!(
-        field("(function(int) -> bool)"),
-        "file test.hero\n  record T\n    field f: (function(int) -> bool)\n"
+        field("(function(i64) -> bool)"),
+        "file test.hero\n  record T\n    field f: (function(i64) -> bool)\n"
     );
     assert_eq!(
-        field("(function(int, int) -> bool)"),
-        "file test.hero\n  record T\n    field f: (function(int, int) -> bool)\n"
+        field("(function(i64, i64) -> bool)"),
+        "file test.hero\n  record T\n    field f: (function(i64, i64) -> bool)\n"
     );
     assert_eq!(
-        field("(function() -> int)"),
-        "file test.hero\n  record T\n    field f: (function() -> int)\n"
+        field("(function() -> i64)"),
+        "file test.hero\n  record T\n    field f: (function() -> i64)\n"
     );
     assert_eq!(
-        field("(function(int) -> ())"),
-        "file test.hero\n  record T\n    field f: (function(int) -> ())\n"
+        field("(function(i64) -> ())"),
+        "file test.hero\n  record T\n    field f: (function(i64) -> ())\n"
     );
 }
 
@@ -84,12 +84,12 @@ fn unit_is_a_type_like_any_other() {
 #[test]
 fn a_named_parameter_in_a_function_type_is_loud() {
     assert_eq!(
-        field("(function(x: int) -> int)"),
+        field("(function(x: i64) -> i64)"),
         "\
 file test.hero
   record T
-    field f: (function(int) -> int)
-DIAG test.hero:2:18: error[named_parameter_in_function_type]: a function type lists types, not names — write `(function(int) -> int)`
+    field f: (function(i64) -> i64)
+DIAG test.hero:2:18: error[named_parameter_in_function_type]: a function type lists types, not names — write `(function(i64) -> i64)`
 "
     );
 }
@@ -99,28 +99,28 @@ DIAG test.hero:2:18: error[named_parameter_in_function_type]: a function type li
 #[test]
 fn fn_is_still_a_reserved_word_inside_a_type() {
     assert_eq!(
-        dump("record T\n    f: (fn(int) -> int)\n"),
+        dump("record T\n    f: (fn(i64) -> i64)\n"),
         "\
 file test.hero
   record T
     field f: <?>
-DIAG test.hero:2:9: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: int) -> int`
+DIAG test.hero:2:9: error[reserved_word]: `fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`
 "
     );
 }
 
 /// One node per written constructor, and `?` *wraps* rather than annotates:
-/// `{str: [int]}?` is five nodes, not three. Pinned because the count is the
+/// `{str: [i64]}?` is five nodes, not three. Pinned because the count is the
 /// whole reason the arena exists — a recursive type needs no pointers, only
 /// indices, which is what lets it port to Heroes unchanged (§4.10).
 #[test]
 fn the_arena_holds_one_node_per_written_constructor() {
     let src = crate::source::Source::new(
         "test.hero".to_string(),
-        "record T\n    f: {str: [int]}?\n".to_string(),
+        "record T\n    f: {str: [i64]}?\n".to_string(),
     );
     let out = crate::syntax::parse(&src);
     assert_eq!(out.diagnostics.len(), 0);
-    // str · int · [int] · {str: [int]} · {str: [int]}?
+    // str · int · [i64] · {str: [i64]} · {str: [i64]}?
     assert_eq!(out.ast.types.len(), 5);
 }

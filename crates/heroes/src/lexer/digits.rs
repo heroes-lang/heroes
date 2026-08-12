@@ -16,7 +16,7 @@
 use crate::diagnostics::Diagnostic;
 use crate::source::Span;
 
-/// The four bases a literal may be written in. `int` is one type; this is only
+/// The four bases a literal may be written in. `i64` is one type; this is only
 /// how its digits are spelled, which is why there is no `Base` anywhere outside
 /// the lexer.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -92,14 +92,14 @@ impl Base {
     }
 }
 
-/// The value of an `int` literal, or `None` if the digits do not fit one.
+/// The value of an `i64` literal, or `None` if the digits do not fit one.
 ///
 /// **This is the only place that reads a literal's digits.** The frontend calls
 /// it to decide whether to report `int_out_of_range`, and the lowering calls it
 /// to get the number — so the two can no longer disagree about what `0x10` is.
 ///
 /// The reading is by **value**, not by bit pattern: `0xffffffffffffffff` does
-/// not fit an `int` and is refused, exactly as its decimal twin
+/// not fit an `i64` and is refused, exactly as its decimal twin
 /// `18446744073709551615` is. Panel 041 vetoed the bit-pattern reading, on the
 /// ground that it deletes a compile error — sixteen `f`s would silently become
 /// `-1` and `0xFFFFFFFF00000000` would silently become `-4294967296`.
@@ -115,7 +115,7 @@ pub(crate) fn decode_int(text: &str) -> Option<i64> {
 /// sentence out separately.
 ///
 /// The note answers **in the notation the question was asked in**: a reader who
-/// wrote `0xffffffffffffffff` is told the largest `int` is `0x7fffffffffffffff`,
+/// wrote `0xffffffffffffffff` is told the largest `i64` is `0x7fffffffffffffff`,
 /// because being handed a decimal boundary for a hexadecimal mistake is the
 /// second half of the same error (CLAUDE.md §8 — everything needed to fix the
 /// program without opening another file).
@@ -128,14 +128,14 @@ pub(crate) fn int_out_of_range(text: &str, span: Span) -> Diagnostic {
         Base::Hexadecimal => format!("0x{:x}", i64::MAX),
     };
     let note = if base == Base::Decimal {
-        "`int` is a 64-bit signed integer and the only integer type, so it holds -9223372036854775808 through 9223372036854775807".to_string()
+        "`i64` is a 64-bit signed integer and the only integer type, so it holds -9223372036854775808 through 9223372036854775807".to_string()
     } else {
         format!(
-            "`int` is a 64-bit signed integer and the only integer type, so the largest one {} literal can write is `{largest}` (9223372036854775807)",
+            "`i64` is a 64-bit signed integer and the only integer type, so the largest one {} literal can write is `{largest}` (9223372036854775807)",
             base.a_name()
         )
     };
-    Diagnostic::new("int_out_of_range", format!("`{text}` does not fit in an `int`"), span)
+    Diagnostic::new("int_out_of_range", format!("`{text}` does not fit in an `i64`"), span)
         .with_note(note)
 }
 
@@ -149,7 +149,7 @@ fn split_base(text: &str) -> (Base, &str) {
     (Base::Decimal, text)
 }
 
-/// The canonical spelling of an `int` literal: what the author wrote, with the
+/// The canonical spelling of an `i64` literal: what the author wrote, with the
 /// digits lowercased.
 ///
 /// A C header spells a mask `0xFF` and a reader copies it as written, so the

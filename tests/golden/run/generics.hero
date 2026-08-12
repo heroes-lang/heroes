@@ -5,11 +5,11 @@
 # a type after it — "a `TyId` past the end of this table would read as uncounted,
 # which is a leak that no test can see". Monomorphisation interns `[str]` where
 # only `[A]` existed, so the table is rebuilt after the pass, and this program is
-# what proves it: **one generic instantiated at `str` and at `int` in the same
+# what proves it: **one generic instantiated at `str` and at `i64` in the same
 # file**, run under `--sanitize` with the leak counter asserted at exit.
 #
 # If the rebuild were missing, the `str` instance would read as uncounted and leak
-# silently while the `int` instance stayed correct — which is why one type is not
+# silently while the `i64` instance stayed correct — which is why one type is not
 # enough to test it.
 # Bulk regression case.
 
@@ -26,7 +26,7 @@ function convert<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
         out @ push(out, f(x))
     return out
 
-function label(n: int) -> str
+function label(n: i64) -> str
     return "#" + to_str(n)
 
 function main()

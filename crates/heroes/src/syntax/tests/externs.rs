@@ -33,10 +33,10 @@ file test.hero
 #[test]
 fn the_library_is_carried_beside_the_header() {
     assert_eq!(
-        dump("extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_close(db: ptr) -> int\n"),
+        dump("extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_close(db: ptr) -> i64\n"),
         "\
 file test.hero
-  extern \"sqlite3.h\" link \"sqlite3\" function sqlite3_close(db: ptr) -> int
+  extern \"sqlite3.h\" link \"sqlite3\" function sqlite3_close(db: ptr) -> i64
 "
     );
 }
@@ -47,11 +47,11 @@ file test.hero
 #[test]
 fn two_groups_do_not_borrow_each_others_headers() {
     assert_eq!(
-        dump("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nextern \"stdio.h\"\n    function puts(s: cstr) -> int\n"),
+        dump("extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nextern \"stdio.h\"\n    function puts(s: cstr) -> i64\n"),
         "\
 file test.hero
   extern \"math.h\" function sqrt(x: f64) -> f64
-  extern \"stdio.h\" function puts(s: cstr) -> int
+  extern \"stdio.h\" function puts(s: cstr) -> i64
 "
     );
 }
@@ -85,10 +85,10 @@ DIAG test.hero:3:1: error[expected_extern_block]: an `extern` group's signatures
 #[test]
 fn link_without_a_library_name_is_refused() {
     assert_eq!(
-        dump("extern \"sqlite3.h\" link\n    function sqlite3_close(db: ptr) -> int\n"),
+        dump("extern \"sqlite3.h\" link\n    function sqlite3_close(db: ptr) -> i64\n"),
         "\
 file test.hero
-  extern \"sqlite3.h\" function sqlite3_close(db: ptr) -> int
+  extern \"sqlite3.h\" function sqlite3_close(db: ptr) -> i64
 DIAG test.hero:1:24: error[expected_link_name]: expected the library's name in quotes after `link`, found end of line — `link \"sqlite3\"`, which is `-lsqlite3` to the linker
 "
     );
@@ -116,11 +116,11 @@ DIAG test.hero:2:5: error[expected_extern_signature]: expected a `function` or a
 #[test]
 fn a_constant_is_a_group_member() {
     assert_eq!(
-        dump("extern \"sqlite3.h\" link \"sqlite3\"\n    constant SQLITE_OK: int\n    function sqlite3_close(db: ptr) -> int\n"),
+        dump("extern \"sqlite3.h\" link \"sqlite3\"\n    constant SQLITE_OK: i64\n    function sqlite3_close(db: ptr) -> i64\n"),
         "\
 file test.hero
-  extern \"sqlite3.h\" link \"sqlite3\" constant SQLITE_OK: int
-  extern \"sqlite3.h\" link \"sqlite3\" function sqlite3_close(db: ptr) -> int
+  extern \"sqlite3.h\" link \"sqlite3\" constant SQLITE_OK: i64
+  extern \"sqlite3.h\" link \"sqlite3\" function sqlite3_close(db: ptr) -> i64
 "
     );
 }

@@ -11,7 +11,7 @@
 # mistake: the promise is what was broken.
 # Bulk regression case.
 
-function sign(x: int) -> int    #~ missing_return
+function sign(x: i64) -> i64    #~ missing_return
     if x > 0
         return 1
 

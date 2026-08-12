@@ -10,7 +10,7 @@
 //! is `return;`. The panel's compiler-engineer measured this one before any line of
 //! the emitter existed.
 //!
-//! Only `int`, `bool` and `()` occur here at M-scalars-run. The rest of the table is present
+//! Only `i64`, `bool` and `()` occur here at M-scalars-run. The rest of the table is present
 //! because `gate.rs` — not this file — is where a form is refused: a type that has
 //! a C spelling but no runtime support yet is the gate's business, and keeping the
 //! spellings here means M-strings-ownership and M-value-aggregates delete gate rows instead of adding cases.
@@ -33,7 +33,7 @@ pub(super) struct Names {
     ///
     /// Generated rather than declared: there is no `record` in the source for a
     /// `T?`, and every `T` needs its own struct because the payload is by value.
-    /// Named by INDEX rather than by spelling — `int?` and `[int]?` sanitise to the
+    /// Named by INDEX rather than by spelling — `int?` and `[i64]?` sanitise to the
     /// same identifier, and a collision here is two types sharing one C name. The
     /// index is assigned in `TyId` order, which is a function of the program, so
     /// the double-emit determinism test (CLAUDE.md §7) covers it.

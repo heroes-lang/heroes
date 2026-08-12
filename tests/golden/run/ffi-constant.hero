@@ -22,13 +22,13 @@ extern "math.h"
     function sqrt(x: f64) -> f64
 
 extern "stdio.h"
-    constant SEEK_SET: int
-    constant SEEK_END: int
+    constant SEEK_SET: i64
+    constant SEEK_END: i64
 
 function main()
     # `3.14159…` is in `math.h`, and the program says only its name.
     print(M_PI)
     print(sqrt(M_PI * M_PI))
-    # Two `int` macros, and the arithmetic is the language's own.
+    # Two `i64` macros, and the arithmetic is the language's own.
     print(SEEK_SET)
     print(SEEK_END - SEEK_SET)

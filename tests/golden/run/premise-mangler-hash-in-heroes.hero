@@ -6,7 +6,7 @@
 #
 # HOW IT DIED THE FIRST TIME (2026-08-12, panel 039's verification): the hash was
 # FNV-1a, and all three of its ingredients are inexpressible in Heroes —
-# `14695981039346656037` is `int_out_of_range` because `int` is signed,
+# `14695981039346656037` is `int_out_of_range` because `i64` is signed,
 # `hash * 1099511628211` is `panic: integer overflow` because §4.3 makes overflow
 # an abort, and `^` is `reserved_operator`. The comment claiming portability had
 # been sitting above code that was not portable, and nothing said so: the closure
@@ -18,19 +18,19 @@
 # `the_typehash_is_computable_in_heroes` says so by name.
 #
 # The two numbers are `mangle::HASH_BASE` and `mangle::HASH_MODULUS`. Every
-# intermediate fits: (M - 1) * B + 255 is about 2.8e11 against `int`'s 9.2e18.
+# intermediate fits: (M - 1) * B + 255 is about 2.8e11 against `i64`'s 9.2e18.
 # Bulk regression case.
 
-function typehash(rendered: str) -> int
-    h: int @ 0
+function typehash(rendered: str) -> i64
+    h: i64 @ 0
     for i in range(from: 0, to: len(rendered))
         h @ (h * 131 + rendered[i]) % 2147483647
     return h
 
 function main()
-    print(typehash("map<int, str>"))
-    print(typehash("fold<int, int>"))
+    print(typehash("map<i64, str>"))
+    print(typehash("fold<i64, i64>"))
     # The two renderings that would collide under a readable suffix — the reason
     # `instance` is a hash at all (panel 029 R5). They must not collide here.
-    print(typehash("pair<int, str_x>"))
-    print(typehash("pair<int_str, x>"))
+    print(typehash("pair<i64, str_x>"))
+    print(typehash("pair<i64_str, x>"))

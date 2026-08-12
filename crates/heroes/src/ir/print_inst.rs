@@ -8,7 +8,7 @@
 //! - **the destination is left of `=` (a value) or of `<-` (a place)**, never
 //!   after a comma, because LLVM's `store` is value-first and a reader who has seen
 //!   LLVM will guess wrong;
-//! - **`!` marks an instruction that can abort** — `int` overflow, division by
+//! - **`!` marks an instruction that can abort** — `i64` overflow, division by
 //!   zero, an out-of-bounds index (§4.3, §4.9). `f64` arithmetic carries no mark,
 //!   which makes the mark a type distinction as well as a warning.
 //!
@@ -229,7 +229,7 @@ fn word_of(op: BinOp) -> &'static str {
     }
 }
 
-/// Whether this operation can stop the program. `int` arithmetic can (overflow
+/// Whether this operation can stop the program. `i64` arithmetic can (overflow
 /// aborts, §4.3; division by zero aborts, §4.6); `f64` arithmetic cannot; a
 /// comparison never can.
 fn aborts(op: BinOp, operands: crate::types::TyId, int: crate::types::TyId) -> bool {

@@ -7,52 +7,52 @@
 # can express its own compiler's shapes.
 #
 # What each line is here for: `record` and `variant` with an exhaustive `match` ·
-# `[T]`, `{K: V}`, `str`, `int`, `bool`, `()` · `T?` with `?`, `.must()` and
+# `[T]`, `{K: V}`, `str`, `i64`, `bool`, `()` · `T?` with `?`, `.must()` and
 # `.default()` · `=` and `@` bindings · an `@` parameter with copy-out · `if`,
 # `while`, `for` over an array and over a map's keys, `break`/`continue` ·
 # `return` · UFCS · a function value · a generic · `test` + `assert` · and the
 # library: `print`, `len`, `push`, `slice`, `chars`, `keys`, `sort`, `join`,
-# `to_int`/`to_f64`/`to_str`, `map`.
+# `to_i64`/`to_f64`/`to_str`, `map`.
 # Bulk regression case.
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 variant Shape
     dot
     seg
         from: Point
 
-function area(s: Shape) -> int
+function area(s: Shape) -> i64
     return match s
         .dot => 0
         .seg g => g.from.x
 
-function shift(@p: Point, by: int)
+function shift(@p: Point, by: i64)
     p @ Point(x: p.x + by, y: p.y)
 
-function halve(n: int) -> int?
+function halve(n: i64) -> i64?
     if n % 2 == 1
         return fail("odd", "not even")
     return ok(n / 2)
 
-function chain(n: int) -> int?
+function chain(n: i64) -> i64?
     v = halve(n)?
     return ok(v + 1)
 
-function show(n: int) -> str
+function show(n: i64) -> str
     return to_str(n)
 
 function main()
     xs = [1, 2, 3]
-    m: {str: int} @ {}
+    m: {str: i64} @ {}
     m["a"] @ 1
     p: Point @ Point(x: 1, y: 2)
     shift(@p, by: 3)
-    total: int @ 0
+    total: i64 @ 0
     for k in sort(keys(m))
         total @ total + m[k].must()
-    i: int @ 0
+    i: i64 @ 0
     while i < len(xs)
         if xs[i] == 2
             i @ i + 1
@@ -61,7 +61,7 @@ function main()
         i @ i + 1
     print(total, " ", area(.seg(from: p)), " ", chain(4).default(0 - 1))
     print(xs.len(), " ", join(map(xs, show), ","))
-    print(chars("ab")[0], slice("abc", from: 0, to: 2), to_int(1.9), to_f64(2))
+    print(chars("ab")[0], slice("abc", from: 0, to: 2), to_i64(1.9), to_f64(2))
 
 test "the closure list runs"
     assert 1 + 1 == 2

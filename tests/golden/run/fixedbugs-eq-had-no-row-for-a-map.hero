@@ -16,11 +16,11 @@
 # did not show the gap.
 
 record Box
-    m: {str: int}
-    o: int?
-    f: (function(int) -> int)
+    m: {str: i64}
+    o: i64?
+    f: (function(i64) -> i64)
 
-function bump(n: int) -> int
+function bump(n: i64) -> i64
     return n + 1
 
 function main()
@@ -32,7 +32,7 @@ function main()
 
     # The sharp one: a record with a map inside it, used as a map KEY. The
     # insert hashes and the lookup compares, so the defect needed both halves.
-    seen: {Box: int} @ {}
+    seen: {Box: i64} @ {}
     seen[a] @ 1
     print(seen[b].default(0))
     print(seen[c].default(0))

@@ -6,16 +6,16 @@
 
 # The largest element. Fails on nothing: an empty array has no largest, so
 # the caller is asked for a floor instead.
-function largest_or(xs: [int], floor: int) -> int
-    best: int @ floor
+function largest_or(xs: [i64], floor: i64) -> i64
+    best: i64 @ floor
     for x in xs
         if x > best
             best @ x
     return best
 
 # Sums until the running total would pass a limit, then stops.
-function sum_until(xs: [int], limit: int) -> int
-    total: int @ 0
+function sum_until(xs: [i64], limit: i64) -> i64
+    total: i64 @ 0
     for x in xs
         if total + x > limit
             break
@@ -23,8 +23,8 @@ function sum_until(xs: [int], limit: int) -> int
     return total
 
 # Counts the even ones, and shows `continue` earning its keep.
-function even_count(xs: [int]) -> int
-    seen: int @ 0
+function even_count(xs: [i64]) -> i64
+    seen: i64 @ 0
     for x in xs
         if x % 2 != 0
             continue
@@ -33,9 +33,9 @@ function even_count(xs: [int]) -> int
 
 # The conditional loop, with the counter visible: `while cond` has no header
 # that hides where the index changes.
-function digits_in(n: int) -> int
-    left: int @ n
-    digits: int @ 1
+function digits_in(n: i64) -> i64
+    left: i64 @ n
+    digits: i64 @ 1
     while left >= 10
         left @ left / 10
         digits @ digits + 1
@@ -43,7 +43,7 @@ function digits_in(n: int) -> int
 
 # The loop variable is not needed, so it is `_` — the same wildcard a pattern
 # uses, and the reason an unused name is never an accident here.
-function repeat_dash(times: int) -> str
+function repeat_dash(times: i64) -> str
     out: str @ ""
     for _ in range(from: 0, to: times)
         out @ out + "-"

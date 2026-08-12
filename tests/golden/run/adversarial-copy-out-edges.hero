@@ -9,7 +9,7 @@
 #
 # Both arguments are labelled because two parameters share a type (§4.9).
 
-function walk(@n: int, @steps: int) -> bool
+function walk(@n: i64, @steps: i64) -> bool
     while n > 0
         steps @ steps + 1
         n @ n - 1
@@ -18,14 +18,14 @@ function walk(@n: int, @steps: int) -> bool
     return false
 
 function main()
-    n: int @ 5
-    steps: int @ 0
+    n: i64 @ 5
+    steps: i64 @ 0
     hit = walk(n: @n, steps: @steps)
     print(hit)
     print(n)
     print(steps)
-    m: int @ 0
-    taken: int @ 0
+    m: i64 @ 0
+    taken: i64 @ 0
     print(walk(n: @m, steps: @taken))
     print(m)
     print(taken)

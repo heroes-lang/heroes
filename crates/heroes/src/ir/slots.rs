@@ -4,7 +4,7 @@
 //! **A synthetic name cannot collide.** It starts with `$`, and `$` is not in the
 //! language — not an identifier character, not an operator, not a comment marker.
 //! This is the llm-ergonomist's condition, and the reason it is a condition rather
-//! than a preference is that `t0: int @ 0` is legal Heroes: without the sigil the
+//! than a preference is that `t0: i64 @ 0` is legal Heroes: without the sigil the
 //! dump would be ambiguous on input the author may legally write.
 //!
 //! The two run arenas (`args`, `steps`) are here for the Cyclone rule (CLAUDE.md

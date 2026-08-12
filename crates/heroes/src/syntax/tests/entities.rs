@@ -1,5 +1,5 @@
 //! The four entities and their two neighbours (`extern`, `test`) — one
-//! keyword-first shape, `constant MAX: int` / `function f(…)` / `record R` /
+//! keyword-first shape, `constant MAX: i64` / `function f(…)` / `record R` /
 //! `variant V`, seen six ways (design.md §4.2, §4.18, §4.19; panel 018).
 
 use super::dump;
@@ -12,10 +12,10 @@ fn empty_file_has_no_declarations() {
 #[test]
 fn constant_carries_its_type_and_its_value() {
     assert_eq!(
-        dump("constant MAX_DEPTH: int\n    64\n"),
+        dump("constant MAX_DEPTH: i64\n    64\n"),
         "\
 file test.hero
-  constant MAX_DEPTH: int
+  constant MAX_DEPTH: i64
     expr 64
 "
     );
@@ -24,10 +24,10 @@ file test.hero
 #[test]
 fn function_signature_reads_back_as_written() {
     assert_eq!(
-        dump("function dist2(a: Point, b: Point) -> int\n    return 1\n"),
+        dump("function dist2(a: Point, b: Point) -> i64\n    return 1\n"),
         "\
 file test.hero
-  function dist2(a: Point, b: Point) -> int
+  function dist2(a: Point, b: Point) -> i64
     return 1
 "
     );
@@ -77,12 +77,12 @@ file test.hero
 #[test]
 fn record_is_one_field_per_line() {
     assert_eq!(
-        dump("record Point\n    x: int\n    y: int\n"),
+        dump("record Point\n    x: i64\n    y: i64\n"),
         "\
 file test.hero
   record Point
-    field x: int
-    field y: int
+    field x: i64
+    field y: i64
 "
     );
 }
@@ -92,12 +92,12 @@ file test.hero
 #[test]
 fn variant_cases_carry_optional_payloads() {
     assert_eq!(
-        dump("variant Token\n    num\n        v: int\n    plus\n"),
+        dump("variant Token\n    num\n        v: i64\n    plus\n"),
         "\
 file test.hero
   variant Token
     case num
-      field v: int
+      field v: i64
     case plus
 "
     );
@@ -134,22 +134,22 @@ fn a_whole_file_keeps_its_reading_order() {
         dump(
             "\
 record Point
-    x: int
+    x: i64
 
-function dist2(a: Point, b: Point) -> int
+function dist2(a: Point, b: Point) -> i64
     return 1
 
-constant MAX: int
+constant MAX: i64
     64
 "
         ),
         "\
 file test.hero
   record Point
-    field x: int
-  function dist2(a: Point, b: Point) -> int
+    field x: i64
+  function dist2(a: Point, b: Point) -> i64
     return 1
-  constant MAX: int
+  constant MAX: i64
     expr 64
 "
     );

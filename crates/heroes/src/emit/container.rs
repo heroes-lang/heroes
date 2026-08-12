@@ -80,7 +80,7 @@ pub(super) fn read_element(
     };
     let spelling = super::ctype::c_type(types.names, types.checked, element)?;
     // `{spelling} const *`, not `const {spelling} *`: the two differ exactly when the
-    // element is itself a pointer. For `[[int]]` the element spelling is
+    // element is itself a pointer. For `[[i64]]` the element spelling is
     // `HeroArrayHeader *`, and the prefix form reads as pointer-to-pointer-to-const,
     // whose dereference is a `const HeroArrayHeader *` — assigning that to the
     // temporary is `-Wincompatible-pointer-types-discards-qualifiers`. The suffix form

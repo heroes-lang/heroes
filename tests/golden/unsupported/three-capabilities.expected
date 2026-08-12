@@ -4,7 +4,7 @@ unsupported[builtin]: the built-in `sort` on elements other than `int`, `f64` or
   59 |     print(len(sort(ps)))      #~ builtin
      |               ^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_i64`, `to_str` — no other built-in is emitted yet
 
 unsupported[unit_element]: `()` as the element of an array is not emitted yet
   at tests/golden/unsupported/three-capabilities.hero:66:5
@@ -12,4 +12,4 @@ unsupported[unit_element]: `()` as the element of an array is not emitted yet
   66 |     us: [()] @ []      #~ unit_element
      |     ^^^^^^^^^^^^^
   note: no change to this file will fix this
-  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_int`, `to_str` — no other built-in is emitted yet
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `slice`, `sort`, `to_f64`, `to_i64`, `to_str` — no other built-in is emitted yet

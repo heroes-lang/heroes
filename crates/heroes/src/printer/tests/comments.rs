@@ -11,9 +11,9 @@ use super::format;
 /// documentation (§4.1), so the formatter may never open or close that gap.
 #[test]
 fn a_blank_line_between_comment_and_declaration_is_preserved() {
-    let doc = "# The limit.\nconstant MAX: int\n    64\n";
+    let doc = "# The limit.\nconstant MAX: i64\n    64\n";
     assert_eq!(format(doc), doc);
-    let remark = "# Just a remark.\n\nconstant MAX: int\n    64\n";
+    let remark = "# Just a remark.\n\nconstant MAX: i64\n    64\n";
     assert_eq!(format(remark), remark);
 }
 
@@ -33,12 +33,12 @@ function main()
 #[test]
 fn declarations_are_separated_by_exactly_one_blank_line() {
     assert_eq!(
-        format("constant A: int\n    1\nconstant B: int\n    2\n"),
-        "constant A: int\n    1\n\nconstant B: int\n    2\n"
+        format("constant A: i64\n    1\nconstant B: i64\n    2\n"),
+        "constant A: i64\n    1\n\nconstant B: i64\n    2\n"
     );
     assert_eq!(
-        format("constant A: int\n    1\n\n\n\nconstant B: int\n    2\n"),
-        "constant A: int\n    1\n\nconstant B: int\n    2\n"
+        format("constant A: i64\n    1\n\n\n\nconstant B: i64\n    2\n"),
+        "constant A: i64\n    1\n\nconstant B: i64\n    2\n"
     );
 }
 
@@ -61,12 +61,12 @@ fn one_blank_line_inside_a_body_survives() {
 #[test]
 fn an_arm_does_not_steal_the_next_declarations_doc_comment() {
     let text = "\
-function f(k: int) -> int
+function f(k: i64) -> i64
     return match k
         _ => 2
 
 # Doc for g.
-function g() -> int
+function g() -> i64
     return 1
 ";
     assert_eq!(format(text), text);

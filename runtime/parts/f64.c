@@ -14,7 +14,7 @@
  * `1.5` in another cannot be a golden test — and the M-selfhost-fixpoint fixpoint compares
  * generated C byte for byte.
  *
- * `to_int`'s range check is the one piece of arithmetic in this runtime that
+ * `to_i64`'s range check is the one piece of arithmetic in this runtime that
  * was arrived at by testing thirteen values rather than by reasoning; the
  * comment on it says which two plausible spellings are wrong.
  *
@@ -151,7 +151,7 @@ HeroStr hero_str_identity(HeroStr s) {
  *     the largest acceptable value is the double just below 2^63. */
 int64_t hero_f64_to_int(double v) {
     if (!(v >= -0x1p63 && v < 0x1p63)) {
-        hero_panic("to_int of an f64 outside the range of int");
+        hero_panic("to_i64 of an f64 outside the range of int");
     }
     return (int64_t)v; /* truncates toward zero, as spec line 131 requires */
 }
@@ -159,5 +159,5 @@ int64_t hero_f64_to_int(double v) {
 /* No range to check: every int64_t converts. It is lossy above 2^53 — round to
  * nearest, which is defined behaviour rather than UB — and that loss is silent.
  * Every language with these two types has it; Part 8 is where it belongs, and an
- * abort is not, because the value that loses precision is a legitimate `int`. */
+ * abort is not, because the value that loses precision is a legitimate `i64`. */
 double hero_int_to_f64(int64_t v) { return (double)v; }

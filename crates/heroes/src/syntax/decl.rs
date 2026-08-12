@@ -84,10 +84,10 @@ pub(super) fn head(cur: &mut Cursor, src: &Source, example: &str) -> Option<(Spa
     Some((keyword, doc, name))
 }
 
-/// `constant MAX_DEPTH: int` + the value, indented (§4.2). Constants use
+/// `constant MAX_DEPTH: i64` + the value, indented (§4.2). Constants use
 /// SCREAMING_CASE by convention; the parser does not police it.
 fn constant(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
-    let Some((keyword, doc, name)) = head(cur, src, "constant MAX_DEPTH: int") else {
+    let Some((keyword, doc, name)) = head(cur, src, "constant MAX_DEPTH: i64") else {
         return;
     };
     constant_tail(cur, ast, src, keyword, doc, name, Linkage::Heroes);
@@ -142,11 +142,11 @@ pub(super) fn constant_tail(
     ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body, header, link } });
 }
 
-/// `function dist2(a: Point, b: Point) -> int` + body (§4.2). The parameter
+/// `function dist2(a: Point, b: Point) -> i64` + body (§4.2). The parameter
 /// list attaches to the name, as at the call site.
 fn function_decl(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
     let Some((keyword, doc, name)) =
-        head(cur, src, "function dist2(a: Point, b: Point) -> int")
+        head(cur, src, "function dist2(a: Point, b: Point) -> i64")
     else {
         return;
     };

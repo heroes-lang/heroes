@@ -1,12 +1,12 @@
 ## Strings
 #
-# A `str` is immutable UTF-8, indexed in bytes. `s[i]` is an `int` in
+# A `str` is immutable UTF-8, indexed in bytes. `s[i]` is an `i64` in
 # 0..255, and `s.chars()` walks characters as one-character strings — the
 # two are different jobs and the language refuses to blur them.
 
 # Bytes, not characters: this counts the ASCII spaces.
-function space_count(s: str) -> int
-    seen: int @ 0
+function space_count(s: str) -> i64
+    seen: i64 @ 0
     for i in range(from: 0, to: s.len())
         if s[i] == ' '
             seen @ seen + 1
@@ -23,7 +23,7 @@ function letters_of(s: str) -> [str]
 # Splitting on a single space, written out. There is no library to hide in.
 function words_of(s: str) -> [str]
     out: [str] @ []
-    start: int @ 0
+    start: i64 @ 0
     for i in range(from: 0, to: s.len())
         if s[i] == ' '
             if i > start

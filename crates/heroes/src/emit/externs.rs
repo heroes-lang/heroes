@@ -84,17 +84,17 @@ fn extern_spans(ast: &Ast, function: &Function) -> (Option<crate::source::Span>,
 /// **The half of §4.19's guarantee that clang does not give for free.**
 ///
 /// The emitter does not re-declare an `extern`'s signature — re-declaring is
-/// `conflicting types` five times out of five on SQLite, because Heroes' `int` is
-/// `int64_t` and every C entry point returns `int`. So the header declares the
+/// `conflicting types` five times out of five on SQLite, because Heroes' `i64` is
+/// `int64_t` and every C entry point returns `i64`. So the header declares the
 /// function and clang checks the *call*: the arguments, and nothing else. Panel
 /// 036 measured what that leaves open — four wrong bindings out of six compile
-/// clean, and `extern function sqrt(x: f64) -> int` exits 0 printing `1`.
+/// clean, and `extern function sqrt(x: f64) -> i64` exits 0 printing `1`.
 ///
 /// One `_Static_assert` per `extern` closes it. The controlling expression of a
 /// `_Generic` is **not evaluated** (C11 6.5.1.1p3) but is type-checked, so a call
 /// with zero arguments of the declared types costs nothing at runtime and asks
 /// clang what the real header returns. Eleven of eleven correct ladder bindings
-/// pass; `strlen` declared `-> int` fires, because `size_t` is unsigned and the
+/// pass; `strlen` declared `-> i64` fires, because `size_t` is unsigned and the
 /// widening set admits only signed C integers.
 pub(super) fn extern_assertions(
     w: &mut Writer,
@@ -115,10 +115,10 @@ pub(super) fn extern_assertions(
     // self-contained and the runtime's ABI stamp does not move for a macro.
     // **`+(c)` and the unsigned narrows, both found by binding libcurl** (author
     // instruction, ladder rung 4). `CURLcode` is an `enum`, and `_Generic` selects
-    // on the enum's own type rather than on `int`, so the first version of this
+    // on the enum's own type rather than on `i64`, so the first version of this
     // macro refused **every enum-returning C function in existence** — which is
     // most of libcurl, OpenSSL and raylib, and was invisible against SQLite
-    // because SQLite returns plain `int`.
+    // because SQLite returns plain `i64`.
     //
     // **The repair was two changes and only one of them was needed** (panel 042,
     // 2026-08-12). M-ffi-ladder added a unary `+` *and* widened the accepted set
@@ -131,7 +131,7 @@ pub(super) fn extern_assertions(
     // for work it does not do.
     //
     // And it was doing damage while it did so. `+` on a pointer is a **hard clang
-    // error**, so `extern function getenv(name: cstr) -> int` — an ordinary
+    // error**, so `extern function getenv(name: cstr) -> i64` — an ordinary
     // mistake, since `getenv` returns `char *` — produced `invalid argument type
     // 'char *' to unary expression` at exit 2, which CLAUDE.md §7 makes a claim
     // that *the compiler* is wrong. The marker string below never reached

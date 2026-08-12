@@ -42,7 +42,7 @@ pub(super) fn emit(w: &mut Writer, function: &Function, checked: &Checked, term:
         //
         // The labels are integers rather than the tag enum's own enumerators, and the
         // reason is that this terminator does not know which variant it switches on:
-        // `Op::Tag`'s result is an `int`, so the declaration is not reachable from
+        // `Op::Tag`'s result is an `i64`, so the declaration is not reachable from
         // here. The enum in the typedef is the legend, and the indices are dense.
         Term::Switch { tag, cases } => {
             w.line(&format!("    switch ({}) {{", mangle::value(tag.0)));

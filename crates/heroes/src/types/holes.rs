@@ -190,7 +190,7 @@ fn nearby(
         // suggestion the reader has to repair (§4.16 is output, not a guess).
         //
         // **And only from a module this file can name.** The principle was
-        // applied halfway: a hole in `geom.hero` was offered `main.tally(x: int)`,
+        // applied halfway: a hole in `geom.hero` was offered `main.tally(x: i64)`,
         // which `geom` cannot `use` without a module cycle — so writing the
         // suggestion is three errors, and §4.16's whole promise is that you are
         // handed the answer rather than made to guess (2026-08-12).

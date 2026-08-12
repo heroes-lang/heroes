@@ -110,7 +110,7 @@ mod tests {
         }
     }
 
-    /// `range` is an ordinary Heroes function now, so it obeys §4.11: two `int`
+    /// `range` is an ordinary Heroes function now, so it obeys §4.11: two `i64`
     /// parameters mean every call site names them. That is the rule this step
     /// collided with, and the collision is the test — the positional form the
     /// spec used to write is a compile error carrying a machine-applicable fix.
@@ -127,7 +127,7 @@ mod tests {
         assert!(positional[1].ends_with("this one is `to`"), "{positional:?}");
     }
 
-    /// Its result is `[int]` and it is a value like any other — bindable,
+    /// Its result is `[i64]` and it is a value like any other — bindable,
     /// countable, sliceable. That is what Tier 2 claims and what the tier phrase
     /// in the spec tells a reader (panel 028 R6).
     #[test]
@@ -143,7 +143,7 @@ mod tests {
     /// at a line in a file they cannot open.
     #[test]
     fn a_user_redeclaring_a_library_name_is_told_the_language_took_it() {
-        let said = check("function range(a: int) -> int\n    return a\n\nfunction main()\n    print(0)\n");
+        let said = check("function range(a: i64) -> i64\n    return a\n\nfunction main()\n    print(0)\n");
         assert!(said[0].contains("builtin_name_taken"), "{said:?}");
         assert!(!said.iter().any(|d| d.contains("line 2")), "no library line: {said:?}");
     }

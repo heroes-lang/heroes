@@ -7,11 +7,11 @@
 #
 # The third function guards the other half of §4.6: a `?` needs a caller that
 # can fail.
-function half(n: int) -> int?
+function half(n: i64) -> i64?
     return n  #~ type_mismatch
 
-function unwrapped(n: int) -> int?
+function unwrapped(n: i64) -> i64?
     return ok(n).must()  #~ cannot_infer
 
-function forgotten(n: int) -> int
+function forgotten(n: i64) -> i64
     return half(n)?  #~ try_in_infallible

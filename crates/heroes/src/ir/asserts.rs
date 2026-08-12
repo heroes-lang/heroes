@@ -38,7 +38,7 @@ pub(super) fn assert(
     // **A counted operand travels through a slot, not across the edge.**
     //
     // The two sides are computed here, in the test block, and read over there, in the
-    // failure block — which is the whole reason they are named at all. For an `int`
+    // failure block — which is the whole reason they are named at all. For an `i64`
     // that is free. For a `str` it is a use-after-free, because M-strings-ownership's ownership pass
     // releases an owning temporary at the end of the block that defines it, and a
     // block-crossing read is precisely what it cannot see.

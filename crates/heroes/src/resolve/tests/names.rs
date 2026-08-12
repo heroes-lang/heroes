@@ -12,7 +12,7 @@ use super::{assert_clean, diagnostics, resolved};
 fn a_local_a_top_level_name_and_a_builtin_each_record_their_own_kind() {
     let (out, _) = resolved(
         "\
-constant MAX: int
+constant MAX: i64
     64
 
 function main()
@@ -88,7 +88,7 @@ fn a_case_only_difference_is_a_candidate() {
         diagnostics(
             "\
 record Point
-    x: int
+    x: i64
 
 function main()
     p = point(x: 1)
@@ -108,7 +108,7 @@ fn an_unknown_ufcs_name_teaches_the_rewrite() {
         diagnostics(
             "\
 function main()
-    m: {str: int} @ {}
+    m: {str: i64} @ {}
     m.set(\"a\", 1)
 "
         ),
@@ -124,9 +124,9 @@ fn a_field_that_could_hold_a_function_is_left_to_the_checker() {
     assert_clean(
         "\
 record Holder
-    cb: (function(int) -> int)
+    cb: (function(i64) -> i64)
 
-function run(h: Holder, n: int) -> int
+function run(h: Holder, n: i64) -> i64
     return h.cb(n)
 ",
     );
@@ -137,7 +137,7 @@ fn a_top_level_name_that_is_not_a_function_cannot_be_called_through_a_dot() {
     assert_eq!(
         diagnostics(
             "\
-constant MAX: int
+constant MAX: i64
     64
 
 function main()
@@ -172,8 +172,8 @@ fn a_record_is_called_by_name_because_construction_is_a_call() {
     assert_clean(
         "\
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     p = Point(x: 1, y: 2)
@@ -188,7 +188,7 @@ function main()
 fn fail_and_ok_resolve_as_builtins() {
     assert_clean(
         "\
-function half(n: int) -> int?
+function half(n: i64) -> i64?
     if n < 0
         return fail(\"negative\", \"n must not be negative\")
     return ok(n / 2)
@@ -203,7 +203,7 @@ function half(n: int) -> int?
 fn to_str_is_a_builtin_because_the_inventory_says_so() {
     assert_clean(
         "\
-function describe(n: int) -> str
+function describe(n: i64) -> str
     return \"n = \" + n.to_str()
 ",
     );
@@ -229,7 +229,7 @@ function main()
 fn a_hole_resolves_to_nothing_and_is_not_an_error() {
     let (out, _) = resolved(
         "\
-function f() -> int
+function f() -> i64
     return ???
 ",
     );

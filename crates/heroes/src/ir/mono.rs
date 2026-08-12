@@ -233,8 +233,8 @@ fn polymorphic_recursion(from: &str, to: &str, span: Span) -> Diagnostic {
     )
 }
 
-/// Is `small` `big`, or a part of it? `[int]` contains `int`; `int` does not
-/// contain `[int]`.
+/// Is `small` `big`, or a part of it? `[i64]` contains `i64`; `i64` does not
+/// contain `[i64]`.
 fn contains(checked: &Checked, big: TyId, small: TyId) -> bool {
     if big == small {
         return true;

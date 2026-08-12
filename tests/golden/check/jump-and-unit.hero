@@ -1,6 +1,6 @@
 # UNVERIFIED — pending debrief
 # Adversarial case for panel 017's two flow rules, which are easy to get
-# backwards. A jump has **no type**: an `int`-valued `match` with a `return` arm
+# backwards. A jump has **no type**: an `i64`-valued `match` with a `return` arm
 # is legal, and typing the jump `()` — RFC 1216's recorded wrong turn — would
 # reject it. But a construct whose **every** branch jumps produces nothing, and
 # binding that is the error. Then the mirror pair: a `()` value cannot be bound
@@ -8,16 +8,16 @@
 # silently (panel 003).
 variant Token
     num
-        v: int
+        v: i64
     eof
 
-function nothing_to_bind(t: Token) -> int
+function nothing_to_bind(t: Token) -> i64
     tag = match t  #~ no_value
         .num _ => return 1
         .eof   => return 0
     return tag
 
-function bound_nothing(xs: [int]) -> int
+function bound_nothing(xs: [i64]) -> i64
     done = print("counting")  #~ bound_unit
     print(done)
     xs.push(4)  #~ discarded_value

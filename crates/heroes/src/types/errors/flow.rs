@@ -67,7 +67,7 @@ pub(in crate::types) fn jump_outside_loop(word: &str, span: Span) -> Diagnostic 
 
 
 /// Panel 014's value rule, and the llm-ergonomist's finding that made it: an
-/// `int`-valued `match` whose every arm jumps produces nothing, and today that
+/// `i64`-valued `match` whose every arm jumps produces nothing, and today that
 /// is silent under both readings of the arm-body question.
 pub(in crate::types) fn no_value(what: &str, span: Span) -> Diagnostic {
     Diagnostic::new(

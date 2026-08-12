@@ -1,7 +1,7 @@
 # `sort` on an element type with no order is refused by the GATE, not by the
 # type checker, and the difference is the message this file pins.
 #
-# `{Point: int}` compiles and runs today, so `keys(m)` can be `[Point]` — and
+# `{Point: i64}` compiles and runs today, so `keys(m)` can be `[Point]` — and
 # spec line 71 teaches `for k in sort(keys(m))` as *the* idiom for walking a map
 # in order. A checker rule rejecting `sort([Point])` would make the spec's own
 # sentence a compile error, which is the shape that cost this project a whole
@@ -16,8 +16,8 @@
 # Bulk regression case.
 
 record Point
-    x: int
-    y: int
+    x: i64
+    y: i64
 
 function main()
     ps = [Point(x: 2, y: 1), Point(x: 1, y: 2)]

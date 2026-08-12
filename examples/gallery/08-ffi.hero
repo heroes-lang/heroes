@@ -19,7 +19,7 @@ extern "math.h"
 # comes from a different header — and on macOS neither needs `link`, since
 # libm and libc are already there.
 extern "stdio.h"
-    function puts(s: cstr) -> int
+    function puts(s: cstr) -> i64
 
 # The hypotenuse, in the language's own arithmetic plus one C call.
 #
@@ -30,13 +30,13 @@ extern "stdio.h"
 function hypotenuse(a: f64, b: f64) -> f64
     return sqrt(a * a + b * b)
 
-# No implicit conversions: an `int` becomes an `f64` because you said so.
-function diagonal_of(width: int, height: int) -> f64
+# No implicit conversions: an `i64` becomes an `f64` because you said so.
+function diagonal_of(width: i64, height: i64) -> f64
     return hypotenuse(a: to_f64(width), b: to_f64(height))
 
 # `pow` is C's, `floor` is C's, and the rounding is yours.
-function rounded_power(base: f64, exponent: f64) -> int
-    return to_int(floor(pow(base: base, exponent: exponent)))
+function rounded_power(base: f64, exponent: f64) -> i64
+    return to_i64(floor(pow(base: base, exponent: exponent)))
 
 test "the C library does the maths"
     assert hypotenuse(a: 3.0, b: 4.0) == 5.0

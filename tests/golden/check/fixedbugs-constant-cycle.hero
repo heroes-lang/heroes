@@ -1,7 +1,7 @@
 # A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
 #
 # SYMPTOM (2026-08-12, found by reasoning note 003 while arguing about
-# compile-time evaluation): `constant A: int` with body `B` and `constant B: int`
+# compile-time evaluation): `constant A: i64` with body `B` and `constant B: i64`
 # with body `A` passed everything. `heroes check` exited 0. `heroes build` exited
 # 0. The emitted C was two mutually recursive zero-argument accessors, and the
 # binary died by **SIGSEGV at -O0** and **hung at -O2** — one program, two
@@ -34,33 +34,33 @@
 # than the defect it replaced.
 # Bulk regression case.
 
-constant A: int         #~ constant_cycle
+constant A: i64         #~ constant_cycle
     B
 
-constant B: int
+constant B: i64
     A
 
-constant SELF: int      #~ constant_cycle
+constant SELF: i64      #~ constant_cycle
     SELF
 
-constant THROUGH: int   #~v constant_body
+constant THROUGH: i64   #~v constant_body
     depends()
 
-function depends() -> int
+function depends() -> i64
     return THROUGH
 
-constant START: int
+constant START: i64
     2
 
-constant CHAIN: int
+constant CHAIN: i64
     START + 1
 
-function even(n: int) -> bool
+function even(n: i64) -> bool
     if n == 0
         return true
     return odd(n - 1)
 
-function odd(n: int) -> bool
+function odd(n: i64) -> bool
     if n == 0
         return false
     return even(n - 1)

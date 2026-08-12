@@ -2,11 +2,11 @@
 # index can, and only one of the two carries the `!` that says so. Same syntax,
 # two instructions — which is why lowering asks the checker for the base's type
 # instead of looking at the brackets.
-function score_of(scores: {str: int}, name: str) -> int
+function score_of(scores: {str: i64}, name: str) -> i64
     return scores[name].default(0)
 
-function first_of(xs: [int]) -> int
+function first_of(xs: [i64]) -> i64
     return xs[0]
 
-function both(scores: {str: int}, xs: [int]) -> int
+function both(scores: {str: i64}, xs: [i64]) -> i64
     return score_of(scores, "ada") + first_of(xs)

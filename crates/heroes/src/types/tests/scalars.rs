@@ -5,22 +5,22 @@ use crate::types::{IntKind, Ty, TyId, Types};
 
 #[test]
 fn the_five_literal_kinds_get_their_types() {
-    assert_eq!(type_of_last("constant MAX: int\n    1\n"), "int");
+    assert_eq!(type_of_last("constant MAX: i64\n    1\n"), "i64");
     assert_eq!(type_of_last("constant X: f64\n    1.5\n"), "f64");
     assert_eq!(type_of_last("constant X: bool\n    true\n"), "bool");
     assert_eq!(type_of_last("constant X: str\n    \"hi\"\n"), "str");
-    // §4.3: a character literal *is* an `int`, which is what makes
+    // §4.3: a character literal *is* an `i64`, which is what makes
     // `c >= '0' && c <= '9'` ordinary arithmetic.
-    assert_eq!(type_of_last("constant X: int\n    'a'\n"), "int");
+    assert_eq!(type_of_last("constant X: i64\n    'a'\n"), "i64");
 }
 
 #[test]
 fn arithmetic_is_monomorphic_and_says_so() {
-    assert_clean("function f(a: int, b: int) -> int\n    return a + b\n");
+    assert_clean("function f(a: i64, b: i64) -> i64\n    return a + b\n");
     assert_clean("function f(a: f64, b: f64) -> f64\n    return a * b\n");
     assert_eq!(
-        diagnostics("function f(a: int, b: f64) -> int\n    return a + b\n"),
-        "test.hero:2:12: error[mixed_arithmetic]: `+` takes `int` with `int` or `f64` with `f64`, never mixed — found `int` and `f64`\n"
+        diagnostics("function f(a: i64, b: f64) -> i64\n    return a + b\n"),
+        "test.hero:2:12: error[mixed_arithmetic]: `+` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `i64` and `f64`\n"
     );
 }
 
@@ -31,16 +31,16 @@ fn arithmetic_is_monomorphic_and_says_so() {
 fn plus_joins_two_strings_and_only_plus() {
     assert_clean("function f(a: str, b: str) -> str\n    return a + b\n");
     assert_clean(
-        "function describe(n: int) -> str\n    return \"n = \" + n.to_str()\n",
+        "function describe(n: i64) -> str\n    return \"n = \" + n.to_str()\n",
     );
     assert_eq!(
         diagnostics("function f(a: str, b: str) -> str\n    return a * b\n"),
-        "test.hero:2:12: error[bad_operand]: `*` takes `int` or `f64`, found `str`\n"
+        "test.hero:2:12: error[bad_operand]: `*` takes `i64` or `f64`, found `str`\n"
     );
     // The conversion is named in the message, because the repair is the point.
     assert_eq!(
-        diagnostics("function f(a: str, n: int) -> str\n    return a + n\n"),
-        "test.hero:2:12: error[mixed_arithmetic]: `+` takes `int` with `int` or `f64` with `f64`, never mixed — found `str` and `int`\n"
+        diagnostics("function f(a: str, n: i64) -> str\n    return a + n\n"),
+        "test.hero:2:12: error[mixed_arithmetic]: `+` takes `i64` with `i64` or `f64` with `f64`, never mixed — found `str` and `i64`\n"
     );
 }
 
@@ -49,20 +49,20 @@ fn equality_is_structural_and_ordering_is_not() {
     assert_clean(
         "\
 record Point
-    x: int
+    x: i64
 
 function same(a: Point, b: Point) -> bool
     return a == b
 ",
     );
-    assert_clean("function f(a: [int], b: [int]) -> bool\n    return a != b\n");
+    assert_clean("function f(a: [i64], b: [i64]) -> bool\n    return a != b\n");
     assert_eq!(
         diagnostics("function f(a: str, b: str) -> bool\n    return a < b\n"),
-        "test.hero:2:12: error[bad_operand]: `<` takes `int` or `f64`, found `str`\n"
+        "test.hero:2:12: error[bad_operand]: `<` takes `i64` or `f64`, found `str`\n"
     );
     assert_eq!(
-        diagnostics("function f(a: int, b: str) -> bool\n    return a == b\n"),
-        "test.hero:2:12: error[type_mismatch]: expected `int`, found `str`\n"
+        diagnostics("function f(a: i64, b: str) -> bool\n    return a == b\n"),
+        "test.hero:2:12: error[type_mismatch]: expected `i64`, found `str`\n"
     );
 }
 
@@ -71,25 +71,25 @@ fn there_is_no_truthiness() {
     assert_eq!(
         diagnostics(
             "\
-function f(n: int) -> int
+function f(n: i64) -> i64
     if n
         return 1
     return 0
 "
         ),
-        "test.hero:2:8: error[not_bool]: an `if` condition must be `bool`, found `int` — there is no truthiness in this language\n"
+        "test.hero:2:8: error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no truthiness in this language\n"
     );
     assert_eq!(
         diagnostics(
             "\
-function f(n: int) -> int
-    total: int @ 0
+function f(n: i64) -> i64
+    total: i64 @ 0
     while n
         total @ total + 1
     return total
 "
         ),
-        "test.hero:3:11: error[not_bool]: a `while` condition must be `bool`, found `int` — there is no truthiness in this language\n"
+        "test.hero:3:11: error[not_bool]: a `while` condition must be `bool`, found `i64` — there is no truthiness in this language\n"
     );
 }
 
@@ -97,8 +97,8 @@ function f(n: int) -> int
 fn boolean_operators_take_bool_only() {
     assert_clean("function f(a: bool, b: bool) -> bool\n    return a && !b\n");
     assert_eq!(
-        diagnostics("function f(a: int) -> bool\n    return !a\n"),
-        "test.hero:2:12: error[bad_operand]: `!` takes `bool`, found `int`\n"
+        diagnostics("function f(a: i64) -> bool\n    return !a\n"),
+        "test.hero:2:12: error[bad_operand]: `!` takes `bool`, found `i64`\n"
     );
 }
 
@@ -108,7 +108,7 @@ fn boolean_operators_take_bool_only() {
 fn a_discarded_value_is_an_error_with_a_certain_fix() {
     let (out, _) = super::checked(
         "\
-function main(xs: [int])
+function main(xs: [i64])
     xs.push(4)
 ",
     );
@@ -138,7 +138,7 @@ function main()
 /// name rather than reporting a mystery.
 #[test]
 fn an_empty_literal_needs_its_annotation() {
-    assert_clean("function main()\n    xs: [int] = []\n    print(xs.len())\n");
+    assert_clean("function main()\n    xs: [i64] = []\n    print(xs.len())\n");
     assert_eq!(
         diagnostics("function main()\n    xs = []\n    print(xs.len())\n"),
         "test.hero:2:10: error[cannot_infer]: the array literal is empty, so there is nothing to infer its type from — write the annotation\n"
@@ -154,49 +154,49 @@ fn a_declared_cell_checks_its_initialiser_and_every_write() {
     assert_clean(
         "\
 function main()
-    total: int @ 0
+    total: i64 @ 0
     total @ total + 1
     print(total)
 ",
     );
     assert_eq!(
-        diagnostics("function main()\n    total: int @ \"x\"\n    print(total)\n"),
-        "test.hero:2:18: error[type_mismatch]: expected `int`, found `str`\n"
+        diagnostics("function main()\n    total: i64 @ \"x\"\n    print(total)\n"),
+        "test.hero:2:18: error[type_mismatch]: expected `i64`, found `str`\n"
     );
     assert_eq!(
         diagnostics(
             "\
 function main()
-    total: int @ 0
+    total: i64 @ 0
     total @ \"x\"
     print(total)
 "
         ),
-        "test.hero:3:13: error[type_mismatch]: expected `int`, found `str`\n"
+        "test.hero:3:13: error[type_mismatch]: expected `i64`, found `str`\n"
     );
 }
 
 #[test]
 fn indexing_knows_its_three_containers() {
-    assert_eq!(type_of_last("function f(s: str) -> int\n    return s[0]\n"), "int");
+    assert_eq!(type_of_last("function f(s: str) -> i64\n    return s[0]\n"), "i64");
     assert_eq!(
         type_of_last("function f(xs: [str]) -> str\n    return xs[0]\n"),
         "str"
     );
     // §4.9: a map yields `V?`, which is what makes a missing key a value.
     assert_eq!(
-        type_of_last("function f(m: {str: int}) -> int?\n    return m[\"a\"]\n"),
-        "int?"
+        type_of_last("function f(m: {str: i64}) -> i64?\n    return m[\"a\"]\n"),
+        "i64?"
     );
     assert_eq!(
-        diagnostics("function f(n: int) -> int\n    return n[0]\n"),
-        "test.hero:2:12: error[not_indexable]: `int` cannot be indexed — `s[i]`, `xs[i]` and `m[k]` are for `str`, `[T]` and `{K: V}`\n"
+        diagnostics("function f(n: i64) -> i64\n    return n[0]\n"),
+        "test.hero:2:12: error[not_indexable]: `i64` cannot be indexed — `s[i]`, `xs[i]` and `m[k]` are for `str`, `[T]` and `{K: V}`\n"
     );
 }
 
 #[test]
 fn a_for_in_walks_an_array_and_names_the_alternative() {
-    assert_clean("function main(xs: [int])\n    for x in xs\n        print(x)\n");
+    assert_clean("function main(xs: [i64])\n    for x in xs\n        print(x)\n");
     assert_eq!(
         diagnostics("function main(s: str)\n    for c in s\n        print(c)\n"),
         "test.hero:2:14: error[not_iterable]: `for x in …` walks an array, and this is a `str` — a string's characters come from `s.chars()`, a count from `range(a, b)`\n"
@@ -208,7 +208,7 @@ fn an_assert_takes_a_bool() {
     assert_clean("test \"it holds\"\n    assert 1 + 1 == 2\n");
     assert_eq!(
         diagnostics("test \"it holds\"\n    assert 1 + 1\n"),
-        "test.hero:2:12: error[not_bool]: an `assert` must be `bool`, found `int` — there is no truthiness in this language\n"
+        "test.hero:2:12: error[not_bool]: an `assert` must be `bool`, found `i64` — there is no truthiness in this language\n"
     );
 }
 
@@ -231,7 +231,7 @@ fn the_prelude_ids_match_their_accessors() {
     let expected: [(&str, TyId, Ty); 8] = [
         ("error", types.error(), Ty::Error),
         ("unit", types.unit(), Ty::Unit),
-        ("int", types.int(), Ty::Int(IntKind::I64)),
+        ("i64", types.int(), Ty::Int(IntKind::I64)),
         ("f64", types.f64(), Ty::F64),
         ("bool", types.bool(), Ty::Bool),
         ("str", types.str(), Ty::Str),

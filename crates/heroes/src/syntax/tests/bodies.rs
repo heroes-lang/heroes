@@ -124,11 +124,11 @@ fn a_hole_is_an_expression_anywhere() {
 #[test]
 fn binding_declaration_and_mutation_are_told_apart_by_one_token() {
     assert_eq!(stmt("x = 5"), "    bind x = 5\n");
-    assert_eq!(stmt("v: int @ 0"), "    declare v: int @ 0\n");
+    assert_eq!(stmt("v: i64 @ 0"), "    declare v: i64 @ 0\n");
     assert_eq!(stmt("v @ v + 1"), "    mutate v @ (v + 1)\n");
     // An empty literal cannot say what it holds, so it needs the annotation
     // (§4.5) — and that line is a binding, not a declaration.
-    assert_eq!(stmt("xs: [int] = []"), "    bind xs: [int] = []\n");
+    assert_eq!(stmt("xs: [i64] = []"), "    bind xs: [i64] = []\n");
 }
 
 /// A field or an element is a place too: `l.pos @ l.pos + 1` is how the
@@ -265,7 +265,7 @@ fn match_arms_carry_patterns_and_bodies() {
     assert_eq!(
         dump(
             "\
-function factor(t: Token) -> int
+function factor(t: Token) -> i64
     return match t
         .num n                   => n.v
         .name _                  => 0
@@ -277,7 +277,7 @@ function factor(t: Token) -> int
         ),
         "\
 file test.hero
-  function factor(t: Token) -> int
+  function factor(t: Token) -> i64
     return match t
       .num n => expr n.v
       .name _ => expr 0
@@ -311,14 +311,14 @@ file test.hero
 }
 
 /// `_` is a catch-all arm, legal only where exhaustiveness is impossible
-/// (`int`, `str`). The parser records it; M-data-declarations decides whether it was allowed.
+/// (`i64`, `str`). The parser records it; M-data-declarations decides whether it was allowed.
 #[test]
 fn a_wildcard_arm_is_recorded_not_judged() {
     assert_eq!(
-        dump("function f(n: int) -> int\n    return match n\n        0 => 1\n        _ => 2\n"),
+        dump("function f(n: i64) -> i64\n    return match n\n        0 => 1\n        _ => 2\n"),
         "\
 file test.hero
-  function f(n: int) -> int
+  function f(n: i64) -> i64
     return match n
       0 => expr 1
       _ => expr 2
@@ -333,8 +333,8 @@ file test.hero
 #[test]
 fn an_annotation_without_a_binding_symbol_is_loud() {
     assert_eq!(
-        stmt("v: int 0"),
-        "    error\nDIAG test.hero:2:12: error[expected_binding_symbol]: expected `@` to declare a mutable, or `=` to bind, found a number (`0`) — `v: int @ 0` declares a cell, `xs: [int] = []` binds once\n"
+        stmt("v: i64 0"),
+        "    error\nDIAG test.hero:2:12: error[expected_binding_symbol]: expected `@` to declare a mutable, or `=` to bind, found a number (`0`) — `v: i64 @ 0` declares a cell, `xs: [i64] = []` binds once\n"
     );
 }
 
@@ -375,10 +375,10 @@ fn a_mutable_marker_where_a_colon_belongs_is_repaired() {
 #[test]
 fn a_declaration_is_not_an_arm_body() {
     assert_eq!(
-        dump("function f(k: int) -> int\n    return match k\n        0 => x = 5\n        _ => 1\n"),
+        dump("function f(k: i64) -> i64\n    return match k\n        0 => x = 5\n        _ => 1\n"),
         "\
 file test.hero
-  function f(k: int) -> int
+  function f(k: i64) -> i64
     return match k
       0 => bind x = 5
       _ => expr 1
@@ -392,11 +392,11 @@ DIAG test.hero:3:14: error[declaration_in_arm]: an arm's body may not declare a 
 #[test]
 fn a_mutation_is_still_a_legal_arm_body() {
     assert_eq!(
-        dump("function f(k: int)\n    v: int @ 0\n    match k\n        0 => v @ 1\n        _ => print(v)\n"),
+        dump("function f(k: i64)\n    v: i64 @ 0\n    match k\n        0 => v @ 1\n        _ => print(v)\n"),
         "\
 file test.hero
-  function f(k: int) -> ()
-    declare v: int @ 0
+  function f(k: i64) -> ()
+    declare v: i64 @ 0
     match k
       0 => mutate v @ 1
       _ => expr print(v)
@@ -420,7 +420,7 @@ file test.hero
 fn a_pattern_join_is_not_bitwise_or() {
     let dumped = dump(
         "\
-function name(n: int) -> str
+function name(n: i64) -> str
     return match n
         1 | 2  => \"small\"
         _      => \"big\"

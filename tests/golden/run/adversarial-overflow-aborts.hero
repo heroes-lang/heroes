@@ -11,6 +11,6 @@
 
 function main()
     print(1)
-    big: int @ 9223372036854775807
+    big: i64 @ 9223372036854775807
     big @ big + 1
     print(big)

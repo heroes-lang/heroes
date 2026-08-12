@@ -206,7 +206,7 @@ fn pattern(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Option<Pattern> {
         _ => {
             if !cur.at_reported_error() {
                 let message = format!(
-                    "expected a pattern, found {} — `.case`, `.case name`, a literal, or `_` (on `int`/`str` only)",
+                    "expected a pattern, found {} — `.case`, `.case name`, a literal, or `_` (on `i64`/`str` only)",
                     cur.found(src)
                 );
                 cur.error("expected_pattern", message, cur.span());
