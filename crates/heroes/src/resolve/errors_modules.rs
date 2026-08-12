@@ -29,11 +29,11 @@ pub(crate) fn used_twice(name: &str, span: Span) -> Diagnostic {
 /// `use geom` in a file that also declares `geom`. Spec line 76's rule, reached
 /// because `use` *binds* (panel 031 R3): the module name and the declaration
 /// are one name meaning two things.
-pub(crate) fn use_shadows_a_declaration(name: &str, decl_line: u32, span: Span) -> Diagnostic {
+pub(crate) fn use_shadows_a_declaration(name: &str, declared_at: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "shadowed_binding",
         format!(
-            "`use {name}` binds `{name}`, and this file already declares `{name}` at line {decl_line} — shadowing is an error here, so one of the two has to be renamed"
+            "`use {name}` binds `{name}`, and this file already declares `{name}` at {declared_at} — shadowing is an error here, so one of the two has to be renamed"
         ),
         span,
     )

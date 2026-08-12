@@ -33,7 +33,7 @@ function f() -> int
     return 2
 "
         ),
-        "test.hero:4:10: error[declared_twice]: `f` is already declared at line 1 — one file is one program, and a name means one thing in it\n"
+        "test.hero:4:10: error[declared_twice]: `f` is already declared at line 1 — one file is one module, and a name means one thing in it\n"
     );
 }
 
@@ -50,7 +50,7 @@ variant Token
     plus
 "
         ),
-        "test.hero:4:9: error[declared_twice]: `Token` is already declared at line 1 — one file is one program, and a name means one thing in it\n"
+        "test.hero:4:9: error[declared_twice]: `Token` is already declared at line 1 — one file is one module, and a name means one thing in it\n"
     );
 }
 

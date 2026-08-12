@@ -157,7 +157,25 @@ pub fn emit_for(
     perfn::prototypes(&mut w, ast, checked, &names, src);
     // The descriptors before any definition: an array literal names its element's
     // descriptor, so the object has to exist by the time a function body mentions it.
-    perfn::descriptors(&mut w, ast, checked, &names);
+    // Every type the functions this build will actually emit mention — the
+    // descriptor worklist's filter, so a `test` block's containers do not put
+    // unused objects in an ordinary program (see `descriptors::generated`).
+    let mut reachable: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    for function in &program.functions {
+        if function.kind == crate::ir::FnKind::Test && target != Target::Tests {
+            continue;
+        }
+        reachable.insert(function.result.0);
+        for slot in &function.slots {
+            reachable.insert(slot.ty.0);
+        }
+        for block in &function.blocks {
+            for inst in &block.insts {
+                reachable.insert(inst.ty.0);
+            }
+        }
+    }
+    perfn::descriptors(&mut w, ast, checked, &names, &reachable);
     // The author's functions, plus exactly the library functions they reach.
     let used = builtins::reachable(program, src);
     let shown: Vec<&crate::ir::Function> = program

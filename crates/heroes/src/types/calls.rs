@@ -187,8 +187,8 @@ fn user_call(
     let given = args.len() + usize::from(receiver.is_some());
     if given != arity {
         let signature = crate::printer::render_signature(ast, src, decl);
-        let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
-        let diagnostic = errors::arity(&name, arity, given, Some((signature, line)), span);
+        let at = src.elsewhere(span.start, ast.decls[decl as usize].name.start);
+        let diagnostic = errors::arity(&name, arity, given, Some((signature, at)), span);
         checker.push_diagnostic(diagnostic);
         return checker.error_ty();
     }

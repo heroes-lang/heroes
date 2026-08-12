@@ -75,7 +75,7 @@ pub(in crate::types) fn field_of_variant(holder: &str, field: &str, span: Span) 
 pub(in crate::types) fn missing_fields(
     holder: &str,
     fields: &[String],
-    line: u32,
+    declared_at: &str,
     span: Span,
 ) -> Diagnostic {
     let list: Vec<String> = fields.iter().map(|f| format!("{f}:")).collect();
@@ -87,7 +87,7 @@ pub(in crate::types) fn missing_fields(
         ),
         span,
     )
-    .with_note(format!("`{holder}` is declared at line {line}"))
+    .with_note(format!("`{holder}` is declared at {declared_at}"))
 }
 
 

@@ -288,9 +288,13 @@ fn report(ast: &Ast, src: &Source, edges: &[Edge], cycle: &[usize]) -> Diagnosti
             // `A.b: B (line 5)` rather than prose: an article before a type name
             // is a grammar problem the compiler cannot solve (`a A`), and the
             // colon form is the one the author wrote.
-            let (line, _) = src.line_col(edges[edge].field.start);
+            //
+            // The step is located from **the diagnostic's own caret**, so a cycle
+            // that crosses a module boundary names the file for the steps that are
+            // elsewhere and stays terse for the ones that are not.
+            let at = src.elsewhere(edges[last].field.start, edges[edge].field.start);
             format!(
-                "{}.{}: {} (line {line})",
+                "{}.{}: {} ({at})",
                 name_of(edges[edge].from),
                 src.slice(edges[edge].name),
                 name_of(edges[edge].to),

@@ -87,31 +87,31 @@ pub(super) fn variant_in_value_position(name: &str, span: Span) -> Diagnostic {
 
 // --- names declared more than once ------------------------------------
 
-pub(super) fn declared_twice(name: &str, first_line: u32, span: Span) -> Diagnostic {
+pub(super) fn declared_twice(name: &str, first: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "declared_twice",
         format!(
-            "`{name}` is already declared at line {first_line} — one file is one program, and a name means one thing in it"
+            "`{name}` is already declared at {first} — one file is one module, and a name means one thing in it"
         ),
         span,
     )
 }
 
-pub(super) fn shadowed(name: &str, bound_line: u32, span: Span) -> Diagnostic {
+pub(super) fn shadowed(name: &str, bound_at: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "shadowed_binding",
         format!(
-            "`{name}` is already in scope, bound at line {bound_line} — shadowing is an error here: a name means one thing for as long as it is visible"
+            "`{name}` is already in scope, bound at {bound_at} — shadowing is an error here: a name means one thing for as long as it is visible"
         ),
         span,
     )
 }
 
-pub(super) fn shadows_top_level(name: &str, decl_line: u32, span: Span) -> Diagnostic {
+pub(super) fn shadows_top_level(name: &str, declared_at: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "shadowed_binding",
         format!(
-            "`{name}` is the name of the declaration at line {decl_line}, which is in scope everywhere — pick another name"
+            "`{name}` is the name of the declaration at {declared_at}, which is in scope everywhere — pick another name"
         ),
         span,
     )

@@ -227,11 +227,20 @@ fn frontend(test: &str, files: &[(&str, &str)], root: &str) -> (Vec<String>, Str
     assert!(parsed.diagnostics.is_empty(), "the test's own input must parse");
     let resolved = crate::resolve::resolve(&parsed.ast, &src);
     let checked = crate::types::check(&parsed.ast, &resolved, &src);
+    // The one-line form **plus its notes**: §4.17 makes the note the half that
+    // carries the other end of the mistake, and a helper that dropped it could
+    // not see the class of defect this file keeps finding.
     let said = resolved
         .diagnostics
         .iter()
         .chain(checked.diagnostics.iter())
-        .map(|d| d.render_line(&src))
+        .map(|d| {
+            let mut line = d.render_line(&src);
+            for note in &d.notes {
+                line.push_str(&format!("\n  note: {note}"));
+            }
+            line
+        })
         .collect();
     (said, crate::types::report_holes(&parsed.ast, &resolved, &checked, &src))
 }
@@ -375,5 +384,70 @@ fn fixedbugs_the_module_a_name_is_in_is_one_this_file_can_see() {
     assert!(
         !said.iter().any(|d| d.contains("unused_binding")),
         "and no cascade telling the author to delete the fix: {said:?}"
+    );
+}
+
+/// **fixedbugs, sweep 001 N5, 2026-08-12.** Ten sites formatted a line number
+/// **into a message** — `note: declared at line 6`, `the cycle is: A.b: B
+/// (line 7)`, `already declared at line 6` — from `line_col`, naming no file.
+/// Correct while `lines_before` was zero for everything; after M8a, a line that
+/// is not in the file the reader is looking at. One of them was internally
+/// consistent and wrong in both halves: a `shadowed_binding` whose note said
+/// "line 8" while its own caret sat on `geom.hero:8`.
+///
+/// The reason M8a's sweep walked past all ten is the finding, not the fix: they
+/// build real `Diagnostic`s, and the sweep fixed where a diagnostic's **span**
+/// is rendered. A location formatted into a `String` note is outside every guard
+/// this compiler has, so `Source::locate` could not protect it — which is why
+/// the repair is a second function, `Source::elsewhere`, rather than another
+/// pass of the same discipline.
+///
+/// Both directions are asserted. The short form is deliberate: §4.17 asks the
+/// note to carry the file the model would otherwise open, and naming the file
+/// already on screen is noise.
+#[test]
+fn fixedbugs_the_other_end_of_a_mistake_names_its_file_when_it_is_elsewhere() {
+    let files = &[
+        ("main.hero", "use geom\n\nfunction main()\n    print(geom.area(3, 4))\n"),
+        ("geom.hero", "function area(side: int) -> int\n    return side * side\n"),
+    ];
+    let (said, _) = frontend("fixedbugs-other-end-cross", files, "main.hero");
+    let arity: Vec<&String> = said.iter().filter(|d| d.contains("wrong_arity")).collect();
+    assert_eq!(arity.len(), 1, "{said:?}");
+    assert!(arity[0].contains("geom.hero:1"), "the note names the other file: {said:?}");
+    assert!(!arity[0].contains("at line "), "and not a bare line number: {said:?}");
+
+    // Same file, same rule, terse — the case that must not become noisier.
+    let files = &[(
+        "main.hero",
+        "function f() -> int\n    return 1\n\nfunction f() -> int\n    return 2\n\nfunction main()\n    print(f())\n",
+    )];
+    let (said, _) = frontend("fixedbugs-other-end-same", files, "main.hero");
+    let twice: Vec<&String> = said.iter().filter(|d| d.contains("declared_twice")).collect();
+    assert_eq!(twice.len(), 1, "{said:?}");
+    assert!(twice[0].contains("at line 1"), "one file, no file name: {said:?}");
+    assert!(!twice[0].contains("main.hero:1 —"), "{said:?}");
+}
+
+/// **fixedbugs, sweep 001 N10, 2026-08-12.** §4.16's hole report offered
+/// functions from modules the hole's own file cannot name: a hole in `geom.hero`
+/// was handed `main.tally(x: int)`, and `geom` cannot `use main` without a
+/// module cycle — so writing the suggestion is three errors.
+///
+/// The code stated the right principle two lines above and applied it halfway:
+/// it *qualified* a cross-module name, which is necessary, and never asked
+/// whether the file could reach it, which is the other half. §4.16's whole
+/// promise is that you are handed the answer rather than made to guess.
+#[test]
+fn fixedbugs_a_hole_is_only_offered_what_its_own_file_can_name() {
+    let files = &[
+        ("main.hero", "use geom\n\nfunction tally(x: int) -> int\n    return x\n\nfunction main()\n    print(geom.f())\n"),
+        ("geom.hero", "function f() -> int\n    return ???\n"),
+    ];
+    let (_, holes) = frontend("fixedbugs-hole-reach", files, "main.hero");
+    assert!(holes.contains("hole at"), "{holes}");
+    assert!(
+        !holes.contains("main.tally"),
+        "`geom` cannot `use main` without a cycle, so it is not an answer: {holes}"
     );
 }

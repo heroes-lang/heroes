@@ -82,8 +82,8 @@ fn generics(r: &mut Resolver, ast: &Ast, src: &Source, function: &Function) {
     for (position, span) in function.generics.iter().enumerate() {
         let name = src.slice(*span);
         if let Some(previous) = r.generics.iter().find(|(n, _)| n == name) {
-            let (line, _) = src.line_col(function.generics[previous.1 as usize].start);
-            let diagnostic = errors::shadowed(name, line, *span);
+            let at = src.elsewhere(span.start, function.generics[previous.1 as usize].start);
+            let diagnostic = errors::shadowed(name, &at, *span);
             r.push_diagnostic(diagnostic);
             continue;
         }
@@ -98,8 +98,8 @@ fn generics(r: &mut Resolver, ast: &Ast, src: &Source, function: &Function) {
             // `map<A, B>` must not collide with a user's `record A`.
             let declared_at = ast.decls[decl as usize].name.start;
             if src.is_library(span.start) == src.is_library(declared_at) {
-                let (line, _) = src.line_col(declared_at);
-                let diagnostic = errors::shadows_top_level(name, line, *span);
+                let at = src.elsewhere(span.start, declared_at);
+                let diagnostic = errors::shadows_top_level(name, &at, *span);
                 r.push_diagnostic(diagnostic);
                 continue;
             }

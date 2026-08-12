@@ -234,8 +234,14 @@ fn option_bodies(w: &mut Writer, checked: &Checked, names: &Names) {
 /// is the price of a generic runtime in C, and it is paid **once per type here**
 /// rather than at every call site: `retain`/`release` take a typed pointer so that
 /// the emitter's own calls are checked, and only the descriptor erases them.
-pub(super) fn descriptors(w: &mut Writer, ast: &Ast, checked: &Checked, names: &Names) {
-    let wanted = super::descriptors::generated(ast, checked);
+pub(super) fn descriptors(
+    w: &mut Writer,
+    ast: &Ast,
+    checked: &Checked,
+    names: &Names,
+    reachable: &std::collections::BTreeSet<u32>,
+) {
+    let wanted = super::descriptors::generated(ast, checked, reachable);
     if wanted.is_empty() {
         return;
     }

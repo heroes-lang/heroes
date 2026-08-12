@@ -156,8 +156,8 @@ impl Resolver {
         }
         if let Some(previous) = self.scopes.lookup(text) {
             let at = self.out.locals[previous as usize].name;
-            let (line, _) = src.line_col(at.start);
-            let diagnostic = errors::shadowed(text, line, name);
+            let bound_at = src.elsewhere(name.start, at.start);
+            let diagnostic = errors::shadowed(text, &bound_at, name);
             self.push_diagnostic(diagnostic);
             return None;
         }
@@ -187,8 +187,8 @@ impl Resolver {
             // every name the library declares is a reserved built-in.
             let declared_at = ast.decls[decl as usize].name.start;
             if src.is_library(name.start) == src.is_library(declared_at) {
-                let (line, _) = src.line_col(declared_at);
-                let diagnostic = errors::shadows_top_level(text, line, name);
+                let at = src.elsewhere(name.start, declared_at);
+                let diagnostic = errors::shadows_top_level(text, &at, name);
                 self.push_diagnostic(diagnostic);
                 return None;
             }

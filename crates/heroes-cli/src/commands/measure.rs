@@ -37,8 +37,13 @@ pub fn run(file: Option<&str>) -> Exit {
     let m = match measure(&text, &vendor_dir()) {
         Ok(m) => m,
         Err(e) => {
+            // **2, not 1.** Both of `measure`'s error arms are "the vendored
+            // tokeniser tables could not be read" — the tool failing to run, not
+            // the input having a mistake in it (CLAUDE.md §10). The two adjacent
+            // paths in this one function used to disagree: an unreadable spec
+            // file exited 2 and a missing table exited 1.
             eprintln!("error: {e}");
-            return Exit::Diagnostics;
+            return Exit::Failed;
         }
     };
 

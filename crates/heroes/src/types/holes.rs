@@ -188,6 +188,18 @@ fn nearby(
         // A name from another module is offered the only way it can be
         // written: qualified. Offering `f` where only `geom.f` compiles is a
         // suggestion the reader has to repair (§4.16 is output, not a guess).
+        //
+        // **And only from a module this file can name.** The principle was
+        // applied halfway: a hole in `geom.hero` was offered `main.tally(x: int)`,
+        // which `geom` cannot `use` without a module cycle — so writing the
+        // suggestion is three errors, and §4.16's whole promise is that you are
+        // handed the answer rather than made to guess (2026-08-12).
+        let reachable = module == &here
+            || module == crate::source::LIBRARY_MODULE
+            || resolved.is_used_module(&here, module);
+        if !reachable {
+            continue;
+        }
         let written = if module == &here { name.clone() } else { format!("{module}.{name}") };
         let mut line = format!("{written}({})", params.join(", "));
         if let Some(doc) = ast.decls[*decl as usize].doc.first() {

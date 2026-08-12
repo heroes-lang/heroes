@@ -83,10 +83,17 @@ fn source_line(src: &Source, line: u32) -> String {
         .to_string()
 }
 
-/// The span, underlined. Tabs cannot appear (the lexer rejects them), so one
-/// byte is one column — and a span that runs past its line is clamped, because a
-/// declaration's span covers its whole body and pointing at forty lines of caret
-/// helps nobody.
+/// The span, underlined. One byte is one column, and a span that runs past its
+/// line is clamped, because a declaration's span covers its whole body and
+/// pointing at forty lines of caret helps nobody.
+///
+/// **The padding copies the line's own tabs.** This used to say tabs cannot
+/// appear because the lexer rejects them, which is true of every line except the
+/// one the tab diagnostic is *about* — and that line is printed above the caret
+/// like any other, so a terminal expanded the tab in the source line and not in
+/// a caret padded with spaces. rustc's rule and rustc's reason: reuse the
+/// whitespace rather than guess a tab width, and the two lines agree at any
+/// setting (2026-08-12).
 fn caret(src: &Source, diagnostic: &Diagnostic, col: u32) -> String {
     let (end_line, end_col) = src.line_col(diagnostic.span.end);
     let (start_line, _) = src.line_col(diagnostic.span.start);
@@ -95,5 +102,9 @@ fn caret(src: &Source, diagnostic: &Diagnostic, col: u32) -> String {
     } else {
         1
     };
-    format!("{}{}", " ".repeat(col as usize - 1), "^".repeat(width.max(1)))
+    let start = diagnostic.span.start as usize + 1 - col as usize;
+    let before = &src.text[start..diagnostic.span.start as usize];
+    let padding: String =
+        before.chars().map(|c| if c == '\t' { '\t' } else { ' ' }).collect();
+    format!("{padding}{}", "^".repeat(width.max(1)))
 }

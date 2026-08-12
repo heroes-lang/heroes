@@ -177,6 +177,32 @@ impl Source {
         self.file_of(offset) == 0
     }
 
+    /// How to name **the other end of a mistake**, from where the caret is.
+    ///
+    /// `line 12` when both ends are in one file, `geom.hero:12` when they are
+    /// not. Every "already declared at …", "the cycle is …" and "declared at …:
+    /// <signature>" goes through here.
+    ///
+    /// It exists because `locate` could not protect these: a location formatted
+    /// **into a message** is a `String` by the time any renderer sees it, so it
+    /// is outside every guard this compiler has. Ten sites built one by hand from
+    /// `line_col` and named no file at all — correct while `lines_before` was
+    /// zero for everything, and after M8a pointing at a line that is not there.
+    /// One of them was internally consistent and wrong in both halves: a
+    /// `shadowed_binding` whose note said "line 8" while its own caret sat on
+    /// `geom.hero:8` (2026-08-12).
+    ///
+    /// The short form is kept for the same-file case deliberately. §4.17 asks the
+    /// note to carry *the file the model would otherwise open*, and when that is
+    /// the file already on screen, naming it is noise.
+    pub fn elsewhere(&self, here: u32, there: u32) -> String {
+        let (file, line, _) = self.locate(there);
+        if self.file_of(here) == self.file_of(there) {
+            return format!("line {line}");
+        }
+        format!("{file}:{line}")
+    }
+
     /// The last offset **inside the root file** — where a diagnostic about the
     /// file as a whole puts its caret.
     ///

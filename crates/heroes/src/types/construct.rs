@@ -38,8 +38,8 @@ pub(super) fn construct_record(
         .iter()
         .map(|f| (src.slice(f.name).to_string(), f.ty))
         .collect();
-    let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
-    let holder = Holder { label: name, line };
+    let declared_at = src.elsewhere(span.start, ast.decls[decl as usize].name.start);
+    let holder = Holder { label: name, declared_at };
     check_named_fields(checker, ast, resolved, src, &holder, &expected, args, span);
     checker.out.types.intern(Ty::Named(decl))
 }
@@ -89,8 +89,8 @@ pub(super) fn case(
         .map(|f| (src.slice(f.name).to_string(), f.ty))
         .collect();
     let label = format!("{holder}.{name}");
-    let (line, _) = src.line_col(found.name.start);
-    let holder = Holder { label, line };
+    let declared_at = src.elsewhere(span.start, found.name.start);
+    let holder = Holder { label, declared_at };
     check_named_fields(checker, ast, resolved, src, &holder, &expected_fields, args, span);
     checker.record(at, expected);
 }
@@ -153,7 +153,9 @@ pub(super) fn fallible_constructor(
 /// and because the alternative is a nine-parameter function.
 struct Holder {
     label: String,
-    line: u32,
+    /// Where the declaration is, already worded for a reader: `line 7` when it
+    /// is in this file, `geom.hero:7` when it is not (`Source::elsewhere`).
+    declared_at: String,
 }
 
 fn check_named_fields(
@@ -169,7 +171,7 @@ fn check_named_fields(
     if args.len() != expected.len() {
         let names: Vec<String> = expected.iter().map(|(n, _)| n.clone()).collect();
         let diagnostic =
-            errors::missing_fields(&holder.label, &names, holder.line, span);
+            errors::missing_fields(&holder.label, &names, &holder.declared_at, span);
         checker.push_diagnostic(diagnostic);
         for arg in args {
             exprs::synth(checker, ast, resolved, src, arg.value);

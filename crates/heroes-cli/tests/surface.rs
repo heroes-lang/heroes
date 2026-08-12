@@ -670,3 +670,21 @@ fn fixedbugs_apply_does_not_panic_on_a_fix_in_another_module() {
     assert!(program.contains("use geom"), "the root file comes back whole: {program}");
     assert!(!program.contains("function area"), "and only the root file: {program}");
 }
+
+/// **fixedbugs, sweep 001 N6, 2026-08-12.** `lex --dump-tokens` dumped the whole
+/// compilation — an eight-line program printed 470 lines, the appended library's
+/// tokens included, at concatenated line numbers with no file marker. Its two
+/// siblings filter correctly, and `printer/scopes.rs` states the rule in words:
+/// a `--dump-<stage>` answers "what does the compiler know about **the file I
+/// named**" (CLAUDE.md §10).
+#[test]
+fn fixedbugs_dump_tokens_shows_the_file_that_was_named() {
+    let out = heroes(&["lex", "examples/gallery/00-first.hero", "--dump-tokens"]);
+    let shown = String::from_utf8_lossy(&out.stdout);
+    let lines = shown.lines().count();
+    assert!(lines < 40, "an 8-line program should not print {lines} token lines");
+    assert!(!shown.contains("range"), "the library is not this file: {lines} lines");
+    // Its own lines, not the concatenated text's.
+    assert!(shown.starts_with("1:1 "), "{shown}");
+    assert_eq!(code(&out), 0);
+}

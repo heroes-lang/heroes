@@ -74,8 +74,8 @@ pub(super) fn collect(r: &mut Resolver, ast: &Ast, src: &Source) {
         // two types. Only a *second* declaration in the SAME module is the
         // duplicate spec line 76 refuses.
         if let Some(previous) = r.out.top.get(&(module.clone(), name.clone())) {
-            let (line, _) = src.line_col(ast.decls[*previous as usize].name.start);
-            let diagnostic = errors::declared_twice(&name, line, decl.name);
+            let at = src.elsewhere(decl.name.start, ast.decls[*previous as usize].name.start);
+            let diagnostic = errors::declared_twice(&name, &at, decl.name);
             r.push_diagnostic(diagnostic);
             continue;
         }
@@ -107,8 +107,8 @@ fn uses(r: &mut Resolver, ast: &Ast, src: &Source) {
             continue;
         }
         if let Some(&decl) = r.out.top.get(&(from.clone(), named.clone())) {
-            let (line, _) = src.line_col(ast.decls[decl as usize].name.start);
-            let diagnostic = errors::use_shadows_a_declaration(&named, line, used.name);
+            let at = src.elsewhere(used.name.start, ast.decls[decl as usize].name.start);
+            let diagnostic = errors::use_shadows_a_declaration(&named, &at, used.name);
             r.push_diagnostic(diagnostic);
             continue;
         }

@@ -114,7 +114,7 @@ pub(in crate::types) fn arity(
     name: &str,
     expected: usize,
     got: usize,
-    declared: Option<(String, u32)>,
+    declared: Option<(String, String)>,
     span: Span,
 ) -> Diagnostic {
     let diagnostic = Diagnostic::new(
@@ -125,8 +125,8 @@ pub(in crate::types) fn arity(
     // A built-in and a function *value* have no declaration to cite, and a note
     // saying so would be worse than no note.
     match declared {
-        Some((signature, line)) => {
-            diagnostic.with_note(format!("declared at line {line}: {signature}"))
+        Some((signature, at)) => {
+            diagnostic.with_note(format!("declared at {at}: {signature}"))
         }
         None => diagnostic,
     }

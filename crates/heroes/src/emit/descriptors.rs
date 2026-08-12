@@ -89,6 +89,9 @@ pub(super) fn hash_call(checked: &Checked, names: &Names, ty: TyId, place: &str)
 /// 3. **Every field of every aggregate**, because `hash_body` sends a field whose
 ///    type is not itself an aggregate through `hash_call` → `pointer`.
 ///
+/// A container the emitted functions do not mention is skipped too: `test`
+/// blocks intern types, and an ordinary build does not emit them.
+///
 /// A type that still mentions a type parameter is skipped, exactly as the two
 /// sibling walks in `ctype.rs` and `types.rs` do: monomorphisation deletes the
 /// generic *functions*, not the `A?` their signatures interned, and asking
@@ -98,12 +101,24 @@ pub(super) fn hash_call(checked: &Checked, names: &Names, ty: TyId, place: &str)
 /// Sorted and deduplicated, because the emitted order has to be a function of the
 /// program and not of the interner's insertion order — the double-emit determinism
 /// test (CLAUDE.md §7) is what that buys.
-pub(super) fn generated(ast: &Ast, checked: &Checked) -> Vec<TyId> {
+pub(super) fn generated(
+    ast: &Ast,
+    checked: &Checked,
+    reachable: &BTreeSet<u32>,
+) -> Vec<TyId> {
     let mut wanted: BTreeSet<u32> = BTreeSet::new();
     let mut queue: Vec<TyId> = Vec::new();
     for index in 0..checked.types.len() {
         let id = TyId(index as u32);
         if super::ctype::mentions_generic(checked, id) {
+            continue;
+        }
+        // A container the **emitted** functions never mention contributes
+        // nothing. The checker interns from `test` blocks too, so a `[P]` that
+        // only a test builds used to put `h_M_P_desc` into an ordinary program
+        // build and leave it `-Wunused-const-variable` — the warning this
+        // worklist's own doc says it exists to prevent (2026-08-12).
+        if !reachable.contains(&id.0) {
             continue;
         }
         match checked.types.get(id) {
