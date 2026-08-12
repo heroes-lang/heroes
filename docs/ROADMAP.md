@@ -17,44 +17,20 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-header-constants closed 2026-08-12, tag `m-header-constants` — a value that
-comes from a C header is named, never copied.**
+**M-literal-bases closed 2026-08-12, tag `m-literal-bases` — an `int` is written
+in the base the header uses, and `0700` stopped meaning seven hundred.**
 
-    $ heroes run tests/golden/run/ffi-constant.hero
-    3.141592653589793
+    $ heroes run tests/golden/run/literal-bases.hero
+    hex 255 · oct 448 · bin 10 · sep 1000000 · mix 3735928559
 
-`constant SQLITE_OK: int` inside an `extern` group, with no body: the header holds
-the value, so there is no digit in the `.hero` file to be wrong. Panel 018
-committed the spelling *"at the FFI milestone at the latest"* and M-ffi-ladder
-closed without it, paying in five hand-copied numbers; §4.19 promised the
-capability in a sentence that was false. Both repaired here.
+`0x1f` `0o37` `0b11111` `31`, `_` between any two digits, by the author's
+ratification of panel 041: a base creates no value that did not exist, so panel
+035's exponent precedent does not reach it. The reading is by **value**, and
+octal also closed a live silent defect — `print(0700)` printed `700`.
 
-Measured before the cure and after it, as a **site count** and never a rate:
-`heroes mutate`'s twelfth operator moves one digit of a `constant`'s value, and
-`examples/` went from **5 sites, 0 caught** to **0 sites**. The panel's spec-warden
-had the class sized inside the sitting — 267 int-literal sites in all, so this
-reaches five of them and the objection that says so stands un-withdrawn.
-
-Three refusals no other language makes together: a C **object** (`stdout`, `errno`)
-is not a constant, a `str` cannot come from a foreign header, and a declared type
-the header refutes is a diagnostic on the `.hero` line rather than an internal
-error. Plus one defect in shipped code and one in the specification, both found by
-judges compiling rather than reading.
-
-At the close: **458 crate tests · 46 CLI surface · 13 golden harnesses**, clippy
-clean, spec at **2588** of 4096, `heroes mutate` at **93% / 78% over 1252** across
-19 programs.
-
-**Since, in two `/decide` sessions (2026-08-12): 463 · 49 · 13, spec 2675** —
-twenty-one open decisions answered and applied, `docs/debrief/QUEUE.md` for what
-each was. Panels **039** (comptime, examined and unplaced) and **040** (the bitwise
-set, a retro-record) both landed; a `constant` is constant again, `& | ^ ~ << >>`
-are real, and the port can compute its own mangled names.
-
-The record: `docs/journal/013-header-constants.md` ·
-`docs/panel/038-constants-from-headers.md` ·
-`docs/measurements/005-magic-constants.md` · `docs/debrief/QUEUE.md`.
-Next: **M-program-corpus**.
+**529 tests · 49 CLI · 13 harnesses**, clippy clean, spec **2745** of 4096,
+`mutate` 93% / 78% over 1252. Record: `docs/journal/014-literal-bases.md` ·
+`docs/panel/041`, ratified and scored. Next: **M-sized-integers**.
 
 ---
 
