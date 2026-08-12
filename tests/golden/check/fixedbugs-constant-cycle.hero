@@ -1,0 +1,63 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-12, found by reasoning note 003 while arguing about
+# compile-time evaluation): `constant A: int` with body `B` and `constant B: int`
+# with body `A` passed everything. `heroes check` exited 0. `heroes build` exited
+# 0. The emitted C was two mutually recursive zero-argument accessors, and the
+# binary died by **SIGSEGV at -O0** and **hung at -O2** — one program, two
+# failure modes, chosen by an optimisation flag nobody typed.
+#
+# CAUSE: nothing looked. `types/sized.rs` detects cycles over record and variant
+# *field types*, which is a question about bytes; nothing asked the same question
+# about *values*. A constant read lowers to a call (`ir/exprs.rs`), so the
+# circularity was invisible to every pass that ran after lowering and unasked by
+# every pass before it.
+#
+# FIX: `resolve/cycles.rs` — one iterative depth-first search over "this body
+# reads that declaration", reporting a cycle only where a `constant` is on it.
+# The filter is on the cycle rather than on the edges because the defect escapes
+# through functions: `A` reading `f()` where `f` returns `A` is the same defect
+# wearing a different declaration, and it was accepted too. Functions alone may
+# recur freely — §4.2 grants mutual recursion, and a function has arguments and a
+# base case where a constant's accessor has neither.
+#
+# The last two declarations are the CONTROL, and they are the reason this file is
+# not three files: `chain` reads `START`, `even`/`odd` recur through each other,
+# and neither may be reported. A cycle check that fired on those would be worse
+# than the defect it replaced.
+# Bulk regression case.
+
+constant A: int         #~ constant_cycle
+    B
+
+constant B: int
+    A
+
+constant SELF: int      #~ constant_cycle
+    SELF
+
+constant THROUGH: int   #~ constant_cycle
+    depends()
+
+function depends() -> int
+    return THROUGH
+
+constant START: int
+    2
+
+constant CHAIN: int
+    START + 1
+
+function even(n: int) -> bool
+    if n == 0
+        return true
+    return odd(n - 1)
+
+function odd(n: int) -> bool
+    if n == 0
+        return false
+    return even(n - 1)
+
+function main()
+    print(A + B + SELF + THROUGH + CHAIN)
+    print(even(4))

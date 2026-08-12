@@ -21,13 +21,14 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 54] = [
+const ANNOTATED: [&str; 55] = [
     "bound_unit",
     "builtin",
     "builtin_as_value",
     "builtin_name_taken",
     "cannot_infer",
     "char_literal",
+    "constant_cycle",
     "discarded_value",
     "empty_record",
     "escape_not_needed",

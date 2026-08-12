@@ -207,3 +207,39 @@ function main()
         "`record Box<A>` must not parse as a generic declaration"
     );
 }
+
+/// A `constant` may not be defined in terms of itself — directly, through
+/// another constant, or through a function (`resolve/cycles.rs`).
+///
+/// The control is in the same test on purpose: `CHAIN` reading `START` and
+/// `even`/`odd` recurring through each other are both legal, and a cycle check
+/// that fired on either would be worse than the defect it replaced.
+#[test]
+fn a_constant_defined_in_terms_of_itself_is_refused() {
+    let codes = |text: &str| -> Vec<String> {
+        let src = crate::source::Source::new("t.hero".to_string(), text.to_string());
+        let parsed = crate::syntax::parse(&src);
+        assert!(parsed.diagnostics.is_empty(), "the fixture parses: {:?}", parsed.diagnostics);
+        crate::resolve::resolve(&parsed.ast, &src)
+            .diagnostics
+            .iter()
+            .map(|d| d.code.clone())
+            .collect()
+    };
+
+    let direct = "constant A: int\n    A\n\nfunction main()\n    print(A)\n";
+    assert_eq!(codes(direct), vec!["constant_cycle".to_string()]);
+
+    let pair = "constant A: int\n    B\n\nconstant B: int\n    A\n\nfunction main()\n    print(A)\n";
+    assert_eq!(codes(pair), vec!["constant_cycle".to_string()], "one diagnostic per cycle, not per constant");
+
+    let through =
+        "constant A: int\n    f()\n\nfunction f() -> int\n    return A\n\nfunction main()\n    print(A)\n";
+    assert_eq!(codes(through), vec!["constant_cycle".to_string()], "the cycle escapes through a function");
+
+    let legal = "constant START: int\n    2\n\nconstant CHAIN: int\n    START + 1\n\n\
+                 function even(n: int) -> bool\n    if n == 0\n        return true\n    return odd(n - 1)\n\n\
+                 function odd(n: int) -> bool\n    if n == 0\n        return false\n    return even(n - 1)\n\n\
+                 function main()\n    print(CHAIN)\n    print(even(4))\n";
+    assert!(codes(legal).is_empty(), "a chain and mutual recursion are both legal (§4.2)");
+}

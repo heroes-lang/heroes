@@ -28,6 +28,7 @@
 //! | `qualified.rs`| `geom.f` — a module in receiver position, and what it is not |
 //! | `types.rs`    | written types against primitives, declarations, generics |
 //! | `errors.rs`   | the messages, and the one-candidate `Certain` rename |
+//! | `cycles.rs`   | a `constant` defined in terms of itself, directly or not |
 //!
 //! **The resolver only ever runs on a tree that parsed clean.** After a parse
 //! error the tree holds recovery guesses, and a name error about a line the
@@ -47,6 +48,7 @@ use crate::source::{Source, Span};
 use crate::syntax::{Ast, ExprId, ExprKind, TypeId};
 
 mod builtins;
+mod cycles;
 mod decls;
 mod errors;
 mod exprs;
@@ -276,6 +278,10 @@ pub fn resolve(ast: &Ast, src: &Source) -> Resolved {
     }
     top::unused_uses(&mut r, ast, src);
     r.report_unused(src);
+    // Last, because it reads `uses` and `uses` is only complete once every body
+    // has been walked. A definitional cycle is a fact about the finished table,
+    // not about any one declaration.
+    cycles::report(&mut r.out, ast, src);
     // Within the pass, source order. Diagnostics from earlier stages stay ahead
     // of these (see `syntax::parse`): grouped by the stage that can explain
     // them, ordered by position inside it.
