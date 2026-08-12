@@ -156,6 +156,25 @@ file opens with a module doc stating its role and citing its design.md
 sections; comments teach the invariant and the why, never the diff. The
 author must be able to open any file and read it without drowning.
 
+**A narrowing asks the value, never the world** (author instruction
+2026-08-12, sweep 001). A filter, an allow-list of kinds, or a `_ =>` arm is a
+decision, and its correctness rests on something. Rest it on a fact about the
+value in hand — *this* expression's extent, *this* declaration's fields — never
+on a premise about the world around it ("a multi-line list is the only value
+that does not end where it started"; "nothing reads this payload"). A fact
+about the value cannot expire. A premise about the world expires **silently**,
+and the comment justifying it goes on reading as correct, because the argument
+is still valid and only the premise died. Two of sweep 001's twenty were
+exactly this, and both had been read and agreed with — which is why a
+convention about comment style would not have caught either. Where a premise
+is unavoidable, two things are owed: write it as a **falsifiable claim**, not a
+justification; and give it **a test that fires when it dies**, whose failure
+message names what depends on it (`a_declared_type_cannot_contain_a_type_parameter`
+is the shape — one premise, three dependants in three modules, one test). And
+put the fallback in the **loud** direction: `_ => hero_unreachable()` beat
+`_ => false` by a whole class of defect at M5c, and D3 paid for the same lesson
+twice.
+
 ## 12. Precedence when artifacts disagree
 Spec beats compiler (the compiler has the bug). Measurement beats opinion —
 including the author's and the panel's: comprehension is the objective (§1.1)

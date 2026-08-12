@@ -130,3 +130,80 @@ function twice(f: (function(Poimt) -> int)) -> int
         "test.hero:1:29: error[unknown_type]: no type named `Poimt`\n"
     );
 }
+
+/// **THE PREMISE: a declared type cannot contain a type parameter.**
+///
+/// §4.12's positive rule — *"Generics on functions only, not on types"* — and
+/// this test exists because **three functions in three other modules quietly
+/// depend on it and none of them says so**:
+///
+/// | who | what it does with the premise |
+/// |---|---|
+/// | `emit/ctype.rs::mentions_generic` | walks `Array\|Fallible\|Map\|Func` and answers `false` for everything else, so a `Ty::Named` is assumed parameter-free. If it were not, the emitter would give a template type a C declaration: `error: unknown type name 'HeroValue'`, exit 2 |
+/// | `ir/mono.rs::contains` | same walk, same fallback. If it were wrong, monomorphisation would miss a substitution site and emit a body still mentioning a parameter |
+/// | `types/table.rs::poisoned` | same walk again. If it were wrong, an `Error` inside a declared type would stop suppressing the cascade it exists to suppress |
+///
+/// All three fail **silently** if the premise dies: no diagnostic says "this
+/// walk did not descend". Nothing in the compiler connects them to the rule
+/// they rest on — so this is that connection, and it is a test rather than a
+/// comment because two defects on 2026-08-12 were protected by comments that
+/// argued correctly for a world that had changed underneath them
+/// (`docs/defects/001-the-post-m8a-sweep.md`).
+///
+/// **The premise is currently enforced, and by an accident worth knowing about.**
+/// `resolve/types.rs` resolves a type parameter against the *enclosing
+/// function's* list, and a `record` has no such list — so `A` inside a field is
+/// simply an unknown name. Nobody wrote a rule saying "a declaration may not be
+/// generic"; the rule is a consequence of where the parameter list lives. An
+/// accident is exactly the kind of enforcement that disappears in a refactor
+/// nobody thinks is related.
+///
+/// **If this test goes red, the three functions above are wrong** and the walks
+/// have to descend into a declaration's fields before anything else lands. Part 8
+/// wart 5 is the live route to that: typed errors name generics-on-types as their
+/// first prerequisite.
+#[test]
+fn a_declared_type_cannot_contain_a_type_parameter() {
+    let said = diagnostics(
+        "\
+record Box
+    v: A
+
+function main()
+    print(1)
+",
+    );
+    assert!(
+        said.contains("unknown_type"),
+        "the premise three walks depend on has died — read this test's doc: {said}"
+    );
+
+    let said = diagnostics(
+        "\
+variant T
+    one
+        v: A
+
+function main()
+    print(1)
+",
+    );
+    assert!(
+        said.contains("unknown_type"),
+        "a case payload is a small record and the premise covers it too: {said}"
+    );
+
+    // And the other way in: a declaration may not carry a parameter list at all,
+    // which is what keeps `A` from ever being resolvable in a field. This one is
+    // refused by the **parser**, one pass earlier — `record` takes a name and
+    // nothing else (§4.2) — so it is asked of `parse` rather than of `resolve`.
+    let src = crate::source::Source::new(
+        "test.hero".to_string(),
+        "record Box<A>\n    v: int\n\nfunction main()\n    print(1)\n".to_string(),
+    );
+    let parsed = crate::syntax::parse(&src);
+    assert!(
+        !parsed.diagnostics.is_empty(),
+        "`record Box<A>` must not parse as a generic declaration"
+    );
+}

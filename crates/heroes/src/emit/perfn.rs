@@ -95,7 +95,7 @@ fn every_generated_type(
                 out.push((payload, owns_case(ast, checked, decl, at as u32)));
             }
         }
-        out.push((name, owns(checked, decl)));
+        out.push((name, owns(ast, checked, decl)));
     }
     out
 }
@@ -125,7 +125,7 @@ pub(super) fn bodies(
                 equality_body(w, checked, names, src, &payload, &case.fields);
                 hash_body(w, checked, names, src, &payload, &case.fields);
             }
-            if owns(checked, decl) {
+            if owns(ast, checked, decl) {
                 variant_reference_body(w, ast, checked, names, src, decl, &name, true);
                 variant_reference_body(w, ast, checked, names, src, decl, &name, false);
             }
@@ -134,7 +134,7 @@ pub(super) fn bodies(
             continue;
         }
         let fields = fields_of(ast, decl);
-        if owns(checked, decl) {
+        if owns(ast, checked, decl) {
             reference_body(w, checked, names, src, &name, fields, true);
             reference_body(w, checked, names, src, &name, fields, false);
         }
@@ -296,11 +296,20 @@ pub(super) fn descriptors(
 
 /// Whether a value of this declaration owns a counted reference — asked through
 /// `ir::is_refcounted`, which is the one home for the question.
-fn owns(checked: &Checked, decl: u32) -> bool {
+///
+/// The `None` arm used to be `false`, under the reasoning that a declaration no
+/// written type mentions is one nothing can hold. That is the same sentence
+/// `owns_case` carried, and there it was wrong (D3): the interner records what a
+/// program *mentioned*, and the question is what a declaration *is*. It was never
+/// reproduced here and may well be unreachable — a `Ty::Named` is interned by any
+/// written type or any construction, so an uninterned declaration is one nothing
+/// builds. It is asked of the fields anyway, because "I could not build the
+/// program that reaches it" is exactly what was true of D3's twin the day before
+/// it leaked, and the two arms now give the same answer for the same reason.
+fn owns(ast: &Ast, checked: &Checked, decl: u32) -> bool {
     match checked.types.lookup(Ty::Named(decl)) {
         Some(id) => crate::ir::is_refcounted(checked, id),
-        // Declared and never mentioned by any written type, so nothing can hold one.
-        None => false,
+        None => any_field_is_counted(ast, checked, fields_of(ast, decl)),
     }
 }
 
@@ -311,19 +320,23 @@ fn owns_case(ast: &Ast, checked: &Checked, decl: u32, case: u32) -> bool {
         // variant is still built, copied and released, and its release has to reach
         // the fields inside it. The answer therefore comes from the fields, never
         // from the interner (panel 034 D1).
-        None => case_fields_are_counted(ast, checked, decl, case),
+        None => any_field_is_counted(ast, checked, &cases_of(ast, decl)[case as usize].fields),
     }
 }
 
-/// The fallback for a payload no `match` arm binds: ask the fields directly.
+/// Does any of these fields own a counted reference?
 ///
-/// This is the whole repair. `Ty::Case` is interned when a pattern *destructures*
-/// the payload, and a module may build `.name(s: …)` without ever destructuring it —
-/// which made the same declaration emit a walking `release` in one compilation and an
-/// empty one in another, purely because a *different* module happened to contain the
+/// **This is the repair, and it is one function because it was one mistake.**
+/// `Ty::Case` is interned when a pattern *destructures* a payload and `Ty::Named`
+/// when a written type or a construction names it — both are facts about what a
+/// program happened to mention. Whether a value owns a reference is a fact about
+/// its declaration. A module may build `.name(s: …)` and never destructure it,
+/// which made the same declaration emit a walking `release` in one compilation
+/// and an empty one in another, purely because a *different* module held the
 /// `match`. The fields do not move between compilations; the interner does.
-fn case_fields_are_counted(ast: &Ast, checked: &Checked, decl: u32, case: u32) -> bool {
-    cases_of(ast, decl)[case as usize].fields.iter().any(|field| {
+fn any_field_is_counted(ast: &Ast, checked: &Checked, fields: &[Field]) -> bool {
+    let _ = ast;
+    fields.iter().any(|field| {
         let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
         crate::ir::is_refcounted(checked, ty)
     })
