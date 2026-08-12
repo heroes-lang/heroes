@@ -22,6 +22,12 @@
 //! are redundant — and that is exactly why they are written. A field added to a
 //! record in the middle is then a clang error at every construction site instead of a
 //! silent shift of every value one field along.
+//!
+//! **Records and variant payloads only** (the §11 sweep of 2026-08-12 took the rest):
+//! `container.rs` has `[T]` and `{K: V}`, which are a runtime pointer rather than a C
+//! aggregate, and `fallible.rs` has `T?`, whose members are alternatives. What stayed
+//! is what answers this file's one question. The `Types` bundle stayed too, because all
+//! three files need it and it belongs with the field walk it exists for.
 
 use crate::ir::{Function, Place, Step, ValueId};
 use crate::source::Source;
@@ -47,7 +53,7 @@ impl<'a> Types<'a> {
     /// `None` where the owner is not an aggregate or the index is past its fields,
     /// which by here means the checker reported something and the emitter is running
     /// on a program it should never have been handed.
-    fn field(&self, owner: TyId, index: u32) -> Option<(String, TyId)> {
+    pub(super) fn field(&self, owner: TyId, index: u32) -> Option<(String, TyId)> {
         // §4.6's built-in record: two `str`s, `code` then `msg`, with no declaration
         // anywhere to read them from — `ir/layout.rs` fixes the order for the same
         // reason and this is the C side of it.
@@ -77,7 +83,7 @@ impl<'a> Types<'a> {
     }
 
     /// The C type name a per-type function belongs to.
-    fn aggregate_name(&self, ty: TyId) -> Option<&str> {
+    pub(super) fn aggregate_name(&self, ty: TyId) -> Option<&str> {
         match self.checked.types.get(ty) {
             Ty::Named(decl) => Some(self.names.of(decl)),
             Ty::Case(decl, case) => Some(self.names.case_of(decl, case)),
@@ -230,282 +236,4 @@ pub(super) fn retain(types: &Types, ty: TyId, value: ValueId, keep: bool) -> Opt
     let name = types.aggregate_name(ty)?;
     let verb = if keep { "retain" } else { "release" };
     Some(format!("{name}_{verb}(&{})", mangle::value(value.0)))
-}
-
-// --- arrays ---------------------------------------------------------------
-
-/// `t4 = hero_array_new(&hero_desc_int, 3);` plus one push per element.
-///
-/// Built by pushing rather than by writing the elements directly, because `push` is
-/// where the element's `copy` runs — and that copy is what takes the array's own
-/// reference to a counted element. Writing the bytes would share the caller's
-/// reference without counting it.
-///
-/// Each push hands back a NEW array and the previous one is released, so a literal of
-/// n elements allocates n+1 blocks and frees n. That is §4.10's declared bill in its
-/// smallest form; performance is a non-goal (Part 2), and the alternative — a `push`
-/// that appends in place — has no reading under value semantics, because a refcount of
-/// 1 means "the slot has it" and appending would change what the slot sees.
-pub(super) fn build_array(
-    types: &Types,
-    result: TyId,
-    arguments: &[String],
-    into: &str,
-) -> Option<Vec<String>> {
-    let element = match types.checked.types.get(result) {
-        Ty::Array(element) => element,
-        _ => return None,
-    };
-    let desc = super::descriptors::pointer(types.checked, types.names, element)?;
-    let mut lines = vec![format!("{into} = hero_array_new({desc}, {});", arguments.len().max(1))];
-    for value in arguments {
-        // The temporary the push returns replaces the one it grew from, and the old one
-        // is released — one line each, and no temporary left owning anything.
-        lines.push(format!("{{ HeroArrayHeader *grown = hero_array_push({into}, &{value});"));
-        lines.push(format!("  hero_array_decref({into}); {into} = grown; }}"));
-    }
-    Some(lines)
-}
-
-/// `t9 = *(const int64_t *)hero_array_at(t7, t8);`
-///
-/// The read goes through the runtime because that is where the bounds check lives:
-/// spec line 126 says an out-of-bounds index aborts, and §4.9 says it never reads
-/// arbitrary memory. The cast is on the *result*, so the element type is stated at
-/// every read and clang checks the assignment.
-pub(super) fn read_element(
-    types: &Types,
-    function: &Function,
-    base: ValueId,
-    index: ValueId,
-) -> Option<String> {
-    let element = match types.checked.types.get(function.value_type(base)) {
-        Ty::Array(element) => element,
-        _ => return None,
-    };
-    let spelling = super::ctype::c_type(types.names, types.checked, element)?;
-    // `{spelling} const *`, not `const {spelling} *`: the two differ exactly when the
-    // element is itself a pointer. For `[[int]]` the element spelling is
-    // `HeroArrayHeader *`, and the prefix form reads as pointer-to-pointer-to-const,
-    // whose dereference is a `const HeroArrayHeader *` — assigning that to the
-    // temporary is `-Wincompatible-pointer-types-discards-qualifiers`. The suffix form
-    // says what is meant: a const pointer to the element, whatever the element is.
-    Some(format!(
-        "*({spelling} const *)hero_array_at({}, {})",
-        mangle::value(base.0),
-        mangle::value(index.0)
-    ))
-}
-
-/// `xs[i] @ v`, and every deeper spelling of it: **one unshare per array step of the
-/// place, each writing back at its own level** (panel 022).
-///
-/// The walk keeps a C *lvalue* for the place reached so far rather than an address,
-/// because a field step is `.member` on an lvalue and `&` is only needed where a
-/// primitive takes one. For `g.rows[0].cells[0] @ 7`:
-///
-/// ```text
-///   h0_g                                        the slot, ours already
-///   h0_g.f_rows                                 a field: no unshare, we own the record
-///   hero_array_unshare(&(h0_g.f_rows));         an array step: make THIS level unique
-///   (*(h_m_Row *)hero_array_at_mut(h0_g.f_rows, t12))          descend into the element
-///   ....f_cells                                 a field of the element
-///   hero_array_unshare(&(....f_cells));         the second array step, unique too
-///   hero_array_set(&(....f_cells), t13, &t14);  and the write, which unshares again
-/// ```
-///
-/// The last step's `set` unshares a third time and that is deliberate: it is a
-/// refcount test, it is idempotent, and having one entry point that cannot be reached
-/// without it beats an emitter that has to remember.
-pub(super) fn write_element(
-    types: &Types,
-    function: &Function,
-    at: Place,
-    value: ValueId,
-) -> Option<Vec<String>> {
-    let slot = &function.slots[at.root.0 as usize];
-    let mut lvalue = mangle::slot(at.root.0, &slot.name);
-    let mut ty = slot.ty;
-    let steps = function.steps_of(at.path);
-    let mut lines: Vec<String> = Vec::new();
-    for (position, step) in steps.iter().enumerate() {
-        let last = position + 1 == steps.len();
-        match step {
-            Step::Field(index) => {
-                let (member, next) = types.field(ty, *index)?;
-                lvalue = format!("{lvalue}.{member}");
-                ty = next;
-                // A field is not an indirection: the record is inside a place we
-                // already own, so nothing to unshare. A trailing field store is
-                // rule 3's plain assignment and never reaches this function.
-                if last {
-                    return None;
-                }
-            }
-            Step::Index(index) => {
-                // **A map step ends the walk.** `m[k] @ v` inserts, so there is no
-                // element to descend into — a key that is absent is created by the
-                // store itself. A map step that is *not* last would mean writing
-                // through a value the map may not hold, which the checker refuses.
-                if let Ty::Map(_, _) = types.checked.types.get(ty) {
-                    if !last {
-                        return None;
-                    }
-                    lines.push(format!(
-                        "hero_map_set(&({lvalue}), &{}, &{});",
-                        mangle::value(index.0),
-                        mangle::value(value.0)
-                    ));
-                    return Some(lines);
-                }
-                let element = match types.checked.types.get(ty) {
-                    Ty::Array(element) => element,
-                    _ => return None,
-                };
-                if last {
-                    lines.push(format!(
-                        "hero_array_set(&({lvalue}), {}, &{});",
-                        mangle::value(index.0),
-                        mangle::value(value.0)
-                    ));
-                    return Some(lines);
-                }
-                lines.push(format!("hero_array_unshare(&({lvalue}));"));
-                let spelling = super::ctype::c_type(types.names, types.checked, element)?;
-                lvalue = format!(
-                    "(*({spelling} *)hero_array_at_mut({lvalue}, {}))",
-                    mangle::value(index.0)
-                );
-                ty = element;
-            }
-        }
-    }
-    None
-}
-
-// --- `T?` -----------------------------------------------------------------
-
-/// `ok(x)`, `fail(code, msg)` and the `err` that `?` produces (design.md §4.6).
-///
-/// One compound literal each, and the tag is written explicitly even though C would
-/// zero it for `ok`: the two sides of a `T?` are the whole point of the type, and a
-/// reader of the generated C should not have to know C's initialiser rules to see
-/// which one this is.
-pub(super) fn construct_option(
-    types: &Types,
-    result: TyId,
-    shape: crate::ir::Shape,
-    arguments: &[String],
-) -> Option<String> {
-    use crate::ir::Shape;
-    let name = types.names.option_of(result);
-    match shape {
-        Shape::Ok => {
-            let value = arguments.first();
-            match value {
-                Some(text) => Some(format!("({name}){{.tag = INT64_C(0), .as.ok = {text}}}")),
-                // `ok(())` — a unit payload has no member at all, so the tag is the
-                // whole value.
-                None => Some(format!("({name}){{.tag = INT64_C(0)}}")),
-            }
-        }
-        Shape::Fail => {
-            let code = arguments.first()?;
-            let msg = arguments.get(1)?;
-            Some(format!(
-                "({name}){{.tag = INT64_C(1), .as.err = {{.code = {code}, .msg = {msg}}}}}"
-            ))
-        }
-        // `?` propagates the failure UNCHANGED into the caller's `T?`: nothing re-reads
-        // its code and msg on the way (§4.6), so this is one struct assignment.
-        Shape::Err => {
-            let failure = arguments.first()?;
-            Some(format!("({name}){{.tag = INT64_C(1), .as.err = {failure}}}"))
-        }
-        _ => None,
-    }
-}
-
-/// `t16 = t15.tag;` for a `T?`, the same member a variant uses.
-pub(super) fn option_tag(base: ValueId) -> String {
-    format!("{}.tag", mangle::value(base.0))
-}
-
-/// `.as.ok` for case 0 and `.as.err` for case 1 — `ir/inst.rs`'s own numbering.
-pub(super) fn option_payload(base: ValueId, case: u32) -> String {
-    let member = if case == 0 { "ok" } else { "err" };
-    format!("{}.as.{member}", mangle::value(base.0))
-}
-
-// --- `{K: V}` -------------------------------------------------------------
-
-/// `t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2);` plus one `put` per pair.
-///
-/// The arguments alternate key, value (`ir/inst.rs`'s own shape for `Shape::Map`), and
-/// both go in **by address**: the runtime copies them through their descriptors, which
-/// is the only way one function can insert a `str` key and a `Point` value.
-pub(super) fn build_map(
-    types: &Types,
-    result: TyId,
-    arguments: &[String],
-    into: &str,
-) -> Option<Vec<String>> {
-    let (key, value) = match types.checked.types.get(result) {
-        Ty::Map(key, value) => (key, value),
-        _ => return None,
-    };
-    let key_desc = super::descriptors::pointer(types.checked, types.names, key)?;
-    let value_desc = super::descriptors::pointer(types.checked, types.names, value)?;
-    let pairs = arguments.len() / 2;
-    let mut lines = vec![format!("{into} = hero_map_new({key_desc}, {value_desc}, {pairs});")];
-    for pair in arguments.chunks(2) {
-        if pair.len() == 2 {
-            lines.push(format!("hero_map_put({into}, &{}, &{});", pair[0], pair[1]));
-        }
-    }
-    Some(lines)
-}
-
-/// `m[k]`, which is **not** `xs[i]`: it yields a `V?` and cannot abort (§4.9).
-///
-/// The runtime hands back the value's address or NULL, because it cannot build the
-/// option — that struct is generated per payload type. So the wrapping is here, and the
-/// found value is copied through its descriptor rather than assigned: the map still
-/// owns its copy, and the `V?` needs one of its own.
-pub(super) fn map_get(
-    types: &Types,
-    function: &Function,
-    map: ValueId,
-    key: ValueId,
-    result: TyId,
-    into: &str,
-) -> Option<Vec<String>> {
-    let value = match types.checked.types.get(function.value_type(map)) {
-        Ty::Map(_, value) => value,
-        _ => return None,
-    };
-    let option = types.names.option_of(result);
-    let mut lines = vec![
-        "{".to_string(),
-        format!(
-            "  const void *found = hero_map_find({}, &{});",
-            mangle::value(map.0),
-            mangle::value(key.0)
-        ),
-        "  if (found == NULL) {".to_string(),
-        format!(
-            "    {into} = ({option}){{.tag = INT64_C(1), .as.err = hero_failure_missing_key()}};"
-        ),
-        "  } else {".to_string(),
-        format!("    {into}.tag = INT64_C(0);"),
-    ];
-    // A unit value type has no `ok` member at all (`ctype.rs`'s unit rule), so the tag
-    // is the whole answer.
-    if super::ctype::c_type(types.names, types.checked, value).is_some() {
-        let desc = super::descriptors::pointer(types.checked, types.names, value)?;
-        lines.push(format!("    ({desc})->copy(&{into}.as.ok, found);"));
-    }
-    lines.push("  }".to_string());
-    lines.push("}".to_string());
-    Some(lines)
 }

@@ -25,6 +25,8 @@ use crate::ir::{Arg, Inst, Op, Place, Program};
 use crate::types::Ty;
 
 use super::aggregate;
+use super::container;
+use super::fallible;
 use super::ops;
 use super::ctype::is_unit;
 use super::mangle;
@@ -94,7 +96,7 @@ pub(super) fn emit(
                 .iter()
                 .any(|step| matches!(step, crate::ir::Step::Index(_))) =>
         {
-            match aggregate::write_element(types, function, place, value) {
+            match container::write_element(types, function, place, value) {
                 Some(lines) => {
                     for line in lines {
                         w.line(&format!("    {line}"));
@@ -230,7 +232,7 @@ pub(super) fn emit(
                         Arg::InOut(_) => None,
                     })
                     .collect();
-                match aggregate::build_array(types, inst.ty, &arguments, &name) {
+                match container::build_array(types, inst.ty, &arguments, &name) {
                     Some(lines) => {
                         for line in lines {
                             w.line(&format!("    {line}"));
@@ -251,7 +253,7 @@ pub(super) fn emit(
                         Arg::InOut(_) => None,
                     })
                     .collect();
-                match aggregate::construct_option(types, inst.ty, shape, &arguments) {
+                match fallible::construct_option(types, inst.ty, shape, &arguments) {
                     Some(text) => w.line(&format!("    {name} = {text};")),
                     None => w.line("    hero_unreachable(); /* not a T? */"),
                 }
@@ -270,7 +272,7 @@ pub(super) fn emit(
                         Arg::InOut(_) => None,
                     })
                     .collect();
-                match aggregate::build_map(types, inst.ty, &arguments, &name) {
+                match container::build_map(types, inst.ty, &arguments, &name) {
                     Some(lines) => {
                         for line in lines {
                             w.line(&format!("    {line}"));
@@ -282,7 +284,7 @@ pub(super) fn emit(
         }
         Op::MapGet { map, key } => {
             if let Some(name) = target {
-                match aggregate::map_get(types, function, map, key, inst.ty, &name) {
+                match container::map_get(types, function, map, key, inst.ty, &name) {
                     Some(lines) => {
                         for line in lines {
                             w.line(&format!("    {line}"));
@@ -361,7 +363,7 @@ pub(super) fn emit(
         Op::Tag(base) => {
             if let Some(name) = target {
                 let text = match checked.types.get(function.value_type(base)) {
-                    Ty::Fallible(_) => aggregate::option_tag(base),
+                    Ty::Fallible(_) => fallible::option_tag(base),
                     _ => aggregate::tag(base),
                 };
                 w.line(&format!("    {name} = {text};"));
@@ -370,7 +372,7 @@ pub(super) fn emit(
         Op::Payload { base, case } => {
             if let Some(name) = target {
                 let text = match checked.types.get(function.value_type(base)) {
-                    Ty::Fallible(_) => Some(aggregate::option_payload(base, case)),
+                    Ty::Fallible(_) => Some(fallible::option_payload(base, case)),
                     _ => aggregate::payload(types, function, base, case),
                 };
                 match text {
@@ -389,7 +391,7 @@ pub(super) fn emit(
         }
         Op::Index { base, index } => {
             if let Some(name) = target {
-                match aggregate::read_element(types, function, base, index) {
+                match container::read_element(types, function, base, index) {
                     Some(text) => w.line(&format!("    {name} = {text};")),
                     None => w.line("    hero_unreachable(); /* not an array */"),
                 }
