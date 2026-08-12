@@ -87,3 +87,27 @@ refused because it deletes a compile error: sixteen `f`s is `-1` and fifteen is
 silently wrong number instead of a diagnostic. `~0` has been the all-ones mask
 since the previous milestone anyway, which is the fact that made the refusal
 cheap.
+
+
+---
+
+## The closing block, as `docs/ROADMAP.md` § Status carried it
+
+Moved here at `M-sized-integers` close (2026-08-12), by `/step`'s rule that the
+ROADMAP says what is *next* and a closed milestone's record is its journal. The
+wording is the milestone's own; `Next:` names what was next **then**.
+
+**M-literal-bases closed 2026-08-12, tag `m-literal-bases` — an `int` is written
+in the base the header uses, and `0700` stopped meaning seven hundred.**
+
+    $ heroes run tests/golden/run/literal-bases.hero
+    hex 255 · oct 448 · bin 10 · sep 1000000 · mix 3735928559
+
+`0x1f` `0o37` `0b11111` `31`, `_` between any two digits, by the author's
+ratification of panel 041: a base creates no value that did not exist, so panel
+035's exponent precedent does not reach it. The reading is by **value**, and
+octal also closed a live silent defect — `print(0700)` printed `700`.
+
+**529 tests · 49 CLI · 13 harnesses**, clippy clean, spec **2745** of 4096,
+`mutate` 93% / 78% over 1252. Record: `docs/journal/014-literal-bases.md` ·
+`docs/panel/041`, ratified and scored. Next: **M-sized-integers**.
