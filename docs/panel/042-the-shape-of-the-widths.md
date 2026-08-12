@@ -328,3 +328,54 @@ corrections to the proposal's own text** and dropped what it could not source.
 worth stating, because the author's ratification of panel 041 is what put the
 widths beyond this sitting's reach, and a reader meeting two vetoes in the table
 could mistake this for the panel refusing again.
+
+
+---
+
+## The author's verdict, 2026-08-12 — all four, and one of them goes further than the panel's menu
+
+1. **`int` is deleted.** *"i64 sempre e mai int, togli int."* Not option (a), (b)
+   or (c): the alias does not exist. Eight types, one spelling each —
+   `i8 i16 i32 i64 u8 u16 u32 u64`. **This dissolves the compiler-engineer's Q3
+   veto rather than answering it**: with no alias there is no two-renderer
+   problem, no §4.15 question about which spelling `fmt` emits, and
+   `types/lower.rs` keeps its 87 lines and its 17 context-free call sites. The
+   historian's "canonicalise in the comparison" and Go's #63223 both become moot
+   — there is nothing to canonicalise.
+
+   The reason given is the thesis, not a concession: *"non mi importa se `i64`
+   sembra strano perché tanto lo useranno gli LLM."* `int` is a word with forty
+   years of conflicting widths behind it — 16 bits in C on one platform, 32 on
+   another, arbitrary precision in Python — and `i64` is ambiguous to no reader.
+   §1.1 makes comprehension the objective and the objective is measured, so the
+   spec-warden's **545 `int` occurrences across 168 `.hero` files** are a
+   migration cost, not a counter-argument: they are 545 tokens that currently
+   carry a number nobody can read off the name.
+
+2. **The wrapping forms come too.** So FNV-1a becomes writable and the
+   llm-ergonomist's veto ground is answered rather than overruled. Overflow still
+   aborts everywhere by default; `wrapping_mul` and `wrapping_add` are the
+   explicit escape, which is the third option from the author's own menu of
+   2026-08-12 — the one not taken then.
+
+3. **`s[i]` yields `u8`** — *"u8, o comunque il dato preciso"*, which is the rule
+   and not just the answer: **a value gets the type that describes it**, not the
+   widest type that holds it. So `[u8]` gains its producer, the ergonomist's
+   `b == 'a'` problem moves to character literals, and the historian's Go
+   precedent (unchanged since Go 1, no sourced regret) is the one followed.
+   Rust's counter-warning stands and is adopted with it: **the index parameter's
+   accepted type is not narrowed**, because `as usize` is the most-complained-of
+   integer decision in the historian's whole report.
+
+4. **`HERO_RUNTIME_ABI` 10 → 11**, with `hero_print_uint`/`hero_uint_to_str`. So a
+   `u64` prints `18446744073709551615` rather than `-1`, and panel 041's finding 1
+   is overturned outright rather than conditionally.
+
+**What this leaves the panel's provisional resolution.** Items 1–7 stand as
+adopted: shape B, distinct conversion names, full literal adoption, Kotlin's
+default rule with `range` audited first, no erasure at `lower.rs` (now moot),
+the `+` removed, and `c_size_t` scheduled as a named successor. Items 8–11 are
+answered above. **Prediction 5 is retired unscored** — it asked whether ≥80% of
+generated annotations would still spell `int`, and `int` will not exist.
+Prediction 8 is **moot** for the same reason and retired with it. Predictions 1,
+2, 3, 4, 6 and 7 stand.

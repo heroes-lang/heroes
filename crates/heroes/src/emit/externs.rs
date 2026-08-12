@@ -118,16 +118,39 @@ pub(super) fn extern_assertions(
     // on the enum's own type rather than on `int`, so the first version of this
     // macro refused **every enum-returning C function in existence** — which is
     // most of libcurl, OpenSSL and raylib, and was invisible against SQLite
-    // because SQLite returns plain `int`. Unary `+` applies the integer
-    // promotions, which is what turns an enum into the type it is compatible
-    // with.
+    // because SQLite returns plain `int`.
     //
-    // That promotion is `unsigned int` here, not `int`, because `CURLcode`'s
-    // values are all non-negative — so the accepted set is *every signed integer,
-    // plus every unsigned integer narrower than 64 bits*. That is exactly what
-    // fits in Heroes' `int64_t` without losing a value, and it leaves `size_t`
-    // (unsigned 64-bit) firing, which is panel 030 R3's third row.
-    w.line("#define HERO_RET_INT(c) _Generic(+(c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)");
+    // **The repair was two changes and only one of them was needed** (panel 042,
+    // 2026-08-12). M-ffi-ladder added a unary `+` *and* widened the accepted set
+    // to `unsigned int` and its narrower siblings, on the reading that `+` applies
+    // the integer promotions and is what turns an enum into a number. Measured
+    // since, on Apple clang 21, against a synthetic enum and against the real
+    // `CURLcode`: a **bare** `_Generic` accepts both, because C11 6.5.1.1 selects
+    // an enum's *compatible integer type* and the widened set now contains it. The
+    // second change alone was sufficient; the first was carrying a justification
+    // for work it does not do.
+    //
+    // And it was doing damage while it did so. `+` on a pointer is a **hard clang
+    // error**, so `extern function getenv(name: cstr) -> int` — an ordinary
+    // mistake, since `getenv` returns `char *` — produced `invalid argument type
+    // 'char *' to unary expression` at exit 2, which CLAUDE.md §7 makes a claim
+    // that *the compiler* is wrong. The marker string below never reached
+    // `emit/ffi.rs`, so §7's named exception could not fire on exactly the return
+    // type most likely to be declared wrong. Without `+` the same program gets
+    // exit 1 and an `ffi_return_type` on the `.hero` line, which is what panel 036
+    // built this mechanism to do.
+    //
+    // `tests/golden/fixedbugs/ffi-pointer-return.hero` is the case, and
+    // `an_enum_returning_extern_needs_no_unary_plus` is the test that fires if the
+    // enum premise ever comes back (CLAUDE.md §11: a premise owes a falsifiable
+    // claim and a test for its death).
+    //
+    // The accepted set is every signed integer plus every unsigned integer
+    // narrower than 64 bits. **That is a fact about `i64`'s range and about
+    // nothing else** — it is not a rule about "the integer type", and a second
+    // width must never reuse this macro (panel 042; `M-sized-integers` owes its
+    // own row per width).
+    w.line("#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)");
     w.line("#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)");
     w.line("#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)");
     w.line("#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)");

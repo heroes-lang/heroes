@@ -1,0 +1,33 @@
+# fixedbugs, panel 042, 2026-08-12.
+#
+# SYMPTOM: `heroes run` on this file answered `internal error: compiling the
+# generated C failed … error: invalid argument type 'char *' to unary
+# expression`, and exited **2**. Under CLAUDE.md §7 exit 2 means the *compiler*
+# is wrong. It is not: `getenv` returns `char *`, the declaration below says
+# `int`, and that is an ordinary author mistake — arguably the single most
+# likely wrong FFI return type there is, because a C function returning a
+# string is the first thing anybody binds.
+#
+# CAUSE: `emit/externs.rs` wrote the return assertion as `_Generic(+(c), …)`.
+# Unary `+` applied to a pointer is a **hard clang error**, not a failed
+# assertion, so compilation died before the marker string
+# `heroes-ffi-return getenv int` was ever produced — and `emit/ffi.rs` matches
+# on exactly that marker to decide that a clang failure is §7's named
+# exception. The mechanism panel 036 built to say "your declaration disagrees
+# with the header" was unreachable for the return type most likely to disagree.
+#
+# FIX: the `+` is deleted. It was one of two changes made together at
+# M-ffi-ladder to accept enum-returning C functions, and measurement showed the
+# other one — widening the accepted set to `unsigned int` and its narrower
+# siblings — was sufficient on its own, because C11 6.5.1.1 selects an enum's
+# compatible integer type. See `an_enum_returning_extern_needs_no_unary_plus`,
+# which is the test that fires if that premise ever comes back.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a_wrong_pointer_return_is_a_diagnostic_not_an_internal_error`.
+
+extern "stdlib.h"
+    function getenv(name: cstr) -> int
+
+function main()
+    print(getenv("PATH".cstr()))

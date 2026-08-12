@@ -5,7 +5,7 @@
 
 _Static_assert(HERO_RUNTIME_ABI == 10, "heroes_runtime.h is from another compiler");
 
-#define HERO_RET_INT(c) _Generic(+(c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
+#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)
 #define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)

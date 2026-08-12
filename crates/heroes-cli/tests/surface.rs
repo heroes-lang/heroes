@@ -713,6 +713,60 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
     assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
 }
 
+/// **A pointer return was the one case that could not reach its own diagnostic**
+/// (panel 042, 2026-08-12). `extern function getenv(name: cstr) -> int` is an
+/// ordinary mistake — `getenv` returns `char *` — and it answered `internal
+/// error … invalid argument type 'char *' to unary expression` at exit 2, which
+/// CLAUDE.md §7 makes a claim that the *compiler* is wrong.
+///
+/// The assertion was written `_Generic(+(c), …)`, and `+` on a pointer is a hard
+/// clang error rather than a failed assertion, so the marker `emit/ffi.rs` looks
+/// for was never produced and §7's named exception could not fire. This pins the
+/// repair from both ends: the diagnostic appears, and the words that mean the
+/// compiler blamed itself do not.
+#[test]
+fn a_wrong_pointer_return_is_a_diagnostic_not_an_internal_error() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-pointer-return.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_return_type]"), "{stderr}");
+    assert!(stderr.contains("getenv"), "{stderr}");
+    assert!(stderr.contains("stdlib.h"), "{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("unary expression"), "clang's error leaked:\n{stderr}");
+    assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
+}
+
+/// **The premise that put the `+` there, as a claim that can die loudly.**
+///
+/// `emit/externs.rs` recorded that without a unary `+` the return assertion
+/// *"refused every enum-returning C function in existence"*. Panel 042 measured
+/// that this is false: the accepted set was widened in the same commit to include
+/// `unsigned int` and its narrower siblings, and C11 6.5.1.1 selects an enum's
+/// **compatible integer type**, which that set now contains. The `+` was carrying
+/// a justification for work it does not do, while making a pointer return
+/// unreachable by its own diagnostic.
+///
+/// CLAUDE.md §11 owes a premise a test that fires when it dies, whose failure
+/// message names what depends on it. This is that test: `examples/curl` binds
+/// `curl_easy_setopt` and `curl_easy_perform`, both of which return `CURLcode`,
+/// an enum. If a future clang stops selecting a compatible integer type for an
+/// enum, this goes red **here** rather than as a mystery in the ladder.
+#[test]
+fn an_enum_returning_extern_needs_no_unary_plus() {
+    let out = heroes(&["build", "examples/curl/main.hero"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(
+        code(&out),
+        0,
+        "an enum-returning `extern` must pass HERO_RET_INT with no unary `+`. \
+         If this is red, C11 6.5.1.1's compatible-integer-type selection no longer \
+         covers this enum, and `emit/externs.rs`'s widened set is what depends on \
+         it — `tests/golden/fixedbugs/ffi-pointer-return.hero` is why the `+` \
+         cannot simply come back.\n{stderr}"
+    );
+}
+
 /// **The spec's own FFI example, run.** Nothing in this project compiled the
 /// specification's examples, and that is how the most-copied FFI line in the
 /// document came to contradict the rule four lines below it: it declared
