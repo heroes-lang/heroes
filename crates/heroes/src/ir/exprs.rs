@@ -63,11 +63,23 @@ pub(super) fn expr(
             // §4.3: a character literal *is* an `i64`. The five escapes were
             // decided by panel 008 and applied by the same function the lexer uses.
             let text = unescape(src, span);
-            let value = text.chars().next().map(|c| c as i64).unwrap_or(0);
+            let value = text.chars().next().map(|c| c as i128).unwrap_or(0);
             b.emit(Op::Const(Const::Int(value)), ty, span)
         }
         ExprKind::Name => name(b, ast, resolved, id, ty, span),
         ExprKind::Hole => b.emit(Op::Hole, ty, span),
+        // **A negative literal is a literal, and it is folded here.** Left as a
+        // negation of a positive, `-128` against an `i8` puts `128` in an
+        // `int8_t` before the minus reaches it — clang's
+        // `-Wconstant-conversion`, and the only way to write that type's lowest
+        // value. The frontend already range-checked the value WITH the sign
+        // applied, so folding is what makes the two passes agree.
+        ExprKind::Unary { op: UnaryOp::Neg, operand }
+            if matches!(ast.exprs[operand.0 as usize].kind, ExprKind::Int) =>
+        {
+            let value = int_literal(b, src, ast.exprs[operand.0 as usize].span);
+            b.emit(Op::Const(Const::Int(-value)), ty, span)
+        }
         ExprKind::Unary { op, operand } => {
             let value = expr(b, ast, resolved, checked, src, *operand);
             let op = match op {
@@ -202,9 +214,14 @@ fn is_constant(ast: &Ast, decl: u32) -> bool {
 /// The message speaks in the syntax the author wrote and names the range, because
 /// `i64` is the only integer type (§4.3): there is no wider one to suggest, so the
 /// fix is a different number and the compiler should not pretend otherwise.
-fn int_literal(b: &mut Lowering, src: &Source, span: Span) -> i64 {
+fn int_literal(b: &mut Lowering, src: &Source, span: Span) -> i128 {
     let text = src.slice(span);
-    match crate::lexer::decode_int(text) {
+    // `decode_wide`, not `decode_int`: after M-sized-integers the frontend accepts
+    // `0xffffffffffffffff` against a `u64`, and the narrower decoder would refuse
+    // here what the checker has already allowed — a program that checks clean and
+    // fails to lower, which is the exact asymmetry the range check was moved to
+    // the frontend to remove.
+    match crate::lexer::decode_wide(text) {
         Some(value) => value,
         None => {
             b.push_diagnostic(crate::lexer::int_out_of_range(text, span));

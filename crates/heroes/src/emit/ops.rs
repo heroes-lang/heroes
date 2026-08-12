@@ -20,20 +20,30 @@
 
 use crate::ir::{Arg, BinOp, Const, Program, UnOp};
 use crate::resolve::BUILTINS;
-use crate::types::{Checked, Ty};
+use crate::types::{Checked, IntKind, Ty};
 
 use super::aggregate;
 use super::mangle;
 use super::writer::Writer;
 
-/// `INT64_C(n)`, always. A bare `-9223372036854775808` warns
-/// (`-Wimplicitly-unsigned-literal`) because C parses it as a negation of an
-/// out-of-range positive, and a bare decimal above `INT32_MAX` is only `long` on
-/// LP64 — so the macro is both the portable and the warning-free spelling.
-pub(super) fn constant(value: Const) -> String {
+/// A constant, in the C spelling its own width asks for.
+///
+/// A bare `-9223372036854775808` warns (`-Wimplicitly-unsigned-literal`) because
+/// C parses it as a negation of an out-of-range positive, and a bare decimal
+/// above `INT32_MAX` is only `long` on LP64 — so a macro is both the portable and
+/// the warning-free spelling, and the macro has to match the width.
+///
+/// **`UINT64_C` for the unsigned widths is not tidiness.** `18446744073709551615`
+/// through `INT64_C` is a constant C cannot represent, and the narrower unsigned
+/// widths take it too so that the emitted text says what the Heroes type says
+/// rather than relying on the assignment to convert it.
+pub(super) fn constant(value: Const, kind: Option<IntKind>) -> String {
     match value {
-        Const::Int(i64::MIN) => "INT64_MIN".to_string(),
-        Const::Int(n) => format!("INT64_C({n})"),
+        Const::Int(n) if n == i128::from(i64::MIN) => "INT64_MIN".to_string(),
+        Const::Int(n) => match kind {
+            Some(k) if !k.signed() => format!("UINT64_C({n})"),
+            _ => format!("INT64_C({n})"),
+        },
         Const::Bool(b) => (if b { "true" } else { "false" }).to_string(),
         // `NULL` would need a header; the cast needs none and is the same value.
         Const::NullPtr => "((void *)0)".to_string(),
@@ -427,6 +437,12 @@ pub(super) fn print(
                 Ty::Bool => "hero_print_bool",
                 Ty::Str => "hero_print_str",
                 Ty::F64 => "hero_print_f64",
+                // **`u64` is the one width that needs its own printer.** The
+                // other seven widen into an `int64_t` without losing a value;
+                // 18446744073709551615 does not, and read as signed it is `-1` —
+                // which is precisely what `print(SIZE_MAX)` produced when panel
+                // 042 measured it, and what this arm exists to stop.
+                Ty::Int(IntKind::U64) => "hero_print_uint",
                 _ => "hero_print_int",
             },
             // `print(@x)` cannot be written: §4.8's marker is for parameters

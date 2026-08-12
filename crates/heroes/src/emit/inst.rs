@@ -80,7 +80,15 @@ pub(super) fn emit(
     match inst.op {
         Op::Const(value) => {
             if let Some(name) = target {
-                w.line(&format!("    {name} = {};", ops::constant(value)));
+                // The width comes from the instruction's own type, which the
+                // checker recorded — the constant emitter cannot know it and must
+                // not guess: an unsigned literal spelled `INT64_C` is a value C
+                // has no way to represent.
+                let kind = match checked.types.get(inst.ty) {
+                    Ty::Int(k) => Some(k),
+                    _ => None,
+                };
+                w.line(&format!("    {name} = {};", ops::constant(value, kind)));
             }
         }
         Op::Load(place) => {

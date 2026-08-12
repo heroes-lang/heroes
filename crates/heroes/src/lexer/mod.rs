@@ -39,7 +39,7 @@ mod scan;
 mod token;
 
 pub use escape::unescape;
-pub(crate) use digits::{canonical_int, decode_int, int_out_of_range};
+pub(crate) use digits::{canonical_int, decode_int, decode_wide, int_out_of_range, out_of_range};
 pub use token::{kind_name, Token, TokenKind};
 
 use crate::diagnostics::Diagnostic;

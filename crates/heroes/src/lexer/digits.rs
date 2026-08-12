@@ -104,9 +104,20 @@ impl Base {
 /// ground that it deletes a compile error — sixteen `f`s would silently become
 /// `-1` and `0xFFFFFFFF00000000` would silently become `-4294967296`.
 pub(crate) fn decode_int(text: &str) -> Option<i64> {
+    decode_wide(text).and_then(|v| i64::try_from(v).ok())
+}
+
+/// The same digits, in the one Rust integer that holds **every** Heroes width.
+///
+/// `i64` cannot: `u64`'s top is 18446744073709551615 and `i8`'s bottom is -128,
+/// and no single 64-bit type spans both. Every literal in this language is
+/// written without a sign — `-1` is unary minus applied to `1` — so the value
+/// here is never negative, and `i128` is chosen over `u128` only because the
+/// checker compares it against a signed lower bound.
+pub(crate) fn decode_wide(text: &str) -> Option<i128> {
     let (base, digits) = split_base(text);
     let digits: String = digits.chars().filter(|c| *c != '_').collect();
-    i64::from_str_radix(&digits, base.radix()).ok()
+    i128::from_str_radix(&digits, base.radix()).ok()
 }
 
 /// `int_out_of_range`, built where the decoder lives — the frontend raises it
@@ -120,6 +131,17 @@ pub(crate) fn decode_int(text: &str) -> Option<i64> {
 /// second half of the same error (CLAUDE.md §8 — everything needed to fix the
 /// program without opening another file).
 pub(crate) fn int_out_of_range(text: &str, span: Span) -> Diagnostic {
+    out_of_range(text, span, None)
+}
+
+/// The same diagnostic, told which width the literal was measured against.
+///
+/// **One code, not two.** A literal with no annotation is measured against
+/// `i64` — which is a width, the default one — so "does not fit `i64`" and "does
+/// not fit the `u8` you declared" are the same finding with a different number
+/// in it. A second code would have split one class in two on the accident of
+/// whether the reader had written the type down.
+pub(crate) fn out_of_range(text: &str, span: Span, kind: Option<crate::types::IntKind>) -> Diagnostic {
     let (base, _) = split_base(text);
     let largest = match base {
         Base::Decimal => i64::MAX.to_string(),

@@ -17,7 +17,7 @@
 
 use crate::resolve::Resolved;
 use crate::source::{Source, Span};
-use crate::syntax::{Ast, ExprId, ExprKind};
+use crate::syntax::{Ast, ExprId, ExprKind, UnaryOp};
 
 use super::exprs::synth;
 use super::stmts::Want;
@@ -42,6 +42,50 @@ pub(super) fn check(
         ExprKind::Hole => {
             checker.out.holes.push(Hole { at: id, span, expected });
             checker.record(id, expected);
+        }
+        // **A number literal, checked against the width the context asked for.**
+        // This is the one place the value in the source and the type in the
+        // annotation meet, so it is the one place that can say `300` does not fit
+        // a `u8` — and it says it with the range, because a reader who wrote 300
+        // needs to know what would have fitted (§4.17).
+        //
+        // A character literal shares the arm: §4.3 makes it a number whose value
+        // is one ASCII character, so it fits every width and the check is the
+        // same one.
+        ExprKind::Int | ExprKind::Char | ExprKind::Unary { op: UnaryOp::Neg, .. } => {
+            match checker.out.types.get(expected) {
+                Ty::Int(kind) => {
+                    let text = src.slice(span);
+                    let value = literal_value(ast, src, id);
+                    let (low, high) = kind.range();
+                    let fits = value.is_some_and(|v| v >= i128::from(low) && v <= i128::from(high));
+                    if !fits {
+                        let diagnostic = crate::lexer::out_of_range(text, span, Some(kind));
+                        checker.push_diagnostic(diagnostic);
+                    }
+                    // The digits under a minus sign need the type too: the
+                    // lowering walks to them and would otherwise find no type
+                    // recorded, which reaches the emitter as `HeroValue` — a
+                    // clang error naming a type nobody wrote. Recorded rather
+                    // than re-checked, because the range question was answered
+                    // above with the sign applied, and `128` on its own does not
+                    // fit the `i8` that `-128` does.
+                    let mut at = id;
+                    while let ExprKind::Unary { op: UnaryOp::Neg, operand } =
+                        &ast.exprs[at.0 as usize].kind
+                    {
+                        at = *operand;
+                        checker.record(at, expected);
+                    }
+                    checker.record(id, expected);
+                }
+                _ => {
+                    let got = checker.out.types.int();
+                    let shown = checker.show(ast, src, got);
+                    mismatch(checker, ast, src, expected, &shown, span);
+                    checker.record(id, got);
+                }
+            }
         }
         // §4.5's two inference failures, answered instead of reported: the
         // annotation *is* the expected type.
@@ -161,4 +205,27 @@ fn mismatch(checker: &mut Checker, ast: &Ast, src: &Source, expected: TyId, got:
     let a = checker.show(ast, src, expected);
     let diagnostic = errors::mismatch(&a, got, span);
     checker.push_diagnostic(diagnostic);
+}
+
+
+/// The value a literal denotes, wide enough for every width, with the minus sign
+/// applied where there is one.
+///
+/// The sign has to be folded in **here** rather than checked separately: `-128`
+/// fits an `i8` and `128` does not, so a check that saw them one at a time would
+/// refuse the only way to write that type's lowest value.
+fn literal_value(ast: &Ast, src: &Source, id: ExprId) -> Option<i128> {
+    let node = &ast.exprs[id.0 as usize];
+    match &node.kind {
+        ExprKind::Int => crate::lexer::decode_wide(src.slice(node.span)),
+        // §4.3: a character literal *is* a number, and its value is one ASCII
+        // character — so it fits every width and needs no special range.
+        ExprKind::Char => Some(i128::from(
+            crate::lexer::unescape(src, node.span).chars().next().unwrap_or('\0') as u32,
+        )),
+        ExprKind::Unary { op: UnaryOp::Neg, operand } => {
+            literal_value(ast, src, *operand).map(|v| -v)
+        }
+        _ => None,
+    }
 }

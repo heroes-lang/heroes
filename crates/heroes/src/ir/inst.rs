@@ -144,7 +144,12 @@ pub enum Abort {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Const {
-    Int(i64),
+    /// **`i128`, and it has to be.** A literal's value must survive from the
+    /// source to the emitter, and after M-sized-integers the widths span
+    /// `i8`'s -128 to `u64`'s 18446744073709551615 — no 64-bit integer holds
+    /// both ends, so a narrower carrier here would silently wrap the one
+    /// literal a reader is most likely to write on purpose (`0xffffffffffffffff`).
+    Int(i128),
     Float(f64),
     Bool(bool),
     Str(StrId),
