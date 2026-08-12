@@ -125,18 +125,25 @@ fn members(
                 return;
             }
             TokenKind::Eof => return,
-            TokenKind::KwFunction => {
+            TokenKind::KwFunction | TokenKind::KwConstant => {
+                let is_constant = cur.at(TokenKind::KwConstant);
                 let keyword = cur.span();
                 // The group's own doc comment documents its first signature;
                 // after that each line takes its own, exactly as a record's
                 // fields do.
                 let doc = if first { group_doc.clone() } else { cur.take_docs(src, keyword) };
                 first = false;
-                cur.bump(); // `function`
+                cur.bump(); // `function` or `constant`
                 if !cur.at(TokenKind::Ident) {
                     if !cur.at_reported_error() {
+                        let shape = if is_constant {
+                            "`constant SQLITE_OK: int`"
+                        } else {
+                            "`function sqrt(x: f64) -> f64`"
+                        };
+                        let what = if is_constant { "constant's" } else { "function's" };
                         let message = format!(
-                            "expected the C function's name, found {} — `function sqrt(x: f64) -> f64`",
+                            "expected the C {what} name, found {} — {shape}",
                             cur.found(src)
                         );
                         cur.error("expected_name", message, cur.span());
@@ -145,12 +152,16 @@ fn members(
                     continue;
                 }
                 let name = cur.bump().span;
-                function_tail(cur, ast, src, keyword, doc, name, linkage);
+                if is_constant {
+                    super::decl::constant_tail(cur, ast, src, keyword, doc, name, linkage);
+                } else {
+                    function_tail(cur, ast, src, keyword, doc, name, linkage);
+                }
             }
             _ => {
                 if !cur.at_reported_error() {
                     let message = format!(
-                        "expected a `function` signature, found {} — an `extern` group holds signatures and nothing else, one per line",
+                        "expected a `function` or a `constant`, found {} — an `extern` group holds what the header declares, one per line",
                         cur.found(src)
                     );
                     cur.error("expected_extern_signature", message, cur.span());
@@ -168,17 +179,22 @@ fn members(
 /// An `extern` with a body is a mistake worth naming: the body would never
 /// be compiled, and silently ignoring it is the class of thing this language
 /// exists to make loud.
-pub(super) fn body_check(cur: &mut Cursor) {
+///
+/// `kind` is what the member is, because the repair differs: a `function`'s code
+/// comes from C, a `constant`'s *value* does — and telling a reader who wrote
+/// `constant SQLITE_OK: int` with `0` under it that "it names a C function" sends
+/// them looking for a function they never wrote (§4.17).
+pub(super) fn body_check(cur: &mut Cursor, kind: &str) {
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
         return;
     }
     let span = cur.span();
-    cur.error(
-        "extern_has_body",
+    let what = if kind == "constant" {
+        "an `extern` declaration has no body — this `constant` names one the header already defines, so the value is the header's and never yours"
+    } else {
         "an `extern` declaration has no body — it names a C function, and C provides the code"
-            .to_string(),
-        span,
-    );
+    };
+    cur.error("extern_has_body", what.to_string(), span);
     cur.balanced_block();
 }

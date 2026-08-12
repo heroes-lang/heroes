@@ -247,7 +247,11 @@ pub(super) fn mix_int_float(ast: &Ast, src: &Source) -> Vec<String> {
 pub(super) fn typo_digit(ast: &Ast, src: &Source) -> Vec<String> {
     let mut out = Vec::new();
     for decl in &ast.decls {
-        let DeclKind::Constant { body, .. } = &decl.kind else { continue };
+        // A constant with no body is an `extern constant`: its value is the
+        // header's, so there is no digit in this file to move — which is the
+        // whole point of the form, and the reason this operator's site count is
+        // the number to report (§4.19, panel 038).
+        let DeclKind::Constant { body: Some(body), .. } = &decl.kind else { continue };
         // One statement, and it is an expression: a constant computed from
         // several has no single number to be wrong about.
         if body.stmts.len() != 1 {

@@ -102,6 +102,11 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
 
 fn entity(ast: &Ast, decl: u32) -> &'static str {
     match &ast.decls[decl as usize].kind {
+        // `extern constant`, never plain `constant`: the two are different
+        // entities to a reader of `--dump-scopes` — one's value is in this file
+        // and the other's is in a header — and this walk is the one place the
+        // widened `DeclKind::Constant` could have said nothing about which.
+        DeclKind::Constant { header: Some(_), .. } => "extern constant",
         DeclKind::Constant { .. } => "constant",
         DeclKind::Function(function) => {
             if function.is_extern {

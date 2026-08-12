@@ -33,18 +33,34 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
     for (index, declaration) in ast.decls.iter().enumerate() {
         let decl = declaration;
         match &decl.kind {
-            DeclKind::Constant { ty, body } => {
+            DeclKind::Constant { ty, body, header, .. } => {
                 let declared = lower::ty(checker, ast, resolved, *ty);
                 checker.result = declared;
                 checker.fallible = is_fallible(checker, declared);
                 checker.generic_names.clear();
-                // A constant's body *is* its value: its last statement produces
-                // it, unlike a function, which returns.
-                let (_, value) = block(checker, ast, resolved, src, body, Want::Value(declared));
-                if value.is_none() {
-                    let want = checker.show(ast, src, declared);
-                    let diagnostic = errors::no_value(&want, body.span);
-                    checker.push_diagnostic(diagnostic);
+                match body {
+                    // A constant's body *is* its value: its last statement
+                    // produces it, unlike a function, which returns.
+                    Some(body) => {
+                        let (_, value) =
+                            block(checker, ast, resolved, src, body, Want::Value(declared));
+                        if value.is_none() {
+                            let want = checker.show(ast, src, declared);
+                            let diagnostic = errors::no_value(&want, body.span);
+                            checker.push_diagnostic(diagnostic);
+                        }
+                    }
+                    // No body: the value is the header's, so there is nothing here
+                    // to check it against and the type is the declaration's alone.
+                    // What *is* checkable here is whether a header could produce
+                    // this type at all; the rest is clang's, per constant.
+                    None if header.is_some() => {
+                        ffi_constant(checker, ast, src, declared, ast.types[ty.0 as usize].span);
+                        // The result type reaches lowering through this table
+                        // rather than through the body, which no longer exists.
+                        checker.out.results.insert(index as u32, declared);
+                    }
+                    None => {}
                 }
             }
             DeclKind::Function(function) => {
@@ -183,6 +199,49 @@ fn ffi_signature(
         }
         let name = checker.show(ast, src, ty);
         let diagnostic = errors::ffi_type(&name, what, span);
+        checker.push_diagnostic(diagnostic);
+    }
+}
+
+/// The type of an `extern constant`, which is a narrower question than an
+/// `extern`'s signature asks (§4.19, panel 038).
+///
+/// Two of the seven boundary types cannot be a *value* a header holds, and both
+/// refusals are facts about **Heroes** rather than about C headers — which is why
+/// they belong here and not in an assertion clang evaluates. A `str` is a
+/// `HeroStr`, built by this runtime and carrying its magic word; a `()` names no
+/// value at all.
+///
+/// `bool` is deliberately **not** refused here. Under `-std=c11` no header
+/// constant has type `_Bool` — `stdbool.h` spells `true` as `#define true 1` —
+/// but that is a premise about the world, and a premise expires silently
+/// (CLAUDE.md §11). The per-constant type assertion asks the token in hand
+/// instead, and refuses `constant true: bool` loudly with what the header really
+/// says.
+fn ffi_constant(
+    checker: &mut Checker,
+    ast: &Ast,
+    src: &Source,
+    declared: TyId,
+    span: crate::source::Span,
+) {
+    let what = "an `extern constant`";
+    if !crosses_the_boundary(checker, declared) {
+        let name = checker.show(ast, src, declared);
+        let diagnostic = errors::ffi_type(&name, what, span);
+        checker.push_diagnostic(diagnostic);
+        return;
+    }
+    let refusal = match checker.out.types.get(declared) {
+        Ty::Str => Some(
+            "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and convert with `to_str`, which copies (§4.20)",
+        ),
+        Ty::Unit => Some("a `constant` names a value, and `()` is a type rather than a value"),
+        _ => None,
+    };
+    if let Some(why) = refusal {
+        let name = checker.show(ast, src, declared);
+        let diagnostic = errors::ffi_constant_type(&name, why, span);
         checker.push_diagnostic(diagnostic);
     }
 }

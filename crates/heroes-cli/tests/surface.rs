@@ -713,6 +713,45 @@ fn a_wrong_extern_return_type_is_the_authors_error_not_the_compilers() {
     assert!(!stderr.contains("_Generic"), "it showed generated C:\n{stderr}");
 }
 
+/// An `extern constant` whose declared type the header refutes. The same
+/// `_Generic` as a signature's, asked of a token instead of a call — and a
+/// different code, because a function *returns* the wrong type and a constant
+/// **is** one (panel 038).
+///
+/// The silent route this closes was measured before the form existed: `int64_t
+/// f(void) { return M_PI; }` compiles clean under the project's flags and yields
+/// **3**.
+#[test]
+fn a_wrong_extern_constant_type_is_the_authors_error_not_the_compilers() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-constant-type.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_constant_type]"), "{stderr}");
+    assert!(stderr.contains("`M_PI` is not `int`"), "{stderr}");
+    assert!(stderr.contains("math.h"), "{stderr}");
+    // Not the function's diagnostic: a constant does not "return" anything.
+    assert!(!stderr.contains("does not return"), "{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("_Static_assert"), "it showed generated C:\n{stderr}");
+}
+
+/// A C **object** named as a constant. The refusal that no other language makes as
+/// a rule, and the one the historian predicted Heroes would need or else compile
+/// `stdout` at exit 0 in silence (panel 038).
+#[test]
+fn a_c_object_is_not_a_constant() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-not-constant.hero"]);
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("error[ffi_not_constant]"), "{stderr}");
+    assert!(stderr.contains("has `stdout`, but not as a constant"), "{stderr}");
+    // The note must carry *why* it is refused, not just that it is: the rule being
+    // enforced is §4.2's ban on mutable globals (§4.17).
+    assert!(stderr.contains("reading it twice could give two answers"), "{stderr}");
+    assert!(!stderr.contains("internal error"), "it blamed the compiler:\n{stderr}");
+    assert!(!stderr.contains("__builtin_constant_p"), "it showed generated C:\n{stderr}");
+}
+
 /// The other half of §7's named exception: a name the header does not have is
 /// **a different mistake** from a result type it refutes, and was being reported
 /// as that one (panel 038, rider A1).

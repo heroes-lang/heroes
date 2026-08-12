@@ -94,10 +94,10 @@ DIAG test.hero:1:24: error[expected_link_name]: expected the library's name in q
     );
 }
 
-/// A member that is not a signature costs **one line**, not the rest of the
-/// group: recovery inside a block is `skip_line`, the way `field_block` and
-/// `case_block` already recover. The signature after the mistake is still read,
-/// and that is what this asserts.
+/// A member that is neither a `function` nor a `constant` costs **one line**, not
+/// the rest of the group: recovery inside a block is `skip_line`, the way
+/// `field_block` and `case_block` already recover. The signature after the mistake
+/// is still read, and that is what this asserts.
 #[test]
 fn a_stray_line_in_a_group_costs_one_line() {
     assert_eq!(
@@ -105,7 +105,22 @@ fn a_stray_line_in_a_group_costs_one_line() {
         "\
 file test.hero
   extern \"math.h\" function sqrt(x: f64) -> f64
-DIAG test.hero:2:5: error[expected_extern_signature]: expected a `function` signature, found a name (`x`) — an `extern` group holds signatures and nothing else, one per line
+DIAG test.hero:2:5: error[expected_extern_signature]: expected a `function` or a `constant`, found a name (`x`) — an `extern` group holds what the header declares, one per line
+"
+    );
+}
+
+/// A `constant` is a member, and it carries the group's two spans exactly as a
+/// signature does — which is what the `fmt` reconstruction and the emitter's
+/// `#include` walk both read (§4.19, panel 038).
+#[test]
+fn a_constant_is_a_group_member() {
+    assert_eq!(
+        dump("extern \"sqlite3.h\" link \"sqlite3\"\n    constant SQLITE_OK: int\n    function sqlite3_close(db: ptr) -> int\n"),
+        "\
+file test.hero
+  extern \"sqlite3.h\" link \"sqlite3\" constant SQLITE_OK: int
+  extern \"sqlite3.h\" link \"sqlite3\" function sqlite3_close(db: ptr) -> int
 "
     );
 }

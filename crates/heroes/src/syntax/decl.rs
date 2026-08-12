@@ -90,6 +90,25 @@ fn constant(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
     let Some((keyword, doc, name)) = head(cur, src, "constant MAX_DEPTH: int") else {
         return;
     };
+    constant_tail(cur, ast, src, keyword, doc, name, Linkage::Heroes);
+}
+
+/// Everything after a constant's name: its type, and — for a non-extern — the
+/// indented value. Shared by `constant` and a group's members, exactly as
+/// `function_tail` is (§4.2, §4.19).
+///
+/// The symmetry is the whole rule this form rests on: **inside a group a
+/// declaration is a signature, not a definition**, so `constant` gives up its
+/// body for the same reason `function` gives up its own — C has the thing.
+pub(super) fn constant_tail(
+    cur: &mut Cursor,
+    ast: &mut Ast,
+    src: &Source,
+    keyword: Span,
+    doc: Vec<Span>,
+    name: Span,
+    linkage: Linkage,
+) {
     if !cur.expect(
         TokenKind::Colon,
         "expected_constant_type",
@@ -100,12 +119,27 @@ fn constant(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
         return;
     }
     let ty = parse_type(cur, ast, src);
-    let Some(body) = block(cur, ast, src, "a `constant`") else {
-        cur.recover_to_next_decl();
-        return;
+    let (header, link) = match linkage {
+        Linkage::Heroes => (None, None),
+        Linkage::Extern { header, link } => (Some(header), link),
     };
-    let span = keyword.to(body.span);
-    ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body } });
+    // An `extern` constant has no body, and an indented one under it is the
+    // mistake `externs::body_check` names. Everything else keeps the old shape.
+    let body = if header.is_some() {
+        super::externs::body_check(cur, "constant");
+        None
+    } else {
+        let Some(body) = block(cur, ast, src, "a `constant`") else {
+            cur.recover_to_next_decl();
+            return;
+        };
+        Some(body)
+    };
+    let span = match &body {
+        Some(block) => keyword.to(block.span),
+        None => keyword.to(cur.previous_span()),
+    };
+    ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body, header, link } });
 }
 
 /// `function dist2(a: Point, b: Point) -> int` + body (§4.2). The parameter
@@ -159,7 +193,7 @@ pub(super) fn function_tail(
         ast.push_type(TypeNode { kind: TypeKind::Unit, span: Span { start: here.start, end: here.start } })
     };
     let body = if is_extern {
-        super::externs::body_check(cur);
+        super::externs::body_check(cur, "function");
         None
     } else {
         match block(cur, ast, src, "a `function`") {

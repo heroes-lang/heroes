@@ -42,12 +42,23 @@ use super::inst::{Callee, Op, Term};
 use super::uses::{operands, slots_of};
 use super::values;
 use super::phases;
-use super::{Block, FnKind, Function, Program, SlotKind};
+use super::{Block, Function, Program, SlotKind};
+
+/// Whether this function's implementation is C's: an `extern function`'s code, or
+/// an `extern constant`'s value (§4.19, panel 038). Both have no blocks, and
+/// nothing else in the IR may have none.
+fn from_c(ast: &crate::syntax::Ast, function: &Function) -> bool {
+    match &ast.decls[function.decl as usize].kind {
+        crate::syntax::DeclKind::Function(declared) => declared.is_extern,
+        crate::syntax::DeclKind::Constant { header, .. } => header.is_some(),
+        _ => false,
+    }
+}
 
 /// Every invariant violation, or an empty list. The message names the function and
 /// the block, because a dump of a large program is not where anyone wants to start
 /// searching.
-pub fn verify(program: &Program, checked: &Checked) -> Vec<String> {
+pub fn verify(program: &Program, checked: &Checked, ast: &crate::syntax::Ast) -> Vec<String> {
     let mut problems = Vec::new();
     for function in &program.functions {
         // The phase is in every message, because "which pass produced this" is the
@@ -56,9 +67,15 @@ pub fn verify(program: &Program, checked: &Checked) -> Vec<String> {
         // `validate_body(tcx, body, format!("after pass {pass_name}"))`.
         let phase = program.phase;
         let where_ = |what: String| format!("{} ({}): {what}", function.name, phase.name());
-        if function.kind == FnKind::Extern {
+        // **What C provides has no blocks, and the question is asked of the
+        // declaration rather than of `FnKind`.** An `extern function` lowers to
+        // `FnKind::Extern`; an `extern constant` lowers to `FnKind::Constant`,
+        // because it is read like any other constant — so a rule written over the
+        // kind would have to encode *which kinds can come from a header*, a
+        // premise this milestone already falsified once (CLAUDE.md §11).
+        if from_c(ast, function) {
             if !function.blocks.is_empty() {
-                problems.push(where_("an extern has a body".to_string()));
+                problems.push(where_("what C provides has a body".to_string()));
             }
             continue;
         }

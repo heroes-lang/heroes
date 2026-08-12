@@ -1,0 +1,22 @@
+# M-header-constants, 2026-08-12. The two types an `extern constant` may not have,
+# and they are refused **in the checker** rather than by clang — because both
+# reasons are facts about Heroes rather than about any header (§4.19, panel 038).
+#
+# A `str` carries the runtime's magic word, so only this runtime can build one; a
+# `()` is a type and not a value, so a constant of it would name nothing.
+#
+# `bool` is deliberately absent from this file. Under `-std=c11` no header
+# constant has type `_Bool` — `stdbool.h` spells `true` as `#define true 1` — but
+# that is a premise about the world, and a premise expires silently (CLAUDE.md
+# §11). It is refused per constant by the type assertion instead, which asks the
+# token in hand; `fixedbugs/ffi-constant-type.hero` is where that fires.
+
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_VERSION: str  #~ ffi_constant_type
+    function sqlite3_libversion() -> cstr
+
+extern "stdio.h"
+    constant EOF: ()  #~ ffi_constant_type
+
+function main()
+    print(to_str(sqlite3_libversion()))

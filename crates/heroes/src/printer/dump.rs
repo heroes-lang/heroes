@@ -44,10 +44,19 @@ pub fn dump_ast(ast: &Ast, src: &Source) -> String {
 fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
     let name = src.slice(decl.name);
     match &decl.kind {
-        DeclKind::Constant { ty, body } => {
-            out.push_str(&format!("  constant {name}: {}\n", render_type(ast, *ty, src)));
+        DeclKind::Constant { ty, body, header, link } => {
+            // The group's head line, exactly as a signature carries it: a reader of
+            // `--dump-ast` must be able to tell a constant whose value is in a
+            // header from one whose value is in this file, and the widened
+            // `DeclKind` is a place that could have said nothing about it.
+            let group = extern_prefix(src, *header, *link);
+            out.push_str(&format!("  {group}constant {name}: {}\n", render_type(ast, *ty, src)));
             docs(src, &decl.doc, out);
-            write_body(ast, src, body, out);
+            // An `extern constant` has no body: the value is in the header
+            // (§4.19), exactly as an `extern function`'s code is.
+            if let Some(body) = body {
+                write_body(ast, src, body, out);
+            }
         }
         DeclKind::Function(function) => {
             out.push_str(&format!("  {}\n", signature(ast, src, name, function)));
@@ -97,17 +106,23 @@ pub fn render_signature(ast: &Ast, src: &Source, decl: u32) -> String {
 /// the header (§4.19, panel 036) — and a dump that re-grouped them would show a
 /// structure no later pass can see. `heroes fmt` re-groups, because it hands the
 /// author their own program back; this prints what the tree holds.
-fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
-    let mut out = String::new();
-    if let Some(header) = function.header {
-        out.push_str("extern ");
-        out.push_str(src.slice(header));
-        if let Some(link) = function.link {
-            out.push_str(" link ");
-            out.push_str(src.slice(link));
-        }
-        out.push(' ');
+/// `extern "sqlite3.h" link "sqlite3" ` — the head line a group's member carries,
+/// or nothing. **One writer for both member kinds**, so a `constant` and a
+/// `function` in the same group cannot print it two ways.
+fn extern_prefix(src: &Source, header: Option<Span>, link: Option<Span>) -> String {
+    let Some(header) = header else { return String::new() };
+    let mut out = String::from("extern ");
+    out.push_str(src.slice(header));
+    if let Some(link) = link {
+        out.push_str(" link ");
+        out.push_str(src.slice(link));
     }
+    out.push(' ');
+    out
+}
+
+fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
+    let mut out = extern_prefix(src, function.header, function.link);
     out.push_str("function ");
     out.push_str(name);
     if !function.generics.is_empty() {

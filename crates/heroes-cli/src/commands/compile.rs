@@ -92,7 +92,7 @@ pub fn compile_with_tests(
     // The IR verifier: GHC's Core Lint, on every function, every time. Not gated
     // behind a flag because the cost is linear in the program and the thing it
     // catches is a wrong compiler.
-    let problems = verify(&lowered.program, &checked);
+    let problems = verify(&lowered.program, &checked, &parsed.ast);
     if !problems.is_empty() {
         eprintln!("internal error: the lowered program is not well formed");
         for problem in &problems {
@@ -109,7 +109,7 @@ pub fn compile_with_tests(
     let mut checked = checked;
     let problems = mono::run(&mut lowered.program, &mut checked, &parsed.ast, &src);
     report(&problems, &src)?;
-    let problems = verify(&lowered.program, &checked);
+    let problems = verify(&lowered.program, &checked, &parsed.ast);
     if !problems.is_empty() {
         eprintln!("internal error: monomorphisation produced an ill-formed program");
         for problem in &problems {
@@ -121,7 +121,7 @@ pub fn compile_with_tests(
     // emitter sees (panel 021 R8). The verifier runs again afterwards, at phase
     // `Owned`, where the invariants are different ones.
     own::run(&mut lowered.program, &checked);
-    let problems = verify(&lowered.program, &checked);
+    let problems = verify(&lowered.program, &checked, &parsed.ast);
     if !problems.is_empty() {
         eprintln!("internal error: the ownership pass produced an ill-formed program");
         for problem in &problems {
