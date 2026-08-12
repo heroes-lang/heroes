@@ -17,6 +17,12 @@
 //! `copy`, `drop`, `eq` and `hash` on an array value all reach the element type
 //! through the header's own `elem`, so `[[int]]` and `[[str]]` need one descriptor
 //! between them rather than one each.
+//!
+//! The file answers three questions about descriptors and then **writes them**
+//! (`definitions`, moved here from `perfn.rs` by the §11 sweep of 2026-08-12): which
+//! ones the program needs, how to name one, how to call its `hash` — and the C that
+//! defines them. The emitter was the odd one out where it was, since every caller of
+//! it is a caller of `generated` one line later.
 
 use std::collections::BTreeSet;
 
@@ -24,6 +30,7 @@ use crate::syntax::Ast;
 use crate::types::{Checked, Ty, TyId};
 
 use super::ctype::Names;
+use super::writer::Writer;
 
 /// The C expression for a pointer to this type's descriptor, or `None` where the
 /// backend has no representation for it yet — which `gate.rs` has already refused.
@@ -172,4 +179,80 @@ pub(super) fn generated(
         }
     }
     wanted.into_iter().map(TyId).collect()
+}
+
+/// One `static const HeroDesc` per element type the program actually uses.
+///
+/// Emitted **before** the function definitions, not with the other bodies: an array
+/// literal names its element descriptor, so `hero_array_new(&h_m_Point_desc, 2)` in
+/// `main` needs the object to exist by then. Measured the other way first — three
+/// `error: use of undeclared identifier 'h_m_Point_desc'` on the first program with
+/// an array of records in it.
+///
+/// `static`, so a descriptor nothing points at is `-Wunused-const-variable` — which
+/// is exactly why the set is a worklist over the program's arrays rather than a walk
+/// over every declaration (panel 022).
+///
+/// The four function pointers are cast to the descriptor's own signatures. That cast
+/// is the price of a generic runtime in C, and it is paid **once per type here**
+/// rather than at every call site: `retain`/`release` take a typed pointer so that
+/// the emitter's own calls are checked, and only the descriptor erases them.
+pub(super) fn definitions(
+    w: &mut Writer,
+    ast: &Ast,
+    checked: &Checked,
+    names: &Names,
+    reachable: &std::collections::BTreeSet<u32>,
+) {
+    let wanted = generated(ast, checked, reachable);
+    if wanted.is_empty() {
+        return;
+    }
+    for ty in wanted {
+        let name = match checked.types.get(ty) {
+            Ty::Named(decl) => names.of(decl).to_string(),
+            Ty::Case(decl, case) => names.case_of(decl, case).to_string(),
+            // A `T?` used as an element needs one too, and its four functions already
+            // exist — `option_bodies` writes them for every `T?` in the program.
+            Ty::Fallible(_) => names.option_of(ty).to_string(),
+            _ => continue,
+        };
+        let counted = crate::ir::is_refcounted(checked, ty);
+        w.at_generated();
+        // The adapters. `retain`/`release`/`eq` take TYPED pointers so that every call
+        // the emitter itself writes is checked by clang; only these three erase them,
+        // once per type, which is the whole price of a generic runtime in C.
+        w.line(&format!("static void {name}_desc_copy(void *dst, const void *src) {{"));
+        w.line(&format!("    *({name} *)dst = *(const {name} *)src;"));
+        if counted {
+            // Shallow plus incref, never deep (panel 022): copy-on-write is what makes
+            // a deep copy unnecessary, because sharing is unobservable until somebody
+            // mutates. A deep copy here would pay for every binding what only a
+            // mutation costs.
+            w.line(&format!("    {name}_retain((const {name} *)dst);"));
+        }
+        w.line("}");
+        w.line(&format!("static void {name}_desc_drop(void *elem) {{"));
+        if counted {
+            w.line(&format!("    {name}_release(({name} *)elem);"));
+        } else {
+            // Nothing inside owns a reference, so there is nothing to release — and
+            // `(void)` keeps the parameter used, because `-Wall` is on.
+            w.line("    (void)elem;");
+        }
+        w.line("}");
+        w.line(&format!("static bool {name}_desc_eq(const void *a, const void *b) {{"));
+        w.line(&format!(
+            "    return {name}_eq((const {name} *)a, (const {name} *)b);"
+        ));
+        w.line("}");
+        w.line(&format!("static const HeroDesc {name}_desc = {{"));
+        w.line(&format!("    sizeof({name}),"));
+        w.line(&format!("    {name}_desc_copy,"));
+        w.line(&format!("    {name}_desc_drop,"));
+        w.line(&format!("    {name}_desc_eq,"));
+        w.line(&format!("    {name}_hash,"));
+        w.line("};");
+        w.blank();
+    }
 }

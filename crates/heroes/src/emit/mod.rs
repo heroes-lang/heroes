@@ -43,6 +43,7 @@ use crate::types::Checked;
 mod aggregate;
 mod body;
 mod builtins;
+mod counted;
 mod ctype;
 mod descriptors;
 mod decls;
@@ -55,6 +56,7 @@ mod mangle;
 mod signature;
 mod ops;
 mod perfn;
+mod structural;
 mod term;
 mod typeorder;
 mod types;
@@ -210,7 +212,7 @@ pub fn emit_for(
     // prototype, then the ordinary function prototypes.
     typeorder::definitions(&mut w, ast, checked, &names, src);
     perfn::prototypes(&mut w, ast, checked, &names, src);
-    perfn::descriptors(&mut w, ast, checked, &names, &reachable);
+    descriptors::definitions(&mut w, ast, checked, &names, &reachable);
     // The descriptors before any definition: an array literal names its element's
     // descriptor, so the object has to exist by the time a function body mentions it.
     // Every type the functions this build will actually emit mention — the
