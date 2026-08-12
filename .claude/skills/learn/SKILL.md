@@ -1,19 +1,19 @@
 ---
 name: learn
-description: Teach the author one part of the compiler they want to understand, from the learning queue (docs/debrief/QUEUE.md). Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
+description: Teach the author one part of the compiler they want to understand, from the learning list (docs/debrief/LEARN.md). Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
 ---
 
 # /learn [n] — understanding, only when asked for
 
 The author is learning compilers through this project. This is the only place
 that serves that, and it serves **nothing else**: no decisions, no ratifications,
-no unblocking. Those live in `/unblock`, and mixing them is what this split was
+no unblocking. Those live in `/decide`, and mixing them is what this split was
 made to end (author instruction 2026-08-12) — a session that alternates *"what
 does this teach you"* with *"the compiler is waiting on your answer"* is two
 different clocks in one room, and the second always wins.
 
 **Never convened by the assistant.** Not at a milestone close, not when the queue
-grows, not as a suggestion at the end of a step. The queue is written by `/step`
+grows, not as a suggestion at the end of a step. `docs/debrief/LEARN.md` is written by `/step`
 and read here, and the author decides when. Conversation in Italian, using
 `/where`'s canonical analogies; artifacts written here in English.
 
@@ -66,21 +66,25 @@ in the message itself.
   hold — is distilled into `docs/glossary/NNN-<concept>.md` (numbered in birth
   order, English, canonical analogies, origin cited, never deleted) and the
   glossary index is updated.
-- Tick the items in the queue and leave them checked; the queue is also the
+- Tick the items in `LEARN.md` and leave them checked; the list is also the
   record. Commit: `learn: <what was covered>`.
 
 **Lessons stay impersonal — shapes and rules, never scores.** Nothing about how
 the author did is written anywhere, in this repository or in a message. What is
 written is what the *code* teaches.
 
-## What belongs here, and what does not
+## Where the items are
 
-An item belongs here if it asks **what is true** — how a pass works, why a
-representation was chosen, what a failure's cause was, what a golden guards
-against. Those are `/step`'s queue entries about concepts, failures and
-ratifications-by-reading.
+`docs/debrief/LEARN.md`, and nowhere else. The queue was split into three lists
+on 2026-08-12 because one file held 192 open items of three kinds, and a list you
+have to filter before you can read it is a list nobody opens:
 
-An item does **not** belong here if it asks **what should be true**. A `Decide:`,
-an `Undecided:`, an open question, a panel default awaiting a verdict — every one
-of those is `/unblock`'s, because the compiler goes on behaving some way while it
-waits, and that is a different kind of urgency from wanting to understand.
+- **`LEARN.md`** — what is true. This skill's, and only this skill's.
+- **`DECIDE.md`** — what *should* be true. `/decide`'s, because the compiler
+  goes on behaving some way while it waits, which is a different urgency from
+  wanting to understand.
+- **`SCHEDULED.md`** — work with a home, read by `/step` at the milestone that
+  names it.
+
+`QUEUE.md` is the record: every ticked item, and the path every commit subject
+cites.

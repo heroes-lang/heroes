@@ -5,7 +5,7 @@ mistake is a compile error**. Bootstrap compiler in Rust, backend emits C11
 compiled by clang, self-hosting is the v1 finish line (fixpoint on generated
 C). `design.md` is the source of truth for the language; the milestone chain
 lives at `docs/ROADMAP.md`; the process lives in the skills (`/step`,
-`/unblock`, `/learn`, `/panel`, `/where`) — each rule is written in exactly one
+`/decide`, `/learn`, `/panel`, `/where`) — each rule is written in exactly one
 place,
 everything else cites it. One person is learning compilers through this
 project; comprehension is the objective, but it runs **on the author's
@@ -28,9 +28,11 @@ Neither → it waits, regardless of elegance.
 The assistant implements autonomously and never stops mid-step to ask.
 Everything that once gated progress (predictions, spot-checks, golden
 ratification, failure diagnosis, drills) becomes an entry in
-`docs/debrief/QUEUE.md` — **read by two skills with opposite clocks** (author
-instruction 2026-08-12). `/unblock` takes the decisions the compiler is waiting
-on: fast, no teaching, every answer applied in the same session, and every item
+**three lists, split by what an item asks** (author instruction 2026-08-12):
+`docs/debrief/DECIDE.md` (what should be true), `LEARN.md` (what is true),
+`SCHEDULED.md` (work with a milestone that will do it). `QUEUE.md` keeps the
+record and the index, because every commit subject cites that path.
+`/decide` takes the decisions the compiler is waiting on: fast, no teaching, every answer applied in the same session, and every item
 verified against the repository before it is put to the author. `/learn` takes
 the comprehension, **only when the author asks for it** — never convened by the
 assistant, never at a milestone close — and each question arrives with the code

@@ -1,12 +1,14 @@
 ---
-name: unblock
-description: Settle the open DECISIONS the compiler is waiting on, from the queue (docs/debrief/QUEUE.md) — fast, no teaching. Verify each item against the repository before asking; a settled question put to the author is the one cost this skill cannot pay. Apply every answer in the same session.
+name: decide
+description: Settle the open DECISIONS the compiler is waiting on, from the decision list (docs/debrief/DECIDE.md) — fast, no teaching. Verify each item against the repository before asking; a settled question put to the author is the one cost this skill cannot pay. Apply every answer in the same session.
 ---
 
-# /unblock [n] — the decisions, and nothing else
+# /decide [n] — the decisions, and nothing else
 
-Split from `/learn` by author instruction (2026-08-12). The queue holds two kinds
-of item and they have **opposite clocks**: a decision left open goes on shaping
+Split from `/learn` by author instruction (2026-08-12), and named after the list
+it reads — `docs/debrief/DECIDE.md` — because a skill whose name does not match
+its list is one more thing to remember. The queue held two kinds of item with
+**opposite clocks**: a decision left open goes on shaping
 the code by default, an explanation left unread costs nothing until it is wanted.
 This takes the first kind only.
 
@@ -17,10 +19,11 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
 
 ## Procedure
 
-1. **Triage the queue for decisions.** An item qualifies if it asks *what should
-   be true*: `Decide:`, `Undecided:`, an open question, a panel resolution
-   awaiting a verdict. An item that asks *what is true* is `/learn`'s, however
-   interesting.
+1. **Read `docs/debrief/DECIDE.md`.** The triage is already done — the queue was
+   split into three lists on 2026-08-12 — so this step is only checking that
+   nothing arrived in the wrong one. An item that asks *what is true* belongs in
+   `LEARN.md` however interesting, and one that names the milestone which will do
+   it belongs in `SCHEDULED.md`; move it rather than answering it.
 
 2. **Verify before asking. This is the rule the skill exists for.** Run the
    thing. A queue entry is a claim from the day it was written, and entries

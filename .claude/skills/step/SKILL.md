@@ -1,6 +1,6 @@
 ---
 name: step
-description: Run one development step of the Heroes compiler autonomously — implement, test, queue what the author owes nobody (/learn) and what the compiler is waiting on (/unblock), commit. Chains steps without stopping; use for every implementation step, including in unattended loops.
+description: Run one development step of the Heroes compiler autonomously — implement, test, queue what the author owes nobody (/learn) and what the compiler is waiting on (/decide), commit. Chains steps without stopping; use for every implementation step, including in unattended loops.
 ---
 
 # /step [<milestone> <step>] — the development protocol
@@ -15,6 +15,17 @@ for it before a step; no other ceremony attaches to it.)
 `git log --oneline -10` · DESIGN-LOG tail · `docs/ROADMAP.md` status · read
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
+
+**Opening a milestone also means reading `docs/debrief/SCHEDULED.md` for the
+items that name it.** That list is work with a home — a measurement to run, a
+paragraph owed, a row to price — put aside precisely because doing it earlier
+would do it against a smaller corpus or a compiler that had not grown into the
+question yet. There is no `/scheduled` skill and there should not be one: a third
+verb that reads a list `/step` already has to open answers no question the two
+existing ones do not (CLAUDE.md §10's stopping rule, applied to the skills). What
+the list needs is not a caller of its own, it is *this line* — without it the
+file is write-only, which is the failure mode of every list nobody is obliged to
+open.
 
 ## 2. Implement
 - If the step touches a panel path (CLAUDE.md § Panel), run `/panel` first —
@@ -33,7 +44,7 @@ before reading the fix.
 ## 4. Queue comprehension — per new concept, not per step
 When a step introduces a new concept (first tokens, first tree, first types,
 first blocks, first C…), append 2–4 closed-form items (a count, a choice
-among structures, an output value) to `docs/debrief/QUEUE.md`:
+among structures, an output value) to `docs/debrief/LEARN.md`:
 `- [ ] <origin> | <question / task> | <where to look> | <why it matters>`
 Plumbing steps — CLI, harness, refactors, bulk cases — add nothing.
 

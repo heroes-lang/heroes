@@ -1,0 +1,35 @@
+# Work already assigned to a milestone
+
+Neither a question nor a decision: work that has a **home** and is waiting for
+it. Nothing here needs the author, and nothing here should be done early — each
+item names the milestone that will read it, and doing it sooner means doing it
+against a smaller corpus, a smaller compiler, or a measurement not yet taken.
+
+`/step` reads this when it opens the milestone named in the item — its § 1
+Orient says so, and that line is the whole mechanism. **There is deliberately no
+`/scheduled` skill**: a third verb reading a list `/step` already has to open
+answers no question the other two do not, which is CLAUDE.md §10's stopping rule
+applied to the skills instead of the CLI. A list nobody is *obliged* to open is
+write-only, and the obligation is cheaper than a command.
+
+Format: `- [ ] <origin> | <what> | <where to look> | <why it matters>`
+
+**Split from `docs/debrief/QUEUE.md` on 2026-08-12, by author instruction.** One
+file held 192 open items of three different kinds, and a list you have to filter
+before you can read it is a list nobody opens. The closed items — the record —
+stayed in `QUEUE.md`, because every commit subject in this repository cites that
+path and CLAUDE.md §14 does not rewrite a record.
+
+If an item here loses its home — the milestone closes without it, or the
+milestone is retired — it moves to `DECIDE.md` rather than staying here. Work
+scheduled at nothing is a decision nobody has made.
+
+## Open
+
+- [ ] panel 019 | `heroes measure` vendors two of panel 011's three tokenisers, and o200k was the binding one on v0 by 2 tokens. Vendor it before any verdict lands within 10 tokens of a ceiling | crates/heroes/src/measure/mod.rs · docs/panel/011 | the instrument's own error bar, found by the warden while measuring something else
+- [ ] harness | Held-out tasks must be author-written (assistant-written tasks would measure the assistant's priors); n now scales with the paced protocol, not 15 at once | harness/tasks/README.md | metric 2 validity
+- [ ] M-strings-ownership | The `f64` ladder's guarantee is **round-trip-exact, not shortest**, and the distinction is worth one paragraph: `5e-324` renders shortest only because of gnulib's subnormal branch, and Java shipped `1.9999999999999998E23` for eighteen years while satisfying its own "round-trips" spec | runtime/runtime.c (hero_f64_render) · design.md §4.9 | a spec sentence that says "shortest" would be false, and §12 makes a false spec the compiler's bug
+- [ ] panel 022 | Two free corrections the warden found while measuring something else: `docs/ROADMAP.md` asserted "reference counting **leaks cycles**", contradicting design.md §4.10 gift 2 (fixed with this panel); and `resolve/exprs.rs` walks a `BTreeMap` into diagnostic text with **no `// ORDER:` marker**, which §4.9 requires — there are zero such markers in the tree | docs/panel/022 § Watch list · §4.9 | a rule with no instances is a rule nobody is following
+- [ ] author draft 2026-08-10 | Three claims from the value-semantics draft were **not** adopted into §4.10, and each is a small lesson in over-claiming: `null`'s absence belongs to §4.6 (absence as a variant), not to value semantics; "no data races by construction" is true only once Part 7.13's isolated heaps exist, so §4.10 says *inexpressible once concurrency arrives* rather than *bought now*; and "nothing is ever genuinely shared" contradicts copy-on-write itself, whose premise is that data **is** physically shared until someone writes — the true form adds *across threads*. Confirm or overturn each | design.md §4.10 "What it buys" · DESIGN-LOG 2026-08-10 | a design document that over-claims teaches the reader to discount it, which is worse than claiming less
+- [ ] defect, open | **`-g` reaches clang only under `--sanitize`** (`toolchain.rs:203`, the file's one occurrence), so an ordinary build carries no DWARF — while design.md §2 ("line-level debugging works: lldb breaks on and steps through `.hero` source lines") and §3.1 ("Debug info. `#line` directives map generated C back to `.hero` lines") both state the opposite. The `#line` machinery is tested; the claim about lldb is tested by nothing. Scheduled into M-selfhost-port, where debugging a Heroes compiler written in Heroes makes it load-bearing | crates/heroes-cli/src/commands/toolchain.rs:203 · design.md:460, 482 | a design.md claim no artifact executes is the same class as a verifier check that never fires — and this one was found by asking whether QBE was worth more than a debugger
+- [ ] panel 036 | **Score at M-ffi-ladder close**: the ffi-pragmatist predicts SQLite reaches the acceptance test with no shim **but** that reading a TEXT column into a `str` needs one; the compiler-engineer predicts `emit/ops.rs` stays under 380 lines and `HERO_RUNTIME_ABI` stays 10 under the Tier-2 route; the historian predicts `exit(code)` typed as `()` either trips `-Werror=conditional-uninitialized` or forces an unproven `hero_unreachable()` | docs/panel/036 § Predictions to score | three judges predicted three different failure surfaces for the same milestone
