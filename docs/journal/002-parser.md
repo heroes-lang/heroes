@@ -155,3 +155,44 @@ The lesson that generalises, and it is about process rather than parsing:
 Panel 013 produced a useful null result the same way — the ffi-pragmatist
 compiled real C against three real headers and reported that nothing in the
 proposal touched the ABI.
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+**M2 closed 2026-08-04, tag `m2` — parser, tree, `--dump-ast` and the
+canonical formatter; panel 013 settled the function type's marker
+(`(function(A, B) -> C)`, `fn` stays an error everywhere). The 317-line
+acceptance program in design.md's appendix parses clean, formats idempotently
+and its tree survives formatting. Golden `check/` now runs through `parse`;
+104 crate tests + 11 golden cases (4 inherited from M1, 5 adversarial, 2 bulk).
+M1 closed 2026-08-04 tag `m1`; M0 closed 2026-08-03, retro-tagged `m0`.
+Debrief of the same day (after the tag): panels 013 and 014 ratified/resolved,
+M2's five adversarial cases ratified, the layout cascade improved (5
+diagnostics → 2), and two defects panel 014's costing exposed are fixed —
+`heroes fmt` was deleting an arm's `if` branches and `heroes parse` could hang.
+110 tests, 12 golden cases.
+Next: M3a, step 1 (resolver — scopes, no shadowing, unused with the `???`
+exemption, order-free top level). Nothing blocks it. Carried into M3: classify
+`break`/`continue`/`return` (NOT as `()` — RFC 1216), the value-`match` rule,
+declarations out of inline arm bodies, and the unrejected `()` in binding
+position.**
+
+
+### M2 — Parser, AST, pretty printer ✅ (2026-08-04, tag `m2`)
+Four entities plus `extern` and `test`, `=`/`@`, the §4.14 precedence table,
+`???` as an AST node, the type grammar (function type per panel 013), `if` and
+`match` as expressions, patterns. Two renderings of one tree: `--dump-ast`
+prints every parenthesis, `heroes fmt` prints the fewest — comparing the two
+is what proves the formatter preserved meaning. Formatter policies in
+DESIGN-LOG (minimal parens, 88 columns inside brackets only, blank lines as
+content). Recovery landmarks: brackets and lines, the two things the language
+cannot lie about.
+**Runnable:** `heroes parse examples/gallery/00-first.hero --dump-ast` ·
+`heroes fmt examples/gallery/00-first.hero` (already canonical) · the appendix acceptance
+program parses clean and formats idempotently (pinned by tests that read
+design.md, so the appendix stays its single source).
+
+

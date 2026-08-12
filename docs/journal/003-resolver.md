@@ -152,3 +152,38 @@ zero diagnostics** — 33 top-level names, 60 bindings, 293 resolved uses, of wh
 - **`Ref::Top(u32)` indexes one `Vec<Decl>`.** At M6 the tier-2 functions become
   real Heroes source in a prelude, and the index will need a tag or a documented
   concatenation.
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+**M3a closed 2026-08-04, tag `m3a` — the resolver: order-free top
+level, scopes with no shadowing, unused bindings with §4.16's file-wide hole
+exemption, written types against primitives/declarations/generics, and
+`heroes check [--dump-scopes]`, which the golden harness now runs through (the
+frontend command's name stops moving here). Panel 015 settled the rejection set
+and changed three of its five defaults on the judges' evidence: one tier of
+built-in names, not two; the UFCS unknown narrowed to "not a field anywhere in
+the file"; `_` as the unused rule's escape valve. design.md's appendix renamed
+its `map`/`fold` to `apply`/`reduce` — the third rule that program has caught —
+and **resolves with zero diagnostics**: 33 top-level names, 60 bindings, 293
+resolved uses. 164 crate tests + 21 golden cases (12 inherited unchanged, 5
+adversarial, 4 bulk).
+Next: M3b, the bidirectional checker (⇐/⇒ on `int`/`bool`/functions). Carried
+in: classify `break`/`continue`/`return` (NOT as `()` — RFC 1216), `+` on `str`
+(unwritable per the spec's operator table, provided by §4.20's runtime — wants a
+panel), the value-`match` rule, declarations out of inline arm bodies, and the
+unrejected `()` in binding position.**
+
+
+- **M3a — Resolver ✅** (2026-08-04, tag `m3a`)**:** scopes, no shadowing,
+  unused (with the `???` exemption), order-free top level, written types, and
+  the name-error diagnostic class settled by panel 015.
+  **Runnable:** `heroes check examples/gallery/00-first.hero` (silent — it resolves) ·
+  `heroes check tests/golden/check/shadowing.hero` (the diagnostic class) ·
+  `--dump-scopes` prints the alphabetical top-level table and every binding
+  nested by scope, for any file that has bindings. The witness is the appendix,
+  read out of design.md by a test so it cannot drift: zero diagnostics.
+

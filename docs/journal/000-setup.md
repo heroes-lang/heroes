@@ -108,3 +108,21 @@ Open at close of M0 — now tracked in `docs/debrief/QUEUE.md`: author's
 explain-it-back (§5), harness baseline run (n=20, needs API key or manual
 sessions). Panel decisions 002/003/005/006: taken 2026-08-03, applied to
 design.md.
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+### M0 — Day zero ✅ (2026-08-03)
+Git, Cargo workspace (library + `heroes` CLI), Cyclone tooling
+(`clippy.toml`, `forbid(unsafe_code)`), golden harness green with zero cases,
+`heroes doctor`, minimal runtime (`heroes_runtime.h` + `runtime.c`),
+spec v0 (~1496 tokens, FROZEN as the pre-amendment baseline), harness
+skeleton, four hand-written C spikes in `tools/spike/` (01 target shape ·
+02 loop as goto+labels · 03 FFI via libm · 04 recursive variant + refcount,
+ASan-clean — decided the container/descriptor ABI). Panels 000–006 all
+decided; decisions applied to design.md.
+
+

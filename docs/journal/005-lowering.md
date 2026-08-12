@@ -135,3 +135,61 @@ Three outcomes:
   (4.77, pinned by a test) and the ergonomist's collision probe (falsified by design
   — the sigil shipped, so `t0` the slot and `$t0` the temporary cannot be confused).
   The rest wait for metric 2 and M5b.
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+**M4 closed 2026-08-04, tag `m4` — the middle end exists. Part 5's sugar
+table is erased on the way into a three-address IR with explicit basic blocks,
+**slots and no phi nodes** (panel 019, unanimous, on LLVM's own advice to frontend
+authors), and `heroes build [--dump-ir]` is the fifth verb.
+
+Three measurable outcomes. **design.md's 320-line acceptance program lowers and
+verifies** — 35 functions, 226 basic blocks, its one hole reported — and for the
+first milestone in five it produced *no new defect in the program*: the frontend's
+recorded answers were complete enough for a pass that reads them instead of
+re-walking the tree. **The dump is an artifact, not debug output**: 4.77 IR lines
+per source line against the panel's ceiling of 12, deterministic and byte-identical
+twice (the cheap analogue of §7's double-emit diff, a milestone before there is any
+C), explicitly **not** version-stable — LLVM's own stance on `.ll`. **Panel 019
+changed the design in five places**, each because a judge compiled or read something
+rather than argued: linkage on every callee (an unmangled Heroes `function open`
+silently replaces libc's — compiled, prints 7, no diagnostic), at most one
+destination on a call (`dst = call print(x)` is a hard clang error), a place as a
+store's target, construction as an instruction, and an explicit cast at the FFI
+boundary. Two vetoes were lifted by amending design.md §4.12 and Part 5 rather than
+by argument (CLAUDE.md §12: spec beats compiler).
+
+304 tests (was 259): 277 crate, 3 golden harnesses over 42 cases (`tests/golden/ir/`
+is born with 14 — one per live sugar row plus 5 adversarial, marked UNVERIFIED —
+and inherits `check/`'s `UPDATE_GOLDEN` ban), 21 CLI surface tests, 6 harness-level.
+`ir/` is sixteen files, none over 300 lines, and `verify.rs` is GHC's Core Lint
+without GHC's tree: it asserts §4.8's "copy-out happens always" on every exit edge,
+including the error side of `?`.
+Next: M5a, scalars run — `int`/`bool`/`if`/`while`/functions/`print` → C → binary,
+the mangler, `#line` on change, the `-Werror` set, and the double-emit determinism
+test that stays green forever. Nothing blocks it. Carried in: `???` reaching `build`
+and the out-of-range `int` literal are both decided-by-default and queued as their
+own diagnostic classes; a function that runs off its end waits for
+`-Werror=return-type`; `-Wconditional-uninitialized` and `-Werror=format` want
+adding to CLAUDE.md §7.**
+
+
+### M4 — Desugar + lowering ✅ (2026-08-04, tag `m4`)
+Part 5's sugar table erased **on the way into the IR** — no desugared tree, and
+`--dump-ir` is the evidence (one golden per row); three-address IR with explicit
+basic blocks, **slots and no phi nodes** (panel 019). Named-arg check ordered
+before monomorphisation, which is itself an IR→IR pass at M6. `heroes build
+[--dump-ir]`, and an IR verifier that runs in tests — GHC's Core Lint without
+GHC's tree.
+**Runnable:** `heroes build examples/gallery/00-first.hero --dump-ir` · `heroes build
+examples/gallery/05-mutation.hero --dump-ir` (the `@` copy-out chain on every exit
+edge) · `heroes build <file>` alone, which says what it lowered and what does not
+exist yet. The witness is the appendix, read out of design.md by a test: 320 lines,
+35 functions, 226 basic blocks, lowered and verified. (Queued for the author:
+hand-desugar three constructs, against the IR text.)
+
+

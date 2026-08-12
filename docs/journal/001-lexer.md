@@ -105,3 +105,24 @@ Verified at close: 29 crate tests + 2 golden tests green, clippy clean,
 `heroes lex` live on examples/first.hero, and `tests/golden/check/` now
 executes through the real binary — the promise `golden.rs` made at M0
 ("from M1 on, each case is executed") and M1 nearly failed to keep.
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+### M1 — Lexer ✅ (2026-08-04, tag `m1`)
+Rigid indentation (INDENT/DEDENT, tab = error), terminator insertion (as
+amended by panel 007: full ender list, brackets-only continuation,
+unclosed-opener diagnostic), str/char literals with the five escapes of
+panel 008 (split by context, backslash reserved), comments retained,
+reserved-word detection with prescribed errors and `Certain` fixes.
+`heroes lex --dump-tokens [--json]` (spelled `--json` alone until panel 016). 30 crate-internal tests + 4 golden `check/` cases run
+through the real binary. Lexer split into six single-concern files.
+TextMate grammar (bonus): `editors/vscode/` (installable extension) — foreign
+reserved words and unknown escapes scoped `invalid.illegal`, so the thesis
+shows up while you type.
+**Runnable:** `heroes lex examples/gallery/00-first.hero --dump-tokens`.
+
+

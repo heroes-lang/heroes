@@ -70,3 +70,35 @@ and a deleted one does not.
 Not a type — a built-in, and an operator. `sort`, `join`, `chars` and `range` have
 no runtime entry point, and `.must()` is an `Op::Abort` rather than a shape. All
 five are M6's, and they are what four gallery programs are waiting for.
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+- **M5d — `T?` and the map ✅** (2026-08-10, tag `m5d`, author instruction over the
+  M5c deferral)**:** `T?` as a tagged union **by value** with `HeroFailure` shipped in
+  the runtime — so **every `T?` is reference-counted whatever `T` is**, `int?` included,
+  because its error side is two `str`s. One generated option struct per distinct `T?`,
+  named by index because `int?` and `[int]?` sanitise to the same identifier. The map is
+  open addressing over three parallel regions with a **fixed seed** (determinism across runs
+  is a fixpoint requirement — but "iteration order is a function of the contents" was **false
+  as implemented**, corrected by panel 026: arrival is not stored and `cap` depends on a
+  literal's duplicate count) and
+  **order-independent `==`** (spec line 58). `m[k]` yields a `V?`; the runtime returns an
+  address or NULL because it cannot build an option struct generated per payload type.
+  `HERO_RUNTIME_ABI` 5. **The gate now refuses no type at all.**
+  **The disagreement, unresolved and recorded:** M5c deferred both on Principle 0
+  because panel 022's R4 leaves `{K: V}` open — deleting it recovers **−57** spec tokens
+  against **+29** to fund `set` plus `for k in m`. The author overruled that. If M6's
+  audit deletes the container, this map goes with it; `T?` is not at risk under any
+  reading.
+  **Runnable:** `heroes run tests/golden/run/maps.hero` · `heroes run
+  tests/golden/run/fallible.hero` (a refusal golden that became a running one, like
+  `strings.hero` at M5b).
+  **What is left in the language is not a type:** `sort`, `join`, `chars` and `range`
+  have no runtime entry point, and `.must()` is an `Op::Abort` rather than a shape. All
+  five are M6's, and they are what the last four gallery programs wait on.
+
+

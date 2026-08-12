@@ -117,3 +117,34 @@ the author that the compiler is broken.
 - **ASan** — agreed with the leak counter twice and found nothing on its own,
   which is the honest record: on this platform it is the use-after-free
   instrument and the counter is the leak one
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+- **M5c — Aggregates ✅** (2026-08-10, tag `m5c`, panels 022 and 023)**:** records
+  and variants **by value** (confirming spike 04), `[T]` through the descriptor pass at
+  `HERO_RUNTIME_ABI 3`, structural `==` as a direct `h_T_eq`, and **COW as one unshare
+  per array step of the place path** with write-back — the primitives take
+  `HeroArrayHeader **`, because a caller cannot forget to store a result that does not
+  exist. `Op::CowCheck` did **not** enter the IR: inside the primitive, C's
+  argument-evaluation rule makes the hoisted order inexpressible, and the hoistable form
+  is what a judge built a three-block cycle from.
+  **The acceptance is one program:** `examples/gallery/11-trees.hero`, design.md §4.10's
+  own recursive variant — `Expr` holding `[Expr]` — compiles, runs, prints 14, leak
+  counter zero. A tree containing itself in a language with no pointer. The gallery goes
+  from 3 building to 5, and nothing in it exits 2.
+  **The veto ran**: `h = g` then `g.rows[0].cells[0] @ 7` prints 7 and 0, where the
+  single-unshare version printed 7 and 7 with ASan clean, the leak counter at zero and
+  exit 0 — a green harness on a program violating spec line 60. All three owed `run/`
+  cases exist (`adversarial-cow-per-step.hero`).
+  New in the front end: the **`no_size`** class (panel 023) with the topological type
+  order it shares, and `Checked::counted` answering "does this type own a reference"
+  where the AST is.
+  **Runnable:** `heroes run examples/gallery/11-trees.hero` · `heroes run
+  tests/golden/run/adversarial-cow-per-step.hero` · `heroes build
+  tests/golden/emit/aggregates.hero --emit-c` (the descriptors and the tag switch, as
+  text) · `heroes check tests/golden/check/no-size-mutual.hero`.
+

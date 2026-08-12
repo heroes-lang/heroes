@@ -143,3 +143,62 @@ Three measurable outcomes, and they are the milestone:
 - **`()` inside a container** (`[()]`, `{str: ()}`) still resolves clean. Ten
   lines to reject, and the engineer's condition 4 says C1 is not credited with
   closing it.
+
+## What landed, and what carried forward
+
+Moved verbatim from `docs/ROADMAP.md` on 2026-08-12, when the ROADMAP became a
+file about what is next (CLAUDE.md §14). The identifiers are the ones this
+milestone was built under.
+
+**M3 closed 2026-08-04, tag `m3` — the frontend is complete. M3a the
+resolver, M3b the bidirectional checker, M3c the data rules, M3d errors as a
+product. Panels 015 (the resolver's rejection set), 016 (the command surface) and
+017 (the type system's four edges) all decided and ratified; nine judges ran, and
+three of them changed the design on evidence rather than argument.
+
+Three measurable outcomes. **design.md's 317-line acceptance program type-checks
+with zero diagnostics** — getting there found a twelfth `T`-where-`T?` site that
+panels 002/006 had missed, the fourth defect that program has surfaced in four
+milestones without ever being run. **Metric 3 ran for the first time**: 379
+mutants, 94% caught against 76% in the control arm, recorded with provenance in
+`docs/measurements/001-metric-3.md` — the project's first number about its own
+thesis, with the columns that show *no* effect named as plainly as the ones that
+do. **spec v1 landed and the freeze is over**: seven panels' amendments, 160
+measured tokens of removals spent, 2139 binding max (from 2048 — the number read
+2136 until panel 018's sweep landed, which cost +3 measured against a table that
+had sold its shape as −4 on v0: deltas measured on v0 did not transfer), and the spec is
+now *tested* against the compiler — because it had been briefing models into a
+reserved-word error for four milestones.
+
+259 tests (was 110 at M2): 240 crate, 3 golden harnesses over 28 cases (5
+adversarial from M3a, 5 from M3b–d, 4 bulk, 12 inherited, 4 with `.fixed`
+expectations), 16 CLI surface tests where there were none. `heroes` itself was
+rebuilt on panel 016's verdict: one strict table-driven argv parser, exit codes
+0/1/2 printed in `--help`, `--dump-<stage>` per design.md §3.5, `--in-place`
+where `--write` used to be, and a stopping rule in CLAUDE.md §10 so the surface
+does not sprawl.
+Next: M4, desugar and lowering — Part 5's sugar table erased on the way into the IR, a
+three-address IR with explicit basic blocks, `heroes build --dump-ir`. Nothing
+blocks it. Carried in: `()` inside a container is still accepted, a `match` over
+`bool` cannot be written exhaustively, and the same-typed-argument rule's cost on
+the FFI boundary wants a panel.**
+
+
+### M3 — split in four (each with its own runnable artifact)
+
+- **M3b — Checker core ✅** (2026-08-04)**:** bidirectional ⇐/⇒, one shared join
+  rule for every branching construct, and a jump with no type (panel 017 A).
+  **Runnable:** `heroes check <file>` — the appendix type-checks clean.
+- **M3c — Data ✅** (2026-08-04)**:** records, variants with payload,
+  exhaustiveness, the `_` ban, the same-typed-argument rule, `ok`/`fail` in ⇐
+  mode, and a declaration rejected as an inline arm body (panel 017 D).
+- **M3d — Diagnostics as a product ✅** (2026-08-04)**:** §4.17's rich form (the
+  line, the caret, the note carrying the other end, the tagged fixes), `.fixed`
+  goldens that assert an applied `certain` fix checks clean, §4.16's `???` output
+  capped at 5 and deterministic, `heroes check --json` (schema 1), `--brief`,
+  `--apply`, and `--permissive` — the control arm metric 3 needs.
+  **Metrics 1 and 3 have run**; metric 2 still needs a model or paced sampling
+  with author-written tasks (`harness/README.md`), so the thesis keeps its
+  measured mechanism and not yet its measured claim.
+
+

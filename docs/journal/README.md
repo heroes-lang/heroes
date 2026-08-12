@@ -1,0 +1,41 @@
+# Journals — one per milestone, the record of what happened
+
+One file per closed milestone, numbered in the order they closed. Each carries the
+three sections `/step`'s close checklist asks for — **goal** · **what surprised**
+(impersonal: shapes and rules, never scores) · **what broke and why** — and, since
+2026-08-12, a fourth: **what landed, and what carried forward**, which is the
+milestone's status paragraph and its chain entry, moved here from `docs/ROADMAP.md`.
+
+The division of labour, and the reason this file exists:
+
+- **`docs/ROADMAP.md` says what is next.** It had accumulated 512 lines about the
+  past before its first line about the future, growing ~66 lines per close. The
+  retrospectives live here now, and `/step`'s checklist keeps the ROADMAP's
+  § Status at ≤15 lines.
+- **These journals say what happened**, one milestone at a time, with the lesson
+  next to the inventory.
+- `DESIGN-LOG.md` says what was decided, `docs/panel/` why, `docs/measurements/`
+  and `docs/defects/` with what numbers, and `docs/book/beats.md` what it felt like.
+
+**The identifiers here are the ones each milestone was built under** — `M5c`, not
+`M-value-aggregates`. A journal is a dated record and is never rewritten; the map
+is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
+
+| # | journal | milestone | closed | tag |
+|---|---|---|---|---|
+| 000 | [setup](000-setup.md) | M0 — day zero | 2026-08-03 | `m0` |
+| 001 | [lexer](001-lexer.md) | M1 — the lexer | 2026-08-04 | `m1` |
+| 002 | [parser](002-parser.md) | M2 — parser, tree, formatter | 2026-08-04 | `m2` |
+| 003 | [resolver](003-resolver.md) | M3a — the resolver | 2026-08-04 | `m3a` |
+| 004 | [checker](004-checker.md) | M3, M3b–M3d — the frontend complete | 2026-08-04 | `m3` |
+| 005 | [lowering](005-lowering.md) | M4 — desugar and the IR | 2026-08-04 | `m4` |
+| 006 | [scalars run](006-scalars-run.md) | M5, M5a — the first native binary | 2026-08-04 | `m5a` |
+| 007 | [strings and ownership](007-strings-and-ownership.md) | M5b — `str`, and the ownership pass | 2026-08-05 | `m5b` |
+| 008 | [aggregates](008-aggregates.md) | M5c — records and variants by value | 2026-08-10 | `m5c` |
+| 009 | [the map and the fallible](009-the-map-and-the-fallible.md) | M5d — `T?` and `{K: V}` | 2026-08-10 | `m5d` |
+| 010 | [sugar, tests, generics, library](010-sugar-tests-generics-library.md) | M6 — the language is finished | 2026-08-11 | `m6` |
+| 011 | [modules, the namespace](011-modules-the-namespace.md) | M8a — a program is many files | 2026-08-12 | `m8a` |
+
+`git tag --list --sort=creatordate` gives the same order from git itself, and
+`git checkout m5b` re-opens any milestone's code — which is what
+`M-journey-book` is written from.
