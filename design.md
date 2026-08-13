@@ -1141,7 +1141,7 @@ function advance(@l: Lex)
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + fit_i64(l.here() - '0')
+        v @ v * 10 + fit_i64(l.here() - '0').must()
         advance(@l)
     return v
 ```
@@ -2819,7 +2819,7 @@ function is_letter(c: u8) -> bool
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + fit_i64(l.here() - '0')
+        v @ v * 10 + fit_i64(l.here() - '0').must()
         advance(@l)
     return v
 

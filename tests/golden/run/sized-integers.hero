@@ -36,7 +36,7 @@ function main()
     print("top ", top, " ", hex, " ", top == hex)
 
     byte: u8 @ 7
-    print("widen ", fit_i64(byte) * 100)
+    print("widen ", fit_i64(byte).must() * 100)
     print("narrow ", fit_u8(300).is_err(), " ", fit_u8(42).must())
     print("signed ", fit_u8(-1).is_err())
 
@@ -46,12 +46,12 @@ function main()
 test "a literal takes the width its context asks for"
     small: u8 @ 255
     edge: i8 @ -128
-    assert fit_i64(small) == 255
-    assert fit_i64(edge) == -128
+    assert fit_i64(small).must() == 255
+    assert fit_i64(edge).must() == -128
 
 test "a widening cannot fail and says so"
     b: u8 @ 9
-    w: i64 = fit_i64(b)
+    w: i64 = fit_i64(b).must()
     assert w == 9
 
 test "a narrowing can fail and says so"

@@ -2,8 +2,8 @@
 
 **Convened** 2026-08-12 on the author's instruction (*"per sciogliere i decide
 rimasti convoca il panel"*), over the whole of `docs/debrief/DECIDE.md` § Open.
-**Four judges.** **Status: Q2 resolved; Q1 provisional — author ratification
-pending.**
+**Four judges.** **Status: RESOLVED. Q2 closed at the sitting; Q1 ratified 2026-08-13 — the
+author restored the uniform rule and the shipped one was reverted.**
 
 **The ffi-pragmatist was not convened, and that is a decision.** Neither question
 touches the C boundary: the conversion happens entirely inside Heroes and the
@@ -274,3 +274,54 @@ sitting's sharpest Q1 finding and three corrections to the proposal's text.
 **Three of this sitting's six tree findings are defects in work committed the
 same day, by the assistant convening the panel.** That is the panel doing what it
 is for.
+
+
+---
+
+## The author's verdict on Q1, 2026-08-13 — the uniform rule is restored
+
+*"Fai la soluzione più solida e sicura."* `fit_<w>` returns `T?` at every pair,
+including the ones that cannot fail. Step 7's bend is reverted.
+
+**The bent rule was correct and still the wrong shape.** This sitting's
+compiler-engineer generated all 64 pairs from an independent reimplementation
+and found no fault; the emission survived a structural attack; the two `Fix`es
+its condition demanded were built. None of that was the question. Three things
+outrank the `.must()` it saved:
+
+- **One rule.** A reader knows the result's shape from the name, without
+  resolving the argument's declaration to learn its width — which is §1.3's
+  locality test, and which this sitting measured as *"worse by exactly one
+  write-side hop"*.
+- **It was an invention.** The historian searched Zig, Rust, Swift, D and Ada for
+  one conversion name yielding a plain value for some argument types and an
+  optional for others, and found none. Zig's `math.cast(comptime T: type, x) ?T`
+  — the closest live analogue, and `fit`'s exact shape — returns `?T`
+  unconditionally.
+- **Reversibility.** 8 call sites today against ≥25 at M-selfhost-probe, on the
+  compiler-engineer's own measurement. This was the cheap moment; every later
+  one is dearer, and its prediction 4 is thereby **scored: the revert touched 8
+  sites, inside its "<15 means still cheaply reversible" branch.**
+
+**The cost is real and is written into the code rather than hidden.**
+`fit_i64(l.here() - '0').must()` is back in the calculator's lexer — a `.must()`
+on a conversion that can never fail, at the hottest line of the shape the closure
+list is made of. §1.4 calls that redundancy spent where errors cannot occur, and
+it is the price of the three reasons above. The `certain` fix built at this
+sitting still fires the other way, on a `.must()` applied to something that was
+never fallible.
+
+**And the revert exposed an interaction the sitting had created.** Panel 043 made
+`emit/ops.rs`'s empty-test branch `hero_unreachable()`, correctly: under the bent
+rule an early return took every widening before that point, and all 64 emissions
+confirmed nothing reached it. Restoring the uniform rule made it reachable again,
+and `tests/golden/run/premise-mangler-hash-in-heroes.hero` failed within a minute
+with `assigning to … from incompatible type 'void'`. The branch now emits an
+unconditional `ok` — no condition, no `else`, and no `if (1)`, which
+`-Wtautological-constant-out-of-range` would reject. `contains_agrees_with_range`
+still guards the premise underneath: if `contains` and `range` ever part, a
+*narrowing* reaches that branch with no test and truncates in silence.
+
+A repair that is right under one rule and wrong under another, caught by a golden
+rather than by reading — which is the argument for the goldens, and for reverting
+at the cheap moment rather than the convenient one.

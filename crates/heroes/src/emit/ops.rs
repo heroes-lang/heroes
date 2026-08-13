@@ -398,13 +398,6 @@ pub(super) fn call(
                 .iter()
                 .find(|k| k.name() == &name[4..])
                 .expect("the name was checked into existence by `resolve`");
-            // A widening cannot fail, so it is an assignment and not an option:
-            // no union, no tag, no branch. The C is the cast the type already
-            // says, which is also why this arm has to ask before building one.
-            if to.contains(from) {
-                w.line(&format!("    {into} = ({}){};", to.c_type(), arguments[0]));
-                return;
-            }
             // **Both bounds are asked of the two RANGES, not of the two shapes.**
             // A first version derived them from `signed()` and `bits()` by hand
             // and got `fit_i8(-129)` wrong: it emitted a low test only when the
@@ -428,19 +421,21 @@ pub(super) fn call(
             if from_high > high {
                 tests.push(format!("{value} <= {high}{}", if from.signed() { "LL" } else { "ULL" }));
             }
-            // **Unreachable, and loud rather than `"1"`** (panel 043). An empty
-            // test list means every value of the source fits the target — which
-            // the `to.contains(from)` early return above already took. Measured
-            // over all 64 pairs: zero emissions reach here. `"1"` would have
-            // emitted `if (1)`, a silently correct answer that hides a `contains`
-            // that has stopped agreeing with `range()`; CLAUDE.md §11 wants the
-            // fallback in the loud direction, and `contains_agrees_with_range`
-            // is the test that fires if the two ever part.
-            if tests.is_empty() {
-                w.line(&format!("    {into} = hero_unreachable();"));
-                return;
-            }
-            let condition = tests.join(" && ");
+            // **An empty test list is the widening case, and it emits no branch
+            // at all.** Every value of the source fits the target, so the option
+            // is unconditionally `ok` — no condition, no `else`, and in
+            // particular no `if (1)`, which `-Wtautological-constant-out-of-range`
+            // would reject anyway.
+            //
+            // This arm was `hero_unreachable()` between panel 043 and the
+            // author's ratification of 2026-08-13, and that was right at the
+            // time: the rule then returned a plain `T` for a widening and an
+            // early return took every such case before this point. Restoring the
+            // uniform `T?` made the branch reachable again, and the golden caught
+            // it within a minute — `assigning to … from incompatible type
+            // 'void'`. `contains_agrees_with_range` still guards the premise the
+            // emptiness rests on: `contains` and `range` must agree, or a
+            // narrowing arrives here with no test and truncates in silence.
             // `lookup`, not `intern`: the checker already made this `T?` when it
             // typed the call, so a miss here would mean the two passes disagree
             // about the result type rather than that a type is missing.
@@ -452,6 +447,15 @@ pub(super) fn call(
                 Some(id) => types.names.option_of(id),
                 None => return,
             };
+            if tests.is_empty() {
+                w.line(&format!(
+                    "    {into} = ({union}){{.tag = INT64_C(0), .as.ok = ({}){}}};",
+                    to.c_type(),
+                    arguments[0]
+                ));
+                return;
+            }
+            let condition = tests.join(" && ");
             w.line(&format!("    if ({condition}) {{"));
             w.line(&format!(
                 "        {into} = ({union}){{.tag = INT64_C(0), .as.ok = ({}){value}}};",

@@ -156,28 +156,35 @@ pub(super) fn call(
                 .iter()
                 .find(|k| k.name() == &name[4..])
                 .expect("just matched");
-            let source = match checker.out.types.get(*one) {
-                Ty::Int(k) => k,
-                _ => unreachable!("refused above"),
-            };
             let target = checker.out.types.intern(Ty::Int(kind));
-            // **A widening returns `T`, not `T?`** (pending author ratification;
-            // the author's ruling was `T?` for every conversion, and the cost of
-            // taking that literally showed up on the language's own acceptance
-            // programme: `v * 10 + fit_i64(l.here() - '0').must()` in the
-            // calculator's lexer, a `.must()` on something that cannot fail, at
-            // the hottest line of the shape the closure list is made of).
+            // **`T?` at every pair, including the ones that cannot fail** (author
+            // ratification 2026-08-13, closing panel 043's Q1 and restoring the
+            // author's original ruling, which step 7 had bent).
             //
-            // Panel 042's Q2 refused *one name with two result types*, and the
-            // reason was unpredictability. This is not that: the result is a
-            // function of the argument's width, the compiler knows it, and it is
-            // fallible exactly when it can fail. The llm-ergonomist asked for this
-            // and was overruled for uniformity; the measurement went its way.
-            if kind.contains(source) {
-                target
-            } else {
-                checker.out.types.intern(Ty::Fallible(target))
-            }
+            // The bent rule returned `T` where `IntKind::contains` said the
+            // conversion was safe. It was *correct* — panel 043's
+            // compiler-engineer generated all 64 pairs from an independent
+            // reimplementation and found no fault — and still the wrong shape,
+            // for three reasons that outrank the `.must()` it saved:
+            //
+            // - **one rule.** A reader knows the result's shape from the name,
+            //   without resolving the argument's declaration to learn its width.
+            //   That resolution is §1.3's locality test, measured by the same
+            //   judge as "worse by exactly one write-side hop".
+            // - **it was an invention.** Panel 043's historian searched Zig, Rust,
+            //   Swift, D and Ada for one conversion name yielding a plain value
+            //   for some argument types and an optional for others, and found
+            //   none. Zig's `math.cast(comptime T: type, x) ?T` is the closest
+            //   live analogue and returns `?T` unconditionally.
+            // - **reversibility.** 8 call sites today against ≥25 at
+            //   M-selfhost-probe on that judge's own measurement, so this was the
+            //   cheap moment and every later one is dearer.
+            //
+            // The cost is real and not hidden: `fit_i64(l.here() - '0')` in the
+            // calculator's lexer now needs a `.must()` it can never exercise.
+            // §1.4 calls that redundancy spent where errors cannot occur, and it
+            // is the price of the three reasons above.
+            checker.out.types.intern(Ty::Fallible(target))
         }
         ("to_f64", [one]) if matches!(checker.out.types.get(*one), Ty::Int(_)) => checker.out.types.f64(),
         // §4.20's inventory calls this one `.str()`; panel 017 renames it
