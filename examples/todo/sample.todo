@@ -1,0 +1,4 @@
+[x] write the corpus harness
+[x] find a compiler defect with it
+[ ] make the CI run on both platforms
+[ ] re-measure heroes mutate over the enlarged corpus
