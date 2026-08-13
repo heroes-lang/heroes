@@ -1,0 +1,76 @@
+# A log summariser: a file of lines in, a page a person can read out.
+#
+#     heroes run examples/logs/main.hero -- examples/logs/sample.log
+#     heroes run examples/logs/main.hero -- examples/logs/sample.log ERROR
+#
+#     main.hero      the program: arguments, the file, the page, the status
+#     summary.hero   counting, and the ordering a count wants
+#     entry.hero     one line, taken apart — and the lines that are not one
+#
+# It ends **1** when the log holds an error, which is the whole point of running
+# it from a script: the exit code answers "did anything go wrong last night"
+# without anyone reading the page.
+#
+# What it exercises: `{str: i64}` tallies read back in an order the map does not
+# have, a ranking that `sort` gets wrong on purpose, and a reader that **skips
+# and counts** what it cannot parse rather than refusing the file.
+
+use entry
+use summary
+
+function main()
+    given = args()
+    if len(given) == 0
+        print("usage: logs <file.log> [LEVEL]")
+        exit(2)
+    match read_file(given[0])
+        .err e   => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text => report(entry.read(text), given)
+
+function stop(message: str)
+    print(message)
+    exit(1)
+
+function report(r: entry.Reading, given: [str])
+    if len(given) > 1
+        show_level(r, given[1])
+        return
+    print("lines: ", r.entries.len(), " read, ", r.skipped.len(), " skipped")
+    print("levels:")
+    for line in summary.rows(summary.tally(summary.levels_of(r.entries)))
+        print(line)
+    print("sources:")
+    for line in summary.rows(summary.tally(summary.sources_of(r.entries)))
+        print(line)
+    busiest = summary.ranked(summary.tally(summary.hours_of(r.entries)))
+    if busiest.len() > 0
+        print("busiest hour: ", busiest[0])
+    match summary.first_at(r.entries, "ERROR")
+        .ok first => print("first error: ", first.source, ": ", first.message)
+        .err _    => print("first error: none")
+    if summary.how_many_at(r.entries, "ERROR") > 0
+        exit(1)
+
+# Every line at one level, in the order the file had them — the view you want
+# once the page above has told you which level to ask about.
+function show_level(r: entry.Reading, level: str)
+    shown: i64 @ 0
+    for one in r.entries
+        if one.level == level
+            shown @ shown + 1
+            print(one.stamp, " ", one.source, ": ", one.message)
+    print(shown, " ", level, " lines")
+
+test "the sample's page is the one the file describes"
+    r = entry.read(read_file("examples/logs/sample.log").must())
+    assert r.entries.len() == 12
+    assert r.skipped == [8]
+    assert summary.how_many_at(r.entries, "ERROR") == 2
+    assert summary.first_at(r.entries, "ERROR").must().source == "emit"
+
+test "the sample's two hours are tied, so the tie-break is what is being read"
+    r = entry.read(read_file("examples/logs/sample.log").must())
+    hours = summary.tally(summary.hours_of(r.entries))
+    assert hours["21"].must() == hours["22"].must()
+    assert summary.ranked(hours) == ["21", "22"]
+    assert summary.rows(summary.tally(summary.levels_of(r.entries)))[0] == "  INFO 8"

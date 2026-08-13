@@ -1,0 +1,15 @@
+lines: 12 read, 1 skipped
+levels:
+  INFO 8
+  ERROR 2
+  WARN 2
+sources:
+  cli 4
+  emit 3
+  lexer 2
+  resolve 1
+  syntax 1
+  types 1
+busiest hour: 21
+first error: emit: variable 't72' set but not used
+!exit: 1

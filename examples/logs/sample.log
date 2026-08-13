@@ -1,0 +1,13 @@
+2026-08-13T21:58:02 INFO cli: heroes build examples/maze/main.hero
+2026-08-13T21:58:02 INFO lexer: 412 tokens
+2026-08-13T21:58:02 INFO syntax: 31 declarations
+2026-08-13T21:58:03 WARN resolve: `grid` names a module, not a value
+2026-08-13T21:58:03 ERROR emit: variable 't72' set but not used
+2026-08-13T21:58:03 INFO cli: exit 1
+2026-08-13T22:04:10 INFO cli: heroes build examples/maze/main.hero
+this line was still being written when the process died
+2026-08-13T22:04:11 INFO lexer: 412 tokens
+2026-08-13T22:04:11 WARN emit: a temporary nobody reads
+2026-08-13T22:04:12 ERROR emit: the assertion the header wanted
+2026-08-13T22:04:13 INFO types: 0 diagnostics
+2026-08-13T22:31:00 INFO cli: exit 0
