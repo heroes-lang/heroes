@@ -21,6 +21,7 @@ over cases somebody thought of.
 
 | directory | what it is |
 |---|---|
+| `json/` | a JSON reader: recursive descent over one byte of lookahead, a value recursive through **both** `[T]` and `{K: V}`, and `f64`s built digit by digit because a `str` has no conversion to a number |
 | `calculator/` | the acceptance program: a lexer, a recursive-descent parser and an evaluator for arithmetic with variables, across four modules — and `whole.hero` beside them, the same program in one file, so "two spellings of one program" is a claim something checks |
 | `sqlite/` | §4.19's own acceptance: open, query, close, against the SDK's `sqlite3.h` with **no shim** |
 | `curl/` | a variadic and an enum return, over libcurl. The one program with no `main.expected`, and the reason is read off the program rather than off a list: it prints this machine's libcurl version |

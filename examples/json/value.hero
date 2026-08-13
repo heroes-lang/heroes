@@ -1,0 +1,168 @@
+# The JSON value, and how it prints.
+#
+# A JSON document is a tree of six kinds, and this is the module that says so.
+# It names no other module: like the calculator's lexer, a module with no `use`
+# line is the base case of the graph.
+#
+# One name here is decided by the language rather than by JSON. The `null` case
+# is called `nothing`, because `null` is a **refused word** — `heroes check` on
+# it says *there is no null in this language; absence is a fallible type*. That
+# refusal is about the language having no null **value**, and a JSON document is
+# free to contain the word; what it cannot do is spell a Heroes name with it.
+
+variant Json
+    nothing
+    boolean
+        b: bool
+    number
+        v: f64
+    text
+        s: str
+    array
+        items: [Json]
+    object
+        fields: {str: Json}
+
+## Rendering
+
+# The document as text again, in a canonical form: no spaces, and an object's
+# keys in sorted order.
+#
+# Sorted rather than as-written, and that is a property of the language rather
+# than a choice made here — a `{K: V}` does not remember insertion order, and
+# `==` on two maps ignores it. `for k in sort(keys(m))` is the spec's own idiom
+# for walking one in an order a reader can predict.
+#
+# It does not round-trip byte for byte, and the reason is worth stating: every
+# JSON number is an `f64`, so `1` comes back as `1.0`. That is JSON's own model
+# (its numbers are doubles), not a shortcut.
+function render(j: Json) -> str
+    return match j
+        .nothing   => "null"
+        .boolean b => b.b.to_str()
+        .number n  => n.v.to_str()
+        .text t    => quote(t.s)
+        .array a   => "[" + join(rendered(a.items), ",") + "]"
+        .object o  => "{" + join(pairs(o.fields), ",") + "}"
+
+# Every element, rendered. Separate from `render` because a `match` arm is one
+# expression and a loop is not one.
+function rendered(items: [Json]) -> [str]
+    out: [str] @ []
+    for item in items
+        out @ out.push(render(item))
+    return out
+
+function pairs(fields: {str: Json}) -> [str]
+    out: [str] @ []
+    for k in sort(keys(fields))
+        out @ out.push(quote(k) + ":" + render(fields[k].must()))
+    return out
+
+# A string, with the five escapes JSON needs on the way out.
+#
+# Built as an array and joined rather than with `+` in a loop, which the spec
+# prices: `+` on `str` copies both sides, so accumulating in a loop is
+# quadratic, and `join` is linear.
+function quote(s: str) -> str
+    out: [str] @ ["\""]
+    for c in s.chars()
+        if c == "\""
+            out @ out.push("\\\"")
+        else if c == "\\"
+            out @ out.push("\\\\")
+        else if c == "\n"
+            out @ out.push("\\n")
+        else if c == "\t"
+            out @ out.push("\\t")
+        else
+            out @ out.push(c)
+    out @ out.push("\"")
+    return join(out, "")
+
+## Asking a document questions
+
+# How many values the tree holds, counting itself.
+function size(j: Json) -> i64
+    return match j
+        .nothing   => 1
+        .boolean _ => 1
+        .number _  => 1
+        .text _    => 1
+        .array a   => 1 + size_of_all(a.items)
+        .object o  => 1 + size_of_fields(o.fields)
+
+function size_of_all(items: [Json]) -> i64
+    total: i64 @ 0
+    for item in items
+        total @ total + size(item)
+    return total
+
+function size_of_fields(fields: {str: Json}) -> i64
+    total: i64 @ 0
+    for k in keys(fields)
+        total @ total + size(fields[k].must())
+    return total
+
+# How deep the tree goes: a leaf is 1.
+function depth(j: Json) -> i64
+    return match j
+        .nothing   => 1
+        .boolean _ => 1
+        .number _  => 1
+        .text _    => 1
+        .array a   => 1 + deepest(a.items)
+        .object o  => 1 + deepest(fields_of(o.fields))
+
+function deepest(items: [Json]) -> i64
+    best: i64 @ 0
+    for item in items
+        d = depth(item)
+        if d > best
+            best @ d
+    return best
+
+function fields_of(fields: {str: Json}) -> [Json]
+    out: [Json] @ []
+    for k in sort(keys(fields))
+        out @ out.push(fields[k].must())
+    return out
+
+# The value at `key`, for an object — and an error for everything else, because
+# "not an object" and "no such key" are different mistakes and a caller usually
+# wants to tell them apart.
+#
+# The object arm hands back `o.fields[key]` unchanged, which is already a `Json?`
+# with the code `missing_key`. Writing it any other way costs correctness: a
+# document is allowed to contain `null`, so `.default(.nothing)` followed by a
+# test for `.nothing` would report a present null as an absent field.
+function field(j: Json, key: str) -> Json?
+    return match j
+        .object o => o.fields[key]
+        .nothing | .boolean _ | .number _ | .text _ | .array _ =>
+            fail("not_an_object", "asked for `" + key + "` of a value that is not an object")
+
+test "rendering is canonical"
+    assert render(.nothing) == "null"
+    assert render(.boolean(b: true)) == "true"
+    assert render(.number(v: 1.5)) == "1.5"
+    assert render(.text(s: "hi")) == "\"hi\""
+    assert render(.array(items: [.number(v: 1.0), .nothing])) == "[1.0,null]"
+
+test "a string is escaped on the way out"
+    assert quote("a\"b") == "\"a\\\"b\""
+    assert quote("a\\b") == "\"a\\\\b\""
+    assert quote("a\nb") == "\"a\\nb\""
+
+test "an object prints its keys in sorted order"
+    m: {str: Json} @ {}
+    m["z"] @ .number(v: 1.0)
+    m["a"] @ .boolean(b: false)
+    assert render(.object(fields: m)) == "{\"a\":false,\"z\":1.0}"
+
+test "size and depth count the tree"
+    leaf: Json = .number(v: 1.0)
+    nested: Json = .array(items: [leaf, .array(items: [leaf])])
+    assert size(nested) == 4
+    assert depth(nested) == 3
+    assert depth(leaf) == 1

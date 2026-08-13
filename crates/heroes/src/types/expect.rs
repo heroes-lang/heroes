@@ -52,7 +52,12 @@ pub(super) fn check(
         // A character literal shares the arm: §4.3 makes it a number whose value
         // is one ASCII character, so it fits every width and the check is the
         // same one.
-        ExprKind::Int | ExprKind::Char | ExprKind::Unary { op: UnaryOp::Neg, .. } => {
+        //
+        // The arm is chosen by `contextual::number_literal`, which walks under
+        // the minus signs, rather than by the shape of the outermost node. A
+        // flat `Unary { op: Neg, .. }` sent `-x` here too, where it met a range
+        // check about a value it does not have (fixedbugs, 2026-08-13).
+        _ if super::contextual::number_literal(ast, id) => {
             match checker.out.types.get(expected) {
                 Ty::Int(kind) => {
                     let text = src.slice(span);

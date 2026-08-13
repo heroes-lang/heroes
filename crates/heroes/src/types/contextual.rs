@@ -47,18 +47,33 @@ pub(super) fn contextual(ast: &Ast, id: ExprId) -> bool {
         // ASCII character, and it fits every width. Without it `b == 'a'` for a
         // `u8` byte would be a type error — which is lexer code, the closure
         // list's own shape.
-        ExprKind::Int | ExprKind::Char => true,
-        // `-128` is unary minus applied to `128`, so a negative literal is only
-        // contextual if the sign is. Without this arm `b: i8 @ -128` is a type
-        // error *and* `128` does not fit an `i8` on its own — the value is only
-        // in range once the minus is applied, which is why the check below has to
-        // see them together rather than one at a time.
-        ExprKind::Unary { op: UnaryOp::Neg, operand } => contextual(ast, *operand),
-        _ => false,
+        _ => number_literal(ast, id),
     }
 }
 
-
+/// Whether this expression **is** a number literal, sign included.
+///
+/// `-128` is unary minus applied to `128`, so the sign has to be read with the
+/// digits rather than after them: `128` does not fit an `i8` on its own and
+/// `-128` does, so a check that saw them one at a time would refuse the value
+/// the width exists to hold.
+///
+/// **And the recursion is the whole predicate**: `-x` is not a literal, because
+/// nothing under the minus is one. Two rules read that question flatly —
+/// `ExprKind::Unary { op: Neg, .. }` with no look at the operand — and both were
+/// wrong in the same way (fixedbugs, 2026-08-13): `x @ -x` on an `f64` was
+/// *expected `f64`, found `i64`*, and `ok(-n)` on an `i64` was *`-n` does not
+/// fit an `i64`*, a range diagnostic about an expression with no value to
+/// range-check. That is why the answer lives here beside `contextual`, in one
+/// function that every rule calls: this module's own doc says two readings of
+/// the list would be two languages, and for one day they were.
+pub(super) fn number_literal(ast: &Ast, id: ExprId) -> bool {
+    match &ast.exprs[id.0 as usize].kind {
+        ExprKind::Int | ExprKind::Char => true,
+        ExprKind::Unary { op: UnaryOp::Neg, operand } => number_literal(ast, *operand),
+        _ => false,
+    }
+}
 
 /// Whether a contextual expression will actually take the type offered.
 ///
@@ -73,10 +88,8 @@ pub(super) fn contextual(ast: &Ast, id: ExprId) -> bool {
 /// is. A number has a *value* already, and a value that cannot be an `f64` is
 /// worse off being told to try.
 pub(super) fn adopts(checker: &Checker, ast: &Ast, id: ExprId, offered: TyId) -> bool {
-    match &ast.exprs[id.0 as usize].kind {
-        ExprKind::Int | ExprKind::Char | ExprKind::Unary { op: UnaryOp::Neg, .. } => {
-            matches!(checker.out.types.get(offered), Ty::Int(_))
-        }
-        _ => true,
+    if number_literal(ast, id) {
+        return matches!(checker.out.types.get(offered), Ty::Int(_));
     }
+    true
 }

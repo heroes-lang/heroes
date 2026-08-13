@@ -1,0 +1,61 @@
+# A JSON reader: a document in, its shape and its canonical form out.
+#
+#     heroes run examples/json/main.hero -- examples/json/sample.json title
+#
+# The program's three edges are all here (§1.11): it takes `args()`, it reads a
+# file, and it ends with a status a shell can branch on — 0 for a document it
+# read, 1 for one it could not, 2 for being asked wrong. That last distinction is
+# the compiler's own contract (CLAUDE.md §10) applied to a program: *the input is
+# bad* and *you called me wrong* are different answers.
+#
+#     main.hero    the program: arguments, the file, the report
+#     parse.hero   the reader — recursive descent, one byte of lookahead
+#     value.hero   the document, its canonical form, and how to ask it questions
+#
+# What it exercises: a variant recursive through **both** `[T]` and `{K: V}`, an
+# `@` record travelling through a parser, `T?` with `?` propagation across two
+# modules, `f64` arithmetic built up digit by digit, and a `{str: Json}` walked
+# in sorted key order because a map remembers no other one.
+
+use parse
+use value
+
+function main()
+    given = args()
+    if len(given) == 0
+        print("usage: json <file> [key]")
+        exit(2)
+    match read_file(given[0])
+        .err e   => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text => report(text, given)
+
+# Every unhappy ending in one place, so the exit code is decided once.
+function stop(message: str)
+    print(message)
+    exit(1)
+
+function report(text: str, given: [str])
+    match parse.read(text)
+        .err e  => stop(e.code + ": " + e.msg)
+        .ok doc => describe(doc, given)
+
+function describe(doc: value.Json, given: [str])
+    print("values: ", value.size(doc))
+    print("depth: ", value.depth(doc))
+    print(value.render(doc))
+    if len(given) > 1
+        match value.field(doc, given[1])
+            .err e   => print("field ", given[1], ": ", e.code)
+            .ok got  => print("field ", given[1], ": ", value.render(got))
+
+test "the report reads its own sample"
+    doc = parse.read(read_file("examples/json/sample.json").must()).must()
+    assert value.render(value.field(doc, "title").must()) == "\"Heroes\""
+    assert value.field(doc, "nothing_here").is_err()
+    assert value.field(.number(v: 1.0), "title").is_err()
+
+test "a document survives a round trip through its own canonical form"
+    once = read_file("examples/json/sample.json").must()
+    first = value.render(parse.read(once).must())
+    twice = value.render(parse.read(first).must())
+    assert first == twice

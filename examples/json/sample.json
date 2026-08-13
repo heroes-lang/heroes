@@ -1,0 +1,9 @@
+{
+  "title": "Heroes",
+  "version": 0.1,
+  "compiled": true,
+  "successor": null,
+  "targets": ["c11", "qbe"],
+  "limits": { "spec_tokens": 4096, "file_lines": 300 },
+  "motto": "every plausible mistake is a compile \"error\""
+}

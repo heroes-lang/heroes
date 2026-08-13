@@ -1,0 +1,330 @@
+# The reader: text in, a `Json` out — or an error saying where it stopped.
+#
+# A recursive-descent parser with no separate tokeniser, which is what JSON's
+# grammar invites: every value is decided by its first byte. The shape is the
+# calculator's — a record carrying the text and a position, travelling through
+# the parser as an `@` parameter, copy in and copy out.
+#
+# Every failure is a `fail(code, msg)` with a stable snake_case code and the
+# position in the message, because §4.17's rule holds for programs too: an error
+# should carry what is needed to fix the input without opening another file.
+
+use value
+
+record Reader
+    text: str
+    pos: i64
+
+function at_end(r: Reader) -> bool
+    return r.pos >= r.text.len()
+
+function here(r: Reader) -> u8
+    return r.text[r.pos]
+
+function advance(@r: Reader)
+    r.pos @ r.pos + 1
+
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+function digit_of(c: u8) -> i64
+    return to_i64(c - '0').must()
+
+function skip_space(@r: Reader)
+    while !at_end(r) && is_space(here(r))
+        advance(@r)
+
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == '\n' || c == 13
+
+# Whether the next bytes spell `spelling` — asked without moving, and without
+# ever slicing past the end, because an out-of-bounds slice **aborts** (§4.14)
+# rather than failing.
+function has_word(r: Reader, spelling: str) -> bool
+    stop = r.pos + spelling.len()
+    if stop > r.text.len()
+        return false
+    return r.text.slice(from: r.pos, to: stop) == spelling
+
+function skip(@r: Reader, n: i64)
+    r.pos @ r.pos + n
+
+## Values
+
+# One value, whatever it turns out to be. JSON is decided by the first byte, so
+# this is a dispatch rather than a search.
+function read_value(@r: Reader) -> value.Json?
+    skip_space(@r)
+    if at_end(r)
+        return fail("unexpected_end", "the document ends where a value was expected")
+    c = here(r)
+    if c == '{'
+        return read_object(@r)
+    else if c == '['
+        return read_array(@r)
+    else if c == '"'
+        return ok(.text(s: read_string(@r)?))
+    else if c == '-' || is_digit(c)
+        return ok(.number(v: read_number(@r)?))
+    else if has_word(r, "true")
+        skip(@r, 4)
+        return ok(.boolean(b: true))
+    else if has_word(r, "false")
+        skip(@r, 5)
+        return ok(.boolean(b: false))
+    else if has_word(r, "null")
+        skip(@r, 4)
+        return ok(.nothing)
+    return fail("unexpected_character", "no value starts at " + r.pos.to_str())
+
+# A string literal, from its opening quote to its closing one.
+#
+# Pieces are collected and joined rather than concatenated in a loop: `+` on
+# `str` copies both sides, so the obvious spelling is quadratic in the length of
+# the string, and `join` is linear.
+function read_string(@r: Reader) -> str?
+    advance(@r)
+    parts: [str] @ []
+    while !at_end(r) && here(r) != '"'
+        if here(r) == '\\'
+            advance(@r)
+            if at_end(r)
+                return fail("unterminated_string", "the document ends inside an escape")
+            parts @ parts.push(escape_at(r)?)
+            advance(@r)
+        else
+            parts @ parts.push(r.text.slice(from: r.pos, to: r.pos + 1))
+            advance(@r)
+    if at_end(r)
+        return fail("unterminated_string", "the document ends inside a string")
+    advance(@r)
+    return ok(join(parts, ""))
+
+# What one escape stands for.
+#
+# Five of JSON's eight are read, and the missing three are a fact about the
+# language rather than a shortcut taken here: a Heroes string literal has
+# **exactly five escapes** — `\n` `\t` `\\` `\"` and `\'` in a character — so
+# `\r`, `\b` and `\f` cannot be *written* as the values they stand for, and
+# neither can `\u`'s code point without UTF-8 encoding. Refusing them is the
+# only honest arm: a reader that quietly substituted a space would produce a
+# document that is wrong in a way nothing downstream could see.
+function escape_at(r: Reader) -> str?
+    c = here(r)
+    if c == '"'
+        return ok("\"")
+    else if c == '\\'
+        return ok("\\")
+    else if c == '/'
+        return ok("/")
+    else if c == 'n'
+        return ok("\n")
+    else if c == 't'
+        return ok("\t")
+    else if c == 'r' || c == 'b' || c == 'f' || c == 'u'
+        return fail("unsupported_escape", "this reader does not decode `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "`, at " + r.pos.to_str())
+    return fail("bad_escape", "no escape `\\" + r.text.slice(from: r.pos, to: r.pos + 1) + "` at " + r.pos.to_str())
+
+# A number. JSON's numbers are doubles, so this builds an `f64` — digit by
+# digit, because the language deliberately offers no `to_f64` on a `str`:
+# parsing can fail, and a conversion that can fail is not a conversion.
+function read_number(@r: Reader) -> f64?
+    negative: bool @ false
+    if here(r) == '-'
+        negative @ true
+        advance(@r)
+    whole: f64 @ 0.0
+    digits: i64 @ 0
+    while !at_end(r) && is_digit(here(r))
+        whole @ whole * 10.0 + to_f64(digit_of(here(r)))
+        digits @ digits + 1
+        advance(@r)
+    if digits == 0
+        return fail("bad_number", "a number needs a digit at " + r.pos.to_str())
+    if !at_end(r) && here(r) == '.'
+        advance(@r)
+        scale: f64 @ 1.0
+        after: i64 @ 0
+        while !at_end(r) && is_digit(here(r))
+            scale @ scale / 10.0
+            whole @ whole + to_f64(digit_of(here(r))) * scale
+            after @ after + 1
+            advance(@r)
+        if after == 0
+            return fail("bad_number", "a `.` needs a digit after it, at " + r.pos.to_str())
+    if !at_end(r) && (here(r) == 'e' || here(r) == 'E')
+        advance(@r)
+        whole @ whole * power_of_ten(read_exponent(@r)?)
+    if negative
+        whole @ -whole
+    return ok(whole)
+
+# The exponent's own sign and digits, as an `i64`. Capped, and the cap is a
+# fact about `f64` rather than about this program: past ~308 the value is
+# infinite either way, and an uncapped loop would spin on `1e999999999`.
+function read_exponent(@r: Reader) -> i64?
+    negative: bool @ false
+    if !at_end(r) && (here(r) == '+' || here(r) == '-')
+        negative @ here(r) == '-'
+        advance(@r)
+    value: i64 @ 0
+    digits: i64 @ 0
+    while !at_end(r) && is_digit(here(r))
+        value @ value * 10 + digit_of(here(r))
+        digits @ digits + 1
+        if value > 400
+            return fail("exponent_out_of_range", "an exponent beyond an f64's range at " + r.pos.to_str())
+        advance(@r)
+    if digits == 0
+        return fail("bad_number", "an exponent needs a digit at " + r.pos.to_str())
+    if negative
+        return ok(-value)
+    return ok(value)
+
+function power_of_ten(n: i64) -> f64
+    out: f64 @ 1.0
+    if n < 0
+        for _ in range(from: n, to: 0)
+            out @ out / 10.0
+        return out
+    for _ in range(from: 0, to: n)
+        out @ out * 10.0
+    return out
+
+## The two containers
+
+# `[` … `]`, with the empty array a case of its own rather than a special exit
+# out of the loop.
+function read_array(@r: Reader) -> value.Json?
+    advance(@r)
+    items: [value.Json] @ []
+    skip_space(@r)
+    if at_end(r)
+        return fail("unclosed_array", "the document ends inside an array")
+    if here(r) == ']'
+        advance(@r)
+        return ok(.array(items: items))
+    more: bool @ true
+    while more
+        items @ items.push(read_value(@r)?)
+        skip_space(@r)
+        if at_end(r)
+            return fail("unclosed_array", "the document ends inside an array")
+        if here(r) == ','
+            advance(@r)
+        else if here(r) == ']'
+            advance(@r)
+            more @ false
+        else
+            return fail("expected_separator", "expected `,` or `]` at " + r.pos.to_str())
+    return ok(.array(items: items))
+
+# `{` … `}`. A repeated key **replaces**, which is `m[k] @ v`'s own rule and
+# also what most JSON readers do.
+function read_object(@r: Reader) -> value.Json?
+    advance(@r)
+    fields: {str: value.Json} @ {}
+    skip_space(@r)
+    if at_end(r)
+        return fail("unclosed_object", "the document ends inside an object")
+    if here(r) == '}'
+        advance(@r)
+        return ok(.object(fields: fields))
+    more: bool @ true
+    while more
+        skip_space(@r)
+        if at_end(r) || here(r) != '"'
+            return fail("expected_key", "an object's key is a string, at " + r.pos.to_str())
+        key = read_string(@r)?
+        skip_space(@r)
+        if at_end(r) || here(r) != ':'
+            return fail("expected_colon", "expected `:` after a key, at " + r.pos.to_str())
+        advance(@r)
+        fields[key] @ read_value(@r)?
+        skip_space(@r)
+        if at_end(r)
+            return fail("unclosed_object", "the document ends inside an object")
+        if here(r) == ','
+            advance(@r)
+        else if here(r) == '}'
+            advance(@r)
+            more @ false
+        else
+            return fail("expected_separator", "expected `,` or `}` at " + r.pos.to_str())
+    return ok(.object(fields: fields))
+
+## The entry point
+
+# One document, and nothing after it. The trailing check is the half a happy
+# path never reaches: `1 2` is two valid values and not one valid document.
+function read(text: str) -> value.Json?
+    r: Reader @ Reader(text: text, pos: 0)
+    j = read_value(@r)?
+    skip_space(@r)
+    if !at_end(r)
+        return fail("trailing_input", "the document ends at " + r.pos.to_str() + " and the text does not")
+    return ok(j)
+
+# The code a document fails with — or `no_error` for one that does not, which is
+# a code no arm above can produce, so a test asserting a failure cannot pass by
+# the document turning out to be fine.
+function code_of(text: str) -> str
+    return match read(text)
+        .ok _  => "no_error"
+        .err e => e.code
+
+# What a document renders as, in one call: every test below reads through the
+# canonical form rather than through the tree, so the two modules are checked
+# against each other rather than each against itself.
+function shape_of(text: str) -> str
+    return value.render(read(text).must())
+
+test "reads the six kinds"
+    assert shape_of("null") == "null"
+    assert shape_of("true") == "true"
+    assert shape_of("12") == "12.0"
+    assert shape_of("\"hi\"") == "\"hi\""
+    assert shape_of("[1,2]") == "[1.0,2.0]"
+    assert shape_of("{\"a\":1}") == "{\"a\":1.0}"
+
+test "whitespace is not part of the grammar"
+    assert shape_of("  [ 1 , 2 ]  ") == "[1.0,2.0]"
+    assert shape_of("[]") == "[]"
+    assert shape_of("{}") == "{}"
+
+test "numbers: sign, fraction, exponent"
+    assert shape_of("-3") == "-3.0"
+    assert shape_of("1.5") == "1.5"
+    assert shape_of("2e3") == "2000.0"
+    assert shape_of("2e-3") == "0.002"
+    assert shape_of("-0.25") == "-0.25"
+
+test "escapes come back as the characters they stand for"
+    assert shape_of("\"a\\nb\"") == "\"a\\nb\""
+    assert shape_of("\"a\\\"b\"") == "\"a\\\"b\""
+    assert shape_of("\"a\\\\b\"") == "\"a\\\\b\""
+    assert shape_of("\"a\\/b\"") == "\"a/b\""
+
+test "a nested document keeps its shape"
+    doc = read("{\"a\":[1,{\"b\":null}],\"c\":true}").must()
+    assert value.render(doc) == "{\"a\":[1.0,{\"b\":null}],\"c\":true}"
+    assert value.depth(doc) == 4
+    assert value.size(doc) == 6
+
+test "a repeated key replaces, and that is `m[k] @ v`'s own rule"
+    assert shape_of("{\"a\":1,\"a\":2}") == "{\"a\":2.0}"
+
+test "every failure says what and where"
+    assert code_of("") == "unexpected_end"
+    assert code_of("[1,") == "unexpected_end"
+    assert code_of("[1 2]") == "expected_separator"
+    assert code_of("{a:1}") == "expected_key"
+    assert code_of("{\"a\" 1}") == "expected_colon"
+    assert code_of("\"oops") == "unterminated_string"
+    assert code_of("\"\\u0041\"") == "unsupported_escape"
+    assert code_of("\"\\q\"") == "bad_escape"
+    assert code_of("1 2") == "trailing_input"
+    assert code_of("-") == "bad_number"
+    assert code_of("1e") == "bad_number"
+    assert code_of("1e999") == "exponent_out_of_range"
+    assert code_of("$") == "unexpected_character"
