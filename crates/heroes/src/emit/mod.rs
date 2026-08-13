@@ -56,6 +56,8 @@ mod externs;
 mod fallible;
 pub mod ffi;
 mod gate;
+mod gate_ops;
+mod gate_types;
 mod inst;
 mod literal;
 mod main;

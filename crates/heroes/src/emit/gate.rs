@@ -1,6 +1,12 @@
 //! What this backend cannot emit yet, said in a way that ends the reader's loop
 //! (panel 020, R1 and R2).
 //!
+//! **Two tables, and this file is neither of them.** What it owns is the LIST:
+//! collecting one entry per capability, deduplicating on the message so a program
+//! with forty strings in it has one string problem, and sorting by where the
+//! capability first appears. The tables themselves are `gate_types.rs` (what the
+//! runtime can represent) and `gate_ops.rs` (what the emitter can write).
+//!
 //! The gate walks the **IR**, not the surface. Part 5's sugar is erased on the way
 //! in, so the IR is the smaller closed vocabulary: a table over ops and types
 //! cannot drift when a sugar row moves, and one row here covers every spelling
@@ -36,13 +42,15 @@
 //!   about carrying the list, applied to the backend.
 
 use crate::diagnostics::Diagnostic;
-use crate::ir::{Abort, Callee, FnKind, Function, Op, Program};
-use crate::resolve::{Resolved, BUILTINS};
+use crate::ir::{FnKind, Program};
+use crate::resolve::Resolved;
 use crate::source::{Source, Span};
 use crate::syntax::Ast;
-use crate::types::{Checked, Ty, TyId};
+use crate::types::Checked;
 
 use super::builtins::EMITTED as EMITTED_BUILTINS;
+use super::gate_ops::{check_builtin_operand, check_op};
+use super::gate_types::{check_type, unit_fields};
 
 /// What the backend does emit. Derived, not maintained: the type list is the arms of
 /// `check_type` that return without a note, and the built-in list is
@@ -126,7 +134,7 @@ pub(super) fn refuse(
 
 /// One capability, at its earliest span. The dedup is on the *message*: a program
 /// with forty strings in it has one string problem.
-fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span: Span) {
+pub(super) fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span: Span) {
     match found.iter_mut().find(|(_, existing, _)| *existing == what) {
         Some((_, _, at)) => {
             if span.start < at.start {
@@ -134,239 +142,5 @@ fn note(found: &mut Vec<(String, String, Span)>, code: &str, what: String, span:
             }
         }
         None => found.push((code.to_string(), what, span)),
-    }
-}
-
-/// A type the runtime has no representation for yet. One row per §4.3 table entry,
-/// so M-strings-ownership and M-value-aggregates delete rows rather than discovering cases.
-///
-/// **It descends into element and payload types**, and that was a filed defect
-/// rather than a design: `Ty::Array(_) => return` did not look at what the array
-/// held, so `xs: [()] @ []` and `xs: [ptr] @ []` and `m: {str: ptr} @ {}` all
-/// checked clean at exit 0, built a binary, and aborted with `entered
-/// unreachable code — this is a compiler bug`. The generated C said so itself —
-/// `hero_unreachable(); /* not an array */` — and nobody read it (panel 029 R4b).
-///
-/// Until M-generics-library step 6 an author had to *write* `[ptr]` to reach it. After it they
-/// **infer** it: `map(nums, print)` infers `B := ()`.
-/// **The type table is empty of refusals as of M-ffi-ladder step 6, and this is
-/// what that looks like.** Every arm returns; what is left is descent into the
-/// types a container holds, because `()` as an *element* is still refused (a
-/// descriptor that does not exist) while `()` as a type in its own right is
-/// fine.
-///
-/// The rows died one milestone at a time, which was the file's whole design:
-/// `str` and `f64` at M-strings-ownership, records and variants at M-value-aggregates,
-/// `T?` and `{K: V}` at M-optional-map, function types and type parameters at
-/// M-generics-library, and §4.19's `ptr` and `cstr` here — the last two, and the
-/// only ones whose row was a veto rather than a schedule. A `ptr` local is what
-/// holds a C out-parameter, so refusing it would have refused the milestone's own
-/// acceptance test.
-fn check_type(
-    found: &mut Vec<(String, String, Span)>,
-    ast: &Ast,
-    checked: &Checked,
-    src: &Source,
-    function: &Function,
-    ty: TyId,
-    span: Span,
-) {
-    match checked.types.get(ty) {
-        // The container emits; whether its ELEMENT does is the element's own row.
-        Ty::Array(element) => {
-            check_element(found, ast, checked, src, function, element, span, "an array")
-        }
-        Ty::Map(key, value) => {
-            check_element(found, ast, checked, src, function, key, span, "a map key");
-            check_element(found, ast, checked, src, function, value, span, "a map value");
-        }
-        // **A `()?` is representable and the other containers are not.** An array
-        // or a map needs a descriptor for its element and `()` has none; a `T?` is
-        // a tagged union, and a union whose ok side carries nothing is just a tag.
-        // `write_file(path, text) -> ()?` is the signature that needed it.
-        Ty::Fallible(payload) if checked.types.get(payload) != Ty::Unit => {
-            check_element(found, ast, checked, src, function, payload, span, "a `T?`")
-        }
-        // Every other type in the language has a C representation (`ctype.rs`),
-        // including `Ty::Error`, which the checker has already reported — one
-        // mistake, one message.
-        _ => {}
-    }
-}
-
-/// `()` as the type of a **declared field**, which the walk above cannot see.
-///
-/// Everything else in this file reads the IR — slots, instruction types,
-/// parameters, results — and a declaration's field list is in none of those. So
-/// `record Box { u: () }` walked straight past the gate and reached clang as
-/// `void f_u;`: `error: field has incomplete type 'void'`, exit 2, the compiler
-/// blaming itself for the author's program, which `check_op`'s own comment calls
-/// the one failure the gate exists to prevent (2026-08-12).
-///
-/// It is `check_element`'s rule at the other end of the same argument: `()` is a
-/// perfectly good type and no kind of *member*. CLAUDE.md §7 already says a
-/// unit-typed temporary is never declared at all and `void t0;` is a hard error;
-/// the rule reached temporaries and not fields.
-fn unit_fields(
-    found: &mut Vec<(String, String, Span)>,
-    ast: &Ast,
-    checked: &Checked,
-    src: &Source,
-) {
-    for decl in super::types::aggregates(ast, checked) {
-        let owner = src.slice(ast.decls[decl as usize].name).to_string();
-        let mut fields: Vec<&crate::syntax::Field> = super::types::fields_of(ast, decl).iter().collect();
-        for case in super::types::cases_of(ast, decl) {
-            fields.extend(case.fields.iter());
-        }
-        for field in fields {
-            if checked.written_type(field.ty) != Some(checked.types.unit()) {
-                continue;
-            }
-            note(
-                found,
-                "unit_field",
-                format!("`()` as the type of `{owner}.{}`", src.slice(field.name)),
-                field.name,
-            );
-        }
-    }
-}
-
-/// What a container holds, which is a narrower question than what a type is.
-///
-/// `()` is a perfectly good type and no kind of element: it has no C declaration,
-/// so there is no descriptor to hand the runtime. Everything else defers to
-/// `check_type`, so an `[[ptr]]` is refused for its `ptr` and says so once.
-fn check_element(
-    found: &mut Vec<(String, String, Span)>,
-    ast: &Ast,
-    checked: &Checked,
-    src: &Source,
-    function: &Function,
-    element: TyId,
-    span: Span,
-    container: &str,
-) {
-    if checked.types.get(element) == Ty::Unit {
-        note(found, "unit_element", format!("`()` as the element of {container}"), span);
-        return;
-    }
-    check_type(found, ast, checked, src, function, element, span);
-}
-
-fn check_op(
-    found: &mut Vec<(String, String, Span)>,
-    ast: &Ast,
-    src: &Source,
-    op: Op,
-    span: Span,
-) {
-    match op {
-        // A place with a path is a field or an element. Reading either emits; *writing*
-        // through an element does not yet, because that is the copy-on-write path —
-        // one unshare per array step of the place, each writing back at its level
-        // (panel 022), and the mutation primitives it needs take `HeroArrayHeader **`.
-        //
-        // The row is here rather than left out because leaving it out is measured: with
-        // arrays emitting and this refused nowhere, `xs[0] @ 7` reached clang as
-        // `error: incompatible integer to pointer conversion assigning to
-        // 'HeroArrayHeader *'`, which this toolchain reports as an internal error with
-        // a path to generated C — the compiler blaming itself for the author's program,
-        // which is the one failure the gate exists to prevent.
-        // Reading and writing a place both emit now: a field is a member access, and an
-        // element write is copy-on-write, one unshare per array step with write-back.
-        Op::Load(_) | Op::Store { .. } => {}
-        // `str`→`cstr` emits from M-ffi-ladder step 6, which is when it acquired a
-        // producer: `s.cstr()`. The row was keyed to the FFI rather than to `str`,
-        // which is why landing `str` did not make it emittable.
-        Op::Cast { .. } => {}
-        Op::Call { callee, args, .. } => {
-            callee_note(found, ast, src, callee, span);
-            let _ = args;
-        }
-        // **Every construction emits from M-optional-map**: records, variant cases, both
-        // containers, and all three sides of a `T?`. The arm holds no rows rather than
-        // being deleted, so adding a shape to the IR is still a compile error here —
-        // the gate's own reason for enumerating instead of defaulting.
-        Op::Construct { .. } => {}
-        // A tag, a payload and a field read are the same three operations on a variant
-        // and on a `T?` — §4.6's `ok`/`err` *is* a variant by the time it reaches here —
-        // and all of them emit now.
-        Op::Field { .. } | Op::Tag(_) | Op::Payload { .. } => {}
-        // Both spellings of `[i]` emit now: a byte through `hero_str_byte`, an element
-        // through `hero_array_at`.
-        Op::Index { .. } => {}
-        Op::MapGet { .. } => {}
-        // `len` counts bytes on a `str` and elements on an array; a map is the row
-        // still standing, and it is refused by its own type before reaching here.
-        Op::Len(_) => {}
-        // A function designator, from M-generics-library step 5.
-        Op::FuncRef(_) => {}
-        // **Both aborts emit, and the second row is retired rather than defended.**
-        // `.must()` landed at M-generics-library step 1. `assert` was kept at M-optional-map "only because
-        // the step that lands `heroes test` needs the row already written" — that
-        // step is M-generics-library step 7, and what it needed turned out to be the *emission*,
-        // not the refusal. An ordinary build never reaches a `test` block, and a
-        // test build emits it, so no program can make this row fire. The arm holds
-        // no rows rather than being deleted, which is the gate's own design: adding
-        // an `Abort` kind is a compile error here.
-        Op::Abort { reason, .. } => match reason {
-            Abort::Must | Abort::Assert => {}
-        },
-        // §4.16 says a holed file "produces no binary". The build path reports the
-        // holes themselves and stops before here, so this row is the belt to that
-        // braces: a hole must never be emitted as anything.
-        Op::Hole => note(found, "hole", "a hole (`???`)".to_string(), span),
-        // The verifier rejects this before the emitter is asked.
-        Op::Missing => note(found, "missing", "a form the compiler cannot lower".to_string(), span),
-        Op::Const(_)
-        | Op::Incref(_)
-        | Op::Decref(_)
-        | Op::Unary { .. }
-        | Op::Binary { .. }
-        | Op::CopyOut { .. } => {}
-    }
-}
-
-/// A built-in whose *name* emits but whose **operand type** has no entry point.
-/// The rule itself lives in `builtins.rs`, beside the entry-point table it is the
-/// complement of; this is the walk that applies it.
-fn check_builtin_operand(
-    found: &mut Vec<(String, String, Span)>,
-    checked: &Checked,
-    function: &Function,
-    op: Op,
-    span: Span,
-) {
-    let Op::Call { callee: Callee::Builtin(index), args, .. } = op else { return };
-    let name = BUILTINS[index as usize].name;
-    if let Some(what) = super::builtins::unsupported_operand(name, function, checked, args) {
-        note(found, "builtin", what, span);
-    }
-}
-
-fn callee_note(
-    found: &mut Vec<(String, String, Span)>,
-    ast: &Ast,
-    src: &Source,
-    callee: Callee,
-    span: Span,
-) {
-    match callee {
-        // A call to C emits from M-ffi-ladder step 5: the group's header is in the
-        // prelude, so the name this call writes is declared by the real header
-        // rather than by a prototype this compiler invented.
-        Callee::Heroes(_) | Callee::Extern(_) => {
-            let _ = (ast, src);
-        }
-        Callee::Builtin(index) => {
-            let name = BUILTINS[index as usize].name;
-            if !EMITTED_BUILTINS.contains(&name) {
-                note(found, "builtin", format!("the built-in `{name}`"), span);
-            }
-        }
-        // A call through a function value emits from M-generics-library step 5.
-        Callee::Indirect(_) => {}
     }
 }
