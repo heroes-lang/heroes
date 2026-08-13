@@ -1,0 +1,196 @@
+# One turn: the state before, a line of English, the state after and what to say.
+#
+# **A turn is a value.** `play` takes a `Game` and returns a `Turn` holding the
+# next `Game` and the lines to print — it changes nothing, because a language
+# with no aliasing gives no way to change something you were handed. That is the
+# shape a state machine takes here, and it is the reason the whole game is
+# testable without a terminal: a test plays a list of commands and looks at what
+# came back.
+
+use world
+
+record Game
+    here: str
+    carrying: [str]
+    taken: {str: bool}
+    moves: i64
+    won: bool
+
+record Turn
+    said: [str]
+    next: Game
+
+function begin(w: world.World) -> Game
+    return Game(here: w.start, carrying: [], taken: {}, moves: 0, won: false)
+
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == 13
+
+function trimmed(line: str) -> str
+    from: i64 @ 0
+    while from < line.len() && is_space(line[from])
+        from @ from + 1
+    to: i64 @ line.len()
+    while to > from && is_space(line[to - 1])
+        to @ to - 1
+    return line.slice(from: from, to: to)
+
+function first_word(line: str) -> str
+    i: i64 @ 0
+    while i < line.len() && line[i] != ' '
+        i @ i + 1
+    return line.slice(from: 0, to: i)
+
+function rest_after(line: str, word: str) -> str
+    if word.len() >= line.len()
+        return ""
+    return trimmed(line.slice(from: word.len(), to: line.len()))
+
+function carrying(g: Game, what: str) -> bool
+    for one in g.carrying
+        if one == what
+            return true
+    return false
+
+## The turn
+
+function play(w: world.World, g: Game, line: str) -> Turn
+    command = trimmed(line)
+    verb = first_word(command)
+    if verb == "look"
+        return same(g, describe(w, g))
+    if verb == "go"
+        return go(w, g, rest_after(line: command, word: "go"))
+    if verb == "take"
+        return take(w, g)
+    if verb == "bag"
+        return same(g, [bag_of(g)])
+    if verb == "open"
+        return open(g)
+    if verb == ""
+        return same(g, [])
+    return same(g, ["I do not know how to " + verb + "."])
+
+function same(g: Game, said: [str]) -> Turn
+    return Turn(said: said, next: g)
+
+function describe(w: world.World, g: Game) -> [str]
+    match world.room_at(w, g.here)
+        .err _   => return ["You are nowhere, which should not be possible."]
+        .ok room =>
+            lines: [str] @ [room.description]
+            if room.item != "" && g.taken[room.item].is_err()
+                lines @ lines.push("There is a " + room.item + " here.")
+            return lines
+
+function go(w: world.World, g: Game, direction: str) -> Turn
+    if direction == ""
+        return same(g, ["Go where?"])
+    match world.through(w, here: g.here, direction: direction)
+        .err e    => return same(g, [e.msg])
+        .ok there =>
+            moved = Game(
+                here: there,
+                carrying: g.carrying,
+                taken: g.taken,
+                moves: g.moves + 1,
+                won: g.won
+            )
+            return Turn(said: describe(w, moved), next: moved)
+
+function take(w: world.World, g: Game) -> Turn
+    match world.room_at(w, g.here)
+        .err _   => return same(g, ["There is nothing here."])
+        .ok room =>
+            if room.item == "" || !g.taken[room.item].is_err()
+                return same(g, ["There is nothing to take."])
+            picked = Game(
+                here: g.here,
+                carrying: g.carrying.push(room.item),
+                taken: with_taken(g.taken, room.item),
+                moves: g.moves + 1,
+                won: g.won
+            )
+            return Turn(said: ["You take the " + room.item + "."], next: picked)
+
+function with_taken(taken: {str: bool}, item: str) -> {str: bool}
+    out: {str: bool} @ taken
+    out[item] @ true
+    return out
+
+function bag_of(g: Game) -> str
+    if g.carrying.len() == 0
+        return "You are carrying nothing."
+    return "You are carrying: " + join(sort(g.carrying), ", ") + "."
+
+# The one command that ends the game. It needs the key **and** the room, so the
+# two mistakes it can catch say different things.
+function open(g: Game) -> Turn
+    if g.here != "vault"
+        return same(g, ["There is nothing here to open."])
+    if !carrying(g, "key")
+        return same(g, ["The door is locked, and you have no key."])
+    won = Game(
+        here: g.here,
+        carrying: g.carrying,
+        taken: g.taken,
+        moves: g.moves + 1,
+        won: true
+    )
+    return Turn(said: ["The key turns. The door swings up on a stair going down."], next: won)
+
+# A whole walkthrough, played in order — the shape every test below uses, and
+# the shape `main` uses too, so what is tested is what runs.
+function play_all(w: world.World, lines: [str]) -> Turn
+    g: Game @ begin(w)
+    said: [str] @ []
+    for line in lines
+        turn = play(w, g, line)
+        for one in turn.said
+            said @ said.push(one)
+        g @ turn.next
+    return Turn(said: said, next: g)
+
+test "a new game starts at the start, empty-handed"
+    w = world.make()
+    g = begin(w)
+    assert g.here == w.start
+    assert g.carrying == []
+    assert g.moves == 0
+    assert g.won == false
+
+test "going somewhere describes it, and going nowhere says which ways there are"
+    w = world.make()
+    after = play(w, begin(w), "go north")
+    assert after.next.here == "yard"
+    assert after.next.moves == 1
+    refused = play(w, begin(w), "go west")
+    assert refused.next.here == "gate"
+    assert refused.next.moves == 0
+    assert refused.said == ["there is no way west — try north"]
+
+test "an item is taken once, and the room remembers"
+    w = world.make()
+    turn = play_all(w, ["go north", "take", "take"])
+    assert turn.next.carrying == ["lantern"]
+    assert turn.said[turn.said.len() - 1] == "There is nothing to take."
+
+test "the vault needs the key, and says which half is missing"
+    w = world.make()
+    no_key = play_all(w, ["go north", "go west", "go north", "open"])
+    assert no_key.next.won == false
+    assert no_key.said[no_key.said.len() - 1] == "The door is locked, and you have no key."
+    wrong_room = play_all(w, ["open"])
+    assert wrong_room.said == ["There is nothing here to open."]
+
+test "the game can be won, and the walkthrough is the proof"
+    w = world.make()
+    won = play_all(w, ["go north", "go east", "take", "go west", "go west", "go north", "open"])
+    assert won.next.won == true
+    assert won.next.carrying == ["key"]
+    assert won.next.moves == 7
+
+test "a word the game does not know is answered rather than ignored"
+    w = world.make()
+    assert play(w, begin(world.make()), "dance").said == ["I do not know how to dance."]
+    assert play(w, begin(world.make()), "   ").said == []

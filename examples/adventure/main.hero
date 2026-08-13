@@ -1,0 +1,93 @@
+# A text adventure, played from a script.
+#
+#     heroes run examples/adventure/main.hero -- examples/adventure/walkthrough.txt
+#
+#     main.hero    the program: the script, the transcript, and no `exit`
+#     game.hero    one turn — a state in, a state and some lines out
+#     world.hero   the map: rooms, the ways between them, and what is lying about
+#
+# **This is the corpus program that does not call `exit`** (author instruction
+# 2026-08-12), and it is here on purpose. `exit` bypasses
+# `hero_runtime_check_leaks()` by design — a program asking to stop now is not
+# asking for an audit, and running the gate there would report a leak for every
+# live value in every frame the exit unwinds past — but on Darwin arm64 that
+# counter is the **only** leak instrument there is. So the corpus keeps a path
+# that runs off the end of `main` and crosses the gate, and this is it: every
+# refusal below is a printed line and a return, never a status.
+#
+# The commands come from a file rather than from a terminal, which is what makes
+# a game a corpus program at all. `game.play_all` is the same call the tests
+# make, so what is tested is what runs.
+
+use game
+use world
+
+function main()
+    given = args()
+    if len(given) == 0
+        print("usage: adventure <walkthrough.txt>")
+        return
+    match read_file(given[0])
+        .err e     => print("cannot read ", given[0], ": ", e.code)
+        .ok script => run(script)
+
+function run(script: str)
+    w = world.make()
+    lines = commands(script)
+    turn = game.play_all(w, lines)
+    for said in turn.said
+        print(said)
+    print("")
+    print(turn.next.moves, " moves, ", ending_of(turn.next))
+
+function ending_of(g: game.Game) -> str
+    if g.won
+        return "and the stair is open."
+    return "and the stair is still shut."
+
+# One command per line, with blanks and `#` comments dropped — the same shape
+# every other file in this corpus uses, so a reader who has met one has met all
+# of them.
+function commands(script: str) -> [str]
+    out: [str] @ []
+    for line in split_lines(script)
+        head = trimmed(line)
+        if head == "" || head[0] == '#'
+            continue
+        out @ out.push(head)
+    return out
+
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == 13
+
+function trimmed(line: str) -> str
+    from: i64 @ 0
+    while from < line.len() && is_space(line[from])
+        from @ from + 1
+    to: i64 @ line.len()
+    while to > from && is_space(line[to - 1])
+        to @ to - 1
+    return line.slice(from: from, to: to)
+
+function split_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == '\n'
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+test "the walkthrough on disk wins the game"
+    script = read_file("examples/adventure/walkthrough.txt").must()
+    turn = game.play_all(world.make(), commands(script))
+    assert turn.next.won == true
+    assert ending_of(turn.next) == "and the stair is open."
+
+test "comments and blank lines are not commands"
+    assert commands("go north\n\n# a note\n  take  \n") == ["go north", "take"]
+    assert commands("") == []

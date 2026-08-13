@@ -1,0 +1,11 @@
+# The short way through, which is the only way through.
+look
+go north
+bag
+go east
+take
+bag
+go west
+go west
+go north
+open

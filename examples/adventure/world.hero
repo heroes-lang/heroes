@@ -1,0 +1,113 @@
+# The map: rooms, the ways between them, and what is lying about.
+#
+# Written in code rather than read from a file, and that is the point of having
+# it: every other program in this corpus parses its input, and a world is the
+# case where the data *is* the program. A `{str: Room}` keyed by name, each room
+# holding a `{str: str}` from a direction to another room's name — so the map is
+# a graph with no pointers in it, which is the only kind this language has.
+#
+# Names are the links. An index would be shorter and a reader would then have to
+# hold a numbering in their head to know where `2` goes.
+
+record Room
+    name: str
+    description: str
+    exits: {str: str}
+    item: str
+
+record World
+    rooms: {str: Room}
+    start: str
+
+function make() -> World
+    rooms: {str: Room} @ {}
+    rooms["gate"] @ Room(
+        name: "gate",
+        description: "A gate of black iron, standing open. A path leads north.",
+        exits: {"north": "yard"},
+        item: ""
+    )
+    rooms["yard"] @ Room(
+        name: "yard",
+        description: "A walled yard, gone to grass. Doors east and west, the gate south.",
+        exits: {"south": "gate", "east": "kitchen", "west": "library"},
+        item: "lantern"
+    )
+    rooms["kitchen"] @ Room(
+        name: "kitchen",
+        description: "Cold ovens and a long table. Something glints under it.",
+        exits: {"west": "yard"},
+        item: "key"
+    )
+    rooms["library"] @ Room(
+        name: "library",
+        description: "Shelves to the ceiling, all of them empty. A small door north.",
+        exits: {"east": "yard", "north": "vault"},
+        item: ""
+    )
+    rooms["vault"] @ Room(
+        name: "vault",
+        description: "A round room with one locked door in the floor.",
+        exits: {"south": "library"},
+        item: ""
+    )
+    return World(rooms: rooms, start: "gate")
+
+function room_at(w: World, name: str) -> Room?
+    return w.rooms[name]
+
+# Where `direction` leads from here — or an error naming the ways that do exist,
+# which is the whole difference between a game and a guessing game.
+function through(w: World, here: str, direction: str) -> str?
+    room = room_at(w, here)?
+    match room.exits[direction]
+        .ok there => return ok(there)
+        .err _    => return fail("no_way", "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", "))
+
+test "every exit leads to a room that exists, and comes back"
+    w = make()
+    for name in sort(keys(w.rooms))
+        room = room_at(w, name).must()
+        for direction in sort(keys(room.exits))
+            there = room.exits[direction].must()
+            assert !room_at(w, there).is_err()
+
+test "the world is connected: every room is reachable from the start"
+    w = make()
+    seen = reachable(w)
+    assert seen.len() == len(w.rooms)
+
+test "a direction that is not there names the ones that are"
+    w = make()
+    assert through(w, here: "gate", direction: "north").must() == "yard"
+    match through(w, here: "gate", direction: "west")
+        .ok _  => assert false
+        .err e =>
+            assert e.code == "no_way"
+            assert e.msg == "there is no way west — try north"
+
+test "the only item worth having is behind two doors"
+    w = make()
+    assert room_at(w, "kitchen").must().item == "key"
+    assert room_at(w, "vault").must().item == ""
+
+# Every room a walker can get to, by breadth-first search over the names. It is
+# a test helper that lives here because it is about the map rather than about
+# the game — and a world with an unreachable room is a world with a bug in it.
+function reachable(w: World) -> [str]
+    seen: {str: bool} @ {}
+    seen[w.start] @ true
+    queue: [str] @ [w.start]
+    head: i64 @ 0
+    while head < queue.len()
+        here = queue[head]
+        head @ head + 1
+        match room_at(w, here)
+            .err _ => continue
+            .ok room =>
+                for direction in sort(keys(room.exits))
+                    there = room.exits[direction].must()
+                    if seen[there].is_err()
+                        seen[there] @ true
+                        queue @ queue.push(there)
+    return sort(keys(seen))
