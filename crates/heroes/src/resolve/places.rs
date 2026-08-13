@@ -22,7 +22,20 @@ use super::{Ref, Resolver};
 pub(super) fn place(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
     match &ast.exprs[id.0 as usize].kind {
         ExprKind::Name => write_root(r, ast, src, id),
-        ExprKind::Field { base, .. } => place(r, ast, src, *base),
+        // `grid.WALL @ 1` — a qualified `constant`, which is a top-level
+        // declaration and so not a place at all (§4.2: there are no mutable
+        // globals). Descending to the base would report `grid` as a name that is
+        // not in scope, which is wrong twice: the module *is* in scope, and the
+        // mistake the author made was about `WALL`.
+        ExprKind::Field { base, name } => {
+            if super::qualified::module_at(r, ast, src, *base).is_some() {
+                let diagnostic =
+                    errors::no_mutable_globals(src.slice(*name), "top-level declaration", *name);
+                r.push_diagnostic(diagnostic);
+                return;
+            }
+            place(r, ast, src, *base)
+        }
         ExprKind::Index { base, index } => {
             expr(r, ast, src, *index);
             place(r, ast, src, *base);

@@ -1,0 +1,97 @@
+# Breadth-first search, and the shortest path it found.
+#
+# Breadth-first rather than depth-first because the question is *how short*, and
+# a queue answers it while a stack does not. The queue is an array with a **head
+# index** rather than something that removes from the front: removing element 0
+# copies the whole array under value semantics, so a queue that shrinks is
+# quadratic in the number of squares and one that only grows is not.
+#
+# `came` does two jobs, and doing both with one map is what keeps the loop
+# honest: it is the visited set (a key exists) and the way back (its value). A
+# separate `visited` could disagree with it, and the disagreement would be a
+# solver that walks in circles.
+
+use grid
+
+function solve(g: grid.Grid) -> [i64]?
+    start = grid.locate(g, grid.START)?
+    goal = grid.locate(g, grid.GOAL)?
+    came: {i64: i64} @ {}
+    came[start] @ start
+    queue: [i64] @ [start]
+    head: i64 @ 0
+    while head < queue.len()
+        here = queue[head]
+        head @ head + 1
+        if here == goal
+            return ok(walk_back(came, start: start, goal: goal))
+        for next in grid.neighbours(g, here)
+            if came[next].is_err()
+                came[next] @ here
+                queue @ queue.push(next)
+    return fail("no_path", "no way from the start to the goal")
+
+# The path, start first. It is built backwards from the goal and turned round
+# once, because following `came` is the only direction that map can be read in.
+function walk_back(came: {i64: i64}, start: i64, goal: i64) -> [i64]
+    backwards: [i64] @ [goal]
+    at: i64 @ goal
+    while at != start
+        at @ came[at].must()
+        backwards @ backwards.push(at)
+    return reversed(backwards)
+
+function reversed(xs: [i64]) -> [i64]
+    out: [i64] @ []
+    for i in range(from: 0, to: xs.len())
+        out @ out.push(xs[xs.len() - 1 - i])
+    return out
+
+# How many steps the path takes — one fewer than the squares it visits.
+function steps(path: [i64]) -> i64
+    return path.len() - 1
+
+# Whether every step of a path is a legal move: adjacent, open, and inside. The
+# solver is believed by nothing; this is what the tests ask.
+function is_walkable(g: grid.Grid, path: [i64]) -> bool
+    if path.len() == 0
+        return false
+    for i in range(from: 1, to: path.len())
+        if !contains(grid.neighbours(g, path[i - 1]), path[i])
+            return false
+    return true
+
+function contains(known: [i64], one: i64) -> bool
+    for each in known
+        if each == one
+            return true
+    return false
+
+test "the shortest way through an open room is the straight one"
+    g = grid.read("S..\n...\n..E\n").must()
+    path = solve(g).must()
+    assert steps(path) == 4
+    assert is_walkable(g, path)
+    assert path[0] == 0
+    assert path[path.len() - 1] == 8
+
+test "a wall makes the way round it longer"
+    g = grid.read("S.#\n.#.\n..E\n").must()
+    path = solve(g).must()
+    assert steps(path) == 4
+    assert is_walkable(g, path)
+
+test "a maze with no way through says so instead of guessing"
+    walled = grid.read("S#E\n###\n...\n").must()
+    boxed = grid.read("S.#\n..#\n##E\n").must()
+    assert solve(walled).is_err()
+    assert solve(boxed).is_err()
+
+test "the start and the goal may be the same square's neighbours"
+    g = grid.read("SE\n..\n").must()
+    assert steps(solve(g).must()) == 1
+
+test "reversed does what its name says, including for nothing"
+    assert reversed([1, 2, 3]) == [3, 2, 1]
+    assert reversed([]) == []
+    assert reversed([7]) == [7]

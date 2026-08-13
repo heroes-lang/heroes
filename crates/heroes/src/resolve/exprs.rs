@@ -55,7 +55,21 @@ pub(super) fn expr(r: &mut Resolver, ast: &Ast, src: &Source, id: ExprId) {
         }
         // `p.x` — the base is a value, the field name is not a name in any
         // scope. Which record it belongs to is M-data-declarations's question.
-        ExprKind::Field { base, .. } => expr(r, ast, src, *base),
+        //
+        // **Unless the base is a module**, in which case the three tokens are one
+        // qualified name and not a field at all: `grid.WALL` reads a `constant`
+        // next door. It is the same question `Method` asks one arm below, and it
+        // has to be asked here for the same reason — a module has no type, so
+        // anything that resolves the base as a value reports `grid` as a name
+        // that is not a value and never reaches the point. Nothing asked it here
+        // until a corpus program read a constant across a module (fixedbugs,
+        // 2026-08-13): `use` binds *declarations*, and a `constant` is one.
+        ExprKind::Field { base, name } => {
+            if super::qualified::qualified(r, ast, src, id, *base, *name) {
+                return;
+            }
+            expr(r, ast, src, *base);
+        }
         ExprKind::Index { base, index } => {
             expr(r, ast, src, *base);
             expr(r, ast, src, *index);

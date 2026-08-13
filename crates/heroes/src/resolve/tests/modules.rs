@@ -168,3 +168,47 @@ fn the_librarys_names_stay_unqualified_and_need_no_use() {
     );
     assert!(said.is_empty(), "{said:?}");
 }
+
+/// **A FIXED DEFECT, named after it** (Go's `test/fixedbugs`), 2026-08-13.
+///
+/// SYMPTOM: `geom.ORIGIN` — a `constant` read across a module — was refused with
+/// *`geom` names a module, not a value — a module can only be followed by a dot*,
+/// on a line where it **was** followed by a dot. `geom.dist2(x)` worked and
+/// `p: geom.Point` worked; only the constant did not, so the shape had been
+/// reachable since M-module-namespace with nothing meeting it.
+///
+/// CAUSE: `resolve/exprs.rs` asked `qualified` from the `Method` arm only — a
+/// dot *with a call*. A dot with no call is `ExprKind::Field`, which resolved its
+/// base as a value, and a module is not one. The spec's sentence is about
+/// declarations (`use geom` binds "`geom.hero`'s declarations"), and a
+/// `constant` is a declaration.
+///
+/// FIX: the `Field` arm asks the same question, and the checker and the lowering
+/// read the answer back the way `Method` already did. Found by a corpus program
+/// that put its `#` and `S` marks in one module and its solver in another.
+#[test]
+fn fixedbugs_a_constant_is_read_across_a_module() {
+    let said = program(
+        "use geom\n\nfunction main()\n    print(geom.SIDES, geom.dist2(a: geom.Point(x: 0, y: 0), b: geom.Point(x: 1, y: 1)))\n",
+        &format!("constant SIDES: i64\n    4\n\n{GEOM}"),
+    );
+    assert!(said.is_empty(), "{said:?}");
+}
+
+/// The other half of the same fix, and the reason it is not one line.
+///
+/// A write to a qualified constant is still refused — there are no mutable
+/// globals (§4.2) — but it used to be refused as *nothing named `geom` is in
+/// scope*, which is wrong twice: the module is in scope, and the mistake was
+/// about `SIDES`. The place walker descended to the base and lost the name the
+/// author actually wrote.
+#[test]
+fn a_write_to_a_qualified_constant_names_the_constant_not_the_module() {
+    let said = program(
+        "use geom\n\nfunction main()\n    geom.SIDES @ 5\n    print(geom.SIDES)\n",
+        &format!("constant SIDES: i64\n    4\n\n{GEOM}"),
+    );
+    assert_eq!(said.len(), 1, "{said:?}");
+    assert!(said[0].contains("no_mutable_globals"), "{said:?}");
+    assert!(said[0].contains("`SIDES`"), "{said:?}");
+}

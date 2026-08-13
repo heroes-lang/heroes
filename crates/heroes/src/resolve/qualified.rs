@@ -35,19 +35,9 @@ pub(super) fn qualified(
     receiver: ExprId,
     called: Span,
 ) -> bool {
-    if !matches!(ast.exprs[receiver.0 as usize].kind, ExprKind::Name) {
+    let Some(module) = module_at(r, ast, src, receiver) else {
         return false;
-    }
-    let module = src.slice(ast.exprs[receiver.0 as usize].span).to_string();
-    // A local of the same name wins, and there is no ambiguity to resolve: a
-    // local named after a module is the shadowing error, reported where the
-    // local is bound. Here it simply means this dot is UFCS.
-    if r.lookup_local(&module).is_some() {
-        return false;
-    }
-    if !r.out.is_used_module(&r.module, &module) {
-        return false;
-    }
+    };
     r.module_reads.insert((r.module.clone(), module.clone()));
     r.record(receiver, Ref::Module);
     let text = src.slice(called);
@@ -66,6 +56,32 @@ pub(super) fn qualified(
     let diagnostic = errors::not_in_module(&module, text, &near, called);
     r.push_diagnostic(diagnostic);
     true
+}
+
+/// The module this expression names, if it names one.
+///
+/// Three conditions and they are all about *this* expression: it is a bare name,
+/// no local of that name is in scope, and this file `use`s it. The second is not
+/// an ambiguity to resolve — a local named after a module is the shadowing
+/// error, reported where the local is bound — it simply means the dot beside it
+/// is UFCS.
+///
+/// One function because three passes ask the same question: a qualified call, a
+/// qualified constant, and a write to one.
+pub(super) fn module_at(
+    r: &Resolver,
+    ast: &Ast,
+    src: &Source,
+    id: ExprId,
+) -> Option<String> {
+    if !matches!(ast.exprs[id.0 as usize].kind, ExprKind::Name) {
+        return None;
+    }
+    let name = src.slice(ast.exprs[id.0 as usize].span);
+    if r.lookup_local(name).is_some() || !r.out.is_used_module(&r.module, name) {
+        return None;
+    }
+    Some(name.to_string())
 }
 
 /// The name is real and lives somewhere else. Panel 031 R5's diagnostic, which

@@ -104,6 +104,12 @@ pub(super) fn expr(
             }
         },
         ExprKind::Field { base, name } => {
+            // `grid.WALL` is one qualified name, not a field of a value — the
+            // same shape `Method` handles for `grid.f(x)`, decided by the
+            // resolver and read back here rather than re-decided.
+            if resolved.use_at(*base) == Ref::Module {
+                return self::name(b, ast, resolved, id, ty, span);
+            }
             let owner = checked.expr_types[base.0 as usize];
             let value = expr(b, ast, resolved, checked, src, *base);
             match layout::field_index(ast, checked, src, owner, *name) {

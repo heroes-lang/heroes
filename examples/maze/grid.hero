@@ -1,0 +1,142 @@
+# The maze: a rectangle of characters, and the arithmetic that turns a position
+# into one number.
+#
+#     #   wall          S   where you start
+#     .   open          E   where you are going
+#
+# **A position is an index, not a pair.** `row * width + column` is the whole
+# reason the solver can use a `{i64: i64}` for "how I got here": the language has
+# no tuples and a record key would work, but one number is what makes the map
+# cheap to read and the encoding is three lines with its own test.
+#
+# Every row must be the same width. A ragged maze is refused rather than padded,
+# because padding invents open squares and a solver that walks through one has
+# found a path the file does not describe.
+
+record Grid
+    rows: [str]
+    width: i64
+    height: i64
+
+constant WALL: u8
+    '#'
+
+constant START: u8
+    'S'
+
+constant GOAL: u8
+    'E'
+
+function split_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == '\n'
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+function read(text: str) -> Grid?
+    rows: [str] @ []
+    for line in split_lines(text)
+        if line != ""
+            rows @ rows.push(line)
+    if rows.len() == 0
+        return fail("empty_maze", "the file has no rows")
+    width = rows[0].len()
+    for line in rows
+        if line.len() != width
+            return fail("ragged_maze", "every row must be " + width.to_str() + " wide")
+    g = Grid(rows: rows, width: width, height: rows.len())
+    _ = locate(g, START)?
+    _ = locate(g, GOAL)?
+    return ok(g)
+
+## Positions
+
+function index_of(g: Grid, row: i64, column: i64) -> i64
+    return row * g.width + column
+
+function row_of(g: Grid, index: i64) -> i64
+    return index / g.width
+
+function column_of(g: Grid, index: i64) -> i64
+    return index % g.width
+
+function at(g: Grid, index: i64) -> u8
+    return g.rows[row_of(g, index)][column_of(g, index)]
+
+function inside(g: Grid, row: i64, column: i64) -> bool
+    return row >= 0 && row < g.height && column >= 0 && column < g.width
+
+function is_open(g: Grid, index: i64) -> bool
+    return at(g, index) != WALL
+
+# Where the one square marked `mark` is. Exactly one: a maze with two starts is
+# a maze whose answer depends on which one the reader meant.
+function locate(g: Grid, mark: u8) -> i64?
+    found: i64 @ 0 - 1
+    for row in range(from: 0, to: g.height)
+        for column in range(from: 0, to: g.width)
+            index = index_of(g, row: row, column: column)
+            if at(g, index) == mark
+                if found >= 0
+                    return fail("repeated_mark", "the maze has more than one `" + one_char(mark) + "`")
+                found @ index
+    if found < 0
+        return fail("missing_mark", "the maze has no `" + one_char(mark) + "`")
+    return ok(found)
+
+# One byte as a `str`, for a message. There is no `chr`, so the two marks this
+# program can complain about are spelled out where they are declared.
+function one_char(mark: u8) -> str
+    if mark == START
+        return "S"
+    if mark == GOAL
+        return "E"
+    return "#"
+
+# The four squares you can step to: inside the maze, and not a wall.
+function neighbours(g: Grid, index: i64) -> [i64]
+    row = row_of(g, index)
+    column = column_of(g, index)
+    out: [i64] @ []
+    out @ step(g, out, row: row - 1, column: column)
+    out @ step(g, out, row: row + 1, column: column)
+    out @ step(g, out, row: row, column: column - 1)
+    out @ step(g, out, row: row, column: column + 1)
+    return out
+
+function step(g: Grid, out: [i64], row: i64, column: i64) -> [i64]
+    if !inside(g, row: row, column: column)
+        return out
+    index = index_of(g, row: row, column: column)
+    if !is_open(g, index)
+        return out
+    return out.push(index)
+
+test "an index is a row and a column, both ways"
+    g = read("S.\n.E\n").must()
+    assert index_of(g, row: 1, column: 0) == 2
+    assert row_of(g, 2) == 1
+    assert column_of(g, 3) == 1
+    assert at(g, 0) == START
+    assert at(g, 3) == GOAL
+
+test "a maze must be a rectangle with one start and one goal"
+    assert read("S.\n.E\n").must().width == 2
+    assert read("S.\n.E.\n").is_err()
+    assert read("").is_err()
+    assert read("SE\nS.\n").is_err()
+    assert read("S.\n..\n").is_err()
+    assert read("E.\n..\n").is_err()
+
+test "the neighbours of a square stop at the walls and at the edges"
+    g = read("S#\n.E\n").must()
+    assert neighbours(g, 0) == [2]
+    assert neighbours(g, 2) == [0, 3]
+    assert neighbours(g, 3) == [2]

@@ -218,10 +218,7 @@ fn discarded(
         }
         for one in &block.insts {
             if one.dest == Some(crate::ir::ValueId(value)) {
-                return matches!(
-                    one.op,
-                    crate::ir::Op::Call { .. } | crate::ir::Op::Load(_) | crate::ir::Op::Const(_)
-                );
+                return super::inst::may_lose_its_destination(&one.op);
             }
         }
     }
@@ -236,23 +233,62 @@ fn discarded(
 /// extraction, the extraction's result is `()`, and the load was left assigned
 /// and unread — `-Wunused-but-set-variable` on a correct program.
 ///
-/// **One pass, not a fixpoint, and the limit is stated rather than discovered.**
-/// A suppressed reader whose own operand is produced by another suppressed
-/// reader would still leave a warning; no such chain exists today, because the
-/// only suppressed ops are the one-step extractions above. If one appears, this
-/// is where it is answered, and the answer is a worklist.
+/// **A fixpoint, and the chain that made it one arrived on schedule.** This was
+/// one pass, with the limit written down rather than discovered: *a suppressed
+/// reader whose own operand is produced by another suppressed reader would still
+/// leave a warning; no such chain exists today. If one appears, this is where it
+/// is answered, and the answer is a worklist.* `_ = f(x)?` on a fallible is that
+/// chain — the payload extraction vanishes, and the load that fed it becomes
+/// unread in the same step — and it arrived with a corpus program on 2026-08-13.
+/// So the note is now the code.
+///
+/// Each round asks which instructions print nothing, and an instruction that
+/// prints nothing reads nothing. `gone` only grows and is bounded by the number
+/// of values, so the loop ends.
 fn emitted_reads(
     function: &Function,
     checked: &Checked,
+) -> std::collections::BTreeSet<u32> {
+    let mut gone: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    loop {
+        let read = reads_given(function, checked, &gone);
+        let mut grew = false;
+        for block in &function.blocks {
+            for one in &block.insts {
+                let Some(dest) = one.dest else { continue };
+                if gone.contains(&dest.0) || read.contains(&dest.0) {
+                    continue;
+                }
+                if super::inst::vanishes_when_unread(&one.op) {
+                    gone.insert(dest.0);
+                    grew = true;
+                }
+            }
+        }
+        if !grew {
+            return read;
+        }
+    }
+}
+
+/// One round: what the C reads, given the instructions already known to print
+/// nothing.
+fn reads_given(
+    function: &Function,
+    checked: &Checked,
+    gone: &std::collections::BTreeSet<u32>,
 ) -> std::collections::BTreeSet<u32> {
     let mut read = std::collections::BTreeSet::new();
     for block in &function.blocks {
         for one in &block.insts {
             // A pure op with a unit result prints nothing, so it reads nothing.
+            // The case that produced this rule is `()?`: `r.must()` lowers to a
+            // load and a payload extraction, the extraction's result is `()`, and
+            // the load was left assigned and unread.
             let silent = one.dest.is_some()
                 && is_unit(checked, one.ty)
                 && !matches!(one.op, crate::ir::Op::Call { .. } | crate::ir::Op::Abort { .. });
-            if silent {
+            if silent || one.dest.is_some_and(|d| gone.contains(&d.0)) {
                 continue;
             }
             for value in crate::ir::uses::operands(function, one.op) {

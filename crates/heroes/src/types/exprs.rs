@@ -107,8 +107,16 @@ pub(super) fn synth(
             ops::binary(checker, ast, src, *op, left_ty, right_ty, span)
         }
         ExprKind::Field { base, name: field } => {
-            let base_ty = synth(checker, ast, resolved, src, *base);
-            field_type(checker, ast, resolved, src, base_ty, *field)
+            // A module in base position makes the whole expression one qualified
+            // name — `grid.WALL`, a `constant` next door — which the resolver
+            // already decided. Synthesising the base first is how that turns
+            // into a diagnostic about `grid`.
+            if resolved.use_at(*base) == Ref::Module {
+                name(checker, ast, resolved, src, id, span)
+            } else {
+                let base_ty = synth(checker, ast, resolved, src, *base);
+                field_type(checker, ast, resolved, src, base_ty, *field)
+            }
         }
         ExprKind::Index { base, index } => {
             let base_ty = synth(checker, ast, resolved, src, *base);
