@@ -68,13 +68,15 @@ mod render;
 mod sized;
 mod stmts;
 mod table;
+mod widths;
 
 #[cfg(test)]
 mod tests;
 
 pub use holes::report as report_holes;
 pub use render::render_ty;
-pub use table::{IntKind, Params, Ty, TyId, Types, INT_KINDS};
+pub use table::{Params, Ty, TyId, Types};
+pub use widths::{IntKind, INT_KINDS};
 
 pub struct Checked {
     pub types: Types,
