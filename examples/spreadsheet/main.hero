@@ -1,0 +1,71 @@
+# A spreadsheet: a file of cells, evaluated.
+#
+#     heroes run examples/spreadsheet/main.hero -- examples/spreadsheet/sample.cells
+#
+#     main.hero      the program: arguments, the file, the report, the status
+#     formula.hero   the expression language, and the cycle check
+#     sheet.hero     cell names, ranges, and the file's shape
+#
+# It ends **1** when any cell failed, which is what makes the exit code carry
+# information: a shell can ask whether the sheet is sound without reading it.
+# The sample has one bad cell on purpose, because a corpus program that only ever
+# takes the happy path tests half of itself.
+#
+# What it exercises: mutual recursion between an evaluator and a parser, a
+# `[str]` used as the chain of cells under evaluation — value semantics means
+# `visiting.push(name)` hands down a copy and there is nothing to pop — and a
+# `match` arm whose body is a block that mutates a counter.
+
+use formula
+use sheet
+
+function main()
+    given = args()
+    if len(given) == 0
+        print("usage: spreadsheet <file.cells>")
+        exit(2)
+    match read_file(given[0])
+        .err e   => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text => evaluate(text)
+
+function stop(message: str)
+    print(message)
+    exit(1)
+
+function evaluate(text: str)
+    match sheet.read(text)
+        .err e => stop(e.code + ": " + e.msg)
+        .ok s  => report(s)
+
+function report(s: sheet.Sheet)
+    broken: i64 @ 0
+    for name in sheet.names(s)
+        match formula.value_of(s, name, [])
+            .ok v =>
+                print(padded(name), " = ", v.to_str())
+            .err e =>
+                broken @ broken + 1
+                print(padded(name), " ! ", e.code)
+    print(len(sheet.names(s)).to_str(), " cells, ", broken.to_str(), " broken")
+    if broken > 0
+        exit(1)
+
+# The name in a fixed width, so the `=` signs line up. Four is enough for one
+# letter and three digits, and a longer name simply pushes its own column out —
+# which is a report being honest rather than a report being wrong.
+function padded(name: str) -> str
+    out: str @ name
+    while out.len() < 4
+        out @ out + " "
+    return out
+
+test "the sample is read, and its one broken cell is the one that is broken"
+    s = sheet.read(read_file("examples/spreadsheet/sample.cells").must()).must()
+    assert formula.value_of(s, "A1", []).must() == 2.0
+    assert formula.value_of(s, "C3", []).must() == 24.0
+    assert formula.value_of(s, "D1", []).is_err()
+
+test "a name is padded to four and never truncated"
+    assert padded("A1") == "A1  "
+    assert padded("Z100") == "Z100"
+    assert padded("Z1000") == "Z1000"

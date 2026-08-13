@@ -1,0 +1,176 @@
+# The grid: cell names, ranges, and the file they are read from.
+#
+# A cell name is **one letter and one or more digits** — `A1`, `C12`. One letter
+# rather than Excel's `AA`, and the reason is written here rather than assumed:
+# it makes a column a number between 0 and 25, so `A1:C1` is a loop and not a
+# base-26 conversion. A program that needed 27 columns would change this file and
+# nothing else.
+#
+# The file is one cell per line, `NAME = formula`. Blank lines and `#` comments
+# are skipped, which is what makes the sample readable.
+
+constant LETTERS: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+record Cell
+    column: i64
+    row: i64
+
+record Sheet
+    cells: {str: str}
+
+function is_letter(c: u8) -> bool
+    return c >= 'A' && c <= 'Z'
+
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == 13
+
+function trimmed(line: str) -> str
+    from: i64 @ 0
+    while from < line.len() && is_space(line[from])
+        from @ from + 1
+    to: i64 @ line.len()
+    while to > from && is_space(line[to - 1])
+        to @ to - 1
+    return line.slice(from: from, to: to)
+
+function split_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == '\n'
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+## Names
+
+# `A1` as a `Cell`, or an error naming what was wrong with it.
+function cell_of(name: str) -> Cell?
+    if name.len() < 2 || !is_letter(name[0])
+        return fail("bad_cell_name", "`" + name + "` is not a cell: one letter then digits")
+    row: i64 @ 0
+    i: i64 @ 1
+    while i < name.len()
+        if !is_digit(name[i])
+            return fail("bad_cell_name", "`" + name + "` is not a cell: one letter then digits")
+        row @ row * 10 + to_i64(name[i] - '0').must()
+        i @ i + 1
+    if row == 0
+        return fail("bad_cell_name", "`" + name + "` has no row: rows start at 1")
+    return ok(Cell(column: to_i64(name[0] - 'A').must(), row: row))
+
+# The name a `Cell` had. There is no `chr` in this language, so the letter comes
+# out of a constant by slicing it — which is exactly what a character table is.
+function name_of(c: Cell) -> str
+    return LETTERS.slice(from: c.column, to: c.column + 1) + c.row.to_str()
+
+function is_name(word: str) -> bool
+    return !cell_of(word).is_err()
+
+## Ranges
+
+# `A1:C2` as the names it covers, row by row. Both corners are inclusive, and a
+# range whose end is before its start is empty rather than an error — the same
+# answer `range(from: 3, to: 1)` gives, so there is one rule to remember.
+function expand(text: str) -> [str]?
+    at = index_of(text, ':')
+    if at < 0
+        return fail("bad_range", "`" + text + "` is not a range: two cells joined by `:`")
+    from = cell_of(trimmed(text.slice(from: 0, to: at)))?
+    to = cell_of(trimmed(text.slice(from: at + 1, to: text.len())))?
+    out: [str] @ []
+    for row in range(from: from.row, to: to.row + 1)
+        for column in range(from: from.column, to: to.column + 1)
+            out @ out.push(name_of(Cell(column: column, row: row)))
+    return ok(out)
+
+function index_of(text: str, c: u8) -> i64
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == c
+            return i
+        i @ i + 1
+    return 0 - 1
+
+## The file
+
+# `NAME = formula` per line, `#` a comment, blank lines skipped.
+function read(text: str) -> Sheet?
+    cells: {str: str} @ {}
+    for line in split_lines(text)
+        head = trimmed(line)
+        if head == "" || head[0] == '#'
+            continue
+        at = index_of(head, '=')
+        if at < 0
+            return fail("no_assignment", "`" + head + "` is not `NAME = formula`")
+        name = trimmed(head.slice(from: 0, to: at))
+        if !is_name(name)
+            return fail("bad_cell_name", "`" + name + "` is not a cell name")
+        cells[name] @ trimmed(head.slice(from: at + 1, to: head.len()))
+    return ok(Sheet(cells: cells))
+
+# Every cell the sheet has, in the order a reader expects: down the rows, then
+# across the columns. `sort(keys(m))` would put `A10` before `A2`, because that
+# is what sorting text does.
+function names(s: Sheet) -> [str]
+    known = sort(keys(s.cells))
+    out: [str] @ []
+    for row in range(from: 1, to: highest_row(known) + 1)
+        for column in range(from: 0, to: 26)
+            name = name_of(Cell(column: column, row: row))
+            if !s.cells[name].is_err()
+                out @ out.push(name)
+    return out
+
+function highest_row(known: [str]) -> i64
+    best: i64 @ 0
+    for name in known
+        match cell_of(name)
+            .ok c  => best @ larger(a: best, b: c.row)
+            .err _ => continue
+    return best
+
+function larger(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+test "a cell name is one letter and digits"
+    assert cell_of("A1").must() == Cell(column: 0, row: 1)
+    assert cell_of("C12").must() == Cell(column: 2, row: 12)
+    assert cell_of("1A").is_err()
+    assert cell_of("A").is_err()
+    assert cell_of("A0").is_err()
+    assert cell_of("AA1").is_err()
+
+test "a name survives a round trip"
+    assert name_of(cell_of("Z9").must()) == "Z9"
+    assert name_of(Cell(column: 25, row: 100)) == "Z100"
+
+test "a range is a rectangle, row by row"
+    assert expand("A1:A3").must() == ["A1", "A2", "A3"]
+    assert expand("A1:C1").must() == ["A1", "B1", "C1"]
+    assert expand("A1:B2").must() == ["A1", "B1", "A2", "B2"]
+    assert expand("B2:A1").must() == []
+    assert expand("A1").is_err()
+
+test "the file is one cell per line, with comments"
+    s = read("# a note\n\nA1 = 2\nB1 = A1 * 3\n").must()
+    assert len(s.cells) == 2
+    assert s.cells["B1"].must() == "A1 * 3"
+    assert read("A1 2\n").is_err()
+    assert read("1A = 2\n").is_err()
+
+test "the cells come back in reading order, not in sorted order"
+    s = read("A10 = 1\nA2 = 1\nB2 = 1\n").must()
+    assert names(s) == ["A2", "B2", "A10"]
+    assert sort(keys(s.cells)) == ["A10", "A2", "B2"]

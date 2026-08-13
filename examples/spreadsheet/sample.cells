@@ -1,0 +1,16 @@
+# A quarter of sales, and one cell that cannot be computed.
+
+A1 = 2
+A2 = 8
+A3 = 6
+
+B1 = A1 * 3
+B2 = A2 * 3
+B3 = A3 * 3
+
+C1 = A1 + B1
+C2 = A2 + B2
+C3 = SUM(A3:B3)
+
+D1 = D2 + 1
+D2 = D1 + 1

@@ -1,0 +1,13 @@
+A1   = 2.0
+B1   = 6.0
+C1   = 8.0
+D1   ! circular_reference
+A2   = 8.0
+B2   = 24.0
+C2   = 32.0
+D2   ! circular_reference
+A3   = 6.0
+B3   = 18.0
+C3   = 24.0
+11 cells, 2 broken
+!exit: 1

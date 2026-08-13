@@ -21,6 +21,7 @@ over cases somebody thought of.
 
 | directory | what it is |
 |---|---|
+| `spreadsheet/` | a sheet of formulas, evaluated: cells that read cells, `SUM` over a rectangle, and a **cycle reported rather than a stack overflow**. The one program that ends non-zero on purpose |
 | `markdown/` | Markdown to plain text, in four modules: one line's markup, a line-oriented block grammar, a page, and the program. `continue` as a `match` arm body, and two `str` parameters that must be named at the call site |
 | `json/` | a JSON reader: recursive descent over one byte of lookahead, a value recursive through **both** `[T]` and `{K: V}`, and `f64`s built digit by digit because a `str` has no conversion to a number |
 | `calculator/` | the acceptance program: a lexer, a recursive-descent parser and an evaluator for arithmetic with variables, across four modules — and `whole.hero` beside them, the same program in one file, so "two spellings of one program" is a claim something checks |
