@@ -18,6 +18,16 @@
 //! registered falsifiable prediction, so the gate does not enforce the rule: it
 //! makes the rule's question unavoidable, and the answer lands in the commit body
 //! where a reader can check it.
+//!
+//! **What "a prediction" means here was narrowed by panel 046**, and the narrowing
+//! came out of this very table: six of its rows were paid with a prediction and not
+//! one was ever collected, because each named metric 2 — an instrument scheduled at
+//! M-selfhost-fixpoint. A prediction now pays only if it names the instrument that
+//! will score it *and* that instrument exists on the day it is registered; one that
+//! does not is registered as an observation and pays nothing. The gate still checks
+//! none of this — it reads no commit, calls no git, and any form that made it do so
+//! is refused by the same §10 argument three paragraphs up. The rows below are the
+//! record a reader audits it against.
 
 /// The spec's measured size, `max` over both vendored instruments — the binding
 /// number, never an estimate.
@@ -96,8 +106,12 @@ mod tests {
             SPEC_TOKENS,
             "the spec measures {} and the record says {SPEC_TOKENS} — a delta of {}. \
              If the change is intended, write the new number into `SPEC_TOKENS` in the \
-             SAME commit, and put the delta plus either a named removal or a registered \
-             falsifiable prediction in the commit body (panel 012). If it is not \
+             SAME commit, and put the delta plus its payment in the commit body: either \
+             a named removal, or a registered falsifiable prediction that names BOTH the \
+             instrument that will score it and the milestone at which it is scored — and \
+             the instrument has to exist today (panel 012, as amended by panel 046). A \
+             prediction naming an instrument nobody has built is an observation, not a \
+             payment, and six rows of this ledger were bought with one. If it is not \
              intended, the spec grew by accident, which is the case this test exists for.",
             measured.max(),
             measured.max() as i64 - SPEC_TOKENS as i64,
