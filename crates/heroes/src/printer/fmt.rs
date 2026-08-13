@@ -18,17 +18,18 @@
 //!    alternative — deleting them — would erase the only grouping a body has,
 //!    and gofmt made the same call.
 //!
-//! Comments are never dropped, including the ones the tree does not keep:
-//! `parse` hands back every comment span, and they are interleaved by line.
-//! A blank line between a comment and the declaration below it is preserved
-//! *exactly*, because that blank line is what tells documentation from an
-//! ordinary remark (§4.1).
+//! **This file owns the file as a whole**: which items there are, what order
+//! they come in, and where the blank lines between them go. What one item
+//! *looks like* is `fmt_decl.rs`; what a statement looks like is `fmt_stmt.rs`;
+//! comments and their blank lines are `fmt_comments.rs`; and rebuilding a
+//! flattened `extern` group is `fmt_extern.rs`. `Fmt` is the state all four
+//! share, so it lives here with the two primitives everything is written in.
 
 use crate::source::{Source, Span};
-use crate::syntax::{Ast, Case, Decl, DeclKind, Field, Function};
+use crate::syntax::{Ast, Decl};
 
 use super::fmt_expr::render;
-use super::types::render_type;
+use super::fmt_extern::{extern_group, extern_header_span};
 
 /// Where a line stops being one line. Not a language rule — one constant,
 /// changeable, and the only thing that decides single- versus multi-line
@@ -65,9 +66,7 @@ pub fn format_file(ast: &Ast, comments: &[Span], src: &Source) -> String {
     // The `extern` group, rebuilt. The parser flattened it (§4.19, panel 036),
     // so the canonical form is **a run of consecutive members sharing a head
     // line** — which is what the author wrote, and the only rule that survives
-    // `fmt(fmt(x)) == fmt(x)`: printing one head per member would round-trip a
-    // two-signature group into two groups, and re-grouping non-adjacent members
-    // would move declarations past each other.
+    // `fmt(fmt(x)) == fmt(x)`. The reconstruction itself is `fmt_extern.rs`.
     let mut open_group: Option<(&str, Option<&str>)> = None;
     for item in &items {
         let line = src.line_of(item.start(src));
@@ -156,13 +155,15 @@ fn decl_start(src: &Source, decl: &Decl) -> u32 {
     decl.span.start.min(decl.name.start)
 }
 
+/// The formatter's whole state, and it is deliberately three fields: the text so
+/// far, how far into the comment stream we are, and the source line of the last
+/// thing printed — which is how "was there a blank line here?" is answered
+/// without a second pass.
 pub(super) struct Fmt {
-    /// `pub(super)` because `fmt_stmt.rs` implements the statement half on
-    /// this same struct. Nothing else writes to it.
+    /// `pub(super)` because the four sibling files implement their half on this
+    /// same struct. Nothing outside `printer/` writes to it.
     pub(super) out: String,
     pub(super) next_comment: usize,
-    /// Source line of the last thing printed — how "was there a blank line
-    /// here?" is answered without a second pass.
     pub(super) last_line: u32,
 }
 
@@ -180,234 +181,6 @@ impl Fmt {
             self.out.push('\n');
         }
     }
-
-    /// Print every comment that sits above source line `line`, at `indent`,
-    /// preserving a single blank line wherever the source had one.
-    pub(super) fn comments_before(
-        &mut self,
-        src: &Source,
-        comments: &[Span],
-        line: u32,
-        indent: usize,
-    ) {
-        while self.next_comment < comments.len() {
-            let span = comments[self.next_comment];
-            let comment_line = src.line_of(span.start);
-            if comment_line >= line {
-                return;
-            }
-            if self.last_line > 0 && comment_line > self.last_line + 1 {
-                self.blank_line();
-            }
-            self.line(indent, src.slice(span).trim_end());
-            self.last_line = comment_line;
-            self.next_comment += 1;
-        }
-    }
-
-    /// A comment that sits on the same line as what was just printed goes at
-    /// the end of that line, two spaces out.
-    pub(super) fn trailing_comment(&mut self, src: &Source, comments: &[Span], line: u32) {
-        if self.next_comment >= comments.len() {
-            return;
-        }
-        let span = comments[self.next_comment];
-        let comment_line = src.line_of(span.start);
-        if comment_line != line {
-            return;
-        }
-        let text = src.slice(span).trim_end();
-        // Splice it before the newline the statement already wrote.
-        if self.out.ends_with('\n') {
-            self.out.pop();
-        }
-        self.out.push_str("  ");
-        self.out.push_str(text);
-        self.out.push('\n');
-        self.next_comment += 1;
-    }
-
-    /// The group's head line, printed by its **first** member only, and the
-    /// indent every member of a group takes. `0` for a declaration that is not
-    /// one (§4.19, panel 038: two kinds of member, one head line).
-    ///
-    /// **The first member's own comments are flushed here, after the head.** The
-    /// caller keys every comment rule on the *head's* line for a first member —
-    /// it has to, or §4.1's blank-line rule fires on a gap the head itself
-    /// created — and the consequence was that a comment written between the head
-    /// and the first member belonged to neither: too late for the caller, and
-    /// flushed by whatever declaration came next, which printed it above the
-    /// **second** member. Reproduced with functions alone, so it predates
-    /// constants; found by panel 038's compiler-engineer, and fixed before the
-    /// examples migrated onto it, since `examples/curl/main.hero` moves a
-    /// four-line comment into exactly that position.
-    fn extern_head_once(
-        &mut self,
-        src: &Source,
-        comments: &[Span],
-        decl: &Decl,
-        header: Option<Span>,
-        continues: bool,
-    ) -> usize {
-        let Some(header) = header else { return 0 };
-        if !continues {
-            self.line(0, &extern_head(src, decl));
-            self.last_line = src.line_of(header.start);
-            self.comments_before(src, comments, src.line_of(decl.name.start), 4);
-        }
-        4
-    }
-
-    fn declaration(
-        &mut self,
-        ast: &Ast,
-        src: &Source,
-        comments: &[Span],
-        decl: &Decl,
-        continues: bool,
-    ) {
-        let name = src.slice(decl.name);
-        let line = src.line_of(decl.name.start);
-        match &decl.kind {
-            DeclKind::Constant { ty, body, header, .. } => {
-                let indent = self.extern_head_once(src, comments, decl, *header, continues);
-                self.line(indent, &format!("constant {name}: {}", render_type(ast, *ty, src)));
-                self.last_line = line;
-                self.trailing_comment(src, comments, line);
-                if let Some(body) = body {
-                    self.block(ast, src, comments, body, 4);
-                }
-            }
-            DeclKind::Function(function) => {
-                let indent = self.extern_head_once(src, comments, decl, function.header, continues);
-                self.line(indent, &signature(ast, src, name, function));
-                self.last_line = line;
-                self.trailing_comment(src, comments, line);
-                if let Some(body) = &function.body {
-                    self.block(ast, src, comments, body, 4);
-                }
-            }
-            DeclKind::Record { fields } => {
-                self.line(0, &format!("record {name}"));
-                self.last_line = line;
-                for field in fields {
-                    self.field(ast, src, comments, field, 4);
-                }
-            }
-            DeclKind::Variant { cases } => {
-                self.line(0, &format!("variant {name}"));
-                self.last_line = line;
-                for case in cases {
-                    self.case(ast, src, comments, case);
-                }
-            }
-            DeclKind::Test { body } => {
-                // The name is the string literal, quotes included.
-                self.line(0, &format!("test {name}"));
-                self.last_line = line;
-                self.trailing_comment(src, comments, line);
-                self.block(ast, src, comments, body, 4);
-            }
-        }
-    }
-
-    fn field(&mut self, ast: &Ast, src: &Source, comments: &[Span], field: &Field, indent: usize) {
-        let line = src.line_of(field.name.start);
-        self.comments_before(src, comments, line, indent);
-        self.line(
-            indent,
-            &format!("{}: {}", src.slice(field.name), render_type(ast, field.ty, src)),
-        );
-        self.last_line = line;
-        self.trailing_comment(src, comments, line);
-    }
-
-    fn case(&mut self, ast: &Ast, src: &Source, comments: &[Span], case: &Case) {
-        let line = src.line_of(case.name.start);
-        self.comments_before(src, comments, line, 4);
-        self.line(4, src.slice(case.name));
-        self.last_line = line;
-        self.trailing_comment(src, comments, line);
-        for field in &case.fields {
-            self.field(ast, src, comments, field, 8);
-        }
-    }
-}
-
-/// `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
-///
-/// `-> ()` is never printed: a function that returns nothing writes no arrow
-/// (§4.2's `function main()`), so the canonical form has one spelling.
-/// `extern "sqlite3.h" link "sqlite3"` — the group's head line, rebuilt from any
-/// one of its members, since every member carries both spans (§4.19).
-fn extern_head(src: &Source, decl: &Decl) -> String {
-    let (header, link) = extern_spans(decl);
-    let mut out = String::from("extern ");
-    if let Some(header) = header {
-        out.push_str(src.slice(header)); // quotes included
-    }
-    if let Some(link) = link {
-        out.push_str(" link ");
-        out.push_str(src.slice(link));
-    }
-    out
-}
-
-/// The two spans a group's members all carry, whatever kind of member they are
-/// (§4.19, panel 038). **One reader**, so `function` and `constant` cannot drift
-/// apart on where a group begins — which is what the run-of-members
-/// reconstruction below is entirely built on.
-fn extern_spans(decl: &Decl) -> (Option<Span>, Option<Span>) {
-    match &decl.kind {
-        DeclKind::Function(function) => (function.header, function.link),
-        DeclKind::Constant { header, link, .. } => (*header, *link),
-        _ => (None, None),
-    }
-}
-
-/// The header and library a declaration belongs to, as text — `None` for
-/// anything that is not an `extern`. Compared by **text, not by span**: two
-/// members of one group have different spans and the same words.
-fn extern_group<'a>(src: &'a Source, decl: &Decl) -> Option<(&'a str, Option<&'a str>)> {
-    let (header, link) = extern_spans(decl);
-    Some((src.slice(header?), link.map(|span| src.slice(span))))
-}
-
-/// The head line's header string, as a span — where the group *begins*, which is
-/// earlier than any member's own span.
-fn extern_header_span(decl: &Decl) -> Option<Span> {
-    extern_spans(decl).0
-}
-
-fn signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
-    let mut out = String::new();
-    out.push_str("function ");
-    out.push_str(name);
-    if !function.generics.is_empty() {
-        let names: Vec<&str> =
-            function.generics.iter().map(|span| src.slice(*span)).collect();
-        out.push_str(&format!("<{}>", names.join(", ")));
-    }
-    out.push('(');
-    let params: Vec<String> = function
-        .params
-        .iter()
-        .map(|param| {
-            let marker = if param.mutable { "@" } else { "" };
-            format!(
-                "{marker}{}: {}",
-                src.slice(param.name),
-                render_type(ast, param.ty, src)
-            )
-        })
-        .collect();
-    out.push_str(&params.join(", "));
-    out.push(')');
-    let result = render_type(ast, function.result, src);
-    if result != "()" {
-        out.push_str(&format!(" -> {result}"));
-    }
-    out
 }
 
 /// A one-line rendering, for the width test. Kept here so the breaking
