@@ -22,11 +22,13 @@
 //! site.
 
 use crate::ir::{Arg, Inst, Op, Place, Program};
-use crate::types::{IntKind, Ty};
+use crate::types::Ty;
 
+use super::abort;
+use super::access;
 use super::aggregate;
+use super::construct;
 use super::container;
-use super::fallible;
 use super::literal;
 use super::operator;
 use super::ops;
@@ -180,26 +182,11 @@ pub(super) fn emit(
         // One built-in, two runtime entry points: `len` on a `str` counts bytes and on
         // an array counts elements. The op is the same op, so the split is by operand
         // type — the same shape the gate uses to ask about it.
-        Op::Len(value) => {
-            if let Some(name) = target {
-                let counter = match checked.types.get(function.value_type(value)) {
-                    Ty::Str => "hero_str_len",
-                    Ty::Map(_, _) => "hero_map_len",
-                    _ => "hero_array_len",
-                };
-                w.line(&format!("    {name} = {counter}({});", mangle::value(value.0)));
-            }
-        }
+        Op::Len(value) => access::len(w, checked, function, value, target),
         // `s[i]`: a byte as an `i64`, aborting out of range (spec line 142). The
         // array case is the same op and waits for M-value-aggregates.
         Op::Index { base, index } if checked.types.get(function.value_type(base)) == Ty::Str => {
-            if let Some(name) = target {
-                w.line(&format!(
-                    "    {name} = hero_str_byte({}, {});",
-                    mangle::value(base.0),
-                    mangle::value(index.0)
-                ));
-            }
+            access::string_byte(w, base, index, target)
         }
         // Every remaining form is refused by `gate.rs` at this milestone. The arm is
         // here rather than in a catch-all so that M-value-aggregates and M-generics-library are compile errors
@@ -207,90 +194,25 @@ pub(super) fn emit(
         // `Point(x: 1, y: 2)` and `.num(v: 7)`. The container shapes and `T?` are
         // still refused, and each stays a named arm so that landing one is a compile
         // error here rather than a silent omission.
-        Op::Construct { shape: crate::ir::Shape::Record(decl), args }
-        | Op::Construct { shape: crate::ir::Shape::Case(decl, _), args } => {
-            if let Some(name) = target {
-                let arguments: Vec<String> = function
-                    .args_of(args)
-                    .into_iter()
-                    .map(|arg| match arg {
-                        Arg::Value(value) => mangle::value(value.0),
-                        Arg::InOut(place) => format!("&{}", read(types, function, place)),
-                    })
-                    .collect();
-                let literal = match inst.op {
-                    Op::Construct { shape: crate::ir::Shape::Case(decl, case), .. } => {
-                        aggregate::construct_case(types, decl, case, &arguments)
-                    }
-                    _ => aggregate::construct(types, decl, &arguments),
-                };
-                match literal {
-                    Some(text) => w.line(&format!("    {name} = {text};")),
-                    None => w.line("    hero_unreachable(); /* not an aggregate */"),
-                }
-            }
-        }
+        Op::Construct {
+            shape: shape @ (crate::ir::Shape::Record(_) | crate::ir::Shape::Case(_, _)),
+            args,
+        } => construct::record_or_case(w, types, function, shape, args, target),
         // An array literal is several statements rather than one expression, because
         // each push has to release the array it grew from.
         Op::Construct { shape: crate::ir::Shape::Array, args } => {
-            if let Some(name) = target {
-                let arguments: Vec<String> = function
-                    .args_of(args)
-                    .into_iter()
-                    .filter_map(|arg| match arg {
-                        Arg::Value(value) => Some(mangle::value(value.0)),
-                        Arg::InOut(_) => None,
-                    })
-                    .collect();
-                match container::build_array(types, inst.ty, &arguments, &name) {
-                    Some(lines) => {
-                        for line in lines {
-                            w.line(&format!("    {line}"));
-                        }
-                    }
-                    None => w.line("    hero_unreachable(); /* not an array */"),
-                }
-            }
+            construct::array(w, types, function, inst.ty, args, target)
         }
         // `ok(x)`, `fail(c, m)`, and the `err` that `?` produces.
-        Op::Construct { shape: shape @ (crate::ir::Shape::Ok | crate::ir::Shape::Fail | crate::ir::Shape::Err), args } => {
-            if let Some(name) = target {
-                let arguments: Vec<String> = function
-                    .args_of(args)
-                    .into_iter()
-                    .filter_map(|arg| match arg {
-                        Arg::Value(value) => Some(mangle::value(value.0)),
-                        Arg::InOut(_) => None,
-                    })
-                    .collect();
-                match fallible::construct_option(types, inst.ty, shape, &arguments) {
-                    Some(text) => w.line(&format!("    {name} = {text};")),
-                    None => w.line("    hero_unreachable(); /* not a T? */"),
-                }
-            }
-        }
+        Op::Construct {
+            shape: shape @ (crate::ir::Shape::Ok | crate::ir::Shape::Fail | crate::ir::Shape::Err),
+            args,
+        } => construct::option(w, types, function, inst.ty, shape, args, target),
         // A tag and a payload read the same two members on a variant and on a `T?`.
         // §4.6's `ok`/`err` *is* a variant by the time it reaches here, and the only
         // difference is where the member names come from.
         Op::Construct { shape: crate::ir::Shape::Map, args } => {
-            if let Some(name) = target {
-                let arguments: Vec<String> = function
-                    .args_of(args)
-                    .into_iter()
-                    .filter_map(|arg| match arg {
-                        Arg::Value(value) => Some(mangle::value(value.0)),
-                        Arg::InOut(_) => None,
-                    })
-                    .collect();
-                match container::build_map(types, inst.ty, &arguments, &name) {
-                    Some(lines) => {
-                        for line in lines {
-                            w.line(&format!("    {line}"));
-                        }
-                    }
-                    None => w.line("    hero_unreachable(); /* not a map */"),
-                }
-            }
+            construct::map(w, types, function, inst.ty, args, target)
         }
         Op::MapGet { map, key } => {
             if let Some(name) = target {
@@ -307,15 +229,7 @@ pub(super) fn emit(
         // `.must()` on an error. The failure travels with the abort (`ir/fallible.rs`),
         // so the panic names the `code` and `msg` the author wrote rather than only that
         // a `.must()` failed. `assert` keeps its own row until `heroes test` runs one.
-        Op::Abort { reason: crate::ir::Abort::Must, args } => {
-            w.at_generated();
-            match function.args_of(args).first() {
-                Some(Arg::Value(value)) => {
-                    w.line(&format!("    hero_panic_must({});", mangle::value(value.0)))
-                }
-                _ => w.line("    hero_unreachable(); /* a must with no failure */"),
-            }
-        }
+        Op::Abort { reason: crate::ir::Abort::Must, args } => abort::must(w, function, args),
         // `assert` (§4.18, spec line 163: "shows the source expression and both
         // sides"). The IR carries three operands where the asserted expression is
         // a comparison and one where it is not (`ir/asserts.rs`), and each side is
@@ -323,110 +237,12 @@ pub(super) fn emit(
         // with no rendering (a record, an array) falls back to the text alone
         // rather than inventing one.
         Op::Abort { reason: crate::ir::Abort::Assert, args } => {
-            w.at_generated();
-            let operands = function.args_of(args);
-            let rendered: Vec<String> = operands
-                .iter()
-                .skip(1)
-                .filter_map(|arg| match arg {
-                    Arg::Value(value) => {
-                        let ty = checked.types.get(function.value_type(*value));
-                        let entry = match ty {
-                            // Exhaustive: `hero_int_to_str` takes an `int64_t`,
-                            // so a `u64` above 2^63 would print as a negative
-                            // number — measured at panel 042, `SIZE_MAX` printing
-                            // `-1`. A new width needs its own runtime entry point
-                            // and an ABI bump, and this arm is where that is
-                            // discovered rather than in the output.
-                            // Six of the seven narrow widths widen into an
-                            // `int64_t` without losing a value, so they share the
-                            // signed entry point. `u64` does not: 2^64-1 read as
-                            // signed is -1, which is what `print(SIZE_MAX)`
-                            // produced before `hero_uint_to_str` existed.
-                            Ty::Int(kind) => match kind {
-                                IntKind::U64 => "hero_uint_to_str",
-                                IntKind::I8
-                                | IntKind::I16
-                                | IntKind::I32
-                                | IntKind::I64
-                                | IntKind::U8
-                                | IntKind::U16
-                                | IntKind::U32 => "hero_int_to_str",
-                            },
-                            Ty::F64 => "hero_f64_to_str",
-                            Ty::Bool => "hero_bool_to_str",
-                            Ty::Str => "hero_str_identity",
-                            _ => return None,
-                        };
-                        Some(format!("{entry}({})", mangle::value(value.0)))
-                    }
-                    Arg::InOut(_) => None,
-                })
-                .collect();
-            let text = match operands.first() {
-                Some(Arg::Value(value)) => mangle::value(value.0),
-                _ => {
-                    w.line("    hero_unreachable(); /* an assert with no text */");
-                    return;
-                }
-            };
-            if rendered.len() == 2 {
-                w.line(&format!(
-                    "    hero_panic_assert_sides({text}, {}, {});",
-                    rendered[0], rendered[1]
-                ));
-            } else {
-                // A side with no rendering — a record, an array — is still
-                // computed: the lowering does not know what C can print, and
-                // asking it to would put a backend question in the IR. Discarding
-                // it explicitly is what keeps `-Wunused-but-set-variable` at zero,
-                // and the cast says "deliberately" where silence would say
-                // "forgotten".
-                for arg in operands.iter().skip(1) {
-                    if let Arg::Value(value) = arg {
-                        w.line(&format!("    (void){};", mangle::value(value.0)));
-                    }
-                }
-                w.line(&format!("    hero_panic_assert({text});"));
-            }
+            abort::assert(w, checked, function, args)
         }
-        Op::Tag(base) => {
-            if let Some(name) = target {
-                let text = match checked.types.get(function.value_type(base)) {
-                    Ty::Fallible(_) => fallible::option_tag(base),
-                    _ => aggregate::tag(base),
-                };
-                w.line(&format!("    {name} = {text};"));
-            }
-        }
-        Op::Payload { base, case } => {
-            if let Some(name) = target {
-                let text = match checked.types.get(function.value_type(base)) {
-                    Ty::Fallible(_) => Some(fallible::option_payload(base, case)),
-                    _ => aggregate::payload(types, function, base, case),
-                };
-                match text {
-                    Some(text) => w.line(&format!("    {name} = {text};")),
-                    None => w.line("    hero_unreachable(); /* not a variant */"),
-                }
-            }
-        }
-        Op::Field { base, index } => {
-            if let Some(name) = target {
-                match aggregate::read_field(types, function, base, index) {
-                    Some(text) => w.line(&format!("    {name} = {text};")),
-                    None => w.line("    hero_unreachable(); /* the gate refuses this base */"),
-                }
-            }
-        }
-        Op::Index { base, index } => {
-            if let Some(name) = target {
-                match container::read_element(types, function, base, index) {
-                    Some(text) => w.line(&format!("    {name} = {text};")),
-                    None => w.line("    hero_unreachable(); /* not an array */"),
-                }
-            }
-        }
+        Op::Tag(base) => access::tag(w, checked, function, base, target),
+        Op::Payload { base, case } => access::payload(w, types, function, base, case, target),
+        Op::Field { base, index } => access::field(w, types, function, base, index, target),
+        Op::Index { base, index } => access::element(w, types, function, base, index, target),
         // A function used as a value is the C function designator, which decays to
         // a pointer on its own — `&` would be legal and redundant, and writing it
         // would make the emitted C say something the language does not: that a
