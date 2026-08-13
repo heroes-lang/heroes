@@ -35,6 +35,7 @@ mod digits;
 mod keywords;
 mod layout;
 mod number;
+mod literals;
 mod scan;
 mod token;
 
