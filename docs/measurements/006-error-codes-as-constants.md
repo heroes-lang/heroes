@@ -70,7 +70,7 @@ program reads back; a nine-line example that fails is a sentence.
 Nothing the compiler could see. **Zero spec tokens, zero compiler lines**, and no
 test changed behaviour — 116 corpus tests green before and after, in all three
 configurations. What it cost in the source is 61 `constant` declarations across
-18 modules, and three of them are read **across a module boundary**:
+18 modules, and five of them are read **across a module boundary**:
 `program.ERR_BAD_REGISTER`, `program.ERR_BAD_NUMBER`, `sheet.ERR_BAD_RANGE`,
 `parse.ERR_UNEXPECTED_END`, `parse.ERR_UNCLOSED_PAREN`.
 
