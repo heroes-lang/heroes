@@ -52,6 +52,7 @@ mod counted;
 mod ctype;
 mod descriptors;
 mod decls;
+mod extern_assert;
 mod externs;
 mod fallible;
 pub mod ffi;

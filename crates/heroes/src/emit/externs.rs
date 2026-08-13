@@ -17,12 +17,10 @@
 //! `FnKind::Constant`, so a filter written as `kind == Extern` drops its
 //! `#include` and clang then blames the compiler for a name it was never given.
 
-use crate::ir::{Function, Program, SlotKind};
+use crate::ir::{Function, Program};
 use crate::source::Source;
 use crate::syntax::Ast;
-use crate::types::{Checked, IntKind, Ty, TyId};
 
-use super::writer::Writer;
 
 /// Every header a group named, without its quotes, deduplicated and in
 /// declaration order — which is deterministic, so the double-emit test holds.
@@ -73,178 +71,12 @@ fn extern_header(ast: &Ast, src: &Source, function: &Function) -> Option<String>
 /// header"* — that this milestone falsifies, and its failure is silent: the
 /// `#include` disappears and clang blames the compiler for a name it was never
 /// given (CLAUDE.md §11). Asking the declaration is a fact about the value.
-fn extern_spans(ast: &Ast, function: &Function) -> (Option<crate::source::Span>, Option<crate::source::Span>) {
+pub(super) fn extern_spans(ast: &Ast, function: &Function) -> (Option<crate::source::Span>, Option<crate::source::Span>) {
     match &ast.decls[function.decl as usize].kind {
         crate::syntax::DeclKind::Function(declared) => (declared.header, declared.link),
         crate::syntax::DeclKind::Constant { header, link, .. } => (*header, *link),
         _ => (None, None),
     }
-}
-
-/// **The half of §4.19's guarantee that clang does not give for free.**
-///
-/// The emitter does not re-declare an `extern`'s signature — re-declaring is
-/// `conflicting types` five times out of five on SQLite, because Heroes' `i64` is
-/// `int64_t` and every C entry point returns `i64`. So the header declares the
-/// function and clang checks the *call*: the arguments, and nothing else. Panel
-/// 036 measured what that leaves open — four wrong bindings out of six compile
-/// clean, and `extern function sqrt(x: f64) -> i64` exits 0 printing `1`.
-///
-/// One `_Static_assert` per `extern` closes it. The controlling expression of a
-/// `_Generic` is **not evaluated** (C11 6.5.1.1p3) but is type-checked, so a call
-/// with zero arguments of the declared types costs nothing at runtime and asks
-/// clang what the real header returns. Eleven of eleven correct ladder bindings
-/// pass; `strlen` declared `-> i64` fires, because `size_t` is unsigned and the
-/// widening set admits only signed C integers.
-pub(super) fn extern_assertions(
-    w: &mut Writer,
-    program: &Program,
-    ast: &Ast,
-    checked: &Checked,
-    src: &Source,
-) {
-    // Everything a header owns, whichever kind it lowered to — a signature is
-    // `FnKind::Extern`, a constant is `FnKind::Constant` with no blocks, and the
-    // question both answer is *does a header declare this* (see `extern_spans`).
-    let externs: Vec<&Function> =
-        program.functions.iter().filter(|f| extern_spans(ast, f).0.is_some()).collect();
-    if externs.is_empty() {
-        return;
-    }
-    // Defined here rather than in `heroes_runtime.h` so the generated unit stays
-    // self-contained and the runtime's ABI stamp does not move for a macro.
-    // **`+(c)` and the unsigned narrows, both found by binding libcurl** (author
-    // instruction, ladder rung 4). `CURLcode` is an `enum`, and `_Generic` selects
-    // on the enum's own type rather than on `i64`, so the first version of this
-    // macro refused **every enum-returning C function in existence** — which is
-    // most of libcurl, OpenSSL and raylib, and was invisible against SQLite
-    // because SQLite returns plain `i64`.
-    //
-    // **The repair was two changes and only one of them was needed** (panel 042,
-    // 2026-08-12). M-ffi-ladder added a unary `+` *and* widened the accepted set
-    // to `unsigned int` and its narrower siblings, on the reading that `+` applies
-    // the integer promotions and is what turns an enum into a number. Measured
-    // since, on Apple clang 21, against a synthetic enum and against the real
-    // `CURLcode`: a **bare** `_Generic` accepts both, because C11 6.5.1.1 selects
-    // an enum's *compatible integer type* and the widened set now contains it. The
-    // second change alone was sufficient; the first was carrying a justification
-    // for work it does not do.
-    //
-    // And it was doing damage while it did so. `+` on a pointer is a **hard clang
-    // error**, so `extern function getenv(name: cstr) -> i64` — an ordinary
-    // mistake, since `getenv` returns `char *` — produced `invalid argument type
-    // 'char *' to unary expression` at exit 2, which CLAUDE.md §7 makes a claim
-    // that *the compiler* is wrong. The marker string below never reached
-    // `emit/ffi.rs`, so §7's named exception could not fire on exactly the return
-    // type most likely to be declared wrong. Without `+` the same program gets
-    // exit 1 and an `ffi_return_type` on the `.hero` line, which is what panel 036
-    // built this mechanism to do.
-    //
-    // `tests/golden/fixedbugs/ffi-pointer-return.hero` is the case, and
-    // `an_enum_returning_extern_needs_no_unary_plus` is the test that fires if the
-    // enum premise ever comes back (CLAUDE.md §11: a premise owes a falsifiable
-    // claim and a test for its death).
-    //
-    // The accepted set is every signed integer plus every unsigned integer
-    // narrower than 64 bits. **That is a fact about `i64`'s range and about
-    // nothing else** — it is not a rule about "the integer type", and a second
-    // width must never reuse this macro (panel 042; `M-sized-integers` owes its
-    // own row per width).
-    w.line("#define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)");
-    // **The seven other widths, and they cannot reuse the row above** (panel 042,
-    // ffi-pragmatist, compiled against real headers on five targets). Three facts
-    // decide the shape:
-    //
-    // - **No unary `+`.** It applies the integer promotions, so `+(c)` on a
-    //   `signed char` is an `int` and the narrow rows would either reject every
-    //   correct binding or check nothing at all. The `+` also broke pointer
-    //   returns outright, which is `tests/golden/fixedbugs/ffi-pointer-return.hero`.
-    // - **Fundamental types, never typedefs.** `size_t` and `uintptr_t` in one
-    //   `_Generic` is a *hard clang error* — they are the same type on this
-    //   target — so the class test lists the thirteen fundamental integer types,
-    //   which C guarantees are pairwise distinct.
-    // - **`sizeof` is load-bearing, not belt-and-braces.** Without it, i386 and
-    //   wasm32 ACCEPT a 32-bit `unsigned long` as `u64`: `_Generic` can say what
-    //   kind a type is and cannot say how wide it is. Measured, both targets.
-    //
-    // `char`'s signedness is implementation-defined, so it is asked rather than
-    // assumed: `(char)-1 > 0` is the question, answered at compile time.
-    w.line("#define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)");
-    w.line("#define HERO_C_UNSIGNED(c) _Generic((c), unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)");
-    for (name, signed_test, bytes) in [
-        ("HERO_RET_I8", "!HERO_C_UNSIGNED(c)", 1),
-        ("HERO_RET_I16", "!HERO_C_UNSIGNED(c)", 2),
-        ("HERO_RET_I32", "!HERO_C_UNSIGNED(c)", 4),
-        ("HERO_RET_U8", "HERO_C_UNSIGNED(c)", 1),
-        ("HERO_RET_U16", "HERO_C_UNSIGNED(c)", 2),
-        ("HERO_RET_U32", "HERO_C_UNSIGNED(c)", 4),
-        ("HERO_RET_U64", "HERO_C_UNSIGNED(c)", 8),
-    ] {
-        w.line(&format!(
-            "#define {name}(c) (HERO_C_INTEGER(c) && {signed_test} && sizeof(c) == {bytes})"
-        ));
-    }
-    w.line("#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)");
-    w.line("#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)");
-    w.line("#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)");
-    w.line("#define HERO_RET_UNIT(c) _Generic((c), void:1, default:0)");
-    // A pointer return is checked by its **negative** set: `_Generic` cannot say
-    // "any pointer", and `default:1` alone would check nothing. Listing what a
-    // pointer is not still catches the case that matters — a function returning an
-    // integer or a float declared as `ptr`.
-    w.line("#define HERO_RET_PTR(c) _Generic((c), signed char:0, short:0, int:0, long:0, long long:0, unsigned char:0, unsigned short:0, unsigned int:0, unsigned long:0, unsigned long long:0, float:0, double:0, long double:0, HeroStr:0, default:1)");
-    for function in externs {
-        let name = src.slice(ast.decls[function.decl as usize].name);
-        let Some(check) = return_check(checked, function.result) else { continue };
-        let declared_type = crate::types::render_ty(&checked.types, ast, src, function.result, &[]);
-        // **A constant is a token, not a call.** The same `_Generic` asks the same
-        // question of it — *what type does the header give this?* — with no
-        // argument list to build, and one more assertion nothing else needs: that
-        // the header gives it a **value** at all. `stdout` and `errno` are
-        // objects, and a zero-argument accessor over one would return a different
-        // value on two calls, which is the mutable global §4.2 forbids arriving
-        // through the back door.
-        if is_extern_constant(ast, function) {
-            w.line(&format!(
-                "_Static_assert({check}({name}), \"{}{name} {declared_type}\");",
-                super::ffi::ASSERTION
-            ));
-            // `__builtin_constant_p` is itself a constant expression even when its
-            // argument is not, so the failure stays a `_Static_assert` carrying
-            // *our* message. A `static const T probe = X;` would fail with clang's
-            // own words instead, and mapping those back to a `.hero` line would
-            // widen CLAUDE.md §7's named exception from a message to a generated
-            // line (panel 038, measured).
-            w.line(&format!(
-                "_Static_assert(__builtin_constant_p({name}), \"{}{name}\");",
-                super::ffi::CONSTANCY
-            ));
-            continue;
-        }
-        let zeros: Vec<String> = function
-            .params
-            .iter()
-            .map(|slot| {
-                let declared = &function.slots[slot.0 as usize];
-                // **An `@` parameter is a pointer parameter** (§4.8, CLAUDE.md §7),
-                // so its zero is a null of that pointer type. Writing the value's
-                // own zero instead was `-Wint-conversion` — a warning rather than
-                // an error under C11, which is exactly how it survived a green
-                // test run until the goldens were read.
-                let mutable = matches!(declared.kind, SlotKind::Param { mutable: true });
-                zero_of(checked, declared.ty, mutable)
-            })
-            .collect();
-        // The message is a **contract with `ffi::explain`**, not prose: it carries
-        // the marker, the C name and the declared Heroes type, so a failure can be
-        // mapped back to the author's line instead of printing generated C.
-        w.line(&format!(
-            "_Static_assert({check}({name}({})), \"{}{name} {declared_type}\");",
-            zeros.join(", "),
-            super::ffi::ASSERTION
-        ));
-    }
-    w.line("");
 }
 
 /// A `constant` whose value a header holds (§4.19, panel 038) — as opposed to an
@@ -254,53 +86,4 @@ pub(super) fn is_extern_constant(ast: &Ast, function: &Function) -> bool {
         &ast.decls[function.decl as usize].kind,
         crate::syntax::DeclKind::Constant { body: None, header: Some(_), .. }
     )
-}
-
-/// Which assertion a declared result type asks for.
-fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
-    match checked.types.get(ty) {
-        // Exhaustive: `HERO_RET_INT` accepts every signed C integer plus every
-        // unsigned one narrower than 64 bits, and that set is a fact about
-        // `i64`'s range and about nothing else. A second width reusing it would
-        // accept a C `long` for an `i32` and truncate in silence (panel 042).
-        Ty::Int(kind) => Some(match kind {
-            IntKind::I64 => "HERO_RET_INT",
-            IntKind::I8 => "HERO_RET_I8",
-            IntKind::I16 => "HERO_RET_I16",
-            IntKind::I32 => "HERO_RET_I32",
-            IntKind::U8 => "HERO_RET_U8",
-            IntKind::U16 => "HERO_RET_U16",
-            IntKind::U32 => "HERO_RET_U32",
-            IntKind::U64 => "HERO_RET_U64",
-        }),
-        Ty::F64 => Some("HERO_RET_F64"),
-        Ty::Bool => Some("HERO_RET_BOOL"),
-        Ty::Str => Some("HERO_RET_STR"),
-        Ty::Unit => Some("HERO_RET_UNIT"),
-        Ty::Ptr | Ty::Cstr => Some("HERO_RET_PTR"),
-        // No other type crosses the boundary: `ffi_type` refuses them in the
-        // checker, so this arm is where a new FFI type would have to declare
-        // what its assertion is rather than silently getting none.
-        _ => None,
-    }
-}
-
-/// A zero of the declared parameter type, cast so the call type-checks. It is
-/// never evaluated — it exists only to make the call expression well-formed.
-fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
-    let value = match checked.types.get(ty) {
-        Ty::Int(kind) => kind.c_type(),
-        Ty::F64 => "double",
-        Ty::Bool => "bool",
-        Ty::Str => "HeroStr",
-        Ty::Cstr => "const char *",
-        _ => "void *",
-    };
-    if mutable {
-        return format!("({value} *)0");
-    }
-    match checked.types.get(ty) {
-        Ty::Str => "(HeroStr){0}".to_string(),
-        _ => format!("({value})0"),
-    }
 }

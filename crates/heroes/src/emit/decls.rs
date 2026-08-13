@@ -29,6 +29,7 @@ use crate::syntax::Ast;
 use crate::types::Checked;
 
 use super::Target;
+use super::extern_assert;
 use super::externs;
 use super::writer::Writer;
 
@@ -71,7 +72,7 @@ pub(super) fn prelude(
         "_Static_assert(HERO_RUNTIME_ABI == 11, \"heroes_runtime.h is from another compiler\");",
     );
     w.line("");
-    externs::extern_assertions(w, program, ast, checked, src);
+    extern_assert::extern_assertions(w, program, ast, checked, src);
     // Every decoded string literal **an emitted function actually reads**, as a
     // static block clang lays out: refcount −1 means "never freed", so a literal
     // allocates nothing and decrefing one is a no-op. The escapes were applied once,
