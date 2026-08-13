@@ -21,29 +21,29 @@
 //! reproduces once a week". The panel costed a `TyArgs` pool on `Op::Call` for
 //! this; it turned out unnecessary, because `Inst` already carries the span.
 //!
-//! **Termination is not an accident and not a depth limit.** Polymorphic
-//! recursion — `f<T>` calling `f<[T]>` — instantiates forever, type-checks clean
-//! today, and design.md does not mention it. MLton's whole-program monomorphiser
-//! has been total for twenty-five years *because* SML bans it; inference for it is
-//! undecidable (Henglein 1993; Kfoury–Tiuryn–Urzyczyn 1993). Rust is the warning:
-//! it accepts at type-check and blows up at codegen with `reached the recursion
-//! limit while instantiating`, no error code, late and unattributable. So this
-//! pass refuses it **structurally** — instantiating `f` at `S` from within `f` at
-//! `T` where `S` properly contains `T` is unbounded — and reports it as a program
-//! diagnostic, exit 1, naming both instantiations.
+//! This file decides **which instances exist**: it walks out from the non-generic
+//! roots, queues what each body calls, and stops. The §11 sweep took the two
+//! questions that are not that one:
+//!
+//! - `mono_subst.rs` — what one instance *is*, once it is known to exist.
+//! - `mono_recursion.rs` — why the walk terminates. Polymorphic recursion is
+//!   refused structurally there, with the literature that says why a depth limit
+//!   is the wrong answer.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::diagnostics::Diagnostic;
 use crate::source::{Source, Span};
 use crate::syntax::Ast;
-use crate::types::{render_ty, Checked, Ty, TyId};
+use crate::types::{Checked, TyId};
 
 use super::inst::{Callee, Op};
+use super::mono_recursion::recursive;
+use super::mono_subst::{apply, instantiate};
 use super::{Function, Phase, Program};
 
 /// One instantiation: which declaration, at which type arguments.
-type Instance = (u32, Vec<TyId>);
+pub(super) type Instance = (u32, Vec<TyId>);
 
 /// Replace every generic function with its instances, and delete the originals.
 ///
@@ -75,14 +75,14 @@ pub fn run(
         .map(|(index, _)| index)
         .collect();
     for index in roots {
-        let calls = calls_in(&program.functions[index], &generic, checked, &[]);
+        let calls = calls_in(&program.functions[index], &generic, checked);
         enqueue(calls, None, &mut queue, &mut seen);
     }
 
     let mut instances: Vec<Function> = Vec::new();
     let mut at = 0;
     while at < queue.len() {
-        let ((decl, args), parent, span) = queue[at].clone();
+        let ((decl, args), _, span) = queue[at].clone();
         if let Some(problem) = recursive(&queue, at, decl, &args, checked, ast, src, span) {
             diagnostics.push(problem);
             at += 1;
@@ -98,7 +98,7 @@ pub fn run(
         // instantiating from it verbatim would carry `Ty::Generic` into the copy.
         // That was this pass's first defect, and the verifier caught it: "an
         // instruction still has a type parameter in it".
-        let calls = calls_in(&instance, &generic, checked, &args);
+        let calls = calls_in(&instance, &generic, checked);
         let calls: Vec<(Instance, Span)> = calls
             .into_iter()
             .map(|((decl, callee_args), span)| {
@@ -109,7 +109,6 @@ pub fn run(
             .collect();
         enqueue(calls, Some(at), &mut queue, &mut seen);
         instances.push(instance);
-        let _ = parent;
         at += 1;
     }
 
@@ -128,16 +127,16 @@ pub fn run(
 
 /// Every generic call in this function, as it was recorded.
 ///
-/// `subst` is the enclosing instance's own type arguments, so a call written
-/// inside a generic body comes back already substituted where the caller can
-/// apply it.
+/// The arguments come back **as recorded**, which means a call written inside a
+/// generic body still mentions the template's own `T`. Substituting them is the
+/// caller's job and is done at the one site that knows the enclosing instance —
+/// stated here because this function took a `subst` parameter it never read for
+/// as long as it existed, with a doc line saying it did.
 fn calls_in(
     function: &Function,
     generic: &BTreeSet<u32>,
     checked: &Checked,
-    subst: &[TyId],
 ) -> Vec<(Instance, Span)> {
-    let _ = subst;
     let mut found = Vec::new();
     for block in &function.blocks {
         for inst in &block.insts {
@@ -163,200 +162,6 @@ fn enqueue(
         if seen.insert(instance.clone()) {
             queue.push((instance, parent, span));
         }
-    }
-}
-
-/// Is this instance a *growing* repeat of one on its own parent chain?
-///
-/// The test is containment, not equality: `f<[T]>` reached from `f<T>` is
-/// unbounded, while `f<int>` reached from `f<int>` is the ordinary recursion that
-/// every compiler has and that terminates because the instance already exists.
-#[allow(clippy::too_many_arguments)]
-fn recursive(
-    queue: &[(Instance, Option<usize>, Span)],
-    at: usize,
-    decl: u32,
-    args: &[TyId],
-    checked: &Checked,
-    ast: &Ast,
-    src: &Source,
-    span: Span,
-) -> Option<Diagnostic> {
-    let mut walk = queue[at].1;
-    while let Some(index) = walk {
-        let ((ancestor_decl, ancestor_args), parent, _) = &queue[index];
-        if *ancestor_decl == decl
-            && ancestor_args.len() == args.len()
-            && ancestor_args
-                .iter()
-                .zip(args)
-                .all(|(small, big)| contains(checked, *big, *small))
-            && ancestor_args.iter().zip(args).any(|(small, big)| small != big)
-        {
-            let show = |list: &[TyId]| {
-                list.iter()
-                    .map(|t| render_ty(&checked.types, ast, src, *t, &[]))
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            };
-            return Some(polymorphic_recursion(&show(ancestor_args), &show(args), span));
-        }
-        walk = *parent;
-    }
-    None
-}
-
-/// §4.12 has no shape for this, so the message carries the whole explanation: what
-/// was instantiated, what it reached, and the one edit that ends it.
-///
-/// A **program** diagnostic, exit 1 — not exit 2. The program is legal under
-/// §4.12 as written, and "the compiler could not run" would be a lie about whose
-/// mistake it is.
-fn polymorphic_recursion(from: &str, to: &str, span: Span) -> Diagnostic {
-    Diagnostic::new(
-        "polymorphic_recursion",
-        format!(
-            "this call instantiates the function that contains it at a LARGER type — \
-             `<{from}>` reaches `<{to}>`, which reaches a larger one again, without end"
-        ),
-        span,
-    )
-    .with_note(
-        "a generic function is compiled once per type it is used at, so a chain that \
-         never repeats a type never ends"
-            .to_string(),
-    )
-    .with_note(
-        "pass the value along unchanged, or take the recursive step in a \
-         non-generic helper"
-            .to_string(),
-    )
-}
-
-/// Is `small` `big`, or a part of it? `[i64]` contains `i64`; `i64` does not
-/// contain `[i64]`.
-fn contains(checked: &Checked, big: TyId, small: TyId) -> bool {
-    if big == small {
-        return true;
-    }
-    match checked.types.get(big) {
-        Ty::Array(element) => contains(checked, element, small),
-        Ty::Fallible(inner) => contains(checked, inner, small),
-        Ty::Map(key, value) => {
-            contains(checked, key, small) || contains(checked, value, small)
-        }
-        Ty::Func { params, result } => {
-            checked.types.params_of(params).iter().any(|p| contains(checked, *p, small))
-                || contains(checked, result, small)
-        }
-        _ => false,
-    }
-}
-
-/// One copy of `template`, with every `Ty::Generic(i)` replaced by `args[i]`.
-///
-/// Every type in the body goes through `apply`, which interns as it substitutes —
-/// so the descriptor the emitter later asks for comes from the **substituted**
-/// `TyId` through `descriptors::pointer`, and is never carried across as a name. A
-/// wrong descriptor here is invisible to clang, ASan, UBSan and the leak counter
-/// alike: `[-0.0] == [0.0]` would print `false` at exit 0 (panel 029 R4c).
-fn instantiate(template: &Function, args: &[TyId], checked: &mut Checked) -> Function {
-    let slots = template
-        .slots
-        .iter()
-        .map(|slot| super::Slot {
-            name: slot.name.clone(),
-            ty: apply(checked, slot.ty, args),
-            kind: slot.kind,
-        })
-        .collect();
-    let values = template.values.iter().map(|v| apply(checked, *v, args)).collect();
-    let blocks = template
-        .blocks
-        .iter()
-        .map(|block| super::Block {
-            preds: block.preds.clone(),
-            insts: block
-                .insts
-                .iter()
-                .map(|inst| super::Inst {
-                    dest: inst.dest,
-                    op: inst.op,
-                    ty: apply(checked, inst.ty, args),
-                    span: inst.span,
-                })
-                .collect(),
-            term: clone_term(&block.term),
-            note: block.note.clone(),
-        })
-        .collect();
-    Function {
-        name: template.name.clone(),
-        decl: template.decl,
-        kind: template.kind,
-        generics: Vec::new(),
-        params: template.params.clone(),
-        result: apply(checked, template.result, args),
-        slots,
-        blocks,
-        values,
-        args: template.args.clone(),
-        steps: template.steps.clone(),
-        instance: args.to_vec(),
-        span: template.span,
-    }
-}
-
-/// `Term` is not `Copy` — it carries a `switch`'s arm table — so the clone is
-/// written out rather than derived, which keeps a new terminator kind a compile
-/// error here rather than a silently dropped arm.
-fn clone_term(term: &super::Term) -> super::Term {
-    match term {
-        super::Term::Return(value) => super::Term::Return(*value),
-        super::Term::Jump(block) => super::Term::Jump(*block),
-        super::Term::Branch { cond, then, otherwise } => {
-            super::Term::Branch { cond: *cond, then: *then, otherwise: *otherwise }
-        }
-        super::Term::Switch { tag, cases } => {
-            super::Term::Switch { tag: *tag, cases: cases.clone() }
-        }
-        super::Term::Unreachable => super::Term::Unreachable,
-        super::Term::Open => super::Term::Open,
-    }
-}
-
-/// `ty` with the type parameters substituted, interning whatever is new.
-fn apply(checked: &mut Checked, ty: TyId, args: &[TyId]) -> TyId {
-    match checked.types.get(ty) {
-        Ty::Generic(position) => match args.get(position as usize) {
-            Some(bound) => *bound,
-            // The checker reported an uninferable parameter; this keeps the shape.
-            None => ty,
-        },
-        Ty::Array(element) => {
-            let element = apply(checked, element, args);
-            checked.types.intern(Ty::Array(element))
-        }
-        Ty::Fallible(inner) => {
-            let inner = apply(checked, inner, args);
-            checked.types.intern(Ty::Fallible(inner))
-        }
-        Ty::Map(key, value) => {
-            let key = apply(checked, key, args);
-            let value = apply(checked, value, args);
-            checked.types.intern(Ty::Map(key, value))
-        }
-        Ty::Func { params, result } => {
-            let spelled: Vec<TyId> = checked
-                .types
-                .params_of(params)
-                .into_iter()
-                .map(|p| apply(checked, p, args))
-                .collect();
-            let result = apply(checked, result, args);
-            checked.types.func(&spelled, result)
-        }
-        _ => ty,
     }
 }
 

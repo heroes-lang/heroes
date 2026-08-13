@@ -60,6 +60,8 @@ mod calls;
 mod control;
 mod decls;
 pub mod mono;
+mod mono_recursion;
+mod mono_subst;
 mod exprs;
 mod fallible;
 mod inst;
