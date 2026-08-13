@@ -34,12 +34,30 @@ pub fn run() -> Exit {
         detail: clang.unwrap_or_else(|| "not found — install Xcode Command Line Tools".into()),
     });
 
-    // Xcode CLT — provides the assembler and linker on macOS.
-    let clt = run_capture("xcode-select", &["-p"]);
+    // The assembler and linker clang hands off to. Which command answers for them
+    // is the platform's question, not this project's, so the check is named after
+    // what it is *for* and each platform is asked in its own words: macOS keeps
+    // them in the Xcode Command Line Tools, and everywhere else they come with the
+    // system compiler driver.
+    //
+    // It used to ask `xcode-select -p` on every platform, which made `heroes
+    // doctor` exit 1 on Linux — found the day the CI first ran on two platforms
+    // (M-program-corpus), which is the whole reason that CI exists.
+    let (linker_name, linker) = if cfg!(target_os = "macos") {
+        ("xcode CLT", run_capture("xcode-select", &["-p"]))
+    } else {
+        ("cc", run_capture("cc", &["--version"]))
+    };
     checks.push(Check {
-        name: "xcode CLT",
-        ok: clt.is_some(),
-        detail: clt.unwrap_or_else(|| "not found — run `xcode-select --install`".into()),
+        name: linker_name,
+        ok: linker.is_some(),
+        detail: linker.unwrap_or_else(|| {
+            if cfg!(target_os = "macos") {
+                "not found — run `xcode-select --install`".into()
+            } else {
+                "not found — install a C toolchain (build-essential, base-devel, …)".into()
+            }
+        }),
     });
 
     // Architecture — informational; the emitted C is portable, clang targets host.

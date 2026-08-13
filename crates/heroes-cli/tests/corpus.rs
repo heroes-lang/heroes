@@ -317,6 +317,33 @@ fn lends_a_ptr(text: &str) -> bool {
     text.lines().any(|line| line.contains('@') && line.contains(": ptr"))
 }
 
+/// The corpus runs on **both** platforms, and the workflow says which two.
+///
+/// M-program-corpus's acceptance is the corpus green "in all three
+/// configurations **and on both platforms**", and the three configurations are
+/// asserted three tests above. The platforms cannot be asserted from inside one
+/// of them — a test running on this machine can only ever report this machine —
+/// so what is checked is the thing that decides: the workflow's matrix.
+///
+/// It is a weaker check than the others and is written down as such. It proves
+/// the *intent* is still in the tree, not that the run was green; the run being
+/// green is what the badge is for. What it catches is the failure this project
+/// has already had once in another form — a rule that quietly stopped covering
+/// something because a line was deleted while everything else stayed true.
+#[test]
+fn the_ci_covers_both_platforms() {
+    let workflow = std::fs::read_to_string(workspace_root().join(".github/workflows/ci.yml"))
+        .expect("the CI workflow must exist");
+    for runner in ["ubuntu-latest", "macos-14"] {
+        assert!(workflow.contains(runner), "the CI matrix lost `{runner}`");
+    }
+    assert!(
+        workflow.contains("fail-fast: false"),
+        "with `fail-fast`, one platform's failure hides the other's — which is the \
+         one thing having two platforms was for"
+    );
+}
+
 /// Every program directory is named in `examples/README.md`.
 ///
 /// The ROADMAP asks each program for "a `README` line saying what it

@@ -177,12 +177,28 @@ impl Toolchain {
         if object.is_file() {
             return Ok(object);
         }
+        // **Written beside it and renamed into place**, because `is_file()` above
+        // is a *published* flag and clang writing to `object` directly would raise
+        // it while the file was still half a file. Two `heroes` processes on a cold
+        // cache is not a hypothetical: `cargo test` runs the test binaries in
+        // parallel and each one builds programs, and the failure it produced was a
+        // link against a truncated object — once, in one run out of several, which
+        // is the worst way for a defect to present itself. A rename inside one
+        // directory is atomic on POSIX, so a reader sees no file or a whole one.
+        //
+        // The temporary carries the process id so two compilers never share it. If
+        // another process wins the rename, its object is byte-for-byte ours — the
+        // key covers the compiler, the level, the sanitiser and the runtime's whole
+        // contents — so losing the race costs nothing and is not reported.
+        let staged = self.build.join(format!("runtime-{key}.o.{}.tmp", std::process::id()));
         let mut clang = Command::new("clang");
         clang.args(FLAGS).arg(level).args(sanitizers(sanitize)).arg("-c");
         clang.arg(self.runtime.join("runtime.c"));
         clang.arg("-I").arg(&self.runtime);
-        clang.arg("-o").arg(&object);
+        clang.arg("-o").arg(&staged);
         run(clang, "compiling the runtime")?;
+        std::fs::rename(&staged, &object)
+            .map_err(|e| format!("cannot publish {}: {e}", object.display()))?;
         Ok(object)
     }
 

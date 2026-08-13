@@ -39,13 +39,34 @@ fn power(ast: &Ast, id: ExprId) -> u8 {
             BinaryOp::Add | BinaryOp::Sub => 8,
             BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem => 9,
         },
-        ExprKind::Unary { .. } => 10,
+        ExprKind::Unary { .. } => UNARY,
         // A control form spans lines; treating it as the loosest thing there
         // is keeps a parenthesis from ever being printed around it.
         ExprKind::If { .. } | ExprKind::Match { .. } => 0,
-        _ => 11,
+        _ => POSTFIX,
     }
 }
+
+/// Unary `-` `!` `~`, and the postfix forms above it — `f(x)`, `x.f()`, `p.x`,
+/// `xs[i]`, `e?`. They are the two strongest rows of the spec's chain (*"call and
+/// `.` -> unary `-` `!` `~` -> `* / %`"*), and they are **named** rather than
+/// written at each site, which is the repair as much as the numbers are.
+///
+/// They used to be `7` and `10` spelled out five times. `7` was right when the
+/// scale ended at `Mul = 5, Unary = 6, postfix = 7`; panel 040 added five bitwise
+/// levels below `Add`, every level above shifted up, and the five literal `7`s
+/// did not. From that day `heroes fmt` printed `(at / WORDS).to_str()` as `at /
+/// WORDS.to_str()` — a *different program*, and one that does not even type-check
+/// — because a receiver of power 9 was compared against a needed 7 and passed.
+///
+/// The comment on the scale above says the numbers have to match the parser's,
+/// *"so a scale that disagreed with the parser's would print a program that
+/// parses differently from the one it read"*. It was true, it was read, it was
+/// agreed with, and the disagreement was twenty lines below it in the same file
+/// (fixedbugs, 2026-08-13; found by `every_program_in_the_repository_survives_
+/// formatting_twice` on the first corpus program that wrote `(a / b).to_str()`).
+const UNARY: u8 = 10;
+const POSTFIX: u8 = 11;
 
 pub(super) fn render(ast: &Ast, src: &Source, id: ExprId) -> String {
     let node = &ast.exprs[id.0 as usize];
@@ -68,7 +89,7 @@ pub(super) fn render(ast: &Ast, src: &Source, id: ExprId) -> String {
                 UnaryOp::Not => "!",
                 UnaryOp::BitNot => "~",
             };
-            format!("{op}{}", wrapped(ast, src, *operand, 10))
+            format!("{op}{}", wrapped(ast, src, *operand, UNARY))
         }
         ExprKind::Binary { op, left, right } => {
             let mine = power(ast, id);
@@ -82,17 +103,17 @@ pub(super) fn render(ast: &Ast, src: &Source, id: ExprId) -> String {
             )
         }
         ExprKind::Field { base, name } => {
-            format!("{}.{}", wrapped(ast, src, *base, 7), src.slice(*name))
+            format!("{}.{}", wrapped(ast, src, *base, POSTFIX), src.slice(*name))
         }
         ExprKind::Index { base, index } => {
-            format!("{}[{}]", wrapped(ast, src, *base, 7), render(ast, src, *index))
+            format!("{}[{}]", wrapped(ast, src, *base, POSTFIX), render(ast, src, *index))
         }
         ExprKind::Call { callee, args } => {
-            format!("{}({})", wrapped(ast, src, *callee, 7), args_line(ast, src, args))
+            format!("{}({})", wrapped(ast, src, *callee, POSTFIX), args_line(ast, src, args))
         }
         ExprKind::Method { receiver, name, args } => format!(
             "{}.{}({})",
-            wrapped(ast, src, *receiver, 7),
+            wrapped(ast, src, *receiver, POSTFIX),
             src.slice(*name),
             args_line(ast, src, args)
         ),
@@ -121,7 +142,7 @@ pub(super) fn render(ast: &Ast, src: &Source, id: ExprId) -> String {
                 .collect();
             format!("{{{}}}", rendered.join(", "))
         }
-        ExprKind::Try(inner) => format!("{}?", wrapped(ast, src, *inner, 7)),
+        ExprKind::Try(inner) => format!("{}?", wrapped(ast, src, *inner, POSTFIX)),
         // Headers only: `fmt.rs` prints the blocks under them.
         ExprKind::If { branches, .. } => match branches.first() {
             Some(branch) => format!("if {}", render(ast, src, branch.cond)),

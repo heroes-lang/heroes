@@ -1,0 +1,90 @@
+# The corpus, on both machines.
+#
+# Everything this project knows about the machine it runs on it learned the hard
+# way, and every one of those facts is a place where the other platform can
+# diverge in silence:
+#
+#   - AddressSanitizer has **no leak detector** on Darwin arm64, which is why
+#     every generated `main` ends in `hero_runtime_check_leaks()` (panel 021).
+#     On Linux the sanitiser's own detector runs *as well*, so this job is the
+#     first thing that has ever checked the two against each other;
+#   - `INT64_MIN % -1` does not trap on arm64 — it returns 0 at exit 0 — while
+#     the same program raises SIGFPE on x86. Same source, two behaviours, and
+#     the emitter guards `%` like `/` because of it;
+#   - Apple ARM64 passes variadic arguments on the stack, which the FFI ladder
+#     met at `curl_easy_setopt`.
+#
+# Until this file, nothing tested any of it: the whole record was made on one
+# laptop. `cargo test` is what runs the corpus — `tests/corpus.rs` compiles and
+# runs every `examples/*/main.hero` at `-O0`, at `-O2` and under
+# `-fsanitize=address,undefined`, and `tests/golden.rs` does the same for
+# `tests/golden/run/` — so the three configurations are inside it rather than
+# beside it.
+
+name: heroes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# One run per ref: a second push cancels the first, because a red result about
+# code nobody has any more is a red result nobody reads.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    # Neither platform's failure hides the other's. That is the point of having
+    # two, and `fail-fast` would undo it on the first divergence.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86-64
+            os: ubuntu-latest
+          - name: Darwin arm64
+            os: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The two FFI examples bind real libraries: `examples/sqlite/` against the
+      # SDK's own `sqlite3.h` with no shim, and `examples/curl/` against
+      # libcurl. macOS ships both; Linux needs the headers.
+      # clang is named rather than assumed: it is the backend (CLAUDE.md §7), and
+      # a job that found it only because the image happened to carry it is a job
+      # that breaks when the image changes.
+      - name: Install clang and the C libraries the FFI examples bind
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libsqlite3-dev libcurl4-openssl-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build the compiler
+        run: cargo build
+
+      # The toolchain check, before anything asks it to compile C. It is the one
+      # command that reports what this machine actually has, and the `arch` line
+      # in its output is how a reader tells the two jobs apart at a glance.
+      - name: heroes doctor
+        run: ./target/debug/heroes doctor
+
+      # The Cyclone rule (CLAUDE.md §5) and every lint the repo has agreed to.
+      - name: cargo clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      # Everything: the crate tests, the golden harnesses, the CLI surface, and
+      # the corpus in its three configurations.
+      - name: cargo test
+        run: cargo test
