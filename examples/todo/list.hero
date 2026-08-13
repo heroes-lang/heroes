@@ -14,6 +14,23 @@
 # disk, and it is the same split value semantics makes free: `complete` returns a
 # new list rather than editing one, because there is no other thing it could do.
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_BAD_LINE: str
+    "bad_line"
+
+constant ERR_BAD_MARKER: str
+    "bad_marker"
+
+constant ERR_EMPTY_TASK: str
+    "empty_task"
+
+constant ERR_NO_SUCH_TASK: str
+    "no_such_task"
+
 record Task
     done: bool
     text: str
@@ -54,10 +71,10 @@ function read(text: str) -> [Task]?
         if head == ""
             continue
         if head.len() < 4 || head[0] != '[' || head[2] != ']' || head[3] != ' '
-            return fail("bad_line", "line " + number.to_str() + ": a task is `[ ] text` or `[x] text`")
+            return fail(ERR_BAD_LINE, "line " + number.to_str() + ": a task is `[ ] text` or `[x] text`")
         marker = head[1]
         if marker != ' ' && marker != 'x'
-            return fail("bad_marker", "line " + number.to_str() + ": the marker is a space or an `x`")
+            return fail(ERR_BAD_MARKER, "line " + number.to_str() + ": the marker is a space or an `x`")
         out @ out.push(Task(done: marker == 'x', text: trimmed(head.slice(from: 4, to: head.len()))))
     return ok(out)
 
@@ -78,7 +95,7 @@ function marker_of(task: Task) -> str
 
 function add(tasks: [Task], text: str) -> [Task]?
     if trimmed(text) == ""
-        return fail("empty_task", "a task needs some text")
+        return fail(ERR_EMPTY_TASK, "a task needs some text")
     return ok(tasks.push(Task(done: false, text: trimmed(text))))
 
 # `n` counts from 1, because the list a person reads is numbered from 1 and the
@@ -86,7 +103,7 @@ function add(tasks: [Task], text: str) -> [Task]?
 # remembering which end of the program is which.
 function complete(tasks: [Task], n: i64) -> [Task]?
     if n < 1 || n > tasks.len()
-        return fail("no_such_task", "there is no task " + n.to_str() + " — the list has " + tasks.len().to_str())
+        return fail(ERR_NO_SUCH_TASK, "there is no task " + n.to_str() + " — the list has " + tasks.len().to_str())
     out: [Task] @ []
     for i in range(from: 0, to: tasks.len())
         if i == n - 1
@@ -123,9 +140,9 @@ test "blank lines are skipped and spacing is forgiven"
     assert tasks[1].done == true
 
 test "a line that is not a task is refused by name"
-    assert code_of("one\n") == "bad_line"
-    assert code_of("[ ]one\n") == "bad_line"
-    assert code_of("[?] one\n") == "bad_marker"
+    assert code_of("one\n") == ERR_BAD_LINE
+    assert code_of("[ ]one\n") == ERR_BAD_LINE
+    assert code_of("[?] one\n") == ERR_BAD_MARKER
 
 test "adding appends, and an empty task is not a task"
     tasks = read("[ ] one\n").must()

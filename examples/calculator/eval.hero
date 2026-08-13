@@ -6,12 +6,23 @@
 use lex
 use parse
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_TRAILING_TOKENS: str
+    "trailing_tokens"
+
+constant ERR_UNKNOWN_NAME: str
+    "unknown_name"
+
 ## Evaluator
 
 # The value bound to a name, with a decent message if absent.
 function lookup(env: {str: i64}, name: str) -> i64?
     if env[name].is_err()
-        return fail("unknown_name", "undefined variable: " + name)
+        return fail(ERR_UNKNOWN_NAME, "undefined variable: " + name)
     return ok(env[name].must())
 
 function sum_of(children: [parse.Expr], env: {str: i64}) -> i64?
@@ -57,7 +68,7 @@ function calculate(text: str, env: {str: i64}) -> i64?
     p: parse.Parse @ parse.Parse(ts: ts, pos: 0)
     tree = parse.expression(@p)?
     if !parse.parse_at_end(p)
-        return fail("trailing_tokens", "leftover input at the end")
+        return fail(ERR_TRAILING_TOKENS, "leftover input at the end")
     return evaluate(tree, env)
 
 test "precedence and parens"
@@ -74,13 +85,13 @@ test "errors reach the top"
     empty: {str: i64} = {}
     match calculate("2 +", empty)
         .ok _  => assert false
-        .err e => assert e.code == "unexpected_end"
+        .err e => assert e.code == parse.ERR_UNEXPECTED_END
     match calculate("z + 1", empty)
         .ok _  => assert false
-        .err e => assert e.code == "unknown_name"
+        .err e => assert e.code == ERR_UNKNOWN_NAME
     match calculate("(2 + 3", empty)
         .ok _  => assert false
-        .err e => assert e.code == "unclosed_paren"
+        .err e => assert e.code == parse.ERR_UNCLOSED_PAREN
 
 test "values are always copies"
     a = [1, 2, 3]

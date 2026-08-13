@@ -13,6 +13,23 @@
 # because padding invents open squares and a solver that walks through one has
 # found a path the file does not describe.
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_EMPTY_MAZE: str
+    "empty_maze"
+
+constant ERR_MISSING_MARK: str
+    "missing_mark"
+
+constant ERR_RAGGED_MAZE: str
+    "ragged_maze"
+
+constant ERR_REPEATED_MARK: str
+    "repeated_mark"
+
 record Grid
     rows: [str]
     width: i64
@@ -46,11 +63,11 @@ function read(text: str) -> Grid?
         if line != ""
             rows @ rows.push(line)
     if rows.len() == 0
-        return fail("empty_maze", "the file has no rows")
+        return fail(ERR_EMPTY_MAZE, "the file has no rows")
     width = rows[0].len()
     for line in rows
         if line.len() != width
-            return fail("ragged_maze", "every row must be " + width.to_str() + " wide")
+            return fail(ERR_RAGGED_MAZE, "every row must be " + width.to_str() + " wide")
     g = Grid(rows: rows, width: width, height: rows.len())
     _ = locate(g, START)?
     _ = locate(g, GOAL)?
@@ -85,10 +102,10 @@ function locate(g: Grid, mark: u8) -> i64?
             index = index_of(g, row: row, column: column)
             if at(g, index) == mark
                 if found >= 0
-                    return fail("repeated_mark", "the maze has more than one `" + one_char(mark) + "`")
+                    return fail(ERR_REPEATED_MARK, "the maze has more than one `" + one_char(mark) + "`")
                 found @ index
     if found < 0
-        return fail("missing_mark", "the maze has no `" + one_char(mark) + "`")
+        return fail(ERR_MISSING_MARK, "the maze has no `" + one_char(mark) + "`")
     return ok(found)
 
 # One byte as a `str`, for a message. There is no `chr`, so the two marks this

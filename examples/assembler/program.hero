@@ -21,6 +21,17 @@
 # A line is `[label:] [mnemonic [operand, operand]] [; comment]`, and any part
 # may be missing.
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_BAD_NUMBER: str
+    "bad_number"
+
+constant ERR_BAD_REGISTER: str
+    "bad_register"
+
 constant OP_LOAD: i64
     0
 
@@ -146,10 +157,10 @@ function read(text: str) -> [Line]
 # who wrote `r9` needs to know what would have fitted (§4.17).
 function register_of(word: str, number: i64) -> i64?
     if word.len() != 2 || word[0] != 'r'
-        return fail("bad_register", "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
+        return fail(ERR_BAD_REGISTER, "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
     n = to_i64(word[1] - '0').must()
     if n < 0 || n >= REGISTERS
-        return fail("bad_register", "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
+        return fail(ERR_BAD_REGISTER, "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
     return ok(n)
 
 function number_of(word: str, number: i64) -> i64?
@@ -159,11 +170,11 @@ function number_of(word: str, number: i64) -> i64?
         negative @ true
         body @ body.slice(from: 1, to: body.len())
     if body.len() == 0
-        return fail("bad_number", "line " + number.to_str() + ": `" + word + "` is not a number")
+        return fail(ERR_BAD_NUMBER, "line " + number.to_str() + ": `" + word + "` is not a number")
     v: i64 @ 0
     for i in range(from: 0, to: body.len())
         if body[i] < '0' || body[i] > '9'
-            return fail("bad_number", "line " + number.to_str() + ": `" + word + "` is not a number")
+            return fail(ERR_BAD_NUMBER, "line " + number.to_str() + ": `" + word + "` is not a number")
         v @ v * 10 + to_i64(body[i] - '0').must()
     if negative
         return ok(-v)

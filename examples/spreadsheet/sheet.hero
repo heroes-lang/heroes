@@ -9,6 +9,20 @@
 # The file is one cell per line, `NAME = formula`. Blank lines and `#` comments
 # are skipped, which is what makes the sample readable.
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_BAD_CELL_NAME: str
+    "bad_cell_name"
+
+constant ERR_BAD_RANGE: str
+    "bad_range"
+
+constant ERR_NO_ASSIGNMENT: str
+    "no_assignment"
+
 constant LETTERS: str
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -55,16 +69,16 @@ function split_lines(text: str) -> [str]
 # `A1` as a `Cell`, or an error naming what was wrong with it.
 function cell_of(name: str) -> Cell?
     if name.len() < 2 || !is_letter(name[0])
-        return fail("bad_cell_name", "`" + name + "` is not a cell: one letter then digits")
+        return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell: one letter then digits")
     row: i64 @ 0
     i: i64 @ 1
     while i < name.len()
         if !is_digit(name[i])
-            return fail("bad_cell_name", "`" + name + "` is not a cell: one letter then digits")
+            return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell: one letter then digits")
         row @ row * 10 + to_i64(name[i] - '0').must()
         i @ i + 1
     if row == 0
-        return fail("bad_cell_name", "`" + name + "` has no row: rows start at 1")
+        return fail(ERR_BAD_CELL_NAME, "`" + name + "` has no row: rows start at 1")
     return ok(Cell(column: to_i64(name[0] - 'A').must(), row: row))
 
 # The name a `Cell` had. There is no `chr` in this language, so the letter comes
@@ -83,7 +97,7 @@ function is_name(word: str) -> bool
 function expand(text: str) -> [str]?
     at = index_of(text, ':')
     if at < 0
-        return fail("bad_range", "`" + text + "` is not a range: two cells joined by `:`")
+        return fail(ERR_BAD_RANGE, "`" + text + "` is not a range: two cells joined by `:`")
     from = cell_of(trimmed(text.slice(from: 0, to: at)))?
     to = cell_of(trimmed(text.slice(from: at + 1, to: text.len())))?
     out: [str] @ []
@@ -111,10 +125,10 @@ function read(text: str) -> Sheet?
             continue
         at = index_of(head, '=')
         if at < 0
-            return fail("no_assignment", "`" + head + "` is not `NAME = formula`")
+            return fail(ERR_NO_ASSIGNMENT, "`" + head + "` is not `NAME = formula`")
         name = trimmed(head.slice(from: 0, to: at))
         if !is_name(name)
-            return fail("bad_cell_name", "`" + name + "` is not a cell name")
+            return fail(ERR_BAD_CELL_NAME, "`" + name + "` is not a cell name")
         cells[name] @ trimmed(head.slice(from: at + 1, to: head.len()))
     return ok(Sheet(cells: cells))
 

@@ -9,6 +9,14 @@
 # Names are the links. An index would be shorter and a reader would then have to
 # hold a numbering in their head to know where `2` goes.
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_NO_WAY: str
+    "no_way"
+
 record Room
     name: str
     description: str
@@ -62,7 +70,7 @@ function through(w: World, here: str, direction: str) -> str?
     room = room_at(w, here)?
     match room.exits[direction]
         .ok there => return ok(there)
-        .err _    => return fail("no_way", "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", "))
+        .err _    => return fail(ERR_NO_WAY, "there is no way " + direction + " — try " + join(sort(keys(room.exits)), ", "))
 
 test "every exit leads to a room that exists, and comes back"
     w = make()
@@ -83,7 +91,7 @@ test "a direction that is not there names the ones that are"
     match through(w, here: "gate", direction: "west")
         .ok _  => assert false
         .err e =>
-            assert e.code == "no_way"
+            assert e.code == ERR_NO_WAY
             assert e.msg == "there is no way west — try north"
 
 test "the only item worth having is behind two doors"

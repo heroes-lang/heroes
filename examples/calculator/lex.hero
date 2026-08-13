@@ -4,6 +4,14 @@
 
 ## Tokens
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_UNKNOWN_CHAR: str
+    "unknown_char"
+
 variant Token
     num
         v: i64
@@ -76,7 +84,7 @@ function tokenize(text: str) -> [Token]?
             out @ out.push(.rparen)
             advance(@l)
         else
-            return fail("unknown_char", "at position " + l.pos.to_str())
+            return fail(ERR_UNKNOWN_CHAR, "at position " + l.pos.to_str())
 
     return ok(out)
 
@@ -90,4 +98,4 @@ test "tokenizes numbers, names and symbols"
 test "tokenize rejects the unknown"
     match tokenize("2 $ 3")
         .ok _  => assert false
-        .err e => assert e.code == "unknown_char"
+        .err e => assert e.code == ERR_UNKNOWN_CHAR

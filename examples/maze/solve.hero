@@ -13,6 +13,14 @@
 
 use grid
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_NO_PATH: str
+    "no_path"
+
 function solve(g: grid.Grid) -> [i64]?
     start = grid.locate(g, grid.START)?
     goal = grid.locate(g, grid.GOAL)?
@@ -29,7 +37,7 @@ function solve(g: grid.Grid) -> [i64]?
             if came[next].is_err()
                 came[next] @ here
                 queue @ queue.push(next)
-    return fail("no_path", "no way from the start to the goal")
+    return fail(ERR_NO_PATH, "no way from the start to the goal")
 
 # The path, start first. It is built backwards from the goal and turned round
 # once, because following `came` is the only direction that map can be read in.

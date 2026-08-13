@@ -12,6 +12,14 @@
 
 use entry
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_NONE_AT_LEVEL: str
+    "none_at_level"
+
 function tally(names: [str]) -> {str: i64}
     counts: {str: i64} @ {}
     for name in names
@@ -69,7 +77,7 @@ function first_at(entries: [entry.Entry], level: str) -> entry.Entry?
     for one in entries
         if one.level == level
             return ok(one)
-    return fail("none_at_level", "no line is " + level)
+    return fail(ERR_NONE_AT_LEVEL, "no line is " + level)
 
 function how_many_at(entries: [entry.Entry], level: str) -> i64
     return tally(levels_of(entries))[level].default(0)

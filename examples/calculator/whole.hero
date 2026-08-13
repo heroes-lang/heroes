@@ -29,6 +29,29 @@
 # Applies `f` to every element, in order. Named `apply` rather than `map`
 # because `map` is a built-in name and no file may redeclare one (panel 015);
 # the point here is generics, and any name demonstrates them.
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_EXPECTED_FACTOR: str
+    "expected_factor"
+
+constant ERR_TRAILING_TOKENS: str
+    "trailing_tokens"
+
+constant ERR_UNCLOSED_PAREN: str
+    "unclosed_paren"
+
+constant ERR_UNEXPECTED_END: str
+    "unexpected_end"
+
+constant ERR_UNKNOWN_CHAR: str
+    "unknown_char"
+
+constant ERR_UNKNOWN_NAME: str
+    "unknown_name"
+
 function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
     for x in xs
@@ -127,7 +150,7 @@ function tokenize(text: str) -> [Token]?
             out @ out.push(.rparen)
             advance(@l)
         else
-            return fail("unknown_char", "at position " + l.pos.to_str())
+            return fail(ERR_UNKNOWN_CHAR, "at position " + l.pos.to_str())
 
     return ok(out)
 
@@ -141,7 +164,7 @@ test "tokenizes numbers, names and symbols"
 test "tokenize rejects the unknown"
     match tokenize("2 $ 3")
         .ok _  => assert false
-        .err e => assert e.code == "unknown_char"
+        .err e => assert e.code == ERR_UNKNOWN_CHAR
 
 ## Syntax tree
 
@@ -180,7 +203,7 @@ function parse_advance(@p: Parse)
 # A number, a name, or a parenthesised expression.
 function factor(@p: Parse) -> Expr?
     if p.parse_at_end()
-        return fail("unexpected_end", "the expression ends too soon")
+        return fail(ERR_UNEXPECTED_END, "the expression ends too soon")
 
     t = p.parse_here()
     parse_advance(@p)
@@ -189,15 +212,15 @@ function factor(@p: Parse) -> Expr?
         .num n                   => ok(.num(v: n.v))
         .name x                  => ok(.variable(name: x.s))
         .lparen                  => group(@p)
-        .plus | .times | .rparen => fail("expected_factor", "found an operator")
+        .plus | .times | .rparen => fail(ERR_EXPECTED_FACTOR, "found an operator")
 
 # An expression followed by its closing paren.
 function group(@p: Parse) -> Expr?
     inner = expression(@p)?
     if p.parse_at_end()
-        return fail("unclosed_paren", "missing closing paren")
+        return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
     if p.parse_here() != .rparen
-        return fail("unclosed_paren", "missing closing paren")
+        return fail(ERR_UNCLOSED_PAREN, "missing closing paren")
     parse_advance(@p)
     return ok(inner)
 
@@ -232,7 +255,7 @@ function expression(@p: Parse) -> Expr?
 # The value bound to a name, with a decent message if absent.
 function lookup(env: {str: i64}, name: str) -> i64?
     if env[name].is_err()
-        return fail("unknown_name", "undefined variable: " + name)
+        return fail(ERR_UNKNOWN_NAME, "undefined variable: " + name)
     return ok(env[name].must())
 
 function sum_of(children: [Expr], env: {str: i64}) -> i64?
@@ -278,7 +301,7 @@ function calculate(text: str, env: {str: i64}) -> i64?
     p: Parse @ Parse(ts: ts, pos: 0)
     tree = expression(@p)?
     if !p.parse_at_end()
-        return fail("trailing_tokens", "leftover input at the end")
+        return fail(ERR_TRAILING_TOKENS, "leftover input at the end")
     return evaluate(tree, env)
 
 test "precedence and parens"
@@ -295,13 +318,13 @@ test "errors reach the top"
     empty: {str: i64} = {}
     match calculate("2 +", empty)
         .ok _  => assert false
-        .err e => assert e.code == "unexpected_end"
+        .err e => assert e.code == ERR_UNEXPECTED_END
     match calculate("z + 1", empty)
         .ok _  => assert false
-        .err e => assert e.code == "unknown_name"
+        .err e => assert e.code == ERR_UNKNOWN_NAME
     match calculate("(2 + 3", empty)
         .ok _  => assert false
-        .err e => assert e.code == "unclosed_paren"
+        .err e => assert e.code == ERR_UNCLOSED_PAREN
 
 test "values are always copies"
     a = [1, 2, 3]

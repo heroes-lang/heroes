@@ -11,6 +11,23 @@
 
 use program
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_BAD_OPERAND_COUNT: str
+    "bad_operand_count"
+
+constant ERR_DUPLICATE_LABEL: str
+    "duplicate_label"
+
+constant ERR_UNKNOWN_INSTRUCTION: str
+    "unknown_instruction"
+
+constant ERR_UNKNOWN_LABEL: str
+    "unknown_label"
+
 record Assembled
     code: [i64]
     labels: {str: i64}
@@ -23,7 +40,7 @@ function label_table(lines: [program.Line]) -> {str: i64}?
     for line in lines
         if line.label != ""
             if !labels[line.label].is_err()
-                return fail("duplicate_label", "line " + line.number.to_str() + ": `" + line.label + "` is defined twice")
+                return fail(ERR_DUPLICATE_LABEL, "line " + line.number.to_str() + ": `" + line.label + "` is defined twice")
             labels[line.label] @ at
         if line.mnemonic != ""
             at @ at + 1
@@ -64,7 +81,7 @@ function encode(line: program.Line, labels: {str: i64}) -> [i64]?
     if m == "halt"
         _ = expect(line, 0)?
         return ok([program.OP_HALT, 0, 0])
-    return fail("unknown_instruction", "line " + line.number.to_str() + ": there is no `" + m + "` instruction")
+    return fail(ERR_UNKNOWN_INSTRUCTION, "line " + line.number.to_str() + ": there is no `" + m + "` instruction")
 
 function opcode_of(m: str) -> i64
     if m == "copy"
@@ -75,7 +92,7 @@ function opcode_of(m: str) -> i64
 
 function expect(line: program.Line, wanted: i64) -> i64?
     if line.operands.len() != wanted
-        return fail("bad_operand_count", "line " + line.number.to_str() + ": `" + line.mnemonic + "` takes " + wanted.to_str() + ", not " + line.operands.len().to_str())
+        return fail(ERR_BAD_OPERAND_COUNT, "line " + line.number.to_str() + ": `" + line.mnemonic + "` takes " + wanted.to_str() + ", not " + line.operands.len().to_str())
     return ok(wanted)
 
 # A label becomes the instruction index it stands at — times the width, because
@@ -83,7 +100,7 @@ function expect(line: program.Line, wanted: i64) -> i64?
 function target_of(name: str, labels: {str: i64}, number: i64) -> i64?
     match labels[name]
         .ok at => return ok(at * program.WORDS)
-        .err _ => return fail("unknown_label", "line " + number.to_str() + ": there is no label `" + name + "`")
+        .err _ => return fail(ERR_UNKNOWN_LABEL, "line " + number.to_str() + ": there is no label `" + name + "`")
 
 test "labels are instruction indices, and blank lines do not count"
     lines = program.read("start:\n\n  load r0, 1   ; one\nagain:\n  print r0\n  jmp again\n")
@@ -102,12 +119,12 @@ test "a jump resolves to a word offset"
     assert forward.code[1] == 2 * program.WORDS
 
 test "every way to get it wrong has its own code and its own line"
-    assert code_of("add r0\n") == "bad_operand_count"
-    assert code_of("frob r0, r1\n") == "unknown_instruction"
-    assert code_of("add r0, r9\n") == "bad_register"
-    assert code_of("load r0, x\n") == "bad_number"
-    assert code_of("jmp nowhere\n") == "unknown_label"
-    assert code_of("a:\nhalt\na:\nhalt\n") == "duplicate_label"
+    assert code_of("add r0\n") == ERR_BAD_OPERAND_COUNT
+    assert code_of("frob r0, r1\n") == ERR_UNKNOWN_INSTRUCTION
+    assert code_of("add r0, r9\n") == program.ERR_BAD_REGISTER
+    assert code_of("load r0, x\n") == program.ERR_BAD_NUMBER
+    assert code_of("jmp nowhere\n") == ERR_UNKNOWN_LABEL
+    assert code_of("a:\nhalt\na:\nhalt\n") == ERR_DUPLICATE_LABEL
 
 test "the message names the line the reader has to open"
     match assemble(program.read("halt\nhalt\nfrob\n"))

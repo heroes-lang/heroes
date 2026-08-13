@@ -12,6 +12,20 @@
 use assemble
 use program
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_BAD_OPCODE: str
+    "bad_opcode"
+
+constant ERR_OUT_OF_FUEL: str
+    "out_of_fuel"
+
+constant ERR_RAN_OFF_THE_END: str
+    "ran_off_the_end"
+
 record Machine
     registers: [i64]
     pc: i64
@@ -23,14 +37,14 @@ function run(code: [i64], fuel: i64) -> [str]?
     while left > 0
         left @ left - 1
         if m.pc < 0 || m.pc + program.WORDS > code.len()
-            return fail("ran_off_the_end", "the machine stepped past the last instruction")
+            return fail(ERR_RAN_OFF_THE_END, "the machine stepped past the last instruction")
         opcode = code[m.pc]
         a = code[m.pc + 1]
         b = code[m.pc + 2]
         if opcode == program.OP_HALT
             return ok(m.output)
         _ = step(@m, opcode: opcode, a: a, b: b)?
-    return fail("out_of_fuel", "the program ran for " + fuel.to_str() + " steps without halting")
+    return fail(ERR_OUT_OF_FUEL, "the program ran for " + fuel.to_str() + " steps without halting")
 
 # One instruction. The program counter moves here and nowhere else, so a jump is
 # the arm that does *not* fall through to the advance.
@@ -53,7 +67,7 @@ function step(@m: Machine, opcode: i64, a: i64, b: i64) -> i64?
             m.pc @ b
             return ok(opcode)
     else
-        return fail("bad_opcode", "the code holds " + opcode.to_str() + ", which is not an instruction")
+        return fail(ERR_BAD_OPCODE, "the code holds " + opcode.to_str() + ", which is not an instruction")
     m.pc @ m.pc + program.WORDS
     return ok(opcode)
 
@@ -75,14 +89,14 @@ test "a loop counts down and stops"
     assert execute(countdown, 100).must() == ["3", "2", "1"]
 
 test "a program that never halts runs out of fuel instead of running forever"
-    assert code_of("here:\n  jmp here\n", 50) == "out_of_fuel"
+    assert code_of("here:\n  jmp here\n", 50) == ERR_OUT_OF_FUEL
 
 test "falling off the end is not the same as halting"
-    assert code_of("load r0, 1\n", 100) == "ran_off_the_end"
+    assert code_of("load r0, 1\n", 100) == ERR_RAN_OFF_THE_END
 
 test "the fuel is spent per instruction, so a short program needs little"
     assert execute("halt\n", 1).must() == []
-    assert code_of("load r0, 1\nhalt\n", 1) == "out_of_fuel"
+    assert code_of("load r0, 1\nhalt\n", 1) == ERR_OUT_OF_FUEL
 
 function code_of(text: str, fuel: i64) -> str
     return match execute(text, fuel)

@@ -10,6 +10,14 @@
 # refusal is about the language having no null **value**, and a JSON document is
 # free to contain the word; what it cannot do is spell a Heroes name with it.
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_NOT_AN_OBJECT: str
+    "not_an_object"
+
 variant Json
     nothing
     boolean
@@ -140,7 +148,7 @@ function field(j: Json, key: str) -> Json?
     return match j
         .object o => o.fields[key]
         .nothing | .boolean _ | .number _ | .text _ | .array _ =>
-            fail("not_an_object", "asked for `" + key + "` of a value that is not an object")
+            fail(ERR_NOT_AN_OBJECT, "asked for `" + key + "` of a value that is not an object")
 
 test "rendering is canonical"
     assert render(.nothing) == "null"

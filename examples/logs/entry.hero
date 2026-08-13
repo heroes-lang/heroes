@@ -9,6 +9,20 @@
 # count is reported, so "skipped" is a number the reader sees rather than a
 # silence.
 
+## Error codes
+#
+# One `constant` per code, so a typo is `error[unknown_name]` here rather
+# than a comparison that is quietly false forever (panel 034 R4).
+
+constant ERR_NO_SOURCE: str
+    "no_source"
+
+constant ERR_NO_STAMP: str
+    "no_stamp"
+
+constant ERR_SHORT_LINE: str
+    "short_line"
+
 record Entry
     stamp: str
     level: str
@@ -74,11 +88,11 @@ function first_words(text: str, n: i64) -> [str]
 function read_line(text: str) -> Entry?
     parts = first_words(text, 3)
     if parts[0] == "" || parts[1] == "" || parts[2] == ""
-        return fail("short_line", "a line is `stamp LEVEL source: message`")
+        return fail(ERR_SHORT_LINE, "a line is `stamp LEVEL source: message`")
     if parts[2][parts[2].len() - 1] != ':'
-        return fail("no_source", "the third word must end in `:`")
+        return fail(ERR_NO_SOURCE, "the third word must end in `:`")
     if index_of(parts[0], 'T') < 0
-        return fail("no_stamp", "the first word must be a timestamp, `DATEThh:mm:ss`")
+        return fail(ERR_NO_STAMP, "the first word must be a timestamp, `DATEThh:mm:ss`")
     source = parts[2].slice(from: 0, to: parts[2].len() - 1)
     return ok(Entry(stamp: parts[0], level: parts[1], source: source, message: parts[3]))
 
@@ -112,10 +126,10 @@ test "a line comes apart into four pieces, message included"
     assert one.message == "the thing broke, twice"
 
 test "each way of not being a log line has its own code"
-    assert code_of("") == "short_line"
-    assert code_of("2026-08-13T22:04:11 ERROR") == "short_line"
-    assert code_of("2026-08-13T22:04:11 ERROR emit the thing") == "no_source"
-    assert code_of("yesterday ERROR emit: the thing") == "no_stamp"
+    assert code_of("") == ERR_SHORT_LINE
+    assert code_of("2026-08-13T22:04:11 ERROR") == ERR_SHORT_LINE
+    assert code_of("2026-08-13T22:04:11 ERROR emit the thing") == ERR_NO_SOURCE
+    assert code_of("yesterday ERROR emit: the thing") == ERR_NO_STAMP
 
 test "a file keeps what it could read and counts what it could not"
     r = read("2026-08-13T09:00:00 INFO a: one\nnonsense\n\n2026-08-13T10:00:00 WARN b: two\n")
