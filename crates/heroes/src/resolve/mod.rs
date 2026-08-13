@@ -54,6 +54,7 @@ mod cycles;
 mod decls;
 mod errors;
 mod exprs;
+mod places;
 mod qualified;
 mod resolved;
 mod scope;

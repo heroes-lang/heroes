@@ -16,6 +16,7 @@ use crate::source::Source;
 use crate::syntax::{Ast, Block, StmtId, StmtKind};
 
 use super::scope::Binding;
+use super::places;
 use super::{exprs, types, Resolver};
 
 /// A block, in its own scope.
@@ -53,7 +54,7 @@ pub(super) fn statement(r: &mut Resolver, ast: &Ast, src: &Source, id: StmtId) {
         // it would make the unused rule unable to see any cell at all.
         StmtKind::Mutate { place, value } => {
             exprs::expr(r, ast, src, *value);
-            exprs::place(r, ast, src, *place);
+            places::place(r, ast, src, *place);
         }
         StmtKind::Return(Some(value)) => exprs::expr(r, ast, src, *value),
         StmtKind::Assert(value) | StmtKind::Expr(value) => exprs::expr(r, ast, src, *value),
