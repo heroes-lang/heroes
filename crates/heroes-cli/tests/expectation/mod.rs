@@ -65,7 +65,7 @@ pub fn check(
     // four different causes behind one message. That cost a CI round trip on the
     // first Linux run this project ever had (M-program-corpus): the only machine
     // that could answer the question was the one that could not be asked twice.
-    let ending = match output.status.code() {
+    let ended = match output.status.code() {
         Some(code) => format!("exit {code}"),
         None => "killed by a signal".to_string(),
     };
@@ -73,7 +73,7 @@ pub fn check(
         String::from_utf8_lossy(&output.stdout),
         expected,
         "{} prints something else at {level} — the same corpus, one configuration apart\n  \
-         it ended: {ending}\n  its stderr was:\n{}",
+         it ended: {ended}\n  its stderr was:\n{}",
         case.display(),
         String::from_utf8_lossy(&output.stderr)
     );
