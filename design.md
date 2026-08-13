@@ -833,7 +833,19 @@ forward declarations, mutual recursion is free, and the model can emit functions
 this language — it carries forty years of conflicting widths, so a reader must know the platform to
 know what it means, where `i64` is ambiguous to nobody. A literal takes the width its context asks
 for and is an `i64` where nothing asks; overflow aborts at every width; `s[i]` is a `u8`;
-`fit_<width>` converts, returning `T?` where the value may not fit and `T` where it cannot.
+`to_<width>` converts, returning `T?` — and the naming is panel 017's rule applied rather than a
+new one: it renamed `.str()` to `to_str` so *"the three conversions share one scheme and a model can
+derive the third from the two the spec already lists"*, and a family called `fit_` broke exactly
+that. `to_i64` takes an `f64` too, so **the name says whether a conversion can fail**: `to_str` and
+`to_f64` cannot and give a value, every `to_<width>` can and gives a `T?`.
+
+**128-bit integers are refused, and the reason is C rather than taste** (measured 2026-08-13).
+`__int128` is a clang extension and §7 says C11; C cannot express a literal above 2^63 at all
+(`integer literal is too large to be represented in any integer type`), so the emitter could not
+write a constant; and `inttypes.h` has no `PRId128`, so the runtime could not print one. Against
+that, §1.11 gives no pull: no C header declares a 128-bit integer in a portable API, which is what
+justified all eight of the widths above. **What would make this row wrong**: a header this language
+must bind that declares one — and the falsifier goes in `tests/golden/` the day it appears.
 
 **This paragraph said the opposite until 2026-08-12 and the correction is the record, not a
 rewrite** (panel 043). It read *"One integer type only. No `i8`, `u32`, `usize`… Keep them out of v1
@@ -1141,7 +1153,7 @@ function advance(@l: Lex)
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + fit_i64(l.here() - '0').must()
+        v @ v * 10 + to_i64(l.here() - '0').must()
         advance(@l)
     return v
 ```
@@ -2819,7 +2831,7 @@ function is_letter(c: u8) -> bool
 function read_number(@l: Lex) -> i64
     v: i64 @ 0
     while !l.at_end() && l.here().is_digit()
-        v @ v * 10 + fit_i64(l.here() - '0').must()
+        v @ v * 10 + to_i64(l.here() - '0').must()
         advance(@l)
     return v
 

@@ -61,7 +61,7 @@ function main()
         i @ i + 1
     print(total, " ", area(.seg(from: p)), " ", chain(4).default(0 - 1))
     print(xs.len(), " ", join(map(xs, show), ","))
-    print(chars("ab")[0], slice("abc", from: 0, to: 2), to_i64(1.9), to_f64(2))
+    print(chars("ab")[0], slice("abc", from: 0, to: 2), to_i64(1.9).must(), to_f64(2))
 
 test "the closure list runs"
     assert 1 + 1 == 2

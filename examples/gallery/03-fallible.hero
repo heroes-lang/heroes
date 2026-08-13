@@ -8,7 +8,7 @@
 function digit_of(c: u8) -> i64?
     if c < '0' || c > '9'
         return fail("not_a_digit", "expected 0-9")
-    return ok(fit_i64(c - '0').must())
+    return ok(to_i64(c - '0').must())
 
 # Reads a whole non-negative number. Empty input is an error, not a zero.
 function number_of(text: str) -> i64?

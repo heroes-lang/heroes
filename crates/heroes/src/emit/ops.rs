@@ -382,25 +382,64 @@ pub(super) fn call(
         // conversion into a `-Wtautological-constant-out-of-range-compare`, which
         // §7 compiles with `-Werror`-adjacent flags.
         Callee::Builtin(index)
-            if BUILTINS[index as usize].name.starts_with("fit_") && target.is_some() =>
+            if BUILTINS[index as usize].name.starts_with("to_")
+                && crate::types::INT_KINDS
+                    .iter()
+                    .any(|k| k.name() == &BUILTINS[index as usize].name[3..])
+                && target.is_some() =>
         {
             let into = target.expect("just matched");
             let result = function.value_type(match function.args_of(args).first() {
                 Some(crate::ir::Arg::Value(v)) => *v,
                 _ => return,
             });
+            let name = BUILTINS[index as usize].name;
+            let to = *crate::types::INT_KINDS
+                .iter()
+                .find(|k| k.name() == &name[3..])
+                .expect("the name was checked into existence by `resolve`");
+            // `lookup`, not `intern`: the checker already made this `T?` when it
+            // typed the call, so a miss here would mean the two passes disagree
+            // about the result type rather than that a type is missing.
+            let union = match checked
+                .types
+                .lookup(Ty::Int(to))
+                .and_then(|inner| checked.types.lookup(Ty::Fallible(inner)))
+            {
+                Some(id) => types.names.option_of(id),
+                None => return,
+            };
+            // **The `f64` source is `to_i64`'s alone and takes its own path.**
+            // Its range question is not a comparison against two widths; it is
+            // `hero_f64_fits_int`, whose predicate is written in the runtime with
+            // the reason two obvious spellings of it are wrong. The conversion
+            // itself truncates toward zero and cannot fail once the predicate
+            // holds.
             let from = match checked.types.get(result) {
                 Ty::Int(kind) => kind,
+                Ty::F64 => {
+                    w.line(&format!("    if (hero_f64_fits_int({})) {{", arguments[0]));
+                    w.line(&format!(
+                        "        {into} = ({union}){{.tag = INT64_C(0), .as.ok = hero_f64_to_int({})}};",
+                        arguments[0]
+                    ));
+                    w.line("    } else {");
+                    w.line(&format!(
+                        "        {into} = ({union}){{.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}};"
+                    ));
+                    w.line("    }");
+                    return;
+                }
                 _ => return,
             };
             let name = BUILTINS[index as usize].name;
             let to = *crate::types::INT_KINDS
                 .iter()
-                .find(|k| k.name() == &name[4..])
+                .find(|k| k.name() == &name[3..])
                 .expect("the name was checked into existence by `resolve`");
             // **Both bounds are asked of the two RANGES, not of the two shapes.**
             // A first version derived them from `signed()` and `bits()` by hand
-            // and got `fit_i8(-129)` wrong: it emitted a low test only when the
+            // and got `to_i8(-129)` wrong: it emitted a low test only when the
             // target's floor was zero, so a *signed narrower* target — whose
             // floor is -128, not 0 — was checked at the top and nowhere else,
             // and -129 walked through. Found by this milestone's own adversarial

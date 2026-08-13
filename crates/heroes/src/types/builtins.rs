@@ -141,21 +141,27 @@ pub(super) fn call(
         ("cstr", [one]) => {
             return arg_error(checker, ast, src, "cstr", "`str`", *one, span)
         }
-        ("to_i64", [one]) if checker.out.types.get(*one) == Ty::F64 => checker.out.types.int(),
-        // `fit_<width>(x) -> <width>?`. The source must be an integer of some
-        // width — converting an `f64` is `to_i64`'s job and aborts, which is a
-        // different question with a different answer (panel 042 Q2).
+        // **`to_<width>(x) -> <width>?`, and `to_i64` is one of these.**
+        //
+        // The source is an integer of any width, or — for `to_i64` alone — an
+        // `f64`, which is the conversion this arm absorbed when the family took
+        // the `to_` scheme (author decision 2026-08-13). One name, one shape:
+        // converting to an `i64` can fail whether the source is a float above
+        // 2^63 or a `u64` above it, so a single fallible answer is the honest one
+        // and the old aborting form is gone.
         (name, [one])
-            if name.starts_with("fit_")
-                && crate::types::INT_KINDS.iter().any(|k| k.name() == &name[4..]) =>
+            if name.starts_with("to_")
+                && crate::types::INT_KINDS.iter().any(|k| k.name() == &name[3..]) =>
         {
-            if !matches!(checker.out.types.get(*one), Ty::Int(_)) {
-                return arg_error(checker, ast, src, name, "an integer", *one, span);
-            }
             let kind = *crate::types::INT_KINDS
                 .iter()
-                .find(|k| k.name() == &name[4..])
+                .find(|k| k.name() == &name[3..])
                 .expect("just matched");
+            let from_f64 = checker.out.types.get(*one) == Ty::F64 && kind.name() == "i64";
+            if !from_f64 && !matches!(checker.out.types.get(*one), Ty::Int(_)) {
+                let allowed = if kind.name() == "i64" { "an integer or an `f64`" } else { "an integer" };
+                return arg_error(checker, ast, src, name, allowed, *one, span);
+            }
             let target = checker.out.types.intern(Ty::Int(kind));
             // **`T?` at every pair, including the ones that cannot fail** (author
             // ratification 2026-08-13, closing panel 043's Q1 and restoring the
@@ -180,7 +186,7 @@ pub(super) fn call(
             //   M-selfhost-probe on that judge's own measurement, so this was the
             //   cheap moment and every later one is dearer.
             //
-            // The cost is real and not hidden: `fit_i64(l.here() - '0')` in the
+            // The cost is real and not hidden: `to_i64(l.here() - '0')` in the
             // calculator's lexer now needs a `.must()` it can never exercise.
             // §1.4 calls that redundancy spent where errors cannot occur, and it
             // is the price of the three reasons above.

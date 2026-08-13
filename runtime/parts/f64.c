@@ -161,11 +161,20 @@ HeroStr hero_str_identity(HeroStr s) {
  *     2^63 and is UB.
  *   - HALF-OPEN on the right, because 2^63-1 is not representable as a double:
  *     the largest acceptable value is the double just below 2^63. */
+/* **Was an aborting conversion until 2026-08-13; now a question.** `to_i64` took
+ * the `to_` scheme with the seven other widths and became fallible with them, so
+ * the range check that used to end the program now decides a tag: the emitter
+ * asks this, then builds an `ok` or a `fail`.
+ *
+ * The test is `v >= -0x1p63 && v < 0x1p63` and it is written that way because two
+ * plausible spellings are WRONG: `v <= (double)INT64_MAX` accepts 2^63, since
+ * that cast rounds UP, and `v > -9223372036854775809.0` rejects INT64_MIN. On
+ * arm64 an unchecked cast does not trap — `fcvtzs` saturates — so this predicate
+ * is the only thing between a caller and a silent INT64_MAX. */
+bool hero_f64_fits_int(double v) { return v >= -0x1p63 && v < 0x1p63; }
+
 int64_t hero_f64_to_int(double v) {
-    if (!(v >= -0x1p63 && v < 0x1p63)) {
-        hero_panic("to_i64 of an f64 outside the range of i64");
-    }
-    return (int64_t)v; /* truncates toward zero, as spec line 131 requires */
+    return (int64_t)v; /* truncates toward zero, as the spec requires */
 }
 
 /* No range to check: every int64_t converts. It is lossy above 2^53 — round to

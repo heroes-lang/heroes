@@ -53,7 +53,7 @@ function main()
     # These emit now, and are here to prove the refusals are not about them —
     # `range` among them, which is what step 4 changed.
     print(sort(xs)[0], join(chars("ab"), "-"), len(slice(xs, from: 0, to: 1)))
-    print(to_i64(1.5), to_f64(2), to_str(3))
+    print(to_i64(1.5).must(), to_f64(2), to_str(3))
     print(len(range(from: 0, to: 2)))
     ps = [P(x: 2), P(x: 1)]
     print(len(sort(ps)))      #~ builtin

@@ -54,9 +54,10 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `T?` | fallible: a `T`, or an error |
 
 - No implicit conversions, widths included: `a + b` needs both the same type, and
-  `1 + 2.0` is an error. `to_f64(x)` and `to_i64(x)` convert between kinds of
-  number and abort out of range; `fit_i8(x)` … `fit_u64(x)` convert between
-  widths and return `T?` — or `T`, where the value cannot fail to fit.
+  `1 + 2.0` is an error. Convert with `to_<type>`, and the name says whether it
+  can fail: `to_str` and `to_f64` cannot, so they give a value; `to_i8` …
+  `to_u64` give a `T?`, because the number may not fit. `to_i64` takes an `f64`
+  too, truncating toward zero.
 - A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
   `u8` — otherwise `i64`. Overflow aborts at every width.
 - Character literals are `i64`: `'a'`, `'0'`, `' '`.
@@ -162,9 +163,9 @@ Value semantics has a price: `+` on `str` copies both sides and `push` copies th
 array, so accumulating either in a loop is quadratic. `join` is linear.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join(xs, sep)` · `sort` · `to_i64` (truncating; out of range aborts) ·
-`to_f64` · `to_str` · `fit_i8` `fit_i16` `fit_i32` `fit_i64` `fit_u8` `fit_u16`
-`fit_u32` `fit_u64` — and, written in
+`chars` · `keys` · `join(xs, sep)` · `sort` · `to_i64` (truncating) ·
+`to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
+`to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
 separator and exactly one trailing newline. An `f64` prints a point or

@@ -145,6 +145,7 @@ HeroStr hero_str_identity(HeroStr s);
  * arm64's `fcvtzs` saturates rather than trapping. `to_f64` cannot fail, and is
  * lossy above 2^53 — defined, silent, and Part 8's to record. */
 int64_t hero_f64_to_int(double v);
+bool hero_f64_fits_int(double v);
 double hero_int_to_f64(int64_t v);
 
 /* -- the failure side of `T?` (design.md §4.6) -------------------------------

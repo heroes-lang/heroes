@@ -47,10 +47,10 @@ pub struct Builtin {
     pub tier: Tier,
 }
 
-/// Sorted by name, searched linearly. Thirty-six entries need no index, and a
+/// Sorted by name, searched linearly. Thirty-five entries need no index, and a
 /// sorted table prints in a deterministic order — §4.16's rule for hole
 /// suggestions, applied to every list the compiler shows.
-pub const BUILTINS: [Builtin; 36] = [
+pub const BUILTINS: [Builtin; 35] = [
     Builtin { name: "all", tier: Tier::Heroes },
     Builtin { name: "args", tier: Tier::Heroes },
     Builtin { name: "any", tier: Tier::Heroes },
@@ -60,31 +60,6 @@ pub const BUILTINS: [Builtin; 36] = [
     Builtin { name: "exit", tier: Tier::Heroes },
     Builtin { name: "fail", tier: Tier::Runtime },
     Builtin { name: "filter", tier: Tier::Heroes },
-    // **One `fit_<width>` per width, and they are not `to_<width>`** (panel 042
-    // Q2, author ruling 3). `to_i64` and `to_f64` are the number-KIND pair and
-    // they abort; these are the width pair and they return `T?`, because a value
-    // may simply not fit. Two names rather than one overloaded name is what every
-    // language that has both does — Swift added a label (`exactly:`), Rust added
-    // a name (`try_into`), and neither changed the incumbent's return type.
-    //
-    // The name says the question: `fit_u8(x)` asks whether `x` fits in a `u8`.
-    //
-    // **A widening returns `T`, not `T?`** (step 7, pending author ratification;
-    // `docs/panel/043`). This comment asserted the opposite for one step, having
-    // been written at step 6 and left behind when step 7 changed the rule — which
-    // is CLAUDE.md §11's named failure mode, committed inside the milestone that
-    // found three instances of it elsewhere. It also credited the ground to panel
-    // 042 Q2, and panel 043's compiler-engineer — who cast that veto — records
-    // that 042 never ruled on a widening at all: its Q2 chose among *names*. The
-    // ruling being bent is the author's, and only the author's.
-    Builtin { name: "fit_i16", tier: Tier::Runtime },
-    Builtin { name: "fit_i32", tier: Tier::Runtime },
-    Builtin { name: "fit_i64", tier: Tier::Runtime },
-    Builtin { name: "fit_i8", tier: Tier::Runtime },
-    Builtin { name: "fit_u16", tier: Tier::Runtime },
-    Builtin { name: "fit_u32", tier: Tier::Runtime },
-    Builtin { name: "fit_u64", tier: Tier::Runtime },
-    Builtin { name: "fit_u8", tier: Tier::Runtime },
     Builtin { name: "find", tier: Tier::Heroes },
     Builtin { name: "fold", tier: Tier::Heroes },
     Builtin { name: "keys", tier: Tier::Runtime },
@@ -100,9 +75,32 @@ pub const BUILTINS: [Builtin; 36] = [
     Builtin { name: "read_file", tier: Tier::Heroes },
     Builtin { name: "slice", tier: Tier::Runtime },
     Builtin { name: "sort", tier: Tier::Runtime },
+    // **Eight width conversions, sharing the one scheme** (author decision
+    // 2026-08-13, over panel 042 Q2's "distinct names"). Panel 017 renamed
+    // `.str()` to `to_str` so that *"the three conversions share one scheme and a
+    // model can derive the third from the two the spec already lists"* — and
+    // `fit_<width>` broke exactly that rule: a model knowing `to_i64`, `to_f64`
+    // and `to_str` cannot derive `to_u8`, it has to be taught. Panel 044's blind
+    // judge proved it by reaching for `to_i64(text[i])` and noting its own miss.
+    //
+    // The rule is per NAME, not per call: `to_<T>` is fallible exactly when
+    // converting *to* `T` can fail. `to_str` and `to_f64` are total — every
+    // integer has a string and an `f64` — so they hand back a plain value.
+    // `to_i8` … `to_u64` hand back a `T?`, because a value may not fit.
+    //
+    // `to_i64` therefore absorbs the old `f64` conversion and becomes fallible
+    // with it: converting to an `i64` can fail whether the source is a float or a
+    // `u64`, so one name with one shape is the honest reading.
     Builtin { name: "to_f64", tier: Tier::Runtime },
+    Builtin { name: "to_i16", tier: Tier::Runtime },
+    Builtin { name: "to_i32", tier: Tier::Runtime },
     Builtin { name: "to_i64", tier: Tier::Runtime },
+    Builtin { name: "to_i8", tier: Tier::Runtime },
     Builtin { name: "to_str", tier: Tier::Runtime },
+    Builtin { name: "to_u16", tier: Tier::Runtime },
+    Builtin { name: "to_u32", tier: Tier::Runtime },
+    Builtin { name: "to_u64", tier: Tier::Runtime },
+    Builtin { name: "to_u8", tier: Tier::Runtime },
     Builtin { name: "write_file", tier: Tier::Heroes },
 ];
 

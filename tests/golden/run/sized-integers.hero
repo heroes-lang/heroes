@@ -36,9 +36,9 @@ function main()
     print("top ", top, " ", hex, " ", top == hex)
 
     byte: u8 @ 7
-    print("widen ", fit_i64(byte).must() * 100)
-    print("narrow ", fit_u8(300).is_err(), " ", fit_u8(42).must())
-    print("signed ", fit_u8(-1).is_err())
+    print("widen ", to_i64(byte).must() * 100)
+    print("narrow ", to_u8(300).is_err(), " ", to_u8(42).must())
+    print("signed ", to_u8(-1).is_err())
 
     text = "A9"
     print("bytes ", text[0], " ", text[1], " ", text[0] == 'A')
@@ -46,25 +46,25 @@ function main()
 test "a literal takes the width its context asks for"
     small: u8 @ 255
     edge: i8 @ -128
-    assert fit_i64(small).must() == 255
-    assert fit_i64(edge).must() == -128
+    assert to_i64(small).must() == 255
+    assert to_i64(edge).must() == -128
 
 test "a widening cannot fail and says so"
     b: u8 @ 9
-    w: i64 = fit_i64(b).must()
+    w: i64 = to_i64(b).must()
     assert w == 9
 
 test "a narrowing can fail and says so"
-    assert fit_u8(255).must() == 255
-    assert fit_u8(256).is_err()
-    assert fit_i8(-129).is_err()
-    assert fit_i8(-128).must() == -128
+    assert to_u8(255).must() == 255
+    assert to_u8(256).is_err()
+    assert to_i8(-129).is_err()
+    assert to_i8(-128).must() == -128
 
 test "unsigned is not signed"
-    assert fit_u8(-1).is_err()
-    assert fit_u32(-1).is_err()
+    assert to_u8(-1).is_err()
+    assert to_u32(-1).is_err()
     top: u64 @ 18446744073709551615
-    assert fit_i64(top).is_err()
+    assert to_i64(top).is_err()
 
 test "a byte is a byte"
     s = "hi"

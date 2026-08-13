@@ -36,7 +36,7 @@ function diagonal_of(width: i64, height: i64) -> f64
 
 # `pow` is C's, `floor` is C's, and the rounding is yours.
 function rounded_power(base: f64, exponent: f64) -> i64
-    return to_i64(floor(pow(base: base, exponent: exponent)))
+    return to_i64(floor(pow(base: base, exponent: exponent))).must()
 
 test "the C library does the maths"
     assert hypotenuse(a: 3.0, b: 4.0) == 5.0
