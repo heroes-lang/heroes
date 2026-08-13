@@ -21,6 +21,7 @@ over cases somebody thought of.
 
 | directory | what it is |
 |---|---|
+| `assembler/` | a register machine, assembled and run: two passes because a jump may name a label further down, an encoding and its decoder written from one set of `constant`s, and a run bounded by fuel |
 | `maze/` | the shortest way from `S` to `E`, drawn: breadth-first search, a queue that only grows because removing from the front copies the array, and one `{i64: i64}` doing both jobs — the visited set and the way back |
 | `spreadsheet/` | a sheet of formulas, evaluated: cells that read cells, `SUM` over a rectangle, and a **cycle reported rather than a stack overflow**. The one program that ends non-zero on purpose |
 | `markdown/` | Markdown to plain text, in four modules: one line's markup, a line-oriented block grammar, a page, and the program. `continue` as a `match` arm body, and two `str` parameters that must be named at the call site |

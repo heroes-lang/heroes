@@ -1,0 +1,96 @@
+# A tiny assembler, and the machine it assembles for.
+#
+#     heroes run examples/assembler/main.hero -- examples/assembler/sample.asm
+#     heroes run examples/assembler/main.hero -- examples/assembler/sample.asm listing
+#
+#     main.hero       the program: arguments, the file, the two views
+#     machine.hero    four registers, a program counter, and fuel
+#     assemble.hero   two passes: where the labels are, then what the words say
+#     program.hero    the instruction set, and one line of assembly
+#
+# What it exercises: an encoding and its decoder written from **one** set of
+# `constant`s so they cannot drift, a two-pass algorithm whose second pass exists
+# only because a jump may name a label further down, and a bounded run — a
+# program that loops forever is a program, and a corpus that hangs is a corpus
+# nobody runs.
+
+use assemble
+use machine
+use program
+
+constant FUEL: i64
+    10000
+
+function main()
+    given = args()
+    if len(given) == 0
+        print("usage: assembler <file.asm> [listing]")
+        exit(2)
+    match read_file(given[0])
+        .err e    => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text  => build(text, given)
+
+function stop(message: str)
+    print(message)
+    exit(1)
+
+function build(text: str, given: [str])
+    match assemble.assemble(program.read(text))
+        .err e => stop(e.code + ": " + e.msg)
+        .ok out => show(out, given)
+
+function show(out: assemble.Assembled, given: [str])
+    if len(given) > 1 && given[1] == "listing"
+        for line in listing(out.code)
+            print(line)
+        return
+    match machine.run(out.code, FUEL)
+        .err e     => stop(e.code + ": " + e.msg)
+        .ok output =>
+            for line in output
+                print(line)
+            print(out.code.len() / program.WORDS, " instructions, ", len(output), " lines out")
+
+# The assembled words, three to a row, with the instruction's index beside them
+# — the view that shows a jump target is an offset and not a line number.
+function listing(code: [i64]) -> [str]
+    out: [str] @ []
+    at: i64 @ 0
+    while at + program.WORDS <= code.len()
+        row = [(at / program.WORDS).to_str(), name_of(code[at]), code[at + 1].to_str(), code[at + 2].to_str()]
+        out @ out.push(join(row, " "))
+        at @ at + program.WORDS
+    return out
+
+function name_of(opcode: i64) -> str
+    if opcode == program.OP_LOAD
+        return "load"
+    if opcode == program.OP_COPY
+        return "copy"
+    if opcode == program.OP_ADD
+        return "add"
+    if opcode == program.OP_SUB
+        return "sub"
+    if opcode == program.OP_PRINT
+        return "print"
+    if opcode == program.OP_JMPZ
+        return "jmpz"
+    if opcode == program.OP_JMP
+        return "jmp"
+    if opcode == program.OP_HALT
+        return "halt"
+    return "?"
+
+test "the sample assembles, runs, and prints the first eight Fibonacci numbers"
+    text = read_file("examples/assembler/sample.asm").must()
+    out = assemble.assemble(program.read(text)).must()
+    assert machine.run(out.code, FUEL).must() == ["1", "1", "2", "3", "5", "8", "13", "21"]
+
+test "the listing has one row per instruction"
+    out = assemble.assemble(program.read("load r0, 1\nprint r0\nhalt\n")).must()
+    assert listing(out.code) == ["0 load 0 1", "1 print 0 0", "2 halt 0 0"]
+
+test "every opcode has a name, and the names are the mnemonics"
+    for opcode in range(from: 0, to: 8)
+        assert name_of(opcode) != "?"
+    assert name_of(99) == "?"

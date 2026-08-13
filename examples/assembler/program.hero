@@ -1,0 +1,206 @@
+# The instruction set, and one line of assembly.
+#
+# A register machine with four registers and seven instructions, which is the
+# smallest set that can compute something worth printing:
+#
+#     load  rD, n        rD = n
+#     copy  rD, rS       rD = rS
+#     add   rD, rS       rD = rD + rS
+#     sub   rD, rS       rD = rD - rS
+#     print rD           write rD
+#     jmpz  rS, label    go to label when rS is zero
+#     jmp   label        go there
+#     halt               stop
+#
+# **Every instruction is three words**: the opcode and two operands, whether it
+# uses them or not. Fixed width because the assembler resolves a label to an
+# *instruction index*, and an index is only arithmetic when instructions are all
+# the same size — a variable-width encoding would need a second pass over
+# addresses rather than over labels.
+#
+# A line is `[label:] [mnemonic [operand, operand]] [; comment]`, and any part
+# may be missing.
+
+constant OP_LOAD: i64
+    0
+
+constant OP_COPY: i64
+    1
+
+constant OP_ADD: i64
+    2
+
+constant OP_SUB: i64
+    3
+
+constant OP_PRINT: i64
+    4
+
+constant OP_JMPZ: i64
+    5
+
+constant OP_JMP: i64
+    6
+
+constant OP_HALT: i64
+    7
+
+constant WORDS: i64
+    3
+
+constant REGISTERS: i64
+    4
+
+record Line
+    label: str
+    mnemonic: str
+    operands: [str]
+    number: i64
+
+## Text
+
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == 13
+
+function trimmed(line: str) -> str
+    from: i64 @ 0
+    while from < line.len() && is_space(line[from])
+        from @ from + 1
+    to: i64 @ line.len()
+    while to > from && is_space(line[to - 1])
+        to @ to - 1
+    return line.slice(from: from, to: to)
+
+function split_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == '\n'
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+function index_of(text: str, c: u8) -> i64
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == c
+            return i
+        i @ i + 1
+    return 0 - 1
+
+# Split at `c`, with the empty pieces dropped. `add r0, r1` and `add r0,r1` are
+# the same instruction: the separator is the comma and the spaces are noise.
+function split_on(text: str, c: u8) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i <= text.len()
+        if i == text.len() || text[i] == c
+            piece = trimmed(text.slice(from: start, to: i))
+            if piece != ""
+                out @ out.push(piece)
+            start @ i + 1
+        i @ i + 1
+    return out
+
+## Lines
+
+# One source line, taken apart. Nothing here is refused — an unknown mnemonic is
+# the assembler's business, and a reader who mistypes one wants to be told which
+# line it was on, which is why `number` travels with it.
+function read_line(text: str, number: i64) -> Line
+    body: str @ text
+    at = index_of(body, ';')
+    if at >= 0
+        body @ body.slice(from: 0, to: at)
+    body @ trimmed(body)
+    label: str @ ""
+    colon = index_of(body, ':')
+    if colon >= 0
+        label @ trimmed(body.slice(from: 0, to: colon))
+        body @ trimmed(body.slice(from: colon + 1, to: body.len()))
+    if body == ""
+        return Line(label: label, mnemonic: "", operands: [], number: number)
+    space = index_of(body, ' ')
+    if space < 0
+        return Line(label: label, mnemonic: body, operands: [], number: number)
+    mnemonic = body.slice(from: 0, to: space)
+    rest = body.slice(from: space + 1, to: body.len())
+    return Line(label: label, mnemonic: mnemonic, operands: split_on(rest, ','), number: number)
+
+function read(text: str) -> [Line]
+    out: [Line] @ []
+    number: i64 @ 0
+    for line in split_lines(text)
+        number @ number + 1
+        out @ out.push(read_line(line, number))
+    return out
+
+## Operands
+
+# `r0` … `r3`, and nothing else. The message names the range, because a reader
+# who wrote `r9` needs to know what would have fitted (§4.17).
+function register_of(word: str, number: i64) -> i64?
+    if word.len() != 2 || word[0] != 'r'
+        return fail("bad_register", "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
+    n = to_i64(word[1] - '0').must()
+    if n < 0 || n >= REGISTERS
+        return fail("bad_register", "line " + number.to_str() + ": `" + word + "` is not a register — r0 to r3")
+    return ok(n)
+
+function number_of(word: str, number: i64) -> i64?
+    body: str @ word
+    negative: bool @ false
+    if body.len() > 0 && body[0] == '-'
+        negative @ true
+        body @ body.slice(from: 1, to: body.len())
+    if body.len() == 0
+        return fail("bad_number", "line " + number.to_str() + ": `" + word + "` is not a number")
+    v: i64 @ 0
+    for i in range(from: 0, to: body.len())
+        if body[i] < '0' || body[i] > '9'
+            return fail("bad_number", "line " + number.to_str() + ": `" + word + "` is not a number")
+        v @ v * 10 + to_i64(body[i] - '0').must()
+    if negative
+        return ok(-v)
+    return ok(v)
+
+test "a line comes apart into its four pieces"
+    plain = read_line("  add r0, r1   ; sum", 7)
+    assert plain.label == ""
+    assert plain.mnemonic == "add"
+    assert plain.operands == ["r0", "r1"]
+    assert plain.number == 7
+
+test "a label may stand alone or open a line"
+    alone = read_line("loop:", 1)
+    assert alone.label == "loop"
+    assert alone.mnemonic == ""
+    both = read_line("loop: jmp loop", 2)
+    assert both.label == "loop"
+    assert both.mnemonic == "jmp"
+    assert both.operands == ["loop"]
+
+test "a comment and blank space leave nothing behind"
+    empty = read_line("   ; nothing at all", 3)
+    assert empty.label == ""
+    assert empty.mnemonic == ""
+    assert empty.operands == []
+
+test "spaces around a comma are noise"
+    assert read_line("add r0,r1", 1).operands == ["r0", "r1"]
+    assert read_line("add  r0 ,  r1 ", 1).operands == ["r0", "r1"]
+
+test "a register is r0 to r3, and a number may be negative"
+    assert register_of("r2", 1).must() == 2
+    assert register_of("r4", 1).is_err()
+    assert register_of("rx", 1).is_err()
+    assert register_of("r", 1).is_err()
+    assert number_of("42", 1).must() == 42
+    assert number_of("-7", 1).must() == 0 - 7
+    assert number_of("x", 1).is_err()
+    assert number_of("-", 1).is_err()

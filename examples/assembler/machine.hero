@@ -1,0 +1,90 @@
+# The machine the assembler assembles for.
+#
+# Assembling without running proves nothing: an encoding is only right if
+# something decodes it, and the two halves are written from the same constants
+# in `program.hero` so they cannot drift apart.
+#
+# **The run is bounded by fuel.** A program that loops forever is a program and
+# not a defect in the machine — but a corpus that hangs is a corpus nobody runs,
+# and a test suite has no operator to press ^C. So the machine stops and says
+# `out_of_fuel`, which is a result the caller can assert.
+
+use assemble
+use program
+
+record Machine
+    registers: [i64]
+    pc: i64
+    output: [str]
+
+function run(code: [i64], fuel: i64) -> [str]?
+    m: Machine @ Machine(registers: [0, 0, 0, 0], pc: 0, output: [])
+    left: i64 @ fuel
+    while left > 0
+        left @ left - 1
+        if m.pc < 0 || m.pc + program.WORDS > code.len()
+            return fail("ran_off_the_end", "the machine stepped past the last instruction")
+        opcode = code[m.pc]
+        a = code[m.pc + 1]
+        b = code[m.pc + 2]
+        if opcode == program.OP_HALT
+            return ok(m.output)
+        _ = step(@m, opcode: opcode, a: a, b: b)?
+    return fail("out_of_fuel", "the program ran for " + fuel.to_str() + " steps without halting")
+
+# One instruction. The program counter moves here and nowhere else, so a jump is
+# the arm that does *not* fall through to the advance.
+function step(@m: Machine, opcode: i64, a: i64, b: i64) -> i64?
+    if opcode == program.OP_LOAD
+        m.registers[a] @ b
+    else if opcode == program.OP_COPY
+        m.registers[a] @ m.registers[b]
+    else if opcode == program.OP_ADD
+        m.registers[a] @ m.registers[a] + m.registers[b]
+    else if opcode == program.OP_SUB
+        m.registers[a] @ m.registers[a] - m.registers[b]
+    else if opcode == program.OP_PRINT
+        m.output @ m.output.push(m.registers[a].to_str())
+    else if opcode == program.OP_JMP
+        m.pc @ a
+        return ok(opcode)
+    else if opcode == program.OP_JMPZ
+        if m.registers[a] == 0
+            m.pc @ b
+            return ok(opcode)
+    else
+        return fail("bad_opcode", "the code holds " + opcode.to_str() + ", which is not an instruction")
+    m.pc @ m.pc + program.WORDS
+    return ok(opcode)
+
+# Assemble and run, which is what the program does — and what every test below
+# asks, so the encoding and the decoding are checked against each other rather
+# than each against a table someone wrote twice.
+function execute(text: str, fuel: i64) -> [str]?
+    out = assemble.assemble(program.read(text))?
+    return run(out.code, fuel)
+
+test "load, add and print do what their names say"
+    assert execute("load r0, 2\nload r1, 3\nadd r0, r1\nprint r0\nhalt\n", 100).must() == ["5"]
+
+test "copy and sub, and a register left alone stays zero"
+    assert execute("load r0, 9\ncopy r1, r0\nsub r1, r0\nprint r1\nprint r3\nhalt\n", 100).must() == ["0", "0"]
+
+test "a loop counts down and stops"
+    countdown = "load r0, 3\nload r1, 1\nagain:\n  print r0\n  sub r0, r1\n  jmpz r0, done\n  jmp again\ndone:\n  halt\n"
+    assert execute(countdown, 100).must() == ["3", "2", "1"]
+
+test "a program that never halts runs out of fuel instead of running forever"
+    assert code_of("here:\n  jmp here\n", 50) == "out_of_fuel"
+
+test "falling off the end is not the same as halting"
+    assert code_of("load r0, 1\n", 100) == "ran_off_the_end"
+
+test "the fuel is spent per instruction, so a short program needs little"
+    assert execute("halt\n", 1).must() == []
+    assert code_of("load r0, 1\nhalt\n", 1) == "out_of_fuel"
+
+function code_of(text: str, fuel: i64) -> str
+    return match execute(text, fuel)
+        .ok _  => "no_error"
+        .err e => e.code
