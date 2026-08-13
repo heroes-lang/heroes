@@ -55,6 +55,7 @@ mod builtins;
 pub(crate) mod calls;
 mod checked;
 mod construct;
+mod contextual;
 mod counted;
 mod decls;
 mod errors;
