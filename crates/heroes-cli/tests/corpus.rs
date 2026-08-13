@@ -253,6 +253,70 @@ fn at_least_one_program_reaches_the_end_of_main_rather_than_exiting() {
     );
 }
 
+/// The C a corpus program generates compiles with **no warnings at all** — with
+/// one exemption that is read off the program and written to fire when it ends.
+///
+/// `tests/golden/run/` has been held to this since M-scalars-run and the corpus
+/// was not, which is how a dead temporary reached a real program: `_ = f(x)?` on
+/// a fallible left an `int64_t t72;` that nothing read, and clang said so on
+/// every build of `examples/maze/` while every golden stayed silent.
+///
+/// **The exemption is `ptr`, and it is not a list of file names.** A program that
+/// hands C an `@` parameter of type `ptr` emits `void **` where the header wants
+/// `sqlite3 **`, and C converts `void *` to any object pointer implicitly but
+/// does not convert `void **`. That warning is *true* and is forwarded rather
+/// than silenced by an M-ffi-ladder decision recorded in
+/// `examples/sqlite/main.hero`'s own header: a cast the emitter inserted would
+/// compile clean and hide a real limit of `ptr`, and the repair is the C-width
+/// type vocabulary §4.19 defers to Part 7 item 10.
+///
+/// So the assertion runs **both ways**. A program with no `ptr` out-parameter
+/// must produce no warning at all; one that has them must produce warnings, and
+/// every one of them must be that warning. When Part 7 item 10 lands and `ptr`
+/// stops erasing the type, this test fails on the second half and the exemption
+/// is deleted by whoever made it obsolete — which is what a premise with a test
+/// under it looks like.
+#[test]
+fn the_corpus_generates_c_that_compiles_without_a_single_warning() {
+    let root = workspace_root();
+    for dir in program_directories() {
+        let main = relative(&dir.join("main.hero"));
+        let erases_a_type = module_texts(&dir).iter().any(|text| lends_a_ptr(text));
+        // `build` is -O0 and `run` is -O2, so the two verbs are the two
+        // configurations. clang's warnings reach stderr even on success.
+        for verb in ["build", "run"] {
+            let out = heroes(&root, &[verb.to_string(), main.clone()]);
+            let noise = String::from_utf8_lossy(&out.stderr);
+            let warnings: Vec<&str> = noise.lines().filter(|l| l.contains("warning:")).collect();
+            if !erases_a_type {
+                assert!(
+                    warnings.is_empty(),
+                    "{main} under `{verb}` produced clang warnings:\n{}",
+                    warnings.join("\n")
+                );
+                continue;
+            }
+            assert!(
+                !warnings.is_empty(),
+                "{main} lends a `ptr` and no longer warns — if `ptr` stopped erasing \
+                 the type, delete this exemption instead of widening it"
+            );
+            for one in &warnings {
+                assert!(
+                    one.contains("incompatible pointer types"),
+                    "{main} under `{verb}` warns about something other than `ptr`:\n{one}"
+                );
+            }
+        }
+    }
+}
+
+/// Whether a module hands C the address of a `ptr` — an `@` parameter of that
+/// type, which is what becomes `void **`.
+fn lends_a_ptr(text: &str) -> bool {
+    text.lines().any(|line| line.contains('@') && line.contains(": ptr"))
+}
+
 /// Every program directory is named in `examples/README.md`.
 ///
 /// The ROADMAP asks each program for "a `README` line saying what it
