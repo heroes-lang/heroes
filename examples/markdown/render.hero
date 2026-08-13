@@ -1,0 +1,112 @@
+# Blocks out, plain text in — the half that decides what the document *looks*
+# like once nothing is markup any more.
+#
+# Every block renders to a list of lines and the lines are joined once, at the
+# end. That is the shape the spec's own cost paragraph asks for: `+` on `str`
+# copies both sides, so building a page by concatenation is quadratic in its
+# length, and `join` is linear.
+
+use blocks
+
+# `c` repeated `n` times. `n` below zero is an empty string rather than an
+# abort: `range(from: 0, to: -1)` is already empty, so the loop simply does not
+# run, and there is no second rule to remember.
+function repeat(c: str, n: i64) -> str
+    out: [str] @ []
+    for _ in range(from: 0, to: n)
+        out @ out.push(c)
+    return join(out, "")
+
+# A heading is underlined the way a typewriter would do it — `=` for the top
+# level and `-` under everything else. The rule's width is the heading's own
+# byte length, which is its visible width for ASCII and is what §11 asks these
+# files to be.
+function underline(level: i64, text: str) -> str
+    if level <= 1
+        return repeat("=", text.len())
+    return repeat("-", text.len())
+
+function indent(lines: [str], prefix: str) -> [str]
+    out: [str] @ []
+    for line in lines
+        out @ out.push(prefix + line)
+    return out
+
+# One block, as the lines it becomes.
+function lines_of(b: blocks.Block) -> [str]
+    return match b
+        .heading h  => [h.text, underline(h.level, h.text)]
+        .paragraph p => [p.text]
+        .bullet x   => ["  * " + x.text]
+        .numbered x => ["  " + x.n.to_str() + ". " + x.text]
+        .quote q    => ["  | " + q.text]
+        .code c     => indent(c.body, "    ")
+        .rule       => [repeat("-", 60)]
+
+# Which run of neighbours a block belongs to, as a small number. Zero is "on its
+# own", and it is the answer for every block that is not a list item.
+function run_kind(b: blocks.Block) -> i64
+    return match b
+        .bullet _   => 1
+        .numbered _ => 2
+        .quote _    => 3
+        .heading _ | .paragraph _ | .code _ | .rule => 0
+
+# Whether two neighbours belong to one run, and so take no blank line between
+# them. A list is one thing on the page, and Markdown's own source writes it
+# that way — three bullets with a blank line between each is three lists.
+function runs_on(before: blocks.Block, after: blocks.Block) -> bool
+    kind = run_kind(before)
+    return kind != 0 && kind == run_kind(after)
+
+# The whole document. Blocks are separated by one blank line unless they are one
+# run, and the text ends in exactly one newline — the same promise `print` makes.
+#
+# An index rather than `for b in document`, because the separator is a question
+# about a *pair* of blocks and the loop has to be able to look behind it.
+function render(document: [blocks.Block]) -> str
+    out: [str] @ []
+    i: i64 @ 0
+    while i < document.len()
+        if i > 0 && !runs_on(before: document[i - 1], after: document[i])
+            out @ out.push("")
+        for line in lines_of(document[i])
+            out @ out.push(line)
+        i @ i + 1
+    if out.len() == 0
+        return ""
+    return join(out, "\n") + "\n"
+
+# The two halves in one call, which is what the program does.
+function to_text(source: str) -> str
+    return render(blocks.read(source))
+
+test "a heading is underlined to its own width"
+    assert to_text("# Hi\n") == "Hi\n==\n"
+    assert to_text("## Hi\n") == "Hi\n--\n"
+
+test "the list markers are rewritten rather than removed"
+    assert to_text("- one\n") == "  * one\n"
+    assert to_text("3. three\n") == "  3. three\n"
+    assert to_text("> said\n") == "  | said\n"
+
+test "code keeps its own layout, indented"
+    assert to_text("```\n  x = 1\n```\n") == "      x = 1\n"
+
+test "blocks are separated by one blank line"
+    assert to_text("# T\n\nbody\n") == "T\n=\n\nbody\n"
+
+test "a list is one run, and two kinds of list are two"
+    assert to_text("- a\n- b\n") == "  * a\n  * b\n"
+    assert to_text("1. a\n2. b\n") == "  1. a\n  2. b\n"
+    assert to_text("- a\n\n1. b\n") == "  * a\n\n  1. b\n"
+    assert to_text("> a\n> b\n") == "  | a\n  | b\n"
+
+test "an empty document renders to nothing at all"
+    assert to_text("") == ""
+    assert to_text("\n\n\n") == ""
+
+test "repeat is empty rather than an abort below zero"
+    assert repeat("x", 0) == ""
+    assert repeat("x", 0 - 3) == ""
+    assert repeat("ab", 3) == "ababab"

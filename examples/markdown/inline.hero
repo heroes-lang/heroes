@@ -1,0 +1,105 @@
+# Inline markup, removed.
+#
+# The innermost module of the four, and the one with no `use` line: it knows
+# about a line of text and nothing about documents. `**bold**` and `*italic*`
+# lose their stars, `` `code` `` loses its backticks, and `[label](url)` becomes
+# `label (url)` — the link's target kept rather than dropped, because plain text
+# is where a reader can no longer click it.
+#
+# `_` is deliberately **not** an italic marker here. It is the one that cannot be
+# told from an identifier without more context than a line has, and stripping it
+# would quietly rewrite `to_str` as `tostr` in every sentence about code.
+
+record Scan
+    text: str
+    pos: i64
+
+function at_end(s: Scan) -> bool
+    return s.pos >= s.text.len()
+
+function here(s: Scan) -> u8
+    return s.text[s.pos]
+
+function advance(@s: Scan)
+    s.pos @ s.pos + 1
+
+function skip(@s: Scan, n: i64)
+    s.pos @ s.pos + n
+
+# The single character under the cursor, as a `str` — `s[i]` gives a `u8`, and a
+# byte is not a string.
+function one(s: Scan) -> str
+    return s.text.slice(from: s.pos, to: s.pos + 1)
+
+# Whether the text from here on opens with `word`, asked without moving and
+# without ever slicing past the end: an out-of-bounds slice **aborts** (§4.14).
+function opens_with(s: Scan, word: str) -> bool
+    stop = s.pos + word.len()
+    if stop > s.text.len()
+        return false
+    return s.text.slice(from: s.pos, to: stop) == word
+
+# One line of Markdown, as the text a reader would be left with.
+function plain(text: str) -> str
+    s: Scan @ Scan(text: text, pos: 0)
+    out: [str] @ []
+    while !at_end(s)
+        if opens_with(s, "**")
+            skip(@s, 2)
+        else if here(s) == '*' || here(s) == '`'
+            advance(@s)
+        else if here(s) == '['
+            out @ out.push(link(@s))
+        else
+            out @ out.push(one(s))
+            advance(@s)
+    return join(out, "")
+
+# `[label](url)` — or, if what follows is not that, the `[` itself.
+#
+# The failure arm rewinds to one past the opening bracket rather than to the
+# bracket, and that is the whole reason this reads left to right without ever
+# looping: the caller resumes *after* the character it just emitted, so a `[`
+# that opens nothing costs one step and not a rescan.
+function link(@s: Scan) -> str
+    opened = s.pos
+    advance(@s)
+    label: [str] @ []
+    while !at_end(s) && here(s) != ']'
+        label @ label.push(one(s))
+        advance(@s)
+    if at_end(s)
+        return give_up(@s, opened)
+    advance(@s)
+    if at_end(s) || here(s) != '('
+        return give_up(@s, opened)
+    advance(@s)
+    target: [str] @ []
+    while !at_end(s) && here(s) != ')'
+        target @ target.push(one(s))
+        advance(@s)
+    if at_end(s)
+        return give_up(@s, opened)
+    advance(@s)
+    return plain(join(label, "")) + " (" + join(target, "") + ")"
+
+function give_up(@s: Scan, opened: i64) -> str
+    s.pos @ opened + 1
+    return "["
+
+test "emphasis loses its markers and keeps its words"
+    assert plain("a **bold** word") == "a bold word"
+    assert plain("a *thin* word") == "a thin word"
+    assert plain("call `to_str` on it") == "call to_str on it"
+
+test "an underscore is left alone, because it is also a name"
+    assert plain("read `hero_runtime_check_leaks` twice") == "read hero_runtime_check_leaks twice"
+
+test "a link keeps its target"
+    assert plain("see [the spec](spec/heroes-spec.md) first") == "see the spec (spec/heroes-spec.md) first"
+    assert plain("[**bold label**](x)") == "bold label (x)"
+
+test "a bracket that opens nothing is a bracket"
+    assert plain("an [unclosed label") == "an [unclosed label"
+    assert plain("a [label] with no target") == "a [label] with no target"
+    assert plain("a [label](unclosed") == "a [label](unclosed"

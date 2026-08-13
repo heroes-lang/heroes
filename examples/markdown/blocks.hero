@@ -1,0 +1,195 @@
+# The document: a list of blocks, read one line at a time.
+#
+# Markdown's block grammar is line-oriented, so this is a `while` over the lines
+# with an index rather than a `for` — a fenced code block consumes lines the loop
+# has not reached yet, and `for` gives no way to say so.
+#
+# What decides a line's kind is its **first characters after the indentation**,
+# and the order of the tests below is part of the grammar: `***` is a horizontal
+# rule and `* item` is a bullet, so the rule is asked about first.
+
+use inline
+
+variant Block
+    heading
+        level: i64
+        text: str
+    paragraph
+        text: str
+    bullet
+        text: str
+    numbered
+        n: i64
+        text: str
+    quote
+        text: str
+    code
+        body: [str]
+    rule
+
+## Reading lines
+
+# The text, split at newlines. A trailing newline does not make a last empty
+# line, which is the convention every `read_file` in this corpus relies on.
+function split_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == '\n'
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == 13
+
+# The line without its surrounding whitespace.
+function trimmed(line: str) -> str
+    from: i64 @ 0
+    while from < line.len() && is_space(line[from])
+        from @ from + 1
+    to: i64 @ line.len()
+    while to > from && is_space(line[to - 1])
+        to @ to - 1
+    return line.slice(from: from, to: to)
+
+function starts(line: str, word: str) -> bool
+    if word.len() > line.len()
+        return false
+    return line.slice(from: 0, to: word.len()) == word
+
+# How many times the line opens with `c`.
+function leading(line: str, c: u8) -> i64
+    n: i64 @ 0
+    while n < line.len() && line[n] == c
+        n @ n + 1
+    return n
+
+function digits_of(line: str) -> i64
+    n: i64 @ 0
+    while n < line.len() && line[n] >= '0' && line[n] <= '9'
+        n @ n + 1
+    return n
+
+# `---`, `***` or `___`, three or more, and nothing else on the line.
+function is_rule(head: str) -> bool
+    if head.len() < 3
+        return false
+    c = head[0]
+    if c != '-' && c != '*' && c != '_'
+        return false
+    return leading(head, c) == head.len()
+
+# `12. ` — the width of the marker, or 0 for a line that is not a numbered item.
+function marker_width(head: str) -> i64
+    n = digits_of(head)
+    if n == 0 || n + 1 >= head.len()
+        return 0
+    if head[n] != '.' || head[n + 1] != ' '
+        return 0
+    return n
+
+function number_of(head: str, width: i64) -> i64
+    v: i64 @ 0
+    for i in range(from: 0, to: width)
+        v @ v * 10 + to_i64(head[i] - '0').must()
+    return v
+
+function after(head: str, n: i64) -> str
+    return trimmed(head.slice(from: n, to: head.len()))
+
+# Whether a line ends the paragraph above it. Every block opener does, and so
+# does a blank line — which is the only reason a paragraph ever ends at all.
+function opens_a_block(head: str) -> bool
+    if head == "" || head.starts(word: "```") || is_rule(head)
+        return true
+    if head.starts(word: "#") || head.starts(word: "> ") || head.starts(word: "- ") || head.starts(word: "* ")
+        return true
+    return marker_width(head) > 0
+
+## The reader
+
+function read(text: str) -> [Block]
+    lines = split_lines(text)
+    out: [Block] @ []
+    i: i64 @ 0
+    while i < lines.len()
+        head = trimmed(lines[i])
+        if head.starts(word: "```")
+            body: [str] @ []
+            i @ i + 1
+            while i < lines.len() && !trimmed(lines[i]).starts(word: "```")
+                body @ body.push(lines[i])
+                i @ i + 1
+            if i < lines.len()
+                i @ i + 1
+            out @ out.push(.code(body: body))
+        else if is_rule(head)
+            out @ out.push(.rule)
+            i @ i + 1
+        else if head == ""
+            i @ i + 1
+        else if head.starts(word: "#")
+            level = leading(head, '#')
+            out @ out.push(.heading(level: level, text: inline.plain(after(head, level))))
+            i @ i + 1
+        else if head.starts(word: "> ")
+            out @ out.push(.quote(text: inline.plain(after(head, 2))))
+            i @ i + 1
+        else if head.starts(word: "- ") || head.starts(word: "* ")
+            out @ out.push(.bullet(text: inline.plain(after(head, 2))))
+            i @ i + 1
+        else if marker_width(head) > 0
+            width = marker_width(head)
+            out @ out.push(.numbered(n: number_of(head, width), text: inline.plain(after(head, width + 1))))
+            i @ i + 1
+        else
+            parts: [str] @ [inline.plain(head)]
+            i @ i + 1
+            while i < lines.len() && !opens_a_block(trimmed(lines[i]))
+                parts @ parts.push(inline.plain(trimmed(lines[i])))
+                i @ i + 1
+            out @ out.push(.paragraph(text: join(parts, " ")))
+    return out
+
+test "the line kinds are told apart by what opens them"
+    blocks = read("# Title\n\ntext\n\n- one\n- two\n\n1. first\n\n> quoted\n\n---\n")
+    assert blocks.len() == 7
+    assert blocks[0] == .heading(level: 1, text: "Title")
+    assert blocks[1] == .paragraph(text: "text")
+    assert blocks[2] == .bullet(text: "one")
+    assert blocks[4] == .numbered(n: 1, text: "first")
+    assert blocks[5] == .quote(text: "quoted")
+    assert blocks[6] == .rule
+
+test "a rule is asked about before a bullet, because `***` is both"
+    only_rule: [Block] = [.rule]
+    only_bullet: [Block] = [.bullet(text: "item")]
+    assert read("***\n") == only_rule
+    assert read("* item\n") == only_bullet
+
+test "a paragraph runs until something opens a block"
+    blocks = read("one\ntwo\n# stop\n")
+    assert blocks.len() == 2
+    assert blocks[0] == .paragraph(text: "one two")
+
+test "a fence takes its lines exactly as they are"
+    verbatim: [Block] = [.code(body: ["  x = 1", "**not bold**"])]
+    assert read("```\n  x = 1\n**not bold**\n```\n") == verbatim
+
+test "an unclosed fence takes the rest of the document"
+    rest: [Block] = [.code(body: ["a", "b"])]
+    assert read("```\na\nb\n") == rest
+
+test "a heading counts its hashes"
+    deep: [Block] = [.heading(level: 3, text: "Deep")]
+    assert read("### Deep\n") == deep
+
+test "split_lines does not invent a last empty line"
+    assert split_lines("a\nb\n") == ["a", "b"]
+    assert split_lines("a\nb") == ["a", "b"]
+    assert split_lines("") == []

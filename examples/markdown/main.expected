@@ -1,0 +1,27 @@
+Heroes
+======
+
+A small compiled language, designed so that every plausible mistake is a compile error. The whole language is one document: see the spec (spec/heroes-spec.md).
+
+Why it exists
+-------------
+
+  * a model writes code that looks right and is wrong
+  * the compiler is the only reader that never gets tired
+  * heroes check is the whole review
+
+  1. read the spec
+  2. write a program
+  3. let the compiler disagree
+
+  | The language is finished for v1 when it can compile itself.
+
+------------------------------------------------------------
+
+What it refuses
+---------------
+
+    x = 5
+    x = 6        # shadowing is a compile error
+
+Nothing above is a suggestion; each line is refused by name.
