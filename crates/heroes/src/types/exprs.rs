@@ -19,7 +19,7 @@ use super::expect::check;
 use super::join::{join_for_value, Branch};
 use super::stmts::Want;
 use super::table::Ty;
-use super::{calls, errors, ops, stmts, Checker, Hole, TyId};
+use super::{calls, errors, ops, stmts, ufcs, Checker, Hole, TyId};
 
 pub(super) fn synth(
     checker: &mut Checker,
@@ -118,7 +118,7 @@ pub(super) fn synth(
             calls::call(checker, ast, resolved, src, id, *callee, args)
         }
         ExprKind::Method { receiver, name: called, args } => {
-            calls::method(checker, ast, resolved, src, id, *receiver, *called, args)
+            ufcs::method(checker, ast, resolved, src, id, *receiver, *called, args)
         }
         // Which variant a case belongs to comes from context (§4.5's ⇐ mode), so
         // there is nothing to synthesise from.

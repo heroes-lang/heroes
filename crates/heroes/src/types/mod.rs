@@ -49,9 +49,10 @@ use crate::source::{Source, Span};
 use crate::syntax::{Ast, ExprId};
 
 mod access;
+mod apply;
 mod arms;
 mod builtins;
-mod calls;
+pub(crate) mod calls;
 mod construct;
 mod counted;
 mod decls;
@@ -68,6 +69,7 @@ mod render;
 mod sized;
 mod stmts;
 mod table;
+mod ufcs;
 mod widths;
 
 #[cfg(test)]

@@ -10,21 +10,20 @@
 //! | `len(xs)` | a built-in form |
 //! | `x.f(y)` | `f(x, y)`, unless `f` is a field holding a function (§4.11) |
 //!
-//! **Generics are inferred here and nowhere else** (§4.12: on functions only, no
-//! constraints, never written at the call site). The inference is one pass over
-//! the parameters: the first argument that meets a type parameter binds it, later
-//! ones are checked against the binding. No unification variables, no
-//! constraints to solve — which is what keeps §4.5's promise that errors stay
-//! local.
-
+//! This file is the **dispatch**: it reads what the callee resolved to and sends
+//! the call to whoever answers it. The §11 sweep took the two answers long enough
+//! to be their own concern — `ufcs.rs` for the dot form, `apply.rs` for a call to a
+//! declared function, which is where generics are inferred.
+//!
 use crate::resolve::{Ref, Resolved};
 use crate::source::{Source, Span};
 use crate::syntax::{Arg, Ast, DeclKind, ExprId, ExprKind};
 
-use super::construct::{construct_record, field_of_function_type};
-use super::generics::{bind, substitute};
+use super::construct::construct_record;
+
 use super::table::Ty;
 use super::expect;
+use super::apply::user_call;
 use super::{builtins, errors, exprs, lower, Checker, TyId};
 
 /// A declaration's type, from its written signature.
@@ -92,210 +91,7 @@ pub(super) fn call(
 }
 
 
-/// `x.f(y)` — §4.11's algorithm, in the order §4.11 states it: **a field first**,
-/// then a free function. The field half needs the receiver's type, which is why
-/// the resolver deliberately left this half unanswered (panel 015 D).
-pub(super) fn method(
-    checker: &mut Checker,
-    ast: &Ast,
-    resolved: &Resolved,
-    src: &Source,
-    at: ExprId,
-    receiver: ExprId,
-    called: Span,
-    args: &[Arg],
-) -> TyId {
-    let span = ast.exprs[at.0 as usize].span;
-    // **`geom.dist2(a, b)` is a call with two arguments, not three.** The
-    // resolver marked the receiver as a module, and the check has to come before
-    // the receiver is synthesised: a module has no type, and asking for one is
-    // how the qualified form turns into an unknown name.
-    if resolved.use_at(receiver) == Ref::Module {
-        return match resolved.use_at(at) {
-            // The same three shapes `call` dispatches on, because a qualified
-            // name is an ordinary name that happens to say where it lives.
-            // `geom.Point(x: 3, y: 4)` is a CONSTRUCTION (§4.9), not a call, and
-            // routing it through `user_call` is how the emitter ends up asking
-            // clang to call a record.
-            Ref::Top(decl) => match &ast.decls[decl as usize].kind {
-                DeclKind::Record { .. } => {
-                    construct_record(checker, ast, resolved, src, decl, args, span)
-                }
-                DeclKind::Function(_) => {
-                    user_call(checker, ast, resolved, src, decl, args, None, span)
-                }
-                _ => checker.error_ty(),
-            },
-            // The resolver already said what is wrong with it.
-            _ => checker.error_ty(),
-        };
-    }
-    let receiver_ty = exprs::synth(checker, ast, resolved, src, receiver);
-    let name = src.slice(called);
-    if let Some(field) = field_of_function_type(checker, ast, resolved, src, receiver_ty, name) {
-        return indirect_call(checker, ast, resolved, src, field, args, None, span);
-    }
-    match resolved.use_at(at) {
-        Ref::Top(decl) => {
-            // §4.8: UFCS does not apply when the first parameter is `@`, because
-            // `l.advance()` would hide the mutation the marker exists to show.
-            if let DeclKind::Function(function) = &ast.decls[decl as usize].kind {
-                if function.params.first().is_some_and(|p| p.mutable) {
-                    let diagnostic = errors::ufcs_on_mutable(name, called);
-                    checker.push_diagnostic(diagnostic);
-                    return checker.error_ty();
-                }
-            }
-            user_call(checker, ast, resolved, src, decl, args, Some(receiver_ty), span)
-        }
-        Ref::Builtin(index) => {
-            builtin_call(checker, ast, resolved, src, index, args, Some(receiver_ty), span)
-        }
-        // The resolver stayed silent because the name *might* have been a field.
-        // Now the receiver's type is known, so both halves fit one message —
-        // which is what the compiler-engineer's panel-015 veto asked for.
-        // A module cannot be reached here: the branch above returns first.
-        Ref::Module | Ref::Unresolved | Ref::Local(_) => {
-            if !checker.out.types.poisoned(receiver_ty) {
-                let holder = checker.show(ast, src, receiver_ty);
-                let diagnostic = errors::no_field_and_no_function(&holder, name, called);
-                checker.push_diagnostic(diagnostic);
-            }
-            checker.error_ty()
-        }
-    }
-}
-
-
-/// A call to a declared function, with `receiver` prepended when it was written
-/// as `x.f(y)`.
-fn user_call(
-    checker: &mut Checker,
-    ast: &Ast,
-    resolved: &Resolved,
-    src: &Source,
-    decl: u32,
-    args: &[Arg],
-    receiver: Option<TyId>,
-    span: Span,
-) -> TyId {
-    let DeclKind::Function(function) = &ast.decls[decl as usize].kind else {
-        return checker.error_ty();
-    };
-    let name = src.slice(ast.decls[decl as usize].name).to_string();
-    let arity = function.params.len();
-    let given = args.len() + usize::from(receiver.is_some());
-    if given != arity {
-        let signature = crate::printer::render_signature(ast, src, decl);
-        let at = src.elsewhere(span.start, ast.decls[decl as usize].name.start);
-        let diagnostic = errors::arity(&name, arity, given, Some((signature, at)), span);
-        checker.push_diagnostic(diagnostic);
-        return checker.error_ty();
-    }
-    let generics = function.generics.len();
-    let mut bindings: Vec<Option<TyId>> = vec![None; generics];
-    let params: Vec<TyId> = function
-        .params
-        .iter()
-        .map(|p| lower::ty(checker, ast, resolved, p.ty))
-        .collect();
-    let mutable: Vec<bool> = function.params.iter().map(|p| p.mutable).collect();
-    let result = lower::ty(checker, ast, resolved, function.result);
-
-    // §4.9's same-typed-argument rule: when two parameters share a type, the
-    // call site must name them. This is the rule that spends tokens exactly where
-    // argument inversion happens — `save(user.name, user.id)` type-checks
-    // perfectly and does the wrong thing, and it is the mistake metric 3's
-    // `swap-args` operator is built to produce.
-    //
-    // The receiver of a UFCS call is exempt: `p.copy_to(other)` names nothing for
-    // the first argument because the dot *is* its position (§4.11).
-    let ambiguous: Vec<usize> = params
-        .iter()
-        .enumerate()
-        .filter(|(index, ty)| {
-            params.iter().enumerate().any(|(other, candidate)| other != *index && candidate == *ty)
-        })
-        .map(|(index, _)| index)
-        .collect();
-
-    let mut offset = 0;
-    if let Some(receiver_ty) = receiver {
-        bind(checker, ast, src, params[0], receiver_ty, &mut bindings, span);
-        offset = 1;
-    }
-    for (index, arg) in args.iter().enumerate() {
-        let param = params[index + offset];
-        let position = index + offset;
-        if ambiguous.contains(&position) {
-            let wanted = src.slice(function.params[position].name).to_string();
-            match arg.name {
-                Some(label) if src.slice(label) == wanted.as_str() => {}
-                Some(label) => {
-                    let diagnostic =
-                        errors::wrong_label(&name, src.slice(label), &wanted, label);
-                    checker.push_diagnostic(diagnostic);
-                }
-                None => {
-                    let at = ast.exprs[arg.value.0 as usize].span;
-                    // Rendered with the *callee's* type-parameter names: at a
-                    // call site the enclosing function's letters are the wrong
-                    // dictionary, and `#0` is nobody's type.
-                    let callee_generics: Vec<String> = function
-                        .generics
-                        .iter()
-                        .map(|span| src.slice(*span).to_string())
-                        .collect();
-                    let shared = super::render_ty(
-                        &checker.out.types,
-                        ast,
-                        src,
-                        param,
-                        &callee_generics,
-                    );
-                    let diagnostic = errors::needs_label(&name, &wanted, &shared, at);
-                    checker.push_diagnostic(diagnostic);
-                }
-            }
-        } else if let Some(label) = arg.name {
-            // A label where the signature does not need one still has to be the
-            // right label: a wrong one is a wrong argument with a comment on it.
-            let wanted = src.slice(function.params[position].name);
-            if src.slice(label) != wanted {
-                let diagnostic = errors::wrong_label(&name, src.slice(label), wanted, label);
-                checker.push_diagnostic(diagnostic);
-            }
-        }
-        // §4.8: the `@` marker is repeated at the call site, and a marked
-        // argument must meet a marked parameter.
-        if arg.mutable != mutable[index + offset] {
-            let at = ast.exprs[arg.value.0 as usize].span;
-            let diagnostic = errors::marker_mismatch(&name, mutable[index + offset], at);
-            checker.push_diagnostic(diagnostic);
-        }
-        if generics == 0 {
-            expect::check(checker, ast, resolved, src, arg.value, param);
-        } else {
-            let got = exprs::synth(checker, ast, resolved, src, arg.value);
-            let at = ast.exprs[arg.value.0 as usize].span;
-            bind(checker, ast, src, param, got, &mut bindings, at);
-        }
-    }
-    // **Recorded, not dropped.** The bindings were computed to type this call and
-    // used to be discarded here; monomorphisation needs exactly them, and
-    // recomputing them at IR level would be a second answer to one question
-    // (panel 029 R2). Only a generic call has any, so a monomorphic program adds
-    // no entries at all.
-    if generics > 0 {
-        let resolved_args: Vec<TyId> =
-            bindings.iter().map(|b| b.unwrap_or_else(|| checker.error_ty())).collect();
-        checker.out.instantiations.insert(span.start, resolved_args);
-    }
-    substitute(checker, result, &bindings)
-}
-
-
-fn builtin_call(
+pub(super) fn builtin_call(
     checker: &mut Checker,
     ast: &Ast,
     resolved: &Resolved,
@@ -344,7 +140,7 @@ fn builtin_call(
 }
 
 
-fn indirect_call(
+pub(super) fn indirect_call(
     checker: &mut Checker,
     ast: &Ast,
     resolved: &Resolved,
