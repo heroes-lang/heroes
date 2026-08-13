@@ -59,6 +59,14 @@ Milestone close — the checklist (this is its only copy):
   and why**;
 - one story beat line in `docs/book/beats.md`;
 - a DESIGN-LOG line per decision made;
+- **score every prediction whose milestone this is**, and lapse the ones you
+  cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/debrief/SCHEDULED.md
+  crates/heroes/src/measure/gate.rs docs/panel/*.md`. A prediction is scored, or
+  it is marked `lapsed` in the ledger row that spent it and the clause it bought
+  goes back to `DECIDE.md` to be re-argued under the removal branch — **never
+  renewed with a new milestone name** (panel 046 R2). This bullet exists because
+  the mechanism failed without it: panel 036's *"Score at M-ffi-ladder close"*
+  survived that milestone's close untouched;
 - queue the milestone's `/learn` offers: walkthrough, golden ratification,
   mutation drill, exit-quiz (all optional, author's call);
 - append the closing block — the status paragraph and the milestone's chain entry —

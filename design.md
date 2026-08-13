@@ -277,6 +277,30 @@ removal or a pre-registered falsifiable prediction (panel 012) — so rescaling 
 next ~500 tokens. Panel 024's warden put the reason in one line: **a soft line that moves whenever
 the document approaches it is a thermometer, not a thermostat.**
 
+**The two payments are held to the same standard, which they were not** (panel 046, provisional —
+author ratification pending). A **named removal** is measured in the commit that spends it. A
+**registered prediction** is admissible *as payment* only if it names (i) the instrument that will
+score it and (ii) the milestone at which it is scored — **and that instrument exists on the day of
+registration**: metric 3, `heroes mutate`, `heroes measure`, a line count, a compile, a diagnostic
+transcript. A prediction naming an instrument nobody has built is still **registered as an
+observation**; it simply pays nothing. The rule is not a new burden, it is what the record already
+shows: **every prediction this project has scored named an instrument that existed when it was
+written**, and of the six ledger rows bought with a prediction, none has ever been collected —
+because each named metric 2, which the author scheduled at M-selfhost-fixpoint. This is CLAUDE.md
+§12's rule applied to the other branch: a refusal is held to the same standard as a feature, and so
+is a promise.
+
+**An outstanding prediction is re-decided, never renewed.** At the milestone it names it is scored,
+or it is marked `lapsed` in the ledger row that spent it and the clause it bought is re-argued on
+its merits under the removal branch. Nothing is deleted from the record. The shape is Java's JEP 12
+— a release boundary that invalidates the artifact and demands a new one — and not a clock, because
+a clock with a free reset is the one mechanism the record shows failing: IETF Internet-Drafts expire
+at six months and are re-posted unchanged (the draft to abolish expiry expired), sunset clauses are
+renewed by the inertia they were meant to overcome, and FDAAA 801's 12-month deadline ran fourteen
+years to its first notice, has never produced a fine, and sits at 41% compliance. This project has
+already run the clock version and lost: `docs/debrief/SCHEDULED.md`'s panel-036 item says *"Score at
+M-ffi-ladder close"* and was still open after that milestone closed.
+
 **What the raise is not backed by, recorded rather than argued away** (panel 024). The mortgage above
 justifies about 3181 (2231 + 950), which clears 3000 by 181 and is a precise reason to raise. 4096
 leaves **915 tokens with no named claimant — 41% of the current spec** — and the mortgage figure was
@@ -286,9 +310,14 @@ the ceiling moved +173%. The warden's summary is the fairest reading available: 
 neither the document nor a costed need, and 4096 is the shape of a context window rather than of a
 language.
 
-**So the veto moves and something has to replace it.** At the observed mean of +30 tokens per
-amendment, 4096 binds after ~61 more amendments where 3000 would have bound after ~25 — a threshold
-that fires after five dozen panels is not an instrument. Two checks are owed, both enforceable at
+**So the veto moves and something has to replace it.** The mean per-amendment delta is not quoted
+here, because a number copied out of the ledger expires silently and this sentence has already done
+it once: it read *"the observed mean of +30 tokens per amendment, so 4096 binds after ~61 more
+amendments — a threshold that fires after five dozen panels is not an instrument"*, and the live
+mean is **roughly twice that** (panel 046, measured from the ledger). The ceiling is therefore about
+twenty amendments away rather than sixty, and the argument this paragraph makes is weaker than it
+was written to be. The live figures are the `SPEC_TOKENS` ledger in
+`crates/heroes/src/measure/gate.rs`, which moves in the same commit as the spec; read them there. Two checks are owed, both enforceable at
 2231 rather than at the ceiling, and both are queued rather than adopted here because they are
 architecture (CLAUDE.md §4): a **delta gate**, failing when a commit's spec delta exceeds ~+50 tokens
 without a named removal or a registered prediction — level-independent, so it survives the next
@@ -310,9 +339,13 @@ the design rule it always was and stops being an audited one (panel 011).
 **The discipline the number was proxying for survives independently of headroom: every addition
 still carries §1.0's burden of proof — compiler-need or a measured thesis effect — and a bigger
 budget buys no exemption from it.** A spec that grows to fill the budget because it can has failed
-§1.2 just as surely as one that breaches it. Honest counter-evidence on the mechanism, from the same
-measurement: the "named removal" clause has produced **zero removals in seven amendments**. It damps
-growth; it does not subtract.
+§1.2 just as surely as one that breaches it. Honest counter-evidence on the mechanism, and it has
+already moved once: over the document's first seven amendments the named-removal clause produced
+**zero** removals (2026-08-04, panel 024) — and that sentence stood here, unqualified, long after it
+stopped being true. It subtracts now, in a minority of sittings; the branch that has produced
+**nothing** is the registered prediction, which is what panel 046 repaired. No count is restated in
+this paragraph on purpose: the ledger in `crates/heroes/src/measure/gate.rs` carries them, moves in
+the same commit as the spec, and a figure that lives in one place cannot die in another.
 
 Historical calibration: Wirth's **Oberon report** is sixteen pages, and an entire operating system
 was written in Oberon. That is the right order of magnitude for one person.
