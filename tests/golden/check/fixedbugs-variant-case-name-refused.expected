@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-variant-case-name-refused.hero:30:5: error[reserved_word]: there is no null in this language — absence is a fallible type: `i64?`, and a C pointer's zero is `nullptr`

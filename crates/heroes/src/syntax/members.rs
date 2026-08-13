@@ -190,6 +190,16 @@ pub(super) fn case_block(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> Vec<C
                 };
                 cases.push(Case { name, fields, doc });
             }
+            // The payload of a case whose *name* was refused on the line above.
+            // The `Ident` arm is the only one that consumes a payload block, so
+            // when the name is not an identifier its block is still here — and
+            // `skip_line` deliberately stops *before* an `Indent`, which left this
+            // loop spinning on the same token forever (fixedbugs, 2026-08-13).
+            // Dropping it silently is `recover.rs`'s own rule: one bad declaration
+            // costs one diagnostic, and the case name already spent it.
+            TokenKind::Indent => {
+                cur.balanced_block();
+            }
             _ => {
                 if !cur.at_reported_error() {
                     let message = format!(

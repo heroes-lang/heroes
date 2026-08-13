@@ -1,0 +1,41 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-13, found by M-program-corpus at its second step, writing the
+# JSON reader's `Json` variant): `heroes check` HUNG. Forever, one core at 100%,
+# no output and no exit — on a variant with a case named `null` and any case in
+# it carrying a payload. Not a wrong diagnostic and not a crash. The first
+# program of the milestone whose deliverable is programs met it in its first
+# minute, which is the milestone working rather than slipping.
+#
+# CAUSE: `syntax/members.rs`'s `case_block` recovered from a refused case name
+# with `skip_line`, and `skip_line` stops *before* an `Indent` by design — so the
+# next line is parsed on its own merits instead of being swallowed. The refused
+# case's payload block was therefore still under the cursor on the next turn of
+# the loop, fell into the same `_` arm, and `skip_line` returned without moving.
+# `field_block` next door has had an `Indent` arm since it was written; the case
+# parser never did, and no case reached it because every test of a refused case
+# name used a case with no payload.
+#
+# FIX: one arm, `cur.balanced_block()`, which drops the orphaned block. Silently,
+# because `recover.rs`'s rule is that one bad declaration costs one diagnostic
+# and the case name already spent it — the reader is told about `null`, not about
+# the two lines that were a consequence of it.
+#
+# `nullptr` is the repair the message names, and the last declaration is the
+# CONTROL: a case with a payload, read rather than dropped. A recovery that
+# started eating good blocks would pass this file's first half and fail here.
+# Bulk regression case.
+
+variant Json
+    null                        #~ reserved_word
+        text: str
+    number
+        v: i64
+
+variant Reference
+    absent
+    present
+        target: i64
+
+function main()
+    print(1)
