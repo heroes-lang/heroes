@@ -46,6 +46,26 @@
  * and a stale relink is silent.
  */
 
+/* **POSIX 2008's per-thread locale, asked for portably** — `locale_t`,
+ * `newlocale` and `uselocale`, which `parts/f64.c` uses so that rendering a
+ * number does not depend on whatever locale a C library the program links
+ * happened to set. Two facts decide these four lines, and both were learned from
+ * the CI's first Linux run (M-program-corpus), because until then this project
+ * had only ever been compiled on one machine:
+ *
+ *   - **glibc hides POSIX declarations under `-std=c11`**, which defines
+ *     `__STRICT_ANSI__`, so the feature-test macro is required — and it must
+ *     come before *every* system header, which is why it is the first thing in
+ *     this file. Darwin needs no such macro and is left alone, because asking
+ *     for strict POSIX there hides BSD extensions instead;
+ *   - **the declarations live in `<locale.h>` on glibc and in `<xlocale.h>` on
+ *     Darwin and the BSDs**, and glibc 2.26 deleted `<xlocale.h>` outright. So
+ *     the header is *asked for* rather than assumed: `fatal error: 'xlocale.h'
+ *     file not found` is exactly how Linux announced itself. */
+#if defined(__linux__) && !defined(_POSIX_C_SOURCE)
+#  define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "heroes_runtime.h"
 
 #include <locale.h>
@@ -55,7 +75,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <xlocale.h>
+#if defined(__has_include)
+#  if __has_include(<xlocale.h>)
+#    include <xlocale.h>
+#  endif
+#endif
 
 /* Aborting and printing: no dependencies, and everything below may abort. */
 #include "parts/panic.c"
