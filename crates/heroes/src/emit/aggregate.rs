@@ -34,7 +34,7 @@ use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 use crate::types::{Checked, Ty, TyId};
 
-use super::ctype::Names;
+use super::typedefs::Names;
 use super::mangle;
 
 /// What every function here needs: the declarations, the types, the C names, and the

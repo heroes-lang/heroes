@@ -29,7 +29,7 @@ use std::collections::BTreeSet;
 use crate::syntax::Ast;
 use crate::types::{Checked, IntKind, Ty, TyId};
 
-use super::ctype::Names;
+use super::typedefs::Names;
 use super::writer::Writer;
 
 /// The C expression for a pointer to this type's descriptor, or `None` where the

@@ -15,7 +15,8 @@ use crate::syntax::Ast;
 use crate::types::Checked;
 
 use super::Target;
-use super::ctype::{c_result, c_type, Names};
+use super::ctype::{c_result, c_type};
+use super::typedefs::Names;
 use super::decls::emitted;
 use super::mangle;
 use super::writer::Writer;

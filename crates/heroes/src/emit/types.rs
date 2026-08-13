@@ -34,7 +34,8 @@ use crate::source::Source;
 use crate::syntax::{Ast, DeclKind, Field};
 use crate::types::Checked;
 
-use super::ctype::{c_result, c_type, Names};
+use super::ctype::{c_result, c_type};
+use super::typedefs::Names;
 use super::mangle;
 use super::writer::Writer;
 

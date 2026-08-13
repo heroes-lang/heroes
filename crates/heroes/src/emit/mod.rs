@@ -69,6 +69,7 @@ mod perfn;
 mod structural;
 mod term;
 mod typeorder;
+mod typedefs;
 mod types;
 mod writer;
 

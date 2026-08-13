@@ -24,7 +24,8 @@ use crate::syntax::Ast;
 use crate::types::Checked;
 
 use super::Target;
-use super::ctype::{c_type, is_unit, Names};
+use super::ctype::{c_type, is_unit};
+use super::typedefs::Names;
 use super::decls::emitted;
 use super::externs;
 use super::mangle;

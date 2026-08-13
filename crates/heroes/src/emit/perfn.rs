@@ -32,7 +32,7 @@ use crate::types::Checked;
 
 use super::counted::{owns, owns_case, reference_body, reference_line, variant_reference_body};
 use super::ctype::c_type;
-use super::ctype::Names;
+use super::typedefs::Names;
 use super::structural::{equality_body, hash_body, variant_equality_body, variant_hash_body};
 use super::types::{aggregates, cases_of, fields_of, is_variant};
 use super::writer::Writer;

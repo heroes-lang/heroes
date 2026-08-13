@@ -17,7 +17,7 @@ use crate::source::Source;
 use crate::syntax::Ast;
 use crate::types::{Checked, Ty, TyId};
 
-use super::ctype::Names;
+use super::typedefs::Names;
 use super::types::{aggregates, cases_of, declared, fields_of, function_type, option};
 use super::writer::Writer;
 

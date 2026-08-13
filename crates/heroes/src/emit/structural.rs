@@ -26,7 +26,7 @@ use crate::source::Source;
 use crate::syntax::{Ast, Field};
 use crate::types::{Checked, Ty};
 
-use super::ctype::Names;
+use super::typedefs::Names;
 use super::mangle;
 use super::types::cases_of;
 use super::writer::Writer;
