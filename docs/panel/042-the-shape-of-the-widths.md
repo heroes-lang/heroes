@@ -1,8 +1,12 @@
 # Panel 042 — the shape of the integer widths
 
 **Convened** 2026-08-12 for `M-sized-integers`, on the author's ratification of
-panel 041. **Lane: full panel.** **Status: provisional — author ratification
-pending on the four questions the sitting could not close.**
+panel 041. **Lane: full panel.** **Status: RATIFIED 2026-08-12 — the author
+answered all four questions the sitting could not close, and one of the answers
+went past the panel's menu. The verdict is the last section of this file; the
+header said `provisional — ratification pending` for a day after it stopped
+being true, which is CLAUDE.md §11's expired-premise class and was repaired on
+2026-08-13.**
 
 Panel 041 vetoed sized integers and the author overturned that veto the same day,
 asking for *"un sistema di tipi fatto bene… molto simile a Rust"*. **The direction

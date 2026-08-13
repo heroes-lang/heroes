@@ -122,7 +122,7 @@ mangler (`h_<module>_<name>[_<typehash>]`; fields, variant cases and labels
 too; the module component sanitised to `[A-Za-z0-9]` so the first `_` ends it;
 `extern` FFI names pass through unmangled by design, and `extern` reaches no
 binary before M-ffi-ladder because only the `#include` verifies it) — **with one
-exception, and it is the mirror of the rule** (panel 038, ratification pending): an
+exception, and it is the mirror of the rule** (panel 038, ratified 2026-08-12): an
 `extern constant`'s accessor **is** mangled, because unmangled `int64_t
 SQLITE_OK(void) { return SQLITE_OK; }` has the macro eat its own definition. A
 linker name must survive the mangler; a preprocessor name must never appear outside

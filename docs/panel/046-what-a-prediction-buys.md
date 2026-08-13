@@ -228,3 +228,55 @@ R1 applied to this sitting's own output.
   compliance was the TrialsTracker's *public naming* rather than the deadline,
   then the cheapest fix is neither (a), (b) nor (c) but a visible ledger of
   unscored predictions — which this repository nearly has already.
+
+---
+
+## Ratification — 2026-08-13, by author decision in `/decide`
+
+**Ratified as it stands: (a).** R1 through R5 are adopted unchanged, and (b) is
+refused with the cost the sitting priced for it — a spec frozen at 2974 until
+M-selfhost-fixpoint, §1.0 compiler-need items included — recorded rather than
+argued away, so a later reader can see what was declined and at what price.
+
+Three things the ratification settles that the provisional default left implicit.
+
+**The rule is not retroactive, and the six rows are not invalidated.** R1 governs
+what is admissible *as payment on the day of registration*; it cannot reach back
+and un-buy a clause that is already in the spec. What R2 does reach is the
+future of those six rows: each one now carries the milestone at which it is
+**re-decided**, written into the ledger entry that spent it, so `/step`'s close
+bullet finds it by the same `grep` it already runs. That is the whole of what
+"the parked rows get a named expiry" means here — a date to *look* at the row,
+never a date on which the clause dies.
+
+**The expiry is not M-selfhost-fixpoint for anything that can be re-argued
+sooner.** The spec-warden's condition was that the named milestone not be the
+one metric 2 waits for, *"otherwise the expiry is the tenancy"*, and the author's
+yes carries that condition. Five of the six rows named metric 2 and are
+therefore re-decided at **M-program-corpus**, which is the next milestone: not
+because metric 2 will exist there, but because that is when the clause is
+re-argued under the removal branch if it still cannot be scored. The sixth,
+`2675`, named *"the next FFI rung"* — a milestone that closed on 2026-08-12
+before the row was three days old, which is the compiler-engineer's evidence
+happening a third time — and it is re-decided at M-program-corpus with the rest.
+
+**Prediction 5 bit within the hour, and on the wrong thing.** Writing R2's expiry
+into `measure/gate.rs` took the file from 133 lines to 152, past the
+compiler-engineer's `≤ 140`. The prediction's stated target is *"any commit-body
+mechanisation"*, and what tripped it was **eight lines of prose** — the
+instrument counts lines and cannot tell documentation from a `Command`. It was
+honoured rather than reworded: the note was cut to four lines and the file sits
+at **140** with `grep -c "std::process::Command"` still **0**. R2 forbids
+renewing a prediction, and rewriting one's threshold the day it binds is the same
+act under another name. What it cost is one paragraph of explanation moved from
+the ledger into this section, which is where an argument belongs anyway. What it
+shows is worth keeping: a line count is a **proxy**, and this project has now
+watched one fire on the thing it was not aimed at — the same defect class as an
+instrument that does not exist, arriving from the opposite side.
+
+**What is now watched, and by what.** The warden's veto condition stands live:
+it fires if the first three `SPEC_TOKENS` rows after this ratification name an
+instrument in name only — a corpus, a milestone, or a future harness under a new
+name. If it fires, (b) returns as the fallback with R3's freeze cost. Nothing
+about that check is mechanised, and R4 keeps it that way: the gate reads no
+commit, calls no git, and the engineer's veto fires on any form that makes it.

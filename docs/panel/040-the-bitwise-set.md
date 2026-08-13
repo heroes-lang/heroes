@@ -150,3 +150,22 @@ reader.
 Prediction 2 is the one to read: it is the falsifier for this whole change. The
 argument was that `+`-for-`|` is a silent wrong answer; if `&`-for-`&&` turns out
 to be another one, the set traded a measured silent class for an unmeasured one.
+
+---
+
+## Ratification — 2026-08-12, by author decision in `/decide`
+
+The set landed as judged: `& | ^ ~ << >>` on `int`, spec **+48 → 2675**, taken
+over the narrower option of a diagnostic that only names the mistake. The
+DESIGN-LOG line is the same date; the ledger row is `2675` in
+`crates/heroes/src/measure/gate.rs`. This section is appended on **2026-08-13**,
+because the decision was recorded everywhere except in the file that was decided
+— readable, but only by someone who already knew where to look.
+
+**And the appending found the defect panel 046 was convened about.** Predictions
+1 and 3 above are scored *"at the next FFI rung"*, and M-ffi-ladder closed on
+**2026-08-12** — the same day this sitting registered them — with neither one
+looked at. Prediction 2 names `mutate --survivors`, an instrument that exists,
+and is the only one of the three that panel 046's R1 would admit as payment
+today. Under R2 the `2675` row is **re-decided at M-program-corpus**, and that
+date is written once, in the gate's module doc beside the rows it governs.

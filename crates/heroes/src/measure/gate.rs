@@ -28,6 +28,11 @@
 //! none of this — it reads no commit, calls no git, and any form that made it do so
 //! is refused by the same §10 argument three paragraphs up. The rows below are the
 //! record a reader audits it against.
+//!
+//! **The six prediction-bought rows — `2588`, `2627`, `2675`, `2745`, `2768`,
+//! `2959` — are re-decided at M-program-corpus** (panel 046 R2, ratified
+//! 2026-08-13): scored, or `lapsed` with the clause re-argued in `DECIDE.md` under
+//! the removal branch, never renewed. The date is here because `/step` greps here.
 
 /// The spec's measured size, `max` over both vendored instruments — the binding
 /// number, never an estimate.

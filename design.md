@@ -277,8 +277,8 @@ removal or a pre-registered falsifiable prediction (panel 012) — so rescaling 
 next ~500 tokens. Panel 024's warden put the reason in one line: **a soft line that moves whenever
 the document approaches it is a thermometer, not a thermostat.**
 
-**The two payments are held to the same standard, which they were not** (panel 046, provisional —
-author ratification pending). A **named removal** is measured in the commit that spends it. A
+**The two payments are held to the same standard, which they were not** (panel 046, ratified by the
+author 2026-08-13). A **named removal** is measured in the commit that spends it. A
 **registered prediction** is admissible *as payment* only if it names (i) the instrument that will
 score it and (ii) the milestone at which it is scored — **and that instrument exists on the day of
 registration**: metric 3, `heroes mutate`, `heroes measure`, a line count, a compile, a diagnostic
