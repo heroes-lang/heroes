@@ -139,7 +139,7 @@ fn check_preds(
     at: &dyn Fn(String) -> String,
     problems: &mut Vec<String>,
 ) {
-    let me = super::inst::BlockId(index as u32);
+    let me = super::ids::BlockId(index as u32);
     let mut expected: Vec<u32> = Vec::new();
     for (other, candidate) in function.blocks.iter().enumerate() {
         if successors(&candidate.term).contains(&me) && !expected.contains(&(other as u32)) {

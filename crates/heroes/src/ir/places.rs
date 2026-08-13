@@ -20,7 +20,7 @@ use crate::syntax::{Ast, ExprId, ExprKind};
 use crate::types::Checked;
 
 use super::build::Lowering;
-use super::inst::{Place, SlotId, Step};
+use super::ids::{Place, SlotId, Step};
 use super::{exprs, layout, SlotKind};
 
 pub(super) fn place(

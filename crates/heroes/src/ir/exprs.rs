@@ -24,7 +24,8 @@ use crate::syntax::{Ast, BinaryOp, ExprId, ExprKind, UnaryOp};
 use crate::types::{Checked, Ty, TyId};
 
 use super::build::Lowering;
-use super::inst::{Args, BinOp, Callee, Const, Op, UnOp, ValueId};
+use super::inst::{BinOp, Callee, Const, Op, UnOp};
+use super::ids::{Args, ValueId};
 use super::{calls, control, fallible, layout};
 
 pub(super) fn expr(

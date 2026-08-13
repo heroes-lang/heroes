@@ -16,7 +16,8 @@ use crate::source::Span;
 use crate::types::TyId;
 
 use super::build::Lowering;
-use super::inst::{Arg, Args, Op, Place, SlotId, Step, Steps, ValueId};
+use super::inst::{Op};
+use super::ids::{Arg, Args, Place, SlotId, Step, Steps, ValueId};
 use super::{Slot, SlotKind};
 
 impl Lowering {

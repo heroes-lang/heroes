@@ -27,7 +27,7 @@
 //! O(blocks²) on a bitset per block, which for a function whose largest recorded block
 //! count is 226 across a 320-line program is not worth a Lengauer–Tarjan.
 
-use super::inst::ValueId;
+use super::ids::ValueId;
 use super::uses::{operands, terminator_operands};
 use super::{Block, BlockId, Function};
 

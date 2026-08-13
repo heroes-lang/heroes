@@ -21,7 +21,8 @@ use crate::types::{Checked, Ty, TyId};
 
 use super::build::Lowering;
 use super::control::{seal_join, store_arm};
-use super::inst::{BinOp, BlockId, Op, SlotId, Term, ValueId};
+use super::inst::{BinOp, Op, Term};
+use super::ids::{BlockId, SlotId, ValueId};
 use super::{exprs, stmts, SlotKind};
 
 /// The two cases of a `T?`, in tag order (§4.6).

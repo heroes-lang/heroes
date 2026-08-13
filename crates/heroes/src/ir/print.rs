@@ -32,7 +32,8 @@ use crate::source::Source;
 use crate::syntax::Ast;
 use crate::types::{render_ty, Checked};
 
-use super::inst::{BlockId, Const, Op, SlotId, Term};
+use super::inst::{Const, Op, Term};
+use super::ids::{BlockId, SlotId};
 use super::print_inst::{instruction, value_name};
 use super::{FnKind, Function, Program, SlotKind};
 

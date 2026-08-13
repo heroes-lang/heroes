@@ -27,64 +27,10 @@
 //! a chain of `Branch`es on literals.
 
 use crate::source::Span;
+
+use super::ids::{Args, BlockId, Place, SlotId, StrId, ValueId};
 use crate::types::TyId;
 
-/// A temporary. Assigned exactly once, by construction — the lowering never
-/// re-uses one, which is what makes the dump readable without a def-use index.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct ValueId(pub u32);
-
-/// A slot: a parameter, a local, a mutable cell, or one lowering invented.
-/// Slots are the reason there are no phi nodes (panel 019 point 2).
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct SlotId(pub u32);
-
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct BlockId(pub u32);
-
-/// A decoded string literal, interned per program (`Program::strings`).
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct StrId(pub u32);
-
-/// A run inside `Function::args`.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Args {
-    pub start: u32,
-    pub len: u32,
-}
-
-/// A run inside `Function::steps`.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Steps {
-    pub start: u32,
-    pub len: u32,
-}
-
-/// A place: where a `store` writes, and what an `@` argument names. §4.8's own
-/// sentence is the specification — "every place has exactly one root" — so a
-/// place is a slot plus a path of field and index steps, never an expression.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Place {
-    pub root: SlotId,
-    pub path: Steps,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Step {
-    /// `.x`, by *index* in the declaration — the name was resolved once, by the
-    /// checker, and no later pass compares strings again.
-    Field(u32),
-    /// `[i]`, the index already in a temporary.
-    Index(ValueId),
-}
-
-/// One argument of a call. `InOut` is `@l` at the call site: the callee copies
-/// in and copies out, so the argument is a *place*, not a value (§4.8).
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Arg {
-    Value(ValueId),
-    InOut(Place),
-}
 
 /// What a call calls — and this enum is the panel's most expensive finding. The
 /// resolver decided this once (`Resolved::uses`); recording it here is what stops

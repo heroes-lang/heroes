@@ -24,6 +24,7 @@
 //!
 //! | file | idea |
 //! |------|------|
+//! | `ids.rs`    | how the IR names things: every reference an index, every run a range |
 //! | `inst.rs`   | what an instruction is, and the five things C proved it must carry |
 //! | `build.rs`  | the pass's state: blocks, instructions, terminators |
 //! | `slots.rs`  | the other half of it: slots, runs, the `$` names |
@@ -64,6 +65,7 @@ mod mono_recursion;
 mod mono_subst;
 mod exprs;
 mod fallible;
+mod ids;
 mod inst;
 mod layout;
 mod matches;
@@ -81,10 +83,8 @@ mod verify;
 #[cfg(test)]
 mod tests;
 
-pub use inst::{
-    Abort, Arg, Args, BinOp, BlockId, Callee, CastKind, Const, Inst, Op, Place, Shape, SlotId, Step,
-    Steps, StrId, Term, UnOp, ValueId,
-};
+pub use ids::{Arg, Args, BlockId, Place, SlotId, Step, Steps, StrId, ValueId};
+pub use inst::{Abort, BinOp, Callee, CastKind, Const, Inst, Op, Shape, Term, UnOp};
 pub(crate) use layout::is_refcounted;
 pub use print::dump;
 pub use verify::verify;

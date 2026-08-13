@@ -10,7 +10,8 @@
 //! tables that disagree about which is which would be a refcount bug that reproduces
 //! once a week. There is one table, and it is this file.
 
-use super::inst::{Arg, Callee, Op, Place, Step, Term, ValueId};
+use super::inst::{Callee, Op, Term};
+use super::ids::{Arg, Place, Step, ValueId};
 use super::Function;
 
 /// Every value an operation reads. One function, so a new `Op` variant that forgets
@@ -54,7 +55,7 @@ pub fn terminator_operands(term: &Term) -> Vec<ValueId> {
     }
 }
 
-pub(super) fn arg_values(function: &Function, args: super::inst::Args) -> Vec<ValueId> {
+pub(super) fn arg_values(function: &Function, args: super::ids::Args) -> Vec<ValueId> {
     let mut values = Vec::new();
     if args.start as usize + args.len as usize > function.args.len() {
         return values;

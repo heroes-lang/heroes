@@ -26,7 +26,8 @@ use crate::resolve::Resolved;
 use crate::source::Span;
 use crate::types::TyId;
 
-use super::inst::{BlockId, Inst, Op, SlotId, StrId, Term, ValueId};
+use super::inst::{Inst, Op, Term};
+use super::ids::{BlockId, SlotId, StrId, ValueId};
 use super::{Block, FnKind, Function, Lowered, Program};
 
 /// Where `break` and `continue` go. A stack, because loops nest; `break` leaves

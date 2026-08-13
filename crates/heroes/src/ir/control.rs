@@ -32,7 +32,8 @@ use crate::syntax::{Arm, Ast, BinaryOp, Block as AstBlock, Branch, ExprId};
 use crate::types::{Checked, TyId};
 
 use super::build::{Loop, Lowering};
-use super::inst::{BinOp, Const, Op, Term, ValueId};
+use super::inst::{BinOp, Const, Op, Term};
+use super::ids::{ValueId};
 use super::{exprs, matches, stmts, SlotKind};
 
 /// `while cond` — the condition loop (§4.7, panel 018 gave it its own keyword).
@@ -245,7 +246,7 @@ pub(super) fn short_circuit(
 /// Writes an arm's value into the join slot, when there is one of each.
 pub(super) fn store_arm(
     b: &mut Lowering,
-    result: Option<super::inst::SlotId>,
+    result: Option<super::ids::SlotId>,
     value: Option<ValueId>,
     span: Span,
 ) {
@@ -260,8 +261,8 @@ pub(super) fn store_arm(
 /// so this is a real shape and not a defensive branch.
 pub(super) fn seal_join(
     b: &mut Lowering,
-    join: super::inst::BlockId,
-    result: Option<super::inst::SlotId>,
+    join: super::ids::BlockId,
+    result: Option<super::ids::SlotId>,
     ty: TyId,
     span: Span,
 ) -> ValueId {

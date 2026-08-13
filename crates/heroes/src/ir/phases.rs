@@ -25,7 +25,8 @@
 
 use crate::types::Checked;
 
-use super::inst::{Op, SlotId, Term};
+use super::inst::{Op, Term};
+use super::ids::{SlotId};
 use super::{is_refcounted, Block, Function, Phase, Program, SlotKind};
 
 pub(super) fn check(

@@ -23,7 +23,8 @@ use crate::syntax::{Arg as AstArg, Ast, DeclKind, ExprId, ExprKind};
 use crate::types::{Checked, Ty, TyId};
 
 use super::build::Lowering;
-use super::inst::{Arg, Args, Callee, CastKind, Op, Shape, ValueId};
+use super::inst::{Callee, CastKind, Op, Shape};
+use super::ids::{Arg, Args, ValueId};
 use super::{exprs, fallible, layout, places};
 
 /// A declaration as a call target. The `extern` split is not a detail: those

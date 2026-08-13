@@ -16,7 +16,8 @@ use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 use crate::types::{Checked, Ty, TyId};
 
-use super::inst::{Callee, Shape, ValueId};
+use super::inst::{Callee, Shape};
+use super::ids::{ValueId};
 use super::print_inst::value_name;
 use super::Function;
 

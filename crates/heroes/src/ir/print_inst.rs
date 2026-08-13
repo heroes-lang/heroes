@@ -21,7 +21,8 @@ use crate::source::Source;
 use crate::syntax::Ast;
 use crate::types::{render_ty, Checked, Ty};
 
-use super::inst::{Abort, Arg, BinOp, CastKind, Const, Inst, Op, Place, Step, UnOp, ValueId};
+use super::inst::{Abort, BinOp, CastKind, Const, Inst, Op, UnOp};
+use super::ids::{Arg, Place, Step, ValueId};
 use super::print_names::{case_name, field_name, field_type, name_of_field, shape_name, target};
 use super::Function;
 
@@ -178,7 +179,7 @@ fn written(
 
 fn arguments(
     function: &Function,
-    args: super::inst::Args,
+    args: super::ids::Args,
     ast: &Ast,
     checked: &Checked,
     src: &Source,

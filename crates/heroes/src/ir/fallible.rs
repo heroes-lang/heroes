@@ -24,7 +24,8 @@ use crate::syntax::{Arg as AstArg, Ast, ExprId};
 use crate::types::{Checked, TyId};
 
 use super::build::Lowering;
-use super::inst::{Abort, BinOp, Const, Op, Shape, SlotId, Term, ValueId};
+use super::inst::{Abort, BinOp, Const, Op, Shape, Term};
+use super::ids::{SlotId, ValueId};
 use super::{decls, exprs};
 
 /// `ok` and `fail` are built-ins so that the names resolve; here they are
@@ -134,7 +135,7 @@ pub(super) fn try_expr(
     // The caller's `T?`, carrying the callee's failure unchanged. The result type
     // is the enclosing function's, which `?` already required to be fallible.
     let result = b.result_type();
-    let args = b.args(&[super::inst::Arg::Value(failure)]);
+    let args = b.args(&[super::ids::Arg::Value(failure)]);
     let wrapped = b.emit(Op::Construct { shape: Shape::Err, args }, result, span);
     decls::copy_out(b, checked);
     b.terminate(Term::Return(Some(wrapped)));
@@ -171,8 +172,8 @@ fn branch_on_ok(
     b: &mut Lowering,
     checked: &Checked,
     subject: SlotId,
-    good: super::inst::BlockId,
-    bad: super::inst::BlockId,
+    good: super::ids::BlockId,
+    bad: super::ids::BlockId,
     span: Span,
 ) {
     let tag = read_tag(b, checked, subject, span);

@@ -23,7 +23,8 @@ use crate::syntax::{Ast, Block, StmtId, StmtKind};
 use crate::types::{Checked, TyId};
 
 use super::build::Lowering;
-use super::inst::{Op, Term, ValueId};
+use super::inst::{Op, Term};
+use super::ids::{ValueId};
 use super::{asserts, control, decls, exprs, places, SlotKind};
 
 /// Lowers a block's statements in order.

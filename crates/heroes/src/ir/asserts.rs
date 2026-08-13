@@ -20,7 +20,8 @@ use crate::syntax::{Ast, BinaryOp, ExprId, ExprKind};
 use crate::types::Checked;
 
 use super::build::Lowering;
-use super::inst::{Abort, Arg, Const, Op, Term, ValueId};
+use super::inst::{Abort, Const, Op, Term};
+use super::ids::{Arg, ValueId};
 use super::exprs;
 
 pub(super) fn assert(
@@ -86,7 +87,7 @@ pub(super) fn assert(
 /// carries a reference.
 enum Carried {
     Value(ValueId),
-    Slot(super::inst::SlotId),
+    Slot(super::ids::SlotId),
 }
 
 /// The condition, and the two sides when there are two.
