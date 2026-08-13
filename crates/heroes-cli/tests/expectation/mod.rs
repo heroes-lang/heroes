@@ -59,11 +59,23 @@ pub fn check(
     expected: &str,
     ending: &Option<Expectation>,
 ) {
+    // **The whole ending, in the failure message.** A mismatch on stdout used to
+    // report stdout and nothing else, so a program that printed nothing looked
+    // exactly like a program that failed to build, aborted early, or was killed —
+    // four different causes behind one message. That cost a CI round trip on the
+    // first Linux run this project ever had (M-program-corpus): the only machine
+    // that could answer the question was the one that could not be asked twice.
+    let ending = match output.status.code() {
+        Some(code) => format!("exit {code}"),
+        None => "killed by a signal".to_string(),
+    };
     assert_eq!(
         String::from_utf8_lossy(&output.stdout),
         expected,
-        "{} prints something else at {level} — the same corpus, one configuration apart",
-        case.display()
+        "{} prints something else at {level} — the same corpus, one configuration apart\n  \
+         it ended: {ending}\n  its stderr was:\n{}",
+        case.display(),
+        String::from_utf8_lossy(&output.stderr)
     );
     match ending {
         None => assert_eq!(
