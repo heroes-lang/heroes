@@ -36,6 +36,10 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 010 | [sugar, tests, generics, library](010-sugar-tests-generics-library.md) | M6 — the language is finished | 2026-08-11 | `m6` |
 | 011 | [modules, the namespace](011-modules-the-namespace.md) | M8a — a program is many files | 2026-08-12 | `m8a` |
 | 012 | [the FFI ladder](012-the-ffi-ladder.md) | M-ffi-ladder — Heroes calls C | 2026-08-12 | `m-ffi-ladder` |
+| 013 | [header constants](013-header-constants.md) | M-header-constants — the number leaves the file | 2026-08-12 | `m-header-constants` |
+| 014 | [literal bases](014-literal-bases.md) | M-literal-bases — four ways to write a number, and one that stopped lying | 2026-08-12 | `m-literal-bases` |
+| 015 | [sized integers](015-sized-integers.md) | M-sized-integers — eight widths, and `int` stops being a word | 2026-08-12 | `m-sized-integers` |
+| 016 | [the program corpus](016-the-program-corpus.md) | M-program-corpus — nine programs, six compiler defects, and a CI | 2026-08-13 | `m-program-corpus` |
 
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what

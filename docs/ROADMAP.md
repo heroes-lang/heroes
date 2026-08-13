@@ -17,64 +17,41 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-sized-integers closed 2026-08-12, tag `m-sized-integers` — eight integer
-widths, and `int` is not a word in this language.**
+**M-program-corpus closed 2026-08-13, tag `m-program-corpus` — nine programs, six
+compiler defects, and a CI on two platforms.**
 
-    $ heroes run tests/golden/run/sized-integers.hero
-    top 18446744073709551615 · widen 700 · narrow true 42 · bytes 65 57 true
+    $ heroes run examples/maze/main.hero -- examples/maze/sample.maze
+    steps: 25
 
-`i8 i16 i32 i64 u8 u16 u32 u64`, by the author's ratification of panel 042 over
-its two vetoes; Part 7 item 10's *"never in v1"* is retired. Overflow aborts at
-every width, a literal takes the width its context asks for, `s[i]` is a `u8`,
-`fit_<w>` is fallible exactly when it can fail, ABI 10 → 11. Half of
-design.md:833's *"most expensive spec item"* was already paid — §4.3 bans
-implicit conversions — so the whole addition came to **+188**.
+`examples/` is one directory per program, found by looking rather than by list.
+The programs found **six** compiler defects, three of them CLAUDE.md §11's class,
+and one of the six was `heroes fmt` changing the meaning of a program.
 
-**532 tests · 51 CLI · 13 harnesses**, clippy clean, spec **2956** of 4096,
-`mutate` 93% / 78% over 1255. Record: `docs/journal/015-sized-integers.md` ·
-`docs/panel/042`. Next: **M-program-corpus**.
+**542 tests · 51 CLI · 13 golden harnesses + 7 corpus properties**, clippy clean
+under `-D warnings`, spec **2974** of 4096, `mutate` **95% / 85% over 5798** over
+45 programs. **The CI has never run**, and the first push starts it — the
+author's call. Record: `docs/journal/016-the-program-corpus.md`. Next:
+**M-selfhost-probe**.
 
 ---
-
-**M-ffi-ladder closed 2026-08-12, tag `m-ffi-ladder` — Heroes calls C, and a wrong
-binding cannot compile.**
-
-    $ heroes run examples/sqlite/main.hero
-    rows: 3
-    longest: 6
-
-The ladder, all four rungs: printf/libm, **SQLite with no shim** (§4.19's own
-acceptance: *if this works without you having written a standard library, the
-architecture holds*), and libcurl — a variadic and an enum return, added on the
-author's instruction, which broke the milestone's newest check in its first
-compile. The closure list's last three rows land as **Tier 2** over
-`runtime/hero_os.h`, so §1.0's fourteen rows are complete and the language's own
-list is closed.
-
-**452 crate tests · 41 CLI surface · 13 golden harnesses**, clippy clean, spec at
-**2560** of 4096, `heroes mutate` at **93% / 78% over 1253** across 19 programs.
-
-The record: `docs/journal/012-the-ffi-ladder.md` · `docs/panel/036-the-ffi-ladder.md`.
-Next: **M-program-corpus**.
 
 ## The order
 
 | order | id | what | warrant |
 |---|---|---|---|
-| 1 | **M-program-corpus** | The corpus — many whole programs, all of them run, before anything is ported | the net the port hangs from |
-| 2 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
-| 3 | **M-selfhost-port** | The port | v1 |
-| 4 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 5 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
-| 6 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 7 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 8 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 9 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
-| 10 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
-| 11 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
-| 12 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
-| 13 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
-| 14 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
+| 1 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
+| 2 | **M-selfhost-port** | The port | v1 |
+| 3 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 4 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
+| 5 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 6 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 7 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 8 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
+| 9 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 10 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 11 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
+| 12 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 13 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -102,74 +79,6 @@ as on simplicity. What is real underneath the question is measured:
 a `constant`, not a feature.
 
 ## What each one is
-
-### M-program-corpus — The corpus: many whole programs, all of them run
-The one milestone whose deliverable is **programs rather than compiler**, and it
-sits here because every instrument this project owns reports on the programs it
-is given. The M-generics-library audit found two live defects with *one* program
-(`run/closure-list.hero`), each reachable for three milestones with no test,
-"because nobody had written the program that meets them". This milestone writes
-them.
-
-- **`examples/` is reorganised as one directory per program.** `calculator.hero`
-  moves to `examples/calculator/` (which M-module-namespace will have split into modules
-  anyway), the gallery stays as the one-idea-per-file series it is, and each new
-  program gets its own directory with its source, its `test` blocks and a `README`
-  line saying what it demonstrates.
-- **Whole programs, not snippets**: the kind of thing other languages ship as
-  their tour — a JSON reader, a Markdown-to-text converter, a text adventure, a
-  spreadsheet evaluator, a maze solver, a tiny assembler, a log summariser, a
-  todo list over a file. Each ends in a state the language must actually reach:
-  reads its input (M-ffi-ladder's file I/O), takes `args()`, exits with a code, and asserts
-  its own behaviour in `test` blocks.
-- **Every program is written from the task, never translated from a licensed
-  source.** The tours these are drawn from (Rosetta Code, *Go by Example*,
-  Nim's and Zig's example sets) carry licences; the *problem* is not copyrightable
-  and the Heroes program is written from the problem statement. No file arrives
-  by transcription, and CLAUDE.md §11's register applies to every line of prose in
-  them.
-- **All of them run, in three configurations** — `-O0`, `-O2`, `--sanitize` —
-  like `tests/golden/run/`, with the leak balance asserted, and they join
-  `heroes mutate`'s corpus, which is where CLAUDE.md §9 says an invariant belongs:
-  *asserted over the corpus rather than over cases somebody thought of*.
-
-**And the CI is born here**, because a corpus is what makes it worth having:
-GitHub Actions over **Linux x86-64 as well as Darwin arm64**, running
-`cargo test` and the corpus in its three configurations. Everything this project
-knows about the machine it runs on it learned the hard way — ASan has no leak
-detector on Darwin arm64 (hence `hero_runtime_check_leaks`), `INT64_MIN % -1`
-does not trap there, Apple ARM64 passes variadics on the stack — and each of
-those is a place where the other platform can diverge in silence. Today nothing
-tests any of it.
-- **Error codes become `constant`s across the corpus** (panel 034 R4), compared as
-  `store.ERR_UNKNOWN_ITEM` rather than as bare literals. Zero spec tokens and zero
-  compiler lines: a typo is `error[unknown_name]` today, locally, with the owning
-  module named. It arrives with its own measurement — re-run `heroes mutate` and
-  say what happened to `typo-code`'s row, including the awkward possibility that
-  it loses its sites rather than passing them.
-
-- **The Part 11 harness runs here** (author instruction 2026-08-12). It has not
-  run since M-strings-ownership, and four panel predictions, `outline`/`explain`'s
-  admissibility and panel 036's four first-try rates all wait on it. Here rather
-  than before the port, because the corpus is what the measurement is taken over
-  and a bigger corpus is a better number.
-- **At least one corpus program does not end in `exit(code)`** (author instruction
-  2026-08-12). `exit` bypasses `hero_runtime_check_leaks()` by design — a program
-  asking to stop now is not asking for an audit, and running the gate there would
-  report a leak for every live value in every frame the exit unwinds past — but on
-  Darwin arm64 that counter is the *only* leak instrument there is. So the
-  exemption stands and the corpus keeps a path that still crosses the gate.
-
-**Acceptance:** `heroes test` green over every directory in `examples/`, in all
-three configurations **and on both platforms**, and a measured mutation rate over
-the enlarged corpus —
-with every defect the corpus finds getting a case named after it (§9's
-`fixedbugs` rule). A defect found here is the milestone working, not the
-milestone slipping.
-**Why before the probe and the port:** the probe measures what the language
-lacks, and a measurement taken on a compiler that still has reachable defects
-measures the defects too. The port then hangs from this net rather than from the
-68 cases it would otherwise have.
 
 ### M-selfhost-probe — The probe: measure before committing to the port
 The lexer (983 non-test lines) ported to Heroes **for real**, to find out what
