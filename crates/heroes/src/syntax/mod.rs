@@ -42,6 +42,7 @@ mod expr;
 mod members;
 mod primary;
 mod recover;
+mod name_stmt;
 mod stmt;
 mod types;
 mod uses;

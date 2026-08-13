@@ -19,10 +19,10 @@ use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::lexer::TokenKind;
 use crate::source::{Source, Span};
 
-use super::ast::{Ast, Block, ExprId, ExprKind, Stmt, StmtId, StmtKind};
+use super::ast::{Ast, Block, Stmt, StmtId, StmtKind};
 use super::cursor::Cursor;
 use super::expr::expr;
-use super::types::parse_type;
+use super::name_stmt::{annotated, bind, expression_or_mutation};
 
 /// The indented body of a declaration, a loop, an `if` or a `match` arm.
 /// `None` means the block was missing and a diagnostic said so; the caller
@@ -239,68 +239,5 @@ fn for_stmt(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
     match block(cur, ast, src, "a `for`") {
         Some(block) => StmtKind::While { cond, block },
         None => StmtKind::Error,
-    }
-}
-
-/// `x = 5` — binds once, forever (§4.4). The type is inferred, and inference
-/// is local: the value on this line decides it (§4.5).
-fn bind(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
-    let name = cur.bump().span;
-    cur.bump(); // `=`
-    StmtKind::Bind { name, ty: None, value: expr(cur, ast, src) }
-}
-
-/// `v: i64 @ 0` — a mutable cell, type mandatory. `xs: [i64] = []` — an
-/// immutable binding that needs its annotation because an empty literal
-/// cannot say what it holds (§4.5).
-fn annotated(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
-    let name = cur.bump().span;
-    cur.bump(); // `:`
-    let ty = parse_type(cur, ast, src);
-    if cur.eat(TokenKind::At) {
-        return StmtKind::Declare { name, ty, value: expr(cur, ast, src) };
-    }
-    if cur.eat(TokenKind::Eq) {
-        return StmtKind::Bind { name, ty: Some(ty), value: expr(cur, ast, src) };
-    }
-    if !cur.at_reported_error() {
-        let message = format!(
-            "expected `@` to declare a mutable, or `=` to bind, found {} — `v: i64 @ 0` declares a cell, `xs: [i64] = []` binds once",
-            cur.found(src)
-        );
-        cur.error("expected_binding_symbol", message, cur.span());
-    }
-    StmtKind::Error
-}
-
-/// Everything else: an expression alone on its line, or the place on the
-/// left of an `@`.
-fn expression_or_mutation(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> StmtKind {
-    let value = expr(cur, ast, src);
-    if !cur.eat(TokenKind::At) {
-        return StmtKind::Expr(value);
-    }
-    if !is_place(ast, value) {
-        let span = ast.exprs[value.0 as usize].span;
-        cur.error(
-            "not_a_place",
-            "only a name, a field or an element can be mutated — the left of `@` must name where the value goes"
-                .to_string(),
-            span,
-        );
-    }
-    StmtKind::Mutate { place: value, value: expr(cur, ast, src) }
-}
-
-/// A *place*: a name, or a field or index path rooted at one. Since Heroes
-/// has no references, every place has exactly one root — which is what makes
-/// panel 010's alias test a comparison of roots rather than a dataflow
-/// analysis.
-fn is_place(ast: &Ast, id: ExprId) -> bool {
-    match &ast.exprs[id.0 as usize].kind {
-        ExprKind::Name => true,
-        ExprKind::Field { base, .. } => is_place(ast, *base),
-        ExprKind::Index { base, .. } => is_place(ast, *base),
-        _ => false,
     }
 }
