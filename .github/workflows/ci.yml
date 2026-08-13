@@ -65,10 +65,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang libsqlite3-dev libcurl4-openssl-dev
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-
+      # **No toolchain step, on purpose.** `rust-toolchain.toml` pins the version
+      # and `rustup` — preinstalled on both runners — honours it for every
+      # `cargo` invocation in this directory. An action naming a version here
+      # would be a second home for the same number, and the first run of this
+      # workflow is what proved the cost: clippy 1.97 rejected forty `vec![…]`
+      # lines that clippy 1.90 accepts, and local and CI had never been compared.
       - uses: Swatinem/rust-cache@v2
 
       - name: Build the compiler

@@ -1,0 +1,25 @@
+# The Rust this compiler is built with, pinned — and the pin is not tidiness.
+#
+# **A compiler whose v1 acceptance criterion is a byte-identical fixpoint must
+# not float on whatever `stable` shipped this morning.** CLAUDE.md §10's declared
+# exception says `cargo build`/`cargo test` build the compiler until
+# M-selfhost-fixpoint; it does not say *which* Rust, and until 2026-08-13 the
+# answer was "whichever the machine happens to have". Local and CI answered
+# differently on the first run that ever compared them.
+#
+# What that first run found (M-program-corpus): clippy **1.97** rejects forty
+# lines that clippy **1.90** accepts, all of them `vec![…]`, all with the same
+# message — *use of a disallowed type `std::boxed::Box`*. This project has
+# **zero** `Box` in its own Rust; `vec!` expands to `Box::new([…])` inside the
+# standard library, and the newer lint looks into that expansion. So the Cyclone
+# rule's own enforcement now fires on the macro that builds the one indirection
+# the Cyclone rule sanctions.
+#
+# The pin holds the line while that is decided — it is in `DECIDE.md`, and the
+# two answers are an exemption for `vec!` or a pin that stays. It is written
+# **once, here**, and `rustup` honours it for every `cargo` invocation in this
+# directory, so the CI needs no toolchain step and cannot disagree with a laptop.
+
+[toolchain]
+channel = "1.90.0"
+components = ["clippy"]
