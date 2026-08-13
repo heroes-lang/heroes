@@ -561,3 +561,44 @@ fn a_milestone_identifier_is_recognised_in_either_spelling() {
         assert!(!names_a_milestone(clean), "false positive: {clean}");
     }
 }
+
+/// **No `_Generic` association names `void`**, in any program.
+///
+/// A FIXED DEFECT, named after it (Go's `test/fixedbugs`), 2026-08-13.
+///
+/// SYMPTOM: every program that binds a C function returning nothing emitted
+/// `#define HERO_RET_UNIT(c) _Generic((c), void:1, default:0)`, and every
+/// program in the corpus binds one — `hero_exit` comes with the library. **It
+/// compiled here and nowhere else.** The first CI run that ever put this project
+/// on two machines failed on both: `error: type 'void' in generic association
+/// incomplete`.
+///
+/// CAUSE: C11 6.5.1.1p2 — *"The type name in a generic association shall specify
+/// a complete object type"* — and `void` is incomplete. It was a constraint
+/// violation from the day §4.19's return assertion was written. This laptop's
+/// clang accepts it and says why when asked: *"incomplete type 'void' in a
+/// '_Generic' association is a **C2y extension**"*. One compiler was reading a
+/// future standard and nothing else was.
+///
+/// FIX: `__builtin_types_compatible_p(__typeof__(c), void)`, which clang and GCC
+/// both give, which takes `void` without complaint, and whose operand is
+/// unevaluated exactly as `_Generic`'s is — so the call is still never made.
+///
+/// This test is the net rather than the fix: it reads the emitted text and looks
+/// for the shape, because the thing that hid the defect for two milestones was
+/// that **only a compiler could see it**, and only some compilers at that. A
+/// string search sees it on every machine.
+#[test]
+fn fixedbugs_no_generic_association_names_void() {
+    let out = emitted(
+        "extern \"stdlib.h\"\n    function abort() -> ()\n\nfunction main()\n    abort()\n",
+    );
+    assert!(out.c.contains("HERO_RET_UNIT"), "the unit return assertion is gone: {}", out.c);
+    for line in out.c.lines().filter(|line| line.contains("_Generic")) {
+        assert!(
+            !line.contains("void:"),
+            "`void` is an incomplete type and C11 6.5.1.1 forbids it as a generic \
+             association — one clang takes it as a C2y extension and the rest refuse it:\n{line}"
+        );
+    }
+}

@@ -139,7 +139,21 @@ pub(super) fn extern_assertions(
     w.line("#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)");
     w.line("#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)");
     w.line("#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)");
-    w.line("#define HERO_RET_UNIT(c) _Generic((c), void:1, default:0)");
+    // **`void` cannot be a `_Generic` association, and this line said it was.**
+    // C11 6.5.1.1p2: *"The type name in a generic association shall specify a
+    // complete object type"*, and `void` is incomplete — so this was a constraint
+    // violation, always, in every program that binds a C function returning
+    // nothing. One clang accepted it and every other rejected it: the laptop this
+    // project was built on said nothing for two milestones, and the **first CI
+    // run that ever compared two machines** failed on both of them
+    // (M-program-corpus, `error: type 'void' in generic association incomplete`).
+    //
+    // `__builtin_types_compatible_p` is the answer clang and GCC both give, it
+    // takes `void` without complaint, and its operand is unevaluated exactly as
+    // `_Generic`'s is — so the call is still never made. It is not a new
+    // dependency: CLAUDE.md §7 already commits every arithmetic operation to
+    // `__builtin_*_overflow`.
+    w.line("#define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)");
     // A pointer return is checked by its **negative** set: `_Generic` cannot say
     // "any pointer", and `default:1` alone would check nothing. Listing what a
     // pointer is not still catches the case that matters — a function returning an
