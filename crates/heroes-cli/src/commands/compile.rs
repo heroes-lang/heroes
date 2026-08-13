@@ -24,17 +24,19 @@
 
 use std::path::PathBuf;
 
-use heroes::diagnostics::{render, Diagnostic};
+use heroes::diagnostics::Diagnostic;
 use heroes::emit::{emit_for, entry_point, module_of, Target};
 use heroes::ir::{dump, lower, verify};
 use heroes::ir::mono;
 use heroes::own;
 use heroes::resolve::resolve;
-use heroes::source::{Source, Span};
+use heroes::source::Span;
 use heroes::syntax::parse;
 use heroes::types::{check, report_holes};
 
-use crate::cli::{Exit, Invocation};
+use super::contract::{report, write};
+
+use crate::cli::Exit;
 use crate::input;
 
 use super::toolchain::Toolchain;
@@ -64,29 +66,6 @@ pub struct Options {
 }
 
 /// `Ok(None)` — it stopped at a dump. `Ok(Some(path))` — that binary exists now.
-/// The optimisation level this invocation asked for, or the verb's default.
-///
-/// **Two levels and no others**, which is CLAUDE.md §10's stopping rule applied to
-/// a flag rather than to a verb: the `run/` golden harness types `-O0` and `-O2`
-/// (every case runs at both), and nothing types `-O1`, `-O3` or `-Os`. A level the
-/// harness does not need is surface nobody must type.
-///
-/// Spelled attached, as clang spells it, so the flag a reader already knows is the
-/// flag that works. Both at once is refused rather than resolved by precedence —
-/// the same reading `build` gives `--dump-ir --emit-c`: an invocation that asked
-/// two questions gets an error, not an answer to one of them.
-pub fn level_from(args: &Invocation, default: &'static str) -> Result<&'static str, Exit> {
-    match (args.has("-O0"), args.has("-O2")) {
-        (true, true) => {
-            eprintln!("error: `-O0` and `-O2` are one choice — ask for one level at a time");
-            Err(Exit::Failed)
-        }
-        (true, false) => Ok("-O0"),
-        (false, true) => Ok("-O2"),
-        (false, false) => Ok(default),
-    }
-}
-
 pub fn compile(path: &str, options: &Options) -> Result<Option<PathBuf>, Exit> {
     compile_with_tests(path, options).map(|pair| pair.map(|(binary, _)| binary))
 }
@@ -280,38 +259,4 @@ pub fn compile_with_tests(
         return Err(Exit::Failed);
     }
     Ok(Some((binary, heroes::emit::tests_of(&lowered.program))))
-}
-
-fn write(path: &str, text: &str) -> Result<(), Exit> {
-    if let Some(parent) = std::path::Path::new(path).parent() {
-        if !parent.as_os_str().is_empty() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-    }
-    std::fs::write(path, text).map_err(|e| {
-        eprintln!("error: cannot write {path}: {e}");
-        Exit::Failed
-    })
-}
-
-/// §4.17's rich form, on stderr, and `Exit::Diagnostics`.
-///
-/// `build` and `run` take no diagnostic-shaping flags: `check` already answers every
-/// question about how to print them, and two commands with two renderings of one
-/// diagnostic is the kind of surface panel 016 exists to prevent.
-fn report(diagnostics: &[Diagnostic], src: &Source) -> Result<(), Exit> {
-    if diagnostics.is_empty() {
-        return Ok(());
-    }
-    // A diagnostic pointing into the library is the COMPILER being wrong, not the
-    // program: the line it names is in a file the author cannot open, so the
-    // message is unactionable however good it is. Exit 2 and say so
-    // (CLAUDE.md §10's contract; the class was panel 028 R5's).
-    if let Some(what) = heroes::library::misplaced(diagnostics, src) {
-        eprintln!("internal error: {what}");
-        return Err(Exit::Failed);
-    }
-    let rendered: Vec<String> = diagnostics.iter().map(|d| render(d, src)).collect();
-    eprint!("{}", rendered.join("\n"));
-    Err(Exit::Diagnostics)
 }

@@ -18,7 +18,8 @@ use crate::cli::{Exit, Invocation};
 
 use heroes::emit::Target;
 
-use super::compile::{compile, level_from, Options};
+use super::compile::{compile, Options};
+use super::contract::level_from;
 
 pub fn run(path: &str, args: &Invocation) -> Exit {
     let level = match level_from(args, "-O2") {

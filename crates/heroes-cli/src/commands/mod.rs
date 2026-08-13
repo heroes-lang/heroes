@@ -1,5 +1,6 @@
 pub mod build;
 pub mod compile;
+mod contract;
 pub mod check;
 pub mod doctor;
 pub mod fmt;
