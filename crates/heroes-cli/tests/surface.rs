@@ -438,7 +438,7 @@ fn editing_a_runtime_part_invalidates_the_cached_object() {
 /// `build`'s is a binary and `run`'s is a process.
 #[test]
 fn test_runs_each_block_and_reports_one_line_each() {
-    let out = heroes(&["test", "examples/calculator.hero"]);
+    let out = heroes(&["test", "examples/calculator/whole.hero"]);
     let shown = String::from_utf8_lossy(&out.stdout).into_owned();
     // The report is the artifact, so it is on stdout (§10's contract).
     assert!(shown.contains("ok   \"precedence and parens\""), "{shown}");
@@ -471,7 +471,7 @@ fn the_split_calculator_passes_the_same_tests_across_four_modules() {
 #[test]
 fn the_split_calculator_prints_what_the_single_file_one_prints() {
     let split = heroes(&["run", "examples/calculator/main.hero"]);
-    let whole = heroes(&["run", "examples/calculator.hero"]);
+    let whole = heroes(&["run", "examples/calculator/whole.hero"]);
     assert_eq!(
         String::from_utf8_lossy(&split.stdout),
         String::from_utf8_lossy(&whole.stdout),
@@ -575,7 +575,7 @@ fn a_failing_test_does_not_hide_the_ones_after_it() {
 /// tests still builds — it just has no `main`, which `test` does not need.
 #[test]
 fn an_ordinary_build_ignores_test_blocks() {
-    let out = heroes(&["build", "examples/calculator.hero", "--emit-c"]);
+    let out = heroes(&["build", "examples/calculator/whole.hero", "--emit-c"]);
     let c = String::from_utf8_lossy(&out.stdout).into_owned();
     assert!(!c.contains("hero_panic_assert"), "a test block reached an ordinary build");
     assert_eq!(code(&out), 0);

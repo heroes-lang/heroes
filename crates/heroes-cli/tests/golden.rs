@@ -26,6 +26,9 @@
 
 use std::path::{Path, PathBuf};
 
+mod expectation;
+use expectation::{check, split_expectation};
+
 fn workspace_root() -> PathBuf {
     // crates/heroes-cli/ -> crates/ -> workspace root
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -629,90 +632,6 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             relative.display()
         );
         check(relative, "--sanitize", &sanitised, &expected, &ending);
-    }
-}
-
-/// An expectation is the program's stdout — and, if its last line begins `!panic: `,
-/// the abort it must end in.
-///
-/// The convention is QBE's, which puts the driver *and* the expected output in the
-/// input file. It exists because the interesting half of §4.14 is the aborts: a
-/// program that overflows must **stop**, and the wrong emitter does not crash, it
-/// prints a wrapped number at exit 0. That behaviour is only a golden if the harness
-/// can spell it.
-fn split_expectation(text: &str) -> (String, Option<Expectation>) {
-    let mut lines: Vec<&str> = text.lines().collect();
-    let mut ending = None;
-    if let Some(last) = lines.last() {
-        if let Some(message) = last.strip_prefix("!panic: ") {
-            ending = Some(Expectation::Panic(message.to_string()));
-            lines.pop();
-        // `!exit: N` — a program that ends deliberately rather than by aborting.
-        // It arrived with `exit(code)` at M-ffi-ladder, and it is a *second* line
-        // the harness can spell rather than a relaxation of the first: a case
-        // without one still has to exit 0, so a program that starts exiting by
-        // accident is still a failure.
-        } else if let Some(code) = last.strip_prefix("!exit: ") {
-            ending = Some(Expectation::Exit(code.trim().parse().expect("an exit code")));
-            lines.pop();
-        }
-    }
-    let mut stdout = lines.join("\n");
-    if !stdout.is_empty() {
-        stdout.push('\n');
-    }
-    (stdout, ending)
-}
-
-/// How a case ends, when it does not end at exit 0 with nothing on stderr.
-enum Expectation {
-    /// `!panic: <message>` — an abort, and the message stderr must carry.
-    Panic(String),
-    /// `!exit: <code>` — `exit(code)`, and the status the shell must see.
-    Exit(i32),
-}
-
-fn check(
-    case: &Path,
-    level: &str,
-    output: &std::process::Output,
-    expected: &str,
-    ending: &Option<Expectation>,
-) {
-    assert_eq!(
-        String::from_utf8_lossy(&output.stdout),
-        expected,
-        "{} prints something else at {level} — the same corpus, one configuration apart",
-        case.display()
-    );
-    match ending {
-        None => assert_eq!(
-            output.status.code(),
-            Some(0),
-            "{} did not exit 0 at {level}",
-            case.display()
-        ),
-        Some(Expectation::Exit(code)) => assert_eq!(
-            output.status.code(),
-            Some(*code),
-            "{} did not exit {code} at {level}",
-            case.display()
-        ),
-        Some(Expectation::Panic(message)) => {
-            let said = String::from_utf8_lossy(&output.stderr);
-            assert!(
-                said.contains(message),
-                "{} at {level} must abort with {message:?}, and said:\n{said}",
-                case.display()
-            );
-            assert_ne!(
-                output.status.code(),
-                Some(0),
-                "{} at {level} must not exit 0: an abort that returns success is the silent \
-                 wrong answer this case exists to catch",
-                case.display()
-            );
-        }
     }
 }
 

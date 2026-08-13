@@ -1,35 +1,56 @@
 # examples/
 
-- `gallery/` — twelve programs written to be **read**: what the language looks
-  like when it is used rather than tested. One theme each, in reading order,
-  opening with the smallest program worth compiling and ending with the shapes
-  the middle end needed:
+**One directory per program.** A directory here holding a `main.hero` *is* a
+program, and that is the whole rule the harness knows: `tests/corpus.rs` finds
+every one of them by looking, so a program joins the suite by existing and cannot
+be forgotten. Beside the source, a program directory may carry
 
-  | file | what it shows |
-  |------|---------------|
-  | `00-first.hero`     | the compiler's first program — M-scalars-run's target, and spike 01 is its hand-written C shape |
-  | `01-points.hero`    | records, named construction, UFCS |
-  | `02-tokens.hero`    | a variant with payloads, and exhaustive `match` |
-  | `03-fallible.hero`  | `T?`, `fail`/`ok`, `?`, `.must()`, `.default()` |
-  | `04-loops.hero`     | `while cond`, `for x in xs`, cells, `break`/`continue` |
-  | `05-mutation.hero`  | `@` parameters: copy in, copy out, no aliasing |
-  | `06-generics.hero`  | generics on functions, and functions as values |
-  | `07-strings.hero`   | bytes versus characters, `slice`, `join` |
-  | `08-ffi.hero`       | `extern`: everything else comes from C |
-  | `09-holes.hero`     | `???`, and working skeleton-first |
-  | `10-maps.hero`      | `{K: V}`, and `m[k]` returning a `V?` — absence as a type |
-  | `11-trees.hero`     | a recursive variant: the array is the only indirection |
+- `main.expected` — what it prints, in the `tests/golden/run/` convention: the
+  stdout, optionally closed by `!exit: <code>` or `!panic: <message>`;
+- `main.args` — one argument per line, handed to `args()`.
 
-  Every one of them is held to six properties by the test suite, because an
-  example nobody runs is an example that rots: it **parses** clean
-  (`printer::gallery`), it **resolves** clean (`resolve::tests::gallery`), it
-  **type-checks** clean (`types::tests::acceptance`), it **lowers and verifies**
-  (`ir::tests::acceptance`), it is in **canonical form** byte for byte — so no
-  example teaches a layout `heroes fmt` would undo — and formatting **preserves
-  its tree**. The gallery is therefore also the widest regression surface the
-  compiler has, and `heroes mutate` uses it as the corpus it makes mistakes in.
+Every program is checked in **three configurations** — `-O0`, `-O2`,
+`--sanitize` — its `test` blocks green in all three and its output identical in
+all three. The leak balance rides along: every generated `main` ends in
+`hero_runtime_check_leaks()`, which on Darwin arm64 is the only leak instrument
+there is. And each of them is in `heroes mutate`'s corpus, which is where
+CLAUDE.md §9 says an invariant belongs — asserted over the corpus rather than
+over cases somebody thought of.
 
-- The **calculator** — the acceptance program — lives in design.md's appendix
-  ("A complete example program"), its single source. The copy that sat here
-  was 70% duplicate and drifted (pruned 2026-08-03). It returns as a real
-  file at M-generics-library, generated from the appendix, when `heroes test` can run it.
+## The programs
+
+| directory | what it is |
+|---|---|
+| `calculator/` | the acceptance program: a lexer, a recursive-descent parser and an evaluator for arithmetic with variables, across four modules — and `whole.hero` beside them, the same program in one file, so "two spellings of one program" is a claim something checks |
+| `sqlite/` | §4.19's own acceptance: open, query, close, against the SDK's `sqlite3.h` with **no shim** |
+| `curl/` | a variadic and an enum return, over libcurl. The one program with no `main.expected`, and the reason is read off the program rather than off a list: it prints this machine's libcurl version |
+
+## `gallery/`
+
+Twelve programs written to be **read**: what the language looks like when it is
+used rather than tested. One theme each, in reading order, opening with the
+smallest program worth compiling and ending with the shapes the middle end
+needed. It is not a program directory — each file is its own program, which is
+why there is no `main.hero` in it.
+
+| file | what it shows |
+|------|---------------|
+| `00-first.hero`     | the compiler's first program — M-scalars-run's target, and spike 01 is its hand-written C shape |
+| `01-points.hero`    | records, named construction, UFCS |
+| `02-tokens.hero`    | a variant with payloads, and exhaustive `match` |
+| `03-fallible.hero`  | `T?`, `fail`/`ok`, `?`, `.must()`, `.default()` |
+| `04-loops.hero`     | `while cond`, `for x in xs`, cells, `break`/`continue` |
+| `05-mutation.hero`  | `@` parameters: copy in, copy out, no aliasing |
+| `06-generics.hero`  | generics on functions, and functions as values |
+| `07-strings.hero`   | bytes versus characters, `slice`, `join` |
+| `08-ffi.hero`       | `extern`: everything else comes from C |
+| `09-holes.hero`     | `???`, and working skeleton-first |
+| `10-maps.hero`      | `{K: V}`, and `m[k]` returning a `V?` — absence as a type |
+| `11-trees.hero`     | a recursive variant: the array is the only indirection |
+
+Every one of them is held to six properties by the test suite, because an example
+nobody runs is an example that rots: it **parses** clean (`printer::gallery`), it
+**resolves** clean (`resolve::tests::gallery`), it **type-checks** clean
+(`types::tests::acceptance`), it **lowers and verifies** (`ir::tests::acceptance`),
+it is in **canonical form** byte for byte — so no example teaches a layout
+`heroes fmt` would undo — and formatting **preserves its tree**.

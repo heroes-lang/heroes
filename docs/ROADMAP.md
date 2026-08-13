@@ -536,9 +536,9 @@ heroes build ex.hero --dump-ir                 # M-ir-lowering (M-strings-owners
 heroes build ex.hero --emit-c                  # M-scalars-run — and the determinism diff:
 heroes build ex.hero --emit-c -o a.c && heroes build ex.hero --emit-c -o b.c && diff a.c b.c
 heroes run examples/gallery/00-first.hero                 # M-scalars-run: first native binary (-O2)
-heroes test examples/calculator.hero           # M-generics-library: acceptance ✅
+heroes test examples/calculator/whole.hero     # M-generics-library: acceptance ✅
 heroes test examples/calculator/main.hero      # M-module-namespace: the same tests, across modules
-heroes run examples/ffi/sqlite.hero            # M-ffi-ladder: acceptance — open, query, close
+heroes run examples/sqlite/main.hero           # M-ffi-ladder: acceptance — open, query, close
 heroes test examples/maze/main.hero            # M-program-corpus: one program (the harness runs them all,
                                                #      in three configurations — a directory
                                                #      argument is §10's question, not a given)

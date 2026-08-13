@@ -1,0 +1,5 @@
+2 + 3 * 4 = 14
+(2 + 3) * 4 = 20
+x * y + 2 = 42
+z + 1 -> unknown_name: undefined variable: z
+2 + -> unexpected_end: the expression ends too soon
