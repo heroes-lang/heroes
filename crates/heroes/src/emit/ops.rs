@@ -1,5 +1,5 @@
-//! One operation as C: a literal, an operator, a call, and `print` (design.md §4.14,
-//! §4.20; panels 006, 020).
+//! One call as C — a Heroes function, a built-in, a function value, a C function —
+//! and `print` (design.md §4.14, §4.19, §4.20; panels 006, 020, 029).
 //!
 //! Split from `inst.rs` when M-value-aggregates step 3 pushed that file to 450 lines, well past
 //! CLAUDE.md §11's ceiling. The line between them is a real one rather than a
@@ -7,329 +7,25 @@
 //! result goes, and this answers **what** one operation is in C. The dispatch is a
 //! table; these are the entries.
 //!
-//! Three rules live here and each has a measured reason:
+//! The §11 sweep took three concerns out of this file, each to a name of its own,
+//! and what stayed is the one question the others are not about — *who* is being
+//! called and under which name:
 //!
-//! - **arithmetic aborts, it never wraps into UB.** `__builtin_*_overflow` for
-//!   `+ - *`, an explicit zero test for `/` and `%`, and `%` is guarded exactly like
-//!   `/` because `INT64_MIN % -1` does not trap on arm64 — it is UB that happens to
-//!   look fine.
-//! - **an `f64` literal is written as hex**, so the decimal round trip that would
-//!   otherwise sit between the lexer and clang does not exist.
-//! - **`print` is monomorphic**, one runtime entry point per type (panel 006), which
-//!   is what lets clang type-check every one of them.
+//! - `literal.rs` — a constant value as C text.
+//! - `operator.rs` — an operator, and the guard that keeps it out of UB.
+//! - `convert.rs` — `to_<width>`, the built-in that builds its own `T?` inline.
+//!
+//! One rule lives here and it has a measured reason: **`print` is monomorphic**,
+//! one runtime entry point per type (panel 006), which is what lets clang
+//! type-check every one of them.
 
-use crate::ir::{Arg, BinOp, Const, Program, UnOp};
+use crate::ir::{Arg, Program};
 use crate::resolve::BUILTINS;
 use crate::types::{Checked, IntKind, Ty};
 
 use super::aggregate;
 use super::mangle;
 use super::writer::Writer;
-
-/// A constant, in the C spelling its own width asks for.
-///
-/// A bare `-9223372036854775808` warns (`-Wimplicitly-unsigned-literal`) because
-/// C parses it as a negation of an out-of-range positive, and a bare decimal
-/// above `INT32_MAX` is only `long` on LP64 — so a macro is both the portable and
-/// the warning-free spelling, and the macro has to match the width.
-///
-/// **`UINT64_C` for the unsigned widths is not tidiness.** `18446744073709551615`
-/// through `INT64_C` is a constant C cannot represent, and the narrower unsigned
-/// widths take it too so that the emitted text says what the Heroes type says
-/// rather than relying on the assignment to convert it.
-pub(super) fn constant(value: Const, kind: Option<IntKind>) -> String {
-    match value {
-        Const::Int(n) if n == i128::from(i64::MIN) => "INT64_MIN".to_string(),
-        Const::Int(n) => match kind {
-            Some(k) if !k.signed() => format!("UINT64_C({n})"),
-            _ => format!("INT64_C({n})"),
-        },
-        Const::Bool(b) => (if b { "true" } else { "false" }).to_string(),
-        // `NULL` would need a header; the cast needs none and is the same value.
-        Const::NullPtr => "((void *)0)".to_string(),
-        // **A hex float, not a decimal one.** `%a` is round-trip-exact by
-        // construction, where `%.17g` is exact only in practice — and design.md §3.1
-        // has said "`f64` literals emitted round-trip-exact (`%a`)" since M-day-zero. This is
-        // the *literal*; how a value **prints** is `hero_print_f64`'s question and a
-        // different answer (§4.9).
-        Const::Float(x) => hex_float(x),
-        // A static block, laid out by clang: refcount -1 means "never freed", so a
-        // literal costs no allocation and decrefing one is a no-op.
-        Const::Str(id) => format!("HERO_STR_LIT(hero_str_{})", id.0),
-    }
-}
-
-/// A `double` as a C11 hexadecimal floating literal. Exact, warning-free, and
-/// independent of every decimal-rendering question.
-fn hex_float(x: f64) -> String {
-    if x.is_nan() {
-        return "(0.0 / 0.0)".to_string();
-    }
-    if x.is_infinite() {
-        return if x > 0.0 { "HUGE_VAL".to_string() } else { "(-HUGE_VAL)".to_string() };
-    }
-    // Rust has no `{:a}`, so the digits are produced by the same route C reads them:
-    // sign, mantissa in hex, binary exponent.
-    let bits = x.to_bits();
-    let negative = bits >> 63 == 1;
-    let exponent = ((bits >> 52) & 0x7ff) as i64;
-    let mantissa = bits & 0x000f_ffff_ffff_ffff;
-    let sign = if negative { "-" } else { "" };
-    if exponent == 0 && mantissa == 0 {
-        return format!("{sign}0x0p+0");
-    }
-    let (lead, unbiased) = if exponent == 0 {
-        (0, -1022) // subnormal
-    } else {
-        (1, exponent - 1023)
-    };
-    // 13 hex digits hold all 52 mantissa bits exactly.
-    let digits = format!("{mantissa:013x}");
-    let trimmed = digits.trim_end_matches('0');
-    let fraction = if trimmed.is_empty() { String::new() } else { format!(".{trimmed}") };
-    format!("{sign}0x{lead}{fraction}p{}{}", if unbiased < 0 { "-" } else { "+" }, unbiased.abs())
-}
-
-pub(super) fn unary(
-    w: &mut Writer,
-    function: &crate::ir::Function,
-    checked: &Checked,
-    op: UnOp,
-    operand: crate::ir::ValueId,
-    target: Option<String>,
-) {
-    let Some(name) = target else { return };
-    let value = mangle::value(operand.0);
-    match op {
-        UnOp::Not => w.line(&format!("    {name} = !{value};")),
-        UnOp::Neg => {
-            if matches!(checked.types.get(function.value_type(operand)), Ty::Int(_)) {
-                // `-INT64_MIN` is overflow, and it is the one negation that is.
-                w.line(&format!(
-                    "    if (__builtin_sub_overflow(INT64_C(0), {value}, &{name})) hero_panic_overflow();"
-                ));
-            } else {
-                w.line(&format!("    {name} = -{value};"));
-            }
-        }
-        // Every `int64_t` has a complement, `INT64_MIN` included, so unlike `Neg`
-        // this one cannot abort and carries no guard.
-        UnOp::BitNot => w.line(&format!("    {name} = ~{value};")),
-    }
-}
-
-pub(super) fn binary(
-    w: &mut Writer,
-    types: &aggregate::Types,
-    function: &crate::ir::Function,
-    checked: &Checked,
-    op: BinOp,
-    left: crate::ir::ValueId,
-    right: crate::ir::ValueId,
-    target: Option<String>,
-) {
-    let Some(name) = target else { return };
-    let l = mangle::value(left.0);
-    let r = mangle::value(right.0);
-    let operands = checked.types.get(function.value_type(left));
-    // `str` has its own arithmetic: `+` is concatenation (§4.14's operator table) and
-    // the comparisons are byte-wise, which is what makes `==` structural on a string
-    // the same way it is on a record.
-    // A map compares order-independently: same length, and every entry found in the
-    // other with an equal value. Spec line 58 requires exactly that, and a pairwise
-    // walk of two entry arrays would have made `{"a":1,"b":2}` and `{"b":2,"a":1}`
-    // unequal — the shape panel 022 ranked first among what a cheap map gets silently
-    // wrong.
-    if let Ty::Map(_, _) = operands {
-        let call = format!("hero_map_eq({l}, {r})");
-        let text = match op {
-            BinOp::Eq => call,
-            BinOp::Ne => format!("!{call}"),
-            _ => "(hero_unreachable(), false)".to_string(),
-        };
-        w.line(&format!("    {name} = {text};"));
-        return;
-    }
-    // An array compares element by element through the descriptor, and a length
-    // mismatch is answered before any element is touched.
-    if let Ty::Array(_) = operands {
-        let call = format!("hero_array_eq({l}, {r})");
-        let text = match op {
-            BinOp::Eq => call,
-            BinOp::Ne => format!("!{call}"),
-            // §4.14 gives an array no ordering, so the checker rejected it already.
-            _ => "(hero_unreachable(), false)".to_string(),
-        };
-        w.line(&format!("    {name} = {text};"));
-        return;
-    }
-    // A `T?` and a `Failure` compare through their generated function: different tags
-    // are never equal, and §4.6's error side compares its code before its message.
-    if matches!(operands, Ty::Fallible(_) | Ty::Failure) {
-        let ty = function.value_type(left);
-        let call = aggregate::equality(types, ty, left, right);
-        let text = match (op, call) {
-            (BinOp::Eq, Some(call)) => call,
-            (BinOp::Ne, Some(call)) => format!("!{call}"),
-            _ => "(hero_unreachable(), false)".to_string(),
-        };
-        w.line(&format!("    {name} = {text};"));
-        return;
-    }
-    if operands == Ty::Str {
-        let call = match op {
-            BinOp::Add => format!("hero_str_concat({l}, {r})"),
-            BinOp::Eq => format!("hero_str_eq({l}, {r})"),
-            BinOp::Ne => format!("!hero_str_eq({l}, {r})"),
-            BinOp::Lt => format!("hero_str_cmp({l}, {r}) < 0"),
-            BinOp::Le => format!("hero_str_cmp({l}, {r}) <= 0"),
-            BinOp::Gt => format!("hero_str_cmp({l}, {r}) > 0"),
-            BinOp::Ge => format!("hero_str_cmp({l}, {r}) >= 0"),
-            // `- * / %` on `str` do not type-check (§4.14), so this is unreachable
-            // by construction rather than by hope.
-            BinOp::Sub
-            | BinOp::Mul
-            | BinOp::Div
-            | BinOp::Rem
-            | BinOp::BitAnd
-            | BinOp::BitOr
-            | BinOp::BitXor
-            | BinOp::Shl
-            | BinOp::Shr => "0 /* not an operation on str */".to_string(),
-        };
-        w.line(&format!("    {name} = {call};"));
-        return;
-    }
-    // Structural `==` on a record is one call to its generated `eq`, which walks
-    // fields — never bytes, because padding makes two equal records differ under
-    // `memcmp` with no warning and no sanitiser report (panel 022).
-    if matches!(operands, Ty::Named(_) | Ty::Case(_, _)) {
-        let ty = function.value_type(left);
-        let call = aggregate::equality(types, ty, left, right);
-        let text = match (op, call) {
-            (BinOp::Eq, Some(call)) => call,
-            (BinOp::Ne, Some(call)) => format!("!{call}"),
-            // §4.14 gives a record no ordering, so the checker rejected it already.
-            _ => "(hero_unreachable(), false)".to_string(),
-        };
-        w.line(&format!("    {name} = {text};"));
-        return;
-    }
-    // **This line is why the width lives inside the variant** (panel 042). As
-    // `operands == Ty::Int` it decided whether to emit `__builtin_*_overflow`,
-    // and with one variant per width a `u8` would simply have made it `false`:
-    // the guard would be dropped, `t0 = l + r` emitted bare, and "overflow aborts
-    // at every width" would be silently untrue at exit 0. Measured as a rustc
-    // error here and as nothing at all under the other shape.
-    let integral = matches!(operands, Ty::Int(_));
-    match op {
-        BinOp::Add | BinOp::Sub | BinOp::Mul if integral => {
-            let builtin = match op {
-                BinOp::Add => "add",
-                BinOp::Sub => "sub",
-                _ => "mul",
-            };
-            w.line(&format!(
-                "    if (__builtin_{builtin}_overflow({l}, {r}, &{name})) hero_panic_overflow();"
-            ));
-        }
-        BinOp::Div | BinOp::Rem if integral => {
-            let operator = if op == BinOp::Div { "/" } else { "%" };
-            w.line(&format!("    if ({r} == 0) hero_panic(\"division by zero\");"));
-            // **`INT64_MIN % -1` and `INT64_MIN / -1` are guarded together and
-            // reported apart** (panel 035's owed message). The guard is the same:
-            // arm64 does not trap on either, so both are UB that happens to look
-            // fine (CLAUDE.md §7). But the *reason* differs, and saying "integer
-            // overflow" for `%` was false — the remainder is 0 and overflows
-            // nothing; what has no representation is the quotient C computes on
-            // the way there. A refusal whose message misleads is worse than the
-            // form it refuses.
-            let abort = if op == BinOp::Div {
-                "hero_panic_overflow()".to_string()
-            } else {
-                "hero_panic(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\")".to_string()
-            };
-            w.line(&format!(
-                "    if ({l} == INT64_MIN && {r} == INT64_C(-1)) {abort};"
-            ));
-            w.line(&format!("    {name} = {l} {operator} {r};"));
-        }
-        // **The three that are pure bit patterns**: no guard, because every pair of
-        // `int64_t`s has an and, an or and an xor. C's `&`, `|` and `^` on two
-        // signed values of the same width are fully defined — it is the *shifts*
-        // that are not.
-        BinOp::BitAnd | BinOp::BitOr | BinOp::BitXor => {
-            let operator = match op {
-                BinOp::BitAnd => "&",
-                BinOp::BitOr => "|",
-                _ => "^",
-            };
-            w.line(&format!("    {name} = {l} {operator} {r};"));
-        }
-        // **The two that can abort, and they abort for C's reasons rather than for
-        // Heroes'** (CLAUDE.md §7: never C UB). A shift count that is negative or
-        // ≥ 64 is undefined in C6.5.7p3, and a left shift that moves bits into or
-        // past the sign bit of a *signed* operand is undefined too. So: the count is
-        // checked, and the shift itself is done on the unsigned bit pattern and cast
-        // back, which is defined for every input and is what makes `1 << 63`
-        // `INT64_MIN` rather than a trap. Without the sign bit reachable a mask set
-        // cannot name its own top flag, which is the whole use.
-        //
-        // `>>` is **arithmetic**: the operand is signed, so the sign propagates, and
-        // C's implementation-defined right shift is replaced by an explicit one.
-        BinOp::Shl | BinOp::Shr if integral => {
-            w.line(&format!(
-                "    if ({r} < 0 || {r} > 63) hero_panic(\"shift count outside 0..63\");"
-            ));
-            if op == BinOp::Shl {
-                w.line(&format!(
-                    "    {name} = (int64_t)((uint64_t){l} << (uint64_t){r});"
-                ));
-            } else {
-                // Arithmetic shift, written so no implementation-defined behaviour
-                // is relied on: shift the magnitude, then put the sign bits back.
-                w.line(&format!(
-                    "    {name} = ({l} < 0) ? ~(int64_t)((~(uint64_t){l}) >> (uint64_t){r}) : (int64_t)((uint64_t){l} >> (uint64_t){r});"
-                ));
-            }
-        }
-        // `%` on two `f64` is `fmod`, not C's `%`, which takes integers only:
-        // `t3 = t1 % t2` on two `double`s is `error: invalid operands to binary
-        // expression`, exit 2, on a program spec line 139 explicitly allows
-        // (`f64 with f64`). It reached clang because the fallthrough arm below
-        // spells every operator the same way (panel 035, compiler-engineer).
-        //
-        // `fmod` truncates toward zero, which is the rule spec line 135 already
-        // states for `/` and `%` — so the C function and the sentence agree
-        // without either being changed.
-        _ if op == BinOp::Rem => {
-            w.line(&format!("    {name} = fmod({l}, {r});"));
-        }
-        _ => {
-            let operator = match op {
-                BinOp::Add => "+",
-                BinOp::Sub => "-",
-                BinOp::Mul => "*",
-                BinOp::Div => "/",
-                BinOp::Rem => "%",
-                BinOp::Eq => "==",
-                BinOp::Ne => "!=",
-                BinOp::Lt => "<",
-                BinOp::Le => "<=",
-                BinOp::Gt => ">",
-                BinOp::Ge => ">=",
-                // Unreachable: the arms above take every bitwise op on `i64`, and
-                // the checker admits them on nothing else (§4.14).
-                BinOp::BitAnd
-                | BinOp::BitOr
-                | BinOp::BitXor
-                | BinOp::Shl
-                | BinOp::Shr => return w.line("    hero_unreachable();"),
-            };
-            w.line(&format!("    {name} = {l} {operator} {r};"));
-        }
-    }
-}
 
 #[allow(clippy::too_many_arguments)] // PORT-DEBT: one emitter call site, six facts
 pub(super) fn call(
@@ -368,19 +64,10 @@ pub(super) fn call(
         Callee::Builtin(index) if BUILTINS[index as usize].name == "print" => {
             print(w, function, checked, args, arguments);
         }
-        // `fit_<width>` is not a call, which is why it is here and not in
-        // `builtins::entry`: that function answers with the NAME of a C entry
-        // point, and this one has to build a `T?` — a tagged union generated for
-        // this result type, which no runtime function can return.
-        //
-        // The range test is written against the SOURCE's C type and the target's
-        // bounds, and both halves matter. Comparing an unsigned source against a
-        // negative lower bound is a warning and a constant answer, so the low
-        // test is omitted where the source cannot be negative; comparing a narrow
-        // source against a wider target's top is likewise always true. Emitting
-        // `true &&` instead of nothing would be simpler and would turn every such
-        // conversion into a `-Wtautological-constant-out-of-range-compare`, which
-        // §7 compiles with `-Werror`-adjacent flags.
+        // `to_<width>` is not a call, which is why `convert.rs` writes it inline and
+        // `builtins::entry` does not name it: that function answers with the NAME of
+        // a C entry point, and a conversion has to build a `T?` — a tagged union
+        // generated for this result type, which no runtime function can return.
         Callee::Builtin(index)
             if BUILTINS[index as usize].name.starts_with("to_")
                 && crate::types::INT_KINDS
@@ -389,122 +76,15 @@ pub(super) fn call(
                 && target.is_some() =>
         {
             let into = target.expect("just matched");
-            let result = function.value_type(match function.args_of(args).first() {
-                Some(crate::ir::Arg::Value(v)) => *v,
-                _ => return,
-            });
-            let name = BUILTINS[index as usize].name;
-            let to = *crate::types::INT_KINDS
-                .iter()
-                .find(|k| k.name() == &name[3..])
-                .expect("the name was checked into existence by `resolve`");
-            // `lookup`, not `intern`: the checker already made this `T?` when it
-            // typed the call, so a miss here would mean the two passes disagree
-            // about the result type rather than that a type is missing.
-            let union = match checked
-                .types
-                .lookup(Ty::Int(to))
-                .and_then(|inner| checked.types.lookup(Ty::Fallible(inner)))
-            {
-                Some(id) => types.names.option_of(id),
-                None => return,
-            };
-            // **The `f64` source is `to_i64`'s alone and takes its own path.**
-            // Its range question is not a comparison against two widths; it is
-            // `hero_f64_fits_int`, whose predicate is written in the runtime with
-            // the reason two obvious spellings of it are wrong. The conversion
-            // itself truncates toward zero and cannot fail once the predicate
-            // holds.
-            let from = match checked.types.get(result) {
-                Ty::Int(kind) => kind,
-                Ty::F64 => {
-                    w.line(&format!("    if (hero_f64_fits_int({})) {{", arguments[0]));
-                    w.line(&format!(
-                        "        {into} = ({union}){{.tag = INT64_C(0), .as.ok = hero_f64_to_int({})}};",
-                        arguments[0]
-                    ));
-                    w.line("    } else {");
-                    w.line(&format!(
-                        "        {into} = ({union}){{.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}};"
-                    ));
-                    w.line("    }");
-                    return;
-                }
-                _ => return,
-            };
-            let name = BUILTINS[index as usize].name;
-            let to = *crate::types::INT_KINDS
-                .iter()
-                .find(|k| k.name() == &name[3..])
-                .expect("the name was checked into existence by `resolve`");
-            // **Both bounds are asked of the two RANGES, not of the two shapes.**
-            // A first version derived them from `signed()` and `bits()` by hand
-            // and got `to_i8(-129)` wrong: it emitted a low test only when the
-            // target's floor was zero, so a *signed narrower* target — whose
-            // floor is -128, not 0 — was checked at the top and nowhere else,
-            // and -129 walked through. Found by this milestone's own adversarial
-            // case, which is what §9's five exist for.
-            //
-            // Comparing the ranges says exactly what is needed and cannot drift:
-            // a bound is tested when the source can reach past it, and omitted
-            // when it cannot — omitted rather than emitted as a tautology,
-            // because `-Wtautological-constant-out-of-range-compare` would make
-            // every widening a warning.
-            let (low, high) = to.range();
-            let (from_low, from_high) = from.range();
-            let value = &arguments[0];
-            let mut tests: Vec<String> = Vec::new();
-            if from_low < low {
-                tests.push(format!("{value} >= {low}{}", if from.signed() { "LL" } else { "ULL" }));
-            }
-            if from_high > high {
-                tests.push(format!("{value} <= {high}{}", if from.signed() { "LL" } else { "ULL" }));
-            }
-            // **An empty test list is the widening case, and it emits no branch
-            // at all.** Every value of the source fits the target, so the option
-            // is unconditionally `ok` — no condition, no `else`, and in
-            // particular no `if (1)`, which `-Wtautological-constant-out-of-range`
-            // would reject anyway.
-            //
-            // This arm was `hero_unreachable()` between panel 043 and the
-            // author's ratification of 2026-08-13, and that was right at the
-            // time: the rule then returned a plain `T` for a widening and an
-            // early return took every such case before this point. Restoring the
-            // uniform `T?` made the branch reachable again, and the golden caught
-            // it within a minute — `assigning to … from incompatible type
-            // 'void'`. `contains_agrees_with_range` still guards the premise the
-            // emptiness rests on: `contains` and `range` must agree, or a
-            // narrowing arrives here with no test and truncates in silence.
-            // `lookup`, not `intern`: the checker already made this `T?` when it
-            // typed the call, so a miss here would mean the two passes disagree
-            // about the result type rather than that a type is missing.
-            let union = match checked
-                .types
-                .lookup(Ty::Int(to))
-                .and_then(|inner| checked.types.lookup(Ty::Fallible(inner)))
-            {
-                Some(id) => types.names.option_of(id),
-                None => return,
-            };
-            if tests.is_empty() {
-                w.line(&format!(
-                    "    {into} = ({union}){{.tag = INT64_C(0), .as.ok = ({}){}}};",
-                    to.c_type(),
-                    arguments[0]
-                ));
-                return;
-            }
-            let condition = tests.join(" && ");
-            w.line(&format!("    if ({condition}) {{"));
-            w.line(&format!(
-                "        {into} = ({union}){{.tag = INT64_C(0), .as.ok = ({}){value}}};",
-                to.c_type()
-            ));
-            w.line("    } else {");
-            w.line(&format!(
-                "        {into} = ({union}){{.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}};"
-            ));
-            w.line("    }");
+            super::convert::width(
+                w,
+                types,
+                function,
+                BUILTINS[index as usize].name,
+                args,
+                arguments,
+                &into,
+            );
         }
         Callee::Builtin(index) if super::EMITTED_BUILTINS.contains(&BUILTINS[index as usize].name) => {
             let entry =

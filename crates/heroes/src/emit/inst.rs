@@ -27,6 +27,8 @@ use crate::types::{IntKind, Ty};
 use super::aggregate;
 use super::container;
 use super::fallible;
+use super::literal;
+use super::operator;
 use super::ops;
 use super::ctype::is_unit;
 use super::mangle;
@@ -88,7 +90,7 @@ pub(super) fn emit(
                     Ty::Int(k) => Some(k),
                     _ => None,
                 };
-                w.line(&format!("    {name} = {};", ops::constant(value, kind)));
+                w.line(&format!("    {name} = {};", literal::constant(value, kind)));
             }
         }
         Op::Load(place) => {
@@ -153,9 +155,9 @@ pub(super) fn emit(
             };
             w.line(&line);
         }
-        Op::Unary { op, operand } => ops::unary(w, function, checked, op, operand, target),
+        Op::Unary { op, operand } => operator::unary(w, function, checked, op, operand, target),
         Op::Binary { op, left, right } => {
-            ops::binary(w, types, function, checked, op, left, right, target)
+            operator::binary(w, types, function, checked, op, left, right, target)
         }
         Op::Call { callee, args, .. } => {
             let arguments: Vec<String> = function
