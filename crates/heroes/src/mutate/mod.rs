@@ -29,6 +29,7 @@ use crate::syntax::parse;
 use crate::types::check;
 
 mod edits;
+mod edits_typo;
 mod operators;
 mod survivors;
 #[cfg(test)]

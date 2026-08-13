@@ -14,6 +14,7 @@ use crate::source::Source;
 use crate::syntax::parse;
 
 use super::edits;
+use super::edits_typo;
 
 pub struct Operator {
     pub id: &'static str,
@@ -49,14 +50,14 @@ pub fn apply(id: &str, name: &str, text: &str) -> Vec<String> {
         "drop-case" => edits::drop_case(ast, &src),
         "forget-at-decl" => edits::forget_at_decl(ast, &src),
         "mutate-undeclared" => edits::mutate_undeclared(ast, &src),
-        "typo-ident" => edits::typo_ident(ast, &src),
-        "typo-code" => edits::typo_code(ast, &src),
+        "typo-ident" => edits_typo::typo_ident(ast, &src),
+        "typo-code" => edits_typo::typo_code(ast, &src),
         "wildcard-variant" => edits::wildcard_variant(ast, &src),
         "positional-named" => edits::positional_named(ast, &src),
         "mix-int-float" => edits::mix_int_float(ast, &src),
         "shadow" => edits::shadow(ast, &src),
         "drop-question" => edits::drop_question(ast, &src),
-        "typo-digit" => edits::typo_digit(ast, &src),
+        "typo-digit" => edits_typo::typo_digit(ast, &src),
         _ => Vec::new(),
     }
 }
