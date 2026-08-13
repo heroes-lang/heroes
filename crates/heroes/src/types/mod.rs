@@ -62,6 +62,7 @@ mod exprs;
 mod generics;
 mod holes;
 mod join;
+mod jumps;
 mod lower;
 mod ops;
 mod patterns;

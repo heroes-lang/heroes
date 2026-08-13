@@ -17,7 +17,7 @@ use crate::source::Source;
 use crate::syntax::{Ast, Block, ExprId, ExprKind, StmtId, StmtKind};
 
 use super::table::Ty;
-use super::{errors, exprs, expect, lower, Checker, TyId};
+use super::{errors, exprs, expect, jumps, lower, Checker, TyId};
 
 /// Does control leave this statement, or fall through to the next one?
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -152,41 +152,8 @@ pub(super) fn statement(
             expect::check(checker, ast, resolved, src, *value, target);
             (Flow::Falls, None)
         }
-        StmtKind::Return(value) => {
-            let unit = checker.out.types.unit();
-            match value {
-                Some(expr) => {
-                    if checker.result == unit {
-                        let diagnostic = errors::returns_nothing(span);
-                        checker.push_diagnostic(diagnostic);
-                        exprs::synth(checker, ast, resolved, src, *expr);
-                    } else {
-                        let want = checker.result;
-                        expect::check(checker, ast, resolved, src, *expr, want);
-                    }
-                }
-                None => {
-                    if checker.result != unit {
-                        let want = checker.show(ast, src, checker.result);
-                        let diagnostic = errors::missing_value(&want, span);
-                        checker.push_diagnostic(diagnostic);
-                    }
-                }
-            }
-            (Flow::Jumps, None)
-        }
-        StmtKind::Break | StmtKind::Continue => {
-            if checker.loops == 0 {
-                let word = if matches!(ast.stmts[id.0 as usize].kind, StmtKind::Break) {
-                    "break"
-                } else {
-                    "continue"
-                };
-                let diagnostic = errors::jump_outside_loop(word, span);
-                checker.push_diagnostic(diagnostic);
-            }
-            (Flow::Jumps, None)
-        }
+        StmtKind::Return(value) => jumps::returns(checker, ast, resolved, src, *value, span),
+        StmtKind::Break | StmtKind::Continue => jumps::jump(checker, ast, id, span),
         StmtKind::Assert(value) => {
             let bool_ty = checker.out.types.bool();
             let got = exprs::synth(checker, ast, resolved, src, *value);
@@ -199,40 +166,10 @@ pub(super) fn statement(
             (Flow::Falls, None)
         }
         StmtKind::While { cond, block: body } => {
-            let bool_ty = checker.out.types.bool();
-            let got = exprs::synth(checker, ast, resolved, src, *cond);
-            if got != bool_ty && !checker.out.types.poisoned(got) {
-                let shown = checker.show(ast, src, got);
-                let at = ast.exprs[cond.0 as usize].span;
-                let diagnostic = errors::not_bool("a `while` condition", &shown, at);
-                checker.push_diagnostic(diagnostic);
-            }
-            checker.loops += 1;
-            block(checker, ast, resolved, src, body, Want::Nothing);
-            checker.loops -= 1;
-            // A loop may run zero times, so it never counts as diverging.
-            (Flow::Falls, None)
+            jumps::while_loop(checker, ast, resolved, src, *cond, body)
         }
         StmtKind::ForIn { name, iterable, block: body } => {
-            let over = exprs::synth(checker, ast, resolved, src, *iterable);
-            let element = match checker.out.types.get(over) {
-                Ty::Array(element) => element,
-                // `s.chars()` is how a string is walked (§4.3), so a bare `str`
-                // here is the mistake worth naming.
-                Ty::Error => checker.error_ty(),
-                _ => {
-                    let got = checker.show(ast, src, over);
-                    let at = ast.exprs[iterable.0 as usize].span;
-                    let diagnostic = errors::not_iterable(&got, at);
-                    checker.push_diagnostic(diagnostic);
-                    checker.error_ty()
-                }
-            };
-            checker.bind_local(*name, element);
-            checker.loops += 1;
-            block(checker, ast, resolved, src, body, Want::Nothing);
-            checker.loops -= 1;
-            (Flow::Falls, None)
+            jumps::for_in(checker, ast, resolved, src, *name, *iterable, body)
         }
         StmtKind::Expr(value) => expression_statement(checker, ast, resolved, src, *value, want),
         StmtKind::Error => (Flow::Falls, None),
