@@ -169,3 +169,31 @@ looked at. Prediction 2 names `mutate --survivors`, an instrument that exists,
 and is the only one of the three that panel 046's R1 would admit as payment
 today. Under R2 the `2675` row is **re-decided at M-program-corpus**, and that
 date is written once, in the gate's module doc beside the rows it governs.
+
+---
+
+## Predictions scored — 2026-08-13, at M-program-corpus (panel 046 R2)
+
+**Prediction 2 — held, and vacuously.** `heroes mutate --survivors` over 5798
+mutants produced 892 survivor lines and not one is a bitwise operator misread as
+its boolean twin. The corpus contains bitwise code for the first time
+(`examples/logs/mask.hero`: `|` to add a flag, `&` to test, `~` to take away, `^`
+to toggle, `>>` to count, `<<` to declare the bits — the flag union this set was
+argued from).
+
+It holds because **none of the twelve operators makes that substitution**. The
+prediction named a live instrument, which is what panel 046 R1 asks; the
+instrument has no arm for the question. That is recorded as the score rather than
+banked as evidence, and a `boolean-twin` operator is queued in `DECIDE.md`.
+
+**Predictions 1 and 3 — lapsed, and they are the reason the ledger's date moved.**
+Both named *"the next FFI rung"*. M-ffi-ladder closed 2026-08-12, the day after
+this row was written, and neither was looked at. Panel 046 cites exactly this as
+the evidence that a milestone-named expiry belongs beside the ledger row rather
+than in a panel file, and `/step`'s close checklist now greps for it.
+
+A by-product worth keeping: `typo-digit` produced **0** mutants over the corpus
+when the §11 sweep looked at it. With bitwise constants in the tree it produces
+**12**, of which 0 are killed — `constant BIT_TRACE: i64` with body `1` mutated
+to `2` survives, as it must. The operator now measures something, and what it
+measures is a hole.

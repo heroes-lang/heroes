@@ -267,3 +267,40 @@ cost that is true today and that the deferred place store would change. If
 M-selfhost-probe measures a need and the place store lands, this sentence becomes
 false — and CLAUDE.md §12 makes a false spec the compiler's bug, so amending it
 is part of that milestone's cost, not a discovery to be made later.
+
+---
+
+## Prediction scored — 2026-08-13, at M-program-corpus (panel 046 R2)
+
+**Half held, half falsified**, and the falsified half is the one worth reading.
+The evidence is `docs/measurements/007`; the instrument is one `llm-ergonomist`
+given `spec/heroes-spec.md` and nothing else, three writing tasks, four questions.
+
+**Held.** No program built a long string by repeated `+` in a loop. The reader
+considered it exactly once — the banner's rule of `=`, the one task with no
+separator to join on — and rejected it *before writing it*, naming this clause as
+the reason: *"That sentence … is the only sentence in the document with a cost
+claim in it, so it is loud."*
+
+**Falsified.** The second half asked that no reader record a hesitation. This one
+recorded a worse one, unprompted: *"What I actually wrote in 1 and 2 is
+`push`-in-a-loop, which the same sentence calls quadratic too. The warning
+redirected me from one quadratic accumulation to the other and I noticed only
+afterwards. The sentence steered the syntax I used, not the complexity of the
+program."*
+
+The extra 16 tokens over the `join` half were spent precisely to prevent that —
+this sitting's own words were that a reader *"left to build the `[str]` with
+`push` has moved the quadratic cost rather than removed it"*. The clause names
+`push`'s copy. The reader read it and did it anyway.
+
+**And the reason is not the wording.** With no lambda, `map` cannot capture the
+separator; with no `repeat`, there is no way to make N copies of `"="`. Two of
+the three tasks had no non-loop route at all, and the third — whose transform
+captures nothing — is the one with no accumulator in it.
+
+So the clause is **not** the first candidate at the next budget squeeze, which is
+what this sitting said would follow from a falsification. Its first half was the
+half in dispute and it held under a real reader. What the second half buys is a
+question, now in `DECIDE.md`: a reader told a loop is quadratic and given no
+non-loop does the loop.

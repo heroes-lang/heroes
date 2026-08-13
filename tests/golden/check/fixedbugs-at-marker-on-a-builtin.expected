@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-at-marker-on-a-builtin.hero:39:15: error[marker_mismatch]: `push` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-at-marker-on-a-builtin.hero:41:16: error[marker_mismatch]: `len` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-at-marker-on-a-builtin.hero:41:30: error[marker_mismatch]: `sort` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-at-marker-on-a-builtin.hero:42:17: error[marker_mismatch]: `to_str` does not change this argument — the `@` says it does

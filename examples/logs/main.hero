@@ -16,12 +16,13 @@
 # and counts** what it cannot parse rather than refusing the file.
 
 use entry
+use mask
 use summary
 
 function main()
     given = args()
     if len(given) == 0
-        print("usage: logs <file.log> [LEVEL]")
+        print("usage: logs <file.log> [LEVEL,LEVEL…]")
         exit(2)
     match read_file(given[0])
         .err e   => stop("cannot read " + given[0] + ": " + e.code)
@@ -33,7 +34,9 @@ function stop(message: str)
 
 function report(r: entry.Reading, given: [str])
     if len(given) > 1
-        show_level(r, given[1])
+        match mask.read(given[1])
+            .err e     => stop(e.code + ": " + e.msg)
+            .ok wanted => show_levels(r, wanted)
         return
     print("lines: ", r.entries.len(), " read, ", r.skipped.len(), " skipped")
     print("levels:")
@@ -51,15 +54,19 @@ function report(r: entry.Reading, given: [str])
     if summary.how_many_at(r.entries, "ERROR") > 0
         exit(1)
 
-# Every line at one level, in the order the file had them — the view you want
-# once the page above has told you which level to ask about.
-function show_level(r: entry.Reading, level: str)
+# Every line at one of the wanted levels, in the order the file had them — the
+# view you want once the page above has told you which levels to ask about.
+#
+# The filter is one `&` per line rather than a loop over a list of names, which
+# is what a set of flags is for: `logs f.log WARN,ERROR` and
+# `mask.PROBLEMS` are the same question asked two ways.
+function show_levels(r: entry.Reading, wanted: i64)
     shown: i64 @ 0
     for one in r.entries
-        if one.level == level
+        if mask.holds(wanted, one.level)
             shown @ shown + 1
             print(one.stamp, " ", one.source, ": ", one.message)
-    print(shown, " ", level, " lines")
+    print(shown, " ", join(mask.names_of(wanted), "+"), " lines")
 
 test "the sample's page is the one the file describes"
     r = entry.read(read_file("examples/logs/sample.log").must())
@@ -74,3 +81,13 @@ test "the sample's two hours are tied, so the tie-break is what is being read"
     assert hours["21"].must() == hours["22"].must()
     assert summary.ranked(hours) == ["21", "22"]
     assert summary.rows(summary.tally(summary.levels_of(r.entries)))[0] == "  INFO 8"
+
+test "a mask filters the sample the way a list of names would"
+    r = entry.read(read_file("examples/logs/sample.log").must())
+    problems: [entry.Entry] @ []
+    for one in r.entries
+        if mask.holds(mask.PROBLEMS, one.level)
+            problems @ problems.push(one)
+    assert problems.len() == 4
+    assert summary.how_many_at(problems, "ERROR") == 2
+    assert summary.how_many_at(problems, "INFO") == 0

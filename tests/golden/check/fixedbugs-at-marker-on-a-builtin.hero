@@ -1,0 +1,43 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-13, found by the blind reader in `docs/measurements/007`):
+# `push(@lines, x)` said nothing about the `@`. A **user** function has answered
+# `marker_mismatch` since M-generics-library — *`twice` does not change this
+# argument — the `@` says it does* — and a **built-in** answered nothing at all.
+# The call failed one line later on `discarded_value`, which is about the array
+# `push` returns and says nothing about what the author claimed.
+#
+# It matters because the `@` is a claim, not a decoration. §4.8 puts the marker
+# at the call site precisely so that a reader of the call can see that this
+# argument may come back changed. `push(@lines, x)` says it does; it does not.
+#
+# WHERE IT CAME FROM is the part worth keeping. A judge given `spec/heroes-spec.md`
+# and nothing else wrote it, and wrote down why: the spec says UFCS does not apply
+# when the first parameter is `@`, `xs.push(x)` is the case where that would bite,
+# and so `push` reads like the `@` kind. That inference is careful, wrong, and
+# exactly what a marker check exists to answer.
+#
+# CAUSE: `types/apply.rs` checks the marker per argument for a user call, and
+# built-ins do not go through it — `types/calls.rs` types them straight from the
+# table.
+#
+# FIX: one arm in `calls.rs`, refusing `@` on any built-in argument, because
+# **no built-in takes one**: `push` and `sort` return new values, and the
+# library's `map`/`filter`/`fold` are ordinary functions checked by `user_call`.
+#
+# The two `extern` lines are the CONTROL, and they are why the fix is one arm
+# rather than a list: a C out-parameter **is** an `@` argument (§4.19), it is
+# typed from a declared signature rather than from the built-in table, and it
+# must keep working.
+# Bulk regression case.
+
+extern "stdio.h"
+    function remove(path: cstr) -> i64
+
+function main()
+    lines: [str] @ []
+    _ = push(@lines, "one")                 #~ marker_mismatch
+    v: i64 @ 3
+    print(len(@lines), sort(@lines).len())  #~ marker_mismatch marker_mismatch
+    _ = to_str(@v)                          #~ marker_mismatch
+    _ = remove("/tmp/heroes-no-such-file".cstr())

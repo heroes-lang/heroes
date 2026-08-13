@@ -30,9 +30,36 @@
 //! record a reader audits it against.
 //!
 //! **The six prediction-bought rows — `2588`, `2627`, `2675`, `2745`, `2768`,
-//! `2959` — are re-decided at M-program-corpus** (panel 046 R2, ratified
+//! `2959` — were re-decided at M-program-corpus** (panel 046 R2, ratified
 //! 2026-08-13): scored, or `lapsed` with the clause re-argued in `DECIDE.md` under
 //! the removal branch, never renewed. The date is here because `/step` greps here.
+//!
+//! **Done, 2026-08-13. Two scored, four lapsed**, and the split is exactly the one
+//! panel 046 R1 predicts: the two that named an instrument existing on the day of
+//! registration were collectable, and the four that named metric 2 were not.
+//!
+//! | row | prediction named | outcome |
+//! |---|---|---|
+//! | `2588` | first-try rates (metric 2) | **lapsed** |
+//! | `2627` | the next spec-only writing experiment | **scored — half held, half falsified** |
+//! | `2675` | a `mutate --survivors` run over bitwise code | **scored — held, and vacuously** |
+//! | `2745` | first metric-2 harness run | **lapsed** |
+//! | `2768` | first-try failures (metric 2) | **lapsed** |
+//! | `2959` | first-try failures (metric 2) | **lapsed** |
+//!
+//! The four lapsed rows keep their clauses in the spec — R1 governs what may be
+//! *offered* as payment and is not retroactive — and each clause is back in
+//! `DECIDE.md` to be re-argued under the removal branch. None is renewed with a
+//! new milestone name, which is the one thing R2 forbids.
+//!
+//! The two scored rows are in `docs/measurements/007`, and both found something
+//! the row itself did not predict. `2627` bought a reader who avoids `+` in a
+//! loop and reaches for `push` in one instead — the clause names `push`'s copy
+//! and the reader did it anyway, because with no lambda and no `repeat` the
+//! document leaves no other way to build the array `join` needs. `2675` holds
+//! because **no operator in `heroes mutate` makes the mistake it is about**: a
+//! prediction can name a live instrument and still be uncollectable if the
+//! instrument has no arm for the question.
 
 /// The spec's measured size, `max` over both vendored instruments — the binding
 /// number, never an estimate.

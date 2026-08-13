@@ -107,6 +107,25 @@ pub(super) fn builtin_call(
         types.push(receiver_ty);
     }
     for arg in args {
+        // §4.8's marker, on this side of the table too. **No built-in takes an
+        // `@` parameter** — `push` returns a new array, `sort` returns a new one,
+        // and the library's own `map`/`filter`/`fold` are ordinary functions that
+        // go through `user_call` and are checked there. So an `@` here is always a
+        // claim about the call that is false.
+        //
+        // It went unchecked until 2026-08-13, when a reader given only the spec
+        // wrote `push(@lines, x)` and said on the record that it was a guess: the
+        // spec states UFCS does not apply to an `@` first parameter, and `push` is
+        // the case where that would bite, which reads as evidence that `push` is
+        // the `@` kind. The guess is wrong, and it *did* fail — on
+        // `discarded_value`, one line later and about something else, saying
+        // nothing at all about the `@`. A user function has said
+        // `marker_mismatch` here since M-generics-library; a built-in now says it
+        // too (fixedbugs).
+        if arg.mutable {
+            let at = ast.exprs[arg.value.0 as usize].span;
+            checker.push_diagnostic(errors::marker_mismatch(name, false, at));
+        }
         // The first argument decides what the rest must be, so from the second
         // on they are *checked* rather than synthesised — which is what lets a
         // `.case` or an `ok(…)` be written as a built-in's argument.
