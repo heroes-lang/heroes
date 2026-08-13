@@ -69,6 +69,7 @@ mod ops;
 mod patterns;
 mod render;
 mod sized;
+mod sized_cycle;
 mod stmts;
 mod table;
 mod ufcs;
