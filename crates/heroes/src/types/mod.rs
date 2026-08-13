@@ -58,6 +58,7 @@ mod counted;
 mod decls;
 mod errors;
 mod expect;
+mod fallible_ops;
 mod exprs;
 mod generics;
 mod holes;
