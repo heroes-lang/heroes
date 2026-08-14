@@ -220,6 +220,42 @@ fn every_name_in_use_has_a_row_in_the_alias_table() {
     assert!(unknown.is_empty(), "a name with no row in the alias table:\n{}", unknown.join("\n"));
 }
 
+/// **No C file lives outside the two places that own C.** `runtime/` is the
+/// runtime and `tools/spike/` is the four hand-written spikes; anything else is a
+/// file somebody left behind.
+///
+/// This exists because the assistant left `cls3.c` — a throwaway that measured
+/// `__builtin_classify_type` for panel 052 — in the repository root, and `git add
+/// -A` committed and pushed it (2026-08-14). The scratch was written to the root
+/// because a shell's working directory had returned there between commands, which
+/// is a mistake no convention prevents and a walk catches every time.
+///
+/// The list is of **directories that own C**, not of file names: a new runtime
+/// part or a fifth spike needs no edit here, and a stray in either directory is
+/// somebody's problem in a directory where somebody is looking. `build/` and
+/// `target/` are already outside the walk (`RECORD`).
+#[test]
+fn no_c_file_lives_outside_the_directories_that_own_c() {
+    let root = repo();
+    let mut files = Vec::new();
+    walk(&root, &root, &mut files);
+    let owns_c = ["runtime/", "tools/spike/"];
+    let mut strays = Vec::new();
+    for file in &files {
+        let rel = slashed(&file.strip_prefix(&root).expect("inside the repo").to_string_lossy());
+        if (rel.ends_with(".c") || rel.ends_with(".h"))
+            && !owns_c.iter().any(|dir| rel.starts_with(dir))
+        {
+            strays.push(rel);
+        }
+    }
+    assert!(
+        strays.is_empty(),
+        "a C file outside `runtime/` and `tools/spike/`:\n{}",
+        strays.join("\n")
+    );
+}
+
 /// Every `M-<lowercase…>` token, at the same word boundary the rename used.
 fn names_used(text: &str) -> Vec<String> {
     let bytes = text.as_bytes();
