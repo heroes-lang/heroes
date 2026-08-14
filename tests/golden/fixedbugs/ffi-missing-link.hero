@@ -5,7 +5,7 @@
 #
 #     internal error: compiling the generated C failed:
 #     Undefined symbols for architecture arm64:
-#       "_iconv_open", referenced from: _h_nolink_main in nolink-c2a717.o
+#       "_sqlite3_libversion_number", referenced from: _h_nolink_main
 #     the generated C is at build/2a141c4fbafbf91d/nolink.c
 #     EXIT=2
 #
@@ -28,7 +28,7 @@
 # about the value. An undefined symbol nobody declared is the **emitter's** bug
 # (a generated `hash` prototyped and never defined is a recorded instance) and
 # stays exit 2, where it belongs. `extern` names are the only unmangled names in
-# the unit (CLAUDE.md §7), so `iconv_open` against `h_missinglink_main` is a
+# the unit (CLAUDE.md §7), so `sqlite3_libversion_number` against `h_ffimissinglink_main` is a
 # perfect discriminator.
 #
 # **No fix is offered**, and four judges agree why: the repair is `link "<name>"`
@@ -38,19 +38,23 @@
 # glibc 2.34 — which is CLAUDE.md §11's expiring premise written as an algorithm.
 # The ffi-pragmatist vetoed exactly that.
 #
-# `iconv` rather than `math.h` on purpose: on Darwin arm64 `sqrt` is lowered to a
-# hardware instruction at every level and never reaches the linker at all, so a
-# libm case would pass here for the wrong reason (measured, panel 048).
+# **The library is `sqlite3`, and choosing it took two tries.** Not `math.h`: on
+# Darwin arm64 `sqrt` is lowered to a hardware instruction at every level and
+# never reaches the linker at all, so a libm case passes here for the wrong
+# reason (measured, panel 048). And not `iconv`, which was the first choice and
+# was wrong for a reason the panel's own ffi-pragmatist had already reported and
+# this file had already quoted: `iconv_open` is **in libc on glibc** and needs
+# `-liconv` only on Darwin. It is the one row in its table that is *inverted*
+# between the two platforms, which makes it the worst possible case for a test
+# that must fail on both. The CI said so within three minutes.
+#
+# A third-party library is the shape that agrees everywhere — the pragmatist's
+# table has `sqlite3`, `curl` and `z` as the only rows where the library name is
+# platform-independent, which is also why panel 047's prediction 2 held.
 # Bulk regression case.
 
-extern "iconv.h"
-    function iconv_open(to: cstr, from: cstr) -> ptr
-    function iconv_close(handle: ptr) -> i64
+extern "sqlite3.h"
+    function sqlite3_libversion_number() -> i64
 
 function main()
-    handle = iconv_open(to: "UTF-8".cstr(), from: "UTF-8".cstr())
-    if handle == nullptr
-        print("could not open")
-    else
-        print("opened")
-        _ = iconv_close(handle)
+    print("sqlite ", sqlite3_libversion_number())

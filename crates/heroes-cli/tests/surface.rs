@@ -1064,10 +1064,11 @@ fn fixedbugs_a_missing_link_is_the_authors_error_not_the_compilers() {
     // The repair works: the same program with the library named builds and runs.
     let source = std::fs::read_to_string("../../tests/golden/fixedbugs/ffi-missing-link.hero")
         .expect("the case is there");
-    let repaired = source.replace("extern \"iconv.h\"", "extern \"iconv.h\" link \"iconv\"");
+    let repaired =
+        source.replace("extern \"sqlite3.h\"", "extern \"sqlite3.h\" link \"sqlite3\"");
     let path = std::env::temp_dir().join("heroes-ffi-missing-link-fixed.hero");
     std::fs::write(&path, repaired).expect("a writable temp file");
     let fixed = heroes(&["run", &path.display().to_string()]);
     assert_eq!(code(&fixed), 0, "{}", String::from_utf8_lossy(&fixed.stderr));
-    assert_eq!(String::from_utf8_lossy(&fixed.stdout), "opened\n");
+    assert!(String::from_utf8_lossy(&fixed.stdout).starts_with("sqlite "), "{}", String::from_utf8_lossy(&fixed.stdout));
 }
