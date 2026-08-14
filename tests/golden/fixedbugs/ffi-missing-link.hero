@@ -1,0 +1,56 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`), 2026-08-14, panel 048.
+#
+# SYMPTOM: a **correct** binding missing only its `link` clause was reported like
+# this — measured, verbatim:
+#
+#     internal error: compiling the generated C failed:
+#     Undefined symbols for architecture arm64:
+#       "_iconv_open", referenced from: _h_nolink_main in nolink-c2a717.o
+#     the generated C is at build/2a141c4fbafbf91d/nolink.c
+#     EXIT=2
+#
+# Five things wrong with it, and the panel's ffi-pragmatist counted them against
+# this file's own module doc: the compiler blames **itself**; exit **2** says the
+# tool could not run when the input has a diagnostic; there is no `.hero` line
+# and no span; it invites the author to debug generated C under `build/<hash>/`
+# for a three-line `extern` group; and the word `link` never appears — while
+# "compiling the generated C failed" is wrong, because it was the **linker**.
+#
+# CAUSE: `emit/ffi.rs::explain` turned three classes of clang's verdict into
+# Heroes diagnostics and had no fourth for the linker's, so `compile.rs` took the
+# `internal error` path. It is the same shape §4.19's return assertion had before
+# panel 036, and this file's own header already carried the verdict on it.
+#
+# FIX: `ffi_missing_link`, exit 1, on the author's line, naming the form.
+#
+# **THE GATE IS THE POINT.** The class is admitted only when the undefined symbol
+# is one *this program* declared in an `extern` group — `declaration()`, a fact
+# about the value. An undefined symbol nobody declared is the **emitter's** bug
+# (a generated `hash` prototyped and never defined is a recorded instance) and
+# stays exit 2, where it belongs. `extern` names are the only unmangled names in
+# the unit (CLAUDE.md §7), so `iconv_open` against `h_missinglink_main` is a
+# perfect discriminator.
+#
+# **No fix is offered**, and four judges agree why: the repair is `link "<name>"`
+# and the compiler does not know the name. A header-to-library table would be
+# wrong on three rows measured — `-lrt` is an error on Darwin, `-liconv` is
+# required on Darwin and does not exist on glibc, `pthread` moved into libc at
+# glibc 2.34 — which is CLAUDE.md §11's expiring premise written as an algorithm.
+# The ffi-pragmatist vetoed exactly that.
+#
+# `iconv` rather than `math.h` on purpose: on Darwin arm64 `sqrt` is lowered to a
+# hardware instruction at every level and never reaches the linker at all, so a
+# libm case would pass here for the wrong reason (measured, panel 048).
+# Bulk regression case.
+
+extern "iconv.h"
+    function iconv_open(to: cstr, from: cstr) -> ptr
+    function iconv_close(handle: ptr) -> i64
+
+function main()
+    handle = iconv_open(to: "UTF-8".cstr(), from: "UTF-8".cstr())
+    if handle == nullptr
+        print("could not open")
+    else
+        print("opened")
+        _ = iconv_close(handle)

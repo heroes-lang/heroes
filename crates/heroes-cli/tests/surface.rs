@@ -1038,3 +1038,36 @@ fn the_optimisation_level_is_a_flag_with_the_verbs_default() {
     let names = String::from_utf8_lossy(&unknown.stderr);
     assert!(names.contains("-O0, -O2"), "{names}");
 }
+
+/// **The fourth class of §7's named exception, and the first that is the
+/// *linker*'s** (panel 048, 2026-08-14). A correct binding missing only its
+/// `link` clause used to be `internal error:` at exit **2** — the compiler
+/// blaming itself for a mistake in a `.hero` file, with no line, no span, and a
+/// pointer at generated C under `build/<hash>/`.
+///
+/// The gate is what makes this safe and it is asserted below: the class is
+/// admitted only for a symbol *this program* declared `extern`. An undefined
+/// symbol nobody declared is the emitter's own bug and stays exit 2.
+#[test]
+fn fixedbugs_a_missing_link_is_the_authors_error_not_the_compilers() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-missing-link.hero"]);
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    // Exit 1: the input has a diagnostic. 2 would say the tool could not run.
+    assert_eq!(code(&out), 1, "{said}");
+    assert!(said.contains("error[ffi_missing_link]"), "{said}");
+    // The author's line, not the generated C's.
+    assert!(said.contains("ffi-missing-link.hero:"), "{said}");
+    assert!(!said.contains("internal error"), "{said}");
+    assert!(!said.contains("build/"), "the message sends the reader to generated C: {said}");
+    // And it says what to write, which is the whole of §4.17 here.
+    assert!(said.contains("link \"<library>\""), "{said}");
+    // The repair works: the same program with the library named builds and runs.
+    let source = std::fs::read_to_string("../../tests/golden/fixedbugs/ffi-missing-link.hero")
+        .expect("the case is there");
+    let repaired = source.replace("extern \"iconv.h\"", "extern \"iconv.h\" link \"iconv\"");
+    let path = std::env::temp_dir().join("heroes-ffi-missing-link-fixed.hero");
+    std::fs::write(&path, repaired).expect("a writable temp file");
+    let fixed = heroes(&["run", &path.display().to_string()]);
+    assert_eq!(code(&fixed), 0, "{}", String::from_utf8_lossy(&fixed.stderr));
+    assert_eq!(String::from_utf8_lossy(&fixed.stdout), "opened\n");
+}

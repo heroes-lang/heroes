@@ -105,11 +105,18 @@ only effect on glibc is to hide `M_PI`, `strdup`, `fileno` and nine more of what
 §1.11 says a program binds; panel 047, ratification pending) `-Wall -Werror=return-type -Werror=uninitialized
 -Werror=format -Werror=conditional-uninitialized -fno-strict-aliasing`; a clang
 failure is exit 2 and says the *compiler* is wrong, **with one named exception**
-(author instruction 2026-08-12, panel 036): the `_Generic` return assertion §4.19
-emits per `extern` exists to fail when the *author's* declaration disagrees with
-the real header, so it is exit 1 and a `ffi_return_type` diagnostic on the
-`.hero` line — `emit/ffi.rs` matches only the assertion messages this emitter
-writes, and every other verdict on generated C is still the compiler's.
+(author instruction 2026-08-12, panel 036; widened by panel 048): a failure the
+**author's own `extern` declaration** caused is exit 1 and a diagnostic on the
+`.hero` line. Four classes now — a result type the header refutes, a `constant`
+that is not one, a name the header does not have, and, since panel 048, a symbol
+the **linker** cannot find because the group named no `link`. **The narrowing is
+`declaration()`, not whose text it is**: every class recovers a name and asks
+whether *this program* declared it `extern`, so a symbol nobody declared stays
+exit 2 and the compiler's. (§7 said for a milestone that `emit/ffi.rs` "matches
+only the assertion messages this emitter writes" — already false when written,
+since `unknown_name` matches clang's own; §11's class, and the stronger rule was
+the true one all along.) Every other verdict on generated C is still the
+compiler's.
 **A refcounted slot is the
 one exception to the no-initialisation rule** — zero-initialised so cleanup is
 unconditional, with `ptr == NULL` as the non-value every runtime entry point

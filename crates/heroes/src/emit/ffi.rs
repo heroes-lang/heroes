@@ -10,10 +10,19 @@
 //! wrote, name a file under `build/<hash>/`, and blame the compiler for a
 //! mistake in a `.hero` file — three of the four things §4.17 exists to prevent.
 //!
-//! The mapping is deliberately narrow. It reads only the assertion messages this
-//! emitter itself writes, matched by their exact prefix, and it recovers the
-//! declaration by name from the same tree that generated them. Anything else in
-//! clang's output stays what it was: a statement about this compiler.
+//! **The mapping is deliberately narrow, and the narrowing is `declaration()`.**
+//! Every class here recovers a name from the tool's output and then asks *this
+//! program* whether it declared that name in an `extern` group. A name no group
+//! declares is refused, and clang's line stays what it was: a statement about
+//! this compiler.
+//!
+//! The doc used to say the narrowing was "only the assertion messages this
+//! emitter itself writes, matched by their exact prefix". That was **already
+//! false when it was written** — `unknown_name` matches clang's own *"call to
+//! undeclared function '"* and always did — and the sentence went on reading as
+//! correct because the argument around it was still valid (CLAUDE.md §11's class,
+//! found by panel 048's compiler-engineer). The rule that actually holds is the
+//! stronger one: a fact about the value, not about whose text it is.
 
 use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::source::Source;
@@ -58,6 +67,9 @@ pub fn explain(stderr: &str, ast: &Ast, src: &Source) -> Vec<Diagnostic> {
             push(&mut found, diagnostic);
         }
         if let Some(diagnostic) = unknown_name(line, stderr, ast, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = missing_link(line, ast, src) {
             push(&mut found, diagnostic);
         }
     }
@@ -218,4 +230,60 @@ fn name_span(ast: &Ast, src: &Source, name: &str) -> Option<crate::source::Span>
         .iter()
         .find(|decl| src.slice(decl.name) == name)
         .map(|decl| decl.name)
+}
+
+/// **A symbol the linker could not find, which this program declared `extern`**
+/// — the author forgot `link`, and until panel 048 the compiler answered
+/// `internal error: …` and **exit 2**, which by CLAUDE.md §10's contract says
+/// *the tool could not run*.
+///
+/// It was the same shape §4.19's return assertion had before panel 036, and this
+/// file's own header already carried the verdict on it: left as an internal
+/// error it prints C the author never wrote, names a file under `build/<hash>/`,
+/// and blames the compiler for a mistake in a `.hero` file.
+///
+/// **The gate is `declaration()` and it is doing real work here.** An undefined
+/// symbol that no `extern` group declares is a symbol the *emitter* failed to
+/// define — a generated `hash` prototyped and never written is a recorded
+/// instance — and that stays exit 2, where it belongs. So the split is a fact
+/// about the value: did *this program* promise this name to C?
+///
+/// **No fix is offered, and that is deliberate.** The repair is `link "<name>"`,
+/// and the compiler does not know the name: the header does not carry it, and a
+/// table mapping `math.h` to `m` would be a premise about the world with an entry
+/// for every library anyone ever binds. The note names the form and the group;
+/// the author knows the library. (Panel 048 declined a spec clause for the same
+/// reason, on four judges' evidence.)
+fn missing_link(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    let name = undefined_symbol(line)?;
+    let (span, header, _) = declaration(ast, src, &name)?;
+    let mut diagnostic = Diagnostic::new(
+        "ffi_missing_link",
+        format!(
+            "the linker cannot find `{name}`, and no group in this program says which library has it"
+        ),
+        span,
+    );
+    diagnostic = diagnostic.with_note(format!(
+        "`{header}` declares `{name}`, and a header is not a library: write `extern \"{header}\" link \"<library>\"` — `math.h` needs `link \"m\"` on Linux and the BSDs, where it is a separate library"
+    ));
+    Some(diagnostic)
+}
+
+/// The symbol out of a linker's complaint, in the spellings the two platforms
+/// produce.
+///
+/// GNU `ld` and `lld` write ``undefined reference to `sqrt'``; Apple's `ld64` and
+/// `ld_prime` write `"_sqrt", referenced from:` on its own line. **The leading
+/// underscore is Mach-O's**, not the program's, and stripping it is what lets one
+/// `declaration()` lookup serve both.
+fn undefined_symbol(line: &str) -> Option<String> {
+    if let Some(rest) = line.split("undefined reference to `").nth(1) {
+        return Some(rest.split('\'').next()?.to_string());
+    }
+    if line.contains("referenced from:") {
+        let quoted = line.split('"').nth(1)?;
+        return Some(quoted.strip_prefix('_').unwrap_or(quoted).to_string());
+    }
+    None
 }
