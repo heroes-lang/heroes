@@ -17,21 +17,21 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-program-corpus closed 2026-08-13, tag `m-program-corpus` — nine programs, six
-compiler defects, and a CI on two platforms.**
+**M-binding-fidelity closed 2026-08-14, tag `m-binding-fidelity` — a wrong FFI
+parameter is now a compile error on the author's own line.**
 
-    $ heroes run examples/maze/main.hero -- examples/maze/sample.maze
-    steps: 25
+    error[ffi_parameter_type]: `size` of `narrow` is declared wider than the
+    header's `int` — clang read the header, and C would convert the value in silence
 
-`examples/` is one directory per program, found by looking rather than by list.
-The programs found **six** compiler defects, three of them CLAUDE.md §11's class,
-and one of the six was `heroes fmt` changing the meaning of a program.
+§4.19's guarantee was half true: checked on results since M-ffi-ladder, unchecked on
+**every parameter**, and `_Generic`'s unevaluated operand is the reason. The check
+is a never-called probe function per `extern`. **42% of what anybody binds** takes a
+parameter that is not 64 bits.
 
-**542 tests · 51 CLI · 13 golden harnesses + 7 corpus properties**, clippy clean
-under `-D warnings`, spec **2974** of 4096, `mutate` **95% / 85% over 5798** over
-45 programs. **The CI has never run**, and the first push starts it — the
-author's call. Record: `docs/journal/016-the-program-corpus.md`. Next:
-**M-selfhost-probe**.
+**550 tests**, clippy clean under `-D warnings`, spec **3208** of 4096 (headroom
+888), CI green on three legs. Record: `docs/journal/017-binding-fidelity.md`.
+Next: **M-struct-passing** — 356 of 1159 entry points, the wall the widths do not
+touch.
 
 ---
 

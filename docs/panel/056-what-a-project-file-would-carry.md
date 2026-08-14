@@ -1,6 +1,6 @@
 # 056 — What a project file would carry
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `RATIFIED 2026-08-15` (was `provisional — author ratification pending`).
 **Convened** 2026-08-14 by author decision, from `docs/reasoning/004-a-project-file.md`
 and in the same session. **Synthesised** 2026-08-15.
 **Lane**: full, five judges, all reporting, all building in copies.
@@ -264,3 +264,28 @@ Meeting all three returns the question to a panel. Meeting fewer does not.
   inside its own measurement. It was reverted before any commit and the suite is
   green at 550 tests, but the rule the judges are held to should bind the
   coordinator during a sitting too.
+
+## Ratification — 2026-08-15
+
+**RATIFIED as it stands** (author instruction, `/decide`: *"le ratifiche ratifica
+tutto per me"*). **B stands adopted with D as its companion**, **A stays refused**,
+**C stays refused on its two vetoes**. The three return conditions are the
+decision's operative half and are unchanged: one key not two, no string in the file
+that also appears in a `.hero`, and one named binding that `package` plus one
+command line cannot build. Meeting all three returns the question to a panel;
+meeting fewer does not.
+
+**The item put one thing to the author that the yes does not silently answer**, and
+it is recorded here so it is not read as settled: if C is ever overturned, the shape
+the judges would accept — **one key** — was **not on the ballot** and is six lines
+dearer than the two-key form that was. A future sitting must price the one-key form
+itself rather than inherit C's measurement.
+
+**Panel 039 was ratified in the same instruction**, which matters for this file:
+B is 039's precedent applied to a second shape of question, and it would have been
+a decision standing on a provisional one for as long as the two were split.
+
+The limit is the 2026-08-12 blanket's limit. Four of the five predictions above
+name instruments that do not exist yet (the model harness, rung 5's close, C's
+landing); the yes does not score them, and R2's *re-decided, never renewed* rule
+governs them exactly as it did before.

@@ -72,7 +72,7 @@ fn compiler_fingerprint() -> String {
 /// join slot the lowering forgot to write on one arm.
 pub const FLAGS: [&str; 11] = [
     // **`gnu11`, not `c11`, and the difference is one predefined macro** (panel
-    // 047, ratification pending). `-std=c11` defines `__STRICT_ANSI__`, and on
+    // 047, ratified 2026-08-14). `-std=c11` defines `__STRICT_ANSI__`, and on
     // glibc that is the *only* thing it does: it hides `M_PI`, `strdup`,
     // `fileno`, `popen`, `setenv`, `newlocale`, `clock_gettime` — most of what
     // §1.11 says a program binds — while Darwin's headers do not guard them at

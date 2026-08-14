@@ -2,7 +2,10 @@
 
 **Convened** 2026-08-04, before M5a's first line. **Trigger**: CLAUDE.md §4 —
 architecture (backend) *and* the tool surface, plus one new output class.
-**Status**: `provisional — author ratification pending`.
+**Status**: `RATIFIED 2026-08-12` (was `provisional — author ratification pending`;
+this line had gone on saying *pending* against this file's own § Ratification for
+three days — repaired 2026-08-15, and it is the class CLAUDE.md §11 is about: a
+header that outlived the fact it stated).
 
 Five judges, differentiated by input. The compiler-engineer read the real `ir/`
 tree and ran clang; the llm-ergonomist read **only** `spec/heroes-spec.md` and

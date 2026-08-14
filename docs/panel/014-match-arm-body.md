@@ -179,3 +179,21 @@ Part 5 desugaring with no value for the IR — for zero expressiveness over P.
 - **`heroes fmt` had no test with a control form in an arm body.** The defect
   that deleted code was reachable in three lines; the acceptance program is
   what would have caught it, and it did not contain the shape either.
+
+## Ratification — 2026-08-15, blanket author instruction
+
+**RATIFIED as it stands** (author instruction, `/decide`: *"le ratifiche ratifica
+tutto per me"*, given as a blanket over what was open rather than clause by
+clause). Resolution **P** is the decision: an arm's body is one statement, inline,
+or an indented block. The vetoed **R** stays vetoed and **S** stays dead with it.
+
+The instruction's limit is the same one the 2026-08-12 blanket recorded, and it is
+worth restating rather than assumed: a blanket yes settles that the provisional
+resolution **is** the decision and that work no longer runs on it as a default. It
+does not settle anything keyed to a measurement nobody has taken — predictions 3
+and 4 name the first Part 11 run, which by the author's decision of 2026-08-12
+waits for M-selfhost-fixpoint, and a yes cannot make a number arrive.
+
+This sitting was outside the 2026-08-12 blanket's range (`013, 019–034`) by an
+accident of how that range was written, not by a judgement — it has been the
+shipped rule since M4 and nothing has run on any other reading of it.

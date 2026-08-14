@@ -4,7 +4,7 @@
 *convene now* / *convene at M-selfhost-probe* / *do not convene*; the author took
 the first).
 
-**Status** `provisional — author ratification pending`.
+**Status** `RATIFIED 2026-08-15` (was `provisional — author ratification pending`).
 
 **Lane** full panel, five judges. The soundness lane was considered and refused:
 the change costs zero spec tokens and emits no code, which is the lane's
@@ -275,3 +275,22 @@ event: zero.**
   sentence for `@setEvalBranchQuota` (the number 1000 stands on the error string
   in ziglang/zig#11996); N3065's paper number; and Nim's `importc`-constant
   precedent, which it read from CLAUDE.md §6 rather than searching.
+
+## Ratification — 2026-08-15, blanket author instruction
+
+**RATIFIED as it stands** (author instruction, `/decide`: *"le ratifiche ratifica
+tutto per me"*). All three parts of the resolution are the decision: the Macros
+row's reason is narrowed to what it actually rejects, **no rejection and no
+deferral is written** — comptime is *examined and unplaced* — and the word is
+greppable, so the next reader who has the idea finds the sitting instead of
+re-litigating it.
+
+**What this ratification is worth beyond its own subject**: panel 056 reached the
+same shape of answer for a project file eleven days later and cited *this* sitting
+as its precedent (*"examined and deliberately unplaced — neither Part 6 nor Part
+7"*). Ratifying 039 therefore ratifies the precedent 056 stands on, and the two are
+now ratified in the same instruction, which is the honest order — the precedent
+should not be provisional under a decision that leans on it.
+
+The limit is the 2026-08-12 blanket's limit: a yes settles that the resolution
+**is** the decision, not anything keyed to a measurement not yet taken.

@@ -102,8 +102,13 @@ hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
 point. Compile flags: `-std=gnu11` (**named, not inherited** — and `gnu11` rather
 than `c11` because the two differ by one predefined macro, `__STRICT_ANSI__`, whose
 only effect on glibc is to hide `M_PI`, `strdup`, `fileno` and nine more of what
-§1.11 says a program binds; panel 047, ratification pending) `-Wall -Werror=return-type -Werror=uninitialized
--Werror=format -Werror=conditional-uninitialized -fno-strict-aliasing`; a clang
+§1.11 says a program binds; panel 047, **ratified 2026-08-14**) `-D_USE_MATH_DEFINES
+-D_CRT_SECURE_NO_WARNINGS -Wall -Werror=return-type -Werror=uninitialized
+-Werror=format -Werror=conditional-uninitialized -fno-strict-aliasing
+-Werror=shorten-64-to-32 -Werror=sign-conversion`. **The list is the eleven in
+`toolchain.rs::FLAGS` and this sentence is a copy of it**, which is why it had
+drifted: the two `-D` and the two parameter-side `-Werror=` (panels 051, 052) landed
+in the code without reaching here. A clang
 failure is exit 2 and says the *compiler* is wrong, **with one named exception**
 (author instruction 2026-08-12, panel 036; widened by panel 048): a failure the
 **author's own `extern` declaration** caused is exit 1 and a diagnostic on the
