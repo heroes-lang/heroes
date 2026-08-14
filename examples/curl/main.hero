@@ -36,13 +36,13 @@ extern "curl/curl.h" link "curl"
     # `CURLOPTTYPE_STRINGPOINT + 2`, and the arithmetic is libcurl's business.
     # This file used to say `10002`, with that derivation in a comment and nothing
     # checking either (panel 038; `heroes mutate` scored it at 5 sites, 0 caught).
-    constant CURLOPT_URL: i64
+    constant CURLOPT_URL: i32
     constant CURLE_OK: i64
     constant CURLE_UNSUPPORTED_PROTOCOL: i64
     function curl_version() -> cstr
     function curl_easy_init() -> ptr
-    function curl_easy_setopt(handle: ptr, option: i64, value: cstr) -> i64
-    function curl_easy_strerror(code: i64) -> cstr
+    function curl_easy_setopt(handle: ptr, option: i32, value: cstr) -> i64
+    function curl_easy_strerror(code: i32) -> cstr
     function curl_easy_cleanup(handle: ptr)
 
 function main()
@@ -55,8 +55,8 @@ function main()
     if rc == CURLE_OK
         print("the url was accepted")
     else
-        print("setopt refused it: ", to_str(curl_easy_strerror(rc)))
+        print("setopt refused it: ", to_str(curl_easy_strerror(rc.to_i32().must())))
     # A code the library knows and this program never provokes: the point is
     # that the message comes from libcurl, not from a table written here.
-    print("code 1 means: ", to_str(curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL)))
+    print("code 1 means: ", to_str(curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL.to_i32().must())))
     curl_easy_cleanup(handle)

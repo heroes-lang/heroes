@@ -1,0 +1,21 @@
+# The rule § FFI states about parameters, made to fire (CLAUDE.md §9: every
+# check has a test that makes it fire; panel 051).
+#
+# `abs` takes a C int, so the binding declares `i32` — the header's own width.
+# The point of writing it that way is what happens on the next line: an `i64`
+# argument is refused *here*, in the frontend, by §4.3's rule against implicit
+# conversion. Bound as `i64` instead, the same program compiles, runs, and
+# prints 5 for 4294967301, because clang narrows the argument in silence and the
+# `_Static_assert` that checks an `extern` only ever asked about the result.
+#
+# That asymmetry is the sentence panel 051 repaired, and it is principled: a
+# result may be wider than C's, because every C integer narrower than 64 bits
+# fits an `i64`; a parameter may not be, because the conversion runs the other
+# way.
+
+extern "stdlib.h"
+    function abs(n: i32) -> i32
+
+function main()
+    wide: i64 @ 7
+    print(abs(wide))   #~ type_mismatch

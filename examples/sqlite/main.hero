@@ -34,9 +34,9 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_open(filename: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
     function sqlite3_exec(db: ptr, sql: cstr, callback: ptr, context: ptr, @error: ptr) -> i64
-    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i64, @statement: ptr, @tail: ptr) -> i64
+    function sqlite3_prepare_v2(db: ptr, sql: cstr, length: i32, @statement: ptr, @tail: ptr) -> i64
     function sqlite3_step(statement: ptr) -> i64
-    function sqlite3_column_int(statement: ptr, column: i64) -> i64
+    function sqlite3_column_int(statement: ptr, column: i32) -> i64
     function sqlite3_finalize(statement: ptr) -> i64
 
 # One statement, run for its effect. The three pointers SQLite's callback
@@ -53,7 +53,7 @@ function first_int(db: ptr, sql: str) -> i64
     rc = sqlite3_prepare_v2(
         db: db,
         sql: sql.cstr(),
-        length: 0 - 1,
+        length: -1,
         statement: @statement,
         tail: @tail
     )

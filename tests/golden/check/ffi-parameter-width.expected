@@ -1,0 +1,1 @@
+tests/golden/check/ffi-parameter-width.hero:21:15: error[type_mismatch]: expected `i32`, found `i64`

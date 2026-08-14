@@ -189,8 +189,9 @@ with holes type-checks everything else but produces no binary.
 ## FFI
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
 libraries. A group names its header, and `link` a library when the symbols need one. clang
-checks every signature and constant against that header, so a wrong FFI type is a
-compile error:
+checks every result type and constant against that header, and a result may be
+wider than C's. A **parameter** is declared at the header's own width — `i32`
+where C says int — because clang narrows a wide one in silence:
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
