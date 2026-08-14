@@ -39,6 +39,11 @@ pub(super) fn test_shim(w: &mut Writer, program: &Program, src: &Source) {
     w.blank();
     w.at_generated();
     w.line("int main(int argc, char **argv) {");
+    // The same first call the program's `main` makes. A test build does not want
+    // the arguments — its one argument is the test's index — but it wants the
+    // streams put in the state the language promises, which is where `\n` is one
+    // byte on every platform (2026-08-14, the third CI leg's second run).
+    w.line("    hero_args_set(argc, argv);");
     w.line("    int64_t which = hero_test_index(argc, argv);");
     w.line("    switch (which) {");
     // The index is the test's POSITION, and the C name is its DECLARATION index:

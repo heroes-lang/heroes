@@ -22,7 +22,7 @@ over cases somebody thought of.
 | directory | what it is |
 |---|---|
 | `adventure/` | a text adventure played from a script — the world is data written in code, a turn is a **value** (a state in, a state and some lines out), and it is the program that never calls `exit`, so the corpus keeps a path across the leak gate |
-| `raylib/` | §4.19's ladder rung 5: a window opens. The acceptance test for `package "raylib"` — the machine is asked where the library is, and answers differently on every platform from one spelling. No `main.expected`: raylib logs this machine's GPU |
+| `raylib/` | §4.19's ladder rung 5: a window opens. The acceptance test for `package "raylib"` — the machine is asked where the library is, and answers differently on every platform from one spelling |
 | `todo/` | a todo list kept in a file — the corpus's first program that **writes** one. Every decision about *what* to write is pure next door, so the list's own tests never touch the disk |
 | `logs/` | a log summariser: a **level mask** (`\|` to add a flag, `&` to test, `~` to take away, `^` to toggle, `>>` to count), `{str: i64}` tallies read back in an order the map does not have, a ranking `sort` gets wrong on purpose, and a reader that **skips and counts** a line it cannot parse rather than refusing the file |
 | `assembler/` | a register machine, assembled and run: two passes because a jump may name a label further down, an encoding and its decoder written from one set of `constant`s, and a run bounded by fuel |

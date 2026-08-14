@@ -24,24 +24,29 @@
 # struct. This program uses `DrawFPS`, which is the one draw call that takes only
 # integers. The type vocabulary is the next wall and it is untouched.
 #
-# The window is 1×1 and closes immediately, because a corpus program runs
-# unattended in three configurations on a machine with no display.
+# **It does not open a window, and that is the second thing this file learned.**
+# The first version did, and it passed here and failed on the macOS CI leg —
+# because a runner has no display, and raylib cannot initialise one. A corpus
+# program runs unattended in three configurations on a headless machine, so the
+# binding it exercises must be one that needs no screen. `SetRandomSeed` and
+# `GetRandomValue` are real raylib entry points that touch no window, and a seed
+# makes the answer the same on every run and every platform.
+#
+# The window *was* opened, by hand, on 2026-08-14, from this same
+# `package "raylib"` line — `InitWindow`/`CloseWindow`, printing
+# "the window opened and closed". That is the rung, and it is recorded in
+# `docs/panel/050` rather than asserted by a test no runner can run.
 
 extern "raylib.h" package "raylib"
-    function InitWindow(width: i32, height: i32, title: cstr)
-    function CloseWindow()
-    function WindowShouldClose() -> bool
+    function SetRandomSeed(seed: u32)
+    function GetRandomValue(min: i32, max: i32) -> i32
 
 function main()
-    InitWindow(width: 1, height: 1, title: "Heroes".cstr())
-    # Asked once so the binding is exercised rather than merely linked: a call
-    # that returns a value is the half a window-open-and-close program skips.
-    _ = WindowShouldClose()
-    CloseWindow()
-    print("the window opened and closed")
+    SetRandomSeed(7)
+    print("raylib answered ", GetRandomValue(min: 1, max: 6))
 
-test "the binding reaches raylib and comes back"
-    InitWindow(width: 1, height: 1, title: "test".cstr())
-    _ = WindowShouldClose()
-    CloseWindow()
-    assert true
+test "the binding reaches raylib and comes back with a value in range"
+    SetRandomSeed(1)
+    roll = GetRandomValue(min: 1, max: 6)
+    assert roll >= 1
+    assert roll <= 6

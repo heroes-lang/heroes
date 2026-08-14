@@ -7,6 +7,32 @@
  * allocation point §4.20 insists on.
  */
 
+/* **stdout is bytes, on every platform.**
+ *
+ * Windows opens the standard streams in *text* mode, where the C runtime turns
+ * every `\n` into `\r\n` on the way out. The spec says `print` writes its values
+ * "with no separator and exactly one trailing newline" — one — and on Windows it
+ * was writing two bytes for that one newline, behind the language's back. A
+ * corpus program's `main.expected` is compared byte for byte across three
+ * platforms, and it caught this on the third leg's second run.
+ *
+ * `_setmode` is the documented switch and it is called once, before anything is
+ * written. Nothing changes on POSIX, where there was never a translation. */
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+static void hero_stdout_is_bytes(void) {
+    static int done = 0;
+    if (!done) {
+        done = 1;
+        _setmode(_fileno(stdout), _O_BINARY);
+        _setmode(_fileno(stderr), _O_BINARY);
+    }
+}
+#else
+static void hero_stdout_is_bytes(void) {}
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -17,6 +43,7 @@ static int hero_argc = 0;
 static char **hero_argv = NULL;
 
 void hero_args_set(int argc, char **argv) {
+    hero_stdout_is_bytes();
     hero_argc = argc;
     hero_argv = argv;
 }
