@@ -63,6 +63,35 @@ pub struct Options {
     /// above are — a test binary sharing a directory with a program binary is one
     /// configuration pretending to be two.
     pub target: Target,
+    /// `--include` and `--library`, in the order written, which is the order clang
+    /// searches (author decision 2026-08-14, settling panel 055's split).
+    ///
+    /// **They are in the cache key**, and that is a measured condition rather than
+    /// a precaution: the judge who built this found its own prototype serving one
+    /// artifact to two configurations, because `dir_for` hashed the source, the
+    /// level, the sanitiser and the runtime and nothing else — so `--include /old`
+    /// and `--include /new` on unchanged source hashed identically and the second
+    /// build silently reused the first. That is the staleness the level key exists
+    /// to prevent, arriving through a new door.
+    pub search: Search,
+}
+
+/// Where to look for a header and for a library, when no `package` can say.
+#[derive(Clone, Default)]
+pub struct Search {
+    pub include: Vec<String>,
+    pub library: Vec<String>,
+}
+
+impl Search {
+    /// The part of the cache key these contribute. Empty when neither was given,
+    /// so every existing build directory keeps its name.
+    pub fn key(&self) -> String {
+        if self.include.is_empty() && self.library.is_empty() {
+            return String::new();
+        }
+        format!("\u{1}I{}\u{1}L{}", self.include.join(":"), self.library.join(":"))
+    }
 }
 
 /// `Ok(None)` — it stopped at a dump. `Ok(Some(path))` — that binary exists now.
@@ -204,7 +233,7 @@ pub fn compile_with_tests(
         Target::Program => options.level.to_string(),
         Target::Tests => format!("{}+tests", options.level),
     };
-    let dir = match toolchain.dir_for(&src.name, &src.text, &level_key, options.sanitize) {
+    let dir = match toolchain.dir_for(&src.name, &src.text, &level_key, options.sanitize, &options.search.key()) {
         Ok(dir) => dir,
         Err(message) => {
             eprintln!("error: {message}");
@@ -242,6 +271,7 @@ pub fn compile_with_tests(
         &super::libraries::Libraries {
             link: emitted.link.clone(),
             packages: emitted.packages.clone(),
+            search: options.search.clone(),
         },
     ) {
         // **Some clang failures are the author's**, and `ffi.rs` is the only place

@@ -12,7 +12,7 @@
 use super::{Command, Flag, Operand, Tag};
 
 fn flag(spelling: &str, what: &str) -> Flag {
-    Flag { spelling: spelling.to_string(), what: what.to_string(), value: false }
+    Flag { spelling: spelling.to_string(), what: what.to_string(), value: false, repeatable: false }
 }
 
 /// A flag that takes the next argument. `-o` is the first one the surface has, and
@@ -20,7 +20,28 @@ fn flag(spelling: &str, what: &str) -> Flag {
 /// … -o A`, `--emit-c -o B.c`, `--emit-c -o C.c`, `diff B.c C.c`. The C leg would
 /// compose from a shell redirect; the *binary* leg cannot be redirected at all.
 fn valued(spelling: &str, what: &str) -> Flag {
-    Flag { spelling: spelling.to_string(), what: what.to_string(), value: true }
+    Flag { spelling: spelling.to_string(), what: what.to_string(), value: true, repeatable: false }
+}
+
+/// A valued flag that may be written more than once, each time meaning one more.
+///
+/// **Only search paths are like this, and the decision is the author's**
+/// (2026-08-14, settling the split panel 055 recorded). Three judges held that
+/// §10's stopping rule yields *nothing*, because `CPATH`, `LIBRARY_PATH` and
+/// `PKG_CONFIG_PATH` already compose to it — measured, all three live, because
+/// `Command` inherits the environment. The judge who built it held that an
+/// environment variable is **not an artifact a program can carry**: asked for a
+/// program that binds SDL2, a model produces something that cannot be built, and
+/// the missing half is an unversioned shell line.
+///
+/// What the author's yes buys is that half. What it costs is written down rather
+/// than hidden: `-I` and `-L` named **independently** are the only way to produce
+/// the skew panel 055 measured — header v1, library v2, compiles clean, links
+/// clean, exit 0, **wrong number** — where `package` asks one question of one
+/// `.pc` and cannot. `package` stays the shape to reach for first, and these are
+/// for the library that has no `.pc`.
+fn repeated(spelling: &str, what: &str) -> Flag {
+    Flag { spelling: spelling.to_string(), what: what.to_string(), value: true, repeatable: true }
 }
 
 pub fn commands() -> Vec<Command> {
@@ -67,6 +88,8 @@ pub fn commands() -> Vec<Command> {
                 flag("--dump-ir", "print the lowered three-address IR and stop"),
                 flag("--emit-c", "print the generated C11 and stop, instead of compiling it"),
                 valued("-o", "write the artifact here instead of under build/"),
+                repeated("--include", "search this directory for an `extern` group's header; may repeat"),
+                repeated("--library", "search this directory for a `link` library; may repeat"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
                 flag("-O0", "compile at -O0 (the default here)"),
                 flag("-O2", "compile at -O2"),
@@ -79,6 +102,8 @@ pub fn commands() -> Vec<Command> {
             operand: Operand::File,
             flags: vec![
                 valued("-o", "keep the binary here as well as running it"),
+                repeated("--include", "search this directory for an `extern` group's header; may repeat"),
+                repeated("--library", "search this directory for a `link` library; may repeat"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
                 flag("-O0", "compile at -O0"),
                 flag("-O2", "compile at -O2 (the default here)"),
@@ -90,6 +115,8 @@ pub fn commands() -> Vec<Command> {
             name: "test".to_string(),
             operand: Operand::File,
             flags: vec![
+                repeated("--include", "search this directory for an `extern` group's header; may repeat"),
+                repeated("--library", "search this directory for a `link` library; may repeat"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
                 flag("-O0", "compile at -O0 (the default here)"),
                 flag("-O2", "compile at -O2"),

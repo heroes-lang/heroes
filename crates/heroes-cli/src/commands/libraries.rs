@@ -24,7 +24,31 @@ use std::process::Command;
 pub struct Libraries {
     pub link: Vec<String>,
     pub packages: Vec<String>,
+    /// `--include` and `--library`, in the order written (author decision
+    /// 2026-08-14, panel 055's split settled).
+    ///
+    /// **They ride here rather than as two more parameters of `link`**, which
+    /// already carries a `PORT-DEBT` for seven and which CLAUDE.md §5 forbids
+    /// ratcheting up. And they belong here on meaning as well as on count: this
+    /// struct is what a program says about *where things are*, and a search path
+    /// is the same sentence said by the invocation instead of by the source.
+    ///
+    /// **No allow-list, and the reason is a falsifiable claim rather than a
+    /// judgement.** Panel 050's list exists because a `.pc` hands back one string
+    /// that is split on whitespace and each word read as a flag — the splitting is
+    /// the vector. A search path is **one argv word** that clang consumes as a
+    /// path: `Command::arg` passes argv with no shell, the parser refuses a value
+    /// beginning with `-`, and clang reports `ignoring nonexistent directory` for
+    /// a `-I` whose operand looks like a flag rather than obeying it. If either
+    /// half of that dies — if these are ever built by string concatenation, or
+    /// passed through a shell — the exemption dies with it, and
+    /// `a_search_path_reaches_clang_as_one_argv_word` is the test that says so.
+    pub search: Search,
 }
+
+/// Where to look, when no `package` can answer. Re-exported from `compile` so the
+/// driver and the argv layer name one type.
+pub use super::compile::Search;
 
 /// Whether this platform's C runtime already contains a library, so naming it is
 /// correct and passing it on would be an error.

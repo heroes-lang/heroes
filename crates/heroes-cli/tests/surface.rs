@@ -1162,3 +1162,77 @@ fn fixedbugs_a_missing_link_is_the_authors_error_not_the_compilers() {
     assert_eq!(code(&fixed), 0, "{}", String::from_utf8_lossy(&fixed.stderr));
     assert!(String::from_utf8_lossy(&fixed.stdout).starts_with("sqlite "), "{}", String::from_utf8_lossy(&fixed.stdout));
 }
+
+/// **A search path reaches clang as one argv word, and that is what makes the
+/// absence of an allow-list safe** (panel 055's settled split, author decision
+/// 2026-08-14).
+///
+/// `package`'s answer goes through `ALLOWED` because a `.pc` hands back **one
+/// string that is split on whitespace and each word read as a flag** — the
+/// splitting is the vector, and Go shipped the same idea without a filter and got
+/// CVE-2018-6574. `--include <dir>` is not that: it is one argv word that clang
+/// consumes as a path.
+///
+/// CLAUDE.md §11 asks that a premise be written as a falsifiable claim **and given
+/// a test that fires when it dies**. This is that test. Three things hold it up,
+/// and each is checked here:
+///
+///  1. the parser refuses a value beginning with `-`, so the flag cannot carry one;
+///  2. nothing reaches a shell — a directory whose name contains shell
+///     metacharacters is searched, not executed;
+///  3. even if 1 and 2 failed, clang would not obey: with `-I` and its operand as
+///     separate argv entries, the next word is a path unconditionally.
+///
+/// If these are ever built by string concatenation, or passed through a shell,
+/// this test is what goes red — and the exemption dies with it.
+#[test]
+fn a_search_path_reaches_clang_as_one_argv_word() {
+    let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+
+    // 1. A value that looks like a flag is refused by the parser, not passed on.
+    let out = heroes(&["build", "examples/gallery/00-first.hero", "--include", "-fplugin=/tmp/x.so"]);
+    assert_eq!(code(&out), 2, "a flag-shaped value is a usage error");
+    let said = String::from_utf8_lossy(&out.stderr);
+    assert!(said.contains("needs a path"), "{said}");
+
+    // 2. No shell. A directory whose name would be three commands under `sh` is
+    // searched as a directory, and the file it would have created does not exist.
+    let hostile = root.join("build/inc; touch /tmp/heroes-shell-escaped");
+    std::fs::create_dir_all(&hostile).expect("a writable build directory");
+    let _ = std::fs::remove_file("/tmp/heroes-shell-escaped");
+    let out = heroes(&[
+        "build",
+        "examples/gallery/00-first.hero",
+        "--include",
+        &hostile.to_string_lossy(),
+    ]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        !std::path::Path::new("/tmp/heroes-shell-escaped").exists(),
+        "the directory name reached a shell"
+    );
+
+    // 3. The path is one argv word: repeating the flag keeps both, in order, and
+    // the *second* is where the header is — so a build that only kept the first
+    // would fail. That is the property `values_of` exists for, and the dedup in
+    // `cli.rs` used to break it silently.
+    let headers = root.join("build/one-word-probe");
+    std::fs::create_dir_all(&headers).expect("a writable directory");
+    std::fs::write(headers.join("oneword.h"), "#define ONE_WORD 91\n").expect("the header");
+    let program = root.join("build/one-word-probe/oneword.hero");
+    std::fs::write(
+        &program,
+        "extern \"oneword.h\"\n    constant ONE_WORD: i64\n\nfunction main()\n    print(ONE_WORD)\n",
+    )
+    .expect("the program");
+    let out = heroes(&[
+        "run",
+        &program.to_string_lossy(),
+        "--include",
+        "/no/such/directory",
+        "--include",
+        &headers.to_string_lossy(),
+    ]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+    assert_eq!(String::from_utf8_lossy(&out.stdout), "91\n");
+}

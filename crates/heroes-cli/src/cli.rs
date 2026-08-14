@@ -66,6 +66,15 @@ pub struct Flag {
     pub what: String,
     /// Whether the next argument belongs to this flag (`-o path`).
     pub value: bool,
+    /// Whether writing it twice means two things rather than one.
+    ///
+    /// **A search path is a list, and the default was to drop the second
+    /// silently** (panel 055): the parse below kept the first occurrence and
+    /// discarded the rest without a word, which for `-o` is right — a second
+    /// output path is a mistake and the first is what the reader meant — and for
+    /// `--include A --include B` is a **wrong build** rather than a failed one,
+    /// which is what design.md §1.12 forbids.
+    pub repeatable: bool,
 }
 
 pub struct Command {
@@ -129,6 +138,16 @@ impl Invocation {
     pub fn value_of(&self, spelling: &str) -> Option<String> {
         self.flags.iter().find(|(f, _)| f == spelling).and_then(|(_, v)| v.clone())
     }
+
+    /// Every value a repeatable flag was given, in the order written — which is
+    /// the order clang will search, so it is the order the author chose.
+    pub fn values_of(&self, spelling: &str) -> Vec<String> {
+        self.flags
+            .iter()
+            .filter(|(f, _)| f == spelling)
+            .filter_map(|(_, v)| v.clone())
+            .collect()
+    }
 }
 
 /// Parse argv against the table. The error is a message ready to print: it names
@@ -188,7 +207,7 @@ pub fn parse(args: &[String]) -> Result<Invocation, String> {
                 } else {
                     None
                 };
-                if !flags.iter().any(|(f, _)| *f == known.spelling) {
+                if known.repeatable || !flags.iter().any(|(f, _)| *f == known.spelling) {
                     flags.push((known.spelling.clone(), value));
                 }
                 continue;

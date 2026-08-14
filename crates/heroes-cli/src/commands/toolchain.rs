@@ -186,15 +186,22 @@ impl Toolchain {
         text: &str,
         level: &str,
         sanitize: bool,
+        search: &str,
     ) -> Result<PathBuf, String> {
         let key = digest(&format!(
-            "{}\u{1}{}{}\u{1}{}\u{1}{}\u{1}{}",
+            "{}\u{1}{}{}\u{1}{}\u{1}{}\u{1}{}{}",
             compiler_fingerprint(),
             level,
             if sanitize { "+san" } else { "" },
             source,
             text,
-            self.runtime_text()
+            self.runtime_text(),
+            // **The search paths, and they are here because a build without them
+            // is a different build** (panel 055, measured on the prototype: two
+            // configurations shared one artifact path and the second silently
+            // reused the first). Empty when neither flag was given, so every
+            // directory that existed before this keeps its name.
+            search
         ));
         let dir = self.build.join(&key);
         std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
@@ -269,6 +276,16 @@ impl Toolchain {
         let from_packages = resolve_packages(&libraries.packages)?;
         let mut clang = Command::new("clang");
         clang.args(FLAGS).arg(level).args(sanitizers(sanitize));
+        // **Before the package's own flags**, so that where the two disagree about
+        // a version the author's answer wins — which is the direction the author
+        // can act on. Each path is its own argv word, which is what makes the
+        // absence of an allow-list safe (see `Libraries::search`).
+        for directory in &libraries.search.include {
+            clang.arg("-I").arg(directory);
+        }
+        for directory in &libraries.search.library {
+            clang.arg("-L").arg(directory);
+        }
         clang.arg(c_file).arg(object);
         clang.arg("-I").arg(&self.runtime);
         if let Some(directory) = include {

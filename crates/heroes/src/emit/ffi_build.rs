@@ -83,7 +83,7 @@ pub(super) fn missing_library(line: &str, ast: &Ast, src: &Source) -> Option<Dia
             span,
         )
         .with_note(format!(
-            "install its development files, or set `LIBRARY_PATH` to the directory holding it; where the library ships a `.pc`, `package \"{name}\"` asks the machine for both its headers and its libraries"
+            "install its development files, or pass `--library <dir>`; where the library ships a `.pc`, `package \"{name}\"` asks the machine for both its headers and its libraries"
         )),
     )
 }
@@ -146,7 +146,7 @@ pub(super) fn missing_header(line: &str, ast: &Ast, src: &Source) -> Option<Diag
         span,
     );
     diagnostic = diagnostic.with_note(
-        "the group names a header the preprocessor must be able to open: install the library's development files, or set `CPATH` to the directory holding it — `package` finds it for you where the library ships a `.pc`".to_string(),
+        "the group names a header the preprocessor must be able to open: install the library's development files, or pass `--include <dir>` — `package` finds it for you where the library ships a `.pc`, and `CPATH` works too".to_string(),
     );
     Some(diagnostic)
 }

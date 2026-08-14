@@ -32,6 +32,10 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
         emit_c: false,
         output: args.value_of("-o"),
         sanitize: args.has("--sanitize"),
+        search: super::compile::Search {
+            include: args.values_of("--include"),
+            library: args.values_of("--library"),
+        },
         target: Target::Program,
     };
     let binary = match compile(path, &options) {

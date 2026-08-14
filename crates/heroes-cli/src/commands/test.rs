@@ -34,6 +34,10 @@ pub fn run(path: &str, args: &Invocation) -> Exit {
         emit_c: false,
         output: None,
         sanitize: args.has("--sanitize"),
+        search: super::compile::Search {
+            include: args.values_of("--include"),
+            library: args.values_of("--library"),
+        },
         target: Target::Tests,
     };
     let (binary, titles) = match compile_with_tests(path, &options) {
