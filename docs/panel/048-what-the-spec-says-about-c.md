@@ -1,6 +1,6 @@
 # 048 — What the spec says about C: two clauses, and the one nobody proposed
 
-**Status** `provisional — author ratification pending`
+**Status** `ratified — 2026-08-14, author decision`
 **Convened** 2026-08-14, by the author · **Lane** full panel, five judges
 
 ## Why it was convened
@@ -286,3 +286,20 @@ The record is appended rather than corrected in place (CLAUDE.md §14). What mad
 the error: a true statement about `-framework`'s absence was carried into a claim
 about what blocks rung 5, without anyone compiling rung 5.
 
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** Both candidate clauses stay refused, the repaired
+sentence and `ffi_missing_link` stay landed, and the queued items stay queued.
+
+What the yes settles that the provisional default left implicit: **the sitting's
+own result is that a panel convened to *add* to the spec may correctly land
+nothing but a repair.** Three judges, judging two proposals, found the sentence
+already there to be false — 13 of 20 groups name no library, one of them the
+closure list's own — and under §12 that made the port illegal and the compiler
+buggy for accepting it. A repair of a false sentence is §1.0 compiler-need and
+needs no removal and no prediction; both refused clauses did, and neither could
+pay. The record should read as a *precedent* for that order of business: ask
+whether what is written is true before asking what to write next.
+
+It also settles that `emit/ffi.rs`'s narrowing is **`declaration()`**, not whose
+text a message is. The doc that claimed otherwise was already false when written.

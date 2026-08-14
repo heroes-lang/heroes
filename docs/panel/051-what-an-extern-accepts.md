@@ -1,7 +1,7 @@
 # Panel 051 — the assertion asks what an `extern` returns, and never what it accepts
 
 **Convened** 2026-08-14, by the third CI leg. **Lane**: full, five judges.
-**Status**: `provisional — author ratification pending`.
+**Status**: `ratified — 2026-08-14, author decision`.
 
 ## The proposal, verbatim
 
@@ -139,3 +139,22 @@ recoverable.
 | spec-warden | with A landed, exactly **2** of 113 units exit 1, **111** exit 0, zero failures on a generated-C line | if A lands |
 | ffi-pragmatist | rung 4's variadic argument still takes a 64-bit value under **any** clang flag | M-ffi-ladder close |
 | historian | the function-pointer probe is an error on clang ≥16 with no flag | **scored now: true**, and it is why E was measurable at all — and E was refused anyway, on the enum parameter |
+
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** D stays landed at +34, B and E stay refused, the
+warden's −8 removal stays unspent, and the queued items stay queued.
+
+What the yes settles: **the asymmetry is the decision, and it was measured rather
+than chosen.** A result may be wider than C's because an `unsigned int` always
+fits an `i64`; a parameter may not be, because that narrowing is the one clang
+performs in silence. Both halves were run before the sentence was written —
+`examples/sqlite/` moved to the header's own widths in two edits and no shim, and
+`examples/curl/` moved its parameters and **could not** move its results, because
+`CURLcode`'s compatible type is unsigned and `HERO_RET_I32` refuses it correctly.
+The spec now states a fact about this compiler rather than an aspiration.
+
+It also settles the refusal of **E**, the function-pointer probe, which looked
+best on paper — precedented in `ctest`, an error by default on clang ≥16, zero
+spec tokens — and repeats panel 042's defect on the parameter side: it rejects
+every enum parameter, which is most of libcurl, OpenSSL and raylib.

@@ -3,7 +3,7 @@
 **Convened** 2026-08-14, on the author's instruction to close panel 051's three
 queued gaps: *"implement f32, size_t and varargs and whatever else it needs — the
 FFI is the most important thing."* **Lane**: full, five judges.
-**Status**: `provisional — author ratification pending`.
+**Status**: `ratified — 2026-08-14, author decision`.
 
 **One irregularity, recorded rather than smoothed:** the compiler-engineer's first
 run was cut off mid-flight by a machine sleep and produced no verdict. It was
@@ -146,3 +146,22 @@ the file got: `ffi.rs` keeps the markers, the dispatcher and the span finders
 `ffi_build.rs` the ones where the machine lacks what the group named (131). The
 prediction did its job twice — it was right about the number, and the number was
 the argument for the split.
+
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** D and C stay landed, A and B stay waiting, the Part 7
+amendment stands, and everything queued stays queued.
+
+What the yes settles: **two of the three things this sitting was convened to add
+were removed by measurement, and that is the sitting's result, not its failure.**
+The instruction was to implement `f32`, `size_t` and varargs. A C `float`
+parameter bound `f64` is bit-exact — two judges got identical bits — so the case
+that motivated `f32` does not need it. A variadic bound with a fixed arity is
+correct, because §4.19 refuses to re-declare and the call goes through the
+header's own prototype; the Heroes declaration never reaches C. What was left
+after both were struck is smaller and true, and it is what landed.
+
+The ffi-pragmatist's **standing veto is ratified with the rest**: no variadic
+implementation may emit a re-declared prototype. The version that does is silently
+correct on x86-64 and returns garbage on arm64, and the Linux CI leg would not see
+it — which is the exact defect class §1.0 says this language exists to kill.

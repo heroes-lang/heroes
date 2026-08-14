@@ -1,6 +1,6 @@
 # 049 — The platform axis: a feature that does not unblock the thing it was convened for
 
-**Status** `provisional — author ratification pending`
+**Status** `ratified — 2026-08-14, author decision`
 **Convened** 2026-08-14, by author instruction · **Lane** full panel, five judges
 
 ## Why it was convened
@@ -246,3 +246,22 @@ self-reported by the judge or synthesis that made them: the ffi-pragmatist's
 in 047, its `LIBRARY_PATH` contamination here, and panel 048's framework claim.
 Every one was found by measuring again rather than by arguing, which is the only
 reason the resolution is trustworthy at all.
+
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** The platform axis stays refused; `ffi_missing_header`
+stays landed; the five queued items stay queued in the order the measurements
+ranked them.
+
+What the yes settles: **the refusal held, and holding it is what produced the
+answer.** Panel 050 climbed rung 5 the next day with `package`, at less cost than
+the axis and with no machine's name in any program — which is the outcome this
+sitting's veto made room for rather than an outcome it failed to reach. And the
+`-lm` question that arrived from Windows a day later was answered in the
+**driver**, by `in_the_c_runtime`, on exactly the ground this sitting stated: a
+platform question belongs where it is a measurable fact about the machine, not
+where it is a word the author must write into a program that then means nothing
+on the machines it does not name.
+
+The falsified prediction stays in the file. Three judges cross-compiled 63
+goldens and not one asked whether the programs would link.
