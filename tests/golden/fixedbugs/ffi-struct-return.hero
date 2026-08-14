@@ -1,0 +1,29 @@
+# fixedbugs, M-binding-fidelity, 2026-08-14 (panel 052).
+#
+# SYMPTOM: `extern function div(...) -> ptr` against a C function that returns a
+# struct **by value** compiled its `_Static_assert` clean and then failed at the
+# call site as `internal error: compiling the generated C failed`, exit 2 — the
+# compiler blamed for the author's declaration, with generated C on screen. That
+# is the one outcome §4.19's whole apparatus exists to prevent, and it is not a
+# corner: 356 of 1159 entry points across sqlite3.h, curl/curl.h and raylib.h
+# return or take a struct by value (panel 052, counted from clang's own AST).
+#
+# CAUSE: `HERO_RET_PTR` was a `_Generic` listing what a pointer is *not*, on the
+# premise that "`_Generic` cannot say 'any pointer', and `default:1` alone would
+# check nothing". True about `_Generic`, false about C — and a struct is not in
+# any negative list, so it fell through `default:1` and passed.
+#
+# FIX: ask the question directly. `__builtin_classify_type(c) == 5` is GCC's own
+# `typeclass.h` code for a pointer (12 is a record), its operand is unevaluated
+# exactly as `_Generic`'s is, and CLAUDE.md §7 already commits to `__builtin_*`.
+# Verified six ways: `void *` and `const char *` pass; a struct, an integer, a
+# double and a `HeroStr` are refused.
+#
+# This file must NOT compile. `div` is used because it is in a header every
+# platform has and it returns `div_t` by value.
+
+extern "stdlib.h"
+    function div(numerator: i32, denominator: i32) -> ptr   #~ ffi_return_type
+
+function main()
+    print(div(numerator: 7, denominator: 2) == nullptr)

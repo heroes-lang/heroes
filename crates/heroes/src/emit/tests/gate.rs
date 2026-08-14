@@ -120,7 +120,15 @@ fn an_extern_call_is_emitted_against_the_real_header() {
     assert!(out.c.contains("#include <stdlib.h>"), "{}", out.c);
     // Unmangled: the C name is what the author wrote (CLAUDE.md §7).
     assert!(out.c.contains("labs("), "{}", out.c);
-    assert!(!out.c.contains("_labs"), "an extern must not be mangled:\n{}", out.c);
+    // **The mangler's own shape, not "no underscore before the name".** This read
+    // `!out.c.contains("_labs")` until panel 052, and that spelling rested on a
+    // premise about the world — *nothing else in this unit will ever end in
+    // `_labs`* — which expired the day `extern_probe.rs` began emitting
+    // `hero_ffi_probe_labs`. The premise's failure was silent in the useful
+    // direction only by luck: it went red on a correct change instead of green on
+    // a wrong one. A fact about the value replaces it: the mangler writes
+    // `h_<module>_<name>` (CLAUDE.md §7), so that is what must be absent.
+    assert!(!out.c.contains("h_scratch_labs"), "an extern must not be mangled:\n{}", out.c);
     // And no invented prototype — the header is the declaration.
     assert!(!out.c.contains("int64_t labs"), "the emitter re-declared it:\n{}", out.c);
 }

@@ -38,6 +38,52 @@ fn code(out: &Output) -> i32 {
     out.status.code().expect("a real exit code")
 }
 
+/// A parameter declared differently from the header is the **author's** mistake,
+/// on the author's line, at exit 1 (panels 051, 052).
+///
+/// The half this pins that nothing else can: the diagnostic names the parameter by
+/// **the author's own name for it**. That name is nowhere in clang's message —
+/// clang says `'int64_t' to 'int'` and a column — so it is recovered by rebuilding
+/// the probe's own line from the declaration and asking which argument the column
+/// falls on. If this test says "a parameter" instead of "`c`", that reconstruction
+/// has drifted from `extern_probe::probe_line`, which is the one string the two
+/// files share.
+#[test]
+fn a_parameter_wider_than_the_header_is_the_authors_error() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-parameter-width.hero"]);
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    if machine_lacks_the_library(&out) {
+        return;
+    }
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics\n{said}");
+    assert!(said.contains("error[ffi_parameter_type]"), "{said}");
+    assert!(said.contains("`c` of `putchar`"), "the author's own parameter name:\n{said}");
+    assert!(said.contains("`int`"), "the header's type, so no second file is needed:\n{said}");
+    assert!(said.contains("Declare it `i32`"), "and what to write:\n{said}");
+    assert!(said.contains("ffi-parameter-width.hero:"), "the author's line:\n{said}");
+    // The three things §4.17 exists to prevent, and §7's exit-2 rule with them.
+    assert!(!said.contains("internal error"), "it blamed the compiler:\n{said}");
+    assert!(!said.contains("build/"), "it sent the reader to generated C:\n{said}");
+    assert!(!said.contains("hero_ffi_probe"), "it showed the probe:\n{said}");
+}
+
+/// The same class from the other side: a **sign** the header does not have.
+///
+/// `curl_easy_setopt` takes `CURLoption` and `curl_easy_strerror` takes
+/// `CURLcode` — two enums in one header whose compatible integer types have
+/// **different signedness**, which is why this is a class and not a special case.
+/// `examples/curl/main.hero` is the program that has to get both right.
+#[test]
+fn a_parameter_of_the_wrong_sign_is_the_same_class() {
+    let out = heroes(&["run", "examples/curl/main.hero"]);
+    if machine_lacks_the_library(&out) {
+        return;
+    }
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("code 1 means: Unsupported protocol"), "{stdout}");
+}
+
 /// 0 clean · 1 the input has diagnostics · 2 the tool could not run. POSIX's own
 /// shape (grep, diff), and javac's since JDK 1.x.
 #[test]

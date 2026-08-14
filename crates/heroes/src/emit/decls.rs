@@ -30,6 +30,7 @@ use crate::types::Checked;
 
 use super::Target;
 use super::extern_assert;
+use super::extern_probe;
 use super::externs;
 use super::writer::Writer;
 
@@ -73,6 +74,11 @@ pub(super) fn prelude(
     );
     w.line("");
     extern_assert::extern_assertions(w, program, ast, checked, src);
+    // And the half a `_Generic` cannot ask: what the header *accepts* (panel 052).
+    // After the assertions rather than beside them, because the two answer
+    // different questions with different mechanisms and a reader of the emitted
+    // unit should not have to untangle them.
+    extern_probe::extern_probes(w, program, ast, checked, src);
     // Every decoded string literal **an emitted function actually reads**, as a
     // static block clang lays out: refcount −1 means "never freed", so a literal
     // allocates nothing and decrefing one is a no-op. The escapes were applied once,

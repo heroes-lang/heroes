@@ -15,7 +15,7 @@
 //! is housekeeping the author never wrote, and lldb must not blame their line for it.
 
 use crate::ir::Arg;
-use crate::types::{Checked, IntKind, Ty};
+use crate::types::Checked;
 
 use super::mangle;
 use super::writer::Writer;
@@ -54,31 +54,11 @@ pub(super) fn assert(
         .filter_map(|arg| match arg {
             Arg::Value(value) => {
                 let ty = checked.types.get(function.value_type(*value));
-                let entry = match ty {
-                    // Exhaustive: `hero_int_to_str` takes an `int64_t`, so a `u64`
-                    // above 2^63 would print as a negative number — measured at
-                    // panel 042, `SIZE_MAX` printing `-1`. A new width needs its own
-                    // runtime entry point and an ABI bump, and this arm is where
-                    // that is discovered rather than in the output.
-                    // Six of the seven narrow widths widen into an `int64_t`
-                    // without losing a value, so they share the signed entry point.
-                    // `u64` does not: 2^64-1 read as signed is -1, which is what
-                    // `print(SIZE_MAX)` produced before `hero_uint_to_str` existed.
-                    Ty::Int(kind) => match kind {
-                        IntKind::U64 => "hero_uint_to_str",
-                        IntKind::I8
-                        | IntKind::I16
-                        | IntKind::I32
-                        | IntKind::I64
-                        | IntKind::U8
-                        | IntKind::U16
-                        | IntKind::U32 => "hero_int_to_str",
-                    },
-                    Ty::F64 => "hero_f64_to_str",
-                    Ty::Bool => "hero_bool_to_str",
-                    Ty::Str => "hero_str_identity",
-                    _ => return None,
-                };
+                // The same reader `to_str` uses. It was a copy of this match until
+                // panel 052, and the copy in `builtins.rs` had a `_` arm that sent
+                // `u64` to the signed entry point — so the two paths printed
+                // different numbers for the same value (see `to_str_entry`).
+                let entry = super::builtins::to_str_entry(&ty)?;
                 Some(format!("{entry}({})", mangle::value(value.0)))
             }
             Arg::InOut(_) => None,

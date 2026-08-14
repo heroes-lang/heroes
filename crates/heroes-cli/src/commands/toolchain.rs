@@ -68,7 +68,7 @@ fn compiler_fingerprint() -> String {
 /// the first run, with clang's warnings forwarded rather than swallowed so that they
 /// could. It is the strictest warning in the set and the one most likely to catch a
 /// join slot the lowering forgot to write on one arm.
-pub const FLAGS: [&str; 8] = [
+pub const FLAGS: [&str; 10] = [
     // **`gnu11`, not `c11`, and the difference is one predefined macro** (panel
     // 047, ratification pending). `-std=c11` defines `__STRICT_ANSI__`, and on
     // glibc that is the *only* thing it does: it hides `M_PI`, `strdup`,
@@ -103,6 +103,8 @@ pub const FLAGS: [&str; 8] = [
     "-Werror=format",
     "-Werror=conditional-uninitialized",
     "-fno-strict-aliasing",
+    "-Werror=shorten-64-to-32",
+    "-Werror=sign-conversion",
 ];
 
 pub struct Toolchain {

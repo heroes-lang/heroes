@@ -42,7 +42,7 @@ extern "curl/curl.h" link "curl"
     function curl_version() -> cstr
     function curl_easy_init() -> ptr
     function curl_easy_setopt(handle: ptr, option: i32, value: cstr) -> i64
-    function curl_easy_strerror(code: i32) -> cstr
+    function curl_easy_strerror(code: u32) -> cstr
     function curl_easy_cleanup(handle: ptr)
 
 function main()
@@ -55,8 +55,8 @@ function main()
     if rc == CURLE_OK
         print("the url was accepted")
     else
-        print("setopt refused it: ", to_str(curl_easy_strerror(rc.to_i32().must())))
+        print("setopt refused it: ", to_str(curl_easy_strerror(rc.to_u32().must())))
     # A code the library knows and this program never provokes: the point is
     # that the message comes from libcurl, not from a table written here.
-    print("code 1 means: ", to_str(curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL.to_i32().must())))
+    print("code 1 means: ", to_str(curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL.to_u32().must())))
     curl_easy_cleanup(handle)

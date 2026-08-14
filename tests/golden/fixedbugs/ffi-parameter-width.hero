@@ -1,0 +1,30 @@
+# fixedbugs, M-binding-fidelity, 2026-08-14 (panels 051, 052).
+#
+# SYMPTOM: `extern function putchar(c: i64) -> i64` compiled clean, ran, and
+# printed the wrong character for any value above 2^31. A C `int narrow(int)`
+# given 4294967301 printed 5. Silently, at exit 0, under the project's exact
+# flags. Measured across three real headers: **267 of 643 bindable entry points,
+# 42%, take a parameter that is not 64 bits**.
+#
+# CAUSE: §4.19's guarantee was half a guarantee. `_Static_assert` over a
+# `_Generic` asks what the header *returns* — and cannot ask what it accepts,
+# because C11 6.5.1.1p3 leaves the controlling expression **unevaluated** and
+# clang runs no conversion diagnostics inside one. Measured both ways: neither
+# the folding form nor the non-folding form says a word.
+#
+# FIX: `emit/extern_probe.rs` emits one never-called function per `extern` with
+# a parameter — declared types in, the call in the body — under a `#line`
+# pointing at the author's declaration. A parameter cannot be constant-folded,
+# so the conversion is the one a real call would make, and
+# `-Werror=shorten-64-to-32` turns it into an error on the author's own line.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a_parameter_wider_than_the_header_is_the_authors_error`, which also pins the
+# half that makes it a diagnostic rather than an internal error: exit 1, the
+# `.hero` line, and the parameter named as the author named it.
+
+extern "stdio.h"
+    function putchar(c: i64) -> i64      #~ ffi_parameter_type
+
+function main()
+    print(putchar(65))

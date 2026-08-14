@@ -19,7 +19,7 @@ _Static_assert(HERO_RUNTIME_ABI == 11, "heroes_runtime.h is from another compile
 #define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
-#define HERO_RET_PTR(c) _Generic((c), signed char:0, short:0, int:0, long:0, long long:0, unsigned char:0, unsigned short:0, unsigned int:0, unsigned long:0, unsigned long long:0, float:0, double:0, long double:0, HeroStr:0, default:1)
+#define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,7 +30,14 @@ _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_cou
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 
-#line 34 "copyout.c"
+#line 111 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_hero_file_write(const char * a0, HeroStr a1) { (void)hero_file_write(a0, a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
+__attribute__((unused)) static void hero_ffi_probe_hero_exit(int64_t a0) { (void)hero_exit(a0); }
+#line 40 "copyout.c"
+
 typedef struct h_copyout_0opt0 {
     int64_t tag;
     union {
@@ -60,7 +67,7 @@ void h_copyout_main(void);
 
 #line 10 "tests/golden/emit/copy-out.hero"
 void h_copyout_count_down(int64_t *ph0_n, int64_t *ph1_seen) {
-#line 64 "copyout.c"
+#line 71 "copyout.c"
     int64_t h0_n;
     int64_t h1_seen;
     int64_t t1;
@@ -111,7 +118,7 @@ bb2:
     t12 = t10 > t11;
     if (t12) goto bb5; else goto bb6;
 bb3:
-#line 115 "copyout.c"
+#line 122 "copyout.c"
     *ph0_n = h0_n;
     *ph1_seen = h1_seen;
     return;
@@ -127,7 +134,7 @@ bb6:
 
 #line 17 "tests/golden/emit/copy-out.hero"
 void h_copyout_main(void) {
-#line 131 "copyout.c"
+#line 138 "copyout.c"
     int64_t h0_n;
     int64_t h1_seen;
     int64_t t1;
@@ -154,7 +161,7 @@ bb0:
     hero_print_int(t4);
     hero_print_end();
     return;
-#line 158 "copyout.c"
+#line 165 "copyout.c"
 }
 void h_copyout_0opt0_retain(const h_copyout_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

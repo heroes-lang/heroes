@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 62] = [
+const ANNOTATED: [&str; 64] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -47,11 +47,17 @@ const ANNOTATED: [&str; 62] = [
     "expected_expression",
     "expected_pattern",
     "exponent_literal",
-    // None of the four is a thesis rule: a wrong FFI type, a wrong constant type,
-    // a C object named as a constant and a name no header declares are errors in
-    // every language that has an FFI, so `--permissive` must keep counting them.
+    // None of the six is a thesis rule: a wrong FFI type, a wrong constant type, a
+    // C object named as a constant, a name no header declares, a **result** the
+    // header refutes and a **parameter** declared at a width or sign the header
+    // does not have are errors in every language that has an FFI, so
+    // `--permissive` must keep counting them. Four became six at panel 052, when
+    // `ffi_parameter_type` was added and `ffi_struct_return`'s case gave
+    // `ffi_return_type` its first annotation.
     "ffi_constant_type",
     "ffi_not_constant",
+    "ffi_parameter_type",
+    "ffi_return_type",
     "ffi_type",
     "ffi_unknown_name",
     "indentation_jump",

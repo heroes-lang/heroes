@@ -244,12 +244,16 @@ pub fn compile_with_tests(
             packages: emitted.packages.clone(),
         },
     ) {
-        // **One class of clang failure is the author's**, and it is the only one:
-        // the return-type assertion §4.19 generates per `extern` exists to fail
-        // when a declaration disagrees with the real header. Reported as an
-        // internal error it would print C the author never wrote and blame the
-        // compiler for a mistake in a `.hero` file (panel 036 rider 3).
-        let theirs = heroes::emit::ffi::explain(&message, &parsed.ast, &src);
+        // **Some clang failures are the author's**, and `ffi.rs` is the only place
+        // that decides which: the assertions and probes §4.19 generates per
+        // `extern` exist to fail when a declaration disagrees with the real
+        // header. Reported as an internal error they would print C the author
+        // never wrote and blame the compiler for a mistake in a `.hero` file
+        // (panel 036 rider 3). The lowered program and its types go with the AST
+        // because the parameter class rebuilds a probe's own line to find which
+        // argument clang's column names (panel 052).
+        let theirs =
+            heroes::emit::ffi::explain(&message, &parsed.ast, &checked, &lowered.program, &src);
         if !theirs.is_empty() {
             report(&theirs, &src)?;
             return Err(Exit::Diagnostics);

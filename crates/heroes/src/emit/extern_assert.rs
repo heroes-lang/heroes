@@ -154,11 +154,25 @@ pub(super) fn extern_assertions(
     // dependency: CLAUDE.md §7 already commits every arithmetic operation to
     // `__builtin_*_overflow`.
     w.line("#define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)");
-    // A pointer return is checked by its **negative** set: `_Generic` cannot say
-    // "any pointer", and `default:1` alone would check nothing. Listing what a
-    // pointer is not still catches the case that matters — a function returning an
-    // integer or a float declared as `ptr`.
-    w.line("#define HERO_RET_PTR(c) _Generic((c), signed char:0, short:0, int:0, long:0, long long:0, unsigned char:0, unsigned short:0, unsigned int:0, unsigned long:0, unsigned long long:0, float:0, double:0, long double:0, HeroStr:0, default:1)");
+    // A pointer return, asked **directly**. This was a `_Generic` listing what a
+    // pointer is *not*, on the premise that *"`_Generic` cannot say 'any pointer',
+    // and `default:1` alone would check nothing"*. The premise was true about
+    // `_Generic` and false about C: `__builtin_classify_type` answers it, and its
+    // codes are GCC's own `typeclass.h` — 5 is a pointer, 12 a struct — with the
+    // operand unevaluated exactly as `_Generic`'s is.
+    //
+    // What the negative list could not see was the **struct**, which fell through
+    // to `default:1` and passed. So `extern function makebox(n: i64) -> ptr`
+    // against a C function returning a struct by value compiled its assertion
+    // clean and then failed at the call site as *"internal error: compiling the
+    // generated C failed"* — exit 2, the compiler blamed for the author's
+    // declaration, which is the one outcome §4.19's whole apparatus exists to
+    // prevent. That is **356 of 1159 entry points across three real headers**
+    // (panel 052's ffi-pragmatist), so it is the ordinary case and not a corner.
+    //
+    // Verified six ways on this clang: `void *` and `const char *` pass; a struct,
+    // an integer, a double and a `HeroStr` are all refused.
+    w.line("#define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)");
     for function in externs {
         let name = src.slice(ast.decls[function.decl as usize].name);
         let Some(check) = return_check(checked, function.result) else { continue };

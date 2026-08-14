@@ -53,6 +53,7 @@ mod ctype;
 mod descriptors;
 mod decls;
 mod extern_assert;
+mod extern_probe;
 mod externs;
 mod fallible;
 pub mod ffi;

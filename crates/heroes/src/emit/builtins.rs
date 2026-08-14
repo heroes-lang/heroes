@@ -110,11 +110,9 @@ pub(super) fn entry(
         // strings as borrowed pointers". Predicted by panel 036's ffi-pragmatist
         // before the ladder reached a library that returns one.
         "to_str" => match first {
-            Some(Ty::F64) => "hero_f64_to_str",
-            Some(Ty::Bool) => "hero_bool_to_str",
-            Some(Ty::Str) => "hero_str_identity",
             Some(Ty::Cstr) => "hero_str_from_cstr",
-            _ => "hero_int_to_str",
+            Some(ty) => to_str_entry(&ty).unwrap_or("hero_unreachable"),
+            None => "hero_unreachable",
         },
         _ => "hero_unreachable",
     }
@@ -214,4 +212,39 @@ fn calls_of(function: &Function) -> Vec<u32> {
         }
     }
     found
+}
+
+/// Which runtime entry point turns a value of this type into a `str`.
+///
+/// **One reader, because two disagreed.** `print(x)` reaches this through
+/// `abort.rs` and `x.to_str()` through the table above, and until panel 052 the
+/// second was a `_ => "hero_int_to_str"` catch-all. So `print(n)` for a `u64` of
+/// 2^64−1 printed `18446744073709551615` and `print(n.to_str())` printed `-1` —
+/// the exact value panel 042 records as the defect `hero_uint_to_str` was added to
+/// fix, fixed on one path and not the other, for two milestones. Found by
+/// `-Werror=sign-conversion`, which made the emitter's own `uint64_t` argument to
+/// an `int64_t` parameter a hard error.
+///
+/// The match over `IntKind` is **exhaustive on purpose** (CLAUDE.md §11: put the
+/// fallback in the loud direction). Six of the seven narrow widths widen into an
+/// `int64_t` without losing a value and share the signed entry point; `u64` does
+/// not, because 2^64−1 read as signed is −1. A new width has to answer here, and
+/// answering wrongly is a compile error in Rust rather than a wrong number in C.
+pub(super) fn to_str_entry(ty: &Ty) -> Option<&'static str> {
+    Some(match ty {
+        Ty::Int(kind) => match kind {
+            crate::types::IntKind::U64 => "hero_uint_to_str",
+            crate::types::IntKind::I8
+            | crate::types::IntKind::I16
+            | crate::types::IntKind::I32
+            | crate::types::IntKind::I64
+            | crate::types::IntKind::U8
+            | crate::types::IntKind::U16
+            | crate::types::IntKind::U32 => "hero_int_to_str",
+        },
+        Ty::F64 => "hero_f64_to_str",
+        Ty::Bool => "hero_bool_to_str",
+        Ty::Str => "hero_str_identity",
+        _ => return None,
+    })
 }
