@@ -394,7 +394,7 @@ So a number met in the record resolves here, and only here.
 | `M-literal-bases` | — | `m-literal-bases` | `0x` `0o` `0b`, the `_` separator, and a leading zero that is no longer decimal |
 | `M-sized-integers` | — | `m-sized-integers` | the integer widths, signed and unsigned, and the conversions between them |
 | `M-program-corpus` | M8e | — | many whole programs, all of them run |
-| `M-binding-fidelity` | — | — | a binding says what the header says: the parameter side of §4.19's guarantee |
+| `M-binding-fidelity` | — | `m-binding-fidelity` | a binding says what the header says: the parameter side of §4.19's guarantee |
 | `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
 | `M-selfhost-port` | M8b | — | the port |
 | `M-selfhost-fixpoint` | M8c | — | the fixpoint — **v1** |
