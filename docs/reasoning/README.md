@@ -103,6 +103,10 @@ understand>. Read: design.md §… · spec § … · <files consulted, none modi
   refused by something other than Part 6, and why declining an *additive*
   mechanism beside *load-bearing* generics forfeits nothing a later version
   could not add
+- [004-a-project-file.md](004-a-project-file.md) — the nine jobs a `Cargo.toml`
+  does, seven of which already have homes with stated reasons; why Principle 0
+  does not fund a manifest and the nearest refusals do not reach one; and the two
+  decisions of 2026-08-14 that pull against each other about where a header is
 
 ## A note on the vocabulary of 000–002
 
