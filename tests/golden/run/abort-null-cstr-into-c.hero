@@ -8,21 +8,22 @@
 # existed, under `--sanitize`: `AddressSanitizer: SEGV on unknown address 0x0`,
 # inside libsystem, with no line of this program on the stack.
 #
-# `getenv` of a name nothing sets is the smallest way to get one. The check the
+# A `strstr` that finds nothing is the smallest way to get one. The check the
 # author *should* write is on the line below, and it is writable only because
 # `nullptr` takes the type its context asks for — the other half of the same
 # sitting. This case deliberately omits it, which is what makes it an abort case.
 # Fixed defect: `docs/panel/053`, 2026-08-14.
-
-extern "stdlib.h"
-    function getenv(name: cstr) -> cstr
 
 extern "string.h"
     function strstr(haystack: cstr, needle: cstr) -> cstr
 
 function main()
     print("before")
-    absent = getenv("HEROES_NO_SUCH_VARIABLE_EXISTS".cstr())
+    # `strstr` returns NULL when the needle is absent, so one binding produces
+    # the null and consumes it. `getenv` was the first spelling and it is
+    # deprecated by MSVC — a warning the harness forbids, and a dependency this
+    # case does not need.
+    absent = strstr(haystack: "abc".cstr(), needle: "zzz".cstr())
     # The result is **used**, not discarded: glibc marks `strstr`
     # `__attribute_pure__`, so `_ = strstr(…)` is `-Wunused-value` on Linux and
     # not on Darwin — a warning the harness forbids, and one more fact about this

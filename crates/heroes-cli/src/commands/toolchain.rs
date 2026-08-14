@@ -70,7 +70,7 @@ fn compiler_fingerprint() -> String {
 /// the first run, with clang's warnings forwarded rather than swallowed so that they
 /// could. It is the strictest warning in the set and the one most likely to catch a
 /// join slot the lowering forgot to write on one arm.
-pub const FLAGS: [&str; 10] = [
+pub const FLAGS: [&str; 11] = [
     // **`gnu11`, not `c11`, and the difference is one predefined macro** (panel
     // 047, ratification pending). `-std=c11` defines `__STRICT_ANSI__`, and on
     // glibc that is the *only* thing it does: it hides `M_PI`, `strdup`,
@@ -99,6 +99,14 @@ pub const FLAGS: [&str; 10] = [
     // 2026-08-14). This is Microsoft's documented switch for exactly that, and it
     // is passed everywhere because it names a macro no other platform reads.
     "-D_USE_MATH_DEFINES",
+    // **The second platform switch, and the same argument as the first.** MSVC
+    // deprecates `getenv`, `fopen`, `strcpy` and most of what §1.11 says a program
+    // binds, in favour of `_s` variants no other platform has — so a binding that
+    // is correct everywhere else fails the corpus harness's zero-warning bar on
+    // Windows alone. `runtime.c` already defines this for its own compilation; the
+    // generated unit needs it for the author's bindings. Named here rather than
+    // discovered, like `-std=gnu11` and `_USE_MATH_DEFINES` (panel 047's class).
+    "-D_CRT_SECURE_NO_WARNINGS",
     "-Wall",
     "-Werror=return-type",
     "-Werror=uninitialized",

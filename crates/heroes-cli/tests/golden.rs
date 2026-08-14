@@ -733,7 +733,7 @@ fn the_spikes_still_compile_and_print_what_they_claim() {
     // comment. A spike compiled under a dialect the product does not use is a
     // test proving a configuration nobody ships.
     let flags: Vec<String> =
-        ["-std=gnu11", "-D_USE_MATH_DEFINES", "-Wall", "-Werror=return-type", "-Iruntime"]
+        ["-std=gnu11", "-D_USE_MATH_DEFINES", "-D_CRT_SECURE_NO_WARNINGS", "-Wall", "-Werror=return-type", "-Iruntime"]
         .iter()
         .map(|f| f.to_string())
         .collect();
