@@ -68,7 +68,7 @@ fn compiler_fingerprint() -> String {
 /// the first run, with clang's warnings forwarded rather than swallowed so that they
 /// could. It is the strictest warning in the set and the one most likely to catch a
 /// join slot the lowering forgot to write on one arm.
-pub const FLAGS: [&str; 7] = [
+pub const FLAGS: [&str; 8] = [
     // **`gnu11`, not `c11`, and the difference is one predefined macro** (panel
     // 047, ratification pending). `-std=c11` defines `__STRICT_ANSI__`, and on
     // glibc that is the *only* thing it does: it hides `M_PI`, `strdup`,
@@ -88,6 +88,15 @@ pub const FLAGS: [&str; 7] = [
     // byte-identical fixpoint cannot let it drift — the same argument that
     // pinned `rust-toolchain.toml` the same day.
     "-std=gnu11",
+    // **The third platform hides `M_PI` too, and for a third reason.** Panel 047
+    // moved to `gnu11` because glibc guards the `math.h` constants behind
+    // `__USE_MISC`, which `-std=c11` switches off. MSVC guards the same constants
+    // behind `_USE_MATH_DEFINES`, which nothing switches on by default — so a
+    // binding that compiles on Darwin and Linux failed on Windows with the very
+    // diagnostic panel 047 was convened about (measured, the third CI leg,
+    // 2026-08-14). This is Microsoft's documented switch for exactly that, and it
+    // is passed everywhere because it names a macro no other platform reads.
+    "-D_USE_MATH_DEFINES",
     "-Wall",
     "-Werror=return-type",
     "-Werror=uninitialized",

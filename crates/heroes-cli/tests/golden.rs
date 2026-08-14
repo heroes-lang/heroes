@@ -732,7 +732,8 @@ fn the_spikes_still_compile_and_print_what_they_claim() {
     // import the constant — so the two are kept in step by hand and by this
     // comment. A spike compiled under a dialect the product does not use is a
     // test proving a configuration nobody ships.
-    let flags: Vec<String> = ["-std=gnu11", "-Wall", "-Werror=return-type", "-Iruntime"]
+    let flags: Vec<String> =
+        ["-std=gnu11", "-D_USE_MATH_DEFINES", "-Wall", "-Werror=return-type", "-Iruntime"]
         .iter()
         .map(|f| f.to_string())
         .collect();
@@ -765,8 +766,16 @@ fn the_spikes_still_compile_and_print_what_they_claim() {
         let expected_path = root.join(format!("tools/spike/{name}.expected"));
         let expected = std::fs::read_to_string(&expected_path)
             .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        // **Line endings are normalised here and nowhere else.** The spikes are
+        // hand-written C that calls `printf` directly; they never reach the
+        // runtime call that puts the streams in binary mode, so on Windows the C
+        // runtime translates `\n` on the way out. What a spike pins is the
+        // *shape* the emitter must produce — the hoisted prologue, the labels,
+        // the descriptor ABI — and not a byte count. The language's own output is
+        // byte-exact and is asserted by `run/` and by the corpus, both of which
+        // go through `_setmode`.
         assert_eq!(
-            String::from_utf8_lossy(&ran.stdout),
+            String::from_utf8_lossy(&ran.stdout).replace("\r\n", "\n"),
             expected,
             "spike {name} prints something else now"
         );
