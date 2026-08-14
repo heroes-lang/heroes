@@ -52,6 +52,35 @@
 //! `DECIDE.md` to be re-argued under the removal branch. None is renewed with a
 //! new milestone name, which is the one thing R2 forbids.
 //!
+//! ## The four, re-decided — 2026-08-14, by author decision
+//!
+//! **Not renewed. Re-registered**, which is the distinction R2 exists to draw: a
+//! renewal differs from its registration only in a date or a milestone name, and
+//! each of these differs in **what is claimed and what will answer it**. Every one
+//! names an instrument that exists today *and has an arm for the question* (R1 as
+//! amended the same day), and every one is countable with `grep` or `heroes
+//! mutate` rather than with the metric-2 harness that does not run until the
+//! fixpoint.
+//!
+//! The honest starting position is the one `DECIDE.md` stated: **three of the four
+//! are §1.0 compiler-need** — the widths, `i64` and the bases are all on the road
+//! to the port — so for those the re-decision is *keep, and here is what would
+//! now falsify the clause*. `2588` is the one that is not, and it is the one whose
+//! new prediction is written to be able to fail.
+//!
+//! | row | the clause | re-registered prediction | instrument, and its arm | scored at |
+//! |---|---|---|---|---|
+//! | `2588` | a group's `constant` has no body | at the next FFI rung, **≥12** `extern constant` declarations exist across `examples/` and `tests/golden/`, and every one names a value **no `.hero` file spells as a literal** | `grep -c "constant [A-Z_]*:"` beside a grep for the same names as literals — both arms exist; today the count is 107 declarations in total | M-ffi-ladder rung 5 |
+//! | `2745` | the four bases and `_` | the corpus holds **44** non-decimal literals today; at the next milestone that touches bit manipulation it is **≥44**, and **0** of them are a decimal spelling of a mask | `grep -coE "0x[0-9a-fA-F_]+\|0b[01_]+\|0o[0-7_]+"` over `examples/`, `library/`, `tests/golden/run/` | next milestone touching masks |
+//! | `2768` | `int` deleted, `i64` everywhere | `grep -c "\bint\b"` over every `.hero` in the repository stays **0** while `i64` stays **≥374**, and no diagnostic transcript in `tests/golden/` names a width the author did not write | two greps and the golden corpus, both live | every milestone close |
+//! | `2959` | the eight widths | the corpus holds **50** narrow-width annotations today; **≥40 of them are at an FFI boundary**, and removing the widths would make each a silent truncation that `ffi_parameter_type` now refuses — countable by deleting the widths in a scratch tree and counting the diagnostics that stop firing | `heroes check` plus the `ffi_parameter_type` class built at M-binding-fidelity, which is the arm that did not exist when the row was written | M-ffi-ladder rung 5 |
+//!
+//! **What makes `2959`'s the strongest of the four**: its original prediction
+//! named metric 2 because, on the day it was registered, nothing else could see
+//! the widths at all. `ffi_parameter_type` can — it exists because of them — so the
+//! re-registration is not a rewording, it is the first time the question has an
+//! instrument. That is the shape R1's second half asks for, arriving on its own.
+//!
 //! The two scored rows are in `docs/measurements/007`, and both found something
 //! the row itself did not predict. `2627` bought a reader who avoids `+` in a
 //! loop and reaches for `push` in one instead — the clause names `push`'s copy
