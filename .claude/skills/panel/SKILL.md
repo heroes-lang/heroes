@@ -55,6 +55,15 @@ is a full panel.
    - `historian` ← the proposal; it must verify precedent via web search.
 
 3. **Run the five as parallel subagents** (one message, five Task calls).
+   **Tell every judge that builds to build in a copy**, and say it in the brief
+   rather than assuming it: `cp -r` the tree to the scratchpad and work there.
+   Panel 054's compiler-engineer was asked to *"prototype it far enough that the
+   number is real"* and prototyped **in the repository** — five files of a
+   half-built `repeat`, which the coordinator then committed and pushed inside an
+   unrelated commit, landing a language feature before its own panel had ruled
+   (CLAUDE.md §4). Panel 053's engineer had copied the tree unprompted, which is
+   how the difference showed. A judge's measurement is worth having and its
+   working tree is not.
 
 4. **Synthesize** into `docs/panel/NNN-<topic>.md`:
    - the proposal, verbatim
