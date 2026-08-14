@@ -206,6 +206,14 @@ short and single-concern — split a module before it passes ~300 lines; every
 file opens with a module doc stating its role and citing its design.md
 sections; comments teach the invariant and the why, never the diff. The
 author must be able to open any file and read it without drowning.
+**The ~300 governs what a reader must hold in their head, so it binds the
+compiler's own code and not its tests** (author decision 2026-08-14): a test file
+is read one case at a time and a case is self-contained, which is why
+`surface.rs` at 1164 lines is legible and `emit/ffi.rs` at 573 was not. And the
+number is a threshold to think at, not a limit to round: `toolchain.rs` stays at
+400 by the same decision, because the cut that would take it under runs through
+the cache key `link` and `runtime_object` share, and a file split against its own
+seam is harder to read than a long one.
 
 **A narrowing asks the value, never the world** (author instruction
 2026-08-12, sweep 001). A filter, an allow-list of kinds, or a `_ =>` arm is a
@@ -235,8 +243,31 @@ that would make it wrong (author decision 2026-08-12, panel 039; the rule's home
 and its argument are Part 6's own preamble). Principle 0 binds what *enters*, so
 without this a permanent rejection was the one design act under no burden of proof.
 
+**Robustness wins.** A Heroes program must not segfault and must not corrupt
+memory — that is a **goal of the language**, stated by the author 2026-08-14, and
+where a choice runs toward it, it beats every other criterion in this file:
+elegance, token cost, ergonomics, the size of the compiler, and speed. This is the
+mirror of §13's performance line rather than an exception to it: performance is
+not a goal *and* not a licence, while safety is a goal *and* a tie-break. The
+`heroes mutate` corpus and `--sanitize` are how it is measured rather than
+asserted, and the rule does not suspend Principle 0 — a form still enters only if
+the compiler needs it or it serves the thesis. What it decides is the case where
+two admissible forms disagree, and one of them can be made to crash.
+
+**It reaches furthest at the C boundary, which is where the language's own
+guarantees stop** (design.md §1.11 — everything comes from C, so everything a
+program touches arrives through §4.19). The author's instruction is that the FFI
+be *complete and bug-proof*: complete, because a library Heroes cannot bind is a
+library the author must leave C code around for; bug-proof, because a binding is
+the one place where a Heroes program can reach an address nobody checked. Panel
+053 measured the shape of that: `to_str` on a null `cstr` is a **clean abort**
+(the runtime guards it), and a null `cstr` handed straight to another C function
+is a **SEGV in libsystem** — so the hole is not where three of its four options
+were looking.
+
 ## 13. Where not to go
-Performance (a non-goal, never a justification — **and never a licence either**:
+Performance (a non-goal, never a justification — **and never a licence either**,
+and see §12's robustness rule, which is its mirror and outranks it:
 author instruction 2026-08-12, *"le prestazioni non sono un goal ma non devono
 essere nemmeno un limite"*. The rule forbids reaching for speed as a **reason**;
 it does not make slowness acceptable as a **ceiling**. Where a cost stops a
