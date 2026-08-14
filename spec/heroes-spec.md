@@ -66,8 +66,9 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
   `0xffffffffffffffff` does not fit and is refused.
 - Five escapes, and no others: `\n` `\t` `\\` `\"` in a string, `\'` instead of
   `\"` in a character literal. Any other escape is a compile error.
-- `==` is structural equality on everything — ints, strings, records,
+- `==` is structural equality on every value — ints, strings, records,
   variants, arrays, maps, recursively; a map's insertion order does not affect it.
+  A `ptr` or `cstr` compares as an address.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
   never changes `a`. No aliasing exists anywhere.
 - A record or variant holds its fields **by value**, so it may contain itself only
