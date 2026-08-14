@@ -631,6 +631,13 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
         // `hero_runtime_check_leaks()` in every generated `main`, which runs in all
         // three configurations. What this one adds is use-after-free and double-free,
         // which is what reference counting gets wrong.
+        // Windows clang ships no sanitiser runtime — the binary links and then
+        // exits 53 before `main`, because the ASan DLL is not there and UBSan has
+        // no MSVC-target runtime at all (measured, 2026-08-14). The other two
+        // configurations run everywhere.
+        if cfg!(target_os = "windows") {
+            continue;
+        }
         let sanitised = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
             .args(["run", &relative.display().to_string(), "--sanitize"])

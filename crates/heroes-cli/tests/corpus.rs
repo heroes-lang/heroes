@@ -17,8 +17,10 @@
 //! Three properties per directory, and each is one thing that has gone wrong here
 //! before:
 //!
-//! 1. **its `test` blocks pass in three configurations** — `-O0`, `-O2`,
-//!    `--sanitize`. One corpus in more than one configuration is the cheapest
+//! 1. **its `test` blocks pass in every configuration this platform can run** —
+//!    `-O0`, `-O2` and `--sanitize`, except on Windows, whose clang ships no
+//!    sanitiser runtime (`configurations()` says so once, and why). One corpus in
+//!    more than one configuration is the cheapest
 //!    multiplier in the record, and the leak gate rides along: every generated
 //!    `main` ends in `hero_runtime_check_leaks()`, which on Darwin arm64 is the
 //!    only leak instrument there is (ASan's does not exist there — measured,
@@ -90,6 +92,22 @@ fn machine_lacks_the_library(out: &std::process::Output) -> bool {
     said.contains("error[ffi_package]") || said.contains("error[ffi_missing_header]")
 }
 
+/// Whether this platform's clang ships the sanitiser runtimes.
+///
+/// **Windows does not**, and the failure is silent in the worst way: the binary
+/// links, then exits **53** with nothing on either stream, because the process
+/// cannot start without `clang_rt.asan_dynamic-x86_64.dll` — and UBSan has no
+/// MSVC-target runtime at all. Measured on the third CI leg, 2026-08-14.
+///
+/// So `--sanitize` is not run there, and this function is where that is said
+/// once. It is a fact about the toolchain rather than about the programs, and it
+/// is the reason `every_program_directory_passes_its_tests_in_three_configurations`
+/// runs **two** configurations on Windows and three everywhere else — which the
+/// name would otherwise quietly stop being true of.
+fn configurations() -> &'static [&'static str] {
+    if cfg!(target_os = "windows") { &["-O0", "-O2"] } else { &["-O0", "-O2", "--sanitize"] }
+}
+
 fn heroes(root: &Path, args: &[String]) -> std::process::Output {
     std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
         .current_dir(root)
@@ -118,7 +136,7 @@ fn every_program_directory_passes_its_tests_in_three_configurations() {
     let total = program_directories().len();
     for dir in program_directories() {
         let main = relative(&dir.join("main.hero"));
-        for level in ["-O0", "-O2", "--sanitize"] {
+        for level in configurations() {
             let out = heroes(&root, &["test".to_string(), main.clone(), level.to_string()]);
             if machine_lacks_the_library(&out) {
                 skipped += 1;
@@ -135,7 +153,7 @@ fn every_program_directory_passes_its_tests_in_three_configurations() {
                 !said.contains("FAIL "),
                 "{main} at {level} reports a failing test:\n{said}"
             );
-            if level == "--sanitize" {
+            if *level == "--sanitize" {
                 assert!(
                     !noise.contains("AddressSanitizer") && !noise.contains("runtime error:"),
                     "{main} tripped a sanitiser:\n{noise}"
@@ -243,14 +261,14 @@ fn every_program_prints_what_it_promises_in_three_configurations() {
 
         // -O2 and --sanitize: `run` compiles and executes, forwarding the status.
         // `--` separates the compiler's arguments from the program's.
-        for level in ["-O2", "--sanitize"] {
+        for level in configurations().iter().filter(|l| **l != "-O0") {
             let mut invocation = vec!["run".to_string(), main.clone(), level.to_string()];
             if !args.is_empty() {
                 invocation.push("--".to_string());
                 invocation.extend(args.iter().cloned());
             }
             let out = heroes(&root, &invocation);
-            if level == "--sanitize" {
+            if *level == "--sanitize" {
                 let noise = String::from_utf8_lossy(&out.stderr);
                 assert!(
                     !noise.contains("AddressSanitizer") && !noise.contains("runtime error:"),
