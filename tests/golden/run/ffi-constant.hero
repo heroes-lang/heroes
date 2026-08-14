@@ -41,7 +41,7 @@
 # and compiles under either. Measured: 63 of 63 `run/` goldens cross-compile for
 # `x86_64-linux-gnu` under `gnu11`, and 62 of 63 under `c11`. This is the one.
 
-extern "math.h"
+extern "math.h" link "m"
     constant M_PI: f64
     function sqrt(x: f64) -> f64
 

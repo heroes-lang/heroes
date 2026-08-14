@@ -9,7 +9,7 @@
 # the header is what clang checks against, and without one a declaration
 # would be verified by nothing at all.
 
-extern "math.h"
+extern "math.h" link "m"
     function sqrt(x: f64) -> f64
     function pow(base: f64, exponent: f64) -> f64
     function floor(x: f64) -> f64
