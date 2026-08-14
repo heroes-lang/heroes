@@ -65,11 +65,26 @@ const QUOTES_THE_OLD_SPELLING: &[&str] = &[
     "CLAUDE.md",
 ];
 
+/// A repository-relative path in the spelling this file's own tables use.
+///
+/// `RECORD` and `QUOTES_THE_OLD_SPELLING` are written with `/`, because that is how
+/// this repository names its own files everywhere else — in CLAUDE.md, in commit
+/// subjects, in every module doc. On Windows a `Path` renders with `\\`, so the
+/// comparison against those tables matched nothing and the walk descended into
+/// `docs/measurements/`, reporting the dated records the tables exist to exempt.
+/// Found by the third CI leg, 2026-08-14.
+///
+/// The conversion is on the **path**, not on the tables: a table is what a reader
+/// edits, and it should keep the spelling the rest of the repository uses.
+fn slashed(path: &str) -> String {
+    path.replace('\\', "/")
+}
+
 fn walk(dir: &Path, root: &Path, out: &mut Vec<PathBuf>) {
     let entries = std::fs::read_dir(dir).expect("a readable directory");
     for entry in entries.flatten() {
         let path = entry.path();
-        let rel = path.strip_prefix(root).expect("inside the repo").to_string_lossy().to_string();
+        let rel = slashed(&path.strip_prefix(root).expect("inside the repo").to_string_lossy());
         if RECORD.iter().any(|r| rel == *r || rel.starts_with(&format!("{r}/"))) {
             continue;
         }
@@ -121,7 +136,7 @@ fn no_living_file_names_a_numbered_milestone() {
         let Ok(text) = std::fs::read_to_string(file) else { continue };
         if let Some(found) = names_a_numbered_milestone(&text) {
             let rel = file.strip_prefix(&root).expect("inside the repo");
-            offenders.push(format!("{}: {found}", rel.display()));
+            offenders.push(format!("{}: {found}", slashed(&rel.to_string_lossy())));
         }
     }
     assert!(offenders.is_empty(), "a living file names a numbered milestone:\n{}", offenders.join("\n"));
@@ -198,7 +213,7 @@ fn every_name_in_use_has_a_row_in_the_alias_table() {
         for name in names_used(&text) {
             if !table.contains(&name) && !refused.contains(&name.as_str()) {
                 let rel = file.strip_prefix(&root).expect("inside the repo");
-                unknown.push(format!("{}: {name}", rel.display()));
+                unknown.push(format!("{}: {name}", slashed(&rel.to_string_lossy())));
             }
         }
     }
