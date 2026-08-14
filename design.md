@@ -2107,6 +2107,14 @@ the first is the one that proves the project's premise:
 A few hundred lines, written once. It ships a header, **`heroes_runtime.h`, which generated C
 includes — so clang type-checks every runtime call.** Contents:
 
+- **A primitive that computes a length guards it before allocating** (panel 054, and
+  normative rather than implementer's discretion). `hero_str_concat` guards its add,
+  `hero_array_new` guards its product, and `hero_str_repeat` guards its multiply with a
+  division — because the check that catches a length wrapping *negative* does not catch
+  one wrapping *positive*, and the positive case allocates eight bytes and copies 2^64:
+  exit 138, SIGBUS, no message. Rust shipped that class as CVE-2018-1000810. §1.12's
+  robustness rule is the general statement; this is its one operational sentence for the
+  runtime, so a new primitive does not have to rediscover it.
 - the allocator (a wrapper over `malloc`) — and **a single point**, which is `runtime/parts/alloc.c`
   and has been since M-ffi-ladder. It was not before: the sentence below claimed one `malloc` and one
   `free` inside the `str` primitives while there were **eleven calls across five files**, and the

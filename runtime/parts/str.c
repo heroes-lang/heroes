@@ -80,6 +80,42 @@ void hero_str_decref(HeroStr s) {
     }
 }
 
+/* **`repeat(s, n)` — one allocation where a loop makes n** (panel 054; design.md
+ * §4.20, CLAUDE.md §12).
+ *
+ * Measured before it was written: 1 MB built by concatenation is 8.180 s, one
+ * million allocations and 500 GB copied; the same string here is 0.000265 s and
+ * one allocation. The spec's cost clause was true and had no exit, and this is
+ * the exit.
+ *
+ * **The multiply is the whole risk, and the division is how it is guarded.** Rust
+ * shipped `str::repeat` with an unchecked `len * count` as CVE-2018-1000810 — an
+ * out-of-bounds write, live from 1.16.0 to 1.29.0 — and this runtime reproduced
+ * the class before adding the guard: `4 * (2^62+2)` wraps **positive to 8**, so
+ * eight bytes are allocated and 2^64 are copied, giving **exit 138, SIGBUS, with
+ * no message and no output**. `hero_str_alloc`'s `len < 0` check catches only the
+ * half that wraps negative. Without this line `hero_str_repeat` would be the only
+ * primitive in this runtime whose length can wrap positive — `hero_str_concat`
+ * guards its add above, `hero_array_new` guards its product.
+ *
+ * The count arrives as a `u64` because the language refuses to write a negative
+ * one: a computed count goes through `to_u64().must()`, which aborts at the
+ * subtraction that went negative rather than here. Go's `strings.Repeat` takes a
+ * signed count and oh-my-posh #4135 is the shipped crash that follows from it —
+ * from a renderer's padding subtraction, which is what `repeat(" ", col)` is. */
+HeroStr hero_str_repeat(HeroStr s, uint64_t n) {
+    hero_str_require(s);
+    /* Either side empty is the empty string, and asking first is what makes the
+     * division below safe as well as cheap. */
+    if (n == 0 || s.len == 0) return hero_str_empty();
+    if (n > (uint64_t)(INT64_MAX / s.len)) hero_panic("string length overflow");
+    int64_t len = s.len * (int64_t)n;
+    HeroStr r = hero_str_alloc(len);
+    char *w = (char *)(void *)(uintptr_t)r.ptr;
+    for (uint64_t i = 0; i < n; i++) memcpy(w + (int64_t)i * s.len, s.ptr, (size_t)s.len);
+    return r;
+}
+
 HeroStr hero_str_concat(HeroStr a, HeroStr b) {
     hero_str_require(a);
     hero_str_require(b);

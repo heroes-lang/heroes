@@ -29,8 +29,8 @@ use crate::types::{Checked, Ty};
 /// Tier 2 (§1.11) is absent by construction: `map`, `filter`, `fold`, `find`,
 /// `any`, `all` and `range` are written in Heroes, so they have no entry point
 /// to name here — they arrive as source, in the prelude.
-pub const EMITTED: [&str; 18] = [
-    "chars", "join", "keys", "len", "print", "push", "slice", "sort", "to_f64", "to_i64",
+pub const EMITTED: [&str; 19] = [
+    "chars", "join", "keys", "len", "print", "push", "repeat", "slice", "sort", "to_f64", "to_i64",
     "to_str",
     // The width conversions. They are on this list and NOT in `entry` below,
     // because `entry` answers with the name of a C entry point and a `to_<width>`
@@ -97,6 +97,7 @@ pub(super) fn entry(
         "sort" => "hero_array_sort",
         "chars" => "hero_str_chars",
         "join" => "hero_str_join",
+        "repeat" => "hero_str_repeat",
         "to_i64" => "hero_f64_to_int",
         "to_f64" => "hero_int_to_f64",
         // `to_str` is one Heroes name over five C entry points, chosen by the

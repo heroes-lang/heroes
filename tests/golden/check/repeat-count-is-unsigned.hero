@@ -1,0 +1,24 @@
+# `repeat`'s count is a `u64`, so a negative one does not compile (panel 054).
+#
+# The sitting had three answers on the table for a negative count — return `""`
+# (consistent with `range(from: 0, to: -1)`, which is empty), abort at runtime,
+# or refuse it in the type. The third is Nim's, written in this language's own
+# types, and design.md §1.12 is what chooses it: **a defensive check must surface
+# a defect, not hide it.** Returning `""` hides the subtraction that went
+# negative; aborting names `repeat` rather than the subtraction; refusing it in
+# the type puts the diagnostic on the value that is wrong.
+#
+# Go takes a signed count, and oh-my-posh #4135 is the shipped crash that
+# follows: `strings.Repeat` with `0xffffffe0`, from a renderer's padding
+# subtraction — which is what `repeat(" ", col)` is.
+#
+# A computed count is written `n.to_u64().must()`, and that aborts with
+# `does_not_fit` at the value rather than inside the primitive.
+
+function main()
+    print(repeat("-", 40))
+    good: u64 @ 3
+    print(repeat("ab", good))
+    print(repeat("-", 0 - 1))    #~ type_mismatch
+    n: i64 @ 0 - 1
+    print(repeat("-", n))        #~ type_mismatch

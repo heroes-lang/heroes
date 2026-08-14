@@ -1,0 +1,26 @@
+# `repeat`'s multiply, guarded — and this is the case that would have been a
+# silent memory corruption (panel 054; CLAUDE.md §12, design.md §1.12).
+#
+# Measured before the guard existed, on this runtime: `4 * (2^62+2)` wraps
+# **positive to 8**, so eight bytes are allocated and 2^64 are copied. The plain
+# build gives **exit 138, SIGBUS, with no message and no output**; under
+# `--sanitize` it is `heap-buffer-overflow, WRITE of size 4, 0 bytes after a
+# 25-byte region`. `hero_str_alloc`'s `len < 0` check catches only the half that
+# wraps negative, so without the division in `hero_str_repeat` this would be the
+# only primitive in the runtime whose length can wrap positive.
+#
+# Rust shipped exactly this as CVE-2018-1000810, live from 1.16.0 to 1.29.0.
+#
+# The other two edges are not here and the reasons differ: a **negative** count
+# cannot be written at all — `repeat("-", 0 - 1)` is `type_mismatch` at compile
+# time, which `tests/golden/check/repeat-count-is-unsigned.hero` pins — and
+# **out of memory** depends on the machine, so a case that asked for it would
+# pass or fail on how much RAM the runner has.
+# Fixed defect: `docs/panel/054`, 2026-08-14.
+
+function main()
+    print("before")
+    # 2^62 + 2, times four bytes: the product wraps to 8.
+    n: u64 @ 4611686018427387906
+    print(len(repeat("abcd", n)))
+    print("unreachable")

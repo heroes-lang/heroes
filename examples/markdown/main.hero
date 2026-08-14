@@ -48,7 +48,7 @@ function headings(document: [blocks.Block]) -> [str]
     out: [str] @ []
     for b in document
         match b
-            .heading h => out @ out.push(render.repeat("  ", h.level - 1) + h.text)
+            .heading h => out @ out.push(repeat("  ", (h.level - 1).to_u64().must()) + h.text)
             .paragraph _ | .bullet _ | .numbered _ | .quote _ | .code _ | .rule => continue
     return out
 

@@ -141,7 +141,7 @@ snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 
 Map access `m[k]` returns
 `V?` with code `missing_key`. An out-of-bounds index or slice
-aborts, and so does a slice that splits a character; integer overflow aborts; integer division by zero aborts. `/` and `%` truncate
+aborts, and so does a slice that splits a character; integer division by zero aborts. `/` and `%` truncate
 toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
 ## Operators
@@ -161,10 +161,10 @@ Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → 
 separate elements by newline; single-line by comma.
 
 Value semantics has a price: `+` on `str` copies both sides and `push` copies the
-array, so accumulating either in a loop is quadratic. `join` is linear.
+array, so accumulating either in a loop is quadratic. `join` and `repeat` build in one pass.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join(xs, sep)` · `sort` ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` ·
 `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.

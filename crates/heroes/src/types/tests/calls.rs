@@ -7,7 +7,7 @@ use super::{assert_clean, diagnostics, type_of_last};
 fn a_call_checks_its_arguments_and_its_arity() {
     assert_clean(
         "\
-function repeat(text: str, times: i64) -> str
+function expand(text: str, times: i64) -> str
     out: str @ \"\"
     left: i64 @ times
     while left > 0
@@ -16,31 +16,31 @@ function repeat(text: str, times: i64) -> str
     return out
 
 function main()
-    print(repeat(\"ab\", 2))
+    print(expand(\"ab\", 2))
 ",
     );
     assert_eq!(
         diagnostics(
             "\
-function repeat(text: str, times: i64) -> str
+function expand(text: str, times: i64) -> str
     print(times)
     return text
 
 function main()
-    print(repeat(\"ab\"))
+    print(expand(\"ab\"))
 "
         ),
-        "test.hero:6:11: error[wrong_arity]: `repeat` takes 2 argument(s), found 1\n"
+        "test.hero:6:11: error[wrong_arity]: `expand` takes 2 argument(s), found 1\n"
     );
     assert_eq!(
         diagnostics(
             "\
-function repeat(text: str, times: i64) -> str
+function expand(text: str, times: i64) -> str
     print(times)
     return text
 
 function main()
-    print(repeat(\"ab\", \"two\"))
+    print(expand(\"ab\", \"two\"))
 "
         ),
         "test.hero:6:24: error[type_mismatch]: expected `i64`, found `str`\n"

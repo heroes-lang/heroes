@@ -50,7 +50,7 @@ pub struct Builtin {
 /// Sorted by name, searched linearly. Thirty-five entries need no index, and a
 /// sorted table prints in a deterministic order — §4.16's rule for hole
 /// suggestions, applied to every list the compiler shows.
-pub const BUILTINS: [Builtin; 35] = [
+pub const BUILTINS: [Builtin; 36] = [
     Builtin { name: "all", tier: Tier::Heroes },
     Builtin { name: "args", tier: Tier::Heroes },
     Builtin { name: "any", tier: Tier::Heroes },
@@ -73,6 +73,13 @@ pub const BUILTINS: [Builtin; 35] = [
     Builtin { name: "push", tier: Tier::Runtime },
     Builtin { name: "range", tier: Tier::Heroes },
     Builtin { name: "read_file", tier: Tier::Heroes },
+    // **The banner, and only the banner** (panel 054). It is not compiler-need —
+    // two judges checked the port's own diagnostic renderer and found its padding
+    // is a tab-preserving per-character map, not `repeat(" ", col)` — and it is
+    // the one program `docs/measurements/007` measured as having **no route**:
+    // the spec's cost clause names `join` as the linear escape and `push`, the
+    // only way to build the array `join` needs, as the trap.
+    Builtin { name: "repeat", tier: Tier::Runtime },
     Builtin { name: "slice", tier: Tier::Runtime },
     Builtin { name: "sort", tier: Tier::Runtime },
     // **Eight width conversions, sharing the one scheme** (author decision

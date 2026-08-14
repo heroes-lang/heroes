@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 12
+#define HERO_RUNTIME_ABI 13
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -130,6 +130,7 @@ const char *hero_str_cstr(HeroStr s);
 bool hero_utf8_valid(const char *p, int64_t len);
 
 HeroStr hero_str_from_bytes(const char *p, int64_t len);
+HeroStr hero_str_repeat(HeroStr s, uint64_t n); /* n copies, one allocation */
 HeroStr hero_str_from_cstr(const char *p); /* strlen, then from_bytes */
 /* The same guard on the outbound side: a `cstr` handed to a C function, which is
    the path `hero_str_from_cstr` never sees (panel 053, CLAUDE.md §12). */

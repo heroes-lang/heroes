@@ -19,6 +19,7 @@ use crate::syntax::Ast;
 
 use super::fallible_ops;
 use super::table::Ty;
+use crate::types::IntKind;
 use super::{errors, Checker, TyId};
 
 /// What a built-in expects of its `index`-th argument, given the type of its
@@ -42,6 +43,9 @@ pub(super) fn expectation(
         ("push", Ty::Array(element), 1) => Some(element),
         ("default", Ty::Fallible(inner), 1) => Some(inner),
         ("join", _, 1) => Some(checker.out.types.str()),
+        // `repeat`'s count is a `u64`, so the literal in `repeat("-", 40)` takes
+        // that width from here rather than defaulting to `i64` (panel 054).
+        ("repeat", _, 1) => checker.out.types.lookup(Ty::Int(IntKind::U64)),
         ("slice", _, 1 | 2) => Some(checker.out.types.int()),
         _ => None,
     }
@@ -124,6 +128,27 @@ pub(super) fn call(
             Ty::Map(k, _) => checker.out.types.intern(Ty::Array(k)),
             _ => return arg_error(checker, ast, src, "keys", "`{K: V}`", *map, span),
         },
+        // **`repeat(s: str, n: u64) -> str`, and the `u64` is the decision**
+        // (panel 054). A negative count cannot be written, so the class does not
+        // arise: Rust shipped `str::repeat`'s unchecked `len * count` as
+        // CVE-2018-1000810, and Go's `strings.Repeat` panics on a negative count
+        // in a shipped crash — oh-my-posh #4135 — from a renderer's padding
+        // subtraction, which is exactly what `repeat(" ", col)` is.
+        //
+        // A computed count is `repeat(" ", col.to_u64().must())`, which aborts
+        // with `does_not_fit` **at the subtraction that went negative** rather
+        // than inside `repeat`. That is design.md §1.12's test: a defensive check
+        // must surface a defect, not hide it — which is why returning `""` for a
+        // negative count loses, despite `range(from: 0, to: -1)` doing exactly
+        // that.
+        ("repeat", [text, count]) => {
+            let str_ty = checker.out.types.str();
+            let u64_ty = checker.out.types.intern(Ty::Int(IntKind::U64));
+            if *text != str_ty || *count != u64_ty {
+                return arg_error(checker, ast, src, "repeat", "`str` and `u64`", *text, span);
+            }
+            str_ty
+        }
         ("join", [parts, separator]) => {
             let str_ty = checker.out.types.str();
             let of_str = checker.out.types.lookup(Ty::Array(str_ty));
