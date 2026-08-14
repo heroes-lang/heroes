@@ -76,7 +76,9 @@ pub(super) fn parameter_width(
     let (function, name) = extern_at_line(program, ast, src, at.0, at.1)?;
     let parameters = extern_probe::parameter_list(function, checked)?;
     let arguments = extern_probe::argument_names(function.params.len());
-    let columns = extern_probe::argument_columns(&name, &parameters, &arguments);
+    let module = src.component_at(ast.decls[function.decl as usize].span.start);
+    let probe = extern_probe::probe_name(module, &name);
+    let columns = extern_probe::argument_columns(&probe, &name, &parameters, &arguments);
     let index = columns.iter().position(|column| *column == at.2 as usize);
     let which = match index.and_then(|i| function.params.get(i)) {
         Some(slot) => format!("`{}`", function.slots[slot.0 as usize].name),

@@ -31,11 +31,11 @@ _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_a
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 
 #line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_hero_file_write(const char * a0, HeroStr a1) { (void)hero_file_write(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)hero_file_write(a0, a1); }
 #line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
-__attribute__((unused)) static void hero_ffi_probe_hero_exit(int64_t a0) { (void)hero_exit(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
 #line 40 "loop.c"
 
 typedef struct h_loop_0opt0 {

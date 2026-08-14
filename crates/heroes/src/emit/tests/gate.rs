@@ -120,15 +120,22 @@ fn an_extern_call_is_emitted_against_the_real_header() {
     assert!(out.c.contains("#include <stdlib.h>"), "{}", out.c);
     // Unmangled: the C name is what the author wrote (CLAUDE.md §7).
     assert!(out.c.contains("labs("), "{}", out.c);
-    // **The mangler's own shape, not "no underscore before the name".** This read
-    // `!out.c.contains("_labs")` until panel 052, and that spelling rested on a
-    // premise about the world — *nothing else in this unit will ever end in
-    // `_labs`* — which expired the day `extern_probe.rs` began emitting
-    // `hero_ffi_probe_labs`. The premise's failure was silent in the useful
-    // direction only by luck: it went red on a correct change instead of green on
-    // a wrong one. A fact about the value replaces it: the mangler writes
-    // `h_<module>_<name>` (CLAUDE.md §7), so that is what must be absent.
-    assert!(!out.c.contains("h_scratch_labs"), "an extern must not be mangled:\n{}", out.c);
+    // **The call, not a substring of the file — and this line has now expired
+    // twice, which is the lesson rather than the bug.** It read
+    // `!out.c.contains("_labs")`, which died when `extern_probe.rs` began writing
+    // `hero_ffi_probe_labs`; then `!out.c.contains("h_scratch_labs")`, which died
+    // when that probe's name went through the mangler (panel 053). Both spellings
+    // asked *does this text appear anywhere*, and the claim is not about the file:
+    // it is about the **call site**, which must name the C function as the author
+    // wrote it because the header is the declaration.
+    //
+    // So the assertion is now the call's own shape. `= labs(` is what the emitter
+    // writes for the body; `= h_scratch_labs(` is what it would write if the
+    // callee had gone through the mangler. Neither can be produced by a generated
+    // name that merely contains the word, and a third generated name will not
+    // expire this one (CLAUDE.md §11).
+    assert!(out.c.contains("= labs("), "the call must name the C function:\n{}", out.c);
+    assert!(!out.c.contains("= h_scratch_labs("), "an extern must not be mangled:\n{}", out.c);
     // And no invented prototype — the header is the declaration.
     assert!(!out.c.contains("int64_t labs"), "the emitter re-declared it:\n{}", out.c);
 }

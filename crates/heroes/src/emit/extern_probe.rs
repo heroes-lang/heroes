@@ -45,8 +45,29 @@ use super::externs::extern_spans;
 use super::writer::Writer;
 
 /// The name a probe carries, spelled after the C function so a reader of the
-/// emitted unit can see what a failure is about.
+/// emitted unit can see what a failure is about — and **through the mangler**,
+/// which is the mirror of §4.19's own exception.
+///
+/// An `extern`'s C name passes through **unmangled by design**: it must survive to
+/// the linker. A probe is the opposite kind of name — a `static` this compiler
+/// invented, which no linker ever sees — so CLAUDE.md §7's rule applies to it
+/// unchanged: *every name through the mangler*. Panel 038 made the same
+/// distinction for an `extern constant`'s accessor, and for the same reason: the
+/// question is not whose name it is, it is whether anything outside this
+/// translation unit must be able to find it.
+///
+/// Found by panel 053's spec-warden, reporting it as incidental: two modules
+/// binding one C function gave `error: redefinition of 'hero_ffi_probe_getenv'` at
+/// **exit 2**, the compiler blaming itself for two declarations the author was
+/// entitled to write. Both modules reach one translation unit, so an unqualified
+/// name was one program away from colliding from the day it was written.
 const PREFIX: &str = "hero_ffi_probe_";
+
+/// A probe's own C name: the prefix, the mangled Heroes-side name, and nothing
+/// that a second module could repeat.
+pub(crate) fn probe_name(module: &str, name: &str) -> String {
+    format!("{PREFIX}{}", super::mangle::function(module, name))
+}
 
 /// One probe per `extern` that has at least one parameter.
 ///
@@ -80,7 +101,8 @@ pub(super) fn extern_probes(
         let (file, line, _) = src.locate(at);
         let file = file.to_string();
         w.at_file(&file, line);
-        w.line(&probe_line(name, &parameters, &arguments));
+        let module = src.component_at(ast.decls[function.decl as usize].span.start);
+        w.line(&probe_line(&probe_name(module, name), name, &parameters, &arguments));
     }
     w.at_generated();
     w.blank();
@@ -92,9 +114,14 @@ pub(super) fn extern_probes(
 /// declaration to find **which** argument clang's column points at. Rebuilding is
 /// exact because the line is a pure function of the declaration; reading clang's
 /// echoed source line instead is the trap panel 038 paid for.
-pub(crate) fn probe_line(name: &str, parameters: &[String], arguments: &[String]) -> String {
+pub(crate) fn probe_line(
+    probe: &str,
+    name: &str,
+    parameters: &[String],
+    arguments: &[String],
+) -> String {
     format!(
-        "__attribute__((unused)) static void {PREFIX}{name}({}) {{ (void){name}({}); }}",
+        "__attribute__((unused)) static void {probe}({}) {{ (void){name}({}); }}",
         parameters.join(", "),
         arguments.join(", ")
     )
@@ -104,11 +131,12 @@ pub(crate) fn probe_line(name: &str, parameters: &[String], arguments: &[String]
 /// numbering clang reports. The caret of a conversion diagnostic sits on the
 /// argument token, so this is what turns a column back into a parameter index.
 pub(crate) fn argument_columns(
+    probe: &str,
     name: &str,
     parameters: &[String],
     arguments: &[String],
 ) -> Vec<usize> {
-    let line = probe_line(name, parameters, arguments);
+    let line = probe_line(probe, name, parameters, arguments);
     let opens = format!("(void){name}(");
     let Some(at) = line.find(&opens) else { return Vec::new() };
     let mut at = at + opens.len();
