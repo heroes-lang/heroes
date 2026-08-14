@@ -752,7 +752,9 @@ fn the_spikes_still_compile_and_print_what_they_claim() {
         let mut args = flags.clone();
         args.push(format!("tools/spike/{name}.c"));
         args.push(object.display().to_string());
-        if name == "03-ffi" {
+        // `-lm` for the same reason the driver drops it on Windows: the maths
+        // functions are in the C runtime there and `m.lib` does not exist.
+        if name == "03-ffi" && !cfg!(target_os = "windows") {
             args.push("-lm".to_string());
         }
         args.extend(["-o".to_string(), binary.display().to_string()]);

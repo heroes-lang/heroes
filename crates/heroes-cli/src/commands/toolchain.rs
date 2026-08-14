@@ -268,6 +268,9 @@ impl Toolchain {
         // path the linker has already stopped needing.
         clang.args(&from_packages);
         for library in &libraries.link {
+            if in_the_c_runtime(library) {
+                continue;
+            }
             clang.arg(format!("-l{library}"));
         }
         // **Written beside it and renamed into place**, for the reason the runtime
@@ -295,6 +298,35 @@ impl Toolchain {
 pub struct Libraries {
     pub link: Vec<String>,
     pub packages: Vec<String>,
+}
+
+/// Whether this platform's C runtime already contains a library, so naming it is
+/// correct and passing it on would be an error.
+///
+/// **This is how the universal spelling is made to always work**, and the
+/// precedent is Zig's `isLibCLibName`, which does exactly this per target so that
+/// `-lm` means "link libc" instead of a link failure (sourced, panel 049's
+/// historian). Panel 049 refused a platform axis in the *language*; this is the
+/// same problem answered in the *driver*, where it is a fact about the machine
+/// rather than a word in the author's program.
+///
+/// Windows is the case that forced it. `link "m"` is required on glibc and
+/// FreeBSD, a POSIX-mandated no-op on musl and macOS — and on MSVC it is
+/// `LNK1181: cannot open input file 'm.lib'`, because the maths functions are in
+/// the C runtime and there is no separate library to open. Measured on the third
+/// CI leg, 2026-08-14, by `tests/golden/run/ffi-constant.hero`, which had been
+/// correct on two platforms for a day.
+///
+/// The list is deliberately short and per-platform: a name here is one this
+/// driver *knows* is folded in, not one it guesses at. A library that is genuinely
+/// absent still fails, and says so with `ffi_missing_link`.
+fn in_the_c_runtime(library: &str) -> bool {
+    if cfg!(target_os = "windows") {
+        // The POSIX names a Unix program writes, all of which the Microsoft CRT
+        // either contains or does not have as a separate library at all.
+        return matches!(library, "m" | "pthread" | "dl" | "rt" | "util" | "resolv");
+    }
+    false
 }
 
 /// **The flags a package may hand back, and nothing else.**
