@@ -137,3 +137,12 @@ stated so it can expire in its turn.
 | compiler-engineer | sqlite emits 12 clang warnings where its own comment claims four | M-ffi-ladder close |
 | historian | the fixed-arity curl binding fails on arm64 | **scored now: falsified** — it succeeds, and the reason is the one the pragmatist measured: the call goes through the header's prototype, not the Heroes declaration |
 | chair (panel 051) | `emit/ffi.rs` passes 440 lines if the mapped class lands | **scored now: true**, and low — it reached 550 |
+
+**Appended 2026-08-14, the same day.** The file finished at **573** and has been
+split four ways, on a seam that is what a verdict is *about* rather than how long
+the file got: `ffi.rs` keeps the markers, the dispatcher and the span finders
+(160); `ffi_declared.rs` the classes where the header contradicts the declaration
+(157); `ffi_narrowed.rs` the one where a parameter would narrow in silence (188);
+`ffi_build.rs` the ones where the machine lacks what the group named (131). The
+prediction did its job twice — it was right about the number, and the number was
+the argument for the split.
