@@ -210,3 +210,25 @@ during M-program-corpus. It looks like the `build/<hash>/` side of the cache rac
 that `toolchain.rs` already documents and fixes for `runtime-*.o`. It is queued
 rather than fixed here: it is not this flag, and a panel is not where a race gets
 diagnosed.
+
+---
+
+## Predictions scored — 2026-08-14, CI runs 5 and 6
+
+**Both platforms green.** The first fully green run in this project's history.
+
+| # | judge | outcome |
+|---|---|---|
+| 1 | ffi-pragmatist | **falsified in its first half, held in its second.** The flag alone did *not* turn the Linux job green on `ffi-constant.hero`: with `M_PI` resolved, the case failed one step later at the **linker** — `undefined reference to 'sqrt'`, because `libm` is inside `libSystem` on Darwin and separate on Linux, and three `extern "math.h"` groups declared no `link "m"`. The flag was necessary and not sufficient. The second half held exactly: **no golden's output changed on either platform**; what changed was one source line in three cases |
+| 2 | ffi-pragmatist | **held.** `examples/sqlite/` and `examples/curl/` compiled and ran on Linux with no flag change and no shim — the corpus harness's seven properties are green on both jobs. The breakage was never the ladder; it was `math.h`'s XSI constants, and then `math.h`'s library |
+| 3 | compiler-engineer | **held**, scored at the landing commit: `git diff --stat tests/golden/emit/` empty, zero golden bytes moved |
+| 4 | compiler-engineer | **not triggered.** The condition was *any new red on Linux under gnu11 that c11 did not produce*. The link error is not one: under `c11` the same case failed **earlier**, at compile, so the missing `-lm` was always there and had never been reached. gnu11 did not create it — it uncovered it |
+| 5 | historian | scored above, split |
+
+**What the sitting missed, and it is worth naming.** Three judges measured the
+dialect exhaustively — LLVM IR, struct layouts, macro diffs, 63 cross-compiled
+goldens — and not one of them asked whether the programs would **link**. The
+ffi-pragmatist compiled 63 of 63 for `x86_64-linux-gnu`; compiling is not
+linking, and the one question nobody put is the one that cost the extra round
+trip. A panel that measures the compiler's output can still miss the platform's
+runtime, and the instrument that caught it was the CI rather than any judge.
