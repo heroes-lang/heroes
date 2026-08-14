@@ -29,6 +29,17 @@ use std::path::{Path, PathBuf};
 mod expectation;
 use expectation::{check, split_expectation};
 
+/// A path as the goldens spell it: `/` on every platform.
+///
+/// The compiler echoes the path it was **given** — which is right, because a
+/// reader on Windows types `\` and wants to see `\` back. So the normalisation
+/// belongs here, in what the harness hands it: an expectation file records what
+/// the compiler does with a path, and it must not also record which operating
+/// system ran the test (2026-08-14, the third CI leg).
+fn slashed(path: &Path) -> String {
+    path.display().to_string().replace('\\', "/")
+}
+
 fn workspace_root() -> PathBuf {
     // crates/heroes-cli/ -> crates/ -> workspace root
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -120,7 +131,7 @@ fn golden_check_cases_render_their_diagnostics() {
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
             .arg(FRONTEND_CMD)
-            .arg(relative)
+            .arg(slashed(relative))
             .arg(FRONTEND_FLAG)
             .output()
             .expect("the heroes binary runs");
@@ -167,7 +178,7 @@ fn applying_certain_fixes_produces_the_fixed_file_and_it_checks_clean() {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let applied = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
-            .args([FRONTEND_CMD, &relative.display().to_string(), "--apply"])
+            .args([FRONTEND_CMD, &slashed(relative), "--apply"])
             .output()
             .expect("the heroes binary runs");
         let got = String::from_utf8_lossy(&applied.stdout).into_owned();
@@ -214,7 +225,7 @@ fn golden_ir_cases_lower_to_their_expected_form() {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
-            .args(["build", &relative.display().to_string(), "--dump-ir"])
+            .args(["build", &slashed(relative), "--dump-ir"])
             .output()
             .expect("the heroes binary runs");
         let actual = String::from_utf8_lossy(&output.stdout).into_owned();
@@ -254,7 +265,7 @@ fn the_dump_is_byte_identical_on_a_second_run() {
         let run = || {
             let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
                 .current_dir(&root)
-                .args(["build", &relative.display().to_string(), "--dump-ir"])
+                .args(["build", &slashed(relative), "--dump-ir"])
                 .output()
                 .expect("the heroes binary runs");
             String::from_utf8_lossy(&output.stdout).into_owned()
@@ -453,7 +464,7 @@ fn golden_unsupported_cases_are_refused_with_a_reason_and_exit_one() {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
-            .args(["build", &relative.display().to_string()])
+            .args(["build", &slashed(relative)])
             .output()
             .expect("the heroes binary runs");
         let actual = String::from_utf8_lossy(&output.stderr).into_owned();
@@ -493,7 +504,7 @@ fn golden_emit_cases_produce_their_c() {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
-            .args(["build", &relative.display().to_string(), "--emit-c"])
+            .args(["build", &slashed(relative), "--emit-c"])
             .output()
             .expect("the heroes binary runs");
         let actual = String::from_utf8_lossy(&output.stdout).into_owned();
@@ -534,7 +545,7 @@ fn the_emitted_c_is_byte_identical_twice_and_through_o() {
             let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"));
             command
                 .current_dir(&root)
-                .args(["build", &relative.display().to_string(), "--emit-c"])
+                .args(["build", &slashed(relative), "--emit-c"])
                 .args(extra);
             let output = command.output().expect("the heroes binary runs");
             assert_eq!(
@@ -593,7 +604,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
         let binary = scratch.join(&name);
         let built = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
-            .args(["build", &relative.display().to_string(), "-o", &binary.display().to_string()])
+            .args(["build", &slashed(relative), "-o", &binary.display().to_string()])
             .output()
             .expect("the heroes binary runs");
         assert_eq!(
@@ -620,7 +631,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
         // -O2: `run` compiles and executes, and forwards the program's own status.
         let at_o2 = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
-            .args(["run", &relative.display().to_string()])
+            .args(["run", &slashed(relative)])
             .output()
             .expect("the heroes binary runs");
         check(relative, "-O2", &at_o2, &expected, &ending);
@@ -640,7 +651,7 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
         }
         let sanitised = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
             .current_dir(&root)
-            .args(["run", &relative.display().to_string(), "--sanitize"])
+            .args(["run", &slashed(relative), "--sanitize"])
             .output()
             .expect("the heroes binary runs");
         let noise = String::from_utf8_lossy(&sanitised.stderr);
@@ -677,7 +688,7 @@ fn the_generated_c_compiles_without_a_single_warning() {
         for verb in ["build", "run"] {
             let built = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
                 .current_dir(&root)
-                .args([verb, &relative.display().to_string()])
+                .args([verb, &slashed(relative)])
                 .output()
                 .expect("the heroes binary runs");
             let noise = String::from_utf8_lossy(&built.stderr);

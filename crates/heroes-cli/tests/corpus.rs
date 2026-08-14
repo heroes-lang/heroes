@@ -41,6 +41,17 @@ use std::path::{Path, PathBuf};
 mod expectation;
 use expectation::{check, split_expectation};
 
+/// A path as the goldens spell it: `/` on every platform.
+///
+/// The compiler echoes the path it was **given** — which is right, because a
+/// reader on Windows types `\` and wants to see `\` back. So the normalisation
+/// belongs here, in what the harness hands it: an expectation file records what
+/// the compiler does with a path, and it must not also record which operating
+/// system ran the test (2026-08-14, the third CI leg).
+fn slashed(path: &Path) -> String {
+    path.display().to_string().replace('\\', "/")
+}
+
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
@@ -71,10 +82,7 @@ fn program_directories() -> Vec<PathBuf> {
 /// The path a command is given: relative to the workspace root, so the emitted
 /// `#line` values and any diagnostic read the same on every machine.
 fn relative(path: &Path) -> String {
-    path.strip_prefix(workspace_root())
-        .expect("under the workspace root")
-        .display()
-        .to_string()
+    slashed(path.strip_prefix(workspace_root()).expect("under the workspace root"))
 }
 
 /// Whether this machine simply does not have what a program binds.
