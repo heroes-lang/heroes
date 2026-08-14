@@ -116,12 +116,56 @@ fn configurations() -> &'static [&'static str] {
     if cfg!(target_os = "windows") { &["-O0", "-O2"] } else { &["-O0", "-O2", "--sanitize"] }
 }
 
+/// How long a corpus program may take before the harness stops waiting.
+///
+/// **A corpus program can hang, and a hang is worse than a failure here**
+/// (2026-08-14, found by the author looking at their own screen). An
+/// `examples/sdl/` binding linked SDL2 — whose `SDL2main` replaces the program's
+/// `main` with a Cocoa one, and whose `sdl2-compat` shim opens a **modal dialog**
+/// when it cannot load SDL3 — so two processes sat at 0% CPU for ninety minutes
+/// waiting for a click nobody could give them. This harness runs unattended, on
+/// three platforms, in three configurations each: a program that never returns
+/// burns the whole job rather than one case.
+///
+/// Two minutes is chosen against the slowest thing the corpus actually does — a
+/// `--sanitize` build of the largest example, seconds rather than minutes — so it
+/// is not a performance budget in disguise (CLAUDE.md §13). It is the line between
+/// *slow* and *never*, and a program that crosses it has stopped, not slowed.
+const PATIENCE: std::time::Duration = std::time::Duration::from_secs(120);
+
+/// Run `heroes`, and refuse to wait forever.
+///
+/// The wait is a poll rather than a platform timeout, because the three CI legs
+/// have three different ways of spelling one, and this file must read the same on
+/// all of them.
 fn heroes(root: &Path, args: &[String]) -> std::process::Output {
-    std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
         .current_dir(root)
         .args(args)
-        .output()
-        .expect("the heroes binary runs")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("the heroes binary runs");
+    let began = std::time::Instant::now();
+    loop {
+        match child.try_wait().expect("the child can be waited on") {
+            Some(_) => break,
+            None if began.elapsed() > PATIENCE => {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!(
+                    "`heroes {}` did not finish in {} seconds — it is hung, not slow, \
+                     and a corpus program that never returns burns the whole job. \
+                     If the program binds a C library, suspect the library: it may be \
+                     waiting on a window, a display or a dialog this machine cannot show.",
+                    args.join(" "),
+                    PATIENCE.as_secs()
+                );
+            }
+            None => std::thread::sleep(std::time::Duration::from_millis(50)),
+        }
+    }
+    child.wait_with_output().expect("the child's output")
 }
 
 /// `main.args`, one argument per line — or nothing, for a program that takes none.

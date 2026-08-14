@@ -1,0 +1,64 @@
+# SDL3, and the two doors that were shut this morning.
+#
+#     heroes run examples/sdl/main.hero
+#
+# **This program is the acceptance test for panel 055's allow-list.** Until
+# 2026-08-14 SDL could not be bound at all, and the shape of the failure is worth
+# keeping: it was unreachable through *both* clauses, and each diagnostic sent the
+# author to the other one.
+#
+#     extern "SDL3/SDL.h" package "sdl3"
+#       → error[ffi_package]: … answered with `-D_THREAD_SAFE` / `-Wl,-rpath,…`,
+#         which this compiler does not pass on
+#     extern "SDL3/SDL.h" link "SDL3"
+#       → error[ffi_missing_header]: not on this machine's include path
+#
+# There was no third door. Panel 050 had cited Go's allow-list as the precedent
+# for having one at all — Go shipped the idea without a filter and it became
+# CVE-2018-6574 — and then adopted a list **narrower than Go's**, which documents
+# `-D`, `-U`, `-I` and `-l`. Measured on one machine: **28 of 285 `.pc` files
+# answer with a flag the narrow list rejected**, among them `ncurses`, `readline`,
+# `x264` and all twelve of Qt6.
+#
+# **It is SDL3 and not SDL2, and that is not a detail.** The first version of this
+# file bound SDL2, and SDL2 on a machine with Homebrew is two traps at once.
+# `pkg-config --libs sdl2` answers `-lSDL2main`, and **`SDL2main` replaces the
+# program's `main`** with SDL's own, which starts Cocoa — so every run of this
+# corpus became a windowed application, eleven programs in three configurations,
+# filling the author's dock with icons. And that machine's `libSDL2` is
+# `sdl2-compat`, a shim that loads SDL3 at run time and, failing, opens a **modal
+# dialog** and waits for a click. On an unattended run that is not a failure, it
+# is a **hang**: two processes at 0% CPU for ninety minutes.
+#
+# SDL3 has neither. There is no `SDL3main` — the library was dropped — and no
+# shim underneath. `docs/debrief/DECIDE.md` carries what the episode found, which
+# is that this allow-list's property test asks what a flag does at **build** time
+# and both of those things happen at **run** time.
+#
+# **It opens no window**, for the reason `examples/raylib/main.hero` learned first:
+# a corpus program runs unattended on a headless runner, so the binding it
+# exercises must need no screen. `SDL_GetRevision` is SDL's own build string and
+# touches no display; `SDL_GetNumVideoDrivers` asks how many ways to draw exist,
+# which is a question and not an attempt.
+#
+# What it does not prove: SDL's interesting surface is `SDL_Rect`, `SDL_Event` and
+# `SDL_Surface`, all structs by value. That is `M-struct-passing`, which is the
+# next milestone precisely because a third of every C boundary is behind it.
+
+extern "SDL3/SDL.h" package "sdl3"
+    function SDL_GetRevision() -> cstr
+    function SDL_GetNumVideoDrivers() -> i32
+
+function main()
+    # The revision string is SDL's own, so its *content* is the library's business
+    # and not this program's. What this asserts is that a `cstr` came back across
+    # the boundary and became a `str` on this side.
+    print("sdl3 named its build: ", len(to_str(SDL_GetRevision())) > 0)
+    # The count is a property of the machine, so the program prints whether there
+    # is a way to draw rather than how many — which is the same on a laptop and on
+    # a runner with no display.
+    print("sdl3 knows a way to draw: ", SDL_GetNumVideoDrivers() > 0)
+
+test "the binding reaches SDL3 and comes back"
+    assert len(to_str(SDL_GetRevision())) > 0
+    assert SDL_GetNumVideoDrivers() >= 0

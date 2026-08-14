@@ -177,6 +177,32 @@ pub(super) fn resolve_packages(packages: &[String]) -> Result<Vec<String>, Strin
             // comma-separated parts, the middle one `-framework` — which is a fact
             // about the value rather than a premise about what packages tend to
             // send (CLAUDE.md §11).
+            // **`-Wl,-rpath,<dir>` — a directory the *loader* searches, and the
+            // second thing in one hour to show that this list's property test is
+            // about build time** (2026-08-14, after panel 055 closed). SDL3's own
+            // `.pc` answers `-Wl,-rpath,/opt/homebrew/lib -lSDL3`, and without it
+            // `package "sdl3"` is refused for a flag that names a directory.
+            //
+            // The list asks: *does this word name a file, load anything, or write
+            // anything?* An rpath does none of the three at build time, and it
+            // **does** change what is loaded at run time. What it costs, written
+            // down rather than waved past: a hostile `.pc` saying
+            // `-L/tmp/x -lfoo` already picks the library at build time, so the
+            // rpath is not a new capability — but it defers the choice, and a
+            // library can be **swapped after the build** by anyone who can write
+            // to that directory, where the build-time route needs the build itself
+            // compromised. That escalation is real and is queued in `DECIDE.md`
+            // together with the `SDL2main` finding, because the two are one
+            // question: this list cannot see runtime.
+            //
+            // The form is checked whole: three comma-separated parts, the middle
+            // one `-rpath`, and the last a path that is not itself a flag.
+            if let Some(rest) = word.strip_prefix("-Wl,-rpath,") {
+                if !rest.is_empty() && !rest.contains(',') && !rest.starts_with('-') {
+                    flags.push("-Wl,-rpath,".to_string() + rest);
+                    continue;
+                }
+            }
             if let Some(rest) = word.strip_prefix("-Wl,-framework,") {
                 if !rest.is_empty() && !rest.contains(',') && !rest.starts_with('-') {
                     flags.push("-framework".to_string());
@@ -186,7 +212,7 @@ pub(super) fn resolve_packages(packages: &[String]) -> Result<Vec<String>, Strin
             }
             return Err(format!(
                 "heroes-ffi-package `{package}` answered with `{word}`, which this compiler does not pass on\n  \
-                 only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework` and `-Wl,-framework,<name>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  \
+                 only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework`, `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  \
                  name the library directly with `link` if you need it"
             ));
         }
