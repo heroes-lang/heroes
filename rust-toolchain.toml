@@ -22,4 +22,10 @@
 
 [toolchain]
 channel = "1.90.0"
-components = ["clippy"]
+# `rust-analyzer` is here for the editor, not the build. Without it the VS Code
+# extension falls back to the rust-analyzer it ships, which is newer than the
+# pinned toolchain and says so in a warning box; naming the component makes
+# `rustup` fetch the one that matches 1.90.0, so the editor and `cargo` read the
+# same compiler. It costs a download and removes a disagreement — the same reason
+# the channel is pinned at all.
+components = ["clippy", "rust-analyzer"]
