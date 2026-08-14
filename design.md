@@ -873,7 +873,9 @@ that. `to_i64` takes an `f64` too, so **the name says whether a conversion can f
 `to_f64` cannot and give a value, every `to_<width>` can and gives a `T?`.
 
 **128-bit integers are refused, and the reason is C rather than taste** (measured 2026-08-13).
-`__int128` is a clang extension and §7 says C11; C cannot express a literal above 2^63 at all
+`__int128` is a clang extension outside the C standard §7 emits, and one no other C compiler
+this project may ever target is obliged to have (the leg that read *"§7 says C11"* was retired by
+panel 047, which moved the build to `-std=gnu11`); C cannot express a literal above 2^63 at all
 (`integer literal is too large to be represented in any integer type`), so the emitter could not
 write a constant; and `inttypes.h` has no `PRId128`, so the runtime could not print one. Against
 that, §1.11 gives no pull: no C header declares a 128-bit integer in a portable API, which is what
@@ -1944,9 +1946,11 @@ plus one more that only a value needs:
 Two of the seven boundary types are refused in the checker, and both reasons are facts
 about Heroes rather than about any header: a `str` carries the runtime's own magic word
 (declare it `cstr` and convert with `to_str`, §4.20), and `()` is a type rather than a
-value. `bool` is **not** refused there — under `-std=c11` `stdbool.h` spells `true` as
-`#define true 1`, so its type is `i64`, but that is a premise about the world and the
-per-constant assertion asks the token instead (CLAUDE.md §11).
+value. `bool` is **not** refused there — clang in C11 mode, `-std=c11` or `-std=gnu11` alike,
+spells `true` as `1`, so its type is `i64`; but that is a premise about the world and the
+per-constant assertion asks the token instead (CLAUDE.md §11). The sentence used to name
+the flag, and panel 047 changed the flag: the fact survived, measured on both dialects and
+both platforms, while the reason given for it would have expired in silence.
 
 What this does not buy: a wrong *number* is now impossible rather than unnoticed, and a
 wrong **name** is still the dominant remaining FFI mistake once a binding names a hundred

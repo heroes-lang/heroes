@@ -69,7 +69,25 @@ fn compiler_fingerprint() -> String {
 /// could. It is the strictest warning in the set and the one most likely to catch a
 /// join slot the lowering forgot to write on one arm.
 pub const FLAGS: [&str; 7] = [
-    "-std=c11",
+    // **`gnu11`, not `c11`, and the difference is one predefined macro** (panel
+    // 047, ratification pending). `-std=c11` defines `__STRICT_ANSI__`, and on
+    // glibc that is the *only* thing it does: it hides `M_PI`, `strdup`,
+    // `fileno`, `popen`, `setenv`, `newlocale`, `clock_gettime` — most of what
+    // §1.11 says a program binds — while Darwin's headers do not guard them at
+    // all. The same `.hero` file compiled here and failed on Linux, which is the
+    // failure §4.19 exists to prevent arriving through the flags instead of
+    // through the types.
+    //
+    // What the emitter *writes* is unchanged and still C11. Measured across the
+    // two: identical LLVM IR for the runtime and for a generated unit at both
+    // levels, 16 glibc struct layouts unchanged, and 63 of 63 `run/` goldens
+    // cross-compiling for `x86_64-linux-gnu` — against 62 of 63 under `c11`.
+    //
+    // The dialect is **named** rather than left to clang's default (`gnu17`
+    // today, `gnu11` before Clang 11) because a project whose acceptance is a
+    // byte-identical fixpoint cannot let it drift — the same argument that
+    // pinned `rust-toolchain.toml` the same day.
+    "-std=gnu11",
     "-Wall",
     "-Werror=return-type",
     "-Werror=uninitialized",

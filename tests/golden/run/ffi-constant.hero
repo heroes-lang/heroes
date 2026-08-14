@@ -16,6 +16,30 @@
 # this form: that test walks `tests/golden/emit` and `tests/golden/run` only
 # (`golden.rs`), so before this file the accessor and its two assertions were
 # emitted by nothing the test could see (panel 038, compiler-engineer's condition).
+#
+# **AND A FIXED DEFECT, named after it** (Go's `test/fixedbugs`), 2026-08-13 —
+# whose symptom is a **platform** rather than a program, which is why it is
+# written here instead of in a case of its own.
+#
+# SYMPTOM: this file passed on Darwin and failed on Linux, on the first CI run
+# this project ever had, with `error[ffi_unknown_name]: `math.h` declares no
+# `M_PI``. The compiler was right both times.
+#
+# CAUSE: `M_PI` is **not in ISO C** — it is POSIX/XSI — and glibc guards it
+# behind `__USE_MISC`, which `-std=c11` switches off by defining
+# `__STRICT_ANSI__`. Darwin's `math.h` does not guard it at all. So the flags,
+# not the types, decided whether a correct binding compiled.
+#
+# FIX: `-std=gnu11` (panel 047). The two dialects differ by exactly one
+# predefined macro, and on glibc that macro's only effect is to hide `M_PI`,
+# `strdup`, `fileno`, `setenv` and nine others — most of what §1.11 says a
+# program binds.
+#
+# **Do not delete the `M_PI` binding as gratuitous.** It is the only line in the
+# repository that fails when the dialect is wrong: everything else the corpus
+# binds — `sqrt`, `pow`, `floor`, `puts`, `getenv`, `abs`, `SEEK_SET` — is ISO C
+# and compiles under either. Measured: 63 of 63 `run/` goldens cross-compile for
+# `x86_64-linux-gnu` under `gnu11`, and 62 of 63 under `c11`. This is the one.
 
 extern "math.h"
     constant M_PI: f64

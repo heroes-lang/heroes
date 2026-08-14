@@ -99,7 +99,10 @@ finding), a label **only where an edge targets it**, all locals hoisted to the
 prologue, and a unit-typed temporary never declared at all (`void t0;` is a
 hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
 `*p_l = l;`). `hero_unreachable()` at every type-system-proven-unreachable
-point. Compile flags: `-Wall -Werror=return-type -Werror=uninitialized
+point. Compile flags: `-std=gnu11` (**named, not inherited** — and `gnu11` rather
+than `c11` because the two differ by one predefined macro, `__STRICT_ANSI__`, whose
+only effect on glibc is to hide `M_PI`, `strdup`, `fileno` and nine more of what
+§1.11 says a program binds; panel 047, ratification pending) `-Wall -Werror=return-type -Werror=uninitialized
 -Werror=format -Werror=conditional-uninitialized -fno-strict-aliasing`; a clang
 failure is exit 2 and says the *compiler* is wrong, **with one named exception**
 (author instruction 2026-08-12, panel 036): the `_Generic` return assertion §4.19

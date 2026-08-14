@@ -698,7 +698,12 @@ fn the_spikes_still_compile_and_print_what_they_claim() {
             .output()
             .expect("clang runs")
     };
-    let flags: Vec<String> = ["-std=c11", "-Wall", "-Werror=return-type", "-Iruntime"]
+    // `gnu11` tracks `toolchain::FLAGS` (panel 047). The duplication is
+    // structural — `heroes-cli` declares only a `[[bin]]`, so a test cannot
+    // import the constant — so the two are kept in step by hand and by this
+    // comment. A spike compiled under a dialect the product does not use is a
+    // test proving a configuration nobody ships.
+    let flags: Vec<String> = ["-std=gnu11", "-Wall", "-Werror=return-type", "-Iruntime"]
         .iter()
         .map(|f| f.to_string())
         .collect();
