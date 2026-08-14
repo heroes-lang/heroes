@@ -1,6 +1,6 @@
 # 054 — A cost the spec names and leaves no way to avoid
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `ratified — 2026-08-14, author decision`.
 **Convened** 2026-08-14, by author decision in `/decide` (item 7, answer `a`: *add
 `repeat`*; the panel decides its shape, not whether it arrives).
 **Lane**: full — four judges reporting, one stopped.
@@ -143,3 +143,28 @@ clause names, in the repository's own gallery.
 | 3 | spec-warden | with `repeat` and the repaired clause, **0 of 3** of measurement 007's programs accumulate in a loop | next spec-only writing experiment |
 | 4 | llm-ergonomist | on tasks needing k copies of a string, the current spec gives a quadratic loop or a hand-counted literal in ≥2/3 of first tries, ≥1-in-5 of the literals off by one and silent; under `repeat`, ~0 | next harness run |
 | 5 | historian | a signed count with a runtime abort would make the compiler's own renderer the first caller to abort — **untestable under the adopted `u64` shape, which is the point** | — |
+
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** `repeat(s: str, n: u64)` stays landed with its guarded
+multiply, the cost clause stays repaired rather than deleted, B stays refused, and
+the record that `repeat` is **not** compiler-need stays in the ledger.
+
+What the yes settles, and it is a rule rather than a feature: **a cost claim is
+admissible only where the same paragraph names a construct the reader can reach
+for.** The clause was true, was read, was named by the reader as the thing that
+stopped it — and then that reader wrote the other quadratic in two programs of
+three, because `join` needs an array and `push` is the only way to build one. The
+escape hatch and the trap were the same sentence. Panel 043's rule had no arm for
+that shape; it has one now.
+
+It settles the `u64` too, and by the same test design.md §1.12 states: **a
+defensive check must surface a defect, not hide it.** Returning `""` for a
+negative count hides the subtraction that went negative; aborting names `repeat`
+rather than the subtraction; the type puts the diagnostic on the value that is
+wrong. That §1.12 decided a question three hours after being written is the
+strongest evidence the principle earns its place.
+
+The irregularity stays in the file: a judge prototyped in the repository, its
+half-built feature was pushed, and the repository's own invariant caught it twice.
+`/panel` now tells every judge that builds to build in a copy.

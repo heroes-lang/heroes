@@ -1,6 +1,6 @@
 # 055 — Where a header is, when the machine cannot say
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `ratified — 2026-08-14, author decision`.
 **Convened** 2026-08-14, by author decision in `/decide` (item 5, answer `a`:
 *add search paths, with the shape decided in panel*).
 **Lane**: full, five judges, all reporting, all building in copies.
@@ -199,3 +199,28 @@ never mixed)"* — false since panel 042 landed the eight widths, and false in t
 | 3 | compiler-engineer | if A ever lands, its diff shows ≥150 added code lines across ≥6 modules of `crates/heroes/src`, one of them `lexer/keywords.rs` | A's landing, or M-selfhost-probe |
 | 4 | spec-warden | at M-ffi-ladder rung 5's close, `grep` over every `.hero` returns **0** header strings beginning with `/` and **≥1** containing `/` (today: 0 and 1) | M-ffi-ladder rung 5 |
 | 5 | llm-ergonomist | under the status quo ≥40% of first-try bindings of an off-path library put a filesystem path inside the header or `link` string; with the refusal and the named composition, <10% | next harness run |
+
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** A stays refused, C stays queued with its split intact,
+the six landed items stay, and design.md:2100 stays repaired.
+
+What the yes settles: **a sitting may discover that its own question was the wrong
+one, twice, and that is a result rather than a failure.** It was convened to add a
+way to name a search path. It found one already present and unnamed — inherited
+from Nim's `header` pragma, which §6 says to copy, so §6 worked and bit in one act
+— and then found the language's other door shut by this project's own allow-list,
+which cited Go's precedent and adopted a narrower list than Go's. SDL2, one of the
+most-bound C libraries there is, was reachable through neither clause.
+
+It settles the general form of the refusal, which will outlive this feature:
+**`package` is the shape that cannot skew.** It asks one question of one `.pc`
+written by one install, so `-I` and `-L` cannot disagree; A and C both let them be
+named independently, and independently named paths compile clean, link clean, exit
+0 and print the wrong number. Under §1.12 a form that lies loses to one that
+cannot, whatever it costs in tokens or convenience.
+
+**The `--include` split is not resolved by this ratification and is not meant to
+be.** Three judges hold that §10's composition test yields nothing; the judge who
+built it holds that an environment variable is not an artifact a program can
+carry. It stays in `DECIDE.md` as one question with two defensible answers.

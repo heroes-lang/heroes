@@ -1,6 +1,6 @@
 # 053 — An inbound `cstr` cannot be checked and read
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `ratified — 2026-08-14, author decision`.
 **Convened** 2026-08-14, by author decision in `/decide` (item 2, answer `d`).
 **Lane**: full, five judges.
 
@@ -161,3 +161,26 @@ minimum, and it is the first thing the next FFI sitting should take.
 | 3 | spec-warden | with A–D waiting and only the `==` repair landed, `SPEC_TOKENS` reads **3144**; at M-binding-fidelity close, 0 of the 3 existing `-> cstr` bindings will have needed a nullability form | next FFI sitting |
 | 4 | llm-ergonomist | on ≥12 first-try tasks binding a null-returning C string function, the current spec yields ≥60% unchecked reads; under C, 0% | next harness run |
 | 5 | historian | if blanket-B lands, an escape hatch is requested within two milestones, and ≥50% of the `.must()`s it forces sit on functions that cannot return NULL | M-ffi-ladder close |
+
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** E and A stay landed, B stays vetoed as inferred, C
+stays refused, B′ and D stay queued.
+
+What the yes settles: **the sitting's premise was false and its answer is better
+than the question.** It was convened because a nullable inbound `cstr` looked like
+a hole in the type system, and the measurement said otherwise — `to_str` on a null
+`cstr` was already a clean abort with its own name, and the real crash was a null
+`cstr` handed **straight back to C**, which three of the four options could not
+see. The option that landed was on nobody's ballot.
+
+It also settles the shape of that answer, which is the part worth keeping: **the
+guard is not a language change**. CLAUDE.md §7 already obliges the backend to
+abort rather than reach C's undefined behaviour — `__builtin_*_overflow` for
+arithmetic, `%` guarded like `/` — and `hero_cstr_nonnull` is that same obligation
+at the same boundary, for zero spec tokens and no new type. A boundary that needs
+one next time does not have to be argued from first principles.
+
+And `nullptr` moved from *cheapest* to *necessary* for a reason that is now
+precedent: a guard whose omission the author had no way to prevent is a worse
+guard. A makes the check writable; E makes its omission survivable.
