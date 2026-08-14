@@ -9,20 +9,30 @@
 # signatures is checked against the real header by a `_Static_assert` the
 # emitter writes, and `fixedbugs-ffi-return-type` is the case that makes one
 # fire. A wrong declaration here would not print the wrong number — it would
-# refuse to compile.
+# refuse to compile — **about its return type**. Windows measured the limit of
+# that sentence: the assertion asks what the header *returns* and cannot ask what
+# it *accepts*, so a too-wide argument narrows in silence. That gap is panel 051's
+# question, and the binding below is written to be correct rather than to lean on
+# a check that does not exist yet.
 # Bulk regression case.
 
 extern "math.h" link "m"
     function sqrt(x: f64) -> f64
     function pow(base: f64, exponent: f64) -> f64
 
+# `llabs` and not `labs`, and the difference is the whole reason this line has a
+# comment. `labs` takes a C `long`, which is 64 bits on Darwin and Linux and **32
+# bits on Windows**, so `function labs(x: i64)` is a true declaration on two
+# platforms and a truncating one on the third — measured on the Windows CI leg,
+# 2026-08-14. `llabs` takes `long long`, which is 64 bits on all three. Where C
+# gives two spellings of one function, the portable one is the binding.
 extern "stdlib.h"
-    function labs(x: i64) -> i64
+    function llabs(x: i64) -> i64
 
 function main()
     print(sqrt(16.0))
     print(pow(base: 2.0, exponent: 10.0))
-    print(labs(0 - 7))
+    print(llabs(0 - 7))
     # The C call composes with the language's own arithmetic, which is the
     # whole point of §1.11: there is no seam at the call site.
     print(sqrt(pow(base: 3.0, exponent: 4.0)))
