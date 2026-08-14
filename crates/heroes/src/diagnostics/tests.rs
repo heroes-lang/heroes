@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 64] = [
+const ANNOTATED: [&str; 65] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -64,6 +64,9 @@ const ANNOTATED: [&str; 64] = [
     "indentation_not_multiple_of_4",
     "int_out_of_range",
     "leading_zero",
+    // Panel 055: a group head names, it does not locate. A thesis rule — C would
+    // take the path, and the program would build on exactly one machine.
+    "machine_locked_path",
     // Reached the corpus at M-program-corpus, with the built-in half of the
     // check: `push(@lines, x)` claimed the call changes its argument and nothing
     // said so. Already a thesis rule — the `@` at a call site is §1.3 locality,

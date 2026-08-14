@@ -146,7 +146,7 @@ toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 
 ## Operators
 ```
-arithmetic   + - * / %          (i64 with i64, f64 with f64 — never mixed)
+arithmetic   + - * / %          (both sides one numeric type — never mixed)
              +                  (str with str: concatenation)
 comparison   == != < <= > >=
 boolean      && || !            (bool only; && and || short-circuit)
@@ -199,6 +199,7 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_open(path: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
 ```
+Both are names, never paths: an absolute one is refused.
 Where a library lives is the machine's answer, not the program's, so a group may
 name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs —

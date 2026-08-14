@@ -74,7 +74,21 @@ pub(super) fn in_the_c_runtime(library: &str) -> bool {
 /// `-framework` and `-F` are on the list because that is how a package answers on
 /// macOS, which is the case `link` could never spell. They take a following
 /// argument, which is why they are matched as a pair rather than as a prefix.
-const ALLOWED: [&str; 3] = ["-I", "-L", "-l"];
+/// **`-D` and `-U` are here on Go's own precedent, which panel 050 cited for the
+/// list's existence and then under-copied** (panel 055). Go documents *"only a
+/// limited set of flags are allowed, notably `-D`, `-U`, `-I`, and `-l`"*, and
+/// their absence was measured to shut a real door: **28 of 285 `.pc` files on one
+/// machine (10%)** answer with a flag this list rejected — `sdl2`, `sdl3`,
+/// `ncurses`, `readline`, `x264`, `simdjson`, all twelve `Qt6*` — and SDL2 was
+/// bindable through **neither** clause, because `package` refused `-D_THREAD_SAFE`
+/// and `link` could not find the header. Each diagnostic sent the author to the
+/// other.
+///
+/// They are safe for a reason that can be stated and tested rather than assumed:
+/// `-D` and `-U` define and undefine a preprocessor macro, and neither names a
+/// file, loads anything, or writes anything. That is the property the list is
+/// about — not the flag's popularity.
+const ALLOWED: [&str; 5] = ["-D", "-U", "-I", "-L", "-l"];
 const ALLOWED_WITH_ARGUMENT: [&str; 2] = ["-framework", "-F"];
 
 /// Ask the machine about each package, and let nothing through that is not on the
@@ -126,9 +140,29 @@ pub(super) fn resolve_packages(packages: &[String]) -> Result<Vec<String>, Strin
                 flags.push(word.to_string());
                 continue;
             }
+            // **`-Wl,-framework,<name>` is a spelling of something already on the
+            // list, and only that spelling** (found after panel 055 closed, when
+            // `-D` alone left SDL2 one flag short of bindable).
+            //
+            // SDL2's own `.pc` answers `-Wl,-framework,Cocoa`, which is
+            // `-framework Cocoa` handed to the linker the long way. Four packages
+            // of 285 on this machine need it. A blanket `-Wl,` would **not** be
+            // safe and is not given: `-Wl,` passes anything to the linker, and the
+            // property this list is about is that a word names no file, loads
+            // nothing and writes nothing. This form is checked whole — three
+            // comma-separated parts, the middle one `-framework` — which is a fact
+            // about the value rather than a premise about what packages tend to
+            // send (CLAUDE.md §11).
+            if let Some(rest) = word.strip_prefix("-Wl,-framework,") {
+                if !rest.is_empty() && !rest.contains(',') && !rest.starts_with('-') {
+                    flags.push("-framework".to_string());
+                    flags.push(rest.to_string());
+                    continue;
+                }
+            }
             return Err(format!(
                 "heroes-ffi-package `{package}` answered with `{word}`, which this compiler does not pass on\n  \
-                 only `-I`, `-L`, `-l`, `-F` and `-framework` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  \
+                 only `-D`, `-U`, `-I`, `-L`, `-l`, `-F`, `-framework` and `-Wl,-framework,<name>` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  \
                  name the library directly with `link` if you need it"
             ));
         }

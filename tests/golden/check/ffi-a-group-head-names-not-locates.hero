@@ -1,0 +1,35 @@
+# A group head names what the machine has, never where this machine keeps it
+# (panel 055).
+#
+# It could, and nobody had noticed until a reader with only the spec in front of
+# it pointed out that "a group names its header" never says the string is a C
+# include spelling rather than a filesystem path. It is not: the string goes
+# straight to `#include`, and C accepts a path there, so
+# `extern "/opt/foo/include/foo.h"` compiled and ran. The slot is **inherited**
+# rather than designed — Nim's `header` pragma is exactly this permissive, and
+# CLAUDE.md §6 says copy Nim's surface.
+#
+# `link` has the worse version. GNU `ld` reads `-l:filename` as a *file*, so
+# `link ":/opt/foo/libfoo.a"` names one on the legs whose linker supports that
+# form — against a driver comment claiming no `.hero` file could hand clang an
+# arbitrary argument. True about flags, false about files.
+#
+# **Only the absolute form is refused**, and the narrowing is the whole point:
+# `sub/bar.h` resolves against this file's own directory and is portable, and
+# `curl/curl.h` is path-shaped and correct.
+
+extern "stdio.h" link "c"
+    function puts(s: cstr) -> i64
+
+extern "/opt/foo/include/foo.h"      #~ machine_locked_path
+    function foo_a() -> i64
+
+extern "stdio.h" link "/opt/foo/lib/libfoo.a"    #~ machine_locked_path
+    function foo_b() -> i64
+
+extern "stdio.h" link ":/opt/foo/lib/libfoo.a"   #~ machine_locked_path
+    function foo_c() -> i64
+
+function main()
+    _ = puts("ok".cstr())
+    print(foo_a() + foo_b() + foo_c())

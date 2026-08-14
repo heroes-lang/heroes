@@ -52,6 +52,56 @@ pub(super) fn missing_link(line: &str, ast: &Ast, src: &Source) -> Option<Diagno
     Some(diagnostic)
 }
 
+/// A library the group **did** name and the linker cannot find (panel 055).
+///
+/// `ld: library 'sdl2' not found` was `internal error:` at **exit 2** — the
+/// compiler blaming itself for a library missing from the author's machine, which
+/// is exactly what panel 049 repaired on the header side and what panel 048
+/// repaired for a library nobody named. This is the third face of one mistake and
+/// the last of them: the group is right, the machine is short.
+///
+/// **The narrowing is `link`'s own list**, which is the analogue of
+/// `declaration()`: a library name this program wrote is the author's business,
+/// and one it did not write is the driver's own `-l` and stays exit 2. Two of
+/// panel 055's judges found this independently while measuring something else.
+pub(super) fn missing_library(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    // `ld: library 'X' not found` (ld64) and `cannot find -lX` (GNU ld / lld).
+    let name = if let Some(rest) = line.split("library '").nth(1) {
+        rest.split('\'').next()?.to_string()
+    } else if let Some(rest) = line.split("cannot find -l").nth(1) {
+        rest.split_whitespace().next()?.trim_matches(':').to_string()
+    } else {
+        return None;
+    };
+    let span = link_head(ast, src, &name)?;
+    Some(
+        Diagnostic::new(
+            "ffi_missing_library",
+            format!(
+                "this machine has no library called `{name}` — the group names it, and the linker looked"
+            ),
+            span,
+        )
+        .with_note(format!(
+            "install its development files, or set `LIBRARY_PATH` to the directory holding it; where the library ships a `.pc`, `package \"{name}\"` asks the machine for both its headers and its libraries"
+        )),
+    )
+}
+
+/// The group head that wrote `link "<name>"` — the narrowing that keeps a
+/// library the *driver* passed from being blamed on the author.
+fn link_head(ast: &Ast, src: &Source, name: &str) -> Option<crate::source::Span> {
+    ast.decls.iter().find_map(|decl| {
+        let library = match &decl.kind {
+            crate::syntax::DeclKind::Function(function) => function.library,
+            crate::syntax::DeclKind::Constant { library, .. } => *library,
+            _ => None,
+        }?;
+        let crate::syntax::Library::Link(span) = library else { return None };
+        (src.slice(span).trim_matches('"') == name).then_some(span)
+    })
+}
+
 /// The symbol out of a linker's complaint, in the spellings the two platforms
 /// produce.
 ///
@@ -96,7 +146,7 @@ pub(super) fn missing_header(line: &str, ast: &Ast, src: &Source) -> Option<Diag
         span,
     );
     diagnostic = diagnostic.with_note(
-        "the group names a header the preprocessor must be able to open: install the library's development files, or point the compiler at them".to_string(),
+        "the group names a header the preprocessor must be able to open: install the library's development files, or set `CPATH` to the directory holding it — `package` finds it for you where the library ships a `.pc`".to_string(),
     );
     Some(diagnostic)
 }

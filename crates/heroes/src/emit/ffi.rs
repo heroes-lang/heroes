@@ -75,6 +75,9 @@ pub fn explain(
         if let Some(diagnostic) = build::missing_link(line, ast, src) {
             push(&mut found, diagnostic);
         }
+        if let Some(diagnostic) = build::missing_library(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
         if let Some(diagnostic) = build::missing_header(line, ast, src) {
             push(&mut found, diagnostic);
         }

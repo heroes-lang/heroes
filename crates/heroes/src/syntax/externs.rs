@@ -66,7 +66,9 @@ pub(super) fn group(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
 /// the grammar.
 fn header(cur: &mut Cursor, src: &Source) -> Option<Span> {
     if cur.at(TokenKind::Str) {
-        return Some(cur.bump().span);
+        let span = cur.bump().span;
+        machine_locked(cur, src, span, "header");
+        return Some(span);
     }
     if !cur.at_reported_error() {
         let message = if cur.at(TokenKind::KwFunction) {
@@ -83,6 +85,56 @@ fn header(cur: &mut Cursor, src: &Source) -> Option<Span> {
     None
 }
 
+/// **A string in a group head may not name an absolute path** (panel 055).
+///
+/// It could, and nobody had noticed: `extern "/opt/foo/include/foo.h"` compiled
+/// and ran, because the string is passed through to `#include` and C accepts a
+/// path there. The slot is inherited rather than designed — Nim's `header` pragma
+/// has the same permissiveness and CLAUDE.md §6 says copy Nim's surface — so §6
+/// worked and bit in the same act. `link` has the worse version: GNU `ld` reads
+/// `-l:filename` as *a file*, so `link ":/opt/foo/libfoo.a"` names one on the legs
+/// whose linker supports it, against a driver comment claiming no `.hero` file can
+/// hand clang an arbitrary argument.
+///
+/// **Only the absolute form is refused, and the narrowing is the point.**
+/// `extern "sub/bar.h"` resolves against the `.hero` file's own directory
+/// (panel 036's `-I <source dir>`), verified from two working directories, so a
+/// vendored header beside the program is portable and correct. `curl/curl.h` is
+/// path-shaped and right. *"This string begins with a filesystem root"* is a fact
+/// about the value; *"nobody needs a relative path"* would be a premise about the
+/// world (CLAUDE.md §11).
+///
+/// The repair is not text, so there is no `Fix`: the answer is `CPATH` or a `.pc`
+/// on `PKG_CONFIG_PATH`, and a `certain` fix that rewrote the string would be a
+/// lie.
+fn machine_locked(cur: &mut Cursor, src: &Source, span: Span, what: &str) {
+    let text = src.slice(span).trim_matches('"');
+    // A leading root, a Windows drive letter, or — for a library only — GNU `ld`'s
+    // `-l:filename` form, which is how a `link` string names a **file** rather
+    // than a library. The last is the one the historian measured: it is refused
+    // whatever follows the colon, because the whole point of the form is that the
+    // rest is a filename.
+    let rooted = text.starts_with('/')
+        || text.starts_with('\\')
+        || text.as_bytes().get(1) == Some(&b':')
+        || text.starts_with(':');
+    if !rooted {
+        return;
+    }
+    let route = if what == "header" {
+        "set `CPATH` to the directory holding it, or name a `package` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`"
+    } else {
+        "set `LIBRARY_PATH` to the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link \"sqlite3\"`"
+    };
+    cur.error(
+        "machine_locked_path",
+        format!(
+            "`{text}` names a path, and a {what} in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere\n  {route}"
+        ),
+        span,
+    );
+}
+
 /// `link "sqlite3"` or `package "raylib"` — optional, one or the other, and both
 /// matched by text rather than lexed as keywords, for the reason above.
 ///
@@ -93,6 +145,7 @@ fn header(cur: &mut Cursor, src: &Source) -> Option<Span> {
 /// the first one named.
 fn library(cur: &mut Cursor, src: &Source) -> Option<Library> {
     let taken = one_library(cur, src)?;
+    machine_locked(cur, src, span_of(taken), "library");
     // A second clause on the same head line. The message names what is already
     // there, because the repair is to delete one and the author must be told
     // which one they wrote first.

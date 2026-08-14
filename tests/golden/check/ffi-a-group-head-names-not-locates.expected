@@ -1,0 +1,6 @@
+tests/golden/check/ffi-a-group-head-names-not-locates.hero:24:8: error[machine_locked_path]: `/opt/foo/include/foo.h` names a path, and a header in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere
+  set `CPATH` to the directory holding it, or name a `package` and let `pkg-config` answer; a header beside this file is written relative, as `sub/foo.h`
+tests/golden/check/ffi-a-group-head-names-not-locates.hero:27:23: error[machine_locked_path]: `/opt/foo/lib/libfoo.a` names a path, and a library in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere
+  set `LIBRARY_PATH` to the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link "sqlite3"`
+tests/golden/check/ffi-a-group-head-names-not-locates.hero:30:23: error[machine_locked_path]: `:/opt/foo/lib/libfoo.a` names a path, and a library in a group head says what the machine has, not where this machine keeps it — the next machine keeps it elsewhere
+  set `LIBRARY_PATH` to the directory holding it, or name a `package` and let `pkg-config` answer; `link` takes the library's **name**, as `link "sqlite3"`

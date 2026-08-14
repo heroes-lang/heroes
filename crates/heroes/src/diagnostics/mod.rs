@@ -157,6 +157,13 @@ impl Diagnostic {
                 | "needs_label"
                 | "wrong_label"
                 | "declared_twice"
+                // **A path in a group head is refused, and C would take it**
+                // (panel 055). That makes it a thesis rule by the same test as
+                // the rest of this list: nothing about the *types* is wrong, and
+                // the program would build — on exactly one machine. `--permissive`
+                // drops it, so metric 3 does not count a refusal the language
+                // chose against a mistake the language catches.
+                | "machine_locked_path"
         )
     }
 

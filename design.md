@@ -2101,6 +2101,21 @@ the first is the one that proves the project's premise:
    keyword — and both are paths, validated not to begin with `-`, so the form stays closed rather
    than becoming an arbitrary-flag hole.
 
+   **Both halves of that last sentence are now false, and panel 055 measured each.** The
+   premise — *what the group head lacks is search paths* — expired when panel 050 landed
+   `package` and rung 5 was climbed with it, measured, with no path in any program; the
+   sentence went on reading as correct because the argument around it stayed valid, which is
+   CLAUDE.md §11's class exactly. And the **validation rule is incomplete**: a `-` check
+   cannot see a response file, because clang expands `@file` *before* it parses a single
+   option. `clang -I "@two.rsp"` with `/tmp -DSMUGGLED=1` inside splices `-D SMUGGLED=1` onto
+   the cc1 line and compiles — CVE-2018-6574's class through the one door the check does not
+   cover. Panel 050's **allow-list** holds against it (a `.pc` answering `@…` is `ffi_package`
+   at exit 1) because it names what is permitted rather than what is forbidden; a rule phrased
+   as *"not beginning with `-`"* does not. What panel 055 landed instead is the opposite of a
+   path clause: an absolute path in a group head is **refused**, `machine_locked_path`, and the
+   search path is the machine's own `CPATH`, `LIBRARY_PATH` or `PKG_CONFIG_PATH` — all three
+   measured live, because `Command` inherits the environment.
+
 
 ### 4.20 The runtime, in C
 
