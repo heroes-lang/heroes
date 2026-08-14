@@ -67,6 +67,25 @@ HeroStr hero_args_at(int64_t index) {
  * A binary read (`"rb"`), because a `str` is bytes: §4.3 measures and indexes a
  * string in bytes, so translating CRLF here would make `len` disagree with the
  * file on one platform and not the other. */
+/* **The runtime does nothing to a path, and that is the portability** (recorded
+ * 2026-08-14, after a day in which four separate things broke on Windows over path
+ * separators and none of them was here).
+ *
+ * There is no `strcat`, no separator literal, no normalisation: the string the
+ * program wrote reaches `fopen` verbatim. Windows accepts `/` in every filesystem
+ * API — it is `cmd.exe`, not the OS, that reads a leading `/` as a switch — so a
+ * program writing `read_file("data/in.txt")` works on all three platforms, and
+ * `examples/adventure/main.hero` proves it on the Windows CI leg with a literal
+ * `examples/adventure/walkthrough.txt`.
+ *
+ * **Written as a claim that can die**: if a platform is ever added whose `fopen`
+ * refuses `/`, this comment is wrong and the corpus is what says so — the adventure
+ * example fails on that leg and nowhere else. Until then, adding separator handling
+ * here would be the repair that creates the defect.
+ *
+ * Both modes are binary (`rb`/`wb`) for the sibling reason: text mode on Windows
+ * translates newlines, and a language whose `str` is measured in bytes cannot have
+ * a file grow one byte per line on one platform. */
 HeroStr hero_file_read(const char *path, int64_t *status) {
     FILE *file = fopen(path, "rb");
     if (file == NULL) {

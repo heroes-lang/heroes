@@ -1195,11 +1195,23 @@ fn a_search_path_reaches_clang_as_one_argv_word() {
     let said = String::from_utf8_lossy(&out.stderr);
     assert!(said.contains("needs a path"), "{said}");
 
-    // 2. No shell. A directory whose name would be three commands under `sh` is
+    // 2. No shell. A directory whose name would be two commands under `sh` is
     // searched as a directory, and the file it would have created does not exist.
-    let hostile = root.join("build/inc; touch /tmp/heroes-shell-escaped");
+    //
+    // **The name is one path component and its characters are legal on all three
+    // platforms**, which the first version was not: it embedded `/tmp/…`, so
+    // Windows read the separators as nested directories and `create_dir_all`
+    // failed before the test could assert anything. What is being asserted holds
+    // everywhere — `Command::arg` passes argv and nothing spawns a shell — so the
+    // *witness* must be spellable everywhere too. `;` and a space are legal in a
+    // Windows file name; `/`, `\\`, `:` and `*` are not.
+    // The witness file lands in whatever directory a shell would have run in,
+    // which for this child is the repository root — so the name carries no path
+    // at all and there is nothing in it a platform can read as a separator.
+    let escaped = root.join("heroes-shell-escaped");
+    let _ = std::fs::remove_file(&escaped);
+    let hostile = root.join("build").join("inc; touch heroes-shell-escaped");
     std::fs::create_dir_all(&hostile).expect("a writable build directory");
-    let _ = std::fs::remove_file("/tmp/heroes-shell-escaped");
     let out = heroes(&[
         "build",
         "examples/gallery/00-first.hero",
@@ -1207,10 +1219,7 @@ fn a_search_path_reaches_clang_as_one_argv_word() {
         &hostile.to_string_lossy(),
     ]);
     assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
-    assert!(
-        !std::path::Path::new("/tmp/heroes-shell-escaped").exists(),
-        "the directory name reached a shell"
-    );
+    assert!(!escaped.exists(), "the directory name reached a shell");
 
     // 3. The path is one argv word: repeating the flag keeps both, in order, and
     // the *second* is where the header is — so a build that only kept the first
