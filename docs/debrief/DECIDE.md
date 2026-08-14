@@ -139,3 +139,36 @@ the file is still over the limit.
   `join` needs. It was **not** spent to fund panel 051, because that clause belongs
   to panel 037 and panel 041 refused exactly this kind of cross-funding. It needs
   its own decision.
+
+## From panel 052 (2026-08-14) — what the FFI still owes after the parameter check
+
+- **Struct-by-value is the whole remaining wall: 356 of 1159 entry points, 31%**,
+  counted from clang's own AST across `sqlite3.h`, `curl/curl.h` and `raylib.h`.
+  raylib alone is 346 of 600. No scalar vocabulary touches it, and the
+  ffi-pragmatist predicts `M-binding-fidelity` will not raise raylib past 254 of
+  600. This is the next milestone's question, not a gap in this one.
+- **A rename, so one C name can carry two arities.** This is what variadics
+  actually need — the ABI is already correct — and it is the ergonomist's blocking
+  condition on the alternative to `...`: `function printf_i(format: cstr, value:
+  i32) -> i64 = "printf"`, or any spelling that keeps the C symbol on the
+  declaration line. Without it the second shape of `curl_easy_setopt` is
+  `declared_twice`.
+- **A variadic argument's width is checked by nothing** — not a flag, not a
+  `_Generic`, not the probe. `int -1` in a variadic slot reads `-1` on arm64 and
+  `4294967295` on x86-64. Reachable today.
+- **`f32`, and the shape is not settled.** The case that motivated it does not need
+  it (a C `float` parameter bound `f64` is bit-exact). The case that does is a
+  `float *` out-parameter — 2 entry points — and the compiler-engineer measured
+  that `@f32` is **core**, not a boundary type: an `@` argument is the address of
+  the author's own slot, so it needs an `f32` local. That is A1's cost, for two
+  entry points.
+- **`emit/ffi.rs` is 550 lines against CLAUDE.md §11's ~300** — the largest
+  non-test file in the repository. The seam is already in the file: **what each
+  class gates on**. The engineer mapped it: `mod` ~130, `asserted` ~72 (a marker
+  this emitter wrote), `named` ~110 (a C name from the tool), `grouped` ~96 (a
+  header or package string), `located` ~142 (a location).
+- **The warden's R2, −12**: `to_i64` is listed twice in Built-ins, once as
+  "`to_i64` (truncating)" and again in the width family, and the truncation fact is
+  already in the conversion clause. Unspent, and available. Panel 051's R1 (−8) is
+  still refused, on stronger ground than before: measurement 007 has a blind reader
+  quoting that sentence, `push` half included, as the document's only cost claim.

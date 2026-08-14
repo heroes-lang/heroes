@@ -2369,6 +2369,20 @@ are *on* the closure list.
     `u64` that can only be converted aborts, so naming it as the falsifier would name a case no
     addition closes. What §4.19 actually asked for is a **C-width** vocabulary (`c_int`, `const`),
     which is this row; a Heroes-width `u64` wearing a C-width name is not.
+
+    **The named falsifier has since been produced, and the row survives on its last sentence
+    rather than on it** (panel 052, 2026-08-14). `extern function strlen(s: cstr) -> u64` now
+    compiles and prints `5`: panel 042's eight widths gave the result type this row said did not
+    exist, so *"no result type exists to correct it to"* is no longer true and must not go on
+    being read as the reason. What still holds is the distinction the row closes with, and panel
+    052 measured it from the other side: `emit/ffi.rs`'s repair table can propose `i32` for a C
+    `int` and **cannot propose anything for a C `long`**, which is 64 bits on Darwin and Linux
+    and 32 on Windows. A Heroes width is a number; a C width is a question about the machine.
+    **The new falsifier, stated so it can expire in its turn**: a program the closure list or
+    §4.19's ladder needs, binding a C `long`, `size_t` or `unsigned long` **parameter**, whose
+    correct spelling is the same on all three CI legs. Produce one and this row is wrong. Until
+    then the check does the work the vocabulary would have: `ffi_parameter_type` refuses the
+    binding rather than letting a width be guessed.
 11. **A `raw` module for low-level access** — see Part 9.
 12. **Inline blocks (Kotlin-style)** — `repeat 3` / `with file("x")` where the last parameter is a
     block expanded at the call site rather than becoming a closure. This is the acceptable substitute

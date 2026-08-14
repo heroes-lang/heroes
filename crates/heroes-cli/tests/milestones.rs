@@ -199,7 +199,7 @@ fn every_name_in_use_has_a_row_in_the_alias_table() {
         .filter_map(|l| l.split('`').next())
         .map(|n| format!("M-{n}"))
         .collect();
-    assert_eq!(table.len(), 34, "the alias table has {} rows, not 34: {table:?}", table.len());
+    assert_eq!(table.len(), 35, "the alias table has {} rows, not 35: {table:?}", table.len());
 
     // The one name that is deliberately written without being a milestone: the runner-up
     // § The names records as refused, so the reasoning survives the decision.
