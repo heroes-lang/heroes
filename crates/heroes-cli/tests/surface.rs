@@ -17,6 +17,23 @@ fn heroes(args: &[&str]) -> Output {
         .expect("the heroes binary runs")
 }
 
+/// Whether the compiler said this machine does not have the library, in which case
+/// the test that follows is not a verdict about the compiler.
+///
+/// **The rule reads the compiler's own diagnostic, never a list of test names and
+/// never `cfg!(windows)`** — that is `corpus.rs`'s rule, and it is here for the
+/// same reason: a skip keyed on the platform goes on skipping after the library
+/// arrives, and a skip keyed on a name stops being true when the name moves. This
+/// one is keyed on the fact in hand — what this invocation printed (CLAUDE.md §11).
+///
+/// The Windows CI leg is where it earns its keep: that image has clang and no
+/// `sqlite3.h`, no `curl/curl.h`. On a machine that *has* them, nothing is skipped
+/// and every assertion below still runs.
+fn machine_lacks_the_library(out: &Output) -> bool {
+    let said = String::from_utf8_lossy(&out.stderr);
+    said.contains("error[ffi_missing_header]") || said.contains("error[ffi_package]")
+}
+
 fn code(out: &Output) -> i32 {
     out.status.code().expect("a real exit code")
 }
@@ -273,8 +290,17 @@ fn build_says_where_it_put_the_binary() {
     // Candidate (ii) of the panel's experiment: given this line the reader wrote
     // `heroes build f.hero && ./build/<hash>/f` correctly first try; given silence
     // it wrote `./f`, which cannot work.
-    assert!(said.starts_with("wrote build/"), "{said}");
-    assert!(said.trim_end().ends_with("/00first"), "{said}");
+    // **The separator is the platform's, and that is the point of the line.** The
+    // reader is being handed a path to type into *this* machine's shell, and
+    // `cmd.exe` reads a leading `/` as a switch. So the assertion pins the shape —
+    // `build/<hash>/<stem>` — and normalises the separator, rather than pinning
+    // bytes that would make the message wrong for the reader it is written for.
+    // Contrast a module's *name* in a diagnostic, which keeps the spelling the
+    // author wrote (`modules::directory_text`): that one is matched against the
+    // author's own text, this one is typed at a prompt.
+    let shape = said.replace('\\', "/");
+    assert!(shape.starts_with("wrote build/"), "{said}");
+    assert!(shape.trim_end().trim_end_matches(".exe").ends_with("/00first"), "{said}");
     // And the path it names exists and runs.
     let path = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."))
         .join(said.trim_start_matches("wrote ").trim_end());
@@ -755,6 +781,9 @@ fn a_wrong_pointer_return_is_a_diagnostic_not_an_internal_error() {
 #[test]
 fn an_enum_returning_extern_needs_no_unary_plus() {
     let out = heroes(&["build", "examples/curl/main.hero"]);
+    if machine_lacks_the_library(&out) {
+        return;
+    }
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert_eq!(
         code(&out),
@@ -806,6 +835,9 @@ fn the_specs_own_ffi_example_opens_a_database() {
     std::fs::write(&path, program).expect("the program is written");
 
     let out = heroes(&["run", &path.display().to_string()]);
+    if machine_lacks_the_library(&out) {
+        return;
+    }
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert_eq!(code(&out), 0, "the spec's own example must compile and run:\n{stderr}");
     // `0` is `SQLITE_OK`. `21` is `SQLITE_MISUSE`, which is what a missing `@`
@@ -863,6 +895,9 @@ fn a_c_object_is_not_a_constant() {
 #[test]
 fn a_misspelled_extern_name_says_the_header_has_no_such_name() {
     let out = heroes(&["build", "tests/golden/fixedbugs/ffi-unknown-name.hero"]);
+    if machine_lacks_the_library(&out) {
+        return;
+    }
     assert_eq!(code(&out), 1, "exit 1: the input has diagnostics");
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("error[ffi_unknown_name]"), "{stderr}");
@@ -890,6 +925,9 @@ fn a_misspelled_extern_name_says_the_header_has_no_such_name() {
 #[test]
 fn sqlite_opens_queries_and_closes_with_no_shim() {
     let out = heroes(&["run", "examples/sqlite/main.hero"]);
+    if machine_lacks_the_library(&out) {
+        return;
+    }
     assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert_eq!(stdout, "rows: 3\nlongest: 6\n", "{stdout}");
@@ -923,6 +961,9 @@ fn exit_forwards_the_programs_own_status() {
 #[test]
 fn libcurl_takes_a_variadic_and_returns_an_enum() {
     let out = heroes(&["run", "examples/curl/main.hero"]);
+    if machine_lacks_the_library(&out) {
+        return;
+    }
     assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.starts_with("libcurl: libcurl/"), "{stdout}");
@@ -1051,6 +1092,9 @@ fn the_optimisation_level_is_a_flag_with_the_verbs_default() {
 #[test]
 fn fixedbugs_a_missing_link_is_the_authors_error_not_the_compilers() {
     let out = heroes(&["build", "tests/golden/fixedbugs/ffi-missing-link.hero"]);
+    if machine_lacks_the_library(&out) {
+        return;
+    }
     let said = String::from_utf8_lossy(&out.stderr).into_owned();
     // Exit 1: the input has a diagnostic. 2 would say the tool could not run.
     assert_eq!(code(&out), 1, "{said}");

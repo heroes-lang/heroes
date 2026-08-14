@@ -73,6 +73,28 @@ pub fn load(path: &str) -> Result<Source, String> {
     Ok(load_text(path, root_text))
 }
 
+/// The root's own directory text — everything up to and including the last
+/// separator the **author wrote**, or `""` for a bare file name.
+///
+/// A sibling module's name is built with this rather than through `Path::join`,
+/// and the difference only shows on Windows: `join` inserts the platform's
+/// preferred separator, so a root spelled `examples/calculator/main.hero` on the
+/// command line produced sibling names spelled `examples\calculator\lex.hero`.
+/// One output then named one directory in two ways — the root as the author typed
+/// it, the modules as `Path` prefers them — and a diagnostic is read by tools as
+/// well as people (§4.17, CLAUDE.md §8). Found by the third CI leg, 2026-08-14.
+///
+/// The filesystem is still asked through a real `Path`, which accepts either
+/// separator on every platform this compiler builds for. This function decides
+/// only what the *name* looks like, and it decides it from the value in hand:
+/// this path's own text (CLAUDE.md §11).
+fn directory_text(path: &str) -> &str {
+    match path.rfind(['/', '\\']) {
+        Some(at) => &path[..=at],
+        None => "",
+    }
+}
+
 /// The same, with the root's text supplied rather than read.
 ///
 /// It exists for `heroes mutate`, which changes one byte of a file and asks the
@@ -110,7 +132,7 @@ pub fn load_text(path: &str, root_text: String) -> Source {
             };
             seen.push(module.clone());
             files.push(InputFile {
-                name: candidate.display().to_string(),
+                name: format!("{}{module}.hero", directory_text(path)),
                 module,
                 text,
                 is_library: false,
