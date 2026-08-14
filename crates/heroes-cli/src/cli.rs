@@ -75,6 +75,18 @@ pub struct Flag {
     /// `--include A --include B` is a **wrong build** rather than a failed one,
     /// which is what design.md §1.12 forbids.
     pub repeatable: bool,
+    /// Whether the value must name a directory that exists.
+    ///
+    /// **The one place this parser looks at the machine**, and it is deliberate.
+    /// Everything else here is a fact about argv, but a search path that names
+    /// nothing is the failure clang is *silent* about (panel 056's findings), and
+    /// silence is what makes it survive being committed to a script or a CI file.
+    /// It is checked here rather than nearer clang because a missing directory is
+    /// **a bad flag** — §10's exit 2, *the tool could not run* — and not a
+    /// diagnostic about the program, which keeps §7's exit-1 narrowing intact: every
+    /// exit-1 class recovers a name *this program declared* `extern`, and a
+    /// directory is not a declaration.
+    pub directory: bool,
 }
 
 pub struct Command {
@@ -207,6 +219,15 @@ pub fn parse(args: &[String]) -> Result<Invocation, String> {
                 } else {
                     None
                 };
+                if let (true, Some(path)) = (known.directory, value.as_deref()) {
+                    if !std::path::Path::new(path).is_dir() {
+                        return Err(format!(
+                            "`{arg} {path}` names no directory on this machine — clang searches it \
+                             in silence and builds against whatever header it finds elsewhere, so \
+                             this is refused here rather than discovered as a wrong answer"
+                        ));
+                    }
+                }
                 if known.repeatable || !flags.iter().any(|(f, _)| *f == known.spelling) {
                     flags.push((known.spelling.clone(), value));
                 }

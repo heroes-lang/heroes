@@ -1,0 +1,39 @@
+# fixedbugs, 2026-08-15 (panel 056's findings; author decision in `/decide`).
+#
+# SYMPTOM: `extern function malloc(size: i64) -> ptr` — the first thing anybody
+# binds — exited **2** with raw clang output under `internal error: compiling the
+# generated C failed`, naming a file under `build/<hash>/` and blaming the
+# compiler for a declaration the author had written. `u64` binds `malloc`
+# correctly, so the language could express the right program and only the
+# diagnostic could not.
+#
+# CAUSE: `emit/ffi_narrowed.rs` mapped C types to Heroes widths through a
+# **table**, and `long`/`unsigned long` were deliberately absent from it because
+# they are 64 bits on Darwin and Linux and 32 on Windows — no tabled string is
+# right on three legs. That correction was right about the table and wrong about
+# the question: a missing row makes the class decline, and declining sends the
+# failure to §7's exit-2 rule, which says the compiler is wrong.
+#
+# FIX: the width stopped being a constant. `word_width_bits()` reads
+# `size_of::<c_ulong>()` — Rust's name for the same C type clang is about to
+# compile, on the same machine for the same target — so the answer is a fact about
+# the value in hand rather than a premise about which platforms exist (CLAUDE.md
+# §11). The note carries the portability half: which width this target uses, and
+# which the other one does. The fix stays `guess`; a portable program wants a
+# different answer from this machine's, and §8 lets no machine apply that choice.
+#
+# The premise that this compiler and clang agree about `unsigned long` is asserted
+# by `the_word_width_this_compiler_claims_is_the_one_clang_uses`, which fires the
+# day a `--target` flag lands.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a_word_width_parameter_is_the_authors_error_not_the_compilers`.
+
+extern "stdlib.h"
+    function malloc(size: i64) -> ptr    #~ ffi_parameter_type
+    function free(p: ptr)
+
+function main()
+    p = malloc(8)
+    free(p)
+    print("unreachable")

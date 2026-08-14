@@ -17,6 +17,24 @@ fn heroes(args: &[&str]) -> Output {
         .expect("the heroes binary runs")
 }
 
+/// The same, against a runtime tree of this test's own.
+///
+/// **For the one test that must edit the runtime.** `cargo test` runs these in
+/// parallel and every other build reads `runtime/`, so a test that writes there is
+/// racing every sibling that compiles — and `std::fs::write` truncates before it
+/// writes, so a sibling can read a half-file. `HEROES_RUNTIME` is the existing way
+/// to say where the runtime is (`toolchain.rs::find` looks there first), which
+/// turns a shared mutable file into a private one and removes the race rather than
+/// narrowing it.
+fn heroes_with_runtime(runtime: &std::path::Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_heroes"))
+        .current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."))
+        .env("HEROES_RUNTIME", runtime)
+        .args(args)
+        .output()
+        .expect("the heroes binary runs")
+}
+
 /// Whether the compiler said this machine does not have the library, in which case
 /// the test that follows is not a verdict about the compiler.
 ///
@@ -65,6 +83,84 @@ fn a_parameter_wider_than_the_header_is_the_authors_error() {
     assert!(!said.contains("internal error"), "it blamed the compiler:\n{said}");
     assert!(!said.contains("build/"), "it sent the reader to generated C:\n{said}");
     assert!(!said.contains("hero_ffi_probe"), "it showed the probe:\n{said}");
+}
+
+/// A parameter whose C type is the machine's **word** is the author's mistake too,
+/// and used to be the compiler's (author decision 2026-08-15, `/decide`).
+///
+/// `malloc` is the first thing anybody binds, and declaring its `size_t` as `i64`
+/// exited 2 with raw clang output: `long` and `unsigned long` were absent from the
+/// spelling table on the ground that no *tabled* string is right on three legs, and
+/// a missing row makes the class decline into §7's exit-2 rule.
+///
+/// What this pins is the half a width table cannot have: the note names **which
+/// target** the proposed width is for. Without that sentence the diagnostic would
+/// be telling a reader on Windows to write `u64` for a 32-bit parameter, which is
+/// the silent widening the class exists to prevent, arriving through the fix.
+#[test]
+fn a_word_width_parameter_is_the_authors_error_not_the_compilers() {
+    let out = heroes(&["build", "tests/golden/fixedbugs/ffi-word-width.hero"]);
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    if machine_lacks_the_library(&out) {
+        return;
+    }
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics\n{said}");
+    assert!(said.contains("error[ffi_parameter_type]"), "{said}");
+    assert!(said.contains("`size` of `malloc`"), "the author's own parameter name:\n{said}");
+    assert!(said.contains("`unsigned long`"), "the header's type:\n{said}");
+    assert!(
+        said.contains("the platform's word"),
+        "the note must say the width is the target's, not the header's:\n{said}"
+    );
+    assert!(
+        said.contains("Windows"),
+        "and name the target where the answer differs:\n{said}"
+    );
+    // §7's exit-2 rule is what this class exists to keep the author out of.
+    assert!(!said.contains("internal error"), "it blamed the compiler:\n{said}");
+    assert!(!said.contains("build/"), "it sent the reader to generated C:\n{said}");
+    assert!(!said.contains("hero_ffi_probe"), "it showed the probe:\n{said}");
+}
+
+/// **The premise `emit/ffi_narrowed.rs` rests on, with the test that fires when it
+/// dies** (CLAUDE.md §11).
+///
+/// `word_width_bits()` reads `size_of::<c_ulong>()` and hands the answer to an
+/// author as the width to declare. That is sound only while this compiler and the
+/// clang it drives are building for the same target — true today because `heroes`
+/// has no `--target` and cross-compilation is not on the argv table.
+///
+/// So the claim is not *"`unsigned long` is 64 bits"* — it is *"whatever Rust says
+/// `c_ulong` is, clang agrees"*. This builds a real binding at that width through
+/// the real toolchain: `strlen` takes a `size_t`-shaped result and `memset` takes an
+/// `unsigned long` parameter, so a disagreement is a `ffi_parameter_type` or an
+/// `ffi_return_type` rather than a silent pass. The day a `--target` flag lands,
+/// this goes red **in the milestone that adds it**.
+#[test]
+fn the_word_width_this_compiler_claims_is_the_one_clang_uses() {
+    let bits = std::mem::size_of::<std::os::raw::c_ulong>() * 8;
+    let dir = std::env::temp_dir().join(format!("heroes-word-width-{bits}"));
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    let source = dir.join("word.hero");
+    std::fs::write(
+        &source,
+        format!(
+            "extern \"string.h\"\n    function strlen(s: cstr) -> u{bits}\n\nfunction main()\n    print(\"len\")\n"
+        ),
+    )
+    .expect("writing the probe program");
+    let out = heroes(&["build", source.to_str().expect("a utf-8 path"), "-o", dir.join("word").to_str().expect("a utf-8 path")]);
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    if machine_lacks_the_library(&out) {
+        return;
+    }
+    assert_eq!(
+        code(&out),
+        0,
+        "this compiler says C's `unsigned long` is {bits} bits and clang disagreed — \
+         `emit/ffi_narrowed.rs::word_width_bits` is now proposing a width to authors \
+         that the C it emits does not use:\n{said}"
+    );
 }
 
 /// The same class from the other side: a **sign** the header does not have.
@@ -460,15 +556,24 @@ fn a_hole_reports_what_belongs_there_and_the_build_exits_one() {
 /// panel 020 measured the hazard before the key covered the runtime at all.
 ///
 /// The test edits a part (a comment, so behaviour cannot change), rebuilds, and
-/// asserts a new object appeared. It restores the file before asserting anything,
-/// so a failure cannot leave the tree dirty.
+/// asserts a new object appeared.
+///
+/// **It edits a copy, and that is not tidiness** (2026-08-15). It used to write
+/// `runtime/parts/sort.c` in the real tree and restore it afterwards, which raced
+/// every sibling test that compiles — they all read `runtime/`, and `fs::write`
+/// truncates before it writes. It failed once under `cargo test`'s parallelism with
+/// `146 -> 146`, passed alone, and passed on the next full run: the signature of a
+/// race rather than of a broken cache key. `HEROES_RUNTIME` makes the file private
+/// to this test, which removes the race instead of making it rarer — and this is the
+/// second time this repository has paid for an intermittent test caused by two
+/// processes sharing one path (`DECIDE.md`, the `-O2` abort flake of 2026-08-13).
 #[test]
 fn editing_a_runtime_part_invalidates_the_cached_object() {
-    let part = std::path::Path::new(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../runtime/parts/sort.c"
-    ))
-    .to_path_buf();
+    let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    let runtime = root.join("build/cache-key-runtime");
+    let _ = std::fs::remove_dir_all(&runtime);
+    copy_tree(&root.join("runtime"), &runtime);
+    let part = runtime.join("parts/sort.c");
     let objects = || {
         let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../build"));
         let Ok(entries) = std::fs::read_dir(dir) else { return 0 };
@@ -479,7 +584,10 @@ fn editing_a_runtime_part_invalidates_the_cached_object() {
     };
 
     let original = std::fs::read_to_string(&part).expect("the part is where runtime.c includes it");
-    assert_eq!(code(&heroes(&["build", "tests/golden/run/builtins.hero"])), 0);
+    assert_eq!(
+        code(&heroes_with_runtime(&runtime, &["build", "tests/golden/run/builtins.hero"])),
+        0
+    );
     let before = objects();
 
     // The probe must be unique per run: `build/` persists between test runs, so a
@@ -491,16 +599,30 @@ fn editing_a_runtime_part_invalidates_the_cached_object() {
         .as_nanos();
     std::fs::write(&part, format!("{original}\n/* cache-key probe {stamp} */\n"))
         .expect("writable");
-    let built = heroes(&["build", "tests/golden/run/builtins.hero"]);
+    let built = heroes_with_runtime(&runtime, &["build", "tests/golden/run/builtins.hero"]);
     let after = objects();
-    std::fs::write(&part, &original).expect("restored");
+    // No restore: the tree this edited is a copy, so there is nothing to put back
+    // and nothing a failure can leave dirty.
 
     assert_eq!(code(&built), 0, "the probe must not break the build");
     assert!(
         after > before,
-        "editing runtime/parts/sort.c reused the cached object ({before} -> {after}): \
+        "editing parts/sort.c reused the cached object ({before} -> {after}): \
          the key hashes runtime.c and heroes_runtime.h only"
     );
+}
+
+/// Copy a directory tree, for the one test that needs a runtime of its own.
+fn copy_tree(from: &std::path::Path, to: &std::path::Path) {
+    std::fs::create_dir_all(to).expect("a writable destination");
+    for entry in std::fs::read_dir(from).expect("a readable source").flatten() {
+        let target = to.join(entry.file_name());
+        if entry.path().is_dir() {
+            copy_tree(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), &target).expect("a copied file");
+        }
+    }
 }
 
 /// `heroes test` — §4.18's "run only when asked for", with the asking.
@@ -1234,14 +1356,66 @@ fn a_search_path_reaches_clang_as_one_argv_word() {
         "extern \"oneword.h\"\n    constant ONE_WORD: i64\n\nfunction main()\n    print(ONE_WORD)\n",
     )
     .expect("the program");
+    //
+    // **The filler used to be `/no/such/directory` and now must exist**, because a
+    // search path that names nothing is refused at the argv layer since 2026-08-15.
+    // An empty directory does the same job: it carries no `oneword.h`, so a build
+    // that kept only the first `--include` still fails.
+    let empty = root.join("build/one-word-empty");
+    std::fs::create_dir_all(&empty).expect("a writable directory");
     let out = heroes(&[
         "run",
         &program.to_string_lossy(),
         "--include",
-        "/no/such/directory",
+        &empty.to_string_lossy(),
         "--include",
         &headers.to_string_lossy(),
     ]);
     assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
     assert_eq!(String::from_utf8_lossy(&out.stdout), "91\n");
+}
+
+/// A search path that names nothing is refused **here**, because clang is silent
+/// about it (panel 056's findings; author decision 2026-08-15).
+///
+/// `clang -Wall -I/no/such/dir` says nothing at all, so an invocation pinning one
+/// machine's prefix — committed to a script, a CI file, a README — builds clean on
+/// another machine against whatever header it finds elsewhere. That is §4.19's
+/// oracle **swapped**, not weakened: every `extern` in the program was checked
+/// against a header nobody chose.
+///
+/// **Why it is exit 2 and not a diagnostic.** `-Wmissing-include-dirs` was measured
+/// first and refused: added to `FLAGS` it exits 2 through §7's *"the compiler is
+/// wrong"* path, which a judge reproduced on a program with **no `extern` at all**.
+/// Classifying it exit 1 would need a fifth narrowing, and §7's current one is that
+/// every exit-1 class recovers a name *this program declared* `extern` — a directory
+/// is not a declaration. A bad flag is what §10 already calls exit 2.
+///
+/// **What this deliberately does not reach is `CPATH`**, and that is the same line
+/// panel 055 drew when these flags were adopted: an environment variable is not an
+/// artifact a program can carry, so it is the machine's configuration and not the
+/// program's. The falsifier, per §12: a wrong header reaching a build through a
+/// missing directory that this check does not see.
+#[test]
+fn a_search_path_that_names_nothing_is_refused_before_clang_sees_it() {
+    for flag in ["--include", "--library"] {
+        let out = heroes(&["build", "examples/gallery/00-first.hero", flag, "/no/such/directory"]);
+        let said = String::from_utf8_lossy(&out.stderr).into_owned();
+        assert_eq!(code(&out), 2, "a bad flag is exit 2 (§10)\n{said}");
+        assert!(said.contains("names no directory"), "{said}");
+        assert!(said.contains("in silence"), "it must say why clang cannot catch it:\n{said}");
+    }
+    // A directory that exists is accepted even when it holds nothing — the check
+    // asks whether the path names a directory, never what is in it. Anything more
+    // would be a premise about what the author put there (CLAUDE.md §11).
+    let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    let empty = root.join("build/empty-search-path");
+    std::fs::create_dir_all(&empty).expect("a writable directory");
+    let out = heroes(&[
+        "build",
+        "examples/gallery/00-first.hero",
+        "--include",
+        &empty.to_string_lossy(),
+    ]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
 }

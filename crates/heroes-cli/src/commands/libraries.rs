@@ -112,6 +112,29 @@ pub(super) fn in_the_c_runtime(library: &str) -> bool {
 /// `-D` and `-U` define and undefine a preprocessor macro, and neither names a
 /// file, loads anything, or writes anything. That is the property the list is
 /// about — not the flag's popularity.
+///
+/// **The list is deliberately not extended to what a library does at run time**
+/// (author decision 2026-08-15, closing panel 055's open finding). `pkg-config
+/// --libs sdl2` answers `-lSDL2main`, and **`SDL2main` replaces the program's
+/// `main`** with one that initialises Cocoa: eleven corpus programs in three
+/// configurations each became windowed applications. `-lSDL2main` names no file,
+/// loads nothing and writes nothing *at build time*, so every question this list
+/// asks returns *safe* — correctly. The list is not weak here, it is **blind**
+/// here: what a library does after linking is not a property of the flag string,
+/// and no allow-list reading flags can recover it. That is the same shape as
+/// CLAUDE.md §7's argument about the ABI stamp and a decoy runtime — a guard is
+/// not widened to cover a class it cannot see, because the widening buys nothing
+/// and makes the guard read as if it did.
+///
+/// Refusing `*main` by name was the alternative and is refused on CLAUDE.md §11:
+/// a rule keyed on a naming convention is a premise about the world, and it
+/// expires in silence while its comment goes on reading as correct.
+///
+/// **The falsifier**, per CLAUDE.md §12 — a refusal carries a feature's burden of
+/// proof: a library whose linked-in behaviour breaks a corpus program *and* that
+/// the corpus timeout does not catch. The timeout is the instrument that answers
+/// this class, because it asks about the program's behaviour rather than about the
+/// flag's spelling, and it catches every future hang instead of this one.
 const ALLOWED: [&str; 5] = ["-D", "-U", "-I", "-L", "-l"];
 const ALLOWED_WITH_ARGUMENT: [&str; 2] = ["-framework", "-F"];
 

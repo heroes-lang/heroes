@@ -70,8 +70,14 @@ distance from self-hosting and must not ratchet up.
 
 ## 6. Nim: copy the surface, never the implementation
 `importc`-style FFI, per-module cache, `nim r` → `heroes run`: yes.
-Macros, templates, effect systems, style-insensitive identifiers, a separate
-package binary: never.
+Macros, templates, effect systems, style-insensitive identifiers: never.
+**The list used to end *"a separate package binary: never"* and that clause is
+retired** (author decision 2026-08-15, panel 056's historian). It was a bare rule
+with one citation and no argument, and its implied contrast was **factually wrong**:
+nimble ships *with* Nim, so the thing it named as separate is not. Worse, it was the
+rule a reader would reach for first to refuse a project file, and it does not reach
+one — a file is not a binary. What it was trying to say is §10's, is already there,
+and is there with a reason: **never a second binary**.
 
 ## 7. Generated-C rules
 C11; `int64_t`/`double`/`bool`; `#include "heroes_runtime.h"` (clang
@@ -193,6 +199,27 @@ the input has diagnostics · 2 the tool could not run. Inspection is `--dump-<st
 (§3.5's own list); `--json` says *how* to print, never *what*; a mutating flag is
 `--in-place`; `--emit-c` is an output, not a dump. One argv table parses and
 prints the help, so they cannot disagree.
+
+**There is no fourth slot, because there is no fourth input class** (author
+decision 2026-08-15, recording what panel 056 adopted). The three shapes above all
+answer *what does this capability do to the inputs the tool already has* — a `.hero`
+file, argv, and the machine's environment. A **per-project file** is none of them:
+it is a new class of input, and §10 as written does not admit one. That is the rule,
+and it refuses a project file more cleanly than design.md Part 6 could — 056 refused
+its Part 6 row precisely because the falsifier such a row owes becomes constructible
+the day `heroes add` exists, which §3.5 already promises. Two things follow and both
+are the point: **the refusal is not permanent**, it is conditional on 056's three
+return conditions (one key not two · no string in the file that also appears in a
+`.hero` · one named binding `package` plus one command line cannot build), which are
+its only amendment path; and §9's `#~` invariant is *evidence for the rule rather
+than a second job* — the golden harness collects `.hero` only, so a new input class
+would arrive with its diagnostics exempt from the one invariant a regenerator cannot
+forge, which panel 020's historian already refused for `unsupported`.
+
+**And never a second binary** — which is what CLAUDE.md §6's retired *"a separate
+package binary"* clause was reaching for, without the false premise it carried
+(nimble ships *with* Nim, so it was never the contrast that clause claimed).
+`heroes add`/`heroes fetch` are subcommands when they arrive (design.md:637).
 
 ## 11. Language and conventions
 **Everything written is English** — code, comments, docs, commits, verdicts.

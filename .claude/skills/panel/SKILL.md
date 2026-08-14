@@ -65,6 +65,23 @@ is a full panel.
    how the difference showed. A judge's measurement is worth having and its
    working tree is not.
 
+   **The copy is not sufficient on its own, and this is the second time that has
+   been paid for** (author decision 2026-08-15, panel 056's process notes). Say
+   **`rm -rf target build` after the copy**: a copied `target/` leaves
+   `env!("CARGO_MANIFEST_DIR")` pointing at the **real** repository, so a judge's
+   golden run silently measures the tree it was told not to touch. Panel 056's
+   compiler-engineer found this in its own first run, discarded it and rebuilt from
+   scratch — which is the only reason it is known rather than a wrong number in a
+   verdict.
+
+   **And the rule binds the coordinator during a sitting.** In panel 056 the
+   coordinator put `-Werror=missing-include-dirs` into `FLAGS` between 23:37 and
+   23:45 while judges were measuring, and one of them observed the effect from
+   inside its own run. It was reverted before any commit and nothing landed wrong,
+   but a rule that binds judges and not the seat that convened them has its hole
+   exactly where the most privileged actor stands. The working tree is frozen from
+   the moment the briefs go out until the synthesis is written.
+
 4. **Synthesize** into `docs/panel/NNN-<topic>.md`:
    - the proposal, verbatim
    - the verdict table (verdict · section · cost/delta · prediction ·

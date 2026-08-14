@@ -12,7 +12,7 @@
 use super::{Command, Flag, Operand, Tag};
 
 fn flag(spelling: &str, what: &str) -> Flag {
-    Flag { spelling: spelling.to_string(), what: what.to_string(), value: false, repeatable: false }
+    Flag { spelling: spelling.to_string(), what: what.to_string(), value: false, repeatable: false, directory: false }
 }
 
 /// A flag that takes the next argument. `-o` is the first one the surface has, and
@@ -20,7 +20,7 @@ fn flag(spelling: &str, what: &str) -> Flag {
 /// … -o A`, `--emit-c -o B.c`, `--emit-c -o C.c`, `diff B.c C.c`. The C leg would
 /// compose from a shell redirect; the *binary* leg cannot be redirected at all.
 fn valued(spelling: &str, what: &str) -> Flag {
-    Flag { spelling: spelling.to_string(), what: what.to_string(), value: true, repeatable: false }
+    Flag { spelling: spelling.to_string(), what: what.to_string(), value: true, repeatable: false, directory: false }
 }
 
 /// A valued flag that may be written more than once, each time meaning one more.
@@ -52,8 +52,25 @@ fn valued(spelling: &str, what: &str) -> Flag {
 /// a heap-buffer-overflow writing 64 bytes into a 16-byte region (design.md §1.12).
 /// `package` stays the shape to reach for first — it asks one question of one `.pc`
 /// and cannot skew — and these are for the library that has no `.pc`.
-fn repeated(spelling: &str, what: &str) -> Flag {
-    Flag { spelling: spelling.to_string(), what: what.to_string(), value: true, repeatable: true }
+///
+/// **This constructor was called `repeated`, and the name was the second defect**
+/// (panel 056's findings; author decision 2026-08-15). A search path is repeatable
+/// *because* a search list has more than one entry, and its value must name a
+/// **directory** *because* that is what a search path is — two properties of one
+/// thing. Naming the constructor after the first made the second invisible, and
+/// nothing checked it: `clang -Wall -I/no/such/dir` says **nothing at all**, so a
+/// committed invocation pinning one machine's prefix builds clean on another
+/// **against a different header than the declarations were checked against** —
+/// §4.19's oracle swapped rather than weakened, and the half of panel 055's skew
+/// that survives being committed.
+fn search_path(spelling: &str, what: &str) -> Flag {
+    Flag {
+        spelling: spelling.to_string(),
+        what: what.to_string(),
+        value: true,
+        repeatable: true,
+        directory: true,
+    }
 }
 
 pub fn commands() -> Vec<Command> {
@@ -100,8 +117,8 @@ pub fn commands() -> Vec<Command> {
                 flag("--dump-ir", "print the lowered three-address IR and stop"),
                 flag("--emit-c", "print the generated C11 and stop, instead of compiling it"),
                 valued("-o", "write the artifact here instead of under build/"),
-                repeated("--include", "search this directory for an `extern` group's header; may repeat"),
-                repeated("--library", "search this directory for a `link` library; may repeat"),
+                search_path("--include", "search this directory for an `extern` group's header; may repeat"),
+                search_path("--library", "search this directory for a `link` library; may repeat"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
                 flag("-O0", "compile at -O0 (the default here)"),
                 flag("-O2", "compile at -O2"),
@@ -114,8 +131,8 @@ pub fn commands() -> Vec<Command> {
             operand: Operand::File,
             flags: vec![
                 valued("-o", "keep the binary here as well as running it"),
-                repeated("--include", "search this directory for an `extern` group's header; may repeat"),
-                repeated("--library", "search this directory for a `link` library; may repeat"),
+                search_path("--include", "search this directory for an `extern` group's header; may repeat"),
+                search_path("--library", "search this directory for a `link` library; may repeat"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
                 flag("-O0", "compile at -O0"),
                 flag("-O2", "compile at -O2 (the default here)"),
@@ -127,8 +144,8 @@ pub fn commands() -> Vec<Command> {
             name: "test".to_string(),
             operand: Operand::File,
             flags: vec![
-                repeated("--include", "search this directory for an `extern` group's header; may repeat"),
-                repeated("--library", "search this directory for a `link` library; may repeat"),
+                search_path("--include", "search this directory for an `extern` group's header; may repeat"),
+                search_path("--library", "search this directory for a `link` library; may repeat"),
                 flag("--sanitize", "compile with -fsanitize=address,undefined"),
                 flag("-O0", "compile at -O0 (the default here)"),
                 flag("-O2", "compile at -O2"),

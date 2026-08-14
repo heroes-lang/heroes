@@ -71,7 +71,8 @@ pub(super) fn parameter_width(
     // `'int64_t' (aka 'long long') to 'int'` — the header's type is the last
     // quoted name on the line, and it is what the parameter should be declared as.
     let c_type = rest.rsplit('\'').nth(1)?;
-    let heroes_type = heroes_spelling(c_type)?;
+    let spelled = spelling(c_type)?;
+    let heroes_type = &spelled.heroes;
     let what = if kind == NARROWED { "wider than" } else { "a different sign from" };
     let (function, name) = extern_at_line(program, ast, src, at.0, at.1)?;
     let parameters = extern_probe::parameter_list(function, checked)?;
@@ -92,29 +93,35 @@ pub(super) fn parameter_width(
     // IR — so the fix points at the declaration and says what to write. A `guess`
     // is not applied by machine, so a span that names the line is enough.
     let ty_span = span;
-    Some(
-        Diagnostic::new(
-            "ffi_parameter_type",
-            format!(
-                "{which} of `{name}` is declared {what} the header's `{c_type}` — clang read the header, and C would convert the value in silence"
-            ),
-            span,
-        )
-        .with_note(format!(
-            "§4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `{heroes_type}`, and convert at the call where the value is known to fit"
-        ))
-        .with_fix(Fix {
-            title: format!("declare it `{heroes_type}`"),
-            replacement: heroes_type.to_string(),
-            // A **guess**, and deliberately: clang names the header's C type and
-            // this maps it to the Heroes type of that width, but a `long` is 64
-            // bits on one platform and 32 on another (panel 047's class), so the
-            // spelling that is right here is not always right elsewhere. Only a
-            // `certain` fix is machine-applicable (CLAUDE.md §8).
-            span: ty_span,
-            certainty: Certainty::Guess,
-        }),
+    let mut diagnostic = Diagnostic::new(
+        "ffi_parameter_type",
+        format!(
+            "{which} of `{name}` is declared {what} the header's `{c_type}` — clang read the header, and C would convert the value in silence"
+        ),
+        span,
     )
+    .with_note(format!(
+        "§4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `{heroes_type}`, and convert at the call where the value is known to fit"
+    ));
+    // A **second** note rather than a longer first one: the width rule is the
+    // same for every C type, and this says something extra about *this* one —
+    // that the answer above is this target's and not the header's.
+    if let Some(caveat) = &spelled.caveat {
+        diagnostic = diagnostic.with_note(caveat.clone());
+    }
+    Some(diagnostic.with_fix(Fix {
+        title: format!("declare it `{heroes_type}`"),
+        replacement: heroes_type.clone(),
+        // A **guess**, and deliberately — for two different reasons depending on
+        // the type. For a fixed-width C type the spelling is exact and the guess
+        // is about *intent*: the author may have meant to convert at the call
+        // rather than to change the declaration. For a word-width type it is also
+        // about the target, and the note above says so. Only a `certain` fix is
+        // machine-applicable (CLAUDE.md §8), and neither reading may be applied
+        // for the author.
+        span: ty_span,
+        certainty: Certainty::Guess,
+    }))
 }
 
 /// `file:line:col: …` split off the head of a clang report, with the file kept
@@ -159,32 +166,97 @@ fn extern_at_line<'a>(
     })
 }
 
+/// A Heroes type to declare a parameter as, and what the reader must know about
+/// how this answer was reached.
+struct Spelling {
+    heroes: String,
+    /// Present when the C type's width is the **platform's** rather than a width
+    /// the header chose, so the note must say which target this answer is for.
+    caveat: Option<String>,
+}
+
 /// The Heroes type a C type of this width and signedness is declared as. The set
 /// is `IntKind`'s, and a C type outside it means the narrowing is one this
 /// language cannot currently express — which is a gap to report, not a fix to
 /// propose, so the class stays silent rather than guessing.
-fn heroes_spelling(c_type: &str) -> Option<&'static str> {
-    Some(match c_type {
-        "int" => "i32",
-        "short" => "i16",
-        "signed char" | "char" => "i8",
-        "unsigned int" => "u32",
-        "unsigned short" => "u16",
-        "unsigned char" => "u8",
-        // **`long` is deliberately absent, and so is `unsigned long`.** They are
-        // 64 bits on Darwin and Linux and 32 on Windows, so there is no spelling
-        // this function could return that is right on all three legs — and a
-        // wrong one here is worse than silence, because it would tell the author
-        // to write `u32` for a 64-bit parameter and the widening back would be
-        // invisible. The first draft of this table did exactly that; the fix was
-        // marked `guess` and the justification named the platform variance, which
-        // is CLAUDE.md §11's failure mode written out: a premise about the world,
-        // acknowledged and then shipped anyway. Panel 052's compiler-engineer
-        // measured it on an `unsigned long` parameter.
-        //
+///
+/// **`long` and `unsigned long` used to be absent, and their absence was the
+/// defect** (author decision 2026-08-15, `/decide`). They are 64 bits on Darwin
+/// and Linux and 32 on Windows, so no *tabled* spelling is right on three legs —
+/// and the first draft tabled one anyway, marked the fix `guess`, and named the
+/// platform variance in the justification, which is CLAUDE.md §11's failure mode
+/// written out. Declining was the right correction to that and the wrong answer to
+/// the question: it left `function malloc(size: i64) -> ptr` exiting **2** with raw
+/// clang output, blaming the compiler for a declaration the author wrote — while
+/// `u64` binds `malloc` correctly, so the language could express it and only the
+/// diagnostic could not.
+///
+/// The answer is that a width is not a constant to be tabled. It is a question
+/// about the target, and `word_width_bits` asks it.
+fn spelling(c_type: &str) -> Option<Spelling> {
+    let fixed = |heroes: &str| {
+        Some(Spelling { heroes: heroes.to_string(), caveat: None })
+    };
+    match c_type {
+        "int" => fixed("i32"),
+        "short" | "short int" => fixed("i16"),
+        "signed char" | "char" => fixed("i8"),
+        "unsigned int" => fixed("u32"),
+        "unsigned short" | "unsigned short int" => fixed("u16"),
+        "unsigned char" => fixed("u8"),
+        // **`long long` is the one C integer that is 64 bits everywhere**, by
+        // C99's own floor (`LLONG_MIN` ≤ −(2^63−1)) and by every ABI that has
+        // shipped since. It carries no caveat because there is nothing about the
+        // target left to say. It was missing from the table for the same reason
+        // `long` was: nobody had bound a function that takes one.
+        "long long" | "long long int" => fixed("i64"),
+        "unsigned long long" | "unsigned long long int" => fixed("u64"),
+        // `size_t` and `ssize_t` need no rows: clang reports the **canonical**
+        // type, so `malloc`'s parameter arrives here as `unsigned long` and not
+        // as `size_t`. Verified on the message this class was built from.
+        "long" | "long int" => Some(word_width('i')),
+        "unsigned long" | "unsigned long int" => Some(word_width('u')),
         // A C type absent from this table means the class **declines** — clang's
         // own verdict is still printed, and the compiler does not pretend to know
-        // the repair.
-        _ => return None,
-    })
+        // the repair. `float` is the live example (§4.19: `f32` does not exist).
+        _ => None,
+    }
+}
+
+/// The spelling for a C type whose width is the machine's word, with the note
+/// that says so.
+fn word_width(sign: char) -> Spelling {
+    let bits = word_width_bits();
+    let (other, here, there) = if bits == 64 {
+        (32, "Darwin and Linux", "Windows")
+    } else {
+        (64, "Windows", "Darwin and Linux")
+    };
+    Spelling {
+        heroes: format!("{sign}{bits}"),
+        caveat: Some(format!(
+            "C's `long` is the platform's word, not a width the header chose: {bits} bits here ({here}) and {other} on {there}. `{sign}{bits}` is the answer for this target — a program that must build on {there} too declares the width it means there and converts at the call"
+        )),
+    }
+}
+
+/// How wide C's `long` is in the C this compiler is about to emit, in bits.
+///
+/// **Derived, never tabled, and the derivation is the whole point.** `c_ulong` is
+/// Rust's name for the same C type clang is about to compile, and both run on this
+/// machine for this target: `heroes` has no `--target` and cross-compilation is not
+/// on the command surface (CLAUDE.md §10 — one argv table, and it has no such
+/// flag). So this is a fact about the value in hand rather than a premise about
+/// which platforms exist, which is the distinction CLAUDE.md §11 turns on — a fact
+/// about the value cannot expire, and the tabled version expired the moment a third
+/// CI leg arrived.
+///
+/// **The claim, written so it can die loudly**: `size_of::<c_ulong>()` is
+/// `sizeof(unsigned long)` in the emitted C. `the_word_width_this_compiler_claims_is_the_one_clang_uses`
+/// in `crates/heroes-cli/tests/surface.rs` builds a binding at this width through
+/// the real toolchain and fails the day the two disagree — which is the day a
+/// `--target` flag lands, and it will fail *in the milestone that adds it* rather
+/// than in a diagnostic somebody reads six months later.
+fn word_width_bits() -> usize {
+    std::mem::size_of::<std::os::raw::c_ulong>() * 8
 }

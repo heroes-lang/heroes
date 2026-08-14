@@ -67,6 +67,20 @@ project and no code, spec or design file was modified. A `/step`, `/panel`,
 `/learn` or `/decide` session does **not** qualify: each already has its
 artifact — the journal, the panel file, the ticked list — and recording it
 twice is noise.
+
+**One exception, and it is bounded by the reason for the rule** (author decision
+2026-08-15, from `docs/reasoning/004`): a session that *reasons its way to a
+panel* may leave a note **when the note holds what the panel file does not** —
+the path to the question, the inventory it was measured against, the tension that
+produced the proposal. It must hold **neither the proposal nor the verdict**,
+because those are the panel file's and duplicating them is exactly the noise the
+rule forbids. The test is mechanical and reads the two artifacts, not the
+session's intent: if the note can be deleted without losing anything the panel
+file does not already say, it should not have been written.
+
+That is why the exception is a sentence rather than a licence. The rule's reason
+was never *"one session, one artifact"* — it was *"do not record the same thing
+twice"*, and 004 is the case where the two artifacts differ.
 A pure orientation (`/where`, "a che punto siamo?") produces no note: there is
 no resolved question to re-read.
 
