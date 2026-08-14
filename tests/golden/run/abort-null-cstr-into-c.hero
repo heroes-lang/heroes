@@ -23,5 +23,9 @@ extern "string.h"
 function main()
     print("before")
     absent = getenv("HEROES_NO_SUCH_VARIABLE_EXISTS".cstr())
-    _ = strstr(haystack: absent, needle: "y".cstr())
-    print("unreachable")
+    # The result is **used**, not discarded: glibc marks `strstr`
+    # `__attribute_pure__`, so `_ = strstr(…)` is `-Wunused-value` on Linux and
+    # not on Darwin — a warning the harness forbids, and one more fact about this
+    # project that only two platforms together could have told it.
+    if strstr(haystack: absent, needle: "y".cstr()) == nullptr
+        print("unreachable")
