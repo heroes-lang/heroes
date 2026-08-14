@@ -84,7 +84,15 @@ pub fn run(dir: Option<&str>, survivors: bool, operator: Option<&str>) -> Exit {
     if let Some(id) = operator {
         if !OPERATORS.iter().any(|o| o.id == id) {
             let known: Vec<&str> = OPERATORS.iter().map(|o| o.id).collect();
-            eprintln!("error: no operator `{id}`\n  the twelve are: {}", known.join(", "));
+            // **The count is read, never written.** It said "twelve" while there
+            // were thirteen, from the day panel 040's own falsifier arrived as
+            // `boolean-twin` — a number in prose is a premise about the world and
+            // it expires in silence (CLAUDE.md §11).
+            eprintln!(
+                "error: no operator `{id}`\n  the {} are: {}",
+                known.len(),
+                known.join(", ")
+            );
             return Exit::Failed;
         }
     }

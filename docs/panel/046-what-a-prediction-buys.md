@@ -280,3 +280,28 @@ instrument in name only — a corpus, a milestone, or a future harness under a n
 name. If it fires, (b) returns as the fallback with R3's freeze cost. Nothing
 about that check is mechanised, and R4 keeps it that way: the gate reads no
 commit, calls no git, and the engineer's veto fires on any form that makes it.
+
+## R1 amended — 2026-08-14, by author decision
+
+**R1 gains its second half: *and the instrument can produce the observation.***
+
+The rule as adopted required a prediction to name an instrument that **exists** on
+the day of registration. `docs/measurements/007` found the gap that leaves: panel
+040's prediction 2 named `heroes mutate --survivors`, which existed, and asked
+about a substitution **none of the twelve operators could make**. It scored `held`
+over 892 survivor lines without a single one of them being able to falsify it.
+
+That is this sitting's own subject wearing the other face. R2 catches a renewal
+that only moves a date; nothing caught a prediction that only names a tool. Both
+are the same failure — a payment that cannot come due.
+
+The amendment is small and its cost is a sentence: a prediction pays only if the
+named instrument has an **arm for the question**, and where it does not, the arm
+is built or the prediction is registered as an observation and pays nothing.
+`boolean-twin` was built the same day and re-scored 040's prediction at **132
+mutants, 132 killed**.
+
+**What would make this amendment wrong**, per §12 and panel 039: a prediction
+whose instrument plainly has the arm, which nobody can score because building the
+*corpus* it needs is the real cost. R1's second half would then be pushing work
+from the registration onto the scoring, which is the opposite of what it intends.

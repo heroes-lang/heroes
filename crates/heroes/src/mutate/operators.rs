@@ -22,7 +22,7 @@ pub struct Operator {
     pub imitates: &'static str,
 }
 
-pub const OPERATORS: [Operator; 12] = [
+pub const OPERATORS: [Operator; 13] = [
     Operator { id: "swap-args", imitates: "classic LLM argument inversion" },
     Operator { id: "drop-case", imitates: "a forgotten variant case" },
     Operator { id: "forget-at-decl", imitates: "mutability confusion" },
@@ -35,6 +35,7 @@ pub const OPERATORS: [Operator; 12] = [
     Operator { id: "shadow", imitates: "an inner-scope habit" },
     Operator { id: "drop-question", imitates: "forgotten error propagation" },
     Operator { id: "typo-digit", imitates: "a one-digit slip in a number copied from elsewhere" },
+    Operator { id: "boolean-twin", imitates: "`&` for `&&`, the habit C and Java leave behind" },
 ];
 
 /// Every mutant one operator makes from one source.
@@ -58,6 +59,7 @@ pub fn apply(id: &str, name: &str, text: &str) -> Vec<String> {
         "shadow" => edits::shadow(ast, &src),
         "drop-question" => edits::drop_question(ast, &src),
         "typo-digit" => edits_typo::typo_digit(ast, &src),
+        "boolean-twin" => edits::boolean_twin(ast, &src),
         _ => Vec::new(),
     }
 }

@@ -14,7 +14,7 @@
 use crate::source::{Source, Span};
 
 use super::edits_typo::typo;
-use crate::syntax::{Arg, Ast, ExprKind, StmtKind};
+use crate::syntax::{Arg, Ast, BinaryOp, ExprKind, StmtKind};
 
 /// Replace a span with new text.
 pub(super) fn edit(src: &Source, span: Span, replacement: &str) -> String {
@@ -211,4 +211,51 @@ fn line_start(src: &Source, at: u32) -> u32 {
         start -= 1;
     }
     start as u32
+}
+
+/// **`&&` written `&`, and `||` written `|`** — the boolean operator mistaken for
+/// its bitwise twin (§4.14; panel 040's own falsifier, added by author decision
+/// 2026-08-14).
+///
+/// Panel 040 bought the bitwise set with a prediction that **no survivor would
+/// ever be one of these**, and `docs/measurements/007` scored it *held* over 892
+/// survivors — **vacuously**, because none of the twelve operators made the
+/// substitution. A prediction that names a live instrument and an arm that
+/// instrument does not have is the thing panel 046 was convened about, wearing the
+/// other face. This is the arm.
+///
+/// The mutation is the real mistake and not a synthetic one: in C, Java, Go and
+/// Python-with-numpy the two spellings differ by short-circuiting and by nothing
+/// else that a reader sees on the line, so a model that has read those languages
+/// writes `a & b` for `a && b` and the program still type-checks wherever both
+/// sides are the same type. In Heroes it should not: §4.14 makes `&&`/`||` take
+/// `bool` only and the bitwise set `i64` only, so **the two vocabularies do not
+/// overlap** and every one of these mutants should die. That is the claim the
+/// operator exists to test, and the survivor list is where it would be falsified.
+///
+/// The span is the **operator's own**, which the AST does not carry, so it is
+/// found between the two operand spans — a fact about the two expressions in hand
+/// rather than a search of the line (CLAUDE.md §11).
+pub(super) fn boolean_twin(ast: &Ast, src: &Source) -> Vec<String> {
+    let mut out = Vec::new();
+    for expr in &ast.exprs {
+        let ExprKind::Binary { op, left, right } = expr.kind else { continue };
+        let twin = match op {
+            BinaryOp::And => "&",
+            BinaryOp::Or => "|",
+            _ => continue,
+        };
+        let written = if twin == "&" { "&&" } else { "||" };
+        let between = Span {
+            start: ast.exprs[left.0 as usize].span.end,
+            end: ast.exprs[right.0 as usize].span.start,
+        };
+        let Some(at) = src.slice(between).find(written) else { continue };
+        let operator = Span {
+            start: between.start + at as u32,
+            end: between.start + at as u32 + written.len() as u32,
+        };
+        out.push(edit(src, operator, twin));
+    }
+    out
 }

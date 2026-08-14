@@ -201,3 +201,33 @@ fn a_corpus_program_that_does_not_check_is_refused() {
         "function range(from: i64, to: i64) -> [i64]\n    return []\n\nfunction main()\n    print(1)\n"
     ));
 }
+
+/// **The arm panel 040's own falsifier needed, and the instrument did not have.**
+///
+/// Prediction 2 of the bitwise set asked that no survivor ever be a boolean
+/// operator misread as its bitwise twin. `docs/measurements/007` scored it *held*
+/// over 892 survivors — vacuously, because none of the twelve operators made the
+/// substitution. This test is what stops that recurring: it fires the operator and
+/// asserts the mutation is the one named, so a prediction about `&` for `&&` is
+/// scored against an instrument that can produce the observation (panel 046 R1 as
+/// amended, author decision 2026-08-14).
+#[test]
+fn boolean_twin_writes_the_bitwise_spelling_of_a_boolean_operator() {
+    let text = "function main()\n    a = 1 > 0\n    b = 2 > 1\n    if a && b\n        print(1)\n    if a || b\n        print(2)\n";
+    let mutants = super::operators::apply("boolean-twin", "t.hero", text);
+    assert_eq!(mutants.len(), 2, "one per boolean operator: {mutants:?}");
+    assert!(mutants.iter().any(|m| m.contains("if a & b") && m.contains("if a || b")));
+    assert!(mutants.iter().any(|m| m.contains("if a && b") && m.contains("if a | b")));
+    // And nothing else moved: a mutant differs from the source by one character.
+    for mutant in &mutants {
+        assert_eq!(mutant.len(), text.len() - 1, "one character, no more:\n{mutant}");
+    }
+}
+
+/// A program with no boolean operator produces no mutant — the narrowing is the
+/// operator in hand, not a search of the line for an `&`.
+#[test]
+fn boolean_twin_leaves_a_bitwise_expression_alone() {
+    let text = "function main()\n    x = 6 & 3\n    y = 6 | 3\n    print(x + y)\n";
+    assert!(super::operators::apply("boolean-twin", "t.hero", text).is_empty());
+}

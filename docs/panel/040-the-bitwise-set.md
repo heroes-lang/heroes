@@ -197,3 +197,21 @@ when the §11 sweep looked at it. With bitwise constants in the tree it produces
 **12**, of which 0 are killed — `constant BIT_TRACE: i64` with body `1` mutated
 to `2` survives, as it must. The operator now measures something, and what it
 measures is a hole.
+
+## Prediction 2, re-scored — 2026-08-14, on an instrument that can now answer
+
+The score of `held` recorded above was **vacuous, and said so**: none of the
+twelve `heroes mutate` operators made the substitution the prediction is about, so
+892 survivor lines could not have contained one. The author's decision of
+2026-08-14 (`/decide`) added the arm.
+
+`boolean-twin` writes `&` for `&&` and `|` for `||`. Over `examples/` it produces
+**132 mutants and kills 132 — 100%**, at `check` and under `--permissive` alike.
+Prediction 2 is now **held, and measured**: no survivor is a boolean operator
+misread as its bitwise twin, because §4.14's two vocabularies do not overlap —
+`&&`/`||` take `bool` only and the bitwise set `i64` only — so every one of these
+mutants is `bad_operand` before it is anything else.
+
+What the re-score buys is not the number. It is that the number could have come
+out differently: a language where the two families shared a type would have shown
+survivors here, and until today this project had no way to find out.
