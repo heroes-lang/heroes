@@ -62,6 +62,19 @@
  *     Darwin and the BSDs**, and glibc 2.26 deleted `<xlocale.h>` outright. So
  *     the header is *asked for* rather than assumed: `fatal error: 'xlocale.h'
  *     file not found` is exactly how Linux announced itself. */
+/* **MSVC deprecates ISO C.** `fopen`, `getenv` and their neighbours are C11
+ * functions that Microsoft's headers mark deprecated in favour of `fopen_s` and
+ * friends — which are Annex K, optional, and implemented by essentially nobody
+ * else. CLAUDE.md §7 fixes the emitted language at C11, so the runtime keeps the
+ * standard spelling and turns off the advice rather than following it onto a
+ * platform-specific API. This is the documented switch and not a workaround.
+ *
+ * It must precede every system header, which is why it sits with the feature-test
+ * macro below rather than beside the includes. */
+#if defined(_WIN32)
+#  define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 #if defined(__linux__) && !defined(_POSIX_C_SOURCE)
 #  define _POSIX_C_SOURCE 200809L
 #endif

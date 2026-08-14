@@ -1,2 +1,18 @@
-# A CRLF conversion would silently break golden-file comparisons.
+# **Line endings are LF everywhere, including on Windows checkouts.**
+#
+# Added the day the third CI leg arrived (2026-08-14). Git's default on Windows
+# rewrites LF to CRLF on checkout, and this repository is full of files whose
+# bytes are the test: `tests/golden/**/*.expected` is compared byte for byte, the
+# double-emit determinism check hashes generated C, and `printer::gallery` asserts
+# every example is in canonical form. A checkout that changed the bytes would make
+# a third of the suite fail on one platform for a reason that is not in any of the
+# programs.
+#
+# `text=auto eol=lf` normalises in the repository and checks out unchanged, so all
+# three legs read the same bytes the author wrote.
 * text=auto eol=lf
+
+# Binary, and never to be touched.
+*.png binary
+*.ico binary
+*.pdf binary

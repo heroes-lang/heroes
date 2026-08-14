@@ -73,7 +73,10 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang pkg-config libsqlite3-dev libcurl4-openssl-dev libraylib-dev
+          # raylib is deliberately not installed: `examples/raylib/` is then a
+          # live test of the skip rule, which reads the compiler's own
+          # `ffi_package` diagnostic rather than a list of program names.
+          sudo apt-get install -y clang pkg-config libsqlite3-dev libcurl4-openssl-dev
 
       # **No toolchain step, on purpose.** `rust-toolchain.toml` pins the version
       # and `rustup` — preinstalled on both runners — honours it for every
