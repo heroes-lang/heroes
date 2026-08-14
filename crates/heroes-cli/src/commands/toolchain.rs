@@ -224,8 +224,7 @@ impl Toolchain {
         clang.arg("-I").arg(&self.runtime);
         clang.arg("-o").arg(&staged);
         run(clang, "compiling the runtime")?;
-        std::fs::rename(&staged, &object)
-            .map_err(|e| format!("cannot publish {}: {e}", object.display()))?;
+        publish(&staged, &object)?;
         Ok(object)
     }
 
@@ -285,8 +284,40 @@ impl Toolchain {
         let staged = binary.with_extension(format!("{}.tmp", std::process::id()));
         clang.arg("-o").arg(&staged);
         run(clang, "compiling the generated C")?;
-        std::fs::rename(&staged, binary)
-            .map_err(|e| format!("cannot publish {}: {e}", binary.display()))
+        publish(&staged, binary)
+    }
+}
+
+/// Move a freshly compiled artifact onto its content-addressed path, **and treat
+/// losing the race as success**.
+///
+/// The premise, written as a claim so it can be falsified: *a file already at this
+/// path was compiled from the same inputs as the one being staged*, because the
+/// key covers the compiler's fingerprint, the optimisation level, the sanitiser,
+/// the source path, the source text and the whole runtime's contents. Whatever is
+/// there is byte-for-byte ours. `dir_for` and `runtime_object` are the two places
+/// that build the key, and the claim dies the day either stops covering an input
+/// that changes the output.
+///
+/// **Windows is why this is a function rather than a `rename`.** On POSIX, renaming
+/// onto a path a *running process is executing* succeeds: the old inode survives
+/// for as long as that process holds it. Windows locks the image and returns
+/// `ERROR_ACCESS_DENIED (os error 5)`, so `cargo test`'s parallel harness — which
+/// runs the same golden at two optimisation levels and can therefore have one
+/// binary executing while another lands — failed on the third CI leg where it had
+/// passed on two for a day. Measured 2026-08-14.
+///
+/// So the loss is made explicit instead of being reported as an internal error.
+/// The staged file is removed either way; a failure with **no** file at the
+/// destination is a real failure and is still returned.
+fn publish(staged: &Path, final_path: &Path) -> Result<(), String> {
+    match std::fs::rename(staged, final_path) {
+        Ok(()) => Ok(()),
+        Err(_) if final_path.exists() => {
+            let _ = std::fs::remove_file(staged);
+            Ok(())
+        }
+        Err(e) => Err(format!("cannot publish {}: {e}", final_path.display())),
     }
 }
 
