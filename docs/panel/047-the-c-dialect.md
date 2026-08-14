@@ -1,6 +1,6 @@
 # 047 — The C dialect: what `-std=` buys, and what it costs on the second platform
 
-**Status** `provisional — author ratification pending`
+**Status** `ratified — 2026-08-14, author decision`
 **Convened** 2026-08-13, by CI run 4 · **Lane** three judges (see § What this lane gave up)
 
 ## Why it was convened
@@ -232,3 +232,36 @@ ffi-pragmatist compiled 63 of 63 for `x86_64-linux-gnu`; compiling is not
 linking, and the one question nobody put is the one that cost the extra round
 trip. A panel that measures the compiler's output can still miss the platform's
 runtime, and the instrument that caught it was the CI rather than any judge.
+
+---
+
+## Ratification — 2026-08-14, by author decision
+
+**RATIFIED as it stands.** `-std=gnu11`, all four conditions, the two refused
+options refused. Nothing in the resolution changes, and the provisional default
+was already in the tree and green on both platforms when the yes arrived — which
+is the arrangement CLAUDE.md §4 describes and the first time in this repository
+that a panel's default had been *measured on two machines* before the author saw
+it.
+
+Three things the yes settles that the provisional default left implicit.
+
+**The dialect is named, and naming it is the decision.** Not `gnu11` over `c11`
+alone — that follows from the measurement — but `-std=<something>` over nothing
+at all, against the dominant precedent of three of three sourceable C-emitting
+compilers. The ground is this project's own acceptance criterion, and it now has
+two instances on the same day: `rust-toolchain.toml` pins the Rust, `FLAGS` names
+the C. A byte-identical fixpoint cannot be built on a dialect that drifts with
+whatever the compiler shipped that morning.
+
+**What is emitted and what is exposed are different questions**, and CLAUDE.md
+§7's opening sentence keeps its word. The emitter still writes C11. `gnu11`
+changes which declarations the platform's headers *present*, and the measurement
+that makes that precise — one predefined macro, identical IR, unchanged struct
+layouts — is what the yes rests on rather than on the argument.
+
+**The panel's own miss stays in the file.** Prediction 1 is falsified: three
+judges cross-compiled 63 of 63 goldens and none asked whether the programs would
+link. That is not a footnote to be tidied away now that the answer is green — it
+is the record of what this instrument does not see, and the next sitting that
+measures compilation and calls it portability should be able to find it.
