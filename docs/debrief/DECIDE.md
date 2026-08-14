@@ -101,17 +101,12 @@ the file is still over the limit.
 
 ## From panel 051 (2026-08-14) — what the FFI's parameter side still owes
 
-- **`-Werror=shorten-64-to-32`, and the gate it needs.** Measured: catches 251 of
-  the 267 lossy parameters (94%), zero false positives across 501 generated units,
-  and clang already reports the author's `.hero` line through `#line`. Blocked by
-  the compiler-engineer's veto: §7 makes a clang failure exit 2 *"the compiler is
-  wrong"* unless `emit/ffi.rs` recognises it, and this message carries no C name to
-  gate on. **The proposed answer, which no judge named: gate on the file clang
-  reports** — a `.hero` path is the author's error, a generated `.c` path is the
-  compiler's. That is a fact about the value in hand rather than a premise about
-  message text. Also owed: the pragmatist's condition that the flag be measured on
-  all three legs first, since `long` makes the same binding clean on LP64 and an
-  error on LLP64.
+- ~~**`-Werror=shorten-64-to-32`, and the gate it needs.**~~ **CLOSED at
+  M-binding-fidelity** (verified 2026-08-15): the flag is in `toolchain.rs::FLAGS`
+  with `-Werror=sign-conversion` beside it, and the veto was answered by building
+  the gate rather than by arguing it — `emit/extern_probe.rs` emits a never-called
+  probe per `extern`, and `ffi_parameter_type` is exit 1 on the author's own line
+  with the parameter's name in it. The three legs are green.
 - **design.md Part 7 item 10 is unsupported.** Its own falsifier names `strlen`,
   and `extern function strlen(s: cstr) -> u64` compiles and prints `5` on this
   machine — closed by panel 042's widths, with the text left behind. Under §12 as
@@ -142,11 +137,11 @@ the file is still over the limit.
 
 ## From panel 052 (2026-08-14) — what the FFI still owes after the parameter check
 
-- **Struct-by-value is the whole remaining wall: 356 of 1159 entry points, 31%**,
-  counted from clang's own AST across `sqlite3.h`, `curl/curl.h` and `raylib.h`.
-  raylib alone is 346 of 600. No scalar vocabulary touches it, and the
-  ffi-pragmatist predicts `M-binding-fidelity` will not raise raylib past 254 of
-  600. This is the next milestone's question, not a gap in this one.
+- ~~**Struct-by-value is the whole remaining wall: 356 of 1159 entry points, 31%.**~~
+  **SCHEDULED 2026-08-14** as `M-struct-passing`, ROADMAP order row **1**, ahead of
+  `M-selfhost-probe` — design.md §1.12's completeness clause over Principle 0's
+  silence. The ffi-pragmatist's *"not past 254 of 600"* prediction is unscored and
+  the milestone's own close scores it.
 - **A rename, so one C name can carry two arities.** This is what variadics
   actually need — the ABI is already correct — and it is the ergonomist's blocking
   condition on the alternative to `...`: `function printf_i(format: cstr, value:
@@ -162,16 +157,16 @@ the file is still over the limit.
   that `@f32` is **core**, not a boundary type: an `@` argument is the address of
   the author's own slot, so it needs an `f32` local. That is A1's cost, for two
   entry points.
-- **`emit/ffi.rs` is 550 lines against CLAUDE.md §11's ~300** — the largest
-  non-test file in the repository. The seam is already in the file: **what each
-  class gates on**. The engineer mapped it: `mod` ~130, `asserted` ~72 (a marker
-  this emitter wrote), `named` ~110 (a C name from the tool), `grouped` ~96 (a
-  header or package string), `located` ~142 (a location).
-- **The warden's R2, −12**: `to_i64` is listed twice in Built-ins, once as
-  "`to_i64` (truncating)" and again in the width family, and the truncation fact is
-  already in the conversion clause. Unspent, and available. Panel 051's R1 (−8) is
-  still refused, on stronger ground than before: measurement 007 has a blind reader
-  quoting that sentence, `push` half included, as the document's only cost claim.
+- ~~**`emit/ffi.rs` is 550 lines against CLAUDE.md §11's ~300.**~~ **CLOSED at
+  M-binding-fidelity** (verified 2026-08-15): split four ways on the engineer's own
+  seam — `ffi.rs` 163, `ffi_build.rs` 181, `ffi_declared.rs` 157,
+  `ffi_narrowed.rs` 190. Nothing in the tree is over 300 outside tests, which
+  CLAUDE.md §11 as amended 2026-08-14 puts outside the rule's words.
+- ~~**The warden's R2, −12.**~~ **SPENT 2026-08-14** at ledger row `3191`, funding
+  panel 048's X clause (+45, net +33). Panel 051's R1 (−8) is **still unspent and
+  still refused**, on the ground measurement 007 supplied: a blind reader quotes
+  that sentence, `push` half included, as the document's only cost claim. It is the
+  live half of this pair and it appears once, in panel 051's list above.
 
 ## Open — the §11 sweep, after M-binding-fidelity
 
