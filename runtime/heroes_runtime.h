@@ -326,6 +326,10 @@ HeroArrayHeader *hero_str_chars(HeroStr s);
  * concatenation. `parts` must hold `str`; anything else is a compiler bug. */
 HeroStr hero_str_join(const HeroArrayHeader *parts, HeroStr sep);
 
+/* `repeat(s, n)` — n copies of s, one allocation. ABORTS on a negative n and on a
+   total length past INT64_MAX, the same named abort every other length does. */
+HeroStr hero_str_repeat(HeroStr s, int64_t n);
+
 /* -- copy-on-write (panel 022, and the veto that shaped it) ------------------
  *
  * `xs[i] @ v` mutates a place, and the place may be shared. So: make it unique

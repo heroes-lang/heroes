@@ -181,7 +181,9 @@ Three forces, and they are **not equal**:
 - **Token economy is an indicator, and frequently a misleading one.**
 
 Operational hierarchy: simplicity sets the ceiling, comprehension decides, tokens break ties. When
-tokens and comprehension conflict, **tokens win only when comprehension is indifferent**.
+tokens and comprehension conflict, **tokens win only when comprehension is indifferent**. And above
+tokens there is now a fourth force: **§1.12's robustness**, which decides between two admissible
+forms when one of them can be made to crash.
 
 ### 1.2 The cost formula
 
@@ -522,6 +524,45 @@ tension become:
 3. **FFI signatures are verified by clang against the real header** (`importc`-style declarations,
    §4.19) — a wrong type in an `extern` is a *compile* error, which is this project's thesis applied
    to the boundary.
+
+### 1.12 Robustness, and a boundary that is complete and defended
+
+Stated by the author, 2026-08-14, and it belongs beside §1.11 because it is that constraint's
+consequence rather than a separate wish. If everything a program touches comes from C, then the C
+boundary is where this language's guarantees end — and a guarantee that ends quietly is not one.
+
+> **A Heroes program must not segfault and must not corrupt memory.** That is a goal of the
+> language, not a quality of its implementation. And the boundary is **complete**: any C library
+> must be bindable, because a library Heroes cannot reach is C code the author has to keep writing
+> by hand — which is §1.11 failing at the one thing it exists to do.
+
+Three consequences, and the third is the one that costs something.
+
+**It is a tie-break, and it outranks the triangle's lower two.** §1.1's hierarchy — simplicity sets
+the ceiling, comprehension decides, tokens break ties — gains a rule above tokens: where two
+admissible forms disagree and one of them can be made to crash, the other wins, whatever it costs in
+tokens or in elegance. The operational statement lives in CLAUDE.md §12, which is where a rule that
+decides between artifacts belongs; this is its argument.
+
+**It does not suspend Principle 0.** §1.0 binds what *enters* the language, and "it would be safer"
+is not an entry ticket any more than "it would be elegant" is. A form still enters because the
+compiler needs it or because it serves the thesis. What §1.12 decides is the *shape* of a form
+already admitted, and which of two admitted shapes wins.
+
+**Defensive, and the cost is real.** The compiler and the runtime **check rather than assume**, and
+they check at the boundary even where the value is known to be good — a `cstr` from `s.cstr()` can
+never be null and is null-checked anyway, because the alternative is a rule that has to reason about
+where a value came from, and provenance is a premise about the world (CLAUDE.md §11). That is one
+predictable branch per FFI argument, and it is paid deliberately. The precedent is this document's
+own: CLAUDE.md §7 already requires arithmetic to abort through `__builtin_*_overflow` rather than
+reach C's undefined behaviour, and to guard `%` like `/`. §1.12 is that obligation stated as a
+principle instead of as a backend rule, so the next boundary that needs one does not have to be
+argued from scratch.
+
+**What would make this wrong** (§12, panel 039's standard applied to a principle): a measured case
+where a defensive check *hides* a defect rather than surfacing it — an abort that stops a program at
+a place that tells the reader nothing, where the crash would have named the cause. Then the check is
+in the wrong place, not unwanted.
 
 ## Part 2 — Non-goals
 

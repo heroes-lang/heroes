@@ -243,7 +243,8 @@ that would make it wrong (author decision 2026-08-12, panel 039; the rule's home
 and its argument are Part 6's own preamble). Principle 0 binds what *enters*, so
 without this a permanent rejection was the one design act under no burden of proof.
 
-**Robustness wins.** A Heroes program must not segfault and must not corrupt
+**Robustness wins** (the principle is design.md **§1.12**; this is its operational
+half). A Heroes program must not segfault and must not corrupt
 memory — that is a **goal of the language**, stated by the author 2026-08-14, and
 where a choice runs toward it, it beats every other criterion in this file:
 elegance, token cost, ergonomics, the size of the compiler, and speed. This is the
