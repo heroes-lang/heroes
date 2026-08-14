@@ -34,12 +34,24 @@ fn valued(spelling: &str, what: &str) -> Flag {
 /// program that binds SDL2, a model produces something that cannot be built, and
 /// the missing half is an unversioned shell line.
 ///
-/// What the author's yes buys is that half. What it costs is written down rather
-/// than hidden: `-I` and `-L` named **independently** are the only way to produce
-/// the skew panel 055 measured — header v1, library v2, compiles clean, links
-/// clean, exit 0, **wrong number** — where `package` asks one question of one
-/// `.pc` and cannot. `package` stays the shape to reach for first, and these are
-/// for the library that has no `.pc`.
+/// What the author's yes buys is that half. **What it cost was written here as a
+/// premise about the world, and panel 056 measured the premise false** — CLAUDE.md
+/// §11's class exactly, where the argument stays valid, only the premise dies, and
+/// the paragraph goes on reading as correct. It said `-I` and `-L` named
+/// *independently* were the only route to panel 055's skew. They are not.
+///
+/// **One header path is enough, because the library side is never empty.** With
+/// this machine's SDK SQLite on the default path, `--include` alone at Homebrew's
+/// keg-only prefix builds a program whose header answers `3053004` and whose
+/// library answers `3.51.0` — clean, exit 0. `CPATH` reaches the same state, and
+/// that is the channel `machine_locked_path`'s own repair note recommends, so the
+/// hazard is older than these flags and is not created by them.
+///
+/// And the outcome is not a wrong number. Two builds of one library, same symbol
+/// and same signature, skewed: **exit 134 with no output**, and under `--sanitize`
+/// a heap-buffer-overflow writing 64 bytes into a 16-byte region (design.md §1.12).
+/// `package` stays the shape to reach for first — it asks one question of one `.pc`
+/// and cannot skew — and these are for the library that has no `.pc`.
 fn repeated(spelling: &str, what: &str) -> Flag {
     Flag { spelling: spelling.to_string(), what: what.to_string(), value: true, repeatable: true }
 }
