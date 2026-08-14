@@ -57,6 +57,26 @@ pub(super) fn check(
         // the minus signs, rather than by the shape of the outermost node. A
         // flat `Unary { op: Neg, .. }` sent `-x` here too, where it met a range
         // check about a value it does not have (fixedbugs, 2026-08-13).
+        // **`nullptr` at the type the context asked for** (panel 053). C's null
+        // pointer constant inhabits `ptr` and `cstr` alike, and `adopts` has
+        // already refused every other type, so there is nothing to check here
+        // beyond recording it: the arm exists because without one, the fallback
+        // would synthesise `ptr` and then compare it against a `cstr` expectation
+        // and report a mismatch about the one value that has no type of its own.
+        ExprKind::NullPtr => {
+            // **`adopts` is asked here, not assumed.** `contextual` says the form
+            // has no type of its own; `adopts` says which types it will take, and
+            // `nullptr` takes a pointer and nothing else. Recording `expected`
+            // unconditionally — which this arm did for one afternoon — made
+            // `s: str @ nullptr` compile: the value would then reach the emitter
+            // as a `HeroStr` built from nothing. The refusal is the half a
+            // widening breaks first, so it is the half with a golden case.
+            if super::contextual::adopts(checker, ast, id, expected) {
+                checker.record(id, expected);
+            } else {
+                mismatch(checker, ast, src, expected, "ptr", span);
+            }
+        }
         _ if super::contextual::number_literal(ast, id) => {
             match checker.out.types.get(expected) {
                 Ty::Int(kind) => {

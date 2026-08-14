@@ -119,7 +119,8 @@ pub(super) fn call(
         // is the other half, on the return side.
         Callee::Extern(decl) => {
             let name = src.slice(ast.decls[decl as usize].name);
-            w.line(&format!("    {assign}{name}({});", arguments.join(", ")));
+            let guarded = guard_cstr_arguments(program, decl, checked, arguments);
+            w.line(&format!("    {assign}{name}({});", guarded.join(", ")));
         }
         // Refused by the gate. The arm exists so that adding a callee kind to the
         // IR breaks this file.
@@ -170,4 +171,62 @@ pub(super) fn print(
         w.line(&format!("    {printer}({name});"));
     }
     w.line("    hero_print_end();");
+}
+
+/// Every `cstr` argument of an `extern` call, wrapped in the runtime's null check
+/// (panel 053; CLAUDE.md §12's robustness rule, §7's own precedent).
+///
+/// **This is not a language change and it is not a type rule.** It is a backend
+/// obligation of exactly the class §7 already states: *"Arithmetic aborts via
+/// `__builtin_*_overflow` — never C UB — and `%` is guarded like `/`."*
+/// `hero_cstr_nonnull` is to a null `cstr` what `__builtin_mul_overflow` is to
+/// signed overflow — one branch, a named abort, and C's undefined behaviour never
+/// reached.
+///
+/// The hole it closes was measured before it existed. `to_str` on a null `cstr`
+/// was already safe: `runtime/parts/str.c` guards it and panics with its own name.
+/// What nothing guarded was a null `cstr` handed **straight back to C** —
+/// `strstr(haystack: getenv(UNSET), needle: "y")` — where `to_str` is never
+/// called and the pointer reaches libsystem unexamined:
+/// `AddressSanitizer: SEGV on unknown address 0x0`. Three of panel 053's four
+/// options were structurally blind to that path.
+///
+/// **The narrowing is the callee's declared parameter type**, which is a fact
+/// about this declaration (CLAUDE.md §11). It is deliberately *not* provenance —
+/// *"this value came from an extern"* — because that is a premise about where a
+/// value has been rather than about the value in hand, and this compiler has no
+/// flow-sensitive narrowing to rest one on. The cost of asking the cheaper
+/// question is that a `cstr` from `s.cstr()`, which cannot be null, is checked
+/// too. One predictable branch, against §12's rule that safety outranks speed.
+///
+/// Panel 052's standing veto is untouched: nothing here re-declares a signature.
+/// Only the argument expression changes, so the call still goes through the
+/// header's own prototype — variadics included.
+fn guard_cstr_arguments(
+    program: &Program,
+    decl: u32,
+    checked: &crate::types::Checked,
+    arguments: &[String],
+) -> Vec<String> {
+    let Some(callee) = program.functions.iter().find(|f| f.decl == decl) else {
+        return arguments.to_vec();
+    };
+    arguments
+        .iter()
+        .enumerate()
+        .map(|(index, argument)| {
+            // A variadic's extra arguments have no declared parameter, and a
+            // parameter whose type is not `cstr` has nothing to check.
+            let declared = callee
+                .params
+                .get(index)
+                .map(|slot| callee.slots[slot.0 as usize].ty)
+                .map(|ty| checked.types.get(ty));
+            if matches!(declared, Some(crate::types::Ty::Cstr)) {
+                format!("hero_cstr_nonnull({argument})")
+            } else {
+                argument.clone()
+            }
+        })
+        .collect()
 }

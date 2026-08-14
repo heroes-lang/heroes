@@ -212,6 +212,21 @@ HeroStr hero_str_from_bytes(const char *p, int64_t len) {
     return r;
 }
 
+/* **A `cstr` on its way INTO C, checked** (panel 053; CLAUDE.md §12's robustness
+   rule). `hero_str_from_cstr` above guards the path where C's string comes into
+   Heroes; this guards the path where it goes straight back out — `strstr(getenv(
+   unset), "y")`, where `to_str` is never called and nothing looked at the pointer.
+   Measured before the guard existed: `AddressSanitizer: SEGV on unknown address
+   0x0` inside libsystem, which is the class §12 says must not happen.
+
+   It is the same obligation CLAUDE.md §7 already places on arithmetic — abort
+   rather than reach C's undefined behaviour — and it is written the same way: one
+   branch, a named message, and no cost when the pointer is good. */
+const char *hero_cstr_nonnull(const char *p) {
+    if (p == NULL) hero_panic("a null `cstr` was passed to a C function");
+    return p;
+}
+
 HeroStr hero_str_from_cstr(const char *p) {
     if (p == NULL) hero_panic("hero_str_from_cstr: NULL pointer from C");
     return hero_str_from_bytes(p, (int64_t)strlen(p));

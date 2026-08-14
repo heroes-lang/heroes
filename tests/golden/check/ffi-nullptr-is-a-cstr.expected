@@ -1,0 +1,2 @@
+tests/golden/check/ffi-nullptr-is-a-cstr.hero:29:14: error[type_mismatch]: expected `str`, found `ptr`
+tests/golden/check/ffi-nullptr-is-a-cstr.hero:30:14: error[type_mismatch]: expected `i64`, found `ptr`

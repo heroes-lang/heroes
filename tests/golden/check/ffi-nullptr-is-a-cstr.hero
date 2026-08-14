@@ -1,0 +1,32 @@
+# `nullptr` takes the type its context asks for (panel 053, option A).
+#
+# It used to be fixed at `ptr`, which made the one question anybody asks of a C
+# string unwritable: `v == nullptr` on a `cstr` was
+# `error[type_mismatch]: expected cstr, found ptr`, and declaring the binding
+# `-> ptr` instead bought the comparison at the cost of ever reading the string.
+# You had to choose between checking for null and reading it.
+#
+# It joins the contextual forms for the reason they share: the value exists and
+# the type does not. C's null pointer constant inhabits `ptr` and `cstr` alike —
+# `((void *)0)` is a valid `const char *` by C11 6.3.2.3p3.
+#
+# What this case pins is the **refusal**, because that is the half a widening
+# breaks first: `nullptr` adopts a pointer and nothing else, so pushing it at a
+# `str` or an `i64` is still one diagnostic rather than two.
+
+extern "stdlib.h"
+    function getenv(name: cstr) -> cstr
+
+function main()
+    v = getenv("HOME".cstr())
+    # Both comparisons are legal, and neither was before.
+    if v == nullptr
+        print("unset")
+    p: ptr @ nullptr
+    if p == nullptr
+        print("also fine")
+    # And the refusals stay refusals.
+    s: str @ nullptr        #~ type_mismatch
+    n: i64 @ nullptr        #~ type_mismatch
+    print(s)
+    print(n)

@@ -47,6 +47,14 @@ pub(super) fn contextual(ast: &Ast, id: ExprId) -> bool {
         // ASCII character, and it fits every width. Without it `b == 'a'` for a
         // `u8` byte would be a type error — which is lexer code, the closure
         // list's own shape.
+        // **`nullptr` joined at panel 053**, and it joined for a reason the other
+        // members share: the value exists and the *type* does not. C's null
+        // pointer constant is one value that inhabits `ptr` and `cstr` alike —
+        // `((void *)0)` is a valid `const char *` by C11 6.3.2.3p3 — so fixing it
+        // at `ptr` made `v == nullptr` unwritable for a `cstr`, which is the one
+        // question anybody asks of a C string. With nothing asking, `synth` still
+        // gives `ptr`, exactly as a number literal still defaults to `i64`.
+        ExprKind::NullPtr => true,
         _ => number_literal(ast, id),
     }
 }
@@ -90,6 +98,13 @@ pub(super) fn number_literal(ast: &Ast, id: ExprId) -> bool {
 pub(super) fn adopts(checker: &Checker, ast: &Ast, id: ExprId, offered: TyId) -> bool {
     if number_literal(ast, id) {
         return matches!(checker.out.types.get(offered), Ty::Int(_));
+    }
+    // **`nullptr` adopts a pointer and nothing else**, for the same reason a
+    // number adopts only an integer width: it has a value already, and a value
+    // that cannot be a `str` is worse off being told to try. Two diagnostics for
+    // one mistake is the defect this compiler has fixed three times.
+    if matches!(ast.exprs[id.0 as usize].kind, ExprKind::NullPtr) {
+        return matches!(checker.out.types.get(offered), Ty::Ptr | Ty::Cstr);
     }
     true
 }
