@@ -259,3 +259,30 @@ repository to run all five briefs. All five reported — the ffi-pragmatist afte
 synthesis was drafted, which is why its verdict arrives in a section of its own
 rather than woven through. Nothing was lost; the only cost is that this file was
 written twice, and the second writing did not change the resolution.
+
+---
+
+## A sentence of this file is falsified — 2026-08-14, panel 049
+
+This file records, from its ffi-pragmatist's report: *"§4.19's ladder rung 5,
+raylib (design.md:2056), is currently unbindable on Darwin."* **That is wrong**,
+and it is the sentence that convened panel 049.
+
+Measured there by three judges independently, and by the synthesis a fourth time:
+raylib's homebrew **dylib** links on Darwin with `-I` and `-L` and **no framework
+at all**, and one judge opened a window and drew from `.hero` source with the head
+line unchanged. `heroes build` on a raylib group dies at `'raylib.h' file not
+found` — the **header path**, one directory before the linker exists as a
+question.
+
+**design.md:2058 had recorded this a milestone earlier**, in ratified text: *"what
+the group head lacks is search paths, not a framework keyword."* The document was
+right and this file was wrong; the finding that stands is the narrower one, that
+`link` cannot spell `-framework` **at all**, which matters for Apple's own APIs
+(`SecRandomCopyBytes` has no `-l` spelling, measured) and not for any rung of the
+ladder.
+
+The record is appended rather than corrected in place (CLAUDE.md §14). What made
+the error: a true statement about `-framework`'s absence was carried into a claim
+about what blocks rung 5, without anyone compiling rung 5.
+

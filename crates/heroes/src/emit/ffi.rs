@@ -72,6 +72,9 @@ pub fn explain(stderr: &str, ast: &Ast, src: &Source) -> Vec<Diagnostic> {
         if let Some(diagnostic) = missing_link(line, ast, src) {
             push(&mut found, diagnostic);
         }
+        if let Some(diagnostic) = missing_header(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
     }
     found
 }
@@ -286,4 +289,52 @@ fn undefined_symbol(line: &str) -> Option<String> {
         return Some(quoted.strip_prefix('_').unwrap_or(quoted).to_string());
     }
     None
+}
+
+/// **A header the preprocessor could not find**, named by an `extern` group in
+/// this program — the fifth class, and the one that stops §4.19's ladder one
+/// directory before the linker.
+///
+/// Measured at panel 049: `heroes build` on a real raylib binding died with
+/// `internal error: … fatal error: 'raylib.h' file not found`, **exit 2**, for a
+/// missing `-I` on the author's own machine. design.md:2058 had recorded the
+/// diagnosis a milestone earlier — *"what the group head lacks is **search
+/// paths**, not a framework keyword"* — and three judges re-measured it from
+/// three directions before anyone read that line.
+///
+/// The class does not repair the gap; the language still has no way to *say*
+/// where a header is, and what that clause should look like is queued. What it
+/// repairs is the blame: a header this program named and this machine does not
+/// have is the author's problem to solve, not evidence that the compiler is
+/// broken.
+fn missing_header(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    let quoted = line.split("file not found").next()?;
+    let header = quoted.split('\'').nth(1)?;
+    let span = group_head(ast, src, header)?;
+    let mut diagnostic = Diagnostic::new(
+        "ffi_missing_header",
+        format!("`{header}` is not on this machine's include path — clang looked and did not find it"),
+        span,
+    );
+    diagnostic = diagnostic.with_note(
+        "the group names a header the preprocessor must be able to open: install the library's development files, or point the compiler at them".to_string(),
+    );
+    Some(diagnostic)
+}
+
+/// The span of the first declaration whose group names this header — which is
+/// the `extern` line the author must look at.
+///
+/// The same gate as everywhere else in this file: a header no group in *this*
+/// program names is not this program's business, and clang's line stays a
+/// statement about the compiler.
+fn group_head(ast: &Ast, src: &Source, header: &str) -> Option<crate::source::Span> {
+    ast.decls.iter().find_map(|decl| {
+        let named = match &decl.kind {
+            DeclKind::Function(function) => function.header?,
+            DeclKind::Constant { header, .. } => (*header)?,
+            _ => return None,
+        };
+        (src.slice(named).trim_matches('"') == header).then_some(decl.span)
+    })
 }
