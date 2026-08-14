@@ -10,4 +10,5 @@ pub mod mutate;
 pub mod parse;
 pub mod run;
 pub mod test;
+pub mod libraries;
 pub mod toolchain;

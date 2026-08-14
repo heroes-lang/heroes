@@ -239,7 +239,7 @@ pub fn compile_with_tests(
         options.level,
         options.sanitize,
         include.as_deref(),
-        &super::toolchain::Libraries {
+        &super::libraries::Libraries {
             link: emitted.link.clone(),
             packages: emitted.packages.clone(),
         },
