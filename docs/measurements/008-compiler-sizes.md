@@ -15,6 +15,7 @@ this file.
 | what | value |
 |---|---|
 | Heroes | `219e50d` |
+| how this file reached the repo | `0561fb6`, whose subject is about `strstr` and says nothing about a measurement — a concurrent session's wide `git add` swept it up and pushed before it could be committed on its own. The history is public and was not rewritten; the DESIGN-LOG line and this note are the additive repair, so `git log --grep` can find the measurement that `git log --oneline` cannot |
 | method | `wc -l` over physical lines, then an `awk` split into code / comment / blank |
 | comment rule | a line whose first non-space characters open a comment (`//`, `/*`, `*`, `#`, `(*`) — an end-of-line comment counts as code, in every tree alike |
 | clones | `git clone --depth 1`; the two giants via `--filter=blob:none --sparse` |
