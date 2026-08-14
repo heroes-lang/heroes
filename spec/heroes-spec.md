@@ -164,7 +164,7 @@ Value semantics has a price: `+` on `str` copies both sides and `push` copies th
 array, so accumulating either in a loop is quadratic. `join` is linear.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join(xs, sep)` · `sort` · `to_i64` (truncating) ·
+`chars` · `keys` · `join(xs, sep)` · `sort` ·
 `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
@@ -205,6 +205,9 @@ asks the system where its headers and libraries are and what else it needs —
 frameworks on macOS, `-lGL -lX11` on Linux — in one spelling that is the same
 everywhere. Only `-I`, `-L`, `-l`, `-F` and `-framework` are accepted back; a
 package that answers with anything else is refused by name.
+
+A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
+usually there. How much more is the platform's answer, not this language's.
 
 A group's `constant` has no body: the header holds the value. `ptr` is an opaque
 pointer whose only literal is `nullptr`, `cstr` a C string, and `s.cstr()` passes a
