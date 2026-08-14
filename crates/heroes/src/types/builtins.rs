@@ -42,7 +42,6 @@ pub(super) fn expectation(
         ("push", Ty::Array(element), 1) => Some(element),
         ("default", Ty::Fallible(inner), 1) => Some(inner),
         ("join", _, 1) => Some(checker.out.types.str()),
-        ("repeat", _, 1) => Some(checker.out.types.int()),
         ("slice", _, 1 | 2) => Some(checker.out.types.int()),
         _ => None,
     }
@@ -210,16 +209,6 @@ pub(super) fn call(
                 )
             }
         },
-        // `repeat(s, n) -> str` — n copies, one allocation. A negative `n` is an
-        // abort at run time, not a type error: the checker cannot see the value.
-        ("repeat", [text, count]) => {
-            let (str_ty, int) = (checker.out.types.str(), checker.out.types.int());
-            if *text != str_ty || *count != int {
-                let bad = if *text == str_ty { *count } else { *text };
-                return arg_error(checker, ast, src, "repeat", "`str` and `i64`", bad, span);
-            }
-            str_ty
-        }
         ("sort", [one]) => match checker.out.types.get(*one) {
             Ty::Array(_) => *one,
             _ => return arg_error(checker, ast, src, "sort", "`[T]`", *one, span),

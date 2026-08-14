@@ -149,23 +149,6 @@ HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to) {
     return r;
 }
 
-/* `repeat(s, n)` — design.md:1318's answer applied to one string: the total is
- * computed first, so the allocation happens once and a length that cannot exist
- * is a named abort rather than a failed malloc. */
-HeroStr hero_str_repeat(HeroStr s, int64_t n) {
-    hero_str_require(s);
-    if (n < 0) hero_panic("repeat with a negative count");
-    if (n == 0 || s.len == 0) return hero_str_empty();
-    if (n > INT64_MAX / s.len) hero_panic("string length overflow");
-    HeroStr r = hero_str_alloc(s.len * n);
-    char *w = (char *)(void *)(uintptr_t)r.ptr;
-    for (int64_t i = 0; i < n; i++) {
-        memcpy(w, s.ptr, (size_t)s.len);
-        w += s.len;
-    }
-    return r;
-}
-
 void hero_print_str(HeroStr s) {
     hero_str_require(s);
     fwrite(s.ptr, 1, (size_t)s.len, stdout);
