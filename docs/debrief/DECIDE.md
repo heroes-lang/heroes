@@ -184,6 +184,13 @@ the file is still over the limit.
 
 ## Owed a panel — the path pair (author decision 2026-08-15: `b`, the pair, no normalisation)
 
+- [ ] **STILL OPEN — the shape is decided, the sitting is not held.** The checkbox
+  stays because the question is live: nothing has landed, and `path_parent` is what
+  the port's module loader will reach for. Ticking it because a decision was taken
+  about *how* to ask it would be this list's own first failure — a ticked item that
+  tracks a live question, which the entry below it (2026-08-15) says costs the same
+  as the inverse.
+
 **This is the one item of the eight `/decide` took on 2026-08-15 that `/decide`
 could not close, and the reason is jurisdictional rather than a hesitation.** Two
 new built-in names plus spec tokens is surface, so CLAUDE.md §4 makes it a `/panel`
