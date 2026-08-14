@@ -45,6 +45,11 @@ pub fn run() -> Exit {
     // (M-program-corpus), which is the whole reason that CI exists.
     let (linker_name, linker) = if cfg!(target_os = "macos") {
         ("xcode CLT", run_capture("xcode-select", &["-p"]))
+    } else if cfg!(target_os = "windows") {
+        // Windows has no `cc`. clang brings its own linker driver there — `lld`
+        // via `clang.exe` — so the question that means the same thing is whether
+        // the linker answers at all.
+        ("lld", run_capture("lld-link", &["--version"]))
     } else {
         ("cc", run_capture("cc", &["--version"]))
     };
@@ -54,6 +59,8 @@ pub fn run() -> Exit {
         detail: linker.unwrap_or_else(|| {
             if cfg!(target_os = "macos") {
                 "not found — run `xcode-select --install`".into()
+            } else if cfg!(target_os = "windows") {
+                "not found — install LLVM, or Visual Studio's C++ workload".into()
             } else {
                 "not found — install a C toolchain (build-essential, base-devel, …)".into()
             }

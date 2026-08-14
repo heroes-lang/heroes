@@ -53,11 +53,37 @@
  * exact defect this file exists to prevent and which its own comment says the
  * round-trip check cannot catch. Aborting is the honest answer: the alternative
  * is a number that is not a number in any locale (2026-08-12, sweep 001 S9). */
-static locale_t hero_c_locale(void) {
-    static locale_t cached = (locale_t)0;
-    if (cached == (locale_t)0) {
-        cached = newlocale(LC_ALL_MASK, "C", (locale_t)0);
-        if (cached == (locale_t)0) hero_panic("cannot create the C locale for rendering");
+/* **Windows spells this better than POSIX does, and the port uses that.**
+ *
+ * POSIX 2008 gives `uselocale`, which *switches* the calling thread's locale and
+ * must be switched back — so every early return between the two calls is a bug
+ * waiting to be written. The Microsoft CRT instead takes the locale as an
+ * argument to the conversion itself (`_snprintf_l`, `_strtod_l`), which removes
+ * the window entirely rather than making it narrow. Both are wrapped below so
+ * the rendering code reads the same on every platform.
+ *
+ * mingw has no `<xlocale.h>`, no `locale_t`, no `newlocale` — this is the whole
+ * of what stopped the runtime compiling for Windows (18 errors, all in this
+ * file, measured at panel 049). */
+#if defined(_WIN32)
+typedef _locale_t hero_locale;
+#define HERO_NO_LOCALE ((_locale_t)0)
+static hero_locale hero_make_c_locale(void) { return _create_locale(LC_ALL, "C"); }
+#define hero_snprintf_c(buf, cap, loc, prec, v) _snprintf_s_l((buf), (cap), _TRUNCATE, "%.*g", (loc), (prec), (v))
+#define hero_strtod_c(s, loc) _strtod_l((s), NULL, (loc))
+#else
+typedef locale_t hero_locale;
+#define HERO_NO_LOCALE ((locale_t)0)
+static hero_locale hero_make_c_locale(void) { return newlocale(LC_ALL_MASK, "C", (locale_t)0); }
+#define hero_snprintf_c(buf, cap, loc, prec, v) snprintf((buf), (cap), "%.*g", (prec), (v))
+#define hero_strtod_c(s, loc) strtod((s), NULL)
+#endif
+
+static hero_locale hero_c_locale(void) {
+    static hero_locale cached = HERO_NO_LOCALE;
+    if (cached == HERO_NO_LOCALE) {
+        cached = hero_make_c_locale();
+        if (cached == HERO_NO_LOCALE) hero_panic("cannot create the C locale for rendering");
     }
     return cached;
 }
@@ -67,17 +93,20 @@ static int hero_f64_render(char *buf, size_t cap, double v) {
     if (v == (double)INFINITY) return snprintf(buf, cap, "inf");
     if (v == -(double)INFINITY) return snprintf(buf, cap, "-inf");
 
-    locale_t c = hero_c_locale();
-    locale_t previous = (locale_t)0;
-    if (c != (locale_t)0) previous = uselocale(c);
+    hero_locale c = hero_c_locale();
+#if !defined(_WIN32)
+    /* POSIX: switch the thread's locale for the window below, and switch back.
+     * On Windows nothing is switched — the locale travels as an argument. */
+    locale_t previous = uselocale(c);
+#endif
 
     double magnitude = v < 0 ? -v : v;
     int first = magnitude != 0.0 && magnitude < DBL_MIN ? 1 : DBL_DIG;
     int n = 0;
     for (int prec = first; prec <= 17; prec++) {
-        n = snprintf(buf, cap, "%.*g", prec, v);
+        n = hero_snprintf_c(buf, cap, c, prec, v);
         if (n < 0 || (size_t)n >= cap) hero_panic("f64 render overflow");
-        if (strtod(buf, NULL) == v) break;
+        if (hero_strtod_c(buf, c) == v) break;
     }
     /* The rider: a value with no fractional part still shows a point, so
      * print(1.0) is not indistinguishable from print(1). Under `1`, the
@@ -90,7 +119,9 @@ static int hero_f64_render(char *buf, size_t cap, double v) {
         if (m < 0 || (size_t)(n + m) >= cap) hero_panic("f64 render overflow");
         n += m;
     }
+#if !defined(_WIN32)
     if (previous != (locale_t)0) uselocale(previous);
+#endif
     return n;
 }
 

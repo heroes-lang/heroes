@@ -110,6 +110,10 @@ pub struct Emitted {
     /// linker's arguments depend on dead-code analysis, and a program that stops
     /// calling one function of a library would stop linking it.
     pub link: Vec<String>,
+    /// The **packages** a group asked the machine about, kept apart from `link`
+    /// because they are a different kind of thing: a name here is a question, and
+    /// its answer arrives from a file this program did not write.
+    pub packages: Vec<String>,
 }
 
 /// Where a program's `main` is, or nothing. A file with no entry point is a
@@ -164,7 +168,7 @@ pub fn emit_for(
 ) -> Emitted {
     let refused = gate::refuse(target, program, ast, resolved, checked, src);
     if !refused.is_empty() {
-        return Emitted { c: String::new(), diagnostics: refused, link: Vec::new() };
+        return Emitted { c: String::new(), diagnostics: refused, link: Vec::new(), packages: Vec::new() };
     }
     // The ROOT module, and it names exactly two things now: the generated `.c`
     // in a `#line` directive, and the program-wide types the emitter invents
@@ -245,5 +249,10 @@ pub fn emit_for(
         }
         Target::Tests => main::test_shim(&mut w, program, src),
     }
-    Emitted { c: w.finish(), diagnostics: Vec::new(), link: externs::libraries(program, ast, src) }
+    Emitted {
+        c: w.finish(),
+        diagnostics: Vec::new(),
+        link: externs::libraries(program, ast, src),
+        packages: externs::packages(program, ast, src),
+    }
 }

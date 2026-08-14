@@ -197,6 +197,13 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_open(path: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
 ```
+Where a library lives is the machine's answer, not the program's, so a group may
+name a **package** instead of a library: `extern "raylib.h" package "raylib"`
+asks the system where its headers and libraries are and what else it needs —
+frameworks on macOS, `-lGL -lX11` on Linux — in one spelling that is the same
+everywhere. Only `-I`, `-L`, `-l`, `-F` and `-framework` are accepted back; a
+package that answers with anything else is refused by name.
+
 A group's `constant` has no body: the header holds the value. `ptr` is an opaque
 pointer whose only literal is `nullptr`, `cstr` a C string, and `s.cstr()` passes a
 `str` to C. A C out-parameter is an `@` parameter.

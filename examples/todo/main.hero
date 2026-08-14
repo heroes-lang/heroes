@@ -102,7 +102,7 @@ test "the sample lists the way the file reads"
     assert list.numbered(tasks)[0] == "1. [x] write the corpus harness"
 
 test "a task added is a task on disk, read back by a second program"
-    path = "/tmp/heroes-corpus-todo.txt"
+    path = "build/heroes-corpus-todo.txt"
     write_file(path: path, text: "[ ] one\n").must()
     first = list.read(read_file(path).must()).must()
     grown = list.add(first, "two").must()
@@ -113,7 +113,7 @@ test "a task added is a task on disk, read back by a second program"
     assert again[1].done == false
 
 test "completing a task survives the round trip through the file"
-    path = "/tmp/heroes-corpus-todo-done.txt"
+    path = "build/heroes-corpus-todo-done.txt"
     write_file(path: path, text: "[ ] one\n[ ] two\n").must()
     tasks = list.read(read_file(path).must()).must()
     write_file(path: path, text: list.render(list.complete(tasks, 1).must())).must()

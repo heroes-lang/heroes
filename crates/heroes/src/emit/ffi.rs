@@ -37,6 +37,12 @@ pub const ASSERTION: &str = "heroes-ffi-return ";
 /// the type was right and the header does not hold a *value*.
 pub const CONSTANCY: &str = "heroes-ffi-const ";
 
+/// The marker the driver puts on a verdict about a **package** — one this
+/// compiler wrote itself, unlike the clang and linker lines the other classes
+/// read. It is here rather than in the driver so that the one file that decides
+/// *whose mistake this is* holds every marker it matches.
+pub const PACKAGE: &str = "heroes-ffi-package ";
+
 /// What clang prints on the line of a `_Static_assert` that failed. Required
 /// before a line is read as one of ours, because clang **echoes the source line
 /// under its diagnostic** — and that echo contains the assertion's message text
@@ -73,6 +79,9 @@ pub fn explain(stderr: &str, ast: &Ast, src: &Source) -> Vec<Diagnostic> {
             push(&mut found, diagnostic);
         }
         if let Some(diagnostic) = missing_header(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = package_problem(stderr, line, ast, src) {
             push(&mut found, diagnostic);
         }
     }
@@ -336,5 +345,54 @@ fn group_head(ast: &Ast, src: &Source, header: &str) -> Option<crate::source::Sp
             _ => return None,
         };
         (src.slice(named).trim_matches('"') == header).then_some(decl.span)
+    })
+}
+
+/// **A package this program asked about, and the machine could not answer** —
+/// not installed, or answering with a flag the allow-list refuses.
+///
+/// The sixth class, and the only one whose text this compiler wrote itself: the
+/// driver marks it, and the marker is matched here so that one file holds every
+/// rule about whose mistake a build failure is. The verdict is still the
+/// author's — a package absent from *this machine* is a thing they install, and
+/// a `.pc` answering with `-fplugin=` is their environment — so it is exit 1 on
+/// the line that named the package, not exit 2 on the compiler.
+fn package_problem(stderr: &str, line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    let rest = line.split(PACKAGE).nth(1)?;
+    let name = rest.split('`').nth(1)?;
+    let span = package_span(ast, src, name)?;
+    // The driver's message is already written for a reader; the whole of it is
+    // carried, minus the marker, because its second and third lines are the
+    // repair and §4.17 says an error carries what is needed to fix it.
+    let whole = stderr
+        .lines()
+        .skip_while(|l| !l.contains(PACKAGE))
+        .collect::<Vec<&str>>()
+        .join("\n");
+    let headline = whole.lines().next().unwrap_or(rest).replace(PACKAGE, "the package ");
+    let mut diagnostic = Diagnostic::new("ffi_package", headline, span);
+    for note in whole.lines().skip(1).map(str::trim).filter(|l| !l.is_empty()) {
+        diagnostic = diagnostic.with_note(note.to_string());
+    }
+    Some(diagnostic)
+}
+
+/// The span of the first declaration whose group asked about this package — the
+/// same gate as everywhere else in this file, and the reason a stray line
+/// mentioning a package name cannot become a diagnostic about a program that
+/// never asked for it.
+fn package_span(ast: &Ast, src: &Source, name: &str) -> Option<crate::source::Span> {
+    ast.decls.iter().find_map(|decl| {
+        let library = match &decl.kind {
+            DeclKind::Function(function) => function.library?,
+            DeclKind::Constant { library, .. } => (*library)?,
+            _ => return None,
+        };
+        match library {
+            crate::syntax::Library::Package(span) if src.slice(span).trim_matches('"') == name => {
+                Some(decl.span)
+            }
+            _ => None,
+        }
     })
 }

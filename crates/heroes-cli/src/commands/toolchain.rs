@@ -242,8 +242,11 @@ impl Toolchain {
         level: &str,
         sanitize: bool,
         include: Option<&Path>,
-        libraries: &[String],
+        libraries: &Libraries,
     ) -> Result<(), String> {
+        // Asked before clang runs, so a package that is not installed is reported
+        // as itself rather than as a header clang could not find.
+        let from_packages = resolve_packages(&libraries.packages)?;
         let mut clang = Command::new("clang");
         clang.args(FLAGS).arg(level).args(sanitizers(sanitize));
         clang.arg(c_file).arg(object);
@@ -251,12 +254,119 @@ impl Toolchain {
         if let Some(directory) = include {
             clang.arg("-I").arg(directory);
         }
-        for library in libraries {
+        // **Before the names.** A package answers with `-I` and `-L` as well as
+        // `-l`, and a search path that arrives after the library it is for is a
+        // path the linker has already stopped needing.
+        clang.args(&from_packages);
+        for library in &libraries.link {
             clang.arg(format!("-l{library}"));
         }
-        clang.arg("-o").arg(binary);
-        run(clang, "compiling the generated C")
+        // **Written beside it and renamed into place**, for the reason the runtime
+        // object already is: `build/<hash>/` is content-addressed, so two `heroes`
+        // processes compiling the same program agree on the path — and `cargo
+        // test` runs its binaries in parallel, so a third one can be *executing*
+        // that path while this one truncates it. It failed three times over two
+        // days, never twice in a row, which is the signature of a race and the
+        // worst way for a defect to present itself. A rename inside one directory
+        // is atomic on POSIX; losing it costs nothing, because the key covers the
+        // whole configuration and the winner's binary is ours.
+        let staged = binary.with_extension(format!("{}.tmp", std::process::id()));
+        clang.arg("-o").arg(&staged);
+        run(clang, "compiling the generated C")?;
+        std::fs::rename(&staged, binary)
+            .map_err(|e| format!("cannot publish {}: {e}", binary.display()))
     }
+}
+
+/// What a program asked to be linked against: names it knew, and names it asked
+/// the machine about.
+///
+/// One struct rather than two more parameters, because `link` already carries a
+/// `PORT-DEBT` for seven of them and CLAUDE.md §5 forbids ratcheting one.
+pub struct Libraries {
+    pub link: Vec<String>,
+    pub packages: Vec<String>,
+}
+
+/// **The flags a package may hand back, and nothing else.**
+///
+/// This is the whole security of `package`, and the precedent is not
+/// hypothetical: Go shipped the same idea — a build file naming flags for the C
+/// compiler — without a filter, and it became **CVE-2018-6574**. A repository
+/// could ship `attack.so` beside `// #cgo CFLAGS: -fplugin=attack.so`, and
+/// `go get` loaded the plugin into the host compiler. The fix, in February 2018,
+/// was exactly this list. Go's own `security.go` opens with *"We must avoid flags
+/// like -fplugin=, which can allow arbitrary code execution during the build. Do
+/// not make changes here without carefully considering the implications."*
+///
+/// Heroes has the advantage of arriving second: the list is here on the first
+/// day, not retrofitted after a disclosure. A `.pc` file is **input this program
+/// did not write** — installed by a package manager, editable by anyone who can
+/// write to a prefix — so it is treated as input and not as configuration.
+///
+/// `-framework` and `-F` are on the list because that is how a package answers on
+/// macOS, which is the case `link` could never spell. They take a following
+/// argument, which is why they are matched as a pair rather than as a prefix.
+const ALLOWED: [&str; 3] = ["-I", "-L", "-l"];
+const ALLOWED_WITH_ARGUMENT: [&str; 2] = ["-framework", "-F"];
+
+/// Ask the machine about each package, and let nothing through that is not on the
+/// list.
+///
+/// The failure is deliberately *not* silent and deliberately *not* a fallback: a
+/// package that cannot be resolved must stop the build, because the alternative
+/// is linking a program that is missing exactly the library the author asked for
+/// and finding out at a link error naming C symbols.
+fn resolve_packages(packages: &[String]) -> Result<Vec<String>, String> {
+    let mut flags: Vec<String> = Vec::new();
+    for package in packages {
+        // The name reaches `pkg-config` as one argument and never as a shell
+        // string, so a package name cannot become a second command.
+        let mut ask = Command::new("pkg-config");
+        ask.arg("--cflags").arg("--libs").arg(package);
+        let answered = match ask.output() {
+            Ok(answered) => answered,
+            Err(e) => {
+                return Err(format!(
+                    "heroes-ffi-package `{package}`: {e}\n  \
+                     `package \"{package}\"` needs `pkg-config` on this machine — install it, or name the library directly with `link`"
+                ))
+            }
+        };
+        if !answered.status.success() {
+            let said = String::from_utf8_lossy(&answered.stderr);
+            return Err(format!(
+                "heroes-ffi-package `{package}` is not installed on this machine\n  \
+                 pkg-config said: {}\n  \
+                 install its development files, or name the library directly with `link`",
+                said.trim()
+            ));
+        }
+        let said = String::from_utf8_lossy(&answered.stdout).into_owned();
+        let mut words = said.split_whitespace();
+        while let Some(word) = words.next() {
+            if ALLOWED_WITH_ARGUMENT.contains(&word) {
+                let Some(value) = words.next() else {
+                    return Err(format!(
+                        "heroes-ffi-package `{package}` answered with `{word}` and nothing after it"
+                    ));
+                };
+                flags.push(word.to_string());
+                flags.push(value.to_string());
+                continue;
+            }
+            if ALLOWED.iter().any(|allowed| word.starts_with(allowed) && word.len() > allowed.len()) {
+                flags.push(word.to_string());
+                continue;
+            }
+            return Err(format!(
+                "heroes-ffi-package `{package}` answered with `{word}`, which this compiler does not pass on\n  \
+                 only `-I`, `-L`, `-l`, `-F` and `-framework` are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  \
+                 name the library directly with `link` if you need it"
+            ));
+        }
+    }
+    Ok(flags)
 }
 
 /// `--sanitize`'s flags, and what they are for.

@@ -75,6 +75,21 @@ fn relative(path: &Path) -> String {
         .to_string()
 }
 
+/// Whether this machine simply does not have what a program binds.
+///
+/// **A fact about the machine, asked of the compiler rather than assumed from a
+/// list of program names.** `ffi_package` and `ffi_missing_header` are the two
+/// diagnostics that mean *the library you named is not installed here* — they are
+/// the author's problem on their own machine and nobody's problem on a CI runner
+/// that was never given raylib. Any other failure is a real one.
+///
+/// The count is floored below, so a machine that starts skipping the whole corpus
+/// says so instead of passing.
+fn machine_lacks_the_library(out: &std::process::Output) -> bool {
+    let said = String::from_utf8_lossy(&out.stderr);
+    said.contains("error[ffi_package]") || said.contains("error[ffi_missing_header]")
+}
+
 fn heroes(root: &Path, args: &[String]) -> std::process::Output {
     std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
         .current_dir(root)
@@ -99,10 +114,16 @@ fn arguments(dir: &Path) -> Vec<String> {
 #[test]
 fn every_program_directory_passes_its_tests_in_three_configurations() {
     let root = workspace_root();
+    let mut skipped = 0;
+    let total = program_directories().len();
     for dir in program_directories() {
         let main = relative(&dir.join("main.hero"));
         for level in ["-O0", "-O2", "--sanitize"] {
             let out = heroes(&root, &["test".to_string(), main.clone(), level.to_string()]);
+            if machine_lacks_the_library(&out) {
+                skipped += 1;
+                break;
+            }
             let said = String::from_utf8_lossy(&out.stdout);
             let noise = String::from_utf8_lossy(&out.stderr);
             assert_eq!(
@@ -122,6 +143,14 @@ fn every_program_directory_passes_its_tests_in_three_configurations() {
             }
         }
     }
+    // **A machine may be missing a library; it may not be missing most of them.**
+    // Without this, a runner with no C libraries at all would report the corpus
+    // green by testing none of it — which is the failure mode a skip always
+    // invites and the reason the count is asserted rather than printed.
+    assert!(
+        skipped * 3 <= total,
+        "{skipped} of {total} programs were skipped for want of a library — this machine is not testing the corpus"
+    );
 }
 
 /// Every program asserts its own behaviour, unless what it does belongs to a C
@@ -196,6 +225,9 @@ fn every_program_prints_what_it_promises_in_three_configurations() {
         let mut build = vec!["build".to_string(), main.clone(), "-o".to_string()];
         build.push(binary.display().to_string());
         let built = heroes(&root, &build);
+        if machine_lacks_the_library(&built) {
+            continue;
+        }
         assert_eq!(
             built.status.code(),
             Some(0),
@@ -286,6 +318,9 @@ fn the_corpus_generates_c_that_compiles_without_a_single_warning() {
         // configurations. clang's warnings reach stderr even on success.
         for verb in ["build", "run"] {
             let out = heroes(&root, &[verb.to_string(), main.clone()]);
+            if machine_lacks_the_library(&out) {
+                break;
+            }
             let noise = String::from_utf8_lossy(&out.stderr);
             let warnings: Vec<&str> = noise.lines().filter(|l| l.contains("warning:")).collect();
             if !erases_a_type {

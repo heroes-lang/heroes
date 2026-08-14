@@ -48,6 +48,7 @@ mod types;
 mod uses;
 
 pub use ast::{
+    Library,
     Arg, Arm, ArmBody, Ast, BinaryOp, Block, Branch, Case, Decl, DeclKind, Expr, ExprId, ExprKind,
     Field, Function, MapEntry, Param, Pattern, PatternKind, Stmt, StmtId, StmtKind, TypeId,
     TypeKind, TypeNode, UnaryOp, Use,

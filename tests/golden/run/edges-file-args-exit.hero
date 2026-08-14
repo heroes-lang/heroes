@@ -7,15 +7,18 @@
 # without a single new built-in and without a second composition form in the
 # emitter.
 #
-# The path is absolute, and that is the harness talking: the three configurations
-# run the binary from two different working directories (the crate's, and the
-# repository root), so a relative path is a different file in each — measured,
-# and the first version of this case failed on exactly that. `/tmp` is assumed,
-# which is true of both platforms the CI will cover.
+# The path is relative, and that is the harness *fixed*: the three configurations
+# used to run the binary from two different working directories (the crate's, and
+# the repository root), so a relative path was a different file in each — measured,
+# and the first version of this case failed on exactly that. It was `/tmp` until
+# 2026-08-14, which was true of both platforms the CI covered and false of the
+# third: Windows has no `/tmp`. `build/` is this project's own directory, created
+# by `heroes doctor` and by every compile, and it exists wherever the compiler
+# does — a fact about the tool rather than about the operating system.
 # Bulk regression case.
 
 constant PATH: str
-    "/tmp/heroes-golden-edges.txt"
+    "build/heroes-golden-edges.txt"
 
 function main()
     match write_file(path: PATH, text: "one\ntwo\nthree\n")
@@ -26,7 +29,7 @@ function main()
         .err e   => print("read failed: ", e.code)
     # The error side, which is the half a happy-path test never reaches. The
     # code is a stable snake_case string (§4.6), so it can be asserted.
-    match read_file("/tmp/heroes-no-such-file-at-all")
+    match read_file("build/heroes-no-such-file-at-all")
         .ok _  => print("unexpected")
         .err e => print("missing: ", e.code)
     # `args()` gives what follows the program's name, and the golden harness

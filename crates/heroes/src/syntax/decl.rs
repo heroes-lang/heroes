@@ -119,9 +119,9 @@ pub(super) fn constant_tail(
         return;
     }
     let ty = parse_type(cur, ast, src);
-    let (header, link) = match linkage {
+    let (header, library) = match linkage {
         Linkage::Heroes => (None, None),
-        Linkage::Extern { header, link } => (Some(header), link),
+        Linkage::Extern { header, library } => (Some(header), library),
     };
     // An `extern` constant has no body, and an indented one under it is the
     // mistake `externs::body_check` names. Everything else keeps the old shape.
@@ -139,7 +139,7 @@ pub(super) fn constant_tail(
         Some(block) => keyword.to(block.span),
         None => keyword.to(cur.previous_span()),
     };
-    ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body, header, link } });
+    ast.decls.push(Decl { name, doc, span, kind: DeclKind::Constant { ty, body, header, library } });
 }
 
 /// `function dist2(a: Point, b: Point) -> i64` + body (§4.2). The parameter
@@ -161,7 +161,7 @@ fn function_decl(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
 #[derive(Clone, Copy)]
 pub(super) enum Linkage {
     Heroes,
-    Extern { header: Span, link: Option<Span> },
+    Extern { header: Span, library: Option<super::ast::Library> },
 }
 
 /// Everything after a function's name: generics, the signature, and — for a
@@ -208,9 +208,9 @@ pub(super) fn function_tail(
         Some(block) => block.span,
         None => cur.previous_span(),
     };
-    let (header, link) = match linkage {
+    let (header, library) = match linkage {
         Linkage::Heroes => (None, None),
-        Linkage::Extern { header, link } => (Some(header), link),
+        Linkage::Extern { header, library } => (Some(header), library),
     };
     let kind = DeclKind::Function(Function {
         generics: generic_names,
@@ -219,7 +219,7 @@ pub(super) fn function_tail(
         body,
         is_extern,
         header,
-        link,
+        library,
     });
     ast.decls.push(Decl { name, doc, span: keyword.to(end), kind });
 }

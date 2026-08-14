@@ -76,7 +76,7 @@ mod decls;
 mod exprs;
 mod types;
 
-pub use decls::{Case, Decl, DeclKind, Field, Function, Param, Use};
+pub use decls::{Case, Decl, DeclKind, Field, Function, Library, Param, Use};
 pub use exprs::{
     Arg, Arm, ArmBody, BinaryOp, Block, Branch, Expr, ExprKind, MapEntry, Pattern, PatternKind,
     Stmt, StmtKind, UnaryOp,

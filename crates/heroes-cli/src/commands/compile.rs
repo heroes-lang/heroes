@@ -239,7 +239,10 @@ pub fn compile_with_tests(
         options.level,
         options.sanitize,
         include.as_deref(),
-        &emitted.link,
+        &super::toolchain::Libraries {
+            link: emitted.link.clone(),
+            packages: emitted.packages.clone(),
+        },
     ) {
         // **One class of clang failure is the author's**, and it is the only one:
         // the return-type assertion §4.19 generates per `extern` exists to fail

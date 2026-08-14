@@ -39,8 +39,8 @@ jobs:
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    # Neither platform's failure hides the other's. That is the point of having
-    # two, and `fail-fast` would undo it on the first divergence.
+    # No platform's failure hides another's. That is the point of having three,
+    # and `fail-fast` would undo it on the first divergence.
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +49,14 @@ jobs:
             os: ubuntu-latest
           - name: Darwin arm64
             os: macos-14
+          # **The third leg, added the day the runtime could hold it** (author
+          # instruction 2026-08-14, "I want Windows too"). It is here because
+          # `runtime/parts/f64.c` now compiles under a Windows target — the 18
+          # errors panel 049 measured were all in that one file — and not because
+          # the platform was named. A name in a document is a promise; a job is a
+          # measurement.
+          - name: Windows x86-64
+            os: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -59,11 +67,13 @@ jobs:
       # clang is named rather than assumed: it is the backend (CLAUDE.md §7), and
       # a job that found it only because the image happened to carry it is a job
       # that breaks when the image changes.
-      - name: Install clang and the C libraries the FFI examples bind
+      # pkg-config is what `package "…"` asks, so it is named on every platform
+      # rather than assumed. macOS runners carry it via Homebrew.
+      - name: Install clang, pkg-config, and the C libraries the FFI examples bind
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang libsqlite3-dev libcurl4-openssl-dev
+          sudo apt-get install -y clang pkg-config libsqlite3-dev libcurl4-openssl-dev libraylib-dev
 
       # **No toolchain step, on purpose.** `rust-toolchain.toml` pins the version
       # and `rustup` — preinstalled on both runners — honours it for every
@@ -73,14 +83,27 @@ jobs:
       # lines that clippy 1.90 accepts, and local and CI had never been compared.
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install what the FFI examples bind
+        if: runner.os == 'macOS'
+        run: brew install pkg-config raylib || true
+
+      # Windows carries clang with Visual Studio; pkg-config and the C libraries
+      # the FFI examples bind are not there, so this leg is honest about what it
+      # covers — see the note in `corpus.rs`.
+      - name: Report the toolchain
+        if: runner.os == 'Windows'
+        run: clang --version
+
       - name: Build the compiler
         run: cargo build
 
       # The toolchain check, before anything asks it to compile C. It is the one
       # command that reports what this machine actually has, and the `arch` line
-      # in its output is how a reader tells the two jobs apart at a glance.
+      # in its output is how a reader tells the three jobs apart at a glance.
+      # `cargo run` rather than a path, because the path has a `.exe` on one of
+      # them and a leading `./` on the others.
       - name: heroes doctor
-        run: ./target/debug/heroes doctor
+        run: cargo run --quiet -- doctor
 
       # The Cyclone rule (CLAUDE.md §5) and every lint the repo has agreed to.
       - name: cargo clippy

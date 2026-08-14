@@ -1,0 +1,47 @@
+# §4.19's ladder, rung 5: a window opens, and the library it needs is asked for
+# rather than described.
+#
+#     heroes run examples/raylib/main.hero
+#
+# **This program is the acceptance test for `package`.** raylib is the ladder's
+# first *third-party* library — rungs 1 to 4 are all system libraries — and it is
+# the rung that was unclimbable for a milestone. Three panels went looking for
+# why. The answer was not the one anybody expected: not the missing `-framework`
+# spelling, but the missing **search path**. On this machine the header is under
+# `/opt/homebrew/include` and the library under `/opt/homebrew/lib`, and the
+# language had no way to say either.
+#
+# `package "raylib"` says both, and says them the same way everywhere: the
+# machine is asked, and it answers with `-I`, `-L` and `-lraylib` here, with
+# `-lGL -lX11 -lm -ldl` on Linux, and with frameworks where frameworks are what
+# is needed. One line, no platform names in the program — which is what panel 049
+# refused a platform axis in favour of.
+#
+# What it does NOT prove, and the record should not be read as claiming it does:
+# rung 5's text also promises *"real struct passing"*, and **383 of raylib's 600
+# entry points pass or return a struct by value**. `ClearBackground(Color)` does
+# not compile, because Heroes has seven boundary types and none of them is a
+# struct. This program uses `DrawFPS`, which is the one draw call that takes only
+# integers. The type vocabulary is the next wall and it is untouched.
+#
+# The window is 1×1 and closes immediately, because a corpus program runs
+# unattended in three configurations on a machine with no display.
+
+extern "raylib.h" package "raylib"
+    function InitWindow(width: i32, height: i32, title: cstr)
+    function CloseWindow()
+    function WindowShouldClose() -> bool
+
+function main()
+    InitWindow(width: 1, height: 1, title: "Heroes".cstr())
+    # Asked once so the binding is exercised rather than merely linked: a call
+    # that returns a value is the half a window-open-and-close program skips.
+    _ = WindowShouldClose()
+    CloseWindow()
+    print("the window opened and closed")
+
+test "the binding reaches raylib and comes back"
+    InitWindow(width: 1, height: 1, title: "test".cstr())
+    _ = WindowShouldClose()
+    CloseWindow()
+    assert true

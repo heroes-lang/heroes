@@ -14,21 +14,29 @@
 //! where a group begins — the whole reconstruction below rests on that.
 
 use crate::source::{Source, Span};
-use crate::syntax::{Decl, DeclKind};
+use crate::syntax::{Decl, DeclKind, Library};
 
 use super::fmt::Fmt;
 
 /// `extern "sqlite3.h" link "sqlite3"` — the group's head line, rebuilt from any
 /// one of its members, since every member carries both spans (§4.19).
 pub(super) fn extern_head(src: &Source, decl: &Decl) -> String {
-    let (header, link) = extern_spans(decl);
+    let (header, library) = extern_spans(decl);
     let mut out = String::from("extern ");
     if let Some(header) = header {
         out.push_str(src.slice(header)); // quotes included
     }
-    if let Some(link) = link {
-        out.push_str(" link ");
-        out.push_str(src.slice(link));
+    if let Some(library) = library {
+        // The word is chosen by the kind, so a `package` group cannot be printed
+        // back as a `link` one — which would be `fmt` changing what the program
+        // asks the machine.
+        out.push_str(match library {
+            Library::Link(_) => " link ",
+            Library::Package(_) => " package ",
+        });
+        out.push_str(src.slice(match library {
+            Library::Link(span) | Library::Package(span) => span,
+        }));
     }
     out
 }
@@ -36,10 +44,10 @@ pub(super) fn extern_head(src: &Source, decl: &Decl) -> String {
 /// The two spans a group's members all carry, whatever kind of member they are
 /// (§4.19, panel 038). **One reader**, so `function` and `constant` cannot drift
 /// apart on where a group begins.
-fn extern_spans(decl: &Decl) -> (Option<Span>, Option<Span>) {
+fn extern_spans(decl: &Decl) -> (Option<Span>, Option<Library>) {
     match &decl.kind {
-        DeclKind::Function(function) => (function.header, function.link),
-        DeclKind::Constant { header, link, .. } => (*header, *link),
+        DeclKind::Function(function) => (function.header, function.library),
+        DeclKind::Constant { header, library, .. } => (*header, *library),
         _ => (None, None),
     }
 }
@@ -51,8 +59,15 @@ pub(super) fn extern_group<'a>(
     src: &'a Source,
     decl: &Decl,
 ) -> Option<(&'a str, Option<&'a str>)> {
-    let (header, link) = extern_spans(decl);
-    Some((src.slice(header?), link.map(|span| src.slice(span))))
+    let (header, library) = extern_spans(decl);
+    // The group key is the head line's *text*, so two groups that differ only in
+    // `link` versus `package` are two groups — which they are.
+    Some((
+        src.slice(header?),
+        library.map(|library| match library {
+            Library::Link(span) | Library::Package(span) => src.slice(span),
+        }),
+    ))
 }
 
 /// The head line's header string, as a span — where the group *begins*, which is

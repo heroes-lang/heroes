@@ -603,7 +603,18 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             relative.display(),
             String::from_utf8_lossy(&built.stderr)
         );
-        let ran = std::process::Command::new(&binary).output().expect("the program runs");
+        // **From the workspace root, like the other two legs.** `run` executes the
+        // binary as a child of `heroes`, which the harness invokes from the root;
+        // this leg used to execute it from the crate's own directory, so a
+        // program opening a relative path opened a *different file* at `-O0` than
+        // at `-O2`. The case that met it worked around it with an absolute
+        // `/tmp` path, which then had to be undone for Windows — so the
+        // workaround outlived its reason and the disagreement it hid was still
+        // there (2026-08-14).
+        let ran = std::process::Command::new(&binary)
+            .current_dir(&root)
+            .output()
+            .expect("the program runs");
         check(relative, "-O0", &ran, &expected, &ending);
 
         // -O2: `run` compiles and executes, and forwards the program's own status.

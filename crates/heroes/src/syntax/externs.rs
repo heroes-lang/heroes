@@ -17,7 +17,7 @@
 use crate::lexer::TokenKind;
 use crate::source::{Source, Span};
 
-use super::ast::Ast;
+use super::ast::{Ast, Library};
 use super::cursor::Cursor;
 use super::decl::{function_tail, Linkage};
 
@@ -45,7 +45,7 @@ pub(super) fn group(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
     let doc = cur.take_docs(src, keyword);
     cur.bump(); // `extern`
     let Some(header) = header(cur, src) else { return };
-    let link = link(cur, src);
+    let library = library(cur, src);
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
         if !cur.at_reported_error() {
@@ -58,7 +58,7 @@ pub(super) fn group(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
         }
         return;
     }
-    members(cur, ast, src, doc, Linkage::Extern { header, link });
+    members(cur, ast, src, doc, Linkage::Extern { header, library });
 }
 
 /// The head line's header string. A missing one is where the old headerless
@@ -83,23 +83,77 @@ fn header(cur: &mut Cursor, src: &Source) -> Option<Span> {
     None
 }
 
-/// `link "sqlite3"` — optional, and matched by text.
-fn link(cur: &mut Cursor, src: &Source) -> Option<Span> {
-    if !(cur.at(TokenKind::Ident) && src.slice(cur.span()) == "link") {
+/// `link "sqlite3"` or `package "raylib"` — optional, one or the other, and both
+/// matched by text rather than lexed as keywords, for the reason above.
+///
+/// **They are alternatives because they are different questions.** `link` tells
+/// the linker a name the program already knows; `package` asks the machine, and
+/// gets a different answer per platform from one spelling. Writing both would
+/// mean the program both knew and did not know, so the second is refused with
+/// the first one named.
+fn library(cur: &mut Cursor, src: &Source) -> Option<Library> {
+    let taken = one_library(cur, src)?;
+    // A second clause on the same head line. The message names what is already
+    // there, because the repair is to delete one and the author must be told
+    // which one they wrote first.
+    if let Some(extra) = one_library(cur, src) {
+        let (first, second) = (word_of(taken), word_of(extra));
+        if !cur.at_reported_error() {
+            cur.error(
+                "one_library_per_group",
+                format!(
+                    "this group already says `{first}`, so `{second}` is a second answer to the same question — a group names a library or asks for a package, never both"
+                ),
+                span_of(extra),
+            );
+        }
+    }
+    Some(taken)
+}
+
+fn word_of(library: Library) -> &'static str {
+    match library {
+        Library::Link(_) => "link",
+        Library::Package(_) => "package",
+    }
+}
+
+fn span_of(library: Library) -> Span {
+    match library {
+        Library::Link(span) | Library::Package(span) => span,
+    }
+}
+
+fn one_library(cur: &mut Cursor, src: &Source) -> Option<Library> {
+    if !cur.at(TokenKind::Ident) {
         return None;
     }
-    cur.bump(); // `link`
+    let word = src.slice(cur.span());
+    let is_package = match word {
+        "link" => false,
+        "package" => true,
+        _ => return None,
+    };
+    cur.bump();
     if !cur.at(TokenKind::Str) {
         if !cur.at_reported_error() {
-            let message = format!(
-                "expected the library's name in quotes after `link`, found {} — `link \"sqlite3\"`, which is `-lsqlite3` to the linker",
-                cur.found(src)
-            );
+            let message = if is_package {
+                format!(
+                    "expected the package's name in quotes after `package`, found {} — `package \"raylib\"`, which is what the machine is asked about",
+                    cur.found(src)
+                )
+            } else {
+                format!(
+                    "expected the library's name in quotes after `link`, found {} — `link \"sqlite3\"`, which is `-lsqlite3` to the linker",
+                    cur.found(src)
+                )
+            };
             cur.error("expected_link_name", message, cur.span());
         }
         return None;
     }
-    Some(cur.bump().span)
+    let span = cur.bump().span;
+    Some(if is_package { Library::Package(span) } else { Library::Link(span) })
 }
 
 /// The indented signatures. Every one becomes its own declaration carrying the

@@ -40,17 +40,35 @@ pub(super) fn headers(program: &Program, ast: &Ast, src: &Source) -> Vec<String>
     seen
 }
 
-/// Every library a group named, deduplicated and in declaration order. Reached
-/// from `Emitted`, so the one walk that knows about `link` lives beside the one
-/// that knows about `header`.
+/// Every library a group named directly, deduplicated and in declaration order.
+/// Reached from `Emitted`, so the one walk that knows about `link` lives beside
+/// the one that knows about `header`.
 pub(super) fn libraries(program: &Program, ast: &Ast, src: &Source) -> Vec<String> {
+    named(program, ast, src, false)
+}
+
+/// Every **package** a group asked for, same order and same deduplication.
+///
+/// Kept apart from `libraries` all the way to the toolchain rather than merged
+/// here, because the two are answered by different things: a library name is
+/// handed to the linker as written, and a package name is a *question* whose
+/// answer this program does not know and must validate when it arrives.
+pub(super) fn packages(program: &Program, ast: &Ast, src: &Source) -> Vec<String> {
+    named(program, ast, src, true)
+}
+
+fn named(program: &Program, ast: &Ast, src: &Source, want_package: bool) -> Vec<String> {
     let mut seen: Vec<String> = Vec::new();
     for function in &program.functions {
-        let (_, link) = extern_spans(ast, function);
-        let Some(link) = link else { continue };
-        let library = src.slice(link).trim_matches('"').to_string();
-        if !seen.contains(&library) {
-            seen.push(library);
+        let (_, library) = extern_spans(ast, function);
+        let span = match library {
+            Some(crate::syntax::Library::Package(span)) if want_package => span,
+            Some(crate::syntax::Library::Link(span)) if !want_package => span,
+            _ => continue,
+        };
+        let name = src.slice(span).trim_matches('"').to_string();
+        if !seen.contains(&name) {
+            seen.push(name);
         }
     }
     seen
@@ -71,10 +89,10 @@ fn extern_header(ast: &Ast, src: &Source, function: &Function) -> Option<String>
 /// header"* — that this milestone falsifies, and its failure is silent: the
 /// `#include` disappears and clang blames the compiler for a name it was never
 /// given (CLAUDE.md §11). Asking the declaration is a fact about the value.
-pub(super) fn extern_spans(ast: &Ast, function: &Function) -> (Option<crate::source::Span>, Option<crate::source::Span>) {
+pub(super) fn extern_spans(ast: &Ast, function: &Function) -> (Option<crate::source::Span>, Option<crate::syntax::Library>) {
     match &ast.decls[function.decl as usize].kind {
-        crate::syntax::DeclKind::Function(declared) => (declared.header, declared.link),
-        crate::syntax::DeclKind::Constant { header, link, .. } => (*header, *link),
+        crate::syntax::DeclKind::Function(declared) => (declared.header, declared.library),
+        crate::syntax::DeclKind::Constant { header, library, .. } => (*header, *library),
         _ => (None, None),
     }
 }

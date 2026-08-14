@@ -21,6 +21,28 @@ pub struct Decl {
     pub kind: DeclKind,
 }
 
+/// Where a group's symbols come from — **one of two, never both**, which is why
+/// this is an enum and not two `Option`s.
+///
+/// The distinction is who answers the question. `link` is the program telling the
+/// linker a name it already knows. `package` is the program asking the *machine*
+/// where something is and what else it needs, and getting back a different answer
+/// on every platform — frameworks on macOS, `-lGL -lX11` on Linux — from one
+/// spelling that never changes (panel 049's measurements; author decision
+/// 2026-08-14).
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Library {
+    /// `link "sqlite3"` — reaches the linker as `-lsqlite3`, a name and never a
+    /// flag, so no `.hero` file can hand clang an arbitrary argument.
+    Link(Span),
+    /// `package "raylib"` — the machine is asked. What comes back is validated
+    /// against a closed set before it reaches clang, because a package file is
+    /// input this program did not write: Go shipped the same idea without that
+    /// check and it became CVE-2018-6574, a remote-code-execution vector through
+    /// `-fplugin=`.
+    Package(Span),
+}
+
 pub enum DeclKind {
     /// `constant MAX: i64` + body (§4.2), or — inside an `extern` group —
     /// `constant SQLITE_OK: i64` with **no** body, whose value is the header's
@@ -35,7 +57,7 @@ pub enum DeclKind {
     ///
     /// `header`/`link` carry the group's head line exactly as `Function`'s do, and
     /// mean the same thing: the group is flattened in the parser and nowhere else.
-    Constant { ty: TypeId, body: Option<Block>, header: Option<Span>, link: Option<Span> },
+    Constant { ty: TypeId, body: Option<Block>, header: Option<Span>, library: Option<Library> },
     Function(Function),
     /// `record Point` + one field per line.
     Record { fields: Vec<Field> },
@@ -72,7 +94,7 @@ pub struct Function {
     /// `extern`: an `extern` without a header does not parse, because a signature
     /// with no `#include` behind it is the accidental-link hazard §4.19 names.
     pub header: Option<Span>,
-    pub link: Option<Span>,
+    pub library: Option<Library>,
 }
 
 pub struct Param {
