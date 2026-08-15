@@ -1,0 +1,59 @@
+# fixedbugs, 2026-08-15 (panel 063, soundness lane, both judges `approve`).
+#
+# SYMPTOM: a **wrong struct result** was never exit 1. Declared and not called it
+# was **exit 0 and a shipped binary**; called, it was clang refusing the *call
+# site* — `assigning to 'Vector2' from incompatible type 'Color'` — at **exit 2**,
+# which by CLAUDE.md §10's contract says *the tool could not run*. So the compiler
+# blamed itself for the author's `.hero` line, which is CLAUDE.md §7's named
+# exception defeated. Measured with raylib: 113 of its 600 entry points return a
+# struct by value; SDL3, 4 of 1248.
+#
+# CAUSE: `assert_spelling.rs::return_check` answered `None` for `Ty::Named`, above
+# a comment reading *"No other type crosses the boundary"*. That sentence was true
+# when written and stopped being true at panel 060, when a group's `record` became
+# the header's own struct — CLAUDE.md §11's premise-about-the-world, expiring in
+# silence while the comment went on reading as correct.
+#
+# AND A CORRECTION THE SITTING FORCED, because it makes the defect worse rather
+# than better: there is **no pair of structs for which a wrong declaration
+# compiles and runs**. C struct assignment is nominal (C11 6.2.7p1), so two
+# distinct tags are incompatible whatever they contain — `Vector4` declared as
+# `Rectangle`, identical size, alignment and members, is refused. The class is
+# therefore *misattributed exit 2*, never a silent wrong answer. A silent wrong
+# answer is a bug in a program; an exit 2 naming generated C is the compiler
+# asserting it is broken when it is not.
+#
+# FIX: `HERO_RET_RECORD(c, T) = __builtin_types_compatible_p(__typeof__(c), T)`,
+# in an **unevaluated operand with no probe**. The parameter check needed a
+# *conversion* diagnostic, and a conversion inside an unevaluated operand is
+# silent; this needs a *type-identity fact*, and `__typeof__` gives the type of an
+# unevaluated expression exactly. Verified from the other side: `nm -u` on a unit
+# whose only mention of the function is the assertion shows no undefined symbol.
+#
+# `_Generic` works and is refused: its association type must be **complete** (C11
+# 6.5.1.1p2) and an incomplete one is a C2y extension Apple clang accepts
+# *silently* at this project's flags — the `HERO_RET_UNIT` defect, which survived
+# two milestones on one laptop and failed on the first CI run that compared two
+# machines. `sizeof` is refused for accepting panel 060's veto case: `{float,
+# float}` and `{int32_t, int32_t}` are one size, one set of offsets, and two
+# register classes.
+#
+# This file must NOT compile. `div` returns `div_t` by value from a header every
+# platform has, and `ldiv_t` is a real struct of the same header with a different
+# tag — so the assertion is refusing a **type identity**, not a layout, which is
+# the whole point. Nothing calls `div`: the uncalled case is the one that used to
+# be exit 0, and it is the one this pins.
+
+extern "stdlib.h"
+    record div_t
+        quot: i32
+        rem: i32
+
+    record ldiv_t
+        quot: i64
+        rem: i64
+
+    function div(numerator: i32, denominator: i32) -> ldiv_t   #~ ffi_return_type
+
+function main()
+    print("nothing calls div, and that used to be enough to ship a binary")

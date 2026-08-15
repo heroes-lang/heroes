@@ -38,26 +38,34 @@ pub(super) fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> 
         Ty::Str => Some("HERO_RET_STR"),
         Ty::Unit => Some("HERO_RET_UNIT"),
         Ty::Ptr | Ty::Cstr => Some("HERO_RET_PTR"),
-        // **A struct result gets no assertion, and this arm is where that is
-        // decided rather than where it is hidden** (panel 062's audit). The `_ =>
-        // None` this replaces carried the sentence *"no other type crosses the
-        // boundary: `ffi_type` refuses them in the checker"*, which stopped being
-        // true at panel 060: a `record` a header declares crosses, and there is no
-        // `HERO_RET_<struct>` macro for it, so `extern_assertions` skips it.
+        // **A struct result, and it took a panel to get an assertion at all**
+        // (panel 063, soundness lane, both judges `approve`). Until then this arm
+        // was `None` above a sentence claiming *"no other type crosses the
+        // boundary"*, false since panel 060.
         //
-        // Measured on this tree, 2026-08-15, with raylib installed: `extern
-        // function ColorAlpha(color: Color, alpha: f32) -> Vector2` — raylib
-        // returns `Color` — **builds at exit 0** when nothing calls it, and when
-        // something does, clang refuses the *call site* with `assigning to
-        // 'Vector2' from incompatible type 'Color'` at **exit 2**, the compiler
-        // blaming itself for the author's declaration. That is panel 036's
-        // original defect, alive again for the 349 of raylib's 600 entry points
-        // that return a struct.
+        // Measured with raylib: `-> Vector2` for a `Color`-returning function
+        // **builds at exit 0** while nothing calls it, and calling it is `assigning
+        // to 'Vector2' from incompatible type 'Color'` at **exit 2** — the compiler
+        // blaming itself for the author's declaration. **113 of raylib's 600** entry
+        // points return a struct by value; SDL3, 4 of 1248.
         //
-        // It is left as it is here on purpose: closing it means a new assertion
-        // macro and a new `heroes-ffi-` class, which is CLAUDE.md §4's panel
-        // trigger, not an audit's repair.
-        Ty::Named(_) => None,
+        // The class is **misattributed exit 2, never a silent wrong answer**, and
+        // that is worse rather than better. C struct assignment is *nominal* (C11
+        // 6.2.7p1), so two distinct tags are incompatible whatever they contain —
+        // `Vector4` declared as `Rectangle`, identical size, alignment and members,
+        // is refused. A silent wrong answer is a bug in a program; *"internal
+        // error: compiling the generated C failed"* is CLAUDE.md §7's named
+        // exception defeated.
+        //
+        // `HERO_RET_RECORD` takes **two** arguments where every other macro takes
+        // one, which is why `return_argument` exists. `_Generic` was measured to
+        // work and is refused anyway: its association type must be **complete**
+        // (C11 6.5.1.1p2), and an incomplete one is a C2y extension Apple clang
+        // accepts *silently* at this project's flags — the `HERO_RET_UNIT` defect
+        // three lines of comment away, which survived two milestones on this laptop
+        // and failed on the first CI run that compared two machines. `sizeof` was
+        // refused for accepting panel 060's veto case.
+        Ty::Named(_) => Some("HERO_RET_RECORD"),
         // **The loud direction** (CLAUDE.md §11). Everything else is refused by
         // `ffi_decls::crosses_the_boundary` before a program can reach the emitter,
         // so a new FFI type arrives here as a compile-time decision instead of
@@ -65,6 +73,50 @@ pub(super) fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> 
         // promised and did not do.
         other => unreachable!("this type does not cross the FFI boundary: {other:?}"),
     }
+}
+
+/// The **second** argument a return check takes, or `""` for the eight that take
+/// one (panel 063).
+///
+/// Every other `HERO_RET_*` names the expected type in the macro itself, so the
+/// call site is `HERO_RET_INT(f(...))`. A struct cannot: there is one macro and a
+/// header's worth of struct names, so the type travels as an argument and the call
+/// site is `HERO_RET_RECORD(f(...), Color)`.
+///
+/// **The name is `Names::of`, the C type table, and not `Names::satellite`.** The
+/// two were split at panel 060 and five call sites read the wrong one for a
+/// milestone, so `a == b` on any group record was `call to undeclared function
+/// 'Color_eq'` at exit 2. What goes inside a `_Static_assert` about a header's own
+/// function is the header's own spelling.
+pub(super) fn return_argument(
+    names: &super::typedefs::Names,
+    checked: &Checked,
+    ty: TyId,
+) -> String {
+    match checked.types.get(ty) {
+        Ty::Named(decl) => format!(", {}", names.of(decl)),
+        _ => String::new(),
+    }
+}
+
+/// Whether a result type can be asked `__builtin_constant_p` — **false for a
+/// struct, and the hole that leaves is written here rather than absorbed** (panel
+/// 063, the compiler-engineer's condition 1).
+///
+/// The falsifiable claim: **`__builtin_constant_p` answers 0 for every struct on
+/// this toolchain, including a fully-constant compound literal.** It is a fact
+/// about clang today, not about C, and it is why raylib's 26 `CLITERAL(Color)`
+/// macros bind and run at exit 0 while a naive `Ty::Named` arm would newly refuse
+/// every one of them.
+///
+/// What it costs is a real hole and the fix makes it *look* closed. §4.2's back
+/// door — a zero-argument accessor over a mutable global returning two answers on
+/// two reads — stays open for a **struct** `extern constant`, and after this change
+/// an auditor sees a type assertion on that line where there were none at all.
+/// The test that fires when the premise dies is
+/// `a_struct_constant_cannot_be_asked_for_a_value`.
+pub(super) fn asks_for_a_value(checked: &Checked, ty: TyId) -> bool {
+    !matches!(checked.types.get(ty), Ty::Named(_))
 }
 
 /// A zero of the declared parameter type, cast so the call type-checks. It is

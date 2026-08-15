@@ -265,6 +265,64 @@ fn an_integer_fields_abi_is_its_width_and_its_sign() {
     }
 }
 
+/// **The premise panel 063's struct-constant arm rests on, and the hole it leaves**
+/// (CLAUDE.md §11; that panel's compiler-engineer made it a condition of its
+/// verdict).
+///
+/// The claim, stated so it can be wrong: **`__builtin_constant_p` answers 0 for
+/// every struct on this toolchain, including a fully-constant compound literal.**
+/// It is a fact about clang today, not about C.
+///
+/// Everything turns on it. `extern_assert.rs` asks every `extern constant` two
+/// questions — *does the header give it this type* and *does the header give it a
+/// value at all* — and the second is what keeps §4.2's back door shut: `stdout`
+/// and `errno` are **objects**, and a zero-argument accessor over one returns a
+/// different answer on two reads, which is the mutable global §4.2 forbids
+/// arriving through the FFI. Asking it of a struct would refuse raylib's 26
+/// `CLITERAL(Color)` macros, which bind and run at exit 0. So the question is not
+/// asked, and the door stays open **for struct constants only**.
+///
+/// That is the hole, and it is written down because the repair makes it look
+/// closed: an auditor now sees a *type* assertion on a struct constant's line
+/// where before there were none at all, and reads the presence of one line as the
+/// presence of both. It is queued as a decision rather than papered over.
+///
+/// If this test goes red, `__builtin_constant_p` has started answering 1 for a
+/// struct — and then the arm is unnecessary, the guard should be deleted, and the
+/// door closes on its own.
+#[test]
+fn a_struct_constant_cannot_be_asked_for_a_value() {
+    let dir = std::env::temp_dir().join("heroes-struct-constant");
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    let probe = dir.join("probe.c");
+    std::fs::write(
+        &probe,
+        "typedef struct { int r, g, b, a; } Rgba;\n\
+         static const Rgba WHITE = { 255, 255, 255, 255 };\n\
+         _Static_assert(__builtin_constant_p(WHITE) == 0,\n\
+         \"a struct answered __builtin_constant_p\");\n\
+         _Static_assert(__builtin_constant_p((Rgba){1, 2, 3, 4}) == 0,\n\
+         \"a compound literal answered __builtin_constant_p\");\n\
+         _Static_assert(__builtin_constant_p(7) == 1, \"an integer still answers it\");\n",
+    )
+    .expect("writing the probe");
+    let out = std::process::Command::new("clang")
+        .args(["-std=gnu11", "-c", probe.to_str().expect("a utf-8 path"), "-o"])
+        .arg(dir.join("probe.o"))
+        .output()
+        .expect("clang runs");
+    assert!(
+        out.status.success(),
+        "`__builtin_constant_p` no longer answers 0 for a struct on this toolchain.\n\
+         `emit/assert_spelling.rs::asks_for_a_value` skips the constancy assertion for a \
+         struct `extern constant` on exactly that premise, and skipping it leaves §4.2's \
+         back door open for struct constants — a header's mutable struct object bound as a \
+         `constant` is not caught. If the premise has died, delete the guard: the assertion \
+         can be asked of every constant again and the hole closes.\n{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
 /// **Panel 053's null guard goes on the value and not on the out-parameter**, and
 /// until 2026-08-15 it went on both (panel 058's compiler-engineer, found while
 /// measuring something else).
