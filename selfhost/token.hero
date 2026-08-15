@@ -1,0 +1,193 @@
+# The token vocabulary: every word-shape the language has, and nothing else.
+# Port of crates/heroes/src/lexer/token.rs (M-selfhost-probe).
+#
+# A Token is deliberately tiny — a kind plus a byte span into the source text.
+# The text is never copied out: whoever needs it slices the source. The port
+# keeps the Rust file's order case for case, so a reader can diff the two.
+#
+# Port notes, honest ones (the probe's whole product):
+# - `int` is a foreign word in Heroes (the registry refuses it with a fix), so
+#   the literal kinds are `int_lit`/`float_lit`/`str_lit`/`char_lit` where Rust
+#   writes `Int`/`Float`/`Str`/`Char`. The *strings* kind_name returns are
+#   unchanged — they are output surface (`heroes lex --json`, the snapshots),
+#   and the Rust tests pin them.
+# - Rust's `Span { start: u32, end: u32 }` becomes i64 fields: Heroes has no
+#   u32 arithmetic worth wanting here, and every index in this language is i64.
+
+## The span and the token
+
+record Span
+    start: i64
+    end: i64
+
+record Token
+    kind: TokenKind
+    span: Span
+
+## The vocabulary
+
+variant TokenKind
+    ident
+    int_lit
+    float_lit
+    str_lit
+    char_lit
+    kw_constant
+    kw_function
+    kw_record
+    kw_variant
+    kw_match
+    kw_if
+    kw_else
+    kw_for
+    kw_while
+    kw_in
+    kw_break
+    kw_continue
+    kw_return
+    kw_test
+    kw_assert
+    kw_extern
+    kw_nullptr
+    kw_use
+    kw_true
+    kw_false
+    kw_fail
+    eq
+    at
+    colon
+    comma
+    dot
+    question
+    hole
+    arrow
+    fat_arrow
+    pipe
+    lparen
+    rparen
+    lbracket
+    rbracket
+    lbrace
+    rbrace
+    plus
+    minus
+    star
+    slash
+    percent
+    eq_eq
+    bang_eq
+    lt
+    le
+    gt
+    ge
+    and_and
+    or_or
+    bang
+    amp
+    caret
+    tilde
+    shl
+    shr
+    comment
+    terminator
+    indent
+    dedent
+    eof
+    error
+
+## The stable names
+
+# Stable lowercase name, used by `heroes lex --json` and the snapshots. These
+# names are output surface: changing one churns every snapshot — which is why
+# they stay byte-identical to the Rust table while the case names above could
+# not (`int` is refused by the foreign-word registry this file will port).
+function kind_name(kind: TokenKind) -> str
+    return match kind
+        .ident => "ident"
+        .int_lit => "int"
+        .float_lit => "float"
+        .str_lit => "str"
+        .char_lit => "char"
+        .kw_constant => "kw_constant"
+        .kw_function => "kw_function"
+        .kw_record => "kw_record"
+        .kw_variant => "kw_variant"
+        .kw_match => "kw_match"
+        .kw_if => "kw_if"
+        .kw_else => "kw_else"
+        .kw_for => "kw_for"
+        .kw_while => "kw_while"
+        .kw_in => "kw_in"
+        .kw_break => "kw_break"
+        .kw_continue => "kw_continue"
+        .kw_return => "kw_return"
+        .kw_test => "kw_test"
+        .kw_assert => "kw_assert"
+        .kw_extern => "kw_extern"
+        .kw_nullptr => "kw_nullptr"
+        .kw_use => "kw_use"
+        .kw_true => "kw_true"
+        .kw_false => "kw_false"
+        .kw_fail => "kw_fail"
+        .eq => "eq"
+        .at => "at"
+        .colon => "colon"
+        .comma => "comma"
+        .dot => "dot"
+        .question => "question"
+        .hole => "hole"
+        .arrow => "arrow"
+        .fat_arrow => "fat_arrow"
+        .pipe => "pipe"
+        .lparen => "lparen"
+        .rparen => "rparen"
+        .lbracket => "lbracket"
+        .rbracket => "rbracket"
+        .lbrace => "lbrace"
+        .rbrace => "rbrace"
+        .plus => "plus"
+        .minus => "minus"
+        .star => "star"
+        .slash => "slash"
+        .percent => "percent"
+        .eq_eq => "eq_eq"
+        .bang_eq => "bang_eq"
+        .lt => "lt"
+        .le => "le"
+        .gt => "gt"
+        .ge => "ge"
+        .and_and => "and_and"
+        .or_or => "or_or"
+        .bang => "bang"
+        .amp => "amp"
+        .caret => "caret"
+        .tilde => "tilde"
+        .shl => "shl"
+        .shr => "shr"
+        .comment => "comment"
+        .terminator => "terminator"
+        .indent => "indent"
+        .dedent => "dedent"
+        .eof => "eof"
+        .error => "error"
+
+test "the four literal kinds keep their Rust names through kind_name"
+    assert kind_name(.int_lit) == "int"
+    assert kind_name(.float_lit) == "float"
+    assert kind_name(.str_lit) == "str"
+    assert kind_name(.char_lit) == "char"
+
+test "kinds compare structurally"
+    k: TokenKind @ .lparen
+    assert k == .lparen
+    assert k != .rparen
+    k @ .eof
+    assert kind_name(k) == "eof"
+
+test "a token carries its span by value"
+    t = Token(kind: .hole, span: Span(start: 4, end: 7))
+    u: Token @ t
+    u.span.start @ 0
+    assert t.span.start == 4
+    assert u.span.start == 0
+    assert u.kind == .hole

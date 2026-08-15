@@ -1,0 +1,116 @@
+# The two word tables: Heroes' own keywords, and the foreign words that fail
+# loudly with the repair pre-written.
+# Port of crates/heroes/src/lexer/keywords.rs (M-selfhost-probe).
+#
+# `keyword` is the closed list from spec/reserved-words.md § keywords — these
+# can never be identifiers. `foreign_word` is the registry's other half and the
+# language's first executable thesis feature: the likeliest mistake from a
+# model on autopilot is a keyword imported from another language, so each one
+# is a compile error carrying its own solution.
+#
+# Port notes:
+# - Rust returns `Option<TokenKind>` and `Option<(&str, Option<&str>)>`; Heroes
+#   has `T?`, so "not in the table" is a `fail` with its own code — the miss is
+#   the common case at every call site, and both callers already match on it.
+# - Rust's `(&str, Option<&str>)` pair becomes a record holding the message and
+#   a `Repair` variant: `swap` carries the machine-applicable replacement
+#   (design.md §4.17's `Certain`), `guidance` carries nothing — a repair a
+#   model would blindly apply is worse than explaining.
+# - Every message is byte-identical to the Rust table: the check/ goldens pin
+#   the exact text, and the fixpoint's own frontend must reproduce it.
+
+use token
+
+## Error codes
+
+constant ERR_NOT_A_KEYWORD: str
+    "not_a_keyword"
+
+constant ERR_NOT_FOREIGN: str
+    "not_foreign"
+
+## The keywords
+
+# The closed list. A miss means the word is an ordinary identifier.
+function keyword(text: str) -> token.TokenKind?
+    return match text
+        "constant" => ok(.kw_constant)
+        "function" => ok(.kw_function)
+        "record" => ok(.kw_record)
+        "variant" => ok(.kw_variant)
+        "match" => ok(.kw_match)
+        "if" => ok(.kw_if)
+        "else" => ok(.kw_else)
+        "for" => ok(.kw_for)
+        "while" => ok(.kw_while)
+        "in" => ok(.kw_in)
+        "break" => ok(.kw_break)
+        "continue" => ok(.kw_continue)
+        "return" => ok(.kw_return)
+        "test" => ok(.kw_test)
+        "assert" => ok(.kw_assert)
+        "extern" => ok(.kw_extern)
+        "nullptr" => ok(.kw_nullptr)
+        "use" => ok(.kw_use)
+        "true" => ok(.kw_true)
+        "false" => ok(.kw_false)
+        "fail" => ok(.kw_fail)
+        _ => fail(ERR_NOT_A_KEYWORD, text)
+
+## The foreign words
+
+variant Repair
+    swap
+        word: str
+    guidance
+
+record ForeignWord
+    message: str
+    repair: Repair
+
+# The prescribed message (spec/reserved-words.md — the registry is the single
+# source; the golden tests in check/ pin the exact text) and, where the repair
+# is a pure word-for-word swap, the replacement to attach as a `Certain`,
+# machine-applicable fix (design.md §4.17).
+function foreign_word(text: str) -> ForeignWord?
+    return match text
+        "int" => ok(ForeignWord(message: "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .swap(word: "i64")))
+        "struct" => ok(ForeignWord(message: "`struct` is not a word in this language — use `record`: `record Point`", repair: .swap(word: "record")))
+        "enum" => ok(ForeignWord(message: "`enum` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant")))
+        "union" => ok(ForeignWord(message: "`union` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant")))
+        "class" => ok(ForeignWord(message: "`class` is not a word in this language — use `record` (there is no inheritance)", repair: .guidance))
+        "fn" => ok(ForeignWord(message: "`fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`", repair: .swap(word: "function")))
+        "func" => ok(ForeignWord(message: "`func` is not a word in this language — use `function`", repair: .swap(word: "function")))
+        "def" => ok(ForeignWord(message: "`def` is not a word in this language — use `function`", repair: .swap(word: "function")))
+        "let" => ok(ForeignWord(message: "`let` is not a word in this language — bind with `=`: `x = 5`", repair: .guidance))
+        "var" => ok(ForeignWord(message: "`var` is not a word in this language — declare a mutable with `@`: `v: i64 @ 0`", repair: .guidance))
+        "const" => ok(ForeignWord(message: "`const` is not a word in this language — use `constant`: `constant MAX: i64`", repair: .swap(word: "constant")))
+        "elif" => ok(ForeignWord(message: "`elif` is not a word in this language — write `else if`", repair: .swap(word: "else if")))
+        "switch" => ok(ForeignWord(message: "`switch` is not a word in this language — use `match`", repair: .swap(word: "match")))
+        "case" => ok(ForeignWord(message: "`case` is not a word in this language — a `match` arm is `.name => expr`", repair: .guidance))
+        "null" | "nil" | "None" => ok(ForeignWord(message: "there is no null in this language — absence is a fallible type: `i64?`, and a C pointer's zero is `nullptr`", repair: .guidance))
+        "try" | "catch" | "throw" | "raise" => ok(ForeignWord(message: "there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`", repair: .guidance))
+        "import" | "include" => ok(ForeignWord(message: "`import` and `include` are not words in this language — a module is named with `use`: `use geom`", repair: .swap(word: "use")))
+        _ => fail(ERR_NOT_FOREIGN, text)
+
+test "every keyword resolves and an identifier does not"
+    assert keyword("function").must() == .kw_function
+    assert keyword("nullptr").must() == .kw_nullptr
+    assert keyword("fail").must() == .kw_fail
+    assert keyword("main").is_err()
+    assert keyword("Function").is_err()
+
+test "a foreign word arrives with its repair"
+    fw = foreign_word("int").must()
+    assert fw.repair == .swap(word: "i64")
+    match foreign_word("let").must().repair
+        .swap _ => assert false
+        .guidance => assert true
+
+test "the three spellings of null share one answer"
+    a = foreign_word("null").must()
+    b = foreign_word("nil").must()
+    c = foreign_word("None").must()
+    assert a == b
+    assert b == c
+    assert foreign_word("hello").is_err()
