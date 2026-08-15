@@ -33,7 +33,7 @@ pub(super) fn field_type(
     }
     match checker.out.types.get(base) {
         Ty::Named(decl) => match &ast.decls[decl as usize].kind {
-            DeclKind::Record { fields } => {
+            DeclKind::Record { fields, .. } => {
                 for candidate in fields {
                     if src.slice(candidate.name) == name {
                         return super::lower::ty(checker, ast, resolved, candidate.ty);

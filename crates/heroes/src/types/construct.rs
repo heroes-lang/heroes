@@ -30,7 +30,7 @@ pub(super) fn construct_record(
     args: &[Arg],
     span: Span,
 ) -> TyId {
-    let DeclKind::Record { fields } = &ast.decls[decl as usize].kind else {
+    let DeclKind::Record { fields, .. } = &ast.decls[decl as usize].kind else {
         return checker.error_ty();
     };
     let name = src.slice(ast.decls[decl as usize].name).to_string();
@@ -225,7 +225,7 @@ pub(super) fn field_of_function_type(
     name: &str,
 ) -> Option<TyId> {
     let Ty::Named(decl) = checker.out.types.get(receiver) else { return None };
-    let DeclKind::Record { fields } = &ast.decls[decl as usize].kind else { return None };
+    let DeclKind::Record { fields, .. } = &ast.decls[decl as usize].kind else { return None };
     let found = fields.iter().find(|f| src.slice(f.name) == name)?;
     let ty = lower::ty(checker, ast, resolved, found.ty);
     match checker.out.types.get(ty) {

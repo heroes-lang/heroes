@@ -26,6 +26,7 @@ use crate::types::{Checked, IntKind, Ty};
 use super::aggregate;
 use super::mangle;
 use super::writer::Writer;
+use crate::types::FloatKind;
 
 #[allow(clippy::too_many_arguments)] // PORT-DEBT: one emitter call site, six facts
 pub(super) fn call(
@@ -155,7 +156,8 @@ pub(super) fn print(
             Arg::Value(value) => match checked.types.get(function.value_type(value)) {
                 Ty::Bool => "hero_print_bool",
                 Ty::Str => "hero_print_str",
-                Ty::F64 => "hero_print_f64",
+                Ty::Float(FloatKind::F32) => "hero_print_f32",
+                Ty::Float(FloatKind::F64) => "hero_print_f64",
                 // **`u64` is the one width that needs its own printer.** The
                 // other seven widen into an `int64_t` without losing a value;
                 // 18446744073709551615 does not, and read as signed it is `-1` —

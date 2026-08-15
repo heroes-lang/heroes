@@ -20,6 +20,7 @@ use crate::types::{Checked, Ty};
 
 use super::aggregate;
 use super::writer::Writer;
+use crate::types::FloatKind;
 
 /// Emit `into = to_<width>(value)` — a `T?`, always, at every width (the uniform
 /// rule restored by the author's ratification of 2026-08-13).
@@ -65,11 +66,28 @@ pub(super) fn width(
     // cannot fail once the predicate holds.
     let from = match checked.types.get(result) {
         Ty::Int(kind) => kind,
-        Ty::F64 => {
-            w.line(&format!("    if (hero_f64_fits_int({})) {{", arguments[0]));
+        // **Either float width takes this path**, and an `f32` reaches it through
+        // one widening call rather than through a second predicate. `f32` → `f64`
+        // is exact, so `hero_f64_fits_int` answers the same question about the
+        // same value; writing a `hero_f32_fits_int` beside it would be two
+        // spellings of one range test, which is two chances to disagree.
+        //
+        // **This arm was `Ty::Float(FloatKind::F64)` and the width made it a
+        // defect the same hour** (panel 060). The checker had been widened to
+        // accept either width and this had not, so an `f32` fell to the `_` below,
+        // returned having emitted nothing, and left the option struct at its
+        // zero-initialiser — `tag = 0`, which is **`ok`** — so `to_i64` on an
+        // `f32` produced `ok(0)` at exit 0 with no diagnostic anywhere.
+        // `-Werror=uninitialized` cannot see it, because panel 021's rule
+        // deliberately zero-initialises every refcounted slot.
+        Ty::Float(kind) => {
+            let value = match kind {
+                FloatKind::F32 => format!("hero_f32_to_f64({})", arguments[0]),
+                FloatKind::F64 => arguments[0].clone(),
+            };
+            w.line(&format!("    if (hero_f64_fits_int({value})) {{"));
             w.line(&format!(
-                "        {into} = ({union}){{.tag = INT64_C(0), .as.ok = hero_f64_to_int({})}};",
-                arguments[0]
+                "        {into} = ({union}){{.tag = INT64_C(0), .as.ok = hero_f64_to_int({value})}};"
             ));
             w.line("    } else {");
             w.line(&format!(
@@ -78,7 +96,11 @@ pub(super) fn width(
             w.line("    }");
             return;
         }
-        _ => return,
+        // **The loud direction** (CLAUDE.md §11). A `return` here is what the
+        // paragraph above cost: it emits nothing and the caller reads a zeroed
+        // slot. The checker refuses every other source type, so reaching this is a
+        // compiler bug and must say so rather than produce a value.
+        other => unreachable!("a conversion's source is an integer or a float, not {other:?}"),
     };
     // **Both bounds are asked of the two RANGES, not of the two shapes.** A first
     // version derived them from `signed()` and `bits()` by hand and got

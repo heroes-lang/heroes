@@ -136,6 +136,13 @@ pub(super) fn extern_assertions(
             "#define {name}(c) (HERO_C_INTEGER(c) && {signed_test} && sizeof(c) == {bytes})"
         ));
     }
+    // **`f32` accepts `float` and nothing else**, where `f64` below accepts all
+    // three. That asymmetry is the spec's own rule — *"a result may be wider than
+    // C's"* — read in the one direction it can be read: declaring `f64` for a C
+    // `float` widens and is exact, declaring `f32` for a C `double` **narrows**,
+    // silently, at every call. The macro is the only thing that can see the
+    // difference, because both compile.
+    w.line("#define HERO_RET_F32(c) _Generic((c), float:1, default:0)");
     w.line("#define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)");
     w.line("#define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)");
     w.line("#define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)");

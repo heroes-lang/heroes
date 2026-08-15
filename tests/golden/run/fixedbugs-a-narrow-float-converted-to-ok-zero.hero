@@ -1,0 +1,33 @@
+# FIXED DEFECT, 2026-08-15 (M-struct-passing, the step that landed `f32`).
+# Symptom: `to_i64` on an `f32` returned `ok(0)` for every input — `to_i64(7.9)`
+# was `0`, and `to_i64` of a value far past `i64`'s range reported `ok` rather
+# than the failure it owes. Exit 0, no diagnostic anywhere, and the only visible
+# trace was a `-Wunused-but-set-variable` on a temporary in the generated C.
+#
+# Cause: the type checker was widened to accept either float width and
+# `emit/convert.rs`'s arm was left at `Ty::Float(FloatKind::F64)`, so an `f32`
+# source fell to a `_ => return` that emitted **nothing**. The destination is a
+# `T?` and panel 021's rule zero-initialises every refcounted slot, so the caller
+# read `tag = 0` — which is the `ok` tag — carrying a zero payload.
+#
+# Two guards that could not see it, and both for stated reasons:
+# `-Werror=uninitialized` is blind because the zero-initialiser is deliberate,
+# and the rustc rename that turned `Ty::F64` into `Ty::Float(FloatKind)` could
+# not reach an arm whose sibling was already a catch-all. That is CLAUDE.md §11's
+# loud-fallback rule paying for itself a third time: the `_ => return` is now
+# `unreachable!` naming what depends on it.
+#
+# The case asserts the two answers the defect got wrong — a truncation and a
+# refusal — because either alone passes under a stuck zero.
+
+function main()
+    small: f32 @ 7.9
+    print(to_i64(small).must())
+    negative: f32 @ -7.9
+    print(to_i64(negative).must())
+    huge: f32 @ 100000000000000000000000000000.0
+    print(to_i64(huge).is_err())
+    # The control: the same conversion at the width that always worked, so a
+    # regression that breaks both is told apart from one that breaks this width.
+    wide: f64 @ 7.9
+    print(to_i64(wide).must())

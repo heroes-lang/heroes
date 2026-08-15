@@ -2,6 +2,7 @@
 
 use super::{assert_clean, diagnostics, type_of_last};
 use crate::types::{IntKind, Ty, TyId, Types};
+use crate::types::FloatKind;
 
 #[test]
 fn the_five_literal_kinds_get_their_types() {
@@ -20,7 +21,7 @@ fn arithmetic_is_monomorphic_and_says_so() {
     assert_clean("function f(a: f64, b: f64) -> f64\n    return a * b\n");
     assert_eq!(
         diagnostics("function f(a: i64, b: f64) -> i64\n    return a + b\n"),
-        "test.hero:2:12: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two `f64` — and found `i64` and `f64`\n"
+        "test.hero:2:12: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `i64` and `f64`\n"
     );
 }
 
@@ -40,7 +41,7 @@ fn plus_joins_two_strings_and_only_plus() {
     // The conversion is named in the message, because the repair is the point.
     assert_eq!(
         diagnostics("function f(a: str, n: i64) -> str\n    return a + n\n"),
-        "test.hero:2:12: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two `f64` — and found `str` and `i64`\n"
+        "test.hero:2:12: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `str` and `i64`\n"
     );
 }
 
@@ -234,7 +235,7 @@ fn the_prelude_ids_match_their_accessors() {
         ("error", types.error(), Ty::Error),
         ("unit", types.unit(), Ty::Unit),
         ("i64", types.int(), Ty::Int(IntKind::I64)),
-        ("f64", types.f64(), Ty::F64),
+        ("f64", types.f64(), Ty::Float(FloatKind::F64)),
         ("bool", types.bool(), Ty::Bool),
         ("str", types.str(), Ty::Str),
         ("failure", types.failure(), Ty::Failure),

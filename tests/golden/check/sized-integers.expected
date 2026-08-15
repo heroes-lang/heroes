@@ -1,4 +1,4 @@
 tests/golden/check/sized-integers.hero:30:13: error[int_out_of_range]: `300` does not fit a `u8`
-tests/golden/check/sized-integers.hero:33:9: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two `f64` — and found `u8` and `i64`
+tests/golden/check/sized-integers.hero:33:9: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `u8` and `i64`
 tests/golden/check/sized-integers.hero:34:14: error[type_mismatch]: expected `i64`, found `u8`
 tests/golden/check/sized-integers.hero:35:13: error[type_mismatch]: expected `u8`, found `u8?`

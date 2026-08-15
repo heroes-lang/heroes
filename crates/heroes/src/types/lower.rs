@@ -71,7 +71,7 @@ fn named(checker: &mut Checker, resolved: &Resolved, id: TypeId) -> TyId {
         TypeRef::Prim(prim) => {
             let ty = match prim {
                 Prim::Int(kind) => Ty::Int(kind),
-                Prim::F64 => Ty::F64,
+                Prim::Float(kind) => Ty::Float(kind),
                 Prim::Bool => Ty::Bool,
                 Prim::Str => Ty::Str,
                 Prim::Ptr => Ty::Ptr,

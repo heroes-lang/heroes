@@ -3,7 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 13, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -15,6 +15,7 @@ _Static_assert(HERO_RUNTIME_ABI == 13, "heroes_runtime.h is from another compile
 #define HERO_RET_U16(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 2)
 #define HERO_RET_U32(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 4)
 #define HERO_RET_U64(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 8)
+#define HERO_RET_F32(c) _Generic((c), float:1, default:0)
 #define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)
 #define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
@@ -36,7 +37,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 40 "scalars.c"
+#line 41 "scalars.c"
 
 typedef struct h_scalars_0opt0 {
     int64_t tag;
@@ -66,7 +67,7 @@ void h_scalars_main(void);
 
 #line 5 "tests/golden/emit/scalars.hero"
 void h_scalars_main(void) {
-#line 70 "scalars.c"
+#line 71 "scalars.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -128,7 +129,7 @@ bb0:
     hero_print_int(t14);
     hero_print_end();
     return;
-#line 132 "scalars.c"
+#line 133 "scalars.c"
 }
 void h_scalars_0opt0_retain(const h_scalars_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

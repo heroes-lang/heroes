@@ -3,7 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 13, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -15,6 +15,7 @@ _Static_assert(HERO_RUNTIME_ABI == 13, "heroes_runtime.h is from another compile
 #define HERO_RET_U16(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 2)
 #define HERO_RET_U32(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 4)
 #define HERO_RET_U64(c) (HERO_C_INTEGER(c) && HERO_C_UNSIGNED(c) && sizeof(c) == 8)
+#define HERO_RET_F32(c) _Generic((c), float:1, default:0)
 #define HERO_RET_F64(c) _Generic((c), float:1, double:1, long double:1, default:0)
 #define HERO_RET_BOOL(c) _Generic((c), _Bool:1, default:0)
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
@@ -36,7 +37,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 40 "strings.c"
+#line 41 "strings.c"
 
 HERO_STR_STATIC(hero_str_0, "hi ");
 HERO_STR_STATIC(hero_str_1, "good day ");
@@ -71,7 +72,7 @@ void h_strings_main(void);
 
 #line 7 "tests/golden/emit/strings.hero"
 HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
-#line 75 "strings.c"
+#line 76 "strings.c"
     HeroStr h2_prefix = {0};
     HeroStr h3_own3 = {0};
     HeroStr t1 = {0};
@@ -92,12 +93,12 @@ bb0:
 #line 8 "tests/golden/emit/strings.hero"
     t7 = h2_prefix;
 #line 8 "tests/golden/emit/strings.hero"
-#line 96 "strings.c"
+#line 97 "strings.c"
     hero_str_incref(t1);
 #line 8 "tests/golden/emit/strings.hero"
     h2_prefix = t1;
 #line 8 "tests/golden/emit/strings.hero"
-#line 101 "strings.c"
+#line 102 "strings.c"
     hero_str_decref(t7);
 #line 9 "tests/golden/emit/strings.hero"
     t2 = h1_formal;
@@ -114,20 +115,20 @@ bb1:
 #line 11 "tests/golden/emit/strings.hero"
     h3_own3 = t6;
 #line 11 "tests/golden/emit/strings.hero"
-#line 118 "strings.c"
+#line 119 "strings.c"
     hero_str_decref(t8);
 #line 11 "tests/golden/emit/strings.hero"
-#line 121 "strings.c"
+#line 122 "strings.c"
     hero_str_incref(t6);
 #line 11 "tests/golden/emit/strings.hero"
     t10 = h2_prefix;
 #line 11 "tests/golden/emit/strings.hero"
-#line 126 "strings.c"
+#line 127 "strings.c"
     hero_str_decref(t10);
 #line 11 "tests/golden/emit/strings.hero"
     t11 = h3_own3;
 #line 11 "tests/golden/emit/strings.hero"
-#line 131 "strings.c"
+#line 132 "strings.c"
     hero_str_decref(t11);
     return t6;
 bb2:
@@ -136,12 +137,12 @@ bb2:
 #line 10 "tests/golden/emit/strings.hero"
     t9 = h2_prefix;
 #line 10 "tests/golden/emit/strings.hero"
-#line 140 "strings.c"
+#line 141 "strings.c"
     hero_str_incref(t3);
 #line 10 "tests/golden/emit/strings.hero"
     h2_prefix = t3;
 #line 10 "tests/golden/emit/strings.hero"
-#line 145 "strings.c"
+#line 146 "strings.c"
     hero_str_decref(t9);
     goto bb1;
 bb3:
@@ -150,7 +151,7 @@ bb3:
 
 #line 13 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
-#line 154 "strings.c"
+#line 155 "strings.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     bool t2;
@@ -170,7 +171,7 @@ bb0:
 #line 14 "tests/golden/emit/strings.hero"
     h0_own0 = t3;
 #line 14 "tests/golden/emit/strings.hero"
-#line 174 "strings.c"
+#line 175 "strings.c"
     hero_str_decref(t4);
 #line 14 "tests/golden/emit/strings.hero"
     hero_print_str(t3);
@@ -178,7 +179,7 @@ bb0:
 #line 14 "tests/golden/emit/strings.hero"
     t5 = h0_own0;
 #line 14 "tests/golden/emit/strings.hero"
-#line 182 "strings.c"
+#line 183 "strings.c"
     hero_str_decref(t5);
     return;
 }

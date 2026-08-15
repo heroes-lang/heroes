@@ -20,7 +20,7 @@ use crate::syntax::Ast;
 use super::fallible_ops;
 use super::table::Ty;
 use crate::types::IntKind;
-use super::{errors, Checker, TyId};
+use super::{conversions, errors, Checker, TyId};
 
 /// What a built-in expects of its `index`-th argument, given the type of its
 /// first — `None` where the rule has nothing to say and the argument must be
@@ -66,12 +66,20 @@ pub(super) fn call(
     if args.iter().any(|a| checker.out.types.poisoned(*a)) {
         return Some(checker.error_ty());
     }
+    // **The conversions are answered first, by `conversions.rs`** — the seam this
+    // file was split along when `f32` pushed it past §11's ceiling. They are one
+    // concern (what `to_<type>` means, a paragraph of the spec in its own right)
+    // and the only built-ins whose *result type* is a function of the name rather
+    // than of the argument, which is what makes them a family and the rest a list.
+    if let Some(answer) = conversions::call(checker, ast, src, name, args, span) {
+        return answer;
+    }
     let result = match (name, args) {
         // Panel 006's contract: any number of arguments, four types, canonical
         // rendering, no separator, one trailing newline.
         ("print", args) => {
             for (index, arg) in args.iter().enumerate() {
-                if !matches!(checker.out.types.get(*arg), Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str) {
+                if !matches!(checker.out.types.get(*arg), Ty::Int(_) | Ty::Float(_) | Ty::Bool | Ty::Str) {
                     let got = checker.show(ast, src, args[index]);
                     // **The message names the set the arm above actually tests.**
                     // It said "`i64`, `f64`, `bool` or `str`" while `Ty::Int(_)`
@@ -82,7 +90,7 @@ pub(super) fn call(
                     // reader who believes it converts for nothing.
                     let diagnostic = errors::bad_operand(
                         "print",
-                        "any integer, `f64`, `bool` or `str`",
+                        "any integer, a float, `bool` or `str`",
                         &got,
                         span,
                     );
@@ -167,73 +175,6 @@ pub(super) fn call(
         ("cstr", [one]) => {
             return arg_error(checker, ast, src, "cstr", "`str`", *one, span)
         }
-        // **`to_<width>(x) -> <width>?`, and `to_i64` is one of these.**
-        //
-        // The source is an integer of any width, or — for `to_i64` alone — an
-        // `f64`, which is the conversion this arm absorbed when the family took
-        // the `to_` scheme (author decision 2026-08-13). One name, one shape:
-        // converting to an `i64` can fail whether the source is a float above
-        // 2^63 or a `u64` above it, so a single fallible answer is the honest one
-        // and the old aborting form is gone.
-        (name, [one])
-            if name.starts_with("to_")
-                && crate::types::INT_KINDS.iter().any(|k| k.name() == &name[3..]) =>
-        {
-            let kind = *crate::types::INT_KINDS
-                .iter()
-                .find(|k| k.name() == &name[3..])
-                .expect("just matched");
-            let from_f64 = checker.out.types.get(*one) == Ty::F64 && kind.name() == "i64";
-            if !from_f64 && !matches!(checker.out.types.get(*one), Ty::Int(_)) {
-                let allowed = if kind.name() == "i64" { "an integer or an `f64`" } else { "an integer" };
-                return arg_error(checker, ast, src, name, allowed, *one, span);
-            }
-            let target = checker.out.types.intern(Ty::Int(kind));
-            // **`T?` at every pair, including the ones that cannot fail** (author
-            // ratification 2026-08-13, closing panel 043's Q1 and restoring the
-            // author's original ruling, which step 7 had bent).
-            //
-            // The bent rule returned `T` where `IntKind::contains` said the
-            // conversion was safe. It was *correct* — panel 043's
-            // compiler-engineer generated all 64 pairs from an independent
-            // reimplementation and found no fault — and still the wrong shape,
-            // for three reasons that outrank the `.must()` it saved:
-            //
-            // - **one rule.** A reader knows the result's shape from the name,
-            //   without resolving the argument's declaration to learn its width.
-            //   That resolution is §1.3's locality test, measured by the same
-            //   judge as "worse by exactly one write-side hop".
-            // - **it was an invention.** Panel 043's historian searched Zig, Rust,
-            //   Swift, D and Ada for one conversion name yielding a plain value
-            //   for some argument types and an optional for others, and found
-            //   none. Zig's `math.cast(comptime T: type, x) ?T` is the closest
-            //   live analogue and returns `?T` unconditionally.
-            // - **reversibility.** 8 call sites today against ≥25 at
-            //   M-selfhost-probe on that judge's own measurement, so this was the
-            //   cheap moment and every later one is dearer.
-            //
-            // The cost is real and not hidden: `to_i64(l.here() - '0')` in the
-            // calculator's lexer now needs a `.must()` it can never exercise.
-            // §1.4 calls that redundancy spent where errors cannot occur, and it
-            // is the price of the three reasons above.
-            checker.out.types.intern(Ty::Fallible(target))
-        }
-        ("to_f64", [one]) if matches!(checker.out.types.get(*one), Ty::Int(_)) => checker.out.types.f64(),
-        // §4.20's inventory calls this one `.str()`; panel 017 renames it
-        // `to_str`, so the three conversions share one scheme and a model can
-        // derive the third from the two the spec already lists.
-        // `cstr` is here and not in a conversion of its own: §4.19's boundary has
-        // two directions, `.cstr()` out and this one back, and giving the return
-        // path a new name would have cost spec tokens for a conversion the three
-        // that exist already teach the shape of.
-        ("to_str", [one]) => match checker.out.types.get(*one) {
-            Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str | Ty::Cstr => checker.out.types.str(),
-            _ => {
-                return arg_error(
-                    checker, ast, src, "to_str", "`i64`, `f64`, `bool`, `str` or `cstr`", *one, span,
-                )
-            }
-        },
         ("sort", [one]) => match checker.out.types.get(*one) {
             Ty::Array(_) => *one,
             _ => return arg_error(checker, ast, src, "sort", "`[T]`", *one, span),

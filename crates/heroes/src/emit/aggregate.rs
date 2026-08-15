@@ -71,7 +71,7 @@ impl<'a> Types<'a> {
         // A record's fields, or one case's payload fields — `Ty::Case` is a real type
         // and `field $t6.v` reads it exactly as it reads a record's.
         let fields = match (&self.ast.decls[decl as usize].kind, self.checked.types.get(owner)) {
-            (DeclKind::Record { fields }, _) => fields,
+            (DeclKind::Record { fields, .. }, _) => fields,
             (DeclKind::Variant { cases }, Ty::Case(_, case)) => {
                 &cases.get(case as usize)?.fields
             }
@@ -135,7 +135,7 @@ pub(super) fn place(types: &Types, function: &Function, at: Place) -> String {
 pub(super) fn construct(types: &Types, decl: u32, arguments: &[String]) -> Option<String> {
     let name = types.names.of(decl);
     let fields = match &types.ast.decls[decl as usize].kind {
-        DeclKind::Record { fields } => fields,
+        DeclKind::Record { fields, .. } => fields,
         _ => return None,
     };
     let parts = designators(types, fields, arguments)?;

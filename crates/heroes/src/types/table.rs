@@ -17,6 +17,7 @@
 
 use std::collections::BTreeMap;
 
+use super::floats::FloatKind;
 use super::widths::{IntKind, INT_KINDS};
 
 /// Index into `Types::nodes`. Equality of `TyId`s is equality of types.
@@ -34,7 +35,10 @@ pub struct Params {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Ty {
     Int(IntKind),
-    F64,
+    /// **The width is inside the variant**, exactly as `Int`'s is, and for the
+    /// reason `floats.rs`'s module doc records: a bare `Ty::F32` beside `Ty::F64`
+    /// was measured at 2 rustc errors and 19 silent sites (panel 060).
+    Float(FloatKind),
     Bool,
     Str,
     /// `ptr` — an opaque C pointer (§4.19).
@@ -125,7 +129,7 @@ impl Types {
             Ty::Error,
             Ty::Unit,
             Ty::Int(IntKind::I64),
-            Ty::F64,
+            Ty::Float(FloatKind::F64),
             Ty::Bool,
             Ty::Str,
             Ty::Ptr,

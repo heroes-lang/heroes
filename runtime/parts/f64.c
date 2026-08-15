@@ -125,6 +125,62 @@ static int hero_f64_render(char *buf, size_t cap, double v) {
     return n;
 }
 
+/* The `f32` mirror, and the two differences from the loop above are both facts
+ * about binary32 rather than choices.
+ *
+ * `FLT_DIG` (6) starts the search and 9 ends it: 9 significant decimal digits
+ * round-trip every binary32, as 17 do every binary64. And the round trip is
+ * tested through a **cast**, `(float)strtod(...)`, not through `strtof`: the
+ * decimal text goes to a double exactly — every 9-digit decimal is exact in
+ * binary64 — and the cast back to float is the single rounding the comparison is
+ * asking about. `strtof` would round once in the library and once more never,
+ * which is the same answer here but depends on the library getting it right.
+ *
+ * The subnormal branch and the trailing `.0` rider are the `f64` loop's own,
+ * for the reasons its comments give. */
+static int hero_f32_render(char *buf, size_t cap, float v) {
+    if (v != v) return snprintf(buf, cap, "nan");
+    if (v == (float)INFINITY) return snprintf(buf, cap, "inf");
+    if (v == -(float)INFINITY) return snprintf(buf, cap, "-inf");
+
+    hero_locale c = hero_c_locale();
+#if !defined(_WIN32)
+    locale_t previous = uselocale(c);
+#endif
+
+    float magnitude = v < 0 ? -v : v;
+    int first = magnitude != 0.0f && magnitude < FLT_MIN ? 1 : FLT_DIG;
+    int n = 0;
+    for (int prec = first; prec <= 9; prec++) {
+        n = hero_snprintf_c(buf, cap, c, prec, (double)v);
+        if (n < 0 || (size_t)n >= cap) hero_panic("f32 render overflow");
+        if ((float)hero_strtod_c(buf, c) == v) break;
+    }
+    if (strpbrk(buf, ".eE") == NULL) {
+        int m = snprintf(buf + n, cap - (size_t)n, ".0");
+        if (m < 0 || (size_t)(n + m) >= cap) hero_panic("f32 render overflow");
+        n += m;
+    }
+#if !defined(_WIN32)
+    if (previous != (locale_t)0) uselocale(previous);
+#endif
+    return n;
+}
+
+void hero_print_f32(float v) {
+    char buf[40];
+    (void)hero_f32_render(buf, sizeof buf, v);
+    fputs(buf, stdout);
+}
+
+HeroStr hero_f32_to_str(float v) {
+    char buf[40];
+    int n = hero_f32_render(buf, sizeof buf, v);
+    HeroStr r = hero_str_alloc(n);
+    memcpy((char *)(void *)(uintptr_t)r.ptr, buf, (size_t)n);
+    return r;
+}
+
 void hero_print_f64(double v) {
     char buf[40];
     (void)hero_f64_render(buf, sizeof buf, v);
@@ -138,6 +194,18 @@ HeroStr hero_f64_to_str(double v) {
     memcpy((char *)(void *)(uintptr_t)r.ptr, buf, (size_t)n);
     return r;
 }
+
+/* The four float conversions the two widths need, all of them one cast.
+ *
+ * They exist as named entry points rather than as casts the emitter writes for
+ * the reason every other primitive here does: `heroes_runtime.h` declares them,
+ * so clang type-checks the call (CLAUDE.md §7). An emitted `(float)x` would be
+ * unchecked text, and the one that matters — `hero_f64_to_f32` — is the only
+ * conversion in this language that loses precision without failing. It is worth
+ * having a name so a reader of the generated C can see it happen. */
+float hero_int_to_f32(int64_t v) { return (float)v; }
+float hero_f64_to_f32(double v) { return (float)v; }
+double hero_f32_to_f64(float v) { return (double)v; }
 
 HeroStr hero_int_to_str(int64_t v) {
     char buf[24];

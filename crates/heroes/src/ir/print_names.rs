@@ -82,7 +82,7 @@ pub(super) fn field_type(
 ) -> TyId {
     let written = match checked.types.get(owner) {
         Ty::Named(decl) => match &ast.decls[decl as usize].kind {
-            DeclKind::Record { fields } => fields.get(index as usize).map(|field| field.ty),
+            DeclKind::Record { fields, .. } => fields.get(index as usize).map(|field| field.ty),
             _ => None,
         },
         Ty::Case(decl, case) => match &ast.decls[decl as usize].kind {
@@ -110,7 +110,7 @@ pub(super) fn name_of_field(
     let fallback = || index.to_string();
     match checked.types.get(owner) {
         Ty::Named(decl) => match &ast.decls[decl as usize].kind {
-            DeclKind::Record { fields } => {
+            DeclKind::Record { fields, .. } => {
                 fields.get(index as usize).map(|f| src.slice(f.name).to_string()).unwrap_or_else(fallback)
             }
             _ => fallback(),

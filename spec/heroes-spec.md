@@ -46,7 +46,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 |---|---|
 | `i8` `i16` `i32` `i64` | signed integers, of that many bits |
 | `u8` `u16` `u32` `u64` | unsigned integers |
-| `f64` | 64-bit float |
+| `f32` `f64` | floats, of that many bits — `f32` is C's `float` |
 | `bool` | `true` / `false` |
 | `str` | immutable UTF-8 string, indexed and measured in bytes |
 | `[T]` | dynamic array, indices from 0 |
@@ -55,9 +55,10 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 
 - No implicit conversions, widths included: `a + b` needs both the same type, and
   `1 + 2.0` is an error. Convert with `to_<type>`, and the name says whether it
-  can fail: `to_str` and `to_f64` cannot, so they give a value; `to_i8` …
-  `to_u64` give a `T?`, because the number may not fit. `to_i64` takes an `f64`
-  too, truncating toward zero.
+  can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value; `to_i8`
+  … `to_u64` give a `T?`, because the number may not fit. `to_i64` takes a float
+  too, truncating toward zero. Nothing fails to fit a float: too large is `inf`,
+  and `to_f32` rounds.
 - A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
   `u8` — otherwise `i64`. Overflow aborts at every width.
 - Character literals are `i64`: `'a'`, `'0'`, `' '`.
@@ -165,11 +166,11 @@ array, so accumulating either in a loop is quadratic. `join` and `repeat` build 
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
 `chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` ·
-`to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
+`to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
 None of these names may be redeclared. `print` writes its values with no
-separator and exactly one trailing newline. An `f64` prints a point or
+separator and exactly one trailing newline. A float prints a point or
 exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`.
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
@@ -190,7 +191,7 @@ with holes type-checks everything else but produces no binary.
 ## FFI
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
 libraries. A group names its header, and `link` a library when the symbols need one. clang
-checks every result type and constant against that header, and a result may be
+checks every result type, constant and record field against that header, and a result may be
 wider than C's. A **parameter** is declared at the header's own width and
 sign — `i32` where C says int — because clang converts a wrong one in silence:
 ```
@@ -204,8 +205,13 @@ Where a library lives is the machine's answer, not the program's, so a group may
 name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs —
 frameworks on macOS, `-lGL -lX11` on Linux — in one spelling that is the same
-everywhere. Only `-I`, `-L`, `-l`, `-F` and `-framework` are accepted back; a
-package that answers with anything else is refused by name.
+everywhere. A package answering with anything this compiler does not pass on is
+refused, naming what it said.
+
+A group's `record` is the header's struct: the same name, all its fields, each at
+the header's own width and sign. A field is a number, `bool`, `ptr`, `cstr` or
+another record of the group; a C `float` field is `f64`, read exactly and written
+rounded.
 
 A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
 usually there. How much more is the platform's answer, not this language's.

@@ -144,7 +144,7 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
             // No body, and no `Want`: only the field types, interned so that
             // `counted.rs` and the descriptor pass can read them whether or not the
             // program touches the field.
-            DeclKind::Record { fields } => {
+            DeclKind::Record { fields, .. } => {
                 checker.generic_names.clear();
                 for field in fields {
                     let _ = lower::ty(checker, ast, resolved, field.ty);
@@ -250,6 +250,6 @@ fn ffi_constant(
 fn crosses_the_boundary(checker: &Checker, ty: TyId) -> bool {
     matches!(
         checker.out.types.get(ty),
-        Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Str | Ty::Ptr | Ty::Cstr | Ty::Unit | Ty::Error
+        Ty::Int(_) | Ty::Float(_) | Ty::Bool | Ty::Str | Ty::Ptr | Ty::Cstr | Ty::Unit | Ty::Error
     )
 }

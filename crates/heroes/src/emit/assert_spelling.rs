@@ -13,6 +13,7 @@
 //! comments record a repair that was built and measured rather than reasoned.
 
 use crate::types::{Checked, IntKind, Ty, TyId};
+use crate::types::FloatKind;
 
 /// Which assertion a declared result type asks for.
 pub(super) fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
@@ -31,7 +32,8 @@ pub(super) fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> 
             IntKind::U32 => "HERO_RET_U32",
             IntKind::U64 => "HERO_RET_U64",
         }),
-        Ty::F64 => Some("HERO_RET_F64"),
+        Ty::Float(FloatKind::F32) => Some("HERO_RET_F32"),
+        Ty::Float(FloatKind::F64) => Some("HERO_RET_F64"),
         Ty::Bool => Some("HERO_RET_BOOL"),
         Ty::Str => Some("HERO_RET_STR"),
         Ty::Unit => Some("HERO_RET_UNIT"),
@@ -72,7 +74,7 @@ pub(super) fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
     }
     let value = match checked.types.get(ty) {
         Ty::Int(kind) => kind.c_type(),
-        Ty::F64 => "double",
+        Ty::Float(kind) => kind.c_type(),
         Ty::Bool => "bool",
         Ty::Str => "HeroStr",
         Ty::Cstr => unreachable!("handled above: a cstr zero is the bare null pointer constant"),

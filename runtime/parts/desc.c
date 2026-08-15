@@ -48,6 +48,18 @@ static uint64_t hero_hash_bytes(const void *p, size_t n) {
 }
 static uint64_t hero_hash_int(const void *elem) { return hero_hash_bytes(elem, sizeof(int64_t)); }
 
+static void hero_copy_f32(void *dst, const void *src) { *(float *)dst = *(const float *)src; }
+static bool hero_eq_f32(const void *a, const void *b) {
+    return *(const float *)a == *(const float *)b;
+}
+/* The `f64` note below applies unchanged, and the zero is collapsed at the
+ * float's own width: reading a float and normalising through a double would
+ * hash `sizeof(double)` bytes of a 4-byte value. */
+static uint64_t hero_hash_f32(const void *elem) {
+    float v = *(const float *)elem;
+    if (v == 0.0f) v = 0.0f; /* collapses -0.0f */
+    return hero_hash_bytes(&v, sizeof v);
+}
 static void hero_copy_f64(void *dst, const void *src) { *(double *)dst = *(const double *)src; }
 static bool hero_eq_f64(const void *a, const void *b) {
     return *(const double *)a == *(const double *)b;
@@ -88,6 +100,8 @@ static uint64_t hero_hash_str(const void *elem) {
 
 const HeroDesc hero_desc_int = {sizeof(int64_t), hero_copy_int, hero_drop_nothing,
                                 hero_eq_int, hero_hash_int};
+const HeroDesc hero_desc_f32 = {sizeof(float), hero_copy_f32, hero_drop_nothing,
+                                hero_eq_f32, hero_hash_f32};
 const HeroDesc hero_desc_f64 = {sizeof(double), hero_copy_f64, hero_drop_nothing,
                                 hero_eq_f64, hero_hash_f64};
 const HeroDesc hero_desc_bool = {sizeof(bool), hero_copy_bool, hero_drop_nothing,

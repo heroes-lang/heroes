@@ -114,7 +114,7 @@ fn fields_of(
 ) {
     let Ty::Named(decl) = checked.types.get(expected) else { return };
     match &ast.decls[decl as usize].kind {
-        DeclKind::Record { fields } => {
+        DeclKind::Record { fields, .. } => {
             let shown: Vec<String> = fields
                 .iter()
                 .map(|f| {

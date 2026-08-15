@@ -26,7 +26,7 @@ use super::Resolver;
 pub(super) fn collect(r: &mut Resolver, ast: &Ast, src: &Source) {
     for (index, decl) in ast.decls.iter().enumerate() {
         match &decl.kind {
-            DeclKind::Record { fields } => {
+            DeclKind::Record { fields, .. } => {
                 for field in fields {
                     let module = src.file(field.name.start).module.clone();
                     r.fields.insert((module, src.slice(field.name).to_string()));

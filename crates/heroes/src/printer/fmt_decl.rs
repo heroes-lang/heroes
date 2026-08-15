@@ -45,11 +45,17 @@ impl Fmt {
                     self.block(ast, src, comments, body, 4);
                 }
             }
-            DeclKind::Record { fields } => {
-                self.line(0, &format!("record {name}"));
+            // A `record` prints exactly like the other two group members: the head
+            // line once, then the declaration at the group's indent, then the
+            // fields one level deeper than *that*. Printing it at 0 unconditionally
+            // is what hoisted it out of its group (panel 060's condition 1).
+            DeclKind::Record { fields, header, .. } => {
+                let indent = self.extern_head_once(src, comments, decl, *header, continues);
+                self.line(indent, &format!("record {name}"));
                 self.last_line = line;
+                self.trailing_comment(src, comments, line);
                 for field in fields {
-                    self.field(ast, src, comments, field, 4);
+                    self.field(ast, src, comments, field, indent + 4);
                 }
             }
             DeclKind::Variant { cases } => {

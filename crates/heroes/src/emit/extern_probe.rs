@@ -184,7 +184,7 @@ pub(crate) fn parameter_list(function: &Function, checked: &Checked) -> Option<V
 fn c_type_of(checked: &Checked, ty: crate::types::TyId) -> Option<String> {
     Some(match checked.types.get(ty) {
         Ty::Int(kind) => kind.c_type().to_string(),
-        Ty::F64 => "double".to_string(),
+        Ty::Float(kind) => kind.c_type().to_string(),
         Ty::Bool => "bool".to_string(),
         Ty::Str => "HeroStr".to_string(),
         Ty::Cstr => "const char *".to_string(),

@@ -53,7 +53,7 @@ pub(super) fn pointer(checked: &Checked, names: &Names, ty: TyId) -> Option<Stri
             }
             .to_string(),
         ),
-        Ty::F64 => Some("&hero_desc_f64".to_string()),
+        Ty::Float(kind) => Some(format!("&hero_desc_{}", kind.name())),
         Ty::Bool => Some("&hero_desc_bool".to_string()),
         Ty::Str => Some("&hero_desc_str".to_string()),
         // One for all of them: see the module doc.

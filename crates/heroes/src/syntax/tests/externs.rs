@@ -105,7 +105,7 @@ fn a_stray_line_in_a_group_costs_one_line() {
         "\
 file test.hero
   extern \"math.h\" function sqrt(x: f64) -> f64
-DIAG test.hero:2:5: error[expected_extern_signature]: expected a `function` or a `constant`, found a name (`x`) — an `extern` group holds what the header declares, one per line
+DIAG test.hero:2:5: error[expected_extern_signature]: expected a `function`, a `constant` or a `record`, found a name (`x`) — an `extern` group holds what the header declares, one per line
 "
     );
 }

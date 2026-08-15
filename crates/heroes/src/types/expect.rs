@@ -81,7 +81,7 @@ pub(super) fn check(
             match checker.out.types.get(expected) {
                 Ty::Int(kind) => {
                     let text = src.slice(span);
-                    let value = literal_value(ast, src, id);
+                    let value = super::contextual::literal_value(ast, src, id);
                     let (low, high) = kind.range();
                     let fits = value.is_some_and(|v| v >= i128::from(low) && v <= i128::from(high));
                     if !fits {
@@ -110,6 +110,37 @@ pub(super) fn check(
                     mismatch(checker, ast, src, expected, &shown, span);
                     checker.record(id, got);
                 }
+            }
+        }
+        // **A float literal at the width the context asks for** (panel 060), the
+        // mirror of the arm above and deliberately simpler than it.
+        //
+        // There is no range check, and that is a fact about IEEE-754 rather than
+        // an omission: binary32 has no *representable* values a decimal literal
+        // can miss — a magnitude too large becomes `inf` and one too small becomes
+        // a subnormal or zero, both of which are values of the type. The integer
+        // arm needs `kind.range()` because `256` is simply not a `u8`; `1e300` IS
+        // an `f32`, and it is `inf`. Rounding is not an error here for the same
+        // reason `0.1` is not one at `f64`.
+        //
+        // The walk under the minus signs is the integer arm's, for its reason:
+        // the lowering reaches the digits and finds no type recorded otherwise,
+        // which arrives at the emitter as a type nobody wrote.
+        _ if super::contextual::float_literal(ast, id) => {
+            if matches!(checker.out.types.get(expected), Ty::Float(_)) {
+                let mut at = id;
+                while let ExprKind::Unary { op: UnaryOp::Neg, operand } =
+                    &ast.exprs[at.0 as usize].kind
+                {
+                    at = *operand;
+                    checker.record(at, expected);
+                }
+                checker.record(id, expected);
+            } else {
+                let got = checker.out.types.f64();
+                let shown = checker.show(ast, src, got);
+                mismatch(checker, ast, src, expected, &shown, span);
+                checker.record(id, got);
             }
         }
         // §4.5's two inference failures, answered instead of reported: the
@@ -248,27 +279,4 @@ fn mismatch(checker: &mut Checker, ast: &Ast, src: &Source, expected: TyId, got:
     let a = checker.show(ast, src, expected);
     let diagnostic = errors::mismatch(&a, got, span);
     checker.push_diagnostic(diagnostic);
-}
-
-
-/// The value a literal denotes, wide enough for every width, with the minus sign
-/// applied where there is one.
-///
-/// The sign has to be folded in **here** rather than checked separately: `-128`
-/// fits an `i8` and `128` does not, so a check that saw them one at a time would
-/// refuse the only way to write that type's lowest value.
-fn literal_value(ast: &Ast, src: &Source, id: ExprId) -> Option<i128> {
-    let node = &ast.exprs[id.0 as usize];
-    match &node.kind {
-        ExprKind::Int => crate::lexer::decode_wide(src.slice(node.span)),
-        // §4.3: a character literal *is* a number, and its value is one ASCII
-        // character — so it fits every width and needs no special range.
-        ExprKind::Char => Some(i128::from(
-            crate::lexer::unescape(src, node.span).chars().next().unwrap_or('\0') as u32,
-        )),
-        ExprKind::Unary { op: UnaryOp::Neg, operand } => {
-            literal_value(ast, src, *operand).map(|v| -v)
-        }
-        _ => None,
-    }
 }

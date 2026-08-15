@@ -37,7 +37,7 @@ pub(super) fn field_index(
     let wanted = src.slice(name);
     match checked.types.get(owner) {
         Ty::Named(decl) => match &ast.decls[decl as usize].kind {
-            DeclKind::Record { fields } => {
+            DeclKind::Record { fields, .. } => {
                 position(fields.iter().map(|f| src.slice(f.name)), wanted)
             }
             _ => None,

@@ -66,7 +66,7 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
                 write_body(ast, src, block, out);
             }
         }
-        DeclKind::Record { fields } => {
+        DeclKind::Record { fields, .. } => {
             out.push_str(&format!("  record {name}\n"));
             docs(src, &decl.doc, out);
             for field in fields {

@@ -72,7 +72,7 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         Ty::Unit => None,
         Ty::Int(kind) => Some(kind.c_type().to_string()),
         Ty::Bool => Some("bool".to_string()),
-        Ty::F64 => Some("double".to_string()),
+        Ty::Float(kind) => Some(kind.c_type().to_string()),
         // A fat pointer, passed BY VALUE (§4.20, panel 021): 16 bytes, two
         // registers, refcount and magic in a heap header before the bytes. By
         // value because of the FFI, not for comfort — written as a pointer, the

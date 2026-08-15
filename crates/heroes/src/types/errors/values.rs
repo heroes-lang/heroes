@@ -23,7 +23,7 @@ pub(in crate::types) fn mixed_arithmetic(op: &str, left: &str, right: &str, span
     let mut diagnostic = Diagnostic::new(
         "mixed_arithmetic",
         format!(
-            "`{op}` takes two of one type — two integers of the SAME width, or two `f64` — and found `{left}` and `{right}`"
+            "`{op}` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `{left}` and `{right}`"
         ),
         span,
     );

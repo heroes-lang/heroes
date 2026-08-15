@@ -8,19 +8,67 @@
 //! lexer terminates the line like any other.
 
 use crate::lexer::TokenKind;
-use crate::source::Source;
+use crate::source::{Source, Span};
 
 use super::ast::{Ast, Decl, DeclKind};
 use super::cursor::Cursor;
-use super::decl::head;
+use super::decl::{head, Linkage};
 use super::members::{case_block, field_block};
 use super::stmt::eat_python_colon;
 
-/// `record Point` + one field per line (§4.2).
-pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
+/// `record Point` + one field per line (§4.2) — and, since panel 060, the same
+/// shape inside an `extern` group, where the fields describe a struct the header
+/// already declares (§4.19).
+///
+/// One entry point for both, because the *syntax* is identical: what differs is
+/// the linkage handed in, and every question a later pass asks — may this field
+/// type cross the boundary, is a typedef emitted, is the name mangled — reads
+/// `header` rather than re-deriving it from where the declaration was parsed.
+pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source, linkage: Linkage) {
     let Some((keyword, doc, name)) = head(cur, src, "record Point") else {
         return;
     };
+    record_tail(cur, ast, src, keyword, doc, name, linkage);
+}
+
+/// The same declaration when the caller has **already taken the doc comment** —
+/// which is what a group member needs, because a group's own doc documents its
+/// first member and `head` would take the run a second time (§4.1's adjacency
+/// rule, applied to a block).
+pub(super) fn record_with_doc(
+    cur: &mut Cursor,
+    ast: &mut Ast,
+    src: &Source,
+    doc: Vec<Span>,
+    linkage: Linkage,
+) {
+    let keyword = cur.span();
+    cur.bump(); // `record`
+    if !cur.at(TokenKind::Ident) {
+        if !cur.at_reported_error() {
+            let message = format!(
+                "expected the C struct's name after `record`, found {} — `record Color`",
+                cur.found(src)
+            );
+            cur.error("expected_name", message, cur.span());
+        }
+        cur.skip_line();
+        return;
+    }
+    let name = cur.bump().span;
+    record_tail(cur, ast, src, keyword, doc, name, linkage);
+}
+
+#[allow(clippy::too_many_arguments)]
+fn record_tail(
+    cur: &mut Cursor,
+    ast: &mut Ast,
+    src: &Source,
+    keyword: Span,
+    doc: Vec<Span>,
+    name: Span,
+    linkage: Linkage,
+) {
     eat_python_colon(cur);
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
@@ -37,11 +85,15 @@ pub(super) fn record(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
     let start = cur.span();
     let fields = field_block(cur, ast, src);
     let end = fields.last().map_or(start, |field| field.name);
+    let (header, library) = match linkage {
+        Linkage::Heroes => (None, None),
+        Linkage::Extern { header, library } => (Some(header), library),
+    };
     ast.decls.push(Decl {
         name,
         doc,
         span: keyword.to(end),
-        kind: DeclKind::Record { fields },
+        kind: DeclKind::Record { fields, header, library },
     });
 }
 

@@ -32,7 +32,7 @@ pub(super) fn file(cur: &mut Cursor, ast: &mut Ast, src: &Source) {
             TokenKind::Eof => return,
             TokenKind::KwConstant => constant(cur, ast, src),
             TokenKind::KwFunction => function_decl(cur, ast, src),
-            TokenKind::KwRecord => record(cur, ast, src),
+            TokenKind::KwRecord => record(cur, ast, src, Linkage::Heroes),
             TokenKind::KwVariant => variant(cur, ast, src),
             TokenKind::KwExtern => super::externs::group(cur, ast, src),
             TokenKind::KwTest => test(cur, ast, src),

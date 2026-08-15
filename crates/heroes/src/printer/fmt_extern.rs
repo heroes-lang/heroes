@@ -44,11 +44,24 @@ pub(super) fn extern_head(src: &Source, decl: &Decl) -> String {
 /// The two spans a group's members all carry, whatever kind of member they are
 /// (§4.19, panel 038). **One reader**, so `function` and `constant` cannot drift
 /// apart on where a group begins.
+///
+/// **Enumerated, never `_`** (panel 060, and it was measured before it was
+/// reasoned about). This match had a `_ => (None, None)` arm, so the moment
+/// `record` became a group member the printer answered "not in a group" for it and
+/// `heroes fmt` **hoisted it to the top level** — emitting a different program that
+/// still parses, which is the worst shape a formatter's bug can take. A catch-all
+/// here rests on a premise about the world (*"these are all the members there
+/// are"*) and CLAUDE.md §11 says such a premise expires silently. Listing the three
+/// that cannot carry a header makes the next member kind a compile error instead.
 fn extern_spans(decl: &Decl) -> (Option<Span>, Option<Library>) {
     match &decl.kind {
         DeclKind::Function(function) => (function.header, function.library),
         DeclKind::Constant { header, library, .. } => (*header, *library),
-        _ => (None, None),
+        DeclKind::Record { header, library, .. } => (*header, *library),
+        // A `variant` is not a C type and a `test` is not a declaration a header
+        // can make, so neither is ever a group member — refused in the parser,
+        // stated here.
+        DeclKind::Variant { .. } | DeclKind::Test { .. } => (None, None),
     }
 }
 

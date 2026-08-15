@@ -17,6 +17,7 @@
 //!   `f64` to an integer literal is how `1 + 2.0` stops being an error, which is a
 //!   defect this project has fixed three times.
 
+use crate::source::Source;
 use crate::syntax::{Ast, ExprId, ExprKind, UnaryOp};
 
 use super::table::Ty;
@@ -55,7 +56,11 @@ pub(super) fn contextual(ast: &Ast, id: ExprId) -> bool {
         // question anybody asks of a C string. With nothing asking, `synth` still
         // gives `ptr`, exactly as a number literal still defaults to `i64`.
         ExprKind::NullPtr => true,
-        _ => number_literal(ast, id),
+        // A **float** literal is contextual for the reason a number literal is:
+        // `1.5` has a value and no width, so `v: f32 @ 1.5` takes the one the
+        // context asks for and `synth` gives `f64` when nothing does. Without this
+        // arm `f32` exists and cannot be written to (panel 060).
+        _ => number_literal(ast, id) || float_literal(ast, id),
     }
 }
 
@@ -83,6 +88,28 @@ pub(super) fn number_literal(ast: &Ast, id: ExprId) -> bool {
     }
 }
 
+/// The same question for a **float** literal, which `f32` made a real one
+/// (panel 060, author instruction 2026-08-15).
+///
+/// Separate from `number_literal` rather than folded into it, and the separation
+/// is the whole point: the two adopt **disjoint** sets. An integer literal must
+/// not adopt a float width — `1 & 2` where the context wants an `f64` is the
+/// two-diagnostics defect `adopts` exists to prevent — and a float literal must
+/// not adopt an integer one, because `1.5` has a value no integer holds. Folding
+/// them into "a number literal" would make each adopt the other's widths, which
+/// is how the integer half acquired that bug in the first hour it existed.
+///
+/// It recurses through unary minus for the reason the integer rule does, and the
+/// reason is a fixed defect rather than symmetry: `x @ -x` on a float read the
+/// negation flatly and reported *expected `f64`, found `i64`*.
+pub(super) fn float_literal(ast: &Ast, id: ExprId) -> bool {
+    match &ast.exprs[id.0 as usize].kind {
+        ExprKind::Float => true,
+        ExprKind::Unary { op: UnaryOp::Neg, operand } => float_literal(ast, *operand),
+        _ => false,
+    }
+}
+
 /// Whether a contextual expression will actually take the type offered.
 ///
 /// **A number literal adopts an integer width and nothing else.** Without this,
@@ -99,6 +126,11 @@ pub(super) fn adopts(checker: &Checker, ast: &Ast, id: ExprId, offered: TyId) ->
     if number_literal(ast, id) {
         return matches!(checker.out.types.get(offered), Ty::Int(_));
     }
+    // **A float literal adopts a float width and nothing else** — the mirror of
+    // the line above, and disjoint from it by construction.
+    if float_literal(ast, id) {
+        return matches!(checker.out.types.get(offered), Ty::Float(_));
+    }
     // **`nullptr` adopts a pointer and nothing else**, for the same reason a
     // number adopts only an integer width: it has a value already, and a value
     // that cannot be a `str` is worse off being told to try. Two diagnostics for
@@ -107,4 +139,32 @@ pub(super) fn adopts(checker: &Checker, ast: &Ast, id: ExprId, offered: TyId) ->
         return matches!(checker.out.types.get(offered), Ty::Ptr | Ty::Cstr);
     }
     true
+}
+
+/// The value a literal denotes, wide enough for every width, with the minus sign
+/// applied where there is one.
+///
+/// The sign has to be folded in **here** rather than checked separately: `-128`
+/// fits an `i8` and `128` does not, so a check that saw them one at a time would
+/// refuse the only way to write that type's lowest value.
+///
+/// The **value** of a number literal, walking under the minus signs — the same
+/// walk `number_literal` above does to say *what it is*, which is why it lives
+/// here rather than beside its one caller. Two files doing one walk is two
+/// chances for them to disagree about where a literal ends, and the fixed defect
+/// this module's doc records is exactly a disagreement of that kind.
+pub(super) fn literal_value(ast: &Ast, src: &Source, id: ExprId) -> Option<i128> {
+    let node = &ast.exprs[id.0 as usize];
+    match &node.kind {
+        ExprKind::Int => crate::lexer::decode_wide(src.slice(node.span)),
+        // §4.3: a character literal *is* a number, and its value is one ASCII
+        // character — so it fits every width and needs no special range.
+        ExprKind::Char => Some(i128::from(
+            crate::lexer::unescape(src, node.span).chars().next().unwrap_or('\0') as u32,
+        )),
+        ExprKind::Unary { op: UnaryOp::Neg, operand } => {
+            literal_value(ast, src, *operand).map(|v| -v)
+        }
+        _ => None,
+    }
 }

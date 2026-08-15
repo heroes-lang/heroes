@@ -59,8 +59,21 @@ pub enum DeclKind {
     /// mean the same thing: the group is flattened in the parser and nowhere else.
     Constant { ty: TypeId, body: Option<Block>, header: Option<Span>, library: Option<Library> },
     Function(Function),
-    /// `record Point` + one field per line.
-    Record { fields: Vec<Field> },
+    /// `record Point` + one field per line — or, inside an `extern` group,
+    /// `record Color` naming a struct the **header** declares (§4.19, panel 060).
+    ///
+    /// `header`/`library` carry the group's head line exactly as `Function`'s and
+    /// `Constant`'s do, and the group is flattened here for the same reason: one
+    /// `Decl` per member, so a declaration's index stays type identity for
+    /// `Ref::Top`, the interner and the mangler's name table.
+    ///
+    /// **What the presence of `header` changes is who owns the layout.** For an
+    /// ordinary `record` the emitter writes a `typedef` and the C struct is this
+    /// compiler's; for a group's `record` it writes **nothing** and uses the
+    /// header's own name, so the layout — size, offsets, padding, and the register
+    /// class each field travels in — is C's. That is the whole of panel 060: the
+    /// mechanism that owns no layout cannot get one wrong.
+    Record { fields: Vec<Field>, header: Option<Span>, library: Option<Library> },
     /// `variant Token` + one case per line, each optionally with fields.
     Variant { cases: Vec<Case> },
     /// `test "3-4-5 triangle"` + body (§4.18). `name` holds the string

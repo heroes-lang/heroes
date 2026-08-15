@@ -50,7 +50,7 @@ pub struct Builtin {
 /// Sorted by name, searched linearly. Thirty-five entries need no index, and a
 /// sorted table prints in a deterministic order — §4.16's rule for hole
 /// suggestions, applied to every list the compiler shows.
-pub const BUILTINS: [Builtin; 36] = [
+pub const BUILTINS: [Builtin; 37] = [
     Builtin { name: "all", tier: Tier::Heroes },
     Builtin { name: "args", tier: Tier::Heroes },
     Builtin { name: "any", tier: Tier::Heroes },
@@ -98,6 +98,7 @@ pub const BUILTINS: [Builtin; 36] = [
     // `to_i64` therefore absorbs the old `f64` conversion and becomes fallible
     // with it: converting to an `i64` can fail whether the source is a float or a
     // `u64`, so one name with one shape is the honest reading.
+    Builtin { name: "to_f32", tier: Tier::Runtime },
     Builtin { name: "to_f64", tier: Tier::Runtime },
     Builtin { name: "to_i16", tier: Tier::Runtime },
     Builtin { name: "to_i32", tier: Tier::Runtime },

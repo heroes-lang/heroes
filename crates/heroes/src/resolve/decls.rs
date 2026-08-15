@@ -35,7 +35,7 @@ pub(super) fn declaration(r: &mut Resolver, ast: &Ast, src: &Source, index: usiz
             }
         }
         DeclKind::Function(function) => function_decl(r, ast, src, function),
-        DeclKind::Record { fields } => {
+        DeclKind::Record { fields, .. } => {
             for field in fields {
                 types::resolve(r, ast, src, field.ty);
             }

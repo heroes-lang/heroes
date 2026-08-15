@@ -56,7 +56,7 @@ pub(super) fn aggregates(ast: &Ast, checked: &Checked) -> Vec<u32> {
 
 pub(super) fn fields_of(ast: &Ast, decl: u32) -> &[Field] {
     match &ast.decls[decl as usize].kind {
-        DeclKind::Record { fields } => fields,
+        DeclKind::Record { fields, .. } => fields,
         _ => &[],
     }
 }

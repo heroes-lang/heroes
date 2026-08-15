@@ -26,7 +26,7 @@ pub fn render_ty(
 ) -> String {
     match types.get(id) {
         Ty::Int(kind) => kind.name().to_string(),
-        Ty::F64 => "f64".to_string(),
+        Ty::Float(kind) => kind.name().to_string(),
         Ty::Bool => "bool".to_string(),
         Ty::Str => "str".to_string(),
         Ty::Ptr => "ptr".to_string(),

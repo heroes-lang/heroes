@@ -20,6 +20,7 @@ use std::collections::BTreeSet;
 use crate::ir::{Arg, Args, Callee, Function, Op, Program};
 use crate::source::Source;
 use crate::types::{Checked, Ty};
+use crate::types::FloatKind;
 
 /// The built-ins the backend emits. The gate reads this list, the note that
 /// tells a reader what *is* supported reads it, and `entry` below is exhaustive
@@ -29,8 +30,8 @@ use crate::types::{Checked, Ty};
 /// Tier 2 (§1.11) is absent by construction: `map`, `filter`, `fold`, `find`,
 /// `any`, `all` and `range` are written in Heroes, so they have no entry point
 /// to name here — they arrive as source, in the prelude.
-pub const EMITTED: [&str; 19] = [
-    "chars", "join", "keys", "len", "print", "push", "repeat", "slice", "sort", "to_f64", "to_i64",
+pub const EMITTED: [&str; 20] = [
+    "chars", "join", "keys", "len", "print", "push", "repeat", "slice", "sort", "to_f32", "to_f64", "to_i64",
     "to_str",
     // The width conversions. They are on this list and NOT in `entry` below,
     // because `entry` answers with the name of a C entry point and a `to_<width>`
@@ -99,7 +100,19 @@ pub(super) fn entry(
         "join" => "hero_str_join",
         "repeat" => "hero_str_repeat",
         "to_i64" => "hero_f64_to_int",
-        "to_f64" => "hero_int_to_f64",
+        // **Dispatched on the source, like `to_str` below**, because one Heroes
+        // name covers two C conversions once there are two float widths. An `f32`
+        // source reaching `hero_int_to_f64` would be C converting a float to an
+        // `int64_t` and back — the silent wrong answer this dispatch exists to
+        // stop.
+        "to_f64" => match first {
+            Some(Ty::Float(_)) => "hero_f32_to_f64",
+            _ => "hero_int_to_f64",
+        },
+        "to_f32" => match first {
+            Some(Ty::Float(_)) => "hero_f64_to_f32",
+            _ => "hero_int_to_f32",
+        },
         // `to_str` is one Heroes name over five C entry points, chosen by the
         // argument's type — the same shape as `print`, for the same reason.
         //
@@ -147,7 +160,7 @@ pub(super) fn unsupported_operand(
     match first_type(function, checked, args) {
         // Exactly the three types `hero_cmp_for` can dispatch on.
         Some(Ty::Array(element)) => match checked.types.get(element) {
-            Ty::Int(_) | Ty::F64 | Ty::Str => None,
+            Ty::Int(_) | Ty::Float(_) | Ty::Str => None,
             _ => Some("the built-in `sort` on elements other than `i64`, `f64` or `str`"
                 .to_string()),
         },
@@ -243,7 +256,8 @@ pub(super) fn to_str_entry(ty: &Ty) -> Option<&'static str> {
             | crate::types::IntKind::U16
             | crate::types::IntKind::U32 => "hero_int_to_str",
         },
-        Ty::F64 => "hero_f64_to_str",
+        Ty::Float(FloatKind::F32) => "hero_f32_to_str",
+        Ty::Float(FloatKind::F64) => "hero_f64_to_str",
         Ty::Bool => "hero_bool_to_str",
         Ty::Str => "hero_str_identity",
         _ => return None,

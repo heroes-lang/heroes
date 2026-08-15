@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 13
+#define HERO_RUNTIME_ABI 14
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -137,6 +137,11 @@ HeroStr hero_str_from_cstr(const char *p); /* strlen, then from_bytes */
 const char *hero_cstr_nonnull(const char *p);
 
 /* -- f64 (proposal point 4) ------------------------------------------------ */
+float hero_int_to_f32(int64_t v);
+float hero_f64_to_f32(double v);
+double hero_f32_to_f64(float v);
+void hero_print_f32(float v);
+HeroStr hero_f32_to_str(float v);
 void hero_print_f64(double v);
 HeroStr hero_f64_to_str(double v);
 HeroStr hero_int_to_str(int64_t v);
@@ -238,6 +243,7 @@ extern const HeroDesc hero_desc_u8;
 extern const HeroDesc hero_desc_u16;
 extern const HeroDesc hero_desc_u32;
 extern const HeroDesc hero_desc_u64;
+extern const HeroDesc hero_desc_f32;
 extern const HeroDesc hero_desc_f64;
 extern const HeroDesc hero_desc_bool;
 extern const HeroDesc hero_desc_str;

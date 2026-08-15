@@ -23,7 +23,8 @@ use super::{Resolver, TypeRef};
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Prim {
     Int(crate::types::IntKind),
-    F64,
+    /// The width rides inside, exactly as `Int`'s does — see `types/floats.rs`.
+    Float(crate::types::FloatKind),
     Bool,
     Str,
     /// `ptr` — an opaque C pointer (§4.19).
@@ -40,7 +41,13 @@ pub(super) fn primitive(name: &str) -> Option<Prim> {
         name if crate::types::INT_KINDS.iter().any(|k| k.name() == name) => Prim::Int(
             *crate::types::INT_KINDS.iter().find(|k| k.name() == name).expect("just matched"),
         ),
-        "f64" => Prim::F64,
+        // Both float widths, from the one array that lists them
+        // (`types::FLOAT_KINDS`), for the reason the line above gives about the
+        // integers: two tables that enumerate the same set are two chances to
+        // disagree about what exists.
+        name if crate::types::FLOAT_KINDS.iter().any(|k| k.name() == name) => Prim::Float(
+            *crate::types::FLOAT_KINDS.iter().find(|k| k.name() == name).expect("just matched"),
+        ),
         "bool" => Prim::Bool,
         "str" => Prim::Str,
         "ptr" => Prim::Ptr,
@@ -165,7 +172,7 @@ fn type_candidates(r: &Resolver, ast: &Ast) -> Vec<String> {
     for kind in crate::types::INT_KINDS {
         candidates.push(kind.name().to_string());
     }
-    for prim in ["f64", "bool", "str", "ptr", "cstr"] {
+    for prim in ["f32", "f64", "bool", "str", "ptr", "cstr"] {
         candidates.push(prim.to_string());
     }
     candidates

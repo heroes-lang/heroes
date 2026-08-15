@@ -70,7 +70,7 @@ pub(super) fn prelude(
     }
     w.line("");
     w.line(
-        "_Static_assert(HERO_RUNTIME_ABI == 13, \"heroes_runtime.h is from another compiler\");",
+        "_Static_assert(HERO_RUNTIME_ABI == 14, \"heroes_runtime.h is from another compiler\");",
     );
     w.line("");
     extern_assert::extern_assertions(w, program, ast, checked, src);

@@ -81,7 +81,7 @@ fn collect(ast: &Ast, resolved: &Resolved) -> Vec<Edge> {
     for (index, decl) in ast.decls.iter().enumerate() {
         let from = index as u32;
         match &decl.kind {
-            DeclKind::Record { fields } => {
+            DeclKind::Record { fields, .. } => {
                 for field in fields {
                     push_edge(&mut edges, ast, resolved, from, field.name, field.ty);
                 }

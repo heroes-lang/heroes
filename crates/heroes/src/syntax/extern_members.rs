@@ -43,6 +43,17 @@ pub(super) fn members(
                 return;
             }
             TokenKind::Eof => return,
+            // **A `record` is a member like the other two** (panel 060). It takes
+            // the group's doc on the first line exactly as they do, and it is
+            // flattened into its own `Decl` carrying the header — so nothing
+            // downstream has to ask "was this parsed inside a group?", it asks the
+            // declaration.
+            TokenKind::KwRecord => {
+                let keyword = cur.span();
+                let doc = if first { group_doc.clone() } else { cur.take_docs(src, keyword) };
+                first = false;
+                super::data::record_with_doc(cur, ast, src, doc, linkage);
+            }
             TokenKind::KwFunction | TokenKind::KwConstant => {
                 let is_constant = cur.at(TokenKind::KwConstant);
                 let keyword = cur.span();
@@ -79,7 +90,7 @@ pub(super) fn members(
             _ => {
                 if !cur.at_reported_error() {
                     let message = format!(
-                        "expected a `function` or a `constant`, found {} — an `extern` group holds what the header declares, one per line",
+                        "expected a `function`, a `constant` or a `record`, found {} — an `extern` group holds what the header declares, one per line",
                         cur.found(src)
                     );
                     cur.error("expected_extern_signature", message, cur.span());

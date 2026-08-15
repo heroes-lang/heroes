@@ -85,7 +85,7 @@ fn counts(types: &Types, ast: &Ast, written: &Written, answer: &[bool], ty: TyId
         Ty::Fallible(_) | Ty::Failure => true,
         // Scalars, the FFI's opaque types, a function pointer, and the two the
         // checker uses for its own bookkeeping.
-        Ty::Int(_) | Ty::F64 | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,
+        Ty::Int(_) | Ty::Float(_) | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,
         Ty::Func { .. } | Ty::Generic(_) | Ty::Error => false,
     }
 }
@@ -106,7 +106,7 @@ fn fields_of<'a>(ast: &'a Ast, written: &'a Written, decl: u32) -> Vec<TyId> {
         fields.iter().filter_map(|field| written.get(&field.ty.0).copied()).collect()
     };
     match &ast.decls[decl as usize].kind {
-        DeclKind::Record { fields } => types(fields),
+        DeclKind::Record { fields, .. } => types(fields),
         DeclKind::Variant { cases } => cases.iter().flat_map(|case| types(&case.fields)).collect(),
         _ => Vec::new(),
     }

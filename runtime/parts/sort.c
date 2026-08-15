@@ -46,6 +46,12 @@ static int64_t hero_cmp_int(const void *x, const void *y) {
  * and it would owe the spec a sentence about NaN, which the spec has never
  * needed. `-0.0` and `0.0` tie, and the sort is stable, so their order is the
  * input's. */
+static int64_t hero_cmp_f32(const void *x, const void *y) {
+    float a = *(const float *)x, b = *(const float *)y;
+    if (a != a || b != b) hero_panic("sort of an f32 array containing nan");
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+
 static int64_t hero_cmp_f64(const void *x, const void *y) {
     double a = *(const double *)x, b = *(const double *)y;
     if (a != a || b != b) hero_panic("sort of an f64 array containing nan");
@@ -97,6 +103,7 @@ static int64_t hero_cmp_u64(const void *x, const void *y) {
  * error. */
 static HeroCmpFn hero_cmp_for(const HeroDesc *elem) {
     if (elem == &hero_desc_int) return hero_cmp_int;
+    if (elem == &hero_desc_f32) return hero_cmp_f32;
     if (elem == &hero_desc_f64) return hero_cmp_f64;
     if (elem == &hero_desc_str) return hero_cmp_str;
     if (elem == &hero_desc_i8) return hero_cmp_i8;
