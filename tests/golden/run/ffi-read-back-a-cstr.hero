@@ -16,12 +16,23 @@
 # two `str` values would become EQUAL after the second call, both looking at one
 # buffer holding the second message.
 #
-# **Nothing platform-specific is printed, deliberately.** `strerror`'s text differs
-# across libcs (`Unknown error: 9999` on Darwin, `Unknown error 9999` on glibc) and
-# `HOME` is not set on the Windows leg — so this asserts the *relationship* between
-# the two strings rather than either one's contents, and picks a variable no machine
-# has. A golden that pins a libc's wording is a golden that goes red on a CI leg for
-# a reason that is not the compiler's.
+# **Nothing platform-specific is printed, deliberately** — and the first version of
+# this file got that half right and half wrong, which is why the codes are `1` and
+# `2` rather than two large ones. It printed no libc text, and then rested on a
+# libc *property*: that two **unknown** codes give two different messages. They do
+# on Darwin and glibc, which embed the number (`Unknown error: 9999`), and they do
+# not on the MSVC CRT, which answers one generic string for every out-of-range
+# code. So `first == second` was `false` on two legs and `true` on the third, and
+# the case went red on Windows for a reason that was not the compiler's — the exact
+# failure its own paragraph claimed to have avoided (fixed 2026-08-15).
+#
+# `1` and `2` are `EPERM` and `ENOENT`, the two errno values C11 §7.5 requires
+# every implementation to define, and no libc gives them the same message. The
+# relationship being asserted — two calls, two independent strings — is unchanged;
+# what is gone is the premise about how a libc renders a code it does not know.
+#
+# `HOME` is still avoided for the reason it always was: it is not set on the
+# Windows leg, so the absent-variable witness is a name no machine has.
 
 extern "string.h"
     function strerror(code: i32) -> cstr
@@ -30,8 +41,8 @@ extern "stdlib.h"
     function getenv(name: cstr) -> cstr
 
 function main()
-    first = strerror(code: 9999).to_str()
-    second = strerror(code: 9998).to_str()
+    first = strerror(code: 1).to_str()
+    second = strerror(code: 2).to_str()
     # `false` here is the whole point: a borrow would make these one string.
     print(first == second)
     print(len(first) > 0)

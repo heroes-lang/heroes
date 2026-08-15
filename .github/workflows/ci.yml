@@ -59,7 +59,7 @@ jobs:
             os: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The two FFI examples bind real libraries: `examples/sqlite/` against the
       # SDK's own `sqlite3.h` with no shim, and `examples/curl/` against
@@ -84,7 +84,7 @@ jobs:
       # would be a second home for the same number, and the first run of this
       # workflow is what proved the cost: clippy 1.97 rejected forty `vec![…]`
       # lines that clippy 1.90 accepts, and local and CI had never been compared.
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.2
 
       - name: Install what the FFI examples bind
         if: runner.os == 'macOS'

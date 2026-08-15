@@ -21,9 +21,28 @@
 #
 # The repair is never "add `const`" — that is the header's to choose, not this
 # program's. It is `ptr` with a buffer C owns.
+#
+# **THE WITNESS IS `strtok` AND NOT `putenv`, and the swap is a fixed defect**
+# (2026-08-15). `putenv` was the case's only line, and `putenv` is POSIX: the MSVC
+# CRT spells it `_putenv` and takes `const char *`, so on the Windows leg this
+# refusal fired **nowhere** — and since this was the diagnostic's only case in the
+# corpus, `ffi_writable_parameter` had zero coverage on a third of CI without
+# anything going red about *that*. A check with no witness is worse than a check
+# that fails.
+#
+# `strtok(char *s1, const char *s2)` is **C11 §7.24.5.8** — the standard mandates
+# the unqualified `char *`, so every conforming implementation declares it that
+# way and the refusal cannot go quiet on a platform. That is the property being
+# bought, and it is deliberately independent of what any one libc does: the repair
+# does not rest on a claim about MSVC, it rests on the standard.
+#
+# `putenv` stays in the paragraphs above because it is what panel 058 measured and
+# why the message says *"does not promise to leave it alone"* rather than *"would
+# write through it"*. The record keeps the witness that taught the lesson; the test
+# uses the one that fires everywhere.
 
-extern "stdlib.h"
-    function putenv(s: cstr) -> i32   #~ ffi_writable_parameter
+extern "string.h"
+    function strtok(s1: cstr, s2: cstr) -> cstr   #~ ffi_writable_parameter
 
 function main()
-    print(putenv(s: "HEROES_PANEL=058".cstr()))
+    print(strtok(s1: "a,b".cstr(), s2: ",".cstr()) == nullptr)
