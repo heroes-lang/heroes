@@ -31,8 +31,24 @@ that was predicted — which is itself the measurement.
 |---|---|---|---|---|
 | `token.hero` | `lexer/token.rs` | 194 | 193 | 3 |
 | `keywords.hero` | `lexer/keywords.rs` | 87 | 116 | 3 |
-| `escape.hero` | `lexer/escape.rs` (pure half) | 100 of 168 | 129 | 4 |
-| `digits.hero` | `lexer/digits.rs` (minus the two diagnostic builders) | 155 of 207 | 209 | 4 |
+| `escape.hero` | `lexer/escape.rs` (the table + decoder) | 100 of 168 | 148 | 4 |
+| `digits.hero` | `lexer/digits.rs` (minus the two diagnostic builders) | 155 of 207 | 197 | 4 |
+| `diag.hero` | the Diagnostic/Fix slice of `diagnostics.rs` | — | 50 | 1 |
+| `state.hero` | LexState half of `lexer/mod.rs` | ~90 | 119 | 3 |
+| `layout.hero` | `lexer/layout.rs` | 150 | 168 | 5 |
+| `literals.hero` | `lexer/literals.rs` + the escape validator | 130 + 68 | 211 | 5 |
+| `bytes.hero` | std's ASCII classes | — | 31 | 1 |
+| `number.hero` | `lexer/number.rs` | 296 | 273 | 6 |
+| `scan.hero` | `lexer/scan.rs` | 199 | 262 | 6 |
+| `lexer.hero` | `lex_one` of `lexer/mod.rs` | ~60 | 106 | 7 |
+
+**The lexer is ported end-to-end: 48 tests green, and the cross-check holds** —
+`heroes lex --dump-tokens` (the Rust lexer) and the port's `kind_line` produce
+the same stream for the same program, terminators, indent and dedent included.
+Not yet done: the faithful translation of `lexer/tests/` (843 lines — many
+behaviors already covered above, but the acceptance names that suite), and the
+multi-file `lex` wrapper, which needs the Source record and is measured when a
+second file needs it.
 
 ## Gap list — forms the port wanted
 
@@ -93,6 +109,30 @@ closes.
 9. **`push` cannot be redeclared** (built-in names are reserved), so Rust's
    `LexState::push` is `emit` in the port — arguably the better name.
    **No form wanted.**
+
+10. **`\r`'s missing spelling is a TESTABILITY wall, not just a comparison
+    detour.** The `stray_carriage_return` diagnostic cannot be provoked from a
+    Heroes-written test string: doing so needs a CR inside a literal, and no
+    escape writes one. This is the single Rust lexer test the port cannot
+    translate today. The workaround for the *scanner* was a constant (gap 7);
+    the workaround for the *test* does not exist short of a raw CR byte pasted
+    into the source file, which every editor and diff tool munges. **The one
+    entry so far where the deferral has a real cost attached** — it goes to the
+    close's gap list with that cost named.
+
+11. **No statement no-op.** A `match` arm that should do nothing has no
+    spelling: `_ = 0` in arm position is `declaration_in_arm` (correctly — the
+    binding would be unreadable). The port's shape is to make the match yield
+    a value both arms produce (`d.fixes @ match … .guidance => d.fixes`),
+    which reads better than a no-op would have. **No form wanted** — the
+    refusal forced the better shape.
+
+12. **Tuple patterns.** Rust's `punct` matches `(b0, Some(b1), Some(b2))` in
+    one table; the port is an if/else ladder in the same order, ~40 lines for
+    30 operators, with the longest-match rule carried by ordering alone.
+    Workaround compiles; the ladder is more verbose and no less clear.
+    **Deferral by default** (Part 6 refuses tuples; the case count here does
+    not reopen it).
 
 ## Language features the port exercised against their own compiler
 

@@ -1,0 +1,105 @@
+# The lexer: source text → tokens (design.md §4.15).
+# Port of the drive loop of crates/heroes/src/lexer/mod.rs (`lex_one`).
+#
+# First station of the assembly line. It cuts the text into words and, because
+# Heroes has no braces and no semicolons, it also mints the two invisible
+# currencies structure travels in: indent/dedent (the margin) and terminator
+# (the line end that CAN end a statement).
+#
+# Two invariants hold everywhere, the Rust module's own two:
+# - THE LEXER NEVER STOPS. Errors become a diagnostic (+ an error token when
+#   something was skipped) and lexing continues.
+# - THE CYCLONE RULE, kept across the port: the source text enters every
+#   function as a parameter and never lives in a record. Tokens point into
+#   the source by byte offset.
+#
+# Port scope note (measurement 009): Rust's `lex` walks a multi-file Source —
+# each file lexed as its own text, spans moved back into compilation
+# coordinates, Eof at the end of the ROOT file. That loop needs the Source
+# record (source.rs), which is not lexer code; the probe ports `lex_one`
+# faithfully and the Source half is measured when a second file needs it.
+
+use token
+use diag
+use state
+use layout
+use scan
+
+## The output
+
+record LexOutput
+    tokens: [token.Token]
+    diagnostics: [diag.Diagnostic]
+
+## One file's tokens
+
+# One file's tokens, in that file's own coordinates. Never fails: errors are
+# in `diagnostics`, and the token stream is always complete through eof.
+function lex_one(text: str) -> LexOutput
+    l: state.LexState @ state.new_state()
+    while true
+        layout.line_start(@l, text)
+        if l.pos >= text.len()
+            break
+        scan.line_body(@l, text)
+    # EOF: terminate the last line if the file ended without a newline,
+    # report every opener that never closed (panel 007: otherwise one missing
+    # `)` silently swallows the rest of the file's layout), then close every
+    # block still open.
+    layout.maybe_terminator(@l)
+    for span in l.open_brackets
+        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span))
+    end = token.Span(start: l.pos, end: l.pos)
+    for _ in range(from: 0, to: l.level)
+        l.tokens @ l.tokens.push(token.Token(kind: .dedent, span: end))
+    l.tokens @ l.tokens.push(token.Token(kind: .eof, span: end))
+    return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics)
+
+## The stream, named
+
+# The kinds as one spaced line — the port's answer to the Rust snapshot
+# tests' rendering, and what keeps every end-to-end assertion readable.
+function kind_line(tokens: [token.Token]) -> str
+    names: [str] @ []
+    for t in tokens
+        names @ names.push(token.kind_name(t.kind))
+    return names.join(" ")
+
+test "a whole program lexes to the stream the parser expects"
+    out = lex_one("function main()\n    x = 5\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "kw_function ident lparen rparen terminator indent ident eq int terminator dedent eof"
+
+test "a file that ends without a newline still terminates its last line"
+    out = lex_one("x = 5")
+    assert kind_line(out.tokens) == "ident eq int terminator eof"
+
+test "an opener that never closes is a diagnostic, not a silent swallow"
+    out = lex_one("f(\ny = 1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unclosed_bracket"
+    assert out.diagnostics[0].span == token.Span(start: 1, end: 2)
+
+test "inside brackets the margin is free and the level is frozen"
+    out = lex_one("f(\n        1,\n        2)\nx = 1\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident lparen int comma int rparen terminator ident eq int terminator eof"
+
+test "blank and comment-only lines are layout-neutral"
+    out = lex_one("x = 1\n\n# note\ny = 2\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq int terminator comment ident eq int terminator eof"
+
+test "dedents close one level at a time and eof closes the rest"
+    out = lex_one("if a\n    if b\n        x = 1\n")
+    # A block header line ends in an ident, which IS a line ender — the
+    # terminator lands before the indent, and the parser reads both.
+    assert kind_line(out.tokens) == "kw_if ident terminator indent kw_if ident terminator indent ident eq int terminator dedent dedent eof"
+
+test "an error never stops the lexer"
+    out = lex_one("let x = 0700 € \"open\n")
+    codes: [str] @ []
+    for d in out.diagnostics
+        codes @ codes.push(d.code)
+    assert codes == ["reserved_word", "leading_zero", "unexpected_character", "unterminated_string"]
+    assert out.tokens[out.tokens.len() - 1].kind == .eof
