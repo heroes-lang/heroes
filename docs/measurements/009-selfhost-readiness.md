@@ -153,6 +153,58 @@ closes.
     **Deferral by default** (Part 6 refuses tuples; the case count here does
     not reopen it).
 
+## The second file — maps, recursive variants, generics (2026-08-16)
+
+The ROADMAP owed this before M-selfhost-port opened, and for the reason it
+stated: *"the lexer has zero `BTreeMap` and zero closures, so these findings
+are a lower bound."* The file is `resolve/resolved.rs` → `selfhost/resolved.hero`
+(7 test blocks), chosen because it is map-bearing **and** carries panel 065's
+`// ORDER:` marks, so the port's sort obligation is tested rather than assumed.
+
+**It found what the lexer could not, and the finding is a defect rather than a
+missing form.**
+
+13. **A record IS a usable map key.** Rust keys `top` and `module_uses` by
+    `(String, String)`; Heroes has no tuples, and a two-field record serves —
+    `==` is structural on records, so insert, read and miss all behave.
+    Measured. **No form wanted.**
+
+14. **`sort` cannot order records, and the spec's own map-walking idiom is
+    therefore unavailable for a compound key.** `<` on a record is
+    `bad_operand`; `sort` on `[Record]` **type-checks and then dies in the
+    emitter** — `unsupported[builtin]`, exit 1, *"no change to this file will
+    fix this"*. But `spec:85` prescribes exactly that idiom: *"`keys(m) -> [K]`
+    gives the keys, so `for k in sort(keys(m))` walks in order"*, and `sort` is
+    listed among the built-ins with no stated element restriction. So a program
+    the spec tells you to write type-checks and cannot be built — CLAUDE.md
+    §12's class, where the spec and the compiler disagree and one of them has
+    the bug. **This is not a form the port wants; it is a disagreement the
+    project's own precedence rule says must be settled**, and it is queued for
+    a panel rather than decided here (three shapes are on the table: a
+    lexicographic order on records, a checker-level type error in place of the
+    emitter's `unsupported`, or a `sort_by` taking a comparison).
+    **Workaround, and it is a good one**: key by module then name — two levels
+    of `str`, both sortable, panel 065's rule satisfiable at both. The port's
+    table is `{str: {str: i64}}`, and `names_in` becomes one map lookup plus
+    one sort instead of a filter over every key in the program, which is
+    arguably the better port. Cost: one level of nesting, ~8 lines across two
+    writer functions.
+
+15. **No set type.** `BTreeSet<String>` ports as `[str]` with a linear
+    `contains`, +4 lines — and an array **sorts**, which a set of records would
+    not, so the workaround for gap 14 arrives here for free. **Deferral by
+    default.**
+
+16. **`?` chains inside an expression.** `r.top[module]?[name]` — propagate the
+    outer map's miss, then index the inner one — compiles and reads well. The
+    port needed it on its first map lookup. **Confirmed, no gap.**
+
+**What the second file did NOT find**: no generics were wanted (the Rust file
+has none), and the recursive-variant question stays open — `Ref` and
+`LocalKind` are flat variants with payloads, which port unchanged. A file with
+a genuinely recursive tree (`syntax/`'s `Expr`) is the next measurement, and it
+is the port's own next step rather than an owed detour.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`

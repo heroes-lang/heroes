@@ -1,0 +1,289 @@
+# What the resolver leaves behind (design.md §4.4, §4.16; panels 015, 031, 033).
+# Port of crates/heroes/src/resolve/resolved.rs — **the second file**, chosen
+# because the lexer had zero maps and zero closures, so its gap list was a
+# lower bound (docs/ROADMAP.md § M-selfhost-probe).
+#
+# Later passes consume this table and never resolve a name again. Everything
+# here is a lookup; nothing here walks a tree.
+#
+# ## The two findings, and they are what this file was ported to find
+#
+# **1. A compound map key is a record, and that works.** Rust keys `top` and
+# `module_uses` by `(String, String)`. Heroes has no tuples — but a record IS a
+# usable key: `==` is structural on records (spec § Types), and measured here,
+# `m[Key(module: "geom", name: "dist2")]` inserts, reads and misses correctly.
+#
+# **2. `sort` cannot order records, and that decides the shape of this file.**
+# Panel 065's rule is that every ordering-sensitive map walk becomes an explicit
+# `sort` in the port. Measured: `sort` on `[Key]` type-checks and then dies in
+# the emitter — `unsupported[builtin]`, exit 1, *"no change to this file will
+# fix this"* — because `<` on a record is `bad_operand` and there is no order to
+# sort by. The spec's own idiom for walking a map in order (line 85: *"`keys(m)
+# -> [K]` gives the keys, so `for k in sort(keys(m))` walks in order"*) is
+# therefore unavailable for exactly the keys this table needs.
+#
+# So the port keys by **module, then name — two levels of `str`** rather than
+# one level of record. Both levels sort natively, panel 065's rule is
+# satisfiable at both, and the shape is arguably the better port anyway:
+# `top_in(module, name)` is a two-step lookup in Rust too, and `names_in` — the
+# one function the ORDER mark sits on — becomes one map lookup plus one sort
+# instead of a filter over every key in the program. The record-key shape is
+# left in `Key` below, unused by the table, because the FINDING is worth
+# keeping in the file that found it.
+
+use token
+
+## The compound key that a map cannot sort
+
+# Kept as the record of finding 2, and used by nothing: `{Key: i64}` works for
+# lookup and fails at `sort(keys(m))`. If `sort` ever orders records, this is
+# the shape `top` goes back to, and the port loses a level of nesting.
+record Key
+    module: str
+    name: str
+
+## What a name refers to
+
+# `unresolved` covers both "this node is not a name" and "this name has no
+# answer" — the array is dense, one entry per expression, because §4.10 makes
+# the array Heroes' only indirection.
+variant Ref
+    unresolved
+    # Index into `Resolved.locals`.
+    local
+        at: i64
+    # Index into the declarations.
+    top
+        at: i64
+    # Index into the built-in table.
+    builtin
+        at: i64
+    # A module name in receiver position: `geom` in `geom.dist2(a, b)`.
+    # Recorded on the RECEIVER, and it is what tells every later pass that this
+    # dot is qualification and not UFCS — the same three tokens with two
+    # meanings, so the answer is recorded once.
+    module
+
+## Where a local came from
+
+# The kind is not decoration: it decides the word the unused-binding error uses,
+# and whether the name may be written.
+variant LocalKind
+    param
+    bind
+    cell
+    loop_var
+    payload
+
+# One binding site.
+#
+# `reads` and `writes` are counted separately on purpose: a cell that is written
+# and never read is a value nobody consumes (panel 015 question B). The
+# declaration's own initialiser is NOT a write — counting it would make the
+# unused rule blind to every cell in the language.
+#
+# Port note: Rust's `ty: Option<TypeId>` and `value: Option<ExprId>` are `i64?`
+# fields. A fallible type in stored position holds an Option without loss, which
+# the lexer port already showed with `last_significant`.
+record Local
+    name: token.Span
+    kind: LocalKind
+    mutable: bool
+    # Which declaration this local lives in.
+    owner: i64
+    # Scope nesting inside that declaration, 0 for parameters. Only
+    # `--dump-scopes` reads it; it is what makes the nesting visible.
+    depth: i64
+    ty: i64?
+    value: i64?
+    reads: i64
+    writes: i64
+
+## The table
+
+# **Keyed by module, then name.** See finding 2 in the module doc: one level of
+# record key cannot be sorted, two levels of `str` can.
+#
+# Declaration order carries no meaning (§4.2), so the table that holds the names
+# has no order either — which is why every walk that reaches a reader sorts.
+#
+# The module is in the key because two modules may each declare `Point` and they
+# are two types. It is also what makes an unqualified name see only its own
+# file: `top_in` is asked for one module, never for all of them.
+record Resolved
+    uses: [Ref]
+    locals: [Local]
+    # module -> (name -> declaration index)
+    top: {str: {str: i64}}
+    # the module that wrote the `use` -> the modules it names
+    module_uses: {str: [str]}
+    # Every module that contains a `???`. While one does, unused bindings are
+    # not reported IN THAT MODULE (§4.16, normative: the suppression is
+    # file-wide). A set rather than a flag, and the difference is a fixed
+    # defect: one `bool` made the exemption program-wide, so an unfinished
+    # `geom.hero` silently suspended the rule in a `main.hero` nobody was
+    # editing (panel 033 D1). Heroes has no set type, so it is an array — and
+    # an array sorts, which a set of records would not.
+    holes_in: [str]
+
+function new_resolved() -> Resolved
+    uses: [Ref] = []
+    locals: [Local] = []
+    top: {str: {str: i64}} = {}
+    module_uses: {str: [str]} = {}
+    holes_in: [str] = []
+    return Resolved(uses: uses, locals: locals, top: top, module_uses: module_uses, holes_in: holes_in)
+
+## Lookups
+
+# A top-level name, looked up in one module and nowhere else.
+function top_in(r: Resolved, module: str, name: str) -> i64?
+    return r.top[module]?[name]
+
+# Does `module` name a module that `from` said `use` about?
+function is_used_module(r: Resolved, from: str, module: str) -> bool
+    named = r.module_uses[from]
+    if named.is_err()
+        return false
+    for m in named.must()
+        if m == module
+            return true
+    return false
+
+# Every name one module declares, for the "did you mean" lists and for
+# `--dump-scopes`.
+#
+# ORDER: ascending name — every did-you-mean candidate list and --dump-scopes
+# inherit this order, and the printed lists cap what they show, so the cap picks
+# by it. This is panel 065's rule discharged at the site its mark names: the
+# Rust `BTreeMap` gave this order for free, and the port pays for it with one
+# `sort` — which is exactly the sentence design.md §4.9 carries.
+function names_in(r: Resolved, module: str) -> [str]
+    inner = r.top[module]
+    if inner.is_err()
+        return []
+    return sort(keys(inner.must()))
+
+# Which module declares `name`, if any does — **preferring one that `from` can
+# actually see**. Used by the diagnostics that turn an unknown name into "it is
+# in `geom`, write `geom.f`".
+#
+# The preference is the whole function. A bare search returns the
+# alphabetically first module of however many declare that name — which had
+# exactly one possible answer while a program was one file. Measured
+# (2026-08-12, the Rust side): with `use geom` written and both `alpha` and
+# `geom` declaring `scale`, the compiler named `alpha` — a module the file
+# cannot see — attached a `guess` fix that gives `wrong_arity` if followed, and
+# cascaded a false `unused_binding` telling the author to delete the `use geom`
+# line that was the real fix.
+#
+# ORDER: ascending module name — ties within each group are broken by it, and
+# the answer reaches a diagnostic and its fix.
+function module_declaring(r: Resolved, from: str, name: str) -> str?
+    visible: [str] @ []
+    other: [str] @ []
+    for module in sort(keys(r.top))
+        if top_in(r, module: module, name: name).is_err()
+            continue
+        if module == from || is_used_module(r, from: from, module: module)
+            visible @ visible.push(module)
+        else
+            other @ other.push(module)
+    if visible.len() > 0
+        return ok(visible[0])
+    if other.len() > 0
+        return ok(other[0])
+    return fail("no_module_declares_it", name)
+
+# Does the module that owns this offset contain a hole? The question every
+# §4.16 exemption asks.
+function hole_covers(r: Resolved, module: str) -> bool
+    for m in r.holes_in
+        if m == module
+            return true
+    return false
+
+## Building it — the writes the resolver makes
+
+function declare_top(@r: Resolved, module: str, name: str, decl: i64)
+    inner: {str: i64} @ {}
+    found = r.top[module]
+    if !found.is_err()
+        inner @ found.must()
+    inner[name] @ decl
+    r.top[module] @ inner
+
+function declare_use(@r: Resolved, from: str, module: str)
+    named: [str] @ []
+    found = r.module_uses[from]
+    if !found.is_err()
+        named @ found.must()
+    named @ named.push(module)
+    r.module_uses[from] @ named
+
+function note_hole(@r: Resolved, module: str)
+    if !hole_covers(r, module)
+        r.holes_in @ r.holes_in.push(module)
+
+test "a name is found in its own module and nowhere else"
+    r: Resolved @ new_resolved()
+    declare_top(@r, module: "geom", name: "dist2", decl: 4)
+    declare_top(@r, module: "main", name: "dist2", decl: 9)
+    assert top_in(r, module: "geom", name: "dist2").must() == 4
+    assert top_in(r, module: "main", name: "dist2").must() == 9
+    assert top_in(r, module: "geom", name: "nope").is_err()
+    assert top_in(r, module: "nope", name: "dist2").is_err()
+
+test "names_in is sorted, which is what the ORDER mark owes"
+    r: Resolved @ new_resolved()
+    declare_top(@r, module: "geom", name: "zeta", decl: 1)
+    declare_top(@r, module: "geom", name: "alpha", decl: 2)
+    declare_top(@r, module: "geom", name: "mid", decl: 3)
+    assert names_in(r, "geom") == ["alpha", "mid", "zeta"]
+    assert names_in(r, "absent") == []
+
+test "the preferred module is one the file can see"
+    r: Resolved @ new_resolved()
+    declare_top(@r, module: "alpha", name: "scale", decl: 1)
+    declare_top(@r, module: "geom", name: "scale", decl: 2)
+    declare_use(@r, from: "main", module: "geom")
+    # Alphabetically `alpha` wins; visibility must beat it — the defect the
+    # Rust comment records, reproduced as a test in the port.
+    assert module_declaring(r, from: "main", name: "scale").must() == "geom"
+    # With no `use` line, the answer is deterministic rather than absent.
+    assert module_declaring(r, from: "other", name: "scale").must() == "alpha"
+    assert module_declaring(r, from: "main", name: "absent").is_err()
+
+test "a hole is recorded per module, never program-wide"
+    r: Resolved @ new_resolved()
+    note_hole(@r, "geom")
+    note_hole(@r, "geom")
+    assert r.holes_in.len() == 1
+    assert hole_covers(r, "geom")
+    assert !hole_covers(r, "main")
+
+test "a use line is remembered for the module that wrote it"
+    r: Resolved @ new_resolved()
+    declare_use(@r, from: "main", module: "geom")
+    assert is_used_module(r, from: "main", module: "geom")
+    assert !is_used_module(r, from: "geom", module: "main")
+    assert !is_used_module(r, from: "absent", module: "geom")
+
+test "a record is a usable map key, which is finding 1"
+    # Not the table's shape — the finding's own test. Lookup works; it is
+    # `sort(keys(m))` that does not, which is why the table nests instead.
+    m: {Key: i64} @ {}
+    m[Key(module: "geom", name: "dist2")] @ 7
+    assert m[Key(module: "geom", name: "dist2")].must() == 7
+    assert m[Key(module: "geom", name: "other")].is_err()
+    assert len(m) == 1
+
+test "a local carries its optional syntax by value"
+    l: Local @ Local(name: token.Span(start: 0, end: 1), kind: .cell, mutable: true, owner: 0, depth: 1, ty: ok(3), value: fail("none", "no value"), reads: 0, writes: 0)
+    assert l.ty.must() == 3
+    assert l.value.is_err()
+    assert l.kind == .cell
+    copy: Local @ l
+    copy.reads @ 5
+    assert l.reads == 0
+    assert copy.reads == 5
