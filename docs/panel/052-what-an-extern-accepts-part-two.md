@@ -132,8 +132,8 @@ stated so it can expire in its turn.
 | judge | prediction | checkable at |
 |---|---|---|
 | llm-ergonomist | ≥8/10 fresh models bind a C `float` as `f64`; 100% → 0% silent-error rate under a boundary type | next first-try harness run |
-| spec-warden | 0 of 45 programs change output for want of `f32` | M-binding-fidelity close |
-| ffi-pragmatist | raylib does not pass 254 of 600 bindable entry points; struct-by-value blocks 346 | M-ffi-ladder rung 5 |
+| spec-warden | 0 of 45 programs change output for want of `f32` | M-binding-fidelity close — **not scored there, scored 2026-08-15 by panel 060: held, and vacuously.** No corpus program binds a C `float` in any position (`ffi-libm.hero` binds `sqrt`/`pow`, genuinely `double`; the raylib example uses `DrawFPS`/`SetRandomSeed`), so the instrument had no arm for the question — row `2675`'s finding, third instance. A vacuous prediction cannot fund the refusal it was registered for, which is why panel 060 reopened `f32` on this row's own condition rather than on a re-vote |
+| ffi-pragmatist | raylib does not pass 254 of 600 bindable entry points; struct-by-value blocks 346 | M-ffi-ladder rung 5 — **scored 2026-08-15 by panel 060: held.** Re-measured on `raylib.h` 6.0: **252 of 601** bindable, **349 of 601** crossing a struct by value, both by two independent counts |
 | compiler-engineer | sqlite emits 12 clang warnings where its own comment claims four | M-ffi-ladder close |
 | historian | the fixed-arity curl binding fails on arm64 | **scored now: falsified** — it succeeds, and the reason is the one the pragmatist measured: the call goes through the header's prototype, not the Heroes declaration |
 | chair (panel 051) | `emit/ffi.rs` passes 440 lines if the mapped class lands | **scored now: true**, and low — it reached 550 |
