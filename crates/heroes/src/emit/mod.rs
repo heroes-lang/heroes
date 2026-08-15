@@ -50,6 +50,7 @@ mod container;
 mod convert;
 mod counted;
 mod ctype;
+mod descriptor_set;
 mod descriptors;
 mod decls;
 mod extern_assert;

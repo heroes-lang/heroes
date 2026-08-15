@@ -205,6 +205,51 @@ has none), and the recursive-variant question stays open — `Ref` and
 a genuinely recursive tree (`syntax/`'s `Expr`) is the next measurement, and it
 is the port's own next step rather than an owed detour.
 
+## The third file — the recursive tree, and a compiler defect (2026-08-16)
+
+`syntax/ast/exprs.rs` → `selfhost/ast.hero`, 6 test blocks. It closes the last
+measurement question the second file left open, and the answer is a negative:
+
+17. **The recursive tree costs nothing, because it was never recursive.**
+    Expressions and statements live in **arenas** and link by index — the Rust
+    file's own first sentence, decided for Rust's reasons. That is exactly what
+    design.md §4.10 asks of a Heroes program (a value holds its fields by value
+    and may contain itself only through `[T]` or `{K: V}`), so an arena
+    satisfies the rule by never needing it. **Zero forms wanted**; the port is a
+    transcription, and a tree walk over it is an ordinary recursive function
+    that copies nothing but an `i64`.
+
+18. **`case` is a foreign word, and the compiler's own AST wanted it.** The
+    registry that exists to catch a model reaching for `switch`/`case` refuses
+    the name Rust gives the variant-case node. Renamed `variant_case`, +0 lines,
+    arguably clearer. **No form wanted** — but worth the record: the thesis
+    machinery and the compiler's own vocabulary can collide, and the collision
+    is cheap.
+
+19. **`_` forbidden on a variant is a real cost, and it is the cost that buys
+    the guarantee.** A depth walk that cares about five shapes must still name
+    the other sixteen — four extra lines. The day a twenty-second `ExprKind`
+    arrives, that walk stops compiling instead of quietly answering 1, which is
+    the same rule that made the Rust lexer's `nullptr` defect inexpressible
+    (gap 11's entry). **Deferral is not even the question**: this is the
+    language working.
+
+**And the port found a compiler defect that no test in the tree could reach.**
+A variant case carrying a `Record?` that the program never **constructs** made
+`==` on that variant emit C naming a descriptor nothing defined — exit 2, the
+compiler blaming itself for a correct program. Cause: `emit/descriptors.rs`
+expanded container payloads in a pass that sees only types the *program*
+reaches, and pushed `T?` **field** types after that pass had run; a
+never-constructed case is reached by nothing, yet its `eq` arm is generated
+anyway. The worklist now expands as it drains
+(`tests/golden/run/fixedbugs-option-payload-descriptor`, symptom/cause/fix in
+the case itself, §9), and `generated` moved to its own file under §11's
+ceiling — the seam `descriptors.rs` had already named.
+
+**This is the port paying for itself before it is finished**: the shape that
+provoked it — a declared-but-unbuilt case with an optional payload — is
+ordinary in a compiler's own AST and absent from every program written to date.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`
