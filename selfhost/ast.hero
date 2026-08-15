@@ -312,6 +312,14 @@ variant TypeKind
     # keeps its shape so the errors after this one are still found.
     error
 
+## Declarations
+
+# `use geom` — the module named, and the whole line's extent. Separate from the
+# declarations because a `use` lowers to nothing (panel 031).
+record Use
+    name: token.Span
+    span: token.Span
+
 ## The arena
 
 record Ast

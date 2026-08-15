@@ -272,6 +272,23 @@ number is a threshold to think at, not a limit to round: `toolchain.rs` stays at
 the cache key `link` and `runtime_object` share, and a file split against its own
 seam is harder to read than a long one.
 
+**And the threshold yields entirely where the *language* forbids the seam**
+(author instruction 2026-08-16, *"supera la regola per heroes"*, answering the
+port's measurement). Heroes refuses module cycles — `module_cycle` fires on the
+`use` edge, whatever it carries, measured both ways — and a recursive-descent
+grammar is mutually recursive by construction, so its knots cannot be split at
+all: over `crates/heroes/src/syntax/`, **`expr`+`primary`+`control`+`stmt`+
+`name_stmt` is 1025 lines and `decl`+`data`+`externs`+`extern_members` is 736**,
+each one module or nothing. This is `toolchain.rs`'s reason at its limit: there
+the cut merely ran against a seam, here **no cut exists**, and a rule that cannot
+be obeyed is not a standard but a lie. Panel 031 R6 chose the cycle refusal as
+*"the reversible direction"* and priced relaxing it against
+M-separate-compilation's topological order; the port supplies the other half of
+that trade and the answer is that the file rule yields, not the language.
+**What is owed in exchange is what the ~300 actually protects**: a knot carries a
+module doc naming its cycle, its entry points and which function calls which, so
+a reader opens it and finds a map rather than drowning.
+
 **A narrowing asks the value, never the world** (author instruction
 2026-08-12, sweep 001). A filter, an allow-list of kinds, or a `_ =>` arm is a
 decision, and its correctness rests on something. Rest it on a fact about the
