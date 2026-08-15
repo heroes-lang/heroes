@@ -1,0 +1,43 @@
+# The read direction, made to run (panel 059, ratified 2026-08-15).
+#
+# `tests/golden/run/` had **zero** coverage of a `cstr` coming back — the only null
+# case was `abort-null-cstr-into-c.hero`, which is the *outbound* direction and never
+# calls `to_str`. That gap is why the sitting had to measure the abort by hand.
+#
+# Three facts the spec's FFI clause states, one program each:
+#   1. `to_str` COPIES — the `str` survives the next call into C, which is what makes
+#      `getenv`, `ctime`, `strerror` and `sqlite3_column_text` bindable at all;
+#   2. `c == nullptr` is testable BEFORE converting, which is the escape the clause
+#      tells the reader to take;
+#   3. a guarded read of a genuinely absent value takes the null branch.
+#
+# `strerror` is the witness because its buffer is documented by POSIX as
+# *"invalidated or overwritten by a subsequent call"* — so if `to_str` borrowed, the
+# two `str` values would become EQUAL after the second call, both looking at one
+# buffer holding the second message.
+#
+# **Nothing platform-specific is printed, deliberately.** `strerror`'s text differs
+# across libcs (`Unknown error: 9999` on Darwin, `Unknown error 9999` on glibc) and
+# `HOME` is not set on the Windows leg — so this asserts the *relationship* between
+# the two strings rather than either one's contents, and picks a variable no machine
+# has. A golden that pins a libc's wording is a golden that goes red on a CI leg for
+# a reason that is not the compiler's.
+
+extern "string.h"
+    function strerror(code: i32) -> cstr
+
+extern "stdlib.h"
+    function getenv(name: cstr) -> cstr
+
+function main()
+    first = strerror(code: 9999).to_str()
+    second = strerror(code: 9998).to_str()
+    # `false` here is the whole point: a borrow would make these one string.
+    print(first == second)
+    print(len(first) > 0)
+
+    absent = getenv(name: "HEROES_NO_SUCH_VARIABLE_059".cstr())
+    if absent == nullptr
+        print("absent, and to_str was never called")
+    else
+        print(absent.to_str())

@@ -1,6 +1,6 @@
 # 059 — The read direction
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `RATIFIED 2026-08-15` (was `provisional — author ratification pending`).
 **Convened** 2026-08-15 by author instruction, from panel 058's blind seat — which
 could not write `getcwd` in **any** of three spec variants and reported the read
 direction as the larger hole, having been asked about the write one.
@@ -271,3 +271,36 @@ sitting.
   `cstr` *"may print an address"* is false.
 - **A judge declined a veto it could not ground and said so in the verdict.** That is
   the instrument working in the direction that is hardest to observe.
+
+## Ratification — 2026-08-15
+
+**RATIFIED as it stands** (author instruction: *"ratifico tutto e finisci tutto prima
+del prossimo step, accetto le decisioni degli esperti senza chiedere a me"* — a
+blanket yes given after reading the synthesis, and the fifth of the day, recorded as
+that rather than as five reviews). The clause is in the spec at **+25**, A is refused
+on the measurement that condemned it, C stays vetoed with its second-name form
+recorded, and no-change stays refused by every seat.
+
+**The instruction has a second half this file must carry**: the author has delegated
+the judges' own recommendations, so the two things owed with the clause are **not
+open questions** — they are work, and they land without coming back:
+
+1. a run-golden for the inbound abort and one for a guarded `sqlite3_column_text` on
+   a SQL NULL, because `tests/golden/run/` has zero coverage of the read direction;
+2. a route on `bad_operand` for a `cstr`, because a hard stop with no route is what
+   produced panel 058's `static char[4096]`.
+
+**What a blanket yes still cannot settle.** Four of the five predictions name a model
+harness or a milestone that has not happened, and panel 046's R2 governs them
+unchanged. Two are checkable and both are worth watching: the llm-ergonomist's — *the
++11 clause is **worse** than no clause by ≥15 points* — because it is the sitting's
+most counter-intuitive claim and its author offered it as the falsifier of its own
+refusal; and the ffi-pragmatist's, that extending `examples/sqlite` to a nullable TEXT
+column needs **≤4 added lines and no shim**, which the run-golden above is the first
+half of.
+
+**On the veto of C**: ratifying it does not rule that a fallible conversion is wrong.
+It rules that `to_str` may not be the name that carries it — spec:58's law, the
+`(char *)-1` sentinel, and four call sites paying `.must()` for nothing. The
+historian's second-name form is the shape a future sitting starts from, and this
+ratification does not consume it.

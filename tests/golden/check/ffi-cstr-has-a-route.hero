@@ -1,0 +1,21 @@
+# A hard stop must carry a route (panel 059, ratified 2026-08-15; §4.17).
+#
+# SYMPTOM this pins: `print` on a `cstr` stopped with `bad_operand` and said only
+# that a `cstr` is not a `str` — which the reader can already see. Panel 058's blind
+# reader met that stop, could find no conversion in the specification, and reached
+# for a C helper with a `static char[4096]`. That escape is one line long, invisible
+# to every rule this compiler has, and strictly worse than what the stop refused.
+#
+# So the note names the operation and its guard, which is what §4.17 asks: an error
+# carries what is needed to repair the program without opening another file.
+#
+# It is a **note and not a `Fix`**: the repair is `v.to_str()`, and building that
+# replacement needs the operand's own source text, which the diagnostics module does
+# not have. A `Fix` with a span and no text would be worse than none (CLAUDE.md §8).
+
+extern "stdlib.h"
+    function getenv(name: cstr) -> cstr
+
+function main()
+    v = getenv(name: "HOME".cstr())
+    print(v)   #~ bad_operand

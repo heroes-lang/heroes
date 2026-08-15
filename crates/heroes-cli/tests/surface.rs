@@ -212,6 +212,39 @@ fn the_null_guard_is_on_the_value_and_not_on_the_out_parameter() {
     assert_eq!(String::from_utf8_lossy(&ran.stdout), "true\n");
 }
 
+/// **A hard stop on a `cstr` carries a route** (panel 059, ratified 2026-08-15).
+///
+/// The `check/` golden beside this pins the diagnostic's code and message, but it
+/// runs `--brief` — one line per diagnostic, no notes — so it cannot see the thing
+/// that matters here. This is the test that makes the route fire.
+///
+/// Why the route exists at all: panel 058's blind reader met `bad_operand` on a
+/// `cstr`, found no conversion in the specification, and reached for a C helper with
+/// a `static char[4096]`. The stop was correct and useless — it said a `cstr` is not
+/// a `str`, which the reader could see, and said nothing about `to_str`, which
+/// exists. §4.17 is the standard: an error carries what is needed to repair the
+/// program without opening another file.
+///
+/// Both halves are asserted because both were missing: the **conversion**, and the
+/// **guard** — `to_str` on a null `cstr` aborts, so a note naming the conversion
+/// without the test would trade one trap for another.
+#[test]
+fn a_cstr_that_cannot_be_used_says_what_turns_it_into_a_str() {
+    let out = heroes(&["check", "tests/golden/check/ffi-cstr-has-a-route.hero"]);
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert_eq!(code(&out), 1, "the input has diagnostics\n{said}");
+    assert!(said.contains("error[bad_operand]"), "{said}");
+    assert!(
+        said.contains("to_str"),
+        "the stop must name the conversion — without it the reader's next move is a C \
+         shim, which is what happened:\n{said}"
+    );
+    assert!(
+        said.contains("nullptr"),
+        "and the guard, or the route leads to an abort:\n{said}"
+    );
+}
+
 /// The same class from the other side: a **sign** the header does not have.
 ///
 /// `curl_easy_setopt` takes `CURLoption` and `curl_easy_strerror` takes

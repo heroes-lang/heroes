@@ -1,0 +1,3 @@
+false
+true
+absent, and to_str was never called
