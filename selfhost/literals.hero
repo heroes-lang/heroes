@@ -1,0 +1,199 @@
+# A value written between quotes (design.md §4.1; spec § Types; panel 008).
+# Port of crates/heroes/src/lexer/literals.rs, plus the escape VALIDATOR from
+# escape.rs — in Rust it is an impl on LexState living beside the table; here
+# it lives beside its only two callers, and the table stays pure in escape.
+#
+# A bad escape does NOT poison the token: it is reported and the literal stays
+# a str_lit, so one mistake inside a string costs one diagnostic. Both
+# scanners stop at the end of the line — a string is not multi-line in this
+# language, so an unterminated one is a mistake with a known extent.
+
+use token
+use diag
+use state
+use escape
+
+## The escape validator
+
+# Validate one escape sequence, `l.pos` sitting on the backslash, and advance
+# past it. Returns false when the backslash is the last thing on the line —
+# the caller then reports the literal unterminated. `l.pos` is left ON the
+# newline in that case: consuming it would swallow the line break and destroy
+# every Indent/Dedent that follows (§4.15).
+function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
+    backslash = l.pos
+    if backslash + 1 >= text.len()
+        l.pos @ backslash + 1
+        return false
+    escaped = text.slice(from: backslash + 1, to: text.len()).chars()[0]
+    if escaped == "\n"
+        l.pos @ backslash + 1
+        return false
+    l.pos @ backslash + 1 + escaped.len()
+    if !escape.escape_text(escaped, ctx).is_err()
+        return true
+    span = token.Span(start: backslash, end: l.pos)
+    # Two different mistakes, two different repairs — both certain.
+    if escaped == escape.bare_text(ctx)
+        d: diag.Diagnostic @ diag.new_diagnostic(code: "escape_not_needed", message: "`\\" + escaped + "` is not an escape here — `" + escaped + "` needs no escape inside " + escape.ctx_word(ctx) + ", write it bare", span: span)
+        d.fixes @ d.fixes.push(diag.Fix(title: "drop the backslash: `" + escaped + "`", replacement: escaped, span: span, certainty: .certain))
+        l.diagnostics @ l.diagnostics.push(d)
+    else
+        d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_escape", message: "`\\" + escaped + "` is not an escape sequence — the escapes are " + escape.legal(ctx) + "; write `\\\\` for a literal backslash", span: span)
+        d.fixes @ d.fixes.push(diag.Fix(title: "escape the backslash: `\\\\" + escaped + "`", replacement: "\\\\" + escaped, span: span, certainty: .certain))
+        l.diagnostics @ l.diagnostics.push(d)
+    # The token keeps its kind: poisoning it to `error` would delete the
+    # line's Terminator (error is not an ender, panel 007) and turn one
+    # mistake into two.
+    return true
+
+## The string
+
+# `"…"` to the closing quote on the same line, escapes validated as we go.
+function string(@l: state.LexState, text: str)
+    start = l.pos
+    l.pos @ l.pos + 1
+    while true
+        if l.pos >= text.len() || text[l.pos] == '\n'
+            break
+        b = text[l.pos]
+        if b == '"'
+            l.pos @ l.pos + 1
+            state.emit(@l, .str_lit, start)
+            return
+        if b == '\\'
+            if !escape_step(@l, text, .in_str)
+                break
+        else
+            l.pos @ l.pos + 1
+    span = token.Span(start: start, end: l.pos)
+    state.error_token(@l, diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — strings are single-line, `\"` to `\"`", span: span))
+
+## The character
+
+# `'a'` — exactly ONE character: one ASCII byte, or one escape sequence. Its
+# value is an i64 (design.md §4.3). `'\n'` is four source bytes and one
+# character. Syntax is ASCII-only (§1.10), so a multi-byte character here is
+# an error, not an interpretation.
+function char_lit(@l: state.LexState, text: str)
+    start = l.pos
+    content_start = start + 1
+    l.pos @ content_start
+    # One pass to the closing quote, counting units: a unit is one character
+    # or one whole escape sequence. Scanning past the closer in one go is what
+    # keeps `'ab'` a single diagnostic instead of an unterminated literal
+    # followed by debris.
+    units: i64 @ 0
+    closed: bool @ false
+    scanning: bool @ true
+    while scanning
+        if l.pos >= text.len() || text[l.pos] == '\n'
+            scanning @ false
+        else if text[l.pos] == '\''
+            closed @ true
+            scanning @ false
+        else if text[l.pos] == '\\'
+            if escape_step(@l, text, .in_char)
+                units @ units + 1
+            else
+                scanning @ false
+        else
+            ch = text.slice(from: l.pos, to: text.len()).chars()[0]
+            l.pos @ l.pos + ch.len()
+            units @ units + 1
+    if !closed
+        unterminated_char(@l, text, start)
+        return
+    content = text.slice(from: content_start, to: l.pos)
+    l.pos @ l.pos + 1
+    if units == 1 && (starts_with_backslash(content) || all_ascii(content))
+        state.emit(@l, .char_lit, start)
+    else
+        span = token.Span(start: start, end: l.pos)
+        state.error_token(@l, diag.new_diagnostic(code: "char_literal", message: "a character literal holds exactly one character — one ASCII character ('a', '0', ' ') or one escape ('\\n', '\\t') — `'" + content + "'` does not", span: span))
+
+# No closing quote on this line. `l.pos` is already where the scan stopped
+# (on the newline, never past it).
+function unterminated_char(@l: state.LexState, text: str, start: i64)
+    span = token.Span(start: start, end: l.pos)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unterminated_char", message: "this character literal never closes — write one character between single quotes: 'a'", span: span)
+    # `'\'` is the classic: the backslash escaped the closing quote.
+    if contains_backslash(text.slice(from: start, to: l.pos))
+        d.fixes @ d.fixes.push(diag.Fix(title: "escape the backslash: `'\\\\'`", replacement: "'\\\\'", span: span, certainty: .certain))
+    state.error_token(@l, d)
+
+## Byte questions the scanners ask
+
+function starts_with_backslash(s: str) -> bool
+    return s.len() > 0 && s[0] == '\\'
+
+function all_ascii(s: str) -> bool
+    i: i64 @ 0
+    while i < s.len()
+        if s[i] > 127
+            return false
+        i @ i + 1
+    return true
+
+function contains_backslash(s: str) -> bool
+    i: i64 @ 0
+    while i < s.len()
+        if s[i] == '\\'
+            return true
+        i @ i + 1
+    return false
+
+test "a string is one token and a bad escape does not poison it"
+    l: state.LexState @ state.new_state()
+    string(@l, "\"abc\"")
+    assert l.tokens.len() == 1
+    assert l.tokens[0].kind == .str_lit
+    assert l.tokens[0].span == token.Span(start: 0, end: 5)
+    b: state.LexState @ state.new_state()
+    string(@b, "\"a\\db\"")
+    assert b.tokens[0].kind == .str_lit
+    assert b.diagnostics.len() == 1
+    assert b.diagnostics[0].code == "unknown_escape"
+    assert b.diagnostics[0].fixes[0].replacement == "\\\\d"
+
+test "the other context's escape is refused with the bare repair"
+    l: state.LexState @ state.new_state()
+    string(@l, "\"a\\'b\"")
+    assert l.diagnostics[0].code == "escape_not_needed"
+    assert l.diagnostics[0].fixes[0].replacement == "'"
+    assert l.tokens[0].kind == .str_lit
+
+test "an unterminated string is an error with a known extent"
+    l: state.LexState @ state.new_state()
+    string(@l, "\"abc\nx = 1")
+    assert l.tokens[0].kind == .error
+    assert l.diagnostics[0].code == "unterminated_string"
+    assert l.pos == 4
+
+test "a character literal holds exactly one character"
+    l: state.LexState @ state.new_state()
+    char_lit(@l, "'a'")
+    assert l.tokens[0].kind == .char_lit
+    e: state.LexState @ state.new_state()
+    char_lit(@e, "'\\n'")
+    assert e.tokens[0].kind == .char_lit
+    assert e.tokens[0].span == token.Span(start: 0, end: 4)
+    two: state.LexState @ state.new_state()
+    char_lit(@two, "'ab'")
+    assert two.tokens[0].kind == .error
+    assert two.diagnostics[0].code == "char_literal"
+    wide: state.LexState @ state.new_state()
+    char_lit(@wide, "'é'")
+    assert wide.tokens[0].kind == .error
+    assert wide.diagnostics[0].code == "char_literal"
+
+test "the backslash that ate the closing quote gets the classic fix"
+    l: state.LexState @ state.new_state()
+    char_lit(@l, "'\\'")
+    assert l.diagnostics[0].code == "unterminated_char"
+    assert l.diagnostics[0].fixes.len() == 1
+    assert l.diagnostics[0].fixes[0].replacement == "'\\\\'"
+    plain: state.LexState @ state.new_state()
+    char_lit(@plain, "'a")
+    assert plain.diagnostics[0].code == "unterminated_char"
+    assert plain.diagnostics[0].fixes.len() == 0

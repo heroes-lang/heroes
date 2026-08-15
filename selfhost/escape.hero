@@ -49,6 +49,18 @@ function bare_here(ctx: Quoted) -> u8
         .in_str => '\''
         .in_char => '"'
 
+# The same character as text, for the message that quotes it.
+function bare_text(ctx: Quoted) -> str
+    return match ctx
+        .in_str => "'"
+        .in_char => "\""
+
+# The context, named the way the diagnostic says it.
+function ctx_word(ctx: Quoted) -> str
+    return match ctx
+        .in_str => "a string"
+        .in_char => "a character literal"
+
 ## The one table
 
 # What one escape denotes, as the one-character string it decodes to. A miss
