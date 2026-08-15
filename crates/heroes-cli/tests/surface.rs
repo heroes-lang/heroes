@@ -185,6 +185,86 @@ fn the_word_width_this_compiler_claims_is_the_one_clang_uses() {
     );
 }
 
+/// **The premise panel 064's resolution rests on, and the test that fires when it
+/// dies** (CLAUDE.md §11).
+///
+/// The claim, stated so it can be wrong: **for an integer field, equal
+/// `__builtin_classify_type`, equal `sizeof` and equal signedness imply equal
+/// ABI.** That is what lets `emit/extern_record.rs` ask width and sign of an
+/// integer member where every other member kind is still asked for type identity.
+///
+/// It is not a general truth about C types — it is a truth about *integers*, and
+/// the distinction is the whole resolution. C's type identity is **finer** than
+/// its integer ABI: on Darwin `int64_t` is `long long` while `time_t` is `long`,
+/// two distinct types of one width and one sign that no ABI distinguishes. Ask
+/// identity there and `size_t`, `time_t`, `clock_t`, `ldiv_t`, `struct timespec`,
+/// `struct timeval`, four `struct rusage` members and `z_stream`'s three counters
+/// become **unbindable** — not bound wrongly, unbindable, with `partial` offering
+/// only the choice to drop the field. Ask identity of a *float* or a *pointer* and
+/// the answer is right, which is why those branches keep it and panel 060's veto
+/// still stands.
+///
+/// The two halves are asserted together on purpose. A test that only proved the
+/// acceptance would pass on a check that had stopped checking; a test that only
+/// proved the refusals would pass on the identity form this replaced. The
+/// compiler-engineer's condition for withdrawing its veto was a pair of equal
+/// class, size and signedness with **different ABI** — produce one and this test
+/// is where it lands.
+#[test]
+fn an_integer_fields_abi_is_its_width_and_its_sign() {
+    let dir = std::env::temp_dir().join("heroes-integer-field-abi");
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    std::fs::write(
+        dir.join("widths.h"),
+        "#include <stddef.h>\n#include <time.h>\ntypedef struct { size_t n; } Sized;\n\
+         typedef struct { time_t t; } Timed;\ntypedef struct { long long o; } Offed;\n\
+         typedef struct { float f; } Floated;\n",
+    )
+    .expect("writing the probe header");
+    // `expected` is the exit code the field's declaration must produce.
+    let cases: [(&str, &str, i32, &str); 7] = [
+        // Accepted, and every one of them was refused by the identity form.
+        ("Sized", "n: u64", 0, "`size_t` is `unsigned long` here and `u64` is `unsigned long long` — one width, one sign, two C types"),
+        ("Timed", "t: i64", 0, "`time_t` is `long` here and `i64` is `long long` — the same pair, signed"),
+        ("Offed", "o: i64", 0, "the case that bound before the relaxation and must go on binding"),
+        // Refused, and each names the conjunct that must have refused it.
+        ("Sized", "n: i64", 1, "the sign conjunct: `size_t` is unsigned"),
+        ("Timed", "t: u64", 1, "the sign conjunct, the other way round"),
+        ("Offed", "o: i32", 1, "the `sizeof` conjunct: 4 against 8"),
+        ("Floated", "f: i32", 1, "the class conjunct: a `float` is class 8, never class 1"),
+    ];
+    for (record, field, expected, why) in cases {
+        let source = dir.join(format!("{record}-{}.hero", field.replace([' ', ':'], "")));
+        std::fs::write(
+            &source,
+            format!("extern \"widths.h\"\n    record {record}\n        {field}\n\nfunction main()\n    print(1)\n"),
+        )
+        .expect("writing the probe program");
+        let out = heroes(&[
+            "build",
+            source.to_str().expect("a utf-8 path"),
+            "--include",
+            dir.to_str().expect("a utf-8 path"),
+            "-o",
+            dir.join("probe").to_str().expect("a utf-8 path"),
+        ]);
+        if machine_lacks_the_library(&out) {
+            continue;
+        }
+        assert_eq!(
+            code(&out),
+            expected,
+            "`record {record} {{ {field} }}` should be exit {expected} — {why}.\n\
+             This is the premise `emit/extern_record.rs`'s integer branch rests on: for an \
+             integer field, equal class, size and sign imply equal ABI. If the accepted rows \
+             went red, the branch is asking type identity again and `size_t`, `time_t`, \
+             `clock_t` and `z_stream` are unbindable. If a refused row went green, the branch \
+             has stopped checking width, sign or class and a wrong field is silent.\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
 /// **Panel 053's null guard goes on the value and not on the out-parameter**, and
 /// until 2026-08-15 it went on both (panel 058's compiler-engineer, found while
 /// measuring something else).

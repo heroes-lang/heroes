@@ -176,6 +176,49 @@ fn assertion(
              \"{FIELD_ASSERTION} {c_type} {member}\");"
         ));
     }
+    // **An integer field asks width and sign, never type identity** (panel 064,
+    // the compiler-engineer's alternative to the vocabulary it vetoed).
+    //
+    // Type identity is the right question for a float, a pointer, a `bool`, an
+    // enum and a nested record, and the branches above keep it there — panel 060
+    // won its veto on exactly that, `{float,float}` and `{int32_t,int32_t}` being
+    // one size and two register classes. It is the **wrong** question for an
+    // integer, because C's integer ABI is width and sign and nothing else, while
+    // C's type identity is finer than its ABI: on Darwin `int64_t` is `long long`
+    // and `time_t` is `long`, same width, same sign, **distinct types**.
+    //
+    // What the identity form refused, measured against real SDKs: `size_t`,
+    // `time_t`, `clock_t`, `ldiv_t.quot`, `struct timespec.tv_sec`, `struct
+    // timeval.tv_sec`, four `struct rusage` members — 9 of 24 POSIX fields — and
+    // `z_stream.total_in/total_out/adler`, which is the struct zlib cannot be used
+    // without. Not *bound wrongly*: **not bindable**, under any of the eight
+    // widths, with `partial` offering only the choice to drop the field. That is
+    // bug-proof and not complete, and CLAUDE.md §12 asks the FFI for both.
+    //
+    // **The relaxation is strictly monotone** — an exact-identity match has the
+    // same class, size and sign by construction — so it cannot accept less than
+    // before, and that is provable rather than tested. What it still refuses is
+    // everything that matters: a wrong width, a wrong sign, a float declared as an
+    // integer (class 8), a pointer (5), a `bool` (4), an enum (3).
+    //
+    // Deliberately **not** `__builtin_types_compatible_p`: that would need a list
+    // of which C types are 64-bit-signed on this target, which is a premise about
+    // the world and expires in silence (CLAUDE.md §11). Class, size and sign ask
+    // the value in hand.
+    //
+    // It does **not** make a program portable, and the row that defers a C-width
+    // vocabulary keeps that half: `timespec.tv_sec: i64` is accepted here and on
+    // Linux and refused on Windows, correctly, because `long` is 32 there. What it
+    // buys is *bindable on the machine in front of the author*.
+    if let Ty::Int(kind) = checked.types.get(ty) {
+        let spelling = kind.c_type();
+        return Some(format!(
+            "_Static_assert(__builtin_classify_type({place}) == 1 \
+             && sizeof({place}) == sizeof({spelling}) \
+             && (((__typeof__({place}))-1 < 0) == (({spelling})-1 < 0)), \
+             \"{FIELD_ASSERTION} {c_type} {member}\");"
+        ));
+    }
     let spelling = c_spelling(checked, names, ty)?;
     Some(format!(
         "_Static_assert(_Generic(&{place}, {spelling} *: 1, default: 0) \
