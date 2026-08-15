@@ -61,7 +61,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
   and `to_f32` rounds.
 - A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
   `u8` — otherwise `i64`. Overflow aborts at every width.
-- Character literals are `i64`: `'a'`, `'0'`, `' '`.
+- A character literal is an integer: `'a'`, `'0'`, `' '`.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so
   `0xffffffffffffffff` does not fit and is refused.
@@ -192,8 +192,9 @@ with holes type-checks everything else but produces no binary.
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
 libraries. A group names its header, and `link` a library when the symbols need one. clang
 checks every result type, constant and record field against that header, and a result may be
-wider than C's. A **parameter** is declared at the header's own width and
-sign — `i32` where C says int — because clang converts a wrong one in silence:
+wider than C's. A **parameter** and a **field** are declared at the header's own
+width and sign — `i32` where C says int — because clang converts a wrong one in
+silence:
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
@@ -208,9 +209,10 @@ frameworks on macOS, `-lGL -lX11` on Linux — in one spelling that is the same
 everywhere. A package answering with anything this compiler does not pass on is
 refused, naming what it said.
 
-A group's `record` is the header's struct: the same name, all its fields, each at
-the header's own width and sign. A field is a number, `bool`, `ptr`, `cstr` or
-another record of the group.
+A group's `record` is the header's struct: the same name and all its fields. A
+field is a number, `bool`, `ptr`, `cstr` or another record of the group.
+`record Font partial` names only some, and then comparing it and using it as a
+map key are compile errors — for it and for any value holding it.
 
 A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
 usually there. How much more is the platform's answer, not this language's.

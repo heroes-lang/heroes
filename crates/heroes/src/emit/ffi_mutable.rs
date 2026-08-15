@@ -37,6 +37,7 @@ pub(super) fn writable_parameter(
     ast: &Ast,
     checked: &crate::types::Checked,
     program: &crate::ir::Program,
+    names: &super::typedefs::Names,
     src: &Source,
 ) -> Option<Diagnostic> {
     if !line.contains(DISCARDS) {
@@ -47,7 +48,7 @@ pub(super) fn writable_parameter(
     // last quoted name, the same shape `ffi_narrowed` reads.
     let c_type = rest.rsplit('\'').nth(1)?;
     let (function, name) = extern_at_line(program, ast, src, at.0, at.1)?;
-    let parameters = extern_probe::parameter_list(function, checked)?;
+    let parameters = extern_probe::parameter_list(names, function, checked)?;
     let arguments = extern_probe::argument_names(function.params.len());
     let module = src.component_at(ast.decls[function.decl as usize].span.start);
     let probe = extern_probe::probe_name(module, &name);

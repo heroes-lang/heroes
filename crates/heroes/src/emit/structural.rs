@@ -43,6 +43,27 @@ pub(super) fn equality_body(
     let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
     w.line(&format!("bool {prefix}_eq(const {c_type} *a, const {c_type} *b) {{"));
+    // **A partial `record`'s `_eq` is emitted and aborts** (panel 061, the
+    // compiler-engineer's condition 3). The checker refuses `==` on one and every
+    // container that reaches one, so nothing should ever call this — and *should
+    // never* is exactly the premise CLAUDE.md §11 says to put in the loud
+    // direction. Not emitting it at all is the tempting alternative and it is the
+    // dangerous one: `descriptors.rs` puts `_hash` into every `HeroDesc`, and a
+    // null there is what panel 022 measured as `SEGV on unknown address 0x0,
+    // pc 0x0` — no type name, no line, nothing to read.
+    //
+    // So a hole in the checker's containment walk costs a named abort rather than
+    // a wrong answer or a crash with no story. `hero_panic` is `_Noreturn`, so
+    // `-Werror=return-type` is satisfied without a `return`.
+    if at.partial {
+        w.line(&format!(
+            "    hero_panic(\"{}_eq: a partial record has no structural equality\");",
+            at.prefix
+        ));
+        w.line("}");
+        w.blank();
+        return;
+    }
     if fields.is_empty() {
         // `record E` is `error[empty_record]` in the checker, so this is belt to that
         // braces — and `(void)` keeps the parameters used, because `-Wall` is on.
@@ -156,6 +177,16 @@ pub(super) fn hash_body(
     let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
     w.line(&format!("uint64_t {prefix}_hash(const void *elem) {{"));
+    // The `_eq` note above, for the operation that must agree with it.
+    if at.partial {
+        w.line(&format!(
+            "    (void)elem; hero_panic(\"{}_hash: a partial record has no structural hash\");",
+            at.prefix
+        ));
+        w.line("}");
+        w.blank();
+        return;
+    }
     w.line(&format!("    const {c_type} *v = elem;"));
     w.line("    uint64_t h = UINT64_C(0xcbf29ce484222325);");
     for field in fields {

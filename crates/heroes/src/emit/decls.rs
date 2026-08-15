@@ -83,7 +83,7 @@ pub(super) fn prelude(
     // After the assertions rather than beside them, because the two answer
     // different questions with different mechanisms and a reader of the emitted
     // unit should not have to untangle them.
-    extern_probe::extern_probes(w, program, ast, checked, src);
+    extern_probe::extern_probes(w, program, ast, checked, names, src);
     // Every decoded string literal **an emitted function actually reads**, as a
     // static block clang lays out: refcount −1 means "never freed", so a literal
     // allocates nothing and decrefing one is a no-op. The escapes were applied once,

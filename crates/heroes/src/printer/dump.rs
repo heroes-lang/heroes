@@ -66,8 +66,16 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
                 write_body(ast, src, block, out);
             }
         }
-        DeclKind::Record { fields, .. } => {
-            out.push_str(&format!("  record {name}\n"));
+        // **`partial` appears here because `fmt_decl.rs` prints it**, and that is
+        // the rule rather than the instance (panel 061). `assert_canonical` asserts
+        // `dump(text) == dump(fmt(text))` — *"fmt changed the tree"* — so a field
+        // the formatter can print and this cannot is a **cancelling pair**: the
+        // formatter drops it, the dump does not notice, and the test is green about
+        // a program that changed meaning. Measured: with this arm absent, `fmt` on
+        // `record Font partial` emitted `record Font` and every test passed.
+        DeclKind::Record { fields, partial, .. } => {
+            let marker = if *partial { " partial" } else { "" };
+            out.push_str(&format!("  record {name}{marker}\n"));
             docs(src, &decl.doc, out);
             for field in fields {
                 field_line(ast, src, field, "    ", out);

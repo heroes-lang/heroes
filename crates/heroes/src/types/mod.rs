@@ -71,6 +71,7 @@ mod join;
 mod jumps;
 mod lower;
 mod ops;
+mod partial;
 mod patterns;
 mod render;
 mod sized;
@@ -134,6 +135,9 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
     checker.out.type_order = order;
     checker.out.diagnostics.extend(no_size);
     decls::file(&mut checker, ast, resolved, src);
+    // After the declarations, because it reads `written_type` — the table
+    // `lower::ty` fills. Asking first is silent: it finds nothing and passes.
+    partial::map_keys(&mut checker, ast, src);
     // §4.16's **file-wide hole exemption**, the same one the unused rule takes: a
     // body that is `???` falls off its end by construction — that is what an
     // unwritten thing does — and demanding a `return` from it would make `???`

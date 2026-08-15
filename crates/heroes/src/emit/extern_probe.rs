@@ -80,6 +80,7 @@ pub(super) fn extern_probes(
     program: &Program,
     ast: &Ast,
     checked: &Checked,
+    names: &super::typedefs::Names,
     src: &Source,
 ) {
     let probes: Vec<&Function> = program
@@ -92,7 +93,7 @@ pub(super) fn extern_probes(
     }
     for function in probes {
         let name = src.slice(ast.decls[function.decl as usize].name);
-        let Some(parameters) = parameter_list(function, checked) else { continue };
+        let Some(parameters) = parameter_list(names, function, checked) else { continue };
         let arguments = argument_names(function.params.len());
         // The declaration's own file and line, so clang's verdict lands where the
         // author can act on it. `at_file` is the same entry point every module's
@@ -157,14 +158,18 @@ pub(crate) fn argument_names(count: usize) -> Vec<String> {
 /// The declared parameter types as C, positionally named `a0`, `a1`, … — or
 /// `None` for a type this backend has no spelling for, which the checker's
 /// `ffi_type` has already refused and which therefore cannot reach a binary.
-pub(crate) fn parameter_list(function: &Function, checked: &Checked) -> Option<Vec<String>> {
+pub(crate) fn parameter_list(
+    names: &super::typedefs::Names,
+    function: &Function,
+    checked: &Checked,
+) -> Option<Vec<String>> {
     function
         .params
         .iter()
         .enumerate()
         .map(|(index, slot)| {
             let declared = &function.slots[slot.0 as usize];
-            let c_type = c_type_of(checked, declared.ty)?;
+            let c_type = c_type_of(names, checked, declared.ty)?;
             // **An `@` parameter is a pointer parameter** (§4.8, CLAUDE.md §7),
             // and the probe must declare it the same way the call site passes it
             // or the probe itself would be the thing that does not compile.
@@ -181,7 +186,27 @@ pub(crate) fn parameter_list(function: &Function, checked: &Checked) -> Option<V
 /// A declared FFI parameter type as C. The set is `ffi_type`'s own — anything
 /// else is refused in the checker, so this returning `None` means the emitter met
 /// a type the frontend should have stopped.
-fn c_type_of(checked: &Checked, ty: crate::types::TyId) -> Option<String> {
+///
+/// **The `Ty::Named` arm was missing for one milestone and the cost was silent**
+/// (panel 061's audit). A group's `record` became a legal `extern` parameter on
+/// 2026-08-15 and this table was not widened, while its sibling
+/// `assert_spelling.rs` was — two tables answering *what is the C spelling of this
+/// FFI type*, one grown and one not. The damage is amplified by `parameter_list`'s
+/// `collect::<Option<Vec<_>>>()`: **one** unspellable parameter makes the whole
+/// list `None`, and the caller then skips the probe for the **entire function**.
+/// So `ColorToInt(color: Color)` got no probe at all, and with it went
+/// `ffi_parameter_type` and `ffi_writable_parameter` — M-binding-fidelity's whole
+/// deliverable, off for any signature that touches a struct. Real raylib's
+/// `DrawText(text: cstr, x: i64, y: i64, size: i64, color: Color)` lost the width
+/// check on all four of its `i64`s because of the fifth parameter.
+fn c_type_of(
+    names: &super::typedefs::Names,
+    checked: &Checked,
+    ty: crate::types::TyId,
+) -> Option<String> {
+    if let Ty::Named(decl) = checked.types.get(ty) {
+        return Some(names.of(decl).to_string());
+    }
     Some(match checked.types.get(ty) {
         Ty::Int(kind) => kind.c_type().to_string(),
         Ty::Float(kind) => kind.c_type().to_string(),

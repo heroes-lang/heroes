@@ -1,0 +1,69 @@
+# `partial`: what a `record` gives up when it names only some of the header's
+# struct, and how far the refusal reaches (spec § FFI; panel 061, ratified
+# 2026-08-15).
+#
+# The word buys exactly one thing — `extern_record.rs`'s completeness probe stops
+# asking. Everything else it does is a refusal, and the three are the operations
+# that READ the fields: `==`, `hash`, and being a map key. Reading a field,
+# copying, passing to C and getting one back all stay legal, because those move the
+# whole struct at a size clang computed (panel 061 counted 124 of 124 unnamed bytes
+# surviving a full `@` round trip).
+#
+# CONSTRUCTION IS PERMITTED, and that is a decision. Refusing it would delete the
+# only expression in the language that produces an `SDL_Event`, so `SDL_PollEvent`
+# — the binding this feature was adopted for — would need a hand-written shim
+# forever. And it buys nothing: the zero-fill is deterministic, and the identical
+# SEGV is reachable from a COMPLETE binding whose `ptr` field is `nullptr`.
+#
+# THE REACH IS NOT UNIFORM, and making it uniform costs the milestone its own use
+# case. Comparison is transitive — an array, a map value, a record field and a
+# variant case's payload all reach the generated `_eq`. Construction is
+# per-declaration: `Holder(c: …)` copies a whole `Color` that came from C, and a
+# transitive rule there would make raylib's own `RenderTexture { Texture texture; }`
+# unbuildable.
+
+extern "raylib.h" package "raylib"
+    record Color partial
+        r: u8
+        g: u8
+        b: u8
+    function ColorToInt(color: Color) -> i32
+
+record Holder
+    c: Color
+
+variant Shape
+    dot
+        c: Color
+
+function main()
+    a = Color(r: 1, g: 2, b: 3)
+    b = Color(r: 1, g: 2, b: 3)
+
+    # Permitted: build it, read a field, pass it to C.
+    print(a.r)
+    print(ColorToInt(a))
+    h = Holder(c: a)
+    print(h.c.g)
+
+    # Refused directly.
+    print(a == b)                       #~ ffi_partial_operation
+    # Refused through an array…
+    xs: [Color] = [a]
+    ys: [Color] = [b]
+    print(xs == ys)                     #~ ffi_partial_operation
+    # …through a record that holds one…
+    print(h == Holder(c: b))            #~ ffi_partial_operation
+    # …through a variant case's payload…
+    s: Shape = .dot(c: a)
+    t: Shape = .dot(c: b)
+    print(s == t)                       #~ ffi_partial_operation
+    # …and as a map key, which fires on no operator the author wrote.
+    keyed: {Color: i64} @ {}            #~ ffi_partial_operation
+    print(len(keyed))
+    literal = {a: 1}                    #~ ffi_partial_operation
+    print(len(literal))
+
+    # Permitted: a map VALUE never reaches `hash`.
+    fine: {i64: Color} @ {}
+    print(len(fine))

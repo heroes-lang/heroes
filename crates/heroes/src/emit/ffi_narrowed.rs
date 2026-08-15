@@ -64,6 +64,7 @@ pub(super) fn parameter_width(
     ast: &Ast,
     checked: &crate::types::Checked,
     program: &crate::ir::Program,
+    names: &super::typedefs::Names,
     src: &Source,
 ) -> Option<Diagnostic> {
     let kind = [NARROWED, RESIGNED].into_iter().find(|what| line.contains(what))?;
@@ -75,7 +76,7 @@ pub(super) fn parameter_width(
     let heroes_type = &spelled.heroes;
     let what = if kind == NARROWED { "wider than" } else { "a different sign from" };
     let (function, name) = extern_at_line(program, ast, src, at.0, at.1)?;
-    let parameters = extern_probe::parameter_list(function, checked)?;
+    let parameters = extern_probe::parameter_list(names, function, checked)?;
     let arguments = extern_probe::argument_names(function.params.len());
     let module = src.component_at(ast.decls[function.decl as usize].span.start);
     let probe = extern_probe::probe_name(module, &name);

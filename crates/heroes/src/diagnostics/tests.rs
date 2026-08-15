@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 68] = [
+const ANNOTATED: [&str; 69] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -71,6 +71,9 @@ const ANNOTATED: [&str; 68] = [
     "ffi_incomplete_record",
     "ffi_not_constant",
     "ffi_parameter_type",
+    // Soundness: `==` and a map key on a partial record read fields nobody named,
+    // so two different C structs answer as one (panel 061).
+    "ffi_partial_operation",
     "ffi_return_type",
     "ffi_type",
     "ffi_unknown_name",

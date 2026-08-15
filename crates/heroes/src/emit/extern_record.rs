@@ -142,7 +142,13 @@ fn completeness_probes(w: &mut Writer, ast: &Ast, names: &Names, src: &Source) {
         .iter()
         .enumerate()
         .filter_map(|(index, decl)| match &decl.kind {
-            DeclKind::Record { fields, header: Some(_), .. } if !fields.is_empty() => {
+            // **`partial` is exactly the absence of this probe**, and that is the
+            // whole of what the word buys. Everything else it does is a *refusal*
+            // — `==`, `hash`, a map key — so if it did not also switch this off it
+            // would be a word that costs and gives nothing.
+            DeclKind::Record { fields, header: Some(_), partial: false, .. }
+                if !fields.is_empty() =>
+            {
                 Some((index, fields))
             }
             _ => None,

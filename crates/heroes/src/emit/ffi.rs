@@ -63,6 +63,13 @@ pub fn explain(
     program: &crate::ir::Program,
     src: &Source,
 ) -> Vec<Diagnostic> {
+    // **Built here rather than threaded in**, because the caller is the CLI and it
+    // has no reason to own an emitter's name table. `Names::new` needs only the AST
+    // and the source — the same two this function already has — and the two readers
+    // below need it for one question: what a group `record`'s C type is called
+    // (panel 061). Cheap, and it keeps `explain`'s signature the driver's rather
+    // than the emitter's.
+    let names = super::typedefs::Names::new(ast, src);
     let mut found: Vec<Diagnostic> = Vec::new();
     for line in stderr.lines() {
         if let Some(diagnostic) = declared::wrong_type(line, ast, src) {
@@ -95,10 +102,10 @@ pub fn explain(
         if let Some(diagnostic) = build::package_problem(stderr, line, ast, src) {
             push(&mut found, diagnostic);
         }
-        if let Some(diagnostic) = narrowed::parameter_width(line, ast, checked, program, src) {
+        if let Some(diagnostic) = narrowed::parameter_width(line, ast, checked, program, &names, src) {
             push(&mut found, diagnostic);
         }
-        if let Some(diagnostic) = mutable::writable_parameter(line, ast, checked, program, src) {
+        if let Some(diagnostic) = mutable::writable_parameter(line, ast, checked, program, &names, src) {
             push(&mut found, diagnostic);
         }
     }

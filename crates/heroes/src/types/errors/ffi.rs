@@ -64,3 +64,30 @@ pub(in crate::types) fn ffi_field_type(name: &str, why: &str, span: Span) -> Dia
     )
     .with_note(why.to_string())
 }
+
+/// A `record` its group marked `partial`, reached by an operation that reads the
+/// fields nobody named (panel 061).
+///
+/// **The message names the record REACHED and the type in hand**, because they are
+/// often not the same and §4.17 asks the diagnostic to carry the repair. Saying
+/// *"`[Font]` names only some of its C struct's members"* is false — `[Font]` is an
+/// array and has no C struct — and it sends the reader looking at the array.
+pub(in crate::types) fn partial_operation(
+    record: &str,
+    shown: &str,
+    what: &str,
+    span: Span,
+) -> Diagnostic {
+    let through =
+        if record == shown { String::new() } else { format!(" — reached through `{shown}`") };
+    Diagnostic::new(
+        "ffi_partial_operation",
+        format!(
+            "`{record}` is `partial`, so it cannot be {what}{through}: the fields it does not name are part of the answer, and this program cannot see them"
+        ),
+        span,
+    )
+    .with_note(format!(
+        "a `partial` record may be read, copied, passed to C and returned from it — what it gives up is `==`, `hash` and being a map key. Name every field of the header's struct to get them back, and drop `partial` from `{record}`"
+    ))
+}

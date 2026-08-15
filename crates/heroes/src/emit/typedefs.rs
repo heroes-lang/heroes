@@ -50,6 +50,9 @@ pub(super) struct Aggregate {
     /// Whether the struct is the **header's** rather than this compiler's, which
     /// decides how its members are spelled as well as what it is called.
     pub(super) foreign: bool,
+    /// Whether the field list names only **some** of that struct — which decides
+    /// what the generated `_eq` and `_hash` are allowed to do (panel 061).
+    pub(super) partial: bool,
 }
 
 /// The C typedef name of every declared aggregate, by declaration index.
@@ -77,6 +80,8 @@ pub(super) struct Names {
     satellites: std::collections::BTreeMap<u32, String>,
     /// The declarations whose struct is the header's.
     foreign: std::collections::BTreeSet<u32>,
+    /// Those of them whose field list is only part of it.
+    partial: std::collections::BTreeSet<u32>,
     /// The C type of each distinct `T?`, by the `TyId` of the whole `T?`.
     ///
     /// Generated rather than declared: there is no `record` in the source for a
@@ -129,13 +134,17 @@ impl Names {
         let mut aggregates = std::collections::BTreeMap::new();
         let mut satellites = std::collections::BTreeMap::new();
         let mut foreign = std::collections::BTreeSet::new();
+        let mut partial = std::collections::BTreeSet::new();
         let mut cases = std::collections::BTreeMap::new();
         for (index, decl) in ast.decls.iter().enumerate() {
             // **Each type is named in its OWN module**, never the root's: two
             // modules may each declare `Point`, and they are two C structs.
             let name = mangle::ty(src.component_at(decl.name.start), src.slice(decl.name));
             match &decl.kind {
-                DeclKind::Record { header, .. } => {
+                DeclKind::Record { header, partial: is_partial, .. } => {
+                    if *is_partial {
+                        partial.insert(index as u32);
+                    }
                     satellites.insert(index as u32, name.clone());
                     // **A group's `record` IS the header's struct**, so its C type
                     // name is the one the author wrote, unmangled — the same
@@ -169,6 +178,7 @@ impl Names {
             aggregates,
             satellites,
             foreign,
+            partial,
             cases,
             options: std::collections::BTreeMap::new(),
             funcs: std::collections::BTreeMap::new(),
@@ -261,6 +271,7 @@ impl Names {
             prefix: self.satellite(decl).to_string(),
             c_type: self.of(decl).to_string(),
             foreign: self.foreign.contains(&decl),
+            partial: self.partial.contains(&decl),
         }
     }
 
@@ -268,6 +279,11 @@ impl Names {
     /// are the same one — stated rather than left implicit, because the pair
     /// exists precisely where that is false.
     pub(super) fn generated(name: &str) -> Aggregate {
-        Aggregate { prefix: name.to_string(), c_type: name.to_string(), foreign: false }
+        Aggregate {
+            prefix: name.to_string(),
+            c_type: name.to_string(),
+            foreign: false,
+            partial: false,
+        }
     }
 }

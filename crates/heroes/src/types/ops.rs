@@ -20,7 +20,7 @@ use crate::source::{Source, Span};
 use crate::syntax::{Ast, BinaryOp, UnaryOp};
 
 use super::table::Ty;
-use super::{errors, Checker, TyId};
+use super::{errors, partial, Checker, TyId};
 
 pub(super) fn binary(
     checker: &mut Checker,
@@ -46,6 +46,22 @@ pub(super) fn binary(
             if left != right {
                 let (a, b) = (checker.show(ast, src, left), checker.show(ast, src, right));
                 let diagnostic = errors::mismatch(&a, &b, span);
+                checker.push_diagnostic(diagnostic);
+                return checker.error_ty();
+            }
+            // **A partial `record` cannot answer `==`, and neither can anything
+            // holding one** (panel 061). §4.3 makes equality structural, so the
+            // generated `_eq` walks the field list — and the field list is not the
+            // struct. Two values that agree on every field the program named are
+            // not equal, and nothing in the emitted C can know it.
+            //
+            // Asked of the type rather than of the operand's syntax, because
+            // `[Font] == [Font]` reaches `Font_eq` through `hero_array_eq` with no
+            // `Font` written anywhere on the line.
+            if let Some(decl) = partial::reaches(checker, ast, left) {
+                let shown = checker.show(ast, src, left);
+                let name = src.slice(ast.decls[decl as usize].name).to_string();
+                let diagnostic = errors::partial_operation(&name, &shown, "compared with `==`", span);
                 checker.push_diagnostic(diagnostic);
                 return checker.error_ty();
             }

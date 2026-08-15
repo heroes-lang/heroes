@@ -49,9 +49,16 @@ impl Fmt {
             // line once, then the declaration at the group's indent, then the
             // fields one level deeper than *that*. Printing it at 0 unconditionally
             // is what hoisted it out of its group (panel 060's condition 1).
-            DeclKind::Record { fields, header, .. } => {
+            // **`partial` is printed, and the arm is not optional** (panel 061).
+            // Without it `heroes fmt` emitted `record Font` for `record Font
+            // partial` — a DIFFERENT PROGRAM that still parses and now constructs.
+            // That is panel 060's `fmt_extern.rs` hoisting one milestone later, and
+            // the guard that exists to catch it was blind in the same place: see
+            // `printer/dump.rs`.
+            DeclKind::Record { fields, header, partial, .. } => {
                 let indent = self.extern_head_once(src, comments, decl, *header, continues);
-                self.line(indent, &format!("record {name}"));
+                let marker = if *partial { " partial" } else { "" };
+                self.line(indent, &format!("record {name}{marker}"));
                 self.last_line = line;
                 self.trailing_comment(src, comments, line);
                 for field in fields {

@@ -73,7 +73,23 @@ pub enum DeclKind {
     /// header's own name, so the layout — size, offsets, padding, and the register
     /// class each field travels in — is C's. That is the whole of panel 060: the
     /// mechanism that owns no layout cannot get one wrong.
-    Record { fields: Vec<Field>, header: Option<Span>, library: Option<Library> },
+    /// **`partial` is a contextual keyword, not a reserved word** (panel 061,
+    /// ratified 2026-08-15). It is an ordinary identifier everywhere else —
+    /// `record partial` with a field named `partial` still compiles — because it is
+    /// recognised only in the one position after a group `record`'s name. Reserving
+    /// a word costs the whole program's namespace to buy one declaration's grammar.
+    ///
+    /// What it says is that the field list names **some** of the header's struct.
+    /// The value may still be read, copied, passed, returned and built; what it may
+    /// not do is answer `==` or `hash`, or be a map key — because those three read
+    /// the fields nobody named. `false` for every ordinary `record`, and for a
+    /// group's `record` that names them all.
+    Record {
+        fields: Vec<Field>,
+        header: Option<Span>,
+        library: Option<Library>,
+        partial: bool,
+    },
     /// `variant Token` + one case per line, each optionally with fields.
     Variant { cases: Vec<Case> },
     /// `test "3-4-5 triangle"` + body (§4.18). `name` holds the string

@@ -59,6 +59,26 @@ pub(super) fn record_with_doc(
     record_tail(cur, ast, src, keyword, doc, name, linkage);
 }
 
+/// `partial` after a group `record`'s name, if it is there.
+///
+/// **A contextual keyword and not a reserved word** (panel 061). It is consumed
+/// only here, in the one position where a declaration can carry it, so `partial`
+/// stays an ordinary identifier everywhere in the language — a `record partial`
+/// with a field named `partial` compiles, measured. Reserving a word would cost the
+/// whole program's namespace to buy one line's grammar, and `spec/reserved-words.md`
+/// is gated separately by §1.6 for exactly that reason.
+///
+/// **Only inside a group.** An ordinary `record` has no header behind it, so there
+/// is no struct for its field list to be a subset *of*; the word there is a name
+/// the parser has no reason to expect, and the field block's own diagnostic says so.
+fn partial_marker(cur: &mut Cursor, src: &Source, in_group: bool) -> bool {
+    if !in_group || !cur.at(TokenKind::Ident) || src.slice(cur.span()) != "partial" {
+        return false;
+    }
+    cur.bump();
+    true
+}
+
 #[allow(clippy::too_many_arguments)]
 fn record_tail(
     cur: &mut Cursor,
@@ -69,6 +89,11 @@ fn record_tail(
     name: Span,
     linkage: Linkage,
 ) {
+    let (header, library) = match linkage {
+        Linkage::Heroes => (None, None),
+        Linkage::Extern { header, library } => (Some(header), library),
+    };
+    let partial = partial_marker(cur, src, header.is_some());
     eat_python_colon(cur);
     cur.skip_terminators();
     if !cur.at(TokenKind::Indent) {
@@ -85,15 +110,11 @@ fn record_tail(
     let start = cur.span();
     let fields = field_block(cur, ast, src);
     let end = fields.last().map_or(start, |field| field.name);
-    let (header, library) = match linkage {
-        Linkage::Heroes => (None, None),
-        Linkage::Extern { header, library } => (Some(header), library),
-    };
     ast.decls.push(Decl {
         name,
         doc,
         span: keyword.to(end),
-        kind: DeclKind::Record { fields, header, library },
+        kind: DeclKind::Record { fields, header, library, partial },
     });
 }
 
