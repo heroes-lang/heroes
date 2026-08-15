@@ -112,3 +112,15 @@ was verified: the SCHEDULED item (verified 2026-08-12) said `types/holes.rs`
 walks only vectors, and `holes.rs:171` walks `resolved.top` today — the fact
 this panel exists to stop prose from asserting had already rotted inside the
 item that scheduled the panel.
+
+## Author's verdict
+
+**Ratified in full, 2026-08-15** (author instruction, *"ratifica tutto"*, given
+after the milestone's closing recap — a blanket ratification, recorded as that
+rather than as clause-by-clause review; the fourth of its kind on this date).
+Everything provisional above becomes final: the rewritten §4.9 port note with
+its dated snapshot (the sitting's one disagreement resolves to the adopted
+resolution — the compiler-engineer's reading stands, the count stays dated and
+panel-cited, the grep stays the only live inventory), the thirteen `// ORDER:`
+marks with one at `names_in` covering its six consumers, and the two
+order-pinning goldens.
