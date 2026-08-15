@@ -1,0 +1,209 @@
+# What a literal's digits *mean*: the four bases and the one decoder
+# (design.md §4.3, §4.15; panel 041).
+# Port of crates/heroes/src/lexer/digits.rs.
+#
+# There is exactly one decoder, and this is it. The scanner next door reads
+# the same Base table this decoder reads: the two cannot disagree about what
+# a prefix means, because there is one place that says.
+#
+# Port notes — and the first genuine gap the probe was sent to find:
+# - Rust decodes into i128, "the one integer that holds every Heroes width":
+#   u64's top and i8's bottom fit no shared 64-bit type. HEROES HAS NO i128.
+#   The way out is a fact about the language, not a trick: every literal is
+#   written without a sign (`-1` is unary minus applied to `1`), so the value
+#   here is never negative and u64 holds every literal a program can write.
+#   The signed LOWER bound moves to where negation lives — the checker port
+#   will answer `-128` fitting an `i8` there, not here.
+# - Overflow ABORTS in Heroes (spec § Types) — it does not fail politely. So
+#   the accumulator guards each step (`value > (U64_MAX - d) / radix`) instead
+#   of multiplying first and asking after, which is the shape Rust hides
+#   inside from_str_radix.
+# - Rust returns (Base, &str) from split_base; Heroes has no tuples, so it is
+#   a record. The diagnostic builders (int_out_of_range and its width-aware
+#   twin) are NOT here: they format a boundary in the reader's own base and
+#   name an IntKind, both of which belong to the checker port. Owed there.
+
+## Error codes
+
+constant ERR_DOES_NOT_FIT: str
+    "does_not_fit"
+
+## The largest literal
+
+constant U64_MAX: u64
+    18446744073709551615
+
+## The four bases
+
+# How a literal's digits are spelled — which is why there is no Base anywhere
+# outside the lexer: i64 is one type, this is only notation.
+variant Base
+    binary
+    octal
+    decimal
+    hexadecimal
+
+# The lowercase marker that introduces this base, if it has one.
+function from_marker(marker: u8) -> Base?
+    if marker == 'b'
+        return ok(.binary)
+    if marker == 'o'
+        return ok(.octal)
+    if marker == 'x'
+        return ok(.hexadecimal)
+    return fail("no_base_marker", "not a base marker")
+
+function radix(base: Base) -> u64
+    return match base
+        .binary => 2
+        .octal => 8
+        .decimal => 10
+        .hexadecimal => 16
+
+function prefix(base: Base) -> str
+    return match base
+        .binary => "0b"
+        .octal => "0o"
+        .decimal => ""
+        .hexadecimal => "0x"
+
+function base_name(base: Base) -> str
+    return match base
+        .binary => "binary"
+        .octal => "octal"
+        .decimal => "decimal"
+        .hexadecimal => "hexadecimal"
+
+# The name with its article, because "a octal digit" is the kind of thing a
+# reader trips over in a message whose whole job is to be read.
+function a_name(base: Base) -> str
+    return match base
+        .binary => "a binary"
+        .octal => "an octal"
+        .decimal => "a decimal"
+        .hexadecimal => "a hexadecimal"
+
+# The digits this base admits, written out for the diagnostic rather than
+# derived, because the reader needs to see them.
+function base_digits(base: Base) -> str
+    return match base
+        .binary => "0 and 1"
+        .octal => "0 through 7"
+        .decimal => "0 through 9"
+        .hexadecimal => "0 through 9 and a through f"
+
+function admits(base: Base, b: u8) -> bool
+    return match base
+        .binary => b == '0' || b == '1'
+        .octal => b >= '0' && b <= '7'
+        .decimal => b >= '0' && b <= '9'
+        .hexadecimal => (b >= '0' && b <= '9') || (b >= 'a' && b <= 'f') || (b >= 'A' && b <= 'F')
+
+# One digit's value. Callers guard with `admits` first; a byte that is no
+# digit of any base aborts here, loudly, rather than decoding to something.
+function digit_value(b: u8) -> u64
+    if b >= '0' && b <= '9'
+        return to_u64(b - '0').must()
+    if b >= 'a' && b <= 'f'
+        return to_u64(b - 'a').must() + 10
+    return to_u64(b - 'A').must() + 10
+
+## Splitting the prefix
+
+record Split
+    base: Base
+    digits: str
+
+function split_base(text: str) -> Split
+    if text.len() > 2 && text[0] == '0'
+        marker: u8 @ text[1]
+        if marker >= 'A' && marker <= 'Z'
+            marker @ marker + 32
+        found = from_marker(marker)
+        if !found.is_err()
+            return Split(base: found.must(), digits: text.slice(from: 2, to: text.len()))
+    return Split(base: .decimal, digits: text)
+
+## The one decoder
+
+# The value of a literal's digits, in the widest type this language has. Every
+# literal is unsigned by construction, so u64 holds every one a program can
+# write — and a value that does not fit u64 is refused, never wrapped: the
+# accumulator checks before it multiplies, because overflow in this language
+# aborts rather than failing politely.
+function decode_u64(text: str) -> u64?
+    split = split_base(text)
+    r = radix(split.base)
+    value: u64 @ 0
+    i: i64 @ 0
+    while i < split.digits.len()
+        b = split.digits[i]
+        i @ i + 1
+        if b == '_'
+            continue
+        d = digit_value(b)
+        if value > (U64_MAX - d) / r
+            return fail(ERR_DOES_NOT_FIT, text)
+        value @ value * r + d
+    return ok(value)
+
+# The value of an `i64` literal, or a failure if the digits do not fit one.
+# The reading is by VALUE, not bit pattern: `0xffffffffffffffff` does not fit
+# an i64 and is refused, exactly as its decimal twin is (panel 041 vetoed the
+# bit-pattern reading — sixteen f's silently becoming -1 deletes a compile
+# error).
+function decode_int(text: str) -> i64?
+    wide = decode_u64(text)?
+    return to_i64(wide)
+
+## The canonical spelling
+
+# What the author wrote, with hex digits lowercased. A C header spells a mask
+# 0xFF and a reader copies it as written, so the lexer accepts either case;
+# §4.15 still wants one spelling, and `fmt` is where the two converge
+# (rustfmt's hex_literal_case is the one precedent — panel 041, historian).
+# The prefix needs no work: `0X` never reaches here, the lexer refuses it
+# where it is written.
+function canonical_int(text: str) -> str
+    out: str @ ""
+    for c in text.chars()
+        out @ out + match c
+            "A" => "a"
+            "B" => "b"
+            "C" => "c"
+            "D" => "d"
+            "E" => "e"
+            "F" => "f"
+            _ => c
+    return out
+
+test "one value, four spellings"
+    assert decode_int("31").must() == 31
+    assert decode_int("0x1f").must() == 31
+    assert decode_int("0o37").must() == 31
+    assert decode_int("0b11111").must() == 31
+    assert decode_int("1_000_000").must() == 1000000
+
+test "the reading is by value and the boundary is exact"
+    assert decode_int("9223372036854775807").must() == 9223372036854775807
+    assert decode_int("9223372036854775808").is_err()
+    assert decode_int("0x7fffffffffffffff").must() == 9223372036854775807
+    assert decode_int("0xffffffffffffffff").is_err()
+    assert decode_u64("0xffffffffffffffff").must() == U64_MAX
+    assert decode_u64("18446744073709551616").is_err()
+    assert decode_u64("0x1ffffffffffffffff").is_err()
+
+test "the base table serves the scanner's questions"
+    assert admits(.hexadecimal, 'F')
+    assert admits(.hexadecimal, 'f')
+    assert !admits(.octal, '8')
+    assert !admits(.binary, '2')
+    assert from_marker('x').must() == .hexadecimal
+    assert from_marker('d').is_err()
+    assert prefix(.octal) == "0o"
+    assert a_name(.octal) == "an octal"
+
+test "canonical lowercases digits and nothing else"
+    assert canonical_int("0xFF") == "0xff"
+    assert canonical_int("0xDead_Beef") == "0xdead_beef"
+    assert canonical_int("123") == "123"
