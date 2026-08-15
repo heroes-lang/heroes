@@ -349,6 +349,31 @@ protects — a reader must be able to open the file and not drown — so each kn
 gets a module doc that names its cycle, lists its entry points, and says which
 function calls which.
 
+## The first knot, written (2026-08-16)
+
+`selfhost/grammar_expr.hero` — the expression half of knot A, as **one module**
+under §11's amended rule, carrying the map the rule asks for: which Rust files
+it replaces, the call ring, the three entry points, and what is not there yet.
+10 test blocks, and they read real token streams and render the tree back
+fully parenthesised, because **a precedence table is only testable through what
+it builds**: `1 + 2 * 3` → `(1 + (2 * 3))`, `1 - 2 - 3` → `((1 - 2) - 3)`,
+`a < b && c` → `((a < b) && c)`, and `x & 1 == 0` → `((x & 1) == 0)` — which is
+the one place Heroes deliberately does **not** inherit C's order.
+
+23. **`args` is a built-in, and it is the natural name for a call's argument
+    list.** `args() -> [str]` is the process's arguments (spec § Built-ins), and
+    built-in names are taken everywhere, so a local called `args` is
+    `builtin_name_taken`. Renamed `arguments`. **Third instance of one pattern**
+    (`case`, gap 18; `func`, gap 21) and the first from the *built-ins* rather
+    than the foreign-word registry — so the pattern's real statement is: **the
+    compiler's own vocabulary overlaps both of the language's reserved sets**,
+    and a port hits it a few times per file. Each costs one rename.
+
+Nothing else was wanted. `unary` recursing into itself, `binary` climbing by
+power, the suffix chain, the two bracketed literals with newline-as-separator,
+and both `certain`-fix repairs (`trailing_comma`, `misplaced_mutable_marker`)
+ported unchanged.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`

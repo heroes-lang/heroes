@@ -1,0 +1,586 @@
+# The expression knot: precedence, atoms, and the two bracketed literals
+# (design.md §4.14 operators, §4.11 UFCS, §4.6 `?`, §4.3 literals, §4.9 calls
+# and containers, §4.5 leading-dot variants, §4.16 holes).
+#
+# ## The map this file owes its reader (CLAUDE.md §11, 2026-08-16)
+#
+# **This is one module because the language leaves no choice.** Heroes refuses
+# module cycles — `module_cycle` fires on the `use` edge, whatever it carries —
+# and these functions call each other in a ring. In the Rust bootstrap the same
+# code is five files (`expr.rs`, `primary.rs`, `control.rs`, `stmt.rs`,
+# `name_stmt.rs`, 1025 lines) held together by `super::`; there is no such
+# spelling here, so the knot is one file. §11's threshold yields for exactly
+# this reason (author instruction *"supera la regola per heroes"*), and what it
+# asks in exchange is this map.
+#
+# **The ring**: `parse_expr` → `binary` → `unary` → `postfix` → `primary` →
+# (`group`, `array_literal`, `map_literal`, `case_expr`) → back to `parse_expr`.
+# `postfix` also reaches `call_args`, which reaches `parse_expr`. Nothing here
+# is reachable without entering at one of the three entry points below.
+#
+# **The entry points**, and they are the whole public surface:
+#
+# | function | what it reads |
+# |---|---|
+# | `parse_expr` | one expression, weakest binding first |
+# | `pattern_operand` | a pattern's operand — a literal, or one with `-` |
+# | `call_args` | `(x, name: y, @l)`, shared by calls, records and cases |
+#
+# **What is not here yet**: `if`/`match` as expressions, and the statement
+# grammar (`stmt.rs`, `name_stmt.rs`, `control.rs`) — the rest of the same knot,
+# which lands in this same file rather than beside it, for the reason above.
+# Where `primary` would call them it reports `expected_expression` today, and
+# the test at the bottom pins that so the gap cannot be mistaken for a defect.
+#
+# ## One rule that shows up three times
+#
+# **Inside brackets, a newline is a separator, not a statement end.** The lexer
+# keeps planting terminators at line ends even inside `(` `[` `{` (panel 007),
+# and §4.9 makes newline the separator of a multi-line literal — so every list
+# here skips terminators, and the array and map literals accept a newline AS the
+# comma.
+
+use token
+use diag
+use ast
+use cursor
+
+## The precedence table — §4.14, read from the bottom up
+
+# The binding power of each operator, and 0 when the token is not one. Higher
+# binds tighter.
+#
+# Two properties are choices rather than accidents: comparisons sit ABOVE `&&`,
+# so `a < b && c < d` needs no parentheses; and the bitwise three sit between
+# the comparisons and the shifts, each on its own level — C's order, which Go,
+# Rust, Java and JavaScript all kept. **C's own mistake is the other one**: `&`
+# binding looser than `==`, so `x & 1 == 0` means `x & (1 == 0)`. Heroes does
+# not inherit it.
+function binding_power(kind: token.TokenKind) -> i64
+    return match kind
+        .or_or => 1
+        .and_and => 2
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge => 3
+        .pipe => 4
+        .caret => 5
+        .amp => 6
+        .shl | .shr => 7
+        .plus | .minus => 8
+        .star | .slash | .percent => 9
+        .ident | .int_lit | .float_lit | .str_lit | .char_lit => 0
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match => 0
+        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => 0
+        .kw_break | .kw_continue | .kw_return | .kw_test | .kw_assert => 0
+        .kw_extern | .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail => 0
+        .eq | .at | .colon | .comma | .dot | .question | .hole => 0
+        .arrow | .fat_arrow | .lparen | .rparen => 0
+        .lbracket | .rbracket | .lbrace | .rbrace => 0
+        .bang | .tilde => 0
+        .comment | .terminator | .indent | .dedent | .eof | .error => 0
+
+# The operator a token stands for, asked only where `binding_power` said there
+# is one.
+function binary_operator(kind: token.TokenKind) -> ast.BinaryOp
+    return match kind
+        .or_or => .or
+        .and_and => .and
+        .eq_eq => .eq
+        .bang_eq => .ne
+        .lt => .lt
+        .le => .le
+        .gt => .gt
+        .ge => .ge
+        .pipe => .bit_or
+        .caret => .bit_xor
+        .amp => .bit_and
+        .shl => .shl
+        .shr => .shr
+        .plus => .add
+        .minus => .sub
+        .star => .mul
+        .slash => .div
+        .percent => .rem
+        .ident | .int_lit | .float_lit | .str_lit | .char_lit => .add
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match => .add
+        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => .add
+        .kw_break | .kw_continue | .kw_return | .kw_test | .kw_assert => .add
+        .kw_extern | .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail => .add
+        .eq | .at | .colon | .comma | .dot | .question | .hole => .add
+        .arrow | .fat_arrow | .lparen | .rparen => .add
+        .lbracket | .rbracket | .lbrace | .rbrace => .add
+        .bang | .tilde => .add
+        .comment | .terminator | .indent | .dedent | .eof | .error => .add
+
+## Entry point 1 — one expression
+
+function parse_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    return binary(@c, @a, text, 0)
+
+# Everything at `min_power` or tighter. All of Heroes' binary operators are
+# left-associative, so the recursive call asks for `power + 1`.
+function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i64
+    left: i64 @ unary(@c, @a, text)
+    climbing: bool @ true
+    while climbing
+        power = binding_power(cursor.current_kind(c))
+        if power == 0 || power < min_power
+            climbing @ false
+        else
+            op = binary_operator(cursor.current_kind(c))
+            _ = cursor.bump(@c)
+            right = binary(@c, @a, text, power + 1)
+            span = token.Span(start: a.exprs[left].span.start, end: a.exprs[right].span.end)
+            left @ ast.push_expr(@a, ast.Expr(kind: .binary(op: op, left: left, right: right), span: span))
+    return left
+
+## Entry point 2 — a pattern's operand
+
+# A literal, or a literal with a leading `-`.
+#
+# **Deliberately not `parse_expr`**, and the reason is a premise that expired
+# silently in the bootstrap. Until the bitwise set landed, no binary operator
+# could follow a literal in pattern position, so parsing a pattern with the full
+# expression parser was safe and nobody wrote the premise down. `|` can follow
+# one — it is the pattern join (§4.7) — and `1 | 2 => "small"` quietly became
+# the expression `3`, so `name(1)` matched nothing and fell through to `_`. A
+# silent wrong answer, which is the class this language spends tokens to avoid.
+#
+# Calling `unary` rather than `binary` is what makes the join unreachable from
+# here: no binary operator is ever consumed in a pattern, whatever the table
+# grows.
+function pattern_operand(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    return unary(@c, @a, text)
+
+## `-x`, `!x`, `~x`
+
+# Each takes exactly one operand and none is overloadable; `!` accepts only
+# `bool`, which is a type judgment (§4.14: there is no truthiness).
+function unary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    k = cursor.current_kind(c)
+    if k != .minus && k != .bang && k != .tilde
+        return postfix(@c, @a, text)
+    op: ast.UnaryOp @ .neg
+    if k == .bang
+        op @ .not
+    if k == .tilde
+        op @ .bit_not
+    start = cursor.bump(@c).span
+    operand = unary(@c, @a, text)
+    span = token.Span(start: start.start, end: a.exprs[operand].span.end)
+    return ast.push_expr(@a, ast.Expr(kind: .unary(op: op, operand: operand), span: span))
+
+## The tightest level — the suffixes
+
+# A field, a call, an index, an error propagation — chained in whatever order
+# they were written, which is what makes `l.text.slice(from: a, to: b)?[0]` read
+# left to right.
+function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    base: i64 @ primary(@c, @a, text)
+    # **A suffix never reaches across a block that just closed.** `.ok v =>
+    # match v` with the inner arms indented under it: the inner `match` consumes
+    # its own arms and its dedent, and then this loop saw the `.` of the NEXT
+    # OUTER ARM and read it as a field. The error landed on the following arm, a
+    # line the author did nothing wrong on (panel 035).
+    closed_a_block = cursor.previous_kind(c) == .dedent
+    chaining: bool @ true
+    while chaining
+        k = cursor.current_kind(c)
+        if closed_a_block && k == .dot
+            chaining @ false
+        else if k == .dot
+            base @ after_dot(@c, @a, text, base)
+            if cursor.current_kind(c) == .dot && base < 0
+                chaining @ false
+        else if k == .lparen
+            start = a.exprs[base].span
+            arguments = call_args(@c, @a, text)
+            span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+            base @ ast.push_expr(@a, ast.Expr(kind: .call(callee: base, args: arguments), span: span))
+        else if k == .lbracket
+            _ = cursor.bump(@c)
+            index = parse_expr(@c, @a, text)
+            close = cursor.current_span(c)
+            _ = cursor.expect(@c, text: text, kind: .rbracket, code: "expected_index_close", what: "`]` to close the index")
+            span = token.Span(start: a.exprs[base].span.start, end: close.end)
+            base @ ast.push_expr(@a, ast.Expr(kind: .index(base: base, index: index), span: span))
+        else if k == .question
+            question = cursor.bump(@c).span
+            span = token.Span(start: a.exprs[base].span.start, end: question.end)
+            base @ ast.push_expr(@a, ast.Expr(kind: .try_expr(value: base), span: span))
+        else
+            chaining @ false
+    return base
+
+# `x.f(y)` is UFCS, `x.f` is a field read: the `(` decides (§4.11).
+function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
+    _ = cursor.bump(@c)
+    if !cursor.at(c, .ident)
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "expected_field_name", message: "expected a field or function name after `.`, found " + cursor.found(c, text), span: cursor.current_span(c))
+        return base
+    name = cursor.bump(@c).span
+    start = a.exprs[base].span
+    if cursor.at(c, .lparen)
+        arguments = call_args(@c, @a, text)
+        span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+        return ast.push_expr(@a, ast.Expr(kind: .method(receiver: base, name: name, args: arguments), span: span))
+    return ast.push_expr(@a, ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end)))
+
+## The atoms
+
+function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    s = cursor.current_span(c)
+    k = cursor.current_kind(c)
+    if k == .lparen
+        return group(@c, @a, text)
+    if k == .lbracket
+        return array_literal(@c, @a, text)
+    if k == .lbrace
+        return map_literal(@c, @a, text)
+    if k == .dot
+        return case_expr(@c, @a, text)
+    simple = atom_kind(k)
+    if simple.is_err()
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "expected_expression", message: "expected an expression, found " + cursor.found(c, text) + " — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`", span: s)
+        # Not consumed: the statement parser decides where the line ends.
+        return ast.push_expr(@a, ast.Expr(kind: .error, span: s))
+    _ = cursor.bump(@c)
+    return ast.push_expr(@a, ast.Expr(kind: simple.must(), span: s))
+
+# The one-token atoms. `fail` is a name like any other here: `fail(code, msg)`
+# is a call, and the compiler knows the callee (§4.6). Keeping it out of the
+# grammar keeps the grammar smaller.
+function atom_kind(k: token.TokenKind) -> ast.ExprKind?
+    if k == .int_lit
+        return ok(.int_lit)
+    if k == .float_lit
+        return ok(.float_lit)
+    if k == .str_lit
+        return ok(.str_lit)
+    if k == .char_lit
+        return ok(.char_lit)
+    if k == .kw_true || k == .kw_false
+        return ok(.bool_lit)
+    if k == .kw_nullptr
+        return ok(.null_ptr)
+    if k == .hole
+        return ok(.hole)
+    if k == .ident || k == .kw_fail
+        return ok(.name)
+    return fail("not_an_atom", "no one-token expression starts here")
+
+# `(e)` — grouping only. There is no tuple type, so a parenthesised expression
+# is exactly its contents; `()` as a VALUE does not exist either (§4.3: `()` is
+# the type of no value).
+function group(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    _ = cursor.bump(@c)
+    cursor.skip_terminators(@c)
+    inner = parse_expr(@c, @a, text)
+    cursor.skip_terminators(@c)
+    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_group_close", what: "`)` to close the group")
+        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+    return inner
+
+# `[1, 2, 3]`, `[]`, or one element per line (§4.9). The canonical formatter
+# picks between the two by length, so the writer never chooses.
+function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    open = cursor.bump(@c).span
+    items: [i64] @ []
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        if cursor.at(c, .rbracket) || cursor.at(c, .eof)
+            reading @ false
+        else
+            items @ items.push(parse_expr(@c, @a, text))
+            if !separator(@c, text: text, closer: .rbracket, what: "element")
+                reading @ false
+    close = cursor.current_span(c)
+    if !cursor.expect(@c, text: text, kind: .rbracket, code: "expected_array_close", what: "`]` to close the list")
+        cursor.recover_past_closer(@c, opener: .lbracket, closer: .rbracket)
+    return ast.push_expr(@a, ast.Expr(kind: .array(elements: items), span: token.Span(start: open.start, end: close.end)))
+
+# `{ "mario": 30 }`, `{}`, or one entry per line.
+function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    open = cursor.bump(@c).span
+    entries: [ast.MapEntry] @ []
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        if cursor.at(c, .rbrace) || cursor.at(c, .eof)
+            reading @ false
+        else
+            key = parse_expr(@c, @a, text)
+            _ = cursor.expect(@c, text: text, kind: .colon, code: "expected_map_entry_colon", what: "`:` between a map's key and its value")
+            value = parse_expr(@c, @a, text)
+            entries @ entries.push(ast.MapEntry(key: key, value: value))
+            if !separator(@c, text: text, closer: .rbrace, what: "entry")
+                reading @ false
+    close = cursor.current_span(c)
+    if !cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map")
+        cursor.recover_past_closer(@c, opener: .lbrace, closer: .rbrace)
+    return ast.push_expr(@a, ast.Expr(kind: .map(entries: entries), span: token.Span(start: open.start, end: close.end)))
+
+# The separator between elements of a bracketed literal: a comma on one line, a
+# newline across several (§4.9). Returns false when the list is over — either
+# properly, at the closer, or because the separator is missing, which is
+# reported here.
+function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: str) -> bool
+    comma_span = cursor.current_span(c)
+    comma = cursor.eat(@c, .comma)
+    newline = cursor.at(c, .terminator)
+    cursor.skip_terminators(@c)
+    if cursor.at(c, closer) || cursor.at(c, .eof)
+        if comma
+            trailing_comma(@c, comma_span)
+        return false
+    if comma || newline
+        return true
+    if !cursor.at_reported_error(c)
+        cursor.error(@c, code: "expected_separator", message: "expected `,` or a new line between one " + what + " and the next, found " + cursor.found(c, text), span: cursor.current_span(c))
+    return false
+
+# `.plus`, `.num(v: 12)` — a variant case whose type comes from context (§4.5's
+# ⇐ mode). Leading dot, because writing `Token.num` would repeat what the
+# context already knows.
+function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    dot = cursor.bump(@c).span
+    if !cursor.at(c, .ident)
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "expected_case_name", message: "expected a variant case name after `.`, found " + cursor.found(c, text) + " — `.plus`, or `.num(v: 12)` with its fields", span: cursor.current_span(c))
+        return ast.push_expr(@a, ast.Expr(kind: .error, span: dot))
+    name = cursor.bump(@c).span
+    arguments: [ast.Arg] @ []
+    if cursor.at(c, .lparen)
+        arguments @ call_args(@c, @a, text)
+    return ast.push_expr(@a, ast.Expr(kind: .variant_case(name: name, args: arguments), span: token.Span(start: dot.start, end: cursor.previous_significant_span(c).end)))
+
+## Entry point 3 — the argument list
+
+# `(x, name: y, @l)` — the argument list of a call, of a record construction,
+# and of a variant case, which are the same thing (§4.9).
+function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
+    arguments: [ast.Arg] @ []
+    _ = cursor.bump(@c)
+    cursor.skip_terminators(@c)
+    if cursor.eat(@c, .rparen)
+        return arguments
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        if cursor.at(c, .rparen)
+            # Reached only after a comma: `f(a, b,)`.
+            trailing_comma(@c, cursor.previous_significant_span(c))
+            reading @ false
+        else
+            name: token.Span? @ fail("unnamed", "a bare argument")
+            if cursor.at(c, .ident) && cursor.peek(c, 1) == .colon
+                name @ ok(cursor.bump(@c).span)
+                _ = cursor.bump(@c)
+            mutable = cursor.eat(@c, .at)
+            value = parse_expr(@c, @a, text)
+            if cursor.at(c, .at)
+                # `f(a @ n)`: recovered as the `f(a: @n)` it meant, so the
+                # mistake costs one diagnostic and the tree stays usable.
+                named = a.exprs[value].span
+                misplaced_mutable_marker(@c)
+                repaired = parse_expr(@c, @a, text)
+                arguments @ arguments.push(ast.Arg(name: ok(named), mutable: true, value: repaired))
+            else
+                arguments @ arguments.push(ast.Arg(name: name, mutable: mutable, value: value))
+            cursor.skip_terminators(@c)
+            if !cursor.eat(@c, .comma)
+                reading @ false
+    cursor.skip_terminators(@c)
+    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_args_close", what: "`)`, or `,` and another argument")
+        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+    return arguments
+
+## The two habits from other languages, each met with a certain fix
+
+# `f(a, b,)` — the Python and JavaScript habit. Heroes has one spelling per
+# program (§4.15), so the trailing comma cannot also be it; the fix is certain
+# because deleting it is the whole repair.
+function trailing_comma(@c: cursor.Cursor, comma: token.Span)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "trailing_comma", message: "a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`", span: comma)
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete the trailing comma", replacement: "", span: comma, certainty: .certain))
+    c.diagnostics @ c.diagnostics.push(d)
+
+# `f(a @ n)` — `@` where the `:` of a named argument belongs. The two rules
+# compose the other way round: `:` names the parameter (§4.9), `@` marks the
+# argument (§4.8), so it is `f(a: @n)`.
+function misplaced_mutable_marker(@c: cursor.Cursor)
+    at = cursor.current_span(c)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "misplaced_mutable_marker", message: "a named mutable argument is written `name: @value` — `:` names the parameter, `@` marks the argument", span: at)
+    d.fixes @ d.fixes.push(diag.Fix(title: "write `: @` instead of `@`", replacement: ": @", span: at, certainty: .certain))
+    c.diagnostics @ c.diagnostics.push(d)
+    _ = cursor.bump(@c)
+
+## Tests — the precedence table, read back off real token streams
+
+function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: start, end: end))
+
+# The tree, written back out fully parenthesised. A precedence table is only
+# testable through what it BUILDS, and this is the cheapest way to see it.
+function render(a: ast.Ast, at: i64, text: str) -> str
+    node = a.exprs[at]
+    return match node.kind
+        .binary b => "(" + render(a, b.left, text) + " " + op_text(b.op) + " " + render(a, b.right, text) + ")"
+        .unary u => "(" + unary_text(u.op) + render(a, u.operand, text) + ")"
+        .field f => "(" + render(a, f.base, text) + "." + cursor.slice_of(text, f.name) + ")"
+        .index i => "(" + render(a, i.base, text) + "[" + render(a, i.index, text) + "])"
+        .try_expr t => "(" + render(a, t.value, text) + "?)"
+        .call c => "(call " + render(a, c.callee, text) + "/" + c.args.len().to_str() + ")"
+        .method m => "(" + render(a, m.receiver, text) + "." + cursor.slice_of(text, m.name) + "()/" + m.args.len().to_str() + ")"
+        .variant_case v => "." + cursor.slice_of(text, v.name)
+        .array ar => "[" + ar.elements.len().to_str() + "]"
+        .map mp => "{" + mp.entries.len().to_str() + "}"
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => cursor.slice_of(text, node.span)
+        .name => cursor.slice_of(text, node.span)
+        .null_ptr => "nullptr"
+        .hole => "???"
+        .if_expr | .match_expr => "<control>"
+        .error => "<error>"
+
+function op_text(op: ast.BinaryOp) -> str
+    return match op
+        .add => "+"
+        .sub => "-"
+        .mul => "*"
+        .div => "/"
+        .rem => "%"
+        .eq => "=="
+        .ne => "!="
+        .lt => "<"
+        .le => "<="
+        .gt => ">"
+        .ge => ">="
+        .and => "&&"
+        .or => "||"
+        .bit_and => "&"
+        .bit_or => "|"
+        .bit_xor => "^"
+        .shl => "<<"
+        .shr => ">>"
+
+function unary_text(op: ast.UnaryOp) -> str
+    return match op
+        .neg => "-"
+        .not => "!"
+        .bit_not => "~"
+
+test "multiplication binds tighter than addition, and both are left-associative"
+    # 1 + 2 * 3
+    stream: [token.Token] = [tok(.int_lit, start: 0, end: 1), tok(.plus, start: 2, end: 3), tok(.int_lit, start: 4, end: 5), tok(.star, start: 6, end: 7), tok(.int_lit, start: 8, end: 9), tok(.eof, start: 9, end: 9)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_expr(@c, @a, "1 + 2 * 3")
+    assert render(a, at, "1 + 2 * 3") == "(1 + (2 * 3))"
+    # 1 - 2 - 3 groups left
+    left: [token.Token] = [tok(.int_lit, start: 0, end: 1), tok(.minus, start: 2, end: 3), tok(.int_lit, start: 4, end: 5), tok(.minus, start: 6, end: 7), tok(.int_lit, start: 8, end: 9), tok(.eof, start: 9, end: 9)]
+    d: cursor.Cursor @ cursor.new_cursor(left)
+    b: ast.Ast @ ast.new_ast()
+    at2 = parse_expr(@d, @b, "1 - 2 - 3")
+    assert render(b, at2, "1 - 2 - 3") == "((1 - 2) - 3)"
+
+test "comparisons sit above &&, so a < b && c needs no parentheses"
+    # a < b && c
+    stream: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.lt, start: 2, end: 3), tok(.ident, start: 4, end: 5), tok(.and_and, start: 6, end: 8), tok(.ident, start: 9, end: 10), tok(.eof, start: 10, end: 10)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_expr(@c, @a, "a < b && c")
+    assert render(a, at, "a < b && c") == "((a < b) && c)"
+
+test "C's own mistake is not inherited: & binds tighter than =="
+    # x & 1 == 0  — in C this means x & (1 == 0); here it is (x & 1) == 0
+    stream: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.amp, start: 2, end: 3), tok(.int_lit, start: 4, end: 5), tok(.eq_eq, start: 6, end: 8), tok(.int_lit, start: 9, end: 10), tok(.eof, start: 10, end: 10)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_expr(@c, @a, "x & 1 == 0")
+    assert render(a, at, "x & 1 == 0") == "((x & 1) == 0)"
+
+test "the suffixes chain left to right"
+    # xs[0].f
+    stream: [token.Token] = [tok(.ident, start: 0, end: 2), tok(.lbracket, start: 2, end: 3), tok(.int_lit, start: 3, end: 4), tok(.rbracket, start: 4, end: 5), tok(.dot, start: 5, end: 6), tok(.ident, start: 6, end: 7), tok(.eof, start: 7, end: 7)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_expr(@c, @a, "xs[0].f")
+    assert render(a, at, "xs[0].f") == "((xs[0]).f)"
+    # e? binds tightest of all
+    q: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.question, start: 1, end: 2), tok(.plus, start: 3, end: 4), tok(.int_lit, start: 5, end: 6), tok(.eof, start: 6, end: 6)]
+    d: cursor.Cursor @ cursor.new_cursor(q)
+    b: ast.Ast @ ast.new_ast()
+    at2 = parse_expr(@d, @b, "e? + 1")
+    assert render(b, at2, "e? + 1") == "((e?) + 1)"
+
+test "a dot with parentheses is UFCS, without them a field"
+    # x.f(y)
+    stream: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.dot, start: 1, end: 2), tok(.ident, start: 2, end: 3), tok(.lparen, start: 3, end: 4), tok(.ident, start: 4, end: 5), tok(.rparen, start: 5, end: 6), tok(.eof, start: 6, end: 6)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_expr(@c, @a, "x.f(y)")
+    assert render(a, at, "x.f(y)") == "(x.f()/1)"
+
+test "a trailing comma is refused with the deletion as its fix"
+    # f(a,)
+    stream: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.lparen, start: 1, end: 2), tok(.ident, start: 2, end: 3), tok(.comma, start: 3, end: 4), tok(.rparen, start: 4, end: 5), tok(.eof, start: 5, end: 5)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    _ = parse_expr(@c, @a, "f(a,)")
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "trailing_comma"
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+    assert c.diagnostics[0].fixes[0].replacement == ""
+
+test "the two rules compose the other way round: f(a @ n) is f(a: @n)"
+    stream: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.lparen, start: 1, end: 2), tok(.ident, start: 2, end: 3), tok(.at, start: 4, end: 5), tok(.ident, start: 6, end: 7), tok(.rparen, start: 7, end: 8), tok(.eof, start: 8, end: 8)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    _ = parse_expr(@c, @a, "f(a @ n)")
+    assert c.diagnostics[0].code == "misplaced_mutable_marker"
+    assert c.diagnostics[0].fixes[0].replacement == ": @"
+
+test "inside brackets a newline is a separator, not a statement end"
+    # [1
+    #  2]  — the lexer plants a terminator between them
+    stream: [token.Token] = [
+        tok(.lbracket, start: 0, end: 1)
+        tok(.int_lit, start: 1, end: 2)
+        tok(.terminator, start: 2, end: 2)
+        tok(.int_lit, start: 3, end: 4)
+        tok(.rbracket, start: 4, end: 5)
+        tok(.eof, start: 5, end: 5)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_expr(@c, @a, "[1\n2]")
+    assert render(a, at, "[1\n2]") == "[2]"
+    assert c.diagnostics.len() == 0
+
+test "a pattern's operand never consumes the join, which is what | is there"
+    # 1 | 2 in pattern position must stop at the `|`, leaving it for the arm.
+    stream: [token.Token] = [tok(.int_lit, start: 0, end: 1), tok(.pipe, start: 2, end: 3), tok(.int_lit, start: 4, end: 5), tok(.eof, start: 5, end: 5)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = pattern_operand(@c, @a, "1 | 2")
+    assert render(a, at, "1 | 2") == "1"
+    assert cursor.current_kind(c) == .pipe
+    # The full expression parser DOES consume it — which is the defect the
+    # split prevents.
+    d: cursor.Cursor @ cursor.new_cursor(stream)
+    b: ast.Ast @ ast.new_ast()
+    at2 = parse_expr(@d, @b, "1 | 2")
+    assert render(b, at2, "1 | 2") == "(1 | 2)"
+
+test "the control forms are not ported yet, and say so rather than crashing"
+    # This pins the module doc's own claim: `if` in expression position reports
+    # `expected_expression` today. When the statement half of the knot lands in
+    # this file, this test is what changes.
+    stream: [token.Token] = [tok(.kw_if, start: 0, end: 2), tok(.eof, start: 2, end: 2)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_expr(@c, @a, "if")
+    assert a.exprs[at].kind == .error
+    assert c.diagnostics[0].code == "expected_expression"
