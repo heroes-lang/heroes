@@ -30,7 +30,7 @@
 /// the first run, with clang's warnings forwarded rather than swallowed so that they
 /// could. It is the strictest warning in the set and the one most likely to catch a
 /// join slot the lowering forgot to write on one arm.
-pub const FLAGS: [&str; 12] = [
+pub const FLAGS: [&str; 13] = [
     // **`gnu11`, not `c11`, and the difference is one predefined macro** (panel
     // 047, ratified 2026-08-14). `-std=c11` defines `__STRICT_ANSI__`, and on
     // glibc that is the *only* thing it does: it hides `M_PI`, `strdup`,
@@ -50,6 +50,25 @@ pub const FLAGS: [&str; 12] = [
     // byte-identical fixpoint cannot let it drift — the same argument that
     // pinned `rust-toolchain.toml` the same day.
     "-std=gnu11",
+    // **Debug info on every build, and it is a repair rather than a feature.**
+    // design.md §2 says lldb "breaks on and steps through `.hero` source lines"
+    // and §3.1 says the `#line` directives are what map the generated C back —
+    // and until 2026-08-16 `-g` reached clang **only** under `--sanitize`
+    // (`toolchain.rs`, the file's one occurrence), so an ordinary build carried
+    // no DWARF at all and both claims had never been executed by anything.
+    // CLAUDE.md §12: where the documents and the compiler disagree, the
+    // compiler has the bug.
+    //
+    // It is here rather than in `sanitizers()` because that is what it is: a
+    // property of every unit this compiler hands clang, not of a debugging
+    // mode. The `#line` machinery has always been unconditional; this makes the
+    // half that consumes it unconditional too.
+    //
+    // What it costs is disk, not speed: DWARF goes in the binary and the linker
+    // does not optimise it. Measured on the corpus at the landing — the numbers
+    // are in the milestone's journal rather than in this comment, because a
+    // number in a comment is the premise §11 says expires in silence.
+    "-g",
     // **The third platform hides `M_PI` too, and for a third reason.** Panel 047
     // moved to `gnu11` because glibc guards the `math.h` constants behind
     // `__USE_MISC`, which `-std=c11` switches off. MSVC guards the same constants
@@ -89,7 +108,11 @@ pub const FLAGS: [&str; 12] = [
 
 pub fn sanitizers(sanitize: bool) -> Vec<String> {
     if sanitize {
-        vec!["-fsanitize=address,undefined".to_string(), "-g".to_string()]
+        // `-g` used to live here, and that was the defect: it made the debug
+        // info a **sanitiser** feature while design.md §2 and §3.1 promised it
+        // to every build. It is in `FLAGS` now, so this list is only what the
+        // sanitisers themselves need.
+        vec!["-fsanitize=address,undefined".to_string()]
     } else {
         Vec::new()
     }

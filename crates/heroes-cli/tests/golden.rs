@@ -841,3 +841,89 @@ fn the_spikes_still_compile_and_print_what_they_claim() {
 fn machine_lacks_the_library(text: &str) -> bool {
     text.contains("error[ffi_package]") || text.contains("error[ffi_missing_header]")
 }
+
+/// **design.md §2's claim, executed** — lldb breaks on a `.hero` line and says so.
+///
+/// The claim is old and had never been run by anything: §2 says "line-level
+/// debugging works: lldb breaks on and steps through `.hero` source lines" and
+/// §3.1 says the `#line` directives are what map the generated C back. The
+/// `#line` machinery has a test; the sentence about lldb had none, which is
+/// CLAUDE.md §9's own class — a claim with no test that makes it fire.
+///
+/// Two defects stood between the sentence and the truth, and only the first was
+/// on the record (M-selfhost-port's carried item):
+///
+/// 1. `-g` reached clang **only** under `--sanitize`, so an ordinary build had
+///    no DWARF at all. It is in `FLAGS` now.
+/// 2. The generated unit's object was a clang **temporary**, deleted after
+///    linking — and on Darwin the DWARF lives in the object, with the binary
+///    carrying only a debug map that points at it. So even with `-g` the debug
+///    info evaporated at the end of the build. `Toolchain::link` now compiles
+///    the unit to an object beside its `.c` and links that.
+///
+/// The known ceiling stays what §2 says it is: `frame variable` prints the
+/// mangled C locals (`h1_m`), not Heroes values. This test asserts the line
+/// mapping, which is the half the language promises today.
+///
+/// Skipped rather than failed where `lldb` is not installed — the third CI leg
+/// has no Xcode — and the skip says so, because a silent skip is a test that
+/// never fires (the `unsupported/` harness's own rule).
+#[test]
+fn lldb_breaks_on_a_hero_line() {
+    if std::process::Command::new("lldb").arg("--version").output().is_err() {
+        eprintln!("skipping: no lldb on this machine");
+        return;
+    }
+    let root = workspace_root();
+    let scratch = root.join("build/golden-debug");
+    std::fs::create_dir_all(&scratch).expect("a scratch directory");
+    let case = root.join("tests/golden/run/arithmetic.hero");
+    let relative = case.strip_prefix(&root).expect("under the workspace root");
+    let binary = scratch.join("debuginfo");
+    let built = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+        .current_dir(&root)
+        .args(["build", &slashed(relative), "-o", &binary.display().to_string()])
+        .output()
+        .expect("the heroes binary runs");
+    assert_eq!(built.status.code(), Some(0), "the case must build");
+
+    // The first line of `main`'s body: a breakpoint here is the whole claim.
+    let line = std::fs::read_to_string(&case)
+        .expect("a readable case")
+        .lines()
+        .enumerate()
+        .find(|(_, l)| l.starts_with("function main"))
+        .map(|(index, _)| index + 2)
+        .expect("the case has a main");
+    let out = std::process::Command::new("lldb")
+        .current_dir(&root)
+        .args([
+            "-b",
+            "-o",
+            &format!("breakpoint set --file arithmetic.hero --line {line}"),
+            "-o",
+            "run",
+            &binary.display().to_string(),
+        ])
+        .output()
+        .expect("lldb runs");
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    // Resolved, not pending: a pending breakpoint is exactly the symptom the
+    // two defects produced, and it does not fail a `run`.
+    assert!(
+        !text.contains("no locations (pending)"),
+        "the breakpoint never resolved — the debug info does not reach `.hero` lines:\n{text}"
+    );
+    assert!(
+        text.contains(&format!("arithmetic.hero:{line}")),
+        "lldb did not report the `.hero` line:\n{text}"
+    );
+    assert!(
+        text.contains("stop reason = breakpoint"),
+        "the breakpoint never fired:\n{text}"
+    );
+}

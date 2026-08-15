@@ -217,6 +217,37 @@ impl Toolchain {
         // Asked before clang runs, so a package that is not installed is reported
         // as itself rather than as a header clang could not find.
         let from_packages = resolve_packages(&libraries.packages)?;
+        // **The unit is compiled to an object that survives, and that is a defect
+        // repair rather than a refactor** (M-selfhost-port, 2026-08-16). One
+        // clang invocation used to compile and link together, which leaves the
+        // unit's object in clang's own temporary directory — and on Darwin the
+        // DWARF *lives* in the object: the linked binary carries only a debug map
+        // pointing at it (`N_OSO`). So the debug info design.md §2 promises was
+        // deleted by the toolchain the moment the build finished, and `-g`
+        // arriving in `FLAGS` would have fixed nothing on its own. Measured: with
+        // the object kept, `breakpoint set --file x.hero --line 3` resolves and
+        // lldb reports `at x.hero:3`; without it, the breakpoint stays pending.
+        //
+        // The object lands beside the `.c` in the same content-addressed
+        // directory, so it lives exactly as long as the build that produced it,
+        // and it is staged-and-published for the reason the binary is.
+        let unit_object = c_file.with_extension("o");
+        let staged_object = c_file.with_extension(format!("o.{}.tmp", std::process::id()));
+        let mut compile = Command::new("clang");
+        compile.args(FLAGS).arg(level).args(sanitizers(sanitize)).arg("-c");
+        for directory in &libraries.search.include {
+            compile.arg("-I").arg(directory);
+        }
+        compile.args(from_packages.iter().filter(|f| f.starts_with("-I")));
+        compile.arg(c_file);
+        compile.arg("-I").arg(&self.runtime);
+        if let Some(directory) = include {
+            compile.arg("-I").arg(directory);
+        }
+        compile.arg("-o").arg(&staged_object);
+        run(compile, "compiling the generated C")?;
+        publish(&staged_object, &unit_object)?;
+
         let mut clang = Command::new("clang");
         clang.args(FLAGS).arg(level).args(sanitizers(sanitize));
         // **Before the package's own flags**, so that where the two disagree about
@@ -229,11 +260,7 @@ impl Toolchain {
         for directory in &libraries.search.library {
             clang.arg("-L").arg(directory);
         }
-        clang.arg(c_file).arg(object);
-        clang.arg("-I").arg(&self.runtime);
-        if let Some(directory) = include {
-            clang.arg("-I").arg(directory);
-        }
+        clang.arg(&unit_object).arg(object);
         // **Before the names.** A package answers with `-I` and `-L` as well as
         // `-l`, and a search path that arrives after the library it is for is a
         // path the linker has already stopped needing.
@@ -255,7 +282,7 @@ impl Toolchain {
         // whole configuration and the winner's binary is ours.
         let staged = binary.with_extension(format!("{}.tmp", std::process::id()));
         clang.arg("-o").arg(&staged);
-        run(clang, "compiling the generated C")?;
+        run(clang, "linking")?;
         publish(&staged, binary)
     }
 }
