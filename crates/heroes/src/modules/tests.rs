@@ -581,3 +581,72 @@ fn fixedbugs_a_root_file_keeps_the_name_the_author_typed() {
     assert!(said.is_empty(), "{said:?}");
     let _ = &files;
 }
+
+/// **The premise `directory_text` rests on, with the test that fires when it dies**
+/// (CLAUDE.md §11; author decision 2026-08-15, after panel 057 refused the same
+/// premise everywhere else).
+///
+/// `directory_text` reads `\` as a separator on every platform. On Linux and Darwin
+/// `\` is a legal byte in a filename, so the function is **wrong** about a file
+/// genuinely named `a\b.hero`: it reports the directory as `a\`, and there is no
+/// directory `a`. That is kept deliberately — a path typed on the command line may
+/// use the Windows separator whatever the platform, and spelling a sibling module
+/// the way the author spelled the root is worth more than this case.
+///
+/// **What makes it survivable is scope**, and scope is what this test pins. The
+/// wrong answer may only ever reach a printed *name*; the filesystem is reached
+/// through `PathBuf::parent`, which is separator-correct. The day someone opens a
+/// file with `directory_text`'s result, the two halves below stop agreeing and this
+/// goes red — which is the premise dying, not a flaky test.
+#[test]
+fn a_backslash_name_is_wrong_here_and_right_where_files_are_opened() {
+    // A real file whose *name* contains a backslash. On Windows this cannot be
+    // created, and there the premise is simply true — so the platform that can
+    // hold the counterexample is the platform that must check it.
+    if cfg!(windows) {
+        return;
+    }
+    let dir = write("backslash-name", &[]);
+    let odd = dir.join("a\\b.hero");
+    std::fs::write(&odd, "function main()\n    print(1)\n").expect("a backslash name is legal here");
+    assert!(odd.exists(), "the file is one name, not a directory and a name");
+
+    let typed = odd.to_string_lossy().into_owned();
+
+    // 1. The naming half is wrong, knowingly. It claims a directory that the
+    //    filesystem does not have.
+    let claimed = directory_text(&typed);
+    assert!(
+        claimed.ends_with("a\\"),
+        "directory_text stopped reading `\\` as a separator — if that is deliberate, \
+         the premise in its doc comment is what changed and this test is its record:\n  \
+         typed:   {typed}\n  claimed: {claimed}"
+    );
+    assert!(
+        !std::path::Path::new(claimed).is_dir(),
+        "a directory named `{claimed}` now exists, so this test's counterexample is no \
+         longer one — rebuild it somewhere the name is free"
+    );
+
+    // 2. The filesystem half is right, and that is the whole defence. If this ever
+    //    fails, `directory_text`'s wrong answer has reached a real path and the
+    //    premise is no longer cosmetic — that is the day it dies.
+    let real = std::path::Path::new(&typed).parent().expect("the file has a parent");
+    assert_eq!(
+        real,
+        dir.as_path(),
+        "the filesystem parent of a backslash-named file must be the directory holding \
+         it. `modules::load_text` reaches files through `PathBuf::parent` for exactly \
+         this reason, and `directory_text` must never be the one asked"
+    );
+
+    // 3. And the two genuinely disagree — which is what makes 2 load-bearing rather
+    //    than incidental. If they ever agree, the premise costs nothing and the
+    //    comment should stop claiming it does.
+    assert_ne!(
+        claimed,
+        format!("{}/", dir.to_string_lossy()),
+        "naming and opening now agree on a backslash name; `directory_text`'s doc \
+         comment says they do not, and one of the two is out of date"
+    );
+}

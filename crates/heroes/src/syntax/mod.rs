@@ -37,6 +37,7 @@ mod cursor;
 mod data;
 mod decl;
 mod describe;
+mod extern_members;
 mod externs;
 mod expr;
 mod members;

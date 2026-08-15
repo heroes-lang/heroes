@@ -88,6 +88,34 @@ pub fn load(path: &str) -> Result<Source, String> {
 /// separator on every platform this compiler builds for. This function decides
 /// only what the *name* looks like, and it decides it from the value in hand:
 /// this path's own text (CLAUDE.md §11).
+///
+/// **Reading `\` as a separator is a premise about the world, and panel 057
+/// refused it everywhere else in this language.** That sitting measured what it
+/// costs where it is load-bearing: a real POSIX directory named `back\` opened
+/// **two different SQLite databases**, both `SQLITE_OK`, with no diagnostic — and
+/// the historian sourced the same hazard shipped in both directions (filebrowser
+/// GHSA-83xp-526h-j3ww manufactured a POSIX traversal by rewriting `\`; Git's
+/// CVE-2019-1354 fix then broke repositories holding legal backslash names). `\` is
+/// a legal byte in a filename on Linux and Darwin, verified on this machine.
+///
+/// **So the premise is kept here, alone in the tree, and it is written as a claim
+/// that can die rather than as a justification** (author decision 2026-08-15):
+///
+/// > A path that reaches this function was **typed by the author** on the command
+/// > line, so it may use the Windows separator whatever the platform — and naming
+/// > a sibling module the way the author spelled the root is worth more than being
+/// > right about a POSIX file whose own name contains `\`. The second case is real
+/// > and this function is wrong about it: `a\b.hero` is one file in the current
+/// > directory, and this reports its directory as `a\`.
+///
+/// What makes that survivable is **scope, not luck**, and the scope is the thing to
+/// protect: nothing opens a file with this result. `load_text` reaches the
+/// filesystem through `PathBuf::parent`, which is separator-correct per platform,
+/// and this text reaches only `InputFile::name` — what a diagnostic prints.
+///
+/// `a_backslash_name_is_wrong_here_and_right_where_files_are_opened` is the test
+/// that fires when the premise dies. It fails the day this result is used to reach
+/// the filesystem, which is the only way the cost above stops being cosmetic.
 fn directory_text(path: &str) -> &str {
     match path.rfind(['/', '\\']) {
         Some(at) => &path[..=at],

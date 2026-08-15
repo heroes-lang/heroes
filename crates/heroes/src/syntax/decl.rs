@@ -126,7 +126,7 @@ pub(super) fn constant_tail(
     // An `extern` constant has no body, and an indented one under it is the
     // mistake `externs::body_check` names. Everything else keeps the old shape.
     let body = if header.is_some() {
-        super::externs::body_check(cur, "constant");
+        super::extern_members::body_check(cur, "constant");
         None
     } else {
         let Some(body) = block(cur, ast, src, "a `constant`") else {
@@ -193,7 +193,7 @@ pub(super) fn function_tail(
         ast.push_type(TypeNode { kind: TypeKind::Unit, span: Span { start: here.start, end: here.start } })
     };
     let body = if is_extern {
-        super::externs::body_check(cur, "function");
+        super::extern_members::body_check(cur, "function");
         None
     } else {
         match block(cur, ast, src, "a `function`") {

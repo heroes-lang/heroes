@@ -72,7 +72,7 @@ pub(super) fn emit(
     //
     // Which ops those are is `may_lose_its_destination`'s question, asked of the
     // op rather than of a list of the ops that have come up so far.
-    let discardable = may_lose_its_destination(&inst.op);
+    let discardable = super::unread::may_lose_its_destination(&inst.op);
     let discarded = discardable && inst.dest.is_some_and(|d| !live_values.contains(&d.0));
     let dest = inst.dest.filter(|_| !is_unit(checked, inst.ty) && !discarded);
     let target = dest.map(|d| mangle::value(d.0));
@@ -285,64 +285,4 @@ pub(super) fn emit(
 /// element, and `gate.rs` refuses both until the descriptor pass exists.
 fn read(types: &aggregate::Types, function: &crate::ir::Function, place: Place) -> String {
     aggregate::place(types, function, place)
-}
-
-/// Whether this instruction is still correct with its **destination dropped** —
-/// the question `-Wunused-but-set-variable` turns on, asked of the op.
-///
-/// Two groups may lose it. A **pure read** simply vanishes: nothing happens, so
-/// nothing is lost. A **call** is emitted for its effect and merely goes
-/// unassigned, which is what `_ = f(x)` means.
-///
-/// Everything else keeps its destination, and each for a reason worth stating.
-/// `Index`, `Cast`, `Unary` and `Binary` can **abort** — out of bounds, out of
-/// range, on overflow — and their emitters print the check *with* the
-/// assignment, so dropping one drops the other. `Construct` and `MapGet` build a
-/// value, which for a refcounted type is a retain. `Store`, `CopyOut`, `Incref`,
-/// `Decref` and `Abort` are effects with no destination to drop in the first
-/// place. `Hole` and `Missing` never reach a backend.
-///
-/// **The match is exhaustive on purpose, and that is the repair.** This was a
-/// three-name list — `Call`, `Load`, `Const` — resting on the premise that
-/// nothing else could produce a value the emitted C never reads. `_ = f(x)?` on
-/// a fallible produces a `Payload` that does, and the premise died in silence
-/// with a clang warning as its only trace: found by a corpus program, three
-/// milestones after the list was written (fixedbugs, 2026-08-13). A new `Op` now
-/// has to answer this question before the compiler will build — which is
-/// CLAUDE.md §11's rule, that a narrowing asks the value and never the world.
-pub(super) fn may_lose_its_destination(op: &Op) -> bool {
-    match op {
-        Op::Const(_)
-        | Op::Load(_)
-        | Op::Field { .. }
-        | Op::Payload { .. }
-        | Op::Tag(_)
-        | Op::Len(_)
-        | Op::Call { .. } => true,
-        Op::FuncRef(_)
-        | Op::Store { .. }
-        | Op::Unary { .. }
-        | Op::Binary { .. }
-        | Op::Cast { .. }
-        | Op::Construct { .. }
-        | Op::Index { .. }
-        | Op::MapGet { .. }
-        | Op::CopyOut { .. }
-        | Op::Abort { .. }
-        | Op::Incref(_)
-        | Op::Decref(_)
-        | Op::Hole
-        | Op::Missing => false,
-    }
-}
-
-/// Whether the instruction disappears **entirely** when its result is unread —
-/// the narrower half of `may_lose_its_destination`, and the one a fixpoint has
-/// to iterate over.
-///
-/// A discarded `Call` still prints its call, so it still reads its arguments; a
-/// discarded pure read prints nothing at all, so its operand loses a reader and
-/// may itself become unread. That chain is why `emitted_reads` is a loop.
-pub(super) fn vanishes_when_unread(op: &Op) -> bool {
-    may_lose_its_destination(op) && !matches!(op, Op::Call { .. })
 }
