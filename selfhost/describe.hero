@@ -1,0 +1,104 @@
+# How a token is named in a diagnostic.
+# Port of crates/heroes/src/syntax/describe.rs.
+#
+# Parse errors read "expected X, found Y", and both halves come from here. The
+# names are prose, not source text, because the three tokens that matter most
+# have no spelling at all: a terminator is an invisible line end, an indent is
+# four spaces the author cannot see, a dedent is their absence. Naming them
+# "end of line", "an indented block" and "the end of the block" is the
+# difference between an error a model can act on and one it has to guess at
+# (design.md §4.17).
+#
+# This is output surface: changing a phrase churns every golden that contains
+# it — so the strings are byte-identical to the Rust table's.
+
+use token
+
+function describe(kind: token.TokenKind) -> str
+    return match kind
+        .amp => "`&`"
+        .caret => "`^`"
+        .tilde => "`~`"
+        .shl => "`<<`"
+        .shr => "`>>`"
+        .ident => "a name"
+        .int_lit => "a number"
+        .float_lit => "a number"
+        .str_lit => "a string"
+        .char_lit => "a character literal"
+        .kw_constant => "`constant`"
+        .kw_function => "`function`"
+        .kw_record => "`record`"
+        .kw_variant => "`variant`"
+        .kw_match => "`match`"
+        .kw_if => "`if`"
+        .kw_else => "`else`"
+        .kw_for => "`for`"
+        .kw_while => "`while`"
+        .kw_in => "`in`"
+        .kw_break => "`break`"
+        .kw_continue => "`continue`"
+        .kw_return => "`return`"
+        .kw_test => "`test`"
+        .kw_assert => "`assert`"
+        .kw_extern => "`extern`"
+        .kw_nullptr => "`nullptr`"
+        .kw_use => "`use`"
+        .kw_true => "`true`"
+        .kw_false => "`false`"
+        .kw_fail => "`fail`"
+        .eq => "`=`"
+        .at => "`@`"
+        .colon => "`:`"
+        .comma => "`,`"
+        .dot => "`.`"
+        .question => "`?`"
+        .hole => "`???`"
+        .arrow => "`->`"
+        .fat_arrow => "`=>`"
+        .pipe => "`|`"
+        .lparen => "`(`"
+        .rparen => "`)`"
+        .lbracket => "`[`"
+        .rbracket => "`]`"
+        .lbrace => "`{`"
+        .rbrace => "`}`"
+        .plus => "`+`"
+        .minus => "`-`"
+        .star => "`*`"
+        .slash => "`/`"
+        .percent => "`%`"
+        .eq_eq => "`==`"
+        .bang_eq => "`!=`"
+        .lt => "`<`"
+        .le => "`<=`"
+        .gt => "`>`"
+        .ge => "`>=`"
+        .and_and => "`&&`"
+        .or_or => "`||`"
+        .bang => "`!`"
+        .comment => "a comment"
+        .terminator => "end of line"
+        .indent => "an indented block"
+        .dedent => "the end of the block"
+        .eof => "end of file"
+        .error => "an unreadable token"
+
+# Whether a token's own text carries information the name does not. The ones
+# that do are quoted beside their name in "found …"; punctuation and keywords
+# are their own text already, and layout tokens have none at all.
+function carries_text(kind: token.TokenKind) -> bool
+    return kind == .ident || kind == .int_lit || kind == .float_lit || kind == .str_lit || kind == .char_lit || kind == .error
+
+test "the three invisible tokens are named in prose"
+    assert describe(.terminator) == "end of line"
+    assert describe(.indent) == "an indented block"
+    assert describe(.dedent) == "the end of the block"
+
+test "a token that carries text is told apart from one that does not"
+    assert carries_text(.ident)
+    assert carries_text(.error)
+    assert !carries_text(.kw_while)
+    assert !carries_text(.terminator)
+    assert describe(.kw_while) == "`while`"
+    assert describe(.int_lit) == describe(.float_lit)

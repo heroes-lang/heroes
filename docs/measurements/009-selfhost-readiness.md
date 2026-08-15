@@ -250,6 +250,27 @@ ceiling — the seam `descriptors.rs` had already named.
 provoked it — a declared-but-unbuilt case with an optional payload — is
 ordinary in a compiler's own AST and absent from every program written to date.
 
+## The fourth file — the parser's cursor (2026-08-16)
+
+`syntax/cursor.rs` + `syntax/describe.rs` → `selfhost/cursor.hero` +
+`selfhost/describe.hero`, 10 test blocks. One finding, and it is about names:
+
+20. **A method name becomes a global name, and shadowing is a compile error.**
+    `c.kind()` and `c.span()` cost Rust nothing — a method lives on its type.
+    Ported as free functions they claim two of the most natural parameter names
+    in a compiler, and the very next function wanting `span: token.Span` does
+    not compile (`shadowed_binding`). The port renames them `current_kind` and
+    `current_span`, **which is what they always meant**: neither is the
+    *cursor's* kind or span, but the **current token's**. Cost: two renames,
+    and the names got better. **No form wanted** — but the shape is worth
+    knowing before the parser's ten files arrive, because Rust's method-heavy
+    style will hit it again: prefer `<what>_of_<whose>` over the bare noun.
+
+`take_docs` needed `line_col`, which the Rust side asks its `Source` for; the
+port computes it from the text in 11 lines and stays free of a `Source` the
+parser does not have yet. That defers the multi-file wrapper honestly rather
+than blocking on it.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`

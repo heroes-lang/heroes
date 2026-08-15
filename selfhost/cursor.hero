@@ -1,0 +1,346 @@
+# The token cursor: the parser's only way to move, and the only place that
+# knows how to fail.
+# Port of crates/heroes/src/syntax/cursor.rs.
+#
+# Three jobs, all of them invariants the grammar files then get to ignore:
+#
+# 1. **Comments never reach the grammar.** The cursor's position never rests on
+#    a comment, but the spans it passes are kept, because a comment directly
+#    above a declaration IS its documentation (design.md §4.1). `take_docs`
+#    hands that run back when a declaration starts.
+# 2. **The parser never stops.** A failed expectation is a diagnostic plus a
+#    recovery move, so a broken first declaration cannot hide the nine after it.
+# 3. **Errors are reported once.** At an `error` token the lexer has already
+#    spoken; the cursor stays silent and lets recovery run, which is what keeps
+#    one mistake from producing two diagnostics.
+#
+# The Cyclone rule survives the port unchanged: the cursor OWNS its token array
+# and takes the source text as a parameter wherever it needs to read it.
+#
+# Two port notes, and the second is a finding.
+#
+# Rust's `Cursor` methods are `&mut self`; here every mover is an `@` parameter,
+# which is the same thing said on the call line — `bump(@c)` announces the
+# mutation where `c.bump()` hid it. §4.8 forbids UFCS on an `@` receiver for
+# exactly that reason, so the port reads *more* explicitly at every call site.
+#
+# **A method name becomes a global name, and shadowing is a compile error.**
+# `c.kind()` and `c.span()` cost Rust nothing, because a method lives on its
+# type; ported as `kind(c)` and `span(c)` they claim two of the most natural
+# parameter names in a compiler, and the next function that wants
+# `span: token.Span` as a parameter does not compile. The port renames them
+# `current_kind` and `current_span` — which is what they always meant, since
+# neither is the *cursor's* kind or span but the **current token's**. The
+# language turned a naming slip into a compile error, which is the thesis
+# working on the compiler that implements it.
+
+use token
+use diag
+use describe
+
+## Reading the text
+
+# Line and column of a byte offset, both 1-based. The Rust side asks its
+# `Source` for this; the port computes it from the text, which is all `take_docs`
+# needs and keeps this file free of a `Source` the parser does not have yet.
+record Position
+    line: i64
+    col: i64
+
+function line_col(text: str, offset: i64) -> Position
+    line: i64 @ 1
+    col: i64 @ 1
+    i: i64 @ 0
+    while i < offset && i < text.len()
+        if text[i] == '\n'
+            line @ line + 1
+            col @ 1
+        else
+            col @ col + 1
+        i @ i + 1
+    return Position(line: line, col: col)
+
+function slice_of(text: str, span: token.Span) -> str
+    return text.slice(from: span.start, to: span.end)
+
+## The cursor
+
+record Cursor
+    # The token array always ends with `eof` (the lexer guarantees it), so the
+    # position is always in range and the parser never checks for the end twice.
+    tokens: [token.Token]
+    pos: i64
+    diagnostics: [diag.Diagnostic]
+    # Comment spans passed over since the last `take_docs`.
+    comments: [token.Span]
+
+function new_cursor(tokens: [token.Token]) -> Cursor
+    diagnostics: [diag.Diagnostic] = []
+    comments: [token.Span] = []
+    c: Cursor @ Cursor(tokens: tokens, pos: 0, diagnostics: diagnostics, comments: comments)
+    pass_comments(@c)
+    return c
+
+function pass_comments(@c: Cursor)
+    while c.tokens[c.pos].kind == .comment
+        c.comments @ c.comments.push(c.tokens[c.pos].span)
+        c.pos @ c.pos + 1
+
+## Reading
+
+function current_kind(c: Cursor) -> token.TokenKind
+    return c.tokens[c.pos].kind
+
+function current_span(c: Cursor) -> token.Span
+    return c.tokens[c.pos].span
+
+function at(c: Cursor, kind: token.TokenKind) -> bool
+    return c.tokens[c.pos].kind == kind
+
+# The kind `ahead` significant tokens on. Comments are skipped here too, so
+# lookahead sees what the grammar sees. Two places need it: telling
+# `name: value` from a bare argument, and telling `for x in xs` from a
+# condition mistakenly written after `for`.
+function peek(c: Cursor, ahead: i64) -> token.TokenKind
+    left: i64 @ ahead
+    i: i64 @ c.pos
+    while i + 1 < c.tokens.len() && left > 0
+        i @ i + 1
+        if c.tokens[i].kind != .comment
+            left @ left - 1
+    return c.tokens[i].kind
+
+# The kind of the token just consumed. One caller, one reason: a statement that
+# ended with a block has already eaten its dedent, so it must not also be asked
+# for a line end.
+function previous_kind(c: Cursor) -> token.TokenKind
+    if c.pos == 0
+        return c.tokens[0].kind
+    return c.tokens[c.pos - 1].kind
+
+# The last span a READER CAN SEE — walking back over the tokens that are layout
+# or annotation rather than program text.
+#
+# A statement's own extent is built from this, and the extent is what §4.17's
+# caret underlines. Built from the previous span it reached the line's
+# terminator, whose position is past any trailing comment: `f() # a note` was
+# underlined twenty-three columns wide for a three-column statement, so the part
+# of the message that says WHERE pointed at something the author cannot fix.
+function previous_significant_span(c: Cursor) -> token.Span
+    i: i64 @ 0
+    if c.pos > 0
+        i @ c.pos - 1
+    while i > 0 && is_invisible(c.tokens[i].kind)
+        i @ i - 1
+    return c.tokens[i].span
+
+function is_invisible(kind: token.TokenKind) -> bool
+    return kind == .comment || kind == .terminator || kind == .indent || kind == .dedent
+
+# True where the lexer already reported the problem: say nothing more.
+function at_reported_error(c: Cursor) -> bool
+    return at(c, .error)
+
+## Moving
+
+# Consume the current token and return it. Stops at `eof`, forever: every
+# recovery loop can then be written without an end-of-file arm.
+function bump(@c: Cursor) -> token.Token
+    t = c.tokens[c.pos]
+    if t.kind != .eof
+        c.pos @ c.pos + 1
+        pass_comments(@c)
+    return t
+
+function eat(@c: Cursor, kind: token.TokenKind) -> bool
+    if at(c, kind)
+        _ = bump(@c)
+        return true
+    return false
+
+# Consume `kind` or report what was found instead. Never consumes on failure:
+# the caller decides whether to recover or carry on.
+function expect(@c: Cursor, text: str, kind: token.TokenKind, code: str, what: str) -> bool
+    if eat(@c, kind)
+        return true
+    if !at_reported_error(c)
+        error(@c, code: code, message: "expected " + what + ", found " + found(c, text), span: current_span(c))
+    return false
+
+# Line ends between declarations, and inside brackets, where the lexer inserts
+# terminators that carry no structure (panel 007).
+function skip_terminators(@c: Cursor)
+    while at(c, .terminator)
+        _ = bump(@c)
+
+## Documentation
+
+# The comment lines directly above a declaration, in source order (§4.1).
+#
+# Adjacency is the whole rule, and it is two comparisons: the comment must sit
+# on the line immediately above, and it must start in the same column — which is
+# what tells `# doc` on its own line from the trailing `x = 5  # note` on the
+# line before. A `##` section heading ends the run: it documents the section,
+# not the declaration under it.
+function take_docs(@c: Cursor, text: str, decl: token.Span) -> [token.Span]
+    at_decl = line_col(text, decl.start)
+    wanted: i64 @ at_decl.line
+    docs: [token.Span] @ []
+    i: i64 @ c.comments.len() - 1
+    while i >= 0
+        s = c.comments[i]
+        here = line_col(text, s.start)
+        if here.line >= at_decl.line
+            # A trailing comment on the declaration's own line.
+            i @ i - 1
+            continue
+        if here.line + 1 != wanted || here.col != at_decl.col
+            i @ -1
+            continue
+        if starts_a_section(slice_of(text, s))
+            i @ -1
+            continue
+        docs @ docs.push(s)
+        wanted @ here.line
+        i @ i - 1
+    empty: [token.Span] = []
+    c.comments @ empty
+    return reversed(docs)
+
+function starts_a_section(comment: str) -> bool
+    return comment.len() >= 2 && comment[0] == '#' && comment[1] == '#'
+
+function reversed(spans: [token.Span]) -> [token.Span]
+    out: [token.Span] @ []
+    i: i64 @ spans.len() - 1
+    while i >= 0
+        out @ out.push(spans[i])
+        i @ i - 1
+    return out
+
+## Failing
+
+# How many diagnostics have been reported so far. The statement parser compares
+# it before and after: a statement that produced one has already said what is
+# wrong, wherever inside itself the mistake was.
+function diagnostic_count(c: Cursor) -> i64
+    return c.diagnostics.len()
+
+function error(@c: Cursor, code: str, message: str, span: token.Span)
+    c.diagnostics @ c.diagnostics.push(diag.new_diagnostic(code: code, message: message, span: span))
+
+# How the current token is named in "expected X, found Y". Tokens whose text
+# carries information show it; punctuation and keywords are their own text
+# already, and layout tokens have none at all.
+function found(c: Cursor, text: str) -> str
+    t = c.tokens[c.pos]
+    if describe.carries_text(t.kind)
+        return describe.describe(t.kind) + " (`" + slice_of(text, t.span) + "`)"
+    return describe.describe(t.kind)
+
+test "a comment never rests under the cursor but is kept"
+    tokens: [token.Token] = [
+        token.Token(kind: .comment, span: token.Span(start: 0, end: 6))
+        token.Token(kind: .kw_function, span: token.Span(start: 7, end: 15))
+        token.Token(kind: .eof, span: token.Span(start: 15, end: 15))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    assert current_kind(c) == .kw_function
+    assert c.comments.len() == 1
+    assert c.pos == 1
+
+test "bump stops at eof forever"
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    first = bump(@c)
+    assert first.kind == .ident
+    _ = bump(@c)
+    _ = bump(@c)
+    assert c.pos == 1
+    assert current_kind(c) == .eof
+
+test "expect reports what it found, and says nothing at an error token"
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 3))
+        token.Token(kind: .eof, span: token.Span(start: 3, end: 3))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    ok_taken = expect(@c, text: "abc", kind: .lparen, code: "expected_args_open", what: "`(`")
+    assert !ok_taken
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].message == "expected `(`, found a name (`abc`)"
+    # The position did not move: the caller decides what to do.
+    assert c.pos == 0
+    # At an error token the lexer already spoke.
+    quiet: [token.Token] = [
+        token.Token(kind: .error, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
+    ]
+    e: Cursor @ new_cursor(quiet)
+    _ = expect(@e, text: "?", kind: .lparen, code: "expected_args_open", what: "`(`")
+    assert e.diagnostics.len() == 0
+
+test "peek sees what the grammar sees, skipping comments"
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .comment, span: token.Span(start: 2, end: 5))
+        token.Token(kind: .colon, span: token.Span(start: 6, end: 7))
+        token.Token(kind: .eof, span: token.Span(start: 7, end: 7))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    assert peek(c, 0) == .ident
+    assert peek(c, 1) == .colon
+
+test "the caret underlines what a reader can see"
+    # ident terminator: the previous SIGNIFICANT span is the ident's, not the
+    # terminator's — the defect this function exists to fix.
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 3))
+        token.Token(kind: .comment, span: token.Span(start: 4, end: 10))
+        token.Token(kind: .terminator, span: token.Span(start: 10, end: 10))
+        token.Token(kind: .eof, span: token.Span(start: 10, end: 10))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    _ = bump(@c)
+    _ = bump(@c)
+    assert previous_significant_span(c) == token.Span(start: 0, end: 3)
+
+test "a doc comment is the run directly above, in the same column"
+    text = "# one\n# two\nfunction f()\n"
+    tokens: [token.Token] = [
+        token.Token(kind: .comment, span: token.Span(start: 0, end: 5))
+        token.Token(kind: .comment, span: token.Span(start: 6, end: 11))
+        token.Token(kind: .kw_function, span: token.Span(start: 12, end: 20))
+        token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    docs = take_docs(@c, text, token.Span(start: 12, end: 20))
+    assert docs.len() == 2
+    assert slice_of(text, docs[0]) == "# one"
+    assert slice_of(text, docs[1]) == "# two"
+    # The run is consumed once.
+    assert c.comments.len() == 0
+
+test "a section heading ends the run rather than documenting the declaration"
+    text = "## Section\n# doc\nfunction f()\n"
+    tokens: [token.Token] = [
+        token.Token(kind: .comment, span: token.Span(start: 0, end: 10))
+        token.Token(kind: .comment, span: token.Span(start: 11, end: 16))
+        token.Token(kind: .kw_function, span: token.Span(start: 17, end: 25))
+        token.Token(kind: .eof, span: token.Span(start: 29, end: 29))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    docs = take_docs(@c, text, token.Span(start: 17, end: 25))
+    assert docs.len() == 1
+    assert slice_of(text, docs[0]) == "# doc"
+
+test "line and column are 1-based and count the newline"
+    text = "ab\ncd"
+    assert line_col(text, 0).line == 1
+    assert line_col(text, 0).col == 1
+    assert line_col(text, 1).col == 2
+    assert line_col(text, 3).line == 2
+    assert line_col(text, 3).col == 1
