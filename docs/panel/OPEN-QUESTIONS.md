@@ -68,7 +68,9 @@ or it breaches the 1500-token budget.
   a real tokenizer count).
 - ~~Escape sequences do not exist (M1.3)~~ — **resolved by panel 008**
   (author ratified 2026-08-04): five escapes split by context, backslash
-  reserved, set frozen.
+  reserved, set frozen. **A sixth, `\r`, entered by panel 066 on 2026-08-16**
+  — on the program side rather than the compiler side; the freeze on
+  `\0`/`\xNN`/`\u{…}`/octal is untouched and strengthened.
 - **Raw string literals (no panel yet, no urgency):** panel 008's
   implementation found that `"C:\temp"` cannot be made loud — `\t` is legal,
   so the path silently becomes `C:<TAB>emp`. Every C-style-escape language

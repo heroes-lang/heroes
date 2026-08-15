@@ -12,6 +12,7 @@ use token
 use diag
 use state
 use escape
+use layout
 
 ## The escape validator
 
@@ -47,6 +48,26 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted) -> bool
     # mistake into two.
     return true
 
+## The raw carriage return
+
+# A raw carriage return inside a literal — refused, with `\r` as the repair
+# (panel 066, the coherence condition).
+#
+# The escape is what makes this diagnostic possible: before it, byte 13 had NO
+# spelling, so refusing the raw byte would have left the character unwritable.
+# Now there is exactly one spelling, and the second — invisible — one is what
+# §4.15 forbids everywhere else in the language.
+#
+# Measured on the compiler before this landed: a raw CR pasted mid-literal
+# compiled at exit 0, survived `heroes fmt` byte-for-byte, and rendered
+# identically to the same literal without it, so retyping what the screen shows
+# changed the program's bytes and still compiled.
+function raw_carriage_return(@l: state.LexState, at: i64, ctx: escape.Quoted)
+    span = token.Span(start: at, end: at + 1)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "raw_carriage_return", message: "a carriage return written as itself inside " + escape.ctx_word(ctx) + " — it is invisible on screen, so the next reader deletes it by retyping the line", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "write it as `\\r`", replacement: "\\r", span: span, certainty: .certain))
+    l.diagnostics @ l.diagnostics.push(d)
+
 ## The string
 
 # `"…"` to the closing quote on the same line, escapes validated as we go.
@@ -65,6 +86,10 @@ function string(@l: state.LexState, text: str)
             if !escape_step(@l, text, .in_str)
                 break
         else
+            # Not a line ending here: a string is single-line, so this byte is
+            # content — invisible content, which is why it is refused (066).
+            if b == layout.CR
+                raw_carriage_return(@l, l.pos, .in_str)
             l.pos @ l.pos + 1
     span = token.Span(start: start, end: l.pos)
     state.error_token(@l, diag.new_diagnostic(code: "unterminated_string", message: "this string never closes — strings are single-line, `\"` to `\"`", span: span))
@@ -98,6 +123,8 @@ function char_lit(@l: state.LexState, text: str)
             else
                 scanning @ false
         else
+            if text[l.pos] == layout.CR
+                raw_carriage_return(@l, l.pos, .in_char)
             ch = text.slice(from: l.pos, to: text.len()).chars()[0]
             l.pos @ l.pos + ch.len()
             units @ units + 1

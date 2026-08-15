@@ -271,13 +271,38 @@ test "what is not in the language is skipped whole with its name"
     assert l.tokens[3].kind == .terminator
     assert l.tokens[2].kind == .ident
 
-# The stray_carriage_return path has NO test here, and cannot have one from
-# Heroes source: provoking it needs a CR inside a test string, and `\r` has
-# no spelling in this language (measurement 009 — the one Rust lexer test the
-# port cannot translate today; the Rust side writes "\r" freely).
 test "a tab between tokens is named"
     l: state.LexState @ state.new_state()
     line_body(@l, "x\ty\n")
     assert l.diagnostics[0].code == "tab_in_line"
     assert l.tokens[0].kind == .ident
     assert l.tokens[1].kind == .ident
+
+# This test could not be written until panel 066, and the note that said so
+# stood right here: provoking the path needs a CR inside a test string, and
+# byte 13 had no spelling. It has one now, so the port tests BOTH directions —
+# the stray one, which is a diagnostic, and the tolerated `\r\n`, which was
+# untested on either side of the port (the compiler-engineer's finding).
+test "a stray carriage return is named and a crlf line ending is tolerated"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "print(1)\rprint(2)\n")
+    assert l.diagnostics.len() == 1
+    assert l.diagnostics[0].code == "stray_carriage_return"
+    crlf: state.LexState @ state.new_state()
+    line_body(@crlf, "x = 1\r\n")
+    assert crlf.diagnostics.len() == 0
+    assert crlf.tokens[crlf.tokens.len() - 1].kind == .terminator
+
+test "a raw carriage return inside a literal is refused with the escape as its repair"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "s = \"a\rb\"\n")
+    assert l.diagnostics.len() == 1
+    assert l.diagnostics[0].code == "raw_carriage_return"
+    assert l.diagnostics[0].fixes[0].replacement == "\\r"
+    assert l.diagnostics[0].fixes[0].certainty == .certain
+    # The token keeps its kind — one mistake, one diagnostic (panel 007).
+    assert l.tokens[2].kind == .str_lit
+    # And the escape spelling is clean, which is the whole point.
+    clean: state.LexState @ state.new_state()
+    line_body(@clean, "s = \"a\\rb\"\n")
+    assert clean.diagnostics.len() == 0

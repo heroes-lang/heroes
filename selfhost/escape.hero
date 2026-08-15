@@ -2,12 +2,13 @@
 # Port of crates/heroes/src/lexer/escape.rs, the pure half: the validator
 # (`LexState.escape`) lives with the lexer state it advances, in scan.
 #
-# Five escapes, split by context (Go's rule), so every character has exactly
+# Six escapes, split by context (Go's rule), so every character has exactly
 # one spelling and §4.15's "exactly one correct way" survives:
 #
 #   in "…"   in '…'   value
 #   \n       \n       10
 #   \t       \t       9
+#   \r       \r       13
 #   \\       \\       92
 #   \"       —        34 — a " needs no escape inside a char literal
 #   —        \'       39 — a ' needs no escape inside a string
@@ -39,8 +40,8 @@ variant Quoted
 # The escapes legal here, for the diagnostic that lists them.
 function legal(ctx: Quoted) -> str
     return match ctx
-        .in_str => "\\n \\t \\\\ \\\""
-        .in_char => "\\n \\t \\\\ \\'"
+        .in_str => "\\n \\t \\r \\\\ \\\""
+        .in_char => "\\n \\t \\r \\\\ \\'"
 
 # The character that needs no escape here because it is not the delimiter —
 # the other context's escape, which the validator must reject.
@@ -71,6 +72,8 @@ function escape_text(after_backslash: str, ctx: Quoted) -> str?
         return ok("\n")
     if after_backslash == "t"
         return ok("\t")
+    if after_backslash == "r"
+        return ok("\r")
     if after_backslash == "\\"
         return ok("\\")
     if after_backslash == "\"" && ctx == .in_str
@@ -116,12 +119,14 @@ function unescape(text: str) -> str
         i @ i + 2
     return out
 
-test "the five escapes decode and the split is by context"
+test "the six escapes decode and the split is by context"
     assert unescape("\"a\\nb\"") == "a\nb"
     assert unescape("\"a\\tb\"") == "a\tb"
     assert unescape("\"a\\\\b\"") == "a\\b"
     assert unescape("\"a\\\"b\"") == "a\"b"
     assert unescape("'\\''") == "'"
+    assert unescape("\"a\\rb\"") == "a\rb"
+    assert unescape("'\\r'") == "\r"
 
 test "an invalid escape decodes to the backslash itself"
     assert unescape("\"a\\db\"") == "a\\db"
@@ -138,4 +143,5 @@ test "the table serves the validator's question too"
     assert escape_text("\"", .in_char).is_err()
     assert escape_text("'", .in_str).is_err()
     assert bare_here(.in_str) == '\''
-    assert legal(.in_char) == "\\n \\t \\\\ \\'"
+    assert legal(.in_char) == "\\n \\t \\r \\\\ \\'"
+    assert escape_text("r", .in_str).must() == "\r"

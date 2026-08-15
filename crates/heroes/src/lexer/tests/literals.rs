@@ -68,7 +68,7 @@ fn strings_and_chars() {
     );
 }
 
-// --- panel 008: the five escapes, split by context -------------------------
+// --- panel 008 (as amended by 066): the six escapes, split by context -------------------------
 
 #[test]
 fn escapes_decode_to_their_bytes() {

@@ -61,7 +61,7 @@ pub(super) fn expr(
             b.emit(Op::Const(Const::Str(id)), ty, span)
         }
         ExprKind::Char => {
-            // §4.3: a character literal *is* an `i64`. The five escapes were
+            // §4.3: a character literal *is* an `i64`. The six escapes were
             // decided by panel 008 and applied by the same function the lexer uses.
             let text = unescape(src, span);
             let value = text.chars().next().map(|c| c as i128).unwrap_or(0);

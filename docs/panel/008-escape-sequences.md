@@ -121,3 +121,37 @@ rather than being rediscovered as a bug.
   **at M7**.
 - historian: `\\` occurrences in the self-hosted compiler outnumber all
   escapes in user-facing examples — **at the fixpoint**.
+
+## Appended 2026-08-16 — the set is six, and this sitting was right about what it heard
+
+**`\r` entered by panel 066** (author ratification pending). Nothing here is
+withdrawn: the resolution below refused `\r` for the question it was asked —
+*lexer-side compiler need* — and that refusal was correct on the evidence of
+2026-08-04, before any FFI existed and before anything in this project could
+hand a byte to a wire.
+
+What reopened it is a question this sitting never heard, and all of it was
+executed rather than argued. Byte 13 is **unspellable by any composition of
+the language's inventory**, so no pure-Heroes program can write the line
+terminator of any CRLF protocol a C binding reaches. `"…\r\n"` failed with a
+`certain`, machine-applicable fix that rewrote the **correct** program into
+`\\r` — wire garbage. And a raw CR pasted into a literal **compiled at exit 0,
+survived `fmt` byte-for-byte, and rendered invisibly**, so retyping the visible
+text dropped the byte and still compiled: the thesis inverted, which is why
+`raw_carriage_return` now refuses it with `\r` as the repair. The escape is
+what made that refusal possible — before it, the character had no spelling at
+all, so refusing the raw byte would have left it unwritable.
+
+**Two of this sitting's rulings are strengthened rather than touched.** The
+**freeze holds** for `\0`, `\xNN`, `\u{…}` and octal on the interior-NUL
+ground — byte 13 cannot truncate a C call, and panel 066's own historian found
+that JSON (RFC 8259) ships exactly this shape: no NUL-capable escapes, `\r`
+present. And **one spelling per character** (Go's rule, resolution 1) is what
+`raw_carriage_return` enforces; the invisible second spelling was a hole in
+that rule that this sitting could not have closed, because closing it needed
+the first spelling to exist.
+
+The **residual trap** recorded below widened honestly: `"C:\results"` joins
+`"C:\temp"`, and `r` is the commoner path-initial letter. The set is exactly
+the legal escapes whose letter starts a plausible word — `\n`, `\t`, `\r` —
+and the remedy is still raw strings, still not v1 material.

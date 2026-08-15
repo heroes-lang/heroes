@@ -49,7 +49,9 @@ that was predicted — which is itself the measurement.
 | `scan.hero` | `lexer/scan.rs` | 199 | 262 | 6 |
 | `lexer.hero` | `lex_one` of `lexer/mod.rs` | ~60 | 106 | 7 |
 
-**The lexer is ported end-to-end: 48 tests green, and the cross-check holds** —
+**The lexer is ported end-to-end: 59 tests green** (48 at the milestone's close,
++2 from the render-in-base port and +9 from panel 066's landing), **and the
+cross-check holds** —
 `heroes lex --dump-tokens` (the Rust lexer) and the port's `kind_line` produce
 the same stream for the same program, terminators, indent and dedent included.
 Not yet done: the faithful translation of `lexer/tests/` (843 lines — many
@@ -103,11 +105,13 @@ closes.
    comes from C when a program needs it; the lexer needs six letters.
    **Deferral by default.**
 
-7. **`\r` has no spelling.** The escape set is five and frozen (panel 008),
-   and the lexer is the one program that must *recognise* a carriage return.
-   Workaround: `constant CR: u8` = 13, +2 lines, and the name reads better
-   than the escape would. **Deferral by default** — the frozen set met its
-   own compiler and held.
+7. **`\r` has no spelling** — **CLOSED 2026-08-16, panel 066**: it has one.
+   The workaround (`constant CR: u8 = 13`) was right about the *scanner* and
+   the constant survives, now spelled `'\r'`; what it could not do was let a
+   program **write** the byte, which is where the sitting found the real cost.
+   The frozen set met its own compiler and **did not** hold — but it broke on
+   the program side, not the compiler side, and `\0`/`\xNN`/`\u{…}`/octal
+   stay frozen on the interior-NUL ground, which byte 13 cannot reach.
 
 8. **Arrays have no `pop`.** The saturating bracket-pop becomes a `slice` to
    len-1 behind a length test, +1 line, the emptiness check now visible at
@@ -117,15 +121,23 @@ closes.
    `LexState::push` is `emit` in the port — arguably the better name.
    **No form wanted.**
 
-10. **`\r`'s missing spelling is a TESTABILITY wall, not just a comparison
-    detour.** The `stray_carriage_return` diagnostic cannot be provoked from a
-    Heroes-written test string: doing so needs a CR inside a literal, and no
-    escape writes one. This is the single Rust lexer test the port cannot
-    translate today. The workaround for the *scanner* was a constant (gap 7);
-    the workaround for the *test* does not exist short of a raw CR byte pasted
-    into the source file, which every editor and diff tool munges. **The one
-    entry so far where the deferral has a real cost attached** — it goes to the
-    close's gap list with that cost named.
+10. **`\r`'s missing spelling is a TESTABILITY wall** — **CLOSED 2026-08-16,
+    panel 066, and this entry carried a false premise that must not be
+    repeated.** What it said: *"the single Rust lexer test the port cannot
+    translate today… the Rust side writes `\r` freely."* **No such Rust unit
+    test exists, or ever did** — the spec-warden verified it by grep and git
+    history in the sitting this entry provoked, and the compiler-engineer
+    reached the same result independently. `stray_carriage_return`'s one
+    firing test is the golden `tests/golden/check/stray-carriage-return.hero`
+    (a raw CR **between tokens**), which both compilers share, so unit-level
+    parity was already exact and the wall was one file high, not two. The
+    premise traveled from here into `selfhost/scan.hero` and from there into
+    panel 066's own brief — three files in one day, CLAUDE.md §11's class at
+    speed. **What was true**: the port could not write the test, and now
+    does (`selfhost/scan.hero`, both directions — the stray one and the
+    tolerated `\r\n`, which was untested on *either* side). The entry stays
+    rather than being deleted, because a corrected record teaches what a
+    deleted one cannot (§14).
 
 11. **No statement no-op.** A `match` arm that should do nothing has no
     spelling: `_ = 0` in arm position is `declaration_in_arm` (correctly — the
@@ -220,6 +232,7 @@ forward with their reasons named:
   constants) ports with it, its note text byte-identical to Rust's and
   asserted down to the string. The width-aware twin still ports with the
   checker: it names an IntKind, which is checker vocabulary.
-- **The `stray_carriage_return` test** (gap 10): untranslatable until either
-  `\r` gets a spelling or a byte-to-str conversion exists — the one deferral
-  with a named cost, and the port re-decides it with the corpus in hand.
+- ~~**The `stray_carriage_return` test**~~ — **closed 2026-08-16** by panel
+  066 rather than carried: `\r` got its spelling, the test is written in
+  `selfhost/scan.hero` (both directions), and the entry's false premise is
+  corrected in gap 10 above.

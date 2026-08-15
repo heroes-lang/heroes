@@ -30,7 +30,7 @@ fn only_the_operations_that_can_abort_are_marked() {
     assert!(dumped.contains("= lt $t"), "a comparison cannot abort: {dumped}");
 }
 
-/// §4.3: a character literal *is* an `i64`, decoded with the same five escapes the
+/// §4.3: a character literal *is* an `i64`, decoded with the same six escapes the
 /// lexer applies (panel 008).
 #[test]
 fn a_character_literal_is_an_int() {

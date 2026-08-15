@@ -3,7 +3,7 @@
 //! Split out of `scan.rs` by the §11 sweep. `scan.rs` decides *which* token starts
 //! here; this scans the two whose content is a value the author wrote out — a
 //! string and a character — and they belong together because they share the rule
-//! that panel 008 spent a sitting on: **the backslash is reserved**, five escapes
+//! that panel 008 spent a sitting on: **the backslash is reserved**, six escapes
 //! exist, and any other escape is a compile error rather than a literal backslash.
 //!
 //! **A bad escape does NOT poison the token.** It is reported and the literal stays

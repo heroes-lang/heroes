@@ -17,13 +17,20 @@ use token
 use state
 use diag
 
-## The bytes the escape table cannot spell
+## The carriage return
 
-# Heroes has five escapes and `\r` is deliberately not one (panel 008, the set
-# is frozen) — so the one byte this file must recognise and cannot write as a
-# character literal is a named number. A gap entry in measurement 009.
+# The byte a line ending may carry before its newline. Named rather than
+# written inline at three sites, which is the ordinary reason to name a
+# constant — and it is spelled `'\r'` since panel 066 gave byte 13 an escape.
+#
+# It used to say "the escape table cannot spell this", and that sentence is the
+# reason the panel sat: the port recognised the byte and could not write it, so
+# the diagnostic about it could not be tested from Heroes source. A comment
+# that states a fact about the language rather than about this value is a
+# premise that expires (CLAUDE.md §11) — this one expired the day it was
+# argued, and the constant survives it because naming 13 was never the point.
 constant CR: u8
-    13
+    '\r' 
 
 ## The enders
 
