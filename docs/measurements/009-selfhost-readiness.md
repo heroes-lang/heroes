@@ -294,6 +294,61 @@ Rust's `&mut Cursor, &mut Ast, &Source` make each call site say what it
 changes — `parse_type(@c, @a, text)` announces the two mutations on the line,
 which is §4.8's whole argument arriving in the compiler that implements it.
 
+## The structural finding — the grammar cannot be split the way Rust splits it (2026-08-16)
+
+The port stopped before writing the expression grammar to ask a question the
+lexer never raised: `syntax/expr.rs` and `syntax/primary.rs` **call each other**,
+and Heroes refuses module cycles.
+
+22. **`module_cycle` fires on `use`, not on calls — measured both ways.** Two
+    modules that call each other are refused (`ty_a uses ty_b uses ty_a`), and
+    so are two that merely name each other's **types** with no call at all. The
+    rule is on the `use` edge, whatever it carries. So the port's module graph
+    must be acyclic in a stronger sense than the Rust call graph is.
+
+**The size of what that forces, measured over `crates/heroes/src/syntax/`
+(20 files, call edges verified by reading every call site):**
+
+| knot | files | Rust lines | over §11's ~300 |
+|---|---|---|---|
+| **A — the expression/statement knot** | `expr`, `primary`, `control`, `stmt`, `name_stmt` | **1025** | 3.4× |
+| **B — the declaration knot** | `decl`, `data`, `externs`, `extern_members` | **736** | 2.5× |
+
+Cycle A's loop is `expr → primary → control → stmt → name_stmt → expr`, with
+shorter back-edges `expr ↔ primary` and `control ↔ stmt`. Cycle B's is
+`decl ↔ data`, `decl ↔ extern_members`, and `decl → externs → extern_members →
+decl`. Every other file in the directory is cycle-free and ports as its own
+module: `cursor` (268), `types` (272), `members` (215), `uses` (113),
+`describe` (86), the four `ast/` files, and `mod` itself.
+
+**This is not a defect and nothing is blocked.** Mutual recursion *inside* one
+module is free — declaration order carries no meaning (§4.2) — so each knot
+ports as one Heroes module and the grammar works. What it costs is file size,
+and that is a **CLAUDE.md §11 question rather than a language one**: the
+~300-line ceiling and the language's own cycle rule cannot both be satisfied by
+a recursive-descent parser.
+
+**Panel 031 R6 chose this deliberately, and its argument still holds.** The
+refusal was adopted because it is *"the reversible direction: relaxing later
+breaks nothing, while tightening at M-separate-compilation — where the
+per-module cache needs a topological order — breaks the port."* The port has now
+arrived and supplies what that decision was waiting for: the cost is two long
+files, not a wall. Relaxing the rule would buy a file layout and spend the
+topological order M-separate-compilation needs, which is the trade 031 already
+priced.
+
+**The resolution the port proposes** (queued for the author in `DECIDE.md`,
+because §11 is amended by author instruction and not by panel): the language
+rule stands, and **§11 yields for a grammar knot with the seam named** — exactly
+as it yielded for `toolchain.rs` at 400 lines on 2026-08-14, where *"the cut
+that would take it under runs through the cache key … and a file split against
+its own seam is harder to read than a long one."* Here the seam is not merely
+awkward: **the language forbids it**, which is a stronger reason than the one
+already accepted. What the port owes in exchange is the thing §11 actually
+protects — a reader must be able to open the file and not drown — so each knot
+gets a module doc that names its cycle, lists its entry points, and says which
+function calls which.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`
