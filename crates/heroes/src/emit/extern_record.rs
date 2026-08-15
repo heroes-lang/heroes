@@ -98,7 +98,7 @@ pub(super) fn extern_record_assertions(
         w.at_generated();
         w.blank();
     }
-    completeness_probes(w, ast, names, src);
+    completeness_probes(w, ast, checked, names, src);
 }
 
 /// One never-called function per group `record`, whose whole body is a
@@ -136,7 +136,13 @@ pub(super) fn extern_record_assertions(
 /// all of it, and `{0}` initialises the first member with no warning — so
 /// `SDL_Event` with one member declared passes, which is the right answer rather
 /// than a hole.
-fn completeness_probes(w: &mut Writer, ast: &Ast, names: &Names, src: &Source) {
+fn completeness_probes(
+    w: &mut Writer,
+    ast: &Ast,
+    checked: &Checked,
+    names: &Names,
+    src: &Source,
+) {
     let records: Vec<(usize, &Vec<Field>)> = ast
         .decls
         .iter()
@@ -165,7 +171,34 @@ fn completeness_probes(w: &mut Writer, ast: &Ast, names: &Names, src: &Source) {
         let decl = &ast.decls[index];
         let c_type = names.of(index as u32);
         let probe = format!("{COMPLETE_PROBE}{}", names.satellite(index as u32));
-        let zeros = vec!["0"; fields.len()].join(",");
+        // **A nested record's slot is `{0}`, not `0`, and the difference is not
+        // cosmetic** (found 2026-08-15 by re-measuring, hours after this probe
+        // shipped). C's **brace elision** lets a flat zero list spill into an inner
+        // struct's members, so `Camera2D v = {0,0,0,0}` fills `offset.x`,
+        // `offset.y`, `target.x` and `target.y` — and clang then reports
+        // `rotation` missing on a record that names **all four** of its fields.
+        //
+        // There was no `.hero` text that satisfied it, and the diagnostic's own
+        // note said *"add the field"*. A message naming a repair that does not
+        // exist is Nim issue #19040's shape — which panel 061 cited **against**
+        // option E, and which this shipped four hours later. Ten of raylib's
+        // thirty-five structs were unbindable for this reason alone.
+        //
+        // `{0}` is the universal zero initialiser and clang exempts it from
+        // `-Wmissing-field-initializers`, so the outer count is what gets counted.
+        // Chosen over expanding the inner record recursively because that would
+        // break the moment an inner record is itself `partial`, and because it is
+        // one token.
+        let zeros: Vec<&str> = fields
+            .iter()
+            .map(|field| {
+                let nested = checked
+                    .written_type(field.ty)
+                    .is_some_and(|ty| matches!(checked.types.get(ty), Ty::Named(_)));
+                if nested { "{0}" } else { "0" }
+            })
+            .collect();
+        let zeros = zeros.join(",");
         // The declaration's own line, so the verdict lands where the author can act
         // on it — the same contract `extern_probe.rs` keeps for parameters.
         let (file, line, _) = src.locate(decl.name.start);
@@ -191,9 +224,47 @@ fn assertion(
     field: &Field,
 ) -> Option<String> {
     let ty = checked.written_type(field.ty)?;
-    let spelling = c_spelling(checked, names, ty)?;
     let member = mangle::field_of(true, src.slice(field.name));
     let place = format!("(({c_type} *)0)->{member}");
+    // **A `ptr` field asks *is this a pointer*, not *is it spelled `void *`***
+    // (measured 2026-08-15, 139 fields of all 35 raylib structs swept).
+    //
+    // The exact-identity form refuses `Rectangle *` for a `ptr` field, because
+    // `Rectangle *` is not `void *` — and there is **no other spelling** the author
+    // could write, so `error[ffi_field_type]` named a repair that does not exist.
+    // Twenty-eight typed-pointer fields across ten structs — `Font`, `Mesh`,
+    // `Model`, `Shader`, `Sound`, `Music`, `AudioStream`, `FilePathList`,
+    // `AutomationEventList`, `ModelSkeleton` — were unbindable for that alone.
+    //
+    // Nothing checkable is lost. `void **` was never asking *is this the right
+    // pointer*; it asked *does the header spell this member `void *`*, which is a
+    // fact about the header's prose. Heroes' `ptr` is opaque — nothing in the
+    // language dereferences it, indexes it or knows its pointee — so the pointee
+    // type carries no obligation a check could enforce.
+    //
+    // **The array refusal is kept, and by a stronger mechanism than before.**
+    // `__builtin_classify_type` decays an array and would let `float[4]` through
+    // alone; the `_Generic` conjunct is what refuses it, because its controlling
+    // expression also decays, so the association `__typeof__(…)` — an array type —
+    // can never match and the array falls to `default: 0`. C11 6.5.1.1p1 and
+    // 6.3.2.1p3 do that work, not a size comparison, **and that matters**: six of
+    // raylib's array fields are `float[2]`, exactly `sizeof(void *)`, so a
+    // widening that leaned on `sizeof` would have bound eight bytes of a
+    // two-element array and said nothing.
+    //
+    // The `sizeof` conjunct stays for the one case it does decide: a function
+    // pointer. C does not guarantee `void *` round-trips one; POSIX does, and both
+    // targets do — so this makes it a **checked** assumption rather than a silent
+    // one, and SDL3 has 25 such fields waiting.
+    if matches!(checked.types.get(ty), Ty::Ptr) {
+        return Some(format!(
+            "_Static_assert(__builtin_classify_type({place}) == 5 \
+             && _Generic({place}, __typeof__({place}): 1, default: 0) \
+             && sizeof({place}) == sizeof(void *), \
+             \"{FIELD_ASSERTION} {c_type} {member}\");"
+        ));
+    }
+    let spelling = c_spelling(checked, names, ty)?;
     Some(format!(
         "_Static_assert(_Generic(&{place}, {spelling} *: 1, default: 0) \
          && sizeof({place}) == sizeof({spelling}), \

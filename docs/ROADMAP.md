@@ -22,13 +22,13 @@ the FFI boundary by value, and the layout is the header's.**
 
     error[ffi_field_type]: `Color.r` is not `i32` in `raylib.h`
 
-Rung 5 of §4.19's ladder — **349 of raylib's 601 entry points**. A group's
+Rung 5 of §4.19's ladder — **349 of raylib's 600 entry points**. A group's
 `record` gets **no typedef emitted**, so the emitter cannot get a layout wrong it
 never states; each field is checked by `_Generic` on its address. `f32` landed
 with it, by author decision over the sitting's deferral.
 
-**557 tests**, clippy clean under `-D warnings`, spec **3329** of 4096 (headroom
-767), determinism diff empty. Record: `docs/journal/018-struct-passing.md`.
+**557 tests**, clippy clean under `-D warnings`, spec **3360** of 4096 (headroom
+736), determinism diff empty. Record: `docs/journal/018-struct-passing.md`.
 Next: **M-selfhost-probe** — the lexer ported, to measure what self-hosting lacks.
 
 ---

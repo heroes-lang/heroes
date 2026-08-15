@@ -9,7 +9,7 @@ author keeps writing by hand* — which the author had ratified the day before.
 ## The goal
 
 §4.19's ladder promises *"real struct passing"* at rung 5, in ratified text, and
-the language could not keep it. **349 of raylib's 601 entry points pass or return
+the language could not keep it. **349 of raylib's 600 entry points pass or return
 a struct by value**, and `ClearBackground(Color)` did not compile:
 `error[ffi_type]: `Color` cannot cross the FFI boundary`. The wall was honest
 rather than silent — nobody got a wrong program, they got a *cannot* — and it was
