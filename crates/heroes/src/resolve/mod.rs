@@ -167,6 +167,8 @@ impl Resolver {
 
     /// The modules the file being resolved names, for a did-you-mean over it.
     fn used_modules(&self) -> Vec<String> {
+        // ORDER: ascending (writer, named) key — `not_a_module` lists these in
+        // this order, so the Heroes port owes an explicit sort (design.md §4.9).
         self.out
             .module_uses
             .keys()

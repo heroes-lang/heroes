@@ -223,6 +223,8 @@ impl Names {
     /// Every `T?`, as `(name, the payload type)`, in emission order — the
     /// per-option generated functions walk this.
     pub(super) fn options(&self, checked: &Checked) -> Vec<(String, TyId)> {
+        // ORDER: ascending TyId — the per-option generated functions are emitted
+        // in this order, so the Heroes port owes an explicit sort (design.md §4.9).
         self.options
             .iter()
             .filter_map(|(id, name)| match checked.types.get(TyId(*id)) {

@@ -1326,12 +1326,18 @@ m = { "mario": 30, "anna": 25 }
   composed with the `for` and `sort` that already exist (CLAUDE.md §10 — nothing, when two
   invocations compose to it), so the only order a program can rely on is one it sorted. The
   fixed seed stays, because determinism *across runs* is still a fixpoint requirement.
-  Port note, and it now cuts the other way: the Rust bootstrap iterates a map in exactly one
-  place (`types/holes.rs`) and its own comment says it needs **sorted** order — which insertion
-  order would not have given it. Every ordering-sensitive walk is still marked `// ORDER:` at
-  the write site, and there are **zero** such marks in the tree today, so nothing exercised the
-  guarantee that has just been withdrawn. It becomes an explicit `sort` in the Heroes port, or
-  the M-selfhost-fixpoint diff breaks.
+  Port note, and it now cuts the other way: the bootstrap leans on `BTreeMap`'s sorted order
+  wherever a walk reaches something a test or a reader can see. Every such walk carries
+  `// ORDER:` at the write site — the marker names the sort key and what observes the order —
+  and the inventory is `grep -rn "// ORDER:" crates/`, kept out of prose deliberately: this
+  note once said *"exactly one place, `types/holes.rs`"*, and the tree had moved (the sweep of
+  2026-08-15 found thirteen; panel 065). The port owes each mark an explicit `sort`, and a
+  missing one breaks two different nets: a walk into the emitted C breaks the
+  M-selfhost-fixpoint diff at its first seam — the Rust bootstrap iterates sorted, a Heroes map
+  iterates in fixed-seed hash order, two deterministic orders that are different functions of
+  the same data — while a walk into diagnostic or `--dump` text breaks the golden diff only
+  once the harness runs under the ported binary, which is the net M-selfhost-port already
+  promises.
 - Multi-line literals separate by **newline**, not comma. Single-line literals use commas. The
   canonical formatter picks based on length, so the model never chooses.
 

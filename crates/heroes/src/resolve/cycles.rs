@@ -118,6 +118,9 @@ fn edges(out: &Resolved, ast: &Ast, extent: &[(u32, u32, u32)]) -> Vec<Vec<u32>>
         }
     }
     let mut adjacent = vec![Vec::new(); ast.decls.len()];
+    // ORDER: ascending (from, to) — adjacency order drives the DFS, which
+    // decides the rotation `constant_cycle` names, so the Heroes port owes an
+    // explicit sort (design.md §4.9).
     for (from, to) in pairs {
         adjacent[from as usize].push(to);
     }

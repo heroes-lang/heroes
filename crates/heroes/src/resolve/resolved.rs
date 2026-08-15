@@ -145,6 +145,10 @@ impl Resolved {
     /// Every name one module declares, for the "did you mean" lists and for
     /// `--dump-scopes`.
     pub fn names_in<'a>(&'a self, module: &'a str) -> impl Iterator<Item = (&'a str, u32)> {
+        // ORDER: ascending (module, name) key — every did-you-mean candidate
+        // list and --dump-scopes inherit this order, and the printed lists cap
+        // what they show; in the Heroes port this function owns the one sort
+        // (design.md §4.9).
         self.top
             .iter()
             .filter(move |((m, _), _)| m == module)
@@ -176,6 +180,9 @@ impl Resolved {
     /// Ties within each group are still broken by sort order, which is
     /// deterministic and is what the double-emit and golden tests need.
     pub fn module_declaring(&self, from: &str, name: &str) -> Option<&str> {
+        // ORDER: ascending (module, name) key — which module `needs_qualifying`
+        // and `needs_a_use` name rests on this, so the Heroes port owes an
+        // explicit sort (design.md §4.9).
         let declaring = || self.top.iter().filter(move |((_, n), _)| n == name);
         declaring()
             .map(|((m, _), _)| m.as_str())

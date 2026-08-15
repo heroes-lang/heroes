@@ -34,6 +34,8 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
     // What this file may write qualified, and what each module offers it. It is
     // the half of "what does the compiler know about this file" that the symbol
     // table cannot show, because those names are not in it (M-module-namespace).
+    // ORDER: ascending (writer, named) key — the `uses` block prints in this
+    // order, so the Heroes port owes an explicit sort (design.md §4.9).
     let named: Vec<&String> = resolved
         .module_uses
         .keys()
@@ -58,6 +60,8 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
         }
     }
     out.push_str("symbols\n");
+    // ORDER: ascending (module, name) key — the `symbols` block prints in this
+    // order, so the Heroes port owes an explicit sort (design.md §4.9).
     for ((_, name), decl) in &resolved.top {
         if !src.is_root(ast.decls[*decl as usize].name.start) {
             continue;
@@ -92,6 +96,8 @@ pub fn dump_scopes(ast: &Ast, resolved: &Resolved, src: &Source) -> String {
     // Named rather than counted: the suppression is file-wide (§4.16), so
     // "holes present" without saying where would describe a rule the compiler
     // no longer has.
+    // ORDER: ascending module name — one trailer line per module, so the Heroes
+    // port owes an explicit sort (design.md §4.9).
     for module in &resolved.holes_in {
         out.push_str(&format!(
             "holes in `{module}`: unused bindings are not reported there\n"

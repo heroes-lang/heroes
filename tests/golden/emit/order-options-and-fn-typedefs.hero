@@ -1,0 +1,49 @@
+# Pins two emitted-C orders that no checked-in artifact pinned before
+# (docs/panel/065, ffi-pragmatist's condition 2): the per-option generated
+# functions (three `T?` payloads here — i64, str, Point) and the `fn{N}`
+# numbering of function-pointer typedefs, whose suffix is the walk position, so
+# an unsorted walk in the port renames symbols file-wide. The double-emit
+# determinism test cannot catch either: one binary emits both files, so a
+# deterministic reorder passes it. This expectation is the pin.
+# Adapted from the sitting's own probe (panel 065).
+
+record Point
+    x: i64
+    y: i64
+
+function half(n: i64) -> i64?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail("odd", "not divisible by two")
+
+function name_of(n: i64) -> str?
+    if n == 0
+        return ok("zero")
+    return fail("unknown", "no name")
+
+function origin(flag: bool) -> Point?
+    if flag
+        return ok(Point(x: 0, y: 0))
+    return fail("none", "no point")
+
+function apply(f: (function(i64, i64) -> i64), x: i64, y: i64) -> i64
+    return f(x, y)
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function twice(f: (function() -> ()))
+    f()
+    f()
+
+function tick()
+    print("tick")
+
+function main()
+    points: [Point] @ [Point(x: 1, y: 2), Point(x: 3, y: 4)]
+    print(points[0].x)
+    print(half(4).default(0))
+    print(name_of(0).default("?"))
+    print(origin(true).is_err())
+    print(apply(add, x: 2, y: 3))
+    twice(tick)

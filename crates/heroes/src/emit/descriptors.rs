@@ -194,6 +194,8 @@ pub(super) fn generated(
             _ => {}
         }
     }
+    // ORDER: ascending TyId — `definitions` walks this into the emitted `_desc`
+    // table, so the Heroes port owes an explicit sort here (design.md §4.9).
     wanted.into_iter().map(TyId).collect()
 }
 

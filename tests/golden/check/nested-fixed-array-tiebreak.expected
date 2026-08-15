@@ -1,0 +1,4 @@
+tests/golden/check/nested-fixed-array-tiebreak.hero:9:8: error[fixed_outside_a_group]: `i64[2]` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)
+tests/golden/check/nested-fixed-array-tiebreak.hero:9:8: error[fixed_outside_a_group]: `i64[2][3]` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)
+tests/golden/check/nested-fixed-array-tiebreak.hero:9:20: error[fixed_array_length]: `i64[2][3]` holds exactly 3, and this literal has 2 — a fixed array's length is part of its type, so the two must agree (§4.19)
+tests/golden/check/nested-fixed-array-tiebreak.hero:10:11: error[bad_operand]: `len` takes `str`, `[T]` or `{K: V}`, found `i64[2][3]`

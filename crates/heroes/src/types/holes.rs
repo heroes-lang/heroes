@@ -166,8 +166,9 @@ fn nearby(
         return;
     }
     let mut shown: Vec<String> = Vec::new();
-    // `Resolved::top` is sorted by name, so the order is deterministic and does
-    // not vary with where the declarations sit in the file.
+    // ORDER: ascending (module, name) key — deterministic whatever the file's
+    // layout, and the cap at SUGGESTIONS means this order picks which five are
+    // shown; the Heroes port owes an explicit sort (design.md §4.9).
     for ((module, name), decl) in &resolved.top {
         let DeclKind::Function(function) = &ast.decls[*decl as usize].kind else { continue };
         if checked.result_type(*decl) != Some(expected) {

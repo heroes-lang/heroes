@@ -68,8 +68,11 @@ impl Names {
                 collect(checked, *value, &mut used);
             }
         }
-        // Named in `TyId` order so the C is a function of the program and not of
-        // the walk — which is what the double-emit determinism test covers.
+        // ORDER: ascending TyId — the `fn{at}` suffix is the walk position, so
+        // this order names symbols file-wide; the Heroes port owes an explicit
+        // sort (design.md §4.9). Pinned by the emit golden
+        // `order-options-and-fn-typedefs`: the double-emit test pins stability,
+        // not order — one binary emits both files (panel 065).
         for id in &used {
             let at = self.funcs.len();
             self.funcs.insert(*id, format!("h_{module}_{SYNTHETIC}fn{at}"));

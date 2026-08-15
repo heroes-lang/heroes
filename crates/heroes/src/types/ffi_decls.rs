@@ -241,6 +241,10 @@ pub(super) fn fixed_only_in_a_group(checker: &mut Checker, ast: &Ast, src: &Sour
             }
         }
     }
+    // ORDER: ascending type-node id — span.start ties on nested fixed arrays
+    // (`i64[2]` inside `i64[2][3]`), so the later stable span sort cannot
+    // replace this key: it decides which diagnostic prints first. The Heroes
+    // port owes an explicit sort (design.md §4.9).
     let offenders: Vec<(TyId, crate::source::Span)> = checker
         .out
         .written_types

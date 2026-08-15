@@ -57,6 +57,8 @@ pub fn dump(program: &Program, ast: &Ast, checked: &Checked, src: &Source) -> St
     }
     if !live.is_empty() {
         out.push_str("strings\n");
+        // ORDER: ascending string index — the `strings` section of --dump-ir
+        // walks this, so the Heroes port owes an explicit sort (design.md §4.9).
         for index in &live {
             let text = &program.strings[*index as usize];
             out.push_str(&format!("    {index}  \"{}\"\n", escape(text)));

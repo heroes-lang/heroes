@@ -1,0 +1,10 @@
+# Pins a diagnostic ORDER, not just a diagnostic (docs/panel/065, condition 4).
+# `i64[2]` and `i64[2][3]` are two type nodes sharing span.start, so the stable
+# span sort in types/mod.rs cannot decide which prints first — the map's
+# ascending-node-id order does (the `// ORDER:` mark in types/ffi_decls.rs), and
+# it puts the inner array's diagnostic first. A port that sorts offenders by
+# span alone swaps the pair (the compiler-engineer's prediction to score at
+# M-selfhost-port).
+function main()
+    x: i64[2][3] @ [[1, 2, 3], [1, 2, 3]]    #~ fixed_outside_a_group fixed_outside_a_group fixed_array_length
+    print(len(x))    #~ bad_operand
