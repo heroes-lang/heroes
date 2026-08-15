@@ -1,0 +1,112 @@
+# Owned lexing state — position, layout, output — and the two ways a token
+# enters the stream. Port of the LexState half of crates/heroes/src/lexer/mod.rs;
+# the drive loop (`lex`, `lex_one`) arrives with the scanners that feed it.
+#
+# The source text is a parameter everywhere and never a field (the Cyclone
+# rule, kept across the port: tokens point into the source by byte offset).
+#
+# Port notes:
+# - Rust's `last_significant: Option<TokenKind>` is a `TokenKind?` field: the
+#   "no significant token yet" state is the fail value, and the reader asks
+#   `.is_err()` where Rust asked `.is_some()`.
+# - Arrays have no `pop`: the saturating pop on a stray closer is a `slice`
+#   to len-1 behind a length test — same recovery, the emptiness check now
+#   visible at the site.
+# - `push` is a built-in name and cannot be redeclared, so the token-emitting
+#   half of Rust's `push` is `emit` here.
+
+use token
+use diag
+
+## Error codes
+
+constant ERR_NO_SIGNIFICANT: str
+    "no_significant_token"
+
+## The state
+
+record LexState
+    pos: i64
+    # Current indentation level (one level == 4 spaces).
+    level: i64
+    # Spans of the openers ( [ { not yet closed; its length is the bracket
+    # depth. Inside brackets, indentation is not structural (panel 007).
+    open_brackets: [token.Span]
+    tokens: [token.Token]
+    diagnostics: [diag.Diagnostic]
+    # Kind of the current line's last significant (non-comment) token — the
+    # one datum terminator insertion needs (layout.hero).
+    last_significant: token.TokenKind?
+
+function new_state() -> LexState
+    brackets: [token.Span] = []
+    tokens: [token.Token] = []
+    diagnostics: [diag.Diagnostic] = []
+    return LexState(
+        pos: 0,
+        level: 0,
+        open_brackets: brackets,
+        tokens: tokens,
+        diagnostics: diagnostics,
+        last_significant: fail(ERR_NO_SIGNIFICANT, "no significant token yet")
+    )
+
+## Emitting
+
+# Emit one token and remember it for terminator insertion. Bracket depth is
+# tracked here, where the kind is known — so brackets inside string literals
+# can never touch it.
+function emit(@l: LexState, kind: token.TokenKind, start: i64)
+    span = token.Span(start: start, end: l.pos)
+    if kind == .lparen || kind == .lbracket || kind == .lbrace
+        l.open_brackets @ l.open_brackets.push(span)
+    if kind == .rparen || kind == .rbracket || kind == .rbrace
+        # Saturating pop: a stray closer never corrupts the following layout;
+        # the parser reports it.
+        if l.open_brackets.len() > 0
+            l.open_brackets @ l.open_brackets.slice(from: 0, to: l.open_brackets.len() - 1)
+    l.tokens @ l.tokens.push(token.Token(kind: kind, span: span))
+    l.last_significant @ ok(kind)
+
+# Error recovery in one move: record why, emit an `error` token over the same
+# span, keep lexing. The lexer never stops.
+function error_token(@l: LexState, d: diag.Diagnostic)
+    span = d.span
+    l.diagnostics @ l.diagnostics.push(d)
+    l.tokens @ l.tokens.push(token.Token(kind: .error, span: span))
+    l.last_significant @ ok(.error)
+
+# The same recovery for a scanner that has ALREADY pushed its diagnostic — a
+# narrower span was reported, and the literal as a whole still has to become
+# an `error` token so the parser is not handed a number nobody decoded.
+function error_token_at(@l: LexState, start: i64)
+    span = token.Span(start: start, end: l.pos)
+    l.tokens @ l.tokens.push(token.Token(kind: .error, span: span))
+    l.last_significant @ ok(.error)
+
+test "emit tracks bracket depth and the last significant token"
+    l: LexState @ new_state()
+    assert l.last_significant.is_err()
+    l.pos @ 1
+    emit(@l, .lparen, 0)
+    assert l.open_brackets.len() == 1
+    l.pos @ 2
+    emit(@l, .rparen, 1)
+    assert l.open_brackets.len() == 0
+    assert l.last_significant.must() == .rparen
+    assert l.tokens.len() == 2
+
+test "a stray closer saturates instead of corrupting"
+    l: LexState @ new_state()
+    l.pos @ 1
+    emit(@l, .rbrace, 0)
+    assert l.open_brackets.len() == 0
+    assert l.tokens[0].kind == .rbrace
+
+test "error recovery records why and keeps lexing"
+    l: LexState @ new_state()
+    l.pos @ 3
+    error_token(@l, diag.new_diagnostic(code: "unexpected_character", message: "`€` is not part of the language's syntax", span: token.Span(start: 0, end: 3)))
+    assert l.diagnostics.len() == 1
+    assert l.tokens[0].kind == .error
+    assert l.last_significant.must() == .error

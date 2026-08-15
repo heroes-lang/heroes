@@ -1,0 +1,177 @@
+# Layout: the part of the lexer that reads *shape* instead of words.
+# Port of crates/heroes/src/lexer/layout.rs.
+#
+# Heroes has no braces and no semicolons (design.md §4.15), so structure
+# travels in two invisible currencies, both minted here: Indent/Dedent from
+# the margin, and the Terminator at a line end that CAN end a statement.
+#
+# Port note, and it is the port's best finding so far: the Rust original
+# forgot `nullptr` in is_line_ender's allow-list when the keyword arrived at
+# M-ffi-ladder — silent for a line, loud on the next, panel 007's own trap.
+# In Heroes that bug is INEXPRESSIBLE: `_` is forbidden on a variant match,
+# so the arm below must name all 61 kinds, and a 62nd kind is a compile error
+# on this very function until somebody decides its enderness. The language
+# refuses its bootstrap's own recorded defect.
+
+use token
+use state
+use diag
+
+## The bytes the escape table cannot spell
+
+# Heroes has five escapes and `\r` is deliberately not one (panel 008, the set
+# is frozen) — so the one byte this file must recognise and cannot write as a
+# character literal is a named number. A gap entry in measurement 009.
+constant CR: u8
+    13
+
+## The enders
+
+# design.md §4.15 (panel 007): the terminator is inserted when a line ends
+# with an identifier, a literal, `return`, `break`, `continue`, `???`,
+# postfix `?`, `)`, `]`, or `}`. `?` is the analogue of Go's `++`/`--`.
+function is_line_ender(kind: token.TokenKind) -> bool
+    return match kind
+        .ident | .int_lit | .float_lit | .str_lit | .char_lit => true
+        .kw_true | .kw_false | .kw_nullptr => true
+        .kw_return | .kw_break | .kw_continue => true
+        .hole | .question | .rparen | .rbracket | .rbrace => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => false
+        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail => false
+        .eq | .at | .colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
+        .lparen | .lbracket | .lbrace => false
+        .plus | .minus | .star | .slash | .percent => false
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr => false
+        .comment | .terminator | .indent | .dedent | .eof | .error => false
+
+## The margin
+
+# Consume the line's leading whitespace and emit Indent/Dedent. Every error
+# path recovers by keeping the current level: the line still lexes, the
+# diagnostic tells the author what the margin meant.
+function line_start(@l: state.LexState, text: str)
+    ws_start = l.pos
+    spaces: i64 @ 0
+    saw_tab: bool @ false
+    while l.pos < text.len() && (text[l.pos] == ' ' || text[l.pos] == '\t')
+        if text[l.pos] == ' '
+            spaces @ spaces + 1
+        else
+            saw_tab @ true
+        l.pos @ l.pos + 1
+    if saw_tab
+        span = token.Span(start: ws_start, end: l.pos)
+        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "tab_in_indentation", message: "a tab in indentation is a compile error — indent with spaces, exactly 4 per level", span: span))
+        return
+    # Inside brackets the margin is not structural (panel 007).
+    if l.open_brackets.len() > 0
+        return
+    # Layout-neutral lines: empty, or comment-only.
+    if l.pos >= text.len()
+        return
+    b = text[l.pos]
+    if b == '\n' || b == CR || b == '#'
+        return
+    span = token.Span(start: ws_start, end: l.pos)
+    # Recovery, and the distinction matters: a wrong margin is always an
+    # ERROR — the program never compiles, so nothing is interpreted in the
+    # sense §4.15 forbids. What is recovered is only the structure handed
+    # downstream: round to the nearest level, and never open more than one
+    # level at a time — nothing in the language opens two.
+    new_level: i64 @ (spaces + 2) / 4
+    if spaces % 4 != 0
+        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "indentation_not_multiple_of_4", message: "indentation must be exactly 4 spaces per level; found " + spaces.to_str(), span: span))
+    if new_level > l.level + 1
+        l.diagnostics @ l.diagnostics.push(diag.new_diagnostic(code: "indentation_jump", message: "indentation jumps from level " + l.level.to_str() + " to level " + new_level.to_str() + "; a block opens one level at a time", span: span))
+        new_level @ l.level + 1
+    if new_level == l.level + 1
+        l.tokens @ l.tokens.push(token.Token(kind: .indent, span: span))
+        l.level @ new_level
+    else
+        # A dedent may close several levels at once; each gets its own token
+        # so blocks nest and unnest one at a time for the parser.
+        for _ in range(from: new_level, to: l.level)
+            l.tokens @ l.tokens.push(token.Token(kind: .dedent, span: span))
+        l.level @ new_level
+
+## The invisible semicolon
+
+# Plant the terminator — only if the line can be *over*. Appended raw rather
+# than through `emit`: the terminator must not become the next line's "last
+# significant token", and it tracks no bracket.
+function maybe_terminator(@l: state.LexState)
+    if l.last_significant.is_err()
+        return
+    if !is_line_ender(l.last_significant.must())
+        return
+    span = token.Span(start: l.pos, end: l.pos)
+    l.tokens @ l.tokens.push(token.Token(kind: .terminator, span: span))
+
+test "the margin becomes indent and dedent one level at a time"
+    l: state.LexState @ state.new_state()
+    line_start(@l, "    x")
+    assert l.level == 1
+    assert l.tokens.len() == 1
+    assert l.tokens[0].kind == .indent
+    l.pos @ 0
+    l.level @ 2
+    line_start(@l, "x")
+    assert l.level == 0
+    assert l.tokens.len() == 3
+    assert l.tokens[1].kind == .dedent
+    assert l.tokens[2].kind == .dedent
+
+test "a wrong margin is an error that still recovers a structure"
+    l: state.LexState @ state.new_state()
+    line_start(@l, "     x")
+    assert l.diagnostics.len() == 1
+    assert l.diagnostics[0].code == "indentation_not_multiple_of_4"
+    assert l.level == 1
+    j: state.LexState @ state.new_state()
+    line_start(@j, "        x")
+    assert j.diagnostics.len() == 1
+    assert j.diagnostics[0].code == "indentation_jump"
+    assert j.level == 1
+    t: state.LexState @ state.new_state()
+    line_start(@t, "\tx")
+    assert t.diagnostics[0].code == "tab_in_indentation"
+    assert t.level == 0
+
+test "inside brackets and on neutral lines the margin means nothing"
+    l: state.LexState @ state.new_state()
+    l.pos @ 1
+    state.emit(@l, .lparen, 0)
+    l.pos @ 0
+    line_start(@l, "        x")
+    assert l.level == 0
+    assert l.diagnostics.len() == 0
+    n: state.LexState @ state.new_state()
+    line_start(@n, "    # a comment-only line")
+    line_start(@n, "")
+    assert n.level == 0
+    assert n.diagnostics.len() == 0
+
+test "the terminator lands only where a line can be over"
+    l: state.LexState @ state.new_state()
+    l.pos @ 1
+    state.emit(@l, .ident, 0)
+    maybe_terminator(@l)
+    assert l.tokens.len() == 2
+    assert l.tokens[1].kind == .terminator
+    p: state.LexState @ state.new_state()
+    p.pos @ 1
+    state.emit(@p, .plus, 0)
+    maybe_terminator(@p)
+    assert p.tokens.len() == 1
+    e: state.LexState @ state.new_state()
+    maybe_terminator(@e)
+    assert e.tokens.len() == 0
+
+test "every value keyword ends a line"
+    assert is_line_ender(.kw_true)
+    assert is_line_ender(.kw_false)
+    assert is_line_ender(.kw_nullptr)
+    assert !is_line_ender(.kw_fail)
+    assert !is_line_ender(.comment)

@@ -29,10 +29,10 @@ that was predicted — which is itself the measurement.
 
 | selfhost file | ports | Rust lines | Heroes lines | tests |
 |---|---|---|---|---|
-| `token.hero` | `lexer/token.rs` | 194 | 198 | 3 |
-| `keywords.hero` | `lexer/keywords.rs` | 87 | 113 | 3 |
-| `escape.hero` | `lexer/escape.rs` (pure half) | 100 of 168 | 128 | 4 |
-| `digits.hero` | `lexer/digits.rs` (minus the two diagnostic builders) | 155 of 207 | 197 | 4 |
+| `token.hero` | `lexer/token.rs` | 194 | 193 | 3 |
+| `keywords.hero` | `lexer/keywords.rs` | 87 | 116 | 3 |
+| `escape.hero` | `lexer/escape.rs` (pure half) | 100 of 168 | 129 | 4 |
+| `digits.hero` | `lexer/digits.rs` (minus the two diagnostic builders) | 155 of 207 | 209 | 4 |
 
 ## Gap list — forms the port wanted
 
@@ -79,6 +79,38 @@ closes.
    fold, +9 lines. A general `lower()` built-in is exactly what §1.11 says
    comes from C when a program needs it; the lexer needs six letters.
    **Deferral by default.**
+
+7. **`\r` has no spelling.** The escape set is five and frozen (panel 008),
+   and the lexer is the one program that must *recognise* a carriage return.
+   Workaround: `constant CR: u8` = 13, +2 lines, and the name reads better
+   than the escape would. **Deferral by default** — the frozen set met its
+   own compiler and held.
+
+8. **Arrays have no `pop`.** The saturating bracket-pop becomes a `slice` to
+   len-1 behind a length test, +1 line, the emptiness check now visible at
+   the site. **Deferral by default.**
+
+9. **`push` cannot be redeclared** (built-in names are reserved), so Rust's
+   `LexState::push` is `emit` in the port — arguably the better name.
+   **No form wanted.**
+
+## Language features the port exercised against their own compiler
+
+- `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`
+  (`last_significant`), with `.is_err()` where Rust asks `.is_some()` —
+  the fallible type serves as the missing Option even in stored position.
+- `_` **forbidden on variant matches made the bootstrap's own defect
+  inexpressible**: Rust forgot `nullptr` in `is_line_ender`'s allow-list when
+  the keyword arrived (layout.rs's own comment records it — silent for a
+  line, loud on the next). The port's `is_line_ender` must name all 61 kinds,
+  so a 62nd kind is a compile error on that function until somebody decides
+  its enderness. The thesis, executed on the compiler itself.
+- `needs_label` fired on the port's own `new_diagnostic(code:, message:)` —
+  two same-typed parameters, named arguments forced, on the first call the
+  port wrote.
+- Multi-line record construction still separates **arguments by comma** —
+  newline separation belongs to container literals only; the parser said so
+  at the first attempt, with `expected_args_close`.
 
 ## Idioms that carried over without friction (the positive result)
 

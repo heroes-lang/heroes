@@ -1,0 +1,49 @@
+# Errors as a product: the diagnostic and its machine-applicable repairs
+# (design.md §4.17). Port of the slice of crates/heroes/src/diagnostics.rs the
+# lexer needs: code, message, span, fixes, notes.
+#
+# Port notes:
+# - Rust's builder style (`Diagnostic::new(..).with_note(..)`) becomes a
+#   constructor function plus direct field mutation through `@` — no methods
+#   in this language, and a record's fields are the builder.
+
+use token
+
+## Certainty
+
+# Only `certain` is machine-applicable (CLAUDE.md §8); a `guess` is shown,
+# never applied.
+variant Certainty
+    certain
+    guess
+
+## The repair
+
+record Fix
+    title: str
+    replacement: str
+    span: token.Span
+    certainty: Certainty
+
+## The diagnostic
+
+record Diagnostic
+    code: str
+    message: str
+    span: token.Span
+    fixes: [Fix]
+    notes: [str]
+
+# The one constructor, so every diagnostic starts complete and empty-handed.
+function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
+    fixes: [Fix] = []
+    notes: [str] = []
+    return Diagnostic(code: code, message: message, span: span, fixes: fixes, notes: notes)
+
+test "a diagnostic starts empty and grows by mutation"
+    d: Diagnostic @ new_diagnostic(code: "tab_in_line", message: "a tab is a compile error — use spaces", span: token.Span(start: 3, end: 4))
+    assert d.code == "tab_in_line"
+    assert d.fixes.len() == 0
+    d.fixes @ d.fixes.push(Fix(title: "t", replacement: "r", span: d.span, certainty: .certain))
+    assert d.fixes.len() == 1
+    assert d.fixes[0].certainty == .certain
