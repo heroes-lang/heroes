@@ -460,6 +460,8 @@ fn golden_unsupported_cases_are_refused_with_a_reason_and_exit_one() {
     let root = workspace_root();
     let cases = collect_cases(&root.join("tests/golden/unsupported"));
     assert!(cases.len() >= 3, "the unsupported goldens lost files: {}", cases.len());
+    let total = cases.len();
+    let mut skipped = 0usize;
     for case in cases {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
@@ -468,6 +470,10 @@ fn golden_unsupported_cases_are_refused_with_a_reason_and_exit_one() {
             .output()
             .expect("the heroes binary runs");
         let actual = String::from_utf8_lossy(&output.stderr).into_owned();
+        if machine_lacks_the_library(&actual) {
+            skipped += 1;
+            continue;
+        }
         let expected_path = case.with_extension("expected");
         let expected = std::fs::read_to_string(&expected_path)
             .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
@@ -485,6 +491,14 @@ fn golden_unsupported_cases_are_refused_with_a_reason_and_exit_one() {
         // Nothing on stdout: there is no artifact.
         assert!(output.stdout.is_empty(), "{} wrote an artifact", relative.display());
     }
+    // **A skip is not a pass.** A machine missing every library would otherwise
+    // report green having checked nothing, which is the failure mode a skip rule
+    // buys if nobody floors it.
+    assert!(
+        skipped * 3 < total,
+        "{skipped} of {total} unsupported goldens were skipped for a missing library — \
+         this machine is not testing the refusals"
+    );
 }
 
 /// Every `emit/` case, through the real binary: `build --emit-c` on stdout, diffed
@@ -592,6 +606,8 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
     std::fs::create_dir_all(&scratch).expect("a scratch directory");
     let cases = collect_cases(&root.join("tests/golden/run"));
     assert!(cases.len() >= 10, "the run goldens lost files: {}", cases.len());
+    let total = cases.len();
+    let mut skipped = 0usize;
     for case in cases {
         let relative = case.strip_prefix(&root).expect("under the workspace root");
         let expected_path = case.with_extension("expected");
@@ -607,6 +623,12 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
             .args(["build", &slashed(relative), "-o", &binary.display().to_string()])
             .output()
             .expect("the heroes binary runs");
+        // The machine's own answer, before the case's: a runner with no
+        // `pkg-config` was never given raylib, and that is nobody's defect.
+        if machine_lacks_the_library(&String::from_utf8_lossy(&built.stderr)) {
+            skipped += 1;
+            continue;
+        }
         assert_eq!(
             built.status.code(),
             Some(0),
@@ -662,6 +684,13 @@ fn golden_run_cases_produce_their_output_at_both_optimisation_levels() {
         );
         check(relative, "--sanitize", &sanitised, &expected, &ending);
     }
+    // A skip is not a pass — the same floor the unsupported leg carries.
+    assert!(
+        skipped * 3 < total,
+        "{skipped} of {total} run goldens were skipped for a missing library — \
+         this machine is not running the corpus"
+    );
+
 }
 
 /// The generated C compiles with **no warnings at all**, at both levels.
@@ -782,4 +811,26 @@ fn the_spikes_still_compile_and_print_what_they_claim() {
             "spike {name} prints something else now"
         );
     }
+}
+
+/// Whether this machine simply does not have what a golden binds.
+///
+/// **The same rule `corpus.rs` states, and the same reason** — a fact about the
+/// machine, asked of the compiler rather than assumed from a list of case names.
+/// `ffi_package` and `ffi_missing_header` are the two diagnostics that mean *the
+/// library you named is not installed here*.
+///
+/// It arrives in this file on 2026-08-15, and the gap is worth recording rather
+/// than closing quietly: the corpus harness has had this rule since `package`
+/// existed, and `M-complete-structs` added goldens that bind **raylib** without
+/// noticing that this harness had never needed one. Every FFI golden before them
+/// bound `math.h`, `string.h`, `stdlib.h` or `sqlite3.h` — things every machine
+/// has — so the first case to name a third-party library was also the first to
+/// go red on the Windows leg, which carries clang and no `pkg-config`.
+///
+/// **A skip is not a pass.** The count is asserted below for the same reason
+/// `corpus.rs` floors its own: a machine that starts skipping everything must say
+/// so rather than report green.
+fn machine_lacks_the_library(text: &str) -> bool {
+    text.contains("error[ffi_package]") || text.contains("error[ffi_missing_header]")
 }
