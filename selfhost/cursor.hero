@@ -344,3 +344,159 @@ test "line and column are 1-based and count the newline"
     assert line_col(text, 1).col == 2
     assert line_col(text, 3).line == 2
     assert line_col(text, 3).col == 1
+
+## Recovery — what to drop after a mistake
+
+# Port of crates/heroes/src/syntax/recover.rs, which is an `impl Cursor` on the
+# Rust side: the same struct, a second file. Here it is the same record and the
+# same file, because the port's cursor is 250 lines rather than 268 + 117 — the
+# Rust split was §11's ceiling, and the port has not reached it.
+#
+# Four moves, each with a landmark it trusts. The error is the deliverable
+# (§4.17), and a model paying ten turns for ten mistakes is the cost these keep
+# down: one bad declaration must cost ONE diagnostic, not one per line inside
+# it — and must not cost the next declaration.
+
+# Consume an indent … matching dedent run and return the span of what sat
+# between them. Nested blocks go with it, so the caller resumes on the next line
+# of the ENCLOSING block.
+function balanced_block(@c: Cursor) -> token.Span
+    open = bump(@c)
+    depth: i64 @ 1
+    last: token.Span @ open.span
+    while depth > 0 && !at(c, .eof)
+        k = current_kind(c)
+        if k == .indent
+            depth @ depth + 1
+            last @ bump(@c).span
+        else if k == .dedent
+            depth @ depth - 1
+            closer = bump(@c)
+            if depth > 0
+                last @ closer.span
+        else
+            last @ bump(@c).span
+    return token.Span(start: open.span.end, end: last.end)
+
+# Drop the rest of a broken line, stopping before whatever ends or nests the
+# block: the next line is then parsed on its own merits.
+function skip_line(@c: Cursor)
+    while !at(c, .eof) && !at(c, .indent) && !at(c, .dedent)
+        if bump(@c).kind == .terminator
+            return
+
+# Drop what is left of a broken declaration: the rest of its line and, if it had
+# one, its whole body.
+#
+# Since panel 018 every header line ends in a token that can end a statement, so
+# a terminator (or a layout token) behind the cursor means a fresh line: nothing
+# is left of the broken declaration but a possible orphaned block. This used to
+# need span arithmetic when `Point = record` ended in a non-ender; the
+# keyword-first shape made the token stream carry it.
+function recover_to_next_decl(@c: Cursor)
+    fresh_line: bool @ c.pos == 0
+    if c.pos > 0
+        k = c.tokens[c.pos - 1].kind
+        fresh_line @ k == .terminator || k == .indent || k == .dedent
+    if !fresh_line
+        scanning: bool @ true
+        while scanning && !at(c, .eof) && !at(c, .indent)
+            if bump(@c).kind == .terminator
+                scanning @ false
+    if at(c, .indent)
+        _ = balanced_block(@c)
+
+# Recover inside a bracketed list: drop tokens up to and including the closer
+# matching the opener already consumed.
+#
+# Brackets are the one place where recovery has a landmark it cannot misread,
+# and using it is what keeps a single misplaced separator in a signature from
+# turning the rest of the line into "declarations" — four diagnostics for one
+# mistake, which is the failure mode §4.17 exists to prevent.
+function recover_past_closer(@c: Cursor, opener: token.TokenKind, closer: token.TokenKind)
+    depth: i64 @ 1
+    while !at(c, .eof)
+        k = bump(@c).kind
+        if k == opener
+            depth @ depth + 1
+        else if k == closer
+            depth @ depth - 1
+            if depth == 0
+                return
+
+test "a balanced block takes its nested blocks with it"
+    tokens: [token.Token] = [
+        token.Token(kind: .indent, span: token.Span(start: 0, end: 4))
+        token.Token(kind: .ident, span: token.Span(start: 4, end: 5))
+        token.Token(kind: .indent, span: token.Span(start: 6, end: 10))
+        token.Token(kind: .ident, span: token.Span(start: 10, end: 11))
+        token.Token(kind: .dedent, span: token.Span(start: 12, end: 12))
+        token.Token(kind: .dedent, span: token.Span(start: 13, end: 13))
+        token.Token(kind: .kw_function, span: token.Span(start: 14, end: 22))
+        token.Token(kind: .eof, span: token.Span(start: 22, end: 22))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    _ = balanced_block(@c)
+    # It resumes on the next line of the ENCLOSING block, not inside.
+    assert current_kind(c) == .kw_function
+
+test "a broken line is dropped without leaving the block"
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .eq, span: token.Span(start: 2, end: 3))
+        token.Token(kind: .terminator, span: token.Span(start: 3, end: 3))
+        token.Token(kind: .ident, span: token.Span(start: 4, end: 5))
+        token.Token(kind: .eof, span: token.Span(start: 5, end: 5))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    skip_line(@c)
+    assert current_kind(c) == .ident
+    assert c.pos == 3
+    # A dedent stops it: the block ends here and the caller must see that.
+    stopping: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .dedent, span: token.Span(start: 1, end: 1))
+        token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
+    ]
+    d: Cursor @ new_cursor(stopping)
+    skip_line(@d)
+    assert current_kind(d) == .dedent
+
+test "one bad declaration costs one, and never costs the next"
+    # `function f(` … then a body, then the next declaration. Recovery eats the
+    # rest of the line AND the orphaned block, landing on `record`.
+    tokens: [token.Token] = [
+        token.Token(kind: .kw_function, span: token.Span(start: 0, end: 8))
+        token.Token(kind: .ident, span: token.Span(start: 9, end: 10))
+        token.Token(kind: .lparen, span: token.Span(start: 10, end: 11))
+        token.Token(kind: .terminator, span: token.Span(start: 11, end: 11))
+        token.Token(kind: .indent, span: token.Span(start: 12, end: 16))
+        token.Token(kind: .ident, span: token.Span(start: 16, end: 17))
+        token.Token(kind: .dedent, span: token.Span(start: 18, end: 18))
+        token.Token(kind: .kw_record, span: token.Span(start: 18, end: 24))
+        token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    _ = bump(@c)
+    _ = bump(@c)
+    _ = bump(@c)
+    recover_to_next_decl(@c)
+    assert current_kind(c) == .kw_record
+
+test "a bracket is the landmark recovery cannot misread"
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .lparen, span: token.Span(start: 1, end: 2))
+        token.Token(kind: .ident, span: token.Span(start: 2, end: 3))
+        token.Token(kind: .rparen, span: token.Span(start: 3, end: 4))
+        token.Token(kind: .rparen, span: token.Span(start: 4, end: 5))
+        token.Token(kind: .comma, span: token.Span(start: 5, end: 6))
+        token.Token(kind: .eof, span: token.Span(start: 6, end: 6))
+    ]
+    c: Cursor @ new_cursor(tokens)
+    # The opener is already consumed by the caller, so nesting starts at 1.
+    _ = bump(@c)
+    _ = bump(@c)
+    recover_past_closer(@c, opener: .lparen, closer: .rparen)
+    # It stopped after the closer that matches, not the first one it saw.
+    assert current_kind(c) == .rparen
