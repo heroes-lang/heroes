@@ -28,7 +28,7 @@
 use crate::ir::{Function, Program, SlotKind};
 use crate::source::Source;
 use crate::syntax::Ast;
-use crate::types::{Checked, IntKind, Ty, TyId};
+use crate::types::Checked;
 
 use super::externs::{extern_spans, is_extern_constant};
 use super::writer::Writer;
@@ -175,7 +175,7 @@ pub(super) fn extern_assertions(
     w.line("#define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)");
     for function in externs {
         let name = src.slice(ast.decls[function.decl as usize].name);
-        let Some(check) = return_check(checked, function.result) else { continue };
+        let Some(check) = super::assert_spelling::return_check(checked, function.result) else { continue };
         let declared_type = crate::types::render_ty(&checked.types, ast, src, function.result, &[]);
         // **A constant is a token, not a call.** The same `_Generic` asks the same
         // question of it — *what type does the header give this?* — with no
@@ -212,7 +212,7 @@ pub(super) fn extern_assertions(
                 // an error under C11, which is exactly how it survived a green
                 // test run until the goldens were read.
                 let mutable = matches!(declared.kind, SlotKind::Param { mutable: true });
-                zero_of(checked, declared.ty, mutable)
+                super::assert_spelling::zero_of(checked, declared.ty, mutable)
             })
             .collect();
         // The message is a **contract with `ffi::explain`**, not prose: it carries
@@ -226,53 +226,3 @@ pub(super) fn extern_assertions(
     }
     w.line("");
 }
-
-/// Which assertion a declared result type asks for.
-fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> {
-    match checked.types.get(ty) {
-        // Exhaustive: `HERO_RET_INT` accepts every signed C integer plus every
-        // unsigned one narrower than 64 bits, and that set is a fact about
-        // `i64`'s range and about nothing else. A second width reusing it would
-        // accept a C `long` for an `i32` and truncate in silence (panel 042).
-        Ty::Int(kind) => Some(match kind {
-            IntKind::I64 => "HERO_RET_INT",
-            IntKind::I8 => "HERO_RET_I8",
-            IntKind::I16 => "HERO_RET_I16",
-            IntKind::I32 => "HERO_RET_I32",
-            IntKind::U8 => "HERO_RET_U8",
-            IntKind::U16 => "HERO_RET_U16",
-            IntKind::U32 => "HERO_RET_U32",
-            IntKind::U64 => "HERO_RET_U64",
-        }),
-        Ty::F64 => Some("HERO_RET_F64"),
-        Ty::Bool => Some("HERO_RET_BOOL"),
-        Ty::Str => Some("HERO_RET_STR"),
-        Ty::Unit => Some("HERO_RET_UNIT"),
-        Ty::Ptr | Ty::Cstr => Some("HERO_RET_PTR"),
-        // No other type crosses the boundary: `ffi_type` refuses them in the
-        // checker, so this arm is where a new FFI type would have to declare
-        // what its assertion is rather than silently getting none.
-        _ => None,
-    }
-}
-
-/// A zero of the declared parameter type, cast so the call type-checks. It is
-/// never evaluated — it exists only to make the call expression well-formed.
-fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
-    let value = match checked.types.get(ty) {
-        Ty::Int(kind) => kind.c_type(),
-        Ty::F64 => "double",
-        Ty::Bool => "bool",
-        Ty::Str => "HeroStr",
-        Ty::Cstr => "const char *",
-        _ => "void *",
-    };
-    if mutable {
-        return format!("({value} *)0");
-    }
-    match checked.types.get(ty) {
-        Ty::Str => "(HeroStr){0}".to_string(),
-        _ => format!("({value})0"),
-    }
-}
-

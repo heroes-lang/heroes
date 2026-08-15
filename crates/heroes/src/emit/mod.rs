@@ -75,6 +75,7 @@ mod structural;
 mod term;
 mod typeorder;
 mod typedefs;
+mod assert_spelling;
 mod unread;
 mod types;
 mod writer;
