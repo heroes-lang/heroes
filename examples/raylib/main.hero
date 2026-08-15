@@ -16,6 +16,17 @@
 # because Heroes has seven boundary types and none of them is a struct."* That
 # paragraph is why the milestone existed, and it is deleted rather than softened.
 #
+# **The number, measured rather than claimed** (2026-08-15, re-taken three times
+# in one day because the first two were wrong). raylib declares **600** entry
+# points — `grep -c "^RLAPI"` and clang's own `FunctionDecl` count agree — and
+# **349** of them pass or return a struct by value. **328 bind with every field
+# named; 346 with `partial`.** The residue is **3**, and it is one struct:
+# `VrStereoConfig`, whose eight members are all arrays, so it has no nameable
+# field at all and `partial` gives `error[empty_record]` rather than a binding.
+# `BeginVrStereoMode`, `LoadVrStereoConfig` and `UnloadVrStereoConfig` are the
+# three, and naming them is the point — a refusal is held to the same standard as
+# a feature (CLAUDE.md §12), so it says which programs it costs.
+#
 # **The layout is the header's, and that is the whole mechanism.** The emitter
 # writes no `typedef` for `Color`, `Vector2` or `Rectangle`: it uses raylib's own
 # types, so their size, their padding and — on arm64 — the register file each
@@ -67,6 +78,38 @@ extern "raylib.h" package "raylib"
     # the ABI to agree in both directions rather than one.
     function GetSplinePointLinear(startPos: Vector2, endPos: Vector2, t: f32) -> Vector2
     function CheckCollisionPointRec(point: Vector2, rec: Rectangle) -> bool
+    # **`partial`, and this is what it is for.** raylib's `Model` holds a
+    # `ModelSkeleton` and, after it, members this language cannot spell — a C array
+    # member has no Heroes type. Naming what we touch and saying so is what makes
+    # `Model` bindable at all; the price is `==`, `hash` and being a map key, none
+    # of which a model wants. Without the word this is `ffi_incomplete_record`, and
+    # with it the layout is still the header's, so `IsModelValid` reads the fields
+    # C put where C put them.
+    record Model partial
+        transform: Matrix
+        meshCount: i32
+        materialCount: i32
+        meshes: ptr
+        materials: ptr
+        meshMaterial: ptr
+    record Matrix
+        m0: f32
+        m4: f32
+        m8: f32
+        m12: f32
+        m1: f32
+        m5: f32
+        m9: f32
+        m13: f32
+        m2: f32
+        m6: f32
+        m10: f32
+        m14: f32
+        m3: f32
+        m7: f32
+        m11: f32
+        m15: f32
+    function IsModelValid(model: Model) -> bool
 
 function main()
     SetRandomSeed(7)
@@ -82,6 +125,24 @@ function main()
         t: 0.5
     )
     print(mid.x, " ", mid.y)
+
+    # A `partial` record, built and passed by value. An empty model is not valid,
+    # and raylib says so from the fields this program named.
+    identity = Matrix(
+        m0: 1.0, m4: 0.0, m8: 0.0, m12: 0.0,
+        m1: 0.0, m5: 1.0, m9: 0.0, m13: 0.0,
+        m2: 0.0, m6: 0.0, m10: 1.0, m14: 0.0,
+        m3: 0.0, m7: 0.0, m11: 0.0, m15: 1.0
+    )
+    empty = Model(
+        transform: identity,
+        meshCount: 0,
+        materialCount: 0,
+        meshes: nullptr,
+        materials: nullptr,
+        meshMaterial: nullptr
+    )
+    print(IsModelValid(model: empty))
 
     box = Rectangle(x: 0.0, y: 0.0, width: 10.0, height: 10.0)
     print(CheckCollisionPointRec(point: Vector2(x: 5.0, y: 5.0), rec: box))
