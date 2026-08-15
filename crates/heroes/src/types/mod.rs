@@ -139,6 +139,9 @@ pub fn check(ast: &Ast, resolved: &Resolved, src: &Source) -> Checked {
     // After the declarations, because it reads `written_type` — the table
     // `lower::ty` fills. Asking first is silent: it finds nothing and passes.
     partial::map_keys(&mut checker, ast, src);
+    // Same reason, same table, and the same defect one milestone apart: panel 062
+    // wired its rule to one call site and three other positions shipped.
+    ffi_decls::fixed_only_in_a_group(&mut checker, ast, src);
     // §4.16's **file-wide hole exemption**, the same one the unused rule takes: a
     // body that is `???` falls off its end by construction — that is what an
     // unwritten thing does — and demanding a `return` from it would make `???`

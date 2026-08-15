@@ -1,0 +1,72 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-15, found by panel 064's spec-warden while measuring spec
+# tokens — it was panel 062's own compiler-engineer prediction coming true, three
+# days after being registered). Three positions, two of them the worst shape a
+# defect can take:
+#
+#     xs: [i64[4]] @ []       heroes check exit 0, heroes build exit 0, A BINARY,
+#                             then `panic: entered unreachable code — this is a
+#                             compiler bug, please report it`, exit 134
+#     m: {str: i64[2]} @ {}   the same
+#     x: i64[4] @ [1,2,3,4]   exit 2, "internal error: compiling the generated C
+#                             failed: use of undeclared identifier 'h0_x'"
+#
+# The first two are worse than the third. `heroes build` *succeeds* and writes a
+# binary, and the abort is the **program's own** — `hero_unreachable()` emitted by
+# `emit/construct.rs:94` (`/* not an array */`) under a `#line` pointing at the
+# author's source. CLAUDE.md §7 puts `hero_unreachable()` at every
+# type-system-proven-unreachable point; here the type system proved nothing, so
+# the loud fallback fired on a case that was simply never checked.
+#
+# CAUSE: panel 062 landed the rule — a fixed array's layout is a C compiler's, so
+# it belongs to a `record` inside an `extern` group and nowhere else — and wired
+# it to **one** call site, `types/decls.rs`'s ordinary-record field walk. A
+# binding, an array element and a map value are three other positions, and none
+# of them was asked. `emit/gate_types.rs::check_type`'s `_ => {}` swallowed
+# `Ty::Fixed` on the way past, which is why the descent that catches `[()]` and
+# `[ptr]` did not catch this.
+#
+# FIX: `types/ffi_decls.rs::fixed_only_in_a_group` — the same rule and the same
+# diagnostic, asked of **every written type in the file** instead of one position.
+# The legal set is built from the declarations in hand (which `TypeId` nodes are a
+# group record's field types), so a position added later is refused by default
+# rather than silently admitted — the loud direction, CLAUDE.md §11. And it reads
+# `written_types`, the **type** table, never the syntax: panel 061's `map_keys`
+# walked `TypeKind` nodes and missed every type a literal interned, and that
+# defect was twenty minutes old when it was written.
+#
+# WHAT THIS CASE ASSERTS: all four positions are exit 1 on the author's line with
+# the message that carries the repair. The legal position — a group record's
+# field — is asserted by `examples/raylib/main.hero`, which still builds and runs.
+#
+# AND ONE THING IT RECORDS THAT THIS FILE CANNOT SHOW: the `record` field's span
+# is wrong. Rendered with caret art, the marker under the first error runs to the
+# end of the line and swallows the annotation comment itself, while the other
+# three are tight — a `record` field's declared-type `TypeId` carries an
+# end-of-line span. It is a **separate, pre-existing** defect, and it is written
+# down here rather than in a commit message because `check/` runs with `--brief`,
+# which prints no carets at all: the harness that pins every diagnostic in this
+# directory is **blind to where a span points**. That is the same shape as panel
+# 060's two-blind-spots-cancelling-into-a-green-test, and it is the reason §9 asks
+# for the annotation *in addition to* the snapshot. Queued, not fixed here.
+
+record Box
+    xs: i64[4]                        #~ fixed_outside_a_group
+
+function elements()
+    xs: [i64[4]] @ []                 #~ fixed_outside_a_group
+    print(len(xs))
+
+function map_values()
+    m: {str: i64[2]} @ {}             #~ fixed_outside_a_group
+    print(len(m))
+
+function a_binding()
+    x: i64[4] @ [1, 2, 3, 4]          #~ fixed_outside_a_group
+    print(x[0])
+
+function main()
+    elements()
+    map_values()
+    a_binding()

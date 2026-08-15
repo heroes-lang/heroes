@@ -203,3 +203,93 @@ pub(super) fn fixed_outside_a_group(
     let diagnostic = errors::fixed_outside_a_group(&name, span);
     checker.push_diagnostic(diagnostic);
 }
+
+/// The same rule as above, asked of **every written type in the file** rather
+/// than of the one position panel 062 happened to be looking at.
+///
+/// **The rule is that a fixed array may appear in exactly one place** — as the
+/// declared type of a field of a `record` inside an `extern` group — because that
+/// is the only place a C compiler chose the layout (§4.19). Panel 062 stated it
+/// and wired it to a single call site, `decls.rs`'s ordinary-record field walk, so
+/// three other positions reached the backend unchecked and **all three shipped**:
+///
+/// ```text
+/// xs: [i64[4]] @ []      heroes check exit 0, a binary, then abort 134
+/// m: {str: i64[2]} @ {}  heroes check exit 0, a binary, then abort 134
+/// x: i64[4] @ [1,2,3,4]  exit 2, "internal error: compiling the generated C failed"
+/// ```
+///
+/// The first two are the worse pair: `heroes build` succeeds, writes a binary, and
+/// the abort is the **program's** — `hero_unreachable()` from `emit/construct.rs`
+/// under a `#line` pointing at the author's own source. CLAUDE.md §7 puts
+/// `hero_unreachable()` at *type-system-proven-unreachable* points, and here the
+/// type system proved nothing.
+///
+/// **It asks the value, not the world** (CLAUDE.md §11). The legal set is built by
+/// reading the declarations in hand — which `TypeId` nodes are group-record field
+/// types — rather than by an allow-list of positions somebody enumerated; a
+/// position added later is refused by default instead of silently admitted, which
+/// is the loud direction. And it walks the **type table**, never the syntax:
+/// panel 061's `map_keys` walked `TypeKind` nodes and missed every type a literal
+/// interned, so the same defect is a `written_types` lookup away here.
+pub(super) fn fixed_only_in_a_group(checker: &mut Checker, ast: &Ast, src: &Source) {
+    let mut owned_by_a_header = std::collections::BTreeSet::new();
+    for decl in &ast.decls {
+        if let crate::syntax::DeclKind::Record { fields, header: Some(_), .. } = &decl.kind {
+            for field in fields {
+                claim(ast, field.ty, &mut owned_by_a_header);
+            }
+        }
+    }
+    let offenders: Vec<(TyId, crate::source::Span)> = checker
+        .out
+        .written_types
+        .iter()
+        .filter(|(node, _)| !owned_by_a_header.contains(node))
+        .filter(|(_, ty)| matches!(checker.out.types.get(**ty), Ty::Fixed(_, _)))
+        .map(|(node, ty)| (*ty, ast.types[*node as usize].span))
+        .collect();
+    for (ty, span) in offenders {
+        // `decls.rs` already refuses an ordinary record's field on the same rule,
+        // and reporting one mistake twice is the thing this compiler never does.
+        if checker.out.diagnostics.iter().any(|d| d.span == span) {
+            continue;
+        }
+        let name = checker.show(ast, src, ty);
+        checker.push_diagnostic(errors::fixed_outside_a_group(&name, span));
+    }
+}
+
+/// A group record's field type **and everything written inside it**.
+///
+/// The whole node, not just its root, and that is the difference between a rule
+/// and a second opinion: `i32[2][3]` in a group's `record` is already refused by
+/// `ffi_field` — the header owns the layout and panel 062 admitted no array of
+/// arrays — so claiming only the outer node left the walk above reporting
+/// `i32[2]` on the same column, one mistake with two messages. Whatever is
+/// written inside a group field is that field's business, and `ffi_field` is the
+/// seat that judges it.
+fn claim(ast: &Ast, id: crate::syntax::TypeId, claimed: &mut std::collections::BTreeSet<u32>) {
+    claimed.insert(id.0);
+    match &ast.types[id.0 as usize].kind {
+        crate::syntax::TypeKind::Fixed(inner, _)
+        | crate::syntax::TypeKind::Array(inner)
+        | crate::syntax::TypeKind::Fallible(inner) => claim(ast, *inner, claimed),
+        crate::syntax::TypeKind::Map(key, value) => {
+            claim(ast, *key, claimed);
+            claim(ast, *value, claimed);
+        }
+        crate::syntax::TypeKind::Func { params, result } => {
+            for param in params {
+                claim(ast, *param, claimed);
+            }
+            claim(ast, *result, claimed);
+        }
+        // A leaf writes no inner node. Enumerated rather than `_`, so a type form
+        // added later is a compile error here instead of a silently unclaimed
+        // child (CLAUDE.md §11, and panel 060 paid for the catch-all version).
+        crate::syntax::TypeKind::Named
+        | crate::syntax::TypeKind::Unit
+        | crate::syntax::TypeKind::Error => {}
+    }
+}
