@@ -16,16 +16,18 @@
 # because Heroes has seven boundary types and none of them is a struct."* That
 # paragraph is why the milestone existed, and it is deleted rather than softened.
 #
-# **The number, measured rather than claimed** (2026-08-15, re-taken three times
-# in one day because the first two were wrong). raylib declares **600** entry
+# **The number, measured rather than claimed** (2026-08-15, re-taken four times in
+# one day because the first three were wrong). raylib declares **600** entry
 # points — `grep -c "^RLAPI"` and clang's own `FunctionDecl` count agree — and
-# **349** of them pass or return a struct by value. **328 bind with every field
-# named; 346 with `partial`.** The residue is **3**, and it is one struct:
-# `VrStereoConfig`, whose eight members are all arrays, so it has no nameable
-# field at all and `partial` gives `error[empty_record]` rather than a binding.
-# `BeginVrStereoMode`, `LoadVrStereoConfig` and `UnloadVrStereoConfig` are the
-# three, and naming them is the point — a refusal is held to the same standard as
-# a feature (CLAUDE.md §12), so it says which programs it costs.
+# **349** of them pass or return a struct by value. **All 349 bind, with every
+# field named and no `partial` anywhere**, across all 35 of raylib's structs.
+#
+# It went 191 → 200 → 328 → 349 in an afternoon, and the last two steps were not
+# features: they were a `ptr` rule that asked whether the header spells a member
+# `void *` rather than whether it is a pointer at all, and a completeness probe
+# that counted a nested record's members as the outer record's. Both refused
+# bindings with **no spelling that would have worked**, which is the shape panel
+# 061 cited against an option and this project then shipped twice.
 #
 # **The layout is the header's, and that is the whole mechanism.** The emitter
 # writes no `typedef` for `Color`, `Vector2` or `Rectangle`: it uses raylib's own
@@ -78,20 +80,26 @@ extern "raylib.h" package "raylib"
     # the ABI to agree in both directions rather than one.
     function GetSplinePointLinear(startPos: Vector2, endPos: Vector2, t: f32) -> Vector2
     function CheckCollisionPointRec(point: Vector2, rec: Rectangle) -> bool
-    # **`partial`, and this is what it is for.** raylib's `Model` holds a
-    # `ModelSkeleton` and, after it, members this language cannot spell — a C array
-    # member has no Heroes type. Naming what we touch and saying so is what makes
-    # `Model` bindable at all; the price is `==`, `hash` and being a map key, none
-    # of which a model wants. Without the word this is `ffi_incomplete_record`, and
-    # with it the layout is still the header's, so `IsModelValid` reads the fields
-    # C put where C put them.
-    record Model partial
+    # **`Model` names every field, and until panel 062 it could not.** It holds a
+    # `ModelSkeleton` by value, which holds a typedef'd pointer; the `ptr` rule had
+    # to stop asking whether the header spells a member `void *` before either was
+    # reachable. This record needed `partial` for one afternoon and does not now —
+    # the word is still in the language, for `SDL_Event` and its kind, and it is
+    # not in this file.
+    record ModelSkeleton
+        boneCount: i32
+        bones: ptr
+        bindPose: ptr
+    record Model
         transform: Matrix
         meshCount: i32
         materialCount: i32
         meshes: ptr
         materials: ptr
         meshMaterial: ptr
+        skeleton: ModelSkeleton
+        currentPose: ptr
+        boneMatrices: ptr
     record Matrix
         m0: f32
         m4: f32
@@ -126,8 +134,8 @@ function main()
     )
     print(mid.x, " ", mid.y)
 
-    # A `partial` record, built and passed by value. An empty model is not valid,
-    # and raylib says so from the fields this program named.
+    # A record with every field named, built and passed by value. An empty model
+    # is not valid, and raylib says so from the fields this program named.
     identity = Matrix(
         m0: 1.0, m4: 0.0, m8: 0.0, m12: 0.0,
         m1: 0.0, m5: 1.0, m9: 0.0, m13: 0.0,
@@ -140,7 +148,10 @@ function main()
         materialCount: 0,
         meshes: nullptr,
         materials: nullptr,
-        meshMaterial: nullptr
+        meshMaterial: nullptr,
+        skeleton: ModelSkeleton(boneCount: 0, bones: nullptr, bindPose: nullptr),
+        currentPose: nullptr,
+        boneMatrices: nullptr
     )
     print(IsModelValid(model: empty))
 

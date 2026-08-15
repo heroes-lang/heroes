@@ -17,18 +17,18 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-struct-passing closed 2026-08-15, tag `m-struct-passing` — a struct crosses
-the FFI boundary by value, and the layout is the header's.**
+**M-complete-structs closed 2026-08-15, tag `m-complete-structs` — every struct a
+C header writes can be named.**
 
-    error[ffi_field_type]: `Color.r` is not `i32` in `raylib.h`
+    all 35 of raylib's structs · all 349 by-value crossings · zero `partial`
 
-Rung 5 of §4.19's ladder — **349 of raylib's 600 entry points**. A group's
-`record` gets **no typedef emitted**, so the emitter cannot get a layout wrong it
-never states; each field is checked by `_Generic` on its address. `f32` landed
-with it, by author decision over the sitting's deferral.
+Three panels, two vetoes, both on shape rather than feature. The count went
+191 → 200 → 328 → 349 and no step was a capability: each was a refusal with no
+escape. `partial` and `i32[4]` are the two field forms that landed.
 
-**557 tests**, clippy clean under `-D warnings`, spec **3360** of 4096 (headroom
-736), determinism diff empty. Record: `docs/journal/018-struct-passing.md`.
+**557 tests**, clippy clean under `-D warnings`, spec **3374** of 4096 (headroom
+722), determinism diff empty, zero hand-written `.c` in `examples/`.
+Record: `docs/journal/019-complete-structs.md`.
 Next: **M-selfhost-probe** — the lexer ported, to measure what self-hosting lacks.
 
 ---
@@ -394,6 +394,7 @@ So a number met in the record resolves here, and only here.
 | `M-program-corpus` | M8e | — | many whole programs, all of them run |
 | `M-binding-fidelity` | — | `m-binding-fidelity` | a binding says what the header says: the parameter side of §4.19's guarantee |
 | `M-struct-passing` | — | `m-struct-passing` | a struct crosses the FFI boundary by value — §4.19's ladder rung 5, and the third of the boundary that was unreachable |
+| `M-complete-structs` | — | `m-complete-structs` | every field form a C header can write — `partial`, `i32[4]`, and the completeness probe. **A new id rather than a reopening** (§14): the milestone before it says *a struct can cross*, this one says *every struct can be named*, and the work landed after `m-struct-passing` was tagged |
 | `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
 | `M-selfhost-port` | M8b | — | the port |
 | `M-selfhost-fixpoint` | M8c | — | the fixpoint — **v1** |
