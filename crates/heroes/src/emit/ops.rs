@@ -19,7 +19,7 @@
 //! one runtime entry point per type (panel 006), which is what lets clang
 //! type-check every one of them.
 
-use crate::ir::{Arg, Program};
+use crate::ir::{Arg, Program, SlotKind};
 use crate::resolve::BUILTINS;
 use crate::types::{Checked, IntKind, Ty};
 
@@ -217,12 +217,27 @@ fn guard_cstr_arguments(
         .map(|(index, argument)| {
             // A variadic's extra arguments have no declared parameter, and a
             // parameter whose type is not `cstr` has nothing to check.
-            let declared = callee
-                .params
-                .get(index)
-                .map(|slot| callee.slots[slot.0 as usize].ty)
-                .map(|ty| checked.types.get(ty));
-            if matches!(declared, Some(crate::types::Ty::Cstr)) {
+            //
+            // **An `@cstr` is excluded, and the guard was vacuous on one** (author
+            // decision 2026-08-15, found by panel 058's compiler-engineer while
+            // measuring something else). §4.8 makes an `@` parameter a *pointer*
+            // parameter, so the argument this emitter writes is `&h0_tail` — the
+            // address of a local, which is **never null**. The guard fired, cost a
+            // call, and proved nothing; worse, a guard that cannot fail is read by
+            // the next person as protection that is there.
+            //
+            // It is CLAUDE.md §11 in miniature: the narrowing asked the declared
+            // *type* and the fact it needed was about the *slot*. What panel 053
+            // guards is a `cstr` **value** crossing into C, and an `@cstr` does not
+            // carry one — it carries somewhere for C to put one.
+            let declared = callee.params.get(index).map(|slot| &callee.slots[slot.0 as usize]);
+            let is_out_parameter =
+                matches!(declared.map(|slot| slot.kind), Some(SlotKind::Param { mutable: true }));
+            let is_cstr = matches!(
+                declared.map(|slot| checked.types.get(slot.ty)),
+                Some(crate::types::Ty::Cstr)
+            );
+            if is_cstr && !is_out_parameter {
                 format!("hero_cstr_nonnull({argument})")
             } else {
                 argument.clone()

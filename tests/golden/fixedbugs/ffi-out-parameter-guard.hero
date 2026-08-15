@@ -1,0 +1,32 @@
+# fixedbugs, 2026-08-15 (panel 058's compiler-engineer, found while measuring
+# something else; author decision in `/decide`).
+#
+# SYMPTOM: panel 053's null-`cstr` guard was emitted around an `@cstr` **out**
+# parameter — `strtod(hero_cstr_nonnull(t3), hero_cstr_nonnull(&h0_tail))`. The
+# second call checks `&h0_tail`, the address of a local, which is **never null**.
+# The guard fired, cost a call and proved nothing; a guard that cannot fail is
+# worse than no guard, because the next reader believes it.
+#
+# CAUSE: `guard_cstr_arguments` narrowed on the declared *type* (`Ty::Cstr`) and
+# the fact it needed was about the *slot*. §4.8 makes an `@` parameter a pointer
+# parameter, so what crosses into C is not a `cstr` value — it is somewhere for C
+# to put one. CLAUDE.md §11 in miniature: the narrowing asked the world (what does
+# this type mean) instead of the value in hand (what is this slot).
+#
+# FIX: exclude `SlotKind::Param { mutable: true }`. The value `cstr` keeps its
+# guard; the out-parameter loses one it could never fail.
+#
+# It also compiled only because `-Wincompatible-pointer-types` is not in `FLAGS`
+# as `-Werror=`, which is recorded here rather than changed — that flag is panel
+# 058's business, not this defect's.
+#
+# This file MUST build and run. It is pinned by
+# `the_null_guard_is_on_the_value_and_not_on_the_out_parameter`.
+
+extern "stdlib.h"
+    function strtod(s: cstr, @end: cstr) -> f64
+
+function main()
+    tail: cstr @ nullptr
+    v = strtod(s: "3.5x".cstr(), end: @tail)
+    print(v)

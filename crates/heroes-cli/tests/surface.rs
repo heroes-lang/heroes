@@ -163,6 +163,48 @@ fn the_word_width_this_compiler_claims_is_the_one_clang_uses() {
     );
 }
 
+/// **Panel 053's null guard goes on the value and not on the out-parameter**, and
+/// until 2026-08-15 it went on both (panel 058's compiler-engineer, found while
+/// measuring something else).
+///
+/// `strtod(s: cstr, @end: cstr)` produced
+/// `strtod(hero_cstr_nonnull(t3), hero_cstr_nonnull(&h0_tail))`. The second checks
+/// the address of a local, which is **never null** — a guard that cannot fail,
+/// which is worse than no guard because the next reader believes it.
+///
+/// **This is also the first test the guard has ever had.** Panel 053 shipped it
+/// with none, which CLAUDE.md §9 forbids — *every verifier check has a test that
+/// makes it fire* — so this pins both directions at once: present on the value,
+/// absent on the out-parameter. Without the second assertion the repair is
+/// invisible to the suite; without the first, deleting the guard entirely would
+/// pass.
+#[test]
+fn the_null_guard_is_on_the_value_and_not_on_the_out_parameter() {
+    let out = heroes(&[
+        "build",
+        "tests/golden/fixedbugs/ffi-out-parameter-guard.hero",
+        "--emit-c",
+    ]);
+    let c = String::from_utf8_lossy(&out.stdout).into_owned();
+    let call = c
+        .lines()
+        .find(|line| line.contains("strtod(") && !line.contains("_Static_assert") && !line.contains("probe"))
+        .unwrap_or_else(|| panic!("no strtod call site in the emitted C:\n{c}"));
+    assert!(
+        call.contains("hero_cstr_nonnull("),
+        "the value `cstr` lost its guard — panel 053's whole subject:\n{call}"
+    );
+    assert!(
+        !call.contains("hero_cstr_nonnull(&"),
+        "an `@` parameter is a pointer parameter (§4.8), so this checks the address of \
+         a local and can never fail:\n{call}"
+    );
+    // And it still runs: the repair is to the guard, not to the binding.
+    let ran = heroes(&["run", "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"]);
+    assert_eq!(code(&ran), 0, "{}", String::from_utf8_lossy(&ran.stderr));
+    assert_eq!(String::from_utf8_lossy(&ran.stdout), "3.5\n");
+}
+
 /// The same class from the other side: a **sign** the header does not have.
 ///
 /// `curl_easy_setopt` takes `CURLoption` and `curl_easy_strerror` takes
