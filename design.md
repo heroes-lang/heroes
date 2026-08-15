@@ -2622,6 +2622,29 @@ visible rather than patched with a second form.
 
 ---
 
+17. **A C function that writes through a string parameter cannot be bound at all** (panel 058,
+   ratified 2026-08-15). `s.cstr()` is zero-copy over a **refcounted copy-on-write** buffer, so a
+   plain `char *` parameter writes into values the program never passed to C — measured, `b = a`
+   then `strtok(a.cstr(), …)` changed **both** at exit 0 with no diagnostic, and on a string literal
+   the same write is `SIGBUS`. Both are §1.12. The compiler now refuses the spelling at exit 1
+   (`ffi_writable_parameter`), and the program is written with `ptr` and a buffer C owns instead —
+   which works today, measured on `getcwd`, `strtok`, `putenv` and ncurses `tigetnum`.
+
+   **This is a wart and not a Part 6 row, deliberately.** Three repairs were priced and refused:
+   unsharing at `.cstr()` copies at *100%* of call sites, because the ownership pass's `$own` slot
+   already holds a second reference — §4.10's own refutation of in-place `push`, and it deletes
+   §4.20's zero-copy decision; a distinct mutable-buffer type is Part 7 item 10 verbatim and waits
+   for the fixpoint; and doing nothing keeps the corruption. What is left is a real cost, and it is
+   named here rather than presented as a design.
+
+   **What would make this row wrong** (§12 — a refusal carries a feature's burden of proof): a
+   binding that **the closure list or §4.19's ladder needs** and that requires a buffer whose
+   **length Heroes knows**. `malloc` + `ptr` gives no length back, so `snprintf`'s truncation return
+   and `readlink`'s no-NUL result have no correct spelling today. One such binding on the critical
+   path and the mutable-buffer type stops being a Part 7 wish and becomes §1.0 compiler-need.
+   Measured against that bar today: the closure list's only outbound `cstr` are
+   `hero_file_read` and `hero_file_write`, both `const char *`.
+
 ## Part 9 — Low-level access, when the time comes
 
 The historical answer to this exists and almost nobody knows it. **Oberon** is a small, safe language

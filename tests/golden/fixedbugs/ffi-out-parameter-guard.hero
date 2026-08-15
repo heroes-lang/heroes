@@ -23,10 +23,24 @@
 # This file MUST build and run. It is pinned by
 # `the_null_guard_is_on_the_value_and_not_on_the_out_parameter`.
 
-extern "stdlib.h"
-    function strtod(s: cstr, @end: cstr) -> f64
+# The binding is `sqlite3_prepare_v2` and not `strtod`, and the reason is itself
+# a measurement. This case first used `strtod(s: cstr, @end: cstr)` — and the
+# flag panel 058 landed **refused it**, correctly: C's `strtod` takes `char
+# **endptr`, so `@end: cstr` promises `const char *` where C writes a `char *`.
+# The case's own first draft was a wrong binding, caught by the guard's sibling
+# an hour later. `sqlite3_prepare_v2`'s `pzTail` is genuinely `const char **`.
+
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    function sqlite3_open(path: cstr, @db: ptr) -> i64
+    function sqlite3_prepare_v2(db: ptr, sql: cstr, n: i32, @stmt: ptr, @tail: cstr) -> i64
 
 function main()
+    db: ptr @ nullptr
+    if sqlite3_open(path: ":memory:".cstr(), db: @db) != SQLITE_OK
+        print("no database")
+        return
+    stmt: ptr @ nullptr
     tail: cstr @ nullptr
-    v = strtod(s: "3.5x".cstr(), end: @tail)
-    print(v)
+    rc = sqlite3_prepare_v2(db: db, sql: "select 1".cstr(), n: -1, stmt: @stmt, tail: @tail)
+    print(rc == SQLITE_OK)

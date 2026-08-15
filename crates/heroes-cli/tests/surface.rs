@@ -188,8 +188,12 @@ fn the_null_guard_is_on_the_value_and_not_on_the_out_parameter() {
     let c = String::from_utf8_lossy(&out.stdout).into_owned();
     let call = c
         .lines()
-        .find(|line| line.contains("strtod(") && !line.contains("_Static_assert") && !line.contains("probe"))
-        .unwrap_or_else(|| panic!("no strtod call site in the emitted C:\n{c}"));
+        .find(|line| {
+            line.contains("sqlite3_prepare_v2(")
+                && !line.contains("_Static_assert")
+                && !line.contains("probe")
+        })
+        .unwrap_or_else(|| panic!("no prepare_v2 call site in the emitted C:\n{c}"));
     assert!(
         call.contains("hero_cstr_nonnull("),
         "the value `cstr` lost its guard — panel 053's whole subject:\n{call}"
@@ -201,8 +205,11 @@ fn the_null_guard_is_on_the_value_and_not_on_the_out_parameter() {
     );
     // And it still runs: the repair is to the guard, not to the binding.
     let ran = heroes(&["run", "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"]);
+    if machine_lacks_the_library(&ran) {
+        return;
+    }
     assert_eq!(code(&ran), 0, "{}", String::from_utf8_lossy(&ran.stderr));
-    assert_eq!(String::from_utf8_lossy(&ran.stdout), "3.5\n");
+    assert_eq!(String::from_utf8_lossy(&ran.stdout), "true\n");
 }
 
 /// The same class from the other side: a **sign** the header does not have.

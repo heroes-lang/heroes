@@ -211,5 +211,5 @@ A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
 usually there. How much more is the platform's answer, not this language's.
 
 A group's `constant` has no body: the header holds the value. `ptr` is an opaque
-pointer whose only literal is `nullptr`, `cstr` a C string, and `s.cstr()` passes a
-`str` to C. A C out-parameter is an `@` parameter.
+pointer whose only literal is `nullptr`, `cstr` a C string, and `s.cstr()` lends a
+`str` to C to read. A C out-parameter is an `@` parameter.

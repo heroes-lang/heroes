@@ -1,0 +1,26 @@
+# The 10% that pay a copy, recorded with the claim that can retire it
+# (panel 058 condition 5, ratified 2026-08-15).
+#
+# `putenv(char *string)` does not write through its argument in the sense that
+# matters here — but it does **retain** it, and POSIX says the string becomes part
+# of the environment. Either way Heroes refuses the `cstr` spelling, and this file
+# is the record of what that costs rather than a claim that it costs nothing.
+#
+# THE MEASURED CLAIM, and it is falsifiable: of 186 plain `char *` parameters
+# across 17 headers, **159 (85%) genuinely write** and only **18 (10%)** are the
+# legacy const-incorrect class that pays a copy it does not need — ncurses'
+# five terminfo entry points, seven in OpenSSL, `cget*`, `rl_expand_prompt`.
+# The refusal is worth its cost at that ratio.
+#
+# WHAT RETIRES IT: measure the same ratio on a header a real Heroes program
+# binds. Above roughly 25% read-only, the refusal is costing more than it buys
+# and panel 058's resolution reopens on its own terms. Below, it stands.
+#
+# The repair is never "add `const`" — that is the header's to choose, not this
+# program's. It is `ptr` with a buffer C owns.
+
+extern "stdlib.h"
+    function putenv(s: cstr) -> i32   #~ ffi_writable_parameter
+
+function main()
+    print(putenv(s: "HEROES_PANEL=058".cstr()))

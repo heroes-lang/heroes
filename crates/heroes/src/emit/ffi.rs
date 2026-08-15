@@ -30,6 +30,7 @@ use crate::syntax::{Ast, DeclKind};
 
 use super::ffi_build as build;
 use super::ffi_declared as declared;
+use super::ffi_mutable as mutable;
 use super::ffi_narrowed as narrowed;
 
 /// The prefix every return-type assertion's message carries, and the contract
@@ -85,6 +86,9 @@ pub fn explain(
             push(&mut found, diagnostic);
         }
         if let Some(diagnostic) = narrowed::parameter_width(line, ast, checked, program, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = mutable::writable_parameter(line, ast, checked, program, src) {
             push(&mut found, diagnostic);
         }
     }

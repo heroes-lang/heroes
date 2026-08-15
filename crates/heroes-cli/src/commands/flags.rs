@@ -25,7 +25,7 @@
 /// the first run, with clang's warnings forwarded rather than swallowed so that they
 /// could. It is the strictest warning in the set and the one most likely to catch a
 /// join slot the lowering forgot to write on one arm.
-pub const FLAGS: [&str; 11] = [
+pub const FLAGS: [&str; 12] = [
     // **`gnu11`, not `c11`, and the difference is one predefined macro** (panel
     // 047, ratified 2026-08-14). `-std=c11` defines `__STRICT_ANSI__`, and on
     // glibc that is the *only* thing it does: it hides `M_PI`, `strdup`,
@@ -70,6 +70,14 @@ pub const FLAGS: [&str; 11] = [
     "-fno-strict-aliasing",
     "-Werror=shorten-64-to-32",
     "-Werror=sign-conversion",
+    // **A C function that writes through a `cstr`** (panel 058, ratified
+    // 2026-08-15). `.cstr()` is zero-copy over a refcounted copy-on-write buffer,
+    // so a plain `char *` parameter writes into values the program never passed —
+    // measured, `b = a` then `strtok` changes both at exit 0, and on a literal it
+    // is SIGBUS. Both are §1.12. It deletes a spelling and not a function: 159 of
+    // 186 such parameters across 17 headers genuinely write, and `ptr` with a
+    // C-owned buffer binds the rest, ncurses included.
+    "-Werror=incompatible-pointer-types-discards-qualifiers",
 ];
 
 

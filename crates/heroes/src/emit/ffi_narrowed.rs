@@ -127,7 +127,7 @@ pub(super) fn parameter_width(
 /// `file:line:col: …` split off the head of a clang report, with the file kept
 /// **only if it is one of this compilation's own** — which is what makes this the
 /// author's mistake rather than the emitter's.
-fn location(line: &str, src: &Source) -> Option<((usize, u32, u32), String)> {
+pub(super) fn location(line: &str, src: &Source) -> Option<((usize, u32, u32), String)> {
     let mut parts = line.splitn(4, ':');
     let file = parts.next()?;
     let at_line: u32 = parts.next()?.trim().parse().ok()?;
@@ -149,7 +149,7 @@ fn location(line: &str, src: &Source) -> Option<((usize, u32, u32), String)> {
 }
 
 /// The `extern` declared at a file and line — the one the probe's `#line` claims.
-fn extern_at_line<'a>(
+pub(super) fn extern_at_line<'a>(
     program: &'a crate::ir::Program,
     ast: &Ast,
     src: &Source,
