@@ -211,9 +211,15 @@ forward with their reasons named:
 - **The second file** (above) — it opens the port.
 - **The multi-file `lex` wrapper**: needs the Source record (`source.rs`,
   not lexer code); measured when a second file needs it.
-- **The two diagnostic builders of `digits.rs`**: rendering a boundary in
-  the reader's own base needs a render-in-base helper — the first real
-  string-building want; measured when it is written, not before.
+- **The two diagnostic builders of `digits.rs`** — **half closed 2026-08-15,
+  post-ratification loop**: `render_in_base` is written and measured — **11
+  lines, no new form**: the sixteen digits already exist as a string and
+  `slice` picks one, so the "first real string-building want" needed no
+  byte-to-str conversion after all (gap 5 downgraded from *watch* to
+  *answered*). `int_out_of_range` (the no-annotation case, whose bounds are
+  constants) ports with it, its note text byte-identical to Rust's and
+  asserted down to the string. The width-aware twin still ports with the
+  checker: it names an IntKind, which is checker vocabulary.
 - **The `stray_carriage_return` test** (gap 10): untranslatable until either
   `\r` gets a spelling or a byte-to-str conversion exists — the one deferral
   with a named cost, and the port re-decides it with the corpus in hand.

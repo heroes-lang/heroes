@@ -19,9 +19,12 @@
 #   of multiplying first and asking after, which is the shape Rust hides
 #   inside from_str_radix.
 # - Rust returns (Base, &str) from split_base; Heroes has no tuples, so it is
-#   a record. The diagnostic builders (int_out_of_range and its width-aware
-#   twin) are NOT here: they format a boundary in the reader's own base and
-#   name an IntKind, both of which belong to the checker port. Owed there.
+#   a record. `int_out_of_range` for the no-annotation case is here with its
+#   render-in-base helper; the width-aware twin names an IntKind, which is
+#   checker vocabulary, and ports with the checker at M-selfhost-port.
+
+use token
+use diag
 
 ## Error codes
 
@@ -156,6 +159,47 @@ function decode_int(text: str) -> i64?
     wide = decode_u64(text)?
     return to_i64(wide)
 
+## Rendering a value in the reader's own base
+
+# The boundary is given IN THE BASE THE READER USED, because being handed a
+# decimal limit for a hexadecimal mistake is the second half of the same error
+# (CLAUDE.md §8). This was the port's "first real string-building want"
+# (measurement 009): Heroes has no byte-to-str conversion, and the answer is
+# no conversion at all — the sixteen digits already exist as a string, and
+# `slice` picks one. Decimal gets no prefix, exactly as `prefix` says.
+function render_in_base(value: u64, base: Base) -> str
+    r = radix(base)
+    if value == 0
+        return prefix(base) + "0"
+    out: str @ ""
+    v: u64 @ value
+    while v > 0
+        d = to_i64(v % r).must()
+        out @ "0123456789abcdef".slice(from: d, to: d + 1) + out
+        v @ v / r
+    return prefix(base) + out
+
+## The out-of-range diagnostic, built where the decoder lives
+
+# `int_out_of_range` for a literal with NO width annotation — measured against
+# `i64`, the default, so its two numbers are constants and the note says the
+# width is a default rather than naming a type the reader never wrote.
+#
+# The width-aware twin (Rust's `out_of_range(text, span, Some(kind))`) is NOT
+# here: it names an IntKind, which is checker vocabulary, and it ports with
+# the checker at M-selfhost-port. One code either way — "does not fit `i64`"
+# and "does not fit the `u8` you declared" are the same finding.
+function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
+    split = split_base(text)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "int_out_of_range", message: "`" + text + "` does not fit an `i64`", span: span)
+    note: str @ ""
+    if split.base == .decimal
+        note @ "a literal with nothing to take a width from is an `i64`, which holds -9223372036854775808 through 9223372036854775807"
+    else
+        note @ "a literal with nothing to take a width from is an `i64`, so the largest one " + a_name(split.base) + " literal can write is `" + render_in_base(9223372036854775807, split.base) + "`"
+    d.notes @ d.notes.push(note)
+    return d
+
 ## The canonical spelling
 
 # What the author wrote, with hex digits lowercased. A C header spells a mask
@@ -207,3 +251,19 @@ test "canonical lowercases digits and nothing else"
     assert canonical_int("0xFF") == "0xff"
     assert canonical_int("0xDead_Beef") == "0xdead_beef"
     assert canonical_int("123") == "123"
+
+test "the boundary is rendered in the reader's own base"
+    assert render_in_base(31, .hexadecimal) == "0x1f"
+    assert render_in_base(31, .octal) == "0o37"
+    assert render_in_base(31, .binary) == "0b11111"
+    assert render_in_base(31, .decimal) == "31"
+    assert render_in_base(0, .hexadecimal) == "0x0"
+    assert render_in_base(9223372036854775807, .hexadecimal) == "0x7fffffffffffffff"
+    assert render_in_base(U64_MAX, .hexadecimal) == "0xffffffffffffffff"
+
+test "the out-of-range note answers in the notation the question was asked in"
+    hex = int_out_of_range("0xffffffffffffffff", token.Span(start: 0, end: 18))
+    assert hex.message == "`0xffffffffffffffff` does not fit an `i64`"
+    assert hex.notes[0] == "a literal with nothing to take a width from is an `i64`, so the largest one a hexadecimal literal can write is `0x7fffffffffffffff`"
+    dec = int_out_of_range("99999999999999999999", token.Span(start: 0, end: 20))
+    assert dec.notes[0] == "a literal with nothing to take a width from is an `i64`, which holds -9223372036854775808 through 9223372036854775807"
