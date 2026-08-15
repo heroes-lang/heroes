@@ -267,16 +267,67 @@ variant PatternKind
         value: i64
     error
 
+## Written types
+
+# A written type. `span` covers the whole type as written (`[i64]` includes its
+# brackets); for `named` the span IS the name, so the text never needs copying.
+record TypeNode
+    kind: TypeKind
+    span: token.Span
+
+variant TypeKind
+    # `i64`, `str`, `Point`, `A` — a bare name. Whether it is built-in,
+    # user-declared or a generic parameter is the resolver's question; the
+    # parser only records that a name stood here.
+    named
+    # `()` — no value (§4.3). Also the result of a function written without
+    # `->`.
+    unit
+    # `[T]`
+    array_of
+        element: i64
+    # `i32[4]` — a FIXED-size array, and the length is part of the type (§4.19;
+    # panel 062). Not an `array_of`, and the difference is where the elements
+    # live: a `[T]` is a heap block with a count in a header before the bytes;
+    # this is the bytes themselves, inline, at an offset a C compiler chose.
+    fixed
+        element: i64
+        length: i64
+    # `{K: V}`
+    map_of
+        key: i64
+        value: i64
+    # `T?` — a `T` or an error (§4.6).
+    fallible
+        inner: i64
+    # `(function(A, B) -> C)` — the parentheses are mandatory (§4.13: without
+    # them `f: function A -> B -> [B]` would be ambiguous).
+    # `function_type`, not `func`: `func` is a foreign word the registry
+    # refuses (the second time it has met the compiler's own vocabulary —
+    # `variant_case` was the first).
+    function_type
+        params: [i64]
+        result: i64
+    # Recovery: the type could not be read. A diagnostic says why, and the tree
+    # keeps its shape so the errors after this one are still found.
+    error
+
 ## The arena
 
 record Ast
     exprs: [Expr]
     stmts: [Stmt]
+    types: [TypeNode]
 
 function new_ast() -> Ast
     exprs: [Expr] = []
     stmts: [Stmt] = []
-    return Ast(exprs: exprs, stmts: stmts)
+    types: [TypeNode] = []
+    return Ast(exprs: exprs, stmts: stmts, types: types)
+
+function push_type(@a: Ast, node: TypeNode) -> i64
+    a.types @ a.types.push(node)
+    return a.types.len() - 1
 
 # Adds a node to the arena and hands back its index — the port of Rust's
 # `push_expr`/`push_stmt`, and the reason the tree never recurses.

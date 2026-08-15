@@ -271,6 +271,29 @@ port computes it from the text in 11 lines and stays free of a `Source` the
 parser does not have yet. That defers the multi-file wrapper honestly rather
 than blocking on it.
 
+## The fifth file — the first real grammar (2026-08-16)
+
+`syntax/types.rs` → `selfhost/parse_type.hero`, 7 test blocks, plus `TypeNode`
+added to `selfhost/ast.hero`. Everything before it was a table, a record or a
+cursor; **this is the first ported file that consumes tokens and produces tree
+nodes**, so it is the first to exercise the cursor, the arena and the
+diagnostics together — including recovery (`recover_past_closer` inside a
+malformed function type) and a `certain` fix.
+
+21. **`func` is a foreign word too** — the second time the registry has met the
+    compiler's own vocabulary (`case` was the first, gap 18). `TypeKind::Func`
+    is `function_type` in the port. **No form wanted**, and the pattern is now
+    worth stating for the files ahead: Rust's compiler vocabulary overlaps the
+    words other languages use as keywords, so expect the registry to fire on
+    `case`, `func`, `enum`, `struct`, `class`, `switch`, `let`, `var`, `const`
+    wherever the bootstrap uses one as a name. Each costs one rename and reads
+    no worse.
+
+Everything else ported unchanged. The three `@`/plain parameters that replace
+Rust's `&mut Cursor, &mut Ast, &Source` make each call site say what it
+changes — `parse_type(@c, @a, text)` announces the two mutations on the line,
+which is §4.8's whole argument arriving in the compiler that implements it.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`

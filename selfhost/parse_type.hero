@@ -1,0 +1,334 @@
+# The type grammar (design.md §4.3 the type table, §4.6 `T?`, §4.13 function
+# types).
+# Port of crates/heroes/src/syntax/types.rs — **the port's first real grammar**:
+# everything before it was a table, a record or a cursor, and this is the first
+# file that consumes tokens and produces tree nodes.
+#
+# Six shapes and no ambiguity, because each one is decided by its first token: a
+# name, `[`, `{`, or `(`. The last is the interesting one — `()` is "no value"
+# and `(function(A) -> B)` is a function type, so one lookahead separates them.
+#
+# Only `?` is postfix, and it is applied exactly once: `T??` is the level
+# ambiguity §4.6 refuses to have in the language, so the parser refuses it in
+# the surface.
+#
+# Port note: the Rust file takes `&mut Cursor, &mut Ast, &Source`. Here that is
+# three `@`/plain parameters, and the call sites say so — `parse_type(@c, @a,
+# text)` announces on the line that both the cursor and the tree will change.
+# The source is a `str` rather than a `Source` for the reason cursor.hero gives:
+# the parser needs the text and not the file table, and deferring the `Source`
+# record keeps the port honest about what it has actually ported.
+
+use token
+use diag
+use ast
+use cursor
+
+## The entry point
+
+# Read one type. Always returns a node index: on failure it is `.error`, so the
+# tree keeps its shape and the errors after this one still get found.
+function parse_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    start = cursor.current_span(c)
+    inner: i64 @ prefix(@c, @a, text)
+    # **`i32[4]` — the bracket AFTER the type, which is what tells it from
+    # `[i32]`** (panel 062). `[T]`'s bracket opens the type; this one follows a
+    # complete one, so no token has two meanings and the parser needs no
+    # lookahead.
+    while cursor.at(c, .lbracket)
+        open = cursor.bump(@c).span
+        length = fixed_length(@c, text, open)
+        inner @ ast.push_type(@a, ast.TypeNode(kind: .fixed(element: inner, length: length), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end)))
+    if !cursor.at(c, .question)
+        return inner
+    question = cursor.bump(@c).span
+    while cursor.at(c, .question)
+        extra = cursor.bump(@c).span
+        cursor.error(@c, code: "nested_fallible", message: "a fallible type cannot be fallible twice — `T?` already carries the error case (§4.6)", span: extra)
+    return ast.push_type(@a, ast.TypeNode(kind: .fallible(inner: inner), span: token.Span(start: start.start, end: question.end)))
+
+## The six shapes, each decided by its first token
+
+function prefix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    k = cursor.current_kind(c)
+    if k == .ident
+        return named(@c, @a, text)
+    if k == .lbracket
+        return array_type(@c, @a, text)
+    if k == .lbrace
+        return map_type(@c, @a, text)
+    if k == .lparen
+        return unit_or_function(@c, @a, text)
+    if !cursor.at_reported_error(c)
+        cursor.error(@c, code: "expected_type", message: "expected a type, found " + cursor.found(c, text) + " — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`", span: cursor.current_span(c))
+    # Not consumed: the caller's recovery decides where the line ends.
+    return ast.push_type(@a, ast.TypeNode(kind: .error, span: cursor.current_span(c)))
+
+# A name, and `geom.Point` — a type from another module. The node keeps one span
+# covering both halves and the resolver splits it: a module name and a type name
+# are both plain identifiers, so the dot between them is the only one there can
+# be, and a second node kind would buy nothing but a match arm in every pass.
+function named(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    s = cursor.bump(@c).span
+    if cursor.at(c, .dot)
+        _ = cursor.bump(@c)
+        if cursor.at(c, .ident)
+            name = cursor.bump(@c).span
+            return ast.push_type(@a, ast.TypeNode(kind: .named, span: token.Span(start: s.start, end: name.end)))
+        cursor.error(@c, code: "expected_qualified_type", message: "expected a type after `" + cursor.slice_of(text, s) + ".`, — a qualified type is `module.Type`, as in `geom.Point`", span: cursor.current_span(c))
+    return ast.push_type(@a, ast.TypeNode(kind: .named, span: s))
+
+# `[T]` — the dynamic array, and Heroes' only indirection (§4.10).
+function array_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    open = cursor.bump(@c).span
+    element = parse_type(@c, @a, text)
+    close = cursor.current_span(c)
+    _ = cursor.expect(@c, text: text, kind: .rbracket, code: "expected_array_close", what: "`]` to close the array type")
+    return ast.push_type(@a, ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: open.start, end: close.end)))
+
+# `{K: V}` — the map. Access returns `V?`, always (§4.9).
+function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    open = cursor.bump(@c).span
+    key = parse_type(@c, @a, text)
+    _ = cursor.expect(@c, text: text, kind: .colon, code: "expected_map_colon", what: "`:` between the map's key and value types")
+    value = parse_type(@c, @a, text)
+    close = cursor.current_span(c)
+    _ = cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map type")
+    return ast.push_type(@a, ast.TypeNode(kind: .map_of(key: key, value: value), span: token.Span(start: open.start, end: close.end)))
+
+# `()` or `(function(A, B) -> C)`.
+#
+# The marker is the same word that declares a function — one word, one meaning,
+# everywhere (panel 013). The parentheses are mandatory because declarations
+# dropped theirs: `f: function A -> B -> [B]` would be ambiguous (§4.13).
+function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    open = cursor.bump(@c).span
+    if cursor.at(c, .rparen)
+        close = cursor.bump(@c).span
+        return ast.push_type(@a, ast.TypeNode(kind: .unit, span: token.Span(start: open.start, end: close.end)))
+    if !cursor.expect(@c, text: text, kind: .kw_function, code: "expected_function_type", what: "`function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`")
+        # This `(` was consumed here, so its `)` is this function's to find:
+        # leaving it for the caller made a signature containing one bad type
+        # report the mistake three times.
+        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+        return ast.push_type(@a, ast.TypeNode(kind: .error, span: open))
+    params = function_params(@c, @a, text)
+    _ = cursor.expect(@c, text: text, kind: .arrow, code: "expected_function_type_arrow", what: "`->` and the result type — a function type always states what it returns, `()` when nothing")
+    result = parse_type(@c, @a, text)
+    close = cursor.current_span(c)
+    _ = cursor.expect(@c, text: text, kind: .rparen, code: "expected_function_type_close", what: "`)` to close the function type")
+    return ast.push_type(@a, ast.TypeNode(kind: .function_type(params: params, result: result), span: token.Span(start: open.start, end: close.end)))
+
+# The parameter TYPES of a function type: `(i64, i64)`, or `()` for a function
+# of no arguments. Names belong to a signature, not to a type — writing one is a
+# plausible mistake, so it gets its own diagnostic and a machine-applicable
+# repair.
+function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [i64]
+    params: [i64] @ []
+    if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_function_type_params", what: "`(` and the parameter types")
+        return params
+    if cursor.eat(@c, .rparen)
+        return params
+    reading: bool @ true
+    while reading
+        ty = parse_type(@c, @a, text)
+        if cursor.at(c, .colon)
+            named_parameter(@c, @a, ty)
+        else
+            params @ params.push(ty)
+            if !cursor.eat(@c, .comma)
+                reading @ false
+    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
+        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+    return params
+
+# `(function(x: i64) -> i64)` — the name that slipped in from the signature it
+# was copied from. The fix is `certain`: drop the name and the colon.
+function named_parameter(@c: cursor.Cursor, @a: ast.Ast, name: i64)
+    name_span = a.types[name].span
+    colon = cursor.bump(@c).span
+    whole = token.Span(start: name_span.start, end: colon.end)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "named_parameter_in_function_type", message: "a function type lists types, not names — write `(function(i64) -> i64)`", span: whole)
+    d.fixes @ d.fixes.push(diag.Fix(title: "drop the parameter name", replacement: "", span: whole, certainty: .certain))
+    c.diagnostics @ c.diagnostics.push(d)
+
+## The length inside `i32[4]`, and every way it can be wrong
+
+# **A literal, never an expression.** The length is part of the type, so it is
+# read by the parser and not by the checker — and a language whose array lengths
+# could be computed would need a constant evaluator §1.0 has never asked for. C
+# headers write literals.
+#
+# **Zero is refused**, because C forbids a zero-length array member in standard
+# C (it is a GNU extension), and a Heroes record with a zero-length field would
+# have an index expression with no valid index at all.
+function fixed_length(@c: cursor.Cursor, text: str, open: token.Span) -> i64
+    if !cursor.at(c, .int_lit)
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "expected_array_length", message: "expected the array's length after `[`, found " + cursor.found(c, text) + " — a C array member is `i32[4]`, and the length is part of the type (§4.19)", span: cursor.current_span(c))
+        return 1
+    written = cursor.slice_of(text, cursor.current_span(c))
+    s = cursor.bump(@c).span
+    if !cursor.at(c, .rbracket)
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "expected_array_length", message: "an array length is one integer, then `]` — `i32[4]`", span: cursor.current_span(c))
+    else
+        _ = cursor.bump(@c)
+    decoded = decode_length(written)
+    if decoded.is_err()
+        return 1
+    n = decoded.must()
+    if n > 0
+        return n
+    cursor.error(@c, code: "empty_fixed_array", message: "a fixed array's length is at least 1 — C has no zero-length struct member in standard C, and an index into one could never be in range", span: token.Span(start: open.start, end: s.end))
+    return 1
+
+# The decoder digits.hero owns, reached without a `use` cycle: a length is
+# always decimal here, because the lexer already refused every other base's
+# prefix inside a bracket.
+function decode_length(written: str) -> i64?
+    value: i64 @ 0
+    i: i64 @ 0
+    while i < written.len()
+        b = written[i]
+        if b == '_'
+            i @ i + 1
+            continue
+        if b < '0' || b > '9'
+            return fail("not_a_length", written)
+        if value > (9223372036854775807 - to_i64(b - '0').must()) / 10
+            return fail("does_not_fit", written)
+        value @ value * 10 + to_i64(b - '0').must()
+        i @ i + 1
+    return ok(value)
+
+## Tests — the parser reading real token streams
+
+# A tiny helper: the token stream for a type, built by hand the way the lexer
+# would have. Spans are made to match `text` so that `found` and the slices in
+# the messages read as they would in a real file.
+function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: start, end: end))
+
+test "a bare name is one node and the span is the name"
+    stream: [token.Token] = [tok(.ident, start: 0, end: 3), tok(.eof, start: 3, end: 3)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_type(@c, @a, "i64")
+    assert a.types[at].kind == .named
+    assert a.types[at].span == token.Span(start: 0, end: 3)
+    assert c.diagnostics.len() == 0
+
+test "the six shapes are told apart by their first token"
+    # [i64]
+    arr: [token.Token] = [tok(.lbracket, start: 0, end: 1), tok(.ident, start: 1, end: 4), tok(.rbracket, start: 4, end: 5), tok(.eof, start: 5, end: 5)]
+    c1: cursor.Cursor @ cursor.new_cursor(arr)
+    a1: ast.Ast @ ast.new_ast()
+    at1 = parse_type(@c1, @a1, "[i64]")
+    match a1.types[at1].kind
+        .array_of e => assert a1.types[e.element].kind == .named
+        .named | .unit | .fixed | .map_of | .fallible | .function_type | .error => assert false
+    assert c1.diagnostics.len() == 0
+    # {str: i64}
+    m: [token.Token] = [tok(.lbrace, start: 0, end: 1), tok(.ident, start: 1, end: 4), tok(.colon, start: 4, end: 5), tok(.ident, start: 6, end: 9), tok(.rbrace, start: 9, end: 10), tok(.eof, start: 10, end: 10)]
+    c2: cursor.Cursor @ cursor.new_cursor(m)
+    a2: ast.Ast @ ast.new_ast()
+    at2 = parse_type(@c2, @a2, "{str: i64}")
+    match a2.types[at2].kind
+        .map_of _ => assert true
+        .named | .unit | .array_of | .fixed | .fallible | .function_type | .error => assert false
+    assert c2.diagnostics.len() == 0
+    # ()
+    u: [token.Token] = [tok(.lparen, start: 0, end: 1), tok(.rparen, start: 1, end: 2), tok(.eof, start: 2, end: 2)]
+    c3: cursor.Cursor @ cursor.new_cursor(u)
+    a3: ast.Ast @ ast.new_ast()
+    at3 = parse_type(@c3, @a3, "()")
+    assert a3.types[at3].kind == .unit
+
+test "T? is applied once, and T?? is refused where it is written"
+    once: [token.Token] = [tok(.ident, start: 0, end: 3), tok(.question, start: 3, end: 4), tok(.eof, start: 4, end: 4)]
+    c: cursor.Cursor @ cursor.new_cursor(once)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_type(@c, @a, "i64?")
+    match a.types[at].kind
+        .fallible f => assert a.types[f.inner].kind == .named
+        .named | .unit | .array_of | .fixed | .map_of | .function_type | .error => assert false
+    assert c.diagnostics.len() == 0
+    twice: [token.Token] = [tok(.ident, start: 0, end: 3), tok(.question, start: 3, end: 4), tok(.question, start: 4, end: 5), tok(.eof, start: 5, end: 5)]
+    d: cursor.Cursor @ cursor.new_cursor(twice)
+    b: ast.Ast @ ast.new_ast()
+    _ = parse_type(@d, @b, "i64??")
+    assert d.diagnostics.len() == 1
+    assert d.diagnostics[0].code == "nested_fallible"
+
+test "a fixed array reads its length, and zero is refused"
+    four: [token.Token] = [tok(.ident, start: 0, end: 3), tok(.lbracket, start: 3, end: 4), tok(.int_lit, start: 4, end: 5), tok(.rbracket, start: 5, end: 6), tok(.eof, start: 6, end: 6)]
+    c: cursor.Cursor @ cursor.new_cursor(four)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_type(@c, @a, "i32[4]")
+    match a.types[at].kind
+        .fixed f => assert f.length == 4
+        .named | .unit | .array_of | .map_of | .fallible | .function_type | .error => assert false
+    assert c.diagnostics.len() == 0
+    zero: [token.Token] = [tok(.ident, start: 0, end: 3), tok(.lbracket, start: 3, end: 4), tok(.int_lit, start: 4, end: 5), tok(.rbracket, start: 5, end: 6), tok(.eof, start: 6, end: 6)]
+    d: cursor.Cursor @ cursor.new_cursor(zero)
+    b: ast.Ast @ ast.new_ast()
+    _ = parse_type(@d, @b, "i32[0]")
+    assert d.diagnostics.len() == 1
+    assert d.diagnostics[0].code == "empty_fixed_array"
+
+test "a function type states what it returns"
+    # (function(i64) -> i64)
+    stream: [token.Token] = [
+        tok(.lparen, start: 0, end: 1)
+        tok(.kw_function, start: 1, end: 9)
+        tok(.lparen, start: 9, end: 10)
+        tok(.ident, start: 10, end: 13)
+        tok(.rparen, start: 13, end: 14)
+        tok(.arrow, start: 15, end: 17)
+        tok(.ident, start: 18, end: 21)
+        tok(.rparen, start: 21, end: 22)
+        tok(.eof, start: 22, end: 22)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_type(@c, @a, "(function(i64) -> i64)")
+    match a.types[at].kind
+        .function_type f =>
+            assert f.params.len() == 1
+            assert a.types[f.result].kind == .named
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+    assert c.diagnostics.len() == 0
+
+test "a name that slipped in from a signature gets a certain repair"
+    # (function(x: i64) -> i64)
+    stream: [token.Token] = [
+        tok(.lparen, start: 0, end: 1)
+        tok(.kw_function, start: 1, end: 9)
+        tok(.lparen, start: 9, end: 10)
+        tok(.ident, start: 10, end: 11)
+        tok(.colon, start: 11, end: 12)
+        tok(.ident, start: 13, end: 16)
+        tok(.rparen, start: 16, end: 17)
+        tok(.arrow, start: 18, end: 20)
+        tok(.ident, start: 21, end: 24)
+        tok(.rparen, start: 24, end: 25)
+        tok(.eof, start: 25, end: 25)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    _ = parse_type(@c, @a, "(function(x: i64) -> i64)")
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "named_parameter_in_function_type"
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+    assert c.diagnostics[0].fixes[0].replacement == ""
+
+test "a type that cannot be read is a node, so the errors after it are found"
+    stream: [token.Token] = [tok(.plus, start: 0, end: 1), tok(.eof, start: 1, end: 1)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = parse_type(@c, @a, "+")
+    assert a.types[at].kind == .error
+    assert c.diagnostics[0].code == "expected_type"
+    # Not consumed: the caller's recovery decides where the line ends.
+    assert cursor.current_kind(c) == .plus
