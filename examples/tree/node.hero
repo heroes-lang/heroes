@@ -1,0 +1,146 @@
+# A small expression tree, in the shape a compiler's own syntax tree has.
+#
+# **Why this program exists** (2026-08-16): the corpus had nine programs and not
+# one of them was shaped like a *tree with a vocabulary* — nodes in an arena,
+# linked by index, over a variant that declares every shape the little language
+# has while any one program builds only some of them. That shape hid a compiler
+# defect for as long as it went unwritten: a case carrying an optional record
+# that a program never CONSTRUCTS still gets its `==` generated, and the emitted
+# C named a descriptor nothing defined (exit 2, the compiler blaming itself for
+# a correct program — `tests/golden/run/fixedbugs-option-payload-descriptor`).
+# It was found by porting the compiler's own AST to Heroes, which is a very
+# expensive way to find it. This program is the cheap way: the corpus runs it in
+# three configurations on every commit.
+#
+# The vocabulary is deliberately wider than `main.hero` uses. That is not
+# padding — it is the point, and it is what every real syntax tree looks like.
+
+## The nodes
+
+# A note an author may attach to a node. Only `.annotated` carries one, and
+# nothing in this program builds an `.annotated` — exactly as a real syntax
+# tree has cases a given input never produces.
+record Note
+    text: str
+    line: i64
+
+variant Node
+    # A number, its value in the node.
+    number
+        value: i64
+    # Two children, by index into the arena.
+    add
+        left: i64
+        right: i64
+    multiply
+        left: i64
+        right: i64
+    # One child.
+    negate
+        operand: i64
+    # A node with a note attached — **declared, never constructed here**.
+    annotated
+        operand: i64
+        note: Note?
+    # A named hole, for an input the parser could not read.
+    unreadable
+
+## The arena
+
+# Every node the program built, in the order it built them. Children are
+# indices, never nested values — which is what lets a tree exist at all in a
+# language whose values are copied (§4.10).
+record Tree
+    nodes: [Node]
+
+function new_tree() -> Tree
+    nodes: [Node] = []
+    return Tree(nodes: nodes)
+
+function add_node(@t: Tree, node: Node) -> i64
+    t.nodes @ t.nodes.push(node)
+    return t.nodes.len() - 1
+
+## Reading the tree back
+
+# What the expression is worth. The walk names every case, because `_` is
+# forbidden on a variant — so the day a seventh node arrives, this function
+# stops compiling instead of quietly answering 0.
+function evaluate(t: Tree, at: i64) -> i64
+    return match t.nodes[at]
+        .number n => n.value
+        .add a => evaluate(t, a.left) + evaluate(t, a.right)
+        .multiply m => evaluate(t, m.left) * evaluate(t, m.right)
+        .negate n => -evaluate(t, n.operand)
+        .annotated a => evaluate(t, a.operand)
+        .unreadable => 0
+
+# How deep the tree goes under this node.
+function depth(t: Tree, at: i64) -> i64
+    return match t.nodes[at]
+        .number _ => 1
+        .add a => 1 + deeper(left: depth(t, a.left), right: depth(t, a.right))
+        .multiply m => 1 + deeper(left: depth(t, m.left), right: depth(t, m.right))
+        .negate n => 1 + depth(t, n.operand)
+        .annotated a => 1 + depth(t, a.operand)
+        .unreadable => 1
+
+function deeper(left: i64, right: i64) -> i64
+    if left > right
+        return left
+    return right
+
+# The expression, written out. Parentheses everywhere: this is a check that the
+# tree is what was built, not a pretty-printer with taste.
+function render(t: Tree, at: i64) -> str
+    return match t.nodes[at]
+        .number n => n.value.to_str()
+        .add a => "(" + render(t, a.left) + " + " + render(t, a.right) + ")"
+        .multiply m => "(" + render(t, m.left) + " * " + render(t, m.right) + ")"
+        .negate n => "-" + render(t, n.operand)
+        .annotated a => render(t, a.operand)
+        .unreadable => "???"
+
+test "a number is its own value and one level deep"
+    t: Tree @ new_tree()
+    n = add_node(@t, .number(value: 7))
+    assert evaluate(t, n) == 7
+    assert depth(t, n) == 1
+    assert render(t, n) == "7"
+
+test "the arena links children by index"
+    t: Tree @ new_tree()
+    two = add_node(@t, .number(value: 2))
+    three = add_node(@t, .number(value: 3))
+    sum = add_node(@t, .add(left: two, right: three))
+    assert evaluate(t, sum) == 5
+    assert depth(t, sum) == 2
+    assert render(t, sum) == "(2 + 3)"
+
+test "nodes compare structurally, cases the program never builds included"
+    # **This is the assertion that would have caught the defect.** Comparing
+    # two `Node` values makes the compiler emit `==` for EVERY case of the
+    # variant, including `.annotated`, whose payload is a `Note?` that nothing
+    # here constructs. Before 2026-08-16 that emitted C naming a descriptor
+    # nobody defined, and the build died at exit 2.
+    a: Node @ .number(value: 1)
+    b: Node @ .number(value: 1)
+    c: Node @ .unreadable
+    assert a == b
+    assert a != c
+
+test "a note is a value like any other, when one is built"
+    n: Note @ Note(text: "check this", line: 12)
+    m: Note @ Note(text: "check this", line: 12)
+    assert n == m
+    held: Node @ .annotated(operand: 0, note: ok(n))
+    absent: Node @ .annotated(operand: 0, note: fail("none", "no note"))
+    assert held != absent
+
+test "a whole tree is one value, copied and not shared"
+    t: Tree @ new_tree()
+    _ = add_node(@t, .number(value: 1))
+    u: Tree @ t
+    _ = add_node(@u, .number(value: 2))
+    assert t.nodes.len() == 1
+    assert u.nodes.len() == 2
