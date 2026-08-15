@@ -1,0 +1,30 @@
+# Byte classification — what Rust takes from std (`is_ascii_digit`,
+# `is_ascii_alphanumeric`, `to_ascii_lowercase`), written out once for the
+# port. A gap entry in measurement 009: the language has no character-class
+# built-ins, and fifteen lines answer every question the lexer asks.
+
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+function is_alpha(b: u8) -> bool
+    return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z')
+
+function is_alnum(b: u8) -> bool
+    return is_digit(b) || is_alpha(b)
+
+# Lowercase one ASCII byte; everything else passes through.
+function lower(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+test "the classes answer the scanner's questions"
+    assert is_digit('7')
+    assert !is_digit('a')
+    assert is_alpha('z')
+    assert is_alpha('Q')
+    assert !is_alpha('_')
+    assert is_alnum('0')
+    assert lower('X') == 'x'
+    assert lower('x') == 'x'
+    assert lower('1') == '1'
