@@ -1,0 +1,129 @@
+# Escape sequences — the table and the decoder (panel 008).
+# Port of crates/heroes/src/lexer/escape.rs, the pure half: the validator
+# (`LexState.escape`) lives with the lexer state it advances, in scan.
+#
+# Five escapes, split by context (Go's rule), so every character has exactly
+# one spelling and §4.15's "exactly one correct way" survives:
+#
+#   in "…"   in '…'   value
+#   \n       \n       10
+#   \t       \t       9
+#   \\       \\       92
+#   \"       —        34 — a " needs no escape inside a char literal
+#   —        \'       39 — a ' needs no escape inside a string
+#
+# The set is frozen: \0, \xNN, \u{…} and octal escapes reconvene the panel.
+#
+# Port notes:
+# - Rust's table returns the byte (`Option<u8>`); this port returns the decoded
+#   one-character string, because Heroes has no byte-to-str conversion — and
+#   the decoder is the only caller that wants the value rather than the fact.
+#   It is still ONE table: the validator asks `.is_err()`, the decoder reads
+#   the value, so the two cannot drift apart (the Rust file's own rule).
+# - Rust walks `chars()` with a clonable iterator to peek; Heroes indexes the
+#   `[str]` that `chars()` returns, so the peek is `cs[i + 1]` behind a bounds
+#   test — the same shape, with the cursor visible.
+
+## Error codes
+
+constant ERR_NOT_AN_ESCAPE: str
+    "not_an_escape"
+
+## The context
+
+# Which literal the escape appears in. The legal set differs between them.
+variant Quoted
+    in_str
+    in_char
+
+# The escapes legal here, for the diagnostic that lists them.
+function legal(ctx: Quoted) -> str
+    return match ctx
+        .in_str => "\\n \\t \\\\ \\\""
+        .in_char => "\\n \\t \\\\ \\'"
+
+# The character that needs no escape here because it is not the delimiter —
+# the other context's escape, which the validator must reject.
+function bare_here(ctx: Quoted) -> u8
+    return match ctx
+        .in_str => '\''
+        .in_char => '"'
+
+## The one table
+
+# What one escape denotes, as the one-character string it decodes to. A miss
+# means "not an escape here" — the validator's question and the decoder's
+# fallback, off one table so they cannot drift apart.
+function escape_text(after_backslash: str, ctx: Quoted) -> str?
+    if after_backslash == "n"
+        return ok("\n")
+    if after_backslash == "t"
+        return ok("\t")
+    if after_backslash == "\\"
+        return ok("\\")
+    if after_backslash == "\"" && ctx == .in_str
+        return ok("\"")
+    if after_backslash == "'" && ctx == .in_char
+        return ok("'")
+    return fail(ERR_NOT_AN_ESCAPE, after_backslash)
+
+## The decoder
+
+# Decode a str or char token's text into the string it denotes. `text` is the
+# token's own text, delimiters included.
+#
+# Total by construction: an invalid escape (already reported by the lexer)
+# decodes to the backslash itself, so a broken literal never panics a later
+# pass.
+function unescape(text: str) -> str
+    ctx: Quoted @ .in_str
+    if text.len() > 0 && text[0] == '\''
+        ctx @ .in_char
+    if text.len() <= 1
+        return ""
+    inner = text.slice(from: 1, to: text.len() - 1)
+    cs = inner.chars()
+    out: str @ ""
+    i: i64 @ 0
+    while i < cs.len()
+        c = cs[i]
+        if c != "\\"
+            out @ out + c
+            i @ i + 1
+            continue
+        if i + 1 >= cs.len()
+            out @ out + "\\"
+            i @ i + 1
+            continue
+        decoded = escape_text(cs[i + 1], ctx)
+        if decoded.is_err()
+            out @ out + "\\"
+            i @ i + 1
+            continue
+        out @ out + decoded.must()
+        i @ i + 2
+    return out
+
+test "the five escapes decode and the split is by context"
+    assert unescape("\"a\\nb\"") == "a\nb"
+    assert unescape("\"a\\tb\"") == "a\tb"
+    assert unescape("\"a\\\\b\"") == "a\\b"
+    assert unescape("\"a\\\"b\"") == "a\"b"
+    assert unescape("'\\''") == "'"
+
+test "an invalid escape decodes to the backslash itself"
+    assert unescape("\"a\\db\"") == "a\\db"
+    assert unescape("\"a\\'b\"") == "a\\'b"
+    assert unescape("'\\\"'") == "\\\""
+
+test "the edges do not abort"
+    assert unescape("\"\"") == ""
+    assert unescape("\"") == ""
+    assert unescape("\"a\\\"") == "a\\"
+
+test "the table serves the validator's question too"
+    assert escape_text("n", .in_str).is_err() == false
+    assert escape_text("\"", .in_char).is_err()
+    assert escape_text("'", .in_str).is_err()
+    assert bare_here(.in_str) == '\''
+    assert legal(.in_char) == "\\n \\t \\\\ \\'"
