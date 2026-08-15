@@ -1,10 +1,13 @@
 # The 10% that pay a copy, recorded with the claim that can retire it
 # (panel 058 condition 5, ratified 2026-08-15).
 #
-# `putenv(char *string)` does not write through its argument in the sense that
-# matters here — but it does **retain** it, and POSIX says the string becomes part
-# of the environment. Either way Heroes refuses the `cstr` spelling, and this file
-# is the record of what that costs rather than a claim that it costs nothing.
+# `putenv(char *string)` does not write through its argument — it **retains** it,
+# and POSIX says the string becomes part of the environment. That is why the
+# diagnostic says *"C does not promise to leave it alone"* and not *"C would write
+# through it"*: the first wording was measured wrong on `free`, which deallocates,
+# and `putenv` is the second witness. The header declares a permission; only the
+# header knows which one is exercised. Heroes refuses the `cstr` spelling either
+# way, and this file records what that costs rather than claiming it costs nothing.
 #
 # THE MEASURED CLAIM, and it is falsifiable: of 186 plain `char *` parameters
 # across 17 headers, **159 (85%) genuinely write** and only **18 (10%)** are the

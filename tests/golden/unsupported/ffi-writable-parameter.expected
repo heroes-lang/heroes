@@ -1,7 +1,7 @@
-error[ffi_writable_parameter]: `s` of `putenv` is declared `cstr`, and the header says `char *` — C would write through it
-  at tests/golden/unsupported/ffi-writable-parameter.hero:23:5
+error[ffi_writable_parameter]: `s` of `putenv` is declared `cstr`, and the header says `char *` — C does not promise to leave it alone
+  at tests/golden/unsupported/ffi-writable-parameter.hero:26:5
      |
-  23 |     function putenv(s: cstr) -> i32   #~ ffi_writable_parameter
+  26 |     function putenv(s: cstr) -> i32   #~ ffi_writable_parameter
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: §4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
   note: declare it `ptr` and give `putenv` a buffer C owns, then read the result back

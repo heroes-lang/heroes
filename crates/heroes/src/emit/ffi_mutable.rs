@@ -70,7 +70,17 @@ pub(super) fn writable_parameter(
         Diagnostic::new(
             "ffi_writable_parameter",
             format!(
-                "{which} of `{name}` is declared `{declared}`, and the header says `{c_type}` — C would write through it"
+                // **"does not promise to leave it alone", not "would write through
+                // it"** (author decision 2026-08-15, from panel 059's findings). The
+                // first wording was measured wrong on the first function anyone
+                // tries: `free(void *)` does not *write* through its argument, it
+                // **deallocates** it — and `strdup`'s result reaching `free` is
+                // exactly the case this class now blocks. Both are the same defect
+                // for this program and neither is "writing", so the message states
+                // what the header actually declares and lets the note carry the
+                // repair. CLAUDE.md §11's rule pointed at prose: the sentence
+                // asserted a mechanism where only a permission is known.
+                "{which} of `{name}` is declared `{declared}`, and the header says `{c_type}` — C does not promise to leave it alone"
             ),
             span,
         )

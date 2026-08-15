@@ -2645,6 +2645,28 @@ visible rather than patched with a second form.
    Measured against that bar today: the closure list's only outbound `cstr` are
    `hero_file_read` and `hero_file_write`, both `const char *`.
 
+18. **A `cstr` that C allocated cannot be freed, in any spelling** (panel 059's findings,
+   2026-08-15). `free(p: cstr)` is refused by wart 17's own diagnostic — the header says
+   `void *`, and C does not promise to leave it alone — while `free(p: ptr)` is
+   `type_mismatch: expected `ptr`, found `cstr``, because a `cstr` has no conversion to `ptr`.
+   Both reproduced. So `readline`, `strdup` and `sqlite3_expanded_sql` **leak on every call**,
+   and the two instruments that would normally say so are silent: `--sanitize` and
+   `hero_runtime_check_leaks()` both report nothing at exit 0, because the block belongs to C
+   and neither looks there.
+
+   The two halves arrived from opposite directions and that is worth recording: the refusal is
+   **new** (wart 17, the same day) and the missing conversion is **old**. Closing half a door
+   is how this became reachable.
+
+   §4.19 already names an ownership vocabulary as future work, and this is the program that
+   makes it concrete rather than anticipated.
+
+   **What would make this row wrong** (§12): a binding on §4.19's ladder or the closure list
+   that must free what C allocated. Measured today: the closure list's `extern` group returns
+   `HeroStr` and `int64_t` and allocates nothing the program owns, and `examples/sqlite`,
+   `examples/curl` and `examples/raylib` all bind only functions whose results C keeps. One
+   binding that must free, and the vocabulary stops being future work.
+
 ## Part 9 — Low-level access, when the time comes
 
 The historical answer to this exists and almost nobody knows it. **Oberon** is a small, safe language
