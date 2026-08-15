@@ -1,6 +1,6 @@
 # 057 — The path pair
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `RATIFIED 2026-08-15` (was `provisional — author ratification pending`).
 **Convened** 2026-08-15 by author instruction, from `docs/debrief/DECIDE.md`'s
 path-pair item (queued by author instruction 2026-08-14, shaped in `/decide`
 2026-08-15).
@@ -285,3 +285,42 @@ sequence*.
   `/decide` on 2026-08-15 and put to the panel unchanged, including the `str?` return
   and the `\` clause that three seats refused. That is the instrument working: the
   measurements were run by seats that did not write it.
+
+## Ratification — 2026-08-15
+
+**RATIFIED as it stands** (author instruction, `/decide`: *"io ratifico tutto"*,
+given after reading the synthesis rather than clause by clause — the same blanket
+form as 2026-08-12 and earlier today, and recorded as that rather than as five
+individual reviews). **Neither built-in enters**, the port writes the scan once in
+`modules/` at 0 spec tokens, the `\`-as-separator clause is refused outright, and
+the Tier-2 route stays measured and available at zero compiler cost.
+
+**What a blanket yes settles, and what it cannot.** It settles that the provisional
+resolution **is** the decision and that no work runs on any other reading. It does
+not settle anything keyed to a measurement nobody has taken — and here that is most
+of the ledger: four of the five predictions above name `M-selfhost-probe` or a model
+harness that does not exist, and panel 046's R2 rule (*re-decided, never renewed*)
+governs them exactly as before. The ergonomist's is the one to watch, because it
+carries a **counter-intuitive clause its own author offered as the falsifier**: that
+the language with no built-in beats both proposed variants. If a harness ever
+contradicts it, the refusal of `path_join` is what reopens.
+
+**Three things the ratification deliberately does not close**, because a yes to a
+refusal is not an answer to a question the refusal raised:
+
+1. **`path_dir` was never on the ballot and is not refused by this yes.** The
+   sitting built it and stopped at its placement, not its shape. Should path work
+   ever return, it starts there and at +41 — not from the pair, which is now
+   refused with reasons on the record.
+2. **The `.cstr()` write hazard is untouched by this verdict.** It was found while
+   pricing an alternative, it is about the FFI boundary rather than about paths, and
+   it is queued in `DECIDE.md` as its own decision.
+3. **`directory_text` still carries the refused premise.** Small blast radius,
+   stated in its own comment, and queued — but it is now the one instance in the
+   tree of a premise a panel has ruled against, which is the condition CLAUDE.md §11
+   describes as expiring in silence.
+
+**A note on this sitting specifically.** The proposal was the coordinator's, drafted
+in `/decide` the same day and put to the panel unchanged — including the `str?`
+return and the `\` clause that three seats refused. The ratification confirms the
+seats rather than the drafter, which is what the panel exists for.
