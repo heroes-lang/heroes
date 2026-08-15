@@ -24,6 +24,7 @@ use diag
 use state
 use layout
 use scan
+use escape
 
 ## The output
 
@@ -103,3 +104,50 @@ test "an error never stops the lexer"
         codes @ codes.push(d.code)
     assert codes == ["reserved_word", "leading_zero", "unexpected_character", "unterminated_string"]
     assert out.tokens[out.tokens.len() - 1].kind == .eof
+
+## Parity with the Rust lexer's own suite (lexer/tests/)
+
+test "an empty file is just eof"
+    out = lex_one("")
+    assert kind_line(out.tokens) == "eof"
+    assert out.diagnostics.len() == 0
+
+test "a single ampersand is the bitwise operator, one token"
+    out = lex_one("x = 1 & 2\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq int amp int terminator eof"
+
+test "record and variant headers earn a terminator"
+    out = lex_one("record Point\n    x: i64\n")
+    assert kind_line(out.tokens) == "kw_record ident terminator indent ident colon ident terminator dedent eof"
+
+test "break, continue, the hole and the question mark end a line"
+    out = lex_one("break\ncontinue\n???\nx?\n")
+    assert kind_line(out.tokens) == "kw_break terminator kw_continue terminator hole terminator ident question terminator eof"
+
+test "the residual windows path trap is on the record"
+    # Honest limit of panel 008: reserving the backslash makes "\d+" loud,
+    # but it CANNOT make "C:\temp" loud — \t is a legal escape, so the path
+    # silently becomes C:<TAB>emp. The fix is not more escapes but raw
+    # strings (deferred, out of scope for v1).
+    out = lex_one("p = \"C:\\temp\"\n")
+    assert out.diagnostics.len() == 0
+    assert escape.unescape("\"C:\\temp\"") == "C:\temp"
+    loud = lex_one("p = \"C:\\Users\"\n")
+    assert loud.diagnostics[0].code == "unknown_escape"
+
+test "a backslash at end of line leaves the layout intact"
+    # The escape must not swallow the newline: doing so would destroy every
+    # indent and dedent that follows (§4.15).
+    out = lex_one("s = \"oops\\\n    x\n")
+    assert out.diagnostics[0].code == "unterminated_string"
+    assert kind_line(out.tokens) == "ident eq error indent ident terminator dedent eof"
+
+test "a multibyte character after the backslash does not panic"
+    # The validator advances by the escaped character's UTF-8 length, not by
+    # one byte — a fixed stride would leave pos mid-character and the next
+    # slice would abort, a crash instead of a diagnostic.
+    out = lex_one("s = \"a\\èb\"\n")
+    assert out.diagnostics[0].code == "unknown_escape"
+    assert kind_line(out.tokens) == "ident eq str terminator eof"
+    assert escape.unescape("\"a\\èb\"") == "a\\èb"
