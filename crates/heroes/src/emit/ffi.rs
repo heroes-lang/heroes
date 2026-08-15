@@ -155,9 +155,19 @@ pub(super) fn name_span(ast: &Ast, src: &Source, name: &str) -> Option<crate::so
 pub(super) fn group_head(ast: &Ast, src: &Source, header: &str) -> Option<crate::source::Span> {
     ast.decls.iter().find_map(|decl| {
         let named = match &decl.kind {
+            // **A `record` is a group member and these lookups are how a group
+            // gets attributed to a `.hero` line** (panel 062's audit, finding 7).
+            // Left out, a group whose members are ONLY records could not claim its
+            // own failure: the driver wrote its `heroes-ffi-package` marker, this
+            // found nothing, and the author saw `internal error` at exit 2 for a
+            // library that is simply not installed — the exact failure CLAUDE.md
+            // §7's named exception exists to remove, on a program whose every line
+            // is correct. It reached CI as a red golden two commits after the audit
+            // reported it and it was queued rather than fixed.
             DeclKind::Function(function) => function.header?,
             DeclKind::Constant { header, .. } => (*header)?,
-            _ => return None,
+            DeclKind::Record { header, .. } => (*header)?,
+            DeclKind::Variant { .. } | DeclKind::Test { .. } => return None,
         };
         (src.slice(named).trim_matches('"') == header).then_some(decl.span)
     })
@@ -172,7 +182,8 @@ pub(super) fn package_span(ast: &Ast, src: &Source, name: &str) -> Option<crate:
         let library = match &decl.kind {
             DeclKind::Function(function) => function.library?,
             DeclKind::Constant { library, .. } => (*library)?,
-            _ => return None,
+            DeclKind::Record { library, .. } => (*library)?,
+            DeclKind::Variant { .. } | DeclKind::Test { .. } => return None,
         };
         match library {
             crate::syntax::Library::Package(span) if src.slice(span).trim_matches('"') == name => {

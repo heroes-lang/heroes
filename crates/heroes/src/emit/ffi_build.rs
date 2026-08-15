@@ -95,7 +95,10 @@ fn link_head(ast: &Ast, src: &Source, name: &str) -> Option<crate::source::Span>
         let library = match &decl.kind {
             crate::syntax::DeclKind::Function(function) => function.library,
             crate::syntax::DeclKind::Constant { library, .. } => *library,
-            _ => None,
+            // The `record`-only group — see `ffi.rs::group_head` for what leaving
+            // this out costs (panel 062's audit, finding 6).
+            crate::syntax::DeclKind::Record { library, .. } => *library,
+            crate::syntax::DeclKind::Variant { .. } | crate::syntax::DeclKind::Test { .. } => None,
         }?;
         let crate::syntax::Library::Link(span) = library else { return None };
         (src.slice(span).trim_matches('"') == name).then_some(span)

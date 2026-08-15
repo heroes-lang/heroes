@@ -1,0 +1,32 @@
+# FIXED DEFECT, 2026-08-15. Symptom: an `extern` group whose members are ALL
+# records could not claim its own failure. A missing package gave
+# `internal error: heroes-ffi-package …` at **exit 2** — the compiler blaming
+# itself, on a program whose every line is correct, for a library that is simply
+# not installed. Same for a missing header and a missing linker library.
+#
+# Cause: `emit/ffi.rs`'s `group_head` and `package_span`, and
+# `emit/ffi_build.rs`'s `link_head`, all matched `Function` and `Constant` and
+# dropped everything else. Those three are how a driver's marker gets attributed
+# to a `.hero` line, so a group with no function had nothing to be attributed to.
+#
+# WHAT MAKES IT WORTH ITS OWN CASE. An audit commissioned during panel 062 found
+# all three and ranked them "LOUD, but the compiler blames itself"; they were
+# QUEUED rather than fixed, on the ground that a loud failure can wait. Two commits
+# later they were the CI failure — and not because a reader met one, but because
+# the *skip rule* that lets a runner without `pkg-config` pass reads
+# `error[ffi_package]`, which is exactly the diagnostic these three could not
+# produce. A defect that only blames the wrong party is still a defect that other
+# machinery reads.
+#
+# The witness is a group of records only, deliberately: one function in it would
+# have hidden all three.
+
+extern "raylib.h" package "definitely-not-a-real-package-062"   #~v ffi_package
+    record Color
+        r: u8
+        g: u8
+        b: u8
+        a: u8
+
+function main()
+    print(Color(r: 1, g: 2, b: 3, a: 4).r)

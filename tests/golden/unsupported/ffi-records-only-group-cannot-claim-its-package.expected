@@ -1,0 +1,10 @@
+error[ffi_package]: the package `definitely-not-a-real-package-062` is not installed on this machine
+  at tests/golden/unsupported/ffi-records-only-group-cannot-claim-its-package.hero:25:5
+     |
+  25 |     record Color
+     |     ^
+  note: pkg-config said: Package definitely-not-a-real-package-062 was not found in the pkg-config search path.
+  note: Perhaps you should add the directory containing `definitely-not-a-real-package-062.pc'
+  note: to the PKG_CONFIG_PATH environment variable
+  note: Package 'definitely-not-a-real-package-062' not found
+  note: install its development files, or name the library directly with `link`

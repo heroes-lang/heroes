@@ -470,13 +470,20 @@ fn golden_unsupported_cases_are_refused_with_a_reason_and_exit_one() {
             .output()
             .expect("the heroes binary runs");
         let actual = String::from_utf8_lossy(&output.stderr).into_owned();
-        if machine_lacks_the_library(&actual) {
-            skipped += 1;
-            continue;
-        }
         let expected_path = case.with_extension("expected");
         let expected = std::fs::read_to_string(&expected_path)
             .unwrap_or_else(|e| panic!("cannot read {}: {e}", expected_path.display()));
+        // **The comparison comes first, and the skip only applies when they
+        // disagree.** A case whose expected output IS a missing-library
+        // diagnostic is testing exactly that, and a skip keyed on the message
+        // alone would silence it on every machine — a golden that never fires
+        // anywhere. `ffi-records-only-group-cannot-claim-its-package` is that
+        // case, and it exists because the attribution it pins is what the skip
+        // rule reads.
+        if actual != expected && machine_lacks_the_library(&actual) {
+            skipped += 1;
+            continue;
+        }
         assert_eq!(
             actual, expected,
             "\nrefusal mismatch for {}\n--- expected ---\n{expected}--- actual ---\n{actual}",
