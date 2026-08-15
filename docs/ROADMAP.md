@@ -17,21 +17,19 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-binding-fidelity closed 2026-08-14, tag `m-binding-fidelity` — a wrong FFI
-parameter is now a compile error on the author's own line.**
+**M-struct-passing closed 2026-08-15, tag `m-struct-passing` — a struct crosses
+the FFI boundary by value, and the layout is the header's.**
 
-    error[ffi_parameter_type]: `size` of `narrow` is declared wider than the
-    header's `int` — clang read the header, and C would convert the value in silence
+    error[ffi_field_type]: `Color.r` is not `i32` in `raylib.h`
 
-§4.19's guarantee was half true: checked on results since M-ffi-ladder, unchecked on
-**every parameter**, and `_Generic`'s unevaluated operand is the reason. The check
-is a never-called probe function per `extern`. **42% of what anybody binds** takes a
-parameter that is not 64 bits.
+Rung 5 of §4.19's ladder — **349 of raylib's 601 entry points**. A group's
+`record` gets **no typedef emitted**, so the emitter cannot get a layout wrong it
+never states; each field is checked by `_Generic` on its address. `f32` landed
+with it, by author decision over the sitting's deferral.
 
-**550 tests**, clippy clean under `-D warnings`, spec **3208** of 4096 (headroom
-888), CI green on three legs. Record: `docs/journal/017-binding-fidelity.md`.
-Next: **M-struct-passing** — 356 of 1159 entry points, the wall the widths do not
-touch.
+**557 tests**, clippy clean under `-D warnings`, spec **3329** of 4096 (headroom
+767), determinism diff empty. Record: `docs/journal/018-struct-passing.md`.
+Next: **M-selfhost-probe** — the lexer ported, to measure what self-hosting lacks.
 
 ---
 
@@ -39,20 +37,19 @@ touch.
 
 | order | id | what | warrant |
 |---|---|---|---|
-| 1 | **M-struct-passing** | A struct crosses the FFI boundary by value | author decision 2026-08-14 — design.md §1.12's completeness clause, over Principle 0's silence |
-| 2 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
-| 3 | **M-selfhost-port** | The port | v1 |
-| 4 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 5 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
-| 6 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 7 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 8 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 9 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
-| 10 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
-| 11 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
-| 12 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
-| 13 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
-| 14 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
+| 1 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
+| 2 | **M-selfhost-port** | The port | v1 |
+| 3 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 4 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
+| 5 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 6 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 7 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 8 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
+| 9 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 10 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 11 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
+| 12 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 13 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -396,7 +393,7 @@ So a number met in the record resolves here, and only here.
 | `M-sized-integers` | — | `m-sized-integers` | the integer widths, signed and unsigned, and the conversions between them |
 | `M-program-corpus` | M8e | — | many whole programs, all of them run |
 | `M-binding-fidelity` | — | `m-binding-fidelity` | a binding says what the header says: the parameter side of §4.19's guarantee |
-| `M-struct-passing` | — | — | a struct crosses the FFI boundary by value — §4.19's ladder rung 5, and the third of the boundary that is unreachable |
+| `M-struct-passing` | — | `m-struct-passing` | a struct crosses the FFI boundary by value — §4.19's ladder rung 5, and the third of the boundary that was unreachable |
 | `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
 | `M-selfhost-port` | M8b | — | the port |
 | `M-selfhost-fixpoint` | M8c | — | the fixpoint — **v1** |
