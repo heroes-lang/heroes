@@ -1,0 +1,63 @@
+# FIXED DEFECTS, 2026-08-15 (panel 061). Six of them, one cause, and the cause is
+# that two names look alike until a header is involved.
+#
+# Symptom: on ANY `record` inside an `extern` group — complete or not —
+#   a == b        -->  error: call to undeclared function 'Color_eq', exit 2
+#   [Color]       -->  static const HeroDesc Color_desc, a GLOBAL UNMANGLED name
+#                      emitted beside the library that declared `Color` (§7)
+#   {i64: Color}  -->  the same, through the map's descriptor
+#   Color?        -->  the same, through the option's
+# and, for a group whose members are only records,
+#   any use       -->  use of undeclared identifier 'Color', then
+#                      fatal error: 'raylib.h' file not found
+#
+# Cause: `M-struct-passing` split `Names::of()` (the C **type**) from
+# `Names::satellite()` (the generated-function **prefix**) because a group's
+# `record` is the only declaration for which they differ. The split landed at the
+# function definitions and five call sites kept reading the type table
+# (`emit/aggregate.rs:92,240,251`, `emit/descriptors.rs:229,262`). The sixth is a
+# different shape of the same thing: `externs::headers` and `externs::named` walk
+# `program.functions`, and a `record` lowers to no function — a premise that was
+# the *shape of a loop* rather than a sentence anybody wrote.
+#
+# WHY IT MATTERS MORE THAN A RED TEST: panel 061 spends spec tokens forbidding
+# `==` and a map key on a *partial* record. While these were broken, neither
+# operation could be performed on ANY group record, so that refusal's control arm
+# — "a COMPLETE record can be compared" — was unwritable and a golden asserting
+# the refusal would have passed vacuously. Found by three judges independently, on
+# the first programs each of them wrote.
+#
+# This case is the control arm. Every line is a container path that reaches the
+# generated `_eq`, `_hash` or `_desc` of a struct this compiler never declared.
+
+extern "raylib.h" package "raylib"
+    record Color
+        r: u8
+        g: u8
+        b: u8
+        a: u8
+    function ColorToInt(color: Color) -> i32
+
+function main()
+    a = Color(r: 1, g: 2, b: 3, a: 4)
+    b = Color(r: 1, g: 2, b: 3, a: 4)
+    c = Color(r: 9, g: 9, b: 9, a: 9)
+    # `==` walks the fields of the header's struct, through this compiler's `_eq`.
+    print(a == b)
+    print(a == c)
+    # An array element reaches `_desc`, whose copy, drop and eq are all generated.
+    xs: [Color] = [a, c]
+    print(len(xs))
+    print(xs[0] == a)
+    # A map VALUE reaches the same descriptor; a map KEY reaches `_hash` as well.
+    m: {i64: Color} @ {}
+    m[1] @ a
+    print(m[1].must() == a)
+    keyed: {Color: i64} @ {}
+    keyed[a] @ 7
+    print(keyed[b].must())
+    # A `T?` payload is a third descriptor route.
+    maybe: Color? = ok(c)
+    print(maybe.is_err())
+    # And the value still crosses to C after all of that.
+    print(ColorToInt(a))

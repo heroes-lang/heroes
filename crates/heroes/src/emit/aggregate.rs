@@ -86,10 +86,20 @@ impl<'a> Types<'a> {
         Some((mangle::field_of(foreign, self.src.slice(field.name)), ty))
     }
 
-    /// The C type name a per-type function belongs to.
-    pub(super) fn aggregate_name(&self, ty: TyId) -> Option<&str> {
+    /// The **prefix** a per-type function is spelled with — what `_eq`, `_hash`,
+    /// `_retain` and `_release` are appended to.
+    ///
+    /// **Never the C type name**, and the two are the same string for every
+    /// declaration except one: a `record` inside an `extern` group, whose type is
+    /// the header's and whose generated functions are still this compiler's. This
+    /// site read `names.of` — the type table — until 2026-08-15, so `a == b` on any
+    /// group record emitted `Color_eq` while the body defined `h_m_Color_eq`:
+    /// `call to undeclared function`, exit 2, on a correct program. Panel 060's
+    /// condition 3 asked for the split and it landed at the definitions and not
+    /// here; panel 061 found it, on the first program three judges wrote.
+    pub(super) fn satellite_name(&self, ty: TyId) -> Option<&str> {
         match self.checked.types.get(ty) {
-            Ty::Named(decl) => Some(self.names.of(decl)),
+            Ty::Named(decl) => Some(self.names.satellite(decl)),
             Ty::Case(decl, case) => Some(self.names.case_of(decl, case)),
             Ty::Fallible(_) => Some(self.names.option_of(ty)),
             Ty::Failure => Some("hero_failure"),
@@ -237,7 +247,7 @@ pub(super) fn read_field(
 
 /// `h_m_Point_eq(&t1, &t2)` — one call, generated per type, walking fields.
 pub(super) fn equality(types: &Types, ty: TyId, left: ValueId, right: ValueId) -> Option<String> {
-    let name = types.aggregate_name(ty)?;
+    let name = types.satellite_name(ty)?;
     Some(format!("{name}_eq(&{}, &{})", mangle::value(left.0), mangle::value(right.0)))
 }
 
@@ -248,7 +258,7 @@ pub(super) fn equality(types: &Types, ty: TyId, left: ValueId, right: ValueId) -
 /// nothing is copied here. The bytes are already where they belong and this only
 /// makes the references inside them owned.
 pub(super) fn retain(types: &Types, ty: TyId, value: ValueId, keep: bool) -> Option<String> {
-    let name = types.aggregate_name(ty)?;
+    let name = types.satellite_name(ty)?;
     let verb = if keep { "retain" } else { "release" };
     Some(format!("{name}_{verb}(&{})", mangle::value(value.0)))
 }

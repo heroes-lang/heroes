@@ -1,6 +1,8 @@
 # 061 — The fields nobody named
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `RATIFIED 2026-08-15` (was `provisional — author ratification pending`).
+The author's yes is a **work order**, and its order is the ratified part: the five
+swept sites, the completeness probe and the false sentences land *before* `partial`.
 **Convened** 2026-08-15, hours after `M-struct-passing` closed, by author instruction
 (*"ok rendili legabili"*) adopting the partial field list panel 060 had queued.
 **Lane**: full, five judges. All five compiled or ran programs.

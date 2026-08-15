@@ -225,12 +225,25 @@ pub(super) fn definitions(
         return;
     }
     for ty in wanted {
-        let name = match checked.types.get(ty) {
-            Ty::Named(decl) => names.of(decl).to_string(),
-            Ty::Case(decl, case) => names.case_of(decl, case).to_string(),
+        // **Both names, because this loop writes both kinds of string.**
+        // `sizeof({c_type})` and `(const {c_type} *)a` are the type; `{prefix}_desc`
+        // and `{prefix}_eq` are functions this compiler generated. They are the same
+        // word for everything except a group's `record`, which is why one variable
+        // did the job until a header was involved — and then emitted
+        // `static const HeroDesc Color_desc`, a **global unmangled name beside the
+        // library that declared `Color`** (CLAUDE.md §7). Panel 061.
+        let (prefix, c_type) = match checked.types.get(ty) {
+            Ty::Named(decl) => (names.satellite(decl).to_string(), names.of(decl).to_string()),
+            Ty::Case(decl, case) => {
+                let n = names.case_of(decl, case).to_string();
+                (n.clone(), n)
+            }
             // A `T?` used as an element needs one too, and its four functions already
             // exist — `option_bodies` writes them for every `T?` in the program.
-            Ty::Fallible(_) => names.option_of(ty).to_string(),
+            Ty::Fallible(_) => {
+                let n = names.option_of(ty).to_string();
+                (n.clone(), n)
+            }
             _ => continue,
         };
         let counted = crate::ir::is_refcounted(checked, ty);
@@ -238,36 +251,36 @@ pub(super) fn definitions(
         // The adapters. `retain`/`release`/`eq` take TYPED pointers so that every call
         // the emitter itself writes is checked by clang; only these three erase them,
         // once per type, which is the whole price of a generic runtime in C.
-        w.line(&format!("static void {name}_desc_copy(void *dst, const void *src) {{"));
-        w.line(&format!("    *({name} *)dst = *(const {name} *)src;"));
+        w.line(&format!("static void {prefix}_desc_copy(void *dst, const void *src) {{"));
+        w.line(&format!("    *({c_type} *)dst = *(const {c_type} *)src;"));
         if counted {
             // Shallow plus incref, never deep (panel 022): copy-on-write is what makes
             // a deep copy unnecessary, because sharing is unobservable until somebody
             // mutates. A deep copy here would pay for every binding what only a
             // mutation costs.
-            w.line(&format!("    {name}_retain((const {name} *)dst);"));
+            w.line(&format!("    {prefix}_retain((const {c_type} *)dst);"));
         }
         w.line("}");
-        w.line(&format!("static void {name}_desc_drop(void *elem) {{"));
+        w.line(&format!("static void {prefix}_desc_drop(void *elem) {{"));
         if counted {
-            w.line(&format!("    {name}_release(({name} *)elem);"));
+            w.line(&format!("    {prefix}_release(({c_type} *)elem);"));
         } else {
             // Nothing inside owns a reference, so there is nothing to release — and
             // `(void)` keeps the parameter used, because `-Wall` is on.
             w.line("    (void)elem;");
         }
         w.line("}");
-        w.line(&format!("static bool {name}_desc_eq(const void *a, const void *b) {{"));
+        w.line(&format!("static bool {prefix}_desc_eq(const void *a, const void *b) {{"));
         w.line(&format!(
-            "    return {name}_eq((const {name} *)a, (const {name} *)b);"
+            "    return {prefix}_eq((const {c_type} *)a, (const {c_type} *)b);"
         ));
         w.line("}");
-        w.line(&format!("static const HeroDesc {name}_desc = {{"));
-        w.line(&format!("    sizeof({name}),"));
-        w.line(&format!("    {name}_desc_copy,"));
-        w.line(&format!("    {name}_desc_drop,"));
-        w.line(&format!("    {name}_desc_eq,"));
-        w.line(&format!("    {name}_hash,"));
+        w.line(&format!("static const HeroDesc {prefix}_desc = {{"));
+        w.line(&format!("    sizeof({c_type}),"));
+        w.line(&format!("    {prefix}_desc_copy,"));
+        w.line(&format!("    {prefix}_desc_drop,"));
+        w.line(&format!("    {prefix}_desc_eq,"));
+        w.line(&format!("    {prefix}_hash,"));
         w.line("};");
         w.blank();
     }

@@ -19,7 +19,7 @@
 
 use crate::ir::{Function, Program};
 use crate::source::Source;
-use crate::syntax::Ast;
+use crate::syntax::{Ast, DeclKind};
 
 
 /// Every header a group named, without its quotes, deduplicated and in
@@ -33,6 +33,25 @@ pub(super) fn headers(program: &Program, ast: &Ast, src: &Source) -> Vec<String>
     let mut seen: Vec<String> = vec!["math.h".to_string(), "hero_os.h".to_string()];
     for function in &program.functions {
         let Some(header) = extern_header(ast, src, function) else { continue };
+        if !seen.contains(&header) {
+            seen.push(header);
+        }
+    }
+    // **And every group that declares a `record`, whether or not it declares a
+    // function** (panel 061). This walk was over `program.functions` alone, which
+    // was true for as long as a group's only members were functions and constants —
+    // and `record` became the third on 2026-08-15. A group of records only then
+    // produced no `#include`, so its own field assertions referenced a type nothing
+    // had declared: `use of undeclared identifier 'Color'`, exit 2, on a program
+    // whose every line is correct.
+    //
+    // Walked over the **declarations** rather than over the IR, because that is
+    // where the answer is: a `record` lowers to no function, so no walk of the
+    // emitted program can see one. The premise that died here was not written down
+    // anywhere — it was the shape of the loop (CLAUDE.md §11).
+    for decl in &ast.decls {
+        let DeclKind::Record { header: Some(header), .. } = &decl.kind else { continue };
+        let header = src.slice(*header).trim_matches('"').to_string();
         if !seen.contains(&header) {
             seen.push(header);
         }
@@ -64,6 +83,23 @@ fn named(program: &Program, ast: &Ast, src: &Source, want_package: bool) -> Vec<
         let span = match library {
             Some(crate::syntax::Library::Package(span)) if want_package => span,
             Some(crate::syntax::Library::Link(span)) if !want_package => span,
+            _ => continue,
+        };
+        let name = src.slice(span).trim_matches('"').to_string();
+        if !seen.contains(&name) {
+            seen.push(name);
+        }
+    }
+    // The `record`-only group again (panel 061), one level further on: `headers`
+    // gained its arm and this did not, so the `#include` was emitted and the `-I`
+    // that finds the header was not — `fatal error: 'raylib.h' file not found`.
+    // One defect, two walks, and the second was invisible until the first was
+    // fixed.
+    for decl in &ast.decls {
+        let DeclKind::Record { library, .. } = &decl.kind else { continue };
+        let span = match library {
+            Some(crate::syntax::Library::Package(span)) if want_package => *span,
+            Some(crate::syntax::Library::Link(span)) if !want_package => *span,
             _ => continue,
         };
         let name = src.slice(span).trim_matches('"').to_string();
