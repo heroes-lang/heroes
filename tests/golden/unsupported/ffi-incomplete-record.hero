@@ -1,0 +1,54 @@
+# The check that protects a `record` with NO marker on it (panel 061, ratified
+# 2026-08-15) — and the defect it closes was shipping four hours before this file
+# existed.
+#
+# `M-struct-passing` gave a group's `record` a `_Generic` assertion per field, and
+# every one of them asks the same question: of a field the program NAMES, does the
+# header agree? None of them can see a field the program left OUT. So this
+# compiled, with every assertion green, zero warnings, and exit 0:
+#
+#     record Color            ColorToInt(Color(r: 255, g: 0, b: 0))
+#         r: u8                 -->  -16777216   (0xFF000000, alpha 0)
+#         g: u8               C gives
+#         b: u8                 -->  -16776961   (0xFF0000FF, alpha 255)
+#
+# A transparent colour where the program asked for an opaque one, and nothing said
+# anywhere. The layout was never wrong — it is the header's — but the fourth byte
+# was the author's to fill and C filled it with zero.
+#
+# THE MECHANISM IS POSITIONAL, and that is the whole of it. The emitter writes
+# designated initialisers everywhere — `(Color){.r = …, .g = …}` — and clang warns
+# about NOTHING for those, in any version, even under `-Wextra`. That is precisely
+# why the defect was reachable. A never-called probe with a POSITIONAL list is the
+# one form C obliges the compiler to count:
+#
+#     static void hero_ffi_complete_h_m_Color(void) { Color v = {0,0,0}; (void)v; }
+#     --> error: missing field 'a' initializer
+#
+# It is armed by a local `#pragma clang diagnostic` region and NOT by a flag in
+# `FLAGS`, because the emitter writes `= {0}` for every refcounted slot — panel
+# 021's zero-initialiser, the rule that makes cleanup unconditional — and a global
+# `-Wmissing-field-initializers` fires on all of them.
+#
+# A UNION GIVES NO SIGNAL, correctly: naming one member of a union is naming all of
+# it, and `{0}` initialises the first with no warning. `SDL_Event` with one member
+# declared is complete, which is the right answer rather than a hole.
+#
+# The second record is the control: `Rectangle` names all four of its fields and
+# says nothing.
+
+extern "raylib.h" package "raylib"
+    record Color            #~ ffi_incomplete_record
+        r: u8
+        g: u8
+        b: u8
+    record Rectangle
+        x: f32
+        y: f32
+        width: f32
+        height: f32
+    function ColorToInt(color: Color) -> i32
+    function CheckCollisionPointRec(point: Rectangle, rec: Rectangle) -> bool
+
+function main()
+    print(ColorToInt(Color(r: 255, g: 0, b: 0)))

@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 67] = [
+const ANNOTATED: [&str; 68] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -66,6 +66,9 @@ const ANNOTATED: [&str; 67] = [
     // Soundness, not thesis: without it a program reads a header's field at a
     // width the header does not use, which is a wrong value rather than a style.
     "ffi_field_type",
+    // Soundness: without it a field the author never named is filled with zero by
+    // C and the program returns a wrong value at exit 0 — measured, panel 061.
+    "ffi_incomplete_record",
     "ffi_not_constant",
     "ffi_parameter_type",
     "ffi_return_type",

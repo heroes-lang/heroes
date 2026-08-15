@@ -30,6 +30,7 @@ use crate::syntax::{Ast, DeclKind};
 
 use super::ffi_build as build;
 use super::ffi_declared as declared;
+use super::ffi_record as record;
 use super::ffi_mutable as mutable;
 use super::ffi_narrowed as narrowed;
 
@@ -70,10 +71,13 @@ pub fn explain(
         if let Some(diagnostic) = declared::not_constant(line, ast, src) {
             push(&mut found, diagnostic);
         }
-        if let Some(diagnostic) = declared::unknown_field(line, ast, src) {
+        if let Some(diagnostic) = record::incomplete_record(line, ast, src) {
             push(&mut found, diagnostic);
         }
-        if let Some(diagnostic) = declared::field_type(line, ast, src) {
+        if let Some(diagnostic) = record::unknown_field(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = record::field_type(line, ast, src) {
             push(&mut found, diagnostic);
         }
         if let Some(diagnostic) = declared::unknown_name(line, stderr, ast, src) {
