@@ -23,6 +23,7 @@ use crate::ir::{Arg, Shape};
 use crate::types::TyId;
 
 use super::aggregate;
+use super::storageless;
 use super::container;
 use super::fallible;
 use super::mangle;
@@ -55,7 +56,14 @@ pub(super) fn record_or_case(
         .args_of(args)
         .into_iter()
         .map(|arg| match arg {
-            Arg::Value(value) => mangle::value(value.0),
+            // **A fixed-array argument is rendered as its braced list, here**, and
+            // it has to be here because C gives it nowhere else to live: an array
+            // is not assignable, so the value has no temporary (`ctype.rs` declares
+            // none, the same rule `()` follows), and the only legal place for the
+            // elements is inside the enclosing initialiser. `emit/inst.rs` emits no
+            // statement for the construction at all; this is where it becomes text.
+            Arg::Value(value) => storageless::fixed_text(types, function, value)
+                .unwrap_or_else(|| mangle::value(value.0)),
             Arg::InOut(place) => format!("&{}", aggregate::place(types, function, place)),
         })
         .collect();

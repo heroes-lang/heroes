@@ -98,119 +98,7 @@ pub(super) fn extern_record_assertions(
         w.at_generated();
         w.blank();
     }
-    completeness_probes(w, ast, checked, names, src);
-}
-
-/// One never-called function per group `record`, whose whole body is a
-/// **positional** initialiser with one zero per field the author named.
-///
-/// ```c
-/// __attribute__((unused)) static void hero_ffi_complete_h_m_Color(void)
-/// { Color v = {0,0,0}; (void)v; }
-/// /* -> error: missing field 'a' initializer */
-/// ```
-///
-/// **This is the check the field assertions cannot make.** They ask, of every field
-/// the program *names*, whether the header agrees — and say nothing at all about a
-/// field the program left out. `record Color` with three of raylib's four members
-/// therefore compiled with every assertion green, zero warnings, **exit 0**, and
-/// returned `0xFF000000` where C returns `0xFF0000FF`: a transparent colour where
-/// the program asked for an opaque one (panel 061, reproduced by two judges).
-///
-/// **Positional, and that is the entire mechanism.** The designated form this
-/// emitter writes everywhere else — `(Color){.r = …, .g = …}` — warns about
-/// nothing, in any clang, even under `-Wextra`, which is precisely why the defect
-/// was reachable. A positional list is the one form C obliges the compiler to count.
-///
-/// **Local pragmas rather than a flag in `FLAGS`**, and the reason is measured: the
-/// emitter writes `= {0}` for every refcounted slot (panel 021's zero-initialiser,
-/// which is what makes cleanup unconditional), and a global
-/// `-Wmissing-field-initializers` fires on all of them. The warning has to be armed
-/// where it is wanted and disarmed immediately.
-///
-/// `-Wmissing-braces` is silenced inside the region for the same reason it is not a
-/// defect: a nested record's `0` is C's brace elision, which is legal and says
-/// nothing about completeness.
-///
-/// **A union gives no signal, correctly.** Naming one member of a union *is* naming
-/// all of it, and `{0}` initialises the first member with no warning — so
-/// `SDL_Event` with one member declared passes, which is the right answer rather
-/// than a hole.
-fn completeness_probes(
-    w: &mut Writer,
-    ast: &Ast,
-    checked: &Checked,
-    names: &Names,
-    src: &Source,
-) {
-    let records: Vec<(usize, &Vec<Field>)> = ast
-        .decls
-        .iter()
-        .enumerate()
-        .filter_map(|(index, decl)| match &decl.kind {
-            // **`partial` is exactly the absence of this probe**, and that is the
-            // whole of what the word buys. Everything else it does is a *refusal*
-            // — `==`, `hash`, a map key — so if it did not also switch this off it
-            // would be a word that costs and gives nothing.
-            DeclKind::Record { fields, header: Some(_), partial: false, .. }
-                if !fields.is_empty() =>
-            {
-                Some((index, fields))
-            }
-            _ => None,
-        })
-        .collect();
-    if records.is_empty() {
-        return;
-    }
-    w.at_generated();
-    w.line("#pragma clang diagnostic push");
-    w.line("#pragma clang diagnostic error \"-Wmissing-field-initializers\"");
-    w.line("#pragma clang diagnostic ignored \"-Wmissing-braces\"");
-    for (index, fields) in records {
-        let decl = &ast.decls[index];
-        let c_type = names.of(index as u32);
-        let probe = format!("{COMPLETE_PROBE}{}", names.satellite(index as u32));
-        // **A nested record's slot is `{0}`, not `0`, and the difference is not
-        // cosmetic** (found 2026-08-15 by re-measuring, hours after this probe
-        // shipped). C's **brace elision** lets a flat zero list spill into an inner
-        // struct's members, so `Camera2D v = {0,0,0,0}` fills `offset.x`,
-        // `offset.y`, `target.x` and `target.y` — and clang then reports
-        // `rotation` missing on a record that names **all four** of its fields.
-        //
-        // There was no `.hero` text that satisfied it, and the diagnostic's own
-        // note said *"add the field"*. A message naming a repair that does not
-        // exist is Nim issue #19040's shape — which panel 061 cited **against**
-        // option E, and which this shipped four hours later. Ten of raylib's
-        // thirty-five structs were unbindable for this reason alone.
-        //
-        // `{0}` is the universal zero initialiser and clang exempts it from
-        // `-Wmissing-field-initializers`, so the outer count is what gets counted.
-        // Chosen over expanding the inner record recursively because that would
-        // break the moment an inner record is itself `partial`, and because it is
-        // one token.
-        let zeros: Vec<&str> = fields
-            .iter()
-            .map(|field| {
-                let nested = checked
-                    .written_type(field.ty)
-                    .is_some_and(|ty| matches!(checked.types.get(ty), Ty::Named(_)));
-                if nested { "{0}" } else { "0" }
-            })
-            .collect();
-        let zeros = zeros.join(",");
-        // The declaration's own line, so the verdict lands where the author can act
-        // on it — the same contract `extern_probe.rs` keeps for parameters.
-        let (file, line, _) = src.locate(decl.name.start);
-        let file = file.to_string();
-        w.at_file(&file, line);
-        w.line(&format!(
-            "__attribute__((unused)) static void {probe}(void) {{ {c_type} v = {{{zeros}}}; (void)v; }}"
-        ));
-    }
-    w.at_generated();
-    w.line("#pragma clang diagnostic pop");
-    w.blank();
+    super::extern_complete::completeness_probes(w, ast, checked, names, src);
 }
 
 /// One field's assertion, or `None` for a field whose type the checker has already
@@ -261,6 +149,30 @@ fn assertion(
             "_Static_assert(__builtin_classify_type({place}) == 5 \
              && _Generic({place}, __typeof__({place}): 1, default: 0) \
              && sizeof({place}) == sizeof(void *), \
+             \"{FIELD_ASSERTION} {c_type} {member}\");"
+        ));
+    }
+    // **An array field is a BRANCH, not a row** (panel 062's compiler-engineer,
+    // whose veto this closes). C's pointer-to-array declarator is `T (*)[N]`, not
+    // `T[N] *`, and `c_spelling` returns a name the caller suffixes with ` *` —
+    // there is no string for which that composes. So `c_spelling` answered `None`
+    // and **no assertion was emitted at all**: `leftLensCenter: f64[2]` over a
+    // header's `float[2]` ran at exit 0 with the field unchecked, which is the
+    // exact class this file exists to prevent.
+    //
+    // It arrived, in that judge's words, *"as a `None` nobody chose"* — through the
+    // arm whose own comment says the next type to reach it should be a `None`
+    // somebody did.
+    //
+    // `_Generic` on the **address** distinguishes `float[2]` from `float[4]` and
+    // from `float *`, measured across ten clang verdicts, and the `sizeof`
+    // conjunct is what refuses a **flexible** array member (`char data[]`), whose
+    // type is compatible with any sized one.
+    if let Ty::Fixed(inner, n) = checked.types.get(ty) {
+        let elem = c_spelling(checked, names, inner)?;
+        return Some(format!(
+            "_Static_assert(_Generic(&{place}, {elem} (*)[{n}]: 1, default: 0) \
+             && sizeof({place}) == sizeof({elem}[{n}]), \
              \"{FIELD_ASSERTION} {c_type} {member}\");"
         ));
     }

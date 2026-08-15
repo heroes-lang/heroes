@@ -32,7 +32,7 @@
 
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind, Field};
-use crate::types::Checked;
+use crate::types::{Checked, Ty};
 
 use super::ctype::{c_result, c_type};
 use super::typedefs::Names;
@@ -75,8 +75,18 @@ pub(super) fn is_variant(ast: &Ast, decl: u32) -> bool {
 /// One field, as a C member declaration.
 pub(super) fn member(checked: &Checked, names: &Names, src: &Source, field: &Field) -> String {
     let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
+    let name = mangle::field(src.slice(field.name));
+    // **C puts an array's brackets after the NAME, not after the type** — `int
+    // params[4]`, never `int[4] params`. This is the one place in the emitter
+    // where the C declarator's shape differs from `<type> <name>`, and it is the
+    // same reason `typedefs.rs` gives for a function type needing a `typedef`
+    // rather than an inline spelling (panel 062).
+    if let Ty::Fixed(inner, n) = checked.types.get(ty) {
+        let elem = c_type(names, checked, inner).unwrap_or_else(|| "void".to_string());
+        return format!("    {elem} {name}[{n}];");
+    }
     let spelling = c_type(names, checked, ty).unwrap_or_else(|| "void".to_string());
-    format!("    {spelling} {};", mangle::field(src.slice(field.name)))
+    format!("    {spelling} {name};")
 }
 
 /// One declared aggregate's `typedef struct`.

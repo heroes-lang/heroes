@@ -74,6 +74,30 @@ pub(super) fn read_element(
     base: ValueId,
     index: ValueId,
 ) -> Option<String> {
+    // **A fixed array is subscripted directly, and guarded here** (panel 062).
+    //
+    // Two things are load-bearing and both were measured. The subscript stays on
+    // an **array-typed lvalue** — `v.params[i]`, never `*((T *)&v.params + i)` —
+    // because that is the only form `-fsanitize=undefined`'s `array-bounds` can
+    // see; ASan is documented blind to an intra-object overflow in a **C** struct
+    // (`-fsanitize-address-field-padding` is C++-only), so UBSan is `--sanitize`'s
+    // only arm on this. And the **guard is the compiler's**, because
+    // `-Warray-bounds` was measured not to fire on `int64_t i = 7; arr[i]` at
+    // `-O0` or `-O2` — and this emitter always writes a temporary, so clang can
+    // never see a constant here. The cost was measured at a 0.94–0.95 ratio over
+    // four million opaque indices: under the noise floor.
+    //
+    // The comparison is unsigned so one test catches both ends: a negative index
+    // becomes huge and fails the same `>=`.
+    if let Ty::Fixed(element, n) = types.checked.types.get(function.value_type(base)) {
+        let _ = element;
+        let base_text = super::storageless::fixed_text(types, function, base)
+            .unwrap_or_else(|| mangle::value(base.0));
+        let i = mangle::value(index.0);
+        return Some(format!(
+            "{base_text}[((uint64_t)({i}) >= UINT64_C({n}) ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : ({i}))]"
+        ));
+    }
     let element = match types.checked.types.get(function.value_type(base)) {
         Ty::Array(element) => element,
         _ => return None,

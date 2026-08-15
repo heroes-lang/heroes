@@ -70,6 +70,14 @@ pub(super) fn collect(checked: &Checked, ty: TyId, into: &mut std::collections::
 pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<String> {
     match checked.types.get(ty) {
         Ty::Unit => None,
+        // **A fixed array is never declared as a temporary either** (panel 062),
+        // and it is the unit rule's second instance rather than a new one. C has no
+        // assignable array: `float t[4]; t = …;` does not compile at any
+        // optimisation level, so a `T[N]`-typed temporary cannot exist the way every
+        // other temporary does. What exists instead is the braced list at its use
+        // site, which `construct::fixed` writes — the same shape `()` takes, where
+        // the value is real and the storage is not.
+        Ty::Fixed(_, _) => None,
         Ty::Int(kind) => Some(kind.c_type().to_string()),
         Ty::Bool => Some("bool".to_string()),
         Ty::Float(kind) => Some(kind.c_type().to_string()),

@@ -23,6 +23,19 @@ pub enum TypeKind {
     Unit,
     /// `[T]`
     Array(TypeId),
+    /// `i32[4]` — a **fixed-size** array, and the length is part of the type
+    /// (§4.19; panel 062, author instruction 2026-08-15).
+    ///
+    /// **Not an `Array`, and the difference is where the elements live.** A `[T]`
+    /// is a heap block with a reference count in a header before the bytes; this
+    /// is the bytes themselves, inline, at an offset a C compiler chose. They can
+    /// no more share a representation than a `str` and a `cstr` can.
+    ///
+    /// The bracket comes **after** the element type, which is what makes the two
+    /// unambiguous to parse and — the reason it was chosen over `[T; N]` and
+    /// `[T N]` — what lets a reader comparing `raylib.h` to a `.hero` file read
+    /// `int params[4]` and `params: i32[4]` without translating.
+    Fixed(TypeId, u32),
     /// `{K: V}`
     Map(TypeId, TypeId),
     /// `T?` — a `T` or an error (§4.6).

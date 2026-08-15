@@ -48,6 +48,10 @@ fn shape(
             let inner = ty(checker, ast, resolved, *inner);
             checker.out.types.intern(Ty::Array(inner))
         }
+        TypeKind::Fixed(inner, n) => {
+            let inner = ty(checker, ast, resolved, *inner);
+            checker.out.types.intern(Ty::Fixed(inner, *n))
+        }
         TypeKind::Fallible(inner) => {
             let inner = ty(checker, ast, resolved, *inner);
             checker.out.types.intern(Ty::Fallible(inner))

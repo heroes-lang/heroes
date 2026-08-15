@@ -156,6 +156,26 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                     // about generated C — exit 2, the compiler blaming itself.
                     if header.is_some() {
                         super::ffi_decls::ffi_field(checker, ast, src, ty, ast.types[field.ty.0 as usize].span);
+                    } else {
+                        // **A fixed array exists at the C boundary and nowhere
+                        // else** (panel 062; all three judges who looked at Q3
+                        // reached it from different directions). It exists because
+                        // a C compiler laid out a struct and put the elements
+                        // inline; an ordinary `record` has no header to inherit a
+                        // layout from, so `[T]` is the form and this one would be a
+                        // second array type in every program for no one's benefit.
+                        //
+                        // Refused **here** rather than left inert: it parses and
+                        // type-checks today, and a type with no constructor and no
+                        // operation is worse than an error — the reader gets no
+                        // signal until the emitter meets it.
+                        super::ffi_decls::fixed_outside_a_group(
+                            checker,
+                            ast,
+                            src,
+                            ty,
+                            ast.types[field.ty.0 as usize].span,
+                        );
                     }
                 }
             }

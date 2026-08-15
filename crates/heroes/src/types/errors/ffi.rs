@@ -91,3 +91,59 @@ pub(in crate::types) fn partial_operation(
         "a `partial` record may be read, copied, passed to C and returned from it — what it gives up is `==`, `hash` and being a map key. Name every field of the header's struct to get them back, and drop `partial` from `{record}`"
     ))
 }
+
+/// A literal built for a fixed array whose length it does not match (panel 062).
+///
+/// **Both numbers are in the message**, because the reader's mistake is a count and
+/// a count is invisible in a type name: someone who read `float lensDistortionValues[4]`
+/// as three cannot see their own error in *"expected `f32[4]`"* alone.
+pub(in crate::types) fn fixed_array_length(
+    want: &str,
+    expected: u32,
+    got: usize,
+    span: Span,
+) -> Diagnostic {
+    Diagnostic::new(
+        "fixed_array_length",
+        format!(
+            "`{want}` holds exactly {expected}, and this literal has {got} — a fixed array's length is part of its type, so the two must agree (§4.19)"
+        ),
+        span,
+    )
+}
+
+/// A literal index past the end of a fixed array (panel 062).
+///
+/// **A compile error and not an abort**, which is the one place a fixed array is
+/// safer than `[T]` rather than merely different: the length is in the type, so the
+/// mistake is visible without running the program. §1.12 asks a check to surface a
+/// defect rather than hide it, and a diagnostic surfaces it earlier than a trap.
+pub(in crate::types) fn fixed_index_out_of_range(
+    shown: &str,
+    n: u32,
+    got: i128,
+    span: Span,
+) -> Diagnostic {
+    Diagnostic::new(
+        "fixed_index_out_of_range",
+        format!(
+            "`{shown}` holds {n}, so its last index is {}, and this is {got} — a fixed array's length is part of its type, so the index is checked here rather than at run time",
+            n - 1
+        ),
+        span,
+    )
+}
+
+/// `i32[4]` in an ordinary `record` (panel 062).
+pub(in crate::types) fn fixed_outside_a_group(name: &str, span: Span) -> Diagnostic {
+    Diagnostic::new(
+        "fixed_outside_a_group",
+        format!(
+            "`{name}` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)"
+        ),
+        span,
+    )
+    .with_note(
+        "use `[T]` here: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds".to_string(),
+    )
+}

@@ -138,6 +138,12 @@ fn by_value_target(ast: &Ast, resolved: &Resolved, ty: TypeId) -> Option<u32> {
         // measured: three records mutually recursive through arrays compile in
         // the worst order with zero forward declarations.
         TypeKind::Array(_) | TypeKind::Map(_, _) => None,
+        // **A fixed array is sized, and its size is the element's times N** — the
+        // opposite of `[T]`, which is a pointer to a heap block and therefore the
+        // escape §4.3 offers a record that would otherwise contain itself. A record
+        // holding `Self[2]` by value has no size, exactly as one holding `Self`
+        // does, so this descends rather than stopping.
+        TypeKind::Fixed(inner, _) => by_value_target(ast, resolved, *inner),
         // A function value is a C function pointer: `record R { f:
         // (function(R) -> i64) }` compiles and runs, measured. M-generics-library owns the
         // emission; the edge set already has the right answer.

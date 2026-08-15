@@ -201,7 +201,7 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_open(path: cstr, @out: ptr) -> i64
     function sqlite3_close(db: ptr) -> i64
 ```
-Both are names, never paths: an absolute one is refused.
+Neither may be an absolute path.
 Where a library lives is the machine's answer, not the program's, so a group may
 name a **package** instead of a library: `extern "raylib.h" package "raylib"`
 asks the system where its headers and libraries are and what else it needs —
@@ -210,7 +210,8 @@ everywhere. A package answering with anything this compiler does not pass on is
 refused, naming what it said.
 
 A group's `record` is the header's struct: the same name and all its fields. A
-field is a number, `bool`, `ptr`, `cstr` or another record of the group.
+field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
+array of one: `i32[4]`, never a `[T]`.
 `record Font partial` names only some, and then comparing it and using it as a
 map key are compile errors — for it and for any value holding it.
 

@@ -1,0 +1,4 @@
+tests/golden/check/ffi-fixed-array.hero:10:9: error[fixed_outside_a_group]: `i32[4]` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)
+tests/golden/check/ffi-fixed-array.hero:14:15: error[ffi_field_type]: `i32[2][3]` cannot be a field of a `record` in an `extern` group — the header owns the layout, and it can hold a number, `bool`, `ptr`, `cstr`, or another record of the group (§4.19)
+tests/golden/check/ffi-fixed-array.hero:22:52: error[fixed_array_length]: `i32[4]` holds exactly 4, and this literal has 3 — a fixed array's length is part of its type, so the two must agree (§4.19)
+tests/golden/check/ffi-fixed-array.hero:23:11: error[fixed_index_out_of_range]: `i32[4]` holds 4, so its last index is 3, and this is 9 — a fixed array's length is part of its type, so the index is checked here rather than at run time

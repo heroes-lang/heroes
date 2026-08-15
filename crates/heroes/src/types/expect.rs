@@ -112,36 +112,8 @@ pub(super) fn check(
                 }
             }
         }
-        // **A float literal at the width the context asks for** (panel 060), the
-        // mirror of the arm above and deliberately simpler than it.
-        //
-        // There is no range check, and that is a fact about IEEE-754 rather than
-        // an omission: binary32 has no *representable* values a decimal literal
-        // can miss — a magnitude too large becomes `inf` and one too small becomes
-        // a subnormal or zero, both of which are values of the type. The integer
-        // arm needs `kind.range()` because `256` is simply not a `u8`; `1e300` IS
-        // an `f32`, and it is `inf`. Rounding is not an error here for the same
-        // reason `0.1` is not one at `f64`.
-        //
-        // The walk under the minus signs is the integer arm's, for its reason:
-        // the lowering reaches the digits and finds no type recorded otherwise,
-        // which arrives at the emitter as a type nobody wrote.
         _ if super::contextual::float_literal(ast, id) => {
-            if matches!(checker.out.types.get(expected), Ty::Float(_)) {
-                let mut at = id;
-                while let ExprKind::Unary { op: UnaryOp::Neg, operand } =
-                    &ast.exprs[at.0 as usize].kind
-                {
-                    at = *operand;
-                    checker.record(at, expected);
-                }
-                checker.record(id, expected);
-            } else {
-                let got = checker.out.types.f64();
-                let shown = checker.show(ast, src, got);
-                mismatch(checker, ast, src, expected, &shown, span);
-                checker.record(id, got);
-            }
+            super::literals::float_at(checker, ast, src, id, expected, span);
         }
         // §4.5's two inference failures, answered instead of reported: the
         // annotation *is* the expected type.
@@ -158,6 +130,31 @@ pub(super) fn check(
             checker.record(id, expected);
         }
         ExprKind::Array(items) => {
+            // **A literal takes a FIXED array's type when the length agrees**
+            // (panel 062). `[1.0, 0.22, 0.24, 0.0]` is a `[f64]` on its own and a
+            // `f32[4]` where one is asked for — the same rule `255` follows into a
+            // `u8`, and for the same reason: the literal has values and no type,
+            // and the context has the type.
+            //
+            // **The length is checked here and nowhere else**, because here is the
+            // only place both numbers exist: the expected type carries `N` and the
+            // literal carries its items. A wrong length names both, since a reader
+            // who miscounted a header's `[4]` cannot see their own mistake from a
+            // message that says only *"expected `f32[4]`"*.
+            if let Ty::Fixed(element, n) = checker.out.types.get(expected) {
+                if items.len() as u32 != n {
+                    let want = checker.show(ast, src, expected);
+                    let diagnostic = errors::fixed_array_length(&want, n, items.len(), span);
+                    checker.push_diagnostic(diagnostic);
+                    checker.record(id, expected);
+                    return;
+                }
+                for item in items {
+                    check(checker, ast, resolved, src, *item, element);
+                }
+                checker.record(id, expected);
+                return;
+            }
             if let Ty::Array(element) = checker.out.types.get(expected) {
                 for item in items {
                     check(checker, ast, resolved, src, *item, element);
@@ -275,7 +272,7 @@ fn compare(
 
 
 
-fn mismatch(checker: &mut Checker, ast: &Ast, src: &Source, expected: TyId, got: &str, span: Span) {
+pub(super) fn mismatch(checker: &mut Checker, ast: &Ast, src: &Source, expected: TyId, got: &str, span: Span) {
     let a = checker.show(ast, src, expected);
     let diagnostic = errors::mismatch(&a, got, span);
     checker.push_diagnostic(diagnostic);

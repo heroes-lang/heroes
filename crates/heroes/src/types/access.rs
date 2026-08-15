@@ -124,6 +124,21 @@ pub(super) fn index_type(
             expect_index(checker, ast, src, index, int, span);
             element
         }
+        // **A fixed array is indexed like any other, and its bound is known**
+        // (panel 062). The index is an `i64` for the reason `[T]`'s is: the
+        // historian reported Rust's `as usize` tax as the most-complained-of
+        // integer decision in its whole survey.
+        //
+        // **A constant index out of range is a compile error rather than an
+        // abort**, and that is the whole difference from `[T]`: `xs[9]` on a
+        // dynamic array cannot be judged until the array exists, and `v.params[9]`
+        // on an `i32[4]` is wrong the moment it is written. §1.12 says a defensive
+        // check must surface a defect rather than hide it, and a diagnostic
+        // surfaces it further than an abort.
+        Ty::Fixed(element, _) => {
+            expect_index(checker, ast, src, index, int, span);
+            element
+        }
         // §4.9: map access yields `V?`, which is what makes a missing key a
         // value rather than a crash.
         Ty::Map(key, value) => {

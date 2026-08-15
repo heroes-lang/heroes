@@ -19,6 +19,11 @@ fn write_type(ast: &Ast, id: TypeId, src: &Source, out: &mut String) {
     match &node.kind {
         TypeKind::Named => out.push_str(src.slice(node.span)),
         TypeKind::Unit => out.push_str("()"),
+        // `i32[4]` — the length is part of the type, so it is part of the text.
+        TypeKind::Fixed(elem, n) => {
+            write_type(ast, *elem, src, out);
+            out.push_str(&format!("[{n}]"));
+        }
         TypeKind::Array(elem) => {
             out.push('[');
             write_type(ast, *elem, src, out);

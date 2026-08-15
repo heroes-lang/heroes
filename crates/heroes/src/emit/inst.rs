@@ -75,7 +75,16 @@ pub(super) fn emit(
     let discardable = super::unread::may_lose_its_destination(&inst.op);
     let discarded = discardable && inst.dest.is_some_and(|d| !live_values.contains(&d.0));
     let dest = inst.dest.filter(|_| !is_unit(checked, inst.ty) && !discarded);
-    let target = dest.map(|d| mangle::value(d.0));
+    // **A value with no C storage gets no assignment, and therefore no target**
+    // (panel 062, generalising `ctype.rs`'s unit rule). A `Ty::Fixed` value is a C
+    // array and C has no assignable array — `float t[4]; t = …;` compiles nowhere
+    // — so the instruction that would produce it emits nothing and
+    // `aggregate::fixed_text` renders the expression where it is used instead.
+    //
+    // Decided from the **type** rather than from the operation, so a third
+    // producer of a fixed array cannot arrive and be assigned by accident.
+    let storageless = matches!(checked.types.get(inst.ty), crate::types::Ty::Fixed(_, _));
+    let target = dest.filter(|_| !storageless).map(|d| mangle::value(d.0));
     match inst.op {
         Op::Const(value) => {
             if let Some(name) = target {

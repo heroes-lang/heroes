@@ -75,9 +75,35 @@ pub(super) fn equality_body(
         let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
         let member = mangle::field_of(at.foreign, src.slice(field.name));
         let test = match checked.types.get(ty) {
-            Ty::Int(_) | Ty::Bool | Ty::Float(_) => format!("a->{member} == b->{member}"),
+            // **`ptr` and `cstr` compare as addresses**, which is what `spec:72`
+            // has said since panel 053 and what the emitter did not do: both fell
+            // to the loud arm below, so `==` on a COMPLETE group record holding
+            // either was `hero_unreachable()` — *"this is a compiler bug, please
+            // report it"*, exit 134, on a correct program. Found by panel 062's
+            // spec-warden, and `Font` — the witness of this milestone's own
+            // `9d8dcda` golden — is in that class, with nothing comparing it.
+            Ty::Int(_) | Ty::Bool | Ty::Float(_) | Ty::Ptr | Ty::Cstr => {
+                format!("a->{member} == b->{member}")
+            }
             Ty::Str => format!("hero_str_eq(a->{member}, b->{member})"),
             Ty::Array(_) => format!("hero_array_eq(a->{member}, b->{member})"),
+            // **A C array member is compared ELEMENTWISE, in a helper this emitter
+            // writes** (panel 062). `a->f == b->f` compiles and is a **pointer**
+            // comparison — two distinct structs always differ, so `==` would be
+            // false for two identical values, silently. And a C array is not
+            // assignable, so there is no memcmp shortcut that is also correct:
+            // padding inside an element would decide the answer, which CLAUDE.md §7
+            // forbids for exactly this reason.
+            Ty::Fixed(inner, n) => {
+                let elem = super::structural_fixed::element_eq(
+                    checked,
+                    names,
+                    &format!("a->{member}[i]"),
+                    &format!("b->{member}[i]"),
+                    inner,
+                );
+                format!("({})", super::structural_fixed::fixed_eq_expr(&elem, n))
+            }
             // The three rows this table went without until 2026-08-12, each one a
             // field kind the checker has always accepted. `hash_body` routes
             // through `descriptors::hash_call`, which covers all three — so the
@@ -192,6 +218,19 @@ pub(super) fn hash_body(
     for field in fields {
         let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
         let member = mangle::field_of(at.foreign, src.slice(field.name));
+        // **A fixed array folds element by element**, and it must, because `hash`
+        // has to agree with `==` or a map answers wrongly for a key it holds
+        // (panel 022's invariant). Hashing the member's address would fold a
+        // pointer, which differs between two equal values.
+        if let Ty::Fixed(inner, n) = checked.types.get(ty) {
+            for i in 0..n {
+                let place = format!("&v->{member}[{i}]");
+                let one = super::descriptors::hash_call(checked, names, inner, &place)
+                    .unwrap_or_else(|| "(hero_unreachable(), UINT64_C(0))".to_string());
+                w.line(&format!("    h = (h ^ {one}) * UINT64_C(0x100000001b3);"));
+            }
+            continue;
+        }
         let one = super::descriptors::hash_call(checked, names, ty, &format!("&v->{member}"))
             .unwrap_or_else(|| "(hero_unreachable(), UINT64_C(0))".to_string());
         w.line(&format!("    h = (h ^ {one}) * UINT64_C(0x100000001b3);"));

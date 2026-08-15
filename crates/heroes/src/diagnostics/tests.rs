@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 69] = [
+const ANNOTATED: [&str; 72] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -47,21 +47,6 @@ const ANNOTATED: [&str; 69] = [
     "expected_expression",
     "expected_pattern",
     "exponent_literal",
-    // None of the seven is a thesis rule: a wrong FFI type, a wrong constant type,
-    // a C object named as a constant, a name no header declares, a **result** the
-    // header refutes, a **parameter** declared at a width or sign the header does
-    // not have, and a parameter the header declares **writable** are errors in
-    // every language that has an FFI, so `--permissive` must keep counting them.
-    // Four became six at panel 052, when `ffi_parameter_type` was added and
-    // `ffi_struct_return`'s case gave `ffi_return_type` its first annotation; six
-    // became seven at panel 058.
-    //
-    // `ffi_writable_parameter` is the one whose *permissive* status is worth
-    // stating rather than assumed: it refuses a program that **compiles and runs**
-    // today, so it looks like a thesis rule. It is not. What it prevents is C
-    // writing through a refcounted copy-on-write buffer — a value the program never
-    // passed, changed at exit 0 — which is memory corruption (design.md §1.12), and
-    // no language with an FFI calls that acceptable.
     "ffi_constant_type",
     // Soundness, not thesis: without it a program reads a header's field at a
     // width the header does not use, which is a wrong value rather than a style.
@@ -78,6 +63,25 @@ const ANNOTATED: [&str; 69] = [
     "ffi_type",
     "ffi_unknown_name",
     "ffi_writable_parameter",
+    // None of the seven is a thesis rule: a wrong FFI type, a wrong constant type,
+    // a C object named as a constant, a name no header declares, a **result** the
+    // header refutes, a **parameter** declared at a width or sign the header does
+    // not have, and a parameter the header declares **writable** are errors in
+    // every language that has an FFI, so `--permissive` must keep counting them.
+    // Four became six at panel 052, when `ffi_parameter_type` was added and
+    // `ffi_struct_return`'s case gave `ffi_return_type` its first annotation; six
+    // became seven at panel 058.
+    //
+    // `ffi_writable_parameter` is the one whose *permissive* status is worth
+    // stating rather than assumed: it refuses a program that **compiles and runs**
+    // today, so it looks like a thesis rule. It is not. What it prevents is C
+    // writing through a refcounted copy-on-write buffer — a value the program never
+    // passed, changed at exit 0 — which is memory corruption (design.md §1.12), and
+    // no language with an FFI calls that acceptable.
+    // Soundness: the C boundary's array form (panel 062).
+    "fixed_array_length",
+    "fixed_index_out_of_range",
+    "fixed_outside_a_group",
     "indentation_jump",
     "indentation_not_multiple_of_4",
     "int_out_of_range",

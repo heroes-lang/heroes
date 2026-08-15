@@ -1,0 +1,24 @@
+# What a C array member refuses (§4.19; panel 062).
+#
+# Three refusals, and each closes one of the compiler-engineer's veto conditions.
+# The veto was on the SHAPE, not on entry — the author had already decided the form
+# enters — and it was worth more than the ballot it interrupted: three reachable
+# paths could not be emitted soundly and the whole harness was green through all of
+# them.
+
+record Ordinary
+    xs: i32[4]              #~ fixed_outside_a_group
+
+extern "raylib.h" package "raylib"
+    record TwoDimensional
+        grid: i32[2][3]     #~ ffi_field_type
+    record AutomationEvent
+        frame: u32
+        type: u32
+        params: i32[4]
+    function GetRandomValue(min: i32, max: i32) -> i32
+
+function main()
+    e = AutomationEvent(frame: 0, type: 0, params: [1, 2, 3])   #~ fixed_array_length
+    print(e.params[9])                                          #~ fixed_index_out_of_range
+    print(GetRandomValue(min: 1, max: 2))

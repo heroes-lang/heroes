@@ -21,7 +21,18 @@ use super::cursor::Cursor;
 /// so the tree keeps its shape and the errors after this one still get found.
 pub(super) fn parse_type(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> TypeId {
     let start = cur.span();
-    let inner = prefix(cur, ast, src);
+    let mut inner = prefix(cur, ast, src);
+    // **`i32[4]` — the bracket AFTER the type, which is what tells it from `[i32]`**
+    // (panel 062). `[T]`'s bracket opens the type; this one follows a complete one,
+    // so no token has two meanings and the parser needs no lookahead.
+    while cur.at(TokenKind::LBracket) {
+        let open = cur.bump().span;
+        let length = fixed_length(cur, ast, src, open);
+        inner = ast.push_type(TypeNode {
+            kind: TypeKind::Fixed(inner, length),
+            span: start.to(cur.previous_span()),
+        });
+    }
     if !cur.at(TokenKind::Question) {
         return inner;
     }
@@ -206,4 +217,56 @@ fn named_parameter(cur: &mut Cursor, ast: &Ast, name: TypeId) {
         certainty: Certainty::Certain,
     });
     cur.push_diagnostic(diag);
+}
+
+/// The length inside `i32[4]`, and every way it can be wrong.
+///
+/// **A literal, never an expression.** The length is part of the type, so it is
+/// read by the parser and not by the checker — and a language whose array lengths
+/// could be computed would need a constant evaluator §1.0 has never asked for. C
+/// headers write literals.
+///
+/// **Zero is refused**, because C forbids a zero-length array member in standard C
+/// (it is a GNU extension), and a Heroes record with a zero-length field would have
+/// an index expression with no valid index at all.
+fn fixed_length(cur: &mut Cursor, ast: &mut Ast, src: &Source, open: crate::source::Span) -> u32 {
+    let _ = ast;
+    let text = if cur.at(TokenKind::Int) { Some(src.slice(cur.span()).to_string()) } else { None };
+    let Some(text) = text else {
+        if !cur.at_reported_error() {
+            cur.error(
+                "expected_array_length",
+                format!(
+                    "expected the array's length after `[`, found {} — a C array member is `i32[4]`, and the length is part of the type (§4.19)",
+                    cur.found(src)
+                ),
+                cur.span(),
+            );
+        }
+        return 1;
+    };
+    let span = cur.bump().span;
+    if !cur.at(TokenKind::RBracket) {
+        if !cur.at_reported_error() {
+            cur.error(
+                "expected_array_length",
+                "an array length is one integer, then `]` — `i32[4]`".to_string(),
+                cur.span(),
+            );
+        }
+    } else {
+        cur.bump();
+    }
+    match crate::lexer::decode_int(&text) {
+        Some(n) if n > 0 => n as u32,
+        Some(_) => {
+            cur.error(
+                "empty_fixed_array",
+                "a fixed array's length is at least 1 — C has no zero-length struct member in standard C, and an index into one could never be in range".to_string(),
+                open.to(span),
+            );
+            1
+        }
+        None => 1,
+    }
 }

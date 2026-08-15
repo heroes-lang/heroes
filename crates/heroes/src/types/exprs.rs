@@ -121,6 +121,23 @@ pub(super) fn synth(
         ExprKind::Index { base, index } => {
             let base_ty = synth(checker, ast, resolved, src, *base);
             let index_ty = synth(checker, ast, resolved, src, *index);
+            // **A constant index into a fixed array is judged here, where the
+            // index EXPRESSION is** (panel 062). `index_type` sees only the two
+            // types, and a bound check needs the value — which is the whole
+            // difference from `[T]`: `xs[9]` cannot be judged until the array
+            // exists, and `v.params[9]` on an `i32[4]` is wrong when it is written.
+            // §1.12 asks a check to surface a defect, and a diagnostic surfaces it
+            // earlier than a trap.
+            if let Ty::Fixed(_, n) = checker.out.types.get(base_ty) {
+                if let Some(literal) = super::contextual::literal_value(ast, src, *index) {
+                    if literal < 0 || literal >= i128::from(n) {
+                        let shown = checker.show(ast, src, base_ty);
+                        let diagnostic =
+                            errors::fixed_index_out_of_range(&shown, n, literal, span);
+                        checker.push_diagnostic(diagnostic);
+                    }
+                }
+            }
             index_type(checker, ast, src, base_ty, index_ty, span)
         }
         ExprKind::Call { callee, args } => {

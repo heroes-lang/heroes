@@ -86,6 +86,13 @@ fn counts(types: &Types, ast: &Ast, written: &Written, answer: &[bool], ty: TyId
         // Scalars, the FFI's opaque types, a function pointer, and the two the
         // checker uses for its own bookkeeping.
         Ty::Int(_) | Ty::Float(_) | Ty::Bool | Ty::Unit | Ty::Ptr | Ty::Cstr => false,
+        // **A fixed array owns exactly what its element owns.** It is inline bytes,
+        // so it adds no reference of its own — but if the element carried one, N
+        // of them would need retaining. The checker refuses a counted element as a
+        // group record's field, so this is `false` in practice today; it is written
+        // as the honest rule rather than as `false`, because the day a fixed array
+        // is permitted outside a group the wrong answer here is a leak.
+        Ty::Fixed(inner, _) => counts(types, ast, written, answer, inner),
         Ty::Func { .. } | Ty::Generic(_) | Ty::Error => false,
     }
 }

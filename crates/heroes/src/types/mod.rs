@@ -69,6 +69,7 @@ mod generics;
 mod holes;
 mod join;
 mod jumps;
+mod literals;
 mod lower;
 mod ops;
 mod partial;

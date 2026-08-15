@@ -64,6 +64,9 @@ pub(super) fn resolve(r: &mut Resolver, ast: &Ast, src: &Source, id: TypeId) {
         // one mistake.
         TypeKind::Unit | TypeKind::Error => {}
         TypeKind::Array(inner) | TypeKind::Fallible(inner) => resolve(r, ast, src, *inner),
+        // The length is a literal the parser already read, so only the element
+        // type is a name anything can resolve.
+        TypeKind::Fixed(inner, _) => resolve(r, ast, src, *inner),
         TypeKind::Map(key, value) => {
             resolve(r, ast, src, *key);
             resolve(r, ast, src, *value);

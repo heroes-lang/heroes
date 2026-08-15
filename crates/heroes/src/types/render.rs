@@ -32,6 +32,9 @@ pub fn render_ty(
         Ty::Ptr => "ptr".to_string(),
         Ty::Cstr => "cstr".to_string(),
         Ty::Unit => "()".to_string(),
+        Ty::Fixed(inner, n) => {
+            format!("{}[{n}]", render_ty(types, ast, src, inner, generics))
+        }
         Ty::Array(inner) => format!("[{}]", render_ty(types, ast, src, inner, generics)),
         Ty::Map(key, value) => format!(
             "{{{}: {}}}",

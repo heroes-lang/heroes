@@ -138,6 +138,27 @@ fn crosses_the_boundary(checker: &Checker, ast: &Ast, ty: TyId) -> bool {
 pub(super) fn ffi_field(checker: &mut Checker, ast: &Ast, src: &Source, ty: TyId, span: crate::source::Span) {
     let ok = match checker.out.types.get(ty) {
         Ty::Int(_) | Ty::Float(_) | Ty::Bool | Ty::Ptr | Ty::Cstr | Ty::Error => true,
+        // **`i32[4]` — a C array member, and its element is the same question
+        // again** (panel 062, author instruction 2026-08-15: *"è fondamentale
+        // chiamare il C"*). It is the last field form raylib needs: `VrStereoConfig`
+        // is eight array members and nothing else, and five more structs bind only
+        // through `partial` today — which costs them `==` and `hash` for a reason
+        // that has nothing to do with equality.
+        //
+        // The element is asked recursively rather than restricted to scalars,
+        // because `Matrix projection[2]` is an array **of a group record** and is
+        // exactly what `VrStereoConfig` opens with.
+        Ty::Fixed(inner, _) => {
+            let ok = matches!(
+                checker.out.types.get(inner),
+                Ty::Int(_) | Ty::Float(_) | Ty::Bool | Ty::Ptr | Ty::Cstr | Ty::Error
+            );
+            ok || matches!(checker.out.types.get(inner), Ty::Named(decl)
+                if matches!(
+                    ast.decls[decl as usize].kind,
+                    crate::syntax::DeclKind::Record { header: Some(_), .. }
+                ))
+        }
         // A nested record is fine exactly when it is also the header's —
         // `RenderTexture` holds two `Texture`s by value, and both are raylib's.
         Ty::Named(decl) => matches!(
@@ -164,5 +185,21 @@ pub(super) fn ffi_field(checker: &mut Checker, ast: &Ast, src: &Source, ty: TyId
     };
     let name = checker.show(ast, src, ty);
     let diagnostic = errors::ffi_field_type(&name, why, span);
+    checker.push_diagnostic(diagnostic);
+}
+
+/// A fixed array where no header owns the layout (panel 062).
+pub(super) fn fixed_outside_a_group(
+    checker: &mut Checker,
+    ast: &Ast,
+    src: &Source,
+    ty: TyId,
+    span: crate::source::Span,
+) {
+    if !matches!(checker.out.types.get(ty), Ty::Fixed(_, _)) {
+        return;
+    }
+    let name = checker.show(ast, src, ty);
+    let diagnostic = errors::fixed_outside_a_group(&name, span);
     checker.push_diagnostic(diagnostic);
 }

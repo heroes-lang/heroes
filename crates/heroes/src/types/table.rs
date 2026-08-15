@@ -49,6 +49,17 @@ pub enum Ty {
     /// statement's type must be it (§4.14, panel 003).
     Unit,
     Array(TyId),
+    /// `T[N]` — a **fixed** array, inline in whatever holds it, with `N` part of
+    /// the type (§4.19; panel 062, author instruction 2026-08-15).
+    ///
+    /// **A separate variant from `Array`, because the representations are separate
+    /// things.** A `[T]` is a pointer to a heap block with a reference count in a
+    /// header before the elements; this is the elements themselves, at an offset a
+    /// C compiler chose, inside a struct this compiler never declared. Sharing one
+    /// variant would mean every emitter site asking *which kind is this* — and the
+    /// day one of them forgot, a `memcpy` of eight bytes would stand in for
+    /// sixteen. `Str` and `Cstr` are two variants for the same reason.
+    Fixed(TyId, u32),
     Map(TyId, TyId),
     /// `T?` — a `T` or an error (§4.6). Never nested: `T??` is rejected by the
     /// parser, so this node's argument is never itself a `Fallible`.
