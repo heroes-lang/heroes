@@ -1,0 +1,2 @@
+tests/golden/check/raw-carriage-return.hero:13:11: error[raw_carriage_return]: a carriage return written as itself inside a string — it is invisible on screen, so the next reader deletes it by retyping the line
+tests/golden/check/raw-carriage-return.hero:14:10: error[raw_carriage_return]: a carriage return written as itself inside a character literal — it is invisible on screen, so the next reader deletes it by retyping the line

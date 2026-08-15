@@ -1,0 +1,15 @@
+# A raw carriage return inside a literal, refused (panel 066).
+#
+# THIS FILE DELIBERATELY CARRIES BYTE 13 INSIDE A STRING AND A CHARACTER
+# LITERAL. It is the one fixture that must: the diagnostic it pins is about the
+# raw spelling itself, so `\\r` here would test nothing. Every other fixture
+# that needs the byte spells it `\\r` (panel 066, the historian condition).
+#
+# The byte is invisible in an editor — which is exactly the finding: before this
+# diagnostic, this program compiled at exit 0, and retyping the visible text
+# dropped the byte and still compiled.
+
+function main()
+    s = "ab"    #~ raw_carriage_return
+    c = ''       #~ raw_carriage_return
+    print(len(s), c)

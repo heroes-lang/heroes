@@ -65,8 +65,8 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so
   `0xffffffffffffffff` does not fit and is refused.
-- Five escapes, and no others: `\n` `\t` `\\` `\"` in a string, `\'` instead of
-  `\"` in a character literal. Any other escape is a compile error.
+- Six escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
+  of `\"` in a character literal. Any other escape is a compile error.
 - `==` is structural equality on every value — ints, strings, records,
   variants, arrays, maps, recursively; a map's insertion order does not affect it.
   A `ptr` or `cstr` compares as an address.

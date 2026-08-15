@@ -124,7 +124,7 @@ fn unknown_escape_is_loud_but_does_not_poison_the_token() {
 2:5 int 1
 2:6 terminator
 3:1 eof
-DIAG test.hero:1:7: error[unknown_escape]: `\\d` is not an escape sequence — the escapes are \\n \\t \\\\ \\\"; write `\\\\` for a literal backslash
+DIAG test.hero:1:7: error[unknown_escape]: `\\d` is not an escape sequence — the escapes are \\n \\t \\r \\\\ \\\"; write `\\\\` for a literal backslash
 "
     );
 }
@@ -142,6 +142,52 @@ fn the_residual_windows_path_trap_is_on_the_record() {
     // The half that IS loud: an unknown escape after the backslash.
     let src2 = Source::new("test.hero".to_string(), "p = \"C:\\Users\"\n".to_string());
     assert_eq!(lex(&src2).diagnostics[0].code, "unknown_escape");
+    // **The trap widened when `\r` landed** (panel 066, the compiler-engineer's
+    // finding): `r` is a common path-initial letter, so `"C:\\results"` joins
+    // `"C:\\temp"` in the silent set. The trap is exactly the legal escapes whose
+    // letter starts a plausible word — `\n`, `\t`, `\r` — and the price was
+    // weighed against a byte that had no spelling at all.
+    let src3 = Source::new("test.hero".to_string(), "p = \"C:\\results\"\n".to_string());
+    assert!(lex(&src3).diagnostics.is_empty());
+    assert_eq!(value_of("p = \"C:\\results\"\n"), "C:\u{0d}esults");
+}
+
+#[test]
+fn the_sixth_escape_decodes_in_both_contexts() {
+    // Panel 066. The value is 13 in both, from the one table — and the
+    // literals still lex as one token each, which is what the escape is for:
+    // before it, byte 13 had no spelling at all.
+    assert_eq!(value_of("s = \"a\\rb\"\n"), "a\rb");
+    assert_eq!(value_of("c = '\\r'\n"), "\r");
+    let src = Source::new("test.hero".to_string(), "s = \"a\\rb\"\nc = '\\r'\n".to_string());
+    let out = lex(&src);
+    assert!(out.diagnostics.is_empty());
+    assert_eq!(out.tokens.iter().filter(|t| t.kind == TokenKind::Str).count(), 1);
+    assert_eq!(out.tokens.iter().filter(|t| t.kind == TokenKind::Char).count(), 1);
+}
+
+#[test]
+fn a_raw_carriage_return_in_a_literal_is_refused_with_the_escape_as_its_repair() {
+    // The coherence condition of panel 066, and the reason it exists: this
+    // program compiled at exit 0 before the sitting, rendered identically to
+    // the same literal without the byte, and survived `fmt` — so retyping what
+    // the screen shows changed the bytes and still compiled. One spelling per
+    // character (§4.15) now cuts the invisible one.
+    let src = Source::new("test.hero".to_string(), "s = \"a\rb\"\n".to_string());
+    let out = lex(&src);
+    assert_eq!(out.diagnostics.len(), 1);
+    assert_eq!(out.diagnostics[0].code, "raw_carriage_return");
+    assert_eq!(out.diagnostics[0].fixes[0].replacement, "\\r");
+    assert_eq!(out.diagnostics[0].fixes[0].certainty, crate::diagnostics::Certainty::Certain);
+    // The token keeps its kind — one mistake, one diagnostic (panel 007).
+    assert!(out.tokens.iter().any(|t| t.kind == TokenKind::Str));
+    // And in a character literal, where the byte is likewise content.
+    let ch = Source::new("test.hero".to_string(), "c = '\r'\n".to_string());
+    let out2 = lex(&ch);
+    assert_eq!(out2.diagnostics[0].code, "raw_carriage_return");
+    // A CRLF line ending is untouched: the CR is not inside a literal.
+    let crlf = Source::new("test.hero".to_string(), "x = 1\r\ny = 2\r\n".to_string());
+    assert!(lex(&crlf).diagnostics.is_empty());
 }
 
 #[test]
@@ -200,7 +246,7 @@ fn a_multibyte_character_after_the_backslash_does_not_panic() {
 1:5 str \"a\\èb\"
 1:11 terminator
 2:1 eof
-DIAG test.hero:1:7: error[unknown_escape]: `\\è` is not an escape sequence — the escapes are \\n \\t \\\\ \\\"; write `\\\\` for a literal backslash
+DIAG test.hero:1:7: error[unknown_escape]: `\\è` is not an escape sequence — the escapes are \\n \\t \\r \\\\ \\\"; write `\\\\` for a literal backslash
 "
     );
     // And it decodes without losing the character.

@@ -1,0 +1,29 @@
+# A CRLF line ending, written in Heroes (panel 066).
+#
+# The program that could not exist before the sixth escape: byte 13 was
+# unspellable by any composition of the inventory, so no pure-Heroes program
+# could write the line terminator of any CRLF protocol a C binding reaches.
+# Here it is written, measured and printed back.
+
+function crlf() -> str
+    return "\r\n"
+
+function request(host: str, path: str) -> str
+    line = "GET " + path + " HTTP/1.1" + crlf()
+    return line + "Host: " + host + crlf() + crlf()
+
+function main()
+    # Two bytes, in order, and neither is the other.
+    e = crlf()
+    print(len(e))
+    print(e[0])
+    print(e[1])
+    # The character literal carries the same value.
+    print('\r')
+    # And the whole request line is the bytes a strict server wants.
+    r = request(host: "example.com", path: "/")
+    print(len(r))
+    print(r[len(r) - 4])
+    print(r[len(r) - 3])
+    print(r[len(r) - 2])
+    print(r[len(r) - 1])

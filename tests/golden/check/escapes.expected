@@ -1,3 +1,3 @@
-tests/golden/check/escapes.hero:5:11: error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \\ \"; write `\\` for a literal backslash
+tests/golden/check/escapes.hero:5:11: error[unknown_escape]: `\d` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
 tests/golden/check/escapes.hero:6:12: error[escape_not_needed]: `\'` is not an escape here — `'` needs no escape inside a string, write it bare
 tests/golden/check/escapes.hero:7:10: error[escape_not_needed]: `\"` is not an escape here — `"` needs no escape inside a character literal, write it bare

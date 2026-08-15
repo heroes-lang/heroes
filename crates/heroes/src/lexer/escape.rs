@@ -1,15 +1,25 @@
-//! Escape sequences — the table, the validator, the decoder (panel 008).
+//! Escape sequences — the table, the validator, the decoder (panel 008, `\r`
+//! added by panel 066).
 //!
-//! Five escapes, **split by context** (Go's rule), so every character has
+//! Six escapes, **split by context** (Go's rule), so every character has
 //! exactly one spelling and §4.15's "exactly one correct way" survives:
 //!
 //! | in `"…"` | in `'…'` | value |
 //! |----------|----------|-------|
 //! | `\n`     | `\n`     | 10    |
 //! | `\t`     | `\t`     | 9     |
+//! | `\r`     | `\r`     | 13    |
 //! | `\\`     | `\\`     | 92    |
 //! | `\"`     | —        | 34 — a `"` needs no escape inside a char literal |
 //! | —        | `\'`     | 39 — a `'` needs no escape inside a string |
+//!
+//! **`\r` is why `raw_carriage_return` exists** (panel 066). One spelling per
+//! character cuts both ways: the escape gave byte 13 a spelling, and the same
+//! sitting found that a raw CR pasted into a literal compiled silently, survived
+//! `fmt`, and rendered invisibly — so retyping the visible text dropped the byte
+//! and still compiled. That is the thesis inverted, and it is a diagnostic here
+//! rather than in `literals.rs` because this file owns what a literal's bytes
+//! may be.
 //!
 //! The backslash is **reserved**: any other character after it is a compile
 //! error carrying a `certain` fix. That half is what turns `"C:\temp"` and
@@ -42,8 +52,16 @@ impl Quoted {
     /// The escapes legal here, for the diagnostic that lists them.
     fn legal(self) -> &'static str {
         match self {
-            Quoted::Str => r#"\n \t \\ \""#,
-            Quoted::Char => r"\n \t \\ \'",
+            Quoted::Str => r#"\n \t \r \\ \""#,
+            Quoted::Char => r"\n \t \r \\ \'",
+        }
+    }
+
+    /// How the diagnostic names this context, for a message that has to read.
+    fn word(self) -> &'static str {
+        match self {
+            Quoted::Str => "a string",
+            Quoted::Char => "a character literal",
         }
     }
 
@@ -63,6 +81,7 @@ fn escape_value(after_backslash: char, ctx: Quoted) -> Option<u8> {
     match after_backslash {
         'n' => Some(b'\n'),
         't' => Some(b'\t'),
+        'r' => Some(b'\r'),
         '\\' => Some(b'\\'),
         '"' if ctx == Quoted::Str => Some(b'"'),
         '\'' if ctx == Quoted::Char => Some(b'\''),
@@ -164,5 +183,42 @@ impl LexState {
         // line's Terminator (Error is not an ender, panel 007) and turn one
         // mistake into two.
         true
+    }
+
+    /// A raw carriage return inside a literal — refused, with `\r` as the repair
+    /// (panel 066, the coherence condition).
+    ///
+    /// The escape is what makes this diagnostic possible: before it, byte 13 had
+    /// **no** spelling, so refusing the raw byte would have left the character
+    /// unwritable. Now there is exactly one spelling, and the second — invisible
+    /// — one is what §4.15 forbids anywhere else in the language.
+    ///
+    /// Why it is worth a diagnostic at all: measured on the compiler before this
+    /// landed, a raw CR pasted mid-literal compiled at exit 0, survived
+    /// `heroes fmt` byte-for-byte, and rendered identically to a literal without
+    /// it — so retyping what the screen shows silently changed the program's
+    /// bytes and still compiled. A plausible mistake that was not a compile
+    /// error.
+    ///
+    /// Scanning is unaffected: `self.pos` is left where it was, the caller
+    /// consumes the byte as ordinary content, and the literal keeps its kind —
+    /// one mistake, one diagnostic, and the rest of the line still lexes.
+    pub(super) fn raw_carriage_return(&mut self, at: usize, ctx: Quoted) {
+        let span = Span { start: at as u32, end: at as u32 + 1 };
+        let mut diag = Diagnostic::new(
+            "raw_carriage_return",
+            format!(
+                "a carriage return written as itself inside {} — it is invisible on screen, so the next reader deletes it by retyping the line",
+                ctx.word()
+            ),
+            span,
+        );
+        diag.fixes.push(Fix {
+            title: "write it as `\\r`".to_string(),
+            replacement: "\\r".to_string(),
+            span,
+            certainty: Certainty::Certain,
+        });
+        self.diagnostics.push(diag);
     }
 }

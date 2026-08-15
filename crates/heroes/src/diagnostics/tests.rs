@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 73] = [
+const ANNOTATED: [&str; 74] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -110,6 +110,7 @@ const ANNOTATED: [&str; 73] = [
     "not_a_type",
     "not_mutable",
     "polymorphic_recursion",
+    "raw_carriage_return",
     "reserved_word",
     "shadowed_binding",
     "stray_carriage_return",

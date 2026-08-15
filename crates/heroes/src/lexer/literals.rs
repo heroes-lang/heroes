@@ -43,6 +43,13 @@ impl LexState {
                     }
                 }
                 None | Some(b'\n') => break,
+                Some(b'\r') => {
+                    // Not a line ending here: a string is single-line, so this
+                    // byte is content — invisible content, which is why it is
+                    // refused (panel 066).
+                    self.raw_carriage_return(self.pos, Quoted::Str);
+                    self.pos += 1;
+                }
                 Some(_) => self.pos += 1,
             }
         }
@@ -77,6 +84,11 @@ impl LexState {
                     if !self.escape(src, Quoted::Char) {
                         break false;
                     }
+                    units += 1;
+                }
+                Some(b'\r') => {
+                    self.raw_carriage_return(self.pos, Quoted::Char);
+                    self.pos += 1;
                     units += 1;
                 }
                 Some(_) => {

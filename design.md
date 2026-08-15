@@ -941,11 +941,25 @@ lexer (the original text said "one line"; the measured cost is on record in pane
 `c == 40` — seven magic numbers in twenty lines, and writing `43` for `+` is an error no compiler
 can catch. This was judged the best benefit-to-cost modification in the entire review.
 
-**Escape sequences: five, split by context** (panel 008). In a string: `\n` `\t` `\\` `\"`. In a
-character literal: `\n` `\t` `\\` `\'`. A `'` needs no escape inside a string and a `"` needs none
-inside a character literal, so **each character has exactly one spelling** — §4.15's canonical-form
-rule survives into the literals. A character literal therefore holds exactly one *character*: one
-ASCII character or one escape, so `'\n'` is four source bytes and one character.
+**Escape sequences: six, split by context** (panel 008, `\r` added by panel 066). In a string:
+`\n` `\t` `\r` `\\` `\"`. In a character literal: `\n` `\t` `\r` `\\` `\'`. A `'` needs no escape
+inside a string and a `"` needs none inside a character literal, so **each character has exactly one
+spelling** — §4.15's canonical-form rule survives into the literals. A character literal therefore
+holds exactly one *character*: one ASCII character or one escape, so `'\n'` is four source bytes and
+one character.
+
+**`\r` is the sixth, and it entered on the programs rather than on the compiler** (panel 066).
+Panel 008 refused it and was right for the question it heard — lexer-side need, before any FFI
+existed. What reopened it is the program side, and all of it was executed rather than argued: byte
+13 is **unspellable by any composition of the language's inventory**, so no pure-Heroes program can
+write the line terminator of any CRLF protocol a C binding reaches; `"…\r\n"` failed with a
+`certain`, machine-applicable fix that rewrote the **correct** program into `\\r` — wire garbage;
+and a raw CR pasted into a literal compiled silently, survived `fmt` byte-for-byte, and rendered
+invisibly, so retyping the visible text dropped the byte and still compiled. That last one is the
+thesis inverted and it is why **a raw carriage return inside a literal is now itself a
+diagnostic**, with `\r` as its certain fix: the escape is what made the repair writable.
+**The freeze is not touched**: `\0`, `\xNN`, `\u{...}` and octal still need a panel, on the
+interior-NUL ground below, which `\r` — one fixed byte, 13 — cannot reach.
 
 **The backslash is reserved**: any other character after it is a compile error whose diagnostic
 names the legal escapes and carries a `certain` fix. This half is the point. Without it,
@@ -955,9 +969,12 @@ one; C's permissiveness is what Python has been unwinding since 2016. **The set 
 `\xNN`, `\u{...}` and octal escapes need a panel, because they can produce an interior NUL, which
 silently truncates every C call and voids §4.20's guarantee that `.cstr()` is free.
 
-**Known residual trap** (found in implementation, panel 008): `"C:\temp"` cannot be made loud —
-`\t` is legal, so the path silently becomes `C:<TAB>emp`. Every language with C-style escapes
-carries this; the remedy is raw string literals, which are not v1 material. Recorded in Part 8.
+**Known residual trap** (found in implementation, panel 008; widened by 066): `"C:\temp"` cannot be
+made loud — `\t` is legal, so the path silently becomes `C:<TAB>emp` — and since `\r` landed,
+`"C:\results"` joins it, which is worse for being a common path-initial letter. The trap set is
+exactly the legal escapes whose letter starts a plausible word: `\n`, `\t`, `\r`. Every language
+with C-style escapes carries this; the remedy is raw string literals, which are not v1 material.
+Recorded in Part 8.
 
 **Strings** are immutable UTF-8, **indexed in bytes**. `s[i]` yields a `u8`. Iterate
 characters with `s.chars()`, which yields single-character `str`. Slicing that lands mid-sequence is

@@ -193,14 +193,21 @@ fn terminator(term: &Term) -> String {
     }
 }
 
-/// A string literal, back in the source's own notation: the five escapes of panel
-/// 008 and no others, so a dumped literal is one line however it was written.
+/// A string literal, back in the source's own notation: the six escapes of panel
+/// 008 as amended by 066, and no others, so a dumped literal is one line however
+/// it was written.
+///
+/// `\r` is here for the reason it entered the language (panel 066): without the
+/// arm, a `str` holding a carriage return — which any C binding can hand back —
+/// put a **raw invisible byte** into every `--dump-ir`, recreating in the
+/// compiler's own output the artifact the escape exists to kill.
 fn escape(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     for c in text.chars() {
         match c {
             '\n' => out.push_str("\\n"),
             '\t' => out.push_str("\\t"),
+            '\r' => out.push_str("\\r"),
             '\\' => out.push_str("\\\\"),
             '"' => out.push_str("\\\""),
             _ => out.push(c),
