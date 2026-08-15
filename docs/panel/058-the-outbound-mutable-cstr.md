@@ -1,6 +1,6 @@
 # 058 — The outbound mutable `cstr`
 
-**Status**: `provisional — author ratification pending`.
+**Status**: `RATIFIED 2026-08-15` (was `provisional — author ratification pending`).
 **Convened** 2026-08-15 by author instruction, from `docs/debrief/DECIDE.md`'s
 `.cstr()` item — which panel 057 found while pricing `dirname(3)`, not by looking
 for it.
@@ -295,3 +295,51 @@ design.md Part 5's test — checker **and** lowering **and** backend — is fail
 - **A judge's named counterexamples were falsified by another judge inside the
   sitting**, which is the differentiated-input design working: the historian's `execv`
   and `iconv` are `char **`, and only the seat that compiles could see it.
+
+## Ratification — 2026-08-15
+
+**RATIFIED as it stands** (author instruction, `/decide`: *"rattifica tutto"*, given
+after reading the synthesis — the fourth blanket ratification of the day and recorded
+as that rather than as five individual reviews). **(i)** is adopted with all five
+conditions binding; **(ii)** and **(iii)** stay refused on their two vetoes each;
+**(iv)** stays refused; the spec takes the **+2** rewrite and not the +32 or +55
+clause.
+
+**This ratification converts a resolution into a work order, and that is the
+difference from the day's other three.** 057 ratified a refusal — nothing was owed
+afterwards. Here the yes authorises the five conditions, and until they are met the
+compiler goes on behaving exactly as it does today: **the silent corruption is
+reachable in a ratified language**, which is a state worth naming rather than
+letting the tick imply otherwise. The conditions are not decoration on an adopted
+option; three seats made them the price of their yes, and one said plainly that
+without them its verdict is `veto`.
+
+**The order the conditions must be worked in is fixed by one of them.** Condition 1
+— the assertion zero becomes the bare `0` rather than a cast — is a repair **on its
+own merits, today, with or without the flag**, because the emitter currently warns
+about its own generated `_Static_assert`. It must land first and separately: the
+obvious alternative (spelling the zero `(char *)0`) was built and **reproduced a
+regression** on a correct `const char **` out-parameter binding, so the wrong repair
+here is not hypothetical.
+
+**What a blanket yes cannot settle**, and here it is unusually large: four of the
+five predictions name `M-struct-passing`, `M-ffi-ladder` rung 5, or a model harness
+that does not exist. Panel 046's R2 — *re-decided, never renewed* — governs them
+unchanged. **The one to watch is the ffi-pragmatist's**, because it is checkable at
+any time and its author offered it as a withdrawal condition: all 28 of ncurses'
+plain-`char *` entry points compile and run under the flag with zero shim files. One
+failure and the refusal is wrong.
+
+**Three things the yes deliberately does not close**, each queued in its own right:
+the **read** direction (the spec documents no `cstr` → `str`, and the blind seat
+could not write `getcwd` in any variant); the **lifetime** hole (a `const char *` C
+stores passes every option's rule and dangles later — §4.19:2064 defers it); and a
+**buffer whose length Heroes knows**, which is the stated condition under which
+option (iii) returns rather than a wish.
+
+**On the historian's dissent**: ratifying the refusal of (iii) does not ratify the
+claim that a separate mutable-buffer type is wrong. Four ecosystems reached it
+independently and OCaml's took three years to land; §13 forbids it *now*, and the
+sitting recorded the disagreement as being about the clock. If Part 7 item 10 is ever
+taken up, this dissent is the argument that starts it and it should not be
+rediscovered.
