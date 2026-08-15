@@ -13,7 +13,7 @@
 //! two groups, and `fmt(fmt(x)) == fmt(x)` would still hold while the program
 //! grew a line every time anybody ran it.
 
-use super::{assert_canonical, format};
+use super::{assert_canonical, dump, format};
 
 #[test]
 fn a_group_prints_as_a_group() {
@@ -100,5 +100,65 @@ fn a_group_mixing_constants_and_functions_round_trips() {
 fn a_function_after_a_group_is_outside_it() {
     assert_canonical(
         "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nfunction hypotenuse(a: f64, b: f64) -> f64\n    return sqrt(a * a + b * b)\n",
+    );
+}
+
+/// **fixedbugs, panel 062's audit, 2026-08-15.** The guard was blind in the place
+/// it guards, and this test is what makes that falsifiable.
+///
+/// Symptom: `assert_canonical` asserts `dump(text) == dump(fmt(text))` —
+/// *"fmt changed the tree"* — and `printer/dump.rs` printed a `record`'s name with
+/// no group head. So **`fmt` hoisting a record out of its group, folding it into a
+/// neighbouring one, or turning `link` into `package` all produced identical dumps
+/// and a green test.** Measured before the repair: `extern "raylib.h" package
+/// "raylib"` + `record Color partial` dumped as `record Color partial`, the same
+/// string a top-level record gives.
+///
+/// Cause: a `..` in the dump's `Record` arm, which is also how `header`/`library`
+/// were lost at panel 060 and `partial` at panel 061 — three fields, one hole,
+/// repaired an arm at a time. The **structural** repair is in the two modules'
+/// docs: no `..` and no unread binding in either printer's `DeclKind` arms, so
+/// rustc fails the build for the next field instead of a test going green about a
+/// program that changed meaning.
+///
+/// This case is the part rustc cannot do: it pins that the dump **discriminates**
+/// the three edits a formatter could make to a group's head.
+#[test]
+fn fixedbugs_the_dump_separates_every_group_head_a_record_can_carry() {
+    let in_group = "extern \"raylib.h\" package \"raylib\"\n    record Color\n        r: u8\n";
+    assert_eq!(
+        dump(in_group),
+        "\
+file test.hero
+  extern \"raylib.h\" package \"raylib\" record Color
+    field r: u8
+"
+    );
+
+    // Hoisted out of the group: a different program, and now a different dump.
+    let hoisted = "record Color\n    r: u8\n";
+    assert_ne!(dump(in_group), dump(hoisted), "a record's group must reach the dump");
+
+    // Folded into a neighbouring group: same record, other header.
+    let other = "extern \"other.h\" package \"raylib\"\n    record Color\n        r: u8\n";
+    assert_ne!(dump(in_group), dump(other), "the header must reach the dump");
+
+    // `link` is the program telling the linker a name; `package` asks the machine
+    // (§4.19, panel 049). One is not the other, and the dump must say which.
+    let linked = "extern \"raylib.h\" link \"raylib\"\n    record Color\n        r: u8\n";
+    assert_ne!(dump(in_group), dump(linked), "link and package are two groups");
+
+    // `partial` — repaired at panel 061, pinned here beside its two siblings.
+    let partial = "extern \"raylib.h\" package \"raylib\"\n    record Color partial\n        r: u8\n";
+    assert_ne!(dump(in_group), dump(partial), "partial must reach the dump");
+}
+
+/// A `record` member round-trips inside a group that also holds a function, which
+/// is raylib's shape and the one the round-trip guard could not see until the case
+/// above. `assert_canonical` is doing real work here for the first time.
+#[test]
+fn a_group_holding_a_record_round_trips() {
+    assert_canonical(
+        "extern \"raylib.h\" package \"raylib\"\n    record Color partial\n        r: u8\n    function ColorToInt(color: Color) -> i32\n",
     );
 }

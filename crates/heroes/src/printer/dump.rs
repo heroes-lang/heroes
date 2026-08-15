@@ -9,6 +9,22 @@
 //!
 //! The format is output surface: goldens and snapshots contain it, so a
 //! change to a word here churns them all.
+//!
+//! **Every field of a `DeclKind` is destructured and used here, and `..` is
+//! banned in this file's arms** (panels 060, 061, 062). The reason is that this
+//! module is half of a guard: `printer::tests::assert_canonical` asserts
+//! `dump(text) == dump(fmt(text))` — *"fmt changed the tree"* — so a field the
+//! formatter can print and this dump elides is a **cancelling pair**. The
+//! formatter drops it, the dump does not notice, and the test is green about a
+//! program that changed meaning. It happened twice: `header`/`library` on a
+//! `record` (panel 060) and `partial` (panel 061), both swallowed by a `..`.
+//!
+//! The rule is mechanical rather than a convention, and rustc is what enforces
+//! it: with no `..`, a new field on a `DeclKind` variant is a *compile error*
+//! here and in `fmt_decl.rs` at once, and a field bound but not read is
+//! `unused_variables`, which CI denies. What a reviewer still owes is the
+//! decision itself — a field deliberately not printed must be bound to `_` in
+//! the open, where the diff shows it.
 
 use crate::source::{Source, Span};
 use crate::syntax::{Ast, Block, Case, Decl, DeclKind, Field, Function, Library};
@@ -66,16 +82,18 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
                 write_body(ast, src, block, out);
             }
         }
-        // **`partial` appears here because `fmt_decl.rs` prints it**, and that is
-        // the rule rather than the instance (panel 061). `assert_canonical` asserts
-        // `dump(text) == dump(fmt(text))` — *"fmt changed the tree"* — so a field
-        // the formatter can print and this cannot is a **cancelling pair**: the
-        // formatter drops it, the dump does not notice, and the test is green about
-        // a program that changed meaning. Measured: with this arm absent, `fmt` on
-        // `record Font partial` emitted `record Font` and every test passed.
-        DeclKind::Record { fields, partial, .. } => {
+        // **`partial` and the group head appear here because `fmt_decl.rs` prints
+        // them** — the rule stated in this file's doc, and this arm is where it was
+        // broken twice. `partial` was repaired at panel 061; `header`/`library`
+        // survived until panel 062's audit, so `fmt` hoisting a `record` out of its
+        // group, folding it into a neighbouring one, or turning `link` into
+        // `package` all produced identical dumps and a green test. Measured, with
+        // this arm's `..` restored: `dump` of `extern "raylib.h" package "raylib"`
+        // + `record Font` and of a top-level `record Font` are the same string.
+        DeclKind::Record { fields, header, library, partial } => {
+            let group = extern_prefix(src, *header, *library);
             let marker = if *partial { " partial" } else { "" };
-            out.push_str(&format!("  record {name}{marker}\n"));
+            out.push_str(&format!("  {group}record {name}{marker}\n"));
             docs(src, &decl.doc, out);
             for field in fields {
                 field_line(ast, src, field, "    ", out);
@@ -99,14 +117,17 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
 
 /// `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]` — the header
 /// in one line, which is how a signature is read.
-pub fn render_signature(ast: &Ast, src: &Source, decl: u32) -> String {
-    let declaration = &ast.decls[decl as usize];
-    match &declaration.kind {
-        DeclKind::Function(function) => {
-            signature(ast, src, src.slice(declaration.name), function)
-        }
-        _ => src.slice(declaration.name).to_string(),
-    }
+///
+/// **It takes the function, not the declaration's index** (panel 062's audit).
+/// This read `ast.decls[decl]` and matched, with `_ => <the name alone>` for a
+/// record or a test — an arm that could not be reached, because its one caller
+/// (`types/apply.rs::user_call`, building an `arity` diagnostic) has already
+/// destructured `DeclKind::Function` and holds the function. The catch-all was
+/// therefore not a fallback but a *second answer to a question nobody asks*, and
+/// the way to make an unreachable case loud is to make it unrepresentable: the
+/// caller passes what it has and there is no arm left to get wrong.
+pub fn render_signature(ast: &Ast, src: &Source, name: &str, function: &Function) -> String {
+    signature(ast, src, name, function)
 }
 
 /// **The group is not in the tree, so the dump does not print one.** The parser

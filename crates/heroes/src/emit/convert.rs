@@ -40,9 +40,17 @@ pub(super) fn width(
     into: &str,
 ) {
     let checked: &Checked = types.checked;
+    // **The loud direction, and the third of this function's silent returns**
+    // (CLAUDE.md §11; panel 062's audit). A conversion takes exactly one argument
+    // and it is a value: the checker fixed the arity, and `@` marks a parameter, of
+    // which a built-in has none — so `None` means the IR lost an argument and
+    // `InOut` means it invented one. Returning here emitted **nothing**, and the
+    // caller then read a zero-initialised `T?` whose `tag = 0` is `ok` (panel 021
+    // zero-initialises every refcounted slot, so `-Werror=uninitialized` cannot see
+    // it). That is the `f32` defect this file already records, one cause up.
     let result = function.value_type(match function.args_of(args).first() {
         Some(crate::ir::Arg::Value(v)) => *v,
-        _ => return,
+        other => unreachable!("a conversion takes one value argument, not {other:?}"),
     });
     let to = *crate::types::INT_KINDS
         .iter()
@@ -51,13 +59,18 @@ pub(super) fn width(
     // `lookup`, not `intern`: the checker already made this `T?` when it typed the
     // call, so a miss here would mean the two passes disagree about the result type
     // rather than that a type is missing.
+    // **A miss is the two passes disagreeing, so it is loud** (CLAUDE.md §11; panel
+    // 062's audit). The sentence above already said a miss "would mean the two
+    // passes disagree rather than that a type is missing", and then answered it
+    // with a silent `return` — which emits nothing and hands the caller the same
+    // zeroed `ok` the arm above describes.
     let union = match checked
         .types
         .lookup(Ty::Int(to))
         .and_then(|inner| checked.types.lookup(Ty::Fallible(inner)))
     {
         Some(id) => types.names.option_of(id),
-        None => return,
+        None => unreachable!("the checker interned `{}?` when it typed this call", to.name()),
     };
     // **The `f64` source is `to_i64`'s alone and takes its own path.** Its range
     // question is not a comparison against two widths; it is `hero_f64_fits_int`,

@@ -38,10 +38,32 @@ pub(super) fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> 
         Ty::Str => Some("HERO_RET_STR"),
         Ty::Unit => Some("HERO_RET_UNIT"),
         Ty::Ptr | Ty::Cstr => Some("HERO_RET_PTR"),
-        // No other type crosses the boundary: `ffi_type` refuses them in the
-        // checker, so this arm is where a new FFI type would have to declare
-        // what its assertion is rather than silently getting none.
-        _ => None,
+        // **A struct result gets no assertion, and this arm is where that is
+        // decided rather than where it is hidden** (panel 062's audit). The `_ =>
+        // None` this replaces carried the sentence *"no other type crosses the
+        // boundary: `ffi_type` refuses them in the checker"*, which stopped being
+        // true at panel 060: a `record` a header declares crosses, and there is no
+        // `HERO_RET_<struct>` macro for it, so `extern_assertions` skips it.
+        //
+        // Measured on this tree, 2026-08-15, with raylib installed: `extern
+        // function ColorAlpha(color: Color, alpha: f32) -> Vector2` — raylib
+        // returns `Color` — **builds at exit 0** when nothing calls it, and when
+        // something does, clang refuses the *call site* with `assigning to
+        // 'Vector2' from incompatible type 'Color'` at **exit 2**, the compiler
+        // blaming itself for the author's declaration. That is panel 036's
+        // original defect, alive again for the 349 of raylib's 600 entry points
+        // that return a struct.
+        //
+        // It is left as it is here on purpose: closing it means a new assertion
+        // macro and a new `heroes-ffi-` class, which is CLAUDE.md §4's panel
+        // trigger, not an audit's repair.
+        Ty::Named(_) => None,
+        // **The loud direction** (CLAUDE.md §11). Everything else is refused by
+        // `ffi_decls::crosses_the_boundary` before a program can reach the emitter,
+        // so a new FFI type arrives here as a compile-time decision instead of
+        // silently getting no assertion — which is exactly what the deleted comment
+        // promised and did not do.
+        other => unreachable!("this type does not cross the FFI boundary: {other:?}"),
     }
 }
 
@@ -92,7 +114,24 @@ pub(super) fn zero_of(
             let c_type = names.of(decl);
             return if mutable { format!("({c_type} *)0") } else { format!("({c_type}){{0}}") };
         }
-        _ => "void *",
+        // §4.19's opaque pointer. It was the reason the catch-all below looked
+        // load-bearing, and it is one arm rather than a fallback.
+        Ty::Ptr => "void *",
+        // **`()` as a parameter type reaches here, and `(void *)0` is the wrong
+        // answer** (measured 2026-08-15, panel 062's audit). `ffi_decls`'s
+        // `crosses_the_boundary` is shared by results and parameters, and `()` is a
+        // legal *result*, so `extern function abs(n: ()) -> i32` type-checks — and
+        // then the assertion this writes is `abs((void *)0)`, which is `error:
+        // incompatible pointer to integer conversion` at **exit 2**: the compiler
+        // blaming itself for the author's declaration.
+        //
+        // The spelling is left unchanged because no C spelling of a `()` argument
+        // exists to replace it with; the repair is a frontend refusal of a `()`
+        // parameter, which is a diagnostic class and therefore CLAUDE.md §4's
+        // panel. What the arm buys today is that the mistake is *named* here rather
+        // than carried by a `_`.
+        Ty::Unit => "void *",
+        other => unreachable!("this type does not cross the FFI boundary: {other:?}"),
     };
     if mutable {
         return format!("({value} *)0");

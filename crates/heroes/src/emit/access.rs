@@ -34,10 +34,17 @@ pub(super) fn len(
     target: Option<String>,
 ) {
     let Some(name) = target else { return };
+    // **The three the checker accepts, named** (CLAUDE.md §11; panel 062's audit).
+    // `types/builtins.rs` types `len` on `str`, `[T]` and `{K: V}` and refuses
+    // everything else, so the array is one of three answers rather than the
+    // fallback: as `_` it also answered for a record, a `ptr` and a `T?`, and
+    // `hero_array_len` on any of them is a load through a pointer that is not a
+    // header.
     let counter = match checked.types.get(function.value_type(value)) {
         Ty::Str => "hero_str_len",
         Ty::Map(_, _) => "hero_map_len",
-        _ => "hero_array_len",
+        Ty::Array(_) => "hero_array_len",
+        other => unreachable!("len counts a str, an array or a map, not {other:?}"),
     };
     w.line(&format!("    {name} = {counter}({});", mangle::value(value.0)));
 }

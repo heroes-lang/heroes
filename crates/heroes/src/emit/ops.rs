@@ -164,11 +164,23 @@ pub(super) fn print(
                 // which is precisely what `print(SIZE_MAX)` produced when panel
                 // 042 measured it, and what this arm exists to stop.
                 Ty::Int(IntKind::U64) => "hero_print_uint",
-                _ => "hero_print_int",
+                // The other seven widths all widen into an `int64_t` without
+                // losing a value, which is what makes one entry point right for
+                // all of them.
+                Ty::Int(_) => "hero_print_int",
+                // **The loud direction** (CLAUDE.md §11; panel 062's audit). This
+                // was `_ => "hero_print_int"`, so every type the checker does not
+                // accept — a record, an array, a `ptr` — would have been printed as
+                // an integer had one ever arrived. `types/builtins.rs` accepts
+                // exactly *any integer, a float, `bool` or `str`*, so the arms
+                // above are the whole set and the catch-all was covering nothing
+                // but a future mistake.
+                other => unreachable!("print accepts an integer, a float, bool or str, not {other:?}"),
             },
             // `print(@x)` cannot be written: §4.8's marker is for parameters
-            // declared `@`, and `print` declares none.
-            Arg::InOut(_) => "hero_print_int",
+            // declared `@`, and `print` declares none — so this is the lowering
+            // having invented an argument, not a program.
+            Arg::InOut(_) => unreachable!("print declares no `@` parameter (§4.8)"),
         };
         w.line(&format!("    {printer}({name});"));
     }

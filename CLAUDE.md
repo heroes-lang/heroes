@@ -105,18 +105,20 @@ finding), a label **only where an edge targets it**, all locals hoisted to the
 prologue, and a unit-typed temporary never declared at all (`void t0;` is a
 hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
 `*p_l = l;`). `hero_unreachable()` at every type-system-proven-unreachable
-point. Compile flags: `-std=gnu11` (**named, not inherited** — and `gnu11` rather
-than `c11` because the two differ by one predefined macro, `__STRICT_ANSI__`, whose
-only effect on glibc is to hide `M_PI`, `strdup`, `fileno` and nine more of what
-§1.11 says a program binds; panel 047, **ratified 2026-08-14**) `-D_USE_MATH_DEFINES
--D_CRT_SECURE_NO_WARNINGS -Wall -Werror=return-type -Werror=uninitialized
--Werror=format -Werror=conditional-uninitialized -fno-strict-aliasing
--Werror=shorten-64-to-32 -Werror=sign-conversion`. **The list is the eleven in
-`commands/flags.rs::FLAGS` and this sentence is a copy of it**, which is why it had
-drifted: the two `-D` and the two parameter-side `-Werror=` (panels 051, 052) landed
-in the code without reaching here. It has its own file since 2026-08-15 for that
-reason as much as for §11's — a list two documents claim to state should be easy to
-find. A clang
+point. Compile flags: **the array in `commands/flags.rs::FLAGS`, and this sentence names
+one of them** — `-std=gnu11`, **named and not inherited**, `gnu11` rather than `c11`
+because the two differ by one predefined macro, `__STRICT_ANSI__`, whose only effect
+on glibc is to hide `M_PI`, `strdup`, `fileno` and nine more of what §1.11 says a
+program binds (panel 047, **ratified 2026-08-14**). The rest are in that file with
+their measured reasons, and **the copy that used to stand here is deleted rather
+than corrected a third time**: this file's own preamble says each rule is written in
+exactly one place and everything else cites it. The copy died **3h16m** after it was
+last made true — `[&str; 11]` and *"the eleven"* at 00:31 on 2026-08-15, `flags.rs`
+created at 02:24 *so that a list two documents claimed to state would be easy to
+find*, panel 058's twelfth flag at 03:47, and this section still saying *eleven* the
+next day. A count in prose is the premise §11 says expires in silence while the
+sentence around it goes on reading as correct.
+A clang
 failure is exit 2 and says the *compiler* is wrong, **with one named exception**
 (author instruction 2026-08-12, panel 036; widened by panel 048): a failure the
 **author's own `extern` declaration** caused is exit 1 and a diagnostic on the
@@ -225,7 +227,28 @@ package binary"* clause was reaching for, without the false premise it carried
 
 ## 11. Language and conventions
 **Everything written is English** — code, comments, docs, commits, verdicts.
-Conversation with the author is Italian. **One declared exception** (author
+Conversation with the author is Italian, **and always in plain words** (author
+instruction 2026-08-15: *"spiegami sempre le cose con questo linguaggio semplice
+in parole povere, perché a volte faccio fatica a capirlo"*). This is not a
+register for summaries and status reports — it is **every** explanation, including
+the middle of a working session, including a defect's cause, including why a panel
+ruled as it did. The rule the `/where` skill already states is the rule
+everywhere: **assume zero compiler knowledge**, name the thing before the term for
+it, and say what a change means for a program somebody writes rather than for a
+module. A sentence the author has to re-read is a sentence that failed, and the
+author is the one person this project is being built for — §1.1 makes their
+comprehension **the objective**, so an explanation they bounce off is the
+objective missing, not a communication style.
+
+Two things this does **not** relax. Everything **written into the repository**
+stays English and stays precise (this section's first line): a journal, a panel
+file and a commit body are records, and a record that trades exactness for
+warmth is a record that will be wrong later. And plain does not mean vague — the
+numbers, the file names and the measurements still belong in the sentence, because
+*"it was slower"* is not plainer than *"it took 0.94 of the time"*, it is only
+emptier.
+
+**One declared exception** (author
 instruction 2026-08-11): the two books, M-journey-book and M-guide-book,
 are written in **Italian and English**, neither a machine translation of the
 other. The author studies from the Italian, so where the two diverge the Italian

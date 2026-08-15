@@ -35,6 +35,7 @@
 //! once, and its definition dominating every use — lives in `values.rs`, which is
 //! where the dominator computation the second half needs also lives.
 
+use crate::syntax::DeclKind;
 use crate::types::Checked;
 
 use super::build::successors;
@@ -45,13 +46,15 @@ use super::phases;
 use super::{Block, Function, Program, SlotKind};
 
 /// Whether this function's implementation is C's: an `extern function`'s code, or
-/// an `extern constant`'s value (§4.19, panel 038). Both have no blocks, and
-/// nothing else in the IR may have none.
+/// an `extern constant`'s value (§4.19, panel 038). Both have no blocks, and nothing
+/// else in the IR may have none.
 fn from_c(ast: &crate::syntax::Ast, function: &Function) -> bool {
     match &ast.decls[function.decl as usize].kind {
-        crate::syntax::DeclKind::Function(declared) => declared.is_extern,
-        crate::syntax::DeclKind::Constant { header, .. } => header.is_some(),
-        _ => false,
+        DeclKind::Function(declared) => declared.is_extern,
+        DeclKind::Constant { header, .. } => header.is_some(),
+        // **Enumerated, never `_`** (CLAUDE.md §11; panel 062's audit): a `record` or a
+        // `variant` lowers to no function, so one here trips `no entry block` below.
+        DeclKind::Test { .. } | DeclKind::Record { .. } | DeclKind::Variant { .. } => false,
     }
 }
 

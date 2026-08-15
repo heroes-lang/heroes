@@ -8,6 +8,16 @@
 //! sixth kind will have to join it: print the header line, record its source line
 //! so the comment rules have something to key on, take any trailing comment, then
 //! descend into whatever the kind carries — a body, fields, cases.
+//!
+//! **`..` is banned in this file's `DeclKind` arms, and so is an unread binding**
+//! (panels 060, 061, 062) — the same rule `printer/dump.rs` states, and it is one
+//! rule because the two files are one guard. `assert_canonical` compares the two
+//! dumps, so a field this formatter prints and the dump elides cancels into a
+//! green test. Exhaustive patterns make a new field a compile error in *both*
+//! files at once, which is the half a convention cannot do; the group head is
+//! therefore built from the fields this arm destructured (`extern_head_once`
+//! takes them), not re-derived from the `Decl`, so dropping one is
+//! `unused_variables` rather than silence.
 
 use crate::source::{Source, Span};
 use crate::syntax::{Ast, Case, Decl, DeclKind, Field, Function};
@@ -27,8 +37,9 @@ impl Fmt {
         let name = src.slice(decl.name);
         let line = src.line_of(decl.name.start);
         match &decl.kind {
-            DeclKind::Constant { ty, body, header, .. } => {
-                let indent = self.extern_head_once(src, comments, decl, *header, continues);
+            DeclKind::Constant { ty, body, header, library } => {
+                let indent =
+                    self.extern_head_once(src, comments, decl, *header, *library, continues);
                 self.line(indent, &format!("constant {name}: {}", render_type(ast, *ty, src)));
                 self.last_line = line;
                 self.trailing_comment(src, comments, line);
@@ -37,7 +48,14 @@ impl Fmt {
                 }
             }
             DeclKind::Function(function) => {
-                let indent = self.extern_head_once(src, comments, decl, function.header, continues);
+                let indent = self.extern_head_once(
+                    src,
+                    comments,
+                    decl,
+                    function.header,
+                    function.library,
+                    continues,
+                );
                 self.line(indent, &signature(ast, src, name, function));
                 self.last_line = line;
                 self.trailing_comment(src, comments, line);
@@ -55,8 +73,9 @@ impl Fmt {
             // That is panel 060's `fmt_extern.rs` hoisting one milestone later, and
             // the guard that exists to catch it was blind in the same place: see
             // `printer/dump.rs`.
-            DeclKind::Record { fields, header, partial, .. } => {
-                let indent = self.extern_head_once(src, comments, decl, *header, continues);
+            DeclKind::Record { fields, header, library, partial } => {
+                let indent =
+                    self.extern_head_once(src, comments, decl, *header, *library, continues);
                 let marker = if *partial { " partial" } else { "" };
                 self.line(indent, &format!("record {name}{marker}"));
                 self.last_line = line;

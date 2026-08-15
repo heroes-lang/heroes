@@ -120,8 +120,27 @@ pub(super) fn c_type(names: &Names, checked: &Checked, ty: TyId) -> Option<Strin
         // then a Heroes function value and a C callback are the same eight bytes,
         // which is what makes `qsort` and every raylib callback expressible.
         Ty::Func { .. } => Some(names.func_of(ty).to_string()),
-        // The two the checker keeps for its own bookkeeping never reach here.
-        _ => Some("HeroValue".to_string()),
+        // **The two the checker keeps for its own bookkeeping, and reaching here
+        // with one is a compiler bug that must say so** (CLAUDE.md §11; panel 062's
+        // audit). `HeroValue` is a type name **no runtime header defines**: this arm
+        // could only ever produce C that clang refuses, and it did, twice —
+        // `typedef HeroValue (*h_m_fn0)(int64_t)` from a poisoned type with no
+        // diagnostic (`types/errors/contextless.rs`, M-generics-library's audit) and
+        // `HeroValue ok;` from a template's `A?` (`typedefs_generated.rs`). Both
+        // came out as `error: unknown type name` at **exit 2**, blaming the emitter
+        // for a mistake made in the checker.
+        //
+        // So the two are named and the message names the *cause* rather than the
+        // symptom: a `Generic` here means monomorphisation left a parameter behind
+        // or a walk was not filtered by `mentions_generic`; an `Error` here means
+        // some checker path answered `error_ty()` **without pushing a diagnostic**,
+        // which is the poison class §4.5 exists to prevent.
+        Ty::Generic(_) => {
+            unreachable!("a type parameter survived monomorphisation and reached the emitter")
+        }
+        Ty::Error => {
+            unreachable!("a poisoned type reached the emitter: some checker path answered `error_ty()` with no diagnostic")
+        }
     }
 }
 

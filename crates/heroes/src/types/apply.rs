@@ -36,7 +36,7 @@ pub(super) fn user_call(
     let arity = function.params.len();
     let given = args.len() + usize::from(receiver.is_some());
     if given != arity {
-        let signature = crate::printer::render_signature(ast, src, decl);
+        let signature = crate::printer::render_signature(ast, src, &name, function);
         let at = src.elsewhere(span.start, ast.decls[decl as usize].name.start);
         let diagnostic = errors::arity(&name, arity, given, Some((signature, at)), span);
         checker.push_diagnostic(diagnostic);

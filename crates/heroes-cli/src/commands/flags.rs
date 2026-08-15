@@ -8,12 +8,17 @@
 //! `toolchain.rs` answers *where is the toolchain and what is cached where*, and this
 //! answers *what does clang enforce about the C we hand it*. Nothing here knows a path.
 //!
-//! It also earns a file for a reason a line count would miss: **this list is quoted by
-//! CLAUDE.md §7**, which is the operating contract, and it had already drifted four
-//! flags out of step with it. A list two documents claim to state should be easy to
-//! find and hard to miss.
+//! It also earns a file for a reason a line count would miss: **this is the list's only
+//! statement**, and CLAUDE.md §7 cites it instead of copying it. §7 used to carry the
+//! copy, and the copy died **3h16m after it was last corrected** — `[&str; 11]` and
+//! "the eleven" at 00:31, this file at 02:24 so that a list two documents claimed to
+//! state would be easy to find, panel 058's twelfth flag at 03:47, and §7 still saying
+//! *eleven* the next day (measured 2026-08-15, panel 062's audit; before that, panels
+//! 051 and 052 had drifted four flags the same way). A count in prose is exactly the
+//! premise CLAUDE.md §11 says expires in silence while the sentence around it goes on
+//! reading as correct. The array is the fact, and it is the only one.
 
-/// CLAUDE.md §7's set, in one place. `-Werror=uninitialized` is the net under the
+/// The set CLAUDE.md §7 cites, in one place. `-Werror=uninitialized` is the net under the
 /// emitter's hoisted prologue: a slot read on a path that never wrote it is a
 /// *lowering* bug, and this is what makes it a compile error instead of a wrong
 /// answer.

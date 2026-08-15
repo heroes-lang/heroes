@@ -20,8 +20,13 @@ use super::fmt::Fmt;
 
 /// `extern "sqlite3.h" link "sqlite3"` — the group's head line, rebuilt from any
 /// one of its members, since every member carries both spans (§4.19).
-pub(super) fn extern_head(src: &Source, decl: &Decl) -> String {
-    let (header, library) = extern_spans(decl);
+///
+/// **The two spans are the caller's, taken from the arm that destructured the
+/// declaration** (panel 062), not re-derived here from the `Decl`. That is what
+/// makes `fmt_decl.rs`'s bindings load-bearing: a head-line field an arm forgets
+/// to pass on is an unread binding, which CI denies, instead of a head line
+/// silently printed from somewhere else.
+pub(super) fn extern_head(src: &Source, header: Option<Span>, library: Option<Library>) -> String {
     let mut out = String::from("extern ");
     if let Some(header) = header {
         out.push_str(src.slice(header)); // quotes included
@@ -110,11 +115,12 @@ impl Fmt {
         comments: &[Span],
         decl: &Decl,
         header: Option<Span>,
+        library: Option<Library>,
         continues: bool,
     ) -> usize {
         let Some(header) = header else { return 0 };
         if !continues {
-            self.line(0, &extern_head(src, decl));
+            self.line(0, &extern_head(src, Some(header), library));
             self.last_line = src.line_of(header.start);
             self.comments_before(src, comments, src.line_of(decl.name.start), 4);
         }
