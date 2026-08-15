@@ -40,6 +40,10 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 014 | [literal bases](014-literal-bases.md) | M-literal-bases — four ways to write a number, and one that stopped lying | 2026-08-12 | `m-literal-bases` |
 | 015 | [sized integers](015-sized-integers.md) | M-sized-integers — eight widths, and `int` stops being a word | 2026-08-12 | `m-sized-integers` |
 | 016 | [the program corpus](016-the-program-corpus.md) | M-program-corpus — nine programs, six compiler defects, and a CI | 2026-08-13 | `m-program-corpus` |
+| 017 | [binding fidelity](017-binding-fidelity.md) | M-binding-fidelity — what an `extern` accepts | 2026-08-14 | `m-binding-fidelity` |
+| 018 | [struct passing](018-struct-passing.md) | M-struct-passing — the layout that is not ours | 2026-08-15 | `m-struct-passing` |
+| 019 | [complete structs](019-complete-structs.md) | M-complete-structs — every field form a C header can write | 2026-08-15 | `m-complete-structs` |
+| 020 | [the selfhost probe](020-selfhost-probe.md) | M-selfhost-probe — the lexer ported, and the wall that was not there | 2026-08-15 | `m-selfhost-probe` |
 
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what

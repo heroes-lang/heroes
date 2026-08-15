@@ -427,3 +427,11 @@ rather than the numbers quietly dropped.
 | 7 | llm-ergonomist | **NOT SCORABLE**, same instrument. Its second clause is the falsifier for the whole notation case — *"≥25% of today's attempts reach for hex unprompted; under 10% and the case weakens sharply"* — and it is now **moot for the decision** and live only as a measurement: the author ratified the notation on a §1-derived argument (a base creates no value that did not exist, so it is not the new syntactic form panel 035 refused), not on a frequency. It stays here because a measurement that would have changed the decision is worth taking even after the decision |
 | 2, 8, 9, 10 | compiler-engineer, ffi-pragmatist ×2, historian | **RETIRED UNSCORED.** All four are about option (b), the FFI-boundary `u64` that no judge who could see the repository accepted and that the ratification did not build. Retiring them is recorded here rather than done silently, because a prediction dropped without a reason is how a judge's track record gets flattered |
 | 3, 5 | spec-warden, llm-ergonomist | still open, checkable at **M-selfhost-probe** and at the first harness run respectively |
+
+## Scored at M-selfhost-probe close (2026-08-15)
+
+- **Prediction 3 (spec-warden): CONFIRMED.** Measurement 009 lists two
+  blockages of the predicted shape: the two diagnostic builders of
+  `digits.rs` stay unported because rendering a boundary **in the reader's
+  own base** (hex-digit output) has no spelling yet, and gap 5 records the
+  missing byte-of-string conversion. Neither needed `f64 → bits`.

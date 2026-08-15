@@ -294,3 +294,11 @@ should not be provisional under a decision that leans on it.
 
 The limit is the 2026-08-12 blanket's limit: a yes settles that the resolution
 **is** the decision, not anything keyed to a measurement not yet taken.
+
+## Scored at M-selfhost-probe close (2026-08-15)
+
+- **Prediction 1 (compiler-engineer): CONFIRMED.** The probe's blockage list
+  (docs/measurements/009, twelve entries) contains **zero** items a
+  compile-time evaluator would close: the gaps are a decoder's width, an
+  overflow guard, Option/tuples/no-ops as shapes, and two missing
+  spellings (`\r`, byte-to-str) — none is a constant a comptime could fold.

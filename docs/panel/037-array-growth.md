@@ -304,3 +304,13 @@ what this sitting said would follow from a falsification. Its first half was the
 half in dispute and it held under a real reader. What the second half buys is a
 question, now in `DECIDE.md`: a reader told a loop is quadratic and given no
 non-loop does the loop.
+
+## Scored at M-selfhost-probe close (2026-08-15)
+
+- **compiler-engineer: CONFIRMED.** The ported lexer lexes
+  `examples/calculator/whole.hero` (2,571 tokens) in **0.04 s user time**
+  (compiled binary, the compile itself excluded), well under the predicted
+  0.2 s; measurement 009's gap list contains **no** `push` blockage.
+- **spec-warden: CONFIRMED at the probe's scope.** Zero programs failed to
+  terminate because of `push`; the 55-test selfhost suite runs to completion.
+  The fixpoint half of the sentence stays open until M-selfhost-fixpoint.

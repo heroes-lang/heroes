@@ -255,6 +255,7 @@ test "an exponent is refused where it is written"
     assert n.tokens[0].kind == .int_lit
     assert n.pos == 1
 
+# UNVERIFIED — pending debrief
 test "a based literal fails loudly, never by splitting"
     l: state.LexState @ state.new_state()
     number(@l, "0b12")

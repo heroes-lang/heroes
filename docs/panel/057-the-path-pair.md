@@ -324,3 +324,15 @@ refusal is not an answer to a question the refusal raised:
 in `/decide` the same day and put to the panel unchanged — including the `str?`
 return and the `\` clause that three seats refused. The ratification confirms the
 seats rather than the drafter, which is what the panel exists for.
+
+## Scored at M-selfhost-probe close (2026-08-15)
+
+- **spec-warden: CONFIRMED.** `grep -rn path_join` over
+  `crates/heroes/src/library/`, `examples/` and `tests/golden/run/` is **0**.
+- **compiler-engineer and ffi-pragmatist: not yet checkable, not lapsed.**
+  The artifacts they name (the Heroes port of `modules/mod.rs`; a Windows
+  build of a ported module graph) do not exist at the probe, whose scope was
+  the lexer. Recorded here so the close does not pass them in silence; they
+  are scored when the port builds what they name. Neither bought a spec
+  clause (no `measure/gate.rs` row cites 057), so panel 046 R2's lapse rule
+  does not bind them.

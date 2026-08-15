@@ -17,19 +17,20 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-complete-structs closed 2026-08-15, tag `m-complete-structs` — every struct a
-C header writes can be named.**
+**M-selfhost-probe closed 2026-08-15, tag `m-selfhost-probe` — the lexer is
+ported, and the wall the plan predicted was not there.**
 
-    all 35 of raylib's structs · all 349 by-value crossings · zero `partial`
+    selfhost/: 11 files, 1,888 lines, 55 tests · 0.04 s on a real module
+    12 gaps, all workaround-compiles · hero_spawn priced at +39 · `private` stays Part 7
 
-Three panels, two vetoes, both on shape rather than feature. The count went
-191 → 200 → 328 → 349 and no step was a capability: each was a refusal with no
-escape. `partial` and `i32[4]` are the two field forms that landed.
+The byte wall was filled by M-sized-integers before the probe ran. Panel 065
+(the `// ORDER:` marks) opened the milestone; measurement 009 is the record.
+The findings are a **lower bound**: the lexer has zero maps and zero closures,
+so a second file (maps, recursive variants, generics) opens M-selfhost-port.
 
-**557 tests**, clippy clean under `-D warnings`, spec **3374** of 4096 (headroom
-722), determinism diff empty, zero hand-written `.c` in `examples/`.
-Record: `docs/journal/019-complete-structs.md`.
-Next: **M-selfhost-probe** — the lexer ported, to measure what self-hosting lacks.
+**561 tests + the port's 55**, clippy clean, spec untouched at **3374** (headroom 722),
+determinism diff empty. Record: `docs/journal/020-selfhost-probe.md`.
+Next: **M-selfhost-port** — the rest of the compiler, file by file.
 
 ---
 
@@ -37,19 +38,18 @@ Next: **M-selfhost-probe** — the lexer ported, to measure what self-hosting la
 
 | order | id | what | warrant |
 |---|---|---|---|
-| 1 | **M-selfhost-probe** | The probe — the lexer ported, to measure what self-hosting lacks | Principle 0 checkpoint |
-| 2 | **M-selfhost-port** | The port | v1 |
-| 3 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 4 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
-| 5 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 6 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 7 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 8 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
-| 9 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
-| 10 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
-| 11 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
-| 12 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
-| 13 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
+| 1 | **M-selfhost-port** | The port | v1 |
+| 2 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
+| 3 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
+| 4 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 5 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 6 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 7 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
+| 8 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 9 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 10 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
+| 11 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 12 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -66,9 +66,11 @@ are an opaque type (§4.9 makes construction impossible from outside, and §4.20
 makes a shim read the field anyway) and private variant cases are
 `#[non_exhaustive]`, which Rust deleted in 2014, re-added per type in 2019 and
 documents as costing exhaustiveness. Both are now **Part 6, permanently**. The
-third, `private` on a declaration, is **Part 7 item 14** at a pre-fixed +18, and
-**M-selfhost-probe decides it**: a blockage there puts it on the closure list, a wish does not
-(the rule at *M-selfhost-probe reports blockages, not wishes*, below). *Errors*: the Rust shape
+third, `private` on a declaration, is **Part 7 item 14** at a pre-fixed +18;
+M-selfhost-probe was assigned to decide it and **did, at its close 2026-08-15:
+no blockage, so it stays Part 7** — eleven modules ported, every cross-module
+read intended, and the rule's own words ("a blockage there puts it on the
+closure list, a wish does not") made the close mechanical (DESIGN-LOG). *Errors*: the Rust shape
 landed at M-optional-map — `T?` is `Result<T,E>`, `?` is `?`, `.must()` is `.unwrap()` — and
 the part Rust has that Heroes does not, the typed error, stays **Part 8 wart 5**
 rather than becoming a deferral, because it loses on §4.12's positive rule as well
@@ -77,40 +79,6 @@ as on simplicity. What is real underneath the question is measured:
 a `constant`, not a feature.
 
 ## What each one is
-
-### M-selfhost-probe — The probe: measure before committing to the port
-The lexer (983 non-test lines) ported to Heroes **for real**, to find out what
-self-hosting still lacks — before the port, not during it.
-
-> **M-selfhost-probe reports blockages, not wishes.** Every form the probe proposes arrives
-> with three things — the Heroes code that does the same job *without* it, that
-> code's line count, and the form's own spec cost quoted from `heroes measure` —
-> and a form whose workaround compiles is a Part 7 deferral by default,
-> overturned only by §1.0 compiler-need (nothing in Heroes expresses the case at
-> all) or a measured Part 11 effect. "The port would be easier with X" is
-> evidence for nothing: the workaround compiling is the proof that the compiler
-> did not need X.
-
-The lexer is the right first file for a specific reason: `lexer/scan.rs` reaches
-`as_bytes()` at seven sites and compares bytes, `types/ops.rs:54` refuses `<` on
-`str`, and the closure list has **no form** that replaces byte access — so the
-probe hits a missing-form wall on file one, cheaply. It is also why the findings
-are **a lower bound, not a measurement**: the lexer has zero `BTreeMap` and zero
-closures (`types/` has 14 BTree sites across 4,509 lines). If the byte wall is
-the only finding, a second file that exercises maps, recursive variants and
-generics is owed before M-selfhost-port opens.
-**And it prices the closure list's fifteenth row: spawning a process** (author
-instruction 2026-08-12 — *the self-hosted compiler must be complete*). After the
-archive `heroes build` and `heroes run` are Heroes programs and they invoke
-clang; `int64_t system(const char *)` is `conflicting types for 'system'`, panel
-030 R3's wall on a row the audit could not find, because measurement 003 is
-mechanical and audits only what is already on the list. The shape is a
-`hero_spawn` in `hero_os.h` beside the file and argument rows it already carries;
-what the probe owes is the measured cost and the signature.
-
-**Acceptance:** the ported lexer passes the Rust lexer's own tests, and
-`docs/measurements/004-selfhost-readiness.md` states the gap list under the rule
-above.
 
 ### M-selfhost-port — The port
 Rust → Heroes into `selfhost/` (directory born here), file by file, **the goldens
@@ -357,6 +325,13 @@ code. `git tag --list --sort=creatordate` gives the same order from git itself.
 | M-module-namespace — a program is many files | 2026-08-12 | `m8a` | [011](journal/011-modules-the-namespace.md) |
 | M-ffi-ladder — Heroes calls C | 2026-08-12 | `m-ffi-ladder` | [012](journal/012-the-ffi-ladder.md) |
 | M-header-constants — the number leaves the file | 2026-08-12 | `m-header-constants` | [013](journal/013-header-constants.md) |
+| M-literal-bases — `0x` `0o` `0b`, the `_` separator | 2026-08-12 | `m-literal-bases` | [014](journal/014-literal-bases.md) |
+| M-sized-integers — eight widths, and `int` stops being a word | 2026-08-12 | `m-sized-integers` | [015](journal/015-sized-integers.md) |
+| M-program-corpus — nine programs, six compiler defects, and a CI | 2026-08-13 | `m-program-corpus` | [016](journal/016-the-program-corpus.md) |
+| M-binding-fidelity — what an `extern` accepts | 2026-08-14 | `m-binding-fidelity` | [017](journal/017-binding-fidelity.md) |
+| M-struct-passing — the layout that is not ours | 2026-08-15 | `m-struct-passing` | [018](journal/018-struct-passing.md) |
+| M-complete-structs — every field form a C header can write | 2026-08-15 | `m-complete-structs` | [019](journal/019-complete-structs.md) |
+| M-selfhost-probe — the lexer ported, and the wall that was not there | 2026-08-15 | `m-selfhost-probe` | [020](journal/020-selfhost-probe.md) |
 
 ## The names
 
@@ -391,11 +366,11 @@ So a number met in the record resolves here, and only here.
 | `M-header-constants` | — | `m-header-constants` | a `constant` whose value is the header's, so the number leaves the file |
 | `M-literal-bases` | — | `m-literal-bases` | `0x` `0o` `0b`, the `_` separator, and a leading zero that is no longer decimal |
 | `M-sized-integers` | — | `m-sized-integers` | the integer widths, signed and unsigned, and the conversions between them |
-| `M-program-corpus` | M8e | — | many whole programs, all of them run |
+| `M-program-corpus` | M8e | `m-program-corpus` | many whole programs, all of them run |
 | `M-binding-fidelity` | — | `m-binding-fidelity` | a binding says what the header says: the parameter side of §4.19's guarantee |
 | `M-struct-passing` | — | `m-struct-passing` | a struct crosses the FFI boundary by value — §4.19's ladder rung 5, and the third of the boundary that was unreachable |
 | `M-complete-structs` | — | `m-complete-structs` | every field form a C header can write — `partial`, `i32[4]`, and the completeness probe. **A new id rather than a reopening** (§14): the milestone before it says *a struct can cross*, this one says *every struct can be named*, and the work landed after `m-struct-passing` was tagged |
-| `M-selfhost-probe` | M8p | — | the lexer ported, to measure what self-hosting lacks |
+| `M-selfhost-probe` | M8p | `m-selfhost-probe` | the lexer ported, to measure what self-hosting lacks |
 | `M-selfhost-port` | M8b | — | the port |
 | `M-selfhost-fixpoint` | M8c | — | the fixpoint — **v1** |
 | `M-separate-compilation` | M9 | — | one `.c` per module, prototypes across TUs, the cache |

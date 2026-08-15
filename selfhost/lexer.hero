@@ -97,6 +97,7 @@ test "dedents close one level at a time and eof closes the rest"
     # terminator lands before the indent, and the parser reads both.
     assert kind_line(out.tokens) == "kw_if ident terminator indent kw_if ident terminator indent ident eq int terminator dedent dedent eof"
 
+# UNVERIFIED — pending debrief
 test "an error never stops the lexer"
     out = lex_one("let x = 0700 € \"open\n")
     codes: [str] @ []
@@ -125,6 +126,7 @@ test "break, continue, the hole and the question mark end a line"
     out = lex_one("break\ncontinue\n???\nx?\n")
     assert kind_line(out.tokens) == "kw_break terminator kw_continue terminator hole terminator ident question terminator eof"
 
+# UNVERIFIED — pending debrief
 test "the residual windows path trap is on the record"
     # Honest limit of panel 008: reserving the backslash makes "\d+" loud,
     # but it CANNOT make "C:\temp" loud — \t is a legal escape, so the path
@@ -136,6 +138,7 @@ test "the residual windows path trap is on the record"
     loud = lex_one("p = \"C:\\Users\"\n")
     assert loud.diagnostics[0].code == "unknown_escape"
 
+# UNVERIFIED — pending debrief
 test "a backslash at end of line leaves the layout intact"
     # The escape must not swallow the newline: doing so would destroy every
     # indent and dedent that follows (§4.15).
@@ -143,6 +146,7 @@ test "a backslash at end of line leaves the layout intact"
     assert out.diagnostics[0].code == "unterminated_string"
     assert kind_line(out.tokens) == "ident eq error indent ident terminator dedent eof"
 
+# UNVERIFIED — pending debrief
 test "a multibyte character after the backslash does not panic"
     # The validator advances by the escaped character's UTF-8 length, not by
     # one byte — a fixed stride would leave pos mid-character and the next

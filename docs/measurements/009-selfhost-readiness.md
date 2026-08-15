@@ -1,6 +1,13 @@
 # Measurement 009 — self-hosting readiness: what the lexer port finds
 
-**Status: in progress — M-selfhost-probe is open.** This document accumulates
+**Status: closed with M-selfhost-probe, 2026-08-15.** The acceptance holds:
+the ported lexer passes the translated Rust lexer suite (55 test blocks green
+under `heroes test selfhost/lexer.hero`; 33 of the 34 Rust tests translated,
+the untranslatable one named in gap 10 with its cause), the gap list below
+stands under the milestone's rule, and the fifteenth closure-list row is
+priced (§ hero_spawn below). Speed, measured not asserted: the ported lexer
+lexes `examples/calculator/whole.hero` — 2,571 tokens — in **0.04 s** user
+time as a compiled binary. This document accumulates
 the gap list as the port advances, one entry per finding, under the milestone's
 own rule (docs/ROADMAP.md § M-selfhost-probe):
 
@@ -164,19 +171,49 @@ closes.
 - `u8` byte scanning: `s[i]`, char literals as `u8` in context, `b - '0'`
   arithmetic, `to_u64(...)/to_i64(...)` with `.must()` at provably-safe sites.
 
-## Still owed by this milestone
+## hero_spawn — the fifteenth closure-list row, priced
 
-- The stateful heart: `number.rs`, `literals.rs`, `layout.rs`, `scan.rs`,
-  `mod.rs` — LexState threading through `@` parameters, the diagnostics-and-
-  Fix records, terminator insertion, the indent stack.
-- The Rust lexer's own tests, translated (`lexer/tests/`, 843 lines): the
-  acceptance is that the port passes them.
-- The two diagnostic builders deferred from `digits.hero` (need a render-in-
-  base helper — the first real string-building want; measure it when it is
-  written, not before).
-- The fifteenth closure-list row: `hero_spawn`'s measured cost and signature
-  (author instruction 2026-08-12 — the ROADMAP's own text).
-- If the byte wall stays filled: the second-file question (the lexer has zero
-  `BTreeMap` and zero closures, so these findings are a lower bound — the
-  ROADMAP already says a maps-and-generics file is owed before
-  M-selfhost-port opens).
+After the archive, `heroes build` is a Heroes program and it invokes clang;
+`int64_t system(const char *)` is `conflicting types for 'system'` (panel 030
+R3's wall), so the row cannot be an ordinary `extern` and must be a runtime
+entry point beside `hero_file_read` and `hero_args_at` in `hero_os.h`.
+
+- **Language shape**: `spawn(cmd: str, args: [str]) -> i64?` — runs a
+  program, waits, gives its exit code; fails only if it cannot start.
+- **Spec cost, measured**: **+39 tokens** (3374 → 3413, headroom 722 → 683),
+  by inserting the sentence into `spec/heroes-spec.md` § Files and the
+  process and running `heroes measure`; the spec was restored untouched.
+- **Runtime shape**: `int64_t hero_spawn(HeroStr cmd, HeroArray args,
+  int64_t *status)` over `posix_spawn` + `waitpid`, estimated 40–60 lines in
+  `runtime.c` — an estimate, marked as one; the measured number arrives when
+  the row lands.
+- **This is a price, not a landing.** The row enters design.md Part 5 and the
+  spec through a panel when M-selfhost-port needs it (CLAUDE.md §4).
+
+## Two questions this milestone was told to answer
+
+- **`private` (Part 7 item 14)**: the ROADMAP's rule was *"a blockage there
+  puts it on the closure list, a wish does not"*. The probe hit **no
+  blockage** shaped like visibility — eleven modules, every cross-module read
+  intended — so `private` stays Part 7 at its pre-fixed +18.
+- **The second file**: owed, as the ROADMAP already said. The byte wall the
+  probe was aimed at no longer exists, and every gap found is small — but the
+  lexer has zero `BTreeMap` and zero closures, so this list is a **lower
+  bound**. A file that exercises maps, recursive variants and generics
+  (`types/` or `resolve/`-shaped) opens M-selfhost-port, and panel 065's
+  `// ORDER:` marks say exactly where its sorts will be owed.
+
+## What carries to M-selfhost-port
+
+Everything this milestone was told to deliver is delivered; four things carry
+forward with their reasons named:
+
+- **The second file** (above) — it opens the port.
+- **The multi-file `lex` wrapper**: needs the Source record (`source.rs`,
+  not lexer code); measured when a second file needs it.
+- **The two diagnostic builders of `digits.rs`**: rendering a boundary in
+  the reader's own base needs a render-in-base helper — the first real
+  string-building want; measured when it is written, not before.
+- **The `stray_carriage_return` test** (gap 10): untranslatable until either
+  `\r` gets a spelling or a byte-to-str conversion exists — the one deferral
+  with a named cost, and the port re-decides it with the corpus in hand.
