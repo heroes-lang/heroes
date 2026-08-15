@@ -81,7 +81,7 @@ fn a_parameter_wider_than_the_header_is_the_authors_error() {
     assert!(said.contains("ffi-parameter-width.hero:"), "the author's line:\n{said}");
     // The three things §4.17 exists to prevent, and §7's exit-2 rule with them.
     assert!(!said.contains("internal error"), "it blamed the compiler:\n{said}");
-    assert!(!said.contains("build/"), "it sent the reader to generated C:\n{said}");
+    assert!(sends_nobody_to_generated_c(&said), "it sent the reader to generated C:\n{said}");
     assert!(!said.contains("hero_ffi_probe"), "it showed the probe:\n{said}");
 }
 
@@ -95,8 +95,18 @@ fn a_parameter_wider_than_the_header_is_the_authors_error() {
 ///
 /// What this pins is the half a width table cannot have: the note names **which
 /// target** the proposed width is for. Without that sentence the diagnostic would
-/// be telling a reader on Windows to write `u64` for a 32-bit parameter, which is
+/// be telling a reader on Windows to write a width for the wrong target, which is
 /// the silent widening the class exists to prevent, arriving through the fix.
+///
+/// **The note is pinned on `fseek`, not on `malloc`, and that is the repair this
+/// test needed** (CI, Windows x86-64, 2026-08-15). `malloc`'s parameter is a
+/// `size_t`; a `size_t` is 64 bits on all three CI legs and only *spells* as
+/// `unsigned long` on the two LP64 ones. On Windows clang canonicalises it to
+/// `unsigned long long`, which `spelling()` answers from a **fixed** row with no
+/// caveat — so asserting the note against `malloc` asserted it on exactly the two
+/// platforms it is not about, and went red on the third. `fseek` takes a C `long`
+/// (C11 7.21.9.2), the one integer whose width differs across the three legs, so it
+/// reaches `word_width()` on all of them.
 #[test]
 fn a_word_width_parameter_is_the_authors_error_not_the_compilers() {
     let out = heroes(&["build", "tests/golden/fixedbugs/ffi-word-width.hero"]);
@@ -106,8 +116,12 @@ fn a_word_width_parameter_is_the_authors_error_not_the_compilers() {
     }
     assert_eq!(code(&out), 1, "exit 1: the input has diagnostics\n{said}");
     assert!(said.contains("error[ffi_parameter_type]"), "{said}");
+    // `malloc` is the defect the case records, and this is the half of its
+    // diagnostic that is the same on every leg. Its C type is deliberately not
+    // asserted: that string is the target's, not the header's.
     assert!(said.contains("`size` of `malloc`"), "the author's own parameter name:\n{said}");
-    assert!(said.contains("`unsigned long`"), "the header's type:\n{said}");
+    assert!(said.contains("`offset` of `fseek`"), "the author's own parameter name:\n{said}");
+    assert!(said.contains("the header's `long`"), "the header's type:\n{said}");
     assert!(
         said.contains("the platform's word"),
         "the note must say the width is the target's, not the header's:\n{said}"
@@ -118,7 +132,7 @@ fn a_word_width_parameter_is_the_authors_error_not_the_compilers() {
     );
     // §7's exit-2 rule is what this class exists to keep the author out of.
     assert!(!said.contains("internal error"), "it blamed the compiler:\n{said}");
-    assert!(!said.contains("build/"), "it sent the reader to generated C:\n{said}");
+    assert!(sends_nobody_to_generated_c(&said), "it sent the reader to generated C:\n{said}");
     assert!(!said.contains("hero_ffi_probe"), "it showed the probe:\n{said}");
 }
 
@@ -131,11 +145,19 @@ fn a_word_width_parameter_is_the_authors_error_not_the_compilers() {
 /// has no `--target` and cross-compilation is not on the argv table.
 ///
 /// So the claim is not *"`unsigned long` is 64 bits"* — it is *"whatever Rust says
-/// `c_ulong` is, clang agrees"*. This builds a real binding at that width through
-/// the real toolchain: `strlen` takes a `size_t`-shaped result and `memset` takes an
-/// `unsigned long` parameter, so a disagreement is a `ffi_parameter_type` or an
-/// `ffi_return_type` rather than a silent pass. The day a `--target` flag lands,
-/// this goes red **in the milestone that adds it**.
+/// `c_ulong` is, clang agrees"*. The binding therefore has to be a function whose
+/// result the header spells `unsigned long` **itself**, and `strtoul` is the one C
+/// guarantees: C11 7.22.1.4 gives it `unsigned long`, on every conforming library,
+/// with no typedef in the way. `HERO_RET_U{bits}` then carries a `sizeof(c) == n`,
+/// so a disagreement is an `ffi_return_type` rather than a silent pass. The day a
+/// `--target` flag lands, this goes red **in the milestone that adds it**.
+///
+/// **It used to bind `strlen`, and `strlen` returns `size_t`** (CI, Windows x86-64,
+/// 2026-08-15). `size_t == unsigned long` is true on LP64 and false on LLP64, so the
+/// test that exists to keep a premise about the world out of the compiler was itself
+/// resting on one: it asked Rust for `sizeof(unsigned long)` — 4 on Windows — and
+/// then asserted it against `size_t`, which is 8 there. Exit 1, on a compiler that
+/// was right.
 #[test]
 fn the_word_width_this_compiler_claims_is_the_one_clang_uses() {
     let bits = std::mem::size_of::<std::os::raw::c_ulong>() * 8;
@@ -145,7 +167,7 @@ fn the_word_width_this_compiler_claims_is_the_one_clang_uses() {
     std::fs::write(
         &source,
         format!(
-            "extern \"string.h\"\n    function strlen(s: cstr) -> u{bits}\n\nfunction main()\n    print(\"len\")\n"
+            "extern \"stdlib.h\"\n    function strtoul(s: cstr, end: ptr, base: i32) -> u{bits}\n\nfunction main()\n    print(\"word\")\n"
         ),
     )
     .expect("writing the probe program");
@@ -1352,7 +1374,7 @@ fn fixedbugs_a_missing_link_is_the_authors_error_not_the_compilers() {
     // The author's line, not the generated C's.
     assert!(said.contains("ffi-missing-link.hero:"), "{said}");
     assert!(!said.contains("internal error"), "{said}");
-    assert!(!said.contains("build/"), "the message sends the reader to generated C: {said}");
+    assert!(sends_nobody_to_generated_c(&said), "the message sends the reader to generated C: {said}");
     // And it says what to write, which is the whole of §4.17 here.
     assert!(said.contains("link \"<library>\""), "{said}");
     // The repair works: the same program with the library named builds and runs.
@@ -1500,4 +1522,16 @@ fn a_search_path_that_names_nothing_is_refused_before_clang_sees_it() {
         &empty.to_string_lossy(),
     ]);
     assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+}
+
+/// Whether a diagnostic sends the reader into `build/`, on **every** platform.
+///
+/// **`build/` alone was a no-op on Windows**, where the separator is `\\` — so three
+/// assertions that exist to keep a reader out of generated C were vacuous on one
+/// of the three legs, and nobody would have known until a message there did send
+/// them (panel 062's audit, 2026-08-15). The path is written by `std::path`, so it
+/// carries the host's separator, and a test that hard-codes one is a test about
+/// the machine it was written on.
+fn sends_nobody_to_generated_c(said: &str) -> bool {
+    !said.contains("build/") && !said.contains("build\\")
 }

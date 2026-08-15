@@ -228,15 +228,27 @@ fn spelling(c_type: &str) -> Option<Spelling> {
 /// that says so.
 fn word_width(sign: char) -> Spelling {
     let bits = word_width_bits();
-    let (other, here, there) = if bits == 64 {
-        (32, "Darwin and Linux", "Windows")
-    } else {
-        (64, "Windows", "Darwin and Linux")
+    // **The name of this machine is asked of the machine, not inferred from the
+    // width** (panel 062's audit, 2026-08-15). This read `if bits == 64 { "Darwin
+    // and Linux" } else { "Windows" }` — a premise about which platforms exist,
+    // written inside the function whose own doc comment two paragraphs down
+    // explains that it does not have one. It is falsifiable **today** and without a
+    // `--target`: on `armv7-unknown-linux-gnueabihf` a C `long` is 32 bits, and the
+    // note would have told a Linux reader they were on Windows.
+    //
+    // `std::env::consts::OS` is a fact about the value in hand — the machine this
+    // compiler is running on — which is the distinction CLAUDE.md §11 turns on.
+    let here = match std::env::consts::OS {
+        "macos" => "macOS",
+        "linux" => "Linux",
+        "windows" => "Windows",
+        other => other,
     };
+    let other = if bits == 64 { 32 } else { 64 };
     Spelling {
         heroes: format!("{sign}{bits}"),
         caveat: Some(format!(
-            "C's `long` is the platform's word, not a width the header chose: {bits} bits here ({here}) and {other} on {there}. `{sign}{bits}` is the answer for this target — a program that must build on {there} too declares the width it means there and converts at the call"
+            "C's `long` is the platform's word, not a width the header chose: {bits} bits on this machine ({here}), and {other} elsewhere — Windows is {other} where the Unixes are {bits}, or the reverse. `{sign}{bits}` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
         )),
     }
 }

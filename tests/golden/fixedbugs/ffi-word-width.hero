@@ -26,12 +26,26 @@
 # by `the_word_width_this_compiler_claims_is_the_one_clang_uses`, which fires the
 # day a `--target` flag lands.
 #
+# **`fseek` is here because `malloc` cannot witness the fix on the leg the fix is
+# for** (CI, Windows x86-64, 2026-08-15). `malloc`'s parameter is a `size_t`, and a
+# `size_t` is 64 bits on all three CI legs — it only *spells* as `unsigned long` on
+# the two LP64 ones. On Windows clang canonicalises it to `unsigned long long`,
+# which has a **fixed** row in `spelling()` and therefore no caveat, so the note
+# this case exists to pin was never reached on the only platform it talks about.
+# `fseek` takes a C `long` (C11 7.21.9.2, and UCRT declares it the same way), which
+# is the one integer whose width actually differs across the three: `long` reaches
+# `word_width()` on every leg, and the note comes out saying *64 bits here (Darwin
+# and Linux)* on two of them and *32 bits here (Windows)* on the third.
+#
 # This file must NOT compile. It is built by the CLI surface test
 # `a_word_width_parameter_is_the_authors_error_not_the_compilers`.
 
 extern "stdlib.h"
     function malloc(size: i64) -> ptr    #~ ffi_parameter_type
     function free(p: ptr)
+
+extern "stdio.h"
+    function fseek(stream: ptr, offset: u64, whence: i32) -> i32   #~ ffi_parameter_type
 
 function main()
     p = malloc(8)
