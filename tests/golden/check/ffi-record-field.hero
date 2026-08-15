@@ -1,0 +1,28 @@
+# What a `record` inside an `extern` group may hold, and the five ways it cannot
+# (§4.19; panel 060). The header owns the layout, so a field is a thing a C
+# struct can contain — and every refusal here is about a Heroes value that has no
+# C spelling at all, which is why it is refused in the checker rather than left to
+# the field assertion: an assertion naming `HeroStr` could not be written, so the
+# failure would arrive as a clang error about generated C at exit 2.
+#
+# The nested-record row is the one that is NOT a blanket refusal: a record may
+# hold another record by value exactly when that one is also the header's.
+
+record Local
+    n: i32
+
+extern "raylib.h" package "raylib"
+    record Bad
+        name: str               #~ ffi_field_type
+        xs: [i64]               #~ ffi_field_type
+        counts: {str: i64}      #~ ffi_field_type
+        maybe: i64?             #~ ffi_field_type
+        nothing: ()             #~ ffi_field_type
+        inner: Local            #~ ffi_field_type
+        ok_number: i32
+        ok_pointer: ptr
+        ok_string: cstr
+    function GetRandomValue(min: i32, max: i32) -> i32
+
+function main()
+    print(GetRandomValue(min: 1, max: 6))

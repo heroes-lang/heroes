@@ -37,11 +37,12 @@ pub(super) fn equality_body(
     checked: &Checked,
     names: &Names,
     src: &Source,
-    name: &str,
+    at: &super::typedefs::Aggregate,
     fields: &[Field],
 ) {
+    let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
-    w.line(&format!("bool {name}_eq(const {name} *a, const {name} *b) {{"));
+    w.line(&format!("bool {prefix}_eq(const {c_type} *a, const {c_type} *b) {{"));
     if fields.is_empty() {
         // `record E` is `error[empty_record]` in the checker, so this is belt to that
         // braces — and `(void)` keeps the parameters used, because `-Wall` is on.
@@ -51,7 +52,7 @@ pub(super) fn equality_body(
     }
     for field in fields {
         let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
-        let member = mangle::field(src.slice(field.name));
+        let member = mangle::field_of(at.foreign, src.slice(field.name));
         let test = match checked.types.get(ty) {
             Ty::Int(_) | Ty::Bool | Ty::Float(_) => format!("a->{member} == b->{member}"),
             Ty::Str => format!("hero_str_eq(a->{member}, b->{member})"),
@@ -68,7 +69,7 @@ pub(super) fn equality_body(
             // A function value is a bare C function pointer, and panel 029 made
             // its equality pointer identity.
             Ty::Func { .. } => format!("a->{member} == b->{member}"),
-            Ty::Named(inner) => format!("{}_eq(&a->{member}, &b->{member})", names.of(inner)),
+            Ty::Named(inner) => format!("{}_eq(&a->{member}, &b->{member})", names.satellite(inner)),
             Ty::Case(inner, case) => {
                 format!("{}_eq(&a->{member}, &b->{member})", names.case_of(inner, case))
             }
@@ -96,16 +97,17 @@ pub(super) fn variant_equality_body(
     names: &Names,
     src: &Source,
     decl: u32,
-    name: &str,
+    at: &super::typedefs::Aggregate,
 ) {
     let _ = checked;
+    let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
-    w.line(&format!("bool {name}_eq(const {name} *a, const {name} *b) {{"));
+    w.line(&format!("bool {prefix}_eq(const {c_type} *a, const {c_type} *b) {{"));
     w.line("    if (a->tag != b->tag) return false;");
     w.line("    switch (a->tag) {");
     for (at, case) in cases_of(ast, decl).iter().enumerate() {
         let case_name = src.slice(case.name);
-        let tag = mangle::tag_of(name, case_name);
+        let tag = mangle::tag_of(prefix, case_name);
         if case.fields.is_empty() {
             // Two payload-free cases with the same tag *are* the same value: there is
             // nothing else to compare.
@@ -148,16 +150,17 @@ pub(super) fn hash_body(
     checked: &Checked,
     names: &Names,
     src: &Source,
-    name: &str,
+    at: &super::typedefs::Aggregate,
     fields: &[Field],
 ) {
+    let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
-    w.line(&format!("uint64_t {name}_hash(const void *elem) {{"));
-    w.line(&format!("    const {name} *v = elem;"));
+    w.line(&format!("uint64_t {prefix}_hash(const void *elem) {{"));
+    w.line(&format!("    const {c_type} *v = elem;"));
     w.line("    uint64_t h = UINT64_C(0xcbf29ce484222325);");
     for field in fields {
         let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
-        let member = mangle::field(src.slice(field.name));
+        let member = mangle::field_of(at.foreign, src.slice(field.name));
         let one = super::descriptors::hash_call(checked, names, ty, &format!("&v->{member}"))
             .unwrap_or_else(|| "(hero_unreachable(), UINT64_C(0))".to_string());
         w.line(&format!("    h = (h ^ {one}) * UINT64_C(0x100000001b3);"));
@@ -181,18 +184,19 @@ pub(super) fn variant_hash_body(
     names: &Names,
     src: &Source,
     decl: u32,
-    name: &str,
+    at: &super::typedefs::Aggregate,
 ) {
     let _ = checked;
+    let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
-    w.line(&format!("uint64_t {name}_hash(const void *elem) {{"));
-    w.line(&format!("    const {name} *v = elem;"));
+    w.line(&format!("uint64_t {prefix}_hash(const void *elem) {{"));
+    w.line(&format!("    const {c_type} *v = elem;"));
     w.line("    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)");
     w.line("        * UINT64_C(0x100000001b3);");
     w.line("    switch (v->tag) {");
     for (at, case) in cases_of(ast, decl).iter().enumerate() {
         let case_name = src.slice(case.name);
-        let tag = mangle::tag_of(name, case_name);
+        let tag = mangle::tag_of(prefix, case_name);
         if case.fields.is_empty() {
             // Nothing else to mix: the tag already told the two apart.
             w.line(&format!("        case {tag}: return h;"));

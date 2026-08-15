@@ -97,7 +97,7 @@ pub(super) fn reference_line(
         Ty::Map(_, _) => format!("    hero_map_decref({place});"),
         Ty::Failure => format!("    hero_failure_{verb}(&{place});"),
         // Reached by address, and its own generated function decides what inside counts.
-        Ty::Named(inner) => format!("    {}_{verb}(&{place});", names.of(inner)),
+        Ty::Named(inner) => format!("    {}_{verb}(&{place});", names.satellite(inner)),
         Ty::Case(inner, case) => format!("    {}_{verb}(&{place});", names.case_of(inner, case)),
         Ty::Fallible(_) => format!("    {}_{verb}(&{place});", names.option_of(ty)),
         _ => return None,
@@ -110,22 +110,23 @@ pub(super) fn reference_body(
     checked: &Checked,
     names: &Names,
     src: &Source,
-    name: &str,
+    at: &super::typedefs::Aggregate,
     fields: &[Field],
     keep: bool,
 ) {
+    let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
     if keep {
-        w.line(&format!("void {name}_retain(const {name} *v) {{"));
+        w.line(&format!("void {prefix}_retain(const {c_type} *v) {{"));
     } else {
-        w.line(&format!("void {name}_release({name} *v) {{"));
+        w.line(&format!("void {prefix}_release({c_type} *v) {{"));
     }
     for field in fields {
         let ty = checked.written_type(field.ty).unwrap_or_else(|| checked.types.error());
         if !crate::ir::is_refcounted(checked, ty) {
             continue;
         }
-        let member = mangle::field(src.slice(field.name));
+        let member = mangle::field_of(at.foreign, src.slice(field.name));
         // Missing a row here is how `variant Expr` with a `[Expr]` payload aborted on
         // its first run: the fallback emits `hero_unreachable()` rather than nothing, so
         // the program stopped instead of leaking. That is the reason every row is listed
@@ -152,15 +153,16 @@ pub(super) fn variant_reference_body(
     names: &Names,
     src: &Source,
     decl: u32,
-    name: &str,
+    at: &super::typedefs::Aggregate,
     keep: bool,
 ) {
     let verb = if keep { "retain" } else { "release" };
+    let (prefix, c_type) = (&at.prefix, &at.c_type);
     w.at_generated();
     if keep {
-        w.line(&format!("void {name}_retain(const {name} *v) {{"));
+        w.line(&format!("void {prefix}_retain(const {c_type} *v) {{"));
     } else {
-        w.line(&format!("void {name}_release({name} *v) {{"));
+        w.line(&format!("void {prefix}_release({c_type} *v) {{"));
     }
     w.line("    switch (v->tag) {");
     for (at, case) in cases_of(ast, decl).iter().enumerate() {
@@ -170,7 +172,7 @@ pub(super) fn variant_reference_body(
         let case_name = src.slice(case.name);
         w.line(&format!(
             "        case {}: {}_{verb}(&v->as.{}); break;",
-            mangle::tag_of(name, case_name),
+            mangle::tag_of(prefix, case_name),
             names.case_of(decl, at as u32),
             mangle::case(case_name)
         ));

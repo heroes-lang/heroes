@@ -210,8 +210,7 @@ refused, naming what it said.
 
 A group's `record` is the header's struct: the same name, all its fields, each at
 the header's own width and sign. A field is a number, `bool`, `ptr`, `cstr` or
-another record of the group; a C `float` field is `f64`, read exactly and written
-rounded.
+another record of the group.
 
 A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
 usually there. How much more is the platform's answer, not this language's.

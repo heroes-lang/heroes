@@ -88,6 +88,18 @@ pub(super) fn declared(
     src: &Source,
     decl: u32,
 ) {
+    // **A group's `record` gets no definition at all** (panel 060). The header
+    // already declares the struct and the `#include` is above; writing a second
+    // `typedef struct Color` here is a redefinition at exit 2, and writing one
+    // under a *different* name is the whole defect this milestone exists to
+    // prevent — two structs with the same fields are still two types, and on
+    // arm64 they need not travel in the same registers.
+    //
+    // This is the line that makes the mechanism sound: the emitter cannot get a
+    // layout wrong that it never states.
+    if let crate::syntax::DeclKind::Record { header: Some(_), .. } = ast.decls[decl as usize].kind {
+        return;
+    }
     let name = names.of(decl).to_string();
     w.at_generated();
     if is_variant(ast, decl) {

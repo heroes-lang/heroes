@@ -258,34 +258,3 @@ pub(in crate::types) fn needs_wildcard(span: Span) -> Diagnostic {
         span,
     )
 }
-
-/// A type in an `extern`'s signature that no C header can declare (§4.19).
-///
-/// The message names what the boundary *does* carry, because the repair is
-/// almost always a different signature rather than a different design: a C
-/// function that returns many values returns a pointer, and the shim that turns
-/// one into a Heroes container is Heroes code on this side of the boundary.
-pub(in crate::types) fn ffi_type(name: &str, what: &str, span: Span) -> Diagnostic {
-    Diagnostic::new(
-        "ffi_type",
-        format!(
-            "`{name}` cannot cross the FFI boundary, and it is {what} — a C header can declare `i64`, `f64`, `bool`, `str`, `ptr` and `cstr`, and nothing else (§4.19)"
-        ),
-        span,
-    )
-}
-
-/// A type that *can* cross the boundary but cannot be a **value a header holds**
-/// (§4.19, panel 038).
-///
-/// Separate from `ffi_type` because the reader's mistake is different: they did
-/// not reach for a type C has never heard of, they reached for one that works
-/// perfectly in a signature and cannot be a constant. So the message carries the
-/// reason rather than the list — the list would say the type is allowed.
-pub(in crate::types) fn ffi_constant_type(name: &str, why: &str, span: Span) -> Diagnostic {
-    Diagnostic::new(
-        "ffi_constant_type",
-        format!("an `extern constant` cannot be declared `{name}` — {why}"),
-        span,
-    )
-}

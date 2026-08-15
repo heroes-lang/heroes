@@ -17,8 +17,9 @@
 
 use crate::diagnostics::{Certainty, Diagnostic, Fix};
 use crate::source::Source;
-use crate::syntax::Ast;
+use crate::syntax::{Ast, DeclKind};
 
+use super::extern_record::FIELD_ASSERTION;
 use super::ffi::{ASSERTION, CONSTANCY, declaration, name_span};
 
 /// What clang prints on the line of a `_Static_assert` that failed. Required
@@ -154,4 +155,117 @@ fn did_you_mean(stderr: &str, name: &str) -> Option<String> {
         }
     }
     None
+}
+
+/// `_Static_assert(_Generic(&((Color *)0)->r, uint8_t *: 1, …), "heroes-ffi-field
+/// Color r")` failed: the header's struct does not have that field at that type.
+///
+/// The third class in this file, and it belongs here for the reason the other two
+/// do — it reads an assertion **this emitter wrote**, so the split is on the
+/// emitter's own format rather than on a guess about clang's wording.
+///
+/// **What makes it safe is the same `declaration()` rule, applied to a record**
+/// (CLAUDE.md §7's narrowing): the name is recovered and then asked whether *this
+/// program* declared it inside an `extern` group. A struct nobody declared that way
+/// stays exit 2 and the compiler's, however much the message looks like one of
+/// ours.
+///
+/// The diagnostic points at the **field**, not at the record, because that is the
+/// token the author must change — and it is why `extern_record.rs` puts its `#line`
+/// on the field rather than on the declaration.
+pub(super) fn field_type(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    if !line.contains(FAILED) {
+        return None;
+    }
+    let rest = line.split(FIELD_ASSERTION).nth(1)?;
+    let mut parts = rest.split_whitespace();
+    let (type_name, member) = (parts.next()?, parts.next()?);
+    let (header, field_span, declared) = record_field(ast, src, type_name, member)?;
+    Some(
+        Diagnostic::new(
+            "ffi_field_type",
+            format!(
+                "`{type_name}.{member}` is not `{declared}` in `{header}` — clang read the header's struct and the field disagrees"
+            ),
+            field_span,
+        )
+        .with_note(format!(
+            "a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `{member}`, or name the header that spells `{type_name}` this way"
+        )),
+    )
+}
+
+/// The `record` a group declares under this C name, plus the span and the written
+/// type of one of its fields. `None` for a name no group declares as a record —
+/// which is what keeps a message that merely looks like ours from being read as
+/// one.
+fn record_field(
+    ast: &Ast,
+    src: &Source,
+    type_name: &str,
+    member: &str,
+) -> Option<(String, crate::source::Span, String)> {
+    ast.decls.iter().find_map(|decl| {
+        if src.slice(decl.name) != type_name {
+            return None;
+        }
+        let DeclKind::Record { fields, header: Some(header), .. } = &decl.kind else { return None };
+        let field = fields.iter().find(|f| src.slice(f.name) == member)?;
+        let written = src.slice(ast.types[field.ty.0 as usize].span).to_string();
+        Some((src.slice(*header).trim_matches('"').to_string(), field.name, written))
+    })
+}
+
+/// clang's own *"no member named 'red' in 'struct Color'"*: the header's struct
+/// exists and the field does not.
+///
+/// **It matches clang's wording rather than one of ours, and that is safe for the
+/// reason `unknown_name` is** (CLAUDE.md §7): the narrowing is `record_group`, not
+/// whose text this is. The struct name is recovered from clang's message and then
+/// asked whether *this program* declared it inside an `extern` group — a struct
+/// nobody declared that way stays exit 2 and the compiler's.
+///
+/// One mistake, **three** clang errors: the `_Generic` and the `sizeof` each name
+/// the member, and every construction site adds a *field designator does not refer
+/// to any field* on top. `ffi::push` collapses them by span, which is why the
+/// author sees one diagnostic about one field.
+pub(super) fn unknown_field(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    let rest = line.split("no member named '").nth(1)?;
+    let (member, rest) = rest.split_once('\'')?;
+    let type_name = rest.split("struct ").nth(1)?.split('\'').next()?.trim();
+    let (header, _) = record_group(ast, src, type_name)?;
+    let field = field_span(ast, src, type_name, member)?;
+    Some(
+        Diagnostic::new(
+            "ffi_unknown_field",
+            format!("`{header}` declares no `{member}` in `{type_name}` — clang read the header's struct and it has no such field"),
+            field,
+        )
+        .with_note(format!(
+            "a group's `record` IS the header's struct (§4.19), so a field is named exactly as the header names it — correct the spelling, or name the header that gives `{type_name}` a `{member}`"
+        ))
+    )
+}
+
+/// The `record` a group declares under this C name, and where the declaration is.
+fn record_group(ast: &Ast, src: &Source, type_name: &str) -> Option<(String, crate::source::Span)> {
+    ast.decls.iter().find_map(|decl| {
+        if src.slice(decl.name) != type_name {
+            return None;
+        }
+        let DeclKind::Record { header: Some(header), .. } = &decl.kind else { return None };
+        Some((src.slice(*header).trim_matches('"').to_string(), decl.span))
+    })
+}
+
+/// Where the author wrote that field name, so the caret lands on the token they
+/// must change rather than on the record's own line.
+fn field_span(ast: &Ast, src: &Source, type_name: &str, member: &str) -> Option<crate::source::Span> {
+    ast.decls.iter().find_map(|decl| {
+        if src.slice(decl.name) != type_name {
+            return None;
+        }
+        let DeclKind::Record { fields, header: Some(_), .. } = &decl.kind else { return None };
+        fields.iter().find(|f| src.slice(f.name) == member).map(|f| f.name)
+    })
 }

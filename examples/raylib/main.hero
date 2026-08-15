@@ -1,52 +1,107 @@
-# §4.19's ladder, rung 5: a window opens, and the library it needs is asked for
-# rather than described.
+# §4.19's ladder, rung 5, both halves: the library is *asked for* rather than
+# described, and a **struct crosses the boundary by value**.
 #
 #     heroes run examples/raylib/main.hero
 #
-# **This program is the acceptance test for `package`.** raylib is the ladder's
-# first *third-party* library — rungs 1 to 4 are all system libraries — and it is
-# the rung that was unclimbable for a milestone. Three panels went looking for
-# why. The answer was not the one anybody expected: not the missing `-framework`
-# spelling, but the missing **search path**. On this machine the header is under
-# `/opt/homebrew/include` and the library under `/opt/homebrew/lib`, and the
-# language had no way to say either.
+# **This program is the acceptance test for two milestones.** `package "raylib"`
+# is M-ffi-ladder's: raylib is the ladder's first third-party library, and the
+# rung was unclimbable for a milestone because the language had no way to say
+# where a header lives. `package` says it the same way everywhere — `-I`, `-L`
+# and `-lraylib` here, `-lGL -lX11 -lm -ldl` on Linux, frameworks where
+# frameworks are the answer — from one line with no platform name in it.
 #
-# `package "raylib"` says both, and says them the same way everywhere: the
-# machine is asked, and it answers with `-I`, `-L` and `-lraylib` here, with
-# `-lGL -lX11 -lm -ldl` on Linux, and with frameworks where frameworks are what
-# is needed. One line, no platform names in the program — which is what panel 049
-# refused a platform axis in favour of.
+# The `record`s are M-struct-passing's, and until 2026-08-15 this file carried a
+# paragraph explaining what it could NOT do: *"383 of raylib's 600 entry points
+# pass or return a struct by value. `ClearBackground(Color)` does not compile,
+# because Heroes has seven boundary types and none of them is a struct."* That
+# paragraph is why the milestone existed, and it is deleted rather than softened.
 #
-# What it does NOT prove, and the record should not be read as claiming it does:
-# rung 5's text also promises *"real struct passing"*, and **383 of raylib's 600
-# entry points pass or return a struct by value**. `ClearBackground(Color)` does
-# not compile, because Heroes has seven boundary types and none of them is a
-# struct. This program uses `DrawFPS`, which is the one draw call that takes only
-# integers. The type vocabulary is the next wall and it is untouched.
+# **The layout is the header's, and that is the whole mechanism.** The emitter
+# writes no `typedef` for `Color`, `Vector2` or `Rectangle`: it uses raylib's own
+# types, so their size, their padding and — on arm64 — the register file each
+# field travels in are C's answers and never this compiler's. What the compiler
+# checks is each *field*, with a `_Generic` on the field's address: write
+# `r: i32` where raylib says `unsigned char` and it is `error[ffi_field_type]`
+# on that line, not a program that prints a plausible number. It did print one,
+# measured, before the assertion existed.
 #
-# **It does not open a window, and that is the second thing this file learned.**
-# The first version did, and it passed here and failed on the macOS CI leg —
-# because a runner has no display, and raylib cannot initialise one. A corpus
-# program runs unattended in three configurations on a headless machine, so the
-# binding it exercises must be one that needs no screen. `SetRandomSeed` and
-# `GetRandomValue` are real raylib entry points that touch no window, and a seed
-# makes the answer the same on every run and every platform.
+# **`f32` is here because a struct made it unavoidable.** Two panels struck it,
+# both correctly on their own evidence: a C `float` *parameter* bound `f64` is
+# bit-exact, because clang converts against the real prototype. Inside a struct
+# there is no prototype — a `Vector2` is two `float`s and nothing widens them —
+# so the width that was a convenience at the signature is the layout at the
+# field.
 #
-# The window *was* opened, by hand, on 2026-08-14, from this same
-# `package "raylib"` line — `InitWindow`/`CloseWindow`, printing
-# "the window opened and closed". That is the rung, and it is recorded in
-# `docs/panel/050` rather than asserted by a test no runner can run.
+# **It opens no window**, for the reason this file learned the hard way: a corpus
+# program runs unattended on a headless runner in three configurations, so the
+# binding it exercises must need no screen. `ColorToInt`, `ColorAlpha`,
+# `GetSplinePointLinear` and `CheckCollisionPointRec` are all pure computation
+# over structs. The window *was* opened by hand from this same `package` line on
+# 2026-08-14, and that is recorded in `docs/panel/050` rather than asserted by a
+# test no runner can run.
 
 extern "raylib.h" package "raylib"
+    # raylib's own structs, at raylib's own widths. Four `unsigned char` for a
+    # colour, two `float` for a point — a Heroes `i64` anywhere here would be a
+    # different struct, and the field assertions are what say so.
+    record Color
+        r: u8
+        g: u8
+        b: u8
+        a: u8
+    record Vector2
+        x: f32
+        y: f32
+    record Rectangle
+        x: f32
+        y: f32
+        width: f32
+        height: f32
     function SetRandomSeed(seed: u32)
     function GetRandomValue(min: i32, max: i32) -> i32
+    # A struct in, an integer out.
+    function ColorToInt(color: Color) -> i32
+    # A struct in and a struct out, with an `f32` beside it.
+    function ColorAlpha(color: Color, alpha: f32) -> Color
+    # Two structs in, a struct **returned by value** — the direction that needs
+    # the ABI to agree in both directions rather than one.
+    function GetSplinePointLinear(startPos: Vector2, endPos: Vector2, t: f32) -> Vector2
+    function CheckCollisionPointRec(point: Vector2, rec: Rectangle) -> bool
 
 function main()
     SetRandomSeed(7)
     print("raylib answered ", GetRandomValue(min: 1, max: 6))
+
+    red = Color(r: 255, g: 0, b: 0, a: 255)
+    print(ColorToInt(red))
+    print(ColorToInt(ColorAlpha(color: red, alpha: 0.5)))
+
+    mid = GetSplinePointLinear(
+        startPos: Vector2(x: 0.0, y: 0.0),
+        endPos: Vector2(x: 10.0, y: 20.0),
+        t: 0.5
+    )
+    print(mid.x, " ", mid.y)
+
+    box = Rectangle(x: 0.0, y: 0.0, width: 10.0, height: 10.0)
+    print(CheckCollisionPointRec(point: Vector2(x: 5.0, y: 5.0), rec: box))
+    print(CheckCollisionPointRec(point: Vector2(x: 50.0, y: 5.0), rec: box))
 
 test "the binding reaches raylib and comes back with a value in range"
     SetRandomSeed(1)
     roll = GetRandomValue(min: 1, max: 6)
     assert roll >= 1
     assert roll <= 6
+
+test "a struct crosses by value, in both directions"
+    # 0xFF0000FF as a signed 32-bit integer: opaque red, packed by raylib.
+    assert ColorToInt(Color(r: 255, g: 0, b: 0, a: 255)) == -16776961
+    # Halfway along a segment is the midpoint, and the fields come back exact
+    # because 5.0 and 10.0 are representable in binary32.
+    mid = GetSplinePointLinear(
+        startPos: Vector2(x: 0.0, y: 0.0),
+        endPos: Vector2(x: 10.0, y: 20.0),
+        t: 0.5
+    )
+    assert mid.x == 5.0
+    assert mid.y == 10.0

@@ -66,7 +66,7 @@ pub(super) fn pointer(checked: &Checked, names: &Names, ty: TyId) -> Option<Stri
         // failure side, which the runtime ships.
         Ty::Fallible(_) => Some(format!("&{}_desc", names.option_of(ty))),
         Ty::Failure => Some("&hero_desc_failure".to_string()),
-        Ty::Named(decl) => Some(format!("&{}_desc", names.of(decl))),
+        Ty::Named(decl) => Some(format!("&{}_desc", names.satellite(decl))),
         Ty::Case(decl, case) => Some(format!("&{}_desc", names.case_of(decl, case))),
         _ => None,
     }
@@ -84,7 +84,7 @@ pub(super) fn pointer(checked: &Checked, names: &Names, ty: TyId) -> Option<Stri
 /// through theirs; an aggregate calls its own function.
 pub(super) fn hash_call(checked: &Checked, names: &Names, ty: TyId, place: &str) -> Option<String> {
     match checked.types.get(ty) {
-        Ty::Named(decl) => Some(format!("{}_hash({place})", names.of(decl))),
+        Ty::Named(decl) => Some(format!("{}_hash({place})", names.satellite(decl))),
         Ty::Case(decl, case) => Some(format!("{}_hash({place})", names.case_of(decl, case))),
         _ => pointer(checked, names, ty).map(|desc| format!("({desc})->hash({place})")),
     }

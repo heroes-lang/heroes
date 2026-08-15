@@ -53,6 +53,7 @@ pub(super) fn extern_assertions(
     program: &Program,
     ast: &Ast,
     checked: &Checked,
+    names: &super::typedefs::Names,
     src: &Source,
 ) {
     // Everything a header owns, whichever kind it lowered to — a signature is
@@ -219,7 +220,7 @@ pub(super) fn extern_assertions(
                 // an error under C11, which is exactly how it survived a green
                 // test run until the goldens were read.
                 let mutable = matches!(declared.kind, SlotKind::Param { mutable: true });
-                super::assert_spelling::zero_of(checked, declared.ty, mutable)
+                super::assert_spelling::zero_of(names, checked, declared.ty, mutable)
             })
             .collect();
         // The message is a **contract with `ffi::explain`**, not prose: it carries

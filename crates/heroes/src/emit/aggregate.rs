@@ -79,7 +79,11 @@ impl<'a> Types<'a> {
         };
         let field = fields.get(index as usize)?;
         let ty = self.checked.written_type(field.ty)?;
-        Some((mangle::field(self.src.slice(field.name)), ty))
+        let foreign = matches!(
+            self.ast.decls[decl as usize].kind,
+            DeclKind::Record { header: Some(_), .. }
+        );
+        Some((mangle::field_of(foreign, self.src.slice(field.name)), ty))
     }
 
     /// The C type name a per-type function belongs to.
@@ -138,7 +142,7 @@ pub(super) fn construct(types: &Types, decl: u32, arguments: &[String]) -> Optio
         DeclKind::Record { fields, .. } => fields,
         _ => return None,
     };
-    let parts = designators(types, fields, arguments)?;
+    let parts = designators(types, decl, fields, arguments)?;
     // A record with no fields is `error[empty_record]`, so this cannot be empty — and
     // `(T){}` is not C11 anyway, which is why the case is named rather than defaulted.
     if parts.is_empty() {
@@ -169,7 +173,7 @@ pub(super) fn construct_case(
     if fields.is_empty() {
         return Some(format!("({name}){{{tag}}}"));
     }
-    let parts = designators(types, fields, arguments)?;
+    let parts = designators(types, decl, fields, arguments)?;
     Some(format!(
         "({name}){{{tag}, .as.{} = {{{}}}}}",
         mangle::case(&case_name),
@@ -185,11 +189,22 @@ pub(super) fn construct_case(
 /// redundant, and that is exactly why they are written: a field added in the middle of
 /// a record is a clang error at every construction site instead of a silent shift of
 /// every value one field along.
-fn designators(types: &Types, fields: &[crate::syntax::Field], arguments: &[String]) -> Option<Vec<String>> {
+fn designators(
+    types: &Types,
+    decl: u32,
+    fields: &[crate::syntax::Field],
+    arguments: &[String],
+) -> Option<Vec<String>> {
+    // A group's `record` is the header's struct, so its designators must be the
+    // header's field names (panel 060). A variant is never a group member, so
+    // this is `false` for every case payload — which the `match` states rather
+    // than assuming.
+    let foreign =
+        matches!(types.ast.decls[decl as usize].kind, DeclKind::Record { header: Some(_), .. });
     let mut parts = Vec::new();
     for (index, field) in fields.iter().enumerate() {
         let value = arguments.get(index)?;
-        parts.push(format!(".{} = {value}", mangle::field(types.src.slice(field.name))));
+        parts.push(format!(".{} = {value}", mangle::field_of(foreign, types.src.slice(field.name))));
     }
     Some(parts)
 }

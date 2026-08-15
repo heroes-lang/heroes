@@ -10,6 +10,7 @@
 //! |------|---------|
 //! | `values.rs` | mismatches, operators, and where a value may stand |
 //! | `data.rs`   | fields, labels, cases, patterns, exhaustiveness |
+//! | `ffi.rs`    | what may cross the C boundary — a signature, a `constant`, a field |
 //! | `flow.rs`   | `return`, jumps, `?`, and branches without a value |
 //! | `sizes.rs`  | a type that would have to contain itself at every depth |
 //!
@@ -18,6 +19,7 @@
 //! only said "type mismatch" would be the anti-thesis.
 
 mod data;
+mod ffi;
 mod flow;
 mod sizes;
 mod contextless;
@@ -25,6 +27,7 @@ mod values;
 
 pub(in crate::types) use contextless::*;
 pub(in crate::types) use data::*;
+pub(in crate::types) use ffi::*;
 pub(in crate::types) use flow::*;
 pub(in crate::types) use sizes::*;
 pub(in crate::types) use values::*;

@@ -68,7 +68,12 @@ pub(super) fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> 
 /// This is a repair on its own merits: with it, the only qualifier diagnostic left
 /// on a `char *` binding is the **probe's**, on the author's own line, which is
 /// where panel 058 wants it.
-pub(super) fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
+pub(super) fn zero_of(
+    names: &super::typedefs::Names,
+    checked: &Checked,
+    ty: TyId,
+    mutable: bool,
+) -> String {
     if matches!(checked.types.get(ty), Ty::Cstr) {
         return "0".to_string();
     }
@@ -78,6 +83,15 @@ pub(super) fn zero_of(checked: &Checked, ty: TyId, mutable: bool) -> String {
         Ty::Bool => "bool",
         Ty::Str => "HeroStr",
         Ty::Cstr => unreachable!("handled above: a cstr zero is the bare null pointer constant"),
+        // **A struct's zero is a compound literal of the header's own type**
+        // (panel 060). `(void *)0` is what this arm produced while the catch-all
+        // covered `Ty::Named`, and clang refused it correctly — *passing 'void *'
+        // to parameter of incompatible type 'Color'* — at **exit 2**, which is the
+        // compiler blaming itself for a binding the author was entitled to write.
+        Ty::Named(decl) => {
+            let c_type = names.of(decl);
+            return if mutable { format!("({c_type} *)0") } else { format!("({c_type}){{0}}") };
+        }
         _ => "void *",
     };
     if mutable {

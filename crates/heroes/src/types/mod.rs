@@ -63,6 +63,7 @@ mod errors;
 mod expect;
 mod floats;
 mod fallible_ops;
+mod ffi_decls;
 mod exprs;
 mod generics;
 mod holes;

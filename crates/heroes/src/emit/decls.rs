@@ -31,6 +31,7 @@ use crate::types::Checked;
 use super::Target;
 use super::extern_assert;
 use super::extern_probe;
+use super::extern_record;
 use super::externs;
 use super::writer::Writer;
 
@@ -48,6 +49,7 @@ pub(super) fn prelude(
     target: Target,
     ast: &Ast,
     checked: &Checked,
+    names: &super::typedefs::Names,
     src: &Source,
 ) {
     w.line(&format!(
@@ -73,7 +75,10 @@ pub(super) fn prelude(
         "_Static_assert(HERO_RUNTIME_ABI == 14, \"heroes_runtime.h is from another compiler\");",
     );
     w.line("");
-    extern_assert::extern_assertions(w, program, ast, checked, src);
+    // **The struct's fields before the signatures that pass one**, so a reader of
+    // the emitted unit meets the layout claim before the call that depends on it.
+    extern_record::extern_record_assertions(w, ast, checked, names, src);
+    extern_assert::extern_assertions(w, program, ast, checked, names, src);
     // And the half a `_Generic` cannot ask: what the header *accepts* (panel 052).
     // After the assertions rather than beside them, because the two answer
     // different questions with different mechanisms and a reader of the emitted

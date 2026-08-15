@@ -142,7 +142,24 @@ pub fn ty(module: &str, name: &str) -> String {
 /// A field, as a C struct member. Mangled too (CLAUDE.md §7 names fields
 /// explicitly), because a field may be spelled `default` or `register`.
 pub fn field(name: &str) -> String {
-    format!("f_{name}")
+    field_of(false, name)
+}
+
+/// A field's C member name, given whether the record it belongs to is the
+/// **header's** (panel 060).
+///
+/// A group's `record` is a struct this compiler never declared, so its members
+/// must be spelled exactly as the header spells them — `.r`, not `.f_r`. The
+/// `f_` prefix exists to keep a Heroes field name off C's keywords (`default`,
+/// `register`); a header's field name is already valid C by construction, because
+/// a C compiler accepted the header.
+///
+/// **`foreign` is asked of the declaration, never inferred from the field name.**
+/// "A field with no `f_` is a header's" would be a premise about the world; "this
+/// record carries a header" is a fact about the declaration in hand (CLAUDE.md
+/// §11).
+pub fn field_of(foreign: bool, name: &str) -> String {
+    if foreign { name.to_string() } else { format!("f_{name}") }
 }
 
 /// One of a variant's cases: the union member that carries its payload.

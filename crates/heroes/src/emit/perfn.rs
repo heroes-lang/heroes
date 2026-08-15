@@ -32,7 +32,7 @@ use crate::types::Checked;
 
 use super::counted::{owns, owns_case, reference_body, reference_line, variant_reference_body};
 use super::ctype::c_type;
-use super::typedefs::Names;
+use super::typedefs::{Aggregate, Names};
 use super::structural::{equality_body, hash_body, variant_equality_body, variant_hash_body};
 use super::types::{aggregates, cases_of, fields_of, is_variant};
 use super::writer::Writer;
@@ -51,14 +51,20 @@ pub(super) fn prototypes(
     src: &Source,
 ) {
     let mut any = false;
-    for (name, counted) in every_generated_type(ast, checked, names, src) {
+    // **The prototype takes the pair, exactly as the body does** — and it has to
+    // be said twice because they are written in two files. A prototype spelled
+    // from `c_type` alone declared `Color_eq` while the body defined
+    // `h_rec_Color_eq`: two functions, one of them never defined, and the reader
+    // sees `undefined symbol` about a name they did not write.
+    for (at, counted) in every_generated_type(ast, checked, names, src) {
+        let (prefix, c_type) = (&at.prefix, &at.c_type);
         w.at_generated();
         if counted {
-            w.line(&format!("void {name}_retain(const {name} *v);"));
-            w.line(&format!("void {name}_release({name} *v);"));
+            w.line(&format!("void {prefix}_retain(const {c_type} *v);"));
+            w.line(&format!("void {prefix}_release({c_type} *v);"));
         }
-        w.line(&format!("bool {name}_eq(const {name} *a, const {name} *b);"));
-        w.line(&format!("uint64_t {name}_hash(const void *elem);"));
+        w.line(&format!("bool {prefix}_eq(const {c_type} *a, const {c_type} *b);"));
+        w.line(&format!("uint64_t {prefix}_hash(const void *elem);"));
         any = true;
     }
     for (name, _) in names.options(checked) {
@@ -85,21 +91,21 @@ fn every_generated_type(
     checked: &Checked,
     names: &Names,
     src: &Source,
-) -> Vec<(String, bool)> {
+) -> Vec<(Aggregate, bool)> {
     let _ = src;
     let mut out = Vec::new();
     for decl in aggregates(ast, checked) {
-        let name = names.of(decl).to_string();
+        let at = names.aggregate(decl);
         if is_variant(ast, decl) {
-            for (at, case) in cases_of(ast, decl).iter().enumerate() {
+            for (case_index, case) in cases_of(ast, decl).iter().enumerate() {
                 if case.fields.is_empty() {
                     continue;
                 }
-                let payload = names.case_of(decl, at as u32).to_string();
-                out.push((payload, owns_case(ast, checked, decl, at as u32)));
+                let payload = Names::generated(names.case_of(decl, case_index as u32));
+                out.push((payload, owns_case(ast, checked, decl, case_index as u32)));
             }
         }
-        out.push((name, owns(ast, checked, decl)));
+        out.push((at, owns(ast, checked, decl)));
     }
     out
 }
@@ -113,16 +119,16 @@ pub(super) fn bodies(
     src: &Source,
 ) {
     for decl in aggregates(ast, checked) {
-        let name = names.of(decl).to_string();
+        let at = names.aggregate(decl);
         if is_variant(ast, decl) {
             // The payloads first: a case is a small record (§4.2), so it gets exactly
             // what a record gets.
-            for (at, case) in cases_of(ast, decl).iter().enumerate() {
+            for (case_index, case) in cases_of(ast, decl).iter().enumerate() {
                 if case.fields.is_empty() {
                     continue;
                 }
-                let payload = names.case_of(decl, at as u32).to_string();
-                if owns_case(ast, checked, decl, at as u32) {
+                let payload = Names::generated(names.case_of(decl, case_index as u32));
+                if owns_case(ast, checked, decl, case_index as u32) {
                     reference_body(w, checked, names, src, &payload, &case.fields, true);
                     reference_body(w, checked, names, src, &payload, &case.fields, false);
                 }
@@ -130,20 +136,20 @@ pub(super) fn bodies(
                 hash_body(w, checked, names, src, &payload, &case.fields);
             }
             if owns(ast, checked, decl) {
-                variant_reference_body(w, ast, checked, names, src, decl, &name, true);
-                variant_reference_body(w, ast, checked, names, src, decl, &name, false);
+                variant_reference_body(w, ast, checked, names, src, decl, &at, true);
+                variant_reference_body(w, ast, checked, names, src, decl, &at, false);
             }
-            variant_equality_body(w, ast, checked, names, src, decl, &name);
-            variant_hash_body(w, ast, checked, names, src, decl, &name);
+            variant_equality_body(w, ast, checked, names, src, decl, &at);
+            variant_hash_body(w, ast, checked, names, src, decl, &at);
             continue;
         }
         let fields = fields_of(ast, decl);
         if owns(ast, checked, decl) {
-            reference_body(w, checked, names, src, &name, fields, true);
-            reference_body(w, checked, names, src, &name, fields, false);
+            reference_body(w, checked, names, src, &at, fields, true);
+            reference_body(w, checked, names, src, &at, fields, false);
         }
-        equality_body(w, checked, names, src, &name, fields);
-        hash_body(w, checked, names, src, &name, fields);
+        equality_body(w, checked, names, src, &at, fields);
+        hash_body(w, checked, names, src, &at, fields);
     }
     option_bodies(w, checked, names);
 }

@@ -70,6 +70,12 @@ pub fn explain(
         if let Some(diagnostic) = declared::not_constant(line, ast, src) {
             push(&mut found, diagnostic);
         }
+        if let Some(diagnostic) = declared::unknown_field(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = declared::field_type(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
         if let Some(diagnostic) = declared::unknown_name(line, stderr, ast, src) {
             push(&mut found, diagnostic);
         }

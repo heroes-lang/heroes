@@ -58,6 +58,7 @@ mod ffi_declared;
 mod ffi_mutable;
 mod ffi_narrowed;
 mod extern_probe;
+mod extern_record;
 mod externs;
 mod fallible;
 pub mod ffi;
@@ -76,6 +77,7 @@ mod structural;
 mod term;
 mod typeorder;
 mod typedefs;
+mod typedefs_generated;
 mod assert_spelling;
 mod unread;
 mod types;
@@ -228,7 +230,7 @@ pub fn emit_for(
         .with_options(&module, checked)
         .with_functions(&module, checked, program);
     let mut w = writer::Writer::new(&module);
-    decls::prelude(&mut w, program, target, ast, checked, src);
+    decls::prelude(&mut w, program, target, ast, checked, &names, src);
     // Types before anything that can mention one: **every** typedef in one
     // containment order — declared aggregates and the ones the emitter invents
     // together, because each kind can contain the other — then every per-type
