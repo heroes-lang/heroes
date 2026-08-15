@@ -20,7 +20,9 @@
 # one day because the first three were wrong). raylib declares **600** entry
 # points — `grep -c "^RLAPI"` and clang's own `FunctionDecl` count agree — and
 # **349** of them pass or return a struct by value. **All 349 bind, with every
-# field named and no `partial` anywhere**, across all 35 of raylib's structs.
+# field named and no `partial` anywhere**, across all 35 of raylib's structs —
+# measured against **this** machine's raylib, which is the only honest way to say
+# it: see the note on `Model` below.
 #
 # It went 191 → 200 → 328 → 349 in an afternoon, and the last two steps were not
 # features: they were a `ptr` rule that asked whether the header spells a member
@@ -80,44 +82,23 @@ extern "raylib.h" package "raylib"
     # the ABI to agree in both directions rather than one.
     function GetSplinePointLinear(startPos: Vector2, endPos: Vector2, t: f32) -> Vector2
     function CheckCollisionPointRec(point: Vector2, rec: Rectangle) -> bool
-    # **`Model` names every field, and until panel 062 it could not.** It holds a
-    # `ModelSkeleton` by value, which holds a typedef'd pointer; the `ptr` rule had
-    # to stop asking whether the header spells a member `void *` before either was
-    # reachable. This record needed `partial` for one afternoon and does not now —
-    # the word is still in the language, for `SDL_Event` and its kind, and it is
-    # not in this file.
-    record ModelSkeleton
-        boneCount: i32
-        bones: ptr
-        bindPose: ptr
-    record Model
-        transform: Matrix
-        meshCount: i32
-        materialCount: i32
-        meshes: ptr
-        materials: ptr
-        meshMaterial: ptr
-        skeleton: ModelSkeleton
-        currentPose: ptr
-        boneMatrices: ptr
-    record Matrix
-        m0: f32
-        m4: f32
-        m8: f32
-        m12: f32
-        m1: f32
-        m5: f32
-        m9: f32
-        m13: f32
-        m2: f32
-        m6: f32
-        m10: f32
-        m14: f32
-        m3: f32
-        m7: f32
-        m11: f32
-        m15: f32
-    function IsModelValid(model: Model) -> bool
+    # **`AutomationEvent` carries a C array member**, which is the field form
+    # panel 062 added and the last one raylib needed. `int params[4]` is inline
+    # bytes at an offset C chose — not a `[T]`, which is a heap block with a
+    # reference count before its elements.
+    #
+    # **`Model` is deliberately NOT here, and that is a lesson rather than a
+    # retreat.** It was, for one commit, and the macOS runner refused it:
+    # `error[ffi_unknown_field]: `raylib.h` declares no `skeleton` in `Model``.
+    # The diagnostic was right — that machine's raylib is a different version from
+    # this one's, and `Model`'s tail changed between them. **A field list is a
+    # claim about a version**, and a corpus program runs against whatever raylib
+    # the machine's package manager gave it. `Color`, `Vector2`, `Rectangle` and
+    # `AutomationEvent` have not changed shape in raylib's life; `Model` has.
+    record AutomationEvent
+        frame: u32
+        type: u32
+        params: i32[4]
 
 function main()
     SetRandomSeed(7)
@@ -134,26 +115,10 @@ function main()
     )
     print(mid.x, " ", mid.y)
 
-    # A record with every field named, built and passed by value. An empty model
-    # is not valid, and raylib says so from the fields this program named.
-    identity = Matrix(
-        m0: 1.0, m4: 0.0, m8: 0.0, m12: 0.0,
-        m1: 0.0, m5: 1.0, m9: 0.0, m13: 0.0,
-        m2: 0.0, m6: 0.0, m10: 1.0, m14: 0.0,
-        m3: 0.0, m7: 0.0, m11: 0.0, m15: 1.0
-    )
-    empty = Model(
-        transform: identity,
-        meshCount: 0,
-        materialCount: 0,
-        meshes: nullptr,
-        materials: nullptr,
-        meshMaterial: nullptr,
-        skeleton: ModelSkeleton(boneCount: 0, bones: nullptr, bindPose: nullptr),
-        currentPose: nullptr,
-        boneMatrices: nullptr
-    )
-    print(IsModelValid(model: empty))
+    # A C array member, built from a literal of exactly its length and read by
+    # index. The bound is in the type, so `params[9]` would not compile.
+    event = AutomationEvent(frame: 0, type: 0, params: [10, 20, 30, 40])
+    print(event.params[2])
 
     box = Rectangle(x: 0.0, y: 0.0, width: 10.0, height: 10.0)
     print(CheckCollisionPointRec(point: Vector2(x: 5.0, y: 5.0), rec: box))
