@@ -29,7 +29,7 @@ use super::extern_probe;
 use super::ffi_narrowed::{extern_at_line, location};
 
 /// What clang calls handing a `const char *` to a `char *`. Matched whole.
-const DISCARDS: &str = "discards qualifiers";
+pub(super) const DISCARDS: &str = "discards qualifiers";
 
 /// A parameter the header declares **writable**, which `.cstr()` cannot supply.
 pub(super) fn writable_parameter(

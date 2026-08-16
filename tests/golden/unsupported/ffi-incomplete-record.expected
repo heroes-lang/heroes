@@ -1,6 +1,6 @@
 error[ffi_incomplete_record]: `Color` does not name `a`, and `raylib.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero
-  at tests/golden/unsupported/ffi-incomplete-record.hero:41:12
+  at tests/golden/unsupported/ffi-incomplete-record.hero:50:12
      |
-  41 |     record Color            #~ ffi_incomplete_record
+  50 |     record Color            #~ ffi_incomplete_record
      |            ^^^^^
   note: the assertions above check every field you DO name and cannot see one you leave out: a `Color` built here would carry a zero `a` into C, which is a value rather than a crash

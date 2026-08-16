@@ -18,6 +18,8 @@ use crate::source::Source;
 use crate::syntax::Ast;
 
 use super::extern_probe;
+use super::c_spellings::spelling;
+use super::ffi_mutable as mutable;
 
 
 /// What clang calls a silent narrowing, and what it calls a silent change of
@@ -32,6 +34,24 @@ use super::extern_probe;
 const NARROWED: &str = "implicit conversion loses integer precision";
 
 const RESIGNED: &str = "implicit conversion changes signedness";
+
+/// The **class** mismatch, which is a wider family than the two above and was
+/// falling through to exit 2 until panel 071.
+///
+/// Measured, seven shapes, all under this project's own flags: a `ptr`, a `cstr`,
+/// a `str`, an `@` parameter or a record declared against a header that says
+/// something else. clang phrases them two ways —
+/// `incompatible pointer to integer conversion passing 'void *' to parameter of
+/// type 'int32_t'` and `passing 'HeroStr' to parameter of incompatible type
+/// 'int32_t'` — and **both contain `" to parameter of "`**, which is the whole
+/// matcher. The two width strings above do not, so the families do not overlap.
+///
+/// **The gate is unchanged and that is the point.** `extern_at_line` still asks
+/// whether an `extern` is declared at exactly this file and line, which is what
+/// panel 052 made the class safe with; only the phrase set widens. A gate reading
+/// *"the path ends in `.hero`"* would be a premise about the world, and this
+/// emitter lowers an author's call site under that author's own `#line`.
+const MISMATCHED: &str = " to parameter of ";
 
 /// A parameter declared wider than the header's, which C narrows in silence
 /// (§4.19; panels 051 and 052).
@@ -67,14 +87,42 @@ pub(super) fn parameter_width(
     names: &super::typedefs::Names,
     src: &Source,
 ) -> Option<Diagnostic> {
-    let kind = [NARROWED, RESIGNED].into_iter().find(|what| line.contains(what))?;
+    // **`discards qualifiers` belongs to `ffi_mutable.rs` and this must not take
+    // it** (found by the golden corpus the hour this matcher widened, which is
+    // what that corpus is for). clang's text for a `cstr` handed to a `char *` is
+    // `'const char *' to parameter of type 'char *'` — it contains `MISMATCHED`,
+    // so the wider family would swallow panel 058's whole class and then say
+    // *"declare it `cstr`"* to an author who already had. The two questions are
+    // different: this one asks whether the types convert, and that one asks
+    // whether C may **write** through the pointer, which is design.md §1.12 and
+    // not a type mismatch at all.
+    //
+    // The test is the phrase clang itself uses for the qualifier, not a guess
+    // about which class *ought* to win — `ffi_mutable.rs` owns that string and
+    // this line names it as its own.
+    if line.contains(mutable::DISCARDS) {
+        return None;
+    }
+    let kind = [NARROWED, RESIGNED, MISMATCHED].into_iter().find(|what| line.contains(what))?;
     let (at, rest) = location(line, src)?;
     // `'int64_t' (aka 'long long') to 'int'` — the header's type is the last
     // quoted name on the line, and it is what the parameter should be declared as.
     let c_type = rest.rsplit('\'').nth(1)?;
-    let spelled = spelling(c_type)?;
-    let heroes_type = &spelled.heroes;
-    let what = if kind == NARROWED { "wider than" } else { "a different sign from" };
+    // **The diagnostic fires whether or not the type has a Heroes spelling, and
+    // only the `Fix` consults the table** (panel 071's ffi-pragmatist made this a
+    // condition of its approval). `parameter_width` declines wholesale when
+    // `spelling()` misses, which is right for a width — a gap in a table is a gap
+    // to report — and catastrophic for a class: the types with no Heroes name are
+    // exactly the interesting ones. A `Vec2` parameter's repair is *declare
+    // `record Vec2` in the group*, a sentence rather than a type name, and
+    // declining would send it back to exit 2 with the compiler blamed. That is
+    // **356 of 1159** entry points by panel 052's count.
+    let spelled = spelling(c_type);
+    let what = match kind {
+        NARROWED => "wider than",
+        RESIGNED => "a different sign from",
+        _ => "a different kind of thing from",
+    };
     let (function, name) = extern_at_line(program, ast, src, at.0, at.1)?;
     let parameters = extern_probe::parameter_list(names, function, checked)?;
     let arguments = extern_probe::argument_names(function.params.len());
@@ -94,14 +142,34 @@ pub(super) fn parameter_width(
     // IR — so the fix points at the declaration and says what to write. A `guess`
     // is not applied by machine, so a span that names the line is enough.
     let ty_span = span;
+    // A width is converted **in silence**; a class mismatch is not — clang refuses
+    // it outright — so the sentence that follows the type has to differ or one of
+    // the two is false. This is the sentence panel 048 and 051 kept getting wrong
+    // in the other direction, and it is cheaper to split it than to find a wording
+    // true of both.
+    let consequence = match kind {
+        MISMATCHED => "and the two do not convert",
+        _ => "and C would convert the value in silence",
+    };
     let mut diagnostic = Diagnostic::new(
         "ffi_parameter_type",
         format!(
-            "{which} of `{name}` is declared {what} the header's `{c_type}` — clang read the header, and C would convert the value in silence"
+            "{which} of `{name}` is declared {what} the header's `{c_type}` — clang read the header, {consequence}"
         ),
         span,
-    )
-    .with_note(format!(
+    );
+    let Some(spelled) = spelled else {
+        // **No Heroes spelling, and the diagnostic still lands.** The note says
+        // what the reader must do instead of naming a type that does not exist:
+        // a C struct parameter is bound by declaring the header's own `record`
+        // inside the group (panel 060), and anything else is a signature this
+        // language cannot express.
+        return Some(diagnostic.with_note(format!(
+            "§4.19: a parameter is declared as what the header says. `{c_type}` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout"
+        )));
+    };
+    let heroes_type = &spelled.heroes;
+    diagnostic = diagnostic.with_note(format!(
         "§4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `{heroes_type}`, and convert at the call where the value is known to fit"
     ));
     // A **second** note rather than a longer first one: the width rule is the
@@ -167,109 +235,5 @@ pub(super) fn extern_at_line<'a>(
     })
 }
 
-/// A Heroes type to declare a parameter as, and what the reader must know about
-/// how this answer was reached.
-struct Spelling {
-    heroes: String,
-    /// Present when the C type's width is the **platform's** rather than a width
-    /// the header chose, so the note must say which target this answer is for.
-    caveat: Option<String>,
-}
 
-/// The Heroes type a C type of this width and signedness is declared as. The set
-/// is `IntKind`'s, and a C type outside it means the narrowing is one this
-/// language cannot currently express — which is a gap to report, not a fix to
-/// propose, so the class stays silent rather than guessing.
-///
-/// **`long` and `unsigned long` used to be absent, and their absence was the
-/// defect** (author decision 2026-08-15, `/decide`). They are 64 bits on Darwin
-/// and Linux and 32 on Windows, so no *tabled* spelling is right on three legs —
-/// and the first draft tabled one anyway, marked the fix `guess`, and named the
-/// platform variance in the justification, which is CLAUDE.md §11's failure mode
-/// written out. Declining was the right correction to that and the wrong answer to
-/// the question: it left `function malloc(size: i64) -> ptr` exiting **2** with raw
-/// clang output, blaming the compiler for a declaration the author wrote — while
-/// `u64` binds `malloc` correctly, so the language could express it and only the
-/// diagnostic could not.
-///
-/// The answer is that a width is not a constant to be tabled. It is a question
-/// about the target, and `word_width_bits` asks it.
-fn spelling(c_type: &str) -> Option<Spelling> {
-    let fixed = |heroes: &str| {
-        Some(Spelling { heroes: heroes.to_string(), caveat: None })
-    };
-    match c_type {
-        "int" => fixed("i32"),
-        "short" | "short int" => fixed("i16"),
-        "signed char" | "char" => fixed("i8"),
-        "unsigned int" => fixed("u32"),
-        "unsigned short" | "unsigned short int" => fixed("u16"),
-        "unsigned char" => fixed("u8"),
-        // **`long long` is the one C integer that is 64 bits everywhere**, by
-        // C99's own floor (`LLONG_MIN` ≤ −(2^63−1)) and by every ABI that has
-        // shipped since. It carries no caveat because there is nothing about the
-        // target left to say. It was missing from the table for the same reason
-        // `long` was: nobody had bound a function that takes one.
-        "long long" | "long long int" => fixed("i64"),
-        "unsigned long long" | "unsigned long long int" => fixed("u64"),
-        // `size_t` and `ssize_t` need no rows: clang reports the **canonical**
-        // type, so `malloc`'s parameter arrives here as `unsigned long` and not
-        // as `size_t`. Verified on the message this class was built from.
-        "long" | "long int" => Some(word_width('i')),
-        "unsigned long" | "unsigned long int" => Some(word_width('u')),
-        // A C type absent from this table means the class **declines** — clang's
-        // own verdict is still printed, and the compiler does not pretend to know
-        // the repair. `float` is the live example (§4.19: `f32` does not exist).
-        _ => None,
-    }
-}
 
-/// The spelling for a C type whose width is the machine's word, with the note
-/// that says so.
-fn word_width(sign: char) -> Spelling {
-    let bits = word_width_bits();
-    // **The name of this machine is asked of the machine, not inferred from the
-    // width** (panel 062's audit, 2026-08-15). This read `if bits == 64 { "Darwin
-    // and Linux" } else { "Windows" }` — a premise about which platforms exist,
-    // written inside the function whose own doc comment two paragraphs down
-    // explains that it does not have one. It is falsifiable **today** and without a
-    // `--target`: on `armv7-unknown-linux-gnueabihf` a C `long` is 32 bits, and the
-    // note would have told a Linux reader they were on Windows.
-    //
-    // `std::env::consts::OS` is a fact about the value in hand — the machine this
-    // compiler is running on — which is the distinction CLAUDE.md §11 turns on.
-    let here = match std::env::consts::OS {
-        "macos" => "macOS",
-        "linux" => "Linux",
-        "windows" => "Windows",
-        other => other,
-    };
-    let other = if bits == 64 { 32 } else { 64 };
-    Spelling {
-        heroes: format!("{sign}{bits}"),
-        caveat: Some(format!(
-            "C's `long` is the platform's word, not a width the header chose: {bits} bits on this machine ({here}), and {other} elsewhere — Windows is {other} where the Unixes are {bits}, or the reverse. `{sign}{bits}` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
-        )),
-    }
-}
-
-/// How wide C's `long` is in the C this compiler is about to emit, in bits.
-///
-/// **Derived, never tabled, and the derivation is the whole point.** `c_ulong` is
-/// Rust's name for the same C type clang is about to compile, and both run on this
-/// machine for this target: `heroes` has no `--target` and cross-compilation is not
-/// on the command surface (CLAUDE.md §10 — one argv table, and it has no such
-/// flag). So this is a fact about the value in hand rather than a premise about
-/// which platforms exist, which is the distinction CLAUDE.md §11 turns on — a fact
-/// about the value cannot expire, and the tabled version expired the moment a third
-/// CI leg arrived.
-///
-/// **The claim, written so it can die loudly**: `size_of::<c_ulong>()` is
-/// `sizeof(unsigned long)` in the emitted C. `the_word_width_this_compiler_claims_is_the_one_clang_uses`
-/// in `crates/heroes-cli/tests/surface.rs` builds a binding at this width through
-/// the real toolchain and fails the day the two disagree — which is the day a
-/// `--target` flag lands, and it will fail *in the milestone that adds it* rather
-/// than in a diagnostic somebody reads six months later.
-fn word_width_bits() -> usize {
-    std::mem::size_of::<std::os::raw::c_ulong>() * 8
-}

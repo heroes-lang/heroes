@@ -36,6 +36,15 @@
 #
 # The second record is the control: `Rectangle` names all four of its fields and
 # says nothing.
+#
+# **The control's function was changed on 2026-08-16 and the reason is the case
+# itself.** It read `CheckCollisionPointRec(point: Rectangle, rec: Rectangle)`,
+# and raylib's first parameter there is a **`Vector2`** — a real mistake, sitting
+# in the corpus, **silent**, because a parameter whose C type mismatched by CLASS
+# rather than by width fell through to exit 2 and was reported as the compiler's
+# fault. Panel 071 widened that matcher and the case's own error surfaced
+# immediately. `CheckCollisionRecs` really does take two `Rectangle`s, so the
+# control now controls.
 
 extern "raylib.h" package "raylib"
     record Color            #~ ffi_incomplete_record
@@ -48,7 +57,7 @@ extern "raylib.h" package "raylib"
         width: f32
         height: f32
     function ColorToInt(color: Color) -> i32
-    function CheckCollisionPointRec(point: Rectangle, rec: Rectangle) -> bool
+    function CheckCollisionRecs(rec1: Rectangle, rec2: Rectangle) -> bool
 
 function main()
     print(ColorToInt(Color(r: 255, g: 0, b: 0)))

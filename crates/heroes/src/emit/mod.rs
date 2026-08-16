@@ -57,6 +57,7 @@ mod extern_assert;
 mod ffi_build;
 mod ffi_declared;
 mod ffi_record;
+mod c_spellings;
 mod ffi_mutable;
 mod ffi_narrowed;
 mod extern_probe;
