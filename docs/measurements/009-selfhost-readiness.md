@@ -382,11 +382,23 @@ port measured, now at scale.
 **The rule's exchange is paid**: the module doc names the ring, the six entry
 points, the one edge that leaves the knot (`parse_type`, which is why that file
 stays separate), and the three name-shaped lines that are the statement half's
-whole difficulty. 1129 lines against Rust's 1025 — the port is *longer*, not shorter, and the
-reason is worth stating: every `_ =>` the Rust code leans on becomes a named
-list of cases (§4.7), and every `Option` becomes a `T?` whose miss carries a
-code. Both are the language charging for what Rust leaves implicit. A reader
-who opens it finds a map first.
+whole difficulty. **The line comparison, measured properly — and the first two attempts at it were
+both wrong.** 1129 was written from memory (it is 1130) and then compared
+against a number that excludes tests, which the port's does not. Counted like
+for like:
+
+| | Heroes | Rust |
+|---|---|---|
+| code | **812** | **1025** |
+| inline tests | 318 | 0 (they live in `syntax/tests/`) |
+
+**The port is 21% shorter than the Rust it replaces.** Inside those 812 lines,
+the module doc the §11 exchange requires is **54** (Rust spreads the same
+material across five file docs), and the language's own tax — arms that exist
+only so a `match` names every case — is **38 lines**, under 5% of the file.
+There are 15 `fail(code, msg)` sites. So the earlier claim that the language
+"charges for what Rust leaves implicit" is true in kind and wrong in scale: the
+charge is 4.7% and the port is a fifth smaller.
 
 ## The members grammar — knot B's foundation (2026-08-16)
 
