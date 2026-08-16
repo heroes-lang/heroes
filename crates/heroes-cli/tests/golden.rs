@@ -842,6 +842,35 @@ fn machine_lacks_the_library(text: &str) -> bool {
     text.contains("error[ffi_package]") || text.contains("error[ffi_missing_header]")
 }
 
+/// Whether this platform can start `lldb` at all.
+///
+/// **Windows cannot, and the guard that used to stand here asked the wrong
+/// question.** It ran `lldb --version` and skipped when the command could not be
+/// *spawned*, on the stated premise that the third CI leg "has no Xcode" — a
+/// premise about the world, and false twice over: the runner carries
+/// `C:\Program Files\LLVM\bin\lldb.exe`, which ships with LLVM and not with
+/// Xcode, and spawning it succeeds. What happens next is that Windows kills it at
+/// load time over a missing DLL: exit `0xC0000135` (`STATUS_DLL_NOT_FOUND`),
+/// **zero bytes on stdout and zero on stderr**. So the skip never fired, the
+/// assertion below ran on an empty string, and the failure read "lldb did not
+/// report the `.hero` line" about a debugger that had never started. Measured on
+/// the third CI leg, 2026-08-16, run 31921731797.
+///
+/// CLAUDE.md §11's shape exactly: the narrowing rested on a claim about the
+/// machine instead of on the value in hand, and it expired in silence while the
+/// comment justifying it went on reading as correct.
+///
+/// **What is not the reason, and was the first guess: the debug info is there.**
+/// `-g` produces a **7.7 MB `.pdb`** beside the binary, which is where Windows
+/// keeps CodeView, and the COFF binary carrying no `.debug*` section is normal
+/// rather than empty. So whether `#line` reaches a `.hero` line **on Windows is
+/// unmeasured**, not refuted: the tool that would answer it does not start, and
+/// the one that reads CodeView is Microsoft's debugger. Recording it as *"Windows
+/// has no debug info"* would send the next reader after a bug that is not there.
+fn lldb_starts_here() -> bool {
+    !cfg!(target_os = "windows")
+}
+
 /// **design.md §2's claim, executed** — lldb breaks on a `.hero` line and says so.
 ///
 /// The claim is old and had never been run by anything: §2 says "line-level
@@ -911,6 +940,23 @@ fn lldb_breaks_on_a_hero_line() {
         "{}{}",
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
+    );
+    // **A process that was created is not a process that ran.** `lldb -b` echoes
+    // every `-o` command it executes, so nothing on either stream means the
+    // script never ran — and `.expect("lldb runs")` above cannot catch it,
+    // because that reports on the *spawn*, which succeeded. Without this line the
+    // three assertions below all read an empty string, and the first to fire
+    // blames the debug info for a debugger that never started. That is what cost
+    // a CI job to diagnose instead of a message, which is CLAUDE.md §8's rule:
+    // an error carries what is needed without opening another file.
+    assert!(
+        !text.trim().is_empty(),
+        "lldb wrote nothing on either stream and exited {}: it never started, so \
+         nothing below is a fact about the debug info",
+        match out.status.code() {
+            Some(code) => format!("{code} ({:#010x})", code as u32),
+            None => "by a signal".to_string(),
+        }
     );
     // Resolved, not pending: a pending breakpoint is exactly the symptom the
     // two defects produced, and it does not fail a `run`.
