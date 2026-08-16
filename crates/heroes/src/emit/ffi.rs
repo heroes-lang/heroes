@@ -30,6 +30,7 @@ use crate::syntax::{Ast, DeclKind};
 
 use super::ffi_build as build;
 use super::ffi_declared as declared;
+use super::ffi_field as field;
 use super::ffi_record as record;
 use super::ffi_tag as tag;
 use super::ffi_mutable as mutable;
@@ -82,10 +83,17 @@ pub fn explain(
         if let Some(diagnostic) = record::incomplete_record(line, ast, src) {
             push(&mut found, diagnostic);
         }
-        if let Some(diagnostic) = record::unknown_field(line, ast, src) {
+        if let Some(diagnostic) = field::unknown_field(line, ast, src) {
             push(&mut found, diagnostic);
         }
-        if let Some(diagnostic) = record::field_type(line, ast, src) {
+        // **Before `field_type`, and the order is the message.** A flexible
+        // array member fails BOTH assertions — its tail is 0, so it is also
+        // shorter than any length — and `push` keeps one diagnostic per span. The
+        // generic one would tell the author to correct a length that cannot exist.
+        if let Some(diagnostic) = field::flexible_array_member(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = field::field_type(line, ast, src) {
             push(&mut found, diagnostic);
         }
         if let Some(diagnostic) = record::union_record(line, ast, src) {
