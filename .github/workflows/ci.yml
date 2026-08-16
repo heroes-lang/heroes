@@ -115,7 +115,12 @@ jobs:
           # raylib is deliberately not installed: `examples/raylib/` is then a
           # live test of the skip rule, which reads the compiler's own
           # `ffi_package` diagnostic rather than a list of program names.
-          sudo apt-get install -y clang pkg-config libsqlite3-dev libcurl4-openssl-dev
+          # lldb is named for the same reason clang is, and it was found missing
+          # the hard way: `lldb_breaks_on_a_hero_line` had been *skipping* here
+          # since it was written, silently, as a pass — so design.md §2's claim
+          # was executed on the author's laptop and nowhere else, which is the
+          # exact state the preamble above says this file exists to end.
+          sudo apt-get install -y clang lldb pkg-config libsqlite3-dev libcurl4-openssl-dev
 
       # **No toolchain step, on purpose.** `rust-toolchain.toml` pins the version
       # and `rustup` — preinstalled on both runners — honours it for every

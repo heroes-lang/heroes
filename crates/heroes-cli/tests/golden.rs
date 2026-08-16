@@ -867,8 +867,21 @@ fn machine_lacks_the_library(text: &str) -> bool {
 /// unmeasured**, not refuted: the tool that would answer it does not start, and
 /// the one that reads CodeView is Microsoft's debugger. Recording it as *"Windows
 /// has no debug info"* would send the next reader after a bug that is not there.
+/// **The second half of this guard is the more expensive lesson.** Replacing the
+/// old spawn check with `cfg!(windows)` alone turned the Linux leg red, and what
+/// that revealed is worse than the breakage: `ubuntu-latest` carries clang and
+/// **no lldb**, so the old guard had been skipping there since the test was
+/// written — silently, as a pass. design.md §2 was executed on exactly one
+/// machine, the author's own laptop, which is the state `ci.yml`'s own preamble
+/// exists to end. The workflow installs `lldb` on the Linux leg now, and the call
+/// site refuses a skip on CI, because a skip is a pass and a pass that tested
+/// nothing is what hid this for the test's whole life (CLAUDE.md §9's rule about
+/// the `unsupported/` harness, paid for rather than quoted).
 fn lldb_starts_here() -> bool {
-    !cfg!(target_os = "windows")
+    if cfg!(target_os = "windows") {
+        return false;
+    }
+    std::process::Command::new("lldb").arg("--version").output().is_ok()
 }
 
 /// **design.md §2's claim, executed** — lldb breaks on a `.hero` line and says so.
@@ -900,7 +913,16 @@ fn lldb_starts_here() -> bool {
 #[test]
 fn lldb_breaks_on_a_hero_line() {
     if !lldb_starts_here() {
-        eprintln!("skipping: lldb does not start on this platform — see `lldb_starts_here`");
+        // **On CI a skip here is a broken job, not an unlucky machine.** The
+        // workflow installs lldb on the Linux leg precisely so this test runs
+        // there, and Windows is the one platform where the skip is the answer.
+        assert!(
+            std::env::var_os("CI").is_none() || cfg!(target_os = "windows"),
+            "lldb is missing on a CI leg that installs it — the skip below would \
+             report this test as passing while it executed nothing, which is how \
+             design.md §2 came to be tested on one machine only"
+        );
+        eprintln!("skipping: lldb does not start here — see `lldb_starts_here`");
         return;
     }
     let root = workspace_root();
