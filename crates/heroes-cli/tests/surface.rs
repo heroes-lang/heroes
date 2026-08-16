@@ -1988,3 +1988,43 @@ fn a_struct_c_names_only_by_tag_binds_and_says_so_when_it_cannot() {
         }
     }
 }
+
+/// `heroes this` — the one zero-input verb (panel 080): constant stdout, empty
+/// stderr, exit 0. The text is pinned byte-exact because the text IS the
+/// artifact — nothing else checks it, and a structural assertion (line count,
+/// first and last law) would wave through a typo in law 9 forever. The copy
+/// here is deliberate redundancy with `commands/this.rs` (CLAUDE.md §9's rule,
+/// and law 15's): a change to the Zen is a change made twice, on purpose.
+#[test]
+fn this_prints_the_zen_byte_exact() {
+    let out = heroes(&["this"]);
+    assert_eq!(code(&out), 0, "zero input, so nothing can fail");
+    assert!(out.stderr.is_empty(), "no diagnostics exist for it");
+    let said = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(said.is_ascii(), "the laws obey the language's own ASCII rule");
+    assert_eq!(
+        said,
+        "The Zen of Heroes\n\
+         \n \
+         1. First of all and freely, this language is a tribute to the great David Bowie.\n \
+         2. A modern language made for LLMs, yet plain to human eyes.\n \
+         3. The machine has read everything, yet sees only the page before it.\n \
+         4. What the eye can see is all there is, nothing but sound and vision.\n \
+         5. One way to say each thing, and every program sings it in the same voice.\n \
+         6. Although that way is not obvious at first, the Starman waiting in the sky already knows it.\n \
+         7. The semantics you already know, a syntax nobody has seen before.\n \
+         8. Turn and face the strange, for every strangeness here is deliberate.\n \
+         9. Nothing changes behind your back, every change signs its name where it happens.\n\
+         10. Every plausible mistake becomes a compile error before the program ever runs.\n\
+         11. Unless you confess it honestly and write ??? in its place.\n\
+         12. An honest hole in the program beats a confident guess every time.\n\
+         13. A compile time error is an answer, a run time error is an ambush.\n\
+         14. An error tells you how to fix the program, anything less is a complaint.\n\
+         15. A repeated word is cheap, a forgotten one costs the whole program.\n\
+         16. The specification is small and lives under pressure, every word must earn its place.\n\
+         17. Nothing crashes and nothing leaks, ashes to ashes, what it takes it returns.\n\
+         18. Where the pretty things and the robust disagree, the robust wins every time.\n\
+         19. There is no standard library, everything comes from C, the man who sold the world.\n\
+         20. We can be heroes, just for one day.\n"
+    );
+}

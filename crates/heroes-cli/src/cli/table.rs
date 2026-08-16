@@ -189,6 +189,13 @@ pub fn commands() -> Vec<Command> {
             summary: "count a spec file against its ceiling (default: spec/heroes-spec.md)"
                 .to_string(),
         },
+        Command {
+            tag: Tag::This,
+            name: "this".to_string(),
+            operand: Operand::None,
+            flags: Vec::new(),
+            summary: "print The Zen of Heroes".to_string(),
+        },
     ]
 }
 

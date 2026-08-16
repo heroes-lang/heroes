@@ -47,6 +47,7 @@ pub enum Tag {
     Run,
     Test,
     Fmt,
+    This,
     Version,
     Help,
 }

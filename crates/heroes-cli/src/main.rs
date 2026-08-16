@@ -42,6 +42,7 @@ fn main() -> ExitCode {
         Tag::Run => commands::run::run(&file, &invocation),
         Tag::Test => commands::test::run(&file, &invocation),
         Tag::Fmt => commands::fmt::run(&file, &invocation),
+        Tag::This => commands::this::run(),
         Tag::Version => {
             println!("heroes {}", heroes::VERSION);
             Exit::Ok

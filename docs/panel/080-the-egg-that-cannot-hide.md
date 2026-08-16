@@ -106,6 +106,13 @@ silently. / Unless explicitly silenced."). Law 20 is the language's name.
 - compiler-engineer, half 1 — **scoreable at the landing commit**: `git diff
   --stat` ≤65 lines added in `crates/heroes-cli` (test included), 0 under
   `crates/heroes/src/`.
+  **Scored at the landing commit, same day**: the count half is **false** — 95
+  insertions, measured with `git diff --cached --stat` — and the containment
+  half is **true**, 0 lines under `crates/heroes/src/`. The overage is the
+  byte-exact test carrying all twenty laws (the engineer priced a ~12-line
+  structural test; the text being the artifact, the landing chose §9's
+  deliberate redundancy instead) plus the module doc. The prediction failed on
+  its own terms and the record keeps it failed.
 - compiler-engineer, half 2 — at **M-selfhost-fixpoint**: the fixpoint diff
   never mentions the command.
 - historian — at each yearly audit: ≤1 maintenance commit per year touching
