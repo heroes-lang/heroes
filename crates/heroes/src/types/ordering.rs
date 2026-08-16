@@ -68,12 +68,24 @@ pub(super) fn is_ordered(checker: &Checker, ty: TyId) -> bool {
 ///   never do.
 ///
 /// The generic *instantiation* at an unordered type is therefore still the
-/// emitter's, and is queued as its own question rather than smuggled in here: the
-/// checker cannot see it without an interprocedural pass, and `heroes check` does
-/// not run the IR at all, so there is no third place to put it that `check` would
-/// reach. What this file guarantees is the shape panel 068 named — a `sort` whose
-/// element type is written down — and that no program reaches `hero_cmp_for`'s
-/// `NULL` return.
+/// emitter's, and is queued as its own question rather than smuggled in here.
+///
+/// **The reason given here used to be that the frontend cannot see it, and that
+/// was false** — corrected 2026-08-16, panel 082 R4, by a judge that ran the thing
+/// instead of reading the pipeline. This paragraph said *"there is no third place
+/// to put it that `check` would reach"*; `types/apply.rs:139-143` writes
+/// `checked.instantiations.insert(span.start, resolved_args)` **inside
+/// `types::check`**, so the checker already knows `A = P` — **keyed by the
+/// call-site span, which is the one line the author can edit** — and both edges are
+/// present when a generic calls a generic. A file-wide pass after `decls::file`
+/// would reach it, beside `map_keys::check` and `ffi_decls::fixed_only_in_a_group`,
+/// and it was priced at ~90–110 lines.
+///
+/// The honest reason the check is not here is Principle 0, not architecture: no
+/// such pass is built, and `selfhost/` declares **zero** generic functions, so
+/// nothing on the closure list needs it. What this file guarantees is the shape
+/// panel 068 named — a `sort` whose element type is written down — and that no
+/// program reaches `hero_cmp_for`'s `NULL` return.
 pub(super) fn is_refusable(checker: &Checker, ty: TyId) -> bool {
     !is_ordered(checker, ty)
         && !matches!(checker.out.types.get(ty), Ty::Error | Ty::Generic(_))

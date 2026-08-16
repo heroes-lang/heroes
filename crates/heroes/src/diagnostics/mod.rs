@@ -106,6 +106,22 @@ impl Diagnostic {
     /// The `code` names the *capability*, so a harness can count which one blocked
     /// what; the `kind` is what a fix loop keys on, because it is the fact that
     /// terminates the loop.
+    ///
+    /// **The constructor no longer attaches *"no change to this file will fix
+    /// this"*, and that is panel 082's R1.** It did, unconditionally, for every row
+    /// this kind can carry — and it was **false on three of the five**, measured:
+    /// `[ptr]` compiles the moment the pointer is held in a one-field record (exit
+    /// 0 against real SQLite 3.51.0), `[()]` compiles as `[i64]`, and `sort` inside
+    /// a generic compiles the moment the call instantiates it at an ordered type.
+    /// A note that denies a repair the author can make is worse than no note: it
+    /// does not merely fail §4.17's *everything needed to fix the program*, it
+    /// tells them to stop looking. GCC's own taxonomy draws exactly this line —
+    /// `DIAGNOSTIC_LEVEL_SORRY` is *"a problem where the input is **valid**, but
+    /// the tool isn't able to handle it"* — and a row keyed on **this program's
+    /// types** is not that.
+    ///
+    /// So the note is the **row's** decision, made in `emit/gate.rs` where the code
+    /// is known, and this constructor stays silent about it.
     pub fn unsupported(code: &str, message: String, span: Span) -> Diagnostic {
         Diagnostic {
             kind: Kind::Unsupported,
@@ -113,7 +129,7 @@ impl Diagnostic {
             message,
             span,
             fixes: Vec::new(),
-            notes: vec!["no change to this file will fix this".to_string()],
+            notes: Vec::new(),
         }
     }
 

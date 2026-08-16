@@ -19,10 +19,23 @@ pub(super) fn refusal(text: &str) -> (String, String) {
     assert!(out.c.is_empty(), "a refused program must emit no C at all");
     let first = out.diagnostics.first().expect("a refusal");
     assert_eq!(first.kind, Kind::Unsupported, "not an error: the program is fine");
-    assert!(first.fixes.is_empty(), "no edit to the file will fix this");
+    assert!(first.fixes.is_empty(), "the gate offers no machine-applicable fix");
+    // **The note is the row's, not the kind's** (panel 082 R1). It was one string
+    // for every row and it was false on three of the five — `[ptr]` runs the moment
+    // the pointer is held in a record, `[()]` runs as `[i64]`, and `sort` in a
+    // generic runs the moment the call instantiates it at an ordered type. So this
+    // helper asks which row it is looking at, which is the whole repair: a shared
+    // assertion on a shared string is how the lie stayed uniform.
+    let expected = if first.code == "missing" {
+        "no change to this file will fix this"
+    } else {
+        "this is refused for the types on this line, so other types compile"
+    };
     assert!(
-        first.notes.iter().any(|n| n == "no change to this file will fix this"),
-        "the note that ends the reader's fix loop is missing"
+        first.notes.iter().any(|n| n == expected),
+        "row `{}` should carry the note `{expected}`, and carries {:?}",
+        first.code,
+        first.notes
     );
     assert!(
         first.notes.iter().any(|n| n.contains("the backend emits")),

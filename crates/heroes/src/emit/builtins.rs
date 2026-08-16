@@ -153,13 +153,16 @@ pub(super) fn entry(
 /// `heroes build` refused, under a note reading *"no change to this file will fix
 /// this"* — which is true of an unsupported form and false of this one.
 ///
-/// **What is left, and why it cannot move.** Inside `function first<A>(xs: [A])`,
+/// **What is left, and why it has not moved.** Inside `function first<A>(xs: [A])`,
 /// `sort(xs)` has an element type that is not yet a type; `first([3, 1, 2])` runs
 /// and prints today, so refusing the generic body would delete a working program.
-/// The instantiation that picks an unordered `A` is only visible after
-/// monomorphisation, which runs in the IR — and `heroes check` never reaches the
-/// IR. So this arm is the only thing standing between that program and
-/// `hero_cmp_for` returning `NULL`, and it is kept deliberately.
+/// So this arm is the only thing standing between that program and `hero_cmp_for`
+/// returning `NULL`, and it is kept deliberately.
+///
+/// **"Visible only after monomorphisation" stood here and was false** (panel 082
+/// R4): `types/apply.rs:139` records instantiations inside `types::check`, keyed by
+/// the **call-site** span, so a checker pass is possible (~90–110 lines) and points
+/// where the author can edit. Unbuilt: `selfhost/` declares zero generics.
 ///
 /// Its message is *not* the checker's, and must not be: this really is a form the
 /// backend does not emit, reached through a generic the author may not have

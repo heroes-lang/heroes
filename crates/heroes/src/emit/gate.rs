@@ -127,9 +127,39 @@ pub(super) fn refuse(
         .into_iter()
         .map(|(code, what, span)| {
             Diagnostic::unsupported(&code, format!("{what} is not emitted yet"), span)
+                .with_note(whether_the_author_can_help(&code).to_string())
                 .with_note(subset())
         })
         .collect()
+}
+
+/// Which note this row has earned — panel 082 R1, and it is a **per-row** answer
+/// because the blanket one was false on three of the five rows this gate can emit.
+///
+/// The test is not *how hard is this to implement*, it is **what is the refusal
+/// keyed on**. A row keyed on a capability the backend lacks whatever the author
+/// writes is honestly *"no change to this file will fix this"* — that is `missing`,
+/// and it is the only one. Every other row is keyed on **a type in this program**,
+/// and a different type compiles:
+///
+/// - `pointer_element` — `stmts: [ptr]` is refused; `record Stmt { p: ptr }` and
+///   `stmts: [Stmt]` runs at **exit 0** against real SQLite 3.51.0. This is §4.19
+///   ladder step 3's own shape, so it is the row an author reaches first.
+/// - `unit_element` — `[()]` is refused; `[i64]` compiles.
+/// - `builtin` — `sort` on a generic element instantiated at an unordered type is
+///   refused; the same generic called at `[2, 1]` builds and runs.
+/// - `hole` — a hole is filled by editing the file, which is the whole point of
+///   `???`. Reached only as a backstop, since the hole report fires first.
+///
+/// The replacement note does **not** name a specific repair, and that is
+/// deliberate: naming one would be a `Fix` (CLAUDE.md §8), and a `guess` dressed as
+/// prose is the shape §4.17 exists to prevent. It says where to look — the types on
+/// this line — which is true of all four and over-promises nothing.
+fn whether_the_author_can_help(code: &str) -> &'static str {
+    match code {
+        "missing" => "no change to this file will fix this",
+        _ => "this is refused for the types on this line, so other types compile",
+    }
 }
 
 /// One capability, at its earliest span. The dedup is on the *message*: a program

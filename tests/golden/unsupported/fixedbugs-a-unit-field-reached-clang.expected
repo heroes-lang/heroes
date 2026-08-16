@@ -3,7 +3,7 @@ unsupported[unit_field]: `()` as the type of `Box.u` is not emitted yet
      |
   14 |     u: ()               #~ unit_field
      |     ^
-  note: no change to this file will fix this
+  note: this is refused for the types on this line, so other types compile
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet
 
 unsupported[unit_field]: `()` as the type of `Reply.nothing` is not emitted yet
@@ -11,5 +11,5 @@ unsupported[unit_field]: `()` as the type of `Reply.nothing` is not emitted yet
      |
   18 |         nothing: ()     #~ unit_field
      |         ^^^^^^^
-  note: no change to this file will fix this
+  note: this is refused for the types on this line, so other types compile
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet
