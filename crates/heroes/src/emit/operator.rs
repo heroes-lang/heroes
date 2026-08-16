@@ -224,6 +224,43 @@ pub(super) fn binary(
                 ));
             }
         }
+        // **A `nan` on either side of an ordering stops the program** (panel 075).
+        // IEEE makes all four false at a `nan`, so `n < a` and `n >= a` are false
+        // *together* and the `else` arm runs with nothing reported. That is not a
+        // surprising answer, it is no answer wearing one: `smallest([nan, 1.0, 2.0])`
+        // gives `nan` and `smallest([1.0, nan, 2.0])` gives `1.0` — same numbers, same
+        // program, the result decided by which line the `nan` arrived on. §4.14's own
+        // dialect already says this everywhere else (overflow, division by zero,
+        // `sort`, a float map key); the bare operator was where it had never reached.
+        // `==` and `!=` stay untouched, so equality guards keep working and `x != x`
+        // still asks the question — which is why no `is_nan` was added.
+        //
+        // **`x != x` rather than `isnan()`, and that choice has an expiry.** It is
+        // what `runtime/parts/sort.c` and `f64.c` already write, it needs no header,
+        // and clang lowers it to arm64's unordered flag (5 instructions against 3 at
+        // `-O2`). It is correct at every level in `FLAGS` and **wrong** under
+        // `-ffast-math`/`-Ofast`, where the compiler is told no `nan` exists and
+        // deletes the test — so the day either flag is adopted this must become
+        // `isnan()`, which is panel 075's standing condition.
+        //
+        // **The same rule lives in `runtime/parts/sort.c:51,57` and cannot move
+        // here**: `sort` compares through a function pointer inside the runtime, so no
+        // emitted `<` reaches it, and deleting those two on this rule's strength
+        // returns an arbitrary permutation at exit 0 — measured by three seats. One
+        // rule, two sites, two languages, and `a_nan_is_refused_at_every_ordering_site`
+        // is the test that fires when that stops being true.
+        BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge if matches!(operands, Ty::Float(_)) => {
+            let operator = match op {
+                BinOp::Lt => "<",
+                BinOp::Le => "<=",
+                BinOp::Gt => ">",
+                _ => ">=",
+            };
+            w.line(&format!(
+                "    if ({l} != {l} || {r} != {r}) hero_panic(\"a nan in `{operator}`: it is neither less nor greater, so both arms would be false\");"
+            ));
+            w.line(&format!("    {name} = {l} {operator} {r};"));
+        }
         // `%` on two `f64` is `fmod`, not C's `%`, which takes integers only:
         // `t3 = t1 % t2` on two `double`s is `error: invalid operands to binary
         // expression`, exit 2, on a program spec line 139 explicitly allows

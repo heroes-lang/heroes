@@ -70,7 +70,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
   of `\"` in a character literal. Any other escape is a compile error.
 - `==` is structural equality on any two values of one type, recursively; a map's
   insertion order does not affect it. A `ptr`, a `cstr` and a function value compare
-  as an address, and `nan` equals nothing, itself included.
+  as an address, and `nan` equals nothing, itself included, so `x != x` asks whether it is one.
 - Every value behaves as an independent copy: after `b = a`, mutating `b`
   never changes `a`. No aliasing exists anywhere.
 - A record or variant holds its fields **by value**, so it may contain itself only
@@ -153,7 +153,7 @@ toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 ```
 arithmetic   + - * / %          (both sides one numeric type — never mixed)
              +                  (str with str: concatenation)
-comparison   == != < <= > >=    (`< <= > >=`: a number only)
+comparison   == != < <= > >=    (`< <= > >=`: a number only, and a `nan` aborts)
 boolean      && || !            (bool only; && and || short-circuit)
 bitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)
 ```
@@ -170,7 +170,7 @@ copy — `xs @ xs.push(4)` — so accumulating either in a loop is quadratic. `j
 and `repeat` build in one pass.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number or `str`) ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number or `str`; a `nan` aborts) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.

@@ -239,3 +239,53 @@ fn the_typehash_is_computable_in_heroes() {
         "panel 029 R5's non-injectivity case"
     );
 }
+
+/// **One rule, two sites, two languages — and this test is what fires when one of
+/// them is deleted on the other's strength** (panel 075, CLAUDE.md §11).
+///
+/// The rule: a `nan` reaching an ordering stops the program. It lives in **two**
+/// places that cannot be merged, and the sitting that adopted it began from a
+/// coordinator's brief asserting they could be:
+///
+/// - `emit/operator.rs` writes the guard for `< <= > >=` on `f32` and `f64`;
+/// - `runtime/parts/sort.c` guards `hero_cmp_f32` and `hero_cmp_f64`, which the
+///   runtime's own merge sort reaches through a `HeroCmpFn` **function pointer**.
+///   No emitted comparison passes through them, so the emitter's rule does not
+///   subsume theirs — three panel seats measured that, two by deleting the two C
+///   guards and running: `sort([5.0, 3.0, nan, 4.0, 1.0, 2.0])` returned
+///   `1.0 2.0 3.0 5.0 nan 4.0` at **exit 0**, an arbitrary permutation, which is
+///   the defect `tests/golden/run/abort-sort-nan.hero` exists to prevent.
+///
+/// So the premise this test pins is: **both sites are guarded, always.** If it
+/// fails, do not weaken it — the thing it protects is that a program which
+/// compares or sorts a `nan` stops instead of answering.
+#[test]
+fn a_nan_is_refused_at_every_ordering_site() {
+    // Site one: the emitter, for all eight combinations of operator and width.
+    for width in ["f32", "f64"] {
+        for operator in ["<", "<=", ">", ">="] {
+            let program = format!(
+                "function main()\n    a: {width} @ 1.0\n    b: {width} @ 2.0\n    print(a {operator} b)\n"
+            );
+            let text = c(&program);
+            assert!(
+                text.contains("!= t") && text.contains("a nan in `"),
+                "emit/operator.rs stopped guarding `{operator}` on {width}: a `nan` \
+                 there makes both arms of an `if/else` false, so the program takes \
+                 the `else` branch and reports nothing (panel 075, \
+                 tests/golden/run/abort-nan-in-an-ordering.hero)"
+            );
+        }
+    }
+    // Site two: the runtime's own comparators, which the emitter never writes.
+    let sort_c = include_str!("../../../../../runtime/parts/sort.c");
+    let guards = sort_c.matches("a != a || b != b").count();
+    assert_eq!(
+        guards, 2,
+        "runtime/parts/sort.c must guard both hero_cmp_f32 and hero_cmp_f64. The \
+         emitter's rule does NOT cover them: `sort` compares through a function \
+         pointer inside the runtime, so no emitted `<` reaches these lines, and \
+         deleting them returns an arbitrary permutation at exit 0 \
+         (tests/golden/run/abort-sort-nan.hero)"
+    );
+}

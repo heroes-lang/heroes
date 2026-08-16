@@ -1,0 +1,49 @@
+# `<` `<=` `>` `>=` with a `nan` on either side abort (panel 075).
+#
+# **The defect this replaces was not a wrong number, it was a wrong branch.** IEEE
+# makes all four comparisons false at a `nan`, so `n < a` and `n >= a` were false
+# *together* and the `else` arm ran with nothing reported — no diagnostic, no
+# abort, exit 0. The measurement that convened the sitting is the first two lines
+# of `main` below, and it is worth stating exactly, because the same program with
+# the same six numbers gave two different answers:
+#
+#     smallest([nan, 1.0, 2.0])  ->  nan
+#     smallest([1.0, nan, 2.0])  ->  1.0
+#
+# The answer depended on which line of the input the `nan` arrived on. That is why
+# this is §4.14's dialect and not a new rule: overflow aborts, division by zero
+# aborts, `sort` aborts on a `nan` (`abort-sort-nan.hero`) and a float map key is
+# refused (`float-map-key.hero`). The bare operator was the one ordering site the
+# decision had never reached.
+#
+# **`==` and `!=` are untouched and this case proves it**: the first print compares
+# a `nan` for equality and answers `false`, and `n != n` answers `true`, which is
+# how a program asks whether a value is a `nan` — the spec now says so, and it is
+# why no `is_nan` built-in was added (vetoed twice, panel 075).
+#
+# **What this case cannot cover, and where the other half lives.** A program stops
+# at its first abort, so one file cannot exercise both sites of the rule. `sort`'s
+# guard is `runtime/parts/sort.c:51,57` — runtime C reached through a function
+# pointer, which no emitted `<` ever passes through — and it is covered by
+# `abort-sort-nan.hero` and pinned by `a_nan_is_refused_at_every_ordering_site`,
+# the test that fires if either site is deleted on the other's strength. Three
+# panel seats measured what deleting them costs: `sort` returns an arbitrary
+# permutation at exit 0.
+#
+# This case carries none of the source annotations CLAUDE.md §9 requires, and the
+# reason is that there is no diagnostic to annotate: a runtime abort is not a
+# compile error, so the convention for one is the `!panic:` line in the
+# `.expected` (`abort-sort-nan.hero`, `abort-map-key-nan.hero`). Writing the
+# annotation marker into a comment here is not neutral either — the scanner in
+# `diagnostics/tests.rs` finds it anywhere on a line, including inside backticks,
+# and this file made that test go red once already.
+#
+# Adversarial case — UNVERIFIED, pending debrief.
+
+function main()
+    zero = 0.0
+    n = zero / zero
+    print(n == n)
+    print(n != n)
+    print(1.0 < 2.0)
+    print(n < 1.0)
