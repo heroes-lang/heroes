@@ -170,7 +170,7 @@ copy — `xs @ xs.push(4)` — so accumulating either in a loop is quadratic. `j
 and `repeat` build in one pass.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number or `str`; a `nan` aborts) ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number, `str` or `bool`; a `nan` aborts) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
