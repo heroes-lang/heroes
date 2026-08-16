@@ -1,0 +1,1 @@
+tests/golden/check/sort-without-an-order.hero:31:15: error[unordered_element]: `sort` orders arrays of numbers, `str` and `bool` — `[Point]` is none of those

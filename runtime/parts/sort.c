@@ -95,6 +95,22 @@ static int64_t hero_cmp_u64(const void *x, const void *y) {
     return a < b ? -1 : (a > b ? 1 : 0);
 }
 
+/* `bool` joined the ordered set at panel 068 (ratified 2026-08-16). `false`
+ * before `true`, which is the order every language carrying the type agrees on
+ * and the one the underlying 0/1 already has — so this is not a convention this
+ * language invents, which is what disqualified a structural order for records in
+ * the same sitting.
+ *
+ * Compared as `bool` and never as its storage byte. A C `bool` is one byte, but
+ * the *values* are 0 and 1 and nothing else, so promoting to `int` first is what
+ * makes this total: a byte holding 2 through an FFI route would order between
+ * them, while `(int)a` on a `_Bool` is 1 for every non-zero. That is the loud
+ * direction and it costs nothing. */
+static int64_t hero_cmp_bool(const void *x, const void *y) {
+    int a = *(const bool *)x ? 1 : 0, b = *(const bool *)y ? 1 : 0;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+
 /* Dispatch is POINTER IDENTITY against the static descriptors, which is exact:
  * every `[i64]` in every program carries `&hero_desc_int`, and after
  * M-sized-integers every `[u8]` carries `&hero_desc_u8`. A descriptor arriving
@@ -113,6 +129,7 @@ static HeroCmpFn hero_cmp_for(const HeroDesc *elem) {
     if (elem == &hero_desc_u16) return hero_cmp_u16;
     if (elem == &hero_desc_u32) return hero_cmp_u32;
     if (elem == &hero_desc_u64) return hero_cmp_u64;
+    if (elem == &hero_desc_bool) return hero_cmp_bool;
     return NULL;
 }
 

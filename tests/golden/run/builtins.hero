@@ -2,8 +2,13 @@
 # Bulk regression case.
 #
 # What each line pins:
-#   - `sort` is STABLE and ascending, on the three element types that have an
+#   - `sort` is STABLE and ascending, on four of the element types that have an
 #     order, and it returns a NEW array — the argument is still readable after.
+#     `bool` is the one panel 068 added (ratified 2026-08-16), and it is here
+#     rather than only in the checker's refusal list because a set the compiler
+#     names and no program exercises is a set that rots — which is exactly what
+#     happened to the emitter's old "`i64`, `f64` or `str`", stale from panel 042
+#     until this sitting found it.
 #   - `slice` on an array copies through the element descriptor, so a `[str]`
 #     slice owns its own references and the leak counter sees it.
 #   - `join` is one allocation, and the empty and single-element cases are the
@@ -23,6 +28,12 @@ function main()
 
     fs = [2.5, 0.5, 1.5]
     print(sort(fs)[0], " ", sort(fs)[2])
+
+    # `false` before `true`, and stability shown the only way a two-valued type
+    # can show it: the count of each is preserved.
+    flags = [true, false, true, false, true]
+    ordered = sort(flags)
+    print(ordered[0], ordered[1], ordered[2], ordered[3], ordered[4])
 
     # `slice` on an array, `to` excluded, and the empty slice at both ends.
     tail = slice(names, from: 1, to: 3)

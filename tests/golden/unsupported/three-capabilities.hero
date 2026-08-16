@@ -8,9 +8,16 @@
 # emits, and every Tier-1 built-in emits**, so what is left is three different KINDS of
 # refusal rather than three names:
 #
-#   1. a built-in refused by OPERAND TYPE — `sort` orders `i64`, `f64` and `str`,
-#      and a `[P]` has no order this backend has decided on (panel 027 R1). The
-#      "refused by NAME" row can no longer fire at all: every one of the 23
+#   1. a built-in refused by OPERAND TYPE **reached through a generic**, which is
+#      all that is left of this row after panel 068 (ratified 2026-08-16). Written
+#      down, `sort([P])` is now the CHECKER's — `unordered_element` at exit 1, in
+#      `tests/golden/check/sort-without-an-order.hero`, on the author's own line.
+#      What the checker cannot see is `sort(xs)` inside `sorted_first<A>(xs: [A])`:
+#      there the element is not yet a type, `sorted_first([3, 1, 2])` runs and
+#      prints, and only monomorphisation — which lives in the IR, which `heroes
+#      check` never reaches — knows this call chose `P`. That is the gate's last
+#      remaining row, and this file is what keeps it alive.
+#      The "refused by NAME" row can no longer fire at all: every one of the 23
 #      reserved names now has an entry point, a library body, or a lowering, and
 #      `emit/tests/gate.rs` asserts that partition instead of an example;
 #   2. a GENERIC function and the six higher-order built-ins, which all emit now —
@@ -42,6 +49,14 @@ function tag(p: P) -> i64
 function first<T>(items: [T]) -> T
     return items[0]
 
+# The generic route, which is the only way a `sort` on an unordered element still
+# reaches the emitter. The refusal lands on the line inside this function, not on
+# the call that chose the type — which is why the message names the route rather
+# than telling the reader to change an element spelled `A`.
+function sorted_first<A>(items: [A]) -> A
+    ordered = sort(items)      #~ builtin
+    return ordered[0]
+
 function main()
     p = P(x: 1)
     print(p.x)
@@ -56,7 +71,7 @@ function main()
     print(to_i64(1.5).must(), to_f64(2), to_str(3))
     print(len(range(from: 0, to: 2)))
     ps = [P(x: 2), P(x: 1)]
-    print(len(sort(ps)))      #~ builtin
+    print(sorted_first(ps).x)
     # A function value emits now, and stays here to prove the refusals are not
     # about it.
     f = add

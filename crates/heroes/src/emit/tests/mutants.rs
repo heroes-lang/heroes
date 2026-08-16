@@ -93,9 +93,17 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
     // remaining rows rather than the gate, and onto one program that must be
     // refused. Losing that assertion entirely would leave the loop below unable to
     // tell "the gate accepted everything" from "the gate never ran".
-    let (refused_on_purpose, _) = super::gate::refusal(
-        "record P\n    x: i64\n\nfunction main()\n    ps = [P(x: 1)]\n    print(len(sort(ps)))\n",
-    );
+    // **The one program is now the generic route** (panel 068 R2, 2026-08-16).
+    // `sort([P])` written down is the checker's since that sitting, so it no
+    // longer reaches the gate at all and would have made this assertion measure
+    // the checker instead. Inside `first<A>(xs: [A])` the element is not yet a
+    // type; only monomorphisation sees that this call chose `P`, and that is the
+    // gate's last remaining row.
+    let (refused_on_purpose, _) = super::gate::refusal(concat!(
+        "record P\n    x: i64\n\n",
+        "function firstof<A>(xs: [A]) -> A\n    ys = sort(xs)\n    return ys[0]\n\n",
+        "function main()\n    print(firstof([P(x: 1)]).x)\n",
+    ));
     assert_eq!(refused_on_purpose, "builtin", "the gate did not run at all");
     let _ = refused;
     assert!(emitted >= 3, "only {emitted} mutants were emitted — is the emitter running?");

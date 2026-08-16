@@ -18,6 +18,7 @@ use crate::source::{Source, Span};
 use crate::syntax::Ast;
 
 use super::fallible_ops;
+use super::ordering;
 use super::table::Ty;
 use crate::types::IntKind;
 use super::{conversions, errors, Checker, TyId};
@@ -175,7 +176,20 @@ pub(super) fn call(
         ("cstr", [one]) => {
             return arg_error(checker, ast, src, "cstr", "`str`", *one, span)
         }
+        // **The element rule is here rather than in the emitter** (panel 068 R2,
+        // ratified 2026-08-16). It used to be `emit/builtins.rs`'s, so `heroes
+        // check` passed a program `heroes build` then refused — with a note saying
+        // *"no change to this file will fix this"*, which is true of an unsupported
+        // form and false of this one: changing the element type fixes it exactly.
+        // `ordering.rs` holds what may be ordered and why.
         ("sort", [one]) => match checker.out.types.get(*one) {
+            Ty::Array(element) if ordering::is_refusable(checker, element) => {
+                let shown = checker.show(ast, src, element);
+                let inside = ordering::why_unordered(checker, ast, src, element);
+                let diagnostic = errors::unordered_element(&shown, inside, span);
+                checker.push_diagnostic(diagnostic);
+                return Some(checker.error_ty());
+            }
             Ty::Array(_) => *one,
             _ => return arg_error(checker, ast, src, "sort", "`[T]`", *one, span),
         },

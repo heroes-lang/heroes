@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 75] = [
+const ANNOTATED: [&str; 76] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -126,6 +126,14 @@ const ANNOTATED: [&str; 75] = [
     "unknown_function",
     "unknown_name",
     "unknown_type",
+    // **Soundness, not thesis** (panel 068 R2). Without it `sort` reaches
+    // `hero_cmp_for`, which answers `NULL` for anything outside its twelve rows,
+    // and the runtime aborts saying *compiler bug* — on a program the author was
+    // entitled to write. `--permissive`'s control arm must reject it too: there is
+    // no order for the permissive build to produce, so the two arms would not be
+    // comparing the same program, they would be comparing a program against a
+    // crash. Same reading as `constant_cycle` and `ffi_field_type` above.
+    "unordered_element",
     "unterminated_string",
     "unused_binding",
     "use_wants_a_name",

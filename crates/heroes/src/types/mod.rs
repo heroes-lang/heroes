@@ -72,6 +72,7 @@ mod jumps;
 mod literals;
 mod lower;
 mod ops;
+mod ordering;
 mod partial;
 mod patterns;
 mod render;

@@ -1,15 +1,15 @@
-unsupported[builtin]: the built-in `sort` on elements other than `i64`, `f64` or `str` is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:59:15
+unsupported[builtin]: the built-in `sort` on a generic element the call instantiated at a type with no order (it orders numbers, `str` and `bool`) is not emitted yet
+  at tests/golden/unsupported/three-capabilities.hero:57:15
      |
-  59 |     print(len(sort(ps)))      #~ builtin
-     |               ^^^^^^^^
+  57 |     ordered = sort(items)      #~ builtin
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: no change to this file will fix this
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet
 
 unsupported[unit_element]: `()` as the element of an array is not emitted yet
-  at tests/golden/unsupported/three-capabilities.hero:66:5
+  at tests/golden/unsupported/three-capabilities.hero:81:5
      |
-  66 |     us: [()] @ []      #~ unit_element
+  81 |     us: [()] @ []      #~ unit_element
      |     ^^^^^^^^^^^^^
   note: no change to this file will fix this
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet

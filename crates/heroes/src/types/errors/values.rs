@@ -67,6 +67,58 @@ pub(in crate::types) fn bad_operand(op: &str, allowed: &str, got: &str, span: Sp
     diagnostic
 }
 
+/// `sort` was handed an array of something the language does not order
+/// (**panel 068 R2**, ratified 2026-08-16 — the refusal moved here from the
+/// emitter).
+///
+/// **Three things this message must not do**, and each was a finding of that
+/// sitting rather than a style preference.
+///
+/// It must not say the element *"has no `<`"*. That is **false of `str`**:
+/// `"a" < "b"` is `bad_operand` and `sort(["b", "a"])` runs and is ordered. The
+/// two questions are different — one is which operator the surface offers, the
+/// other is which order the runtime can produce — and a message that conflates
+/// them teaches a reader a rule that will mislead them the next time.
+///
+/// It must **name the ordered set**, because the reader's next act is to choose a
+/// type, and §4.17 says the error carries the repair without opening another
+/// file. The set is the twelve rows `hero_cmp_for` dispatches on and is written
+/// out rather than summarised: the old emitter message said *"other than `i64`,
+/// `f64` or `str`"* and had been stale since panel 042 added the seven widths.
+///
+/// It must leave **`sort_by` addable**. Panel 068 refused option C today and
+/// priced it at +47…+55 with a stated return condition, so this message says what
+/// `sort` orders and never that ordering *this* is impossible — a sentence the
+/// language would have to take back.
+///
+/// The `reached` argument is what the transitive descent found. Where the element
+/// is itself unordered the two coincide; where a record or a variant case is what
+/// the author wrote, this names the member inside it that decided the answer, so
+/// the reader is not left comparing a type name against a list it is not on.
+pub(in crate::types) fn unordered_element(
+    element: &str,
+    reached: Option<String>,
+    span: Span,
+) -> Diagnostic {
+    let diagnostic = Diagnostic::new(
+        "unordered_element",
+        format!("`sort` orders arrays of numbers, `str` and `bool` — `[{element}]` is none of those"),
+        span,
+    );
+    match reached {
+        Some(inside) => diagnostic.with_note(format!(
+            "{inside}, which has no order the language can produce. Sort a key you can name \
+             instead — build `[i64]`, `[str]` or `[bool]` from the values and order that"
+        )),
+        None => diagnostic.with_note(
+            "the ordered types are `i8` `i16` `i32` `i64`, `u8` `u16` `u32` `u64`, `f32` `f64`, \
+             `str` and `bool`. Sort a key you can name instead — build an array of one of those \
+             from the values and order that"
+                .to_string(),
+        ),
+    }
+}
+
 
 /// There is no truthiness (§4.14), which is worth saying in the message: a model
 /// carrying a C or Python prior needs the rule, not just the mismatch.

@@ -1,0 +1,37 @@
+# `sort` on an element type with no order is refused by the CHECKER, and this
+# file is where that moved (panel 068 R2, ratified 2026-08-16).
+#
+# It lived in `tests/golden/unsupported/` until then, under a comment arguing the
+# opposite: that a checker rule would make spec line 71's `for k in sort(keys(m))`
+# a compile error, so the gate should say "this backend does not emit it" instead.
+# The sitting found the premise inverted. `spec:85` was the sentence with the bug
+# — it derived a map-walking idiom the language never offered — and it was
+# repaired in the same sitting. Meanwhile `heroes check` was passing this program
+# and `heroes build` was refusing it, under a note reading "no change to this file
+# will fix this", which is true of an unsupported form and false of this one:
+# changing the element type fixes it exactly, and that is what the message now
+# says.
+#
+# What the diagnostic must never say is that `Point` "has no `<`". That is false
+# of `str`, which has no `<` in the surface and sorts. The two questions are which
+# operator the surface offers and which order the runtime can produce, and this
+# file's `.expected` is what stops them being conflated again.
+#
+# `sort_by(xs, less)` is priced at +47..+55 and refused for now (panel 068 R4), so
+# nothing here says an element cannot be ordered — only that `sort` does not order
+# it.
+# Bulk regression case.
+
+record Point
+    x: i64
+    y: i64
+
+function main()
+    ps = [Point(x: 2, y: 1), Point(x: 1, y: 2)]
+    ordered = sort(ps)                  #~ unordered_element
+    print(len(ordered))
+    # The four that DO have an order stay in the file, so the refusal above is
+    # provably about the element type and not about the built-in's name. `bool`
+    # is the one panel 068 added, and it is here because a set nobody exercises
+    # is a set that rots.
+    print(join(sort(["b", "a"]), ""), sort([2, 1])[0], sort([2.0, 1.0])[0], sort([true, false])[0])

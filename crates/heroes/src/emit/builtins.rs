@@ -141,13 +141,34 @@ pub(super) fn entry(
 /// entitled to write (panel 025). `slice`'s array half has landed, so the row now
 /// carries `sort`, and it is the same shape for a different reason.
 ///
-/// **`sort` is refused here rather than rejected by the checker**, and the
-/// difference is the message. `{Point: i64}` compiles and runs today, so
-/// `keys(m)` can be `[Point]`, and spec line 71 teaches `for k in sort(keys(m))`
-/// as *the* idiom for walking a map in order. A checker rule would make the
-/// spec's own sentence a compile error; the gate says "this backend does not emit
-/// it", which is the true state — the element-type question belongs to M-generics-library's
-/// closure-list audit, which has to answer `sort_by` first (panel 027 R1).
+/// **`sort`'s element rule left this file at panel 068** (R2, ratified
+/// 2026-08-16). It lives in `types/ordering.rs` now, and what stays here is a
+/// backstop for the one shape the checker cannot see.
+///
+/// The old reasoning — recorded because it was overturned rather than forgotten —
+/// was that a checker rule would make the spec's own map-walking idiom a compile
+/// error, so the gate should say *"this backend does not emit it"* instead. Panel
+/// 068 found the premise inverted: `spec:85` **was the sentence with the bug**, it
+/// was repaired in that sitting, and meanwhile `heroes check` was passing programs
+/// `heroes build` refused, under a note reading *"no change to this file will fix
+/// this"* — which is true of an unsupported form and false of this one.
+///
+/// **What is left, and why it cannot move.** Inside `function first<A>(xs: [A])`,
+/// `sort(xs)` has an element type that is not yet a type; `first([3, 1, 2])` runs
+/// and prints today, so refusing the generic body would delete a working program.
+/// The instantiation that picks an unordered `A` is only visible after
+/// monomorphisation, which runs in the IR — and `heroes check` never reaches the
+/// IR. So this arm is the only thing standing between that program and
+/// `hero_cmp_for` returning `NULL`, and it is kept deliberately.
+///
+/// Its message is *not* the checker's, and must not be: this really is a form the
+/// backend does not emit, reached through a generic the author may not have
+/// written. Making the two identical would tell a reader to change an element type
+/// that is spelled `A`.
+///
+/// The queued question is whether that shape gets a diagnostic of its own — it is
+/// architecture (does `check` run the IR?), so it is a panel path and is on
+/// `DECIDE.md` rather than decided here.
 pub(super) fn unsupported_operand(
     name: &str,
     function: &Function,
@@ -158,11 +179,22 @@ pub(super) fn unsupported_operand(
         return None;
     }
     match first_type(function, checked, args) {
-        // Exactly the three types `hero_cmp_for` can dispatch on.
+        // Exactly the rows `hero_cmp_for` dispatches on — every integer width, both
+        // floats, `str`, and `bool` since panel 068. The old list here said "`i64`,
+        // `f64` or `str`" and had been stale since panel 042 added the seven widths,
+        // which is why the set is now stated once, in the message, from the same
+        // reading of the runtime that `types/ordering.rs` states it from.
         Some(Ty::Array(element)) => match checked.types.get(element) {
-            Ty::Int(_) | Ty::Float(_) | Ty::Str => None,
-            _ => Some("the built-in `sort` on elements other than `i64`, `f64` or `str`"
-                .to_string()),
+            Ty::Int(_) | Ty::Float(_) | Ty::Str | Ty::Bool => None,
+            // A noun phrase, because `gate.rs` completes it with "is not emitted
+            // yet". It names the *route* rather than the type: the author wrote
+            // `[A]`, and telling them their element type is unordered would send
+            // them to a line where the type is spelled with a letter.
+            _ => Some(
+                "the built-in `sort` on a generic element the call instantiated at a type \
+                 with no order (it orders numbers, `str` and `bool`)"
+                    .to_string(),
+            ),
         },
         // Not an array at all: the checker reported that, and one mistake gets one
         // message.

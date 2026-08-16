@@ -436,24 +436,66 @@ fn every_reserved_name_is_emitted_lowered_or_written_in_heroes() {
     );
 }
 
-/// The other half of the row, and the one added at M-generics-library step 3: a
-/// built-in whose name emits and whose **operand type** has none.
+/// A program the **checker accepts** and this backend cannot emit — which after
+/// panel 068 is one shape and no longer two.
 ///
-/// `sort` orders `i64`, `f64` and `str`. A `[Point]` is refused *here* rather
-/// than by the checker, because `{Point: i64}` compiles and spec line 71 teaches
-/// `for k in sort(keys(m))` — a compile error would contradict the spec's own
-/// idiom, where a refusal only says this backend has not decided yet.
+/// `sort([Point])` used to be the example and is now `unordered_element` at exit
+/// 1, in `types/ordering.rs`, on the author's own line. What is left here is the
+/// route through a **generic**: inside `first<A>(xs: [A])` the element is not yet
+/// a type, `first([3, 1, 2])` runs and prints, and only monomorphisation — which
+/// is in the IR, which `heroes check` never reaches — can see that this call
+/// instantiated `A` at a record.
+///
+/// So this test is the last thing between that program and `hero_cmp_for`
+/// returning `NULL`, where the runtime's own message says *compiler bug*. If it
+/// goes green by accident — someone deletes the arm believing the checker covers
+/// it — a correct-looking program starts aborting at 134 with no line.
 #[test]
 fn a_builtin_whose_operand_type_has_no_order_is_refused_by_operand() {
-    let (code, message) = refusal(
-        "record Point\n    x: i64\n    y: i64\n\nfunction main()\n    ps = [Point(x: 1, y: 2)]\n    \
-         print(len(sort(ps)))\n",
-    );
+    let (code, message) = refusal(concat!(
+        "record Point\n    x: i64\n    y: i64\n\n",
+        "function firstof<A>(xs: [A]) -> A\n    ys = sort(xs)\n    return ys[0]\n\n",
+        "function main()\n    print(firstof([Point(x: 1, y: 2)]).x)\n",
+    ));
     assert_eq!(code, "builtin");
     assert!(message.contains("`sort`"), "the message must name it: {message}");
     assert!(
-        message.contains("`i64`, `f64` or `str`"),
-        "and it must name what does work, or the reader has to guess: {message}"
+        message.contains("generic"),
+        "and it must name the route, because the element type on that line is spelled `A` \
+         and telling the reader to change it sends them nowhere: {message}"
+    );
+    assert!(
+        message.contains("numbers, `str` and `bool`"),
+        "and what does work, or the reader has to guess: {message}"
+    );
+}
+
+/// The refusal that **left** this file, asserted from the other side (panel 068 R2).
+///
+/// `sort` on a written-down record type is the checker's now, so the gate must
+/// never see it. This is the pair to the test above: together they pin that
+/// exactly one of the two answers fires for each shape, which is what stops the
+/// class of defect where a rule is moved and the old copy is left behind to
+/// double-report.
+#[test]
+fn a_sort_on_a_written_element_type_never_reaches_this_gate() {
+    let src = crate::source::Source::new(
+        "scratch.hero".to_string(),
+        "record Point\n    x: i64\n    y: i64\n\nfunction main()\n    ps = [Point(x: 1, y: 2)]\n    \
+         print(len(sort(ps)))\n"
+            .to_string(),
+    );
+    let parsed = crate::syntax::parse(&src);
+    let resolved = crate::resolve::resolve(&parsed.ast, &src);
+    let checked = crate::types::check(&parsed.ast, &resolved, &src);
+    let codes: Vec<&str> = checked.diagnostics.iter().map(|d| d.code.as_str()).collect();
+    assert_eq!(
+        codes,
+        ["unordered_element"],
+        "`sort` on `[Point]` is the CHECKER's since panel 068 R2, at exit 1 on the author's \
+         line. If this list is empty the program reaches `emit/builtins.rs`'s backstop and the \
+         author is told `heroes check` was happy; if it has two entries, the rule was moved and \
+         the old copy left behind, and one mistake is reported twice."
     );
 }
 
@@ -464,9 +506,13 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
         "    x: i64\n",
         "    y: i64\n",
         "\n",
+        // The generic route, since panel 068 moved the direct one to the checker.
+        "function firstof<A>(xs: [A]) -> A\n",
+        "    ys = sort(xs)\n",
+        "    return ys[0]\n",
+        "\n",
         "function main()\n",
-        "    ps = [Point(x: 1, y: 2)]\n",
-        "    print(len(sort(ps)))\n",
+        "    print(firstof([Point(x: 1, y: 2)]).x)\n",
         "    us: [()] @ []\n",
         "    print(len(us))\n",
     ));
@@ -491,11 +537,11 @@ fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
         "record Point\n",
         "    x: i64\n",
         "\n",
+        "function thrice<A>(xs: [A]) -> i64\n",
+        "    return len(sort(xs)) + len(sort(xs)) + len(sort(xs))\n",
+        "\n",
         "function main()\n",
-        "    ps = [Point(x: 1)]\n",
-        "    print(len(sort(ps)))\n",
-        "    print(len(sort(ps)))\n",
-        "    print(len(sort(ps)))\n",
+        "    print(thrice([Point(x: 1)]))\n",
     ));
     // Three calls, and `sort` on a record is named ONCE.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
