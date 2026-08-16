@@ -72,13 +72,26 @@ mod tests {
     fn every_name_the_spec_offers_as_a_builtin_exists() {
         let text = spec();
         let start = text.find("Built-ins:").expect("the built-in list must exist");
-        // The list ends where its own terminating sentence begins. Using the blank
-        // line instead would swallow the prose after it, and at M-strings-ownership that prose names
-        // a *type* in a code span ("An `f64` always prints a point or exponent").
-        let end = text[start..]
-            .find("None of these names")
-            .or_else(|| text[start..].find("\n\n"))
-            .map_or(text.len(), |at| start + at);
+        // **The list ends where its own sentence ends** — the first `.` outside a
+        // code span. It used to end where the *next* sentence began, keyed on the
+        // literal text "None of these names", with a blank line as the fallback and
+        // a comment saying the fallback was already known to be wrong (it swallows
+        // the prose after it, which names a *type* in a code span).
+        //
+        // That is CLAUDE.md §11's shape exactly, and it expired the way §11 says a
+        // premise expires — **in silence, with the comment still reading as
+        // correct**. Panel 081 spent that very sentence as clause A's named removal,
+        // measured at −10 and verified loud on four shapes; deleting it dropped this
+        // parser onto the fallback its own comment condemned, and it read `inf` out
+        // of the float-printing sentence and called it a missing built-in. Nothing
+        // about the language changed. A sentence somewhere else did.
+        //
+        // So the question is asked of the value now: this sentence's own full stop.
+        // The scan skips code spans because `print(...)` and `slice(from:, to:)`
+        // carry dots and colons of their own, and the list is one sentence by
+        // construction — every entry is separated by `·` and the last is followed by
+        // the period this finds.
+        let end = start + end_of_sentence(&text[start..]);
         // Parenthesised prose *outside* a code span is not part of the list — the
         // `slice(from:, to:)` entry gained "(`to` excluded)" at M-strings-ownership (panel 021), and
         // `to` is a word about the built-in rather than the name of one. Code spans
@@ -92,6 +105,18 @@ mod tests {
             .filter(|name| !name.is_empty() && !name.contains(' '))
             .collect();
         assert!(listed.len() > 10, "the list looks truncated: {listed:?}");
+        // **The delimiter is pinned at both ends, and this is the half that was
+        // missing.** `len() > 10` passes just as happily on a sentence that ends
+        // early, so a delimiter that quietly shortened the list would shrink this
+        // test's coverage and stay green — which is how the previous delimiter's
+        // fallback would have failed if the panel's removal had not made it fail
+        // loudly instead. `range` is the last entry by construction.
+        assert_eq!(
+            listed.last().map(String::as_str),
+            Some("range"),
+            "the built-in list no longer ends at `range` — the sentence delimiter \
+             found the wrong full stop, and every name after it is now unchecked: {listed:?}"
+        );
         for name in listed {
             let bare = name.split('(').next().unwrap_or(&name).to_string();
             assert!(
@@ -99,6 +124,29 @@ mod tests {
                 "the spec offers `{bare}` and the compiler has no such built-in"
             );
         }
+    }
+
+    /// The offset just past this sentence's terminating `.` — counting only full
+    /// stops **outside** a code span, because `print(...)` is not the end of
+    /// anything. Falls back to the whole slice if the sentence never terminates,
+    /// which the caller's `listed.len() > 10` assertion then catches.
+    fn end_of_sentence(text: &str) -> usize {
+        let mut in_span = false;
+        let mut chars = text.char_indices().peekable();
+        while let Some((at, c)) = chars.next() {
+            match c {
+                '`' => in_span = !in_span,
+                '.' if !in_span => {
+                    let next_is_break =
+                        chars.peek().is_none_or(|(_, n)| n.is_whitespace());
+                    if next_is_break {
+                        return at;
+                    }
+                }
+                _ => {}
+            }
+        }
+        text.len()
     }
 
     /// Drop every `(…)` group that is not inside a code span.

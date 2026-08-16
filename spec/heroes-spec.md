@@ -174,9 +174,9 @@ Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.
-None of these names may be redeclared. `print` writes its values with no
+`print` writes its values with no
 separator and exactly one trailing newline. A float prints a point or
-exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`.
+exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`; a `bool` prints `true` or `false`.
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
 after the program name) · `exit(code: i64)` (ends the program).
