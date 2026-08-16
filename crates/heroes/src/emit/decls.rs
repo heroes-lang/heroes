@@ -78,6 +78,7 @@ pub(super) fn prelude(
     // **The struct's fields before the signatures that pass one**, so a reader of
     // the emitted unit meets the layout claim before the call that depends on it.
     extern_record::extern_record_assertions(w, ast, checked, names, src);
+    super::extern_union::union_assertions(w, program, ast, checked, names, src);
     extern_assert::extern_assertions(w, program, ast, checked, names, src);
     // And the half a `_Generic` cannot ask: what the header *accepts* (panel 052).
     // After the assertions rather than beside them, because the two answer

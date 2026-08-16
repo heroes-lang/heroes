@@ -20,6 +20,7 @@ use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 
 use super::extern_record::FIELD_ASSERTION;
+use super::extern_union::UNION_ASSERTION;
 use super::ffi_declared::FAILED;
 
 /// `_Static_assert(_Generic(&((Color *)0)->r, uint8_t *: 1, …), "heroes-ffi-field
@@ -200,3 +201,61 @@ fn record_at_line(
     })
 }
 
+
+/// A group's `record` over a C **union**, at the two operations that would answer
+/// wrongly: constructing one, and comparing or hashing one (panel 073).
+///
+/// The assertion `extern_union.rs` writes says *these declared fields do not
+/// overlap*, and only a union can fail it. What the author gets back names the
+/// fields that share an address and the route that still works, because the route
+/// is the finding: **reading is untouched**, and a `record` naming one member of
+/// the union binds it soundly — which is how five other languages bind one too.
+///
+/// The same `declaration()` narrowing as every other class in this file: the name
+/// is recovered from our own marker and then asked whether *this program* declared
+/// it inside an `extern` group, so a struct nobody declared that way stays exit 2
+/// and the compiler's.
+pub(super) fn union_record(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    if !line.contains(FAILED) {
+        return None;
+    }
+    let rest = line.split(UNION_ASSERTION).nth(1)?;
+    let mut parts = rest.split_whitespace();
+    let type_name = parts.next()?;
+    let members: Vec<&str> = parts.take_while(|p| !p.contains('"')).collect();
+    let (header, span) = record_declaration(ast, src, type_name)?;
+    let named = match members.as_slice() {
+        [] => String::new(),
+        [one] => format!("`{one}`"),
+        [a, b] => format!("`{a}` and `{b}`"),
+        many => format!("`{}` and `{}`", many[..many.len() - 1].join("`, `"), many[many.len() - 1]),
+    };
+    Some(
+        Diagnostic::new(
+            "ffi_union_field",
+            format!(
+                "`{type_name}` is a `union` in `{header}`, so {named} are the same bytes — building one or comparing it would answer about whichever was written last"
+            ),
+            span,
+        )
+        .with_note(
+            "a `record` over a union may name ONE member, and that binds it soundly: reading through it is correct and construction sets the member it names. Two or more is what has no answer — C keeps the last one written, so `==` and `hash` walk the same bytes twice".to_string(),
+        ),
+    )
+}
+
+/// The declaration's own name span, for a class whose fault is the declaration
+/// rather than any one field.
+fn record_declaration(
+    ast: &Ast,
+    src: &Source,
+    type_name: &str,
+) -> Option<(String, crate::source::Span)> {
+    ast.decls.iter().find_map(|decl| {
+        if src.slice(decl.name) != type_name {
+            return None;
+        }
+        let DeclKind::Record { header: Some(header), .. } = &decl.kind else { return None };
+        Some((src.slice(*header).trim_matches('"').to_string(), decl.name))
+    })
+}

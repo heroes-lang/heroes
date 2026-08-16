@@ -63,6 +63,7 @@ mod ffi_narrowed;
 mod extern_probe;
 mod extern_complete;
 mod extern_record;
+mod extern_union;
 mod externs;
 mod fallible;
 pub mod ffi;
