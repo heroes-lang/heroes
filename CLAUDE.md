@@ -260,6 +260,20 @@ author is the one person this project is being built for — §1.1 makes their
 comprehension **the objective**, so an explanation they bounce off is the
 objective missing, not a communication style.
 
+**And plain is not flat** (author instruction 2026-08-16: *"ti voglio un po' più
+emozionante nel dirmi le cose positive e anche quelle negative — stiamo facendo un
+nuovo linguaggio"*). The register the author asked for is plain **and alive**: when
+something works, say so like it matters, because it does — a defect that printed a
+false number at exit 0 and now stops on the author's own line is a *win*, not a
+line item. When something is bad, say that with the same force and no cushioning:
+a wrong premise in a brief, a rule that would have broken a working program, a
+number that turned out to be invented. **The two halves are one instruction** — an
+assistant that only gets loud about good news is a flatterer, and its enthusiasm
+stops carrying information. What this does not license is inventing either: the
+feeling attaches to a measurement, never to a hope, and *"this is huge"* about
+something unmeasured is worse than a flat sentence, because it spends the author's
+trust on nothing. The excitement is for what was **run**.
+
 Two things this does **not** relax. Everything **written into the repository**
 stays English and stays precise (this section's first line): a journal, a panel
 file and a commit body are records, and a record that trades exactness for
