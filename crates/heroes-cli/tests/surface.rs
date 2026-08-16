@@ -1049,6 +1049,47 @@ fn a_failing_test_shows_the_expression_and_both_sides() {
     assert_eq!(code(&out), 1, "a failing test is the program being wrong");
 }
 
+/// **FIXED DEFECT, 2026-08-16: the expression came back with its brackets eaten.**
+///
+/// `assert (1 == 1) == (1 == 2)` reported `assert failed: 1 == 1) == (1 == 2`,
+/// which spec:190 — *"shows the source expression"* — is not. The cause is that a
+/// parenthesised operand's span covers what is **inside** the brackets, so the
+/// outer `==`'s span ran from the left operand's first token to the right
+/// operand's last and stepped over both on the way. The test above could not see
+/// it, because `twice(2) == 5` has no parentheses at the top level.
+///
+/// The lowering slices the **statement** now and strips the keyword, so no
+/// character the author typed can be lost. The comment case is here because that
+/// is what the trailing trim is for: a statement's span reaches a trailing
+/// comment, and a comment is not part of the expression.
+#[test]
+fn a_failing_assert_keeps_the_brackets_the_author_typed() {
+    let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    let file = dir.join("build/surface-assert-brackets.hero");
+    std::fs::create_dir_all(dir.join("build")).expect("build/ is writable");
+    std::fs::write(
+        &file,
+        "test \"brackets\"\n    assert (1 == 1) == (1 == 2)\n\n\
+         test \"comment\"\n    assert 1 == 2    # this must not be shown\n",
+    )
+    .expect("writable");
+    let out = heroes(&["test", "build/surface-assert-brackets.hero"]);
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    let _ = std::fs::remove_file(&file);
+
+    assert!(
+        said.contains("assert failed: (1 == 1) == (1 == 2)"),
+        "the brackets the author typed are gone: {said}"
+    );
+    assert!(said.contains("left:  true") && said.contains("right: false"), "{said}");
+    assert!(
+        said.contains("assert failed: 1 == 2\n"),
+        "the trailing comment reached the message: {said}"
+    );
+    assert!(!said.contains("must not be shown"), "{said}");
+    assert_eq!(code(&out), 1);
+}
+
 /// One process per test, which is what makes the report complete: an `assert` is
 /// a panic, so a runner that called them in sequence would stop at the first
 /// failure and hide every test after it.

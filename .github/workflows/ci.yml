@@ -175,7 +175,26 @@ jobs:
       # covers — see the note in `corpus.rs`.
       - name: Report the toolchain
         if: runner.os == 'Windows'
-        run: clang --version
+        # `llvm-pdbutil` is asked about because of what it would settle, and it is
+        # asked as a QUESTION rather than asserted (CLAUDE.md §1: a negative claim
+        # rests on the searcher's vocabulary rather than on the world).
+        #
+        # design.md §2 promises lldb breaks on and steps through `.hero` lines.
+        # `lldb_breaks_on_a_hero_line` executes that on Darwin and Linux and skips
+        # here, because LLVM's `lldb.exe` exits `0xC0000135` before running a
+        # command — a Python DLL, the installer's known gap. The **mapping** itself
+        # is covered on all three legs now, by
+        # `no_generated_line_points_past_or_between_the_authors_lines`, which reads
+        # the emitted C rather than a debugger. What is uncovered here is the
+        # debugger leg, and the cheapest way back in would be `llvm-pdbutil`, which
+        # reads CodeView out of the 7.7 MB `.pdb` `-g` already writes and — unlike
+        # `lldb.exe` — has no reason to link Python. Nobody has checked whether the
+        # runner carries it, so the run says so instead of a document guessing.
+        # `|| true`: this step reports, it does not gate.
+        run: |
+          clang --version
+          where llvm-pdbutil 2>NUL || echo "llvm-pdbutil: not on PATH (DECIDE.md, the third CI leg)"
+          where lldb 2>NUL || echo "lldb: not on PATH"
 
       - name: Build the compiler
         run: cargo build

@@ -33,7 +33,7 @@ pub(super) fn assert(
     expr: ExprId,
     span: Span,
 ) {
-    let text = source_text(b, checked, src, ast.exprs[expr.0 as usize].span, span);
+    let text = source_text(b, checked, src, span, span);
     let (cond, sides) = condition(b, ast, resolved, checked, src, expr);
 
     // **A counted operand travels through a slot, not across the edge.**
@@ -119,6 +119,23 @@ fn condition(
 
 /// The asserted expression, as the author wrote it. Interned like any other
 /// string, so the emitter has nothing special to do with it.
+/// The asserted expression **as the author wrote it**, which is the statement's own
+/// text with the keyword taken off the front.
+///
+/// **It used to be the expression node's span, and that lost the parentheses.**
+/// Measured 2026-08-16: `assert (1 == 1) == (1 == 2)` reported
+/// `assert failed: 1 == 1) == (1 == 2` — spec:190 says an `assert` failure "shows
+/// the source expression", and that is not it. The cause is that a parenthesised
+/// operand's span covers what is *inside* the parentheses, so the outer `==`'s span
+/// runs from the left operand's first token to the right operand's last and steps
+/// over both brackets on the way. The expression node is the wrong thing to slice,
+/// because what the reader is looking at is a line of text rather than a tree.
+///
+/// Taking the statement instead cannot lose a character the author typed. The
+/// keyword is fixed and always leading, so stripping it is a fact about the value
+/// rather than a guess about the shape (CLAUDE.md §11), and the trailing trim is
+/// what keeps a comment after the expression — the statement span reaches one — out
+/// of the message.
 fn source_text(
     b: &mut Lowering,
     checked: &Checked,
@@ -126,7 +143,9 @@ fn source_text(
     text: Span,
     span: Span,
 ) -> ValueId {
-    let id = b.intern(src.slice(text).to_string());
+    let written = src.slice(text);
+    let expression = written.strip_prefix("assert").unwrap_or(written).trim();
+    let id = b.intern(expression.to_string());
     b.emit(Op::Const(Const::Str(id)), checked.types.str(), span)
 }
 
