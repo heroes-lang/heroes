@@ -52,6 +52,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 | `[T]` | dynamic array, indices from 0 |
 | `{K: V}` | map |
 | `T?` | fallible: a `T`, or an error |
+| `ptr` `cstr` | an opaque pointer and a C string; `nullptr` is the null of both |
 
 - No implicit conversions, widths included: `a + b` needs both the same type, and
   `1 + 2.0` is an error. Convert with `to_<type>`, and the name says whether it
@@ -88,6 +89,8 @@ Signatures are always explicit; inference is local only. Empty container
 literals need an annotation: `xs: [i64] = []` · `m: {str: i64} @ {}`.
 All bindings are initialised. An unused binding or parameter is a compile
 error; a read is a use and a write is not, except through an `@` parameter.
+A line that computes a value must use it: bind it, or discard it on purpose with
+`_ = f(x)`.
 Shadowing is a compile error.
 
 ## Functions and calls
@@ -117,8 +120,8 @@ value = match e
 ```
 - Exhaustive or compile error. `_` as a catch-all arm is FORBIDDEN on
   variants (allowed on `i64`/`str`, where exhaustiveness is impossible).
-- `_` names anything you do not use: a payload (`.num _ => 0`), a parameter, a
-binding (`_ = f(x)`). It binds nothing, so it is never unused and may repeat.
+- `_` names anything you do not use: a payload (`.num _ => 0`), a parameter. It
+binds nothing, so it is never unused and may repeat.
 - `|` joins patterns: `.plus | .times => f()`.
 - An arm's body is one statement, inline, or an indented block; a block's value
   is its last expression. A `match` may stand as a statement. A jump (`return`,
@@ -162,8 +165,9 @@ Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → 
 `s.chars()`, which yields single-character `str`. Multi-line literals
 separate elements by newline; single-line by comma.
 
-Value semantics has a price: `+` on `str` copies both sides and `push` copies the
-array, so accumulating either in a loop is quadratic. `join` and `repeat` build in one pass.
+Value semantics has a price: `+` on `str` copies both sides and `push` returns a
+copy — `xs @ xs.push(4)` — so accumulating either in a loop is quadratic. `join`
+and `repeat` build in one pass.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
 `chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number or `str`) ·
@@ -219,7 +223,6 @@ map key are compile errors — for it and for any value holding it.
 A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
 usually there. How much more is the platform's answer, not this language's.
 
-A group's `constant` has no body: the header holds the value. `ptr` is an opaque
-pointer whose only literal is `nullptr`, `cstr` a C string, `s.cstr()` lends a
+A group's `constant` has no body: the header holds the value. `s.cstr()` lends a
 `str` to C to read and `c.to_str()` copies one back — test `c == nullptr` first,
 because converting one aborts. A C out-parameter is an `@` parameter.
