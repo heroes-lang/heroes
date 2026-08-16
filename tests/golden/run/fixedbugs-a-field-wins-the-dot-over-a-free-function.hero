@@ -1,0 +1,58 @@
+# §4.11's order, asked once instead of twice (panel 079).
+#
+# **Two passes answered the same question and disagreed, and the disagreement had
+# two faces.** `types/ufcs.rs` looks for a FIELD first and falls back to a free
+# function — design.md:1534 states that order and that file's own doc says it "is
+# not an implementation detail". `ir/calls.rs` did not: it asked the RESOLVER,
+# which answers `Ref::Top` whenever a free function of that name exists, whether
+# or not the receiver has the field.
+#
+# Face one, measured 2026-08-16: with matching result types the program below
+# printed **50007** — `50 * 1000 + 7`, the free function — while the checker had
+# typed the expression from the field, whose answer is **100**. Exit 0. No
+# diagnostic anywhere.
+#
+# Face two: make the two result types differ and the checker types the expression
+# from the field while the lowering calls the function, so the only thing that
+# notices is clang — *"assigning to 'int64_t' from incompatible type 'HeroStr'"*,
+# **exit 2**, the compiler blaming itself for a program the author is entitled to
+# write. A type confusion the type system did not catch.
+#
+# **The third line is the other half of the same repair.** `a.g(50)` on a matched
+# case payload was `error[unknown_function]: Step.apply has no field g` — about a
+# payload that declares `g` two lines above. `types/construct.rs` matched
+# `Ty::Named` only, while `ir/layout.rs` had carried the `Ty::Case` arm since panel
+# 068; design.md §4.2:845 says a variant case **is** a small record, so the checker
+# was the half that had not caught up. §4.17 forbids exactly that message: it named
+# a repair that does not exist, and a reader acting on it edits a correct
+# declaration.
+#
+# Swept before landing: **zero** of 268 corpus files declare a function-typed field
+# whose name is also a top-level function, so no existing program changes meaning.
+#
+# Adversarial case — UNVERIFIED, pending debrief.
+
+function double_it(n: i64) -> i64
+    return n * 2
+
+record Holder
+    tag: i64
+    g: (function(i64) -> i64)
+
+variant Step
+    apply
+        g: (function(i64) -> i64)
+    stop
+
+# The free function that used to win the dot. It must not.
+function g(h: Holder, n: i64) -> i64
+    return n * 1000 + h.tag
+
+function main()
+    s = Holder(tag: 7, g: double_it)
+    print(s.g(50))
+    print(g(h: s, n: 50))
+    v: Step @ .apply(g: double_it)
+    match v
+        .apply a => print(a.g(50))
+        .stop    => print(0)

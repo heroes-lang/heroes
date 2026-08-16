@@ -58,6 +58,7 @@ use crate::types::{Checked, TyId};
 mod asserts;
 mod build;
 mod calls;
+mod ufcs;
 mod control;
 mod decls;
 pub mod mono;

@@ -132,7 +132,7 @@ pub(super) fn expr(
             calls::call(b, ast, resolved, checked, src, *callee, args, ty, span)
         }
         ExprKind::Method { receiver, name, args } => {
-            calls::method(b, ast, resolved, checked, src, id, *receiver, *name, args, ty, span)
+            super::ufcs::method(b, ast, resolved, checked, src, id, *receiver, *name, args, ty, span)
         }
         ExprKind::Case { name, args } => {
             calls::case(b, ast, resolved, checked, src, *name, args, ty, span)

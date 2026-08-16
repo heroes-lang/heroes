@@ -216,6 +216,16 @@ fn check_named_fields(
 
 
 /// A field of the receiver whose type is a function — §4.11's first lookup.
+///
+/// **A variant case's payload answers this too, and it did not until panel 079**
+/// (design.md §4.2:845 — *"a variant case **is** a small record, so it is written
+/// as one — no special case"*). `Ty::Named` alone fell through to UFCS, so
+/// `a.g(50)` on a matched payload reported *"`Step.apply` has no field `g`"*
+/// about a payload that declares `g` — a message asserting a fiction, which is
+/// the one thing §4.17 forbids. `ir/layout.rs::field_type` had carried the
+/// `Ty::Case` arm since panel 068 built it for the record field; this predicate
+/// is what had not caught up, which is why the defect was a **refusal** rather
+/// than a wrong answer.
 pub(super) fn field_of_function_type(
     checker: &mut Checker,
     ast: &Ast,
@@ -224,8 +234,17 @@ pub(super) fn field_of_function_type(
     receiver: TyId,
     name: &str,
 ) -> Option<TyId> {
-    let Ty::Named(decl) = checker.out.types.get(receiver) else { return None };
-    let DeclKind::Record { fields, .. } = &ast.decls[decl as usize].kind else { return None };
+    let fields: &[crate::syntax::Field] = match checker.out.types.get(receiver) {
+        Ty::Named(decl) => match &ast.decls[decl as usize].kind {
+            DeclKind::Record { fields, .. } => fields,
+            _ => return None,
+        },
+        Ty::Case(decl, case) => match &ast.decls[decl as usize].kind {
+            DeclKind::Variant { cases } => &cases[case as usize].fields,
+            _ => return None,
+        },
+        _ => return None,
+    };
     let found = fields.iter().find(|f| src.slice(f.name) == name)?;
     let ty = lower::ty(checker, ast, resolved, found.ty);
     match checker.out.types.get(ty) {

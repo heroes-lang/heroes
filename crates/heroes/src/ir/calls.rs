@@ -103,102 +103,6 @@ pub(super) fn call(
 /// resolver already decided which: a built-in, a top-level function, or a *field*
 /// of the receiver holding a function value.
 #[allow(clippy::too_many_arguments)]
-pub(super) fn method(
-    b: &mut Lowering,
-    ast: &Ast,
-    resolved: &Resolved,
-    checked: &Checked,
-    src: &Source,
-    at: ExprId,
-    receiver: ExprId,
-    name: Span,
-    args: &[AstArg],
-    ty: TyId,
-    span: Span,
-) -> ValueId {
-    // The resolver filed the method name's meaning at the `Method` node itself:
-    // the name after the dot has no `ExprId` of its own (`resolve::Ref`).
-    let target = resolved.use_at(at);
-    // The qualified form, lowered as the plain call it is: the receiver names a
-    // module, which is erased here exactly as it is erased in the C.
-    if resolved.use_at(receiver) == Ref::Module {
-        if let Ref::Top(decl) = target {
-            let run = lower_args(b, ast, resolved, checked, src, args);
-            // A record is constructed, not called — the same split `call` makes,
-            // and the reason the module receiver is erased *here* rather than by
-            // pretending it was never written.
-            if matches!(ast.decls[decl as usize].kind, DeclKind::Record { .. }) {
-                return b.emit(Op::Construct { shape: Shape::Record(decl), args: run }, ty, span);
-            }
-            return emit_call(b, callee_of(ast, decl), run, false, ty, span);
-        }
-    }
-    if let Ref::Builtin(index) = target {
-        let builtin = BUILTINS[index as usize].name;
-        // `.must()`, `.default(v)` and `.is_err()` are branches, not calls
-        // (Part 5): they read a tag and choose an edge.
-        if fallible::is_operation(builtin) {
-            return fallible::operation(
-                b, ast, resolved, checked, src, builtin, receiver, args, ty, span,
-            );
-        }
-    }
-    match target {
-        Ref::Builtin(index) => {
-            let builtin = BUILTINS[index as usize].name;
-            // `s.cstr()` — the same cast the plain-call form makes, and the shape
-            // every program actually writes (§4.11's UFCS). Taken before the
-            // arguments are lowered, because a cast has exactly one operand and
-            // it is the receiver.
-            if builtin == "cstr" {
-                let operand = exprs::expr(b, ast, resolved, checked, src, receiver);
-                return b.emit(Op::Cast { kind: CastKind::StrToCstr, operand }, ty, span);
-            }
-            let run = with_receiver(b, ast, resolved, checked, src, receiver, args);
-            emit_call(b, Callee::Builtin(index), run, is_variadic(builtin), ty, span)
-        }
-        Ref::Top(decl) => {
-            let run = with_receiver(b, ast, resolved, checked, src, receiver, args);
-            emit_call(b, callee_of(ast, decl), run, false, ty, span)
-        }
-        // `h.cb(n)` where `cb` is a field holding a function value: the dot is a
-        // *field read*, not a receiver, so the arguments are only the written ones
-        // (§4.11's first lookup, §4.13).
-        // A module receiver never reaches here — the branch above returns.
-        Ref::Module | Ref::Local(_) | Ref::Unresolved => {
-            let owner = checked.expr_types[receiver.0 as usize];
-            let base = exprs::expr(b, ast, resolved, checked, src, receiver);
-            let field = layout::field_index(ast, checked, src, owner, name);
-            // **The field's own type, read from the declaration that wrote it.**
-            // This used to be `ty` — the *call's result* — under a comment saying
-            // nothing here could intern a function type, which was true and
-            // beside the point: the type is already interned, in the record's
-            // declaration, and `field_type` reads it. The comment's real premise
-            // was *"function values land at M-generics-library, which is where
-            // this path is first exercised"*, and that expired when the milestone
-            // landed. Measured: `h.f(21)` on `record Holder { f: (function(i64)
-            // -> i64) }` emitted `int64_t t4 = t3.f_f;` and then called it,
-            // giving `incompatible pointer to integer conversion` at **exit 2** —
-            // the compiler blaming itself for a correct program (panel 068 F8).
-            //
-            // The fallback is the old behaviour and stays deliberately: a field
-            // the checker could not resolve has already been reported, and
-            // lowering must stay quiet rather than invent a second message.
-            let function_ty =
-                layout::field_type(ast, checked, src, owner, name).unwrap_or(ty);
-            let target = match field {
-                Some(index) => b.emit(Op::Field { base, index }, function_ty, span),
-                None => b.emit(Op::Missing, function_ty, span),
-            };
-            let run = lower_args(b, ast, resolved, checked, src, args);
-            emit_call(b, Callee::Indirect(target), run, false, ty, span)
-        }
-    }
-}
-
-/// `.plus`, `.num(v: 12)` — a variant case, its variant coming from the type the
-/// checker recorded (§4.5's ⇐ mode).
-#[allow(clippy::too_many_arguments)]
 pub(super) fn case(
     b: &mut Lowering,
     ast: &Ast,
@@ -224,7 +128,7 @@ pub(super) fn case(
 /// call print(x)` is a hard clang error and raylib is almost entirely
 /// void-returning, so a `()` result produces no destination at all — the value
 /// handed back is the function-wide unit, which no instruction defines.
-fn emit_call(
+pub(super) fn emit_call(
     b: &mut Lowering,
     callee: Callee,
     args: Args,
@@ -246,7 +150,7 @@ fn emit_call(
 /// and copies out, so it needs to know where to write back (§4.8). Everything
 /// else is an ordinary value, and the label is dropped here — it was checked
 /// against the parameter at this position and carries no further meaning.
-fn lower_args(
+pub(super) fn lower_args(
     b: &mut Lowering,
     ast: &Ast,
     resolved: &Resolved,
@@ -269,7 +173,7 @@ fn lower_args(
 
 /// The UFCS shape: the receiver becomes argument zero. §4.11 forbids this where
 /// the first parameter is `@`, so the receiver is always a value.
-fn with_receiver(
+pub(super) fn with_receiver(
     b: &mut Lowering,
     ast: &Ast,
     resolved: &Resolved,
@@ -295,6 +199,6 @@ fn with_receiver(
 /// The one call shape clang verifies nothing about (§4.19). `print` today; at M-ffi-ladder
 /// it is `TextFormat` and `sqlite3_mprintf`, where the ffi-pragmatist measured a
 /// wrong argument count compiling, running, and printing garbage.
-fn is_variadic(name: &str) -> bool {
+pub(super) fn is_variadic(name: &str) -> bool {
     name == "print"
 }
