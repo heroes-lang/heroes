@@ -409,3 +409,38 @@ precedent produced the correction that Nim does **A and B**, not A instead of B,
 that every numbered silent layout bug sits in the camp that owns its own layout. A
 soundness lane would have had neither, and would have shipped a +137 clause delivering
 62.
+
+## Author's verdict
+
+**Ratified as it stands, 2026-08-16** (author instruction *"ratifica e sistema
+tutto"*, blanket — the fifth of its kind, and the recap of what had already
+landed was verified against the tree before the yes was recorded, per CLAUDE.md
+§1). The mechanism, the complete field list and the −22 §12 repair that funded
+the clause all stand as written above.
+
+**Two clauses of this sitting are NOT ratified, because the author overturned
+them himself the day after it sat**, and a ratification that re-asserted them
+would rewrite the record rather than close it:
+
+- **"`f32` stays struck"** is dead. `f32` entered 2026-08-15 by instruction
+  (*"e aggiungi il tipo f32 basta storie"*). It landed in **this sitting's own
+  measured shape** rather than the instruction's — no `Ty::F32`, but
+  `Ty::Float(FloatKind)`, because a bare variant beside `Ty::F64` measured 2
+  rustc errors and 19 silent sites across 15 files. On landing the rename
+  produced exactly 2 exhaustiveness errors, so nineteen sites had been sitting
+  inside a `_`, and two of those were silently wrong at exit 0:
+  `crosses_the_boundary` answering *"an `f32` cannot cross"*, and `structural.rs`
+  generating an `==` that skips the field. `HERO_RUNTIME_ABI` 13 → 14, as this
+  sitting's compiler-engineer priced it.
+- **The `f64`-over-`float` field clause** — the sentence this sitting called
+  *"the one clause that makes the last two survivable"* — was removed the same
+  day under §12 (DESIGN-LOG 2026-08-15). Once `f32` exists the field assertion
+  asks type identity, so the compiler began refusing `x: f64` over a C `float`
+  and the spec was permitting what the compiler refused. `SPEC_TOKENS`
+  3347 → 3329. The clause entered and left inside one day, and the ledger says
+  so rather than recording only the net.
+
+What that leaves is the sitting minus a deferral its own author reversed, which
+is a smaller and truer thing than the sitting as written. Q3's own diagnosis is
+why the reversal was right: **inside a struct there is no prototype**, so the
+width that is a convenience at a signature is the layout at a field.

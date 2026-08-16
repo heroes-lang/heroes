@@ -128,3 +128,27 @@ record independent of this proposal: `unknown_escape`'s `certain` fix has
 two plausible intents for escape-like inputs, and §8's tag semantics say
 that is a `guess` — repaired for `\r` by this landing, and worth a look for
 the general class.
+
+## Author's verdict
+
+**Ratified in full, 2026-08-16** (author instruction *"ratifica e sistema
+tutto"*, blanket). All ten items of the resolution stand as landed: the spec edit
+and its ledger row, the lexer table arm, `ir/print.rs`'s escape so dumps stop
+carrying raw bytes, the tests, the hand-edited `escapes.expected` with
+`UPDATE_GOLDEN` unused, the design.md amendments keeping `\0`/`\xNN`/`\u{…}`/
+octal frozen on the NUL ground, the port's four mirrored files, and the appended
+records.
+
+**The coherence condition is ratified as the substance rather than as a rider.**
+`raw_carriage_return` is what makes this sitting more than a table row: the
+grounds that admit the escape condemn the invisible second spelling, and the
+escape is what made the repair writable for the first time.
+
+**And the process note is ratified with it.** The spec-warden's veto adjudicated
+only the coordinator's own false parity premise, and that seat lifted it on its
+second ruling — after verifying the other seats' grounds itself, including
+executing the raw-CR trap live rather than reasoning about it. A veto that
+investigates its own basis and withdraws is the mechanism working. It is worth
+recording here because 066, 067 and 068 were each briefed with something false
+and the seats caught all three; this is the sitting where the catching was done
+by the seat that had raised the objection.
