@@ -352,7 +352,7 @@ function calls which.
 ## Knot A, written whole (2026-08-16)
 
 `selfhost/grammar_expr.hero` — **all five files of knot A** (`expr`, `primary`,
-`control`, `stmt`, `name_stmt`; 1025 Rust lines) as **one module** of 872,
+`control`, `stmt`, `name_stmt`; 1025 Rust lines) as **one module** of 1129,
 under §11's amended rule, carrying the map the rule asks for: which Rust files
 it replaces, the call ring, the three entry points, and what is not there yet.
 16 test blocks, and they read real token streams and render the tree back
@@ -382,8 +382,11 @@ port measured, now at scale.
 **The rule's exchange is paid**: the module doc names the ring, the six entry
 points, the one edge that leaves the knot (`parse_type`, which is why that file
 stays separate), and the three name-shaped lines that are the statement half's
-whole difficulty. 872 lines against 1025 in Rust, and a reader who opens it
-finds a map first.
+whole difficulty. 1129 lines against Rust's 1025 — the port is *longer*, not shorter, and the
+reason is worth stating: every `_ =>` the Rust code leans on becomes a named
+list of cases (§4.7), and every `Option` becomes a `T?` whose miss carries a
+code. Both are the language charging for what Rust leaves implicit. A reader
+who opens it finds a map first.
 
 ## Language features the port exercised against their own compiler
 
