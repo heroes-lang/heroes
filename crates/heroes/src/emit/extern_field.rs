@@ -113,6 +113,41 @@ pub(super) fn assertion(
     // `ffi_narrowed.rs` quotes cgo's reason for never doing that.
     if let Ty::Fixed(inner, n) = checked.types.get(ty) {
         let elem = c_spelling(checked, names, inner)?;
+        // **An integer ELEMENT asks width and sign too, and that is panel 064's own
+        // argument arriving one type late** (panel 081 R4, ffi-pragmatist). The
+        // scalar branch below says it in full: C's integer ABI is width and sign,
+        // and C's type identity is finer than its ABI. Nobody carried it across to
+        // the element of an array, so this row went on asking `_Generic` identity —
+        // and C's `char` is a **third type**, distinct from both `signed char` and
+        // `unsigned char`, so `char[N]` matched `int8_t (*)[N]` at none of the eight
+        // widths.
+        //
+        // Measured over eleven POSIX headers plus raylib, SDL3, sqlite3, zlib and
+        // curl: **26 of 81 fixed-array struct fields are `char[N]`** — a third of
+        // them — and `uname()` was unreachable at any price, its `partial` escape
+        // hatch refused as `empty_record` because the struct is nothing but those
+        // fields. Bug-proof and not complete, and CLAUDE.md §12 asks the FFI for
+        // both.
+        //
+        // The length stays **exact**, and asking it of the field's own element type
+        // is what keeps it sign-agnostic: `__typeof__(place[0])[n]` is `char[256]`
+        // when the header says `char` and `signed char[256]` when it says that, so
+        // the conjunct decides the *count* and never re-litigates the element. It
+        // sits after the tail measurement for panel 079's reason, unchanged — a
+        // flexible array member is refused by its own assertion first, and this one
+        // never evaluates `sizeof` of an incomplete type.
+        if matches!(checked.types.get(inner), Ty::Int(_)) {
+            return Some(format!(
+                "_Static_assert(sizeof({c_type}) - __builtin_offsetof({c_type}, {member}) != 0, \
+                 \"{FLEX_ASSERTION} {hero_name} {member}\");\n             \
+                 _Static_assert(__builtin_classify_type({place}[0]) == 1 \
+                 && sizeof({place}[0]) == sizeof({elem}) \
+                 && (((__typeof__({place}[0]))-1 < 0) == (({elem})-1 < 0)) \
+                 && __builtin_types_compatible_p(__typeof__({place}), \
+                 __typeof__({place}[0])[{n}]), \
+                 \"{FIELD_ASSERTION} {hero_name} {member}\");"
+            ));
+        }
         // **Two assertions, because one message cannot answer two questions**
         // (panel 079, discharging the ffi-pragmatist's panel-071 condition). The
         // tail measurement below is *defined* for a flexible array member — that

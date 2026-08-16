@@ -181,7 +181,8 @@ pub(super) fn ffi_field(checker: &mut Checker, ast: &Ast, src: &Source, ty: TyId
         Ty::Fallible(_) => "`T?` is this language's own two-word value and no header declares one: a C function reports failure in its result or an out-parameter (§4.19)",
         Ty::Unit => "`()` is a type rather than a value, so nothing can hold one — drop the field",
         Ty::Named(_) => "a record can hold another only if the header declares that one too: move it into this `extern` group, or declare the field `ptr` if C holds a pointer to it",
-        _ => "no C header can declare a field of this type",
+        // Was "no C header can declare a field of this type" — §11's false claim about the world; `tiffio.h` has `float d_mat[3][3]` (panel 081).
+        _ => "this group has no spelling for that: a field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed array of one",
     };
     let name = checker.show(ast, src, ty);
     let diagnostic = errors::ffi_field_type(&name, why, span);
