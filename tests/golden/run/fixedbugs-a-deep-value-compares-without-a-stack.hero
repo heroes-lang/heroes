@@ -1,0 +1,52 @@
+# A value too deep for the C stack is COMPARED without one (panel 076) — the
+# other half of `fixedbugs-a-deep-value-released-without-a-deep-stack.hero`.
+#
+# **The symptom was the worst this language can have**: exit 139, no output, no
+# diagnostic, no `hero_panic` line. `record Node { label: i64, children: [Node] }`
+# is the shape the specification itself invites — *"`children: [Node]` is a
+# tree"* — and `==` is documented as structural *"recursively"*, with no bound. A
+# reader who composes those two sentences got a segmentation fault.
+#
+# **Cause**: `hero_array_eq` called the element's `eq`, the generated `_eq` called
+# back into `hero_array_eq`, one C frame per level. The cliff was ~52 200 at `-O0`
+# — and it is **not a property of the program**: the same binary at the same depth
+# exits 0 in a plain environment and 139 with one 900 KB environment variable set,
+# because the environment is copied onto the stack at process start. `ulimit`
+# moves it too, and `-O2` moves it 2.6x, which means `heroes run` hid what
+# `heroes build` showed. That is why panel 076 refused a depth number outright.
+#
+# **Fix, 2026-08-16**: `runtime/parts/array.c` defers. `true` is the identity of
+# `&&`, so a nested `hero_array_eq` pushes its elementwise work, answers `true`
+# provisionally, and the outermost call drains the queue and ANDs the real answer
+# in. Zero lines in the compiler, so the Heroes port reproduces nothing.
+#
+# **What this case pins is CORRECTNESS, not merely survival**, because a wrong
+# `==` would be worse than a crash. The second comparison differs only at the
+# DEEPEST level — the last thing a LIFO drain reaches — and the nested-array pair
+# checks that an ordinary shallow answer did not change.
+#
+# Depth 60000 sits just past the measured -O0 cliff and keeps the case fast; the
+# fix was verified separately at 1 000 000.
+#
+# Adversarial case — UNVERIFIED, pending debrief.
+
+record Node
+    label: i64
+    children: [Node]
+
+function chain(depth: i64, tip: i64) -> Node
+    n: Node @ Node(label: tip, children: [])
+    i: i64 @ 0
+    while i < depth
+        n @ Node(label: i, children: [n])
+        i @ i + 1
+    return n
+
+function main()
+    a = chain(depth: 60000, tip: 0)
+    b = chain(depth: 60000, tip: 0)
+    print(a == b)
+    c = chain(depth: 60000, tip: 9)
+    print(a == c)
+    print([[1, 2], [3]] == [[1, 2], [3]])
+    print([[1, 2], [3]] == [[1, 2], [4]])

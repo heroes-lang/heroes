@@ -151,17 +151,97 @@ HeroArrayHeader *hero_array_push(const HeroArrayHeader *a, const void *elem) {
  *
  * The length check above it stays: two arrays of different lengths differ in
  * their contents, which is a fact about the values and not about their addresses. */
+/* **`==` is a conjunction, and that is what makes an unbounded comparison cost no
+ * emitter line at all** (panel 076, prototyped independently by two seats).
+ *
+ * A deep value used to SEGFAULT here: `Node { children: [Node] }` built a chain,
+ * `hero_array_eq` called the element's `eq`, the generated `_eq` called back into
+ * `hero_array_eq`, one C frame per level, exit 139 with no output. The cliff was
+ * ~52 200 at `-O0` and it is not a property of the program — the same binary at
+ * the same depth exits 0 in a plain environment and 139 with one 900 KB
+ * environment variable set, because the environment is copied onto the stack. So
+ * no depth NUMBER could ever have been honest, and panel 076 refused one.
+ *
+ * What lands instead needs no continuation, which is why the compiler-engineer's
+ * standing veto on rewriting `emit/structural.rs` is untouched by it: **`true` is
+ * the identity of `&&`**. A nested call may push its elementwise work, answer
+ * `true` provisionally — *nothing unequal yet, the rest is queued* — and let the
+ * OUTERMOST call drain the queue and AND the real answer in. The generated `_eq`
+ * never learns it was deferred, so the Heroes port reproduces nothing.
+ *
+ * It is sound because the checker makes it so, measured rather than assumed:
+ * `record Node { child: Node }`, `child: Node?` and a self-referencing variant are
+ * all `error[no_size]`. **Every unbounded descent goes through `[T]` or `{K: V}`,
+ * and both live here.**
+ *
+ * One behaviour change is adopted with it and stated rather than discovered: a
+ * generated `_eq` that PANICS — panel 061's `partial` refusal — can now fire on a
+ * subtree the old short-circuit would have skipped. */
+typedef struct {
+    const unsigned char *a;
+    const unsigned char *b;
+    const HeroDesc *elem;
+    int64_t len;
+} HeroEqWork;
+
+/* **These three are file-static rather than thread-local, and that is a decision
+ * with an expiry date rather than an oversight.** Heroes has no threads today —
+ * concurrency is design.md Part 7.13, `M-isolated-threads`, deferred until the
+ * closure list compiles itself. The day it arrives, this queue is shared mutable
+ * state across threads and must become `_Thread_local` (the buffer then leaks one
+ * allocation per thread, which is why it is not that already). `hero_hash_depth`
+ * below is already thread-local because a counter costs nothing to make so. */
+static HeroEqWork *hero_eq_queue = NULL;
+static size_t hero_eq_len = 0;
+static size_t hero_eq_cap = 0;
+static bool hero_eq_running = false;
+
+static void hero_eq_push(const unsigned char *a, const unsigned char *b, const HeroDesc *elem,
+                         int64_t len) {
+    if (hero_eq_len == hero_eq_cap) {
+        size_t cap = hero_eq_cap ? hero_eq_cap * 2 : 64;
+        HeroEqWork *grown = (HeroEqWork *)realloc(hero_eq_queue, cap * sizeof(HeroEqWork));
+        if (grown == NULL) hero_panic("out of memory comparing a deep value");
+        hero_eq_queue = grown;
+        hero_eq_cap = cap;
+    }
+    hero_eq_queue[hero_eq_len].a = a;
+    hero_eq_queue[hero_eq_len].b = b;
+    hero_eq_queue[hero_eq_len].elem = elem;
+    hero_eq_queue[hero_eq_len].len = len;
+    hero_eq_len++;
+}
+
 bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b) {
     hero_array_require(a);
     hero_array_require(b);
     if (a->len != b->len) return false;
     const unsigned char *da = hero_array_data_const(a);
     const unsigned char *db = hero_array_data_const(b);
-    size_t size = a->elem->size;
-    for (int64_t i = 0; i < a->len; i++) {
-        if (!a->elem->eq(da + (size_t)i * size, db + (size_t)i * size)) return false;
+    /* A nested call defers and answers provisionally; only the outermost drains. */
+    if (hero_eq_running) {
+        hero_eq_push(da, db, a->elem, a->len);
+        return true;
     }
-    return true;
+    hero_eq_running = true;
+    size_t base = hero_eq_len;
+    hero_eq_push(da, db, a->elem, a->len);
+    bool equal = true;
+    while (equal && hero_eq_len > base) {
+        HeroEqWork work = hero_eq_queue[--hero_eq_len];
+        size_t size = work.elem->size;
+        for (int64_t i = 0; i < work.len; i++) {
+            if (!work.elem->eq(work.a + (size_t)i * size, work.b + (size_t)i * size)) {
+                equal = false;
+                break;
+            }
+        }
+    }
+    /* Whatever the answer, the queue must come back to where this call found it:
+     * an early `false` leaves work behind that belongs to nobody. */
+    hero_eq_len = base;
+    hero_eq_running = false;
+    return equal;
 }
 
 /* `slice(xs, from:, to:)` on an array — a NEW array, elements copied through the
@@ -201,15 +281,36 @@ static bool hero_eq_array(const void *a, const void *b) {
 /* An array is hashable so that a descriptor's `hash` is never null (panel 022),
  * not because an array can be a map key — `{[i64]: v}` is a question §4.9 has
  * not answered. Order matters, because `==` on an array is order-sensitive. */
+/* **`hash` takes the OPPOSITE fix to `eq`, and the asymmetry is the point** (panel
+ * 076, the compiler-engineer's own contribution).
+ *
+ * `eq` must be exact, so it got a worklist and no bound. `hash` may lose
+ * information: its only contract is that equal values hash equal, and a hash that
+ * stops descending after a fixed number of levels still keeps it — every value
+ * that agrees to that depth simply shares a bucket, and `eq` tells them apart
+ * afterwards. So a **cap** is admissible here where it was refused for `eq`.
+ *
+ * And it is admissible for the reason CLAUDE.md §11 gives: this number is a fact
+ * about **the value** — how deep a hash bothers to look — not a claim about the
+ * machine's stack, which moves with `-O`, with `ulimit` and even with the size of
+ * the environment. Being wrong costs collisions. It can never cost a crash, and it
+ * cannot expire in silence. */
+#define HERO_HASH_MAX_DEPTH 128
+
+static _Thread_local int64_t hero_hash_depth = 0;
+
 static uint64_t hero_hash_array(const void *elem) {
     const HeroArrayHeader *a = *(const HeroArrayHeader *const *)elem;
     hero_array_require(a);
     uint64_t h = UINT64_C(0xcbf29ce484222325);
+    if (hero_hash_depth >= HERO_HASH_MAX_DEPTH) return h;
+    hero_hash_depth++;
     const unsigned char *data = hero_array_data_const(a);
     for (int64_t i = 0; i < a->len; i++) {
         uint64_t one = a->elem->hash(data + (size_t)i * a->elem->size);
         h ^= one;
         h *= UINT64_C(0x100000001b3);
     }
+    hero_hash_depth--;
     return h;
 }
