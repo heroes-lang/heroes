@@ -165,5 +165,68 @@ pub(super) fn check_element(
         note(found, "pointer_element", format!("`cstr` as the element of {container}"), span);
         return;
     }
+    // **A map KEY must not *reach* one either, and this is the seventh shape**
+    // (panel 068, ffi-pragmatist). The three rows above ask about the element
+    // itself; a `record Slot { p: ptr }` used as a key walks straight past them,
+    // and the generated `Slot_hash` gets `hero_unreachable()` for that field —
+    // `heroes check` at exit 0, `panic: entered unreachable code` at 134, on a
+    // program the author wrote correctly.
+    //
+    // **Only the key position**, measured: the same record is fine as a map
+    // *value* and as an array element (both exit 0), because `hash` is called
+    // only for a key. Refusing the others would break programs that work.
+    //
+    // The walk is `types::partial`'s shape — that file descends `[T]`, `{K: V}`,
+    // `T?`, record fields and variant-case payloads for exactly this class of
+    // question, and the reason there are two copies rather than one is that it
+    // runs in the checker over a `Checker` and this runs in the gate over a
+    // `Checked`. If a third asks the same question, they merge.
+    if container == "a map key" {
+        if let Some(what) = reaches_pointer(ast, checked, element, 0) {
+            note(
+                found,
+                "pointer_element",
+                format!("a map key that reaches {what} — it has no hash"),
+                span,
+            );
+            return;
+        }
+    }
     check_type(found, ast, checked, src, function, element, span);
+}
+
+/// Does this type **reach** a `ptr` or a `cstr`, through fields, payloads or
+/// containers? Depth-bounded exactly as `types::partial::reaches_within` is, and
+/// for the same reason: a record cannot contain itself by value, but a bound is
+/// cheaper than an argument that it cannot.
+///
+/// Returns what was found, for the message — a reader who is told *"a map key
+/// that reaches `ptr`"* can look for the pointer; one told *"this is not a valid
+/// key"* cannot.
+fn reaches_pointer(ast: &Ast, checked: &Checked, ty: TyId, depth: u32) -> Option<&'static str> {
+    if depth > 16 {
+        return None;
+    }
+    match checked.types.get(ty) {
+        Ty::Ptr => Some("`ptr`"),
+        Ty::Cstr => Some("`cstr`"),
+        Ty::Array(element) => reaches_pointer(ast, checked, element, depth + 1),
+        Ty::Fallible(inner) => reaches_pointer(ast, checked, inner, depth + 1),
+        Ty::Map(key, value) => reaches_pointer(ast, checked, key, depth + 1)
+            .or_else(|| reaches_pointer(ast, checked, value, depth + 1)),
+        Ty::Named(decl) => {
+            let fields: Vec<&crate::syntax::Field> = match &ast.decls[decl as usize].kind {
+                crate::syntax::DeclKind::Record { fields, .. } => fields.iter().collect(),
+                crate::syntax::DeclKind::Variant { cases } => {
+                    cases.iter().flat_map(|case| case.fields.iter()).collect()
+                }
+                _ => return None,
+            };
+            fields.iter().find_map(|field| {
+                let ty = checked.written_type(field.ty)?;
+                reaches_pointer(ast, checked, ty, depth + 1)
+            })
+        }
+        _ => None,
+    }
 }

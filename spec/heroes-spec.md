@@ -82,7 +82,8 @@ v: i64 @ 0         # mutable declaration — the type is REQUIRED
 v @ v + 1          # mutation; only a declared @ name can be mutated
 ```
 `=` binds once, forever. `@` declares a mutable cell and re-binds it. `m[k] @ v` inserts or replaces;
-`keys(m) -> [K]` gives the keys, so `for k in sort(keys(m))` walks in order.
+`keys(m) -> [K]` gives the keys in no order; `for k in sort(keys(m))` walks
+them in order.
 Signatures are always explicit; inference is local only. Empty container
 literals need an annotation: `xs: [i64] = []` · `m: {str: i64} @ {}`.
 All bindings are initialised. An unused binding or parameter is a compile
@@ -149,7 +150,7 @@ toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
 ```
 arithmetic   + - * / %          (both sides one numeric type — never mixed)
              +                  (str with str: concatenation)
-comparison   == != < <= > >=
+comparison   == != < <= > >=    (`< <= > >=`: a number only)
 boolean      && || !            (bool only; && and || short-circuit)
 bitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)
 ```
@@ -165,7 +166,7 @@ Value semantics has a price: `+` on `str` copies both sides and `push` copies th
 array, so accumulating either in a loop is quadratic. `join` and `repeat` build in one pass.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number or `str`) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.

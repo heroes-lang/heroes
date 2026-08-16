@@ -1,0 +1,23 @@
+# The variant-case-payload route of the same defect — its own file, because the
+# build stops at the first refusal (panel 067 F8: a case carried three lines
+# that proved nothing for months, because an earlier line stopped the build).
+#
+# This is the shape a per-shape enumeration would have missed, and the reason
+# the gate walks transitively rather than checking a list: the `ptr` is not a
+# field of a record, it is the payload of a variant case. Symptom, cause and
+# fix are in `fixedbugs-pointer-reached-through-a-field.hero`, 2026-08-16,
+# panel 068.
+
+extern "stdlib.h"
+    function malloc(size: u64) -> ptr
+
+variant Handle
+    none
+    live
+        p: ptr
+
+function main()
+    h: Handle @ .live(p: malloc(size: 8))
+    by_handle: {Handle: i64} @ {}  #~ pointer_element
+    by_handle[h] @ 1
+    print(len(by_handle))
