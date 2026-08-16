@@ -97,7 +97,12 @@ closes.
    spelling. Workaround: return `"\n"` instead of `10` — 0 extra lines here.
    The place this could bite for real is `scan.rs`'s unexpected-character
    path (slicing the offending char out of the source text serves there) and
-   any future `to_str`-of-byte want. **Watch, not want, so far.**
+   any future `to_str`-of-byte want. **ANSWERED 2026-08-16**: the want arrived
+   — `render_in_base` had to turn a digit into text — and needed no conversion
+   at all, because the sixteen digits already exist as a string and `slice`
+   picks one (11 lines). The entry stays open-eyed rather than closed: a byte
+   that is *not* a digit still has no route to a `str`, and `scan.rs`'s path
+   slices the source instead. **No form wanted; the watch continues.**
 
 6. **No ASCII case fold.** `canonical_int` is `to_ascii_lowercase` in Rust;
    the port maps the six hex digits by hand through a 7-arm `match` in a
