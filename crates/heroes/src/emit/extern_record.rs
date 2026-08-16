@@ -165,14 +165,35 @@ fn assertion(
     // somebody did.
     //
     // `_Generic` on the **address** distinguishes `float[2]` from `float[4]` and
-    // from `float *`, measured across ten clang verdicts, and the `sizeof`
-    // conjunct is what refuses a **flexible** array member (`char data[]`), whose
-    // type is compatible with any sized one.
+    // from `float *`, measured across ten clang verdicts. The second conjunct is
+    // what refuses a **flexible** array member (`char data[]`), whose type is
+    // compatible with any sized one — and it is a **tail measurement, not a
+    // `sizeof` of the field** (panel 071, ffi-pragmatist, compiled).
+    //
+    // It used to be `sizeof({place}) == sizeof({elem}[{n}])`, and a flexible array
+    // member made that a **hard error**: `invalid application of 'sizeof' to an
+    // incomplete type 'char[]'`. clang cannot evaluate the assertion, so nothing
+    // carries `heroes-ffi-field`, so §7's named exception does not reach it and the
+    // build is **exit 2 — the compiler blaming itself** for a header the author is
+    // entitled to bind.
+    //
+    // `sizeof(struct) - offsetof(struct, member)` is defined for both and
+    // separates them: a flexible array member contributes **0** bytes to its
+    // struct's size, every sized array contributes **at least `n * sizeof(elem)`**,
+    // and that held in the judge's probe for the padded `char[1]` case and the
+    // over-aligned `int32_t data[]` case alike. The assertion now **fails** instead
+    // of failing to compile, so it carries its marker and the author gets exit 1 on
+    // their own line.
+    //
+    // Deliberately **not** `__builtin_types_compatible_p(__typeof__(place), char[])`:
+    // measured, clang answers **1** for `char[4]` against `char[]`, so that form
+    // cannot separate them at all. And deliberately not a match on clang's prose —
+    // `ffi_narrowed.rs` quotes cgo's reason for never doing that.
     if let Ty::Fixed(inner, n) = checked.types.get(ty) {
         let elem = c_spelling(checked, names, inner)?;
         return Some(format!(
             "_Static_assert(_Generic(&{place}, {elem} (*)[{n}]: 1, default: 0) \
-             && sizeof({place}) == sizeof({elem}[{n}]), \
+             && sizeof({c_type}) - __builtin_offsetof({c_type}, {member}) >= sizeof({elem}[{n}]), \
              \"{FIELD_ASSERTION} {c_type} {member}\");"
         ));
     }
@@ -199,7 +220,16 @@ fn assertion(
     // same class, size and sign by construction — so it cannot accept less than
     // before, and that is provable rather than tested. What it still refuses is
     // everything that matters: a wrong width, a wrong sign, a float declared as an
-    // integer (class 8), a pointer (5), a `bool` (4), an enum (3).
+    // integer (class 8), a pointer (5), a `bool` (4).
+    //
+    // **This list used to end "an enum (3)" and that was false** (panel 071,
+    // measured): clang applies the default argument promotions to
+    // `__builtin_classify_type`'s operand, so an enum field answers **1** — the
+    // same as an integer — and the refusal the sentence described never happened.
+    // What actually refuses a wrong enum field is the **sign** conjunct, and
+    // correctly: SDL3's enums are unsigned, so `kind: i32` fails and `kind: u32`
+    // binds, measured end-to-end on the real header. A premise about the world,
+    // reading as a rule, for as long as nobody compiled it (CLAUDE.md §11).
     //
     // Deliberately **not** `__builtin_types_compatible_p`: that would need a list
     // of which C types are 64-bit-signed on this target, which is a premise about
