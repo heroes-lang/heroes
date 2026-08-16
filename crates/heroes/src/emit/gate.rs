@@ -49,7 +49,7 @@ use crate::syntax::Ast;
 use crate::types::Checked;
 
 use super::builtins::EMITTED as EMITTED_BUILTINS;
-use super::gate_ops::{check_builtin_operand, check_fixed_flow, check_op};
+use super::gate_ops::{check_fixed_flow, check_op};
 use super::gate_types::{check_type, unit_fields};
 
 /// What the backend does emit. Derived, not maintained: the type list is the arms of
@@ -117,7 +117,6 @@ pub(super) fn refuse(
             for inst in &block.insts {
                 check_type(&mut found, ast, checked, src, function, inst.ty, inst.span);
                 check_op(&mut found, ast, src, inst.op, inst.span);
-                check_builtin_operand(&mut found, checked, function, inst.op, inst.span);
                 check_fixed_flow(&mut found, checked, function, inst.op, inst.span);
             }
 

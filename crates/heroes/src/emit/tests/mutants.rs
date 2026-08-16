@@ -99,12 +99,17 @@ fn no_accepted_program_emits_c_the_gate_should_have_refused() {
     // the checker instead. Inside `first<A>(xs: [A])` the element is not yet a
     // type; only monomorphisation sees that this call chose `P`, and that is the
     // gate's last remaining row.
-    let (refused_on_purpose, _) = super::gate::refusal(concat!(
-        "record P\n    x: i64\n\n",
-        "function firstof<A>(xs: [A]) -> A\n    ys = sort(xs)\n    return ys[0]\n\n",
-        "function main()\n    print(firstof([P(x: 1)]).x)\n",
-    ));
-    assert_eq!(refused_on_purpose, "builtin", "the gate did not run at all");
+    // **The canary moved at panel 084, and it had to.** It was the generic-`sort`
+    // route, and that row is gone — the checker refuses it now, so a program built
+    // on it never reaches the gate and this assertion would have measured the
+    // checker while claiming to measure the emitter. That is the failure the
+    // paragraph above describes, arriving from the other direction: not a floor
+    // that fell, but a canary that stopped being in the mine. `[()]` is a live row
+    // keyed to an element type, which is the shape the gate has left.
+    let (refused_on_purpose, _) = super::gate::refusal(
+        "function main()\n    us: [()] @ []\n    print(len(us))\n",
+    );
+    assert_eq!(refused_on_purpose, "unit_element", "the gate did not run at all");
     let _ = refused;
     assert!(emitted >= 3, "only {emitted} mutants were emitted — is the emitter running?");
 }

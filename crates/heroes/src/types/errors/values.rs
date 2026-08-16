@@ -95,9 +95,17 @@ pub(in crate::types) fn bad_operand(op: &str, allowed: &str, got: &str, span: Sp
 /// is itself unordered the two coincide; where a record or a variant case is what
 /// the author wrote, this names the member inside it that decided the answer, so
 /// the reader is not left comparing a type name against a list it is not on.
+/// **A type parameter takes a third note, and §4.17 is why** (panel 084). Telling
+/// a reader to *"build an array of one of those"* is unanswerable when the element
+/// is spelled `A`: there is no value in scope to build it from. design.md
+/// §4.12:1593 has always named the route — *"If an operation on `T` is needed,
+/// pass it as a parameter"* — so the note names it, and the route is measured
+/// rather than promised: a full generic insertion sort taking
+/// `(function(T, T) -> bool)` runs today at `i64` and at a user record.
 pub(in crate::types) fn unordered_element(
     element: &str,
     reached: Option<String>,
+    generic: bool,
     span: Span,
 ) -> Diagnostic {
     let diagnostic = Diagnostic::new(
@@ -105,6 +113,13 @@ pub(in crate::types) fn unordered_element(
         format!("`sort` orders arrays of numbers, `str` and `bool` — `[{element}]` is none of those"),
         span,
     );
+    if generic {
+        return diagnostic.with_note(format!(
+            "`{element}` is a type parameter, so this line cannot know whether it has an \
+             order — take the comparison as a parameter instead, \
+             `less: (function({element}, {element}) -> bool)`, and call `less(a, b)`"
+        ));
+    }
     match reached {
         Some(inside) => diagnostic.with_note(format!(
             "{inside}, which has no order the language can produce. Sort a key you can name \

@@ -186,7 +186,8 @@ pub(super) fn call(
             Ty::Array(element) if ordering::is_refusable(checker, element) => {
                 let shown = checker.show(ast, src, element);
                 let inside = ordering::why_unordered(checker, ast, src, element);
-                let diagnostic = errors::unordered_element(&shown, inside, span);
+                let generic = matches!(checker.out.types.get(element), Ty::Generic(_));
+                let diagnostic = errors::unordered_element(&shown, inside, generic, span);
                 checker.push_diagnostic(diagnostic);
                 return Some(checker.error_ty());
             }

@@ -86,9 +86,31 @@ pub(super) fn is_ordered(checker: &Checker, ty: TyId) -> bool {
 /// nothing on the closure list needs it. What this file guarantees is the shape
 /// panel 068 named — a `sort` whose element type is written down — and that no
 /// program reaches `hero_cmp_for`'s `NULL` return.
+/// **And `Ty::Generic` came off this list on 2026-08-16, panel 084.** `sort` on an
+/// unconstrained type parameter was the **single outlier** among restricted
+/// built-ins: `join`, `to_str`, `to_i64`, `chars`, `keys`, `len`, `slice` and
+/// `repeat` all refuse `[A]` at `heroes check`, on the body's own line, and only
+/// `sort` passed `check` and died at `build`. That is panel 068 R2's ratified
+/// invariant — *a program the checker accepts must build* — failing on exactly one
+/// row, so this is a bug fix rather than a new rule.
+///
+/// **What it deletes is a program design.md already refused.** `smallest<T>(xs) =
+/// sort(xs)[0]` compiled and printed 1; §4.12:1593 has always said *"**No
+/// constraints.** … If an operation on `T` is needed, **pass it as a parameter**.
+/// Cut exactly on that line."* — so that program was outside the ruling and
+/// compiled by accident. The prescribed route runs today, measured before this line
+/// changed: `sort_by<T>(xs, less)`, a full generic insertion sort, at `i64` **and**
+/// at a user record, exit 0, zero new syntax and zero spec tokens. The historian
+/// reached the same shape from outside — Ada's formal subprogram and CLU's where
+/// clause, 1977 — without seeing design.md.
+///
+/// Constraints (`<T: ordered>`) were **vetoed**: they reverse §4.12 rather than
+/// filling a silence, and the record says a one-name vocabulary does not stay one
+/// unless the language also has the escape hatch — Elm shipped four closed names
+/// and its widening issue has been open since 2015, while SML shipped exactly one
+/// and held for thirty years, because it had functors. Heroes has the hatch.
 pub(super) fn is_refusable(checker: &Checker, ty: TyId) -> bool {
-    !is_ordered(checker, ty)
-        && !matches!(checker.out.types.get(ty), Ty::Error | Ty::Generic(_))
+    !is_ordered(checker, ty) && !matches!(checker.out.types.get(ty), Ty::Error)
 }
 
 /// What inside this type has no order, phrased for a note — `None` when the type

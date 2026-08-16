@@ -64,8 +64,7 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
   `u8` — otherwise `i64`. Overflow aborts at every width.
 - A character literal is an integer: `'a'`, `'0'`, `' '`.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
-  A leading zero is an error, never octal. Every base writes a value, so
-  `0xffffffffffffffff` does not fit and is refused.
+  A leading zero is an error, never octal. Every base writes a value, so a literal must fit its type.
 - Six escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
   of `\"` in a character literal. Any other escape is a compile error.
 - `==` is structural equality on any two values of one type, recursively; a map's
@@ -170,7 +169,7 @@ copy — `xs @ xs.push(4)` — so accumulating either in a loop is quadratic. `j
 and `repeat` build in one pass.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
-`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number, `str` or `bool`; a `nan` aborts) ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number, `str` or `bool`, never a type parameter; a `nan` aborts) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in
 Heroes: `map` · `filter` · `fold` · `find` · `any` · `all` · `range`.

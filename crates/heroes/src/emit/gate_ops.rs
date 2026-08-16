@@ -175,22 +175,6 @@ fn is_a_written_literal(function: &Function, value: crate::ir::ValueId) -> bool 
         })
 }
 
-/// A built-in whose *name* emits but whose **operand type** has no entry point.
-/// The rule itself lives in `builtins.rs`, beside the entry-point table it is the
-/// complement of; this is the walk that applies it.
-pub(super) fn check_builtin_operand(
-    found: &mut Vec<(String, String, Span)>,
-    checked: &Checked,
-    function: &Function,
-    op: Op,
-    span: Span,
-) {
-    let Op::Call { callee: Callee::Builtin(index), args, .. } = op else { return };
-    let name = BUILTINS[index as usize].name;
-    if let Some(what) = super::builtins::unsupported_operand(name, function, checked, args) {
-        note(found, "builtin", what, span);
-    }
-}
 
 pub(super) fn callee_note(
     found: &mut Vec<(String, String, Span)>,

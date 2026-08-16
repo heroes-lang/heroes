@@ -459,39 +459,24 @@ fn every_reserved_name_is_emitted_lowered_or_written_in_heroes() {
     );
 }
 
-/// A program the **checker accepts** and this backend cannot emit — which after
-/// panel 068 is one shape and no longer two.
-///
-/// `sort([Point])` used to be the example and is now `unordered_element` at exit
-/// 1, in `types/ordering.rs`, on the author's own line. What is left here is the
-/// route through a **generic**: inside `first<A>(xs: [A])` the element is not yet
-/// a type, `first([3, 1, 2])` runs and prints, and only monomorphisation — which
-/// is in the IR, which `heroes check` never reaches — can see that this call
-/// instantiated `A` at a record.
-///
-/// So this test is the last thing between that program and `hero_cmp_for`
-/// returning `NULL`, where the runtime's own message says *compiler bug*. If it
-/// goes green by accident — someone deletes the arm believing the checker covers
-/// it — a correct-looking program starts aborting at 134 with no line.
-#[test]
-fn a_builtin_whose_operand_type_has_no_order_is_refused_by_operand() {
-    let (code, message) = refusal(concat!(
-        "record Point\n    x: i64\n    y: i64\n\n",
-        "function firstof<A>(xs: [A]) -> A\n    ys = sort(xs)\n    return ys[0]\n\n",
-        "function main()\n    print(firstof([Point(x: 1, y: 2)]).x)\n",
-    ));
-    assert_eq!(code, "builtin");
-    assert!(message.contains("`sort`"), "the message must name it: {message}");
-    assert!(
-        message.contains("generic"),
-        "and it must name the route, because the element type on that line is spelled `A` \
-         and telling the reader to change it sends them nowhere: {message}"
-    );
-    assert!(
-        message.contains("numbers, `str` and `bool`"),
-        "and what does work, or the reader has to guess: {message}"
-    );
-}
+// **The `builtin` row died at panel 084, and this records what replaced it.**
+//
+// It was the gate's last row keyed on a *value* rather than a capability:
+// `sort` inside `function first<A>(xs: [A])`, instantiated at a type with no
+// order. The checker could not see it, the reasoning went, so the emitter had to.
+//
+// That reasoning was measured false. `types/apply.rs:139` records every
+// instantiation **inside `types::check`**, and `sort` was the **single outlier**
+// among restricted built-ins — `join`, `to_str`, `to_i64`, `chars`, `keys`,
+// `len`, `slice` and `repeat` all refuse `[A]` at `heroes check`, on the body's
+// own line. So the row was removed rather than defended: `types/ordering.rs`
+// refuses it now, at exit 1, with a note naming design.md §4.12's own route —
+// pass the comparison as a parameter, which runs today.
+//
+// **Nothing is left uncovered**, and that is what this comment is for: a reader
+// who greps for the row and finds this instead should not go looking for the
+// hole. `unordered_element` is checker-side and has its own tests; the gate no
+// longer needs a row it cannot make fire.
 
 /// The refusal that **left** this file, asserted from the other side (panel 068 R2).
 ///
@@ -524,28 +509,25 @@ fn a_sort_on_a_written_element_type_never_reaches_this_gate() {
 
 #[test]
 fn every_unsupported_capability_is_reported_not_only_the_first() {
+    // **The example moved off `sort` at panel 084**, because that row is gone: the
+    // checker refuses it now, so a program using it never reaches the gate. Two
+    // surviving rows, both keyed to an element type, which is what the gate has
+    // left after the value-keyed row went to `types/`.
     let out = emitted(concat!(
-        "record Point\n",
-        "    x: i64\n",
-        "    y: i64\n",
-        "\n",
-        // The generic route, since panel 068 moved the direct one to the checker.
-        "function firstof<A>(xs: [A]) -> A\n",
-        "    ys = sort(xs)\n",
-        "    return ys[0]\n",
-        "\n",
         "function main()\n",
-        "    print(firstof([Point(x: 1, y: 2)]).x)\n",
         "    us: [()] @ []\n",
         "    print(len(us))\n",
+        "    ps: [ptr] @ []\n",
+        "    print(len(ps))\n",
     ));
     let codes: Vec<&str> = out.diagnostics.iter().map(|d| d.code.as_str()).collect();
-    assert!(codes.contains(&"builtin"), "{codes:?}");
-    // Two capabilities the backend lacks — one keyed to a name, one to an operand
-    // type — and both are named, so the list arrives at once.
+    assert!(codes.contains(&"unit_element"), "{codes:?}");
+    assert!(codes.contains(&"pointer_element"), "{codes:?}");
+    // Two capabilities the backend lacks, and both are named, so the list arrives
+    // at once rather than one invocation at a time.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
-    assert!(messages.iter().any(|m| m.contains("`sort`")), "{messages:?}");
     assert!(messages.iter().any(|m| m.contains("()")), "{messages:?}");
+    assert!(messages.iter().any(|m| m.contains("`ptr`")), "{messages:?}");
     // Sorted by span: three invocations to learn three facts is what the message
     // carrying the list exists to prevent.
     let spans: Vec<u32> = out.diagnostics.iter().map(|d| d.span.start).collect();
@@ -556,20 +538,18 @@ fn every_unsupported_capability_is_reported_not_only_the_first() {
 
 #[test]
 fn one_capability_is_one_diagnostic_however_many_times_it_appears() {
+    // Three occurrences of one capability. The example moved off `sort` at panel
+    // 084 with the row itself; `[()]` is the same shape and still the gate's.
     let out = emitted(concat!(
-        "record Point\n",
-        "    x: i64\n",
-        "\n",
-        "function thrice<A>(xs: [A]) -> i64\n",
-        "    return len(sort(xs)) + len(sort(xs)) + len(sort(xs))\n",
-        "\n",
         "function main()\n",
-        "    print(thrice([Point(x: 1)]))\n",
+        "    a: [()] @ []\n",
+        "    b: [()] @ []\n",
+        "    c: [()] @ []\n",
+        "    print(len(a) + len(b) + len(c))\n",
     ));
-    // Three calls, and `sort` on a record is named ONCE.
     let messages: Vec<&str> = out.diagnostics.iter().map(|d| d.message.as_str()).collect();
     assert_eq!(
-        messages.iter().filter(|m| m.contains("`sort`")).count(),
+        messages.iter().filter(|m| m.contains("()")).count(),
         1,
         "a program that calls one unsupported built-in three times has one problem: {messages:?}"
     );
