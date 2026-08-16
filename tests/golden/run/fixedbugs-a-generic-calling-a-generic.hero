@@ -1,0 +1,55 @@
+# FIXED DEFECT, 2026-08-16 (filed by panel 084, repaired after it). Symptom: a
+# generic function that calls another generic was `heroes check` exit 0 and
+# `heroes build` **exit 2** — `internal error: compiling the generated C failed:
+# error: too many arguments to function call, expected 0, have 1`, pointing at
+# `t2 = hero_unreachable(t1);`, a line the compiler wrote.
+#
+# Cause, two halves. `Checked::instantiations` is keyed by `span.start`, which is
+# exact at check time — a span occurs once — and stale after monomorphisation,
+# where the same span occurs once **per copy of the enclosing body** while the
+# table still holds the template's unsubstituted `[#0]`. The emitter read that
+# table, found no function matching `[#0]`, and fell back to the literal NAME
+# `hero_unreachable`, handing arguments to a zero-argument `_Noreturn`.
+#
+# Fix, also two halves. The answer moves onto the copy: `Function::call_instances`
+# is per-instance and substituted, so each copy knows which callee its inner calls
+# reach. And the fallback goes in the loud direction (CLAUDE.md §11) — a missed
+# lookup is the compiler being wrong, so it emits `hero_unreachable()` with no
+# arguments and says so, instead of writing C that cannot compile.
+#
+# Why it survived: of the four goldens with two or more generics, EVERY call was
+# from `main`. Nothing composed. §1.11's Tier 2 — `map`, `filter`, `fold`, `find`,
+# `any`, `all` — is a library that composes, so the port would have met this.
+# Named after the defect, per Go's `test/fixedbugs` (CLAUDE.md §9).
+#
+# The shapes attacked around it, all measured before this case was written: three
+# levels deep at three different element types; one generic calling two different
+# generics at two types; and polymorphic recursion, which must STILL be refused
+# and is (`polymorphic_recursion`, exit 1).
+
+record P
+    x: i64
+
+function innermost<C>(zs: [C]) -> C
+    return zs[0]
+
+function middle<B>(ys: [B]) -> B
+    return innermost(ys)
+
+function outer<A>(xs: [A]) -> A
+    return middle(xs)
+
+function tally<D>(ds: [D]) -> i64
+    return len(ds)
+
+function both<E>(es: [E]) -> i64
+    return tally(es) + tally([outer(es)])
+
+function main()
+    # One chain, three element types — each needs its own copy of all three.
+    print(outer([7, 8]))
+    print(outer(["ziggy", "stardust"]))
+    p = outer([P(x: 5), P(x: 6)])
+    print(p.x)
+    # And one generic reaching two different generics, at two types.
+    print(both([1, 2, 3]), " ", both(["only"]))

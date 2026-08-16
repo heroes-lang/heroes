@@ -170,6 +170,22 @@ pub struct Function {
     /// ordinary function (§4.12, panel 029). It is what makes two copies of one
     /// generic declaration different functions, and what the mangler hashes.
     pub instance: Vec<TyId>,
+    /// **Which instance each inner call reaches, in THIS copy** — keyed by the
+    /// call's span, and substituted rather than inherited.
+    ///
+    /// The checker's own `Checked::instantiations` is keyed by span too, and that
+    /// is right for it: at check time a span occurs once. After monomorphisation
+    /// it occurs once **per copy of the enclosing body**, and the table still has
+    /// one entry — the template's, with `Ty::Generic(i)` unsubstituted. The
+    /// emitter read that table directly and, for a generic calling a generic,
+    /// found no function matching `[#0]`, fell back to the literal name
+    /// `hero_unreachable`, and passed arguments to a zero-argument `_Noreturn`:
+    /// `heroes check` exit 0, `heroes build` **exit 2**, on a line the compiler
+    /// wrote (panel 084's filed defect, located by its ffi-pragmatist).
+    ///
+    /// So the answer moves onto the copy, which is the thing that is per-instance.
+    /// Empty for an ordinary function, where the checker's table is still exact.
+    pub call_instances: std::collections::BTreeMap<u32, Vec<TyId>>,
     pub span: Span,
 }
 

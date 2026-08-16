@@ -54,13 +54,24 @@ pub(super) fn call(
             // read (`Checked::instantiations`, keyed by this call's span). One
             // answer, one place: re-deriving it here is the shape panel 029 R2
             // refused.
-            let name = program
+            let found = program
                 .functions
                 .iter()
                 .find(|f| f.decl == decl && f.instance == instance)
-                .map(|f| super::signature::instance_name(f, ast, checked, src))
-                .unwrap_or_else(|| "hero_unreachable".to_string());
-            w.line(&format!("    {assign}{name}({});", arguments.join(", ")));
+                .map(|f| super::signature::instance_name(f, ast, checked, src));
+            // **The fallback is loud now, and the quiet one shipped a defect.**
+            // It used to be `"hero_unreachable"` as a NAME, so a missed lookup
+            // emitted `t2 = hero_unreachable(t1);` — arguments handed to a
+            // zero-argument `_Noreturn`, which is `error: too many arguments` at
+            // exit 2 with the compiler blaming itself. CLAUDE.md §11: put the
+            // fallback in the loud direction. A missed instance is the compiler
+            // being wrong, so it says so and compiles.
+            match found {
+                Some(name) => w.line(&format!("    {assign}{name}({});", arguments.join(", "))),
+                None => w.line(
+                    "    hero_unreachable(); /* no instance for this call — compiler bug */",
+                ),
+            }
         }
         Callee::Builtin(index) if BUILTINS[index as usize].name == "print" => {
             print(w, function, checked, args, arguments);

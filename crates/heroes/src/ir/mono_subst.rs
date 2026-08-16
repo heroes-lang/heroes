@@ -59,6 +59,13 @@ pub(super) fn instantiate(template: &Function, args: &[TyId], checked: &mut Chec
         args: template.args.clone(),
         steps: template.steps.clone(),
         instance: args.to_vec(),
+        // **Every inner call's instance, substituted for THIS copy.** The template
+        // recorded `[#0]`; this copy records what `#0` became. Without it the
+        // emitter re-derived the answer from the checker's span-keyed table, which
+        // holds one entry for a span that now exists once per copy — and a generic
+        // calling a generic went to clang as a call to `hero_unreachable` with
+        // arguments (panel 084's filed defect).
+        call_instances: substituted_calls(checked, template, args),
         span: template.span,
     }
 }
@@ -114,4 +121,32 @@ pub(super) fn apply(checked: &mut Checked, ty: TyId, args: &[TyId]) -> TyId {
         }
         _ => ty,
     }
+}
+
+/// Every inner call's instance, substituted for one copy — see `Function`'s own
+/// field doc for why it lives on the copy rather than being re-derived.
+///
+/// Collected first and mapped second, because `apply` takes `&mut Checked` (it
+/// interns) and the lookup holds an immutable borrow.
+fn substituted_calls(
+    checked: &mut Checked,
+    template: &Function,
+    args: &[TyId],
+) -> std::collections::BTreeMap<u32, Vec<TyId>> {
+    let found: Vec<(u32, Vec<TyId>)> = template
+        .blocks
+        .iter()
+        .flat_map(|block| &block.insts)
+        .filter_map(|inst| {
+            let at = checked.instantiations.get(&inst.span.start)?;
+            Some((inst.span.start, at.clone()))
+        })
+        .collect();
+    found
+        .into_iter()
+        .map(|(at, types)| {
+            let reached = types.iter().map(|ty| apply(checked, *ty, args)).collect();
+            (at, reached)
+        })
+        .collect()
 }

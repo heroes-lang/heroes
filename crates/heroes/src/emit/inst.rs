@@ -175,9 +175,12 @@ pub(super) fn emit(
                     Arg::InOut(place) => format!("&{}", read(types, function, place)),
                 })
                 .collect();
-            // Which instance this call reaches, read from the table the pass read.
-            let instance = crate::ir::mono::instance_at(checked, inst.span)
+            // This copy first: `call_instances` is substituted per copy.
+            let instance = function
+                .call_instances
+                .get(&inst.span.start)
                 .cloned()
+                .or_else(|| crate::ir::mono::instance_at(checked, inst.span).cloned())
                 .unwrap_or_default();
             ops::call(
                 w, program, function, types, callee, args, &arguments, target, instance,
