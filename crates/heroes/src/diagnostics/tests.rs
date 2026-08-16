@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 77] = [
+const ANNOTATED: [&str; 79] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -81,6 +81,15 @@ const ANNOTATED: [&str; 77] = [
     // no language with an FFI calls that acceptable.
     // Soundness: the C boundary's array form (panel 062).
     "fixed_array_length",
+    // **Soundness, and the two rows are the crash they replaced** (panel 081 R3).
+    // Not thesis rules and the distinction matters for `--permissive`: there is no
+    // correct program on the other side of these refusals for metric 3's two arms
+    // to compare. Before them, `heroes check` exited **0** on all four shapes and
+    // the build died — three at exit 2 with clang blaming the compiler for the
+    // author's program, one at exit 134 in `hero_unreachable`. A control arm that
+    // dropped these would be comparing against a segfault.
+    "fixed_element",
+    "fixed_flow",
     "fixed_index_out_of_range",
     "fixed_outside_a_group",
     // **Soundness, not thesis** (panel 069 R4). Without it a `nan` key is stored

@@ -90,6 +90,91 @@ pub(super) fn check_op(
     }
 }
 
+/// **Where a fixed array is allowed to flow** — panel 081 R3, and the rule is
+/// C's rather than this language's: `float t[4]; t = …;` does not compile at any
+/// optimisation level, so a `T[N]` has no storage of its own and
+/// `emit/storageless.rs` renders it *where it is used* instead of assigning it.
+///
+/// That works in exactly **two** positions, which are the only two that consume
+/// `fixed_text`: as the base of a subscript (`container.rs`) and as an argument to
+/// a construction (`construct.rs`). Every other position went to clang unrefused,
+/// and clang blamed the compiler — four shapes, every one of them `heroes check`
+/// **exit 0**, measured 2026-08-16:
+///
+/// - `r = a.reserved` — `use of undeclared identifier 'h1_r'`, exit 2. The
+///   instruction that would define the local emits nothing (`inst.rs:86`), and the
+///   store that follows it still names it.
+/// - `w.reserved @ [9, …]` — `use of undeclared identifier 't21'`, exit 2.
+/// - `b = Widget(…, reserved: a.reserved)` — `incompatible pointer to integer
+///   conversion`, exit 2. Here `fixed_text` *did* render, as `t15.reserved`, and
+///   that spelling is right as a subscript base and wrong as a struct initialiser.
+/// - `[a.reserved]` — exit **134**, `hero_unreachable`, refused by
+///   `check_element`'s own new row rather than here.
+///
+/// **The refusal is a `Ty::Fixed` row and not a repair of the lowering**, because
+/// Principle 0 puts the widening behind a need that does not exist: `selfhost/`
+/// declares zero fixed-array fields, measured by two panel seats. What it buys
+/// today is CLAUDE.md §7 — a program the author wrote stops being the compiler's
+/// fault — and the widening stays available at a price nobody has taken.
+pub(super) fn check_fixed_flow(
+    found: &mut Vec<(String, String, Span)>,
+    checked: &Checked,
+    function: &Function,
+    op: Op,
+    span: Span,
+) {
+    let is_fixed = |value: crate::ir::ValueId| {
+        matches!(checked.types.get(function.values[value.0 as usize]), crate::types::Ty::Fixed(_, _))
+    };
+    match op {
+        // Covers the binding and the field store alike: both are one `Op::Store`,
+        // and neither has a C spelling.
+        Op::Store { value, .. } if is_fixed(value) => note(
+            found,
+            "fixed_flow",
+            "a fixed array given a name or stored into a place"
+                .to_string(),
+            span,
+        ),
+        // An argument that is a fixed array is fine when it **is** the literal, and
+        // is the copy C refuses when it came from somewhere else. The array and map
+        // shapes are left to `check_element`, which names the container and would
+        // otherwise report the same mistake twice.
+        Op::Construct { shape, args }
+            if !matches!(shape, crate::ir::Shape::Array | crate::ir::Shape::Map) =>
+        {
+            for arg in function.args_of(args) {
+                let crate::ir::Arg::Value(value) = arg else { continue };
+                if is_fixed(value) && !is_a_written_literal(function, value) {
+                    note(
+                        found,
+                        "fixed_flow",
+                        "a fixed array copied from another value"
+                            .to_string(),
+                        span,
+                    );
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Whether this value is the `[a, b, c]` an author wrote, as opposed to a field
+/// read that happens to have the same type. The distinction is the whole of the
+/// `Construct` row above: a literal renders as `{a, b, c}`, which C accepts as an
+/// initialiser, and a field read renders as `v.member`, which it does not.
+fn is_a_written_literal(function: &Function, value: crate::ir::ValueId) -> bool {
+    function
+        .blocks
+        .iter()
+        .flat_map(|block| &block.insts)
+        .find(|inst| inst.dest == Some(value))
+        .is_some_and(|inst| {
+            matches!(inst.op, Op::Construct { shape: crate::ir::Shape::Array, .. })
+        })
+}
+
 /// A built-in whose *name* emits but whose **operand type** has no entry point.
 /// The rule itself lives in `builtins.rs`, beside the entry-point table it is the
 /// complement of; this is the walk that applies it.

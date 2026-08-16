@@ -49,7 +49,7 @@ use crate::syntax::Ast;
 use crate::types::Checked;
 
 use super::builtins::EMITTED as EMITTED_BUILTINS;
-use super::gate_ops::{check_builtin_operand, check_op};
+use super::gate_ops::{check_builtin_operand, check_fixed_flow, check_op};
 use super::gate_types::{check_type, unit_fields};
 
 /// What the backend does emit. Derived, not maintained: the type list is the arms of
@@ -118,6 +118,7 @@ pub(super) fn refuse(
                 check_type(&mut found, ast, checked, src, function, inst.ty, inst.span);
                 check_op(&mut found, ast, src, inst.op, inst.span);
                 check_builtin_operand(&mut found, checked, function, inst.op, inst.span);
+                check_fixed_flow(&mut found, checked, function, inst.op, inst.span);
             }
 
         }
@@ -127,38 +128,52 @@ pub(super) fn refuse(
         .into_iter()
         .map(|(code, what, span)| {
             Diagnostic::unsupported(&code, format!("{what} is not emitted yet"), span)
-                .with_note(whether_the_author_can_help(&code).to_string())
+                .with_note(what_the_author_can_do(&code).to_string())
                 .with_note(subset())
         })
         .collect()
 }
 
-/// Which note this row has earned — panel 082 R1, and it is a **per-row** answer
-/// because the blanket one was false on three of the five rows this gate can emit.
+/// What this row leaves the author able to do — panel 082 R1, **per row**, because
+/// the blanket note was one string for every row and false on most of them.
 ///
-/// The test is not *how hard is this to implement*, it is **what is the refusal
+/// The test is not *how hard is this to implement*, it is **what the refusal is
 /// keyed on**. A row keyed on a capability the backend lacks whatever the author
 /// writes is honestly *"no change to this file will fix this"* — that is `missing`,
-/// and it is the only one. Every other row is keyed on **a type in this program**,
-/// and a different type compiles:
+/// and it is the only one. Every other row is keyed on **something in this
+/// program**, so something else in this program compiles, and the note says what.
 ///
-/// - `pointer_element` — `stmts: [ptr]` is refused; `record Stmt { p: ptr }` and
-///   `stmts: [Stmt]` runs at **exit 0** against real SQLite 3.51.0. This is §4.19
-///   ladder step 3's own shape, so it is the row an author reaches first.
-/// - `unit_element` — `[()]` is refused; `[i64]` compiles.
-/// - `builtin` — `sort` on a generic element instantiated at an unordered type is
-///   refused; the same generic called at `[2, 1]` builds and runs.
-/// - `hole` — a hole is filled by editing the file, which is the whole point of
-///   `???`. Reached only as a backstop, since the hole report fires first.
+/// **Each route below was run before it was written here**, which is what separates
+/// a note from a guess (CLAUDE.md §1). They are notes rather than `Fix`es because
+/// none is mechanical — wrapping a `ptr` in a record changes types at every use —
+/// and CLAUDE.md §8 reserves machine-application for `certain`.
 ///
-/// The replacement note does **not** name a specific repair, and that is
-/// deliberate: naming one would be a `Fix` (CLAUDE.md §8), and a `guess` dressed as
-/// prose is the shape §4.17 exists to prevent. It says where to look — the types on
-/// this line — which is true of all four and over-promises nothing.
-fn whether_the_author_can_help(code: &str) -> &'static str {
+/// The prose also has to **complete the sentence `gate.rs` builds**, `"{what} is
+/// not emitted yet"`. Keeping the reason out of `what` is what stops the message
+/// reading *"…so one is written where its record is built is not emitted yet"* —
+/// panel 082's ffi-pragmatist filed exactly that against `pointer_element`, where
+/// the row's phrase already carried a clause of its own.
+fn what_the_author_can_do(code: &str) -> &'static str {
     match code {
+        // The only row the old blanket note was ever true of.
         "missing" => "no change to this file will fix this",
-        _ => "this is refused for the types on this line, so other types compile",
+        // Measured against real SQLite 3.51.0: `stmts: [ptr]` is refused and
+        // `record Stmt { p: ptr }` with `stmts: [Stmt]` runs at exit 0. §4.19
+        // ladder step 3's own shape, so this is the row an author reaches first.
+        "pointer_element" => "hold the pointer in a `record` and make an array of that instead",
+        // Measured: `[()]` is refused, `[i64]` compiles. There is no reason to want
+        // a container of `()`, so the note says the shape rather than a rewrite.
+        "unit_element" | "unit_field" => "give it a type that carries a value",
+        // Measured: writing the elements at the construction compiles; copying or
+        // re-assigning the array does not, because C has no array assignment.
+        "fixed_flow" | "fixed_element" => {
+            "write a fixed array out where its record is built — C has no array assignment"
+        }
+        // Measured: the same generic called at `[2, 1]` builds and runs. Naming the
+        // element type would send the reader to a line where it is spelled `A`.
+        "builtin" => "call it at a type the built-in accepts",
+        // A hole is filled by editing the file, which is the whole point of `???`.
+        _ => "this is refused for what is on this line, so something else compiles",
     }
 }
 

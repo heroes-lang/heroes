@@ -21,20 +21,30 @@ pub(super) fn refusal(text: &str) -> (String, String) {
     assert_eq!(first.kind, Kind::Unsupported, "not an error: the program is fine");
     assert!(first.fixes.is_empty(), "the gate offers no machine-applicable fix");
     // **The note is the row's, not the kind's** (panel 082 R1). It was one string
-    // for every row and it was false on three of the five — `[ptr]` runs the moment
-    // the pointer is held in a record, `[()]` runs as `[i64]`, and `sort` in a
-    // generic runs the moment the call instantiates it at an ordered type. So this
-    // helper asks which row it is looking at, which is the whole repair: a shared
-    // assertion on a shared string is how the lie stayed uniform.
-    let expected = if first.code == "missing" {
-        "no change to this file will fix this"
-    } else {
-        "this is refused for the types on this line, so other types compile"
-    };
+    // for every row and it was false on most of them — `[ptr]` runs the moment the
+    // pointer is held in a record, `[()]` runs as `[i64]`, and `sort` in a generic
+    // runs the moment the call instantiates it at an ordered type. A shared
+    // assertion on a shared string is how the lie stayed uniform for so long, so
+    // what is asserted here is the **invariant** rather than the strings: every row
+    // says something about what to do next, and exactly one row is allowed to say
+    // that nothing will help. Comparing against `what_the_author_can_do` itself
+    // would be tautological and would catch nothing.
+    let ends_the_loop = "no change to this file will fix this";
     assert!(
-        first.notes.iter().any(|n| n == expected),
-        "row `{}` should carry the note `{expected}`, and carries {:?}",
+        first.notes.len() >= 2,
+        "row `{}` carries no note about what to do next: {:?}",
         first.code,
+        first.notes
+    );
+    let says_nothing_helps = first.notes.iter().any(|n| n == ends_the_loop);
+    assert_eq!(
+        says_nothing_helps,
+        first.code == "missing",
+        "only `missing` may tell the author that nothing will help, and row `{}` \
+         {} — panel 082 R1: a note that denies a repair the author can make is \
+         worse than no note at all. Notes: {:?}",
+        first.code,
+        if says_nothing_helps { "does" } else { "does not" },
         first.notes
     );
     assert!(

@@ -1,0 +1,23 @@
+unsupported[fixed_flow]: a fixed array given a name or stored into a place is not emitted yet
+  at tests/golden/unsupported/fixed-array-flow.hero:33:5
+     |
+  33 |     named = a.reserved                       #~ fixed_flow
+     |     ^^^^^^^^^^^^^^^^^^
+  note: write a fixed array out where its record is built — C has no array assignment
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet
+
+unsupported[fixed_flow]: a fixed array copied from another value is not emitted yet
+  at tests/golden/unsupported/fixed-array-flow.hero:36:9
+     |
+  36 |     b = Lens(x: 0.0, y: 0.0, reserved: a.reserved)   #~ fixed_flow
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: write a fixed array out where its record is built — C has no array assignment
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet
+
+unsupported[fixed_element]: a fixed array as the element of an array is not emitted yet
+  at tests/golden/unsupported/fixed-array-flow.hero:38:5
+     |
+  38 |     lenses = [a.reserved]                    #~ fixed_element
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: write a fixed array out where its record is built — C has no array assignment
+  note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `join`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64` — no other built-in is emitted yet

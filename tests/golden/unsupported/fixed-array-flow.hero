@@ -1,0 +1,39 @@
+# The three positions a fixed array may NOT flow through, one file, one row each
+# (panel 081 R3). Every one of these was `heroes check` exit 0 before the repair:
+# the first two reached clang and came back as `internal error: compiling the
+# generated C failed` (exit 2, the compiler blaming itself for the author's
+# program, CLAUDE.md §7), and the third reached the runtime as
+# `hero_unreachable` at exit 134.
+#
+# Cause, one for all three: a `T[N]` has no storage of its own in C —
+# `float t[4]; t = …;` compiles at no optimisation level — so `emit/storageless.rs`
+# renders one where it is USED rather than assigning it, and that works in exactly
+# two positions: the base of a subscript, and an argument at the construction.
+# Nothing refused the others.
+#
+# The header is local rather than a package, so this case is never skipped for a
+# missing library. A skip is a pass, and these rows were crashes.
+#
+# What still works is in `tests/golden/run/ffi-a-c-array-member.hero`: reading by
+# index, passing the whole record by value, `==`, and a map value. The refusal
+# must not reach any of them.
+
+extern "fixed-array-flow.h"
+    record Lens
+        x: f32
+        y: f32
+        reserved: i32[4]
+    function lens_first(l: Lens) -> i32
+
+function main()
+    a = Lens(x: 1.0, y: 2.0, reserved: [7, 0, 0, 0])
+    # 1. Given a name. `use of undeclared identifier 'h1_named'` before the row:
+    #    the instruction that would define the local emits nothing, and the store
+    #    that follows it still names it.
+    named = a.reserved                       #~ fixed_flow
+    # 2. Copied into another record. This one DID render — as `t.reserved` — and
+    #    that spelling is right as a subscript base and wrong as a C initialiser.
+    b = Lens(x: 0.0, y: 0.0, reserved: a.reserved)   #~ fixed_flow
+    # 3. As the element of a container: no descriptor, because it has no storage.
+    lenses = [a.reserved]                    #~ fixed_element
+    print(named[0], b.x, len(lenses))

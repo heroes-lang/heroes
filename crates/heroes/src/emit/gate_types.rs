@@ -165,6 +165,17 @@ pub(super) fn check_element(
         note(found, "pointer_element", format!("`cstr` as the element of {container}"), span);
         return;
     }
+    // **A fixed array is a fourth kind of non-element** (panel 081 R3), and it
+    // reached `hero_unreachable` rather than a diagnostic: `xs = [a.reserved]` was
+    // `heroes check` exit 0 and **exit 134** at run time, *"entered unreachable
+    // code — this is a compiler bug, please report it"*, on a program the author
+    // wrote. Its reason is `()`'s rather than `ptr`'s — a `T[N]` has no descriptor
+    // because it has no storage of its own, which is the same fact
+    // `emit/storageless.rs` exists for, seen from the container's side.
+    if matches!(checked.types.get(element), Ty::Fixed(_, _)) {
+        note(found, "fixed_element", format!("a fixed array as the element of {container}"), span);
+        return;
+    }
     // **A map KEY must not *reach* one either, and this is the seventh shape**
     // (panel 068, ffi-pragmatist). The three rows above ask about the element
     // itself; a `record Slot { p: ptr }` used as a key walks straight past them,
