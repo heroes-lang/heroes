@@ -61,69 +61,68 @@ use parse_type
 
 ## The precedence table — §4.14, read from the bottom up
 
-# The binding power of each operator, and 0 when the token is not one. Higher
-# binds tighter.
-#
-# Two properties are choices rather than accidents: comparisons sit ABOVE `&&`,
-# so `a < b && c < d` needs no parentheses; and the bitwise three sit between
-# the comparisons and the shifts, each on its own level — C's order, which Go,
-# Rust, Java and JavaScript all kept. **C's own mistake is the other one**: `&`
-# binding looser than `==`, so `x & 1 == 0` means `x & (1 == 0)`. Heroes does
-# not inherit it.
-function binding_power(kind: token.TokenKind) -> i64
-    return match kind
-        .or_or => 1
-        .and_and => 2
-        .eq_eq | .bang_eq | .lt | .le | .gt | .ge => 3
-        .pipe => 4
-        .caret => 5
-        .amp => 6
-        .shl | .shr => 7
-        .plus | .minus => 8
-        .star | .slash | .percent => 9
-        .ident | .int_lit | .float_lit | .str_lit | .char_lit => 0
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match => 0
-        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => 0
-        .kw_break | .kw_continue | .kw_return | .kw_test | .kw_assert => 0
-        .kw_extern | .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail => 0
-        .eq | .at | .colon | .comma | .dot | .question | .hole => 0
-        .arrow | .fat_arrow | .lparen | .rparen => 0
-        .lbracket | .rbracket | .lbrace | .rbrace => 0
-        .bang | .tilde => 0
-        .comment | .terminator | .indent | .dedent | .eof | .error => 0
+# What a token is as a binary operator: which one, and how tightly it binds.
+# A miss means the token is not one, and the miss is **loud** — the caller asks
+# `.is_err()` and stops climbing.
+record Operator
+    op: ast.BinaryOp
+    power: i64
 
-# The operator a token stands for, asked only where `binding_power` said there
-# is one.
-function binary_operator(kind: token.TokenKind) -> ast.BinaryOp
+# **One function, and the reason is a defect this port created and panel 067
+# caught.** Rust's `expr.rs` has a single `binary_op(kind) -> Option<(BinaryOp,
+# u8)>`; the first version of this port split it in two — a power table and an
+# operator table — and the split, not §4.7's ban, is what produced the twenty
+# lines of padding that started that sitting. Worse, the second table had to
+# invent an operator for ~50 tokens that are not operators, and it invented
+# `.add`. The compiler-engineer proved what that costs: changing one line from
+# `.percent => .rem` to `.percent => .add` — the copy-paste ten `.add` lines in
+# a row invite — left `heroes check` at exit 0 and every test passing, with `%`
+# parsing as `+`. Nothing in the language or the tests could see it, because
+# both tables were internally consistent and only their *agreement* was the
+# invariant, and nothing held it.
+#
+# Joined, that invariant is unrepresentable: there is one arm per operator
+# carrying both halves, and a token with no answer says so.
+#
+# Two properties of the table are choices rather than accidents. Comparisons sit
+# ABOVE `&&`, so `a < b && c < d` needs no parentheses. And the bitwise three sit
+# between the comparisons and the shifts, each on its own level — C's order,
+# which Go, Rust, Java and JavaScript all kept. **C's own mistake is the other
+# one**: `&` binding looser than `==`, so `x & 1 == 0` means `x & (1 == 0)`.
+# Heroes does not inherit it.
+function binary_op(kind: token.TokenKind) -> Operator?
     return match kind
-        .or_or => .or
-        .and_and => .and
-        .eq_eq => .eq
-        .bang_eq => .ne
-        .lt => .lt
-        .le => .le
-        .gt => .gt
-        .ge => .ge
-        .pipe => .bit_or
-        .caret => .bit_xor
-        .amp => .bit_and
-        .shl => .shl
-        .shr => .shr
-        .plus => .add
-        .minus => .sub
-        .star => .mul
-        .slash => .div
-        .percent => .rem
-        .ident | .int_lit | .float_lit | .str_lit | .char_lit => .add
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match => .add
-        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => .add
-        .kw_break | .kw_continue | .kw_return | .kw_test | .kw_assert => .add
-        .kw_extern | .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail => .add
-        .eq | .at | .colon | .comma | .dot | .question | .hole => .add
-        .arrow | .fat_arrow | .lparen | .rparen => .add
-        .lbracket | .rbracket | .lbrace | .rbrace => .add
-        .bang | .tilde => .add
-        .comment | .terminator | .indent | .dedent | .eof | .error => .add
+        .or_or => ok(Operator(op: .or, power: 1))
+        .and_and => ok(Operator(op: .and, power: 2))
+        .eq_eq => ok(Operator(op: .eq, power: 3))
+        .bang_eq => ok(Operator(op: .ne, power: 3))
+        .lt => ok(Operator(op: .lt, power: 3))
+        .le => ok(Operator(op: .le, power: 3))
+        .gt => ok(Operator(op: .gt, power: 3))
+        .ge => ok(Operator(op: .ge, power: 3))
+        .pipe => ok(Operator(op: .bit_or, power: 4))
+        .caret => ok(Operator(op: .bit_xor, power: 5))
+        .amp => ok(Operator(op: .bit_and, power: 6))
+        .shl => ok(Operator(op: .shl, power: 7))
+        .shr => ok(Operator(op: .shr, power: 7))
+        .plus => ok(Operator(op: .add, power: 8))
+        .minus => ok(Operator(op: .sub, power: 8))
+        .star => ok(Operator(op: .mul, power: 9))
+        .slash => ok(Operator(op: .div, power: 9))
+        .percent => ok(Operator(op: .rem, power: 9))
+        # Everything else is not a binary operator, and says so rather than
+        # answering. These are the arms §4.7's ban costs — one list now instead
+        # of two, and each one a refusal rather than an invented `.add`.
+        .ident | .int_lit | .float_lit | .str_lit | .char_lit => fail("not_an_operator", "a value is not an operator")
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match => fail("not_an_operator", "a declaration keyword is not an operator")
+        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in => fail("not_an_operator", "a control keyword is not an operator")
+        .kw_break | .kw_continue | .kw_return | .kw_test | .kw_assert => fail("not_an_operator", "a statement keyword is not an operator")
+        .kw_extern | .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail => fail("not_an_operator", "a keyword is not an operator")
+        .eq | .at | .colon | .comma | .dot | .question | .hole => fail("not_an_operator", "punctuation is not an operator")
+        .arrow | .fat_arrow | .lparen | .rparen => fail("not_an_operator", "punctuation is not an operator")
+        .lbracket | .rbracket | .lbrace | .rbrace => fail("not_an_operator", "a bracket is not an operator")
+        .bang | .tilde => fail("not_an_operator", "a prefix operator is not a binary one")
+        .comment | .terminator | .indent | .dedent | .eof | .error => fail("not_an_operator", "layout is not an operator")
 
 ## Entry point 1 — one expression
 
@@ -136,15 +135,18 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
     left: i64 @ unary(@c, @a, text)
     climbing: bool @ true
     while climbing
-        power = binding_power(cursor.current_kind(c))
-        if power == 0 || power < min_power
+        found = binary_op(cursor.current_kind(c))
+        if found.is_err()
             climbing @ false
         else
-            op = binary_operator(cursor.current_kind(c))
-            _ = cursor.bump(@c)
-            right = binary(@c, @a, text, power + 1)
-            span = token.Span(start: a.exprs[left].span.start, end: a.exprs[right].span.end)
-            left @ ast.push_expr(@a, ast.Expr(kind: .binary(op: op, left: left, right: right), span: span))
+            operator = found.must()
+            if operator.power < min_power
+                climbing @ false
+            else
+                _ = cursor.bump(@c)
+                right = binary(@c, @a, text, operator.power + 1)
+                span = token.Span(start: a.exprs[left].span.start, end: a.exprs[right].span.end)
+                left @ ast.push_expr(@a, ast.Expr(kind: .binary(op: operator.op, left: left, right: right), span: span))
     return left
 
 ## Entry point 2 — a pattern's operand

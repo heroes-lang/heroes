@@ -414,6 +414,39 @@ reading the same token forever (bootstrap fixedbugs, 2026-08-13). The port has
 that arm and a test that would spin without it — which is CLAUDE.md §9's rule
 ("a fixed defect gets a case named after it") surviving a change of language.
 
+## Panel 067's repair — the port's own regression, undone (2026-08-16)
+
+The sitting convened on the cost of naming every case found that the file's
+worst site was **the port's mistake, not the language's price**. Rust's
+`expr.rs` has one `binary_op(kind) -> Option<(BinaryOp, u8)>`; the port split it
+into a power table and an operator table, so ~50 non-operator tokens were
+enumerated **twice** — and the second table had to invent an operator for them.
+It invented `.add`.
+
+**What the split cost, proved rather than argued** (compiler-engineer): changing
+one line from `.percent => .rem` to `.percent => .add` — the copy-paste that ten
+`.add` lines in a row invite — left `heroes check` at **exit 0** and **46/46
+tests passing**, with `%` parsing as `+`. Neither the compiler nor the file's
+own tests could see it, because both tables were internally consistent and only
+their *agreement* was the invariant — and nothing held it.
+
+**Joined** into `binary_op(kind) -> Operator?`, measured:
+
+| | before | after |
+|---|---|---|
+| code lines | 811 | **796** (−15) |
+| comment lines | 248 | 265 (+17, the explanation) |
+
+The engineer predicted −18 code lines and measured its own join; this one is
+−15, because the port's record carries named fields. **Stated as a miss rather
+than rounded to the prediction.**
+
+What the join actually buys is not the 15 lines: it is that **the two-table
+agreement stops being an invariant nothing holds**. One arm now carries both
+halves, so a token that is not an operator says `fail("not_an_operator", …)`
+instead of answering `.add`. A single-table typo is still possible — that class
+is Rust's too — but the class where two consistent tables disagree is gone.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`
