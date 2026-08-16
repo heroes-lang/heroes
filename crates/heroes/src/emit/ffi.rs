@@ -31,6 +31,7 @@ use crate::syntax::{Ast, DeclKind};
 use super::ffi_build as build;
 use super::ffi_declared as declared;
 use super::ffi_record as record;
+use super::ffi_tag as tag;
 use super::ffi_mutable as mutable;
 use super::ffi_narrowed as narrowed;
 
@@ -90,6 +91,19 @@ pub fn explain(
         if let Some(diagnostic) = record::union_record(line, ast, src) {
             push(&mut found, diagnostic);
         }
+        // **Before `unknown_name`, and the order is the message.** A tag-only
+        // header makes clang say two things about one mistake — *"must use
+        // 'struct' tag"* and *"use of undeclared identifier"* — and only the first
+        // names the repair. `push` keeps one diagnostic per span, so whichever
+        // runs first wins; the generic one would tell the author the header
+        // declares no such type, which is false: it declares it in C's other
+        // namespace.
+        if let Some(diagnostic) = tag::missing_tag(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
+        if let Some(diagnostic) = tag::unknown_tag(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
         if let Some(diagnostic) = declared::unknown_name(line, stderr, ast, src) {
             push(&mut found, diagnostic);
         }
@@ -134,6 +148,17 @@ pub(super) fn declaration(ast: &Ast, src: &Source, name: &str) -> Option<(crate:
         let (header, is_constant) = match &decl.kind {
             DeclKind::Function(function) => (function.header?, false),
             DeclKind::Constant { header, .. } => ((*header)?, true),
+            // **A `record` reaches clang by name too, and this arm was missing**
+            // (panel 074, both seats made it a condition). §7's rule is that the
+            // narrowing is `declaration()` — every class recovers a name and asks
+            // whether *this program* declared it `extern` — and a `record` fell
+            // through to `_ => None`, so a type the author DID declare in a group
+            // came back as exit 2, *"internal error: compiling the generated C
+            // failed"*, the compiler blaming itself for the author's line. The
+            // premise under the old `_` was that only functions and constants
+            // reach clang by name, and it died the day panel 060 gave records a
+            // field assertion: CLAUDE.md §11's shape exactly.
+            DeclKind::Record { header, .. } => ((*header)?, false),
             _ => return None,
         };
         Some((decl.span, src.slice(header).trim_matches('"').to_string(), is_constant))

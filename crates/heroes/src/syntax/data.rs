@@ -79,6 +79,34 @@ fn partial_marker(cur: &mut Cursor, src: &Source, in_group: bool) -> bool {
     true
 }
 
+/// `tag stat` after a group `record`'s name, if it is there (panel 074).
+///
+/// **Contextual exactly like `partial`, and for the same reason**: it is consumed
+/// only in this position, so `tag` stays an ordinary identifier everywhere in the
+/// language and a field named `tag` goes on compiling. What follows it must be an
+/// identifier — C's tag — and a missing one is reported here rather than left to
+/// the field block, which would say something about indentation.
+///
+/// **Order is `tag <name>` then `partial`**, and the other order is a parse error
+/// on purpose: one order that parses is one order to learn, and a reader who
+/// writes the other gets told immediately instead of getting a second grammar.
+fn tag_marker(cur: &mut Cursor, src: &Source, in_group: bool) -> Option<Span> {
+    if !in_group || !cur.at(TokenKind::Ident) || src.slice(cur.span()) != "tag" {
+        return None;
+    }
+    let keyword = cur.bump().span;
+    if !cur.at(TokenKind::Ident) {
+        cur.error(
+            "expected_declaration",
+            "`tag` names the struct tag C uses for this type: `record FileStat tag stat`"
+                .to_string(),
+            cur.here_or(src, keyword),
+        );
+        return None;
+    }
+    Some(cur.bump().span)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn record_tail(
     cur: &mut Cursor,
@@ -93,6 +121,7 @@ fn record_tail(
         Linkage::Heroes => (None, None),
         Linkage::Extern { header, library } => (Some(header), library),
     };
+    let tag = tag_marker(cur, src, header.is_some());
     let partial = partial_marker(cur, src, header.is_some());
     eat_python_colon(cur);
     cur.skip_terminators();
@@ -114,7 +143,7 @@ fn record_tail(
         name,
         doc,
         span: keyword.to(end),
-        kind: DeclKind::Record { fields, header, library, partial },
+        kind: DeclKind::Record { fields, header, library, partial, tag },
     });
 }
 

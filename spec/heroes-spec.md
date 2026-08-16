@@ -214,7 +214,9 @@ frameworks on macOS, `-lGL -lX11` on Linux — in one spelling that is the same
 everywhere. A package answering with anything this compiler does not pass on is
 refused, naming what it said.
 
-A group's `record` is the header's struct: the same name and all its fields. A
+A group's `record` is the header's struct: all its fields, and the same name
+unless the header writes it after the word struct, which `tag` gives:
+`record FileStat tag stat partial`. A
 field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
 array of one: `i32[4]`, never a `[T]`.
 `record Font partial` names only some, and then comparing it and using it as a

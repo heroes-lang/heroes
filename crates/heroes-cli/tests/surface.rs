@@ -1847,3 +1847,102 @@ fn a_union_is_refused_where_it_would_answer_wrongly_and_read_where_it_would_not(
         }
     }
 }
+
+/// **`tag` binds the part of C that keeps its struct names in another drawer**
+/// (panel 074), and the acceptance case is the one panel 072 named: `struct stat`,
+/// beside the `stat()` that fills it.
+///
+/// Before this, `record TagOnly` over a header that writes `struct TagOnly` and no
+/// typedef was **exit 2** — *"internal error: compiling the generated C failed"* —
+/// the compiler blaming itself for a header the author is entitled to bind. That
+/// is **109 of 323** struct definitions across six real header sets, including
+/// `stat`, `timeval`, `timespec`, `sockaddr_in` and `dirent`: most of the
+/// platform, which §1.11 makes this language's whole library.
+///
+/// **The marker carries a name rather than being a boolean**, and that is not
+/// ergonomics: **6 of 328** tags are also a function or an object — `flock`,
+/// `sigaction`, `sigvec`, `stat`, `timezone`, `wait` — so `record stat` collides
+/// with the `function stat` that fills it in Heroes' single namespace, and the
+/// most-bound struct in POSIX would stay unbindable beside its own call.
+///
+/// **Both failure rows are the llm-ergonomist's condition of approval.** It
+/// approved `tag` on the ground that the compiler checks the marker against the
+/// header, and said which way it would fall without that: its first preference
+/// becomes `c_name`, because the word alone would then carry the whole burden of
+/// preventing a swap. Measured before the check existed, a wrong tag was exit 2.
+#[test]
+fn a_struct_c_names_only_by_tag_binds_and_says_so_when_it_cannot() {
+    let dir = std::env::temp_dir().join("heroes-struct-tag");
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    std::fs::write(
+        dir.join("drawer.h"),
+        "#include <stdint.h>\nstruct TagOnly { int32_t a; int32_t b; };\n\
+         typedef struct { int32_t a; } Typedefed;\n\
+         static inline int32_t tag_only_a(struct TagOnly v) { return v.a; }\n",
+    )
+    .expect("writing the probe header");
+    // (name, group, body, expected exit, code the message must carry, why)
+    let cases: [(&str, &str, &str, i32, &str, &str); 5] = [
+        (
+            "bound",
+            "    record Plain tag TagOnly\n        a: i32\n        b: i32\n    function tag_only_a(v: Plain) -> i32\n",
+            "    v = Plain(a: 11, b: 22)\n    print(tag_only_a(v))\n",
+            0,
+            "",
+            "a tag-only struct binds, is built, and crosses to C by value",
+        ),
+        (
+            "no-marker",
+            "    record TagOnly\n        a: i32\n        b: i32\n",
+            "    v = TagOnly(a: 1, b: 2)\n    print(v.a)\n",
+            1,
+            "ffi_missing_tag",
+            "without the marker this was exit 2, the compiler blaming itself for the author's header",
+        ),
+        (
+            "wrong-tag",
+            "    record Plain tag NoSuchTag\n        a: i32\n        b: i32\n",
+            "    v = Plain(a: 1, b: 2)\n    print(v.a)\n",
+            1,
+            "ffi_unknown_tag",
+            "clang checks the marker against the header: a tag with no struct behind it is the author's typo, not the compiler's failure",
+        ),
+        (
+            "wrong-field-under-a-tag",
+            "    record Plain tag TagOnly\n        a: i32\n        b: i64\n",
+            "    v = Plain(a: 1, b: 2)\n    print(v.a)\n",
+            1,
+            "ffi_field_type",
+            "panel 072 rider 1: the field marker had to stop carrying the C TYPE's name, because `struct TagOnly` is two words and the reader splits on whitespace — keyed that way this row was exit 2 while the typedef'd one was exit 1, for the same mistake",
+        ),
+        (
+            "typedef-still-binds",
+            "    record Typedefed\n        a: i32\n",
+            "    v = Typedefed(a: 5)\n    print(v.a)\n",
+            0,
+            "",
+            "the marker is optional and a typedef'd struct must go on binding without it",
+        ),
+    ];
+    for (name, group, body, expected, code_text, why) in cases {
+        let source = dir.join(format!("{name}.hero"));
+        std::fs::write(&source, format!("extern \"drawer.h\"\n{group}\nfunction main()\n{body}"))
+            .expect("writing the probe program");
+        let out = heroes(&[
+            "build",
+            source.to_str().expect("a utf-8 path"),
+            "--include",
+            dir.to_str().expect("a utf-8 path"),
+            "-o",
+            dir.join(name).to_str().expect("a utf-8 path"),
+        ]);
+        let text = String::from_utf8_lossy(&out.stderr).into_owned();
+        assert_eq!(code(&out), expected, "`{name}` should be exit {expected} — {why}.\n{text}");
+        if !code_text.is_empty() {
+            assert!(
+                text.contains(&format!("error[{code_text}]")),
+                "`{name}` must report `{code_text}` — {why}.\n{text}"
+            );
+        }
+    }
+}

@@ -28,32 +28,8 @@ use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 use crate::types::{Checked, Ty, TyId};
 
+pub(super) use super::aggregate_name::Aggregate;
 use super::mangle;
-
-/// The two names one aggregate answers to: the prefix its generated functions
-/// carry, and the C type it *is*.
-///
-/// **They differ for exactly one kind of declaration** — a `record` inside an
-/// `extern` group, whose type is the header's and whose `_eq` must still be this
-/// compiler's — and agree for every other, which is what made a single name look
-/// right for as long as no header was involved. Owned rather than borrowed
-/// (CLAUDE.md §5), and one value rather than two parameters, because the
-/// functions that need it already carry nine and ten.
-#[derive(Clone)]
-pub(super) struct Aggregate {
-    /// This compiler's mangled name — what `_eq`, `_hash`, `_desc`, `_retain` and
-    /// `_release` are spelled with. Never the header's, or the emitter writes a
-    /// global unmangled `Color_eq` beside the library that declared `Color`.
-    pub(super) prefix: String,
-    /// The C type — the header's own spelling for a group's `record`.
-    pub(super) c_type: String,
-    /// Whether the struct is the **header's** rather than this compiler's, which
-    /// decides how its members are spelled as well as what it is called.
-    pub(super) foreign: bool,
-    /// Whether the field list names only **some** of that struct — which decides
-    /// what the generated `_eq` and `_hash` are allowed to do (panel 061).
-    pub(super) partial: bool,
-}
 
 /// The C typedef name of every declared aggregate, by declaration index.
 ///
@@ -141,7 +117,7 @@ impl Names {
             // modules may each declare `Point`, and they are two C structs.
             let name = mangle::ty(src.component_at(decl.name.start), src.slice(decl.name));
             match &decl.kind {
-                DeclKind::Record { header, partial: is_partial, .. } => {
+                DeclKind::Record { header, partial: is_partial, tag, .. } => {
                     if *is_partial {
                         partial.insert(index as u32);
                     }
@@ -152,12 +128,26 @@ impl Names {
                     // name, and for the same reason: it must match something this
                     // compiler did not write. The emitter writes no `typedef` for
                     // it at all (`types.rs`), so there is nothing to collide with.
-                    let c_name = match header {
-                        Some(_) => {
+                    //
+                    // **And with `tag` it is two words** (panel 074): C keeps
+                    // struct tags in a namespace of its own, so a header that
+                    // writes `struct stat` and no typedef is reachable only as
+                    // `struct stat`. Every emitter site spells the type through
+                    // this string, so `struct` travels with it and none of them
+                    // has to ask. What must NOT travel with it is any *name* this
+                    // compiler generates — `_eq`, `_hash`, a typedef — which is
+                    // why `satellites` is set from the mangled name above,
+                    // unconditionally, three lines before this.
+                    let c_name = match (header, tag) {
+                        (Some(_), Some(tag)) => {
+                            foreign.insert(index as u32);
+                            format!("struct {}", src.slice(*tag))
+                        }
+                        (Some(_), None) => {
                             foreign.insert(index as u32);
                             src.slice(decl.name).to_string()
                         }
-                        None => name,
+                        (None, _) => name,
                     };
                     aggregates.insert(index as u32, c_name);
                 }

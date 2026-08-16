@@ -84,8 +84,18 @@ pub(super) fn extern_record_assertions(
     for (index, decl) in ast.decls.iter().enumerate() {
         let DeclKind::Record { fields, header: Some(_), .. } = &decl.kind else { continue };
         let c_type = names.of(index as u32).to_string();
+        // **The marker carries the DECLARATION's name, never the C type's**
+        // (panel 072 rider 1, landed with the marker that made it reachable). With
+        // `tag`, `c_type` is two words — `struct stat` — and `emit/ffi_record.rs`
+        // splits this marker on whitespace and reads token 1 as the name to
+        // recover. Keyed on the C type, the same author mistake got exit 1 on a
+        // typedef'd record and exit 2 *"internal error"* on a tagged one. The
+        // declaration's name is one token by construction: it is an identifier.
+        let hero_name = src.slice(decl.name).to_string();
         for field in fields {
-            let Some(line) = assertion(checked, names, src, &c_type, field) else { continue };
+            let Some(line) = assertion(checked, names, src, &c_type, &hero_name, field) else {
+                continue;
+            };
             let at = field.name.start;
             let (file, at_line, _) = src.locate(at);
             let file = file.to_string();
@@ -109,6 +119,7 @@ fn assertion(
     names: &Names,
     src: &Source,
     c_type: &str,
+    hero_name: &str,
     field: &Field,
 ) -> Option<String> {
     let ty = checked.written_type(field.ty)?;
@@ -149,7 +160,7 @@ fn assertion(
             "_Static_assert(__builtin_classify_type({place}) == 5 \
              && _Generic({place}, __typeof__({place}): 1, default: 0) \
              && sizeof({place}) == sizeof(void *), \
-             \"{FIELD_ASSERTION} {c_type} {member}\");"
+             \"{FIELD_ASSERTION} {hero_name} {member}\");"
         ));
     }
     // **An array field is a BRANCH, not a row** (panel 062's compiler-engineer,
@@ -194,7 +205,7 @@ fn assertion(
         return Some(format!(
             "_Static_assert(_Generic(&{place}, {elem} (*)[{n}]: 1, default: 0) \
              && sizeof({c_type}) - __builtin_offsetof({c_type}, {member}) >= sizeof({elem}[{n}]), \
-             \"{FIELD_ASSERTION} {c_type} {member}\");"
+             \"{FIELD_ASSERTION} {hero_name} {member}\");"
         ));
     }
     // **An integer field asks width and sign, never type identity** (panel 064,
@@ -246,14 +257,14 @@ fn assertion(
             "_Static_assert(__builtin_classify_type({place}) == 1 \
              && sizeof({place}) == sizeof({spelling}) \
              && (((__typeof__({place}))-1 < 0) == (({spelling})-1 < 0)), \
-             \"{FIELD_ASSERTION} {c_type} {member}\");"
+             \"{FIELD_ASSERTION} {hero_name} {member}\");"
         ));
     }
     let spelling = c_spelling(checked, names, ty)?;
     Some(format!(
         "_Static_assert(_Generic(&{place}, {spelling} *: 1, default: 0) \
          && sizeof({place}) == sizeof({spelling}), \
-         \"{FIELD_ASSERTION} {c_type} {member}\");"
+         \"{FIELD_ASSERTION} {hero_name} {member}\");"
     ))
 }
 

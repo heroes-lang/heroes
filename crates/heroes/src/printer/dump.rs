@@ -90,10 +90,14 @@ fn declaration(ast: &Ast, src: &Source, decl: &Decl, out: &mut String) {
         // `package` all produced identical dumps and a green test. Measured, with
         // this arm's `..` restored: `dump` of `extern "raylib.h" package "raylib"`
         // + `record Font` and of a top-level `record Font` are the same string.
-        DeclKind::Record { fields, header, library, partial } => {
+        DeclKind::Record { fields, header, library, partial, tag } => {
             let group = extern_prefix(src, *header, *library);
+            // Both markers, in the order that parses, and for this arm's own
+            // stated reason: a dump that cannot tell two different programs apart
+            // is a guard that is blind exactly where it is needed.
+            let tag = tag.map_or(String::new(), |t| format!(" tag {}", src.slice(t)));
             let marker = if *partial { " partial" } else { "" };
-            out.push_str(&format!("  {group}record {name}{marker}\n"));
+            out.push_str(&format!("  {group}record {name}{tag}{marker}\n"));
             docs(src, &decl.doc, out);
             for field in fields {
                 field_line(ast, src, field, "    ", out);

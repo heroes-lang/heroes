@@ -73,11 +73,16 @@ impl Fmt {
             // That is panel 060's `fmt_extern.rs` hoisting one milestone later, and
             // the guard that exists to catch it was blind in the same place: see
             // `printer/dump.rs`.
-            DeclKind::Record { fields, header, library, partial } => {
+            DeclKind::Record { fields, header, library, partial, tag } => {
                 let indent =
                     self.extern_head_once(src, comments, decl, *header, *library, continues);
+                // `tag` is printed for the reason the comment above gives about
+                // `partial`, one marker later: dropping it emits a program that
+                // still parses and binds a DIFFERENT C type — or none, if the
+                // Heroes name is not a name C knows.
+                let tag = tag.map_or(String::new(), |t| format!(" tag {}", src.slice(t)));
                 let marker = if *partial { " partial" } else { "" };
-                self.line(indent, &format!("record {name}{marker}"));
+                self.line(indent, &format!("record {name}{tag}{marker}"));
                 self.last_line = line;
                 self.trailing_comment(src, comments, line);
                 for field in fields {

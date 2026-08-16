@@ -84,11 +84,28 @@ pub enum DeclKind {
     /// not do is answer `==` or `hash`, or be a map key — because those three read
     /// the fields nobody named. `false` for every ordinary `record`, and for a
     /// group's `record` that names them all.
+    /// **`tag` is the second contextual keyword in this position** (panel 074),
+    /// and it exists because C keeps struct tags in a drawer of their own (C11
+    /// 6.2.3) while Heroes has one namespace. `record FileStat tag stat` binds
+    /// `struct stat`: the Heroes name is the author's, the tag is C's, and the
+    /// two need not agree. Measured over six real header sets: **109 of 323**
+    /// struct definitions have a tag and no typedef — most of the platform,
+    /// including `stat`, `timeval`, `timespec`, `sockaddr_in` and `dirent` — and
+    /// **6 of 328 tags are also a function or an object** (`flock`, `sigaction`,
+    /// `sigvec`, `stat`, `timezone`, `wait`), which is why the marker carries a
+    /// name instead of being a boolean: without one, `record stat` collides with
+    /// the `function stat` that fills it and the most-bound struct in POSIX stays
+    /// unbindable beside its own call.
+    ///
+    /// `Some(span)` is the **tag's identifier**, not the whole clause. `None`
+    /// means the header names the type in C's ordinary namespace, which is what a
+    /// typedef does.
     Record {
         fields: Vec<Field>,
         header: Option<Span>,
         library: Option<Library>,
         partial: bool,
+        tag: Option<Span>,
     },
     /// `variant Token` + one case per line, each optionally with fields.
     Variant { cases: Vec<Case> },

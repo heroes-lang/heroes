@@ -116,6 +116,17 @@ pub(super) fn unknown_name(line: &str, stderr: &str, ast: &Ast, src: &Source) ->
         .iter()
         .find_map(|marker| line.split(marker).nth(1))?;
     let name = quoted.split('\'').next()?;
+    // **A tag-only struct is not an absent one, and clang says both things about
+    // it** (panel 074). For `record TagOnly` over a header that writes `struct
+    // TagOnly` with no typedef, clang emits *"must use 'struct' tag"* AND *"use of
+    // undeclared identifier"*, at two different spans — so `push`'s
+    // one-per-span rule does not choose between them and this message would tell
+    // the author the header declares no such type, which is false. The narrowing
+    // is a fact about the text in hand, not a premise about what clang emits:
+    // if the tag line is present for THIS name, `ffi_missing_tag` owns it.
+    if stderr.contains(&format!("must use 'struct' tag to refer to type '{name}'")) {
+        return None;
+    }
     let (span, header, _) = declaration(ast, src, name)?;
     let mut diagnostic = Diagnostic::new(
         "ffi_unknown_name",
