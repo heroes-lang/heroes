@@ -366,6 +366,73 @@ variant Library
     package
         name: token.Span
 
+## Declarations proper
+
+# Port of crates/heroes/src/syntax/ast/decls.rs. Port note, and it is the
+# `_stmt` finding again at the top level: **all five of Rust's `DeclKind` case
+# names are Heroes keywords** (`constant`, `function`, `record`, `variant`,
+# `test`), so every case carries a `_decl` suffix. The spelling changes; the
+# vocabulary does not.
+
+# A top-level declaration. `span` covers the whole declaration, header and
+# body; `name` is just the name, which is what diagnostics point at.
+record Decl
+    name: token.Span
+    # The comment lines directly above, with no blank line between (§4.1 —
+    # adjacency IS the doc marker). A `##` heading stops the run.
+    doc: [token.Span]
+    span: token.Span
+    kind: DeclKind
+
+# What a `function` owns. Its own record rather than five payload fields,
+# because the passes after the parser hand "the function" around whole —
+# the Rust side is `DeclKind::Function(Function)` for the same reason.
+record FunctionDecl
+    # `function map<A, B>(…)` — type parameters, no constraints (§4.12).
+    generics: [token.Span]
+    params: [Param]
+    # The declared result. A signature without `->` gets a `unit` node, so
+    # later passes never ask "was the arrow there?".
+    result: i64
+    # Absent for an `extern`: the implementation comes from C (§4.19).
+    body: Block?
+    is_extern: bool
+    # The header this signature was declared under, quotes included, and the
+    # library to link — both from the group's head line, copied onto every
+    # member (§4.19, panel 036): the group is flattened in the parser and
+    # nowhere else, so a declaration's index stays function identity.
+    header: token.Span?
+    library: Library?
+
+variant DeclKind
+    # `constant MAX: i64` + body (§4.2), or — inside an `extern` group — no
+    # body, the value being the header's (§4.19, panel 038). One case rather
+    # than two: the Rust side measured that a sixth kind would silently break
+    # the one `matches!` that decides constant-ness.
+    constant_decl
+        ty: i64
+        body: Block?
+        header: token.Span?
+        library: Library?
+    function_decl
+        value: FunctionDecl
+    # `record Point` + fields — or, in a group, a struct the HEADER declares
+    # (panel 060): then the emitter writes no typedef and the layout is C's.
+    # `partial` names some of the fields and costs `==`/`hash`/map-key (panel
+    # 061); `tag` is C's struct tag when the header has no typedef (panel 074).
+    record_decl
+        fields: [Field]
+        header: token.Span?
+        library: Library?
+        partial: bool
+        tag: token.Span?
+    variant_decl
+        cases: [Case]
+    # `test "3-4-5 triangle"` + body (§4.18). `name` holds the string literal,
+    # quotes included — a title, not an identifier.
+    test_decl
+        body: Block
+
 ## The arena
 
 record Ast
@@ -490,6 +557,34 @@ test "the tree is copied by value, so a walk cannot disturb it"
     assert b.exprs.len() == 2
     assert a.exprs[0].kind == .int_lit
     assert b.exprs[1].kind == .float_lit
+
+test "a declaration owns its members directly, no arena"
+    zero = token.Span(start: 0, end: 1)
+    generics: [token.Span] = []
+    ps: [Param] = [Param(name: zero, ty: 0, mutable: false)]
+    doc: [token.Span] = []
+    f = FunctionDecl(generics: generics, params: ps, result: 0, body: fail("absent", "no body"), is_extern: true, header: ok(zero), library: fail("absent", "none"))
+    d = Decl(name: zero, doc: doc, span: zero, kind: .function_decl(value: f))
+    match d.kind
+        .function_decl fd =>
+            assert fd.value.is_extern
+            assert fd.value.params.len() == 1
+            assert fd.value.header.must() == zero
+            assert fd.value.body.is_err()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
+test "a group's record carries what the head line said"
+    zero = token.Span(start: 0, end: 1)
+    fields: [Field] = []
+    kind: DeclKind = .record_decl(fields: fields, header: ok(zero), library: ok(.link(name: zero)), partial: true, tag: fail("absent", "no tag"))
+    match kind
+        .record_decl r =>
+            assert r.partial
+            assert r.tag.is_err()
+            match r.library.must()
+                .link l => assert l.name == zero
+                .package => assert false
+        .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
 
 test "the operators are the language's own, spelled once"
     # A case is contextual — `.shl`, never `BinaryOp.shl`, which is a type in
