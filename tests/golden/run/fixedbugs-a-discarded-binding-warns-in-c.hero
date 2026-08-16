@@ -1,0 +1,43 @@
+# FIXED DEFECT, 2026-08-16. Symptom: `_ = v` on a binding made the generated C
+# draw `warning: variable 'h0_v' set but not used [-Wunused-but-set-variable]`.
+# The corpus harness holds a zero-warning bar, so §4.4's own discard idiom was
+# the one spelling that could not meet it.
+#
+# CAUSE, and it is why the first attempt at this did not work: `_ = v` lowers to
+# a LOAD of the slot whose destination is then discarded. So the slot is read in
+# the IR and not in the emitted C, and a rule that asks the IR alone answers
+# "read" for every discard and catches nothing. The question has to be asked of
+# the emitted C — which is what `emit/unread.rs` already answers for temporaries,
+# so the third question went beside the other two.
+#
+# FIX: a slot nothing reads in C is declared `__attribute__((unused))`, the same
+# idiom `extern_complete.rs` writes on its probes. Not a suppression: an unused
+# binding is already a compile error (§4.4), so a slot written and never read
+# exists exactly when the author wrote the discard and SAID they do not use it.
+# clang is right about the C and the C is right about the program; what was
+# missing was the emitter saying the silence is on purpose.
+#
+# The shapes around it, measured before this case was written:
+#   - a REFCOUNTED discard gets no attribute, and that falls out rather than
+#     being carved out: the exit sweep loads the slot to `decref`, so it really
+#     is read. `s = "ziggy"` then `_ = s` never warned in the first place.
+#   - an ordinary used binding gets no attribute.
+#   - `_ = f(x)`, the discard on a CALL, was already right — `may_lose_its_
+#     destination` covers it, and this is the named-binding half it did not.
+# Named after the defect, per Go's `test/fixedbugs` (CLAUDE.md §9).
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    # The scalar discard: the shape that warned.
+    v = 41
+    _ = v
+    # The refcounted one: reads through the sweep, so it never warned.
+    s = "ziggy"
+    _ = s
+    # The call discard, which was already correct.
+    _ = twice(3)
+    # And a binding that IS used, to prove the attribute is not blanket.
+    kept = twice(21)
+    print(kept)

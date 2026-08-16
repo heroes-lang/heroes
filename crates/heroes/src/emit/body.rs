@@ -144,8 +144,22 @@ fn prologue(
             // every runtime entry point rejects loudly, plus the verifier's own
             // store-before-load check.
             let initialiser = if is_refcounted(checked, slot.ty) { " = {0}" } else { "" };
+            // **A binding the author discarded is told to C that it was on
+            // purpose.** `_ = v` is §4.4's discard and the only way to reach a slot
+            // that is written and never read — an unused binding is already a
+            // compile error — so `-Wunused-but-set-variable` is *right* about the C
+            // and the C is right about the program. What was missing is the
+            // emitter saying the silence is deliberate, which is this attribute,
+            // the same idiom `extern_complete.rs` writes on its probes. A
+            // refcounted slot never gets it, and that falls out rather than being
+            // carved out: the exit sweep loads it to `decref`, so it is read.
+            let deliberate = if super::unread::slot_is_read(function, live, read, SlotId(index as u32)) {
+                ""
+            } else {
+                "__attribute__((unused)) "
+            };
             w.line(&format!(
-                "    {ty} {}{initialiser};",
+                "    {deliberate}{ty} {}{initialiser};",
                 mangle::slot(index as u32, &slot.name)
             ));
         }

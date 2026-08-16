@@ -202,3 +202,59 @@ fn reads_given(
     }
     read
 }
+
+/// Whether anything in this function **reads** the slot — the third question this
+/// file answers, and the one `-Wunused-but-set-variable` turns on for a *named*
+/// binding rather than a temporary.
+///
+/// **`_ = v` is the only way to reach it**, and that is what makes it worth
+/// answering rather than suppressing: an unused binding is already a compile error
+/// (§4.4), so a slot that is written and never read exists exactly when the author
+/// wrote the discard and said *I deliberately do not use this*. The C is then
+/// honest — `int64_t h0_v;` really is set and never used — and clang is right to
+/// say so. What is missing is the emitter telling C that the silence is on
+/// purpose, which is `__attribute__((unused))`, the same idiom `extern_complete.rs`
+/// already writes on its probes.
+///
+/// **A refcounted slot never reaches here and the reason is structural, not a
+/// carve-out**: the exit sweep loads it to `decref`, so it is read by
+/// construction. Measured — `s = "ziggy"` then `_ = s` emits `t4 = h0_s;` and
+/// `t5 = h0_s;` and draws no warning at all. So the rule asks *does anything read
+/// it*, which is a fact about this function, rather than *is it refcounted*, which
+/// would be a premise about the ownership pass that could expire (CLAUDE.md §11).
+///
+/// Conservative in the safe direction: anything that so much as mentions the slot
+/// counts as a read. The attribute means *may* be unused, never *must* be, so an
+/// over-count silences nothing and an under-count only leaves the warning standing.
+pub(super) fn slot_is_read(
+    function: &Function,
+    live: &[bool],
+    read: &std::collections::BTreeSet<u32>,
+    slot: crate::ir::SlotId,
+) -> bool {
+    let touches = |place: &crate::ir::Place| place.root == slot;
+    function.blocks.iter().enumerate().any(|(block, b)| {
+        live[block]
+            && b.insts.iter().any(|inst| match &inst.op {
+                // **A load only counts if the load itself survives into C**, which
+                // is the whole subtlety: `_ = v` lowers to a load whose destination
+                // is then discarded, so the slot is read in the IR and not in the
+                // emitted C. Asking the IR alone answers *true* for every discard
+                // and the rule catches nothing.
+                Op::Load(place) => {
+                    touches(place)
+                        && inst
+                            .dest
+                            .is_some_and(|d| !discarded(function, live, d.0, read))
+                }
+                // A store *through a path* reads the root on the way (copy-on-write
+                // walks it); a store straight to the slot is the write this asks
+                // about.
+                Op::Store { place, .. } => touches(place) && place.path.len > 0,
+                // §4.8's copy-out reads the local and writes it back through the
+                // pointer.
+                Op::CopyOut { param } => *param == slot,
+                _ => false,
+            })
+    })
+}
