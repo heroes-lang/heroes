@@ -91,7 +91,51 @@ fn report(diagnostics: &[Diagnostic], src: &Source, args: &Invocation) -> Option
     if args.has("--apply") {
         // The repair is the artifact here, so the diagnostics stay quiet: a
         // caller that wants both runs the command twice.
-        print!("{}", apply(&kept, src));
+        let repaired = apply(&kept, src);
+        // **`--in-place` writes the file, which it did not do until 2026-08-16**
+        // (defect, panel 071's spec-warden, found while measuring something
+        // else). The flag parsed, the argv table documented it as *"with
+        // --apply, rewrite the file instead of printing it"*, and nothing ever
+        // read it: the repaired text went to stdout and the file was left
+        // byte-identical, at exit 0. CLAUDE.md §10 names `--in-place` as **the**
+        // mutating flag, so a mutating flag that reports success and mutates
+        // nothing is the surface lying about itself.
+        //
+        // The write goes through `src.name` rather than the `path` argument
+        // because that is the file the text came from — `apply` returns
+        // `src.user_text()` with the edits, deliberately excluding the library
+        // §1.11 appends to every `Source`, and writing the two through different
+        // names is how they would drift.
+        if args.has("--in-place") {
+            // **The report is the DIFFERENCE, not the diagnostic count**, and the
+            // distinction is load-bearing since panel 071: `discarded_value` now
+            // offers two `guess`es where the compiler cannot tell them apart, and
+            // `--apply` takes only `certain` ones — so a file can have diagnostics
+            // and no applicable repair. Counting `kept` would have printed
+            // "applied 1 certain fix(es)" over a file it did not touch, which is
+            // the same class as the defect four lines up.
+            let changed = repaired != src.user_text();
+            if changed {
+                if let Err(e) = std::fs::write(&src.name, &repaired) {
+                    eprintln!("error: cannot write {}: {e}", src.name);
+                    return Some(Exit::Failed);
+                }
+            }
+            // On **stderr**: stdout is the artifact channel (§10's contract), and
+            // with `--in-place` there is no artifact on it. Silence would leave a
+            // caller unable to tell a rewrite from a no-op, which is the defect
+            // this repairs wearing a quieter hat.
+            match changed {
+                true => eprintln!("rewrote {}", src.name),
+                false => eprintln!(
+                    "{} unchanged: no `certain` fix applies to its {} diagnostic(s)",
+                    src.name,
+                    kept.len()
+                ),
+            }
+            return Some(Exit::Ok);
+        }
+        print!("{}", repaired);
         return Some(Exit::Ok);
     }
     if args.has("--json") {

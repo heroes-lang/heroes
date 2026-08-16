@@ -155,19 +155,59 @@ pub(in crate::types) fn main_returns(got: &str, span: Span) -> Diagnostic {
     )
 }
 
-pub(in crate::types) fn discarded_value(got: &str, span: Span) -> Diagnostic {
+/// A line computed a value and nothing received it (panel 003).
+///
+/// **`receiver` is the name the call was written on when the call returns that
+/// name's own type**, and it decides whether `_ = …` is `certain` or a `guess`
+/// (panel 071, measured). `push` returns the new array and leaves its receiver
+/// alone, so `_ = xs.push(4)` compiles at exit 0 and loses the element — a
+/// `certain` fix converting a caught mistake into a silent wrong answer, which is
+/// CLAUDE.md §8's definition failing on its own terms and §1.12's rule that a
+/// check must surface a defect rather than hide it.
+pub(in crate::types) fn discarded_value(
+    got: &str,
+    receiver: Option<String>,
+    span: Span,
+) -> Diagnostic {
+    let Some(name) = receiver else {
+        let mut diagnostic = Diagnostic::new(
+            "discarded_value",
+            format!(
+                "this line's value has type `{got}` and nothing receives it — write `_ = …` to discard it on purpose"
+            ),
+            span,
+        );
+        diagnostic.fixes.push(Fix {
+            title: "discard it explicitly".to_string(),
+            replacement: "_ = ".to_string(),
+            span: Span { start: span.start, end: span.start },
+            certainty: Certainty::Certain,
+        });
+        return diagnostic;
+    };
+    // Both repairs are offered and **neither is `certain`**, because the compiler
+    // genuinely cannot tell them apart: the value has `{name}`'s own type, so
+    // assigning it back and throwing it away are both well-formed programs. Only
+    // a `certain` fix is machine-applicable (CLAUDE.md §8), so `--apply` now
+    // declines this line instead of silently picking the losing one.
     let mut diagnostic = Diagnostic::new(
         "discarded_value",
         format!(
-            "this line's value has type `{got}` and nothing receives it — write `_ = …` to discard it on purpose"
+            "this line's value has type `{got}` and nothing receives it — every value here is a copy, so `{name}` is unchanged: write `{name} @ …` to keep the result, or `_ = …` to discard it on purpose"
         ),
         span,
     );
     diagnostic.fixes.push(Fix {
+        title: format!("assign it back to `{name}`"),
+        replacement: format!("{name} @ "),
+        span: Span { start: span.start, end: span.start },
+        certainty: Certainty::Guess,
+    });
+    diagnostic.fixes.push(Fix {
         title: "discard it explicitly".to_string(),
         replacement: "_ = ".to_string(),
         span: Span { start: span.start, end: span.start },
-        certainty: Certainty::Certain,
+        certainty: Certainty::Guess,
     });
     diagnostic
 }

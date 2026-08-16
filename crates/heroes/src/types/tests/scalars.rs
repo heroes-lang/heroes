@@ -104,9 +104,39 @@ fn boolean_operators_take_bool_only() {
 }
 
 /// Panel 003: the value of a statement is discarded, and discarding it silently
-/// is the mistake. The fix is machine-applicable because it preserves meaning.
+/// is the mistake. The fix is machine-applicable **because it preserves
+/// meaning** — and this test used to assert that with the one example where it
+/// does not.
+///
+/// It was written on `xs.push(4)`, which is exactly the case panel 071 measured
+/// as broken: `push` returns the new array and leaves `xs` alone, so
+/// `_ = xs.push(4)` compiles at exit 0 and loses the element. The test asserted
+/// `Certain` on it and therefore certified the defect. Both halves are here now,
+/// and the pair is the point: if the second ever goes back to one `Certain` fix,
+/// the compiler has resumed writing a silent wrong answer into people's files
+/// through `--apply --in-place`.
 #[test]
-fn a_discarded_value_is_an_error_with_a_certain_fix() {
+fn a_discarded_value_is_certain_only_when_the_compiler_can_know() {
+    // Unambiguous: the result has nothing to do with any name on the line, so
+    // discarding it is the only reading and the fix stays machine-applicable.
+    let (out, _) = super::checked(
+        "\
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    twice(3)
+",
+    );
+    assert_eq!(out.diagnostics.len(), 1);
+    assert_eq!(out.diagnostics[0].code, "discarded_value");
+    assert_eq!(out.diagnostics[0].fixes.len(), 1);
+    assert_eq!(out.diagnostics[0].fixes[0].replacement, "_ = ");
+    assert_eq!(out.diagnostics[0].fixes[0].certainty, crate::diagnostics::Certainty::Certain);
+
+    // Ambiguous: the value has the receiver's own type, so assigning it back and
+    // throwing it away are both well-formed and the compiler cannot tell which
+    // was meant. Two fixes, NEITHER machine-applicable.
     let (out, _) = super::checked(
         "\
 function main(xs: [i64])
@@ -115,8 +145,13 @@ function main(xs: [i64])
     );
     assert_eq!(out.diagnostics.len(), 1);
     assert_eq!(out.diagnostics[0].code, "discarded_value");
-    assert_eq!(out.diagnostics[0].fixes[0].replacement, "_ = ");
-    assert_eq!(out.diagnostics[0].fixes[0].certainty, crate::diagnostics::Certainty::Certain);
+    assert!(out.diagnostics[0].message.contains("`xs` is unchanged"), "{}", out.diagnostics[0].message);
+    assert_eq!(out.diagnostics[0].fixes.len(), 2);
+    for fix in &out.diagnostics[0].fixes {
+        assert_eq!(fix.certainty, crate::diagnostics::Certainty::Guess);
+    }
+    assert_eq!(out.diagnostics[0].fixes[0].replacement, "xs @ ");
+    assert_eq!(out.diagnostics[0].fixes[1].replacement, "_ = ");
 }
 
 /// Panel 017 C, and Nim's rule verbatim (the historian's row): `()` is a type in

@@ -251,10 +251,47 @@ fn expression_statement(
             let unit = checker.out.types.unit();
             if got != unit && !checker.out.types.poisoned(got) {
                 let shown = checker.show(ast, src, got);
-                let diagnostic = errors::discarded_value(&shown, span);
+                let receiver = returns_its_receiver(checker, ast, src, value, got);
+                let diagnostic = errors::discarded_value(&shown, receiver, span);
                 checker.push_diagnostic(diagnostic);
             }
             (Flow::Falls, None)
         }
     }
+}
+
+/// The name this call was written **on**, when the call's result has that name's
+/// own type — `xs` in `xs.push(4)`, where both are `[i64]`.
+///
+/// **Not politeness — §8's own definition.** A `certain` fix *preserves meaning
+/// and the compiler knows it does*, and for `xs.push(4)` it did not: `push`
+/// returns the new array and leaves `xs` alone, so `_ = xs.push(4)` compiles at
+/// exit 0 and `len(xs)` prints 3 (measured, panel 071). The compiler was turning
+/// a mistake it had caught into a silent wrong answer through its own
+/// machine-applicable repair, and `--in-place` — repaired the same day — now
+/// writes that repair into the author's file.
+///
+/// **A fact about the value, not a guess about intent** (CLAUDE.md §11): it asks
+/// whether the expression's type equals the type of the name it is written on.
+/// Where they coincide the compiler *cannot know* which repair was meant, so
+/// neither is `certain`; where they differ nothing is ambiguous. Deliberately
+/// shallow — immediate receiver, bare `Name` — because a deeper walk would start
+/// choosing between places, which is the premise this rule avoids.
+fn returns_its_receiver(
+    checker: &Checker,
+    ast: &Ast,
+    src: &Source,
+    value: crate::syntax::ExprId,
+    got: TyId,
+) -> Option<String> {
+    let crate::syntax::ExprKind::Method { receiver, .. } = ast.exprs[value.0 as usize].kind else {
+        return None;
+    };
+    if !matches!(ast.exprs[receiver.0 as usize].kind, crate::syntax::ExprKind::Name) {
+        return None;
+    }
+    if checker.out.expr_types[receiver.0 as usize] != got {
+        return None;
+    }
+    Some(src.slice(ast.exprs[receiver.0 as usize].span).to_string())
 }
