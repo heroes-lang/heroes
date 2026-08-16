@@ -1,0 +1,38 @@
+# FIXED DEFECT, 2026-08-16. Symptom: lldb, stepping off the last statement of a
+# function, showed the author a `.hero` line that does not exist — `two.hero:7` and
+# `two.hero:8` in a program with six lines — and in the middle of a file it showed
+# the blank line before the next declaration. Cause: `#line N` anchors the NEXT line
+# and C auto-increments from there, so a Heroes statement lowering to K lines of C
+# claimed one source line and let the other K−1 walk forward one line each.
+# `emit/writer.rs` tracked what clang BELIEVES and honoured it only at an `at_file`
+# call, so the drift its own module doc described was diagnosed and not prevented.
+# Fix: `intent` beside `claim` — what was asked for, as against what clang believes —
+# with `line` restoring the first whenever the second has aged out.
+#
+# Scale, measured before the repair: 550 C lines across 81 of 81 `run/` programs.
+# design.md §2 promises "lldb breaks on and steps through `.hero` source lines"; the
+# breaking half had a test (`lldb_breaks_on_a_hero_line`) and the stepping half had
+# none, and that gap is exactly the width of the defect. Named after the defect, per
+# Go's `test/fixedbugs` (CLAUDE.md §9).
+#
+# What makes this case a test rather than an anecdote is the invariant that scans
+# every `run/` golden: `no_generated_line_points_past_or_between_the_authors_lines`
+# in `crates/heroes-cli/tests/golden.rs`. Reverted against this tree it reports 550.
+# This file is shaped to be the worst case for it — the last statement of each
+# function is one that lowers to several C lines, which is what makes the drift run
+# off the end rather than onto a line that happens to exist.
+
+function twice(n: i64) -> i64
+    doubled = n * 2
+    return doubled
+
+function shout(s: str) -> str
+    loud = s + "!"
+    return loud
+
+function main()
+    xs: [i64] @ []
+    xs @ xs.push(twice(3))
+    xs @ xs.push(twice(4))
+    print(len(xs), " ", xs[0], " ", xs[1])
+    print(shout("we can be heroes"))

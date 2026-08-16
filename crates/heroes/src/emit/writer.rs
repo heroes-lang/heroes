@@ -8,6 +8,29 @@
 //! mapping is. The comparison has to be against **what clang currently believes** —
 //! the effective line — which this writer tracks.
 //!
+//! **And tracking the belief is half the job — the other half went missing for the
+//! backend's whole life, repaired 2026-08-16.** The belief was tracked and then
+//! honoured only at an `at_file` call, so the drift the paragraph above describes
+//! was diagnosed and not actually prevented: an emitter that writes K lines under
+//! one request positions once, and lines 2..K walk forward a source line each.
+//! Measured over `tests/golden/run/`: **550 C lines across 81 of 81 programs**
+//! landed on a blank line, on the next declaration, or past the end of the file.
+//! `print` on the last line of a 6-line program put `hero_print_end()` on line 7
+//! and the `return` on line 8, and lldb showed the author both — `two.hero:7`,
+//! `two.hero:8`, in a file with six lines — so design.md §2's "steps through
+//! `.hero` source lines" was false on the stepping half. The repair is `intent`
+//! beside `claim`: **what was asked for**, as against **what clang believes**, with
+//! `line` restoring the first whenever the second has aged out from under it.
+//! Cost, measured on the same corpus: **+1.03%** generated C lines, no content line
+//! changed, and `emit/` goldens differ only by the restored directives and the
+//! shifted restore counts they push along.
+//!
+//! **The asymmetry that makes this cheap**: auto-increment is *correct* while the
+//! claim names the generated file, because that file really does advance one line
+//! per output line, and *wrong* while it names a source file, because K lines of C
+//! belong to one Heroes line. So a restore is emitted only against a `.hero` claim,
+//! which is why the fix costs a percent rather than a doubling.
+//!
 //! The frozen target had the bug. `tools/spike/01-first.c` advertises
 //! `00-first.hero:2` in its own header comment; clang, given a deliberate type
 //! error, reports `00-first.hero:6` — a blank line — and prints the *C* text under
@@ -40,6 +63,11 @@ pub(super) struct Writer {
     /// `pushed + 1`.
     pushed: u32,
     claim: Claim,
+    /// What the emitter last **asked** for, as opposed to what clang currently
+    /// believes. The two are the same only until a second line is written under
+    /// one request, and keeping just the belief is what let every multi-line
+    /// lowering walk off the end of the author's file.
+    intent: Claim,
     generated: String,
 }
 
@@ -49,19 +77,65 @@ impl Writer {
             out: String::new(),
             pushed: 0,
             claim: Claim::None,
+            intent: Claim::None,
             generated: format!("{module}.c"),
         }
     }
 
     /// One line of C. Everything goes through here, which is what keeps the count
     /// honest.
+    ///
+    /// **Auto-increment is right for the generated file and wrong for a source
+    /// one**, and that asymmetry is the whole of this method's second half. C
+    /// advances the line after every output line; the generated file really does
+    /// advance with it, so a claim on `<stem>.c` stays true for free. A claim on a
+    /// `.hero` file does not: **one Heroes line lowers to K lines of C, and all K
+    /// belong to the same source line**, so the claim has to be re-asserted rather
+    /// than allowed to drift. Before the repair, the K−1 extra lines walked forward
+    /// one source line each — `print` on the last line of a 6-line file put
+    /// `hero_print_end()` on line 7 and the `return` on line 8, and lldb showed both
+    /// (`two.hero:7`, `two.hero:8`, measured 2026-08-16). Over `tests/golden/run/`
+    /// that was **550 C lines across 81 of 81 programs**, every one of them landing
+    /// on a blank line, on the next declaration, or past the end of the file.
     pub(super) fn line(&mut self, text: &str) {
+        if let Claim::At { file, .. } = &self.intent {
+            if !self.points_at_generated() && self.claim != self.intent {
+                let (file, line) = (file.clone(), self.intent_line());
+                self.restore(&file, line);
+            }
+        }
+        self.push(text);
+    }
+
+    /// The unconditional half of `line`, and the one `directive` uses: writing the
+    /// `#line` itself must not ask whether a `#line` is needed.
+    fn push(&mut self, text: &str) {
         self.out.push_str(text);
         self.out.push('\n');
         self.pushed += 1;
         if let Claim::At { line, .. } = &mut self.claim {
             *line += 1;
         }
+    }
+
+    fn points_at_generated(&self) -> bool {
+        matches!(&self.intent, Claim::At { file, .. } if *file == self.generated)
+    }
+
+    fn intent_line(&self) -> u32 {
+        match &self.intent {
+            Claim::At { line, .. } => *line,
+            Claim::None => 1,
+        }
+    }
+
+    /// Re-state a claim the auto-increment has aged out from under. Same bytes as
+    /// `directive`, without touching `intent` — the intent is what is being honoured.
+    fn restore(&mut self, file: &str, line: u32) {
+        self.claim = Claim::None;
+        let text = format!("#line {line} \"{}\"", escape(file));
+        self.push(&text);
+        self.claim = Claim::At { file: file.to_string(), line };
     }
 
     pub(super) fn blank(&mut self) {
@@ -85,9 +159,13 @@ impl Writer {
     /// are in a file the author cannot open, so a clang error against one must
     /// not look like theirs. That is now the same rule as every other module's,
     /// not an exception to it.
+    /// **The test is the intent, not the claim.** A claim that has aged out under
+    /// its own auto-increment is restored by `line`, at the moment a line is
+    /// actually written — so asking again for what is already intended emits
+    /// nothing here, and emits nothing at all if no line follows.
     pub(super) fn at_file(&mut self, file: &str, line: u32) {
         let line = line.max(1);
-        if self.claim == (Claim::At { file: file.to_string(), line }) {
+        if self.intent == (Claim::At { file: file.to_string(), line }) {
             return;
         }
         self.directive(file, line);
@@ -105,12 +183,14 @@ impl Writer {
     }
 
     fn directive(&mut self, file: &str, line: u32) {
-        // Cleared first, so `line` does not increment a claim this directive is
-        // about to replace.
+        // Cleared first, so the push does not increment a claim this directive is
+        // about to replace. `push`, not `line`: writing a `#line` must not ask
+        // whether one is needed.
         self.claim = Claim::None;
         let text = format!("#line {line} \"{}\"", escape(file));
-        self.line(&text);
+        self.push(&text);
         self.claim = Claim::At { file: file.to_string(), line };
+        self.intent = self.claim.clone();
     }
 
     pub(super) fn finish(self) -> String {

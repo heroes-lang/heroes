@@ -541,6 +541,104 @@ fn golden_emit_cases_produce_their_c() {
     }
 }
 
+/// **Every C line a `#line` points into the author's file names a line that is
+/// there** — over the whole `run/` corpus, not over cases somebody thought of
+/// (CLAUDE.md §9).
+///
+/// The defect this fires on shipped for the backend's whole life and was found by
+/// asking an unrelated question — whether `#line` was worth measuring on the third
+/// CI leg. `#line N` anchors the *next* line and C auto-increments from there, so a
+/// Heroes statement that lowers to K lines of C claimed one source line and let the
+/// other K−1 walk forward. Measured 2026-08-16, before the repair: **550 C lines
+/// across 81 of 81 `run/` programs** pointed at a blank line, at the next
+/// declaration, or past the end of the file — and lldb showed the author
+/// `two.hero:7` and `two.hero:8` in a six-line program, which is design.md §2's
+/// promise failing on the half nothing tested. `lldb_breaks_on_a_hero_line` asserts
+/// that a breakpoint *resolves*; nothing asserted where stepping *goes*, and that
+/// gap is exactly the width of this defect.
+///
+/// Two shapes are refused and they are refused for one reason — a statement never
+/// sits on either. **Past the end of the file** is unarguable. **A blank line** is
+/// the same defect one line earlier, and it is the shape that survives in the
+/// middle of a file where the past-EOF test cannot see it: the drift off the last
+/// statement of a function lands on the blank line before the next declaration.
+///
+/// A continuation line of a genuinely multi-line statement is not flagged and must
+/// not be: it is a real, non-blank line of the author's file, which is the whole
+/// test.
+#[test]
+fn no_generated_line_points_past_or_between_the_authors_lines() {
+    let root = workspace_root();
+    let cases = collect_cases(&root.join("tests/golden/run"));
+    assert!(cases.len() >= 40, "the run goldens lost files: {}", cases.len());
+    let mut checked = 0usize;
+    let mut offences = Vec::new();
+    for case in cases {
+        let relative = case.strip_prefix(&root).expect("under the workspace root");
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&root)
+            .args(["build", &slashed(relative), "--emit-c"])
+            .output()
+            .expect("the heroes binary runs");
+        if output.status.code() != Some(0) {
+            continue; // a case this machine cannot emit (a missing library) is not evidence
+        }
+        checked += 1;
+        let c = String::from_utf8_lossy(&output.stdout).into_owned();
+        offences.extend(source_lines_claimed_but_absent(&root, &c));
+    }
+    assert!(checked >= 40, "only {checked} run goldens emitted — this machine tested nothing");
+    assert!(
+        offences.is_empty(),
+        "{} generated line(s) point at a source line that is blank or absent — \
+         `#line` drifted, and a debugger will show the author a line they did not write:\n{}",
+        offences.len(),
+        offences.join("\n")
+    );
+}
+
+/// Walks emitted C the way C does — `#line N "f"` anchors the next line, then the
+/// count advances — and reports every line whose claim lands nowhere.
+fn source_lines_claimed_but_absent(root: &Path, c: &str) -> Vec<String> {
+    let mut claim: Option<(String, u32)> = None;
+    let mut offences = Vec::new();
+    let mut sources: std::collections::BTreeMap<String, Option<Vec<String>>> = Default::default();
+    for (index, text) in c.lines().enumerate() {
+        if let Some(rest) = text.strip_prefix("#line ") {
+            let (number, file) = rest.split_once(' ').unwrap_or((rest, ""));
+            let file = file.trim_matches('"').replace("\\\\", "\\").replace("\\\"", "\"");
+            claim = number.parse::<u32>().ok().map(|n| (file, n));
+            continue;
+        }
+        let Some((file, line)) = claim.as_mut() else { continue };
+        if file.ends_with(".hero") {
+            let key = file.clone();
+            let body = sources.entry(key).or_insert_with(|| {
+                std::fs::read_to_string(root.join(&*file))
+                    .ok()
+                    .map(|s| s.lines().map(str::to_string).collect())
+            });
+            if let Some(body) = body {
+                let claimed = *line as usize;
+                let why = match body.get(claimed.saturating_sub(1)) {
+                    None => Some(format!("past the end ({} lines)", body.len())),
+                    Some(l) if l.trim().is_empty() => Some("a blank line".to_string()),
+                    Some(_) => None,
+                };
+                if let Some(why) = why {
+                    offences.push(format!(
+                        "  C:{} `{}` -> {file}:{claimed} is {why}",
+                        index + 1,
+                        text.trim()
+                    ));
+                }
+            }
+        }
+        *line += 1;
+    }
+    offences
+}
+
 /// **The double-emit determinism test** (CLAUDE.md §7): same input, byte-identical
 /// C. It stays green at all times, over every case in the two directories that have
 /// emittable programs.
