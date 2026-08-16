@@ -284,3 +284,44 @@ its `-> ()?` failure (no spelling worked at all), and the ffi-pragmatist's
 `cstr`→`str` need. The historian's `exit` prediction did **not** fire, and the
 reason is on the record: `hero_exit` is `_Noreturn`, so clang's flow analysis
 never needed the emitter's help.
+
+
+## Predictions scored — M-ffi-ladder close, measured 2026-08-16
+
+**Overdue, and that is the first finding.** M-ffi-ladder closed with tag
+`m-ffi-ladder` and journal 012, and no seat's prediction was scored at the close.
+`docs/debrief/SCHEDULED.md` carried the item and nothing opened it. Everything
+below is measured **at the tag**, not against today's tree — three of these
+numbers have moved since for reasons belonging to later milestones, and scoring
+a prediction against a later state would be scoring the wrong question.
+
+| judge | prediction | at the tag | verdict |
+|---|---|---|---|
+| ffi-pragmatist | SQLite open→`prepare_v2`/`step`/`column_int`→close links with `-lsqlite3` and needs **no shim** | `examples/sqlite/main.hero` binds all five; **no `.c` or `.h` file exists anywhere under `examples/`** | **correct** |
+| ffi-pragmatist | …but reading a TEXT column into a `str` **will** need one, because no `cstr`→`str` route exists | the premise held: `to_str()` appears **0 times** in the spec at the tag. The example never binds `sqlite3_column_text`, so the consequent was never put to the test | **premise correct, consequent untested** |
+| ffi-pragmatist | `framework "…"` will **not** be exercised by raylib on this machine | raylib binds through `package "raylib"`; the `framework` clause was deferred by rider 5 and is still unbuilt | **correct** |
+| compiler-engineer | the Tier-2 route leaves `emit/ops.rs` under **380**, ABI at **10**, `emit/builtins.rs` **+<10** | ops.rs 341 → **365** ✓ · ABI 10 → **10** ✓ · builtins.rs 193 → **211**, which is **+18** ✗ | **two of three** |
+| compiler-engineer | the group form puts `syntax/decl.rs` over **420** (then 352) and **forces a §11 file split** | the split happened — `syntax/externs.rs` exists at the tag at **184** lines, with `decl.rs` down to **219**. Combined **403**, so the split was real and the number was over by 17 | **the mechanism correct, the number high** |
+| historian | `exit(code)` typed as `()` either trips `-Werror=conditional-uninitialized` **or** forces an emitter special case with an unproven `hero_unreachable()` | neither. `-Werror=conditional-uninitialized` **is** in `FLAGS`, and nothing tripped it: `hero_os.h:78` declares `_Noreturn void hero_exit(int64_t code)`, bound as `function hero_exit(code: i64)` with no `->`, and `emit/builtins.rs` has no `exit` arm at all | **falsified, by a third option** |
+
+**The one worth reading is the historian's**, and it is falsified in the most
+useful direction: the disjunction was exhaustive over the two places this
+compiler could have solved it, and the answer came from **neither** — it came
+from the C header, where `_Noreturn` tells clang the call does not return, so the
+flow analysis that would have complained never runs. A prediction that offers two
+branches is a claim that the problem is the compiler's; this one was C's to
+answer, and C already had the keyword.
+
+**Still open, and correctly so:** the spec-warden's *"by M-selfhost-port,
+invoking clang from Heroes costs ≥25 spec tokens or a `PORT-DEBT` entry"*.
+M-selfhost-port is open and has not reached that point — `hero_spawn` does not
+exist in `hero_os.h` yet (it is the closure list's fifteenth row, priced at +39
+at M-selfhost-probe). **The `PORT-DEBT` count to score it against is 3**, not the
+6 a `grep -rn PORT-DEBT crates/` reports: three of those six hits are prose in
+module docs, and the markers are `toolchain.rs:206`, `emit/body.rs:36` and
+`emit/ops.rs:31`, all `clippy::too_many_arguments`. Counting the prose would
+score the prediction against the wrong unit, which is CLAUDE.md §1's second
+obligation.
+
+The three Part 11 harness predictions and the `-> ()?` one stay unscorable until
+metric 2 runs, which `docs/debrief/SCHEDULED.md` records as waiting for v1.
