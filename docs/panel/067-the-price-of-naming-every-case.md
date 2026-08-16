@@ -125,3 +125,26 @@ premise, 067 got a line count offered against a token-denominated formula — an
 in both cases the seats caught it. The instrument is working; the seat that
 convenes it is the one that keeps needing correction, which is worth recording
 in the process notes rather than in a postscript.
+
+## Author's verdict
+
+**Ratified as it stands, 2026-08-16** (author instruction, *"ratifica il panel
+zero sessantasette"*, given after the plain-language recap of all five seats).
+Everything provisional above becomes final:
+
+- **§4.7 and spec:117 are unchanged.** No catch-all, no `rest`, no
+  lookup-with-default, no named case-groups. Five seats, no seat in favour.
+- **The refusal's three return conditions stand** as the warden wrote them, and
+  the refusal is falsifiable rather than permanent (CLAUDE.md §12).
+- **The llm-ergonomist's `???`-arms diagnostic stays queued rather than landed**
+  — the sitting's one disagreement, resolved conservatively because the warden
+  priced B and C and never priced that sentence.
+- Option D landed the same session (the two operator tables are one again,
+  measured −15 code lines, reported as a miss against the predicted −18), and
+  the sweep condition 3 asked for found one further instance, the weak form.
+
+**And the record keeps what the sitting found about its own convener**: the
+brief carried a number that was wrong four times over, and every seat that
+measured found a different one. That is now two sittings running (066's dead
+premise, 067's line-count-against-a-token-formula). The instrument works; the
+seat that convenes it is the one that keeps needing correction.
