@@ -39,6 +39,36 @@ pub(in crate::types) fn ffi_type(name: &str, what: &str, span: Span) -> Diagnost
 /// not reach for a type C has never heard of, they reached for one that works
 /// perfectly in a signature and cannot be a constant. So the message carries the
 /// reason rather than the list — the list would say the type is allowed.
+/// A type that can cross the boundary in a **result** and cannot be an
+/// **argument** (§4.19; panel 062's follow-up, measured 2026-08-16).
+///
+/// `ffi_constant_type`'s shape one position further, and the reasoning is the
+/// same: the reader did not reach for a type C has never heard of, so the list
+/// `ffi_type` prints would say their type is allowed — and it *is* allowed, just
+/// not here. So this carries the reason instead.
+///
+/// **It reuses `ffi_parameter_type` deliberately rather than opening a code.**
+/// That class already means *this parameter's declared type is wrong*; it is
+/// where a reader looking for the answer will already be; and CLAUDE.md §4 makes
+/// a new diagnostic *class* a panel path, which a second name for one question
+/// would be. The existing instances are recovered from clang's output in
+/// `emit/ffi_narrowed.rs`; these two are decidable in the frontend, because they
+/// are facts about **Heroes** rather than about any particular header — no
+/// header anywhere takes either, so no header needs reading.
+pub(in crate::types) fn ffi_parameter_position(
+    parameter: &str,
+    function: &str,
+    name: &str,
+    why: &str,
+    span: Span,
+) -> Diagnostic {
+    Diagnostic::new(
+        "ffi_parameter_type",
+        format!("`{parameter}` of `{function}` cannot be declared `{name}` — {why}"),
+        span,
+    )
+}
+
 pub(in crate::types) fn ffi_constant_type(name: &str, why: &str, span: Span) -> Diagnostic {
     Diagnostic::new(
         "ffi_constant_type",

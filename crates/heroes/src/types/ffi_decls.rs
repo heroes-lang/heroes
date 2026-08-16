@@ -3,10 +3,8 @@
 //!
 //! Split out of `decls.rs` on 2026-08-15, and the seam is a different question
 //! rather than a line count. `decls.rs` asks *what does this declaration\'s body
-//! owe* — a constant\'s value, a function\'s `return`, a test\'s nothing. These
-//! four functions ask *can C spell this at all*, which is a question about the
-//! **type vocabulary** and is answered without looking at a body, because an
-//! `extern` has none.
+//! owe*; these functions ask *can C spell this at all*, which is about the **type
+//! vocabulary** and needs no body, because an `extern` has none.
 //!
 //! **All four refuse in the loud direction** (CLAUDE.md §11). A container or a
 //! record with no header behind it has no C counterpart, so leaving it to clang
@@ -18,26 +16,27 @@ use crate::source::Source;
 use crate::syntax::Ast;
 
 use super::table::Ty;
-use super::{errors, Checker, TyId};
+use super::{errors, ffi_position, Checker, TyId};
 
 /// Every type in an `extern`'s signature must be one a C header can declare
-/// (§4.19). The list is `ctype.rs`'s scalars plus §4.19's two opaque types, plus
-/// `()` for a function that returns nothing — and `str`, which is a `HeroStr` by
-/// value and reaches C only from a function that builds one (§4.20).
+/// (§4.19): `ctype.rs`'s scalars, §4.19's two opaque types, `()` for a function
+/// that returns nothing, and `str` — a `HeroStr` by value, which `hero_os.h`
+/// really does take. **Where each may STAND is `ffi_position.rs`'s question**,
+/// asked after this one so a type refused at both gets one message.
 ///
-/// **The refusal is the loud direction** (CLAUDE.md §11). A container or a record
-/// in an `extern` has no header counterpart at all, so leaving it to clang costs
-/// an internal error naming generated C; refusing it costs one message naming the
-/// parameter.
+/// **The refusal is the loud direction** (CLAUDE.md §11): a container or a record
+/// with no header behind it costs an internal error naming generated C if left to
+/// clang, and one message naming the parameter if refused here.
 pub(super) fn ffi_signature(
     checker: &mut Checker,
     ast: &Ast,
     src: &Source,
     function: &crate::syntax::Function,
     result: TyId,
+    declared_name: crate::source::Span,
 ) {
-    // Collected first, then checked: a closure that borrows the checker mutably
-    // cannot also read it (and CLAUDE.md §5 keeps stored closures out anyway).
+    // Collected first, then checked: a closure borrowing the checker mutably
+    // cannot also read it (CLAUDE.md §5 keeps stored closures out anyway).
     let mut wanted: Vec<(TyId, crate::source::Span, &str)> =
         vec![(result, ast.types[function.result.0 as usize].span, "an `extern`'s result")];
     for param in &function.params {
@@ -53,6 +52,7 @@ pub(super) fn ffi_signature(
         let diagnostic = errors::ffi_type(&name, what, span);
         checker.push_diagnostic(diagnostic);
     }
+    ffi_position::arguments(checker, ast, src, function, declared_name);
 }
 
 /// The type of an `extern constant`, which is a narrower question than an

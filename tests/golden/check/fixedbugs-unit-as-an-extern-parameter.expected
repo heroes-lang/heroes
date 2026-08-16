@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-unit-as-an-extern-parameter.hero:30:21: error[ffi_parameter_type]: `n` of `abs` cannot be declared `()` — `()` names no value, so there is no argument to pass: as a *result* it is C's `void`, which a parameter list has no spelling for. Drop the parameter, or declare the type the header uses

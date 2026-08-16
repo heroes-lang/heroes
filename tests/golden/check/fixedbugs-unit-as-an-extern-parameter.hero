@@ -1,0 +1,34 @@
+# `()` as an `extern` PARAMETER is exit 1 on the author's line, and was exit 2 —
+# the compiler blaming itself for a declaration the author wrote.
+#
+# SYMPTOM (measured 2026-08-16): `extern function abs(n: ()) -> i32` passed
+# `heroes check` at exit 0, and `heroes build` then said "internal error:
+# compiling the generated C failed" over
+# `_Static_assert(HERO_RET_I32(abs((void *)0)), …)` — incompatible pointer to
+# integer conversion. Every other way to get an `extern` signature wrong is exit 1
+# on the `.hero` line; this one was the compiler's fault by §7's reading, and it
+# was not.
+#
+# CAUSE: `ffi_decls::crosses_the_boundary` is shared by results and parameters,
+# and `()` is a legal RESULT — it is how a `void` function is declared. So the
+# signature check passed, and `zero_of` reached its `Ty::Unit` arm with no C
+# spelling to write. That arm's own comment had recorded the defect and named the
+# repair as a frontend refusal; this is the refusal.
+#
+# WHY THE FRONTEND CAN DECIDE IT, which is the test for whether a refusal belongs
+# there at all: it is a fact about C's GRAMMAR, not about any particular header. A
+# parameter list has no spelling for an argument of type `void`, so no header
+# anywhere can take one, so there is nothing to read a header for. Contrast `ptr`
+# and `cstr`, which are ordinary C parameter types that may or may not match a
+# given header — only clang can answer those, and it does.
+#
+# The `()` RESULT below is in the file on purpose: it is the shape that must keep
+# working, and a refusal that broke it would be worse than the defect.
+# Date: 2026-08-16.
+
+extern "stdlib.h"
+    function abs(n: ()) -> i32      #~ ffi_parameter_type
+    function free(p: ptr)
+
+function main()
+    print(1)

@@ -64,6 +64,7 @@ mod expect;
 mod floats;
 mod fallible_ops;
 mod ffi_decls;
+mod ffi_position;
 mod exprs;
 mod generics;
 mod holes;

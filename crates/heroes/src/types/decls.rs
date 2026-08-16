@@ -109,7 +109,7 @@ pub(super) fn file(checker: &mut Checker, ast: &Ast, resolved: &Resolved, src: &
                 // how the `Point` parameter in `tests/golden/check/ffi-type.hero`
                 // went unreported while the result beside it fired.
                 if function.is_extern {
-                    super::ffi_decls::ffi_signature(checker, ast, src, function, result);
+                    super::ffi_decls::ffi_signature(checker, ast, src, function, result, decl.name);
                 }
                 if let Some(body) = &function.body {
                     let (flow, _) = block(checker, ast, resolved, src, body, Want::Nothing);
