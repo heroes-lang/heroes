@@ -388,6 +388,20 @@ list of cases (§4.7), and every `Option` becomes a `T?` whose miss carries a
 code. Both are the language charging for what Rust leaves implicit. A reader
 who opens it finds a map first.
 
+## The members grammar — knot B's foundation (2026-08-16)
+
+`syntax/members.rs` → `selfhost/parse_members.hero`, 8 test blocks, plus
+`Param`, `Field`, `Case` and `Library` added to `selfhost/ast.hero`. Not in
+either knot — it calls `parse_type` and the cursor, and the declaration grammar
+calls it, one way — so it ports as its own module.
+
+No new findings. What it does carry forward is a **fixed defect ported with its
+test**: `case_block`'s indent arm exists because `skip_line` deliberately stops
+*before* an indent, so a payload block under a refused case name left the loop
+reading the same token forever (bootstrap fixedbugs, 2026-08-13). The port has
+that arm and a test that would spin without it — which is CLAUDE.md §9's rule
+("a fixed defect gets a case named after it") surviving a change of language.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`

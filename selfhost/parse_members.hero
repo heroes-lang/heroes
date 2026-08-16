@@ -1,0 +1,308 @@
+# What sits *inside* a declaration: type parameters, value parameters, record
+# fields, variant cases (design.md §4.2, §4.8, §4.12).
+# Port of crates/heroes/src/syntax/members.rs.
+#
+# One rule explains most of this file: **the lexer keeps planting terminators
+# inside brackets** (panel 007 — a line ending in a name can always be over,
+# brackets or not), so every list here skips terminators where a separator may
+# appear. That is what lets a long signature break across lines while `,` stays
+# the separator.
+#
+# **This file is not in either knot** and ports as its own module: it calls
+# `parse_type` and the cursor, and the declaration grammar calls it — one way,
+# no ring (measurement 009 § the structural finding).
+
+use token
+use cursor
+use ast
+use parse_type
+
+## Type parameters
+
+# `function map<A, B>(…)` — type parameter names after the declared name, no
+# constraints, never written at the call site (§4.12). Absent `<` means a
+# non-generic function.
+function generics(@c: cursor.Cursor, text: str) -> [token.Span]
+    names: [token.Span] @ []
+    if !cursor.eat(@c, .lt)
+        return names
+    reading: bool @ true
+    while reading
+        if !cursor.at(c, .ident)
+            if !cursor.at_reported_error(c)
+                cursor.error(@c, code: "expected_type_parameter", message: "expected a type parameter name, found " + cursor.found(c, text) + " — generics carry no constraints, only names", span: cursor.current_span(c))
+            reading @ false
+        else
+            names @ names.push(cursor.bump(@c).span)
+            if !cursor.eat(@c, .comma)
+                reading @ false
+    _ = cursor.expect(@c, text: text, kind: .gt, code: "expected_generics_close", what: "`>` to close the type parameters")
+    return names
+
+## Value parameters
+
+# `(a: i64, @l: Lex)` — always parenthesised, `()` when empty.
+function params(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Param]
+    out: [ast.Param] @ []
+    if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_params", what: "`(` — a signature always has a parameter list, `()` when it takes nothing")
+        return out
+    cursor.skip_terminators(@c)
+    if cursor.eat(@c, .rparen)
+        return out
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        mutable = cursor.eat(@c, .at)
+        if !cursor.at(c, .ident)
+            if !cursor.at_reported_error(c)
+                cursor.error(@c, code: "expected_parameter", message: "expected a parameter name, found " + cursor.found(c, text) + " — a parameter is `name: type`, or `@name: type` when the callee may change it", span: cursor.current_span(c))
+            reading @ false
+        else
+            name = cursor.bump(@c).span
+            if !cursor.expect(@c, text: text, kind: .colon, code: "expected_parameter_type", what: "`:` and the parameter's type — signatures are always explicit")
+                reading @ false
+            else
+                ty = parse_type.parse_type(@c, @a, text)
+                out @ out.push(ast.Param(name: name, ty: ty, mutable: mutable))
+                cursor.skip_terminators(@c)
+                if !cursor.eat(@c, .comma)
+                    reading @ false
+    cursor.skip_terminators(@c)
+    if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_params_close", what: "`)`, or `,` and another parameter")
+        # The signature's own closer is the landmark: resume just past it, so
+        # the result type and the body are still read (one mistake, one
+        # diagnostic).
+        cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+    return out
+
+## Fields and cases
+
+# One `name: type` per line: a record's fields, and a variant case's payload.
+# Consumes the whole indent … dedent block.
+function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
+    fields: [ast.Field] @ []
+    _ = cursor.bump(@c)
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        k = cursor.current_kind(c)
+        if k == .dedent
+            _ = cursor.bump(@c)
+            reading @ false
+        else if k == .eof
+            reading @ false
+        else if k == .ident
+            name = cursor.current_span(c)
+            doc = cursor.take_docs(@c, text, name)
+            _ = cursor.bump(@c)
+            if !cursor.expect(@c, text: text, kind: .colon, code: "expected_field_type", what: "`:` and the field's type")
+                cursor.skip_line(@c)
+            else
+                ty = parse_type.parse_type(@c, @a, text)
+                fields @ fields.push(ast.Field(name: name, ty: ty, doc: doc))
+        else if k == .indent
+            if !cursor.at_reported_error(c)
+                cursor.error(@c, code: "unexpected_block", message: "a field takes no indented block — a field is one line, `name: type`", span: cursor.current_span(c))
+            _ = cursor.balanced_block(@c)
+        else
+            if !cursor.at_reported_error(c)
+                cursor.error(@c, code: "expected_field", message: "expected a field name, found " + cursor.found(c, text) + " — one field per line, `name: type`", span: cursor.current_span(c))
+            cursor.skip_line(@c)
+    return fields
+
+# The cases of a `variant`: a name on its own line, optionally followed by an
+# indented field block.
+function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
+    cases: [ast.Case] @ []
+    _ = cursor.bump(@c)
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        k = cursor.current_kind(c)
+        if k == .dedent
+            _ = cursor.bump(@c)
+            reading @ false
+        else if k == .eof
+            reading @ false
+        else if k == .ident
+            name = cursor.current_span(c)
+            doc = cursor.take_docs(@c, text, name)
+            _ = cursor.bump(@c)
+            cursor.skip_terminators(@c)
+            fields: [ast.Field] @ []
+            if cursor.at(c, .indent)
+                fields @ field_block(@c, @a, text)
+            cases @ cases.push(ast.Case(name: name, fields: fields, doc: doc))
+        else if k == .indent
+            # The payload of a case whose NAME was refused on the line above.
+            # The ident arm is the only one that consumes a payload block, so
+            # when the name is not an identifier its block is still here — and
+            # `skip_line` deliberately stops BEFORE an indent, which left this
+            # loop spinning on the same token forever (fixedbugs, 2026-08-13).
+            # Dropping it silently is recovery's own rule: one bad declaration
+            # costs one diagnostic, and the case name already spent it.
+            _ = cursor.balanced_block(@c)
+        else
+            if !cursor.at_reported_error(c)
+                cursor.error(@c, code: "expected_case", message: "expected a case name, found " + cursor.found(c, text) + " — a variant case is a name on its own line, with its fields indented below it", span: cursor.current_span(c))
+            cursor.skip_line(@c)
+    return cases
+
+## Tests
+
+function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
+    return token.Token(kind: kind, span: token.Span(start: start, end: end))
+
+test "generics are names and nothing else"
+    stream: [token.Token] = [tok(.lt, start: 0, end: 1), tok(.ident, start: 1, end: 2), tok(.comma, start: 2, end: 3), tok(.ident, start: 4, end: 5), tok(.gt, start: 5, end: 6), tok(.eof, start: 6, end: 6)]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    names = generics(@c, "<A, B>")
+    assert names.len() == 2
+    assert c.diagnostics.len() == 0
+    # No `<` means no generics, and nothing is consumed.
+    plain: [token.Token] = [tok(.lparen, start: 0, end: 1), tok(.eof, start: 1, end: 1)]
+    d: cursor.Cursor @ cursor.new_cursor(plain)
+    assert generics(@d, "(").len() == 0
+    assert cursor.current_kind(d) == .lparen
+
+test "a signature is always parenthesised, and @ marks in-out"
+    # (a: i64, @l: Lex)
+    stream: [token.Token] = [
+        tok(.lparen, start: 0, end: 1)
+        tok(.ident, start: 1, end: 2)
+        tok(.colon, start: 2, end: 3)
+        tok(.ident, start: 4, end: 7)
+        tok(.comma, start: 7, end: 8)
+        tok(.at, start: 9, end: 10)
+        tok(.ident, start: 10, end: 11)
+        tok(.colon, start: 11, end: 12)
+        tok(.ident, start: 13, end: 16)
+        tok(.rparen, start: 16, end: 17)
+        tok(.eof, start: 17, end: 17)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    out = params(@c, @a, "(a: i64, @l: Lex)")
+    assert out.len() == 2
+    assert !out[0].mutable
+    assert out[1].mutable
+    assert c.diagnostics.len() == 0
+
+test "an empty parameter list is () and not nothing"
+    empty: [token.Token] = [tok(.lparen, start: 0, end: 1), tok(.rparen, start: 1, end: 2), tok(.eof, start: 2, end: 2)]
+    c: cursor.Cursor @ cursor.new_cursor(empty)
+    a: ast.Ast @ ast.new_ast()
+    assert params(@c, @a, "()").len() == 0
+    assert c.diagnostics.len() == 0
+    # A missing `(` says so rather than guessing.
+    missing: [token.Token] = [tok(.arrow, start: 0, end: 2), tok(.eof, start: 2, end: 2)]
+    d: cursor.Cursor @ cursor.new_cursor(missing)
+    b: ast.Ast @ ast.new_ast()
+    _ = params(@d, @b, "->")
+    assert d.diagnostics[0].code == "expected_params"
+
+test "a signature may break across lines because the separator stays the comma"
+    # (a: i64,
+    #  b: i64)   — the lexer plants a terminator after the comma
+    stream: [token.Token] = [
+        tok(.lparen, start: 0, end: 1)
+        tok(.ident, start: 1, end: 2)
+        tok(.colon, start: 2, end: 3)
+        tok(.ident, start: 4, end: 7)
+        tok(.comma, start: 7, end: 8)
+        tok(.terminator, start: 8, end: 8)
+        tok(.ident, start: 9, end: 10)
+        tok(.colon, start: 10, end: 11)
+        tok(.ident, start: 12, end: 15)
+        tok(.rparen, start: 15, end: 16)
+        tok(.eof, start: 16, end: 16)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    assert params(@c, @a, "(a: i64,\nb: i64)").len() == 2
+    assert c.diagnostics.len() == 0
+
+test "a field is one line, and its doc comment is the run above it"
+    # indent, "# doc", x: i64, dedent
+    text = "# doc\nx: i64\n"
+    stream: [token.Token] = [
+        tok(.indent, start: 0, end: 0)
+        tok(.comment, start: 0, end: 5)
+        tok(.ident, start: 6, end: 7)
+        tok(.colon, start: 7, end: 8)
+        tok(.ident, start: 9, end: 12)
+        tok(.terminator, start: 12, end: 12)
+        tok(.dedent, start: 13, end: 13)
+        tok(.eof, start: 13, end: 13)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    fields = field_block(@c, @a, text)
+    assert fields.len() == 1
+    assert fields[0].doc.len() == 1
+    assert cursor.slice_of(text, fields[0].doc[0]) == "# doc"
+    assert c.diagnostics.len() == 0
+
+test "a field takes no indented block, and says so"
+    stream: [token.Token] = [
+        tok(.indent, start: 0, end: 0)
+        tok(.ident, start: 0, end: 1)
+        tok(.colon, start: 1, end: 2)
+        tok(.ident, start: 3, end: 6)
+        tok(.terminator, start: 6, end: 6)
+        tok(.indent, start: 7, end: 7)
+        tok(.ident, start: 7, end: 8)
+        tok(.dedent, start: 9, end: 9)
+        tok(.dedent, start: 9, end: 9)
+        tok(.eof, start: 9, end: 9)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    fields = field_block(@c, @a, "x: i64\n    y\n")
+    assert fields.len() == 1
+    assert c.diagnostics[0].code == "unexpected_block"
+
+test "a case is a name, and its fields are the block under it"
+    stream: [token.Token] = [
+        tok(.indent, start: 0, end: 0)
+        tok(.ident, start: 0, end: 3)
+        tok(.terminator, start: 3, end: 3)
+        tok(.indent, start: 4, end: 4)
+        tok(.ident, start: 4, end: 5)
+        tok(.colon, start: 5, end: 6)
+        tok(.ident, start: 7, end: 10)
+        tok(.terminator, start: 10, end: 10)
+        tok(.dedent, start: 11, end: 11)
+        tok(.ident, start: 11, end: 15)
+        tok(.terminator, start: 15, end: 15)
+        tok(.dedent, start: 16, end: 16)
+        tok(.eof, start: 16, end: 16)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    cases = case_block(@c, @a, "num\n    v: i64\nplus\n")
+    assert cases.len() == 2
+    assert cases[0].fields.len() == 1
+    assert cases[1].fields.len() == 0
+    assert c.diagnostics.len() == 0
+
+test "a refused case name does not spin the loop on its own payload"
+    # This is the fixedbugs case of 2026-08-13, ported with it: `skip_line`
+    # stops BEFORE an indent, so a payload block under a refused name used to
+    # leave the loop reading the same token forever.
+    stream: [token.Token] = [
+        tok(.indent, start: 0, end: 0)
+        tok(.int_lit, start: 0, end: 1)
+        tok(.terminator, start: 1, end: 1)
+        tok(.indent, start: 2, end: 2)
+        tok(.ident, start: 2, end: 3)
+        tok(.dedent, start: 4, end: 4)
+        tok(.dedent, start: 4, end: 4)
+        tok(.eof, start: 4, end: 4)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    cases = case_block(@c, @a, "1\n    x\n")
+    assert cases.len() == 0
+    assert c.diagnostics[0].code == "expected_case"
+    assert c.diagnostics.len() == 1

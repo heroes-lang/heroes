@@ -320,6 +320,52 @@ record Use
     name: token.Span
     span: token.Span
 
+## The declarations
+
+# Declarations are not recursive, so each one owns its members directly — no
+# arena, no indices.
+
+# A parameter. A parameter marked `@` is in-out: copy in, copy out (§4.8).
+record Param
+    name: token.Span
+    ty: i64
+    mutable: bool
+
+# A record field, or a variant case's payload field. Fields carry doc comments
+# of their own — §4.1's adjacency rule is about declarations, and a field is
+# one.
+record Field
+    name: token.Span
+    ty: i64
+    doc: [token.Span]
+
+# One case of a variant. A case with fields IS a small record (§4.2) — which is
+# why the surface needs no separator syntax at all.
+record Case
+    name: token.Span
+    fields: [Field]
+    doc: [token.Span]
+
+# Where a group's symbols come from — **one of two, never both**, which is why
+# this is a variant and not two fallibles.
+#
+# The distinction is who answers the question. `link` is the program telling the
+# linker a name it already knows. `package` is the program asking the MACHINE
+# where something is and what else it needs, and getting back a different answer
+# on every platform — frameworks on macOS, `-lGL -lX11` on Linux — from one
+# spelling that never changes (panel 049).
+variant Library
+    # `link "sqlite3"` — reaches the linker as `-lsqlite3`, a name and never a
+    # flag, so no `.hero` file can hand clang an arbitrary argument.
+    link
+        name: token.Span
+    # `package "raylib"` — the machine is asked. What comes back is validated
+    # against a closed set before it reaches clang, because a package file is
+    # input this program did not write: Go shipped the same idea without that
+    # check and it became CVE-2018-6574.
+    package
+        name: token.Span
+
 ## The arena
 
 record Ast
