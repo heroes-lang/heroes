@@ -194,11 +194,18 @@ const void *hero_map_find(const HeroMapHeader *m, const void *key) {
     return NULL;
 }
 
+/* Contents and nothing else — `hero_array_eq`'s rule, deleted here for the same
+ * reason on the same day (panel 069).
+ *
+ * This copy was the one the sitting's brief missed: a nan KEY aborts at
+ * `hero_map_slot_of` and cannot reach here, so the site looked unreachable. It is
+ * reachable through a nan VALUE — `{str: f64}` with `b = a` answered true and a
+ * rebuilt twin answered false. A defence that rests on "the other guard catches
+ * it" is a premise about a neighbouring file, and this one was already wrong. */
 bool hero_map_eq(const HeroMapHeader *a, const HeroMapHeader *b) {
     hero_map_require(a);
     hero_map_require(b);
     if (a->len != b->len) return false;
-    if (a == b) return true;
     const unsigned char *states = hero_map_states_const(a);
     for (int64_t i = 0; i < a->cap; i++) {
         if (states[i] == 0) continue;

@@ -105,11 +105,36 @@ HeroArrayHeader *hero_array_push(const HeroArrayHeader *a, const void *elem) {
     return b;
 }
 
+/* `==` on two arrays is a function of their CONTENTS and of nothing else.
+ *
+ * There used to be `if (a == b) return true;` here, and deleting it is panel
+ * 069's whole resolution. Copy-on-write makes `b = a` share a header, so that
+ * line made the answer depend on how the second value was PRODUCED rather than
+ * on what it holds: with a nan inside, `a == b` was true and `a == c` was false
+ * for identical contents. spec:73 promises "no aliasing exists anywhere", and
+ * the line made copy-on-write's sharing observable — so the shortcut was not a
+ * float bug, it was an aliasing leak that a float happened to expose.
+ *
+ * The sitting proved that with no float in the program at all: with panel 061's
+ * partial-record refusal reachable, the shared operands returned `true` at exit 0
+ * while the distinct ones hit the loud `hero_panic` that refusal exists to fire.
+ * An optimisation that silently defeats a deliberate loud failure is the exact
+ * inversion of CLAUDE.md §11's rule about which direction a fallback points.
+ *
+ * The two defences the line has everywhere else both fail here. SPEED is
+ * forbidden as a justification by CLAUDE.md §13 — and measured, the golden
+ * harness got 3% FASTER without it, because the walk it skipped was never on the
+ * hot path. TERMINATION on a cyclic value is Python's reason and needs cycles:
+ * design.md:2855 makes them unconstructible ("if values are never aliased,
+ * reference cycles cannot be constructed... that is not a compromise, it is the
+ * reason the whole design is small"), measured both ways in the sitting.
+ *
+ * The length check above it stays: two arrays of different lengths differ in
+ * their contents, which is a fact about the values and not about their addresses. */
 bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b) {
     hero_array_require(a);
     hero_array_require(b);
     if (a->len != b->len) return false;
-    if (a == b) return true;
     const unsigned char *da = hero_array_data_const(a);
     const unsigned char *db = hero_array_data_const(b);
     size_t size = a->elem->size;

@@ -1,0 +1,73 @@
+# FIXED DEFECT, 2026-08-16, panel 069 — `==` gave two answers for the same
+# contents, and the shortcut that did it was not about floats.
+#
+# SYMPTOM: with `n = 0.0 / 0.0`, `a = [n]`, `b = a` and `c = [n]`, the program
+# printed `a == b` TRUE and `a == c` FALSE. Identical contents, two answers,
+# decided by how the second value happened to be produced. Exit 0, no
+# diagnostic, no abort. `{str: f64}` did the same through its own copy of the
+# line, reachable through a nan VALUE — a nan KEY aborts and cannot get there,
+# which is why that second site looked unreachable and survived the first audit.
+#
+# CAUSE: `runtime/parts/array.c:112` and `runtime/parts/map.c:201` each carried
+# an uncommented `if (a == b) return true;`. Copy-on-write makes `b = a` share a
+# header, so the shortcut fired for the copy and the elementwise walk ran for the
+# rebuild. That made copy-on-write's sharing observable, and `spec:73` promises
+# "no aliasing exists anywhere".
+#
+# WHY IT IS NOT A FLOAT BUG, which is the finding the sitting turned on: the
+# compiler-engineer reproduced it with NO FLOAT IN THE PROGRAM. With panel 061's
+# partial-record refusal reachable, the shared operands returned `true` at exit 0
+# while the distinct ones fired the deliberate `hero_panic` that refusal exists
+# to produce. An optimisation that silently defeats a loud refusal is CLAUDE.md
+# §11's rule inverted — and there was not even a comment on the line, which is
+# why nobody had re-read it.
+#
+# WHY THE SHORTCUT'S USUAL DEFENCES DO NOT REACH HERE, both measured:
+#   - SPEED. CLAUDE.md §13 forbids it as a justification, and it was not even
+#     true: the golden harness got ~3% FASTER without the line.
+#   - TERMINATION on a cyclic value. That is Python's reason and it needs cycles.
+#     design.md:2855 makes them unconstructible — "if values are never aliased,
+#     reference cycles cannot be constructed" — verified two ways in the sitting:
+#     pushing a record into its own array field yields a snapshot whose own
+#     children are empty, and mutating the parent afterwards does not reach it.
+#
+# THE PRECEDENT, and it is why this case exists rather than a comment: Swift
+# ships this exact bug — COW arrays, a `_buffer.identity` fast path — filed as
+# SR-6181 in October 2017 and still open, and swift-foundation ADDED the same
+# fast path to `Data` in May 2025. No language has removed a container-level one.
+# A defect nobody else fixed is a defect that comes back unless something fires.
+# Date: 2026-08-16.
+
+function main()
+    n = 0.0 / 0.0
+
+    # The four lines the defect lived on. All four must agree, and after the
+    # repair they agree on `false` — which is IEEE's answer and, more to the
+    # point, the SAME answer whichever way the second value was made.
+    a = [n]
+    b = a
+    c = [n]
+    print(a == b, " ", a == c)
+
+    ma: {str: f64} @ {"k": n}
+    mb = ma
+    mc: {str: f64} @ {"k": n}
+    print(ma == mb, " ", ma == mc)
+
+    # And the whole point of the repair is that ORDINARY equality is untouched:
+    # a copy of a value holding no nan is still equal to its source, and a
+    # rebuilt twin still equals it too. If either of these flips, the fix went
+    # too far and every program in the corpus is wrong.
+    xs = [1.0, 2.0, 3.0]
+    ys = xs
+    zs = [1.0, 2.0, 3.0]
+    print(xs == ys, " ", xs == zs)
+
+    ns: {str: i64} @ {"a": 1}
+    os = ns
+    ps: {str: i64} @ {"a": 1}
+    print(ns == os, " ", ns == ps)
+
+    # The length check that sits above the deleted line stays, because a length
+    # is a fact about the contents and not about an address.
+    print([1.0] == [1.0, 2.0])

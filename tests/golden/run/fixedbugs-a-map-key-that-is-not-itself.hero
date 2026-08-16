@@ -25,7 +25,18 @@
 function main()
     m: {f64: i64} @ {}
     m[1.5] @ 1
-    m[0.0 - 0.0] @ 2
+    # **The `-0.0` control, repaired 2026-08-16 (panel 069, ffi-pragmatist).** This
+    # line read `m[0.0 - 0.0] @ 2` and the comment below called it the `-0.0`
+    # control — but `0.0 - 0.0` is `+0.0` under IEEE 754, so for four days the
+    # control compared positive zero against positive zero and could not have
+    # failed. `0.0 * (0.0 - 1.0)` is the expression that produces the sign, and it
+    # was verified to print `-0.0` before this line was changed.
+    #
+    # What it claimed to prove is true anyway, which is the only reason this is a
+    # repair rather than a defect report: the seat measured `hash(-0.0) ==
+    # hash(0.0)` holding at scalar, record-field and fixed-array level, because
+    # `hero_hash_f64` collapses the sign. The check simply never checked it.
+    m[0.0 * (0.0 - 1.0)] @ 2
     m[2.5] @ 3
     print(len(m))
 
