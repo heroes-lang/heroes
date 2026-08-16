@@ -198,8 +198,7 @@ Anything beyond this document — sockets, maths, JSON, databases — comes from
 libraries. A group names its header, and `link` a library when the symbols need one. clang
 checks every result type, constant and record field against that header, and a result may be
 wider than C's. A **parameter** and a **field** are declared at the header's own
-width and sign — `i32` where C says int — because clang converts a wrong one in
-silence:
+width and sign — `i32` where C says int:
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
@@ -218,7 +217,7 @@ A group's `record` is the header's struct: all its fields, and the same name
 unless the header writes it after the word struct, which `tag` gives:
 `record FileStat tag stat partial`. A
 field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
-array of one: `i32[4]`, never a `[T]`.
+array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`.
 `record Font partial` names only some, and then comparing it and using it as a
 map key are compile errors — for it and for any value holding it. Its size stays
 C's, not the field list's.

@@ -466,3 +466,79 @@ fn every_program_directory_is_documented() {
         );
     }
 }
+
+/// **Panel 058's refused option (iii) has a standing reopen condition, and this is
+/// what makes it fire.**
+///
+/// `malloc` + `ptr` is the route the sitting adopted for every C function that
+/// writes into a caller's buffer, and it works — `getcwd`, `strtok`, `putenv` and
+/// ncurses all run with zero shims. **What it gives back is no length.** So a C
+/// function whose contract is *"I wrote N bytes, here is N"* has no correct
+/// spelling in this language: the program learns N and cannot turn N bytes of a
+/// `ptr` into a `str`. A mutable buffer type returns to the panel the day a
+/// binding the closure list or §4.19's ladder needs requires that, and **not one
+/// day sooner** — the refusal is conditional, not permanent.
+///
+/// It sat on `DECIDE.md` for a day as a note that said *"something must fire when
+/// it comes true"*, and nothing could: it was prose, and it was waiting for a
+/// person to re-read a list. CLAUDE.md §11's rule is that a premise which can
+/// expire is owed **a test that fires when it dies, whose failure message names
+/// what depends on it** — so here it is, written as the falsifiable claim it
+/// always was: *no program in this repository binds a C function that reports a
+/// written length.*
+///
+/// The list is the named contract rather than a guess at one, and it is
+/// deliberately a **proxy**: it fires on the binding rather than on the need, so
+/// it can fire early. Early is the correct direction — a sitting convened one
+/// binding too soon costs an hour, and one convened too late costs a shim that
+/// outlives the milestone.
+#[test]
+fn no_binding_needs_a_length_back_from_c() {
+    // Each of these returns a count of bytes it wrote (or would have written) and
+    // hands back no terminator to find it by. `read`/`recv` are here for the same
+    // reason as `readlink`: the count arrives, and the bytes have no spelling.
+    const REPORTS_A_LENGTH: [&str; 10] = [
+        "snprintf", "vsnprintf", "readlink", "readlinkat", "strlcpy", "strlcat", "mbstowcs",
+        "wcstombs", "recv", "pread",
+    ];
+    let mut found: Vec<String> = Vec::new();
+    let mut stack = vec![workspace_root()];
+    while let Some(at) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&at) else { continue };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+            if path.is_dir() {
+                if !matches!(name.as_str(), "target" | "build" | ".git" | "archive") {
+                    stack.push(path);
+                }
+                continue;
+            }
+            if path.extension().and_then(|e| e.to_str()) != Some("hero") {
+                continue;
+            }
+            let Ok(text) = std::fs::read_to_string(&path) else { continue };
+            for line in text.lines() {
+                let code = line.split('#').next().unwrap_or("");
+                let Some(rest) = code.trim().strip_prefix("function ") else { continue };
+                let called = rest.split('(').next().unwrap_or("").trim();
+                if REPORTS_A_LENGTH.contains(&called) {
+                    found.push(format!("  {}: {}", path.display(), code.trim()));
+                }
+            }
+        }
+    }
+    assert!(
+        found.is_empty(),
+        "a binding now reports a written length, and this language has no way to \
+         use it — `malloc` + `ptr` gives the bytes and never the count, so the \
+         program learns N and cannot turn N bytes into a `str`.\n\n{}\n\n\
+         This is panel 058's refused option (iii) coming true. Its refusal was \
+         CONDITIONAL on exactly this, so the mutable buffer type returns to the \
+         panel now — see `docs/panel/058` § Findings and design.md Part 7 item 10. \
+         If the binding below does not actually need the count back, add it to \
+         `REPORTS_A_LENGTH`'s exceptions with the reason, which is a decision and \
+         belongs in the record.",
+        found.join("\n")
+    );
+}
