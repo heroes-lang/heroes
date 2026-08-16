@@ -349,12 +349,13 @@ protects — a reader must be able to open the file and not drown — so each kn
 gets a module doc that names its cycle, lists its entry points, and says which
 function calls which.
 
-## The first knot, written (2026-08-16)
+## Knot A, written whole (2026-08-16)
 
-`selfhost/grammar_expr.hero` — the expression half of knot A, as **one module**
+`selfhost/grammar_expr.hero` — **all five files of knot A** (`expr`, `primary`,
+`control`, `stmt`, `name_stmt`; 1025 Rust lines) as **one module** of 872,
 under §11's amended rule, carrying the map the rule asks for: which Rust files
 it replaces, the call ring, the three entry points, and what is not there yet.
-10 test blocks, and they read real token streams and render the tree back
+16 test blocks, and they read real token streams and render the tree back
 fully parenthesised, because **a precedence table is only testable through what
 it builds**: `1 + 2 * 3` → `(1 + (2 * 3))`, `1 - 2 - 3` → `((1 - 2) - 3)`,
 `a < b && c` → `((a < b) && c)`, and `x & 1 == 0` → `((x & 1) == 0)` — which is
@@ -369,10 +370,20 @@ the one place Heroes deliberately does **not** inherit C's order.
     compiler's own vocabulary overlaps both of the language's reserved sets**,
     and a port hits it a few times per file. Each costs one rename.
 
-Nothing else was wanted. `unary` recursing into itself, `binary` climbing by
-power, the suffix chain, the two bracketed literals with newline-as-separator,
-and both `certain`-fix repairs (`trailing_comma`, `misplaced_mutable_marker`)
-ported unchanged.
+**Nothing else was wanted, across the whole knot.** `unary` recursing into
+itself, `binary` climbing by power, the suffix chain, the two bracketed literals
+with newline-as-separator, the three name-shaped lines told apart by one token
+of lookahead, `block`'s own recovery, and every `certain`/`guess` fix
+(`trailing_comma`, `misplaced_mutable_marker`, `trailing_colon`,
+`for_missing_in`) ported unchanged. Rust's `Option<Block>` is `Block?`, and
+`Option<Span>` inside a pattern is `Span?` — the same substitution the lexer
+port measured, now at scale.
+
+**The rule's exchange is paid**: the module doc names the ring, the six entry
+points, the one edge that leaves the knot (`parse_type`, which is why that file
+stays separate), and the three name-shaped lines that are the statement half's
+whole difficulty. 872 lines against 1025 in Rust, and a reader who opens it
+finds a map first.
 
 ## Language features the port exercised against their own compiler
 

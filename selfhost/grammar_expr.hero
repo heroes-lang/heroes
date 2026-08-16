@@ -13,10 +13,14 @@
 # this reason (author instruction *"supera la regola per heroes"*), and what it
 # asks in exchange is this map.
 #
-# **The ring**: `parse_expr` → `binary` → `unary` → `postfix` → `primary` →
-# (`group`, `array_literal`, `map_literal`, `case_expr`) → back to `parse_expr`.
-# `postfix` also reaches `call_args`, which reaches `parse_expr`. Nothing here
-# is reachable without entering at one of the three entry points below.
+# **The ring**, and it is why nothing here can be split: `parse_expr` → `binary`
+# → `unary` → `postfix` → `primary` → (`group`, `array_literal`, `map_literal`,
+# `case_expr`, `if_expr`, `match_expr`) → `block` → `statement` → back to
+# `parse_expr`. `postfix` reaches `call_args`, which reaches `parse_expr`;
+# `match_expr` reaches `arm`, which reaches both `statement` and `block`;
+# `annotated` reaches `parse_type` in another module, which reaches nothing here
+# — the one edge that leaves the knot and the reason `parse_type` stays its own
+# file.
 #
 # **The entry points**, and they are the whole public surface:
 #
@@ -25,12 +29,21 @@
 # | `parse_expr` | one expression, weakest binding first |
 # | `pattern_operand` | a pattern's operand — a literal, or one with `-` |
 # | `call_args` | `(x, name: y, @l)`, shared by calls, records and cases |
+# | `statement` | one statement, its line end consumed |
+# | `block` | an indented body — a declaration's, a loop's, an arm's |
+# | `eat_python_colon` | the `:` habit, eaten with its fix, wherever a block opens |
 #
-# **What is not here yet**: `if`/`match` as expressions, and the statement
-# grammar (`stmt.rs`, `name_stmt.rs`, `control.rs`) — the rest of the same knot,
-# which lands in this same file rather than beside it, for the reason above.
-# Where `primary` would call them it reports `expected_expression` today, and
-# the test at the bottom pins that so the gap cannot be mistaken for a defect.
+# **The three line shapes that begin with a name**, told apart by one token of
+# lookahead exactly as §4.4 designed it, and the whole difficulty of the
+# statement half:
+#
+#     x = 5            name  =        immutable binding
+#     v: i64 @ 0       name  :        declaration (the type is mandatory)
+#     v @ v + 1        place @        mutation
+#
+# That third line is why the type is mandatory on a mutable declaration: a typo
+# (`totl @ total + x`) must not silently declare a new variable, and the shapes
+# have to be decidable without scanning the block — §1.3's locality test.
 #
 # ## One rule that shows up three times
 #
@@ -44,6 +57,7 @@ use token
 use diag
 use ast
 use cursor
+use parse_type
 
 ## The precedence table — §4.14, read from the bottom up
 
@@ -239,6 +253,10 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         return map_literal(@c, @a, text)
     if k == .dot
         return case_expr(@c, @a, text)
+    if k == .kw_if
+        return if_expr(@c, @a, text)
+    if k == .kw_match
+        return match_expr(@c, @a, text)
     simple = atom_kind(k)
     if simple.is_err()
         if !cursor.at_reported_error(c)
@@ -417,6 +435,381 @@ function misplaced_mutable_marker(@c: cursor.Cursor)
     c.diagnostics @ c.diagnostics.push(d)
     _ = cursor.bump(@c)
 
+## The statement half of the knot
+
+# `function f():` — the Python suite colon, the one autopilot slip panel 018's
+# blind experiment pre-registered above every other (12-18% of files). Eaten with
+# a certain fix so one habit costs one diagnostic and the block still parses. A
+# `:` is never legal at a block boundary — annotations, named arguments and map
+# literals all live inside other structure — so this can never misfire.
+function eat_python_colon(@c: cursor.Cursor)
+    if !cursor.at(c, .colon)
+        return
+    s = cursor.current_span(c)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "trailing_colon", message: "a block is opened by the indentation alone — drop the `:` (this is not Python)", span: s)
+    d.fixes @ d.fixes.push(diag.Fix(title: "drop the `:`", replacement: "", span: s, certainty: .certain))
+    c.diagnostics @ c.diagnostics.push(d)
+    _ = cursor.bump(@c)
+
+# The indented body of a declaration, a loop, an `if` or a `match` arm. A
+# failure is `.is_err()` and the caller gives up on that construct — where Rust
+# returns `Option<Block>`.
+function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str) -> ast.Block?
+    eat_python_colon(@c)
+    cursor.skip_terminators(@c)
+    if !cursor.at(c, .indent)
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "missing_body", message: owner + " needs an indented body — one level deeper, exactly 4 spaces (found " + cursor.found(c, text) + ")", span: cursor.current_span(c))
+        return fail("missing_body", owner)
+    open = cursor.bump(@c).span
+    stmts: [i64] @ []
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        k = cursor.current_kind(c)
+        if k == .dedent
+            _ = cursor.bump(@c)
+            reading @ false
+        else if k == .eof
+            reading @ false
+        else if k == .indent
+            # A block one level deeper than any statement asked for. It belongs
+            # to nothing, so it goes whole rather than one diagnostic per line.
+            if !cursor.at_reported_error(c)
+                cursor.error(@c, code: "unexpected_block", message: "this block is indented deeper than anything that opens one", span: cursor.current_span(c))
+            _ = cursor.balanced_block(@c)
+        else
+            stmts @ stmts.push(statement(@c, @a, text))
+    return ok(ast.Block(span: token.Span(start: open.end, end: cursor.previous_significant_span(c).end), stmts: stmts))
+
+function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    start = cursor.current_span(c)
+    reported_before = cursor.diagnostic_count(c)
+    kind: ast.StmtKind @ statement_kind(@c, @a, text)
+    failed = cursor.diagnostic_count(c) > reported_before
+    return finish(@c, @a, text, start: start, kind: kind, failed: failed)
+
+function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    k = cursor.current_kind(c)
+    if k == .kw_return
+        return return_stmt(@c, @a, text)
+    if k == .kw_break
+        _ = cursor.bump(@c)
+        return .break_stmt
+    if k == .kw_continue
+        _ = cursor.bump(@c)
+        return .continue_stmt
+    if k == .kw_assert
+        _ = cursor.bump(@c)
+        return .assert_stmt(value: parse_expr(@c, @a, text))
+    if k == .kw_for
+        return for_stmt(@c, @a, text)
+    if k == .kw_while
+        return while_stmt(@c, @a, text)
+    # `x = …` and `v: … @ …` are the two declaration shapes; everything else
+    # starting with a name is an expression, and possibly the place of a
+    # mutation.
+    if k == .ident && cursor.peek(c, 1) == .eq
+        return bind_stmt(@c, @a, text)
+    if k == .ident && cursor.peek(c, 1) == .colon
+        return annotated(@c, @a, text)
+    return expression_or_mutation(@c, @a, text)
+
+# Every statement ends at its line end. Consuming the terminator here — in one
+# place — is what keeps the block loop from having to know which statements span
+# lines.
+function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, kind: ast.StmtKind, failed: bool) -> i64
+    # The last significant token, never a trailing comment: the span is what the
+    # caret underlines (§4.17).
+    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+    if failed
+        # A statement that already failed has said what is wrong: the rest of
+        # its line is debris, not a second mistake — and so is any block hanging
+        # off it, which is how a depth-zero line continuation used to cost three
+        # diagnostics instead of one.
+        cursor.skip_line(@c)
+        if cursor.at(c, .indent)
+            _ = cursor.balanced_block(@c)
+        return ast.push_stmt(@a, ast.Stmt(kind: kind, span: span))
+    # A statement that ended with a block — a loop, an `if`, a `match` —
+    # consumed its own dedent, and a dedent IS the end of a line.
+    ended_with_block = cursor.previous_kind(c) == .dedent
+    if !ended_with_block && !cursor.at(c, .dedent) && !cursor.at(c, .eof) && !cursor.eat(@c, .terminator)
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "expected_end_of_line", message: "expected the end of the line, found " + cursor.found(c, text) + " — one statement per line, no semicolons", span: cursor.current_span(c))
+        cursor.skip_line(@c)
+    return ast.push_stmt(@a, ast.Stmt(kind: kind, span: span))
+
+# `return e`, or bare `return` where the function returns nothing.
+function return_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    _ = cursor.bump(@c)
+    if cursor.at(c, .terminator) || cursor.at(c, .dedent) || cursor.at(c, .eof)
+        return .return_stmt(value: fail("bare", "no value"))
+    return .return_stmt(value: ok(parse_expr(@c, @a, text)))
+
+# `while cond` — the condition loop (§4.7; panel 018 split it out of the old
+# two-grammar `for`).
+function while_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    _ = cursor.bump(@c)
+    cond = parse_expr(@c, @a, text)
+    body = block(@c, @a, text: text, owner: "a `while`")
+    if body.is_err()
+        return .error
+    return .while_stmt(cond: cond, block: body.must())
+
+# `for x in xs` — iteration only (§4.7). A condition after `for` is the one
+# autopilot mistake this arm exists to catch. The `while` fix is CERTAIN only
+# when no loop variable can be present (`for !done`, `for 0 < x`): no for-in
+# could have produced that line. `for x > 0` gets the same fix as a GUESS,
+# because `for x of xs` — a mangled iteration, not a condition — reaches the
+# identical parse state, and a machine-applied `while` there would not compile.
+function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    keyword = cursor.bump(@c).span
+    if cursor.at(c, .ident) && cursor.peek(c, 1) == .kw_in
+        name = cursor.bump(@c).span
+        _ = cursor.bump(@c)
+        iterable = parse_expr(@c, @a, text)
+        body = block(@c, @a, text: text, owner: "a `for`")
+        if body.is_err()
+            return .error
+        return .for_in(name: name, iterable: iterable, block: body.must())
+    if !cursor.at_reported_error(c)
+        certainty: diag.Certainty @ .certain
+        if cursor.at(c, .ident)
+            certainty @ .guess
+        d: diag.Diagnostic @ diag.new_diagnostic(code: "for_missing_in", message: "`for` iterates — `for x in xs`; found " + cursor.found(c, text) + " — a loop over a condition is `while`", span: cursor.current_span(c))
+        d.fixes @ d.fixes.push(diag.Fix(title: "use `while`", replacement: "while", span: keyword, certainty: certainty))
+        c.diagnostics @ c.diagnostics.push(d)
+    # Parse the rest as the condition loop it most likely was: one mistake, one
+    # diagnostic, and the body still gets checked.
+    cond = parse_expr(@c, @a, text)
+    recovered = block(@c, @a, text: text, owner: "a `for`")
+    if recovered.is_err()
+        return .error
+    return .while_stmt(cond: cond, block: recovered.must())
+
+## The three line shapes that begin with a name
+
+# `x = 5` — binds once, forever (§4.4). The type is inferred, and inference is
+# local: the value on this line decides it (§4.5).
+function bind_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    name = cursor.bump(@c).span
+    _ = cursor.bump(@c)
+    return .bind(name: name, ty: fail("inferred", "no written type"), value: parse_expr(@c, @a, text))
+
+# `v: i64 @ 0` — a mutable cell, type mandatory. `xs: [i64] = []` — an
+# immutable binding that needs its annotation because an empty literal cannot
+# say what it holds (§4.5).
+function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    name = cursor.bump(@c).span
+    _ = cursor.bump(@c)
+    ty = parse_type.parse_type(@c, @a, text)
+    if cursor.eat(@c, .at)
+        return .declare(name: name, ty: ty, value: parse_expr(@c, @a, text))
+    if cursor.eat(@c, .eq)
+        return .bind(name: name, ty: ok(ty), value: parse_expr(@c, @a, text))
+    if !cursor.at_reported_error(c)
+        cursor.error(@c, code: "expected_binding_symbol", message: "expected `@` to declare a mutable, or `=` to bind, found " + cursor.found(c, text) + " — `v: i64 @ 0` declares a cell, `xs: [i64] = []` binds once", span: cursor.current_span(c))
+    return .error
+
+# Everything else: an expression alone on its line, or the place on the left of
+# an `@`.
+function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
+    value = parse_expr(@c, @a, text)
+    if !cursor.eat(@c, .at)
+        return .expr_stmt(value: value)
+    if !is_place(a, value)
+        cursor.error(@c, code: "not_a_place", message: "only a name, a field or an element can be mutated — the left of `@` must name where the value goes", span: a.exprs[value].span)
+    return .mutate(place: value, value: parse_expr(@c, @a, text))
+
+# A PLACE: a name, or a field or index path rooted at one. Since Heroes has no
+# references, every place has exactly one root — which is what makes panel 010's
+# alias test a comparison of roots rather than a dataflow analysis.
+function is_place(a: ast.Ast, at: i64) -> bool
+    return match a.exprs[at].kind
+        .name => true
+        .field f => is_place(a, f.base)
+        .index i => is_place(a, i.base)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole => false
+        .unary | .binary | .call | .method | .variant_case => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+
+## `if` and `match`, which are expressions (§4.7)
+
+# `if cond` + block, then any number of `else if`, then an optional `else`. No
+# parentheses around the condition (§4.15) and no truthiness: the condition must
+# be `bool`, checked by the type checker.
+function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    start = cursor.bump(@c).span
+    branches: [ast.Branch] @ []
+    cond = parse_expr(@c, @a, text)
+    first = block(@c, @a, text: text, owner: "an `if`")
+    if first.is_err()
+        return ast.push_expr(@a, ast.Expr(kind: .error, span: start))
+    branches @ branches.push(ast.Branch(cond: cond, block: first.must()))
+    otherwise: ast.Block? @ fail("no_else", "the `if` has no `else`")
+    # `else` closes the `if`'s block, so the cursor is back at this level.
+    chaining: bool @ true
+    while chaining && cursor.at(c, .kw_else)
+        _ = cursor.bump(@c)
+        if cursor.eat(@c, .kw_if)
+            more_cond = parse_expr(@c, @a, text)
+            more = block(@c, @a, text: text, owner: "an `else if`")
+            if more.is_err()
+                chaining @ false
+            else
+                branches @ branches.push(ast.Branch(cond: more_cond, block: more.must()))
+        else
+            last = block(@c, @a, text: text, owner: "an `else`")
+            if !last.is_err()
+                otherwise @ last
+            chaining @ false
+    end: token.Span @ branches[branches.len() - 1].block.span
+    if !otherwise.is_err()
+        end @ otherwise.must().span
+    return ast.push_expr(@a, ast.Expr(kind: .if_expr(branches: branches, otherwise: otherwise), span: token.Span(start: start.start, end: end.end)))
+
+# `match e` + one arm per line, indented.
+function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    start = cursor.bump(@c).span
+    scrutinee = parse_expr(@c, @a, text)
+    eat_python_colon(@c)
+    cursor.skip_terminators(@c)
+    if !cursor.at(c, .indent)
+        if !cursor.at_reported_error(c)
+            cursor.error(@c, code: "missing_match_arms", message: "a `match` needs its arms indented one level below it, found " + cursor.found(c, text), span: cursor.current_span(c))
+        return ast.push_expr(@a, ast.Expr(kind: .error, span: start))
+    _ = cursor.bump(@c)
+    arms: [ast.Arm] @ []
+    reading: bool @ true
+    while reading
+        cursor.skip_terminators(@c)
+        k = cursor.current_kind(c)
+        if k == .dedent
+            _ = cursor.bump(@c)
+            reading @ false
+        else if k == .eof
+            reading @ false
+        else if k == .indent
+            # A block where an arm should start: it belongs to an arm that
+            # failed, so it goes whole. Without this case the loop can spin
+            # forever — `skip_line` deliberately stops BEFORE an indent (it must
+            # not leave the block it is cleaning), so a failed arm followed by an
+            # indented body consumed nothing at all and the parser never
+            # terminated (panel 014, found while costing it).
+            _ = cursor.balanced_block(@c)
+        else
+            one = arm(@c, @a, text)
+            if one.is_err()
+                # A pattern or `=>` that failed consumed nothing reusable.
+                cursor.skip_line(@c)
+            else
+                # A body that failed has already dropped the rest of its line
+                # (`finish` does it for every statement), so the loop must NOT
+                # skip again — that ate the arm below it.
+                arms @ arms.push(one.must())
+    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+    return ast.push_expr(@a, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
+
+# One arm: patterns joined by `|`, `=>`, then one statement on the same line or
+# a block below it (§4.7, panel 014).
+function arm(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Arm?
+    start = cursor.current_span(c)
+    patterns: [ast.Pattern] @ []
+    first = pattern(@c, @a, text)
+    if first.is_err()
+        return fail("no_pattern", "the arm has no pattern")
+    patterns @ patterns.push(first.must())
+    joining: bool @ true
+    while joining && cursor.eat(@c, .pipe)
+        more = pattern(@c, @a, text)
+        if more.is_err()
+            return fail("no_pattern", "a joined pattern is missing")
+        patterns @ patterns.push(more.must())
+    if !cursor.expect(@c, text: text, kind: .fat_arrow, code: "expected_arm_arrow", what: "`=>` and the arm's value")
+        return fail("no_arrow", "the arm has no `=>`")
+    cursor.skip_terminators(@c)
+    # One statement, or a block — the same two shapes every other body has
+    # (panel 014). Going through `statement` is what gives an arm `assert`,
+    # `break` and `return`, and what stops the printer from having a second path
+    # that cannot render a block under a control head.
+    body: ast.ArmBody @ .one_stmt(at: 0)
+    if cursor.at(c, .indent)
+        inner = block(@c, @a, text: text, owner: "a `match` arm")
+        if inner.is_err()
+            return fail("no_body", "the arm's block is missing")
+        body @ .block(block: inner.must())
+    else
+        at = statement(@c, @a, text)
+        reject_declaration(@c, a, text, at)
+        body @ .one_stmt(at: at)
+    return ok(ast.Arm(patterns: patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end)))
+
+# A declaration is not an arm body (panel 017 D). `.a => x = 5` binds a name
+# nothing can read: the arm is one statement, so the binding's scope ends with
+# it.
+#
+# The rejection lives here, in the parser, where Rust puts the same rule — as a
+# GRAMMAR exclusion of `let` from expression position. In the checker it would
+# arrive second: the resolver already reports the name as unused, with a repair
+# the author cannot apply, and the user would get both messages for one mistake.
+#
+# The error guard is not defensive. Without it a body the parser could not read
+# at all reports twice — once as the real syntax error and once as this.
+function reject_declaration(@c: cursor.Cursor, a: ast.Ast, text: str, at: i64)
+    named = declared_name(a, at)
+    if named.is_err()
+        return
+    return_if_unreadable = named.must()
+    if a.exprs[return_if_unreadable.value].kind == .error
+        return
+    cursor.error(@c, code: "declaration_in_arm", message: "an arm's body may not declare a name — `" + cursor.slice_of(text, return_if_unreadable.name) + "` would be bound where nothing can read it; write the value as the arm's body, or open a block", span: a.stmts[at].span)
+
+record Declared
+    name: token.Span
+    value: i64
+
+function declared_name(a: ast.Ast, at: i64) -> Declared?
+    return match a.stmts[at].kind
+        .bind b => ok(Declared(name: b.name, value: b.value))
+        .declare d => ok(Declared(name: d.name, value: d.value))
+        .mutate | .return_stmt | .break_stmt | .continue_stmt => fail("not_a_declaration", "no name bound")
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => fail("not_a_declaration", "no name bound")
+
+# `.num n`, `.num _`, `.plus`, `_`, or a literal.
+#
+# The payload name is optional and may be `_`: `.num _ => 0` is legal, `_ => 0`
+# on a variant is not (§4.7). That distinction is not obvious, which is why the
+# spec states it and the tree keeps the two apart.
+function pattern(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
+    start = cursor.current_span(c)
+    k = cursor.current_kind(c)
+    if k == .dot
+        _ = cursor.bump(@c)
+        if !cursor.at(c, .ident)
+            if !cursor.at_reported_error(c)
+                cursor.error(@c, code: "expected_pattern_case", message: "expected a case name after `.`, found " + cursor.found(c, text) + " — an arm is `.name => value`", span: cursor.current_span(c))
+            return fail("no_case_name", "the pattern names no case")
+        name = cursor.bump(@c).span
+        # A name here binds the payload; `_` binds it and says it is unused,
+        # which is what keeps §4.4's unused-binding rule honest.
+        binding: token.Span? @ fail("no_binding", "the payload is not bound")
+        if cursor.at(c, .ident)
+            binding @ ok(cursor.bump(@c).span)
+        return ok(ast.Pattern(kind: .variant_case(name: name, binding: binding), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end)))
+    # `_` lexes as an identifier: it is the wildcard only here.
+    if k == .ident && cursor.slice_of(text, start) == "_"
+        _ = cursor.bump(@c)
+        return ok(ast.Pattern(kind: .wildcard, span: start))
+    if k == .int_lit || k == .str_lit || k == .char_lit || k == .minus
+        # `pattern_operand`, never `parse_expr`: `|` is the join here and an
+        # operator there, and the full parser eats the join.
+        value = pattern_operand(@c, @a, text)
+        return ok(ast.Pattern(kind: .literal(value: value), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end)))
+    if !cursor.at_reported_error(c)
+        cursor.error(@c, code: "expected_pattern", message: "expected a pattern, found " + cursor.found(c, text) + " — `.case`, `.case name`, a literal, or `_` (on `i64`/`str` only)", span: cursor.current_span(c))
+    return fail("no_pattern", "nothing here starts a pattern")
+
 ## Tests — the precedence table, read back off real token streams
 
 function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
@@ -574,13 +967,163 @@ test "a pattern's operand never consumes the join, which is what | is there"
     at2 = parse_expr(@d, @b, "1 | 2")
     assert render(b, at2, "1 | 2") == "(1 | 2)"
 
-test "the control forms are not ported yet, and say so rather than crashing"
-    # This pins the module doc's own claim: `if` in expression position reports
-    # `expected_expression` today. When the statement half of the knot lands in
-    # this file, this test is what changes.
-    stream: [token.Token] = [tok(.kw_if, start: 0, end: 2), tok(.eof, start: 2, end: 2)]
+## Tests — the statement half, and the ring closed
+
+test "the three name-shaped lines are told apart by one token"
+    # x = 5
+    bind_line: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.eq, start: 2, end: 3), tok(.int_lit, start: 4, end: 5), tok(.terminator, start: 5, end: 5), tok(.eof, start: 5, end: 5)]
+    c: cursor.Cursor @ cursor.new_cursor(bind_line)
+    a: ast.Ast @ ast.new_ast()
+    at = statement(@c, @a, "x = 5")
+    match a.stmts[at].kind
+        .bind b => assert b.ty.is_err()
+        .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => assert false
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => assert false
+    assert c.diagnostics.len() == 0
+    # v @ v + 1 — a mutation, because the place is followed by `@`
+    mutate_line: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.at, start: 2, end: 3), tok(.ident, start: 4, end: 5), tok(.plus, start: 6, end: 7), tok(.int_lit, start: 8, end: 9), tok(.terminator, start: 9, end: 9), tok(.eof, start: 9, end: 9)]
+    d: cursor.Cursor @ cursor.new_cursor(mutate_line)
+    b: ast.Ast @ ast.new_ast()
+    at2 = statement(@d, @b, "v @ v + 1")
+    match b.stmts[at2].kind
+        .mutate _ => assert true
+        .bind | .declare | .return_stmt | .break_stmt | .continue_stmt => assert false
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => assert false
+    assert d.diagnostics.len() == 0
+
+test "only a place can be mutated"
+    # f(x) @ 1 — a call is not a place
+    stream: [token.Token] = [tok(.ident, start: 0, end: 1), tok(.lparen, start: 1, end: 2), tok(.ident, start: 2, end: 3), tok(.rparen, start: 3, end: 4), tok(.at, start: 5, end: 6), tok(.int_lit, start: 7, end: 8), tok(.terminator, start: 8, end: 8), tok(.eof, start: 8, end: 8)]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
-    at = parse_expr(@c, @a, "if")
-    assert a.exprs[at].kind == .error
-    assert c.diagnostics[0].code == "expected_expression"
+    _ = statement(@c, @a, "f(x) @ 1")
+    assert c.diagnostics[0].code == "not_a_place"
+
+test "the Python colon is eaten with its fix, so the block still parses"
+    # while c:
+    #     break
+    stream: [token.Token] = [
+        tok(.kw_while, start: 0, end: 5)
+        tok(.ident, start: 6, end: 7)
+        tok(.colon, start: 7, end: 8)
+        tok(.terminator, start: 8, end: 8)
+        tok(.indent, start: 9, end: 13)
+        tok(.kw_break, start: 13, end: 18)
+        tok(.terminator, start: 18, end: 18)
+        tok(.dedent, start: 19, end: 19)
+        tok(.eof, start: 19, end: 19)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = statement(@c, @a, "while c:\n    break\n")
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].code == "trailing_colon"
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+    # And the block still parsed: one habit costs one diagnostic.
+    match a.stmts[at].kind
+        .while_stmt w => assert w.block.stmts.len() == 1
+        .bind | .declare | .mutate | .return_stmt | .break_stmt => assert false
+        .continue_stmt | .assert_stmt | .for_in | .expr_stmt | .error => assert false
+
+test "for over a condition is met with while, and the certainty says how sure"
+    # for !done — no loop variable can be there, so the fix is CERTAIN
+    sure: [token.Token] = [
+        tok(.kw_for, start: 0, end: 3)
+        tok(.bang, start: 4, end: 5)
+        tok(.ident, start: 5, end: 9)
+        tok(.terminator, start: 9, end: 9)
+        tok(.indent, start: 10, end: 14)
+        tok(.kw_break, start: 14, end: 19)
+        tok(.terminator, start: 19, end: 19)
+        tok(.dedent, start: 20, end: 20)
+        tok(.eof, start: 20, end: 20)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(sure)
+    a: ast.Ast @ ast.new_ast()
+    _ = statement(@c, @a, "for !done\n    break\n")
+    assert c.diagnostics[0].code == "for_missing_in"
+    assert c.diagnostics[0].fixes[0].replacement == "while"
+    assert c.diagnostics[0].fixes[0].certainty == .certain
+    # for x > 0 — `for x of xs` reaches the same state, so it is a GUESS
+    unsure: [token.Token] = [
+        tok(.kw_for, start: 0, end: 3)
+        tok(.ident, start: 4, end: 5)
+        tok(.gt, start: 6, end: 7)
+        tok(.int_lit, start: 8, end: 9)
+        tok(.terminator, start: 9, end: 9)
+        tok(.indent, start: 10, end: 14)
+        tok(.kw_break, start: 14, end: 19)
+        tok(.terminator, start: 19, end: 19)
+        tok(.dedent, start: 20, end: 20)
+        tok(.eof, start: 20, end: 20)
+    ]
+    d: cursor.Cursor @ cursor.new_cursor(unsure)
+    b: ast.Ast @ ast.new_ast()
+    _ = statement(@d, @b, "for x > 0\n    break\n")
+    assert d.diagnostics[0].fixes[0].certainty == .guess
+
+test "the ring is closed: if is an expression with a block inside it"
+    # x = if c
+    #         1
+    #     else
+    #         2
+    stream: [token.Token] = [
+        tok(.ident, start: 0, end: 1)
+        tok(.eq, start: 2, end: 3)
+        tok(.kw_if, start: 4, end: 6)
+        tok(.ident, start: 7, end: 8)
+        tok(.terminator, start: 8, end: 8)
+        tok(.indent, start: 9, end: 17)
+        tok(.int_lit, start: 17, end: 18)
+        tok(.terminator, start: 18, end: 18)
+        tok(.dedent, start: 19, end: 19)
+        tok(.kw_else, start: 19, end: 23)
+        tok(.terminator, start: 23, end: 23)
+        tok(.indent, start: 24, end: 32)
+        tok(.int_lit, start: 32, end: 33)
+        tok(.terminator, start: 33, end: 33)
+        tok(.dedent, start: 34, end: 34)
+        tok(.eof, start: 34, end: 34)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    at = statement(@c, @a, "x = if c\n        1\n    else\n        2\n")
+    assert c.diagnostics.len() == 0
+    match a.stmts[at].kind
+        .bind b =>
+            match a.exprs[b.value].kind
+                .if_expr i =>
+                    assert i.branches.len() == 1
+                    assert !i.otherwise.is_err()
+                .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => assert false
+                .null_ptr | .name | .hole | .unary | .binary | .field => assert false
+                .index | .call | .method | .variant_case | .array => assert false
+                .map | .try_expr | .match_expr | .error => assert false
+        .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => assert false
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => assert false
+
+test "a match arm may not declare a name where nothing can read it"
+    # match e
+    #     .a => x = 5
+    stream: [token.Token] = [
+        tok(.kw_match, start: 0, end: 5)
+        tok(.ident, start: 6, end: 7)
+        tok(.terminator, start: 7, end: 7)
+        tok(.indent, start: 8, end: 12)
+        tok(.dot, start: 12, end: 13)
+        tok(.ident, start: 13, end: 14)
+        tok(.fat_arrow, start: 15, end: 17)
+        tok(.ident, start: 18, end: 19)
+        tok(.eq, start: 20, end: 21)
+        tok(.int_lit, start: 22, end: 23)
+        tok(.terminator, start: 23, end: 23)
+        tok(.dedent, start: 24, end: 24)
+        tok(.eof, start: 24, end: 24)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(stream)
+    a: ast.Ast @ ast.new_ast()
+    _ = parse_expr(@c, @a, "match e\n    .a => x = 5\n")
+    codes: [str] @ []
+    for d in c.diagnostics
+        codes @ codes.push(d.code)
+    assert codes == ["declaration_in_arm"]
