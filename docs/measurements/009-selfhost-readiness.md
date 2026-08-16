@@ -447,6 +447,34 @@ halves, so a token that is not an operator says `fail("not_an_operator", …)`
 instead of answering `.add`. A single-table typo is still possible — that class
 is Rust's too — but the class where two consistent tables disagree is gone.
 
+## The sweep panel 067 asked for, and what it found (2026-08-16)
+
+Condition 3 of the sitting: sweep the port once for the same shape — *two
+functions matching one variant to answer one question*. Every function in
+`selfhost/` whose body is a `match` on a parameter was listed and classified.
+
+**One hit, and it is the weak form.** `escape.hero` carried both
+`bare_here(ctx) -> u8` and `bare_text(ctx) -> str` — the same character
+("which delimiter needs no escape here") in two types, because Rust's
+`bare_here` returns a `char` and formats it into the message directly, which
+Heroes cannot do. The byte version was reachable **only from that file's own
+test**, so the two could have drifted with nothing but a test to notice.
+Deleted rather than kept in sync.
+
+**Everything else stays separate, and the engineer's own examples are why.**
+`digits.hero`'s six functions over `Base` (`radix`, `prefix`, `base_name`,
+`a_name`, `base_digits`, `admits`) mirror Rust's six methods exactly and answer
+six different facts; `token.hero`'s `kind_name`, `describe.hero`'s `describe`
+and `layout.hero`'s `is_line_ender` walk `TokenKind` for **three different**
+questions. No merge is owed.
+
+**The engineer's prediction P4 scores as CONFIRMED, weakly**: it predicted
+"at least one further two-table disagreement of finding 5's shape will be found
+by the sweep in a file other than `grammar_expr.hero`." One was — but it was a
+dead duplicate rather than two live tables that could disagree in a shipped
+program, so the class is real and its severity here was lower than at the
+operator table.
+
 ## Language features the port exercised against their own compiler
 
 - `TokenKind?` **as a record field** holds Rust's `Option<TokenKind>`

@@ -43,14 +43,17 @@ function legal(ctx: Quoted) -> str
         .in_str => "\\n \\t \\r \\\\ \\\""
         .in_char => "\\n \\t \\r \\\\ \\'"
 
-# The character that needs no escape here because it is not the delimiter —
-# the other context's escape, which the validator must reject.
-function bare_here(ctx: Quoted) -> u8
-    return match ctx
-        .in_str => '\''
-        .in_char => '"'
-
-# The same character as text, for the message that quotes it.
+# The character that needs no escape here because it is not the delimiter — the
+# other context's escape, which the validator must reject.
+#
+# **One function, and there used to be two.** The port also carried a
+# `bare_here(ctx) -> u8` returning the same character as a byte, because Rust's
+# `bare_here` returns a `char` and formats it into the message directly, which
+# Heroes cannot do. Two tables over one variant answering **one question** in two
+# types — panel 067's shape exactly, found by the sweep its compiler-engineer
+# asked for (condition 3). This one was the weak form: the byte version was
+# reachable only from this file's own test, so the tables could have drifted with
+# nothing but a test to notice. Deleted rather than kept in sync.
 function bare_text(ctx: Quoted) -> str
     return match ctx
         .in_str => "'"
@@ -142,6 +145,6 @@ test "the table serves the validator's question too"
     assert escape_text("n", .in_str).is_err() == false
     assert escape_text("\"", .in_char).is_err()
     assert escape_text("'", .in_str).is_err()
-    assert bare_here(.in_str) == '\''
+    assert bare_text(.in_str) == "'"
     assert legal(.in_char) == "\\n \\t \\r \\\\ \\'"
     assert escape_text("r", .in_str).must() == "\r"
