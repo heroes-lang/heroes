@@ -865,13 +865,13 @@ fn machine_lacks_the_library(text: &str) -> bool {
 /// mangled C locals (`h1_m`), not Heroes values. This test asserts the line
 /// mapping, which is the half the language promises today.
 ///
-/// Skipped rather than failed where `lldb` is not installed — the third CI leg
-/// has no Xcode — and the skip says so, because a silent skip is a test that
+/// Skipped where the platform cannot run lldb at all, and `lldb_starts_here`
+/// carries that fact — a skip says why, because a silent skip is a test that
 /// never fires (the `unsupported/` harness's own rule).
 #[test]
 fn lldb_breaks_on_a_hero_line() {
-    if std::process::Command::new("lldb").arg("--version").output().is_err() {
-        eprintln!("skipping: no lldb on this machine");
+    if !lldb_starts_here() {
+        eprintln!("skipping: lldb does not start on this platform — see `lldb_starts_here`");
         return;
     }
     let root = workspace_root();

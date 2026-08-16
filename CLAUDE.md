@@ -17,6 +17,26 @@ clock, never as a gate** (rule 3).
 - Reach `design.md` **by grep**, never from a remembered summary. Any asserted
   design rule must cite its section; an uncitable rule is a guess.
 - Session start: `git log --oneline -10`, DESIGN-LOG tail, ROADMAP status.
+- **A number or a repository fact goes into a panel brief, a measurement or a
+  record only if it was measured in the session that writes it** (author
+  instruction 2026-08-16). Not recalled, not carried from a comment, not
+  inferred from a document that asserts it. **Three sittings in a row were
+  briefed with something false and the judges caught all three**: panel 066 was
+  told a Rust test existed that never did (a `grep` would have shown it), panel
+  067 was given a **line** count against §1.2's **token**-denominated formula
+  and a "the port is longer" that compared code+tests to code-only (it is 21%
+  *shorter*), and panel 068 was told `sort.c` solved NaN with totalOrder when
+  `DESIGN-LOG:205` had superseded `:148` four days after it was written. A
+  fourth was a line count typed from memory (872 for 1129).
+  Three obligations follow, and each one killed a specific error above:
+  **run the measurement**, whatever it costs — `wc -l`, `grep`, `heroes
+  measure`, or the program itself; **match the unit to the rule that will judge
+  it**, since §1.2 is in tokens and a line count answers a different question;
+  and **when a fact comes from a record, read forward to the end of that record**
+  — DESIGN-LOG and the panels are append-only, so the entry you found may have
+  been overturned below it.
+  The cost of the rule is minutes. The cost of breaking it is a five-judge
+  sitting answering the wrong question, which is what happened three times.
 
 ## 2. Principle 0 (necessary-not-sufficient)
 The language is finished for v1 when it can compile itself. A form enters v1
