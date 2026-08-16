@@ -125,3 +125,39 @@ day, hours later**. The argument survived; the example died.
    is `float_map_key` at exit 1.
 3. **`partial` through a generic**: `spec:221` promises a compile error *"for it
    and for any value holding it"*; through a generic it is a run-time abort.
+
+## Author's verdict
+
+**Ratified 2026-08-16** (author instruction, *"approva tutto"* — blanket, recorded
+as one).
+
+**Final, and landed.** R1 (`Ty::Generic` off `is_refusable`, so `sort` joins the
+other eight restricted built-ins), R2 (the diagnostic names §4.12's route), R4
+(the gate's `builtin` row deleted and the mutants canary moved off it), R5 (spec
+**−2**: +5 against a −7 expired premise).
+
+**R3 is ratified as a NON-decision, and the distinction is the whole point.**
+Constraints are refused by **design.md §4.12:1593**, ratified long before this
+sitting; this panel did not decide that and a yes here does not re-decide it. The
+spec-warden's veto was explicit about the difference — *"my veto is on presenting
+a ratified ruling as an open question, not on the author's right to change it."*
+If the author ever wants constraints, that is a separate act amending §4.12, and
+it should not be able to arrive by inheriting this ratification.
+
+**What this ratification discharges, and it is what started the thread.** Panel
+082 closed with the llm-ergonomist's **veto standing** on locality: nothing on the
+line `sort(xs)` and nothing in `function smallest<T>(xs: [T])` decided whether it
+was legal. That seat named the two wordings that would lift it, and the first was
+**refuse early**. R1 is that, so **the veto is discharged** — the line is now
+decidable from itself, and the capability it seemed to cost survives at
+`sort_by<T>(xs, less)`, which was measured running at `i64` and at a user record
+before the line changed. Panel 082's `DECIDE.md` entry is closed by this.
+
+**Not settled, and the first one is the biggest thing found today for the port**:
+a generic calling a generic is `build` **exit 2** with no golden covering it —
+`Checked::instantiations` holds one answer per span, so it cannot see two
+instantiations of one enclosing generic, and the lookup falls back to a literal
+`hero_unreachable` that takes no arguments. §1.11's Tier 2 is a library that
+composes, so the port will meet this. Filed with its located cause, plus the map
+keyed at `f64` inside a generic (which **runs**), and `spec:221`'s `partial`
+promise becoming a run-time abort through a generic.

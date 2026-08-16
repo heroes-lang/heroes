@@ -152,3 +152,38 @@ out-parameters passing `void **` where the header says `sqlite3 **`, warning onl
 **in a shipped example**; and a C struct member literally named `function` being
 unbindable. All three measured by the ffi-pragmatist, none of them this sitting's
 question.
+
+## Author's verdict
+
+**Ratified 2026-08-16** (author instruction, *"approva tutto"* — blanket, recorded
+as one). What it settles and what it does not:
+
+**Final, and landed the same day.** R1 (the explicit `(void *)` at both doors), R2
+(`HERO_RET_CSTR` over the six character-pointer spellings), R4 (no `Ty` variant,
+no keyword, **zero spec tokens** — `const` stays filed under Part 7 item 10), R5
+(the two goldens, driven by one test because they are one balance).
+
+**R2 is ratified as a memory-safety repair and should be read as the sitting's
+result**, not as a footnote to R1. A four-byte object was being read ten bytes
+deep at exit 0 with every instrument in this project reporting success. R1 makes
+`sqlite3_column_blob` bindable; R2 stops the wrong answer that was the only
+alternative to it.
+
+**R3 is ratified as a verification rather than a decision.** Panel 058's guard was
+not weakened, and that was *measured* — `ffi_writable_parameter` still fires at
+exit 1 — by two seats and the coordinator independently. A blanket yes does not
+re-open 058, and this sitting did not ask it to.
+
+**The compiler-engineer's veto stays armed.** It is conditional and outlives this
+ratification: it fires *"the moment any seat's resolution adds a `Ty` variant, a
+keyword, or a spec type name for `const`"*. Nothing here does. A later sitting
+that wants a `constptr` spelling — Haskell's `Foreign.C.ConstPtr`, base-4.18, is
+the precedent and it is a spelling rather than a refusal — meets that veto first,
+and §4.19:2098 plus CLAUDE.md §13 close Part 7 until the fixpoint.
+
+**Not settled, because the sitting found them while answering something else** —
+all three measured, all three on `DECIDE.md` or in this file's last section: the
+misattributed `ffi_parameter_type` (a const-returning binding makes the compiler
+blame two **correct** declarations elsewhere in the group); `@` out-parameters
+passing `void **` where the header says `sqlite3 **`, warning only, **in a shipped
+example**; and a C struct member literally named `function` being unbindable.
