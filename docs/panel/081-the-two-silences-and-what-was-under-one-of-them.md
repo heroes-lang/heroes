@@ -177,3 +177,44 @@ is on the record because the reflex was to revert: an unrecognised commit inside
 frozen window looks exactly like a judge that ignored its brief, and the only
 thing that separated them was `git log --format=%an` and reading the panel file
 the commit carried.
+
+## Author's verdict
+
+**Ratified 2026-08-16** (author instruction, *"ratifica tutto"* — a blanket yes,
+recorded as one). Everything marked provisional above becomes final. What that
+does and does not settle, stated here rather than left to be re-derived:
+
+**Final, and already landed the same day.** R1 (clause A at +12 against the −10
+removal, net +2 → 3512). R3 (the four fixed-array shapes refused at exit 1 on the
+author's line, `fixed_flow` and `fixed_element`, with `unsupported/fixed-array-flow`
+making all three rows fire). R4 (`char[N]` binds; `run/ffi-a-char-array-member`
+prints 68; `ffi_decls.rs`'s false catch-all repaired).
+
+**Final as a rule, and this is the part a blanket yes is easiest to under-read.**
+R5 now governs future sittings: panel 035 R4's test gains its third case, so
+*loud* means **exit 1 with a message the author can act on**, and loud at **exit 2
+with the compiler's own name on it** is a defect paid in compiler lines, never a
+silence bought with spec tokens. It is cited as R5 of this file from here on.
+
+**R2 is ratified as a HOLD, not as a refusal, and its condition has since been
+met.** The spec-warden's veto on clause B was conditional — *"approve when both
+exit-2 shapes are exit 0 **or exit 1**, and the wording is chosen after that
+repair"* — and R3 landed exactly that: `reserved: a.reserved` and `r = a.reserved`
+are **exit 1**, measured again after the ratification. So the veto is discharged
+and clause B is **eligible**, on one remaining condition that is the sitting's own
+and is not waived by a blanket yes: **the wording is chosen against what is true
+now**, which the four measurements changed. What is true is narrower and more
+useful than the tabled sentence — a fixed array is *written as a literal where its
+record is built* and *read by index*, and cannot be named, copied or stored — and
+the compiler-engineer's condition 2 offered the shape (`"…never a `[T]`; build one
+with `[a, b, c, d]`"`). Pricing that wording is a fresh measurement and it is
+queued rather than smuggled in under this ratification: adopting a spec clause the
+sitting declined to adopt would be reading a yes wider than it was given.
+
+**Not settled by this yes, because the sitting did not decide them.** The literal
+cost for a large `N` (3 tokens per element, so 768 for `char[256]`) — the wall
+that moved rather than fell when R4 landed, and the reason `uname()` is bindable
+and still impractical. The historian's Q4 finding — four studies since panel 024
+measuring specification detail against code correctness, jointly reporting that
+the relation is **non-monotone** — which says the token count is not the quantity
+that predicts the objective and belongs to §1.6 rather than to this sitting.

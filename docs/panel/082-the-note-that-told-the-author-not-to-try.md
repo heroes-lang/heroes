@@ -162,3 +162,52 @@ constraint vocabulary**, C++ took until C++20 and Stroustrup names the surviving
 obstacle as *legacy migration* (which Heroes does not have), and Nim's Araq opened
 the same RFC in 2019 and it is still open. That is the trade the author owns, and
 this sitting does not spend it.
+
+## Author's verdict
+
+**Ratified 2026-08-16** (author instruction, *"ratifica tutto"* — a blanket yes,
+recorded as one). What it settles, and what it does not:
+
+**Final, and landed the same day.** R1 — the note is the row's decision, off the
+`Diagnostic::unsupported` constructor. Measured before it landed and again after:
+false on **three** of the five rows this kind can carry, which is more than either
+compiling seat had (one said one row, one said two). Only `missing` keeps *"no
+change to this file will fix this"*, and the shared test now asserts that
+**invariant** rather than a shared string — comparing against the table itself
+would be tautological, and a shared assertion on a shared string is how the lie
+stayed uniform for as long as it did.
+
+**Final, and it is a refusal rather than a deferral.** R2 — option (a) is refused
+on the compiler-engineer's veto and on five costs measured rather than argued.
+Zig's `-fno-emit-bin` remains the standing counter-precedent and the refusal is
+not permanent; the historian named the condition that reopens it, and it is
+`check`-with-`mono` measuring under ~10% slower, against 1.3–2.2× today.
+
+**Final, and corrective.** R4 — the two shipping module docs that asserted the
+brief's false claim are repaired. R6 — the invariant is *check accepts ⇒ **build**
+succeeds*, never *⇒ run succeeds*, with `sqrt(-1.0)` and `sort.c:51,57` as the
+standing counterexample, shown by deleting the guards and getting four different
+answers at exit 0.
+
+**R3 is ratified as a DIRECTION, and a blanket yes does not build it.** Option (b)
+is ~90–110 lines that nobody has written; the compiler-engineer bounded it and
+said so. Principle 0 keeps it behind the port — `selfhost/` declares zero
+generics, measured by three seats — so what is ratified is *that (b) is where this
+goes*, not that it goes there now.
+
+**Not settled, and it is the live one.** The llm-ergonomist's **veto stands**, and
+(b) does not lift it: (b) moves the error to the call the author can edit, and
+leaves the generic body's line undecidable from the line plus its signature, which
+is the locality ground the veto rests on. Lifting it needs **constraints on
+generics** — a language addition with no compiler-need behind it, priced from
+outside by the historian: Swift and Go bought the checker-side guarantee with a
+*closed* constraint vocabulary, C++ took until C++20 and Stroustrup names legacy
+migration as the surviving obstacle (which Heroes does not have), and Nim's Araq
+opened the same RFC in 2019 and it is still open. That trade is the author's and
+this ratification does not spend it.
+
+**Also filed rather than closed** (R5): `const`-qualified pointer members — 39 of
+sqlite3.h's 158 — are `check` exit 0 and `run` exit 2 today, a fifth class under
+CLAUDE.md §7's narrowing rule that `emit/ffi_field.rs` never sees. Ratifying this
+sitting does not repair it; it records that the sitting found it while answering
+something else.
