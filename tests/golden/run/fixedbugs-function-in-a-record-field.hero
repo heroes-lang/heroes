@@ -1,0 +1,61 @@
+# **Symptom** (2026-08-16, panel 068, found by the compiler-engineer while
+# pricing something else): calling a function held in a **record field** emitted
+# C that assigns a function pointer to an `int64_t` and then calls the integer.
+# `error: incompatible pointer to integer conversion` and `error: called object
+# type 'int64_t' is not a function or function pointer` — **exit 2, the compiler
+# blaming itself for a correct program.**
+#
+# **Cause**: `ir/calls.rs` synthesises the field read during lowering — the
+# parser saw a method call, so there is no expression node for `h.f` and no
+# `expr_types` entry to take the type from. It typed the read with the **call's
+# result** instead, under a comment saying nothing there could intern a function
+# type. True, and beside the point: the type is already interned, in the
+# record's own declaration. The comment's real premise was *"function values
+# land at M-generics-library, which is where this path is first exercised"* —
+# and that expired when the milestone landed. CLAUDE.md §11's shape.
+#
+# **Why no test caught it**: every function type in `tests/golden/` was a
+# **parameter** (`ir/indirect-call.hero`, `emit/order-options-and-fn-typedefs`,
+# `run/function-values.hero`), never a record **field**. The shape was ordinary
+# and untried — the same reason `examples/tree/` exists.
+#
+# **Fix**: `layout::field_type` reads the field's own type from the declaration,
+# the sibling of `field_index` that answers the other half.
+
+record Holder
+    f: (function(i64) -> i64)
+    label: str
+
+function double(n: i64) -> i64
+    return n * 2
+
+function negate(n: i64) -> i64
+    return -n
+
+# A variant case's payload holds one too. **Note the two-step form**: `a.g(50)`
+# directly is `error[unknown_function]: \`Step.apply\` has no field \`g\`` — the
+# resolver reads `x.g(…)` as UFCS and never looks at the case's payload, while
+# the same lookup on a *record* field works. That asymmetry is a separate
+# question and is queued rather than folded in here; reading the value first is
+# the spelling that works today, and it exercises the same lowering.
+variant Step
+    stop
+    apply
+        g: (function(i64) -> i64)
+
+function main()
+    h = Holder(f: double, label: "double")
+    print(h.f(21))
+    print(h.label)
+    # Reassigning the field: the value is a function like any other (§4.13).
+    k: Holder @ h
+    k.f @ negate
+    print(k.f(21))
+    # The original is untouched — a record is a value (§4.10).
+    print(h.f(21))
+    s: Step @ .apply(g: double)
+    match s
+        .apply a =>
+            call = a.g
+            print(call(50))
+        .stop => print(0)

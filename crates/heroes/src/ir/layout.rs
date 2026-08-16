@@ -24,6 +24,42 @@ use crate::types::{Checked, Ty, TyId};
 /// The two fields of the built-in failure record, in order.
 pub(super) const FAILURE_FIELDS: [&str; 2] = ["code", "msg"];
 
+/// The **type** of a field within the type that holds it — the sibling of
+/// `field_index`, walking the same declaration for the other half of the answer.
+///
+/// It exists because one caller needs the field's own type and cannot get it
+/// from `Checked::expr_types`: `h.f(n)` where `f` holds a function value has **no
+/// expression node for the field read** — the parser saw a method call, and the
+/// field is synthesised during lowering. `ir/calls.rs` typed that synthetic read
+/// with the *call's result* instead, under a comment saying nothing here could
+/// intern a function type. Interning was never needed: the type is written in the
+/// record's own declaration, and `written_type` has it. What the old comment
+/// really rested on was *"function values land at M-generics-library, which is
+/// where this path is first exercised"* — a premise that expired when that
+/// milestone landed (panel 068, compiler-engineer F8; CLAUDE.md §11's shape).
+pub(super) fn field_type(
+    ast: &Ast,
+    checked: &Checked,
+    src: &Source,
+    owner: TyId,
+    name: Span,
+) -> Option<TyId> {
+    let wanted = src.slice(name);
+    let fields: &[crate::syntax::Field] = match checked.types.get(owner) {
+        Ty::Named(decl) => match &ast.decls[decl as usize].kind {
+            DeclKind::Record { fields, .. } => fields,
+            _ => return None,
+        },
+        Ty::Case(decl, case) => match &ast.decls[decl as usize].kind {
+            DeclKind::Variant { cases } => &cases[case as usize].fields,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    let field = fields.iter().find(|f| src.slice(f.name) == wanted)?;
+    checked.written_type(field.ty)
+}
+
 /// The index of a field within the type that holds it, or `None` if that type
 /// holds no such field — which by here means the checker reported something and
 /// lowering should stay quiet.

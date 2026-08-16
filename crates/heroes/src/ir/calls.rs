@@ -169,11 +169,23 @@ pub(super) fn method(
             let owner = checked.expr_types[receiver.0 as usize];
             let base = exprs::expr(b, ast, resolved, checked, src, receiver);
             let field = layout::field_index(ast, checked, src, owner, name);
-            // The field's own type is a function type, and nothing here can intern
-            // one: `Checked` is read-only by design. It is typed with the call's
-            // result for now — function values land at M-generics-library, which is where this
-            // path is first exercised (§4.13).
-            let function_ty = ty;
+            // **The field's own type, read from the declaration that wrote it.**
+            // This used to be `ty` — the *call's result* — under a comment saying
+            // nothing here could intern a function type, which was true and
+            // beside the point: the type is already interned, in the record's
+            // declaration, and `field_type` reads it. The comment's real premise
+            // was *"function values land at M-generics-library, which is where
+            // this path is first exercised"*, and that expired when the milestone
+            // landed. Measured: `h.f(21)` on `record Holder { f: (function(i64)
+            // -> i64) }` emitted `int64_t t4 = t3.f_f;` and then called it,
+            // giving `incompatible pointer to integer conversion` at **exit 2** —
+            // the compiler blaming itself for a correct program (panel 068 F8).
+            //
+            // The fallback is the old behaviour and stays deliberately: a field
+            // the checker could not resolve has already been reported, and
+            // lowering must stay quiet rather than invent a second message.
+            let function_ty =
+                layout::field_type(ast, checked, src, owner, name).unwrap_or(ty);
             let target = match field {
                 Some(index) => b.emit(Op::Field { base, index }, function_ty, span),
                 None => b.emit(Op::Missing, function_ty, span),
