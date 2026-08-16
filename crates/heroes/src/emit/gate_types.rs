@@ -121,9 +121,25 @@ pub(super) fn unit_fields(
 
 /// What a container holds, which is a narrower question than what a type is.
 ///
-/// `()` is a perfectly good type and no kind of element: it has no C declaration,
-/// so there is no descriptor to hand the runtime. Everything else defers to
-/// `check_type`, so an `[[ptr]]` is refused for its `ptr` and says so once.
+/// **Three types are no kind of element, and each for its own reason.** `()` has
+/// no C declaration, so there is no descriptor to hand the runtime. `ptr` and
+/// `cstr` have a C declaration and still have no descriptor: `descriptors.rs`
+/// answers `None` for both, because the runtime ships no row for a value that is
+/// an address the program does not own.
+///
+/// **The `ptr`/`cstr` half was a dead premise until 2026-08-16**, and this doc
+/// carried it: it said *"an `[[ptr]]` is refused for its `ptr` and says so
+/// once"*, while `check_type`'s fallthrough let both past. Measured (panel 067,
+/// ffi-pragmatist): `[ptr]`, `[cstr]`, `{i64: ptr}`, `{i64: cstr}`, `{ptr: i64}`
+/// and `{cstr: i64}` all passed `heroes check` at **exit 0** and aborted at
+/// **exit 134** — `hero_unreachable()` reached from a correct program, which is
+/// §1.12's class and the one thing the gate exists to prevent. Panel 029 filed
+/// three types; the fix covered one.
+///
+/// It is a **refusal rather than a feature**: the runtime could grow descriptors
+/// for both, and that is a panel question with an ABI bump in it. Refusing is
+/// what turns a crash into a diagnostic today, which is the loud direction
+/// (CLAUDE.md §11).
 pub(super) fn check_element(
     found: &mut Vec<(String, String, Span)>,
     ast: &Ast,
@@ -136,6 +152,17 @@ pub(super) fn check_element(
 ) {
     if checked.types.get(element) == Ty::Unit {
         note(found, "unit_element", format!("`()` as the element of {container}"), span);
+        return;
+    }
+    // The two that have a C declaration and no descriptor. Named separately from
+    // `()` because the reason differs and so does the future: `()` can never be an
+    // element, while these two wait on a runtime row.
+    if checked.types.get(element) == Ty::Ptr {
+        note(found, "pointer_element", format!("`ptr` as the element of {container}"), span);
+        return;
+    }
+    if checked.types.get(element) == Ty::Cstr {
+        note(found, "pointer_element", format!("`cstr` as the element of {container}"), span);
         return;
     }
     check_type(found, ast, checked, src, function, element, span);

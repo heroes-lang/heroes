@@ -27,19 +27,22 @@
 # and the author never writes the type that lands here at all.
 # Bulk regression case.
 
+# **The `ptr` half left this file on 2026-08-16, and its comment was false.**
+# It read: *"`[ptr]` … is legal as of M-ffi-ladder step 6 — §4.19's opaque types
+# emit now that the header verifying them does. It stays, unannotated."* It was
+# never legal: it passed `check` at exit 0 and aborted at exit 134. And it was
+# never *reached* either — the `[()]` line above fires first and stops the
+# build, so four lines sat here for months proving nothing (panel 067 F8). The
+# six pointer shapes now have their own file, with no `()` in it to mask them:
+# `fixedbugs-pointer-in-a-container.hero`.
+
 function main()
     units: [()] @ []                #~ unit_element
     print(len(units))
-    # `[ptr]` was the second half of this case and is legal as of M-ffi-ladder
-    # step 6 — §4.19's opaque types emit now that the header verifying them does.
-    # It stays, unannotated, because the *descent* is what the defect was about:
-    # a walk that stops at the container is wrong whether or not this line fires.
-    handles: [ptr] @ []
-    print(len(handles))
-    table: {str: ptr} @ {}
-    print(len(table))
-    # A nested one: refused for the `ptr` at the bottom, and named once.
-    deep: [[ptr]] @ []
+    # A nested one: refused for the `ptr` at the bottom, and named once — which
+    # is the descent this case is about. Its comment used to say it was legal;
+    # it fires now, and it is annotated now.
+    deep: [[ptr]] @ []              #~ pointer_element
     print(len(deep))
     # And the containers themselves emit, which is what makes the rows above
     # about the element rather than about the container.
