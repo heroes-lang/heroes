@@ -1,4 +1,4 @@
-# The corpus, on both machines.
+# The corpus, on more than one machine.
 #
 # Everything this project knows about the machine it runs on it learned the hard
 # way, and every one of those facts is a place where the other platform can
@@ -20,12 +20,31 @@
 # `-fsanitize=address,undefined`, and `tests/golden.rs` does the same for
 # `tests/golden/run/` — so the three configurations are inside it rather than
 # beside it.
+#
+# **Which machines run is a separate question from which machines exist**, and
+# the two answers differ because one leg is not paid for in the same currency
+# (author decision 2026-08-16). A macOS runner bills at $0.08/min against
+# Windows' $0.016 and Linux' $0.008: measured over 2026-08-13..16, Darwin was
+# **26% of the minutes and 70% of the money** — 136 min of 524, $10.88 of
+# $15.49 — and the account's spending limit stopped every job on 08-15 at
+# 21:44Z. What Darwin buys for that price is the platform the author already
+# develops on, so its job re-runs `cargo test` on the one machine that has
+# already run it. Linux is the opposite trade: it is the cheapest leg *and* the
+# only one whose ASan carries a leak detector, so it runs on everything,
+# including a docs-only push — `crates/heroes-cli/tests/milestones.rs` reads
+# `docs/` and a malformed record is a red `cargo test`.
 
 name: heroes
 
 on:
   push:
     branches: [main]
+    # Milestone tags (CLAUDE.md §14: the id lowercased, `m-<what-it-delivers>`)
+    # are what widens the matrix below to all three platforms. `git push
+    # --follow-tags` therefore starts two runs — the branch's Linux-only one and
+    # the tag's full one — because `concurrency` keys on `github.ref` and a
+    # branch is not its tag. That duplicate is one Linux job per milestone.
+    tags: ['m-*']
   pull_request:
   workflow_dispatch:
 
@@ -43,20 +62,40 @@ jobs:
     # and `fail-fast` would undo it on the first divergence.
     strategy:
       fail-fast: false
+      # A matrix cannot be narrowed by an `if:` — that covers a whole job, never
+      # one leg of it — so the list itself is what the expression chooses, and
+      # `fromJSON` turns the chosen string back into the table this file used to
+      # spell out. The legs, and what each is here for:
+      #
+      #   - **Linux x86-64 — every push, including a docs-only one.** The
+      #     cheapest leg and the only one whose ASan carries a leak detector, so
+      #     it reads `hero_runtime_check_leaks()` (panel 021) against a second
+      #     instrument; `INT64_MIN % -1` raises SIGFPE here while arm64 returns
+      #     0 at exit 0. Same source, two behaviours.
+      #   - **Darwin arm64 — tags and `workflow_dispatch`.** Not narrowed for
+      #     being less informative but for being *already read*: it is the
+      #     author's machine, so a local `cargo test` is this job, and it is the
+      #     only leg billed at ten Linux minutes to the minute.
+      #   - **Windows x86-64 — tags and `workflow_dispatch`. The third leg,
+      #     added the day the runtime could hold it** (author instruction
+      #     2026-08-14, "I want Windows too"). It is here because
+      #     `runtime/parts/f64.c` now compiles under a Windows target — the 18
+      #     errors panel 049 measured were all in that one file — and not because
+      #     the platform was named. A name in a document is a promise; a job is a
+      #     measurement. It rides with Darwin rather than with Linux because
+      #     nothing local reproduces it, so its result is worth having at the
+      #     moment somebody is looking at one.
+      #
+      # Nothing is untested by this: the third platform is read at the tag
+      # instead of at the commit, which is the trade CLAUDE.md §14's per-
+      # milestone tag already makes for every other record.
       matrix:
-        include:
-          - name: Linux x86-64
-            os: ubuntu-latest
-          - name: Darwin arm64
-            os: macos-14
-          # **The third leg, added the day the runtime could hold it** (author
-          # instruction 2026-08-14, "I want Windows too"). It is here because
-          # `runtime/parts/f64.c` now compiles under a Windows target — the 18
-          # errors panel 049 measured were all in that one file — and not because
-          # the platform was named. A name in a document is a promise; a job is a
-          # measurement.
-          - name: Windows x86-64
-            os: windows-latest
+        include: >-
+          ${{ fromJSON(
+          (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
+          && '[{"name":"Linux x86-64","os":"ubuntu-latest"},{"name":"Darwin arm64","os":"macos-14"},{"name":"Windows x86-64","os":"windows-latest"}]'
+          || '[{"name":"Linux x86-64","os":"ubuntu-latest"}]'
+          ) }}
 
     steps:
       - uses: actions/checkout@v5
