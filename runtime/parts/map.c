@@ -128,10 +128,24 @@ void hero_map_incref(HeroMapHeader *m) {
     m->refcount += 1;
 }
 
+/* `hero_array_decref`'s rule at the other container, and it must be the same
+ * rule: a value may alternate arrays and maps, so a map that released its
+ * entries recursively would put the frames back that `drop.c` exists to remove. */
 void hero_map_decref(HeroMapHeader *m) {
     if (m == NULL) return;
     m->refcount -= 1;
     if (m->refcount > 0) return;
+    if (hero_drop_running) {
+        hero_drop_push_map(m);
+        return;
+    }
+    hero_drop_running = true;
+    hero_drop_drain_from_map(m);
+    hero_drop_running = false;
+}
+
+/* `hero_array_release_contents`' counterpart — see `drop.c`. */
+static void hero_map_release_contents(HeroMapHeader *m) {
     const unsigned char *states = hero_map_states_const(m);
     for (int64_t i = 0; i < m->cap; i++) {
         if (states[i] == 0) continue;

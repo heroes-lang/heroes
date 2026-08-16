@@ -1,0 +1,79 @@
+# FIXED DEFECT, 2026-08-16, panel 070 — a deep value SEGFAULTED, silently, on
+# release. It is the one outcome design.md §1.12 names as forbidden, and it was
+# reachable from nine lines.
+#
+# SYMPTOM: `record Node { children: [Node] }` built deep enough, then simply
+# allowed to go out of scope. Exit 139, no output at all — no diagnostic, no
+# `hero_panic`, no line. Measured on Darwin arm64 with an 8 MB main thread:
+# depth 74642 at -O0, 174003 at -O2. NO `==` IS INVOLVED; construction and scope
+# exit are the whole program.
+#
+# CAUSE: `hero_array_decref` released its elements by calling the element's
+# `drop`, which for a record is the generated `Node_release`, which calls
+# `hero_array_decref` — one C frame per level of the value. `hero_map_decref` had
+# the identical shape.
+#
+# `-O2` WAS NOT A FIX, and the panel had to measure that because the brief said
+# otherwise: the recursion depth is IDENTICAL at both levels (20001 at depth
+# 20000, zero calls eliminated) and only the frame shrinks. The call sits inside
+# a `for` loop and is followed by `hero_release_block`, so it is not in tail
+# position and no C compiler is permitted to turn it into a jump.
+#
+# FIX: the release path is iterative (`runtime/parts/drop.c`). A block whose
+# refcount has reached zero is doomed, so its `refcount` field is dead and holds
+# a link — the worklist needs NO allocation, the layout does not change, and
+# `HERO_RUNTIME_ABI` stays 14. Two lists and ONE shared flag, because a value may
+# alternate arrays and maps and two flags would let the second kind recurse.
+#
+# WHAT THIS CASE ASSERTS, and each line is a route that crashed:
+#   1. an array chain far past the old threshold
+#   2. an ALTERNATING array/map chain, which one list per container would miss
+#   3. that ordinary shallow values are untouched
+#
+# It runs at -O0 and -O2, which the golden harness does for every case precisely
+# because an -O0/-O2 divergence is a known class for a C emitter — the instrument
+# was always there and this case is what was missing.
+# Date: 2026-08-16.
+
+record Node
+    label: i64
+    children: [Node]
+
+record Layer
+    kids: {i64: [Layer]}
+
+function deep(n: i64) -> Node
+    out: Node @ Node(label: 0, children: [])
+    i: i64 @ 0
+    while i < n
+        out @ Node(label: i, children: [out])
+        i @ i + 1
+    return out
+
+function alternating(n: i64) -> Layer
+    out: Layer @ Layer(kids: {})
+    i: i64 @ 0
+    while i < n
+        inner: {i64: [Layer]} @ {}
+        inner[0] @ [out]
+        out @ Layer(kids: inner)
+        i @ i + 1
+    return out
+
+function main()
+    # 200000 is past BOTH old thresholds — 74642 at -O0 and 174003 at -O2 — so
+    # this line fails at both levels if the repair is reverted, rather than at one
+    # and quietly passing at the other.
+    a = deep(200000)
+    print(a.label)
+
+    # The alternating chain: an array holding a map holding an array. Two
+    # per-container worklists would have deferred each kind into the other's
+    # recursion and crashed here while the line above passed.
+    b = alternating(200000)
+    print(len(b.kids))
+
+    # And the ordinary case, which must be untouched: a shallow value, released
+    # the same way, still built and read correctly.
+    c = deep(3)
+    print(c.label, " ", len(c.children))

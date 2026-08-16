@@ -65,10 +65,30 @@ void hero_array_incref(HeroArrayHeader *a) {
     a->refcount += 1;
 }
 
+/* Releasing an array releases what it holds, **iteratively** — see `drop.c` for
+ * why, and for the depth at which the recursion this replaces ran out of stack.
+ *
+ * Whichever of the two release entry points is called first becomes the driver;
+ * every release reached from inside it hands its block over and returns. The
+ * driver then drains both lists until both are empty, so a value alternating
+ * arrays and maps unwinds without a frame per level. */
 void hero_array_decref(HeroArrayHeader *a) {
     if (a == NULL) return; /* the zero-init non-value: a no-op */
     a->refcount -= 1;
     if (a->refcount > 0) return;
+    if (hero_drop_running) {
+        hero_drop_push_array(a);
+        return;
+    }
+    hero_drop_running = true;
+    hero_drop_drain_from_array(a);
+    hero_drop_running = false;
+}
+
+/* The walk `drop.c`'s drainer calls. Releases the elements and then the block,
+ * and never recurses: an element that is itself a container sees
+ * `hero_drop_running` raised and defers. */
+static void hero_array_release_contents(HeroArrayHeader *a) {
     unsigned char *data = hero_array_data(a);
     for (int64_t i = 0; i < a->len; i++) {
         a->elem->drop(data + (size_t)i * a->elem->size);

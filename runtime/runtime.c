@@ -112,6 +112,12 @@
 /* The four scalar descriptors. They reference `str`'s incref/decref. */
 #include "parts/desc.c"
 
+/* Releasing a deep value without a deep C stack: the two pending lists and the
+ * drainer both containers hand their doomed blocks to (panel 070). Before both,
+ * because both call into it; its own walks are forward-declared and defined
+ * there. */
+#include "parts/drop.c"
+
 /* `[T]`, its descriptor, and the primitives that do not mutate. */
 #include "parts/array.c"
 
