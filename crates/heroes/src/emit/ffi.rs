@@ -104,6 +104,9 @@ pub fn explain(
         if let Some(diagnostic) = tag::unknown_tag(line, ast, src) {
             push(&mut found, diagnostic);
         }
+        if let Some(diagnostic) = tag::tag_is_a_union(line, ast, src) {
+            push(&mut found, diagnostic);
+        }
         if let Some(diagnostic) = declared::unknown_name(line, stderr, ast, src) {
             push(&mut found, diagnostic);
         }

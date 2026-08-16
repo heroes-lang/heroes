@@ -22,40 +22,52 @@
 //! languages that refused unions at the **type** level, Go and Fortran, had users
 //! rebuild them by hand, and Go's rebuild defeated its own runtime pointer check.
 //!
-//! ## The predicate, and why it is a sum rather than a pair
+//! ## The predicate: ask C what the type IS
 //!
 //! ```c
-//! _Static_assert(sizeof(UDef) >= sizeof(((UDef *)0)->i) + sizeof(((UDef *)0)->f),
-//!     "heroes-ffi-union UDef i f");
+//! _Static_assert(__builtin_classify_type(*(UDef *)0) != 13, "heroes-ffi-union UDef i f");
 //! ```
 //!
-//! Distinct members of a **struct** occupy distinct storage (C11 6.7.2.1p15), so
-//! their sizes sum to no more than the struct's; every member of a **union**
-//! starts at offset 0, so two or more of them cannot fit. The assertion is exactly
-//! *this record's declared fields do not overlap*, checked by clang against the
-//! real header — the author declares and clang refutes, which is §4.19's own
-//! thesis and not a probe.
+//! **13 is `union_type_class` and 12 is `record_type_class`.** The question is
+//! answered by the same builtin `extern_record.rs` already calls on every field,
+//! in an unevaluated operand, against the real header: the author declares and
+//! clang refutes, which is §4.19's thesis and not a probe.
 //!
-//! **The all-pairs `offsetof` form was measured and is worse on both axes.** It
-//! calls a struct of two GNU zero-sized members a union — `offsetof(S5, e1) ==
-//! offsetof(S5, e2)` with no overlap at all, a false positive this form passes —
-//! and it is O(n²): a sixteen-field record emits 120 conjuncts against 16.
+//! **Panel 073 shipped `sizeof(T) >= Σ sizeof(field)` and panel 077 refuted it,
+//! three hours later, on the case the whole sitting was about.** That predicate
+//! asks whether the declared fields *fit*, and a union with padding has room:
+//! `union { int32_t i; float f; char pad[128]; }` passes `128 >= 8` and prints
+//! **1065353216** — the same false number panel 073's own commit body cites as the
+//! defect it killed. `SDL_Event` is a padded union. The sum form is also **blind
+//! at one declared field**, where there is nothing to sum against, and that is the
+//! shape a binding to a single arm actually has.
+//!
+//! Two seats found this builtin independently, and the brief that told them C
+//! could not answer the question was wrong: it had looked for `__is_union`, which
+//! is C++ only.
+//!
+//! **A premise-death control ships with it** (CLAUDE.md §11). Every assertion here
+//! rests on one claim about the world — that this clang still separates 12 from 13
+//! — and clang answered 12 for unions before 2019. A toolchain that regresses
+//! would turn every check above into one that silently passes, so two assertions
+//! state the premise directly and a regression becomes a **build failure** rather
+//! than a silence.
 //!
 //! ## What it is emitted for, and why not for every record
 //!
-//! Only for a record the program **constructs** or **compares** — including
-//! through a containing type, because `==` on a Heroes record walks into its
-//! fields' `eq`. Emitting it for every declaration would refuse the read-only
-//! bindings that work today, which is the shape panel 073 rejected. A record with
-//! fewer than two declared fields is never emitted for either: one member of a
-//! union is sound, and it is what a binding to one arm looks like.
+//! Only for a record the program **constructs**, **compares** or **uses as a map
+//! key** — including through a containing type, because `==` on a Heroes record
+//! walks into its fields' `eq`. Emitting it for every declaration would refuse the
+//! read-only bindings that work today, which is the shape panel 073 rejected.
+//!
+//! **The map key was reachable where `==` was refused**, which is worse than
+//! refusing neither: `hash` walks the same overlapping bytes and nothing said so.
 
 use crate::ir::{BinOp, Op, Program, Shape};
 use crate::source::Source;
 use crate::syntax::{Ast, DeclKind};
 use crate::types::{Checked, Ty, TyId};
 
-use super::mangle;
 use super::typedefs::Names;
 use super::writer::Writer;
 
@@ -74,25 +86,42 @@ pub(super) fn union_assertions(
     src: &Source,
 ) {
     let mut any = false;
-    for decl in used(program, ast, checked) {
+    let (constructed, operated) = used(program, ast, checked);
+    let mut wanted: Vec<u32> = Vec::new();
+    for decl in constructed {
+        // **Construction with ONE field is the sound binding and must stay**
+        // (panel 073, measured against real SDL3 by two seats): a designated
+        // initialiser sets the member it names and C zeroes the rest, which is
+        // exactly what a binding to one arm wants. It is naming **two or more**
+        // that has no answer, because C keeps the last one written.
+        let DeclKind::Record { fields, .. } = &ast.decls[decl as usize].kind else { continue };
+        if fields.len() >= 2 {
+            wanted.push(decl);
+        }
+    }
+    // **`==`, `hash` and a map key are refused at ANY arity.** With one declared
+    // member they still read one arm's bytes out of a value that may hold
+    // another, so two values holding different members compare equal whenever the
+    // bytes match — the same lie, one field down.
+    wanted.extend(operated);
+    wanted.sort_unstable();
+    wanted.dedup();
+    for decl in wanted {
         let DeclKind::Record { fields, header: Some(_), .. } = &ast.decls[decl as usize].kind
         else {
             continue;
         };
-        if fields.len() < 2 {
-            continue;
-        }
         let c_type = names.of(decl).to_string();
-        let members: Vec<String> = fields
+        // **The marker carries the DECLARATION's name, never `c_type`** — panel
+        // 072 rider 1, which this file broke on the day it was written, one file
+        // over from where that defect was fixed. With `tag`, `c_type` is two
+        // words, and `ffi_record.rs` reads token 1 of the marker as the name.
+        let hero_name = src.slice(ast.decls[decl as usize].name).to_string();
+        let named = fields
             .iter()
-            .map(|f| mangle::field_of(true, src.slice(f.name)))
-            .collect();
-        let sum = members
-            .iter()
-            .map(|m| format!("sizeof((({c_type} *)0)->{m})"))
+            .map(|f| src.slice(f.name).to_string())
             .collect::<Vec<_>>()
-            .join(" + ");
-        let named = members.join(" ");
+            .join(" ");
         // `#line` at the declaration's own name: unlike a field assertion, no one
         // field is at fault — what the author must change is the declaration or
         // the expression that builds it.
@@ -100,12 +129,24 @@ pub(super) fn union_assertions(
         let file = file.to_string();
         w.at_file(&file, at_line);
         w.line(&format!(
-            "_Static_assert(sizeof({c_type}) >= {sum}, \"{UNION_ASSERTION} {c_type} {named}\");"
+            "_Static_assert(__builtin_classify_type(*({c_type} *)0) != 13, \"{UNION_ASSERTION} {hero_name} {named}\");"
         ));
         any = true;
     }
     if any {
         w.at_generated();
+        // **The control that fires when the premise dies** (CLAUDE.md §11). Every
+        // assertion above rests on one claim about the world — that this clang
+        // still answers 13 for a union and 12 for a struct — and clang answered 12
+        // for unions before 2019. Without these two lines a toolchain that
+        // regresses turns every union check into one that silently passes; with
+        // them it is a build failure that names what depends on it.
+        w.line(
+            "_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, \"a union must classify as 13, or every heroes-ffi-union assertion above is vacuous\");",
+        );
+        w.line(
+            "_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, \"a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record\");",
+        );
         w.blank();
     }
 }
@@ -117,8 +158,9 @@ pub(super) fn union_assertions(
 /// its generated `eq`, which calls its fields', so a union one level down is
 /// compared by the same wrong walk. Panel 061 established the same transitivity
 /// for `partial`, and this is that rule one type over.
-fn used(program: &Program, ast: &Ast, checked: &Checked) -> Vec<u32> {
+fn used(program: &Program, ast: &Ast, checked: &Checked) -> (Vec<u32>, Vec<u32>) {
     let mut out: Vec<u32> = Vec::new();
+    let mut ops: Vec<u32> = Vec::new();
     for function in &program.functions {
         for block in &function.blocks {
             for inst in &block.insts {
@@ -130,7 +172,19 @@ fn used(program: &Program, ast: &Ast, checked: &Checked) -> Vec<u32> {
                     // contain the union.
                     Op::Binary { op: BinOp::Eq | BinOp::Ne, left, .. } => {
                         let ty = function.value_type(left);
-                        reach(&mut out, ast, checked, ty, 0);
+                        reach(&mut ops, ast, checked, ty, 0);
+                    }
+                    // **A map key hashes, and `hash` walks the same overlapping
+                    // bytes `eq` does** (panel 077). Refusing `==` and leaving
+                    // `hash` reachable is worse than refusing neither: the wrong
+                    // answer moves from a comparison the author wrote to a bucket
+                    // they never see.
+                    Op::Construct { shape: Shape::Map, .. } => {
+                        reach(&mut ops, ast, checked, inst.ty, 0);
+                    }
+                    Op::MapGet { map, key } => {
+                        reach(&mut ops, ast, checked, function.value_type(map), 0);
+                        reach(&mut ops, ast, checked, function.value_type(key), 0);
                     }
                     _ => {}
                 }
@@ -139,7 +193,9 @@ fn used(program: &Program, ast: &Ast, checked: &Checked) -> Vec<u32> {
     }
     out.sort_unstable();
     out.dedup();
-    out
+    ops.sort_unstable();
+    ops.dedup();
+    (out, ops)
 }
 
 fn push(out: &mut Vec<u32>, decl: u32) {

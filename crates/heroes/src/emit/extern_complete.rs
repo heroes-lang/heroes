@@ -109,6 +109,19 @@ pub(super) fn completeness_probes(
         // Chosen over expanding the inner record recursively because that would
         // break the moment an inner record is itself `partial`, and because it is
         // one token.
+        //
+        // **And the OUTER list is parenthesised, which is not decoration** (panel
+        // 077, found independently by two seats). clang exempts the literal token
+        // `{0}` from `-Wmissing-field-initializers` — measured: `T v = {0};` is
+        // silent where `T v = {1};` and `T v = {(0)};` both warn. So a record
+        // naming **exactly one** field of a multi-field struct emitted `T v = {0};`
+        // and this probe was **silently off**, which is panel 061's
+        // transparent-colour defect reborn one field down: `record FileStat tag
+        // stat` naming `st_size`, not `partial`, said two different files with
+        // different inodes and different mtimes were **equal at exit 0**. The
+        // parentheses cost two characters and nothing else — measured to leave a
+        // union silent, so `SDL_Event` is untouched, and to raise no false
+        // positive on a real one-member struct (`struct in_addr`).
         let zeros: Vec<&str> = fields
             .iter()
             .map(|field| {
@@ -122,7 +135,11 @@ pub(super) fn completeness_probes(
                 if aggregate { "{0}" } else { "0" }
             })
             .collect();
-        let zeros = zeros.join(",");
+        let zeros = if zeros.len() == 1 && zeros[0] == "0" {
+            "(0)".to_string()
+        } else {
+            zeros.join(",")
+        };
         // The declaration's own line, so the verdict lands where the author can act
         // on it — the same contract `extern_probe.rs` keeps for parameters.
         let (file, line, _) = src.locate(decl.name.start);

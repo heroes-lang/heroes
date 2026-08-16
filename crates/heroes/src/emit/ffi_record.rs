@@ -224,24 +224,36 @@ pub(super) fn union_record(line: &str, ast: &Ast, src: &Source) -> Option<Diagno
     let type_name = parts.next()?;
     let members: Vec<&str> = parts.take_while(|p| !p.contains('"')).collect();
     let (header, span) = record_declaration(ast, src, type_name)?;
-    let named = match members.as_slice() {
-        [] => String::new(),
-        [one] => format!("`{one}`"),
-        [a, b] => format!("`{a}` and `{b}`"),
-        many => format!("`{}` and `{}`", many[..many.len() - 1].join("`, `"), many[many.len() - 1]),
+    // **The two cases read differently because they ARE different** (panel 077).
+    // With one declared member the record is buildable and readable and it is
+    // `==`/`hash` that has no answer: the bytes may hold another arm. With two or
+    // more, building it is already wrong, because C keeps the last one written.
+    let (message, note) = match members.as_slice() {
+        [] | [_] => {
+            let one = members.first().copied().unwrap_or("its member");
+            (
+                format!(
+                    "`{type_name}` is a `union` in `{header}`, so comparing or hashing one asks about bytes that may hold another member — `{one}` is only what was written last"
+                ),
+                "reading `{one}` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration".to_string(),
+            )
+        }
+        many => {
+            let named = match many {
+                [a, b] => format!("`{a}` and `{b}`"),
+                rest => {
+                    format!("`{}` and `{}`", rest[..rest.len() - 1].join("`, `"), rest[rest.len() - 1])
+                }
+            };
+            (
+                format!(
+                    "`{type_name}` is a `union` in `{header}`, so {named} are the same bytes — building one or comparing it would answer about whichever was written last"
+                ),
+                "a `record` over a union may name ONE member, and that binds it soundly: reading through it is correct and construction sets the member it names. Two or more is what has no answer — C keeps the last one written, so `==` and `hash` walk the same bytes twice".to_string(),
+            )
+        }
     };
-    Some(
-        Diagnostic::new(
-            "ffi_union_field",
-            format!(
-                "`{type_name}` is a `union` in `{header}`, so {named} are the same bytes — building one or comparing it would answer about whichever was written last"
-            ),
-            span,
-        )
-        .with_note(
-            "a `record` over a union may name ONE member, and that binds it soundly: reading through it is correct and construction sets the member it names. Two or more is what has no answer — C keeps the last one written, so `==` and `hash` walk the same bytes twice".to_string(),
-        ),
-    )
+    Some(Diagnostic::new("ffi_union_field", message, span).with_note(note))
 }
 
 /// The declaration's own name span, for a class whose fault is the declaration

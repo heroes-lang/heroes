@@ -105,3 +105,39 @@ fn record_by_tag(ast: &Ast, src: &Source, tag_name: &str) -> Option<(crate::sour
         Some((*tag, src.slice(*header).trim_matches('"').to_string()))
     })
 }
+
+/// clang's *"use of 'utag' with tag type that does not match previous
+/// declaration"* — the `tag` names a **union** and the emitter spelled `struct`
+/// (panel 077, predicted by its historian from the standard before anyone ran it).
+///
+/// **C11 6.7.2.3#1a (DR 251) is a constraint**: *"Where two declarations that use
+/// the same tag declare the same type, they shall both use the same choice of
+/// `struct`, `union`, or `enum`."* A constraint obliges a diagnostic, so clang
+/// **must** refuse `struct utag` against a header's `union utag` — which means
+/// panel 074's marker closes every **tagged** union for free, and all that was
+/// missing was the wiring. It does not reach `typedef union { … } X;`, where there
+/// is no tag to mismatch; that shape is `extern_union.rs`'s.
+///
+/// The caret lands on the **tag**, because the tag is the token whose spelling is
+/// wrong, and the note says what the author must do instead — there is no `union`
+/// marker in this language today, so the route is a `ptr` and C accessors.
+pub(super) fn tag_is_a_union(line: &str, ast: &Ast, src: &Source) -> Option<Diagnostic> {
+    if !line.contains("with tag type that does not match previous declaration") {
+        return None;
+    }
+    let quoted = line.split("use of '").nth(1)?;
+    let tag_name = quoted.split('\'').next()?;
+    let (span, header) = record_by_tag(ast, src, tag_name)?;
+    Some(
+        Diagnostic::new(
+            "ffi_tag_is_a_union",
+            format!(
+                "`{header}` declares `{tag_name}` as a `union`, not a struct — C keeps the two in one namespace and will not let one stand for the other"
+            ),
+            span,
+        )
+        .with_note(
+            "a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type".to_string(),
+        ),
+    )
+}

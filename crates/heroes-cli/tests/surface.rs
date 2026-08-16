@@ -1771,17 +1771,19 @@ fn a_union_is_refused_where_it_would_answer_wrongly_and_read_where_it_would_not(
         dir.join("onion.h"),
         "#include <stdint.h>\ntypedef union { int32_t i; float f; } UDef;\n\
          typedef struct { int32_t i; float f; } SDef;\n\
+         typedef union { int32_t i; float f; char pad[128]; } Padded;\n\
          static inline int32_t udef_i(UDef u) { return u.i; }\n\
          static inline UDef made(void) { UDef u; u.i = 7; return u; }\n",
     )
     .expect("writing the probe header");
-    // (name, program body after the group, expected exit, why)
-    let cases: [(&str, &str, &str, i32, &str); 5] = [
+    // (name, group, body, expected exit, the code the message must carry, why)
+    let cases: [(&str, &str, &str, i32, &str, &str); 8] = [
         (
             "construct-two",
             "    record UDef\n        i: i32\n        f: f32\n",
             "    a = UDef(i: 1, f: 1.0)\n    print(a.i)\n",
             1,
+            "ffi_union_field",
             "building a union from two members is the silent wrong answer this refuses",
         ),
         (
@@ -1789,6 +1791,7 @@ fn a_union_is_refused_where_it_would_answer_wrongly_and_read_where_it_would_not(
             "    record UDef partial\n        i: i32\n",
             "    a = UDef(i: 7)\n    print(a.i)\n",
             0,
+            "",
             "one member IS the sound binding — construction sets it and reading it is correct",
         ),
         (
@@ -1796,6 +1799,7 @@ fn a_union_is_refused_where_it_would_answer_wrongly_and_read_where_it_would_not(
             "    record UDef\n        i: i32\n        f: f32\n    function made() -> UDef\n",
             "    a = made()\n    print(a.i)\n",
             0,
+            "",
             "reading two members of a union works today and three SDL3 programs depend on it",
         ),
         (
@@ -1803,17 +1807,46 @@ fn a_union_is_refused_where_it_would_answer_wrongly_and_read_where_it_would_not(
             "    record UDef\n        i: i32\n        f: f32\n    function made() -> UDef\n",
             "    a = made()\n    b = made()\n    print(a == b)\n",
             1,
+            "ffi_union_field",
             "`==` walks fields, so over a union it reads the same bytes twice under two types",
+        ),
+        // **The three rows panel 077 added, and every one of them was exit 0 when
+        // panel 073 closed three hours earlier.** The predicate it shipped asked
+        // whether the declared fields FIT, and a union with padding has room.
+        (
+            "padded-two",
+            "    record Padded\n        i: i32\n        f: f32\n",
+            "    a = Padded(i: 1, f: 1.0)\n    print(a.i)\n",
+            1,
+            "ffi_union_field",
+            "a PADDED union passes `sizeof(T) >= sum of the fields` and printed 1065353216 — and SDL_Event is a padded union, so this is the case the sitting was about",
+        ),
+        (
+            "compare-one",
+            "    record UDef\n        i: i32\n    function made() -> UDef\n",
+            "    a = made()\n    b = made()\n    print(a == b)\n",
+            1,
+            "ffi_union_field",
+            "one declared member is sound to build and to read and is NEVER sound to compare: the bytes may hold the other arm, so two values differing in what they hold are equal whenever the bytes match. `partial` reaches the same refusal by its own route (`ffi_partial_operation`), which is why this row does NOT mark the record partial — it is the shape that had no refusal at all",
+        ),
+        (
+            "map-key",
+            "    record UDef\n        i: i32\n    function made() -> UDef\n",
+            "    a = made()\n    m = {a: 1}\n    print(len(m))\n",
+            1,
+            "ffi_union_field",
+            "`hash` was reachable where `==` was refused, which is worse than refusing neither — the wrong answer moves from a comparison the author wrote to a bucket they never see",
         ),
         (
             "struct-two",
             "    record SDef\n        i: i32\n        f: f32\n",
             "    a = SDef(i: 1, f: 1.0)\n    print(a.i)\n",
             0,
+            "",
             "the same shape over a STRUCT must stay accepted, or the predicate is refusing layout rather than overlap",
         ),
     ];
-    for (name, group, body, expected, why) in cases {
+    for (name, group, body, expected, code_text, why) in cases {
         let source = dir.join(format!("{name}.hero"));
         std::fs::write(
             &source,
@@ -1836,14 +1869,23 @@ fn a_union_is_refused_where_it_would_answer_wrongly_and_read_where_it_would_not(
                 "`{name}` must be exit 1 as the author's mistake, not exit 2 as the compiler's — \
                  CLAUDE.md §7's named exception.\n{text}"
             );
-            // **Both field names, because the repair is to pick one of them.** A
+            // **The message names the members it is about.** With two or more
+            // declared, the repair is to pick one of them, so both are named — a
             // message naming the type alone sends a reader to the header to work
-            // out which two members collide, which is the lookup §4.17 exists to
-            // remove.
-            assert!(
-                text.contains('`') && text.contains("`i`") && text.contains("`f`"),
-                "the message must name BOTH colliding fields.\n{text}"
-            );
+            // out which members collide, the lookup §4.17 exists to remove. With
+            // exactly one declared there is nothing to pick between: what is
+            // refused is the operation, and the message says so instead.
+            if group.contains("f: f32") {
+                assert!(
+                    text.contains("`i`") && text.contains("`f`"),
+                    "with two members declared the message must name BOTH.\n{text}"
+                );
+            } else if code_text == "ffi_union_field" {
+                assert!(
+                    text.contains("`i`") && text.contains("comparing or hashing"),
+                    "with one member declared the message must name the operation it refuses, not a collision that has no second half.\n{text}"
+                );
+            }
         }
     }
 }
