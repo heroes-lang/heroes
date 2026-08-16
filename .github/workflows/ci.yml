@@ -132,7 +132,43 @@ jobs:
 
       - name: Install what the FFI examples bind
         if: runner.os == 'macOS'
-        run: brew install pkg-config raylib || true
+        env:
+          # The update is what makes this step slow and noisy, and nothing here
+          # needs a newer formula than the image ships.
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          # **Ask for the thing the compiler asks for, never for the formula that
+          # happens to provide it today** (CLAUDE.md §11: a narrowing asks the
+          # value, not the world). `commands/libraries.rs:153` runs
+          # `Command::new("pkg-config")` — the executable, by name — and Homebrew
+          # renamed that formula to `pkgconf`, so `brew install pkg-config` on a
+          # runner that already carries it answers *"pkgconf 2.5.1 is already
+          # installed and up-to-date"*. The warning was the formula name aging
+          # out from under a check that was asking the wrong question.
+          command -v pkg-config >/dev/null || brew install pkgconf
+          # And `pkg-config --exists raylib` is the question `package "raylib"`
+          # itself asks, rather than *is the formula present*.
+          pkg-config --exists raylib || brew install raylib
+          # The runner taps `aws/tap`, which Homebrew reports as untrusted and —
+          # its own words — is "currently ignoring". Nothing installed above
+          # comes from it, so the honest repair is to remove the tap rather than
+          # to trust it or to set HOMEBREW_NO_REQUIRE_TAP_TRUST, which Homebrew
+          # itself calls "not recommended".
+          brew untap aws/tap 2>/dev/null || true
+          # **`|| true` used to swallow all of this, and that is the defect this
+          # step's own neighbour warns about**: the note on the Linux step above
+          # records `lldb_breaks_on_a_hero_line` *skipping* here for a milestone,
+          # silently, as a pass. A failed install left this job green with
+          # `examples/raylib/` skipping — the same shape, one library over. So
+          # the step now says whether it did what its name claims.
+          # The messages are SINGLE-quoted, and that is not style: a backtick
+          # inside a double-quoted shell string is command substitution, so
+          # "every `package` binding" runs `package` and prints the sentence with
+          # a hole in it. Measured, in this file's own repair.
+          command -v pkg-config >/dev/null \
+            || { echo '::error::pkg-config is still missing — every `package "…"` binding would fall back to the skip rule'; exit 1; }
+          pkg-config --exists raylib \
+            || { echo '::error::raylib is still missing — examples/raylib/ would SKIP on the one leg meant to cover it'; exit 1; }
 
       # Windows carries clang with Visual Studio; pkg-config and the C libraries
       # the FFI examples bind are not there, so this leg is honest about what it
