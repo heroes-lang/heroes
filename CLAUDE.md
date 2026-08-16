@@ -37,6 +37,44 @@ clock, never as a gate** (rule 3).
   been overturned below it.
   The cost of the rule is minutes. The cost of breaking it is a five-judge
   sitting answering the wrong question, which is what happened three times.
+- **And the rule binds CLAIMS, not only numbers** (author instruction 2026-08-16,
+  after one session broke it four ways). Everything above is written about counts,
+  and the day's worst errors carried **no number at all**. Four shapes, each one
+  measured in the session that names it here:
+  - **An inference presented as a measurement.** A brief told five judges that a
+    new abort would let `runtime/parts/sort.c`'s two guards be deleted, *because
+    the general rule subsumes them*. It does not — `sort` compares through a
+    function pointer no emitted `<` ever reaches — and **three seats falsified it,
+    two by deleting the guards and running**: `sort` returned an arbitrary
+    permutation at exit 0. **The tell is the connective**: *so*, *therefore*,
+    *which means*, *it follows that*. A sentence whose truth comes from another
+    sentence rather than from a command is an inference, and it is either run
+    before it is written or marked as one on the page.
+  - **A failed search written as an impossibility.** The same day, a brief told
+    three judges that C cannot detect a union naming one member — having searched
+    for `__is_union`, which is C++ only. Two seats that compile found the answer
+    in `__builtin_classify_type`, **a builtin this emitter already calls on every
+    field**. A negative claim is the least reliable kind there is, because it
+    rests on the searcher's vocabulary rather than on the world: *"X cannot be
+    done"* goes to the judges as a **question**, never as a premise, and names
+    what was searched for.
+  - **A silence read as an open question.** A sitting was convened on *"the spec
+    never states this"* when the silence was **the artifact of a ruling** — panel
+    035, four days earlier, three seats, and the word `integer` at `spec:149` is
+    that ruling's one-word diff (`ec5558b`, `DESIGN-LOG:207`). The obligation
+    above says to read forward from a record; this says **which** record: before
+    convening on something the spec does not say, grep `DESIGN-LOG.md` and
+    `docs/panel/` for the thing that is **not** there. A deliberate silence and an
+    oversight look identical in the document and opposite in the record.
+  - **A repair shipped without its adjacent shapes.** The union predicate landed
+    for a two-field union and was still live for a **padded** one three hours
+    later — and `SDL_Event` is padded, so the case the sitting existed for was
+    never fixed. Before the commit, a repair is attacked at the shapes *next to*
+    the one that provoked it: one field, none, padded, nested, tagged, generic,
+    empty. The provoking case is a witness, not the class.
+
+  The cost is minutes again. The cost of breaking it was a sitting convened on a
+  settled question, and a defect that shipped as fixed.
 
 ## 2. Principle 0 (necessary-not-sufficient)
 The language is finished for v1 when it can compile itself. A form enters v1
