@@ -1,0 +1,74 @@
+# A map key that reaches a float is a compile error (panel 069 R4, provisional
+# 2026-08-16). Before this it was a **runtime abort**, and Heroes was the only
+# language the sitting's historian could source that made it one.
+#
+# WHY THIS AND NOT `==`. The same sitting vetoed — twice, on measured grounds —
+# refusing `==` on float-bearing types: it breaks a divide guard in
+# `examples/spreadsheet/formula.hero`, a raylib assertion, and SQLite's only check
+# on a `double`; and the replacement somebody would hand-write,
+# `p.x == q.x && p.y == q.y`, compiles, is equally wrong, and can forget a field
+# where the generated `_eq` cannot. A map key is the half that CAN be decided
+# statically, because key-eligibility is a property of the map's declared type
+# rather than of a value flowing through it — so the error lands on the annotation
+# the author wrote.
+#
+# THE PRECEDENT is two languages in this one's own machinery class, neither of
+# which needs traits to state it: Rust's `HashMap` requires `K: Eq + Hash` and
+# `f64` is `PartialEq` but not `Eq`; Zig's `std.hash.autoHash` answers a float
+# with `@compileError`.
+#
+# WHAT THE RULE DOES NOT COVER, and the note in the diagnostic says so rather than
+# implying a guarantee: a key type that is still a type PARAMETER. Inside
+# `count<K>(ks: [K])` only monomorphisation knows what the call chose, and
+# `count([1.5, 2.5])` is a working program. The runtime guard therefore stays, and
+# `tests/golden/run/abort-map-key-nan.hero` is what keeps it tested.
+# Date: 2026-08-16.
+
+record Point
+    x: i64
+    y: f64
+
+record Wrapper
+    inner: Point
+
+variant Reading
+    ok
+        v: f32
+    absent
+
+function main()
+    # The key IS a float — the type is the whole answer.
+    direct: {f64: i64} @ {}              #~ float_map_key
+    print(len(direct))
+
+    # A literal, where no annotation exists to point at: the span is the first
+    # entry's key, which is the thing the reader has to change.
+    inferred = {1.5: 2}                  #~ float_map_key
+    print(len(inferred))
+
+    # Through a record's field, named so the reader is not left comparing a type
+    # name against a rule.
+    through: {Point: i64} @ {}           #~ float_map_key
+    print(len(through))
+
+    # Two levels down, and through a variant's payload — the route a list of
+    # container kinds would miss, because a case payload is not a container.
+    nested: {Wrapper: i64} @ {}          #~ float_map_key
+    print(len(nested))
+    cased: {Reading: i64} @ {}           #~ float_map_key
+    print(len(cased))
+
+    # And a fixed array of floats, which is a C struct member and still a float.
+    # This one is here because `Ty::Fixed` is a separate variant from `Ty::Array`
+    # and a walk that forgot it would be silent.
+    fixed: {f32: i64} @ {}               #~ float_map_key
+    print(len(fixed))
+
+    # THE CONTROLS. A float as a VALUE is untouched — that is the whole point of
+    # refusing only the key — and so is an ordinary key. If either of these grows
+    # a diagnostic, the rule has spread past what the sitting adopted and every
+    # program holding a measurement is broken.
+    values: {str: f64} @ {"pi": 3.14}
+    print(values["pi"].default(0.0))
+    ints: {i64: f64} @ {1: 2.5}
+    print(ints[1].default(0.0))

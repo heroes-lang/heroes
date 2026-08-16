@@ -1,0 +1,6 @@
+tests/golden/check/float-map-key.hero:41:14: error[float_map_key]: `f64` cannot be a map key, because it is a float
+tests/golden/check/float-map-key.hero:46:17: error[float_map_key]: `f64` cannot be a map key, because it is a float
+tests/golden/check/float-map-key.hero:51:15: error[float_map_key]: `Point` cannot be a map key, because `Point.y` is a float
+tests/golden/check/float-map-key.hero:56:14: error[float_map_key]: `Wrapper` cannot be a map key, because `Point.y` is a float
+tests/golden/check/float-map-key.hero:58:13: error[float_map_key]: `Reading` cannot be a map key, because `Reading.v` is a float
+tests/golden/check/float-map-key.hero:64:13: error[float_map_key]: `f32` cannot be a map key, because it is a float

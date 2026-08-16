@@ -22,11 +22,52 @@
 # `-0.0` control that isolates reflexivity from the hashing rule. The abort has
 # its own case beside `abort-sort-nan.hero`.
 
+# **REWRITTEN 2026-08-16 (panel 069 R4).** Every `{f64: i64}` below went through
+# a generic, because writing that type down is now a compile error —
+# `float_map_key`, recorded in `tests/golden/check/float-map-key.hero`. The
+# behaviour this case pins is unchanged and still worth pinning: the static rule
+# removes the routes a type can see, and this exercises the ones it cannot.
+
+function keyed<K>(ks: [K], vs: [i64]) -> i64
+    m: {K: i64} @ {}
+    i: i64 @ 0
+    while i < len(ks)
+        m[ks[i]] @ vs[i]
+        i @ i + 1
+    return len(m)
+
+function found<K>(ks: [K], vs: [i64], want: K) -> i64
+    m: {K: i64} @ {}
+    i: i64 @ 0
+    while i < len(ks)
+        m[ks[i]] @ vs[i]
+        i @ i + 1
+    return m[want].default(0)
+
+function missing<K>(ks: [K], vs: [i64], want: K) -> bool
+    m: {K: i64} @ {}
+    i: i64 @ 0
+    while i < len(ks)
+        m[ks[i]] @ vs[i]
+        i @ i + 1
+    return m[want].is_err()
+
+function same<K>(ks: [K], vs: [i64]) -> bool
+    a: {K: i64} @ {}
+    b: {K: i64} @ {}
+    i: i64 @ 0
+    while i < len(ks)
+        a[ks[i]] @ vs[i]
+        b[ks[i]] @ vs[i]
+        i @ i + 1
+    return a == b
+
 function main()
-    m: {f64: i64} @ {}
-    m[1.5] @ 1
-    # **The `-0.0` control, repaired 2026-08-16 (panel 069, ffi-pragmatist).** This
-    # line read `m[0.0 - 0.0] @ 2` and the comment below called it the `-0.0`
+    # The three keys the original case used, now reaching the map through a
+    # generic because `{f64: i64}` written down is a compile error since panel 069.
+    #
+    # **The `-0.0` control, repaired 2026-08-16 (panel 069, ffi-pragmatist).** The
+    # middle key read `0.0 - 0.0` and the comment below called it the `-0.0`
     # control — but `0.0 - 0.0` is `+0.0` under IEEE 754, so for four days the
     # control compared positive zero against positive zero and could not have
     # failed. `0.0 * (0.0 - 1.0)` is the expression that produces the sign, and it
@@ -36,19 +77,16 @@ function main()
     # repair rather than a defect report: the seat measured `hash(-0.0) ==
     # hash(0.0)` holding at scalar, record-field and fixed-array level, because
     # `hero_hash_f64` collapses the sign. The check simply never checked it.
-    m[0.0 * (0.0 - 1.0)] @ 2
-    m[2.5] @ 3
-    print(len(m))
+    ks = [1.5, 0.0 * (0.0 - 1.0), 2.5]
+    vs = [1, 2, 3]
+    print(keyed(ks, vs))
 
     # `-0.0` and `0.0` are one key: `eq` says so, and the descriptor normalises
-    # the zero before hashing so the two agree.
-    print(m[0.0].default(0))
-    print(m[1.5].default(0))
-    print(m[9.5].is_err())
+    # the zero before hashing so the two agree. This is the line the repaired
+    # control exists for — it looks up `+0.0` and finds what `-0.0` inserted.
+    print(found(ks, vs, 0.0))
+    print(found(ks, vs, 1.5))
+    print(missing(ks, vs, 9.5))
 
     # And a map is still equal to a map with the same contents.
-    n: {f64: i64} @ {}
-    n[2.5] @ 3
-    n[1.5] @ 1
-    n[0.0] @ 2
-    print(m == n)
+    print(same(ks, vs))

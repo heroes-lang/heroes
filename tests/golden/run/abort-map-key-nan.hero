@@ -1,14 +1,37 @@
 # `sort`'s rule, at the other place an f64 order is assumed: a key that is not
-# equal to itself aborts rather than being given an invented bucket. See
-# `fixedbugs-a-map-key-that-is-not-itself.hero` for what it was doing before.
+# equal to itself aborts rather than being given an invented bucket.
+#
+# **REWRITTEN 2026-08-16 (panel 069 R4), and the rewrite is the point.** This case
+# used to write `m: {f64: i64} @ {}` directly, and that is now a **compile error**
+# — `float_map_key`, on the annotation, with the route recorded in
+# `tests/golden/check/float-map-key.hero`. Heroes was the only language the
+# historian could source that made a nan key a *runtime* event; Rust and Zig both
+# refuse it statically, and now so does this.
+#
+# So why does this case still exist? **Because the static rule cannot see every
+# route, and the guard behind it must stay tested.** Inside `count<K>`, the key
+# type is still a type parameter; only monomorphisation knows what the call chose,
+# and `count([1.5, 2.5])` is a working program that must keep working — refusing
+# the generic body would delete it. That is the shape `types/map_keys.rs`'s module
+# doc states and this file executes: the type rule removes the reachable cases,
+# and `hero_map_slot_of`'s `eq(key, key)` covers the one a type cannot decide.
+#
+# If this case ever goes green, the guard has been deleted as redundant — and it
+# is not: the first line below proves the generic route reaches a real map, and
+# the second proves the abort still fires at the end of it.
 # Bulk regression case.
 
 function nan() -> f64
     return 0.0 / 0.0
 
+function count<K>(ks: [K]) -> i64
+    m: {K: i64} @ {}
+    for k in ks
+        m[k] @ 1
+    return len(m)
+
 function main()
-    m: {f64: i64} @ {}
-    m[1.5] @ 1
-    print(len(m))
-    m[nan()] @ 2
-    print(len(m))
+    # The route works, and that is why the generic body is not refused.
+    print(count([1.5, 2.5]))
+    # And the same route with a key that is not equal to itself.
+    print(count([nan()]))

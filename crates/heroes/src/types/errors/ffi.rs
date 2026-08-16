@@ -39,6 +39,14 @@ pub(in crate::types) fn ffi_type(name: &str, what: &str, span: Span) -> Diagnost
 /// not reach for a type C has never heard of, they reached for one that works
 /// perfectly in a signature and cannot be a constant. So the message carries the
 /// reason rather than the list — the list would say the type is allowed.
+pub(in crate::types) fn ffi_constant_type(name: &str, why: &str, span: Span) -> Diagnostic {
+    Diagnostic::new(
+        "ffi_constant_type",
+        format!("an `extern constant` cannot be declared `{name}` — {why}"),
+        span,
+    )
+}
+
 /// A type that can cross the boundary in a **result** and cannot be an
 /// **argument** (§4.19; panel 062's follow-up, measured 2026-08-16).
 ///
@@ -65,14 +73,6 @@ pub(in crate::types) fn ffi_parameter_position(
     Diagnostic::new(
         "ffi_parameter_type",
         format!("`{parameter}` of `{function}` cannot be declared `{name}` — {why}"),
-        span,
-    )
-}
-
-pub(in crate::types) fn ffi_constant_type(name: &str, why: &str, span: Span) -> Diagnostic {
-    Diagnostic::new(
-        "ffi_constant_type",
-        format!("an `extern constant` cannot be declared `{name}` — {why}"),
         span,
     )
 }
@@ -175,5 +175,53 @@ pub(in crate::types) fn fixed_outside_a_group(name: &str, span: Span) -> Diagnos
     )
     .with_note(
         "use `[T]` here: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds".to_string(),
+    )
+}
+
+/// A map key that reaches a float (**panel 069 R4**, provisional 2026-08-16).
+///
+/// **Why this is a compile error and `==` on a float is not.** The sitting vetoed
+/// refusing `==` on float-bearing types twice, on measured grounds: it breaks a
+/// divide guard and a raylib assertion, and the hand-written replacement compiles,
+/// is equally wrong, and can forget a field. A map key is the half that *can* be
+/// decided statically, because key-eligibility is a property of the map's declared
+/// type rather than of a value flowing through it — so the error points at the
+/// annotation the author wrote, which is as local as a diagnostic gets.
+///
+/// **The precedent is two languages in this one's own machinery class.** Rust
+/// requires `K: Eq + Hash` and `f64` is `PartialEq` but not `Eq`, so
+/// `HashMap<f64, V>` does not compile; Zig's `std.hash.autoHash` answers a float
+/// with `@compileError`. Neither needs traits to state it and neither does this.
+/// Before this rule Heroes was, as far as the historian could source, the **only**
+/// language that made a nan key a runtime event — Go's proposal to do the same has
+/// been open since 2017 and Go shipped the `clear` builtin to route around its own
+/// NaN keys instead.
+///
+/// **The note answers the generic case, and that was a condition of the sitting**
+/// (llm-ergonomist, who would otherwise have vetoed on non-locality). Inside
+/// `function count<K>(ks: [K])`, `m: {K: i64}` cannot be judged here — only
+/// monomorphisation knows what the call chose, and `count([1.5, 2.5])` is a
+/// working program. So the runtime guard stays behind this rule and the message
+/// says so, rather than implying a guarantee the type system does not give.
+pub(in crate::types) fn float_map_key(key: &str, reached: String, span: Span) -> Diagnostic {
+    // *is* a float, versus *reaches* one — the reader's next act differs. For a
+    // bare `f64` the key type is the whole answer; for a record they have to be
+    // told which field, or they are left comparing a name against a rule.
+    let because = if reached.is_empty() {
+        "it is a float".to_string()
+    } else {
+        format!("`{reached}` is a float")
+    };
+    Diagnostic::new(
+        "float_map_key",
+        format!("`{key}` cannot be a map key, because {because}"),
+        span,
+    )
+    .with_note(
+        "a `nan` is not equal to itself, so it can be stored and never found again. Key the map \
+         on something exact — an `i64` of the value scaled to the precision you need, or a `str` \
+         — and keep the float in the value. Reached through a type parameter this cannot be \
+         checked, and the runtime aborts instead"
+            .to_string(),
     )
 }

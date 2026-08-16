@@ -21,7 +21,7 @@ use super::Diagnostic;
 ///
 /// Update this in the same commit that adds a diagnostic, and say in the commit
 /// body whether the new code is a thesis rule (CLAUDE.md §9, Part 11).
-const ANNOTATED: [&str; 76] = [
+const ANNOTATED: [&str; 77] = [
     "bad_operand",
     // The five M-literal-bases codes. **None is a thesis rule**, and the precedent
     // is `exponent_literal` two lines below `empty_base_literal`: a lexical
@@ -83,6 +83,11 @@ const ANNOTATED: [&str; 76] = [
     "fixed_array_length",
     "fixed_index_out_of_range",
     "fixed_outside_a_group",
+    // **Soundness, not thesis** (panel 069 R4). Without it a `nan` key is stored
+    // and never found again, and `--permissive`'s control arm must reject it too:
+    // there is no correct program on the other side of this refusal for the two
+    // arms to compare. Rust and Zig refuse the same thing statically.
+    "float_map_key",
     "indentation_jump",
     "indentation_not_multiple_of_4",
     "int_out_of_range",
