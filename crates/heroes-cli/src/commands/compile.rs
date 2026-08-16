@@ -257,10 +257,20 @@ pub fn compile_with_tests(
     // header beside the `.hero` file. It has to be passed explicitly: the
     // translation unit lives under `build/<hash>/`, and an angled include searches
     // the include path, never the source's directory (panel 036).
-    let include = std::path::Path::new(&src.name)
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .map(std::path::Path::to_path_buf);
+    //
+    // **An empty parent is the current directory, not the absence of one**
+    // (defect, measured 2026-08-16). `Path::new("prog.hero").parent()` is `""`,
+    // and dropping it meant `heroes build prog.hero` did not pass the directory
+    // the program is sitting in — while `heroes build ./prog.hero`, the same file
+    // by another spelling, did. Measured on one program with `hdr.h` beside it:
+    // `ffi_missing_header` for the bare name, a clean build for `./`. This is
+    // CLAUDE.md §11's shape exactly — the filter was a narrowing that rested on a
+    // premise about the world ("no parent component means no directory to add")
+    // rather than on the value in hand, and `""` names a directory like any other.
+    let include = Some(match std::path::Path::new(&src.name).parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent.to_path_buf(),
+        _ => std::path::PathBuf::from("."),
+    });
     if let Err(message) = toolchain.link(
         &c_file,
         &object,

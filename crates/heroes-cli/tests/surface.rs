@@ -265,6 +265,69 @@ fn an_integer_fields_abi_is_its_width_and_its_sign() {
     }
 }
 
+/// A header beside the program is found **however the program's path is spelled**
+/// (defect, measured 2026-08-16).
+///
+/// `compile.rs` passes the source's own directory to clang as `-I`, because the
+/// translation unit lives under `build/<hash>/` and an angled include never
+/// searches the source's directory (panel 036). It computed that directory with
+/// `Path::parent()` and dropped an empty answer — and `Path::new("prog.hero")`
+/// has an *empty* parent, not an absent one. So the most ordinary FFI invocation
+/// there is, `heroes build prog.hero` from the directory holding both the program
+/// and its header, did not pass that directory, while `heroes build ./prog.hero`
+/// — the same file, one spelling further — did.
+///
+/// What made it hard to see is that it fails as `ffi_missing_header`, which is a
+/// **correct-looking** diagnostic: it says the header is not on the include path,
+/// which was true, and points at the author's line. Nothing in it suggests that
+/// the compiler declined to add the one directory it had promised to add.
+///
+/// This test runs the two spellings against one file and asserts they agree. It
+/// is written as an agreement rather than as two absolute verdicts on purpose: a
+/// machine without a C compiler, or a `build/` it cannot write, should make both
+/// arms fail the same way rather than make this test lie.
+#[test]
+fn a_header_beside_the_program_is_found_by_either_spelling_of_its_path() {
+    let dir = std::env::temp_dir().join("heroes-bare-name-include");
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    std::fs::write(dir.join("beside.h"), "#pragma once\n#define BESIDE_ANSWER 7\n")
+        .expect("writing the header beside the program");
+    std::fs::write(
+        dir.join("beside.hero"),
+        "extern \"beside.h\"\n    constant BESIDE_ANSWER: i64\n\nfunction main()\n    print(BESIDE_ANSWER)\n",
+    )
+    .expect("writing the program");
+    // The cwd is the directory holding both files, which is what makes the bare
+    // name a real invocation rather than a contrived one.
+    let run = |path: &str| {
+        Command::new(env!("CARGO_BIN_EXE_heroes"))
+            .current_dir(&dir)
+            .args(["run", path])
+            .output()
+            .expect("the heroes binary runs")
+    };
+    let bare = run("beside.hero");
+    let dotted = run("./beside.hero");
+    let said = String::from_utf8_lossy(&bare.stderr).into_owned();
+    assert_eq!(
+        code(&bare),
+        code(&dotted),
+        "`heroes run beside.hero` and `heroes run ./beside.hero` are the same file and must \
+         give the same answer. If they differ, `compile.rs` has stopped passing the source's \
+         own directory as `-I` for one spelling of the path — which is the 2026-08-16 defect: \
+         a bare filename's parent is `\"\"`, and dropping an empty parent drops the current \
+         directory. Every `extern` over a header the author ships beside their program breaks \
+         on the spelling people actually type.\nbare: {said}\ndotted: {}",
+        String::from_utf8_lossy(&dotted.stderr)
+    );
+    // And the agreement must be on *success*, not on a shared failure — otherwise a
+    // machine that cannot compile at all would keep this green forever.
+    if !said.contains("error[ffi_missing_header]") {
+        assert_eq!(code(&bare), 0, "the program builds and runs:\n{said}");
+        assert_eq!(String::from_utf8_lossy(&bare.stdout).trim(), "7", "{said}");
+    }
+}
+
 /// **The premise panel 063's struct-constant arm rests on, and the hole it leaves**
 /// (CLAUDE.md §11; that panel's compiler-engineer made it a condition of its
 /// verdict).
