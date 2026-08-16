@@ -136,3 +136,27 @@ on its antecedent** — R1 spent +0, so no sentence landed — and its reason cl
 is **falsified in the direction supporting today's verdict**. Recorded by that
 seat rather than quietly dropped: *"I wrote that prediction expecting A to
 become necessary, and the port's evidence says it did not."*
+
+## Author's verdict
+
+**Ratified as it stands, 2026-08-16** (author instruction, *"Ratifico il panel
+68"*, after the plain-language recap of all five seats). Everything provisional
+above becomes final:
+
+- **`sort` keeps its scalar-and-`str` domain.** A is refused by all five seats
+  and does not return without amending design.md §4.20's *"gains no sixth"* **by
+  name**, in a sitting that re-runs the `0x4` measurement.
+- **The spec repair stands as landed** — 3377 → 3399, +34 gross against the
+  −12 named removal, both ledger rows written (this sitting's, and panel 066's
+  backfill).
+- **C is refused today and available**, at +47…+55, with the spec-warden's
+  registered prediction as its return condition.
+- **B's remaining half is owed**: the refusal moves from the emitter to the
+  checker, transitive, admitting `bool`, worded so C stays addable. The
+  transitive walk landed with the seventh-shape fix; the *move* has not.
+
+**What was already landed before ratification** — the seventh shape of panel
+067's F7 (`ptr`/`cstr` reached through a record field or a variant-case payload,
+where the record is a map key: `check` exit 0, then abort at 134), because it is
+a §1.12 crash and both the compiler-engineer and the ffi-pragmatist made fixing
+it condition 1 regardless of which option won.
