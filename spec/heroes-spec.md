@@ -220,7 +220,8 @@ unless the header writes it after the word struct, which `tag` gives:
 field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
 array of one: `i32[4]`, never a `[T]`.
 `record Font partial` names only some, and then comparing it and using it as a
-map key are compile errors — for it and for any value holding it.
+map key are compile errors — for it and for any value holding it. Its size stays
+C's, not the field list's.
 
 A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
 usually there. How much more is the platform's answer, not this language's.
