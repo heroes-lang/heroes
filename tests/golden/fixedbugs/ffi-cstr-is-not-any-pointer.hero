@@ -1,0 +1,36 @@
+# fixedbugs, 2026-08-16, panel 083's spec-warden — and it is the worst thing
+# found that day.
+#
+# SYMPTOM: a 4-byte blob declared `-> cstr` and read with `to_str()` returned
+# TEN bytes, at exit 0, with no diagnostic and no abort:
+#
+#     declared length: 4
+#     what to_str gives: ABCDSECRET
+#     its len: 10
+#
+# Six bytes past the object. §1.12 says a Heroes program must not corrupt or
+# over-read memory, and §12 says that rule reaches furthest at the C boundary,
+# which is where this was. `--sanitize` reported nothing, because the read stays
+# inside the allocation containing the array — so every instrument this project
+# owns said the program was fine.
+#
+# CAUSE: one line. `emit/assert_spelling.rs` sent BOTH `ptr` and `cstr` to
+# `HERO_RET_PTR`, which is `__builtin_classify_type(c) == 5` — "is it a
+# pointer" — blind to the pointee. So `const void *` satisfied a `cstr`
+# declaration and `to_str` walked to the next NUL. §4.19's whole promise is that
+# clang checks every result type against the header; for this row it was not
+# being kept.
+#
+# FIX: `cstr` gets its own assertion over the six character-pointer spellings —
+# six because C's `char` is a distinct type from both `signed char` and
+# `unsigned char`, and real headers return all three (`sqlite3_column_text` is
+# `const unsigned char *`). `const void *` is refused, which is the repair.
+#
+# This case must stay EXIT 1. `ffi-const-pointer.hero` is its other half: the
+# same header shape bound correctly runs at exit 0.
+
+extern "ffi-const-pointer.h"
+    function get_blob() -> cstr                     #~ ffi_return_type
+
+function main()
+    print(get_blob().to_str())

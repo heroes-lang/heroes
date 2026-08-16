@@ -208,6 +208,28 @@ pub(super) fn extern_assertions(
     {
         w.line("#define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)");
     }
+    // **Conditional for panel 063's reason, which this file already paid once.**
+    // Every line of this preamble shifts the `#line N` restores under it, and
+    // emitting a macro unconditionally renumbered 56 restore directives across five
+    // `tests/golden/emit/` files — a directory where `UPDATE_GOLDEN` is forbidden,
+    // so the churn is hand-read. Emitted only where an `extern` returns a `cstr`,
+    // the golden tree does not move at all.
+    if externs
+        .iter()
+        .any(|function| checked.types.get(function.result) == crate::types::Ty::Cstr)
+    {
+    // **A `cstr` is a pointer to characters, and only that** (panel 083). Six
+    // spellings, because C's `char` is a distinct type from both `signed char` and
+    // `unsigned char` and real headers return all three — `sqlite3_column_text`
+    // gives `const unsigned char *`. `const void *` is refused, which is the whole
+    // repair: it used to pass, and `to_str()` then walked past the object to the
+    // next NUL.
+    w.line(
+        "#define HERO_RET_CSTR(c) _Generic((c), \
+char *:1, const char *:1, signed char *:1, const signed char *:1, \
+unsigned char *:1, const unsigned char *:1, default:0)",
+    );
+    }
     for function in externs {
         let name = src.slice(ast.decls[function.decl as usize].name);
         let Some(check) = super::assert_spelling::return_check(checked, function.result) else { continue };

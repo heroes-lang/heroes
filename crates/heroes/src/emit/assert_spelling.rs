@@ -37,7 +37,18 @@ pub(super) fn return_check(checked: &Checked, ty: TyId) -> Option<&'static str> 
         Ty::Bool => Some("HERO_RET_BOOL"),
         Ty::Str => Some("HERO_RET_STR"),
         Ty::Unit => Some("HERO_RET_UNIT"),
-        Ty::Ptr | Ty::Cstr => Some("HERO_RET_PTR"),
+        Ty::Ptr => Some("HERO_RET_PTR"),
+        // **`cstr` asks for a STRING, and sharing `ptr`'s row let it take any
+        // pointer at all.** Measured 2026-08-16, panel 083's spec-warden: a
+        // `const void *` blob of four bytes declared `-> cstr` compiled at exit 0
+        // and `to_str()` read **ten** — six bytes past the object, no diagnostic,
+        // no abort, and `--sanitize` silent because the read stays inside the
+        // containing allocation. That is §1.12 at the one boundary §12 says the
+        // rule reaches furthest, and every instrument this project owns reported
+        // success. `HERO_RET_PTR` asks `__builtin_classify_type(c) == 5` — *is it
+        // a pointer* — which is blind to the pointee, so the promise §4.19 makes
+        // ("clang checks every result type") was not being kept for this one row.
+        Ty::Cstr => Some("HERO_RET_CSTR"),
         // **A struct result, and it took a panel to get an assertion at all**
         // (panel 063, soundness lane, both judges `approve`). Until then this arm
         // was `None` above a sentence claiming *"no other type crosses the

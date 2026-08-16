@@ -2069,3 +2069,37 @@ fn this_prints_the_zen_byte_exact() {
          20. We can be heroes, just for one day.\n"
     );
 }
+
+/// **FIXED DEFECTS, 2026-08-16 (panel 083), and the two halves must move
+/// together.** A pointer-to-const from C had no readable spelling — `heroes check`
+/// exit 0 and `heroes build` **exit 2**, the compiler blaming itself for a header
+/// the author is entitled to bind. And the one spelling that *did* compile,
+/// `-> cstr`, accepted **any** pointer at all, so a four-byte blob read ten bytes
+/// past its object at exit 0 with `--sanitize` silent.
+///
+/// They are one test because they are one balance: widening the read
+/// (`(void *)` at the two places a `ptr` is materialised from C) without narrowing
+/// `cstr` would leave the over-read; narrowing `cstr` without the cast would leave
+/// `sqlite3_column_blob` unbindable, which is §4.19 ladder rung 3's own
+/// *"read a result"*. A regression in either direction fails here.
+///
+/// The header sits beside the cases, so no CI leg skips this for a missing
+/// package: one half is a memory-safety repair and a skip is a pass.
+#[test]
+fn a_const_pointer_reads_and_a_cstr_is_not_any_pointer() {
+    let good = heroes(&["run", "tests/golden/fixedbugs/ffi-const-pointer.hero"]);
+    let shown = String::from_utf8_lossy(&good.stdout).into_owned();
+    assert_eq!(code(&good), 0, "a const member and a const result must bind: {shown}");
+    assert!(shown.contains("false 3"), "the const member did not read: {shown}");
+    // `const char *` and `const unsigned char *` are both strings and both bind —
+    // the second is `sqlite3_column_text`'s own return type.
+    assert!(shown.contains("ziggy") && shown.contains("stardust"), "{shown}");
+
+    let bad = heroes(&["build", "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"]);
+    let said = String::from_utf8_lossy(&bad.stderr).into_owned();
+    assert_eq!(code(&bad), 1, "a `const void *` declared `cstr` must be refused: {said}");
+    assert!(
+        said.contains("ffi_return_type"),
+        "the refusal must name the result type rather than leaking clang: {said}"
+    );
+}

@@ -121,7 +121,34 @@ pub(super) fn call(
         Callee::Extern(decl) => {
             let name = src.slice(ast.decls[decl as usize].name);
             let guarded = guard_cstr_arguments(program, decl, checked, arguments);
-            w.line(&format!("    {assign}{name}({});", guarded.join(", ")));
+            // **The result half of the const cast** (`access.rs::reads_as_opaque`
+            // carries the field half, and the reason is written there once).
+            // `sqlite3_column_blob` returns `const void *`; without the cast the
+            // assignment violates C11 6.5.16.1's constraint and the build is exit 2
+            // — the compiler blaming itself for §4.19 ladder rung 3's own
+            // *"read a result"*. Measured: 14 of sqlite3's 68 pointer-returning
+            // entry points, and the only spelling that compiled today was `-> cstr`,
+            // which **truncates a blob at its first embedded NUL** and returns a
+            // wrong length at exit 0.
+            // The cast the result needs, if any, and it differs by type rather
+            // than being one blanket spelling: a `ptr` receives any pointer, a
+            // `cstr` receives a character pointer whose sign C distinguishes.
+            let cast = match program
+                .functions
+                .iter()
+                .find(|f| f.decl == decl)
+                .map(|f| checked.types.get(f.result))
+            {
+                Some(crate::types::Ty::Ptr) => "(void *)",
+                // **`const unsigned char *` is `sqlite3_column_text`'s own return
+                // type**, and it is a *different type* from `const char *` — C's
+                // `char` is neither of the signed spellings. `HERO_RET_CSTR` accepts
+                // all six because they are all strings; the cast is what keeps the
+                // assignment quiet, and the corpus harness holds a zero-warning bar.
+                Some(crate::types::Ty::Cstr) => "(const char *)",
+                _ => "",
+            };
+            w.line(&format!("    {assign}{cast}{name}({});", guarded.join(", ")));
         }
         // Refused by the gate. The arm exists so that adding a callee kind to the
         // IR breaks this file.

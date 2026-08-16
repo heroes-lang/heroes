@@ -127,7 +127,52 @@ pub(super) fn field(
 ) {
     let Some(name) = target else { return };
     match aggregate::read_field(types, function, base, index) {
-        Some(text) => w.line(&format!("    {name} = {text};")),
+        Some(text) => {
+            let cast = if reads_as_opaque(types, function, base, index) { "(void *)" } else { "" };
+            w.line(&format!("    {name} = {cast}{text};"));
+        }
         None => w.line("    hero_unreachable(); /* the gate refuses this base */"),
     }
+}
+
+/// Whether this field arrives in Heroes as a `ptr` — the one read that needs the
+/// qualifier written off explicitly.
+///
+/// **A C header may declare a member `const T *`, and Heroes' `ptr` has no
+/// qualifier to receive it.** Without the cast the emitted `t5 = t4.pMethods;` is a
+/// **constraint violation** under C11 6.5.16.1 — the left type must have all the
+/// qualifiers of the right — so clang diagnoses it, and under
+/// `-Werror=incompatible-pointer-types-discards-qualifiers` the build dies at exit
+/// **2**, the compiler blaming itself for a header the author is entitled to bind
+/// (CLAUDE.md §7). With the cast the same C is *conforming*: 6.3.2.3p7 makes a
+/// pointer-to-object conversion legal, and it is what the C library itself does —
+/// `strchr` and `strstr` are specified to return non-const pointers into
+/// const-qualified arguments (SEI CERT EXP05-C, a **recommendation** at P4/L3, and
+/// not the rule; the rule is EXP40-C, which forbids *modifying* a const object).
+///
+/// **The cast adds no hazard, and that is the finding rather than an assumption.**
+/// C, Rust and Zig converged independently on the same rule — undefined behaviour
+/// attaches to the **object**, not to the pointer's qualifier — and Heroes has no
+/// dereference for a `ptr` at all, so the program cannot write through one without
+/// handing it to C, which every other `ptr` already permits.
+///
+/// **What this must not weaken, and does not**: panel 058's
+/// `-Werror=incompatible-pointer-types-discards-qualifiers` exists for the *write*
+/// direction — a C function taking `char *` writing through `.cstr()`'s
+/// copy-on-write buffer, measured to change a value the program never passed. That
+/// guard lives in `emit/ffi_mutable.rs`, keys on a **parameter** the author
+/// declared, and is gated by `extern_at_line`. This cast is on a **field read** the
+/// emitter generates, which that path never inspects. `-Wcast-qual` is not in
+/// `commands/flags.rs::FLAGS` — checked, all thirteen — so an explicit cast is not
+/// itself diagnosed.
+fn reads_as_opaque(
+    types: &aggregate::Types,
+    function: &crate::ir::Function,
+    base: crate::ir::ValueId,
+    index: u32,
+) -> bool {
+    let owner = function.values[base.0 as usize];
+    types
+        .field(owner, index)
+        .is_some_and(|(_, ty)| types.checked.types.get(ty) == crate::types::Ty::Ptr)
 }

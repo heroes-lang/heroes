@@ -1,0 +1,44 @@
+# fixedbugs, 2026-08-16, panel 083.
+#
+# SYMPTOM: a C member or entry point declared pointer-to-const could not be read
+# at all. `heroes check` exited 0 and `heroes build` exited 2 with
+# `internal error: compiling the generated C failed` — the compiler blaming
+# itself for a header the author is entitled to bind, which is exactly what
+# CLAUDE.md §7's named exception exists to prevent. Measured over real headers:
+# 8 struct members and 17 pointer-returning entry points, and the results are the
+# bigger half — they include `sqlite3_column_blob`, which is §4.19 ladder rung
+# 3's own "read a result".
+#
+# CAUSE: `t5 = t4.pMethods;` assigns `const struct ops *` to `void *`, which
+# violates C11 6.5.16.1's constraint (the left type must carry all the right's
+# qualifiers), so clang diagnoses it — and
+# `-Werror=incompatible-pointer-types-discards-qualifiers` turns it into an
+# error. That flag is panel 058's, adopted for the WRITE direction, and this was
+# collateral: the designed firing has a diagnostic at exit 1, this one had exit 2.
+#
+# FIX: the emitter writes the qualifier off explicitly, at the two places a `ptr`
+# is materialised from C. C11 6.3.2.3p7 makes a pointer-to-object conversion
+# legal, and it is what the C library itself does — `strchr` returns a non-const
+# pointer into a const-qualified argument. UB attaches to the OBJECT, not the
+# pointer's qualifier: C, Rust and Zig converged on that independently, and
+# Heroes cannot dereference a `ptr` at all, so nothing the cast permits was
+# unreachable before it. The third door was already open and measured: an
+# `@out: ptr` over `const struct ops **` builds at exit 0 today and SIGBUSes.
+
+extern "ffi-const-pointer.h"
+    record Handle
+        pMethods: ptr
+        id: i32
+    function get_handle() -> Handle
+    function get_blob() -> ptr
+    function get_name() -> cstr
+    function get_utext() -> cstr
+
+function main()
+    h = get_handle()
+    p = h.pMethods
+    print(p == nullptr, " ", h.id.to_i64().must())
+    b = get_blob()
+    print(b == nullptr)
+    print(get_name().to_str())
+    print(get_utext().to_str())
