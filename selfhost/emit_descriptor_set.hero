@@ -111,7 +111,13 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
             .fixed | .function_ty | .failure | .generic | .error => continue
     out: [i64] @ []
-    for want in keys(wanted)
+    # sort(keys(…)), NOT keys(…): the spec says `keys` gives the keys in
+    # NO ORDER, and it measurably does not — a map with 50, 3, 97, 12 put
+    # in answers `97 50 3 12`. The bootstrap gets ascending order free
+    # from BTreeMap and left the note this walk owed:
+    # "ORDER: ascending TyId — `definitions` walks this into the emitted
+    # `_desc`" (descriptor_set.rs's own mark).
+    for want in sort(keys(wanted))
         out @ out.push(want)
     return out
 

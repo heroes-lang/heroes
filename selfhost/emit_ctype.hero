@@ -178,7 +178,14 @@ function with_functions(names: Names, module: str, c: check_state.Checked, p: ir
             collect(c, ty: slot.ty, into: @used)
         for value in f.values
             collect(c, ty: value, into: @used)
-    for id in keys(used)
+    # sort(keys(…)), NOT keys(…): the spec says `keys` gives the keys in
+    # NO ORDER, and it measurably does not — a map with 50, 3, 97, 12 put
+    # in answers `97 50 3 12`. The bootstrap gets ascending order free
+    # from BTreeMap and left the note this walk owed:
+    # "ORDER: ascending TyId" here too, and this walk ASSIGNS the names —
+    # `fn0`, `fn1`, … by walk position — so an unsorted key gave a
+    # different type the same number the bootstrap gave another.
+    for id in sort(keys(used))
         at = len(out.funcs)
         out.funcs[id] @ "h_" + module + "_" + SYNTHETIC + "fn" + at.to_str()
     return out
@@ -226,7 +233,18 @@ record OptionEntry
 
 function option_entries(names: Names, c: check_state.Checked) -> [OptionEntry]
     out: [OptionEntry] @ []
-    for id in keys(names.options)
+    # sort(keys(…)), NOT keys(…): the spec says `keys` gives the keys in
+    # NO ORDER, and it measurably does not — a map with 50, 3, 97, 12 put
+    # in answers `97 50 3 12`. The bootstrap gets ascending order free
+    # from BTreeMap and left the note this walk owed:
+    # "ORDER: ascending TyId — the per-option generated functions are
+    # emitted in this order, so the Heroes port owes an explicit sort
+    # (design.md §4.9)". Unpaid, it put the port's four functions per
+    # option in the runtime's bucket order: 20.8 MB of C whose LINES
+    # matched the bootstrap's exactly and whose SEQUENCE did not, on
+    # 3,330 of 724,197 lines. Measured 2026-08-17, and it was the last
+    # thing between the port and the fixpoint.
+    for id in sort(keys(names.options))
         match check_table.get(c.types, id)
             .fallible o => out @ out.push(OptionEntry(name: names.options[id].must(), payload: o.payload))
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
