@@ -13,13 +13,13 @@ use source
 use lexer
 use diag
 use cli_table
-use cli_parse
+use cli_argv
 use cli_io
 
-function run(s: source.Source, inv: cli_parse.Invocation) -> cli_table.Exit
+function run(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     out = lexer.lex_one(s.text)
-    if cli_parse.has(inv, spelling: "--dump-tokens")
-        if cli_parse.has(inv, spelling: "--json")
+    if cli_argv.has(inv, spelling: "--dump-tokens")
+        if cli_argv.has(inv, spelling: "--json")
             print(json(out.tokens, s))
         else
             print(text_dump(out.tokens, s))
