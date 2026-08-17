@@ -7,6 +7,7 @@
 use token
 use diag
 use ast
+use source
 use cursor
 use lexer
 use parse_decl
@@ -29,6 +30,26 @@ record ParseOutput
 # read better together than interleaved by column.
 function parse(text: str) -> ParseOutput
     return parse_bounded(text: text, root_end: -1)
+
+# The whole compilation parsed the way the CLI must: every file lexed as
+# its own text (lexer.lex's rule — the indent level and the open
+# brackets must not cross a file boundary), and the cursor told where
+# the author's text stops so no diagnostic anchors inside the library.
+function parse_source(s: source.Source) -> ParseOutput
+    lexed = lexer.lex(s)
+    comments: [token.Span] @ []
+    for t in lexed.tokens
+        if t.kind == .comment
+            comments @ comments.push(t.span)
+    c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed.tokens, root_end: source.root_end(s))
+    a: ast.Ast @ ast.new_ast()
+    decls: [ast.Decl] @ []
+    uses: [ast.Use] @ []
+    parse_decl.file(@c, @a, @decls, @uses, s.text)
+    diagnostics: [diag.Diagnostic] @ lexed.diagnostics
+    for d in c.diagnostics
+        diagnostics @ diagnostics.push(d)
+    return ParseOutput(decls: decls, uses: uses, comments: comments, diagnostics: diagnostics, tree: a)
 
 # The same parse, told where the author's own text stops — what the CLI
 # uses, because a compilation is the author's file plus every module it

@@ -17,7 +17,7 @@ use cli_argv
 use cli_io
 
 function run(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
-    out = lexer.lex_one(s.text)
+    out = lexer.lex(s)
     if cli_argv.has(inv, spelling: "--dump-tokens")
         if cli_argv.has(inv, spelling: "--json")
             print(json(out.tokens, s))
@@ -85,7 +85,7 @@ function escape(text: str) -> str
 test "the dump is root-only, layout tokens stay wordless, json escapes"
     text = "constant A: i64\n    1\n"
     s = source.with_library(name: "t.hero", user: text, library: "constant HIDDEN: i64\n    9\n")
-    out = lexer.lex_one(s.text)
+    out = lexer.lex(s)
     dumped = text_dump(out.tokens, s)
     assert has_text(text: dumped, needle: "1:1 kw_constant constant\n")
     assert has_text(text: dumped, needle: "1:11 colon :\n")

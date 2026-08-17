@@ -21,6 +21,7 @@
 
 use token
 use diag
+use source
 use state
 use layout
 use scan
@@ -31,6 +32,53 @@ use escape
 record LexOutput
     tokens: [token.Token]
     diagnostics: [diag.Diagnostic]
+
+## The whole compilation's tokens
+
+# Every file lexed AS ITS OWN TEXT, then the spans moved back into the
+# compilation's coordinates. Bounding one walk over the concatenation
+# instead would be cheaper to write and wrong: the interesting state —
+# the indent `level` and the `open_brackets` list — is exactly what must
+# not survive a file boundary. Measured 2026-08-17, with the port doing
+# it the cheap way: `return (1 + 2` in one module swallowed the next
+# module AND the appended library, and the author's own unclosed
+# bracket came back as `internal error … exit 2` instead of two
+# diagnostics on their own line.
+#
+# EOF SITS AT THE END OF THE ROOT FILE, not of the text. Every parser
+# diagnostic that runs out of input anchors there, and the text ends
+# inside the library §1.11 appends — so an unclosed `(` at the end of a
+# file landed where the author cannot look. Same rule as
+# no_entry_point's caret: a diagnostic about the input as a whole
+# belongs to the file the reader named.
+function lex(s: source.Source) -> LexOutput
+    tokens: [token.Token] @ []
+    diagnostics: [diag.Diagnostic] @ []
+    index: i64 @ 0
+    for entry in s.files
+        _ = entry
+        offset = s.files[index].start
+        one = lex_one(source.text_of(s, index))
+        for t in one.tokens
+            # Each file's own eof is dropped; the compilation gets one,
+            # below, at the root's end. The `continue` here belongs to
+            # THIS inner loop over tokens, not to the file walk that
+            # keeps `index` — the trap that cost five sites today.
+            if t.kind == .eof
+                continue
+            tokens @ tokens.push(token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset)))
+        for d in one.diagnostics
+            moved: diag.Diagnostic @ d
+            moved.span @ token.Span(start: d.span.start + offset, end: d.span.end + offset)
+            fixes: [diag.Fix] @ []
+            for fix in d.fixes
+                fixes @ fixes.push(diag.Fix(title: fix.title, replacement: fix.replacement, span: token.Span(start: fix.span.start + offset, end: fix.span.end + offset), certainty: fix.certainty))
+            moved.fixes @ fixes
+            diagnostics @ diagnostics.push(moved)
+        index @ index + 1
+    at = source.root_end(s)
+    tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))
+    return LexOutput(tokens: tokens, diagnostics: diagnostics)
 
 ## One file's tokens
 
@@ -155,3 +203,32 @@ test "a multibyte character after the backslash does not panic"
     assert out.diagnostics[0].code == "unknown_escape"
     assert kind_line(out.tokens) == "ident eq str terminator eof"
     assert escape.unescape("\"a\\èb\"") == "a\\èb"
+
+# A fixed defect gets a case named after it (CLAUDE.md §9). Symptom:
+# `return (1 + 2` in one module made the port swallow the next module
+# and the appended library, reporting the author's unclosed bracket as
+# `internal error … exit 2`. Cause: the port lexed the CONCATENATION,
+# so `open_brackets` and the indent level crossed the file boundary and
+# the single eof landed inside the library. Found 2026-08-17 by the
+# differential against the bootstrap over 257 corpus inputs, which
+# showed every multi-file dump missing its closing dedents.
+test "fixedbugs: a file's brackets and indent do not cross into the next"
+    broken = "function leaky() -> i64\n    return (1 + 2\n"
+    user = "use broken\n\nfunction main()\n    print(1)\n"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: user)
+        source.user_file(name: "broken.hero", text: broken)
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "constant HERO_OK: i64\n    0\n", is_library: true)
+    ]
+    s = source.from_files(inputs)
+    out = lex(s)
+    # The unclosed bracket is reported once, inside broken.hero.
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unclosed_bracket"
+    assert source.is_root(s, out.diagnostics[0].span.start) == false
+    assert source.file_at(s, out.diagnostics[0].span.start).name == "broken.hero"
+    # The one eof sits at the ROOT's end, never in the library.
+    last = out.tokens[out.tokens.len() - 1]
+    assert last.kind == .eof
+    assert last.span.start == source.root_end(s)
+    assert source.is_root(s, last.span.start)

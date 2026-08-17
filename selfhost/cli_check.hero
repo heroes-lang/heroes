@@ -24,7 +24,7 @@ use cli_argv
 use cli_io
 
 function run(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
-    parsed = parse.parse_bounded(text: s.text, root_end: source.root_end(s))
+    parsed = parse.parse_source(s)
     stop = report(parsed.diagnostics, s, inv)
     if !stop.is_err()
         return stop.must()
@@ -236,7 +236,7 @@ test "stages stop on the first noise, apply repairs, holes stay exit 0"
 test "the json schema leads with its version and escapes its strings"
     text = "function main()\n    n = 3\n    print(1)\n"
     s = source.new_source(name: "t.hero", text: text)
-    parsed = parse.parse_bounded(text: s.text, root_end: source.root_end(s))
+    parsed = parse.parse_source(s)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     got = json(out.diagnostics, s)
     assert has_text(text: got, needle: "{\n  \"schema\": 1,\n  \"diagnostics\": [\n")
