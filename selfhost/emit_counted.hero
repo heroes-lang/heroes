@@ -1,0 +1,194 @@
+# Who owns a counted reference, and the retain/release that follows
+# (design.md §4.10, §4.20; panels 022, 034). Port of
+# crates/heroes/src/emit/counted.rs.
+#
+# Two questions, one concern: does this declaration own a reference,
+# and what is the one line that keeps it alive. Together because the
+# first is the guard on the second — a wrong answer here is a leak or a
+# double free, not a bad-looking function.
+#
+# THE OWNERSHIP QUESTION IS ASKED OF THE DECLARATION, NEVER OF THE
+# INTERNER — the repair D3 paid for. Ty.case is interned when a pattern
+# destructures a payload and Ty.named when a written type or a
+# construction names it: both are facts about what a program happened
+# to MENTION. Whether a value owns a reference is a fact about what it
+# IS. The same declaration emitted a walking release in one compilation
+# and an empty one in another, purely because a different module held
+# the match. The fields do not move between compilations; the interner
+# does.
+#
+# Every fallback here is LOUD: a field kind with no row emits
+# hero_unreachable() rather than nothing, because nothing is a leak no
+# instrument reports, and hero_unreachable() is a program that stops.
+
+use ast
+use source
+use check_table
+use check_state
+use ir_layout
+use emit_mangle
+use emit_ctype
+use emit_types
+use emit_writer
+use parse
+use resolve
+use checker
+
+# Whether a value of this declaration owns a counted reference — asked
+# through is_refcounted, the one home for the question. The absent arm
+# used to be false ("a declaration no written type mentions is one
+# nothing can hold") — the same sentence owns_case carried, and there
+# it was wrong (D3). It is asked of the fields anyway: "I could not
+# build the program that reaches it" is exactly what was true of D3's
+# twin the day before it leaked.
+function owns(c: check_state.Checked, decls: [ast.Decl], decl: i64) -> bool
+    found = check_table.lookup(c.types, .named(decl: decl))
+    if !found.is_err()
+        return ir_layout.is_refcounted(c, found.must())
+    return any_field_is_counted(c, fields: emit_types.fields_of(decls, decl: decl))
+
+function owns_case(c: check_state.Checked, decls: [ast.Decl], decl: i64, at: i64) -> bool
+    found = check_table.lookup(c.types, .case_ty(decl: decl, at: at))
+    if !found.is_err()
+        return ir_layout.is_refcounted(c, found.must())
+    # No match arm binds this payload, so no TEMPORARY of it exists —
+    # but the variant is still built, copied and released, and its
+    # release has to reach the fields inside it (panel 034 D1).
+    return any_field_is_counted(c, fields: emit_types.cases_of(decls, decl: decl)[at].fields)
+
+function any_field_is_counted(c: check_state.Checked, fields: [ast.Field]) -> bool
+    for field in fields
+        ty: i64 @ check_table.error_ty(c.types)
+        written = check_state.written_type(c, field.ty)
+        if !written.is_err()
+            ty @ written.must()
+        if ir_layout.is_refcounted(c, ty)
+            return true
+    return false
+
+# The one call that retains or releases a counted value sitting at
+# `place`. Shared by a record's fields and a T?'s payload, because the
+# question is the same one and two answers to it is the refcount bug
+# ir_layout documents.
+function reference_line(c: check_state.Checked, names: emit_ctype.Names, ty: i64, place: str, keep: bool) -> str?
+    verb: str @ "release"
+    if keep
+        verb @ "retain"
+    match check_table.get(c.types, ty)
+        .str =>
+            if keep
+                return ok("    hero_str_incref(" + place + ");")
+            return ok("    hero_str_decref(" + place + ");")
+        .array =>
+            if keep
+                return ok("    hero_array_incref(" + place + ");")
+            return ok("    hero_array_decref(" + place + ");")
+        .map =>
+            if keep
+                return ok("    hero_map_incref(" + place + ");")
+            return ok("    hero_map_decref(" + place + ");")
+        .failure => return ok("    hero_failure_" + verb + "(&" + place + ");")
+        # Reached by address, and its own generated function decides
+        # what inside counts.
+        .named n => return ok("    " + emit_ctype.satellite(names, decl: n.decl) + "_" + verb + "(&" + place + ");")
+        .case_ty vc => return ok("    " + emit_ctype.case_of(names, decl: vc.decl, at: vc.at) + "_" + verb + "(&" + place + ");")
+        .fallible => return ok("    " + emit_ctype.option_of(names, ty: ty) + "_" + verb + "(&" + place + ");")
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => return fail("none", "not a counted type")
+        .fixed | .function_ty | .generic | .error => return fail("none", "not a counted type")
+    return fail("none", "unreached")
+
+# retain/release for a record or a case payload: one call per counted
+# field.
+function reference_body(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, at: emit_ctype.Aggregate, fields: [ast.Field], keep: bool)
+    emit_writer.at_generated(@w)
+    if keep
+        emit_writer.line(@w, text: "void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
+    else
+        emit_writer.line(@w, text: "void " + at.prefix + "_release(" + at.c_type + " *v) {")
+    for field in fields
+        ty: i64 @ check_table.error_ty(c.types)
+        written = check_state.written_type(c, field.ty)
+        if !written.is_err()
+            ty @ written.must()
+        if !ir_layout.is_refcounted(c, ty)
+            continue
+        member = emit_mangle.field_of(foreign: at.foreign, name: source.span_text(s, field.name))
+        # Missing a row here is how variant Expr with an [Expr] payload
+        # aborted on its first run: the fallback stops the program
+        # instead of leaking.
+        found = reference_line(c, names, ty: ty, place: "v->" + member, keep: keep)
+        if found.is_err()
+            emit_writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this field type */")
+        else
+            emit_writer.line(@w, text: found.must())
+    emit_writer.line(@w, text: "}")
+    emit_writer.blank(@w)
+
+# A variant's retain/release: switch on the tag, touch only the live
+# case. `default: break;` rather than every enumerator, because only
+# the counted cases have anything to do — and it satisfies -Wswitch
+# without listing rows that would be empty.
+function variant_reference_body(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: emit_ctype.Aggregate, keep: bool)
+    verb: str @ "release"
+    if keep
+        verb @ "retain"
+    emit_writer.at_generated(@w)
+    if keep
+        emit_writer.line(@w, text: "void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
+    else
+        emit_writer.line(@w, text: "void " + at.prefix + "_release(" + at.c_type + " *v) {")
+    emit_writer.line(@w, text: "    switch (v->tag) {")
+    case_at: i64 @ 0
+    for one_case in emit_types.cases_of(decls, decl: decl)
+        if one_case.fields.len() > 0 && owns_case(c, decls, decl: decl, at: case_at)
+            case_name = source.span_text(s, one_case.name)
+            emit_writer.line(@w, text: "        case " + emit_mangle.tag_of(ty: at.prefix, case_name: case_name) + ": " + emit_ctype.case_of(names, decl: decl, at: case_at) + "_" + verb + "(&v->as." + emit_mangle.case_member(case_name) + "); break;")
+        case_at @ case_at + 1
+    emit_writer.line(@w, text: "        default: break;")
+    emit_writer.line(@w, text: "    }")
+    emit_writer.line(@w, text: "}")
+    emit_writer.blank(@w)
+
+## Tests
+
+record Setup
+    c: check_state.Checked
+    s: source.Source
+    decls: [ast.Decl]
+    names: emit_ctype.Names
+
+function ready(text: str) -> Setup
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    names = emit_ctype.new_names(s, p.decls)
+    return Setup(c: c, s: s, decls: p.decls, names: names)
+
+test "ownership is the declaration's fact, and the walk is one line per counted field"
+    got = ready("record Person\n    name: str\n    age: i64\n\nrecord Plain\n    n: i64\n\nfunction main()\n    p = Person(name: \"b\", age: 1)\n    print(p.age + Plain(n: 2).n)\n")
+    assert owns(got.c, got.decls, decl: 0)
+    assert !owns(got.c, got.decls, decl: 1)
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    at = emit_ctype.aggregate(got.names, decl: 0)
+    reference_body(@w, got.c, got.names, got.s, at: at, fields: emit_types.fields_of(got.decls, decl: 0), keep: false)
+    text = emit_writer.finish(w)
+    assert text == "#line 2 \"t.c\"\nvoid h_t_Person_release(h_t_Person *v) {\n    hero_str_decref(v->f_name);\n}\n\n"
+
+test "a variant switches on the tag and touches only the counted case"
+    got = ready("variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    _ = t\n")
+    assert owns(got.c, got.decls, decl: 0)
+    assert owns_case(got.c, got.decls, decl: 0, at: 0)
+    assert !owns_case(got.c, got.decls, decl: 0, at: 1)
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    at = emit_ctype.aggregate(got.names, decl: 0)
+    variant_reference_body(@w, got.c, got.names, got.s, got.decls, decl: 0, at: at, keep: true)
+    text = emit_writer.finish(w)
+    assert text == "#line 2 \"t.c\"\nvoid h_t_Tok_retain(const h_t_Tok *v) {\n    switch (v->tag) {\n        case h_t_Tok_tag_word: h_t_Tok_c_word_retain(&v->as.c_word); break;\n        default: break;\n    }\n}\n\n"
+
+test "the D3 repair: a payload nobody destructures still answers from its fields"
+    # .word is BUILT but never matched, so Ty.case may be uninterned —
+    # and the answer must come from the fields, never from the interner.
+    got = ready("variant Msg\n    note\n        body: str\n    quiet\n\nfunction main()\n    m: Msg = .note(body: \"x\")\n    _ = m\n")
+    assert owns_case(got.c, got.decls, decl: 0, at: 0)
