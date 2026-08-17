@@ -1,0 +1,281 @@
+# Which types have a size, in what order C can be told about them, and
+# which cycle the author is shown (design.md §3.1, §4.3, §4.10; panel 023).
+# Port of crates/heroes/src/types/{sized,sized_cycle}.rs — mutual through
+# Edge and the two reporters, so one Heroes module: the fifth boundary
+# the cycle rule has drawn.
+#
+# Heroes has no Box, no ref and no pointer type, so a record is a C
+# struct BY VALUE and a variant a tagged union by value. A type is
+# finite exactly when its containment graph is acyclic, and ONE walk
+# answers both questions the backend has: an order (C needs every struct
+# complete before it is used by value) and the cycles (no_size errors).
+# Two walks would be two answers to one question.
+#
+# **An edge is a field C lays out by value** — the property, never a
+# list of permitted indirections. Panel 023 measured the list being
+# wrong in both directions at once: a map field compiles at 8 bytes
+# because a map is a pointer, and `next: R?` is incomplete-type because
+# a T? is a by-value struct and therefore TRANSPARENT. The property gets
+# every row right without naming one.
+#
+# **The walk is iterative**, and that is not a style preference: rustc
+# #84611 is a stack overflow inside this very check, Nim #13715 a
+# SIGSEGV, Zig #21436 an undetected cycle plus a crash.
+
+use token
+use diag
+use ast
+use source
+use resolved
+use parse
+use resolve
+use size_errors
+
+# One by-value containment edge: from's field lands a whole `to` inside
+# it. `field` is the span the caret points at — the field's TYPE as
+# written, where the repair goes; `name` is the field's identifier, for
+# the path a note prints.
+record Edge
+    from: i64
+    to: i64
+    name: token.Span
+    field: token.Span
+
+# What the walk publishes. Empty order when the file has a cycle: there
+# is no topological order of a graph with a cycle, and a sequence that
+# looks like an answer and is not one is worse than none — whenever the
+# emitter runs, type_order is a topological order BY CONSTRUCTION,
+# because a file with a cycle exits 1 at check.
+record SizeAnswer
+    order: [i64]
+    diagnostics: [diag.Diagnostic]
+
+function order_and_cycles(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> SizeAnswer
+    edges = collect(a, r, decls)
+    return walk(s, decls, edges)
+
+# Every by-value edge in the file, in declaration order — which is what
+# makes the reported cycle stable, and therefore makes a `#~ no_size`
+# annotation land on the same line every run.
+function collect(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl]) -> [Edge]
+    edges: [Edge] @ []
+    index: i64 @ 0
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                for field in rec.fields
+                    push_edge(@edges, a, r, from: index, name: field.name, ty: field.ty)
+            # A case with fields IS a small record (§4.2), so its payload
+            # carries edges exactly as a record's fields do.
+            .variant_decl v =>
+                for one_case in v.cases
+                    for field in one_case.fields
+                        push_edge(@edges, a, r, from: index, name: field.name, ty: field.ty)
+            .constant_decl | .function_decl | .test_decl => continue
+        index @ index + 1
+    return edges
+
+function push_edge(@edges: [Edge], a: ast.Ast, r: resolved.Resolved, from: i64, name: token.Span, ty: i64)
+    target = by_value_target(a, r, ty)
+    if !target.is_err()
+        edges @ edges.push(Edge(from: from, to: target.must(), name: name, field: a.types[ty].span))
+
+# The declaration a field lands BY VALUE, if any. Every arm is listed
+# rather than folded into a catch-all: a type added to the language must
+# not become silently sizeless because a `_` arm answered for it.
+function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
+    match a.types[ty].kind
+        # The only edge: a bare name that resolves to a record or variant.
+        .named =>
+            match r.type_uses[ty]
+                .top t => return ok(t.at)
+                .prim | .generic | .unresolved => return fail("leaf", "a primitive or parameter carries no edge")
+        # Transparent: a T? is a by-value struct, so it carries T inside
+        # it — the row the proposal got wrong and two judges found
+        # independently.
+        .fallible o => return by_value_target(a, r, o.inner)
+        # The indirections: one pointer wide whatever they hold, so
+        # neither lands its contents here — measured, three records
+        # mutually recursive through arrays compile in the worst order.
+        .array_of | .map_of => return fail("leaf", "a pointer breaks the edge")
+        # A fixed array is sized, and its size is the element's times N —
+        # the OPPOSITE of [T], so this descends rather than stopping.
+        .fixed x => return by_value_target(a, r, x.element)
+        # A function value is a C function pointer.
+        .function_type => return fail("leaf", "a function pointer breaks the edge")
+        .unit | .error => return fail("leaf", "no bytes here")
+    return fail("leaf", "unreached")
+
+# Iterative depth-first search: a post-order for the acyclic part, one
+# diagnostic per distinct cycle. Colours rather than a visited flag,
+# because the difference IS the algorithm: grey means "on the current
+# path", which is what tells a back edge from a diamond — a visited flag
+# would reject A-[B]-A, the legal shape panel 023's historian predicted
+# as this file's first false positive.
+function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
+    colour: [i64] @ []
+    i: i64 @ 0
+    while i < decls.len()
+        colour @ colour.push(0)
+        i @ i + 1
+    order: [i64] @ []
+    seen: {str: bool} @ {}
+    diagnostics: [diag.Diagnostic] @ []
+    path: [i64] @ []
+    root: i64 @ 0
+    while root < decls.len()
+        if colour[root] != 0 || !is_aggregate(decls, root)
+            root @ root + 1
+            continue
+        stack: [PathStep] @ [PathStep(node: root, taken: 0)]
+        colour[root] @ 1
+        while stack.len() > 0
+            top = stack[stack.len() - 1]
+            stack @ stack.slice(from: 0, to: stack.len() - 1)
+            out = out_edges(edges, node: top.node)
+            if top.taken >= out.len()
+                colour[top.node] @ 2
+                order @ order.push(top.node)
+                if path.len() > 0
+                    path @ path.slice(from: 0, to: path.len() - 1)
+                continue
+            edge = out[top.taken]
+            stack @ stack.push(PathStep(node: top.node, taken: top.taken + 1))
+            target = edges[edge].to
+            if colour[target] == 1
+                # A back edge: the cycle is this edge plus the suffix of
+                # the path that starts at target.
+                cycle = cycle_from(edges, path: path, closing: edge, target: target)
+                key = cycle_nodes_key(edges, cycle)
+                if seen[key].is_err()
+                    seen[key] @ true
+                    diagnostics @ diagnostics.push(report(s, decls, edges, cycle))
+            else if colour[target] == 0
+                colour[target] @ 1
+                path @ path.push(edge)
+                stack @ stack.push(PathStep(node: target, taken: 0))
+        root @ root + 1
+    if diagnostics.len() > 0
+        empty: [i64] = []
+        order @ empty
+    return SizeAnswer(order: order, diagnostics: diagnostics)
+
+record PathStep
+    node: i64
+    taken: i64
+
+function is_aggregate(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .record_decl | .variant_decl => true
+        .constant_decl | .function_decl | .test_decl => false
+
+function out_edges(edges: [Edge], node: i64) -> [i64]
+    out: [i64] @ []
+    index: i64 @ 0
+    for edge in edges
+        if edge.from == node
+            out @ out.push(index)
+        index @ index + 1
+    return out
+
+function cycle_nodes_key(edges: [Edge], cycle: [i64]) -> str
+    rendered: [str] @ []
+    for e in cycle
+        rendered @ rendered.push(edges[e].from.to_str())
+    return rendered.join("/")
+
+## Which cycle the author is shown
+
+# The cycle as edge indices, ROTATED to start at the lowest declaration
+# index, so the reader gets the same message whichever declaration the
+# walk happened to enter from — otherwise reordering two unrelated
+# declarations rewrites a golden's expected file.
+function cycle_from(edges: [Edge], path: [i64], closing: i64, target: i64) -> [i64]
+    cycle: [i64] @ []
+    found: bool @ false
+    for e in path
+        if edges[e].from == target
+            found @ true
+        if found
+            cycle @ cycle.push(e)
+    # A self-edge: the path holds nothing, the closing edge is the whole
+    # cycle.
+    cycle @ cycle.push(closing)
+    lowest_at: i64 @ 0
+    i: i64 @ 0
+    while i < cycle.len()
+        if edges[cycle[i]].from < edges[cycle[lowest_at]].from
+            lowest_at @ i
+        i @ i + 1
+    rotated: [i64] @ []
+    j: i64 @ lowest_at
+    while j < cycle.len()
+        rotated @ rotated.push(cycle[j])
+        j @ j + 1
+    k: i64 @ 0
+    while k < lowest_at
+        rotated @ rotated.push(cycle[k])
+        k @ k + 1
+    return rotated
+
+# One diagnostic per cycle, at the field that closes it, with the path
+# in notes — Swift's shape (panel 023 R5): the field is where the repair
+# goes, and Go printing only "invalid recursive type T2" for a mutual
+# pair was filed as a bug.
+function report(s: source.Source, decls: [ast.Decl], edges: [Edge], cycle: [i64]) -> diag.Diagnostic
+    last = cycle[cycle.len() - 1]
+    steps: [str] @ []
+    for e in cycle
+        # `A.b: B (line 5)` rather than prose: the colon form is the one
+        # the author wrote, and the step is located from the diagnostic's
+        # own caret so a cross-module cycle names the file only where it
+        # is elsewhere.
+        at = source.elsewhere(s, here: edges[last].field.start, there: edges[e].field.start)
+        steps @ steps.push(decl_name(s, decls, edges[e].from) + "." + source.span_text(s, edges[e].name) + ": " + decl_name(s, decls, edges[e].to) + " (" + at + ")")
+    kind: str @ "record"
+    match decls[edges[last].from].kind
+        .variant_decl => kind @ "variant"
+        .record_decl | .constant_decl | .function_decl | .test_decl => kind @ kind
+    return size_errors.no_size(kind: kind, holder: decl_name(s, decls, edges[last].from), through: decl_name(s, decls, edges[last].to), direct: cycle.len() == 1, steps: steps, span: edges[last].field)
+
+function decl_name(s: source.Source, decls: [ast.Decl], decl: i64) -> str
+    return source.span_text(s, decls[decl].name)
+
+## Tests
+
+function sized_file(text: str) -> SizeAnswer
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    return order_and_cycles(p.tree, out, s, p.decls)
+
+test "the order puts every by-value dependency before its user"
+    got = sized_file("record A\n    b: B\n\nrecord B\n    n: i64\n")
+    assert got.diagnostics.len() == 0
+    assert got.order.len() == 2
+    assert got.order[0] == 1
+    assert got.order[1] == 0
+
+test "a self-containing record is direct, and the order empties"
+    got = sized_file("record Node\n    label: i64\n    child: Node\n")
+    assert got.diagnostics.len() == 1
+    assert got.diagnostics[0].code == "no_size"
+    assert got.diagnostics[0].message == "`record Node` contains itself, so it has no size"
+    assert got.order.len() == 0
+
+test "a mutual cycle is one message, rotated to the lowest declaration"
+    got = sized_file("record A\n    b: B\n\nrecord B\n    a: A\n")
+    assert got.diagnostics.len() == 1
+    assert got.diagnostics[0].notes[0] == "the cycle is: A.b: B (line 2), then B.a: A (line 5)"
+
+test "the historian's false positive stays legal: a cycle through [T]"
+    got = sized_file("record A\n    xs: [B]\n\nrecord B\n    a: A\n")
+    assert got.diagnostics.len() == 0
+    assert got.order.len() == 2
+
+test "a T? is transparent and a variant payload carries edges"
+    maybe = sized_file("record R\n    next: R?\n")
+    assert maybe.diagnostics.len() == 1
+    tagged = sized_file("variant Tree\n    leaf\n    node\n        left: Tree\n")
+    assert tagged.diagnostics.len() == 1
+    assert tagged.diagnostics[0].message == "`variant Tree` contains itself, so it has no size"
