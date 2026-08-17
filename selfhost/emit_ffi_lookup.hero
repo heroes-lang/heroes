@@ -250,6 +250,22 @@ function number(text: str) -> i64?
         return fail("none", "empty")
     return ok(value)
 
+# Rust's .trim(): spaces and tabs off both ends.
+function trimmed(text: str) -> str
+    cs = text.chars()
+    head: i64 @ 0
+    while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
+        head @ head + 1
+    tail: i64 @ cs.len()
+    while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
+        tail @ tail - 1
+    kept: [str] @ []
+    index: i64 @ head
+    while index < tail
+        kept @ kept.push(cs[index])
+        index @ index + 1
+    return kept.join("")
+
 ## Tests
 
 test "declaration finds all three kinds and refuses the rest"

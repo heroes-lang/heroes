@@ -86,7 +86,7 @@ function unknown_field(s: source.Source, decls: [ast.Decl], line: str) -> diag.D
     struct_part = emit_ffi_lookup.after(text: past.must(), marker: "struct ")
     if struct_part.is_err()
         return fail("none", "no struct name on the line")
-    type_name = trimmed(emit_ffi_lookup.up_to_quote(struct_part.must()))
+    type_name = emit_ffi_lookup.trimmed(emit_ffi_lookup.up_to_quote(struct_part.must()))
     group = record_group(s, decls, type_name: type_name)
     if group.is_err()
         return fail("none", "no group declares this record")
@@ -151,22 +151,6 @@ function flexible_array_member(s: source.Source, tree: ast.Ast, decls: [ast.Decl
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_flexible_array_member", message: "`" + found.must().header + "` gives `" + type_name + "." + member + "` no size — it is written there with empty brackets, so it is not a field this record can name at any length", span: found.must().field_span)
     d.notes @ d.notes.push("leave `" + member + "` out and write the `record` `partial` (§4.19): what is left is the header's struct minus a member C itself does not size, and those bytes are reached through the functions the header declares for them")
     return ok(d)
-
-# Rust's .trim(): spaces and tabs off both ends.
-function trimmed(text: str) -> str
-    cs = text.chars()
-    from: i64 @ 0
-    while from < cs.len() && (cs[from] == " " || cs[from] == "\t")
-        from @ from + 1
-    to: i64 @ cs.len()
-    while to > from && (cs[to - 1] == " " || cs[to - 1] == "\t")
-        to @ to - 1
-    kept: [str] @ []
-    index: i64 @ from
-    while index < to
-        kept @ kept.push(cs[index])
-        index @ index + 1
-    return kept.join("")
 
 ## Tests
 
