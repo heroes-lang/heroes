@@ -120,13 +120,17 @@ function last_write(blk: ir_state.Block, slot_at: i64) -> i64
     floor: i64 @ 0
     at: i64 @ 0
     for inst in blk.insts
+        # The no-op arms MUST NOT say continue: the counter at the
+        # bottom is the position, and continue skips it — found the day
+        # the ownership pass first exercised this check, as twelve
+        # false "returns without releasing".
         match inst.op
             .store st =>
                 if st.place.root == slot_at && st.place.path.length == 0
                     floor @ at + 1
-            .lit | .load | .unary | .binary | .cast | .call | .construct => continue
-            .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+            .lit | .load | .unary | .binary | .cast | .call | .construct => at @ at
+            .field | .index | .map_get | .len_of | .tag_of | .payload => at @ at
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => at @ at
         at @ at + 1
     return floor
 
@@ -138,9 +142,9 @@ function released_after(blk: ir_state.Block, slot_at: i64, floor: i64) -> bool
                 .decref rc =>
                     if loaded_from(blk, value: rc.value, slot_at: slot_at, floor: floor, before: at)
                         return true
-                .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                .func_ref | .copy_out | .abort_op | .incref | .hole | .missing => continue
+                .lit | .load | .store | .unary | .binary | .cast | .call | .construct => at @ at
+                .field | .index | .map_get | .len_of | .tag_of | .payload => at @ at
+                .func_ref | .copy_out | .abort_op | .incref | .hole | .missing => at @ at
         at @ at + 1
     return false
 
@@ -155,9 +159,9 @@ function loaded_from(blk: ir_state.Block, value: i64, slot_at: i64, floor: i64, 
                     .load ld =>
                         if ld.place.root == slot_at && ld.place.path.length == 0
                             return true
-                    .lit | .store | .unary | .binary | .cast | .call | .construct => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+                    .lit | .store | .unary | .binary | .cast | .call | .construct => at @ at
+                    .field | .index | .map_get | .len_of | .tag_of | .payload => at @ at
+                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => at @ at
         at @ at + 1
     return false
 
