@@ -1,0 +1,188 @@
+# The IR's containers: what a function, a block and a program ARE
+# (design.md Part 10 step 6; panels 019, 021, 029, 084).
+# Port of crates/heroes/src/ir/mod.rs's data half — the driver `lower`
+# arrives with the declaration walk.
+#
+# The phase lives ON THE PROGRAM, not in the verifier's signature (panel
+# 021 R8): a verify(program, phase) on a phase the caller asserts would
+# silently skip the checks that only make sense afterwards — a verifier
+# that quietly stops checking. The phase cannot disagree with the
+# program it describes if it is a field of it. rustc puts the phase on
+# the body, LLVM has --verify-each, Go runs checkFunc between phases;
+# all three audited verbatim by panel 021's historian.
+
+use token
+use diag
+use ir
+
+# What a lowered function is: a constant's body, a function, an extern
+# with no body, or a test block. A constant becomes a zero-argument
+# function because its body is a block whose value is its last
+# expression (§4.2) — no mutable globals exist, so the only shape that
+# needs no new machinery is a call.
+variant FnKind
+    function_kind
+    constant_kind
+    # §4.19: no body, and the name reaches C UNMANGLED.
+    extern_kind
+    # §4.18: entered only by `heroes test`. Ordinary builds ignore it.
+    test_kind
+
+# Where a slot came from. It decides one thing beyond the dump: whether
+# an exit edge owes a copy_out (§4.8).
+variant SlotKind
+    param_slot
+        mutable: bool
+    # `x = 5` or `v: i64 @ 0` — the surface distinction is the
+    # resolver's, and by here both are cells that hold a value.
+    local_slot
+    # One lowering invented: a loop index, a branch's join. Its name
+    # starts with `$`, a character no Heroes program contains, so it can
+    # collide with nothing the author wrote.
+    synthetic_slot
+
+record Slot
+    name: str
+    ty: i64
+    kind: SlotKind
+
+# One basic block: where control can arrive from, what happens, and the
+# single edge out. preds and note are both there for the READER: their
+# absence was measured on a five-block function, and "what is this
+# block's role" took a full pass over every block — O(blocks) for a
+# question that should be local.
+record Block
+    preds: [i64]
+    insts: [ir.Inst]
+    term: ir.Term
+    # What this block is for, in three words: `loop head`, `for: step`.
+    note: str
+
+record Function
+    # The source name, unmangled — the mangler needs the module, which
+    # is the toolchain's business, not the IR's.
+    name: str
+    # Index into the declarations — the link back to everything the
+    # frontend knows.
+    decl: i64
+    kind: FnKind
+    # The type-parameter letters, in order, so the dump prints what the
+    # author wrote. A body lowers POLYMORPHICALLY: a generic type
+    # survives into the IR and monomorphisation is an IR-to-IR pass.
+    generics: [str]
+    params: [i64]
+    result: i64
+    slots: [Slot]
+    blocks: [Block]
+    # The type of every temporary, dense over the value ids.
+    values: [i64]
+    # The argument pool. Runs point in here — a call's arity is
+    # variable, and the instruction stays flat.
+    arguments: [ir.Arg]
+    # The field/index-step pool, for the same reason.
+    steps: [ir.PathStep]
+    # The type arguments this function was instantiated at, empty for
+    # every ordinary function. It is what makes two copies of one
+    # generic declaration different functions, and what the mangler
+    # hashes.
+    instance: [i64]
+    # Which instance each inner call reaches, IN THIS COPY — keyed by
+    # the call's span start, substituted rather than inherited. The
+    # checker's own table is keyed by span too, and that is right for
+    # it: at check time a span occurs once. After monomorphisation it
+    # occurs once PER COPY of the enclosing body — the emitter read the
+    # checker's table directly and, for a generic calling a generic,
+    # passed arguments to a zero-argument _Noreturn (panel 084's filed
+    # defect).
+    call_instances: {i64: [i64]}
+    span: token.Span
+
+function args_of(f: Function, run: ir.Run) -> [ir.Arg]
+    out: [ir.Arg] @ []
+    i: i64 @ run.start
+    while i < run.start + run.length
+        out @ out.push(f.arguments[i])
+        i @ i + 1
+    return out
+
+function steps_of(f: Function, run: ir.Run) -> [ir.PathStep]
+    out: [ir.PathStep] @ []
+    i: i64 @ run.start
+    while i < run.start + run.length
+        out @ out.push(f.steps[i])
+        i @ i + 1
+    return out
+
+function value_type(f: Function, value: i64) -> i64
+    return f.values[value]
+
+# Which passes have run. Ranked, because a pass may only move forward.
+variant Phase
+    # Straight out of lowering. No incref, no decref.
+    lowered
+    # Monomorphisation has run: no generic type survives anywhere.
+    # BETWEEN lowering and ownership, and the order is forced:
+    # is_refcounted answers false for a generic, which is right for
+    # T = i64 and a leak for T = str — an ownership pass running first
+    # does not decline to decide, it decides wrongly (panel 029 R1).
+    mono
+    # The ownership pass has run. Every exit edge releases what it owns.
+    owned
+
+function phase_rank(p: Phase) -> i64
+    return match p
+        .lowered => 0
+        .mono => 1
+        .owned => 2
+
+# What the verifier's failures name, so a message says which pass to
+# suspect.
+function phase_name(p: Phase) -> str
+    return match p
+        .lowered => "after lowering"
+        .mono => "after monomorphisation"
+        .owned => "after the ownership pass"
+
+record Program
+    # Which passes have run. Only advance_to may change it.
+    phase: Phase
+    # In source order. Declaration order carries no meaning (§4.2), but
+    # the dump must be deterministic and the order the author reads is
+    # the one that costs nothing to preserve.
+    functions: [Function]
+    # Decoded string literals, interned. "a\nb" is two lines here, not
+    # four characters: the escape rules are applied once, at lowering,
+    # and the emitter re-escapes for C.
+    strings: [str]
+
+# Move to a later phase. A pass calls this once, at the end, and the
+# assertion is the cheap half of phase-indexing: a pass that runs twice,
+# or out of order, stops HERE rather than producing an IR whose
+# invariants nobody can name.
+function advance_to(@p: Program, phase: Phase)
+    assert phase_rank(phase) > phase_rank(p.phase)
+    p.phase @ phase
+
+record Lowered
+    program: Program
+    # Lowering is not a checking pass and produces almost nothing here.
+    # The one class it owns is a literal that cannot be represented —
+    # nothing before this pass ever needed an i64 literal's VALUE, so an
+    # out-of-range one was invisible until now.
+    diagnostics: [diag.Diagnostic]
+
+## Tests
+
+test "a run slices its pool, and the phase only moves forward"
+    f = Function(name: "f", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [7, 8, 9], arguments: [.value_arg(value: 4), .value_arg(value: 5), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0)))], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    two = args_of(f, ir.Run(start: 1, length: 2))
+    assert two.len() == 2
+    match two[0]
+        .value_arg v => assert v.value == 5
+        .inout_arg => assert false
+    assert value_type(f, 2) == 9
+    p: Program @ Program(phase: .lowered, functions: [], strings: [])
+    advance_to(@p, .mono)
+    advance_to(@p, .owned)
+    assert phase_rank(p.phase) == 2
+    assert phase_name(p.phase) == "after the ownership pass"
