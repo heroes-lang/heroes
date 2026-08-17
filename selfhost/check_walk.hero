@@ -1,0 +1,1341 @@
+# The checker's walk: both of §4.5's modes, the statements between them,
+# and everything a call or a pattern needs (design.md §4.5 bidirectional
+# checking, §4.7, §4.8, §4.9, §4.11, §4.12, §4.16; panels 002, 003, 014,
+# 015, 017, 026, 053, 062, 071, 079).
+# Port of crates/heroes/src/types/{exprs,expect,stmts,jumps,arms,patterns,
+# calls,ufcs,apply,construct,literals}.rs — eleven files, 1,957 lines, one
+# module here: the biggest knot in either compiler.
+#
+# ## The map this file owes its reader (CLAUDE.md §11)
+#
+# **This is one module because the language leaves no choice.** The eleven
+# Rust files call each other in a ring with three arcs: `synth` ⇄ `check`
+# (an array literal synthesises its first element and CHECKS the rest;
+# every fallthrough in `check` synthesises and compares); `statement` →
+# `synth`/`check` → `block`/`arms` → `statement` (a body holds expressions,
+# an `if` holds bodies); and every call route — `dispatch_call` →
+# `user_call`/`construct_record`/`builtin_dispatch`/`method` — ends in
+# `check` for its arguments. The edges that LEAVE the knot and stay other
+# modules: check_state (the record), check_table, check_lower,
+# check_render, check_ops, check_access, check_contextual, check_join,
+# check_builtins, check_generics, the error files, and digits for the
+# literal range.
+#
+# **The entry points**: `synth` (⇒: give me this expression's type),
+# `check` (⇐: hold this expression to a type the context knows), `block`
+# and `statement` with a `Want` (the two modes seen from the statement
+# side), and `arms` for a match's arms. check_decls will drive them;
+# nothing here reads a declaration list top-down.
+#
+# ## The one rule that shows up everywhere
+#
+# `synth` is TOTAL: it always returns a type, because `return`, `break`
+# and `continue` are STATEMENTS in this language — the checker is never
+# asked what type `break` has. Divergence lives in `Outcome.jumps` and
+# reaches expressions only as an absent branch value in the join.
+
+use token
+use diag
+use ast
+use source
+use resolved
+use builtins
+use digits
+use widths
+use check_table
+use check_state
+use check_lower
+use check_render
+use check_ops
+use check_access
+use check_contextual
+use check_join
+use check_builtins
+use check_generics
+use value_errors
+use data_errors
+use flow_errors
+use contextless_errors
+use ffi_errors
+
+## The two statement-side answers
+
+# What a block or an arm is FOR — §4.5's two modes seen from the
+# statement side: `nothing` is a body run for effect (its last line is a
+# statement like any other, so §4.14's () rule applies), `value` carries
+# an expectation into a match arm (the ⇐-only forms are unwritable there
+# without it), `unknown` synthesises because the context has nothing to
+# give (`x = match k` infers x from the arms).
+variant Want
+    nothing
+    value
+        ty: i64
+    unknown
+
+# Does control leave this statement, and what value did it produce?
+# Rust's (Flow, Option<TyId>) pair, as one record.
+record Outcome
+    jumps: bool
+    value: i64?
+
+function falls_with_nothing() -> Outcome
+    return Outcome(jumps: false, value: fail("none", "a statement produces no value"))
+
+## ⇒ — synthesise
+
+function synth(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> i64
+    span = a.exprs[id].span
+    match a.exprs[id].kind
+        # The range is checked HERE, not only where the value is decoded:
+        # `heroes check` exited 0 on a literal `build` then refused, and a
+        # program that checks clean must build. The literal's text and the
+        # default width are both frontend facts.
+        .int_lit =>
+            if digits.decode_int(source.span_text(s, span)).is_err()
+                check_state.push_diagnostic(@c, digits.int_out_of_range(source.span_text(s, span), span))
+            return check_state.record_expr(@c, at: id, ty: check_table.int_ty_id(c.out.types))
+        # §4.3: a character literal IS an i64.
+        .char_lit => return check_state.record_expr(@c, at: id, ty: check_table.int_ty_id(c.out.types))
+        .float_lit => return check_state.record_expr(@c, at: id, ty: check_table.f64_ty(c.out.types))
+        .str_lit => return check_state.record_expr(@c, at: id, ty: check_table.str_ty(c.out.types))
+        .bool_lit => return check_state.record_expr(@c, at: id, ty: check_table.bool_ty(c.out.types))
+        # §4.19: the one ptr a program can write. No Want here: ptr is
+        # opaque, so a null of one pointer type is a null of every one.
+        .null_ptr => return check_state.record_expr(@c, at: id, ty: check_table.intern(@c.out.types, .ptr))
+        .error => return check_state.record_expr(@c, at: id, ty: check_state.error_ty_of(c))
+        .name => return check_state.record_expr(@c, at: id, ty: synth_name(@c, a, r, s, decls, id))
+        # In value position a hole has no expected type to report — the ⇐
+        # path is where §4.16 earns its keep.
+        .hole =>
+            missing = check_state.error_ty_of(c)
+            c.out.holes @ c.out.holes.push(check_state.Hole(at: id, span: span, expected: missing))
+            return check_state.record_expr(@c, at: id, ty: missing)
+        .unary u =>
+            operand_ty = synth(@c, a, r, s, decls, u.operand)
+            return check_state.record_expr(@c, at: id, ty: check_ops.unary(@c, s, decls, u.op, operand: operand_ty, span: span))
+        .binary b =>
+            # Every binary operator wants both operands to be one type, so
+            # whenever ONE side has no type of its own, the other side's is
+            # the expectation: that is what makes `t == .plus` writable,
+            # and what gives the ??? in `"n = " + ???` a type to report.
+            # The operator still decides the RESULT; this only settles the
+            # operands.
+            left_ty: i64 @ 0
+            right_ty: i64 @ 0
+            if check_contextual.contextual(a, b.right) && !check_contextual.contextual(a, b.left)
+                left_ty @ synth(@c, a, r, s, decls, b.left)
+                if check_contextual.adopts(c, a, id: b.right, offered: left_ty)
+                    check(@c, a, r, s, decls, id: b.right, expected: left_ty)
+                    right_ty @ left_ty
+                else
+                    right_ty @ synth(@c, a, r, s, decls, b.right)
+            else if check_contextual.contextual(a, b.left) && !check_contextual.contextual(a, b.right)
+                right_ty @ synth(@c, a, r, s, decls, b.right)
+                if check_contextual.adopts(c, a, id: b.left, offered: right_ty)
+                    check(@c, a, r, s, decls, id: b.left, expected: right_ty)
+                    left_ty @ right_ty
+                else
+                    left_ty @ synth(@c, a, r, s, decls, b.left)
+            else
+                left_ty @ synth(@c, a, r, s, decls, b.left)
+                right_ty @ synth(@c, a, r, s, decls, b.right)
+            return check_state.record_expr(@c, at: id, ty: check_ops.binary(@c, s, decls, b.op, left: left_ty, right: right_ty, span: span))
+        .field f =>
+            # A module in base position makes the whole expression one
+            # qualified name — `grid.WALL`, a constant next door — which
+            # the resolver already decided.
+            if r.uses[f.base] == .module
+                return check_state.record_expr(@c, at: id, ty: synth_name(@c, a, r, s, decls, id))
+            base_ty = synth(@c, a, r, s, decls, f.base)
+            return check_state.record_expr(@c, at: id, ty: check_access.field_type(@c, a, s, r, decls, base: base_ty, field: f.name))
+        .index i =>
+            base_ty = synth(@c, a, r, s, decls, i.base)
+            index_ty = synth(@c, a, r, s, decls, i.index)
+            fixed_bound_check(@c, a, s, decls, base_ty: base_ty, index_expr: i.index, span: span)
+            return check_state.record_expr(@c, at: id, ty: check_access.index_type(@c, s, decls, base: base_ty, index: index_ty, span: span))
+        .call cl => return check_state.record_expr(@c, at: id, ty: dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args))
+        .method m => return check_state.record_expr(@c, at: id, ty: method(@c, a, r, s, decls, at: id, receiver: m.receiver, called: m.name, given: m.args))
+        # Which variant a case belongs to comes from context (§4.5's ⇐
+        # mode), so there is nothing to synthesise from.
+        .variant_case vc =>
+            check_state.push_diagnostic(@c, contextless_errors.cannot_infer_case(source.span_text(s, vc.name), span))
+            return check_state.record_expr(@c, at: id, ty: check_state.error_ty_of(c))
+        .array items =>
+            if items.elements.len() == 0
+                check_state.push_diagnostic(@c, contextless_errors.cannot_infer_empty(what: "array literal", span: span))
+                return check_state.record_expr(@c, at: id, ty: check_state.error_ty_of(c))
+            first = synth(@c, a, r, s, decls, items.elements[0])
+            n: i64 @ 1
+            while n < items.elements.len()
+                check(@c, a, r, s, decls, id: items.elements[n], expected: first)
+                n @ n + 1
+            return check_state.record_expr(@c, at: id, ty: check_table.intern(@c.out.types, .array(element: first)))
+        .map entries =>
+            if entries.entries.len() == 0
+                check_state.push_diagnostic(@c, contextless_errors.cannot_infer_empty(what: "map literal", span: span))
+                return check_state.record_expr(@c, at: id, ty: check_state.error_ty_of(c))
+            key = synth(@c, a, r, s, decls, entries.entries[0].key)
+            value = synth(@c, a, r, s, decls, entries.entries[0].value)
+            n: i64 @ 1
+            while n < entries.entries.len()
+                check(@c, a, r, s, decls, id: entries.entries[n].key, expected: key)
+                check(@c, a, r, s, decls, id: entries.entries[n].value, expected: value)
+                n @ n + 1
+            return check_state.record_expr(@c, at: id, ty: check_table.intern(@c.out.types, .map(key: key, value: value)))
+        .try_expr t =>
+            inner_ty = synth(@c, a, r, s, decls, t.value)
+            return check_state.record_expr(@c, at: id, ty: check_access.try_type(@c, s, decls, inner: inner_ty, span: span, operand: a.exprs[t.value].span))
+        .if_expr branches =>
+            collected: [check_join.Branch] @ []
+            for branch in branches.branches
+                condition(@c, a, r, s, decls, branch.cond)
+                got = block(@c, a, r, s, decls, body: branch.block, want: .unknown)
+                collected @ collected.push(check_join.Branch(value: got.value, span: branch.block.span))
+            if branches.otherwise.is_err()
+                # Without an else the value is missing whenever the
+                # condition is false, so an if used as a value must have one.
+                check_state.push_diagnostic(@c, flow_errors.if_without_else(span))
+                return check_state.record_expr(@c, at: id, ty: check_state.error_ty_of(c))
+            got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .unknown)
+            collected @ collected.push(check_join.Branch(value: got.value, span: branches.otherwise.must().span))
+            return check_state.record_expr(@c, at: id, ty: check_join.join_for_value(@c, s, decls, collected, what: "if", span: span))
+        .match_expr m =>
+            subject = synth(@c, a, r, s, decls, m.scrutinee)
+            collected = arms(@c, a, r, s, decls, match_arms: m.arms, subject: subject, want: .unknown, span: span)
+            return check_state.record_expr(@c, at: id, ty: check_join.join_for_value(@c, s, decls, collected, what: "match", span: span))
+    return check_state.record_expr(@c, at: id, ty: check_state.error_ty_of(c))
+
+# An if/while condition: a bool, or the no-truthiness message.
+function condition(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64)
+    wanted = check_table.bool_ty(c.out.types)
+    got = synth(@c, a, r, s, decls, cond)
+    if got != wanted && !check_table.poisoned(c.out.types, got)
+        shown = check_state.show(c, s, decls, got)
+        check_state.push_diagnostic(@c, value_errors.not_bool(what: "an `if` condition", got: shown, span: a.exprs[cond].span))
+
+# A constant index into a fixed array is judged HERE, where the index
+# EXPRESSION is (panel 062): the bound check needs the value, and
+# `v.params[9]` on an i32[4] is wrong when written.
+function fixed_bound_check(@c: check_state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], base_ty: i64, index_expr: i64, span: token.Span)
+    match check_table.get(c.out.types, base_ty)
+        .fixed x =>
+            literal = check_contextual.literal_value(a, s, index_expr)
+            if literal.is_err()
+                return
+            v = literal.must()
+            past = !v.negative && v.magnitude >= x.length.to_u64().must()
+            if v.negative || past
+                shown = check_state.show(c, s, decls, base_ty)
+                rendered: str @ v.magnitude.to_str()
+                if v.negative
+                    rendered @ "-" + v.magnitude.to_str()
+                check_state.push_diagnostic(@c, ffi_errors.fixed_index_out_of_range(shown: shown, length: x.length, got_text: rendered, span: span))
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+        .array | .map | .fallible | .function_ty | .named => return
+        .case_ty | .failure | .generic | .error => return
+
+function synth_name(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> i64
+    span = a.exprs[id].span
+    match r.uses[id]
+        # The resolver reported it (module_is_not_a_value); one mistake,
+        # one diagnostic, so nothing is said here.
+        .module => return check_state.error_ty_of(c)
+        .local l => return c.out.local_types[l.at]
+        .top t =>
+            match decls[t.at].kind
+                # §4.13: a top-level function is a value, and its type is
+                # its signature.
+                .function_decl => return signature_of(@c, a, r, decls, decl: t.at)
+                .constant_decl k => return check_lower.lower_ty(@c, a, r, k.ty)
+                # A record name is a constructor, not a value on its own
+                # (§4.9): only meaningful as the callee of a call.
+                .record_decl =>
+                    check_state.push_diagnostic(@c, contextless_errors.record_name_alone(source.span_text(s, decls[t.at].name), span))
+                    return check_state.error_ty_of(c)
+                .variant_decl | .test_decl => return check_state.error_ty_of(c)
+        # A built-in used as a value: an error_ty with no diagnostic is
+        # poison that flows to the emitter — found by the closure-list
+        # audit on its first program.
+        .builtin b =>
+            check_state.push_diagnostic(@c, contextless_errors.builtin_as_value(builtins.table()[b.at].name, span))
+            return check_state.error_ty_of(c)
+        .unresolved => return check_state.error_ty_of(c)
+    return check_state.error_ty_of(c)
+
+## ⇐ — check against a type the context knows
+
+function check(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, expected: i64)
+    span = a.exprs[id].span
+    # §4.16: the hole reports the type it was checked against — the
+    # information the compiler already had and used to throw away.
+    is_hole = match a.exprs[id].kind
+        .hole => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => false
+        .name | .unary | .binary | .field | .index | .call | .method => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+    if is_hole
+        c.out.holes @ c.out.holes.push(check_state.Hole(at: id, span: span, expected: expected))
+        _ = check_state.record_expr(@c, at: id, ty: expected)
+        return
+    # nullptr at the type the context asked for (panel 053): adopts is
+    # ASKED here, not assumed — recording unconditionally made
+    # `s: str @ nullptr` compile for one afternoon.
+    is_null = match a.exprs[id].kind
+        .null_ptr => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .hole => false
+        .name | .unary | .binary | .field | .index | .call | .method => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+    if is_null
+        if check_contextual.adopts(c, a, id: id, offered: expected)
+            _ = check_state.record_expr(@c, at: id, ty: expected)
+        else
+            mismatch_shown(@c, s, decls, expected: expected, got: "ptr", span: span)
+        return
+    # A number literal, checked against the width the context asked for —
+    # the one place the value in the source and the type in the annotation
+    # meet, so the one place that can say `300` does not fit a `u8`, with
+    # the range (§4.17). The arm is chosen by the walk under the minus
+    # signs, never by the outermost node's shape (fixedbugs 2026-08-13).
+    if check_contextual.number_literal(a, id)
+        match check_table.get(c.out.types, expected)
+            .int_ty k =>
+                text = source.span_text(s, span)
+                literal = check_contextual.literal_value(a, s, id)
+                fits: bool @ false
+                if !literal.is_err()
+                    v = literal.must()
+                    fits @ widths.int_fits(k.kind, negative: v.negative, magnitude: v.magnitude)
+                if !fits
+                    check_state.push_diagnostic(@c, digits.int_out_of_range_at(text, span, kind: k.kind))
+                # The digits under a minus sign need the type too: the
+                # lowering walks to them and would otherwise find no type,
+                # which reaches the emitter as a type nobody wrote.
+                record_through_neg(@c, a, id: id, ty: expected)
+            .float_ty | .bool | .str | .ptr | .cstr | .unit | .array =>
+                got = check_table.int_ty_id(c.out.types)
+                mismatch_shown(@c, s, decls, expected: expected, got: check_state.show(c, s, decls, got), span: span)
+                _ = check_state.record_expr(@c, at: id, ty: got)
+            .fixed | .map | .fallible | .function_ty | .named =>
+                got = check_table.int_ty_id(c.out.types)
+                mismatch_shown(@c, s, decls, expected: expected, got: check_state.show(c, s, decls, got), span: span)
+                _ = check_state.record_expr(@c, at: id, ty: got)
+            .case_ty | .failure | .generic | .error =>
+                got = check_table.int_ty_id(c.out.types)
+                mismatch_shown(@c, s, decls, expected: expected, got: check_state.show(c, s, decls, got), span: span)
+                _ = check_state.record_expr(@c, at: id, ty: got)
+        return
+    # A float literal at the width the context asks for (panel 060) —
+    # Rust's literals.rs, inlined where its one caller lives.
+    if check_contextual.float_literal(a, id)
+        is_float_width = match check_table.get(c.out.types, expected)
+            .float_ty => true
+            .int_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
+            .fixed | .map | .fallible | .function_ty | .named => false
+            .case_ty | .failure | .generic | .error => false
+        if is_float_width
+            record_through_neg(@c, a, id: id, ty: expected)
+        else
+            got = check_table.f64_ty(c.out.types)
+            mismatch_shown(@c, s, decls, expected: expected, got: check_state.show(c, s, decls, got), span: span)
+            _ = check_state.record_expr(@c, at: id, ty: got)
+        return
+    match a.exprs[id].kind
+        # §4.5's two inference failures, answered instead of reported: the
+        # annotation IS the expected type.
+        .array items =>
+            if items.elements.len() == 0
+                is_array = match check_table.get(c.out.types, expected)
+                    .array => true
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+                    .fixed | .map | .fallible | .function_ty | .named => false
+                    .case_ty | .failure | .generic | .error => false
+                if !is_array
+                    mismatch_shown(@c, s, decls, expected: expected, got: "[]", span: span)
+                _ = check_state.record_expr(@c, at: id, ty: expected)
+                return
+            # A literal takes a FIXED array's type when the length agrees
+            # (panel 062) — the length is checked here and nowhere else,
+            # because here is the only place both numbers exist.
+            if checked_array_literal(@c, a, r, s, decls, id: id, elements: items.elements, expected: expected, span: span)
+                return
+            got = synth(@c, a, r, s, decls, id)
+            compare(@c, s, decls, expected: expected, got: got, span: span)
+            return
+        .map entries =>
+            if entries.entries.len() == 0
+                is_map = match check_table.get(c.out.types, expected)
+                    .map => true
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+                    .fixed | .array | .fallible | .function_ty | .named => false
+                    .case_ty | .failure | .generic | .error => false
+                if !is_map
+                    mismatch_shown(@c, s, decls, expected: expected, got: "{}", span: span)
+                _ = check_state.record_expr(@c, at: id, ty: expected)
+                return
+            got = synth(@c, a, r, s, decls, id)
+            compare(@c, s, decls, expected: expected, got: got, span: span)
+            return
+        .variant_case vc =>
+            case_construct(@c, a, r, s, decls, at: id, called: vc.name, given: vc.args, expected: expected)
+            return
+        .call cl =>
+            # ok/fail are ⇐-only (panel 002): which T? they make is the
+            # caller's question, so they are checked here and nowhere else.
+            built = fallible_constructor(@c, a, r, s, decls, callee: cl.callee, given: cl.args, expected: expected, span: span)
+            if !built.is_err()
+                _ = check_state.record_expr(@c, at: id, ty: built.must())
+                return
+            got = synth(@c, a, r, s, decls, id)
+            compare(@c, s, decls, expected: expected, got: got, span: span)
+            return
+        # An if or match in ⇐ position pushes the expectation into every
+        # branch, so the error lands in the branch that disagrees — and so
+        # a .case, an ok(…) or a [] can be written in an arm at all.
+        .if_expr branches =>
+            for branch in branches.branches
+                condition(@c, a, r, s, decls, branch.cond)
+                _ = block(@c, a, r, s, decls, body: branch.block, want: .value(ty: expected))
+            if branches.otherwise.is_err()
+                check_state.push_diagnostic(@c, flow_errors.if_without_else(span))
+            else
+                _ = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .value(ty: expected))
+            _ = check_state.record_expr(@c, at: id, ty: expected)
+            return
+        .match_expr m =>
+            subject = synth(@c, a, r, s, decls, m.scrutinee)
+            branches = arms(@c, a, r, s, decls, match_arms: m.arms, subject: subject, want: .value(ty: expected), span: span)
+            produced: bool @ false
+            for b in branches
+                if !b.value.is_err()
+                    produced @ true
+            if branches.len() > 0 && !produced
+                check_state.push_diagnostic(@c, flow_errors.no_value("match", span))
+            _ = check_state.record_expr(@c, at: id, ty: expected)
+            return
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => fall_through()
+        .name | .unary | .binary | .field | .index | .method | .hole => fall_through()
+        .try_expr | .error => fall_through()
+    got = synth(@c, a, r, s, decls, id)
+    compare(@c, s, decls, expected: expected, got: got, span: span)
+
+# The no-op an arm may call: an arm body must be a statement, `_ = 0` is
+# a declaration the rule refuses, and a bare function call whose type is
+# () is exactly what a statement is allowed to be.
+function fall_through()
+    return
+
+# The array-literal half of ⇐, true when the expectation's shape took it.
+function checked_array_literal(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, elements: [i64], expected: i64, span: token.Span) -> bool
+    match check_table.get(c.out.types, expected)
+        .fixed x =>
+            if elements.len() != x.length
+                want = check_state.show(c, s, decls, expected)
+                check_state.push_diagnostic(@c, ffi_errors.fixed_array_length(want: want, expected: x.length, got: elements.len(), span: span))
+                _ = check_state.record_expr(@c, at: id, ty: expected)
+                return true
+            for item in elements
+                check(@c, a, r, s, decls, id: item, expected: x.element)
+            _ = check_state.record_expr(@c, at: id, ty: expected)
+            return true
+        .array arr =>
+            for item in elements
+                check(@c, a, r, s, decls, id: item, expected: arr.element)
+            _ = check_state.record_expr(@c, at: id, ty: expected)
+            return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .map | .fallible | .function_ty | .named => return false
+        .case_ty | .failure | .generic | .error => return false
+    return false
+
+# Record `expected` on the node and on every negated layer under it.
+function record_through_neg(@c: check_state.Checker, a: ast.Ast, id: i64, ty: i64)
+    at: i64 @ id
+    walking: bool @ true
+    while walking
+        _ = check_state.record_expr(@c, at: at, ty: ty)
+        match a.exprs[at].kind
+            .unary u =>
+                if u.op == .neg
+                    at @ u.operand
+                else
+                    walking @ false
+            .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => walking @ false
+            .name | .hole | .binary | .field | .index | .call | .method => walking @ false
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => walking @ false
+
+function compare(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
+    if expected == got || check_table.poisoned(c.out.types, expected) || check_table.poisoned(c.out.types, got)
+        return
+    a_text = check_state.show(c, s, decls, expected)
+    b_text = check_state.show(c, s, decls, got)
+    d: diag.Diagnostic @ value_errors.mismatch(expected: a_text, got: b_text, span: span)
+    # A T? where a T was wanted has one obvious repair, and it is a GUESS
+    # (panel 043): .must() aborts on the error case, and whether that is
+    # what the author wants is theirs to say — ?, .default(v) and a match
+    # are the other three answers §4.6 gives.
+    if check_table.get(c.out.types, got) == .fallible(payload: expected)
+        d.fixes @ d.fixes.push(diag.Fix(title: "`.must()` — abort on the error case, giving `" + a_text + "`", replacement: source.span_text(s, span) + ".must()", span: span, certainty: .guess))
+    check_state.push_diagnostic(@c, d)
+
+function mismatch_shown(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: str, span: token.Span)
+    a_text = check_state.show(c, s, decls, expected)
+    check_state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: got, span: span))
+
+## Statements — where divergence lives
+
+# A block: every statement checked, and — when a value is wanted — the
+# type its last statement produces. Only the last statement of a value
+# block may produce one; every other line is a statement, and §4.14
+# wants it to be ().
+function block(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, want: Want) -> Outcome
+    jumps: bool @ false
+    value: i64? @ fail("none", "no last value yet")
+    last = body.stmts.len() - 1
+    index: i64 @ 0
+    for sid in body.stmts
+        here: Want @ .nothing
+        if index == last
+            here @ want
+        got = statement(@c, a, r, s, decls, id: sid, want: here)
+        if got.jumps
+            jumps @ true
+        if index == last
+            value @ got.value
+        index @ index + 1
+    # A block that jumps produces no value, whatever its last line looked
+    # like.
+    if jumps
+        return Outcome(jumps: true, value: fail("jumps", "a block that jumps produces no value"))
+    # Asked for a value, falls through, and has none: its last line is a
+    # statement. NOT the same as diverging — treating the two alike would
+    # let `x = if c` with a loop in the branch pass silently.
+    if want != .nothing && value.is_err()
+        check_state.push_diagnostic(@c, flow_errors.branch_without_value(body.span))
+    return Outcome(jumps: false, value: value)
+
+function statement(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, want: Want) -> Outcome
+    span = a.stmts[id].span
+    match a.stmts[id].kind
+        .bind b =>
+            bound: i64 @ 0
+            if !b.ty.is_err()
+                declared = check_lower.lower_ty(@c, a, r, b.ty.must())
+                check(@c, a, r, s, decls, id: b.value, expected: declared)
+                bound @ declared
+            else
+                bound @ synth(@c, a, r, s, decls, b.value)
+            # Panel 017 C: () is not a value, so nothing can hold one.
+            # Poisoned rather than (): every later read stays quiet,
+            # because there is one mistake here and it has been reported.
+            if bound == check_table.unit_ty(c.out.types)
+                check_state.push_diagnostic(@c, value_errors.bound_unit(source.span_text(s, b.name), b.name))
+                bound @ check_state.error_ty_of(c)
+            check_state.bind_local(@c, b.name, ty: bound)
+            return falls_with_nothing()
+        .declare d =>
+            declared = check_lower.lower_ty(@c, a, r, d.ty)
+            check(@c, a, r, s, decls, id: d.value, expected: declared)
+            check_state.bind_local(@c, d.name, ty: declared)
+            return falls_with_nothing()
+        .mutate m =>
+            target = synth(@c, a, r, s, decls, m.place)
+            # The write side of m[k] is V, not V? (§4.9, panel 026):
+            # reading a map yields a fallible because the key may be
+            # absent; WRITING one cannot fail, because m[k] @ v inserts.
+            # So the target sheds one fallible layer, only for this shape.
+            narrowed = write_target(c, a, place: m.place, read: target)
+            check(@c, a, r, s, decls, id: m.value, expected: narrowed)
+            return falls_with_nothing()
+        .return_stmt rv => return returns(@c, a, r, s, decls, value: rv.value, span: span)
+        .break_stmt =>
+            if c.loops == 0
+                check_state.push_diagnostic(@c, flow_errors.jump_outside_loop("break", span))
+            return Outcome(jumps: true, value: fail("jumps", "a jump has no value"))
+        .continue_stmt =>
+            if c.loops == 0
+                check_state.push_diagnostic(@c, flow_errors.jump_outside_loop("continue", span))
+            return Outcome(jumps: true, value: fail("jumps", "a jump has no value"))
+        .assert_stmt v =>
+            wanted = check_table.bool_ty(c.out.types)
+            got = synth(@c, a, r, s, decls, v.value)
+            if got != wanted && !check_table.poisoned(c.out.types, got)
+                shown = check_state.show(c, s, decls, got)
+                check_state.push_diagnostic(@c, value_errors.not_bool(what: "an `assert`", got: shown, span: a.exprs[v.value].span))
+            return falls_with_nothing()
+        .while_stmt w =>
+            wanted = check_table.bool_ty(c.out.types)
+            got = synth(@c, a, r, s, decls, w.cond)
+            if got != wanted && !check_table.poisoned(c.out.types, got)
+                shown = check_state.show(c, s, decls, got)
+                check_state.push_diagnostic(@c, value_errors.not_bool(what: "a `while` condition", got: shown, span: a.exprs[w.cond].span))
+            c.loops @ c.loops + 1
+            _ = block(@c, a, r, s, decls, body: w.block, want: .nothing)
+            c.loops @ c.loops - 1
+            # A loop may run zero times, so it never counts as diverging —
+            # that one line is why a function whose only return sits
+            # inside a loop is still missing_return.
+            return falls_with_nothing()
+        .for_in f =>
+            over = synth(@c, a, r, s, decls, f.iterable)
+            element: i64 @ 0
+            match check_table.get(c.out.types, over)
+                .array arr => element @ arr.element
+                # s.chars() is how a string is walked (§4.3), so a bare
+                # str here is the mistake worth naming.
+                .error => element @ check_state.error_ty_of(c)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+                    shown = check_state.show(c, s, decls, over)
+                    check_state.push_diagnostic(@c, flow_errors.not_iterable(shown, a.exprs[f.iterable].span))
+                .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic =>
+                    shown = check_state.show(c, s, decls, over)
+                    check_state.push_diagnostic(@c, flow_errors.not_iterable(shown, a.exprs[f.iterable].span))
+            check_state.bind_local(@c, f.name, ty: element)
+            c.loops @ c.loops + 1
+            _ = block(@c, a, r, s, decls, body: f.block, want: .nothing)
+            c.loops @ c.loops - 1
+            return falls_with_nothing()
+        .expr_stmt v => return expression_statement(@c, a, r, s, decls, value: v.value, want: want)
+        .error => return falls_with_nothing()
+    return falls_with_nothing()
+
+# `return e` and `return` — checked against the signature, never
+# inferred. The two error cases are opposites: a value where the
+# signature promised none, and none where it promised one.
+function returns(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64?, span: token.Span) -> Outcome
+    unit = check_table.unit_ty(c.out.types)
+    if !value.is_err()
+        if c.result == unit
+            check_state.push_diagnostic(@c, flow_errors.returns_nothing(span))
+            _ = synth(@c, a, r, s, decls, value.must())
+        else
+            check(@c, a, r, s, decls, id: value.must(), expected: c.result)
+    else
+        if c.result != unit
+            want = check_state.show(c, s, decls, c.result)
+            check_state.push_diagnostic(@c, flow_errors.missing_value(want, span))
+    return Outcome(jumps: true, value: fail("jumps", "a return has no value here"))
+
+# The type a mutation target ACCEPTS, which differs from the type it
+# reads in exactly one case: an index into a map.
+function write_target(c: check_state.Checker, a: ast.Ast, place: i64, read: i64) -> i64
+    match a.exprs[place].kind
+        .index i =>
+            base_ty = c.out.expr_types[i.base]
+            base_is_map = match check_table.get(c.out.types, base_ty)
+                .map => true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+                .array | .fixed | .fallible | .function_ty | .named => false
+                .case_ty | .failure | .generic | .error => false
+            if base_is_map
+                match check_table.get(c.out.types, read)
+                    .fallible o => return o.payload
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return read
+                    .array | .fixed | .map | .function_ty | .named => return read
+                    .case_ty | .failure | .generic | .error => return read
+            return read
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => return read
+        .name | .hole | .unary | .binary | .field | .call | .method => return read
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return read
+    return read
+
+# An expression alone on a line: route if/match in statement position
+# (where they need no value and may have arms that all jump), and enforce
+# panel 003's rule everywhere else.
+function expression_statement(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64, want: Want) -> Outcome
+    span = a.exprs[value].span
+    match a.exprs[value].kind
+        .if_expr branches =>
+            if want == .nothing
+                all_jump: bool @ !branches.otherwise.is_err()
+                for branch in branches.branches
+                    condition(@c, a, r, s, decls, branch.cond)
+                    got = block(@c, a, r, s, decls, body: branch.block, want: .nothing)
+                    all_jump @ all_jump && got.jumps
+                if !branches.otherwise.is_err()
+                    got = block(@c, a, r, s, decls, body: branches.otherwise.must(), want: .nothing)
+                    all_jump @ all_jump && got.jumps
+                # As a statement it has the type a statement must have.
+                _ = check_state.record_expr(@c, at: value, ty: check_table.unit_ty(c.out.types))
+                return Outcome(jumps: all_jump, value: fail("none", "a statement produces no value"))
+            return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+        .match_expr m =>
+            if want == .nothing
+                subject = synth(@c, a, r, s, decls, m.scrutinee)
+                branches = arms(@c, a, r, s, decls, match_arms: m.arms, subject: subject, want: .nothing, span: span)
+                produced: bool @ false
+                for b in branches
+                    if !b.value.is_err()
+                        produced @ true
+                all_jump = branches.len() > 0 && !produced
+                _ = check_state.record_expr(@c, at: value, ty: check_table.unit_ty(c.out.types))
+                return Outcome(jumps: all_jump, value: fail("none", "a statement produces no value"))
+            return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+        .name | .hole | .unary | .binary | .field | .index | .call | .method => return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+        .variant_case | .array | .map | .try_expr | .error => return valued_expression(@c, a, r, s, decls, value: value, want: want, span: span)
+    return falls_with_nothing()
+
+function valued_expression(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], value: i64, want: Want, span: token.Span) -> Outcome
+    # A value block's last statement is checked against what the block is
+    # FOR — the ⇐-only forms live or die on this.
+    match want
+        .value w =>
+            check(@c, a, r, s, decls, id: value, expected: w.ty)
+            return Outcome(jumps: false, value: ok(w.ty))
+        .unknown =>
+            got = synth(@c, a, r, s, decls, value)
+            return Outcome(jumps: false, value: ok(got))
+        .nothing =>
+            got = synth(@c, a, r, s, decls, value)
+            # Panel 003: the value of a statement is discarded, and
+            # discarding one silently is the mistake.
+            unit = check_table.unit_ty(c.out.types)
+            if got != unit && !check_table.poisoned(c.out.types, got)
+                shown = check_state.show(c, s, decls, got)
+                receiver = returns_its_receiver(c, a, s, value: value, got: got)
+                check_state.push_diagnostic(@c, value_errors.discarded_value(got: shown, receiver: receiver, span: span))
+            return falls_with_nothing()
+    return falls_with_nothing()
+
+# The name this call was written ON, when the call's result has that
+# name's own type — xs in xs.push(4), where both are [i64]. A fact about
+# the value, not a guess about intent (panel 071): where the types
+# coincide the compiler cannot know which repair was meant, so neither is
+# certain; where they differ nothing is ambiguous. Deliberately shallow.
+function returns_its_receiver(c: check_state.Checker, a: ast.Ast, s: source.Source, value: i64, got: i64) -> str?
+    match a.exprs[value].kind
+        .method m =>
+            is_name = match a.exprs[m.receiver].kind
+                .name => true
+                .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => false
+                .hole | .unary | .binary | .field | .index | .call | .method => false
+                .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+            if !is_name
+                return fail("absent", "the receiver is not a bare name")
+            if c.out.expr_types[m.receiver] != got
+                return fail("absent", "the result is not the receiver's own type")
+            return ok(source.span_text(s, a.exprs[m.receiver].span))
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => return fail("absent", "not a method call")
+        .name | .hole | .unary | .binary | .field | .index | .call => return fail("absent", "not a method call")
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail("absent", "not a method call")
+    return fail("absent", "unreached")
+
+## Arms and patterns — the rule match exists for
+
+# Every arm of a match: what its patterns bind, whether the set is
+# exhaustive, and what value it produces.
+function arms(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], match_arms: [ast.Arm], subject: i64, want: Want, span: token.Span) -> [check_join.Branch]
+    branches: [check_join.Branch] @ []
+    covered: [i64] @ []
+    wildcard_seen: bool @ false
+    for arm in match_arms
+        for pattern in arm.patterns
+            match pattern.kind
+                .variant_case cp =>
+                    bound = case_pattern(@c, s, decls, subject: subject, name: cp.name, span: pattern.span, @covered)
+                    if !cp.binding.is_err()
+                        check_state.bind_local(@c, cp.binding.must(), ty: bound)
+                .wildcard =>
+                    wildcard_seen @ true
+                    wildcard_pattern(@c, a, s, decls, subject: subject, span: pattern.span)
+                .literal l => literal_pattern(@c, a, r, s, decls, subject: subject, value: l.value, span: pattern.span)
+                .error => continue
+        value: i64? @ fail("none", "nothing produced yet")
+        match arm.body
+            .one_stmt one =>
+                got = statement(@c, a, r, s, decls, id: one.at, want: want)
+                if got.jumps
+                    value @ fail("jumps", "a jumping arm has no value")
+                else
+                    value @ got.value
+            .block bb =>
+                got = block(@c, a, r, s, decls, body: bb.block, want: want)
+                value @ got.value
+        branches @ branches.push(check_join.Branch(value: value, span: arm.span))
+    exhaustive(@c, a, s, decls, subject: subject, covered: covered, wildcard_seen: wildcard_seen, span: span)
+    return branches
+
+# `.case name` — records the case as covered and hands back what the
+# payload binding is worth.
+function case_pattern(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, name: token.Span, span: token.Span, @covered: [i64]) -> i64
+    case_name = source.span_text(s, name)
+    if check_table.poisoned(c.out.types, subject)
+        return check_state.error_ty_of(c)
+    match check_table.get(c.out.types, subject)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl v =>
+                    at: i64 @ -1
+                    index: i64 @ 0
+                    for one_case in v.cases
+                        if source.span_text(s, one_case.name) == case_name
+                            at @ index
+                        index @ index + 1
+                    if at < 0
+                        known: [str] @ []
+                        for one_case in v.cases
+                            known @ known.push(source.span_text(s, one_case.name))
+                        holder = source.span_text(s, decls[n.decl].name)
+                        check_state.push_diagnostic(@c, data_errors.no_such_case(holder: holder, case_name: case_name, known: known, span: name))
+                        return check_state.error_ty_of(c)
+                    if listed(covered, at)
+                        check_state.push_diagnostic(@c, data_errors.duplicate_arm(case_name, span))
+                    covered @ covered.push(at)
+                    return check_table.intern(@c.out.types, .case_ty(decl: n.decl, at: at))
+                .constant_decl | .function_decl | .record_decl | .test_decl =>
+                    got = check_state.show(c, s, decls, subject)
+                    check_state.push_diagnostic(@c, data_errors.not_matchable(got, span))
+                    return check_state.error_ty_of(c)
+        # §4.6's two cases, and they are the only ones.
+        .fallible o =>
+            if case_name == "ok"
+                covered @ covered.push(0)
+                return o.payload
+            if case_name == "err"
+                covered @ covered.push(1)
+                return check_table.failure_ty(c.out.types)
+            known: [str] = ["ok", "err"]
+            check_state.push_diagnostic(@c, data_errors.no_such_case(holder: "a fallible value", case_name: case_name, known: known, span: name))
+            return check_state.error_ty_of(c)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+            got = check_state.show(c, s, decls, subject)
+            check_state.push_diagnostic(@c, data_errors.case_on_non_variant(got: got, case_name: case_name, span: span))
+            return check_state.error_ty_of(c)
+        .array | .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error =>
+            got = check_state.show(c, s, decls, subject)
+            check_state.push_diagnostic(@c, data_errors.case_on_non_variant(got: got, case_name: case_name, span: span))
+            return check_state.error_ty_of(c)
+    return check_state.error_ty_of(c)
+
+# `_` as a whole arm: legal only where exhaustiveness is impossible.
+function wildcard_pattern(@c: check_state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], subject: i64, span: token.Span)
+    _ = a
+    if check_table.poisoned(c.out.types, subject)
+        return
+    countable = match check_table.get(c.out.types, subject)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl => true
+                .constant_decl | .function_decl | .record_decl | .test_decl => false
+        .fallible | .bool => true
+        .int_ty | .float_ty | .str | .ptr | .cstr | .unit | .array => false
+        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => false
+    if countable
+        got = check_state.show(c, s, decls, subject)
+        check_state.push_diagnostic(@c, data_errors.wildcard_on_variant(got, span))
+
+# A literal arm: its type must be the subject's.
+function literal_pattern(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], subject: i64, value: i64, span: token.Span)
+    got = synth(@c, a, r, s, decls, value)
+    if got != subject && !check_table.poisoned(c.out.types, got) && !check_table.poisoned(c.out.types, subject)
+        a_text = check_state.show(c, s, decls, subject)
+        b_text = check_state.show(c, s, decls, got)
+        check_state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: b_text, span: span))
+
+# The rule the language is built around: every case named, or the
+# compiler names the ones that are missing.
+function exhaustive(@c: check_state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], subject: i64, covered: [i64], wildcard_seen: bool, span: token.Span)
+    _ = a
+    if wildcard_seen || check_table.poisoned(c.out.types, subject)
+        return
+    match check_table.get(c.out.types, subject)
+        .named n =>
+            match decls[n.decl].kind
+                .variant_decl v =>
+                    missing: [str] @ []
+                    index: i64 @ 0
+                    for one_case in v.cases
+                        if !listed(covered, index)
+                            missing @ missing.push("." + source.span_text(s, one_case.name))
+                        index @ index + 1
+                    if missing.len() > 0
+                        check_state.push_diagnostic(@c, data_errors.non_exhaustive(missing, span))
+                .constant_decl | .function_decl | .record_decl | .test_decl => return
+        .fallible =>
+            missing: [str] @ []
+            if !listed(covered, 0)
+                missing @ missing.push(".ok")
+            if !listed(covered, 1)
+                missing @ missing.push(".err")
+            if missing.len() > 0
+                check_state.push_diagnostic(@c, data_errors.non_exhaustive(missing, span))
+        # i64 and str cannot be enumerated, so `_` is how they are
+        # finished — and its absence is the error.
+        .int_ty | .str => check_state.push_diagnostic(@c, data_errors.needs_wildcard(span))
+        .float_ty | .bool | .ptr | .cstr | .unit | .array => return
+        .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => return
+
+function listed(xs: [i64], x: i64) -> bool
+    for it in xs
+        if it == x
+            return true
+    return false
+
+## Calls — the dispatch, and the one place generics are inferred
+
+# A declaration's type, from its written signature (§4.13: a top-level
+# function is a value).
+function signature_of(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], decl: i64) -> i64
+    match decls[decl].kind
+        .function_decl fd =>
+            lowered: [i64] @ []
+            for p in fd.value.params
+                lowered @ lowered.push(check_lower.lower_ty(@c, a, r, p.ty))
+            result = check_lower.lower_ty(@c, a, r, fd.value.result)
+            return check_table.intern_function(@c.out.types, lowered, result: result)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return check_state.error_ty_of(c)
+    return check_state.error_ty_of(c)
+
+# Four things arrive looking identical in the tree, and the callee's
+# RESOLUTION tells them apart — which is why the resolver runs first.
+function dispatch_call(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, callee: i64, given: [ast.Arg]) -> i64
+    span = a.exprs[at].span
+    callee_is_name = match a.exprs[callee].kind
+        .name => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => false
+        .hole | .unary | .binary | .field | .index | .call | .method => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+    if callee_is_name
+        direct = named_call(@c, a, r, s, decls, callee: callee, given: given, span: span)
+        if !direct.is_err()
+            return direct.must()
+    # Anything else must be a function VALUE (§4.13): a parameter, a
+    # local, or a field holding one.
+    callee_ty = synth(@c, a, r, s, decls, callee)
+    return indirect_call(@c, a, r, s, decls, callee_ty: callee_ty, given: given, receiver: fail("absent", "no receiver"), span: span)
+
+# The named-callee half of the dispatch; fail = fall to the indirect path.
+function named_call(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], span: token.Span) -> i64?
+    match r.uses[callee]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl =>
+                    # The callee is a value in its own right (§4.13), so it
+                    # gets its signature recorded even when called directly
+                    # — the lowering reads expr_types, not the tree.
+                    signature = signature_of(@c, a, r, decls, decl: t.at)
+                    _ = check_state.record_expr(@c, at: callee, ty: signature)
+                    return ok(user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail("absent", "no receiver"), span: span))
+                .record_decl => return ok(construct_record(@c, a, r, s, decls, decl: t.at, given: given, span: span))
+                .variant_decl =>
+                    name = source.span_text(s, decls[t.at].name)
+                    check_state.push_diagnostic(@c, contextless_errors.variant_not_callable(name, span))
+                    return ok(check_state.error_ty_of(c))
+                .constant_decl | .test_decl => return fail("indirect", "a constant callee is a value")
+        .builtin b => return ok(builtin_dispatch(@c, a, r, s, decls, index: b.at, given: given, receiver: fail("absent", "no receiver"), span: span))
+        .unresolved | .local | .module => return fail("indirect", "the resolver did not name a declaration")
+    return fail("indirect", "unreached")
+
+function builtin_dispatch(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], index: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
+    name = builtins.table()[index].name
+    collected: [i64] @ []
+    if !receiver.is_err()
+        collected @ collected.push(receiver.must())
+    for arg in given
+        # §4.8's marker, on this side of the table too: NO built-in takes
+        # an @ parameter — push returns a new array, sort a new one — so
+        # an @ here is always a claim about the call that is false. It
+        # went unchecked until a spec-only reader guessed otherwise and
+        # the failure said nothing about the @ (fixedbugs 2026-08-13).
+        if arg.mutable
+            check_state.push_diagnostic(@c, data_errors.marker_mismatch(name: name, wants: false, span: a.exprs[arg.value].span))
+        # The first argument decides what the rest must be, so from the
+        # second on they are CHECKED rather than synthesised — which is
+        # what lets a .case or an ok(…) be written as a built-in's
+        # argument.
+        expected: i64? @ fail("absent", "no first argument yet")
+        if collected.len() > 0
+            expected @ check_builtins.expectation(c, name, first: collected[0], index: collected.len())
+        if !expected.is_err()
+            check(@c, a, r, s, decls, id: arg.value, expected: expected.must())
+            collected @ collected.push(expected.must())
+        else
+            collected @ collected.push(synth(@c, a, r, s, decls, arg.value))
+    # ok and fail are not in the built-in table: they are ⇐-only and live
+    # with the constructions, so reaching them here means they were
+    # written where nothing expects a fallible value.
+    if name == "ok" || name == "fail"
+        check_state.push_diagnostic(@c, contextless_errors.constructor_needs_context(name, span))
+        return check_state.error_ty_of(c)
+    answered = check_builtins.builtin_call(@c, s, decls, name: name, given: collected, span: span)
+    if !answered.is_err()
+        return answered.must()
+    check_state.push_diagnostic(@c, contextless_errors.builtin_shape(name, given: collected.len(), span: span))
+    return check_state.error_ty_of(c)
+
+function indirect_call(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee_ty: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
+    if check_table.poisoned(c.out.types, callee_ty)
+        return check_state.error_ty_of(c)
+    match check_table.get(c.out.types, callee_ty)
+        .function_ty f =>
+            params = check_table.params_of(c.out.types, f.params)
+            offset: i64 @ 0
+            if !receiver.is_err()
+                offset @ 1
+            if given.len() + offset != params.len()
+                check_state.push_diagnostic(@c, value_errors.arity(name: "this function", expected: params.len(), got: given.len() + offset, declared: fail("absent", "a function value has no line to cite"), span: span))
+                return check_state.error_ty_of(c)
+            index: i64 @ 0
+            for arg in given
+                check(@c, a, r, s, decls, id: arg.value, expected: params[index + offset])
+                index @ index + 1
+            return f.result
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+            got = check_state.show(c, s, decls, callee_ty)
+            check_state.push_diagnostic(@c, value_errors.not_callable(got, span))
+            return check_state.error_ty_of(c)
+        .array | .fixed | .map | .fallible | .named | .case_ty | .failure | .generic | .error =>
+            got = check_state.show(c, s, decls, callee_ty)
+            check_state.push_diagnostic(@c, value_errors.not_callable(got, span))
+            return check_state.error_ty_of(c)
+    return check_state.error_ty_of(c)
+
+## UFCS — the three tokens with two meanings
+
+# x.f(y) — §4.11's algorithm, in §4.11's order: A FIELD FIRST, then a
+# free function. The field half needs the receiver's type, which is why
+# the resolver deliberately left this half unanswered (panel 015 D).
+function method(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64, called: token.Span, given: [ast.Arg]) -> i64
+    span = a.exprs[at].span
+    # geom.dist2(a, b) is a call with two arguments, not three: the check
+    # comes BEFORE the receiver is synthesised, because a module has no
+    # type, and asking for one is how the qualified form turns into an
+    # unknown name.
+    if r.uses[receiver] == .module
+        match r.uses[at]
+            .top t =>
+                match decls[t.at].kind
+                    # geom.Point(x: 3, y: 4) is a CONSTRUCTION (§4.9), not
+                    # a call: routing it through user_call is how the
+                    # emitter ends up asking clang to call a record.
+                    .record_decl => return construct_record(@c, a, r, s, decls, decl: t.at, given: given, span: span)
+                    .function_decl => return user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail("absent", "no receiver"), span: span)
+                    .constant_decl | .variant_decl | .test_decl => return check_state.error_ty_of(c)
+            # The resolver already said what is wrong with it.
+            .unresolved | .local | .builtin | .module => return check_state.error_ty_of(c)
+    receiver_ty = synth(@c, a, r, s, decls, receiver)
+    name = source.span_text(s, called)
+    field = field_of_function_type(@c, a, r, s, decls, receiver: receiver_ty, name: name)
+    if !field.is_err()
+        return indirect_call(@c, a, r, s, decls, callee_ty: field.must(), given: given, receiver: fail("absent", "the field call takes no receiver"), span: span)
+    match r.uses[at]
+        .top t =>
+            # §4.8: UFCS does not apply when the first parameter is @,
+            # because l.advance() would hide the mutation the marker
+            # exists to show.
+            if ufcs_hides_the_marker(decls, decl: t.at)
+                check_state.push_diagnostic(@c, data_errors.ufcs_on_mutable(name, called))
+                return check_state.error_ty_of(c)
+            return user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: ok(receiver_ty), span: span)
+        .builtin b => return builtin_dispatch(@c, a, r, s, decls, index: b.at, given: given, receiver: ok(receiver_ty), span: span)
+        # The resolver stayed silent because the name MIGHT have been a
+        # field. Now the receiver's type is known, so both halves fit one
+        # message — the compiler-engineer's panel-015 veto.
+        .module | .unresolved | .local =>
+            if !check_table.poisoned(c.out.types, receiver_ty)
+                holder = check_state.show(c, s, decls, receiver_ty)
+                check_state.push_diagnostic(@c, data_errors.no_field_and_no_function(holder: holder, name: name, span: called))
+            return check_state.error_ty_of(c)
+    return check_state.error_ty_of(c)
+
+function ufcs_hides_the_marker(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .function_decl fd => fd.value.params.len() > 0 && fd.value.params[0].mutable
+        .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
+## A call to a declared function — where generics are inferred
+
+# The header line, sliced from the source: the grammar keeps a signature
+# on one line, so the line IS the signature. (Rust renders it through the
+# printer; on canonical source the two agree byte for byte, and the
+# port's divergence on non-canonical input is this comment.)
+function header_line(s: source.Source, from: i64) -> str
+    end: i64 @ from
+    while end < s.text.len() && s.text[end] != '\n'
+        end @ end + 1
+    return s.text.slice(from: from, to: end)
+
+function user_call(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
+    match decls[decl].kind
+        .function_decl fd =>
+            name = source.span_text(s, decls[decl].name)
+            arity = fd.value.params.len()
+            offset: i64 @ 0
+            if !receiver.is_err()
+                offset @ 1
+            if given.len() + offset != arity
+                signature = header_line(s, from: decls[decl].span.start)
+                at_line = source.elsewhere(s, here: span.start, there: decls[decl].name.start)
+                check_state.push_diagnostic(@c, value_errors.arity(name: name, expected: arity, got: given.len() + offset, declared: ok(value_errors.DeclaredAt(signature: signature, at: at_line)), span: span))
+                return check_state.error_ty_of(c)
+            generics = fd.value.generics.len()
+            bindings: [i64?] @ []
+            g: i64 @ 0
+            while g < generics
+                bindings @ bindings.push(fail("unbound", "not met yet"))
+                g @ g + 1
+            params: [i64] @ []
+            for p in fd.value.params
+                params @ params.push(check_lower.lower_ty(@c, a, r, p.ty))
+            result = check_lower.lower_ty(@c, a, r, fd.value.result)
+            # §4.9's same-typed-argument rule: when two parameters share a
+            # type, the call site names them — the rule that spends tokens
+            # exactly where argument inversion happens. The UFCS receiver
+            # is exempt: the dot IS its position.
+            ambiguous: [i64] @ []
+            i: i64 @ 0
+            while i < params.len()
+                j: i64 @ 0
+                shared: bool @ false
+                while j < params.len()
+                    if j != i && params[j] == params[i]
+                        shared @ true
+                    j @ j + 1
+                if shared
+                    ambiguous @ ambiguous.push(i)
+                i @ i + 1
+            if !receiver.is_err()
+                bind_argument(@c, s, decls, @bindings, param: params[0], got: receiver.must(), span: span, has_generics: generics > 0)
+            index: i64 @ 0
+            for arg in given
+                position = index + offset
+                param = params[position]
+                if listed(ambiguous, position)
+                    wanted = source.span_text(s, fd.value.params[position].name)
+                    if arg.name.is_err()
+                        # Rendered with the CALLEE's type-parameter names:
+                        # at a call site the enclosing function's letters
+                        # are the wrong dictionary, and #0 is nobody's type.
+                        callee_generics: [str] @ []
+                        for gspan in fd.value.generics
+                            callee_generics @ callee_generics.push(source.span_text(s, gspan))
+                        shared_text = check_render.render_ty(c.out.types, s, decls, param, callee_generics)
+                        check_state.push_diagnostic(@c, data_errors.needs_label(name: name, expected: wanted, shared: shared_text, span: a.exprs[arg.value].span))
+                    else
+                        if source.span_text(s, arg.name.must()) != wanted
+                            check_state.push_diagnostic(@c, data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, span: arg.name.must()))
+                else
+                    # A label where the signature does not need one still
+                    # has to be the right label: a wrong one is a wrong
+                    # argument with a comment on it.
+                    if !arg.name.is_err()
+                        wanted = source.span_text(s, fd.value.params[position].name)
+                        if source.span_text(s, arg.name.must()) != wanted
+                            check_state.push_diagnostic(@c, data_errors.wrong_label(holder: name, written: source.span_text(s, arg.name.must()), expected: wanted, span: arg.name.must()))
+                # §4.8: the marker is repeated at the call site, and a
+                # marked argument must meet a marked parameter.
+                if arg.mutable != fd.value.params[position].mutable
+                    check_state.push_diagnostic(@c, data_errors.marker_mismatch(name: name, wants: fd.value.params[position].mutable, span: a.exprs[arg.value].span))
+                if generics == 0
+                    check(@c, a, r, s, decls, id: arg.value, expected: param)
+                else
+                    got = synth(@c, a, r, s, decls, arg.value)
+                    check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: a.exprs[arg.value].span)
+                index @ index + 1
+            # Recorded, not dropped (panel 029 R2): monomorphisation needs
+            # exactly these bindings, and recomputing them at IR level
+            # would be a second answer to one question. Only a generic
+            # call has any.
+            if generics > 0
+                resolved_args: [i64] @ []
+                for b in bindings
+                    if b.is_err()
+                        resolved_args @ resolved_args.push(check_state.error_ty_of(c))
+                    else
+                        resolved_args @ resolved_args.push(b.must())
+                c.out.instantiations[span.start] @ resolved_args
+            return check_generics.substitute(@c, result, bindings)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return check_state.error_ty_of(c)
+    return check_state.error_ty_of(c)
+
+# The receiver's binding, split out so user_call can treat generic and
+# monomorphic first parameters with one spelling.
+function bind_argument(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], @bindings: [i64?], param: i64, got: i64, span: token.Span, has_generics: bool)
+    if has_generics
+        check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: span)
+        return
+    if param != got && !check_table.poisoned(c.out.types, param) && !check_table.poisoned(c.out.types, got)
+        a_text = check_state.show(c, s, decls, param)
+        b_text = check_state.show(c, s, decls, got)
+        check_state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: b_text, span: span))
+
+## Construction — every field named, always
+
+record FieldSpec
+    name: str
+    ty: i64
+
+# Point(x: 3, y: 4) — §4.9 makes every field name mandatory, always,
+# which is why there is no positional form to get wrong.
+function construct_record(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], span: token.Span) -> i64
+    match decls[decl].kind
+        .record_decl rec =>
+            name = source.span_text(s, decls[decl].name)
+            expected: [FieldSpec] @ []
+            for f in rec.fields
+                expected @ expected.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
+            declared_at = source.elsewhere(s, here: span.start, there: decls[decl].name.start)
+            check_named_fields(@c, a, r, s, decls, label: name, declared_at: declared_at, expected: expected, given: given, span: span)
+            return check_table.intern(@c.out.types, .named(decl: decl))
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return check_state.error_ty_of(c)
+    return check_state.error_ty_of(c)
+
+# .num(v: 12) in ⇐ position: the expected type says which variant, and
+# the case name says which case (§4.2's "a case is a small record").
+function case_construct(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, called: token.Span, given: [ast.Arg], expected: i64)
+    span = a.exprs[at].span
+    name = source.span_text(s, called)
+    decl: i64 @ -1
+    match check_table.get(c.out.types, expected)
+        .named n => decl @ n.decl
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl @ -1
+        .array | .fixed | .map | .fallible | .function_ty => decl @ -1
+        .case_ty | .failure | .generic | .error => decl @ -1
+    if decl < 0
+        if !check_table.poisoned(c.out.types, expected)
+            want = check_state.show(c, s, decls, expected)
+            check_state.push_diagnostic(@c, contextless_errors.case_not_expected(name: name, expected: want, span: span))
+        _ = check_state.record_expr(@c, at: at, ty: check_state.error_ty_of(c))
+        return
+    match decls[decl].kind
+        .variant_decl v =>
+            holder = source.span_text(s, decls[decl].name)
+            found: i64 @ -1
+            index: i64 @ 0
+            for one_case in v.cases
+                if source.span_text(s, one_case.name) == name
+                    found @ index
+                index @ index + 1
+            if found < 0
+                known: [str] @ []
+                for one_case in v.cases
+                    known @ known.push(source.span_text(s, one_case.name))
+                check_state.push_diagnostic(@c, data_errors.no_such_case(holder: holder, case_name: name, known: known, span: called))
+                _ = check_state.record_expr(@c, at: at, ty: check_state.error_ty_of(c))
+                return
+            expected_fields: [FieldSpec] @ []
+            for f in v.cases[found].fields
+                expected_fields @ expected_fields.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
+            declared_at = source.elsewhere(s, here: span.start, there: v.cases[found].name.start)
+            check_named_fields(@c, a, r, s, decls, label: holder + "." + name, declared_at: declared_at, expected: expected_fields, given: given, span: span)
+            _ = check_state.record_expr(@c, at: at, ty: expected)
+        .constant_decl | .function_decl | .record_decl | .test_decl =>
+            want = check_state.show(c, s, decls, expected)
+            check_state.push_diagnostic(@c, contextless_errors.case_not_expected(name: name, expected: want, span: span))
+            _ = check_state.record_expr(@c, at: at, ty: check_state.error_ty_of(c))
+
+# ok(x) and fail(code, msg) — ⇐-only (panel 002): no implicit T -> T?
+# ever, and the expected type is what decides which T? is being built.
+# fail here = this call is not one of the two constructors.
+function fallible_constructor(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], expected: i64, span: token.Span) -> i64?
+    callee_is_name = match a.exprs[callee].kind
+        .name => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => false
+        .hole | .unary | .binary | .field | .index | .call | .method => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+    if !callee_is_name
+        return fail("not_mine", "the callee is not a bare name")
+    name: str @ ""
+    match r.uses[callee]
+        .builtin b => name @ builtins.table()[b.at].name
+        .unresolved | .local | .top | .module => return fail("not_mine", "the callee is not a built-in")
+    if name != "ok" && name != "fail"
+        return fail("not_mine", "not one of the two constructors")
+    inner: i64 @ -1
+    match check_table.get(c.out.types, expected)
+        .fallible o => inner @ o.payload
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => inner @ -1
+        .array | .fixed | .map | .function_ty | .named => inner @ -1
+        .case_ty | .failure | .generic | .error => inner @ -1
+    if inner < 0
+        if !check_table.poisoned(c.out.types, expected)
+            want = check_state.show(c, s, decls, expected)
+            check_state.push_diagnostic(@c, contextless_errors.constructor_not_expected(name: name, expected: want, span: span))
+        return ok(check_state.error_ty_of(c))
+    if name == "ok"
+        # ok() is how a ()? succeeds — the arity is DERIVED from the
+        # payload rather than fixed: ok carries as many arguments as its
+        # payload has values, and () has none. Zero spec tokens.
+        wanted: i64 @ 1
+        if inner == check_table.unit_ty(c.out.types)
+            wanted @ 0
+        if given.len() != wanted
+            check_state.push_diagnostic(@c, value_errors.arity(name: "ok", expected: wanted, got: given.len(), declared: fail("absent", "a constructor has no line to cite"), span: span))
+            return ok(check_state.error_ty_of(c))
+        if wanted == 1
+            check(@c, a, r, s, decls, id: given[0].value, expected: inner)
+        return ok(expected)
+    if given.len() != 2
+        check_state.push_diagnostic(@c, value_errors.arity(name: "fail", expected: 2, got: given.len(), declared: fail("absent", "a constructor has no line to cite"), span: span))
+        return ok(check_state.error_ty_of(c))
+    str_id = check_table.str_ty(c.out.types)
+    for arg in given
+        check(@c, a, r, s, decls, id: arg.value, expected: str_id)
+    return ok(expected)
+
+# Named fields, for a record or a case: every one mandatory, none
+# repeated, none unknown, and the label must match the field at that
+# position.
+function check_named_fields(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], label: str, declared_at: str, expected: [FieldSpec], given: [ast.Arg], span: token.Span)
+    if given.len() != expected.len()
+        names: [str] @ []
+        for f in expected
+            names @ names.push(f.name)
+        check_state.push_diagnostic(@c, data_errors.missing_fields(holder: label, fields: names, declared_at: declared_at, span: span))
+        for arg in given
+            _ = synth(@c, a, r, s, decls, arg.value)
+        return
+    index: i64 @ 0
+    for arg in given
+        spec = expected[index]
+        if arg.name.is_err()
+            check_state.push_diagnostic(@c, data_errors.missing_label(holder: label, expected: spec.name, span: a.exprs[arg.value].span))
+        else
+            if source.span_text(s, arg.name.must()) != spec.name
+                check_state.push_diagnostic(@c, data_errors.wrong_label(holder: label, written: source.span_text(s, arg.name.must()), expected: spec.name, span: arg.name.must()))
+        lowered = check_lower.lower_ty(@c, a, r, spec.ty)
+        check(@c, a, r, s, decls, id: arg.value, expected: lowered)
+        index @ index + 1
+
+# A field of the receiver whose type is a function — §4.11's first
+# lookup. A variant case's payload answers this too, and it did not until
+# panel 079: Ty.named alone fell through to UFCS, so a.g(50) on a matched
+# payload reported "no field g" about a payload that declares g — a
+# message asserting a fiction, the one thing §4.17 forbids.
+function field_of_function_type(@c: check_state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], receiver: i64, name: str) -> i64?
+    holder: i64 @ -1
+    case_at: i64 @ -1
+    match check_table.get(c.out.types, receiver)
+        .named n => holder @ n.decl
+        .case_ty vc =>
+            holder @ vc.decl
+            case_at @ vc.at
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => holder @ -1
+        .array | .fixed | .map | .fallible | .function_ty => holder @ -1
+        .failure | .generic | .error => holder @ -1
+    if holder < 0
+        return fail("absent", "the receiver is not a record or a case")
+    found_ty: i64 @ -1
+    match decls[holder].kind
+        .record_decl rec =>
+            if case_at >= 0
+                return fail("absent", "a case type on a record declaration")
+            for f in rec.fields
+                if source.span_text(s, f.name) == name
+                    found_ty @ f.ty
+        .variant_decl v =>
+            if case_at < 0
+                return fail("absent", "a variant's own name has no fields")
+            for f in v.cases[case_at].fields
+                if source.span_text(s, f.name) == name
+                    found_ty @ f.ty
+        .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+    if found_ty < 0
+        return fail("absent", "no field of that name")
+    lowered = check_lower.lower_ty(@c, a, r, found_ty)
+    match check_table.get(c.out.types, lowered)
+        .function_ty => return ok(lowered)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "the field does not hold a function")
+        .array | .fixed | .map | .fallible | .named => return fail("absent", "the field does not hold a function")
+        .case_ty | .failure | .generic | .error => return fail("absent", "the field does not hold a function")
+    return fail("absent", "unreached")
