@@ -1,0 +1,123 @@
+# The resolver: every name, and what it means (design.md Part 10 step 4,
+# §4.4, §4.16).
+# Port of crates/heroes/src/resolve/mod.rs::resolve — the driver that cuts
+# the pass into its measured order.
+#
+# One pass over a CLEAN tree answers four questions the checker would
+# otherwise have to answer while it is also doing arithmetic: what does
+# this name refer to (uses, one entry per expression), is it defined at
+# all (a typo dies here, before any type exists, so it is never reported
+# as a type mismatch), is anything declared twice or never read, and which
+# written type is which (type_uses, one entry per node).
+#
+# **The resolver only ever runs on a tree that parsed clean.** After a
+# parse error the tree holds recovery guesses, and a name error about a
+# line the author did not write is worse than no name error at all.
+# `resolve` never panics on a dirty tree; it is the caller that declines
+# to ask.
+#
+# **Later passes consume `uses`; they never resolve a name again.** Not an
+# optimisation — a correctness rule: in one function `len(xs)` can be a
+# local and `xs.len()` the built-in, legitimately, and a pass that
+# re-resolved after UFCS erasure would silently give the erased call the
+# other meaning. One resolution, recorded once.
+
+use ast
+use source
+use parse
+use diag
+use resolved
+use resolve_state
+use resolve_top
+use resolve_decls
+use resolve_cycles
+
+function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use]) -> resolved.Resolved
+    r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
+    # A flat scan of the arena, not a walk: a hole suspends the unused rule
+    # wherever it is, including inside a construct the walk gives up on.
+    # The file table is what turns each one into a module.
+    for expr in a.exprs
+        is_hole = match expr.kind
+            .hole => true
+            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => false
+            .null_ptr | .name | .unary | .binary | .field => false
+            .index | .call | .method | .variant_case | .array => false
+            .map | .try_expr | .if_expr | .match_expr | .error => false
+        if is_hole
+            resolved.note_hole(@r.out, source.module_at(s, expr.span.start))
+    resolve_top.collect(@r, s, decls, uses)
+    index: i64 @ 0
+    for decl in decls
+        r.owner @ index
+        # The module whose declaration is being resolved: every unqualified
+        # name is looked up in it and in nothing else, which is where
+        # "always qualified" is actually enforced (panel 031).
+        r.module @ source.module_at(s, decl.name.start)
+        resolve_decls.declaration(@r, a, s, decls, index)
+        index @ index + 1
+    resolve_top.unused_uses(@r, s, uses)
+    resolve_state.report_unused(@r, s)
+    # Last, because it reads `uses` and `uses` is only complete once every
+    # body has been walked: a definitional cycle is a fact about the
+    # finished table, not about any one declaration.
+    resolve_cycles.report(@r.out, a, s, decls)
+    # Within the pass, source order. Diagnostics from earlier stages stay
+    # ahead of these (parse's rule): grouped by the stage that can explain
+    # them, ordered by position inside it.
+    r.out.diagnostics @ by_position(r.out.diagnostics)
+    return r.out
+
+# A stable insertion sort keyed on the span's start — stable because equal
+# keys never cross the `>` below, and hand-written because `sort` orders
+# numbers and strings, never records.
+function by_position(diagnostics: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    for d in diagnostics
+        at: i64 @ out.len()
+        while at > 0 && out[at - 1].span.start > d.span.start
+            at @ at - 1
+        before = out.slice(from: 0, to: at)
+        after = out.slice(from: at, to: out.len())
+        grown: [diag.Diagnostic] @ before.push(d)
+        for rest in after
+            grown @ grown.push(rest)
+        out @ grown
+    return out
+
+## Tests
+
+function resolved_source(text: str) -> resolved.Resolved
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    return resolve(p.tree, s, p.decls, p.uses)
+
+test "a clean program resolves end-to-end, every table filled"
+    out = resolved_source("record Point\n    x: i64\n    y: i64\n\nfunction dist2(a: Point, b: Point) -> i64\n    dx = a.x - b.x\n    dy = a.y - b.y\n    return dx*dx + dy*dy\n\ntest \"origin\"\n    assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25\n")
+    assert out.diagnostics.len() == 0
+    # The two Point mentions in the signature landed in type_uses.
+    tops: i64 @ 0
+    for u in out.type_uses
+        found = match u
+            .top => true
+            .unresolved | .prim | .generic => false
+        if found
+            tops @ tops + 1
+    assert tops == 2
+    # Locals: a, b, dx, dy — bound, read, no survivors in the sweep.
+    assert out.locals.len() == 4
+
+test "the pass's diagnostics come out in source order"
+    # The unread use sits on line 1; the unknown name on line 3. The sweep
+    # REPORTS the use last, but position wins inside the pass.
+    out = resolved_source("use geom\nfunction f()\n    print(zz)\n")
+    assert out.diagnostics.len() == 2
+    assert out.diagnostics[0].code == "unused_binding"
+    assert out.diagnostics[1].code == "unknown_name"
+    assert out.diagnostics[0].span.start < out.diagnostics[1].span.start
+
+test "a hole suspends the unused rule from a flat scan, not the walk"
+    out = resolved_source("function f()\n    x = 1\n    _ = ???\n")
+    # `x` is never read, and the hole in the same module keeps the sweep
+    # quiet about it (§4.16: the suppression is file-wide).
+    assert out.diagnostics.len() == 0
