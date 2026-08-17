@@ -1,0 +1,175 @@
+# Every command, as data (CLAUDE.md §10; panel 016) — the table that
+# both parses argv and prints --help, so the two cannot disagree.
+# Port of crates/heroes-cli/src/cli/table.rs.
+#
+# The order is the pipeline's — stage by stage, then the tools —
+# because that is the order someone learning the compiler meets them
+# in. This file is WHAT the surface is; how a line is read against it
+# is the driver's, and how it is shown is help's. A new command
+# touches exactly one of the three.
+
+## The shapes
+
+variant Operand
+    file_operand
+    no_operand
+    optional_operand
+
+variant Tag
+    lex_cmd
+    parse_cmd
+    check_cmd
+    build_cmd
+    run_cmd
+    test_cmd
+    fmt_cmd
+    doctor_cmd
+    mutate_cmd
+    measure_cmd
+    this_cmd
+
+record Flag
+    spelling: str
+    what: str
+    # Takes the next argument. -o is the first one the surface had: the
+    # fixpoint invocation cannot be written without it.
+    value: bool
+    # May be written more than once, each time meaning one more. ONLY
+    # search paths are like this (author decision 2026-08-14), and a
+    # search path's value must name a DIRECTORY because that is what a
+    # search path is — two properties of one thing, which is why the
+    # constructor names the thing and not its first property (panel
+    # 056: `repeated` hid `directory`, and clang says nothing at all
+    # about -I/no/such/dir).
+    repeatable: bool
+    directory: bool
+
+record Command
+    tag: Tag
+    name: str
+    operand: Operand
+    flags: [Flag]
+    summary: str
+
+function plain(spelling: str, what: str) -> Flag
+    return Flag(spelling: spelling, what: what, value: false, repeatable: false, directory: false)
+
+function valued(spelling: str, what: str) -> Flag
+    return Flag(spelling: spelling, what: what, value: true, repeatable: false, directory: false)
+
+function search_path(spelling: str, what: str) -> Flag
+    return Flag(spelling: spelling, what: what, value: true, repeatable: true, directory: true)
+
+function commands() -> [Command]
+    lex_flags: [Flag] = [
+        plain(spelling: "--dump-tokens", what: "print the token stream")
+        plain(spelling: "--json", what: "print it as JSON instead of text")
+    ]
+    parse_flags: [Flag] = [plain(spelling: "--dump-ast", what: "print the syntax tree")]
+    check_flags: [Flag] = [
+        plain(spelling: "--dump-scopes", what: "print the symbols and every binding")
+        plain(spelling: "--json", what: "print the diagnostics as JSON (schema 1) instead of text")
+        plain(spelling: "--brief", what: "one line per diagnostic instead of the full form")
+        plain(spelling: "--permissive", what: "drop the diagnostics that exist for the thesis — the control arm of Part 11's measurement")
+        plain(spelling: "--apply", what: "print the program with every certain fix applied")
+        plain(spelling: "--in-place", what: "with --apply, rewrite the file instead of printing it")
+    ]
+    build_flags: [Flag] = [
+        plain(spelling: "--dump-ir", what: "print the lowered three-address IR and stop")
+        plain(spelling: "--emit-c", what: "print the generated C11 and stop, instead of compiling it")
+        valued(spelling: "-o", what: "write the artifact here instead of under build/")
+        search_path(spelling: "--include", what: "search this directory for an `extern` group's header; may repeat")
+        search_path(spelling: "--library", what: "search this directory for a `link` library; may repeat")
+        plain(spelling: "--sanitize", what: "compile with -fsanitize=address,undefined")
+        plain(spelling: "-O0", what: "compile at -O0 (the default here)")
+        plain(spelling: "-O2", what: "compile at -O2")
+    ]
+    run_flags: [Flag] = [
+        valued(spelling: "-o", what: "keep the binary here as well as running it")
+        search_path(spelling: "--include", what: "search this directory for an `extern` group's header; may repeat")
+        search_path(spelling: "--library", what: "search this directory for a `link` library; may repeat")
+        plain(spelling: "--sanitize", what: "compile with -fsanitize=address,undefined")
+        plain(spelling: "-O0", what: "compile at -O0")
+        plain(spelling: "-O2", what: "compile at -O2 (the default here)")
+    ]
+    test_flags: [Flag] = [
+        search_path(spelling: "--include", what: "search this directory for an `extern` group's header; may repeat")
+        search_path(spelling: "--library", what: "search this directory for a `link` library; may repeat")
+        plain(spelling: "--sanitize", what: "compile with -fsanitize=address,undefined")
+        plain(spelling: "-O0", what: "compile at -O0 (the default here)")
+        plain(spelling: "-O2", what: "compile at -O2")
+    ]
+    fmt_flags: [Flag] = [
+        plain(spelling: "--in-place", what: "rewrite the file instead of printing it; prints nothing, and refuses a file it cannot parse")
+    ]
+    no_flags: [Flag] = []
+    mutate_flags: [Flag] = [
+        plain(spelling: "--survivors", what: "print the mutants the compiler accepted, not only the rates")
+        valued(spelling: "--operator", what: "score this operator alone, by its id")
+    ]
+    return [
+        Command(tag: .lex_cmd, name: "lex", operand: .file_operand, flags: lex_flags, summary: "check the token stream")
+        Command(tag: .parse_cmd, name: "parse", operand: .file_operand, flags: parse_flags, summary: "check the syntax")
+        Command(tag: .check_cmd, name: "check", operand: .file_operand, flags: check_flags, summary: "check names and types")
+        Command(tag: .build_cmd, name: "build", operand: .file_operand, flags: build_flags, summary: "compile to a native binary")
+        Command(tag: .run_cmd, name: "run", operand: .file_operand, flags: run_flags, summary: "compile and execute (the dev loop, -O2); `-- a b` passes a and b to the program")
+        Command(tag: .test_cmd, name: "test", operand: .file_operand, flags: test_flags, summary: "run the file's `test` blocks")
+        Command(tag: .fmt_cmd, name: "fmt", operand: .file_operand, flags: fmt_flags, summary: "print the canonical form")
+        Command(tag: .doctor_cmd, name: "doctor", operand: .no_operand, flags: no_flags, summary: "check the toolchain (clang, CLT, arch, runtime, cache)")
+        Command(tag: .mutate_cmd, name: "mutate", operand: .optional_operand, flags: mutate_flags, summary: "metric 3: make one plausible mistake per site and count what the compiler catches (default: examples/)")
+        Command(tag: .measure_cmd, name: "measure", operand: .optional_operand, flags: no_flags, summary: "count a spec file against its ceiling (default: spec/heroes-spec.md)")
+        Command(tag: .this_cmd, name: "this", operand: .no_operand, flags: no_flags, summary: "print The Zen of Heroes")
+    ]
+
+# A retired spelling names its replacement — the same treatment the
+# LANGUAGE gives a foreign keyword (fn -> function). Empty since
+# M-scalars-run: `run` was the only entry, and it has stopped being
+# retired and become the dev loop. The function stays because the NEXT
+# rename needs somewhere to live, and because its emptiness is the
+# record of that one having completed.
+function retired(word: str) -> str?
+    _ = word
+    return fail("none", "nothing is retired today")
+
+# --write shipped and panel 016 renamed it: "write" reads as the
+# NON-destructive meaning, which makes the plausible misreading the
+# one that overwrites a file. --no-line is here rather than in the
+# table: panel 020 refused it a place on the surface, and a flag
+# somebody plausibly reaches for should say so rather than print the
+# whole list.
+function retired_flag(command: str, arg: str) -> str?
+    if command == "fmt" && (arg == "--write" || arg == "-w")
+        return ok("--in-place")
+    if command == "lex" && arg == "--tokens"
+        return ok("--dump-tokens")
+    if command == "build" && arg == "--no-line"
+        return ok("--emit-c` alone (the `#line` directives are the artifact; the emitter's own tests are what read C without them")
+    return fail("none", "not a retired flag")
+
+## Tests
+
+test "the table is the pipeline's order and the flags carry their shapes"
+    table = commands()
+    assert table.len() == 11
+    assert table[0].name == "lex"
+    assert table[3].name == "build"
+    # -o takes a value; --include repeats and names a directory.
+    o_found: bool @ false
+    inc_found: bool @ false
+    for f in table[3].flags
+        if f.spelling == "-o"
+            assert f.value
+            assert !f.repeatable
+            o_found @ true
+        if f.spelling == "--include"
+            assert f.value
+            assert f.repeatable
+            assert f.directory
+            inc_found @ true
+    assert o_found
+    assert inc_found
+    # The retirements: the language's own treatment of a foreign word.
+    assert retired(word: "run").is_err()
+    assert retired_flag(command: "fmt", arg: "--write").must() == "--in-place"
+    assert retired_flag(command: "lex", arg: "--tokens").must() == "--dump-tokens"
+    assert retired_flag(command: "build", arg: "--sanitize").is_err()
