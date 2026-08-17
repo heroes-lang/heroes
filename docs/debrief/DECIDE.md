@@ -431,11 +431,28 @@ it goes to the panel rather than to an assistant's optimisation instinct.
 The fixpoint (M-selfhost-fixpoint) is the v1 finish line and it cannot be
 reached at these numbers.
 
-**Before the panel is convened, two measurements are owed** and neither is
-an optimisation: (a) the same table with the selfhost binary built at -O2
-rather than -O0 — the compiler was measured in a debug build, which is not
-the configuration the fixpoint runs in; (b) a profile naming the top three
-call sites, so a sitting is briefed with where the time goes rather than
-with a guess about it. Queued rather than done because (b) needs an
-instrument this project does not yet have on the surface, and adding one is
-itself a §10 stopping-rule question.
+**Measurement (a) is now done, and it moves the numbers without moving the
+question.** The same inputs, the selfhost binary built at -O2 instead of
+-O0 (4.1 MB against 6.3 MB):
+
+| input | -O0 | -O2 | ratio |
+|---|---|---|---|
+| `token.hero` | 0s | 1s | — (both noise) |
+| `parse.hero` | 24s | 8s | 3.0x |
+| `checker.hero` | 152s | 54s | 2.8x |
+
+A constant factor of ~2.8x against a superlinear curve: it buys one step
+along the curve, not the shape of it. Whether it is enough for all 143
+modules is being measured as this entry is written and the answer belongs
+under it.
+
+**Measurement (b) is still owed, and it is the one a sitting needs**: a
+profile naming the top three call sites, so the panel is briefed with where
+the time goes rather than with the shape argument above — which is a
+reading of the code, not a measurement of it (§1's rule about an inference
+presented as a measurement). It needs an instrument this project does not
+have on the surface, and adding one is itself a §10 stopping-rule question:
+`--profile` would be a flag nothing in the fixpoint invocation types.
+The cheap alternative that needs no surface at all is `sample` (macOS) or
+`perf` (Linux) against the running binary, which is the machine's
+instrument rather than this compiler's.
