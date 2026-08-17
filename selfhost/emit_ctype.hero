@@ -260,6 +260,20 @@ function aggregate(names: Names, decl: i64) -> Aggregate
 function generated(name: str) -> Aggregate
     return Aggregate(prefix: name, c_type: name, foreign: false, partial: false)
 
+# The prefix whose _eq/_retain/_release/_hash serve this TYPE — the
+# satellite for a declared aggregate, the option's own name for a T?,
+# the runtime's for a failure. Absent where no generated function
+# exists, which the gate has already refused.
+function satellite_name(names: Names, c: check_state.Checked, ty: i64) -> str?
+    match check_table.get(c.types, ty)
+        .named n => return ok(satellite(names, decl: n.decl))
+        .case_ty vc => return ok(case_of(names, decl: vc.decl, at: vc.at))
+        .fallible => return ok(option_of(names, ty: ty))
+        .failure => return ok("hero_failure")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail("none", "no generated functions")
+        .array | .fixed | .map | .function_ty | .generic | .error => return fail("none", "no generated functions")
+    return fail("none", "unreached")
+
 ## What a type IS in C
 
 # The C type, or absent for () — which has no declaration — and for a

@@ -1,0 +1,268 @@
+# One operator as C — and the guard that keeps it out of undefined
+# behaviour (design.md §4.14; panels 020, 022, 035, 040, 042, 075).
+# Port of crates/heroes/src/emit/operator.rs.
+#
+# The concern is single and it is the loudest rule in the emitter:
+# ARITHMETIC ABORTS, IT NEVER WRAPS INTO UB. __builtin_*_overflow for
+# + - *, an explicit zero test for / and %, and % is guarded exactly
+# like / because INT64_MIN % -1 does not trap on arm64 — it is UB that
+# happens to look fine. The shifts are guarded for C's reasons rather
+# than for Heroes'.
+#
+# Port note: the Rust signatures take the Types bundle; the aggregate
+# module is not ported yet, so this takes the two pieces it reads —
+# Checked and Names — and the eq dispatch goes through
+# emit_ctype.satellite_name, the one home for that question.
+
+use check_table
+use check_state
+use ir
+use ir_state
+use emit_mangle
+use emit_ctype
+use emit_writer
+use token
+use source
+use parse
+use resolve
+use checker
+
+function unary(@w: emit_writer.Writer, f: ir_state.Function, c: check_state.Checked, op: ir.UnaryOp, operand: i64, target: str?)
+    if target.is_err()
+        return
+    name = target.must()
+    value = emit_mangle.value(operand)
+    match op
+        .not_op => emit_writer.line(@w, text: "    " + name + " = !" + value + ";")
+        .neg =>
+            is_int: bool @ false
+            match check_table.get(c.types, ir_state.value_type(f, operand))
+                .int_ty => is_int @ true
+                .float_ty | .bool | .str | .ptr | .cstr | .unit => is_int @ is_int
+                .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
+                .case_ty | .failure | .generic | .error => is_int @ is_int
+            if is_int
+                # -INT64_MIN is overflow, and it is the one negation
+                # that is.
+                emit_writer.line(@w, text: "    if (__builtin_sub_overflow(INT64_C(0), " + value + ", &" + name + ")) hero_panic_overflow();")
+            else
+                emit_writer.line(@w, text: "    " + name + " = -" + value + ";")
+        # Every int64_t has a complement, INT64_MIN included, so unlike
+        # neg this one cannot abort and carries no guard.
+        .bit_not => emit_writer.line(@w, text: "    " + name + " = ~" + value + ";")
+
+function binary(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, f: ir_state.Function, op: ir.BinaryOp, left: i64, right: i64, target: str?)
+    if target.is_err()
+        return
+    name = target.must()
+    # The no-op the fall-through arms mutate: name is =-bound.
+    fall: bool @ false
+    l = emit_mangle.value(left)
+    r = emit_mangle.value(right)
+    left_ty = ir_state.value_type(f, left)
+    # The aggregate equalities first: a map compares order-
+    # independently (a pairwise walk would make {"a":1,"b":2} and
+    # {"b":2,"a":1} unequal — the shape panel 022 ranked first among
+    # what a cheap map gets silently wrong); an array element by
+    # element through the descriptor; a T?, a failure, a record and a
+    # case through their generated eq, which walks fields, never bytes.
+    match check_table.get(c.types, left_ty)
+        .map =>
+            eq_or_bust(@w, name: name, call: "hero_map_eq(" + l + ", " + r + ")", op: op)
+            return
+        .array =>
+            eq_or_bust(@w, name: name, call: "hero_array_eq(" + l + ", " + r + ")", op: op)
+            return
+        .fallible | .failure | .named | .case_ty =>
+            found = emit_ctype.satellite_name(names, c, ty: left_ty)
+            if found.is_err()
+                emit_writer.line(@w, text: "    " + name + " = (hero_unreachable(), false);")
+            else
+                eq_or_bust(@w, name: name, call: found.must() + "_eq(&" + l + ", &" + r + ")", op: op)
+            return
+        .str =>
+            str_binary(@w, name: name, l: l, r: r, op: op)
+            return
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => fall @ fall
+        .fixed | .function_ty | .generic | .error => fall @ fall
+    # This test is why the width lives inside the variant (panel 042):
+    # as `operands == int` it decided whether to emit the overflow
+    # guard, and with one variant per width a u8 would have made it
+    # false — the guard dropped, t0 = l + r emitted bare, and "overflow
+    # aborts at every width" silently untrue at exit 0.
+    integral: bool @ false
+    is_float: bool @ false
+    match check_table.get(c.types, left_ty)
+        .int_ty => integral @ true
+        .float_ty => is_float @ true
+        .bool | .str | .ptr | .cstr | .unit => integral @ integral
+        .array | .fixed | .map | .fallible | .function_ty | .named => integral @ integral
+        .case_ty | .failure | .generic | .error => integral @ integral
+    match op
+        .add | .sub | .mul =>
+            if integral
+                builtin: str @ "add"
+                match op
+                    .sub => builtin @ "sub"
+                    .mul => builtin @ "mul"
+                    .add | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge => builtin @ builtin
+                    .bit_and | .bit_or | .bit_xor | .shl | .shr => builtin @ builtin
+                emit_writer.line(@w, text: "    if (__builtin_" + builtin + "_overflow(" + l + ", " + r + ", &" + name + ")) hero_panic_overflow();")
+                return
+        .div | .rem =>
+            if integral
+                operator: str @ "/"
+                if op == .rem
+                    operator @ "%"
+                emit_writer.line(@w, text: "    if (" + r + " == 0) hero_panic(\"division by zero\");")
+                # Guarded together, reported apart (panel 035's owed
+                # message): saying "integer overflow" for % was false —
+                # the remainder is 0 and overflows nothing; what has no
+                # representation is the quotient C computes on the way.
+                abort_call: str @ "hero_panic_overflow()"
+                if op == .rem
+                    abort_call @ "hero_panic(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\")"
+                emit_writer.line(@w, text: "    if (" + l + " == INT64_MIN && " + r + " == INT64_C(-1)) " + abort_call + ";")
+                emit_writer.line(@w, text: "    " + name + " = " + l + " " + operator + " " + r + ";")
+                return
+        # The three that are pure bit patterns: every pair of int64_ts
+        # has an and, an or and an xor — it is the SHIFTS that are not
+        # defined.
+        .bit_and | .bit_or | .bit_xor =>
+            operator: str @ "&"
+            match op
+                .bit_or => operator @ "|"
+                .bit_xor => operator @ "^"
+                .add | .sub | .mul | .div | .rem | .eq | .ne => operator @ operator
+                .lt | .le | .gt | .ge | .bit_and | .shl | .shr => operator @ operator
+            emit_writer.line(@w, text: "    " + name + " = " + l + " " + operator + " " + r + ";")
+            return
+        # The two that can abort, for C's reasons: a count outside
+        # 0..63 is UB, and a left shift into the sign bit of a signed
+        # operand is UB too — so the count is checked and the shift is
+        # done on the unsigned pattern and cast back, defined for every
+        # input, which is what makes 1 << 63 INT64_MIN rather than a
+        # trap. >> is arithmetic: the sign propagates explicitly.
+        .shl | .shr =>
+            if integral
+                emit_writer.line(@w, text: "    if (" + r + " < 0 || " + r + " > 63) hero_panic(\"shift count outside 0..63\");")
+                if op == .shl
+                    emit_writer.line(@w, text: "    " + name + " = (int64_t)((uint64_t)" + l + " << (uint64_t)" + r + ");")
+                else
+                    emit_writer.line(@w, text: "    " + name + " = (" + l + " < 0) ? ~(int64_t)((~(uint64_t)" + l + ") >> (uint64_t)" + r + ") : (int64_t)((uint64_t)" + l + " >> (uint64_t)" + r + ");")
+                return
+        # A nan on either side of an ordering stops the program (panel
+        # 075): IEEE makes all four false at a nan, so both arms of an
+        # if would be false together — no answer wearing one.
+        # x != x rather than isnan(): what the runtime already writes,
+        # no header, and clang lowers it to the unordered flag. Correct
+        # at every level in FLAGS and WRONG under -ffast-math — the day
+        # that flag is adopted this must become isnan() (panel 075's
+        # standing condition). == and != stay untouched so equality
+        # guards keep working.
+        .lt | .le | .gt | .ge =>
+            if is_float
+                operator: str @ "<"
+                match op
+                    .le => operator @ "<="
+                    .gt => operator @ ">"
+                    .ge => operator @ ">="
+                    .add | .sub | .mul | .div | .rem | .eq | .ne | .lt => operator @ operator
+                    .bit_and | .bit_or | .bit_xor | .shl | .shr => operator @ operator
+                emit_writer.line(@w, text: "    if (" + l + " != " + l + " || " + r + " != " + r + ") hero_panic(\"a nan in `" + operator + "`: it is neither less nor greater, so both arms would be false\");")
+                emit_writer.line(@w, text: "    " + name + " = " + l + " " + operator + " " + r + ";")
+                return
+        .eq | .ne => fall @ fall
+    # % on two f64 is fmod, not C's %, which takes integers only —
+    # t3 = t1 % t2 on doubles is a clang error on a program the spec
+    # explicitly allows. fmod truncates toward zero, which is the rule
+    # the spec already states for / and %.
+    if op == .rem
+        emit_writer.line(@w, text: "    " + name + " = fmod(" + l + ", " + r + ");")
+        return
+    plain: str @ "+"
+    match op
+        .sub => plain @ "-"
+        .mul => plain @ "*"
+        .div => plain @ "/"
+        .eq => plain @ "=="
+        .ne => plain @ "!="
+        .lt => plain @ "<"
+        .le => plain @ "<="
+        .gt => plain @ ">"
+        .ge => plain @ ">="
+        .add | .rem => plain @ plain
+        # Unreachable: the arms above take every bitwise op on i64, and
+        # the checker admits them on nothing else (§4.14).
+        .bit_and | .bit_or | .bit_xor | .shl | .shr =>
+            emit_writer.line(@w, text: "    hero_unreachable();")
+            return
+    emit_writer.line(@w, text: "    " + name + " = " + l + " " + plain + " " + r + ";")
+
+# ==/!= through a call; anything else on this operand is unreachable by
+# the checker's own refusal.
+function eq_or_bust(@w: emit_writer.Writer, name: str, call: str, op: ir.BinaryOp)
+    match op
+        .eq => emit_writer.line(@w, text: "    " + name + " = " + call + ";")
+        .ne => emit_writer.line(@w, text: "    " + name + " = !" + call + ";")
+        .add | .sub | .mul | .div | .rem | .lt | .le | .gt | .ge => emit_writer.line(@w, text: "    " + name + " = (hero_unreachable(), false);")
+        .bit_and | .bit_or | .bit_xor | .shl | .shr => emit_writer.line(@w, text: "    " + name + " = (hero_unreachable(), false);")
+
+# str has its own arithmetic: + is concatenation and the comparisons
+# are byte-wise, which is what makes == structural on a string the
+# same way it is on a record.
+function str_binary(@w: emit_writer.Writer, name: str, l: str, r: str, op: ir.BinaryOp)
+    call: str @ ""
+    match op
+        .add => call @ "hero_str_concat(" + l + ", " + r + ")"
+        .eq => call @ "hero_str_eq(" + l + ", " + r + ")"
+        .ne => call @ "!hero_str_eq(" + l + ", " + r + ")"
+        .lt => call @ "hero_str_cmp(" + l + ", " + r + ") < 0"
+        .le => call @ "hero_str_cmp(" + l + ", " + r + ") <= 0"
+        .gt => call @ "hero_str_cmp(" + l + ", " + r + ") > 0"
+        .ge => call @ "hero_str_cmp(" + l + ", " + r + ") >= 0"
+        # - * / % on str do not type-check (§4.14): unreachable by
+        # construction rather than by hope.
+        .sub | .mul | .div | .rem => call @ "0 /* not an operation on str */"
+        .bit_and | .bit_or | .bit_xor | .shl | .shr => call @ "0 /* not an operation on str */"
+    emit_writer.line(@w, text: "    " + name + " = " + call + ";")
+
+## Tests
+
+record Setup
+    c: check_state.Checked
+    names: emit_ctype.Names
+    f: ir_state.Function
+
+function ready() -> Setup
+    text = "function f()\n    print(1)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
+    names = emit_ctype.new_names(s, p.decls)
+    int_id = check_table.int_ty_id(c.types)
+    f64_id = check_table.f64_ty(c.types)
+    str_id = check_table.str_ty(c.types)
+    f = ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: int_id, slots: [], blocks: [], values: [int_id, int_id, int_id, f64_id, f64_id, str_id, str_id], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    return Setup(c: c, names: names, f: f)
+
+test "overflow guards on + - * and negation, the / and % pair, the shifts"
+    got = ready()
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    binary(@w, got.c, got.names, got.f, op: .add, left: 1, right: 2, target: ok("t0"))
+    binary(@w, got.c, got.names, got.f, op: .rem, left: 1, right: 2, target: ok("t0"))
+    binary(@w, got.c, got.names, got.f, op: .shl, left: 1, right: 2, target: ok("t0"))
+    unary(@w, got.f, got.c, op: .neg, operand: 1, target: ok("t0"))
+    text = emit_writer.finish(w)
+    assert text == "    if (__builtin_add_overflow(t1, t2, &t0)) hero_panic_overflow();\n    if (t2 == 0) hero_panic(\"division by zero\");\n    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\");\n    t0 = t1 % t2;\n    if (t2 < 0 || t2 > 63) hero_panic(\"shift count outside 0..63\");\n    t0 = (int64_t)((uint64_t)t1 << (uint64_t)t2);\n    if (__builtin_sub_overflow(INT64_C(0), t1, &t0)) hero_panic_overflow();\n"
+
+test "a nan stops an ordering, f64 % is fmod, and str + concatenates"
+    got = ready()
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    binary(@w, got.c, got.names, got.f, op: .lt, left: 3, right: 4, target: ok("t0"))
+    binary(@w, got.c, got.names, got.f, op: .rem, left: 3, right: 4, target: ok("t0"))
+    binary(@w, got.c, got.names, got.f, op: .add, left: 5, right: 6, target: ok("t0"))
+    binary(@w, got.c, got.names, got.f, op: .lt, left: 5, right: 6, target: ok("t0"))
+    text = emit_writer.finish(w)
+    assert text == "    if (t3 != t3 || t4 != t4) hero_panic(\"a nan in `<`: it is neither less nor greater, so both arms would be false\");\n    t0 = t3 < t4;\n    t0 = fmod(t3, t4);\n    t0 = hero_str_concat(t5, t6);\n    t0 = hero_str_cmp(t5, t6) < 0;\n"
