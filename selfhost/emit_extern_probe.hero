@@ -1,0 +1,224 @@
+# The half of §4.19's guarantee that asks what an extern ACCEPTS
+# (design.md §4.19; panels 036, 042, 051, 052, 053). Port of
+# crates/heroes/src/emit/extern_probe.rs.
+#
+# extern_assert asks what a header RETURNS, with a _Generic whose
+# controlling expression C11 does not evaluate — and that mechanism is
+# exactly why it cannot ask about parameters: an unevaluated expression
+# gets no conversion diagnostics, measured silent under
+# -Wshorten-64-to-32 in both forms. So the check is BUILT: one
+# never-called function per extern with a parameter, whose parameters
+# are the declared types and whose body is the call. A parameter
+# cannot be folded the way f((int64_t)0) is, so the conversion is the
+# one the real call would make; #line at the declaration puts clang's
+# verdict on the author's own extern line; unused static keeps the
+# binary and -Wunused-function quiet. Silent on a correct binding
+# (measured on all eleven ladder bindings) and on f64/cstr/ptr/str,
+# which convert exactly or not at all.
+
+use ast
+use source
+use check_table
+use check_state
+use widths
+use ir_state
+use emit_mangle
+use emit_ctype
+use emit_externs
+use emit_writer
+use parse
+use resolve
+use checker
+use ir_lower
+
+# The probe's name goes THROUGH the mangler — the mirror of §4.19's own
+# exception. An extern's C name passes unmangled because it must
+# survive to the linker; a probe is a static this compiler invented,
+# which no linker ever sees. Panel 053's spec-warden found the cost of
+# forgetting: two modules binding one C function gave "redefinition of
+# 'hero_ffi_probe_getenv'" at exit 2, the compiler blaming itself for
+# two declarations the author was entitled to write.
+constant PREFIX: str
+    "hero_ffi_probe_"
+
+function probe_name(module: str, name: str) -> str
+    return PREFIX + emit_mangle.function_name(module: module, name: name)
+
+# One probe per extern that has at least one parameter. The narrowing
+# is HAS A PARAMETER — a fact about the declaration in hand: a
+# signature with none has nothing to check, and a constant is not a
+# call. Nothing asks what KIND of extern it is; that premise is the one
+# M-header-constants falsified for the sibling walks.
+function extern_probes(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
+    wrote: bool @ false
+    for f in p.functions
+        if emit_externs.extern_spans(decls, f).header.is_err()
+            continue
+        if f.params.len() == 0
+            continue
+        name = source.span_text(s, decls[f.decl].name)
+        parameters = parameter_list(names, c, f)
+        if parameters.is_err()
+            continue
+        arguments = argument_names(count: f.params.len())
+        # The declaration's own file and line, so clang's verdict lands
+        # where the author can act on it — and a probe for a library's
+        # extern claims the library.
+        found = source.locate(s, decls[f.decl].name.start)
+        emit_writer.at_file(@w, file: found.file, at: found.line)
+        module = source.component_at(s, decls[f.decl].span.start)
+        emit_writer.line(@w, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments))
+        wrote @ true
+    if wrote
+        emit_writer.at_generated(@w)
+        emit_writer.blank(@w)
+
+# The probe, as one line of C. ONE FORMATTER, TWO READERS — the error
+# mapper rebuilds this string from the declaration to find WHICH
+# argument clang's column points at. Rebuilding is exact because the
+# line is a pure function of the declaration; reading clang's echoed
+# source line instead is the trap panel 038 paid for.
+function probe_line(probe: str, name: str, parameters: [str], arguments: [str]) -> str
+    return "__attribute__((unused)) static void " + probe + "(" + parameters.join(", ") + ") { (void)" + name + "(" + arguments.join(", ") + "); }"
+
+# Where each argument begins in probe_line's output, in the 1-based
+# column numbering clang reports. The caret of a conversion diagnostic
+# sits on the argument token, so this is what turns a column back into
+# a parameter index.
+function argument_columns(probe: str, name: str, parameters: [str], arguments: [str]) -> [i64]
+    line = probe_line(probe: probe, name: name, parameters: parameters, arguments: arguments)
+    opens = "(void)" + name + "("
+    found = find_text(line: line, needle: opens)
+    if found.is_err()
+        none: [i64] = []
+        return none
+    at: i64 @ found.must() + opens.len()
+    out: [i64] @ []
+    for argument in arguments
+        out @ out.push(at + 1)
+        at @ at + argument.len() + 2
+    return out
+
+# The names a probe gives its arguments: positional, so nothing about
+# the author's own parameter names can change the generated line.
+function argument_names(count: i64) -> [str]
+    out: [str] @ []
+    index: i64 @ 0
+    while index < count
+        out @ out.push("a" + index.to_str())
+        index @ index + 1
+    return out
+
+# The declared parameter types as C, positionally named a0, a1, … — or
+# absent for a type this backend has no spelling for, which the
+# checker's boundary rule has already refused. ONE unspellable
+# parameter withholds the WHOLE list, and the caller then skips the
+# probe for the entire function — which is why the named arm below
+# exists: losing it cost DrawText the width check on all four of its
+# i64s because of the fifth parameter (panel 061's audit).
+function parameter_list(names: emit_ctype.Names, c: check_state.Checked, f: ir_state.Function) -> [str]?
+    out: [str] @ []
+    index: i64 @ 0
+    for slot_id in f.params
+        declared = f.slots[slot_id]
+        c_type = c_type_of(names, c, ty: declared.ty)
+        if c_type.is_err()
+            return fail("none", "a type the frontend should have stopped")
+        # An @ parameter is a pointer parameter (§4.8, CLAUDE.md §7),
+        # and the probe must declare it the same way the call site
+        # passes it or the probe itself would be the thing that does
+        # not compile.
+        mutable: bool @ false
+        match declared.kind
+            .param_slot ps =>
+                if ps.mutable
+                    mutable @ true
+            .local_slot | .synthetic_slot => mutable @ mutable
+        if mutable
+            out @ out.push(c_type.must() + " * a" + index.to_str())
+        else
+            out @ out.push(c_type.must() + " a" + index.to_str())
+        index @ index + 1
+    return ok(out)
+
+# A declared FFI parameter type as C. The set is the boundary rule's
+# own — anything else is refused in the checker, so failing here means
+# the emitter met a type the frontend should have stopped. The named
+# arm was missing for one milestone in the bootstrap and the cost was
+# silent: two tables answering "what is the C spelling of this FFI
+# type", one grown and one not, when a group's record became a legal
+# extern parameter.
+function c_type_of(names: emit_ctype.Names, c: check_state.Checked, ty: i64) -> str?
+    match check_table.get(c.types, ty)
+        .named n => return ok(emit_ctype.of(names, decl: n.decl))
+        .int_ty ik => return ok(widths.int_c_type(ik.kind))
+        .float_ty fk => return ok(widths.float_c_type(fk.kind))
+        .bool => return ok("bool")
+        .str => return ok("HeroStr")
+        .cstr => return ok("const char *")
+        .ptr => return ok("void *")
+        .unit | .array | .fixed | .map => return fail("none", "no C spelling")
+        .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail("none", "no C spelling")
+    return fail("none", "unreached")
+
+# Byte offset of the first occurrence of needle, over chars so the scan
+# never splits a character — the ASCII probe lines make the two counts
+# agree.
+function find_text(line: str, needle: str) -> i64?
+    cs = line.chars()
+    needle_cs = needle.chars()
+    if needle_cs.len() == 0
+        return ok(0)
+    if needle_cs.len() > cs.len()
+        return fail("none", "not found")
+    start: i64 @ 0
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+        if matched
+            return ok(start)
+        start @ start + 1
+    return fail("none", "not found")
+
+## Tests
+
+function has(text: str, needle: str) -> bool
+    return !find_text(line: text, needle: needle).is_err()
+
+test "a probe per extern with parameters, mutables as pointers, columns exact"
+    text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n    function fill(@buf: i64, n: i64)\n    function version() -> i64\n\nfunction main()\n    print(narrow(x: 1))\n    v: i64 @ 0\n    fill(buf: @v, n: 1)\n    print(version())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = emit_ctype.new_names(s, parsed.decls)
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    extern_probes(@w, low.program, c, names, s, parsed.decls)
+    got = emit_writer.finish(w)
+    # The probe's name goes through the mangler; the C name does not.
+    assert has(text: got, needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)narrow(a0); }")
+    # An @ parameter is declared the way the call site passes it.
+    assert has(text: got, needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)fill(a0, a1); }")
+    # A zero-parameter extern gets no probe at all.
+    assert !has(text: got, needle: "hero_ffi_probe_h_t_version")
+    # #line at the declaration's own line.
+    assert has(text: got, needle: "#line 2 \"t.hero\"")
+
+test "argument columns point at each argument's own token"
+    parameters: [str] = ["int64_t a0", "double a1"]
+    arguments = argument_names(count: 2)
+    line = probe_line(probe: "hero_ffi_probe_h_t_f", name: "f", parameters: parameters, arguments: arguments)
+    columns = argument_columns(probe: "hero_ffi_probe_h_t_f", name: "f", parameters: parameters, arguments: arguments)
+    assert columns.len() == 2
+    # The 1-based column lands on the first character of each argument.
+    cs = line.chars()
+    assert cs[columns[0] - 1] == "a"
+    assert cs[columns[1] - 1] == "a"
+    assert columns[1] == columns[0] + 4
