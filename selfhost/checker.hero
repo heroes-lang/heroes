@@ -1,0 +1,121 @@
+# The checker: every expression gets a type, or a diagnostic says why
+# not (design.md Part 10 step 5, §4.5 bidirectional checking).
+# Port of crates/heroes/src/types/mod.rs::check — the driver in its
+# measured order.
+#
+# Bidirectional, and the two modes are the whole design (§4.5):
+# signatures are always explicit and inference is local, so the checker
+# never solves constraints — it either synthesises (⇒) or checks against
+# a type it already knows (⇐), and errors stay local because nothing
+# travels.
+#
+# The order below is the design, each position fixing a defect the
+# record can name: sizes FIRST and needing no expression types (a
+# containment cycle makes every later answer a guess, and a file with
+# one produces no binary anyway); map keys and the fixed-array sweep
+# AFTER the declarations, because both read written_type, the table the
+# lowering fills — asking first is silent; the hole exemption applied
+# PER MODULE to the held-back missing_returns (one bool once made an
+# unfinished geom.hero hold back a diagnostic in a main.hero nobody was
+# editing); and counted LAST, dense over the interner, because a TyId
+# past the end of that table would read as uncounted — a leak no test
+# can see.
+
+use ast
+use source
+use parse
+use resolved
+use resolve
+use check_state
+use check_sized
+use check_decls
+use check_map_keys
+use check_ffi
+use check_counted
+
+# Check one resolved program. The resolver ran first and its answers are
+# inputs, never recomputed.
+function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> check_state.Checked
+    c: check_state.Checker @ check_state.new_checker(out_of: r, expr_count: a.exprs.len())
+    # Sizes first, and it needs no expression types.
+    sizes = check_sized.order_and_cycles(a, r, s, decls)
+    c.out.type_order @ sizes.order
+    for d in sizes.diagnostics
+        check_state.push_diagnostic(@c, d)
+    check_decls.file(@c, a, r, s, decls)
+    # After the declarations, because it reads written_type — the table
+    # the lowering fills. Asking first is silent: it finds nothing and
+    # passes.
+    check_map_keys.check(@c, a, s, decls)
+    # Same reason, same table, and the same defect one milestone apart:
+    # panel 062 wired its rule to one call site and three other positions
+    # shipped.
+    check_ffi.fixed_only_in_a_group(@c, a, s, decls)
+    # §4.16's FILE-WIDE hole exemption, the same one the unused rule
+    # takes: a body that is ??? falls off its end by construction — that
+    # is what an unwritten thing does — and demanding a return from it
+    # would make ??? unusable for the case design.md's own appendix uses
+    # it for. Per module, not per program.
+    held: {str: bool} @ {}
+    for hole in c.out.holes
+        held[source.module_at(s, hole.span.start)] @ true
+    for d in c.missing_returns
+        if held[source.module_at(s, d.span.start)].is_err()
+            check_state.push_diagnostic(@c, d)
+    # Within the pass, source order — the same stable sort the resolver
+    # uses, called across the module boundary rather than copied: two
+    # sorts that could disagree are two answers to one question.
+    c.out.diagnostics @ resolve.by_position(c.out.diagnostics)
+    # Last, because it is dense over the interner and nothing may intern
+    # a type after it without saying so.
+    c.out.counted @ check_counted.build(c.out.types, decls, c.out.written_types)
+    return c.out
+
+## Tests
+
+function checked(text: str) -> check_state.Checked
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    return check(p.tree, out, s, p.decls)
+
+test "a whole program checks end to end, every table filled"
+    out = checked("record Point\n    x: i64\n    y: i64\n\nfunction dist2(a: Point, b: Point) -> i64\n    dx = a.x - b.x\n    dy = a.y - b.y\n    return dx*dx + dy*dy\n\nfunction main()\n    print(dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)))\n")
+    assert out.diagnostics.len() == 0
+    assert out.type_order.len() == 1
+    assert out.counted.len() > 0
+    # str is counted, i64 is not: the table answers for the whole interner.
+    assert out.counted[5]
+    assert !out.counted[2]
+
+test "a hole in the module holds back missing_return, absence releases it"
+    quiet = checked("function f() -> i64\n    _ = ???\n")
+    held: bool @ false
+    for d in quiet.diagnostics
+        if d.code == "missing_return"
+            held @ true
+    assert !held
+    loud = checked("function f(c: bool) -> i64\n    if c\n        return 1\n")
+    released: bool @ false
+    for d in loud.diagnostics
+        if d.code == "missing_return"
+            released @ true
+    assert released
+
+test "a containment cycle empties the order and speaks once"
+    out = checked("record A\n    b: B\n\nrecord B\n    a: A\n")
+    assert out.type_order.len() == 0
+    count: i64 @ 0
+    for d in out.diagnostics
+        if d.code == "no_size"
+            count @ count + 1
+    assert count == 1
+
+test "the pass's diagnostics come out in source order"
+    # The no_size sits on line 2's field; the mismatch on line 6. The
+    # sweep pushes them in pass order; position wins.
+    out = checked("record N\n    inner: N\n\nfunction f() -> i64\n    x: str @ 3\n    return 1\n")
+    assert out.diagnostics.len() == 2
+    assert out.diagnostics[0].code == "no_size"
+    assert out.diagnostics[1].code == "type_mismatch"
+    assert out.diagnostics[0].span.start < out.diagnostics[1].span.start
