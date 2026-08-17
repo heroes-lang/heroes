@@ -47,9 +47,13 @@ pub struct Builtin {
     pub tier: Tier,
 }
 
-/// Sorted by name, searched linearly. Thirty-five entries need no index, and a
-/// sorted table prints in a deterministic order — §4.16's rule for hole
-/// suggestions, applied to every list the compiler shows.
+/// Searched linearly — the table needs no index of its own, and its one fixed
+/// order is what every list the compiler shows inherits (§4.16's determinism
+/// rule). **The order is identity, not presentation**: `Ref::Builtin` carries
+/// an index into this table, so entries are appended, never re-sorted. (An
+/// earlier comment here claimed the table was sorted and counted thirty-five
+/// entries; both were false when the port read them — CLAUDE.md §11's
+/// expired-count class, and the port's test now pins the true order.)
 pub const BUILTINS: [Builtin; 37] = [
     Builtin { name: "all", tier: Tier::Heroes },
     Builtin { name: "args", tier: Tier::Heroes },
