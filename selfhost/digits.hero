@@ -25,6 +25,7 @@
 
 use token
 use diag
+use widths
 
 ## Error codes
 
@@ -185,10 +186,10 @@ function render_in_base(value: u64, base: Base) -> str
 # `i64`, the default, so its two numbers are constants and the note says the
 # width is a default rather than naming a type the reader never wrote.
 #
-# The width-aware twin (Rust's `out_of_range(text, span, Some(kind))`) is NOT
-# here: it names an IntKind, which is checker vocabulary, and it ports with
-# the checker at M-selfhost-port. One code either way — "does not fit `i64`"
-# and "does not fit the `u8` you declared" are the same finding.
+# The width-aware twin below landed with the checker, exactly as this
+# comment promised on the day of the deferral. One code either way —
+# "does not fit `i64`" and "does not fit the `u8` you declared" are the
+# same finding with a different number in it.
 function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
     split = split_base(text)
     d: diag.Diagnostic @ diag.new_diagnostic(code: "int_out_of_range", message: "`" + text + "` does not fit an `i64`", span: span)
@@ -198,6 +199,15 @@ function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
     else
         note @ "a literal with nothing to take a width from is an `i64`, so the largest one " + a_name(split.base) + " literal can write is `" + render_in_base(9223372036854775807, split.base) + "`"
     d.notes @ d.notes.push(note)
+    return d
+
+# The same diagnostic, told which width the literal was measured against
+# (the checker's number-literal check is the caller). The reader wrote
+# the type, so the note names it and says the repair has two ends.
+function int_out_of_range_at(text: str, span: token.Span, kind: widths.IntKind) -> diag.Diagnostic
+    a_width = widths.int_article_name(kind)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "int_out_of_range", message: "`" + text + "` does not fit " + a_width, span: span)
+    d.notes @ d.notes.push(a_width + " holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind) + ". Widen the type, or write a number in range — this language never truncates one silently")
     return d
 
 ## The canonical spelling

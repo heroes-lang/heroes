@@ -12,10 +12,10 @@
 # One array enumerates the widths, so the resolver's name table, the
 # prelude and the did-you-mean list cannot disagree about what exists.
 #
-# Port note: `range()` — the closed range a literal must fall in — is NOT
-# ported yet. Its one consumer is the checker, its top value needs `u64`
-# arithmetic the number decoder already owns (selfhost/number.hero), and
-# porting it before its consumer would be a guess about which side owns it.
+# The range tables landed when their consumer did (the checker's
+# number-literal check): sign and u64 magnitude, tabulated per width
+# rather than computed, because `<<` is i64-only in this language and a
+# table a test pins cannot silently disagree with a shift.
 
 ## The integer widths
 
@@ -98,6 +98,46 @@ function int_c_type(kind: IntKind) -> str
         .u32 => "uint32_t"
         .u64 => "uint64_t"
 
+# The largest magnitude a POSITIVE literal of this width may have.
+function int_max_magnitude(kind: IntKind) -> u64
+    return match kind
+        .i8 => 127
+        .i16 => 32767
+        .i32 => 2147483647
+        .i64 => 9223372036854775807
+        .u8 => 255
+        .u16 => 65535
+        .u32 => 4294967295
+        .u64 => 18446744073709551615
+
+# The largest magnitude a NEGATIVE literal of this width may have — one
+# more than the positive side for the signed widths (two's complement),
+# zero for the unsigned ones, where only `-0` is writable.
+function int_min_magnitude(kind: IntKind) -> u64
+    return match kind
+        .i8 => 128
+        .i16 => 32768
+        .i32 => 2147483648
+        .i64 => 9223372036854775808
+        .u8 | .u16 | .u32 | .u64 => 0
+
+# Whether a literal of this sign and magnitude fits the width — the port
+# of range(), asked the way the checker asks it: the sign travels with
+# the digits, so `-128` fits an `i8` that `128` alone does not.
+function int_fits(kind: IntKind, negative: bool, magnitude: u64) -> bool
+    if negative
+        return magnitude <= int_min_magnitude(kind)
+    return magnitude <= int_max_magnitude(kind)
+
+# The bounds as a reader is told them: `-128` or `0`, and the top.
+function int_low_text(kind: IntKind) -> str
+    if int_signed(kind)
+        return "-" + int_min_magnitude(kind).to_str()
+    return "0"
+
+function int_high_text(kind: IntKind) -> str
+    return int_max_magnitude(kind).to_str()
+
 ## The float widths
 
 variant FloatKind
@@ -142,6 +182,21 @@ test "containment is asymmetric on purpose"
     assert !int_contains(target: .i16, source: .u16)
     # Signed into unsigned: never, -1 is a value.
     assert !int_contains(target: .u64, source: .i8)
+
+test "the range tables hold at the corners the widths exist for"
+    assert int_fits(.i8, negative: true, magnitude: 128)
+    assert !int_fits(.i8, negative: false, magnitude: 128)
+    assert int_fits(.i8, negative: false, magnitude: 127)
+    assert int_fits(.u8, negative: false, magnitude: 255)
+    assert !int_fits(.u8, negative: false, magnitude: 256)
+    assert !int_fits(.u8, negative: true, magnitude: 1)
+    assert int_fits(.u8, negative: true, magnitude: 0)
+    assert int_fits(.u64, negative: false, magnitude: 18446744073709551615)
+    assert !int_fits(.i64, negative: false, magnitude: 9223372036854775808)
+    assert int_fits(.i64, negative: true, magnitude: 9223372036854775808)
+    assert int_low_text(.i16) == "-32768"
+    assert int_high_text(.i16) == "32767"
+    assert int_low_text(.u32) == "0"
 
 test "what a width tells the reader and what it tells clang"
     assert int_bits(.u16) == 16
