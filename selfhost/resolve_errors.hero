@@ -1,0 +1,263 @@
+# Every name error the resolver can produce, in one file — because they are
+# one diagnostic class and design.md §4.17 judges them together: the error
+# carries what is needed to fix the program without opening another file.
+# Port of crates/heroes/src/resolve/errors.rs. (errors_modules.rs — the
+# module-shaped half — is a later file: it needs nothing here and nothing
+# here needs it.)
+#
+# Two shapes of repair, and the line between them is §4.17's:
+#
+# - **certain**, machine-applicable: renaming to the ONE candidate in scope,
+#   and renaming an unread binding to `_`. Both preserve meaning, and the
+#   compiler is the one that knows the candidate is unique.
+# - **guess**, prose for the reader: everything whose repair depends on
+#   intent — removing a parameter (its call sites are elsewhere), deleting a
+#   binding, or writing the type on a cell the resolver cannot infer.
+#
+# Wording follows the lexer's house style: what is wrong, then an em-dash
+# clause that teaches the rule, then the repair. The message TEXT is the
+# Rust side's, byte for byte: two compilers that disagree about a message
+# would turn the fixpoint diff into a prose review.
+
+use token
+use diag
+use bytes
+use resolved
+
+## Names that resolve to nothing
+
+function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_name", message: "nothing named `" + name + "` is in scope", span: span)
+    suggest(@d, near, span)
+    return d
+
+# `x.f(y)` is `f(x, y)` and nothing else (§4.11: there are no methods), so
+# an unknown name after the dot is answerable now — before types exist.
+function unknown_function(name: str, near: [str], span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_function", message: "no function named `" + name + "` — `x." + name + "(…)` means `" + name + "(x, …)`, so `" + name + "` has to be a top-level function or a built-in", span: span)
+    suggest(@d, near, span)
+    return d
+
+function unknown_type(name: str, near: [str], span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_type", message: "no type named `" + name + "`", span: span)
+    suggest(@d, near, span)
+    return d
+
+function not_a_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "not_a_type", message: "`" + name + "` is " + what + ", not a type", span: span)
+
+# The name exists and is not a function, so "unknown" would be a lie and a
+# did-you-mean would be noise: say what it is instead.
+function not_a_function(name: str, what: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "not_a_function", message: "`" + name + "` is " + what + ", so `x." + name + "(…)` cannot call it", span: span)
+
+# A variant name in value position. The cases are the values (§4.5's ⇐
+# mode), which is exactly what a model carrying a Rust prior forgets — and
+# this port tripped it writing its own tests, which is the diagnostic
+# working on the person it was written for.
+function variant_in_value_position(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "variant_in_value_position", message: "`" + name + "` is a variant, so it names a type and not a value — write one of its cases, `.case` or `.case(field: value)`", span: span)
+
+## Names declared more than once
+
+function declared_twice(name: str, first: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "declared_twice", message: "`" + name + "` is already declared at " + first + " — one file is one module, and a name means one thing in it", span: span)
+
+function shadowed(name: str, bound_at: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "shadowed_binding", message: "`" + name + "` is already in scope, bound at " + bound_at + " — shadowing is an error here: a name means one thing for as long as it is visible", span: span)
+
+function shadows_top_level(name: str, declared_at: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "shadowed_binding", message: "`" + name + "` is the name of the declaration at " + declared_at + ", which is in scope everywhere — pick another name", span: span)
+
+function builtin_name_taken(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "builtin_name_taken", message: "`" + name + "` is a built-in of the language, so the name is taken everywhere — pick another name", span: span)
+
+function duplicate_pattern_binding(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "duplicate_pattern_binding", message: "`" + name + "` is bound by two patterns of the same arm — one arm binds each name once", span: span)
+
+## Bindings nobody reads
+
+# §4.4's unused rule, and the escape valve is the wildcard: where renaming
+# to `_` is legal it is also CERTAIN, because it changes nothing but the
+# name.
+function unused(name: str, kind: resolved.LocalKind, writes: i64, span: token.Span) -> diag.Diagnostic
+    message = match kind
+        .param => "the parameter `" + name + "` is never read — remove it from the signature, or write `???` in the body while the function is unfinished"
+        .bind => "`" + name + "` is bound and never read — remove the binding, or read it"
+        .cell =>
+            if writes > 0
+                "`" + name + "` is written and never read — a cell nothing reads is a value nobody uses"
+            else
+                "`" + name + "` is declared and never read — remove it, or read it"
+        .loop_var => "the loop variable `" + name + "` is never read — write `for _ in …` when the element is not needed"
+        .payload => "the payload `" + name + "` is never read — write `_` in the pattern when the value is not needed"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unused_binding", message: message, span: span)
+    if kind == .loop_var || kind == .payload
+        d.fixes @ d.fixes.push(diag.Fix(title: "rename `" + name + "` to `_`", replacement: "_", span: span, certainty: .certain))
+    return d
+
+## Writes to something that is not a cell
+
+# The `.bind | .cell` arm carries the `=` message. A cell never reaches
+# this function — a cell IS mutable — so the pair exists only because `_`
+# is forbidden on variants: the Rust side hid the same fact under `_ =>`,
+# and here the unreachable case is at least named where a reader can ask
+# about it.
+function not_mutable(name: str, kind: resolved.LocalKind, span: token.Span) -> diag.Diagnostic
+    message = match kind
+        .param => "`" + name + "` is a parameter without `@`, so it cannot be written — mark it `@" + name + "` in the signature and at every call site (copy in, copy out)"
+        .loop_var => "`" + name + "` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"
+        .payload => "`" + name + "` is bound by the pattern, and a pattern binding is not a cell — bind what you need with `@` outside the `match`"
+        .bind | .cell => "`" + name + "` was bound with `=`, which binds once, forever — a cell is declared with its type: `" + name + ": <type> @ <value>`"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "not_mutable", message: message, span: span)
+    if kind == .bind
+        # The type is the missing half and no type exists yet at this stage:
+        # prose, not a fix a tool may apply (§4.17).
+        d.fixes @ d.fixes.push(diag.Fix(title: "declare `" + name + "` as a cell: `" + name + ": <type> @ <value>`", replacement: "", span: span, certainty: .guess))
+    return d
+
+function no_mutable_globals(name: str, what: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "no_mutable_globals", message: "`" + name + "` is a " + what + ", and there are no mutable globals — pass what changes as an `@` parameter", span: span)
+
+## Did you mean
+
+# One candidate → a CERTAIN rename (§4.17 names this case explicitly).
+# Several → the names, in prose, and no fix: a tool that picks one of three
+# is guessing, and only certain fixes may be applied.
+function suggest(@d: diag.Diagnostic, near: [str], span: token.Span)
+    if near.len() == 1
+        d.message @ d.message + " — did you mean `" + near[0] + "`?"
+        d.fixes @ d.fixes.push(diag.Fix(title: "rename to `" + near[0] + "`", replacement: near[0], span: span, certainty: .certain))
+        return
+    if near.len() > 1
+        quoted: [str] @ []
+        for c in near
+            quoted @ quoted.push("`" + c + "`")
+        d.message @ d.message + " — the closest names in scope are " + quoted.join(", ")
+
+# Candidates within the edit distance the name's length allows, capped at
+# three and in the order the caller supplied (innermost scope first), so the
+# list is deterministic — §4.16's rule, applied to every list the compiler
+# prints.
+#
+# A difference in CASE ONLY wins alone, and that is not a tie-breaker: the
+# letters are already right, so it is the one repair that can be handed over
+# as certain even when three other names are one edit away. `point` for
+# `Point` is also one edit from `print`.
+function nearest(name: str, candidates: [str]) -> [str]
+    for c in candidates
+        if c != name && same_ignoring_case(a: name, b: c)
+            return [c]
+    allowed: i64 @ 2
+    if name.chars().len() < 4
+        allowed @ 1
+    near: [str] @ []
+    for candidate in candidates
+        if candidate != name && !already_listed(near, candidate) && near.len() < 3
+            if distance(a: name, b: candidate) <= allowed
+                near @ near.push(candidate)
+    return near
+
+function already_listed(xs: [str], x: str) -> bool
+    for it in xs
+        if it == x
+            return true
+    return false
+
+# Identifiers are ASCII by the language's own rule (spec: syntax is
+# ASCII-only), so case-folding byte by byte is exact here — this is NOT a
+# general Unicode fold and does not claim to be.
+function same_ignoring_case(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+    i: i64 @ 0
+    while i < a.len()
+        if bytes.lower(a[i]) != bytes.lower(b[i])
+            return false
+        i @ i + 1
+    return true
+
+# Levenshtein distance, two rows, over bytes — exact for the ASCII names it
+# is asked about. Names are short; this is not a hot path.
+function distance(a: str, b: str) -> i64
+    previous: [i64] @ []
+    j: i64 @ 0
+    while j <= b.len()
+        previous @ previous.push(j)
+        j @ j + 1
+    i: i64 @ 0
+    while i < a.len()
+        current: [i64] @ [i + 1]
+        k: i64 @ 0
+        while k < b.len()
+            cost: i64 @ 1
+            if a[i] == b[k]
+                cost @ 0
+            current @ current.push(min3(a: previous[k] + cost, b: previous[k + 1] + 1, c: current[k] + 1))
+            k @ k + 1
+        previous @ current
+        i @ i + 1
+    return previous[b.len()]
+
+function min3(a: i64, b: i64, c: i64) -> i64
+    least: i64 @ a
+    if b < least
+        least @ b
+    if c < least
+        least @ c
+    return least
+
+## Tests
+
+test "one candidate is a certain rename, three are prose"
+    span = token.Span(start: 0, end: 5)
+    one: [str] = ["total"]
+    d = unknown_name("totl", one, span)
+    assert d.message == "nothing named `totl` is in scope — did you mean `total`?"
+    assert d.fixes.len() == 1
+    assert d.fixes[0].replacement == "total"
+    assert d.fixes[0].certainty == .certain
+    many: [str] = ["tot", "toll", "tall"]
+    e = unknown_name("totl", many, span)
+    assert e.fixes.len() == 0
+    assert e.message == "nothing named `totl` is in scope — the closest names in scope are `tot`, `toll`, `tall`"
+
+test "a case-only difference wins alone even among closer names"
+    candidates: [str] = ["print", "paint", "Point"]
+    assert nearest("point", candidates).join(",") == "Point"
+    # Without the case twin, ordinary distance applies, caller's order kept.
+    plain: [str] = ["print", "paint"]
+    assert nearest("point", plain).join(",") == "print,paint"
+
+test "the edit budget follows the name's length"
+    # A short name affords one edit: `fo` reaches `fn` (1) but not `bar` (3).
+    short: [str] = ["fn", "bar"]
+    assert nearest("fo", short).join(",") == "fn"
+    # A longer name affords two.
+    long: [str] = ["totale", "wholly"]
+    assert nearest("total", long).join(",") == "totale"
+    assert distance(a: "total", b: "totale") == 1
+    assert distance(a: "kitten", b: "sitting") == 3
+    assert distance(a: "", b: "abc") == 3
+
+test "the unused wording follows the kind, and the valve is certain"
+    span = token.Span(start: 0, end: 3)
+    p = unused("xs", .param, 0, span)
+    assert p.fixes.len() == 0
+    assert p.message == "the parameter `xs` is never read — remove it from the signature, or write `???` in the body while the function is unfinished"
+    l = unused("x", .loop_var, 0, span)
+    assert l.fixes.len() == 1
+    assert l.fixes[0].replacement == "_"
+    assert l.fixes[0].certainty == .certain
+    written = unused("n", .cell, 2, span)
+    assert written.message == "`n` is written and never read — a cell nothing reads is a value nobody uses"
+    fresh = unused("n", .cell, 0, span)
+    assert fresh.message == "`n` is declared and never read — remove it, or read it"
+
+test "a write to a plain binding earns the guess, not a certain fix"
+    span = token.Span(start: 0, end: 1)
+    d = not_mutable("x", .bind, span)
+    assert d.fixes.len() == 1
+    assert d.fixes[0].certainty == .guess
+    loop_write = not_mutable("x", .loop_var, span)
+    assert loop_write.fixes.len() == 0
