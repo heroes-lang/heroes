@@ -1,0 +1,79 @@
+# T? as C: two alternatives, a tag, and never a guess about which one
+# is live (design.md §4.6, §4.8). Port of crates/heroes/src/emit/fallible.rs.
+#
+# Its own module because a T? is the one aggregate whose members are
+# ALTERNATIVES: a record's fields all exist at once, and reading the
+# wrong one of these is reading a union member that was never written.
+# Every function here writes the tag explicitly — C would zero it for
+# ok — so a reader of the generated C sees which side this is without
+# knowing C's initialiser rules.
+#
+# ? propagates a failure UNCHANGED (§4.6): nothing re-reads its code or
+# msg on the way out, which is why the err shape is one struct
+# assignment and not a rebuild.
+
+use ir
+use emit_mangle
+use emit_ctype
+use source
+use parse
+use resolve
+use check_state
+use checker
+
+# ok(x), fail(code, msg) and the err that ? produces — one compound
+# literal each.
+function construct_option(names: emit_ctype.Names, result: i64, shape: ir.Shape, arguments: [str]) -> str?
+    name = emit_ctype.option_of(names, ty: result)
+    match shape
+        .ok_shape =>
+            if arguments.len() > 0
+                return ok("(" + name + "){.tag = INT64_C(0), .as.ok = " + arguments[0] + "}")
+            # ok(()) — a unit payload has no member at all, so the tag
+            # is the whole value.
+            return ok("(" + name + "){.tag = INT64_C(0)}")
+        .fail_shape =>
+            if arguments.len() < 2
+                return fail("none", "a fail without both sides")
+            return ok("(" + name + "){.tag = INT64_C(1), .as.err = {.code = " + arguments[0] + ", .msg = " + arguments[1] + "}}")
+        .err_shape =>
+            if arguments.len() < 1
+                return fail("none", "an err without its failure")
+            return ok("(" + name + "){.tag = INT64_C(1), .as.err = " + arguments[0] + "}")
+        .record_shape | .case_shape | .array_shape | .map_shape => return fail("none", "not an option shape")
+    return fail("none", "unreached")
+
+# t16 = t15.tag; for a T?, the same member a variant uses.
+function option_tag(base: i64) -> str
+    return emit_mangle.value(base) + ".tag"
+
+# .as.ok for case 0 and .as.err for case 1 — the IR's own numbering.
+function option_payload(base: i64, at: i64) -> str
+    member: str @ "err"
+    if at == 0
+        member @ "ok"
+    return emit_mangle.value(base) + ".as." + member
+
+## Tests
+
+test "the tag is written even where C would zero it, and err is one assignment"
+    text = "record Holder\n    maybe: i64?\n\nfunction main()\n    h = Holder(maybe: ok(3))\n    _ = h\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
+    names0 = emit_ctype.new_names(s, p.decls)
+    names = emit_ctype.with_options(names0, module: "t", c: c)
+    opt: i64 @ 0 - 1
+    for id in keys(names.options)
+        opt @ id
+    assert opt >= 0
+    built = construct_option(names, result: opt, shape: .ok_shape, arguments: ["t3"])
+    assert built.must() == "(h_t_0opt0){.tag = INT64_C(0), .as.ok = t3}"
+    failed = construct_option(names, result: opt, shape: .fail_shape, arguments: ["t1", "t2"])
+    assert failed.must() == "(h_t_0opt0){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}"
+    wrapped = construct_option(names, result: opt, shape: .err_shape, arguments: ["t9"])
+    assert wrapped.must() == "(h_t_0opt0){.tag = INT64_C(1), .as.err = t9}"
+    assert option_tag(base: 15) == "t15.tag"
+    assert option_payload(base: 15, at: 0) == "t15.as.ok"
+    assert option_payload(base: 15, at: 1) == "t15.as.err"
