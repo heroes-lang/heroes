@@ -1,7 +1,6 @@
-# Which types need a HeroDesc, and what to call it (design.md §4.20;
-# panel 022). Port of crates/heroes/src/emit/descriptors.rs' naming
-# half — pointer and hash_call. The definitions writer arrives with
-# descriptor_set, whose worklist it walks.
+# Which types need a HeroDesc, what to call it, and the C that defines
+# one (design.md §4.20; panels 022, 061). Port of
+# crates/heroes/src/emit/descriptors.rs.
 #
 # The runtime works on an array through a descriptor because C has no
 # generic copy, drop, comparison or hash — and it must be a DESCRIPTOR
@@ -18,6 +17,10 @@
 use check_table
 use check_state
 use emit_ctype
+use emit_writer
+use emit_descriptor_set
+use ir_layout
+use ast
 use source
 use parse
 use resolve
@@ -84,6 +87,75 @@ function through_pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i6
     if desc.is_err()
         return fail("none", "no descriptor for this type")
     return ok("(" + desc.must() + ")->hash(" + place + ")")
+
+
+# One static const HeroDesc per element type the program actually uses.
+# Emitted BEFORE the function definitions: an array literal names its
+# element descriptor, so hero_array_new(&h_m_Point_desc, 2) in main
+# needs the object to exist by then — measured the other way first,
+# three undeclared-identifier errors on the first program with an array
+# of records. static, so a descriptor nothing points at is
+# -Wunused-const-variable, which is exactly why the set is a worklist.
+#
+# BOTH names, because this loop writes both kinds of string:
+# sizeof({c_type}) and the casts are the type; {prefix}_desc and
+# {prefix}_eq are functions this compiler generated. One variable did
+# the job until a header was involved — and then emitted a global
+# unmangled Color_desc beside the library that declared Color (panel
+# 061). The four function pointers are cast to the descriptor's own
+# signatures: the price of a generic runtime in C, paid once per type
+# here rather than at every call site.
+function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], reachable: {i64: bool})
+    wanted = emit_descriptor_set.generated(c, decls, reachable: reachable)
+    for ty in wanted
+        prefix: str @ ""
+        c_type: str @ ""
+        skip: bool @ false
+        match check_table.get(c.types, ty)
+            .named n =>
+                prefix @ emit_ctype.satellite(names, decl: n.decl)
+                c_type @ emit_ctype.of(names, decl: n.decl)
+            .case_ty vc =>
+                prefix @ emit_ctype.case_of(names, decl: vc.decl, at: vc.at)
+                c_type @ prefix
+            # A T? used as an element needs one too, and its four
+            # functions already exist — option_bodies writes them for
+            # every T? in the program.
+            .fallible =>
+                prefix @ emit_ctype.option_of(names, ty: ty)
+                c_type @ prefix
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => skip @ true
+            .array | .fixed | .map | .function_ty => skip @ true
+            .failure | .generic | .error => skip @ true
+        if skip
+            continue
+        counted = ir_layout.is_refcounted(c, ty)
+        emit_writer.at_generated(@w)
+        emit_writer.line(@w, text: "static void " + prefix + "_desc_copy(void *dst, const void *src) {")
+        emit_writer.line(@w, text: "    *(" + c_type + " *)dst = *(const " + c_type + " *)src;")
+        if counted
+            # Shallow plus incref, never deep (panel 022): copy-on-write
+            # is what makes a deep copy unnecessary, because sharing is
+            # unobservable until somebody mutates.
+            emit_writer.line(@w, text: "    " + prefix + "_retain((const " + c_type + " *)dst);")
+        emit_writer.line(@w, text: "}")
+        emit_writer.line(@w, text: "static void " + prefix + "_desc_drop(void *elem) {")
+        if counted
+            emit_writer.line(@w, text: "    " + prefix + "_release((" + c_type + " *)elem);")
+        else
+            emit_writer.line(@w, text: "    (void)elem;")
+        emit_writer.line(@w, text: "}")
+        emit_writer.line(@w, text: "static bool " + prefix + "_desc_eq(const void *a, const void *b) {")
+        emit_writer.line(@w, text: "    return " + prefix + "_eq((const " + c_type + " *)a, (const " + c_type + " *)b);")
+        emit_writer.line(@w, text: "}")
+        emit_writer.line(@w, text: "static const HeroDesc " + prefix + "_desc = {")
+        emit_writer.line(@w, text: "    sizeof(" + c_type + "),")
+        emit_writer.line(@w, text: "    " + prefix + "_desc_copy,")
+        emit_writer.line(@w, text: "    " + prefix + "_desc_drop,")
+        emit_writer.line(@w, text: "    " + prefix + "_desc_eq,")
+        emit_writer.line(@w, text: "    " + prefix + "_hash,")
+        emit_writer.line(@w, text: "};")
+        emit_writer.blank(@w)
 
 ## Tests
 
