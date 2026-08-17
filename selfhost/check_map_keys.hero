@@ -1,0 +1,171 @@
+# What may be a map's KEY — one walk, every rule (§4.19, spec § Strings,
+# arrays, maps; panels 061 and 069).
+# Port of crates/heroes/src/types/map_keys.rs.
+#
+# A map key is the one refusal with no operator behind it: `==` fires on
+# a token the author typed; `m[k] @ v` fires on nothing — the hazard is
+# in the TYPE, which may be written once in an annotation and never
+# mentioned again. So the check walks the program's written types and
+# map literals instead.
+#
+# It asks two questions in one pass, and that is the point of the file:
+# the partial rule and the float rule in a second walk in a second file
+# is exactly the shape that hid sort's defect for a milestone — one walk
+# cannot drift from itself. Two routes, and the second is the one a
+# syntax rule misses: a key type may be written, or it may exist only as
+# a literal's inferred type. The first version walked only the written
+# nodes — a rule about the SYNTAX written twenty minutes after its own
+# audit brief warned of that class, caught by a named hero_panic.
+#
+# What this walk cannot see, stated rather than left implicit: a key
+# type that is still a type PARAMETER — only monomorphisation knows what
+# the call chose, so the runtime guard STAYS and the float diagnostic's
+# own note says so.
+
+use token
+use ast
+use source
+use parse
+use resolve
+use check_decls
+use check_table
+use check_state
+use check_partial
+use ffi_errors
+
+# Check every map key the program writes or builds.
+function check(@c: check_state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    # `m: {Color: i64} @ {}` — the annotation's own key node.
+    node: i64 @ 0
+    while node < a.types.len()
+        match a.types[node].kind
+            .map_of m =>
+                written = check_state.written_type(c.out, m.key)
+                if !written.is_err()
+                    refuse(@c, s, decls, key: written.must(), span: a.types[m.key].span)
+            .named | .unit | .array_of | .fixed | .fallible | .function_type | .error => node @ node
+        node @ node + 1
+    # `m = {c: 1}` — no map node exists, so the type comes from the
+    # expression table and the span from the first entry's key, which is
+    # the thing the reader has to change.
+    at: i64 @ 0
+    while at < a.exprs.len()
+        match a.exprs[at].kind
+            .map entries =>
+                if entries.entries.len() > 0
+                    match check_table.get(c.out.types, c.out.expr_types[at])
+                        .map m => refuse(@c, s, decls, key: m.key, span: a.exprs[entries.entries[0].key].span)
+                        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => at @ at
+                        .array | .fixed | .fallible | .function_ty | .named => at @ at
+                        .case_ty | .failure | .generic | .error => at @ at
+            .int_lit | .char_lit | .float_lit | .str_lit | .bool_lit | .null_ptr => at @ at
+            .name | .hole | .unary | .binary | .field | .index | .call | .method => at @ at
+            .variant_case | .array | .try_expr | .if_expr | .match_expr | .error => at @ at
+        at @ at + 1
+
+# The rules, in the order a reader meets them. At most ONE fires per
+# key: a partial record reaching a float is one mistake, and §4.17 gives
+# one mistake one message.
+function refuse(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], key: i64, span: token.Span)
+    reached = check_partial.reaches(c, decls, key)
+    if !reached.is_err()
+        shown = check_state.show(c, s, decls, key)
+        name = source.span_text(s, decls[reached.must()].name)
+        check_state.push_diagnostic(@c, ffi_errors.partial_operation(holder: name, shown: shown, what: "a map key", span: span))
+        return
+    floated = reaches_float(c, s, decls, ty: key, depth: 0)
+    if !floated.is_err()
+        shown = check_state.show(c, s, decls, key)
+        check_state.push_diagnostic(@c, ffi_errors.float_map_key(key: shown, reached: floated.must(), span: span))
+
+# Does this key type REACH an f32 or an f64? Returns WHERE it found one
+# — an empty string when the key IS the float, a dotted path when it is
+# inside. Absence at the bound is safe in the direction that matters:
+# the runtime guard still sits behind this rule, so a missed refusal
+# costs a named abort rather than a wrong answer.
+function reaches_float(c: check_state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, depth: i64) -> str?
+    if depth > 16
+        return fail("absent", "past any nesting worth naming")
+    match check_table.get(c.out.types, ty)
+        .float_ty => return ok("")
+        .named n =>
+            owner = source.span_text(s, decls[n.decl].name)
+            match decls[n.decl].kind
+                .record_decl rec => return inside(c, s, decls, owner: owner, fields: rec.fields, depth: depth)
+                .variant_decl v =>
+                    for one_case in v.cases
+                        found = inside(c, s, decls, owner: owner, fields: one_case.fields, depth: depth)
+                        if !found.is_err()
+                            return found
+                    return fail("absent", "no payload reaches a float")
+                .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+        .fixed x => return reaches_float(c, s, decls, ty: x.element, depth: depth + 1)
+        # [T], {K: V} and T? are not key types today — each is refused
+        # before this walk runs — but the arms are here rather than
+        # folded, so the day one becomes a key this rule does not
+        # silently stop applying.
+        .array arr => return reaches_float(c, s, decls, ty: arr.element, depth: depth + 1)
+        .fallible o => return reaches_float(c, s, decls, ty: o.payload, depth: depth + 1)
+        .map m =>
+            in_key = reaches_float(c, s, decls, ty: m.key, depth: depth + 1)
+            if !in_key.is_err()
+                return in_key
+            return reaches_float(c, s, decls, ty: m.value, depth: depth + 1)
+        .int_ty | .bool | .str | .ptr | .cstr | .unit => return fail("absent", "no float here")
+        .function_ty | .case_ty | .failure | .generic | .error => return fail("absent", "no float here")
+    return fail("absent", "unreached")
+
+# The first field or case payload that reaches a float, as a dotted path
+# threaded DOWNWARD. The DEEPEST owner wins, not the full path — Wrapper
+# holding a Point reports `Point.y` rather than `Wrapper.inner.y`, and
+# that is deliberate where the ordering walk builds the path instead:
+# sort refuses the whole value and the reader needs the route in, while
+# a map key is repaired by changing ONE declaration, and `Point.y` names
+# the declaration to open.
+function inside(c: check_state.Checker, s: source.Source, decls: [ast.Decl], owner: str, fields: [ast.Field], depth: i64) -> str?
+    for field in fields
+        written = check_state.written_type(c.out, field.ty)
+        if written.is_err()
+            continue
+        found = reaches_float(c, s, decls, ty: written.must(), depth: depth + 1)
+        if found.is_err()
+            continue
+        if found.must() == ""
+            return ok(owner + "." + source.span_text(s, field.name))
+        return found
+    return fail("absent", "every field is exact")
+
+## Tests
+
+function swept(text: str) -> check_state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checker @ check_state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    check_decls.file(@c, p.tree, out, s, p.decls)
+    check(@c, p.tree, s, p.decls)
+    return c
+
+test "a float key is refused at the annotation, with the deepest owner"
+    direct = swept("function f()\n    m: {f64: i64} @ {}\n    _ = m\n")
+    assert direct.out.diagnostics.len() == 1
+    assert direct.out.diagnostics[0].code == "float_map_key"
+    assert direct.out.diagnostics[0].message == "`f64` cannot be a map key, because it is a float"
+    nested = swept("record Point\n    x: i64\n    y: f64\n\nrecord Wrapper\n    inner: Point\n\nfunction f()\n    m: {Wrapper: i64} @ {}\n    _ = m\n")
+    assert nested.out.diagnostics.len() == 1
+    assert nested.out.diagnostics[0].message == "`Wrapper` cannot be a map key, because `Point.y` is a float"
+
+test "the literal route is caught too, and an exact key stays legal"
+    built = swept("function f()\n    m = {1.5: 2}\n    print(len(m))\n")
+    found: bool @ false
+    for d in built.out.diagnostics
+        if d.code == "float_map_key"
+            found @ true
+    assert found
+    fine = swept("function f()\n    m: {str: i64} @ {}\n    m[\"a\"] @ 1\n    print(len(m))\n")
+    assert fine.out.diagnostics.len() == 0
+
+test "a partial key is the partial's message, and only one fires"
+    c = swept("extern \"r.h\"\n    record Font partial\n        size: f64\n\nfunction f()\n    m: {Font: i64} @ {}\n    _ = m\n")
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "ffi_partial_operation"
