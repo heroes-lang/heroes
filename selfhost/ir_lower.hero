@@ -236,10 +236,8 @@ function statement(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: c
             if b.loops.len() > 0
                 ir_build.terminate(@b, .jump(to: b.loops[b.loops.len() - 1].continue_to))
             return fail("none", "a continue produces nothing")
-        .assert_stmt =>
-            # PORT-STUB (asserts.rs): the assert lowering with both sides
-            # carried arrives with the next step.
-            ir_build.emit_void(@b, op: .missing, ty: check_table.unit_ty(c.types), span: span)
+        .assert_stmt asrt =>
+            lower_assert(@b, a, r, c, s, decls, asserted: asrt.value, span: span)
             return fail("none", "an assert produces nothing")
         .while_stmt w =>
             while_loop(@b, a, r, c, s, decls, cond: w.cond, body: w.block)
@@ -824,6 +822,123 @@ function field_call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
     run = lower_args(@b, a, r, c, s, decls, given: given)
     return emit_call(@b, target: .indirect(value: target), run: run, variadic: false, ty: ty, span: span)
 
+## assert — the source expression and both sides (§4.18, spec:157)
+
+# Part 5's row reads "if plus panic, with source text attached", and
+# the AND BOTH SIDES half is why the abort carries three operands where
+# the asserted expression is a comparison — the text, the left value,
+# the right value — and one where it is not. There is no panic in the
+# built-in inventory on purpose: the runtime has it, the user gets
+# assert, and the abort is an instruction rather than a call for
+# exactly that reason.
+
+# How an operand reaches the failure block: directly, or through a slot
+# because it carries a reference.
+variant Carried
+    direct
+        value: i64
+    through_slot
+        slot: i64
+
+function lower_assert(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], asserted: i64, span: token.Span)
+    text = assert_text(@b, c, s, span: span)
+    sides: [i64] @ []
+    cond = assert_condition(@b, a, r, c, s, decls, asserted: asserted, sides: @sides)
+    # A COUNTED OPERAND TRAVELS THROUGH A SLOT, NOT ACROSS THE EDGE.
+    # The two sides are computed here, in the test block, and read over
+    # there, in the failure block. For an i64 that is free. For a str it
+    # is a use-after-free, because the ownership pass releases an owning
+    # temporary at the end of the block that defines it, and a
+    # block-crossing read is precisely what it cannot see. Panel 021
+    # predicted this; it arrived early, on the gallery's own
+    # `assert sentence_of([...]) == "one two"`. A synthetic slot costs
+    # two instructions on a path that is about to abort the program.
+    carried: [Carried] @ []
+    for side in sides
+        ty = ir_build.value_ty(b, side)
+        if !ir_layout.is_refcounted(c, ty)
+            carried @ carried.push(.direct(value: side))
+        else
+            slot = ir_build.synthetic(@b, prefix: "assert", ty: ty)
+            ir_build.store_slot(@b, slot_id: slot, value: side, span: span)
+            carried @ carried.push(.through_slot(slot: slot))
+    good = ir_build.block(@b, note: "assert: held")
+    bad = ir_build.block(@b, note: "assert: failed")
+    ir_build.terminate(@b, .branch(cond: cond, then_to: good, else_to: bad))
+    ir_build.switch_to(@b, target: bad)
+    operands: [ir.Arg] @ [.value_arg(value: text)]
+    for one in carried
+        match one
+            .direct d => operands @ operands.push(.value_arg(value: d.value))
+            .through_slot t =>
+                loaded = ir_build.load_slot(@b, slot_id: t.slot, span: span)
+                operands @ operands.push(.value_arg(value: loaded))
+    run = ir_build.args_run(@b, operands)
+    ir_build.emit_void(@b, op: .abort_op(why: .assert_abort, arguments: run), ty: ir_build.unit_ty(b), span: span)
+    ir_build.terminate(@b, .unreachable)
+    ir_build.switch_to(@b, target: good)
+
+# The condition, and the two sides when there are two. A comparison is
+# lowered HERE rather than through expr so that the operands are named:
+# the same two temporaries feed the branch AND the failure message,
+# which is what lets the message quote values instead of re-evaluating
+# an expression that may have side effects.
+function assert_condition(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], asserted: i64, @sides: [i64]) -> i64
+    span = a.exprs[asserted].span
+    match a.exprs[asserted].kind
+        .binary bin =>
+            cmp = comparison_op(bin.op)
+            if !cmp.is_err()
+                left = expr(@b, a, r, c, s, decls, id: bin.left)
+                right = expr(@b, a, r, c, s, decls, id: bin.right)
+                sides @ sides.push(left)
+                sides @ sides.push(right)
+                return ir_build.emit(@b, op: .binary(op: cmp.must(), left: left, right: right), ty: check_table.bool_ty(c.types), span: span)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return expr(@b, a, r, c, s, decls, id: asserted)
+        .name | .hole | .unary | .field | .index | .call | .method => return expr(@b, a, r, c, s, decls, id: asserted)
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return expr(@b, a, r, c, s, decls, id: asserted)
+    return expr(@b, a, r, c, s, decls, id: asserted)
+
+# The asserted expression AS THE AUTHOR WROTE IT: the statement's own
+# text with the keyword taken off the front. It used to be the
+# expression node's span, and that lost the parentheses — measured:
+# `assert (1 == 1) == (1 == 2)` reported `1 == 1) == (1 == 2`, because
+# a parenthesised operand's span covers what is INSIDE the brackets.
+# The statement span cannot lose a character the author typed; the
+# keyword is fixed and always leading, so stripping it is a fact about
+# the value rather than a guess about the shape (CLAUDE.md §11).
+function assert_text(@b: ir_build.Lowering, c: check_state.Checked, s: source.Source, span: token.Span) -> i64
+    written = source.span_text(s, span)
+    expression: str @ written
+    if written.len() > 6 && written.slice(from: 0, to: 6) == "assert"
+        expression @ written.slice(from: 6, to: written.len())
+    expression @ trimmed(expression)
+    at = ir_build.intern(@b, expression)
+    return ir_build.emit(@b, op: .lit(value: .str_const(at: at)), ty: check_table.str_ty(c.types), span: span)
+
+# Both ends, spaces and tabs: the trailing trim keeps a comment after
+# the expression — the statement span reaches one — out of the message.
+function trimmed(text: str) -> str
+    first: i64 @ 0
+    past: i64 @ text.len()
+    while first < past && (text[first] == ' ' || text[first] == '\t')
+        first @ first + 1
+    while past > first && (text[past - 1] == ' ' || text[past - 1] == '\t')
+        past @ past - 1
+    return text.slice(from: first, to: past)
+
+function comparison_op(op: ast.BinaryOp) -> ir.BinaryOp?
+    match op
+        .eq => return ok(.eq)
+        .ne => return ok(.ne)
+        .lt => return ok(.lt)
+        .le => return ok(.le)
+        .gt => return ok(.gt)
+        .ge => return ok(.ge)
+        .add | .sub | .mul | .div | .rem | .and | .or => return fail("no", "not a comparison")
+        .bit_and | .bit_or | .bit_xor | .shl | .shr => return fail("no", "not a comparison")
+    return fail("no", "unreached")
+
 ## Expressions
 
 function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64
@@ -1259,3 +1374,51 @@ test "must branches to the payload or an abort that carries the failure"
                 .unreachable => continue
                 .jump | .branch | .switch_term | .return_term | .open => assert false
     assert aborted
+
+test "an assert carries its text and both sides, and a str side rides a slot"
+    got = lowered("function f(name: str)\n    assert name == \"bowie\"\n")
+    fun = got.program.functions[0]
+    # The failure block: text + left + right = three operands, and the
+    # str sides were parked in $assert slots so nothing counted crosses
+    # the block edge.
+    carried_three: bool @ false
+    for blk in fun.blocks
+        if blk.note == "assert: failed"
+            for inst in blk.insts
+                match inst.op
+                    .abort_op ab =>
+                        if ab.arguments.length == 3
+                            carried_three @ true
+                    .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                    .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
+    assert carried_three
+    slotted: i64 @ 0
+    for slot in fun.slots
+        if slot.name == "$assert0" || slot.name == "$assert1"
+            slotted @ slotted + 1
+    assert slotted == 2
+    # The interned text is the expression as written, keyword stripped.
+    found_text: bool @ false
+    for text in got.program.strings
+        if text == "name == \"bowie\""
+            found_text @ true
+    assert found_text
+
+test "a bare assert carries only its text, and an i64 side rides no slot"
+    got = lowered("function g(flag: bool, n: i64)\n    assert flag\n    assert n > 0\n")
+    fun = got.program.functions[0]
+    counts: [i64] @ []
+    for blk in fun.blocks
+        if blk.note == "assert: failed"
+            for inst in blk.insts
+                match inst.op
+                    .abort_op ab => counts @ counts.push(ab.arguments.length)
+                    .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                    .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
+    assert counts.len() == 2
+    assert counts[0] == 1
+    assert counts[1] == 3
+    for slot in fun.slots
+        assert slot.name != "$assert0"
