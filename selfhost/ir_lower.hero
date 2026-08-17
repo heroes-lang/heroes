@@ -240,13 +240,11 @@ function statement(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: c
             # carried arrives with the next step.
             ir_build.emit_void(@b, op: .missing, ty: check_table.unit_ty(c.types), span: span)
             return fail("none", "an assert produces nothing")
-        .while_stmt =>
-            # PORT-STUB (control.rs): loops arrive with the next step.
-            ir_build.emit_void(@b, op: .missing, ty: check_table.unit_ty(c.types), span: span)
+        .while_stmt w =>
+            while_loop(@b, a, r, c, s, decls, cond: w.cond, body: w.block)
             return fail("none", "a loop produces nothing")
-        .for_in =>
-            # PORT-STUB (control.rs): loops arrive with the next step.
-            ir_build.emit_void(@b, op: .missing, ty: check_table.unit_ty(c.types), span: span)
+        .for_in fi =>
+            for_loop(@b, a, r, c, s, decls, name: fi.name, iterable: fi.iterable, body: fi.block)
             return fail("none", "a loop produces nothing")
         .expr_stmt e =>
             # A statement's type must be () (panel 003), with one
@@ -323,6 +321,169 @@ function walk_place(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
 function orphan(@b: ir_build.Lowering, c: check_state.Checked, id: i64) -> i64
     return ir_build.slot(@b, name: "$orphan", ty: c.expr_types[id], kind: .synthetic_slot)
 
+## Control flow — three rows of Part 5's table erased
+
+# The IR has no `if`, no `for` and no `&&`. It has blocks and two-way
+# branches, and each surface form is a shape built out of them:
+# while = test/body/exit; for = test/body/STEP/exit; if = one test and
+# one arm per branch, then a join; && = the right side, then a join.
+# A branching expression's value is a SLOT: each arm stores into $r and
+# the join loads it — what replaces a phi node, and why a join needs no
+# argument list.
+
+# `while cond` — the condition loop (§4.7; panel 018 gave it its own
+# keyword). continue targets the test: a while has nothing to step.
+function while_loop(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], cond: i64, body: ast.Block)
+    head = ir_build.block(@b, note: "while: test")
+    inside = ir_build.block(@b, note: "while: body")
+    leave = ir_build.block(@b, note: "while: exit")
+    ir_build.terminate(@b, .jump(to: head))
+    ir_build.switch_to(@b, target: head)
+    value = expr(@b, a, r, c, s, decls, id: cond)
+    ir_build.terminate(@b, .branch(cond: value, then_to: inside, else_to: leave))
+    b.loops @ b.loops.push(ir_build.LoopEdges(break_to: leave, continue_to: head))
+    ir_build.switch_to(@b, target: inside)
+    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false)
+    ir_build.terminate(@b, .jump(to: head))
+    b.loops @ b.loops.slice(from: 0, to: b.loops.len() - 1)
+    ir_build.switch_to(@b, target: leave)
+
+# `for x in xs` — Part 5's row, erased: a while with an index. The
+# iterable is evaluated ONCE, into a slot, because `for x in f()` must
+# not call f per iteration. The index is $i<n>: a name the author
+# cannot have written, so it cannot shadow anything and cannot be
+# reported unused (§4.4 twice).
+function for_loop(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, iterable: i64, body: ast.Block)
+    int_id = check_table.int_ty_id(c.types)
+    bool_id = check_table.bool_ty(c.types)
+    sequence_ty = c.expr_types[iterable]
+    sequence = expr(@b, a, r, c, s, decls, id: iterable)
+    holder = ir_build.synthetic(@b, prefix: "xs", ty: sequence_ty)
+    ir_build.store_slot(@b, slot_id: holder, value: sequence, span: name)
+    index = ir_build.synthetic(@b, prefix: "i", ty: int_id)
+    zero = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))), ty: int_id, span: name)
+    ir_build.store_slot(@b, slot_id: index, value: zero, span: name)
+    # The loop variable is a real local: the resolver made it and the
+    # body reads it by name. `for _ in xs` names nothing (§4.7), so it
+    # gets no slot and the body never reads an element — the loop is
+    # being run for its count.
+    element: i64? @ fail("none", "no loop variable")
+    element_ty: i64 @ int_id
+    local = ir_build.local_at(b, name)
+    if !local.is_err()
+        element_ty @ c.local_types[local.must()]
+        slot = ir_build.slot(@b, name: source.span_text(s, name), ty: element_ty, kind: .local_slot)
+        ir_build.bind_local(@b, local: local.must(), slot_id: slot)
+        element @ ok(slot)
+    head = ir_build.block(@b, note: "for: test")
+    inside = ir_build.block(@b, note: "for: body")
+    step = ir_build.block(@b, note: "for: step")
+    leave = ir_build.block(@b, note: "for: exit")
+    ir_build.terminate(@b, .jump(to: head))
+    ir_build.switch_to(@b, target: head)
+    i = ir_build.load_slot(@b, slot_id: index, span: name)
+    xs = ir_build.load_slot(@b, slot_id: holder, span: name)
+    length = ir_build.emit(@b, op: .len_of(value: xs), ty: int_id, span: name)
+    more = ir_build.emit(@b, op: .binary(op: .lt, left: i, right: length), ty: bool_id, span: name)
+    ir_build.terminate(@b, .branch(cond: more, then_to: inside, else_to: leave))
+    ir_build.switch_to(@b, target: inside)
+    if !element.is_err()
+        xs_again = ir_build.load_slot(@b, slot_id: holder, span: name)
+        i_again = ir_build.load_slot(@b, slot_id: index, span: name)
+        item = ir_build.emit(@b, op: .index(base: xs_again, at: i_again), ty: element_ty, span: name)
+        ir_build.store_slot(@b, slot_id: element.must(), value: item, span: name)
+    # continue lands on the STEP, not the test: the increment owes
+    # itself to that path as much as to the fall-through.
+    b.loops @ b.loops.push(ir_build.LoopEdges(break_to: leave, continue_to: step))
+    _ = block(@b, a, r, c, s, decls, body: body, wants_value: false)
+    ir_build.terminate(@b, .jump(to: step))
+    b.loops @ b.loops.slice(from: 0, to: b.loops.len() - 1)
+    ir_build.switch_to(@b, target: step)
+    i_step = ir_build.load_slot(@b, slot_id: index, span: name)
+    one = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 1))), ty: int_id, span: name)
+    next = ir_build.emit(@b, op: .binary(op: .add, left: i_step, right: one), ty: int_id, span: name)
+    ir_build.store_slot(@b, slot_id: index, value: next, span: name)
+    ir_build.terminate(@b, .jump(to: head))
+    ir_build.switch_to(@b, target: leave)
+
+# `if c` / `else if c` / `else` — an expression like everything else
+# (§4.7), so one routine serves both positions. In statement position
+# the join slot is simply never loaded.
+function if_expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], branches: [ast.Branch], otherwise: ast.Block?, ty: i64, span: token.Span) -> i64
+    wants_value = ty != ir_build.unit_ty(b) && ty != check_table.error_ty(c.types)
+    result: i64? @ fail("none", "statement position")
+    if wants_value
+        result @ ok(ir_build.synthetic(@b, prefix: "r", ty: ty))
+    meet = ir_build.block(@b, note: "if: join")
+    for branch in branches
+        cond = expr(@b, a, r, c, s, decls, id: branch.cond)
+        then_block = ir_build.block(@b, note: "if: then")
+        next = ir_build.block(@b, note: "if: else")
+        ir_build.terminate(@b, .branch(cond: cond, then_to: then_block, else_to: next))
+        ir_build.switch_to(@b, target: then_block)
+        value = block(@b, a, r, c, s, decls, body: branch.block, wants_value: wants_value)
+        store_arm(@b, result: result, value: value, span: span)
+        ir_build.terminate(@b, .jump(to: meet))
+        ir_build.switch_to(@b, target: next)
+    # No else means the fall-through IS the missing arm. An if used as a
+    # value always has one (§4.7), so that only happens in statement
+    # position.
+    if !otherwise.is_err()
+        value = block(@b, a, r, c, s, decls, body: otherwise.must(), wants_value: wants_value)
+        store_arm(@b, result: result, value: value, span: span)
+    ir_build.terminate(@b, .jump(to: meet))
+    ir_build.switch_to(@b, target: meet)
+    return seal_join(@b, meet: meet, result: result, span: span)
+
+# `a && b` and `a || b` — not instructions. §4.14 makes them
+# short-circuit, so the right side is evaluated on one edge only, and
+# that is a branch. The asymmetry IS the operator: && evaluates the
+# right side when the left is true, || when it is false.
+function short_circuit(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], op: ast.BinaryOp, left: i64, right: i64, ty: i64, span: token.Span) -> i64
+    result = ir_build.synthetic(@b, prefix: "b", ty: ty)
+    first = expr(@b, a, r, c, s, decls, id: left)
+    ir_build.store_slot(@b, slot_id: result, value: first, span: span)
+    is_and: bool @ false
+    match op
+        .and => is_and @ true
+        .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge => is_and @ is_and
+        .or | .bit_and | .bit_or | .bit_xor | .shl | .shr => is_and @ is_and
+    rest: i64 @ 0
+    meet: i64 @ 0
+    if is_and
+        rest @ ir_build.block(@b, note: "&&: right")
+        meet @ ir_build.block(@b, note: "&&: join")
+        ir_build.terminate(@b, .branch(cond: first, then_to: rest, else_to: meet))
+    else
+        rest @ ir_build.block(@b, note: "||: right")
+        meet @ ir_build.block(@b, note: "||: join")
+        ir_build.terminate(@b, .branch(cond: first, then_to: meet, else_to: rest))
+    ir_build.switch_to(@b, target: rest)
+    second = expr(@b, a, r, c, s, decls, id: right)
+    ir_build.store_slot(@b, slot_id: result, value: second, span: span)
+    ir_build.terminate(@b, .jump(to: meet))
+    ir_build.switch_to(@b, target: meet)
+    return ir_build.load_slot(@b, slot_id: result, span: span)
+
+# Writes an arm's value into the join slot, when there is one of each.
+function store_arm(@b: ir_build.Lowering, result: i64?, value: i64?, span: token.Span)
+    if result.is_err() || value.is_err()
+        return
+    ir_build.store_slot(@b, slot_id: result.must(), value: value.must(), span: span)
+
+# Closes a join: load the value if there is one, and say unreachable
+# when nothing reaches here — which happens when every arm jumped or
+# returned. A match all of whose arms diverge is legal in statement
+# position (panel 017 A), so this is a real shape and not a defensive
+# branch.
+function seal_join(@b: ir_build.Lowering, meet: i64, result: i64?, span: token.Span) -> i64
+    if !ir_build.has_preds(b, target: meet)
+        ir_build.terminate(@b, .unreachable)
+        return ir_build.unit_value()
+    if result.is_err()
+        return ir_build.unit_value()
+    return ir_build.load_slot(@b, slot_id: result.must(), span: span)
+
 ## Expressions
 
 function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64
@@ -361,9 +522,7 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
         .binary bin =>
             match bin.op
                 .and | .or =>
-                    # PORT-STUB (control.rs): short-circuit is control
-                    # flow and arrives with the next step.
-                    return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+                    return short_circuit(@b, a, r, c, s, decls, op: bin.op, left: bin.left, right: bin.right, ty: ty, span: span)
                 .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge | .bit_and | .bit_or | .bit_xor | .shl | .shr =>
                     left = expr(@b, a, r, c, s, decls, id: bin.left)
                     right = expr(@b, a, r, c, s, decls, id: bin.right)
@@ -428,9 +587,8 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
         .try_expr =>
             # PORT-STUB (fallible.rs): `?` arrives with the next step.
             return ir_build.emit(@b, op: .missing, ty: ty, span: span)
-        .if_expr =>
-            # PORT-STUB (control.rs).
-            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .if_expr ie =>
+            return if_expr(@b, a, r, c, s, decls, branches: ie.branches, otherwise: ie.otherwise, ty: ty, span: span)
         .match_expr =>
             # PORT-STUB (matches.rs).
             return ir_build.emit(@b, op: .missing, ty: ty, span: span)
@@ -606,3 +764,66 @@ test "string literals intern decoded, and twice is once"
     got = lowered("function f() -> str\n    a = \"he\\nllo\"\n    b = \"he\\nllo\"\n    return a + b\n")
     assert got.program.strings.len() == 1
     assert got.program.strings[0] == "he\nllo"
+
+test "a while is three blocks and a for is four, continue landing on the step"
+    got = lowered("function g(xs: [i64]) -> i64\n    total: i64 @ 0\n    for x in xs\n        if x == 0\n            continue\n        total @ total + x\n    return total\n")
+    f = got.program.functions[0]
+    step_at: i64 @ 0 - 1
+    at: i64 @ 0
+    for blk in f.blocks
+        if blk.note == "for: step"
+            step_at @ at
+        at @ at + 1
+    assert step_at >= 0
+    # The continue arm jumps to the STEP block, not the test: the
+    # increment owes itself to that path too.
+    jumped: bool @ false
+    walk: i64 @ 0
+    for blk in f.blocks
+        if blk.note == "if: then"
+            match blk.term
+                .jump j =>
+                    if j.to == step_at
+                        jumped @ true
+                .branch | .switch_term | .return_term | .unreachable | .open => continue
+        walk @ walk + 1
+    assert jumped
+
+test "an if in value position stores into $r and the join loads it"
+    got = lowered("function h(c: bool) -> i64\n    v = if c\n        1\n    else\n        2\n    return v\n")
+    f = got.program.functions[0]
+    named: bool @ false
+    for slot in f.slots
+        if slot.name == "$r0"
+            named @ true
+    assert named
+
+test "&& branches with its own polarity and || with the opposite"
+    got = lowered("function s(p: bool, q: bool) -> bool\n    return p && q\n")
+    f = got.program.functions[0]
+    rest_at: i64 @ 0 - 1
+    meet_at: i64 @ 0 - 1
+    at: i64 @ 0
+    for blk in f.blocks
+        if blk.note == "&&: right"
+            rest_at @ at
+        if blk.note == "&&: join"
+            meet_at @ at
+        at @ at + 1
+    match f.blocks[0].term
+        .branch br =>
+            # && evaluates the right side when the left is TRUE.
+            assert br.then_to == rest_at
+            assert br.else_to == meet_at
+        .jump | .switch_term | .return_term | .unreachable | .open => assert false
+
+test "a join every arm returned past is sealed unreachable"
+    got = lowered("function d(c: bool) -> i64\n    if c\n        return 1\n    else\n        return 2\n")
+    f = got.program.functions[0]
+    sealed: bool @ false
+    for blk in f.blocks
+        if blk.note == "if: join"
+            match blk.term
+                .unreachable => sealed @ true
+                .jump | .branch | .switch_term | .return_term | .open => continue
+    assert sealed
