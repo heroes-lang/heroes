@@ -17,20 +17,23 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-selfhost-probe closed 2026-08-15, tag `m-selfhost-probe` — the lexer is
-ported, and the wall the plan predicted was not there.**
+**M-selfhost-port closed 2026-08-17, tag `m-selfhost-port` — THE FIXPOINT.**
 
-    selfhost/: 11 files, 1,888 lines, 55 tests · 0.04 s on a real module
-    12 gaps, all workaround-compiles · hero_spawn priced at +39 · `private` stays Part 7
+    373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63
+    gen1b.c (bootstrap) == gen3.c (heroes, in Heroes) == gen4.c (stage 2)
+    20,886,539 bytes · 724,245 lines · Apple clang 21.0.0, arm64-darwin
 
-The byte wall was filled by M-sized-integers before the probe ran. Panel 065
-(the `// ORDER:` marks) opened the milestone; measurement 009 is the record.
-The findings are a **lower bound**: the lexer has zero maps and zero closures,
-so a second file (maps, recursive variants, generics) opens M-selfhost-port.
+`selfhost/`: **143 modules, 34,812 lines, 27,230 tests, zero PORT-DEBT** — the
+whole compiler, CLI included. Verified three ways: the port's C compiles under
+the full flag set, *that* compiler passes the differential (5 commands × 257
+corpus inputs × 2 streams, zero divergences), and the fixpoint is stable.
 
-**561 tests + the port's 55**, clippy clean, spec untouched at **3374** (headroom 722),
-determinism diff empty. Record: `docs/journal/020-selfhost-probe.md`.
-Next: **M-selfhost-port** — the rest of the compiler, file by file.
+Nine defects found getting there, five in the port and **four in the
+bootstrap**; four predictions scored, 036's spec-warden falsified. Record:
+`docs/journal/021-selfhost-port.md`.
+
+Next: **M-selfhost-fixpoint** — the seed test first (B.c from a clean checkout
+with nothing but a C compiler), then the archive. That order is the row's own.
 
 ---
 
