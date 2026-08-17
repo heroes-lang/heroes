@@ -120,7 +120,7 @@ function halted(tree: ast.Ast, decls: [ast.Decl], c: check_state.Checked, p: ir_
 # The pipeline to a translation unit. The failure's code carries the
 # exit: "diagnostics" is 1, "failed" is 2 — the caller maps e.code.
 function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
-    parsed = parse.parse(s.text)
+    parsed = parse.parse_bounded(text: s.text, root_end: source.root_end(s))
     stop = stage(parsed.diagnostics, s)
     if !stop.is_err()
         return leave(stop.must())

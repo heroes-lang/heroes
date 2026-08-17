@@ -45,6 +45,7 @@ function main()
         cli_io.eprint(text: "error: " + message_of(parsed))
         exit(code: 2)
     inv = parsed.must()
+    reading: bool @ false
     # The ones that answer without reading a program.
     match inv.tag
         .version_cmd =>
@@ -58,8 +59,14 @@ function main()
         .mutate_cmd | .measure_cmd =>
             cli_io.eprint(text: "error: `mutate` and `measure` are not in the selfhost compiler yet — the bootstrap has them")
             exit(code: 2)
-        .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd => print("")
+        # The seven that read a program fall through to the walk
+        # below. The arm is a no-op MUTATION and not a print: a
+        # `print("")` here put a blank line above every diagnostic and
+        # every dump — caught by the differential against the
+        # bootstrap on 2026-08-17, four inputs out of 257.
+        .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd => reading @ true
     # Everything left reads a file.
+    _ = reading
     path = inv.file.default("")
     library = read_file(LIBRARY_PATH).default("")
     read = cli_input.read_compilation(path: path, library: library)

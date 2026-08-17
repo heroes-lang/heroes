@@ -28,12 +28,19 @@ record ParseOutput
 # Never sorted across stages: a shape error and the word error that caused it
 # read better together than interleaved by column.
 function parse(text: str) -> ParseOutput
+    return parse_bounded(text: text, root_end: -1)
+
+# The same parse, told where the author's own text stops — what the CLI
+# uses, because a compilation is the author's file plus every module it
+# reaches plus the library (§1.11), and a diagnostic must never point
+# inside the last of those.
+function parse_bounded(text: str, root_end: i64) -> ParseOutput
     lexed = lexer.lex_one(text)
     comments: [token.Span] @ []
     for t in lexed.tokens
         if t.kind == .comment
             comments @ comments.push(t.span)
-    c: cursor.Cursor @ cursor.new_cursor(lexed.tokens)
+    c: cursor.Cursor @ cursor.bounded_cursor(tokens: lexed.tokens, root_end: root_end)
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []

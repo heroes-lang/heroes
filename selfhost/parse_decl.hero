@@ -147,9 +147,16 @@ function head(@c: cursor.Cursor, text: str, example: str) -> Head?
 # arm cannot fire and the current span is always the author's file — a
 # premise that dies the day the Source port arrives, which is why the name
 # and the call sites are kept one-to-one with Rust: only this body changes.
+# The clamp lives on the cursor, which is the only thing that knows the
+# boundary. This was a STUB that threw the fallback away for the whole
+# port — so `variant Token` with no cases, as the file's last
+# declaration, was reported at the LIBRARY's line 26 and the port
+# exited 2 blaming itself for the author's mistake. Found 2026-08-17 by
+# the differential against the bootstrap, on
+# tests/golden/check/missing-body.hero, whose own comment describes the
+# hazard verbatim.
 function here_or(c: cursor.Cursor, fallback: token.Span) -> token.Span
-    _ = fallback
-    return cursor.current_span(c)
+    return cursor.here_or(c, fallback)
 
 ## constant
 

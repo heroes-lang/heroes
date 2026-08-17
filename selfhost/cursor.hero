@@ -73,13 +73,36 @@ record Cursor
     diagnostics: [diag.Diagnostic]
     # Comment spans passed over since the last `take_docs`.
     comments: [token.Span]
+    # Where the author's own text ends. The parse runs over the WHOLE
+    # concatenated Source (§1.11 appends the library to every
+    # compilation), so a diagnostic that reaches for "the next token"
+    # past the author's last declaration would land on the library's
+    # first line — a place the author cannot open (panel 028 R5's
+    # class). One number is all the clamp needs, and the parser stays
+    # a function of text rather than growing a Source.
+    root_end: i64
 
 function new_cursor(tokens: [token.Token]) -> Cursor
+    return bounded_cursor(tokens: tokens, root_end: -1)
+
+# The same, told where the author's text stops. -1 means "everything is
+# the author's", which is what a single-file parse is.
+function bounded_cursor(tokens: [token.Token], root_end: i64) -> Cursor
     diagnostics: [diag.Diagnostic] = []
     comments: [token.Span] = []
-    c: Cursor @ Cursor(tokens: tokens, pos: 0, diagnostics: diagnostics, comments: comments)
+    c: Cursor @ Cursor(tokens: tokens, pos: 0, diagnostics: diagnostics, comments: comments, root_end: root_end)
     pass_comments(@c)
     return c
+
+# The current token's span, or the fallback when the current token is
+# past the author's text. The bootstrap asks `src.is_library`; the port
+# asks the boundary it was given, which is the same question with one
+# less dependency.
+function here_or(c: Cursor, fallback: token.Span) -> token.Span
+    here = current_span(c)
+    if c.root_end >= 0 && here.start >= c.root_end
+        return fallback
+    return here
 
 function pass_comments(@c: Cursor)
     while c.tokens[c.pos].kind == .comment
@@ -500,3 +523,26 @@ test "a bracket is the landmark recovery cannot misread"
     recover_past_closer(@c, opener: .lparen, closer: .rparen)
     # It stopped after the closer that matches, not the first one it saw.
     assert current_kind(c) == .rparen
+
+# A fixed defect gets a case named after it (CLAUDE.md §9). Symptom:
+# the last declaration in a file, reported at "the next token", landed
+# on the LIBRARY's first line — a place the author cannot open — so the
+# CLI's misplaced-diagnostic rule turned the author's own mistake into
+# `internal error` at exit 2. Cause: parse_decl's `here_or` was a stub
+# that discarded the fallback for the whole port. Found 2026-08-17 by
+# the differential against the bootstrap over 257 corpus inputs.
+test "fixedbugs: past the boundary, the fallback is what the caret gets"
+    tokens: [token.Token] = [
+        token.Token(kind: .kw_constant, span: token.Span(start: 0, end: 8))
+        token.Token(kind: .eof, span: token.Span(start: 40, end: 40))
+    ]
+    keyword = token.Span(start: 0, end: 8)
+    # Unbounded: the current token answers, whatever it is.
+    plain: Cursor @ new_cursor(tokens)
+    assert here_or(plain, keyword).start == current_span(plain).start
+    # Bounded: a token at or past the author's end yields the fallback.
+    bounded: Cursor @ bounded_cursor(tokens: tokens, root_end: 20)
+    _ = bump(@bounded)
+    assert current_span(bounded).start == 40
+    assert here_or(bounded, keyword).start == 0
+    assert here_or(bounded, keyword).end == 8

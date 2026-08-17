@@ -21,7 +21,7 @@ use cli_io
 # check, silent on success; with it the tree — but only when the file
 # is clean.
 function run_parse(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
-    out = parse.parse(s.text)
+    out = parse.parse_bounded(text: s.text, root_end: source.root_end(s))
     for d in out.diagnostics
         cli_io.eprint(text: diag.render_line(d, s))
     if out.diagnostics.len() > 0
@@ -34,7 +34,7 @@ function run_parse(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
 # --in-place rewrites the file and prints nothing — and an
 # already-canonical file is NOT rewritten, so its mtime does not move.
 function run_fmt(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
-    out = parse.parse(s.text)
+    out = parse.parse_bounded(text: s.text, root_end: source.root_end(s))
     if out.diagnostics.len() > 0
         for d in out.diagnostics
             cli_io.eprint(text: diag.render_line(d, s))
