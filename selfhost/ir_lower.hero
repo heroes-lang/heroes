@@ -42,6 +42,7 @@ use ir_layout
 use parse
 use resolve
 use checker
+use builtins
 
 # Lower one checked file. Runs only on a tree that checked clean: after
 # a type error the checker's answers are guesses, and expr_types would
@@ -603,6 +604,226 @@ function payload_of(@b: ir_build.Lowering, subject: i64, at: i64, ty: i64, span:
     held = ir_build.load_slot(@b, slot_id: subject, span: span)
     return ir_build.emit(@b, op: .payload(base: held, at: at), ty: ty, span: span)
 
+## Calls, construction, and UFCS erased (§4.9, §4.11, §4.13, §4.19)
+
+# Two of Part 5's rows cost nothing here, and the reason is a surface
+# rule: a label in Heroes does not REORDER an argument — the checker
+# verified the label at a position against the parameter AT that
+# position, so "named -> positional" is erased by simply not carrying
+# the label. Callee is where this file earns its keep (panel 019's most
+# expensive finding): a Heroes `function open` reaching C unmangled
+# replaces libc's, clang says nothing, and the program prints 7 instead
+# of a file descriptor. Recording the linkage here is what stops the
+# emitter from re-deriving it and getting it wrong.
+
+# `f(x)`, `Point(x: 3, y: 4)`, `ok(v)`, `fail(c, m)`, `h.cb(n)` — one
+# syntax, and what it IS depends on what the callee resolved to.
+function call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    is_name: bool @ false
+    match a.exprs[callee].kind
+        .name => is_name @ true
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => is_name @ is_name
+        .hole | .unary | .binary | .field | .index | .call | .method => is_name @ is_name
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => is_name @ is_name
+    if is_name
+        match r.uses[callee]
+            .top t =>
+                # Record construction IS a call with named arguments
+                # (§4.9), so the surface needs no node of its own — but
+                # the IR does, because the layout decision belongs to the
+                # descriptor pass.
+                if is_record(decls, t.at)
+                    run = lower_args(@b, a, r, c, s, decls, given: given)
+                    return ir_build.emit(@b, op: .construct(shape: .record_shape(decl: t.at), arguments: run), ty: ty, span: span)
+                run = lower_args(@b, a, r, c, s, decls, given: given)
+                return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
+            .builtin bt =>
+                builtin_name = builtins.table()[bt.at].name
+                # `.cstr()` is a CAST, not a call: §4.3's no-implicit-
+                # conversions rule would be invisible in the dump if the
+                # conversion were hidden inside a call.
+                if builtin_name == "cstr"
+                    operand = expr(@b, a, r, c, s, decls, id: given[0].value)
+                    return ir_build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
+                # ok/fail build the two sides of a T? (§4.6, panel 002).
+                shape = fallible_constructor(builtin_name)
+                if !shape.is_err()
+                    run = lower_args(@b, a, r, c, s, decls, given: given)
+                    return ir_build.emit(@b, op: .construct(shape: shape.must(), arguments: run), ty: ty, span: span)
+                run = lower_args(@b, a, r, c, s, decls, given: given)
+                return emit_call(@b, target: .builtin_fn(at: bt.at), run: run, variadic: is_variadic(builtin_name), ty: ty, span: span)
+            # A local holding a function value (§4.13) — and geom(...),
+            # which the checker refused, since lowering only runs on a
+            # clean program.
+            .module | .local | .unresolved => is_name @ is_name
+    target = expr(@b, a, r, c, s, decls, id: callee)
+    run = lower_args(@b, a, r, c, s, decls, given: given)
+    return emit_call(@b, target: .indirect(value: target), run: run, variadic: false, ty: ty, span: span)
+
+function is_record(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .record_decl => true
+        .constant_decl | .function_decl | .variant_decl | .test_decl => false
+
+# `.num(v: 12)` — a case construction: the type is the VARIANT, the
+# name picks the case, and both were the checker's decisions.
+function case_construct(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    match check_table.get(c.types, ty)
+        .named n =>
+            found = ir_layout.case_index(decls, s, decl: n.decl, name: name)
+            if found.is_err()
+                return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+            run = lower_args(@b, a, r, c, s, decls, given: given)
+            return ir_build.emit(@b, op: .construct(shape: .case_shape(decl: n.decl, at: found.must()), arguments: run), ty: ty, span: span)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .array | .fixed | .map | .fallible | .function_ty => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .case_ty | .failure | .generic | .error => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+    return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+
+# A call, with the one thing the C proved: AT MOST ONE DESTINATION.
+# `dst = call print(x)` is a hard clang error and raylib is almost
+# entirely void-returning, so a () result produces no destination at
+# all — the value handed back is the function-wide unit, which no
+# instruction defines.
+function emit_call(@b: ir_build.Lowering, target: ir.Callee, run: ir.Run, variadic: bool, ty: i64, span: token.Span) -> i64
+    if ty == ir_build.unit_ty(b)
+        ir_build.emit_void(@b, op: .call(callee: target, arguments: run, variadic: variadic), ty: ty, span: span)
+        return ir_build.unit_value()
+    return ir_build.emit(@b, op: .call(callee: target, arguments: run, variadic: variadic), ty: ty, span: span)
+
+# Lowers the written arguments, left to right. `@x` at the call site
+# becomes a PLACE, not a value: the callee copies in and copies out, so
+# it needs to know where to write back (§4.8). The label is dropped
+# here — it was checked against the parameter at this position and
+# carries no further meaning.
+function lower_args(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg]) -> ir.Run
+    lowered_args: [ir.Arg] @ []
+    for arg in given
+        if arg.mutable
+            spot = place(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(.inout_arg(place: spot))
+        else
+            value = expr(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(.value_arg(value: value))
+    return ir_build.args_run(@b, lowered_args)
+
+# The UFCS shape: the receiver becomes argument zero. §4.11 forbids
+# this where the first parameter is @, so the receiver is always a
+# value.
+function with_receiver(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg]) -> ir.Run
+    first = expr(@b, a, r, c, s, decls, id: receiver)
+    lowered_args: [ir.Arg] @ [.value_arg(value: first)]
+    for arg in given
+        if arg.mutable
+            spot = place(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(.inout_arg(place: spot))
+        else
+            value = expr(@b, a, r, c, s, decls, id: arg.value)
+            lowered_args @ lowered_args.push(.value_arg(value: value))
+    return ir_build.args_run(@b, lowered_args)
+
+# The one call shape clang verifies nothing about (§4.19): print today,
+# TextFormat and sqlite3_mprintf at the boundary, where a wrong argument
+# count compiles, runs, and prints garbage.
+function is_variadic(name: str) -> bool
+    return name == "print"
+
+## `x.f(y)` — the three tokens with two meanings (§4.11, §4.13; panel 079)
+
+# The same three tokens are either a call to a free function with the
+# receiver first, or a read of a FIELD that holds a function value —
+# and only the receiver's type settles which. The two halves live in
+# one place on purpose: they used to disagree (the resolver answers
+# top whenever a free function of that name exists, whether or not the
+# receiver has the field), and the disagreement printed 50007 against
+# 100 at exit 0, then a clang type confusion at exit 2. One rule, asked
+# once: THE FIELD FIRST, then whatever the resolver said.
+function method(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64, name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    # The resolver filed the method name's meaning at the method node
+    # itself: the name after the dot has no expression id of its own.
+    # The qualified form first: the receiver names a module, erased here
+    # exactly as it is erased in the C.
+    is_qualified: bool @ false
+    match r.uses[receiver]
+        .module => is_qualified @ true
+        .local | .top | .builtin | .unresolved => is_qualified @ is_qualified
+    if is_qualified
+        match r.uses[at]
+            .top t =>
+                run = lower_args(@b, a, r, c, s, decls, given: given)
+                # A record is constructed, not called — the same split
+                # call makes.
+                if is_record(decls, t.at)
+                    return ir_build.emit(@b, op: .construct(shape: .record_shape(decl: t.at), arguments: run), ty: ty, span: span)
+                return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
+            .local | .builtin | .module | .unresolved => is_qualified @ is_qualified
+    # .must(), .default(v) and .is_err() are branches, not calls
+    # (Part 5): they read a tag and choose an edge.
+    match r.uses[at]
+        .builtin bt =>
+            if is_fallible_operation(builtins.table()[bt.at].name)
+                return fallible_operation(@b, a, r, c, s, decls, name: builtins.table()[bt.at].name, receiver: receiver, given: given, ty: ty, span: span)
+        .local | .top | .module | .unresolved => is_qualified @ is_qualified
+    # §4.11's order, asked HERE too, because this pass used to answer it
+    # differently from the checker (panel 079): the field first, and
+    # only a field whose type is a function value.
+    field_ty = ir_layout.field_type(decls, c, s, owner: c.expr_types[receiver], name: name)
+    if !field_ty.is_err()
+        is_function: bool @ false
+        match check_table.get(c.types, field_ty.must())
+            .function_ty => is_function @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_function @ is_function
+            .array | .fixed | .map | .fallible | .named => is_function @ is_function
+            .case_ty | .failure | .generic | .error => is_function @ is_function
+        if is_function
+            return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
+    match r.uses[at]
+        .builtin bt =>
+            builtin_name = builtins.table()[bt.at].name
+            # `s.cstr()` — the same cast the plain-call form makes, and
+            # the shape every program actually writes. Taken before the
+            # arguments are lowered, because a cast has exactly one
+            # operand and it is the receiver.
+            if builtin_name == "cstr"
+                operand = expr(@b, a, r, c, s, decls, id: receiver)
+                return ir_build.emit(@b, op: .cast(kind: .str_to_cstr, operand: operand), ty: ty, span: span)
+            run = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            return emit_call(@b, target: .builtin_fn(at: bt.at), run: run, variadic: is_variadic(builtin_name), ty: ty, span: span)
+        .top t =>
+            run = with_receiver(@b, a, r, c, s, decls, receiver: receiver, given: given)
+            return emit_call(@b, target: callee_of(decls, t.at), run: run, variadic: false, ty: ty, span: span)
+        # h.cb(n) where cb is a field holding a function value: the dot
+        # is a FIELD READ, not a receiver (§4.11's first lookup, §4.13).
+        # A module receiver never reaches here — the branch above
+        # returned.
+        .module | .local | .unresolved =>
+            return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
+    return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+
+# h.cb(n): the dot is a field read. Split out (panel 079) so the two
+# callers cannot drift: the resolver's fallback reaches it, and so does
+# §4.11's field-first order above.
+function field_call(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    owner = c.expr_types[receiver]
+    base = expr(@b, a, r, c, s, decls, id: receiver)
+    # The field's OWN type, read from the declaration that wrote it —
+    # this used to be the call's result under an expired premise, and
+    # the emitted C blamed itself for a correct program (panel 068 F8).
+    # The fallback is deliberate: a field the checker could not resolve
+    # has already been reported, and lowering stays quiet.
+    function_ty: i64 @ ty
+    written = ir_layout.field_type(decls, c, s, owner: owner, name: name)
+    if !written.is_err()
+        function_ty @ written.must()
+    found = ir_layout.field_index(decls, c, s, owner: owner, name: name)
+    target: i64 @ 0
+    if found.is_err()
+        target @ ir_build.emit(@b, op: .missing, ty: function_ty, span: span)
+    else
+        target @ ir_build.emit(@b, op: .field(base: base, at: found.must()), ty: function_ty, span: span)
+    run = lower_args(@b, a, r, c, s, decls, given: given)
+    return emit_call(@b, target: .indirect(value: target), run: run, variadic: false, ty: ty, span: span)
+
 ## Expressions
 
 function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64
@@ -693,16 +914,12 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
                 values @ values.push(expr(@b, a, r, c, s, decls, id: entry.value))
             run = value_args(@b, values)
             return ir_build.emit(@b, op: .construct(shape: .map_shape, arguments: run), ty: ty, span: span)
-        .call =>
-            # PORT-STUB (calls.rs): dispatch arrives with the next step.
-            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
-        .method =>
-            # PORT-STUB (ufcs.rs): UFCS erasure arrives with the next step.
-            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
-        .variant_case =>
-            # PORT-STUB (calls.rs): case construction arrives with the
-            # next step.
-            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .call cl =>
+            return call(@b, a, r, c, s, decls, callee: cl.callee, given: cl.args, ty: ty, span: span)
+        .method m =>
+            return method(@b, a, r, c, s, decls, at: id, receiver: m.receiver, name: m.name, given: m.args, ty: ty, span: span)
+        .variant_case vc =>
+            return case_construct(@b, a, r, c, s, decls, name: vc.name, given: vc.args, ty: ty, span: span)
         .try_expr t =>
             return try_expr(@b, a, r, c, s, decls, inner: t.value, ty: ty, span: span)
         .if_expr ie =>
@@ -974,3 +1191,71 @@ test "? branches on the tag, and the error edge is a real exit edge"
             .field | .index | .map_get | .len_of | .tag_of | .payload => continue
             .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     assert wrapped
+
+test "an @ argument is a place, and a record construction is not a call"
+    got = lowered("record Pt\n    x: i64\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction f() -> i64\n    v: i64 @ 0\n    bump(@v)\n    _ = Pt(x: 2)\n    return v\n")
+    f = got.program.functions[1]
+    assert f.name == "f"
+    passed_place: bool @ false
+    built: bool @ false
+    for blk in f.blocks
+        for inst in blk.insts
+            match inst.op
+                .call cl =>
+                    for arg in ir_state.args_of(f, cl.arguments)
+                        match arg
+                            .inout_arg => passed_place @ true
+                            .value_arg => continue
+                .construct con =>
+                    match con.shape
+                        .record_shape => built @ true
+                        .case_shape | .array_shape | .map_shape => continue
+                        .ok_shape | .fail_shape | .err_shape => continue
+                .lit | .load | .store | .unary | .binary | .cast => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+    assert passed_place
+    assert built
+
+test "UFCS puts the receiver first, and print is variadic with no destination"
+    got = lowered("function double(n: i64) -> i64\n    return n * 2\n\nfunction g()\n    print(5.double())\n")
+    f = got.program.functions[1]
+    ufcs_two: bool @ false
+    printed: bool @ false
+    for blk in f.blocks
+        for inst in blk.insts
+            match inst.op
+                .call cl =>
+                    match cl.callee
+                        .heroes_fn =>
+                            assert cl.arguments.length == 1
+                            ufcs_two @ true
+                        .builtin_fn =>
+                            assert cl.variadic
+                            assert inst.dest.is_err()
+                            printed @ true
+                        .extern_fn | .indirect => continue
+                .lit | .load | .store | .unary | .binary | .cast | .construct => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+    assert ufcs_two
+    assert printed
+
+test "must branches to the payload or an abort that carries the failure"
+    got = lowered("function h(m: {str: i64}) -> i64\n    return m[\"a\"].must()\n")
+    f = got.program.functions[0]
+    aborted: bool @ false
+    for blk in f.blocks
+        if blk.note == "must: abort"
+            for inst in blk.insts
+                match inst.op
+                    .abort_op ab =>
+                        assert ab.arguments.length == 1
+                        aborted @ true
+                    .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                    .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
+            match blk.term
+                .unreachable => continue
+                .jump | .branch | .switch_term | .return_term | .open => assert false
+    assert aborted
