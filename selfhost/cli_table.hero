@@ -27,6 +27,9 @@ variant Tag
     mutate_cmd
     measure_cmd
     this_cmd
+    # The two that live outside the table: --version and --help/none.
+    version_cmd
+    help_cmd
 
 record Flag
     spelling: str
