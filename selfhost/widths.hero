@@ -1,0 +1,153 @@
+# The eight integer widths and the two float widths, and what a width
+# implies (spec § Types; design.md §4.3; panel 042, ratified 2026-08-12).
+# Port of crates/heroes/src/types/{widths,floats}.rs — the width halves
+# only; the float payload rules stay with the checker port.
+#
+# **This variant exists so that a width cannot be forgotten**, measured on
+# the Rust side: eight unit variants left 18 silent sites, one of which
+# dropped the overflow guard for `u8` at exit 0. With the width inside one
+# case, every site that dispatches on it is an exhaustive `match` and a new
+# width is a compile error there (CLAUDE.md §11's loud-fallback rule).
+#
+# One array enumerates the widths, so the resolver's name table, the
+# prelude and the did-you-mean list cannot disagree about what exists.
+#
+# Port note: `range()` — the closed range a literal must fall in — is NOT
+# ported yet. Its one consumer is the checker, its top value needs `u64`
+# arithmetic the number decoder already owns (selfhost/number.hero), and
+# porting it before its consumer would be a guess about which side owns it.
+
+## The integer widths
+
+variant IntKind
+    i8
+    i16
+    i32
+    i64
+    u8
+    u16
+    u32
+    u64
+
+# Every width, in declaration order, for the places that must enumerate them.
+function int_kinds() -> [IntKind]
+    return [.i8, .i16, .i32, .i64, .u8, .u16, .u32, .u64]
+
+# The surface spelling, which is also what a diagnostic prints. There is no
+# `int` (panel 042): one spelling per width, and `int` is a foreign word
+# with a certain fix to `i64`.
+function int_name(kind: IntKind) -> str
+    return match kind
+        .i8 => "i8"
+        .i16 => "i16"
+        .i32 => "i32"
+        .i64 => "i64"
+        .u8 => "u8"
+        .u16 => "u16"
+        .u32 => "u32"
+        .u64 => "u64"
+
+# How many bits, and whether the top one is a sign. Together they are the
+# whole of what a width IS, and every question below is derived from them
+# rather than tabulated again — a table per question is a table per chance
+# to disagree.
+function int_bits(kind: IntKind) -> i64
+    return match kind
+        .i8 | .u8 => 8
+        .i16 | .u16 => 16
+        .i32 | .u32 => 32
+        .i64 | .u64 => 64
+
+function int_signed(kind: IntKind) -> bool
+    return match kind
+        .i8 | .i16 | .i32 | .i64 => true
+        .u8 | .u16 | .u32 | .u64 => false
+
+# `an i64`, `a u8`. The article follows how the name is SAID — the signed
+# ones begin with a vowel sound — and it is derived from `int_signed` rather
+# than tabulated, so a ninth width gets it right without a second edit.
+function int_article_name(kind: IntKind) -> str
+    if int_signed(kind)
+        return "an `" + int_name(kind) + "`"
+    return "a `" + int_name(kind) + "`"
+
+# Whether EVERY value of `source` is a value of `target` — i.e. whether a
+# conversion from `source` into `target` can fail.
+#
+# The four cases are not symmetric and the asymmetry is the point: an
+# unsigned source needs a STRICTLY wider signed target, because the target
+# spends a bit on a sign it will never use; and a signed source never fits
+# an unsigned target at all, however wide, because -1 is a value.
+function int_contains(target: IntKind, source: IntKind) -> bool
+    if int_signed(target) == int_signed(source)
+        return int_bits(target) >= int_bits(source)
+    if int_signed(target)
+        return int_bits(target) > int_bits(source)
+    return false
+
+# The C type the emitter writes. Fixed-width by name, so the generated C
+# says what the Heroes source says and clang checks the rest.
+function int_c_type(kind: IntKind) -> str
+    return match kind
+        .i8 => "int8_t"
+        .i16 => "int16_t"
+        .i32 => "int32_t"
+        .i64 => "int64_t"
+        .u8 => "uint8_t"
+        .u16 => "uint16_t"
+        .u32 => "uint32_t"
+        .u64 => "uint64_t"
+
+## The float widths
+
+variant FloatKind
+    f32
+    f64
+
+function float_kinds() -> [FloatKind]
+    return [.f32, .f64]
+
+function float_name(kind: FloatKind) -> str
+    return match kind
+        .f32 => "f32"
+        .f64 => "f64"
+
+function float_bits(kind: FloatKind) -> i64
+    return match kind
+        .f32 => 32
+        .f64 => 64
+
+function float_c_type(kind: FloatKind) -> str
+    return match kind
+        .f32 => "float"
+        .f64 => "double"
+
+## Tests
+
+test "one array lists the widths and the names round-trip"
+    kinds = int_kinds()
+    assert kinds.len() == 8
+    names: [str] @ []
+    for k in kinds
+        names @ names.push(int_name(k))
+    assert names.join(" ") == "i8 i16 i32 i64 u8 u16 u32 u64"
+    assert float_kinds().len() == 2
+
+test "containment is asymmetric on purpose"
+    # Same signedness: width decides.
+    assert int_contains(target: .i64, source: .i32)
+    assert !int_contains(target: .i16, source: .i32)
+    # Unsigned into signed: strictly wider, the sign bit is spent.
+    assert int_contains(target: .i64, source: .u32)
+    assert !int_contains(target: .i16, source: .u16)
+    # Signed into unsigned: never, -1 is a value.
+    assert !int_contains(target: .u64, source: .i8)
+
+test "what a width tells the reader and what it tells clang"
+    assert int_bits(.u16) == 16
+    assert !int_signed(.u64)
+    assert int_article_name(.i64) == "an `i64`"
+    assert int_article_name(.u8) == "a `u8`"
+    assert int_c_type(.u32) == "uint32_t"
+    assert float_c_type(.f64) == "double"
+    assert float_bits(.f32) == 32

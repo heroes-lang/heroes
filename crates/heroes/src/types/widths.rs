@@ -50,12 +50,14 @@ pub const INT_KINDS: [IntKind; 8] = [
 impl IntKind {
     /// The surface spelling, which is also what a diagnostic prints.
     ///
-    /// **There is no `i64`.** The author deleted it 2026-08-12 rather than
+    /// **There is no `int`.** The author deleted it 2026-08-12 rather than
     /// aliasing it (panel 042's verdict section): one spelling per width, and
-    /// `i64` is a foreign word with a `certain` fix to `i64`. The reason is the
-    /// thesis rather than taste — `i64` is a word carrying forty years of
+    /// `int` is a foreign word with a `certain` fix to `i64`. The reason is the
+    /// thesis rather than taste — `int` is a word carrying forty years of
     /// conflicting widths, and a reader has to know the platform to know what it
-    /// means, while `i64` is ambiguous to nobody.
+    /// means, while `i64` is ambiguous to nobody. (This paragraph once said
+    /// "there is no `i64`": a search-and-replace over the rename ate its own
+    /// subject. Repaired 2026-08-17 against panel 042's option table.)
     pub fn name(self) -> &'static str {
         match self {
             IntKind::I8 => "i8",
