@@ -1,0 +1,58 @@
+# What the generated C is compiled UNDER: the dialect, the diagnostics
+# that are errors, and what --sanitize adds (panels 020, 047, 058).
+# Port of crates/heroes-cli/src/commands/flags.rs.
+#
+# THIS IS THE LIST'S ONLY STATEMENT in the port, exactly as flags.rs
+# is the bootstrap's: CLAUDE.md §7 cites it instead of copying it,
+# because the copy it used to carry died 3h16m after it was last
+# corrected — a count in prose is the premise §11 says expires in
+# silence. The reasons ride each flag below; the array is the fact.
+
+# The thirteen, in the bootstrap's order:
+# - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
+#   only effect on glibc is to hide M_PI, strdup, fileno and most of
+#   what §1.11 says a program binds (panel 047, ratified).
+# - -g on EVERY build: design.md §2 promises lldb steps .hero lines,
+#   and until 2026-08-16 the DWARF existed only under --sanitize.
+# - the two Windows macros: MSVC hides M_PI behind _USE_MATH_DEFINES
+#   and deprecates getenv/fopen/strcpy without _CRT_SECURE_NO_WARNINGS.
+# - -Werror=conditional-uninitialized is -Werror because the corpus
+#   said so (panel 020's falsifiable disposition, zero fires).
+# - the qualifier discard is panel 058's cstr-write refusal at the
+#   C level.
+function flags() -> [str]
+    return [
+        "-std=gnu11"
+        "-g"
+        "-D_USE_MATH_DEFINES"
+        "-D_CRT_SECURE_NO_WARNINGS"
+        "-Wall"
+        "-Werror=return-type"
+        "-Werror=uninitialized"
+        "-Werror=format"
+        "-Werror=conditional-uninitialized"
+        "-fno-strict-aliasing"
+        "-Werror=shorten-64-to-32"
+        "-Werror=sign-conversion"
+        "-Werror=incompatible-pointer-types-discards-qualifiers"
+    ]
+
+# What --sanitize adds — NOT a leak detector: ASan's is missing on
+# Darwin arm64, and leaks are hero_runtime_check_leaks()'s job in the
+# generated main. What these catch is use-after-free and double-free.
+function sanitizers(sanitize: bool) -> [str]
+    if sanitize
+        return ["-fsanitize=address,undefined"]
+    empty: [str] = []
+    return empty
+
+## Tests
+
+test "the array is the fact: thirteen flags, gnu11 named first"
+    got = flags()
+    assert got.len() == 13
+    assert got[0] == "-std=gnu11"
+    assert got[1] == "-g"
+    assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
+    assert sanitizers(sanitize: true).len() == 1
+    assert sanitizers(sanitize: false).len() == 0
