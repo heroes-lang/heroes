@@ -1,0 +1,157 @@
+# WHICH descriptors a program needs — the reachability half (design.md
+# §4.20; panel 022). Port of crates/heroes/src/emit/descriptor_set.rs.
+#
+# Nothing here writes a byte of output; nothing in the naming half
+# walks the arena. The walk earns its own module because it is the part
+# that goes wrong silently: a descriptor nothing points at is a
+# warning; a descriptor something points at and nobody defined is `use
+# of undeclared identifier` at exit 2, the compiler blaming itself for
+# a correct program.
+#
+# The question is "which descriptors does the EMITTER name", not "which
+# types did the program mention inside a container". Those were the
+# same set until option_bodies started naming payloads and hash_body
+# started routing fields through pointer — asking the old question
+# produced the exit-2 identifier on `function grab() -> P?`, with the
+# tell that adding [P] anywhere in the program made it compile.
+#
+# Three sources, each a place the emitter writes &..._desc: container
+# elements (an array its element, a map key AND value; no second pass
+# for nesting, because an inner [T] is itself an interned type); every
+# T?'s payload; every T? field of every aggregate. The worklist EXPANDS
+# AS IT DRAINS: a case declared but never constructed still gets an eq
+# arm calling its payload's descriptor, and collecting without
+# expanding left that payload out at exit 2. `seen` guards the queue
+# rather than the answer: an array is expanded and never generated.
+
+use ast
+use check_table
+use check_state
+use ir_phases
+use emit_types
+use source
+use parse
+use resolve
+use checker
+
+# Every GENERATED descriptor the program needs, ascending — the key
+# walk is the sort, and the emitted order must be a function of the
+# program, not of the interner's insertion order (the double-emit
+# determinism test is what that buys).
+function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: bool}) -> [i64]
+    wanted: {i64: bool} @ {}
+    queue: [i64] @ []
+    count = check_table.len_of(c.types)
+    id: i64 @ 0
+    while id < count
+        # A type still carrying a parameter is skipped, as in both
+        # sibling walks: monomorphisation deletes the generic FUNCTIONS,
+        # not the A? their signatures interned.
+        if !ir_phases.mentions_generic(c, ty: id)
+            # A container the EMITTED functions never mention
+            # contributes nothing: test blocks intern types too, and an
+            # ordinary build does not emit them.
+            if !reachable[id].is_err()
+                match check_table.get(c.types, id)
+                    .array arr => queue @ queue.push(arr.element)
+                    .map m =>
+                        queue @ queue.push(m.key)
+                        queue @ queue.push(m.value)
+                    .fallible o => queue @ queue.push(o.payload)
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => id @ id
+                    .fixed | .function_ty | .named | .case_ty => id @ id
+                    .failure | .generic | .error => id @ id
+        id @ id + 1
+    # Only a T? field: hash_call sends named and case types straight to
+    # their own _hash, and every other field kind reaches one of the
+    # runtime's shared rows — pushing them all would generate
+    # descriptors nothing points at, the exact warning this worklist
+    # exists to avoid.
+    for decl in emit_types.aggregates(c, decls)
+        written_ids: [i64] @ []
+        for field in emit_types.fields_of(decls, decl: decl)
+            written_ids @ written_ids.push(field.ty)
+        for one_case in emit_types.cases_of(decls, decl: decl)
+            for field in one_case.fields
+                written_ids @ written_ids.push(field.ty)
+        for written in written_ids
+            found = check_state.written_type(c, written)
+            if found.is_err()
+                continue
+            match check_table.get(c.types, found.must())
+                .fallible => queue @ queue.push(found.must())
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+                .array | .fixed | .map | .function_ty | .named => continue
+                .case_ty | .failure | .generic | .error => continue
+    seen: {i64: bool} @ {}
+    while queue.len() > 0
+        next = queue[queue.len() - 1]
+        queue @ queue.slice(from: 0, to: queue.len() - 1)
+        if ir_phases.mentions_generic(c, ty: next)
+            continue
+        if !seen[next].is_err()
+            continue
+        seen[next] @ true
+        match check_table.get(c.types, next)
+            # The scalars and str are the runtime's, and one shared row
+            # serves every array, map and function type — none is
+            # generated. A named or case type reached as a FIELD goes
+            # through its own _hash, but it still needs a descriptor
+            # when it is an element or a payload, and an unused-
+            # descriptor warning is cheaper than a missing one.
+            .named => wanted[next] @ true
+            .case_ty => wanted[next] @ true
+            .fallible o =>
+                wanted[next] @ true
+                queue @ queue.push(o.payload)
+            .array arr => queue @ queue.push(arr.element)
+            .map m =>
+                queue @ queue.push(m.key)
+                queue @ queue.push(m.value)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .fixed | .function_ty | .failure | .generic | .error => continue
+    out: [i64] @ []
+    for want in keys(wanted)
+        out @ out.push(want)
+    return out
+
+## Tests
+
+test "the worklist reaches an element, a payload, and expands as it drains"
+    text = "record Point\n    x: i64\n\nrecord Holder\n    maybe: i64?\n\nfunction grab(pts: [Point], flag: bool) -> Point?\n    if flag && pts.len() > 0\n        return ok(pts[0])\n    return fail(\"empty\", \"none\")\n\nfunction main()\n    h = Holder(maybe: ok(3))\n    print(grab([Point(x: 1)], true).is_err() == h.maybe.is_err())\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    # Reachable: everything the program's own types mention — built the
+    # way the driver will build it, closed under containment.
+    reachable: {i64: bool} @ {}
+    count = check_table.len_of(c.types)
+    id: i64 @ 0
+    while id < count
+        reachable[id] @ true
+        id @ id + 1
+    got = generated(c, p.decls, reachable: reachable)
+    point = check_table.lookup(c.types, .named(decl: 0)).must()
+    saw_point: bool @ false
+    saw_option: bool @ false
+    for one in got
+        if one == point
+            saw_point @ true
+        match check_table.get(c.types, one)
+            .fallible => saw_option @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .array | .fixed | .map | .function_ty | .named => continue
+            .case_ty | .failure | .generic | .error => continue
+    # Point is [Point]'s element AND Point?'s payload. The OPTION
+    # descriptor exists only where a T? is an element or a field —
+    # Holder's i64? field is the one that buys it; grab's Point? result
+    # alone would not (its four functions exist, its _desc does not).
+    assert saw_point
+    assert saw_option
+    # Ascending: the key walk is the sort.
+    walk: i64 @ 1
+    while walk < got.len()
+        assert got[walk - 1] < got[walk]
+        walk @ walk + 1
