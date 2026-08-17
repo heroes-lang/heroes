@@ -1,0 +1,384 @@
+# Source text and byte-offset spans: every file of one compilation in ONE
+# text (design.md §1.11, §4.1, §4.17; panels 031, 032).
+# Port of crates/heroes/src/source/{mod,files,locate,build}.rs — four files,
+# 511 lines; one module here NOT because of a cycle but because the record
+# and its questions are one concern, and the port is under §11's threshold.
+#
+# **Why one text rather than a file id in every Span** (panel 031 R7,
+# measured rather than preferred): concatenation changed none of the Rust
+# compiler's 39 Span construction sites; a file id would have changed all 39.
+# Everything downstream points into the text with byte offsets — indices,
+# never references — so tokens and diagnostics stay plain values.
+#
+# **The root file is `files[0]`, and every offset the author can see is what
+# it would have been if their file were alone.** Files are appended in load
+# order, never sorted, and nothing is ever prepended.
+#
+# The library (§1.11 Tier 2) is an ordinary module in every respect but one:
+# a diagnostic pointing into it is a compiler bug, not a user error, and
+# nothing that hands a program back may print it.
+
+use token
+use bytes
+
+## The two tables
+
+# One file inside a Source. `module` is the RAW stem, `_` and all, because
+# that is what the author typed and what a `use` line spells; `component` is
+# the same module as a C identifier — two namespaces, and they are not the
+# same namespace (panel 032: module `print` + name `inst_value_name` and
+# module `print_inst` + name `value_name` are one linker symbol unless the
+# component is sanitised).
+record FileEntry
+    name: str
+    module: str
+    component: str
+    start: i64
+    # How many lines of the concatenated text come before this file, so that
+    # line_in_file = line_in_source - lines_before.
+    lines_before: i64
+    is_library: bool
+
+# One file on its way into a Source: what a caller holds before any offset
+# exists. `module` is separate from `name` because a `use`d module's name is
+# declared, not derived — `stem_of` is only the default for a root file.
+record InputFile
+    name: str
+    module: str
+    text: str
+    is_library: bool
+
+record Source
+    # The root file's name — what `--dump-<stage>` heads its output with.
+    name: str
+    # Every file, joined by one blank line each.
+    text: str
+    # Byte offset of the first byte of each line; line_starts[0] == 0.
+    line_starts: [i64]
+    # In load order, never empty, files[0] the root. Sorted by `start` by
+    # construction, which is what lets `file_of` binary-search it.
+    files: [FileEntry]
+
+## Names: what a path stands for
+
+# The module a source path stands for, AS THE AUTHOR TYPED IT — the stem,
+# with its underscores, before any sanitising. Deterministic from the path
+# as given: `./x.hero`, `x.hero` and `/tmp/x.hero` all yield `x`.
+function stem_of(path: str) -> str
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < path.len()
+        if path[i] == '/' || path[i] == '\\'
+            start @ i + 1
+        i @ i + 1
+    end: i64 @ path.len()
+    j: i64 @ start
+    scanning: bool @ true
+    while scanning && j < path.len()
+        if path[j] == '.'
+            end @ j
+            scanning @ false
+        j @ j + 1
+    return path.slice(from: start, to: end)
+
+# The same stem as a C identifier component, `[A-Za-z0-9]` only — the one
+# line that makes `h_<module>_<name>` injective: with the module
+# alphanumeric, the first `_` after `h_` ends it. Residual and reachable:
+# `print_inst` and `printinst` are one component, so two such modules in one
+# program collide — refused where the module table is built, not here,
+# because the collision is a property of a SET of files and this function
+# knows about one.
+function module_of(path: str) -> str
+    stem = stem_of(path)
+    kept: str @ ""
+    i: i64 @ 0
+    while i < stem.len()
+        if bytes.is_alnum(stem[i])
+            kept @ kept + stem.slice(from: i, to: i + 1)
+        i @ i + 1
+    if kept.len() == 0
+        # A file called `.hero` or `---.hero`. It has to become SOMETHING,
+        # and one fixed word is better than an empty component, which would
+        # make `h__main` collide with a module named `_`.
+        return "anon"
+    return kept
+
+# The module component the library's own functions get, whatever is being
+# compiled: `range` is `h_library_range` in every program (panel 028 R3b —
+# one definition, many prototypes, so the definition's name cannot vary).
+constant LIBRARY_MODULE: str
+    "library"
+
+# What the library calls itself in a diagnostic and in a `#line`. Not a
+# path, and deliberately unopenable: a clang error against one of its lines
+# must not look like an error in a file the author can edit.
+constant LIBRARY_FILE: str
+    "<heroes library>"
+
+## Building — everything here runs once, before any offset exists
+
+# An ordinary Heroes file, its module taken from its path — the RAW stem.
+function user_file(name: str, text: str) -> InputFile
+    return InputFile(name: name, module: stem_of(name), text: text, is_library: false)
+
+# One file on its own, with nothing else attached.
+function new_source(name: str, text: str) -> Source
+    inputs: [InputFile] = [user_file(name: name, text: text)]
+    return from_files(inputs)
+
+# The user's program with the library appended (§1.11).
+function with_library(name: str, user: str, library: str) -> Source
+    inputs: [InputFile] = [
+        user_file(name: name, text: user)
+        InputFile(name: LIBRARY_FILE, module: LIBRARY_MODULE, text: library, is_library: true)
+    ]
+    return from_files(inputs)
+
+# The general constructor: N files, concatenated in the order given.
+#
+# **One blank line joins each pair**, and it is load-bearing twice: two
+# declarations butted together would be one line to the parser, and the
+# boundary offset has to fall on a line start for the file table to agree
+# with the line numbering. The previous file's last line is closed first if
+# it had no newline — done HERE rather than after each file so that the LAST
+# file is left exactly as written: a trailing newline the author did not
+# type would move the eof token's position.
+function from_files(inputs: [InputFile]) -> Source
+    assert inputs.len() > 0
+    name = inputs[0].name
+    text: str @ ""
+    table: [FileEntry] @ []
+    for input in inputs
+        if table.len() > 0
+            if text[text.len() - 1] != '\n'
+                text @ text + "\n"
+            text @ text + "\n"
+        table @ table.push(FileEntry(name: input.name, module: input.module, component: module_of(input.module), start: text.len(), lines_before: starts_of(text).len() - 1, is_library: input.is_library))
+        text @ text + input.text
+    return Source(name: name, text: text, line_starts: starts_of(text), files: table)
+
+# Byte offset of the first byte of each line. starts[0] == 0, and the length
+# is the number of lines, which is what makes it double as a line count.
+function starts_of(text: str) -> [i64]
+    starts: [i64] @ [0]
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == '\n'
+            starts @ starts.push(i + 1)
+        i @ i + 1
+    return starts
+
+## Which file — the index that makes concatenation reversible
+
+# The greatest index whose start is <= offset. Both tables this file owns
+# are sorted by construction, which is what makes the binary search honest.
+function floor_start(starts: [i64], offset: i64) -> i64
+    lo: i64 @ 0
+    hi: i64 @ starts.len() - 1
+    while lo < hi
+        mid = (lo + hi + 1) / 2
+        if starts[mid] <= offset
+            lo @ mid
+        else
+            hi @ mid - 1
+    return lo
+
+function file_of(s: Source, offset: i64) -> i64
+    starts: [i64] @ []
+    for f in s.files
+        starts @ starts.push(f.start)
+    return floor_start(starts, offset)
+
+function file_at(s: Source, offset: i64) -> FileEntry
+    return s.files[file_of(s, offset)]
+
+# Is this offset in the library rather than in something the author wrote?
+# Every caller is answering one of three questions: may a diagnostic point
+# here (no — compiler bug), may a `#line` claim the author's file for it
+# (no), and which module does the mangler put it in (`library`).
+function is_library(s: Source, offset: i64) -> bool
+    return file_at(s, offset).is_library
+
+# Is this offset in the file the reader actually named? `--dump-<stage>` and
+# `fmt` ask this; emission and `heroes test` are about the whole program and
+# ask `is_library` instead — a module's `test` blocks are its own.
+function is_root(s: Source, offset: i64) -> bool
+    return file_of(s, offset) == 0
+
+function component_at(s: Source, offset: i64) -> str
+    return file_at(s, offset).component
+
+function module_at(s: Source, offset: i64) -> str
+    return file_at(s, offset).module
+
+## Where in the file — every caret and every #line ends up here
+
+record Position
+    line: i64
+    col: i64
+
+# 1-based line and column in the whole text; **the column counts
+# characters**, not bytes — the consumer is the reader, and for a caret a
+# byte is not a column (the byte-counting version disagreed with its own
+# caret by three columns on one tabbed line, 2026-08-12).
+function line_col(s: Source, offset: i64) -> Position
+    line = floor_start(s.line_starts, offset)
+    start = s.line_starts[line]
+    col = s.text.slice(from: start, to: offset).chars().len() + 1
+    return Position(line: line + 1, col: col)
+
+# The 1-based line in the whole text — the printer's question. `locate`
+# answers the reader's; nobody assembles the triple by hand.
+function line_of(s: Source, offset: i64) -> i64
+    return line_col(s, offset).line
+
+# The 1-based line WITHIN ITS OWN FILE, for a diagnostic or a `#line` that
+# names that file rather than the root.
+function file_line_of(s: Source, offset: i64) -> i64
+    p = line_col(s, offset)
+    line: i64 @ p.line - file_at(s, offset).lines_before
+    if line < 1
+        line @ 1
+    return line
+
+# Where an offset is, AS A READER HAS TO BE TOLD IT: the file that contains
+# it, the line within that file, and the column. One function, no caller
+# assembles the triple itself — before M-module-namespace two renderers each
+# did, and both were wrong the moment a program had two files.
+record Location
+    file: str
+    line: i64
+    col: i64
+
+function locate(s: Source, offset: i64) -> Location
+    p = line_col(s, offset)
+    entry = file_at(s, offset)
+    return Location(file: entry.name, line: file_line_of(s, offset), col: p.col)
+
+# How to name THE OTHER END of a mistake, from where the caret is: `line 12`
+# when both ends are in one file, `geom.hero:12` when they are not. Every
+# "already declared at …" goes through here. The short form is deliberate:
+# §4.17 asks the note to carry the file the model would otherwise open, and
+# when that is the file already on screen, naming it is noise.
+function elsewhere(s: Source, here: i64, there: i64) -> str
+    at = locate(s, there)
+    if file_of(s, here) == file_of(s, there)
+        return "line " + at.line.to_str()
+    return at.file + ":" + at.line.to_str()
+
+function span_text(s: Source, span: token.Span) -> str
+    return s.text.slice(from: span.start, to: span.end)
+
+# Byte offset of the first byte of the line containing `offset`. The one
+# caller is the caret, which pads with the line's own leading whitespace.
+function line_start_of(s: Source, offset: i64) -> i64
+    return s.line_starts[floor_start(s.line_starts, offset)]
+
+## The root's own extent
+
+# The last offset INSIDE THE ROOT FILE — where a diagnostic about the file
+# as a whole puts its caret. `text.len()` is not that offset once anything
+# is appended: it lands in whichever file happens to be last, which is how
+# `no_entry_point` came out as a compiler bug at exit 2 for the commonest
+# mistake in the language (2026-08-12).
+function root_end(s: Source) -> i64
+    if s.files.len() > 1
+        return s.files[1].start - 1
+    return s.text.len()
+
+# Exactly what the author wrote in the file they named, with everything
+# appended to it removed. Anything that hands a program BACK — `fmt`,
+# applied fixes — must go through this, or it writes the whole compilation
+# into one of its files.
+function user_text(s: Source) -> str
+    return text_of(s, 0)
+
+# One file's own text, without the blank line that joins it to the next.
+function text_of(s: Source, index: i64) -> str
+    start = s.files[index].start
+    if index + 1 < s.files.len()
+        return s.text.slice(from: start, to: s.files[index + 1].start - 1)
+    return s.text.slice(from: start, to: s.text.len())
+
+## Tests
+
+test "a module is the stem however the path was written"
+    assert module_of("geom.hero") == "geom"
+    assert module_of("./geom.hero") == "geom"
+    assert module_of("/tmp/sub/geom.hero") == "geom"
+    assert module_of("geom") == "geom"
+    assert stem_of("a_b.hero") == "a_b"
+
+test "the component is alphanumeric and that is not injective"
+    assert module_of("print_inst.hero") == "printinst"
+    assert module_of("printinst.hero") == "printinst"
+    # The collision is real, which is why a program containing both files is
+    # refused where the module table is built.
+    assert module_of("print_inst.hero") == module_of("printinst.hero")
+
+test "a path with no alphanumerics still becomes a name"
+    assert module_of("---.hero") == "anon"
+    assert module_of(".hero") == "anon"
+
+test "two files, one text, and the table makes it reversible"
+    inputs: [InputFile] = [
+        user_file(name: "main.hero", text: "constant A: i64\n    1\n")
+        user_file(name: "geom.hero", text: "constant B: i64\n    2\n")
+    ]
+    s = from_files(inputs)
+    # The joiner is one blank line: file 2 starts one past it, on a line start.
+    assert s.files.len() == 2
+    assert s.files[1].start == 23
+    assert is_root(s, 0)
+    assert !is_root(s, s.files[1].start)
+    # Offsets on the boundary belong to the file that starts there.
+    assert file_of(s, s.files[1].start) == 1
+    assert file_of(s, s.files[1].start - 1) == 0
+    # The second file's first line is ITS line 1, not the text's line 4.
+    assert line_of(s, s.files[1].start) == 4
+    assert file_line_of(s, s.files[1].start) == 1
+    assert locate(s, s.files[1].start).file == "geom.hero"
+
+test "elsewhere names the file only when it is not already on screen"
+    inputs: [InputFile] = [
+        user_file(name: "main.hero", text: "constant A: i64\n    1\n")
+        user_file(name: "geom.hero", text: "constant B: i64\n    2\n")
+    ]
+    s = from_files(inputs)
+    # Both ends in the root: the short form.
+    assert elsewhere(s, here: 0, there: 16) == "line 2"
+    # The other end in geom.hero: the long form, with GEOM's own line number.
+    assert elsewhere(s, here: 0, there: s.files[1].start) == "geom.hero:1"
+
+test "the library is appended, unopenable, and the root keeps its offsets"
+    s = with_library(name: "main.hero", user: "constant A: i64\n    1\n", library: "function range()\n    return\n")
+    assert !is_library(s, 0)
+    assert is_library(s, s.files[1].start)
+    assert s.files[1].name == "<heroes library>"
+    assert s.files[1].module == "library"
+    # The root's extent stops before the joiner, not at text.len().
+    assert root_end(s) == s.files[1].start - 1
+    # What the author wrote comes back exactly, appendix removed.
+    assert user_text(s) == "constant A: i64\n    1\n"
+
+test "a file without a trailing newline is closed before the joiner"
+    inputs: [InputFile] = [
+        user_file(name: "a.hero", text: "constant A: i64\n    1")
+        user_file(name: "b.hero", text: "constant B: i64\n    2\n")
+    ]
+    s = from_files(inputs)
+    # a.hero's 21 bytes, the added closer, the blank line: b starts at 23.
+    assert s.files[1].start == 23
+    # The LAST file is left exactly as written — nothing appended after it.
+    assert text_of(s, 1) == "constant B: i64\n    2\n"
+
+test "the column counts characters, not bytes"
+    # `è` is two bytes; the caret after it must say column 3, not 4.
+    s = new_source(name: "x.hero", text: "è = 1\n")
+    assert line_col(s, 3).col == 3
+    assert line_col(s, 3).line == 1
+    # Position arithmetic across lines still holds.
+    t = new_source(name: "y.hero", text: "a\nbc\n")
+    assert line_col(t, 2).line == 2
+    assert line_col(t, 2).col == 1
+    assert line_start_of(t, 3) == 2
