@@ -1,0 +1,162 @@
+# Mismatches, operators, and the two rules about where a value may stand.
+# Port of crates/heroes/src/types/errors/values.rs.
+#
+# The pair worth reading together is `discarded_value` and `bound_unit`:
+# panel 003 made a non-`()` expression alone on a line an error, and panel
+# 017 C made a `()` value in binding position the mirror of it. Between
+# them, a value is either received or explicitly discarded, and nothing is
+# silently dropped.
+#
+# Message text byte for byte with the Rust side, as everywhere in the port.
+
+use token
+use diag
+
+function mismatch(expected: str, got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "type_mismatch", message: "expected `" + expected + "`, found `" + got + "`", span: span)
+
+# The two numeric types never mix (§4.14), and the repair is the
+# conversion the spec names — a guess, because which side to convert is
+# the author's.
+function mixed_arithmetic(op: str, left: str, right: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "mixed_arithmetic", message: "`" + op + "` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `" + left + "` and `" + right + "`", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "convert one side: `to_f64(x)`, `to_i64(x)`, or `fit_<width>(x)` between widths", replacement: "", span: span, certainty: .guess))
+    return d
+
+# A `cstr` gets a route, because a hard stop without one is what produced
+# the only genuinely unsafe artifact in this project's record (panel 059):
+# the blind reader hit the stop and reached for a C helper with a static
+# buffer — an escape one line long, invisible to every rule this compiler
+# has, and strictly worse than what the stop refused. A note and not a
+# fix: the repair is `c.to_str()`, and building that replacement needs the
+# operand's own source text, which this module does not have.
+function bad_operand(op: str, allowed: str, got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "bad_operand", message: "`" + op + "` takes " + allowed + ", found `" + got + "`", span: span)
+    if got == "cstr"
+        d.notes @ d.notes.push("a `cstr` is C's string, not this language's — `c.to_str()` copies one into a `str`. Test `c == nullptr` first, because converting one aborts")
+    return d
+
+# `sort` was handed an array of something the language does not order
+# (panel 068 R2 — the refusal moved here from the emitter). Three things
+# this message must not do, each a finding of that sitting: it must not
+# say the element "has no `<`" (false of `str`); it must NAME the ordered
+# set (the old emitter message was stale since the widths landed); and it
+# must leave `sort_by` addable — it says what `sort` orders, never that
+# ordering THIS is impossible. A type parameter takes its own note (panel
+# 084): "build an array of one of those" is unanswerable when the element
+# is spelled `A`, and §4.12 has always named the route — pass the
+# comparison as a parameter.
+function unordered_element(element: str, reached: str?, generic: bool, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unordered_element", message: "`sort` orders arrays of numbers, `str` and `bool` — `[" + element + "]` is none of those", span: span)
+    if generic
+        d.notes @ d.notes.push("`" + element + "` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(" + element + ", " + element + ") -> bool)`, and call `less(a, b)`")
+        return d
+    if !reached.is_err()
+        d.notes @ d.notes.push(reached.must() + ", which has no order the language can produce. Sort a key you can name instead — build `[i64]`, `[str]` or `[bool]` from the values and order that")
+        return d
+    d.notes @ d.notes.push("the ordered types are `i8` `i16` `i32` `i64`, `u8` `u16` `u32` `u64`, `f32` `f64`, `str` and `bool`. Sort a key you can name instead — build an array of one of those from the values and order that")
+    return d
+
+# There is no truthiness (§4.14), which is worth saying in the message: a
+# model carrying a C or Python prior needs the rule, not just the
+# mismatch.
+function not_bool(what: str, got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "not_bool", message: what + " must be `bool`, found `" + got + "` — there is no truthiness in this language", span: span)
+
+# `main` has no result, and a program that fails has to say so some other
+# way. Not a style rule: with a result type, `return fail(…)` from `main`
+# printed nothing and exited 0, so the one thing a shell can read said the
+# program had worked (panel 035).
+function main_returns(got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "main_returns", message: "`main` produces nothing, and this one is declared `-> " + got + "` — a program reports failure by what it prints, not by what it returns", span: span)
+    d.notes @ d.notes.push("drop the result type; a value `main` computed and returned would have nowhere to go")
+    return d
+
+# A line computed a value and nothing received it (panel 003).
+#
+# `receiver` is the name the call was written on WHEN the call returns
+# that name's own type, and it decides whether `_ = …` is certain or a
+# guess (panel 071, measured): `push` returns the new array and leaves its
+# receiver alone, so `_ = xs.push(4)` compiles at exit 0 and loses the
+# element — a certain fix converting a caught mistake into a silent wrong
+# answer. With a receiver in hand, BOTH repairs are guesses, because the
+# compiler genuinely cannot tell them apart.
+function discarded_value(got: str, receiver: str?, span: token.Span) -> diag.Diagnostic
+    insertion = token.Span(start: span.start, end: span.start)
+    if receiver.is_err()
+        d: diag.Diagnostic @ diag.new_diagnostic(code: "discarded_value", message: "this line's value has type `" + got + "` and nothing receives it — write `_ = …` to discard it on purpose", span: span)
+        d.fixes @ d.fixes.push(diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: .certain))
+        return d
+    name = receiver.must()
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "discarded_value", message: "this line's value has type `" + got + "` and nothing receives it — every value here is a copy, so `" + name + "` is unchanged: write `" + name + " @ …` to keep the result, or `_ = …` to discard it on purpose", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "assign it back to `" + name + "`", replacement: name + " @ ", span: insertion, certainty: .guess))
+    d.fixes @ d.fixes.push(diag.Fix(title: "discard it explicitly", replacement: "_ = ", span: insertion, certainty: .guess))
+    return d
+
+# Panel 017 C: the mirror of the rule above. A `()` value binds to
+# nothing, and the repair is to keep the call and drop the binding.
+function bound_unit(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "bound_unit", message: "`" + name + "` would hold `()`, which is no value — keep the call and drop the binding", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "remove `" + name + " = `", replacement: "", span: span, certainty: .guess))
+    return d
+
+function not_callable(got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "not_callable", message: "this is a `" + got + "`, and a `" + got + "` cannot be called", span: span)
+
+# §4.17: the error carries the signature, because that is the file the
+# reader would otherwise open. A built-in and a function VALUE have no
+# declaration to cite, and a note saying so would be worse than no note.
+#
+# Port note: Rust's Option<(String, String)> pair becomes a record + a
+# fallible — the Head move, third time.
+record DeclaredAt
+    signature: str
+    at: str
+
+function arity(name: str, expected: i64, got: i64, declared: DeclaredAt?, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "wrong_arity", message: "`" + name + "` takes " + expected.to_str() + " argument(s), found " + got.to_str(), span: span)
+    if !declared.is_err()
+        d.notes @ d.notes.push("declared at " + declared.must().at + ": " + declared.must().signature)
+    return d
+
+## Tests
+
+test "the cstr stop carries its route, every other operand does not"
+    span = token.Span(start: 0, end: 3)
+    stopped = bad_operand(op: "+", allowed: "two of one numeric type", got: "cstr", span: span)
+    assert stopped.notes.len() == 1
+    assert stopped.notes[0] == "a `cstr` is C's string, not this language's — `c.to_str()` copies one into a `str`. Test `c == nullptr` first, because converting one aborts"
+    plain = bad_operand(op: "&", allowed: "`i64`", got: "bool", span: span)
+    assert plain.notes.len() == 0
+    assert plain.message == "`&` takes `i64`, found `bool`"
+
+test "a discarded value splits on the receiver, and certainty follows"
+    span = token.Span(start: 12, end: 20)
+    bare = discarded_value(got: "[i64]", receiver: fail("absent", "no receiver"), span: span)
+    assert bare.fixes.len() == 1
+    assert bare.fixes[0].certainty == .certain
+    assert bare.fixes[0].span.start == 12 && bare.fixes[0].span.end == 12
+    named = discarded_value(got: "[i64]", receiver: ok("xs"), span: span)
+    assert named.fixes.len() == 2
+    assert named.fixes[0].certainty == .guess
+    assert named.fixes[1].certainty == .guess
+    assert named.fixes[0].replacement == "xs @ "
+
+test "sort's refusal names the set, the member, or the route"
+    span = token.Span(start: 0, end: 4)
+    bare = unordered_element(element: "Point", reached: fail("absent", "the element itself"), generic: false, span: span)
+    assert bare.message == "`sort` orders arrays of numbers, `str` and `bool` — `[Point]` is none of those"
+    assert bare.notes[0] == "the ordered types are `i8` `i16` `i32` `i64`, `u8` `u16` `u32` `u64`, `f32` `f64`, `str` and `bool`. Sort a key you can name instead — build an array of one of those from the values and order that"
+    inside = unordered_element(element: "Row", reached: ok("its field `cells` holds `[Cell]`"), generic: false, span: span)
+    assert inside.notes[0] == "its field `cells` holds `[Cell]`, which has no order the language can produce. Sort a key you can name instead — build `[i64]`, `[str]` or `[bool]` from the values and order that"
+    parameter = unordered_element(element: "A", reached: fail("absent", "unknown"), generic: true, span: span)
+    assert parameter.notes[0] == "`A` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(A, A) -> bool)`, and call `less(a, b)`"
+
+test "arity cites the declaration only when one exists"
+    span = token.Span(start: 0, end: 2)
+    cited = arity(name: "dist2", expected: 2, got: 3, declared: ok(DeclaredAt(signature: "function dist2(a: Point, b: Point) -> i64", at: "line 4")), span: span)
+    assert cited.notes.len() == 1
+    assert cited.notes[0] == "declared at line 4: function dist2(a: Point, b: Point) -> i64"
+    builtin = arity(name: "len", expected: 1, got: 2, declared: fail("absent", "a built-in has no line"), span: span)
+    assert builtin.notes.len() == 0
+    assert builtin.message == "`len` takes 1 argument(s), found 2"
