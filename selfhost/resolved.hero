@@ -32,6 +32,8 @@
 # keeping in the file that found it.
 
 use token
+use diag
+use widths
 
 ## The compound key that a map cannot sort
 
@@ -63,6 +65,58 @@ variant Ref
     # dot is qualification and not UFCS — the same three tokens with two
     # meanings, so the answer is recorded once.
     module
+
+## What a written type refers to
+
+# A primitive as the resolver knows it. The width rides INSIDE the case,
+# exactly as the Rust side's does (types/widths.rs' measured argument: eight
+# unit variants left 18 silent sites; with the width inside, every dispatch
+# is an exhaustive match and a new width is a compile error there).
+#
+# Port note: Rust keeps `Prim` in resolve/types.rs beside the type walker;
+# it lives here because `TypeRef` names it and the walker is a later file.
+variant Prim
+    int_prim
+        kind: widths.IntKind
+    float_prim
+        kind: widths.FloatKind
+    bool_prim
+    str_prim
+    ptr_prim
+    cstr_prim
+
+# The name -> primitive lookup, from the one array that lists each width
+# family — so this table and the width table cannot disagree about what
+# exists. A width added there is writable here with no second edit.
+function primitive(name: str) -> Prim?
+    for k in widths.int_kinds()
+        if widths.int_name(k) == name
+            return ok(.int_prim(kind: k))
+    for k in widths.float_kinds()
+        if widths.float_name(k) == name
+            return ok(.float_prim(kind: k))
+    if name == "bool"
+        return ok(.bool_prim)
+    if name == "str"
+        return ok(.str_prim)
+    if name == "ptr"
+        return ok(.ptr_prim)
+    if name == "cstr"
+        return ok(.cstr_prim)
+    return fail("free", "no primitive has this name")
+
+# What a written type name refers to. Dense over the type arena, same
+# reasons as `Ref`.
+variant TypeRef
+    unresolved
+    prim
+        value: Prim
+    # A `record` or `variant` declaration: index into the declarations.
+    top
+        at: i64
+    # A type parameter of the enclosing function: index into its generics.
+    generic
+        at: i64
 
 ## Where a local came from
 
@@ -112,6 +166,8 @@ record Local
 # file: `top_in` is asked for one module, never for all of them.
 record Resolved
     uses: [Ref]
+    # One entry per node in the type arena.
+    type_uses: [TypeRef]
     locals: [Local]
     # module -> (name -> declaration index)
     top: {str: {str: i64}}
@@ -125,14 +181,17 @@ record Resolved
     # editing (panel 033 D1). Heroes has no set type, so it is an array — and
     # an array sorts, which a set of records would not.
     holes_in: [str]
+    diagnostics: [diag.Diagnostic]
 
 function new_resolved() -> Resolved
     uses: [Ref] = []
+    type_uses: [TypeRef] = []
     locals: [Local] = []
     top: {str: {str: i64}} = {}
     module_uses: {str: [str]} = {}
     holes_in: [str] = []
-    return Resolved(uses: uses, locals: locals, top: top, module_uses: module_uses, holes_in: holes_in)
+    diagnostics: [diag.Diagnostic] = []
+    return Resolved(uses: uses, type_uses: type_uses, locals: locals, top: top, module_uses: module_uses, holes_in: holes_in, diagnostics: diagnostics)
 
 ## Lookups
 
@@ -287,3 +346,26 @@ test "a local carries its optional syntax by value"
     copy.reads @ 5
     assert l.reads == 0
     assert copy.reads == 5
+
+test "a primitive's name answers with its width inside the case"
+    match primitive("u16").must()
+        .int_prim k => assert widths.int_bits(k.kind) == 16 && !widths.int_signed(k.kind)
+        .float_prim | .bool_prim | .str_prim | .ptr_prim | .cstr_prim => assert false
+    match primitive("f32").must()
+        .float_prim k => assert widths.float_bits(k.kind) == 32
+        .int_prim | .bool_prim | .str_prim | .ptr_prim | .cstr_prim => assert false
+    assert primitive("bool").must() == .bool_prim
+    assert primitive("cstr").must() == .cstr_prim
+    # A user type and a foreign spelling are both free here: the registry
+    # refuses `int` at the LEXER, one stage before this table is asked.
+    assert primitive("Point").is_err()
+    assert primitive("double").is_err()
+
+test "type references compare structurally, dense over the arena"
+    a: TypeRef @ .prim(value: .bool_prim)
+    b: TypeRef @ .prim(value: .bool_prim)
+    assert a == b
+    assert a != .unresolved
+    c: TypeRef @ .top(at: 3)
+    assert c == .top(at: 3)
+    assert c != .generic(at: 3)
