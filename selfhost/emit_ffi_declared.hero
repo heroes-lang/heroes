@@ -91,7 +91,7 @@ function unknown_name(s: source.Source, decls: [ast.Decl], line: str, stderr: st
             caught @ true
     if !caught
         return fail("none", "not an undeclared-name line")
-    name = up_to_quote(quoted)
+    name = emit_ffi_lookup.up_to_quote(quoted)
     # A tag-only struct is not an ABSENT one, and clang says both
     # things about it (panel 074): "must use 'struct' tag" AND "use of
     # undeclared identifier", at two different spans — so the
@@ -127,20 +127,10 @@ function did_you_mean(stderr: str, name: str) -> str?
         rest = emit_ffi_lookup.after(text: one, marker: "did you mean '")
         if rest.is_err()
             continue
-        meant = up_to_quote(rest.must())
+        meant = emit_ffi_lookup.up_to_quote(rest.must())
         if meant != name
             return ok(meant)
     return fail("none", "clang offered no correction")
-
-# The token up to the first single quote — the whole token when no
-# quote follows, which is what Rust's split('\'').next() gives.
-function up_to_quote(text: str) -> str
-    kept: [str] @ []
-    for ch in text.chars()
-        if ch == "'"
-            return kept.join("")
-        kept @ kept.push(ch)
-    return kept.join("")
 
 # What clang's echo can leave stuck to a token: quotes and the
 # assertion's own closing punctuation.

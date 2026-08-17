@@ -57,7 +57,8 @@ pub(super) fn incomplete_record(line: &str, ast: &Ast, src: &Source) -> Option<D
     let mut parts = at.rsplitn(3, ':');
     let _column = parts.next()?;
     let row: u32 = parts.next()?.trim().parse().ok()?;
-    let (type_name, header, span) = record_at_line(ast, src, row)?;
+    let path = parts.next()?;
+    let (type_name, header, span) = record_at_line(ast, src, path, row)?;
     Some(
         Diagnostic::new(
             "ffi_incomplete_record",
@@ -76,11 +77,19 @@ pub(super) fn incomplete_record(line: &str, ast: &Ast, src: &Source) -> Option<D
 fn record_at_line(
     ast: &Ast,
     src: &Source,
+    path: &str,
     row: u32,
 ) -> Option<(String, String, crate::source::Span)> {
     ast.decls.iter().find_map(|decl| {
         let DeclKind::Record { header: Some(header), .. } = &decl.kind else { return None };
-        if src.line_of(decl.name.start) != row {
+        // **The row clang echoes is the `#line` mapping's — 1-based within its own
+        // file — so the whole-text line is the wrong denominator the moment a
+        // program has two files.** It matched anyway for every single-file golden,
+        // which is how it survived: `line_of` and `locate`'s line agree exactly
+        // when `lines_before` is zero. Found by the port, whose reader asked which
+        // of the two source questions this one is.
+        let (file, line, _) = src.locate(decl.name.start);
+        if file != path || line != row {
             return None;
         }
         Some((
@@ -125,7 +134,9 @@ pub(super) fn union_record(line: &str, ast: &Ast, src: &Source) -> Option<Diagno
                 format!(
                     "`{type_name}` is a `union` in `{header}`, so comparing or hashing one asks about bytes that may hold another member — `{one}` is only what was written last"
                 ),
-                "reading `{one}` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration".to_string(),
+                format!(
+                    "reading `{one}` and building one that names it are both sound and stay legal; what has no answer is `==`, `hash` and being a map key, because two values holding different members are equal whenever the bytes match. Mark the `record` `partial` if you want that refusal stated at the declaration"
+                ),
             )
         }
         many => {

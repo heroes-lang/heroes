@@ -208,6 +208,17 @@ function words(text: str) -> [str]
         out @ out.push(run.join(""))
     return out
 
+# The token up to the first single quote — the whole token when no
+# quote follows, which is what Rust's split('\'').next() gives. Every
+# reader that recovers a name from clang's quoting reads it this way.
+function up_to_quote(text: str) -> str
+    kept: [str] @ []
+    for ch in text.chars()
+        if ch == "'"
+            return kept.join("")
+        kept @ kept.push(ch)
+    return kept.join("")
+
 ## Tests
 
 test "declaration finds all three kinds and refuses the rest"
