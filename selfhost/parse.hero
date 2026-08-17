@@ -1,0 +1,63 @@
+# The parser's front door: text → tree in one call (design.md §3.3 — a
+# library with a thin CLI on top; Part 10 step 2).
+# Port of crates/heroes/src/syntax/mod.rs::parse — the last piece of the
+# syntax stage, and the one that makes the pipeline an implementation detail
+# of the frontend rather than of its clients.
+
+use token
+use diag
+use ast
+use cursor
+use lexer
+use parse_decl
+
+record ParseOutput
+    decls: [ast.Decl]
+    uses: [ast.Use]
+    # Every comment in the file, in source order. The tree keeps only the
+    # ones that are DOCUMENTATION (§4.1); `heroes fmt` needs all of them,
+    # because a formatter that drops a comment is a formatter nobody runs.
+    comments: [token.Span]
+    diagnostics: [diag.Diagnostic]
+    tree: ast.Ast
+
+# Lex and parse one file in a single call.
+#
+# Diagnostics come out lexer-first, then parser, which keeps them grouped by
+# the stage that can explain them; within a stage they are in source order.
+# Never sorted across stages: a shape error and the word error that caused it
+# read better together than interleaved by column.
+function parse(text: str) -> ParseOutput
+    lexed = lexer.lex_one(text)
+    comments: [token.Span] @ []
+    for t in lexed.tokens
+        if t.kind == .comment
+            comments @ comments.push(t.span)
+    c: cursor.Cursor @ cursor.new_cursor(lexed.tokens)
+    a: ast.Ast @ ast.new_ast()
+    decls: [ast.Decl] @ []
+    uses: [ast.Use] @ []
+    parse_decl.file(@c, @a, @decls, @uses, text)
+    diagnostics: [diag.Diagnostic] @ lexed.diagnostics
+    for d in c.diagnostics
+        diagnostics @ diagnostics.push(d)
+    return ParseOutput(decls: decls, uses: uses, comments: comments, diagnostics: diagnostics, tree: a)
+
+test "text becomes a tree in one call, comments and all"
+    text = "# a note\nconstant MAX: i64\n    64  # trailing\n"
+    p = parse(text)
+    assert p.diagnostics.len() == 0
+    assert p.decls.len() == 1
+    # BOTH comments are kept for the formatter; the tree keeps only the doc.
+    assert p.comments.len() == 2
+    assert p.decls[0].doc.len() == 1
+
+test "diagnostics come out lexer-first, then parser"
+    # A tab (the lexer's mistake) on line 2, a stray name at top level (the
+    # parser's) on line 3: the lexer's diagnostic must come out first even
+    # though recovery means both are found.
+    text = "constant MAX: i64\n\t64\njunk\n"
+    p = parse(text)
+    assert p.diagnostics.len() >= 2
+    assert p.diagnostics[0].code == "tab_in_indentation"
+    assert p.diagnostics[p.diagnostics.len() - 1].code == "expected_declaration"
