@@ -365,3 +365,25 @@ Was | author instruction, 2026-08-14 | **A runtime function that joins two path 
 - [ ] M-selfhost-port, found by the knot's own first test (2026-08-17) | **The spec's §Tests example does not compile, and both compilers agree.** `spec/heroes-spec.md:186` reads `assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25` — and `dist2(a: Point, b: Point)` has two parameters of one type, so §Functions' own rule ("named arguments are mandatory") makes the call `needs_label`, twice, exit 1. Measured today against the Rust compiler AND the Heroes port of the checker: identical refusal, identical fixes (`a: `, `b: `). The spec is in disagreement with itself — the rule at § Functions and calls versus its own example at § Tests and holes — and the repair (adding the two labels, +2 tokens by eye, to be measured for §1.2 at the edit) is a `spec/**` change, which is a PANEL PATH per CLAUDE.md §4. Not repaired in the loop for that reason; queued instead. Panel 018:41 quotes the same call in a dated record, which stays as written per §14 | spec/heroes-spec.md:186 · §Functions' rule at :98-99 | the first program the ported checker ever refused was the specification's own example, for a reason both compilers state identically — the thesis could not have asked for a better witness
 - [ ] **`continue` as the sanctioned arm no-op is a semantic trap inside counted loops** (M-selfhost-port, found 2026-08-17). The language refuses `_ = 0` as an arm body and the natural fillers are bare `continue`/`return`. But inside a `for`/`while` whose body ends with a counter (`at @ at + 1`), a `continue` arm SKIPS the counter — it is a loop jump, not a "nothing here". The port hit this three times in one session: an infinite loop in ir_own.hero's rewrite (a while whose index increment was skipped), and three silent position-counter desyncs in ir_phases.hero (twelve false "returns without releasing" the first time the owned checks ran on real IR). Outside a loop the compiler catches it (jump_outside_loop); inside, it is legal and wrong. Question for the author (spec/** path, panel if pursued): should arms have a true no-op form (e.g. `()` call is today's other option), or should the checker warn when a match arm's `continue` targets a loop whose body continues below the match? | the three fixes are in ir_own.hero and ir_phases.hero, commit pending
 - [ ] **Float literals: the port cannot reproduce the bootstrap's hex spelling** (M-selfhost-port, found 2026-08-17). The bootstrap emits f64 literals as C hex floats (`%a`, round-trip-exact, design.md §3.1) computed FROM the f64 bits. The port carries a float literal as its SPELLED TEXT, because Heroes has no str->f64 by design — so it cannot compute the bits, and would emit the decimal text instead. If the fixpoint compares bootstrap-C against port-C byte for byte (the mangler's own doc says it does), any float literal in selfhost source diverges. Three ways out, none free: (a) implement decimal->binary64->hex in Heroes over i64 arithmetic (exact, a real sub-project); (b) keep selfhost source float-free and gate float literals in the port until (a); (c) change BOTH emitters to pass the source text through (reintroduces the decimal round trip the hex rule exists to kill — likely refused). Needs an author call; (b) is the conservative default the port adopts meanwhile. | emit_literal.hero carries the divergence note
+
+## The word width and the host's name (M-selfhost-port, emit_c_spellings)
+
+The bootstrap derives C `long`'s width from `size_of::<c_ulong>()` and names
+the host from `env::consts::OS`; Heroes has neither, and an extern constant
+cannot carry a platform-varying width by construction — declaring `ULONG_MAX`
+at either width fails the width assertion on the other platform, which is
+this table's own lesson applied to itself. The port therefore takes the width
+as a PARAMETER (`spelling(c_type, word_bits)`), still derived and never
+tabled, and its caveat names both widths without naming the host OS.
+
+**The question**: where does the selfhost compiler get `word_bits` when the
+CLI department is ported?
+- (a) a runtime entry point (`hero_word_bits()` in hero_os.h) — one C line,
+  ABI addition;
+- (b) a builtin the language grows — heavier, §10's stopping rule applies;
+- (c) hardcode 64 with a premise-death test — exactly what the bootstrap's
+  own doc forbids ("derived, never tabled").
+The bootstrap's test contract (`the_word_width_this_compiler_claims_is_the_
+one_clang_uses`) should hold whichever way; (a) looks cheapest and keeps the
+derivation. Also: the port's caveat drops the "(macOS)" host name — accept
+the divergence, or add the host's name to the same runtime entry?

@@ -43,6 +43,14 @@ constant PACKAGE: str
 constant FAILED: str
     "static assertion failed"
 
+# What clang calls handing a `const char *` to a `char *`, matched
+# whole. It is ffi_mutable's class, and ffi_narrowed names it to step
+# aside — the wider "to parameter of" family would otherwise swallow
+# panel 058's whole class and tell an author who already declared
+# `cstr` to declare it again.
+constant DISCARDS: str
+    "discards qualifiers"
+
 # The extern declaration with this C name: where it is, which header
 # it was declared under, and whether it is a constant.
 record Declared
@@ -218,6 +226,29 @@ function up_to_quote(text: str) -> str
             return kept.join("")
         kept @ kept.push(ch)
     return kept.join("")
+
+# A small decimal read whole — clang's row and column numbers. Spaces
+# at either end are skipped, as Rust's trim().parse() skips them.
+function number(text: str) -> i64?
+    ds = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    value: i64 @ 0
+    read: bool @ false
+    for ch in text.chars()
+        if ch == " "
+            continue
+        matched: bool @ false
+        index: i64 @ 0
+        for one in ds
+            if one == ch
+                value @ value * 10 + index
+                matched @ true
+                read @ true
+            index @ index + 1
+        if !matched
+            return fail("none", "not a digit")
+    if !read
+        return fail("none", "empty")
+    return ok(value)
 
 ## Tests
 

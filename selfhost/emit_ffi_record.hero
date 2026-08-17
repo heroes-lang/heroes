@@ -84,31 +84,10 @@ function caret_of(line: str) -> Caret?
     while at < last
         row_text @ row_text.push(cs[at])
         at @ at + 1
-    row = parse_row(row_text.join(""))
+    row = emit_ffi_lookup.number(row_text.join(""))
     if row.is_err()
         return fail("none", "the row is not a number")
     return ok(Caret(path: path.join(""), row: row.must()))
-
-function parse_row(text: str) -> i64?
-    ds = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    value: i64 @ 0
-    read: bool @ false
-    for ch in text.chars()
-        if ch == " "
-            continue
-        matched: bool @ false
-        index: i64 @ 0
-        for one in ds
-            if one == ch
-                value @ value * 10 + index
-                matched @ true
-                read @ true
-            index @ index + 1
-        if !matched
-            return fail("none", "not a digit")
-    if !read
-        return fail("none", "empty")
-    return ok(value)
 
 # The group record whose name sits on this .hero line — file and line
 # TOGETHER, because the row is file-relative by construction.

@@ -1,0 +1,256 @@
+# The class where A PARAMETER NARROWS IN SILENCE (design.md §4.19;
+# panels 051, 052, 071). Port of crates/heroes/src/emit/ffi_narrowed.rs.
+#
+# Kept apart from ffi_declared because the mechanism differs in the
+# way that matters: those classes read a message this emitter wrote,
+# this one reads a message CLANG wrote, about a probe this emitter
+# placed. There is no marker and no C name in the text — the gate is
+# the LOCATION, and extern_probe is what makes a location mean
+# something by putting one #line per probe at the author's own extern
+# line. cgo made the same choice for the same reason: reading message
+# text ties the tool to compiler versions; a synthetic #line channel
+# does not.
+
+use ast
+use source
+use diag
+use check_state
+use ir_state
+use emit_ctype
+use emit_extern_probe
+use emit_c_spellings
+use emit_ffi_lookup
+use parse
+use resolve
+use checker
+use ir_lower
+
+# What clang calls a silent narrowing, and what it calls a silent
+# change of sign. Both are the same defect — a parameter declared as
+# something the header does not say — and one class, because the
+# repair is one sentence: declare it at the header's own width AND
+# signedness. Measured on curl, where the two arrived a day apart
+# from the same cause.
+constant NARROWED: str
+    "implicit conversion loses integer precision"
+
+constant RESIGNED: str
+    "implicit conversion changes signedness"
+
+# The CLASS mismatch — a wider family that was falling through to
+# exit 2 until panel 071. Seven shapes measured; clang phrases them
+# two ways and both contain this string, which the two width strings
+# do not, so the families never overlap.
+constant MISMATCHED: str
+    " to parameter of "
+
+# Where clang's caret sits and what follows it, with the file kept
+# only if it is one of this compilation's own NON-LIBRARY files. The
+# library is a registered Source entry whose name is deliberately
+# unopenable: a clang error against one of its lines must not look
+# like an error in a file the author can edit (panel 052's
+# compiler-engineer, in the emitted goldens).
+record Located
+    file: i64
+    line: i64
+    col: i64
+    rest: str
+
+function location(s: source.Source, line: str) -> Located?
+    cs = line.chars()
+    stops: [i64] @ []
+    index: i64 @ 0
+    while index < cs.len() && stops.len() < 3
+        if cs[index] == ":"
+            stops @ stops.push(index)
+        index @ index + 1
+    if stops.len() < 3
+        return fail("none", "not a file:line:col report")
+    file_name = slice_chars(cs, from: 0, to: stops[0])
+    row = emit_ffi_lookup.number(slice_chars(cs, from: stops[0] + 1, to: stops[1]))
+    col = emit_ffi_lookup.number(slice_chars(cs, from: stops[1] + 1, to: stops[2]))
+    if row.is_err() || col.is_err()
+        return fail("none", "the position is not numeric")
+    at: i64 @ -1
+    counter: i64 @ 0
+    for entry in s.files
+        if entry.name == file_name && !entry.is_library && at == -1
+            at @ counter
+        counter @ counter + 1
+    if at == -1
+        return fail("none", "not one of this compilation's own files")
+    return ok(Located(file: at, line: row.must(), col: col.must(), rest: slice_chars(cs, from: stops[2] + 1, to: cs.len())))
+
+function slice_chars(cs: [str], from: i64, to: i64) -> str
+    kept: [str] @ []
+    index: i64 @ from
+    while index < to
+        kept @ kept.push(cs[index])
+        index @ index + 1
+    return kept.join("")
+
+# The extern declared at a file and line — the one the probe's #line
+# claims.
+record ExternAt
+    f: ir_state.Function
+    name: str
+
+function extern_at_line(p: ir_state.Program, s: source.Source, decls: [ast.Decl], file: i64, at_line: i64) -> ExternAt?
+    for f in p.functions
+        start = decls[f.decl].name.start
+        if source.file_of(s, start) != file || source.file_line_of(s, start) != at_line
+            continue
+        return ok(ExternAt(f: f, name: source.span_text(s, decls[f.decl].name)))
+    return fail("none", "no extern is declared at that line")
+
+# The content between the LAST two quotes on the line — the header's
+# type, which is what the parameter should be declared as.
+function last_quoted(text: str) -> str?
+    cs = text.chars()
+    close: i64 @ -1
+    open: i64 @ -1
+    index: i64 @ cs.len() - 1
+    while index >= 0
+        if cs[index] == "'"
+            if close == -1
+                close @ index
+            else
+                open @ index
+                break
+        index @ index - 1
+    if close == -1 || open == -1
+        return fail("none", "no quoted type on the line")
+    return ok(slice_chars(cs, from: open + 1, to: close))
+
+# A parameter declared wider than the header's, which C narrows in
+# silence. The declaration is found by LINE, and the offending
+# parameter by COLUMN, rebuilt from probe_line — the same string the
+# emitter wrote, recomputed rather than read back out of clang's echo.
+function parameter_width(s: source.Source, decls: [ast.Decl], p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, line: str, word_bits: i64) -> diag.Diagnostic?
+    # `discards qualifiers` belongs to ffi_mutable and this must not
+    # take it (found by the golden corpus the hour this matcher
+    # widened): clang's text for a cstr handed to a char * contains
+    # MISMATCHED, so the wider family would swallow panel 058's whole
+    # class and then say "declare it cstr" to an author who already
+    # had. The two questions are different: this one asks whether the
+    # types convert, that one whether C may WRITE through the pointer.
+    if emit_ffi_lookup.has(text: line, needle: emit_ffi_lookup.DISCARDS)
+        return fail("none", "the mutable class owns this line")
+    kind: str @ ""
+    if emit_ffi_lookup.has(text: line, needle: NARROWED)
+        kind @ NARROWED
+    else
+        if emit_ffi_lookup.has(text: line, needle: RESIGNED)
+            kind @ RESIGNED
+        else
+            if emit_ffi_lookup.has(text: line, needle: MISMATCHED)
+                kind @ MISMATCHED
+            else
+                return fail("none", "not a conversion line")
+    at = location(s, line: line)
+    if at.is_err()
+        return fail("none", "no usable location")
+    c_type = last_quoted(at.must().rest)
+    if c_type.is_err()
+        return fail("none", "no header type on the line")
+    # The diagnostic fires whether or not the type has a Heroes
+    # spelling, and only the Fix consults the table (panel 071's
+    # ffi-pragmatist made this a condition): declining when the table
+    # misses is right for a width and catastrophic for a class — the
+    # types with no Heroes name are exactly the interesting ones, 356
+    # of 1159 entry points by panel 052's count.
+    spelled = emit_c_spellings.spelling(c_type: c_type.must(), word_bits: word_bits)
+    what: str @ "a different kind of thing from"
+    if kind == NARROWED
+        what @ "wider than"
+    if kind == RESIGNED
+        what @ "a different sign from"
+    found = extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+    if found.is_err()
+        return fail("none", "no extern is declared at that line")
+    f = found.must().f
+    name = found.must().name
+    parameters = emit_extern_probe.parameter_list(names, c, f)
+    if parameters.is_err()
+        return fail("none", "a parameter with no C spelling")
+    arguments = emit_extern_probe.argument_names(count: f.params.len())
+    module = source.component_at(s, decls[f.decl].span.start)
+    probe = emit_extern_probe.probe_name(module: module, name: name)
+    columns = emit_extern_probe.argument_columns(probe: probe, name: name, parameters: parameters.must(), arguments: arguments)
+    which: str @ "a parameter"
+    index: i64 @ 0
+    for column in columns
+        if column == at.must().col && index < f.params.len()
+            which @ "`" + f.slots[f.params[index]].name + "`"
+        index @ index + 1
+    span = decls[f.decl].span
+    # A width is converted IN SILENCE; a class mismatch is not — clang
+    # refuses it outright — so the sentence after the type has to
+    # differ or one of the two is false.
+    consequence: str @ "and C would convert the value in silence"
+    if kind == MISMATCHED
+        consequence @ "and the two do not convert"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_parameter_type", message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence, span: span)
+    if spelled.is_err()
+        # No Heroes spelling, and the diagnostic still lands: the note
+        # says what the reader must do instead of naming a type that
+        # does not exist.
+        d.notes @ d.notes.push("§4.19: a parameter is declared as what the header says. `" + c_type.must() + "` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout")
+        return ok(d)
+    heroes_type = spelled.must().heroes
+    d.notes @ d.notes.push("§4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `" + heroes_type + "`, and convert at the call where the value is known to fit")
+    # A SECOND note rather than a longer first one: the width rule is
+    # the same for every C type, and this says something extra about
+    # THIS one — that the answer above is this target's.
+    if !spelled.must().caveat.is_err()
+        d.notes @ d.notes.push(spelled.must().caveat.must())
+    # A guess, deliberately: for a fixed-width C type the guess is
+    # about INTENT (convert at the call instead?), for a word-width
+    # type also about the target. Neither may be applied for the
+    # author (CLAUDE.md §8).
+    d.fixes @ d.fixes.push(diag.Fix(title: "declare it `" + heroes_type + "`", replacement: heroes_type, span: span, certainty: .guess))
+    return ok(d)
+
+## Tests
+
+test "the width, the sign and the class, gated by the probe's own line"
+    text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n\nfunction main()\n    print(narrow(x: 1))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = emit_ctype.new_names(s, parsed.decls)
+    # The column is computed the way the emitter computes it, so the
+    # test cannot drift from the contract.
+    fs = low.program.functions
+    f0: ir_state.Function @ fs[0]
+    picked: bool @ false
+    for f in fs
+        if f.name == "narrow" && !picked
+            f0 @ f
+            picked @ true
+    parameters = emit_extern_probe.parameter_list(names, c, f0).must()
+    arguments = emit_extern_probe.argument_names(count: 1)
+    probe = emit_extern_probe.probe_name(module: "t", name: "narrow")
+    columns = emit_extern_probe.argument_columns(probe: probe, name: "narrow", parameters: parameters, arguments: arguments)
+    line = "t.hero:2:" + columns[0].to_str() + ": error: implicit conversion loses integer precision: 'int64_t' to 'int'"
+    d = parameter_width(s, parsed.decls, low.program, c, names, line: line, word_bits: 64)
+    assert d.must().code == "ffi_parameter_type"
+    assert d.must().message == "`x` of `narrow` is declared wider than the header's `int` — clang read the header, and C would convert the value in silence"
+    assert d.must().fixes.len() == 1
+    assert d.must().fixes[0].replacement == "i32"
+    assert d.must().fixes[0].certainty == .guess
+    # The class mismatch: no Heroes spelling for the quoted type, the
+    # diagnostic lands anyway, no fix is invented.
+    mism = "t.hero:2:" + columns[0].to_str() + ": error: passing 'HeroStr' to parameter of type 'Vector2'"
+    k = parameter_width(s, parsed.decls, low.program, c, names, line: mism, word_bits: 64)
+    assert k.must().message == "`x` of `narrow` is declared a different kind of thing from the header's `Vector2` — clang read the header, and the two do not convert"
+    assert k.must().fixes.len() == 0
+    # The mutable class owns qualifiers, and a line at no extern's own
+    # line stays the compiler's.
+    quals = "t.hero:2:9: warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"
+    assert parameter_width(s, parsed.decls, low.program, c, names, line: quals, word_bits: 64).is_err()
+    stray = "t.hero:5:9: error: implicit conversion loses integer precision: 'int64_t' to 'int'"
+    assert parameter_width(s, parsed.decls, low.program, c, names, line: stray, word_bits: 64).is_err()

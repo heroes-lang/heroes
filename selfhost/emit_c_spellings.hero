@@ -1,0 +1,106 @@
+# What to declare a parameter as, given the C type clang reported
+# (design.md §4.19; panel 071). Port of
+# crates/heroes/src/emit/c_spellings.rs.
+#
+# NOT a list of every C type and it must not become one: a row exists
+# because a real header used it and somebody bound it. size_t and
+# ssize_t need no rows, because clang reports the CANONICAL type and
+# malloc's parameter arrives as `unsigned long`. A missing row is not
+# a failure (panel 071): the caller reports either way and only the
+# Fix asks here.
+#
+# Port note — the one divergence in this department, queued in
+# docs/debrief/DECIDE.md. The bootstrap derives the word width from
+# size_of::<c_ulong>() and names the host OS from env::consts::OS;
+# Heroes has neither, and an extern constant cannot carry a
+# platform-varying width by construction (declaring ULONG_MAX at
+# either width fails the width assertion on the other platform —
+# this file's own lesson applied to itself). So the width arrives as
+# a PARAMETER the driver owns, still derived and never tabled, and
+# the caveat names both widths without naming the host.
+
+## The answer
+
+record Spelling
+    heroes: str
+    # Present when the C type's width is the PLATFORM'S rather than a
+    # width the header chose, so the note must say which target this
+    # answer is for.
+    caveat: str?
+
+# The Heroes type a C type of this width and signedness is declared
+# as. The set is IntKind's plus the two pointer rows the class family
+# owes (panel 071): a width mismatch never reports a pointer; a class
+# mismatch reports them constantly, because ptr and cstr are what an
+# author reaches for first at the boundary.
+#
+# `long` and `unsigned long` used to be absent from the bootstrap's
+# table, and their absence was the defect: 64 bits on Darwin and
+# Linux, 32 on Windows, so no TABLED spelling is right on three legs —
+# declining left `function malloc(size: i64) -> ptr` at exit 2 with
+# raw clang output while `u64` binds malloc correctly. A width is not
+# a constant to be tabled; it is a question about the target, and
+# word_bits carries the answer in.
+function spelling(c_type: str, word_bits: i64) -> Spelling?
+    no_caveat: str? = fail("none", "no caveat")
+    if c_type == "void *"
+        return ok(Spelling(heroes: "ptr", caveat: no_caveat))
+    if c_type == "char *" || c_type == "const char *"
+        return ok(Spelling(heroes: "cstr", caveat: no_caveat))
+    if c_type == "int"
+        return ok(Spelling(heroes: "i32", caveat: no_caveat))
+    if c_type == "short" || c_type == "short int"
+        return ok(Spelling(heroes: "i16", caveat: no_caveat))
+    if c_type == "signed char" || c_type == "char"
+        return ok(Spelling(heroes: "i8", caveat: no_caveat))
+    if c_type == "unsigned int"
+        return ok(Spelling(heroes: "u32", caveat: no_caveat))
+    if c_type == "unsigned short" || c_type == "unsigned short int"
+        return ok(Spelling(heroes: "u16", caveat: no_caveat))
+    if c_type == "unsigned char"
+        return ok(Spelling(heroes: "u8", caveat: no_caveat))
+    # `long long` is the one C integer that is 64 bits everywhere, by
+    # C99's own floor and every ABI that has shipped since — no caveat
+    # because there is nothing about the target left to say.
+    if c_type == "long long" || c_type == "long long int"
+        return ok(Spelling(heroes: "i64", caveat: no_caveat))
+    if c_type == "unsigned long long" || c_type == "unsigned long long int"
+        return ok(Spelling(heroes: "u64", caveat: no_caveat))
+    if c_type == "long" || c_type == "long int"
+        return ok(word_width(sign: "i", word_bits: word_bits))
+    if c_type == "unsigned long" || c_type == "unsigned long int"
+        return ok(word_width(sign: "u", word_bits: word_bits))
+    # A C type absent from this table means the class DECLINES — clang's
+    # own verdict is still printed, and the compiler does not pretend
+    # to know the repair. `float` is the live example.
+    return fail("none", "no Heroes spelling for this C type")
+
+# The spelling for a C type whose width is the machine's word, with
+# the note that says so. The width both ways round, so the sentence is
+# true whichever leg the reader is on.
+function word_width(sign: str, word_bits: i64) -> Spelling
+    other: i64 @ 32
+    if word_bits == 32
+        other @ 64
+    heroes = sign + word_bits.to_str()
+    caveat: str? = ok("C's `long` is the platform's word, not a width the header chose: " + word_bits.to_str() + " bits on this machine, and " + other.to_str() + " elsewhere — Windows is " + other.to_str() + " where the Unixes are " + word_bits.to_str() + ", or the reverse. `" + heroes + "` is the answer for this target; a program that must build on both declares the width it means there and converts at the call")
+    return Spelling(heroes: heroes, caveat: caveat)
+
+## Tests
+
+test "the table: pointers, fixed widths, the derived word, the decline"
+    p = spelling(c_type: "void *", word_bits: 64)
+    assert p.must().heroes == "ptr"
+    assert p.must().caveat.is_err()
+    assert spelling(c_type: "const char *", word_bits: 64).must().heroes == "cstr"
+    assert spelling(c_type: "int", word_bits: 64).must().heroes == "i32"
+    assert spelling(c_type: "unsigned short int", word_bits: 64).must().heroes == "u16"
+    assert spelling(c_type: "long long", word_bits: 64).must().caveat.is_err()
+    # The word rows carry the caveat, and the width is the caller's.
+    l64 = spelling(c_type: "long", word_bits: 64)
+    assert l64.must().heroes == "i64"
+    assert !l64.must().caveat.is_err()
+    u32w = spelling(c_type: "unsigned long", word_bits: 32)
+    assert u32w.must().heroes == "u32"
+    # float has no row on purpose: the class declines, clang speaks.
+    assert spelling(c_type: "float", word_bits: 64).is_err()
