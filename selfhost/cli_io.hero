@@ -21,6 +21,11 @@ function eprint(text: str)
     line = text + "\n"
     _ = write(fd: 2, buf: line.cstr(), count: line.len().to_u64().must())
 
+# The same channel, no newline added — for a blob that already ends
+# with one (the rich renderer's, the JSON's).
+function eprint_raw(text: str)
+    _ = write(fd: 2, buf: text.cstr(), count: text.len().to_u64().must())
+
 ## Tests
 
 test "eprint writes and the write binding answers with a count"
