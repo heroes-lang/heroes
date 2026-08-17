@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-hosted — Heroes compiles Heroes, and the fixpoint holds</title>
+<meta name="description" content="The Heroes compiler is written in Heroes: 143 modules, 34,812 lines. Both compilers emit the same 20-megabyte C file, byte for byte, three generations deep. One hash.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="why.html">Why Heroes</a></li>
+      <li><a href="docs/index.html">Docs</a></li>
+      <li><a href="errors.html">Errors</a></li>
+      <li><a class="here" href="selfhost.html">Self-hosted</a></li>
+      <li><a href="log.html">Log</a></li>
+    </ul>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <div class="page-head">
+    <h1 class="page">Written in itself</h1>
+    <span class="nod">· a new career in a new town ·</span>
+  </div>
+  <p class="lede">The compiler now exists twice: once in the language it was
+  built with, once in the language it builds.</p>
+
+  <p>
+    A language is a toy until it can express its own compiler. That needs a tree
+    with heterogeneous nodes, symbol tables, lists, recursion, error handling and
+    multiple files — so if a language can write that, the argument about whether
+    it is real is over. It was the finish line from the first day, and the test
+    for it is not a test suite.
+  </p>
+  <p>
+    It is this: ask both compilers to write out the same program in C, and
+    compare the results letter by letter. Then compile the letters the new
+    compiler wrote, and ask <i>that</i> compiler to write the program a third
+    time.
+  </p>
+  <pre class="fixpoint"><code>sha256  <span class="hash">373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63</span>
+
+  gen1b.c   the bootstrap, written in Rust
+  gen3.c    heroes, written in Heroes
+  gen4.c    the compiler that came out of gen3.c
+
+<span class="c">  20,886,539 bytes · 724,245 lines · three compilers · one hash</span></code></pre>
+  <p>
+    A thing that reproduces itself exactly, twice over. What it took, measured:
+  </p>
+  <ul class="stats">
+    <li><span class="n">143</span><span class="what">modules of Heroes</span></li>
+    <li><span class="n">34,812</span><span class="what">lines</span></li>
+    <li><span class="n">0</span><span class="what">workarounds left</span></li>
+    <li><span class="n">2,570</span><span class="what">outputs compared, no divergence</span></li>
+  </ul>
+  <p>
+    That is the whole compiler, not a subset: lexer, parser, resolver, type
+    checker, the intermediate representation and its verifier,
+    monomorphisation, the ownership pass, the C backend, the FFI checks,
+    diagnostics, the printer, the formatter, and the command line.
+  </p>
+
+  <h2>The best part is what went wrong</h2>
+  <p>
+    Pointed at its own source, the new compiler <b>refused it</b> — claimed a
+    piece of its own structure contained itself, which was false. That one wrong
+    complaint was the thread, and pulling it produced five real faults in the new
+    compiler and, more surprising, <b>four in the old one</b>. Including this:
+    the underline that shows a reader where an error is was covering the little
+    note written on that same line for the sole purpose of checking that
+    underline. The child corrected the parent.
+  </p>
+  <p>
+    A compiler pointed at its own source is a corpus no test suite reproduces —
+    34,812 lines holding every shape the language has, in the proportions real
+    code has them. Which is why five of the port's faults came from a single
+    trap that the original could not contain: a loop jump inside a
+    <code>match</code> arm, skipping a hand-maintained index, where the Rust
+    walks the list with an iterator and cannot.
+  </p>
+
+  <h2>Twenty million letters behind three words</h2>
+  <p>
+    The very last thing standing between the two files being identical was a
+    message the old compiler had written down for whoever would do this work, in
+    three separate places:
+  </p>
+  <blockquote>
+    this list comes out in order here, and the new one will owe an explicit sort
+  </blockquote>
+  <p>
+    Three sorts, unpaid. The result was 20.8 megabytes of C whose <i>lines</i>
+    all matched and whose <i>sequence</i> did not, on 3,330 lines out of 724,197.
+    A map has no order — the language says so, and measurably means it — so the
+    note was correct on the day it was written and stayed correct for months
+    until somebody needed it.
+  </p>
+
+  <h2>What is left</h2>
+  <p>
+    Not a measurement. Two things: the generated C has to be shown building from
+    a clean checkout with nothing but a C compiler — which is how Go shipped 1.4
+    and how Zig ships its bootstrap — and then the Rust bootstrap gets archived
+    and never maintained again. After that the whole picture is Heroes → C →
+    native binary, with no third language anywhere.
+  </p>
+
+  <p class="next">
+    The day-by-day version of all of this is the <a href="log.html">build
+    log</a>.
+  </p>
+
+  <footer>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

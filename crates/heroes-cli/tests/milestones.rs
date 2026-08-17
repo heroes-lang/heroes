@@ -39,7 +39,12 @@ const RECORD: &[&str] = &[
     "DESIGN-LOG.md",
     "vendor",
     "editors/vscode/icons",
-    "site/index.html",
+    // The site's build log: one dated postcard per milestone, and it keeps the
+    // identifiers each entry was written with (`M0`, `M5a`, `M8a`) like every other
+    // dated record here. It moved out of `site/index.html` when the site became a
+    // multi-page one, and the exemption moved with it rather than being added to it —
+    // the home page is not a record and is watched again (2026-08-17).
+    "site/log.html",
     "target",
     "build",
     ".git",

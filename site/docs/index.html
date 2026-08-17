@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heroes — documentation</title>
+<meta name="description" content="The Heroes language, explained page by page for a reader who has not read the specification. Every code block is a file in the repository that compiles and runs.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Why Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../errors.html">Errors</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <header>
+    <!-- the Aladdin Sane bolt (1973): red over blue, worn at a jaunty angle -->
+    <svg class="bolt" viewBox="0 0 48 64" aria-hidden="true">
+      <path fill="var(--blue)" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z" transform="translate(3.5,3)"/>
+      <path fill="var(--red)"  d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z"/>
+    </svg>
+    <h1><span class="q">&ldquo;</span>Docs<span class="q">&rdquo;</span></h1>
+    <p class="tagline">The language, page by page — for a reader who has not read the specification, and should not have to.</p>
+    <span class="badge">in progress &middot; one chapter written &middot; <a href="../index.html">← the language</a></span>
+  </header>
+
+  <h2>How to read this <span class="nod">· hunky dory ·</span></h2>
+  <p>
+    Heroes has a specification, and it is deliberately not a teaching text: it
+    is the control instrument, budgeted to the token so that the whole language
+    fits in a prompt. Reading it teaches you the rules the way a rulebook
+    teaches a game. These pages are the other thing — one idea at a time, in
+    order, with the reasoning left in.
+  </p>
+  <p>
+    <b>Every code block in this documentation is a slice of a file in the
+    repository that compiles and runs.</b> Nothing here is typed into the page
+    and hoped for. Each block names its file underneath, so you can open it,
+    run it, and change it — and so that a check can tell us the day the
+    documentation stops matching the language.
+  </p>
+
+  <h2>The chapters</h2>
+  <p>
+    Twelve chapters, in teaching order rather than reference order. One is
+    written; the rest are being written, and they are listed here because the
+    shape of the whole is part of the plan.
+  </p>
+  <ol class="chapters">
+    <li class="todo">A first program
+      <span class="soon">in progress</span>
+      <span class="src">files, layout, comments as documentation · examples/gallery/00-first.hero</span>
+    </li>
+    <li class="todo">Records and functions
+      <span class="soon">in progress</span>
+      <span class="src">declarations, named construction, method-call syntax · examples/gallery/01-points.hero</span>
+    </li>
+    <li class="todo">Variants and match
+      <span class="soon">in progress</span>
+      <span class="src">exhaustive by force, no catch-all · examples/gallery/02-tokens.hero</span>
+    </li>
+    <li><a href="failure-is-a-value.html">Failure is a value</a>
+      <span class="src">no null, no exceptions · examples/gallery/03-fallible.hero</span>
+    </li>
+    <li class="todo">Control flow
+      <span class="soon">in progress</span>
+      <span class="src">if, while, for, range · examples/gallery/04-loops.hero</span>
+    </li>
+    <li class="todo">Bindings and mutation
+      <span class="soon">in progress</span>
+      <span class="src">= and @, and why shadowing is an error · examples/gallery/05-mutation.hero</span>
+    </li>
+    <li class="todo">Generics and function values
+      <span class="soon">in progress</span>
+      <span class="src">one shape, many types · examples/gallery/06-generics.hero</span>
+    </li>
+    <li class="todo">Strings
+      <span class="soon">in progress</span>
+      <span class="src">five escapes, and bytes when you need them · examples/gallery/07-strings.hero</span>
+    </li>
+    <li class="todo">Maps
+      <span class="soon">in progress</span>
+      <span class="src">lookup returns a value or an error · examples/gallery/10-maps.hero</span>
+    </li>
+    <li class="todo">Values all the way down
+      <span class="soon">in progress</span>
+      <span class="src">copies, and a tree with no pointer in it · examples/gallery/11-trees.hero</span>
+    </li>
+    <li class="todo">Tests and holes
+      <span class="soon">in progress</span>
+      <span class="src">tests in the language, and ??? as a question · examples/gallery/09-holes.hero</span>
+    </li>
+    <li class="todo">The C boundary
+      <span class="soon">in progress</span>
+      <span class="src">extern, headers, and what clang checks for you · examples/gallery/08-ffi.hero</span>
+    </li>
+  </ol>
+
+  <footer>
+    <p>The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977) —
+    the quotation marks are his. The section nods are song titles, nothing more:
+    the irony lives in the packaging, and the language keeps its keywords plain.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

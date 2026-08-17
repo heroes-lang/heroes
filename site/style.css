@@ -1,0 +1,362 @@
+/* ---------------------------------------------------------------------------
+   heroes-lang.org — the one stylesheet, shared by every page.
+
+   Register and rules: site/README.md § Style guide. 70s-glam Bowie with
+   discipline — near-black stage / cream daylight, the bolt's red and blue as
+   the only loud colours, gold for the quotation marks, poster-condensed caps
+   on the system stack (never a webfont), Georgia serif body.
+
+   Why a file and not a <style> block per page: the site is four pages now and
+   twelve chapters eventually, with no build step to keep copies honest. A
+   duplicated palette drifts invisibly — one page's dark mode goes stale and
+   nothing fails. This is the only cross-page asset; the bolt stays inline SVG
+   in each page, because it is markup.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --bg: #0d0d12; --fg: #ece9e2; --dim: #9a9790;
+  --red: #e5393e; --blue: #3f7bff; --gold: #e6b450;
+  --card: #16161d; --line: #2b2b35; --code: #cdd6f4;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f2e9; --fg: #191713; --dim: #6b6860;
+    --red: #c2262b; --blue: #1f4fd8; --gold: #8a5a00;
+    --card: #efe9dc; --line: #dcd4c2; --code: #24365e;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.65 Georgia, 'Times New Roman', serif;
+}
+main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+main.home { max-width: 54rem; }
+
+/* ------- the nav bar: every page carries it, so no page is a dead end -------
+   Duplicated in each file's markup rather than injected, because the site has
+   no build step and no JavaScript. Keep the six items and their order in sync;
+   the current page marks itself with class="here". */
+nav.site {
+  border-bottom: 1px solid var(--line); background: var(--bg);
+  position: sticky; top: 0; z-index: 10;
+}
+nav.site > div {
+  max-width: 54rem; margin: 0 auto; padding: 0.7rem 1.25rem;
+  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+}
+nav.site .mark {
+  display: flex; align-items: center; gap: 0.45rem; text-decoration: none;
+  color: var(--fg); font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 1.05rem;
+}
+nav.site .mark svg { width: 0.85rem; height: 1.15rem; display: block; }
+nav.site ul {
+  display: flex; gap: 1.15rem; list-style: none; margin: 0; padding: 0;
+  flex-wrap: wrap;
+}
+nav.site a:not(.mark) {
+  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); text-decoration: none; letter-spacing: 0.04em;
+}
+nav.site a:not(.mark):hover { color: var(--fg); }
+nav.site a.here { color: var(--red); }
+nav.site .out { margin-left: auto; }
+@media (max-width: 620px) {
+  nav.site > div { gap: 0.6rem; }
+  nav.site ul { gap: 0.85rem; }
+  nav.site .out { margin-left: 0; }
+}
+
+/* ------- the marquee: condensed glam caps + the Aladdin Sane bolt ------- */
+header { position: relative; }
+h1 {
+  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  font-size: 4.6rem; margin: 0; line-height: 1;
+}
+h1 .q { color: var(--gold); }
+.bolt {
+  position: absolute; top: -1.6rem; right: 0.2rem; width: 4.4rem; height: auto;
+  transform: rotate(8deg); pointer-events: none;
+}
+@media (max-width: 480px) { h1 { font-size: 3rem; } .bolt { width: 3rem; } }
+.tagline { font-size: 1.25rem; color: var(--dim); margin: 0.9rem 0 0; font-style: italic; }
+.badge {
+  display: inline-block; margin-top: 1.5rem; padding: 0.2rem 0.7rem;
+  border: 1px solid var(--line); border-radius: 999px;
+  font: 0.8rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+}
+.badge a { color: var(--blue); text-decoration: none; }
+
+/* ------- section headings: poster caps, bolt bullet, red/blue ------- */
+h2 {
+  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
+  font-size: 1.15rem; color: var(--red); margin: 3.2rem 0 0.75rem;
+}
+h2::before {
+  content: ''; display: inline-block; width: 0.75em; height: 1em;
+  margin-right: 0.5rem; vertical-align: -0.12em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%233f7bff' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+h2 .nod {
+  display: block; font-size: 0.72rem; letter-spacing: 0.22em; color: var(--dim);
+  margin-top: 0.15rem;
+}
+
+blockquote {
+  margin: 1.25rem 0; padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 3px solid var(--red); font-size: 1.15rem; font-style: italic;
+}
+pre {
+  background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  padding: 1.1rem 1.3rem; overflow-x: auto;
+  font: 0.86rem/1.55 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--code);
+}
+/* ------- syntax colouring, done in markup because there is no JavaScript -----
+   The token classes are the lexer's own tables, not a guess: `.k` is
+   `lexer/keywords.rs::keyword`, `.t` is spec § Types. Three accents only, as
+   the style guide demands — red for the words the language reserves, blue for
+   its types, gold for literals, which is the same gold as the quotation marks.
+
+   A user's own type (`Point`) is deliberately NOT coloured. Doing so would mean
+   guessing from the capital letter, and the spec mandates no such convention —
+   `snake_case` at spec:136 is about error codes and nothing else. That is a
+   premise about the world rather than a fact about the token, so it stays out. */
+pre .c { color: var(--dim); }                      /* comments */
+pre .k { color: var(--red); }                      /* keywords */
+pre .t { color: var(--blue); }                     /* built-in types */
+pre .s, pre .n { color: var(--gold); }             /* strings, chars, numbers */
+pre .h { color: var(--red); font-style: italic; }  /* ??? — a hole is a question */
+
+/* Real diagnostics have long message lines and short caret lines. Wrapping
+   lets the message reflow into the column while the caret rows — which are
+   short — keep the alignment that makes them mean anything. */
+pre.diag { white-space: pre-wrap; }
+code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.92em; }
+ul.pillars { list-style: none; padding: 0; margin: 1rem 0; }
+ul.pillars li { margin: 0.9rem 0; padding-left: 1.4rem; position: relative; }
+ul.pillars li::before { content: '—'; position: absolute; left: 0; color: var(--red); }
+ul.pillars b { font-style: normal; }
+dl.why dt { font-weight: 600; margin-top: 1.1rem; }
+dl.why dd { margin: 0.25rem 0 0 0; }
+ol.log { list-style: none; padding: 0; margin: 1rem 0; }
+ol.log li {
+  margin: 0; padding: 0.9rem 0 0.9rem 1.4rem; position: relative;
+  border-left: 2px solid var(--line);
+}
+ol.log li::before {
+  content: ''; position: absolute; left: -7px; top: 1.3rem;
+  width: 12px; height: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+ol.log .when {
+  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); display: block;
+}
+ol.log b { font-style: normal; }
+a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+footer {
+  margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+  color: var(--dim); font-size: 0.9rem;
+}
+
+/* ------- the fixpoint: three generations, one hash ------- */
+.fixpoint .hash {
+  color: var(--gold); word-break: break-all; display: block;
+}
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 1.4rem 1rem; margin: 1.6rem 0; padding: 0; list-style: none;
+}
+.stats li { margin: 0; }
+.stats .n {
+  display: block; color: var(--red); font-size: 1.6rem; line-height: 1.1;
+  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; letter-spacing: 0.02em;
+}
+.stats .what {
+  font: 0.76rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); display: block; margin-top: 0.15rem;
+}
+
+/* ------- the home page: a landing, not a scroll -------
+   The hero is a two-column stage: the promise on the left, and on the right the
+   thing this language actually sells — a real compile error, carrying its own
+   repair. Showing the diagnostic rather than a hello-world is the whole pitch in
+   one glance. Under it, the three numbers that make the claim checkable. */
+.hero {
+  position: relative; padding: 3.5rem 0 2.5rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center;
+}
+.hero > div { min-width: 0; }
+/* The bolt's own colours, thrown behind the marquee like stage light. */
+.hero::before {
+  content: ''; position: absolute; z-index: -1;
+  top: -6rem; left: -20%; right: -20%; height: 130%;
+  background:
+    radial-gradient(38rem 22rem at 22% 34%, color-mix(in srgb, var(--red) 20%, transparent), transparent 70%),
+    radial-gradient(32rem 20rem at 74% 62%, color-mix(in srgb, var(--blue) 17%, transparent), transparent 70%);
+  pointer-events: none;
+}
+/* Says what this is before it says what it is called — a visitor who has never
+   heard the name should not have to infer the category. */
+.hero .kicker {
+  margin: 0 0 0.6rem;
+  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--blue);
+}
+.hero h1 { font-size: 5.2rem; }
+.hero .promise {
+  font-size: 1.5rem; line-height: 1.3; margin: 1.1rem 0 0.6rem; font-weight: 700;
+}
+.hero .promise em { color: var(--red); font-style: normal; }
+.hero .tagline { font-size: 1.05rem; margin: 0.6rem 0 0; }
+.hero .bolt { top: -0.6rem; right: auto; left: -3.2rem; width: 2.8rem; }
+
+/* The demo card's `bar` names the file, so it is that block's caption and the
+   figure carries no second one. */
+.demo figure.example { margin: 0; }
+.demo figure.example figcaption { display: none; }
+
+/* the demo card: a code panel, in the page's own furniture */
+.demo {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+  overflow: hidden;
+}
+.demo .bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--line);
+  font: 0.72rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+}
+.demo .bar::before {
+  content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--red); flex: none;
+}
+.demo pre {
+  border: 0; border-radius: 0; margin: 0; background: transparent;
+  font-size: 0.74rem; line-height: 1.5; white-space: pre-wrap;
+}
+.demo .under {
+  padding: 0 0.9rem 0.8rem; margin: 0;
+  font: 0.72rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+}
+.demo .under a { text-decoration: none; }
+
+.figures {
+  display: flex; flex-wrap: wrap; gap: 1.2rem 2.6rem; margin: 0 0 1rem;
+  padding: 1.2rem 0 0; list-style: none; border-top: 1px solid var(--line);
+}
+.figures li { margin: 0; }
+.figures .n {
+  color: var(--red); font-size: 1.35rem;
+  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; letter-spacing: 0.02em;
+}
+.figures .what {
+  display: block; font: 0.74rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim);
+}
+
+@media (max-width: 780px) {
+  .hero { grid-template-columns: 1fr; gap: 1.8rem; padding-top: 2.5rem; }
+  .hero h1 { font-size: 3.4rem; }
+  .hero .promise { font-size: 1.25rem; }
+  .hero .bolt { left: auto; right: 0.2rem; top: -1.6rem; }
+}
+
+.cta { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 1.8rem 0 0; }
+.cta a {
+  display: inline-block; padding: 0.5rem 1.1rem; border-radius: 999px;
+  text-decoration: none; border: 1px solid var(--red);
+  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+  font-size: 0.9rem;
+}
+.cta a.primary { background: var(--red); color: var(--bg); border-color: var(--red); }
+.cta a.ghost { color: var(--red); }
+
+.cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1.6rem; margin: 1.5rem 0 0; padding: 0; list-style: none;
+}
+.cards li {
+  margin: 0; padding: 1.2rem 1.3rem; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--card);
+}
+.cards h3 { margin: 0 0 0.5rem; color: var(--red); font-size: 0.9rem; }
+.cards p { margin: 0 0 0.7rem; font-size: 0.95rem; }
+.cards a.more {
+  font: 0.74rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-decoration: none; letter-spacing: 0.05em;
+}
+.cards a.more::after { content: ' →'; }
+
+/* ------- subpage headers: a title, not a marquee ------- */
+.page-head { padding: 1.5rem 0 0.5rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+h1.page {
+  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  font-size: 2.8rem; margin: 0; line-height: 1.05;
+}
+.page-head .nod {
+  display: block; font: 0.72rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.22em; color: var(--dim); margin-top: 0.3rem;
+}
+.page-head .lede { font-size: 1.15rem; color: var(--dim); font-style: italic; margin: 0.7rem 0 1.2rem; }
+@media (max-width: 480px) { h1.page { font-size: 2rem; } }
+
+/* ------- documentation pages: book page, not marquee ------- */
+.crumb {
+  font: 0.8rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); margin: 0 0 2rem;
+}
+h1.chapter {
+  font-size: 2.4rem; letter-spacing: 0.01em; text-transform: none;
+  font-family: Georgia, 'Times New Roman', serif; font-weight: 700;
+}
+h3 {
+  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+  font-size: 0.95rem; color: var(--fg); margin: 2.4rem 0 0.6rem;
+}
+
+/* Every code block on this site is a slice of a file that compiles and runs.
+   `data-src` (+ optional `data-lines`) is the machine-readable half of that
+   promise: M-documentation-site's drift check greps these attributes and diffs
+   the block against the file. The figcaption is the same promise, for readers. */
+figure.example { margin: 1.5rem 0; }
+figure.example pre { margin: 0 0 0.4rem; }
+figure.example figcaption {
+  font: 0.76rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); text-align: right;
+}
+figure.example figcaption::before { content: '↳ '; color: var(--red); }
+
+ol.chapters { list-style: none; padding: 0; margin: 1.5rem 0; counter-reset: ch; }
+ol.chapters li {
+  counter-increment: ch; position: relative; padding: 0.55rem 0 0.55rem 2.4rem;
+  border-bottom: 1px solid var(--line);
+}
+ol.chapters li::before {
+  content: counter(ch, decimal-leading-zero);
+  position: absolute; left: 0; top: 0.55rem; color: var(--dim);
+  font: 0.8rem/1.65 ui-monospace, 'SF Mono', Menlo, monospace;
+}
+ol.chapters .src {
+  display: block; font: 0.74rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim);
+}
+ol.chapters .soon {
+  font: 0.68rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--dim); border: 1px solid var(--line); border-radius: 999px;
+  padding: 0.05rem 0.5rem; margin-left: 0.5rem; white-space: nowrap;
+}
+ol.chapters li.todo { color: var(--dim); }
+.next {
+  margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+  font-size: 0.95rem;
+}
