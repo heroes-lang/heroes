@@ -1,0 +1,181 @@
+# What the checker leaves behind, and the state it works with (design.md
+# §4.3, §4.16; panels 023, 029).
+# Port of crates/heroes/src/types/checked.rs plus the state half of
+# types/mod.rs — the same pairing resolve_state made, for the same reason:
+# in Rust they are two files held together by impl blocks; here they are
+# one concern with no cycle forcing them.
+#
+# **counted is dense over the interner and is built last**, on the stated
+# ground that nothing may intern a type after it. extend_counted will be
+# the one sanctioned way to break that rule when monomorphisation ports;
+# until then the field exists and stays empty, which reads as "not built
+# yet" rather than "nothing is counted" because nothing asks it before
+# counted.hero lands.
+
+use token
+use diag
+use ast
+use source
+use resolved
+use check_table
+use check_render
+
+## What the checker leaves behind
+
+# One typed hole: where it is, and what belongs there (§4.16).
+record Hole
+    at: i64
+    span: token.Span
+    # The type the context expects, or the error id where the hole stands
+    # in statement position and nothing is expected of it.
+    expected: i64
+
+record Checked
+    types: check_table.Types
+    # The type of every local, indexed as Resolved.locals is — kept
+    # because §4.16's hole output has to say what is in scope, and the
+    # lowering will ask the same question.
+    local_types: [i64]
+    # Each function declaration's result type, by declaration index.
+    results: {i64: i64}
+    # Every WRITTEN type, by its node in the type arena. The one table
+    # that answers "what did the author write here" without a local to
+    # hang it on — which is what an extern's parameters need (§4.19: no
+    # body, so no locals).
+    written_types: {i64: i64}
+    # The type of every expression, dense over the expression arena. A
+    # diverging or already-reported expression carries the error id.
+    expr_types: [i64]
+    # What the checker expected where a `???` stands, in source order.
+    holes: [Hole]
+    # record and variant declarations in an order where every by-value
+    # dependency precedes its user — C needs every struct complete before
+    # it is used by value, and Heroes' top level is order-free (panel 023).
+    type_order: [i64]
+    # What each call to a GENERIC function instantiated it at, keyed by
+    # the call's span start (§4.12; panel 029 R2: recorded, never
+    # recomputed — a span is a byte range and two calls cannot share one).
+    instantiations: {i64: [i64]}
+    # One entry per interned type: does a value of it own a reference the
+    # compiler must count. Built by the counted pass after checking.
+    counted: [bool]
+    diagnostics: [diag.Diagnostic]
+
+# The type of a local, by its index. The hole report reads it to print
+# what is in scope.
+function local_type(out: Checked, index: i64) -> i64
+    if index < out.local_types.len()
+        return out.local_types[index]
+    return 0
+
+# The result type of a top-level function, or absent if that declaration
+# is not one.
+function result_type(out: Checked, decl: i64) -> i64?
+    return out.results[decl]
+
+# The type a written type node resolved to.
+function written_type(out: Checked, id: i64) -> i64?
+    return out.written_types[id]
+
+## The working state
+
+# The pass's working state. Owns everything; the tree, the resolver's
+# answers and the source are parameters.
+record Checker
+    out: Checked
+    # The result type of the function being checked — what `return` is
+    # checked against.
+    result: i64
+    # Whether that function's result is a T?, which is what makes `?`
+    # legal (§4.6: `?` in a function that cannot fail is a compile error).
+    fallible: bool
+    # Loop nesting, so `break` outside a loop is caught here, not in C.
+    loops: i64
+    # Where each local's binding name starts -> its index. Built once,
+    # because the checker must not depend on walking the tree in the same
+    # order the resolver did.
+    locals_by_span: {i64: i64}
+    # The names of the enclosing function's type parameters (§4.12), in
+    # order — a generic id is only meaningful inside it, and messages
+    # must print the letter the author wrote.
+    generic_names: [str]
+    # A missing_return per function that can run off its end, held back
+    # until the whole file is checked so §4.16's file-wide hole exemption
+    # can apply.
+    missing_returns: [diag.Diagnostic]
+
+function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
+    types = check_table.new_types()
+    local_types: [i64] @ []
+    i: i64 @ 0
+    while i < out_of.locals.len()
+        local_types @ local_types.push(0)
+        i @ i + 1
+    expr_types: [i64] @ []
+    j: i64 @ 0
+    while j < expr_count
+        expr_types @ expr_types.push(0)
+        j @ j + 1
+    results: {i64: i64} = {}
+    written_types: {i64: i64} = {}
+    holes: [Hole] = []
+    type_order: [i64] = []
+    instantiations: {i64: [i64]} = {}
+    counted: [bool] = []
+    diagnostics: [diag.Diagnostic] = []
+    out = Checked(types: types, local_types: local_types, results: results, written_types: written_types, expr_types: expr_types, holes: holes, type_order: type_order, instantiations: instantiations, counted: counted, diagnostics: diagnostics)
+    locals_by_span: {i64: i64} @ {}
+    k: i64 @ 0
+    while k < out_of.locals.len()
+        locals_by_span[out_of.locals[k].name.start] @ k
+        k @ k + 1
+    generic_names: [str] = []
+    missing_returns: [diag.Diagnostic] = []
+    return Checker(out: out, result: 0, fallible: false, loops: 0, locals_by_span: locals_by_span, generic_names: generic_names, missing_returns: missing_returns)
+
+function error_ty_of(c: Checker) -> i64
+    return check_table.error_ty(c.out.types)
+
+function push_diagnostic(@c: Checker, d: diag.Diagnostic)
+    c.out.diagnostics @ c.out.diagnostics.push(d)
+
+# A type as the author would have written it — every message goes through
+# here so that no diagnostic ever prints a notation the language lacks.
+function show(c: Checker, s: source.Source, decls: [ast.Decl], id: i64) -> str
+    return check_render.render_ty(c.out.types, s, decls, id, c.generic_names)
+
+# Gives a local the type its declaration says it has. Keyed by the span
+# of the name, so the checker and the resolver agree by POSITION IN THE
+# SOURCE rather than by both happening to walk in the same order.
+function bind_local(@c: Checker, name: token.Span, ty: i64)
+    found = c.locals_by_span[name.start]
+    if !found.is_err()
+        c.out.local_types[found.must()] @ ty
+
+# Records an expression's type and hands it back, so a synthesis rule can
+# end with it.
+function record_expr(@c: Checker, at: i64, ty: i64) -> i64
+    c.out.expr_types[at] @ ty
+    return ty
+
+## Tests
+
+test "a local is typed by the position of its name, not by walk order"
+    r: resolved.Resolved @ resolved.new_resolved()
+    r.locals @ r.locals.push(resolved.Local(name: token.Span(start: 10, end: 11), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail("absent", "inferred"), value: fail("absent", "none"), reads: 1, writes: 0))
+    r.locals @ r.locals.push(resolved.Local(name: token.Span(start: 30, end: 31), kind: .cell, mutable: true, owner: 0, depth: 0, ty: fail("absent", "x"), value: fail("absent", "x"), reads: 1, writes: 1))
+    c: Checker @ new_checker(out_of: r, expr_count: 2)
+    bind_local(@c, token.Span(start: 30, end: 31), check_table.str_ty(c.out.types))
+    assert local_type(c.out, 0) == 0
+    assert local_type(c.out, 1) == check_table.str_ty(c.out.types)
+    # A span nobody declared binds nothing, silently: recovery's business.
+    bind_local(@c, token.Span(start: 99, end: 100), 4)
+
+test "an expression's type is recorded dense, error until someone says"
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: Checker @ new_checker(out_of: r, expr_count: 3)
+    assert c.out.expr_types.len() == 3
+    assert c.out.expr_types[1] == check_table.error_ty(c.out.types)
+    given = record_expr(@c, at: 1, ty: check_table.bool_ty(c.out.types))
+    assert given == check_table.bool_ty(c.out.types)
+    assert c.out.expr_types[1] == check_table.bool_ty(c.out.types)
