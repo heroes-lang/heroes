@@ -1,0 +1,396 @@
+# Monomorphisation: one copy of a generic function per concrete type
+# tuple (design.md §4.12; panels 029, 084).
+# Port of crates/heroes/src/ir/{mono,mono_subst,mono_recursion}.rs —
+# one module, because the driver and the recursion refusal share the
+# queue: the eighth knot.
+#
+# THE ONLY SUGAR ROW ERASED BY A PASS rather than by lowering: a
+# generic type is present in the IR, the dump shows it, and this is
+# what removes it. It runs BEFORE the ownership pass, and the reason is
+# a defect rather than a preference: is_refcounted answers false for a
+# type parameter — right for T = i64, a leak for T = str — so an
+# ownership pass running first does not fail to decide, it DECIDES
+# WRONGLY (panel 029 R1).
+#
+# What it does not do: recompute the substitution. The checker bound
+# the type parameters to type each call, keyed by the call's span
+# start. Re-deriving them here would be a second answer to one question.
+#
+# TERMINATION IS NOT AN ACCIDENT AND NOT A DEPTH LIMIT. Polymorphic
+# recursion — f<T> calling f<[T]> — instantiates forever, type-checks
+# clean, and inference for it is undecidable (Henglein 1993;
+# Kfoury-Tiuryn-Urzyczyn 1993). MLton's monomorphiser has been total
+# for twenty-five years because SML bans it; Rust accepts at type-check
+# and blows up at codegen, late and unattributable. The refusal is
+# STRUCTURAL — an instance reached from an ancestor of the same
+# declaration whose every argument contains the ancestor's and at least
+# one grew — and it is a PROGRAM diagnostic at exit 1, because the
+# program is legal under §4.12 as written.
+
+use token
+use diag
+use ast
+use source
+use check_table
+use check_render
+use check_state
+use check_counted
+use ir
+use ir_state
+use parse
+use resolve
+use checker
+use ir_lower
+use ir_verify
+
+# One instantiation: which declaration, at which type arguments.
+record Instance
+    decl: i64
+    bound: [i64]
+
+# A queued instance, with the instance it was reached FROM — the parent
+# chain is what makes polymorphic recursion visible. parent indexes the
+# queue; absent for one reached from a non-generic root.
+record Pending
+    instance: Instance
+    parent: i64?
+    span: token.Span
+
+record FoundCall
+    instance: Instance
+    span: token.Span
+
+# Replace every generic function with its instances, and delete the
+# originals. Returns the diagnostics it found; a program with none is
+# monomorphic afterwards, which the mono phase's verifier check asserts.
+function run(@p: ir_state.Program, @c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    diagnostics: [diag.Diagnostic] @ []
+    generic: {i64: bool} @ {}
+    for f in p.functions
+        if f.generics.len() > 0
+            generic[f.decl] @ true
+    if len(generic) == 0
+        ir_state.advance_to(@p, .mono)
+        return diagnostics
+    queue: [Pending] @ []
+    seen: {str: bool} @ {}
+    for f in p.functions
+        if f.generics.len() == 0
+            no_parent: i64? = fail("root", "reached from a non-generic root")
+            enqueue(calls_in(f, generic, c), parent: no_parent, queue: @queue, seen: @seen)
+    instances: [ir_state.Function] @ []
+    at: i64 @ 0
+    while at < queue.len()
+        pending = queue[at]
+        problem = recursive(queue, at: at, c: c, s: s, decls: decls)
+        if !problem.is_err()
+            diagnostics @ diagnostics.push(problem.must())
+            at @ at + 1
+            continue
+        template = find_template(p, decl: pending.instance.decl)
+        if template.is_err()
+            at @ at + 1
+            continue
+        instance = instantiate(template.must(), bound: pending.instance.bound, c: @c)
+        # THE CALLEE'S ARGUMENTS ARE THE CALLER'S, SUBSTITUTED. A
+        # generic call inside a generic body records T — the template's
+        # own parameter — so instantiating from it verbatim would carry
+        # a type parameter into the copy. That was this pass's first
+        # defect, and the verifier caught it.
+        raw = calls_in(instance, generic, c)
+        applied: [FoundCall] @ []
+        for one in raw
+            substituted: [i64] @ []
+            for t in one.instance.bound
+                substituted @ substituted.push(apply(@c, ty: t, bound: pending.instance.bound))
+            applied @ applied.push(FoundCall(instance: Instance(decl: one.instance.decl, bound: substituted), span: one.span))
+        enqueue(applied, parent: ok(at), queue: @queue, seen: @seen)
+        instances @ instances.push(instance)
+        at @ at + 1
+    # The templates go: they have no C, and leaving one would emit a
+    # body with a type parameter in it.
+    kept: [ir_state.Function] @ []
+    for f in p.functions
+        if f.generics.len() == 0
+            kept @ kept.push(f)
+    for inst in instances
+        kept @ kept.push(inst)
+    p.functions @ kept
+    # counted is dense over the interner and was built last, on the
+    # stated ground that nothing may intern a type after it. This pass
+    # interns [str] where only [T] existed, so an id past the end would
+    # read as uncounted — a leak no test can see. One home for the
+    # answer: the same build, run again.
+    c.counted @ check_counted.build(c.types, decls, c.written_types)
+    ir_state.advance_to(@p, .mono)
+    return diagnostics
+
+function find_template(p: ir_state.Program, decl: i64) -> ir_state.Function?
+    for f in p.functions
+        if f.decl == decl
+            return ok(f)
+    return fail("absent", "no such declaration in the program")
+
+# Every generic call in this function, AS RECORDED — a call written
+# inside a generic body still mentions the template's own T.
+# Substituting is the caller's job, at the one site that knows the
+# enclosing instance (this function once took a subst parameter it
+# never read, with a doc line saying it did).
+function calls_in(f: ir_state.Function, generic: {i64: bool}, c: check_state.Checked) -> [FoundCall]
+    found: [FoundCall] @ []
+    for blk in f.blocks
+        for inst in blk.insts
+            match inst.op
+                .call cl =>
+                    match cl.callee
+                        .heroes_fn h =>
+                            if generic[h.decl].is_err()
+                                continue
+                            recorded = c.instantiations[inst.span.start]
+                            if recorded.is_err()
+                                continue
+                            found @ found.push(FoundCall(instance: Instance(decl: h.decl, bound: recorded.must()), span: inst.span))
+                        .extern_fn | .builtin_fn | .indirect => continue
+                .lit | .load | .store | .unary | .binary | .cast | .construct => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+    return found
+
+# Add what has not been seen, remembering which instance reached it.
+function enqueue(calls: [FoundCall], parent: i64?, @queue: [Pending], @seen: {str: bool})
+    for one in calls
+        key = instance_key(one.instance)
+        if seen[key].is_err()
+            seen[key] @ true
+            queue @ queue.push(Pending(instance: one.instance, parent: parent, span: one.span))
+
+function instance_key(instance: Instance) -> str
+    rendered: [str] @ []
+    for t in instance.bound
+        rendered @ rendered.push(t.to_str())
+    return instance.decl.to_str() + ":" + rendered.join(",")
+
+## What one instance IS (mono_subst.rs)
+
+# One copy of the template, with every type parameter replaced by its
+# binding. Every type in the body goes through apply, which INTERNS AS
+# IT SUBSTITUTES — so the descriptor the emitter later asks for comes
+# from the substituted id and is never carried across as a name. A
+# wrong descriptor here is invisible to clang, ASan, UBSan and the leak
+# counter alike: [-0.0] == [0.0] would print false at exit 0.
+#
+# Port note: Rust writes clone_term by hand because its Term is not
+# Copy; Heroes values copy whole, so blk.term travels as a value and
+# the hand clone has nothing to do.
+function instantiate(template: ir_state.Function, bound: [i64], @c: check_state.Checked) -> ir_state.Function
+    slots: [ir_state.Slot] @ []
+    for slot in template.slots
+        slots @ slots.push(ir_state.Slot(name: slot.name, ty: apply(@c, ty: slot.ty, bound: bound), kind: slot.kind))
+    values: [i64] @ []
+    for v in template.values
+        values @ values.push(apply(@c, ty: v, bound: bound))
+    blocks: [ir_state.Block] @ []
+    for blk in template.blocks
+        insts: [ir.Inst] @ []
+        for inst in blk.insts
+            insts @ insts.push(ir.Inst(dest: inst.dest, op: inst.op, ty: apply(@c, ty: inst.ty, bound: bound), span: inst.span))
+        blocks @ blocks.push(ir_state.Block(preds: blk.preds, insts: insts, term: blk.term, note: blk.note))
+    empty_generics: [str] = []
+    return ir_state.Function(name: template.name, decl: template.decl, kind: template.kind, generics: empty_generics, params: template.params, result: apply(@c, ty: template.result, bound: bound), slots: slots, blocks: blocks, values: values, arguments: template.arguments, steps: template.steps, instance: bound, call_instances: substituted_calls(template, bound: bound, c: @c), span: template.span)
+
+# ty with the type parameters substituted, interning whatever is new.
+function apply(@c: check_state.Checked, ty: i64, bound: [i64]) -> i64
+    match check_table.get(c.types, ty)
+        .generic g =>
+            if g.at < bound.len()
+                return bound[g.at]
+            # The checker reported an uninferable parameter; keep the shape.
+            return ty
+        .array arr =>
+            element = apply(@c, ty: arr.element, bound: bound)
+            return check_table.intern(@c.types, .array(element: element))
+        .fallible o =>
+            payload = apply(@c, ty: o.payload, bound: bound)
+            return check_table.intern(@c.types, .fallible(payload: payload))
+        .map m =>
+            key = apply(@c, ty: m.key, bound: bound)
+            value = apply(@c, ty: m.value, bound: bound)
+            return check_table.intern(@c.types, .map(key: key, value: value))
+        .function_ty fn_ty =>
+            spelled: [i64] @ []
+            for one in check_table.params_of(c.types, fn_ty.params)
+                spelled @ spelled.push(apply(@c, ty: one, bound: bound))
+            result = apply(@c, ty: fn_ty.result, bound: bound)
+            return check_table.intern_function(@c.types, spelled, result)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ty
+        .fixed | .named | .case_ty | .failure | .error => return ty
+    return ty
+
+# Every inner call's instance, substituted for ONE copy — the template
+# recorded [#0]; this copy records what #0 became. Without it the
+# emitter re-derived the answer from the span-keyed table, which holds
+# one entry for a span that now exists once per copy — and a generic
+# calling a generic went to clang as a call to hero_unreachable with
+# arguments (panel 084's filed defect).
+function substituted_calls(template: ir_state.Function, bound: [i64], @c: check_state.Checked) -> {i64: [i64]}
+    out: {i64: [i64]} @ {}
+    for blk in template.blocks
+        for inst in blk.insts
+            recorded = c.instantiations[inst.span.start]
+            if recorded.is_err()
+                continue
+            reached: [i64] @ []
+            for t in recorded.must()
+                reached @ reached.push(apply(@c, ty: t, bound: bound))
+            out[inst.span.start] @ reached
+    return out
+
+## Why the walk terminates (mono_recursion.rs)
+
+# Is this instance a GROWING repeat of one on its own parent chain?
+# The test is containment, not equality: f<[T]> reached from f<T> is
+# unbounded, while f<i64> reached from f<i64> is the ordinary recursion
+# every compiler has, terminating because the instance already exists.
+function recursive(queue: [Pending], at: i64, c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
+    pending = queue[at]
+    walk: i64? @ pending.parent
+    while !walk.is_err()
+        ancestor = queue[walk.must()]
+        if ancestor.instance.decl == pending.instance.decl && ancestor.instance.bound.len() == pending.instance.bound.len()
+            all_contained: bool @ true
+            any_grew: bool @ false
+            i: i64 @ 0
+            while i < pending.instance.bound.len()
+                small = ancestor.instance.bound[i]
+                big = pending.instance.bound[i]
+                if !contains(c, big: big, small: small)
+                    all_contained @ false
+                if small != big
+                    any_grew @ true
+                i @ i + 1
+            if all_contained && any_grew
+                return ok(polymorphic_recursion(from: show_list(c, s, decls, list: ancestor.instance.bound), to: show_list(c, s, decls, list: pending.instance.bound), span: pending.span))
+        walk @ ancestor.parent
+    return fail("fine", "no growing repeat on the chain")
+
+function show_list(c: check_state.Checked, s: source.Source, decls: [ast.Decl], list: [i64]) -> str
+    rendered: [str] @ []
+    none: [str] = []
+    for t in list
+        rendered @ rendered.push(check_render.render_ty(c.types, s, decls, t, none))
+    return rendered.join(", ")
+
+# §4.12 has no shape for this, so the message carries the whole
+# explanation: what was instantiated, what it reached, and the one edit
+# that ends it.
+function polymorphic_recursion(from: str, to: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "polymorphic_recursion", message: "this call instantiates the function that contains it at a LARGER type — `<" + from + ">` reaches `<" + to + ">`, which reaches a larger one again, without end", span: span)
+    d.notes @ d.notes.push("a generic function is compiled once per type it is used at, so a chain that never repeats a type never ends")
+    d.notes @ d.notes.push("pass the value along unchanged, or take the recursive step in a non-generic helper")
+    return d
+
+# Is small big, or a part of it? [i64] contains i64; i64 does not
+# contain [i64].
+function contains(c: check_state.Checked, big: i64, small: i64) -> bool
+    if big == small
+        return true
+    match check_table.get(c.types, big)
+        .array arr => return contains(c, big: arr.element, small: small)
+        .fallible o => return contains(c, big: o.payload, small: small)
+        .map m => return contains(c, big: m.key, small: small) || contains(c, big: m.value, small: small)
+        .function_ty fn_ty =>
+            for p in check_table.params_of(c.types, fn_ty.params)
+                if contains(c, big: p, small: small)
+                    return true
+            return contains(c, big: fn_ty.result, small: small)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .fixed | .named | .case_ty | .failure | .generic | .error => return false
+    return false
+
+## For the emitter
+
+# The instances of one declaration, for the mangler and the dump's
+# instance table.
+function instances_of(p: ir_state.Program, decl: i64) -> [[i64]]
+    out: [[i64]] @ []
+    for f in p.functions
+        if f.decl == decl && f.instance.len() > 0
+            out @ out.push(f.instance)
+    return out
+
+# Every declaration that had type parameters, so the emitter knows a
+# call needs a suffix. Derived from the DECLARATIONS rather than the
+# program, because the pass has already deleted the templates by the
+# time the emitter runs.
+function generic_decls(decls: [ast.Decl]) -> {i64: i64}
+    found: {i64: i64} @ {}
+    index: i64 @ 0
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.generics.len() > 0
+                    found[index] @ fd.value.generics.len()
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+        index @ index + 1
+    return found
+
+## Tests
+
+record MonoOut
+    program: ir_state.Program
+    checked: check_state.Checked
+    decls: [ast.Decl]
+    diagnostics: [diag.Diagnostic]
+
+function monoed(text: str) -> MonoOut
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+    p: ir_state.Program @ low.program
+    diagnostics = run(@p, @c, s, parsed.decls)
+    return MonoOut(program: p, checked: c, decls: parsed.decls, diagnostics: diagnostics)
+
+test "two uses make two copies, the template dies, and mono verifies"
+    got = monoed("function id<T>(x: T) -> T\n    return x\n\nfunction main()\n    print(id(3))\n    print(id(\"a\"))\n")
+    assert got.diagnostics.len() == 0
+    copies: i64 @ 0
+    for f in got.program.functions
+        assert f.generics.len() == 0
+        if f.name == "id"
+            copies @ copies + 1
+            assert f.instance.len() == 1
+    assert copies == 2
+    # The verifier's mono phase asserts no type parameter survived.
+    assert ir_verify.verify(got.program, got.checked, got.decls).len() == 0
+
+test "a generic calling a generic carries substituted call instances"
+    got = monoed("function inner<T>(x: T) -> T\n    return x\n\nfunction outer<T>(x: T) -> T\n    return inner(x)\n\nfunction main()\n    print(outer(5))\n")
+    assert got.diagnostics.len() == 0
+    named: [str] @ []
+    for f in got.program.functions
+        named @ named.push(f.name)
+    # Both instances exist: outer<i64> reached inner<i64> through the
+    # substituted queue, not through the template's own T.
+    saw_inner: bool @ false
+    saw_outer: bool @ false
+    for f in got.program.functions
+        if f.name == "inner" && f.instance.len() == 1
+            saw_inner @ true
+        if f.name == "outer" && f.instance.len() == 1
+            saw_outer @ true
+            # The copy's own table holds what #0 became, never a
+            # parameter (panel 084's defect, refused by construction).
+            for key in keys(f.call_instances)
+                for t in f.call_instances[key].must()
+                    assert t == check_table.int_ty_id(got.checked.types)
+    assert saw_inner
+    assert saw_outer
+
+test "polymorphic recursion is refused with the whole explanation"
+    got = monoed("function grow<T>(x: T) -> i64\n    return grow([x])\n\nfunction main()\n    print(grow(1))\n")
+    assert got.diagnostics.len() == 1
+    assert got.diagnostics[0].code == "polymorphic_recursion"
+    assert got.diagnostics[0].notes.len() == 2
