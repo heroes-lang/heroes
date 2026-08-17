@@ -1,0 +1,92 @@
+# A form the context must give a type to, and could not (§4.5's ⇐-only
+# list).
+# Port of crates/heroes/src/types/errors/contextless.rs.
+#
+# value_errors reports a value whose type is KNOWN AND WRONG — a mismatch,
+# an operator that does not take it. These report a form with NO TYPE OF
+# ITS OWN: an empty literal, a bare case name, a constructor with nothing
+# to construct against, a built-in used as a value. The two fail
+# differently, which is why they read differently: a mismatch names two
+# types and the reader picks; these can name only one and have to say
+# where the missing half was supposed to come from — which is why almost
+# every message here ends by telling the author to write an annotation.
+
+use token
+use diag
+use digits
+
+function cannot_infer_empty(what: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: "the " + what + " is empty, so there is nothing to infer its type from — write the annotation", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "annotate the binding: `xs: [i64] = []`", replacement: "", span: span, certainty: .guess))
+    return d
+
+## Forms that cannot say what they are
+
+# §4.5's ⇐ mode, from the other side: a case name alone has no type until
+# something says which variant is expected.
+function cannot_infer_case(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "cannot_infer", message: "`." + name + "` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)", span: span)
+
+function case_not_expected(name: str, expected: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "type_mismatch", message: "expected `" + expected + "`, found the case `." + name + "`", span: span)
+
+function constructor_not_expected(name: str, expected: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "type_mismatch", message: "`" + name + "(…)` builds a fallible value, and `" + expected + "` is not one — no `T` is ever promoted to a `T?`", span: span)
+
+# `ok(x)` and `fail(c, m)` are ⇐-only (panel 002), so in a position with
+# no expectation there is nothing for them to build. The message says
+# which positions DO have one, because "cannot infer" alone sends the
+# reader looking for a type annotation that does not belong on a call.
+function constructor_needs_context(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "cannot_infer", message: "`" + name + "(…)` builds a fallible value, and which one comes from the context — return it, bind it with an annotation, or pass it where a `T?` is expected", span: span)
+
+function record_name_alone(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "record_name_alone", message: "`" + name + "` names a record, and a record is built by calling it with every field: `" + name + "(field: value, …)`", span: span)
+
+# A built-in used as a value rather than called. Found by the closure-list
+# audit on its first program, silent in the worst way: an error type with
+# nothing reported is poison that flows into the emitter, and
+# `map(xs, to_str)` produced C that clang refused at exit 2 — the exit
+# CLAUDE.md §7 reserves for the compiler being wrong. The rule already
+# existed (top-level FUNCTIONS are values; a built-in is not one — `print`
+# takes any number of arguments, which no single signature can describe);
+# only the message was missing. The fix is a wrapper, named because the
+# reader would otherwise have to invent the shape.
+function builtin_as_value(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "builtin_as_value", message: "`" + name + "` is a built-in of the language, not a function value — several take any number of arguments, or arguments of several types, which no single signature can describe", span: span)
+    d.notes @ d.notes.push("wrap it: `function " + name + "_of(x: …) -> …` with `return " + name + "(x)`, and pass that")
+    return d
+
+function variant_not_callable(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "variant_not_callable", message: "`" + name + "` is a variant, so a value of it is written `.case`, never `" + name + "(…)`", span: span)
+
+function builtin_shape(name: str, given: i64, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "builtin_shape", message: "`" + name + "` does not take " + given.to_str() + " argument(s) of those types", span: span)
+
+# `99999999999999999999` — a literal no `i64` holds. Built beside the
+# lexer's decoder (panel 041), because the frontend and the lowering both
+# raise this diagnostic and before that panel they each spelled it out by
+# hand. The port delegates exactly as Rust does.
+function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
+    return digits.int_out_of_range(text, span)
+
+## Tests
+
+test "a contextless form says where the missing half should come from"
+    span = token.Span(start: 0, end: 4)
+    empty = cannot_infer_empty(what: "array literal", span: span)
+    assert empty.message == "the array literal is empty, so there is nothing to infer its type from — write the annotation"
+    assert empty.fixes[0].certainty == .guess
+    case_alone = cannot_infer_case("plus", span)
+    assert case_alone.message == "`.plus` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)"
+    ok_alone = constructor_needs_context("ok", span)
+    assert ok_alone.code == "cannot_infer"
+
+test "a built-in as a value names the wrapper it wants"
+    d = builtin_as_value("print", token.Span(start: 0, end: 5))
+    assert d.notes.len() == 1
+    assert d.notes[0] == "wrap it: `function print_of(x: …) -> …` with `return print(x)`, and pass that"
+
+test "the range refusal is the lexer's own, one spelling for two callers"
+    d = int_out_of_range("99999999999999999999", token.Span(start: 0, end: 20))
+    assert d.code == "int_out_of_range"
