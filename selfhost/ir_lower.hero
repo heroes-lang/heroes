@@ -1,0 +1,608 @@
+# The lowering walk: declarations, statements, places and expressions
+# become instructions (design.md Part 10 step 6, §4.4, §4.7, §4.8, §4.9).
+# Port of crates/heroes/src/ir/{decls,stmts,places,exprs}.rs, with
+# {control,fallible,calls,ufcs,asserts,matches}.rs arriving in the next
+# steps — the SIXTH knot the cycle rule has drawn, and the largest.
+#
+# THE KNOT'S MAP (CLAUDE.md §11's due for a module the language refuses
+# to split): statements and expressions are mutually recursive by
+# construction — a statement lowers its expressions, an if-expression
+# lowers its blocks, a block lowers its statements. Entry points, top to
+# bottom: lower() walks declarations; declaration() begins/ends one
+# function; block() runs statements in order; statement() dispatches;
+# expr() flattens one expression to a temporary; place() walks the left
+# side of a mutation to a root and steps. Who calls whom: declaration ->
+# block -> statement -> {expr, place, block (loops)}; expr -> {expr,
+# block (if/match arms), place (@ arguments)}.
+#
+# Flattening is the whole job: `2 + 3 * 4` is a tree in the syntax and
+# three instructions here, each naming temporaries and nothing nested.
+# That is what makes the C emitter a printer rather than a second
+# compiler, and what lets the ownership pass point at a single
+# instruction and say "this one produced a value somebody owns".
+#
+# PORT SCAFFOLDING, the same trick the Rust uses on itself: a form whose
+# lowering has not been ported yet emits `.missing`, which the verifier
+# rejects — so an unfinished lowering can never reach a golden or a
+# backend, and every stub is findable by grepping PORT-STUB.
+
+use token
+use ast
+use source
+use resolved
+use check_table
+use check_state
+use check_contextual
+use contextless_errors
+use escape
+use ir
+use ir_state
+use ir_build
+use ir_layout
+use parse
+use resolve
+use checker
+
+# Lower one checked file. Runs only on a tree that checked clean: after
+# a type error the checker's answers are guesses, and expr_types would
+# be error in places this pass reads as fact. It is the caller that
+# declines to ask.
+function lower(a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> ir_state.Lowered
+    b: ir_build.Lowering @ ir_build.new_lowering(r, unit: check_table.unit_ty(c.types))
+    index: i64 @ 0
+    while index < decls.len()
+        declaration(@b, a, r, c, s, decls, index)
+        index @ index + 1
+    # The resolver's stable sort, called across the module boundary
+    # rather than copied: two sorts that could disagree are two answers
+    # to one question.
+    b.out.diagnostics @ resolve.by_position(b.out.diagnostics)
+    return b.out
+
+## One declaration at a time
+
+# Four of the five declaration kinds produce a function in the IR:
+# a function's body runs for effect and returns; a constant's body IS
+# its value (a zero-argument function — no mutable globals exist); an
+# extern contributes a signature and no blocks; a test is a
+# zero-argument function entered only by `heroes test`. record and
+# variant declare types — the descriptor pass is what turns them into
+# copy/drop/eq/hash.
+function declaration(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], index: i64)
+    name = source.span_text(s, decls[index].name)
+    match decls[index].kind
+        .function_decl fd => lower_function(@b, a, r, c, s, decls, f: fd.value, index: index, name: name)
+        .constant_decl k =>
+            if !k.body.is_err()
+                # The declared type is what the checker already checked
+                # the body against.
+                body = k.body.must()
+                result = block_value_type(a, c, body)
+                ir_build.begin(@b, name: name, decl: index, kind: .constant_kind, result: result, generics: [], span: decls[index].span)
+                ir_build.entry(@b)
+                value = block(@b, a, r, c, s, decls, body: body, wants_value: true)
+                if !ir_build.is_terminated(b)
+                    ir_build.terminate(@b, .return_term(value: value))
+                ir_build.end_fn(@b)
+            else
+                # An extern constant: no body, so no blocks — the same
+                # shape an extern function has. The result type comes
+                # from the checker's table rather than from a body that
+                # does not exist (§4.19, panel 038).
+                result: i64 @ check_table.unit_ty(c.types)
+                found = c.results[index]
+                if !found.is_err()
+                    result @ found.must()
+                ir_build.begin(@b, name: name, decl: index, kind: .constant_kind, result: result, generics: [], span: decls[index].span)
+                ir_build.end_fn(@b)
+        .test_decl t =>
+            # The name is the title, quotes included: it is a string
+            # literal, not an identifier, and the dump prints what the
+            # author wrote.
+            ir_build.begin(@b, name: name, decl: index, kind: .test_kind, result: check_table.unit_ty(c.types), generics: [], span: decls[index].span)
+            ir_build.entry(@b)
+            _ = block(@b, a, r, c, s, decls, body: t.body, wants_value: false)
+            if !ir_build.is_terminated(b)
+                ir_build.terminate(@b, .return_term(value: fail("none", "a test returns nothing")))
+            ir_build.end_fn(@b)
+        .record_decl | .variant_decl => return
+
+function lower_function(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, index: i64, name: str)
+    result: i64 @ check_table.unit_ty(c.types)
+    found = c.results[index]
+    if !found.is_err()
+        result @ found.must()
+    generics: [str] @ []
+    for g in f.generics
+        generics @ generics.push(source.span_text(s, g))
+    kind: ir_state.FnKind @ .function_kind
+    if f.is_extern
+        kind @ .extern_kind
+    ir_build.begin(@b, name: name, decl: index, kind: kind, result: result, generics: generics, span: decls[index].span)
+    # Parameters are slots before anything else happens, so a
+    # body's first instruction can already load one. The WRITTEN
+    # type, not the local's: an extern has no locals (§4.19 — no
+    # body to use them in) and its parameter types are exactly
+    # what the emitter writes a C prototype from.
+    for param in f.params
+        ty: i64 @ check_table.error_ty(c.types)
+        written = check_state.written_type(c, param.ty)
+        if !written.is_err()
+            ty @ written.must()
+        slot = ir_build.param(@b, name: source.span_text(s, param.name), ty: ty, mutable: param.mutable)
+        local = ir_build.local_at(b, param.name)
+        if !local.is_err()
+            ir_build.bind_local(@b, local: local.must(), slot_id: slot)
+    if f.body.is_err()
+        # An extern keeps its signature and gets no blocks
+        # (§4.19): the implementation is in C, and clang
+        # type-checks the call against the real header.
+        ir_build.end_fn(@b)
+    else
+        ir_build.entry(@b)
+        _ = block(@b, a, r, c, s, decls, body: f.body.must(), wants_value: false)
+        close(@b, c)
+        ir_build.end_fn(@b)
+
+# The fall-through edge out of a function body. A body that runs off
+# its end returns nothing — right for a () result, a program error
+# otherwise, and the frontend already held that back as missing_return.
+# Lowering does not invent a value: it emits the copy-out chain and
+# return.
+function close(@b: ir_build.Lowering, c: check_state.Checked)
+    if ir_build.is_terminated(b)
+        return
+    copy_out(@b, c)
+    ir_build.terminate(@b, .return_term(value: fail("none", "fell off the end")))
+
+# §4.8's second half, on one exit edge: every @ parameter is written
+# back before control leaves. Copy-out happens ALWAYS — including on
+# early return and on `?` — so this is called from three places, and the
+# dump shows the instructions rather than leaving them to the emitter's
+# good intentions.
+function copy_out(@b: ir_build.Lowering, c: check_state.Checked)
+    unit = check_table.unit_ty(c.types)
+    for param in ir_build.mutable_params(b)
+        span = ir_build.declaration_span(b)
+        ir_build.emit_void(@b, op: .copy_out(param: param), ty: unit, span: span)
+
+## Statements
+
+# Lowers a block's statements in order. A block is a straight line until
+# something branches. wants_value is the constant-and-arm case: a
+# block's value is its last statement when that statement is an
+# expression (§4.7). A function body wants nothing — it hands its value
+# back through return.
+function block(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], body: ast.Block, wants_value: bool) -> i64?
+    value: i64? @ fail("none", "no value yet")
+    index: i64 @ 0
+    for id in body.stmts
+        if ir_build.is_terminated(b)
+            break
+        produced = statement(@b, a, r, c, s, decls, id)
+        if wants_value && index == body.stmts.len() - 1
+            value @ produced
+        index @ index + 1
+    return value
+
+# The type a block produces: its last statement's, when that statement
+# is an expression. Read straight out of the checker's dense table —
+# lowering never re-derives a type it was given.
+function block_value_type(a: ast.Ast, c: check_state.Checked, body: ast.Block) -> i64
+    if body.stmts.len() == 0
+        return check_table.unit_ty(c.types)
+    last = a.stmts[body.stmts[body.stmts.len() - 1]]
+    return match last.kind
+        .expr_stmt e => c.expr_types[e.value]
+        .bind | .declare | .mutate | .return_stmt | .break_stmt => check_table.unit_ty(c.types)
+        .continue_stmt | .assert_stmt | .while_stmt | .for_in | .error => check_table.unit_ty(c.types)
+
+# Lowers one statement. The fallible is its value, which only an
+# expression statement has.
+function statement(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64?
+    span = a.stmts[id].span
+    match a.stmts[id].kind
+        .bind bd =>
+            bind_stmt(@b, a, r, c, s, decls, name: bd.name, value: bd.value, span: span)
+            return fail("none", "a bind produces nothing")
+        .declare dc =>
+            bind_stmt(@b, a, r, c, s, decls, name: dc.name, value: dc.value, span: span)
+            return fail("none", "a declare produces nothing")
+        .mutate m =>
+            target = place(@b, a, r, c, s, decls, id: m.place)
+            produced = expr(@b, a, r, c, s, decls, id: m.value)
+            ty = ir_build.value_ty(b, produced)
+            ir_build.emit_void(@b, op: .store(place: target, value: produced), ty: ty, span: span)
+            return fail("none", "a mutation produces nothing")
+        .return_stmt ret =>
+            if ret.value.is_err()
+                copy_out(@b, c)
+                ir_build.terminate(@b, .return_term(value: fail("none", "bare return")))
+            else
+                produced = expr(@b, a, r, c, s, decls, id: ret.value.must())
+                # The copy-out chain goes AFTER the value is computed and
+                # before control leaves: the returned value was read from
+                # the pre-copy-out state, which is what "copy in, copy
+                # out" means.
+                copy_out(@b, c)
+                ir_build.terminate(@b, .return_term(value: ok(produced)))
+            return fail("none", "a return produces nothing")
+        .break_stmt =>
+            if b.loops.len() > 0
+                ir_build.terminate(@b, .jump(to: b.loops[b.loops.len() - 1].break_to))
+            return fail("none", "a break produces nothing")
+        .continue_stmt =>
+            if b.loops.len() > 0
+                ir_build.terminate(@b, .jump(to: b.loops[b.loops.len() - 1].continue_to))
+            return fail("none", "a continue produces nothing")
+        .assert_stmt =>
+            # PORT-STUB (asserts.rs): the assert lowering with both sides
+            # carried arrives with the next step.
+            ir_build.emit_void(@b, op: .missing, ty: check_table.unit_ty(c.types), span: span)
+            return fail("none", "an assert produces nothing")
+        .while_stmt =>
+            # PORT-STUB (control.rs): loops arrive with the next step.
+            ir_build.emit_void(@b, op: .missing, ty: check_table.unit_ty(c.types), span: span)
+            return fail("none", "a loop produces nothing")
+        .for_in =>
+            # PORT-STUB (control.rs): loops arrive with the next step.
+            ir_build.emit_void(@b, op: .missing, ty: check_table.unit_ty(c.types), span: span)
+            return fail("none", "a loop produces nothing")
+        .expr_stmt e =>
+            # A statement's type must be () (panel 003), with one
+            # exception the checker allows and this pass honours: a
+            # match or if in statement position. Both lower the same way
+            # in either position — the value is simply not used.
+            return ok(expr(@b, a, r, c, s, decls, id: e.value))
+        .error => return fail("none", "an error lowers to nothing")
+    return fail("none", "unreached")
+
+# `x = 5` and `v: i64 @ 0` are both slots by here: §4.4's mutation rule
+# was enforced by the resolver, and the IR does not re-litigate it.
+function bind_stmt(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, value: i64, span: token.Span)
+    produced = expr(@b, a, r, c, s, decls, id: value)
+    # `_ = f(x)` binds nothing (§4.7): the resolver made no local for
+    # it, so the call happens and the value is dropped.
+    local = ir_build.local_at(b, name)
+    if local.is_err()
+        return
+    ty = c.local_types[local.must()]
+    slot = ir_build.slot(@b, name: source.span_text(s, name), ty: ty, kind: .local_slot)
+    ir_build.bind_local(@b, local: local.must(), slot_id: slot)
+    ir_build.store_slot(@b, slot_id: slot, value: produced, span: span)
+
+## Places
+
+# §4.8 wrote the specification in one sentence — "every place has
+# exactly one root" — so a place is a slot plus a path of steps, never
+# an expression. Evaluation order is left to right: the path's index
+# expressions are lowered before the value being stored, because
+# `xs[f()] @ g()` calls f first.
+function place(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> ir.Place
+    steps: [ir.PathStep] @ []
+    root = walk_place(@b, a, r, c, s, decls, id: id, steps: @steps)
+    path = ir_build.steps_run(@b, steps)
+    return ir.Place(root: root, path: path)
+
+# Descends to the root, pushing steps on the way back out, so the path
+# reads root-first — the order the emitter needs to spell `l.pos` and
+# the order a reader expects.
+function walk_place(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64, @steps: [ir.PathStep]) -> i64
+    match a.exprs[id].kind
+        .name =>
+            match r.uses[id]
+                .local l =>
+                    slot = ir_build.slot_of_local(b, l.at)
+                    if slot.is_err()
+                        return orphan(@b, c, id)
+                    return slot.must()
+                .top | .builtin | .module | .unresolved => return orphan(@b, c, id)
+        .field f =>
+            owner = c.expr_types[f.base]
+            root = walk_place(@b, a, r, c, s, decls, id: f.base, steps: @steps)
+            found = ir_layout.field_index(decls, c, s, owner: owner, name: f.name)
+            if !found.is_err()
+                steps @ steps.push(.field_step(at: found.must()))
+            return root
+        .index ix =>
+            root = walk_place(@b, a, r, c, s, decls, id: ix.base, steps: @steps)
+            key = expr(@b, a, r, c, s, decls, id: ix.index)
+            steps @ steps.push(.index_step(value: key))
+            return root
+        # Unreachable on a tree that checked clean: the parser only
+        # accepts a name, a field path or an index path on the left of @
+        # (§4.4), and the resolver rejected a root that is not a
+        # binding. A slot is invented rather than aborting, because a
+        # pass that aborts on a shape it did not expect is a pass that
+        # cannot be trusted with the next one.
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return orphan(@b, c, id)
+        .hole | .unary | .binary | .call | .method | .variant_case => return orphan(@b, c, id)
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return orphan(@b, c, id)
+    return orphan(@b, c, id)
+
+function orphan(@b: ir_build.Lowering, c: check_state.Checked, id: i64) -> i64
+    return ir_build.slot(@b, name: "$orphan", ty: c.expr_types[id], kind: .synthetic_slot)
+
+## Expressions
+
+function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64
+    span = a.exprs[id].span
+    ty = c.expr_types[id]
+    match a.exprs[id].kind
+        .int_lit => return emit_int(@b, a, s, id: id, ty: ty, span: span)
+        .float_lit => return ir_build.emit(@b, op: .lit(value: .float_const(text: source.span_text(s, span))), ty: ty, span: span)
+        .bool_lit => return ir_build.emit(@b, op: .lit(value: .bool_const(value: source.span_text(s, span) == "true")), ty: ty, span: span)
+        .null_ptr => return ir_build.emit(@b, op: .lit(value: .null_ptr), ty: ty, span: span)
+        .str_lit =>
+            decoded = escape.unescape(source.span_text(s, span))
+            at = ir_build.intern(@b, decoded)
+            return ir_build.emit(@b, op: .lit(value: .str_const(at: at)), ty: ty, span: span)
+        # §4.3: a character literal IS a number — the same decoder the
+        # checker used answers for both (panel 008's escapes included).
+        .char_lit => return emit_int(@b, a, s, id: id, ty: ty, span: span)
+        .name => return name_expr(@b, r, decls, id: id, ty: ty, span: span)
+        .hole => return ir_build.emit(@b, op: .hole, ty: ty, span: span)
+        .unary u =>
+            # A negative literal is a literal, and it is folded HERE.
+            # Left as a negation of a positive, -128 against an i8 puts
+            # 128 in an int8_t before the minus reaches it — and the
+            # frontend already range-checked the value WITH the sign
+            # applied, so folding is what makes the two passes agree.
+            folded = fold_negative(@b, a, s, op: u.op, operand: u.operand, ty: ty, span: span)
+            if !folded.is_err()
+                return folded.must()
+            operand = expr(@b, a, r, c, s, decls, id: u.operand)
+            un: ir.UnaryOp @ .neg
+            match u.op
+                .neg => un @ .neg
+                .not => un @ .not_op
+                .bit_not => un @ .bit_not
+            return ir_build.emit(@b, op: .unary(op: un, operand: operand), ty: ty, span: span)
+        .binary bin =>
+            match bin.op
+                .and | .or =>
+                    # PORT-STUB (control.rs): short-circuit is control
+                    # flow and arrives with the next step.
+                    return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+                .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge | .bit_and | .bit_or | .bit_xor | .shl | .shr =>
+                    left = expr(@b, a, r, c, s, decls, id: bin.left)
+                    right = expr(@b, a, r, c, s, decls, id: bin.right)
+                    return ir_build.emit(@b, op: .binary(op: binary_op(bin.op), left: left, right: right), ty: ty, span: span)
+        .field f =>
+            # `grid.WALL` is one qualified name, not a field of a value —
+            # decided by the resolver and read back here rather than
+            # re-decided.
+            qualified: bool @ false
+            match r.uses[f.base]
+                .module => qualified @ true
+                .local | .top | .builtin | .unresolved => qualified @ false
+            if qualified
+                return name_expr(@b, r, decls, id: id, ty: ty, span: span)
+            owner = c.expr_types[f.base]
+            base = expr(@b, a, r, c, s, decls, id: f.base)
+            found = ir_layout.field_index(decls, c, s, owner: owner, name: f.name)
+            if found.is_err()
+                return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+            return ir_build.emit(@b, op: .field(base: base, at: found.must()), ty: ty, span: span)
+        .index ix =>
+            owner = c.expr_types[ix.base]
+            base = expr(@b, a, r, c, s, decls, id: ix.base)
+            key = expr(@b, a, r, c, s, decls, id: ix.index)
+            # A map access yields V? and cannot abort; an array index can
+            # (§4.9). Same syntax, two instructions.
+            is_map: bool @ false
+            match check_table.get(c.types, owner)
+                .map => is_map @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
+                .array | .fixed | .fallible | .function_ty | .named => is_map @ is_map
+                .case_ty | .failure | .generic | .error => is_map @ is_map
+            if is_map
+                return ir_build.emit(@b, op: .map_get(map: base, key: key), ty: ty, span: span)
+            return ir_build.emit(@b, op: .index(base: base, at: key), ty: ty, span: span)
+        .array elements =>
+            values: [i64] @ []
+            for e in elements.elements
+                values @ values.push(expr(@b, a, r, c, s, decls, id: e))
+            run = value_args(@b, values)
+            return ir_build.emit(@b, op: .construct(shape: .array_shape, arguments: run), ty: ty, span: span)
+        .map entries =>
+            # Key and value alternate in the run: a map literal is
+            # n-ary, and the pairing is positional rather than a second
+            # arena.
+            values: [i64] @ []
+            for entry in entries.entries
+                values @ values.push(expr(@b, a, r, c, s, decls, id: entry.key))
+                values @ values.push(expr(@b, a, r, c, s, decls, id: entry.value))
+            run = value_args(@b, values)
+            return ir_build.emit(@b, op: .construct(shape: .map_shape, arguments: run), ty: ty, span: span)
+        .call =>
+            # PORT-STUB (calls.rs): dispatch arrives with the next step.
+            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .method =>
+            # PORT-STUB (ufcs.rs): UFCS erasure arrives with the next step.
+            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .variant_case =>
+            # PORT-STUB (calls.rs): case construction arrives with the
+            # next step.
+            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .try_expr =>
+            # PORT-STUB (fallible.rs): `?` arrives with the next step.
+            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .if_expr =>
+            # PORT-STUB (control.rs).
+            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .match_expr =>
+            # PORT-STUB (matches.rs).
+            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .error => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+    return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+
+# The value-argument run a construct needs.
+function value_args(@b: ir_build.Lowering, values: [i64]) -> ir.Run
+    list: [ir.Arg] @ []
+    for v in values
+        list @ list.push(.value_arg(value: v))
+    return ir_build.args_run(@b, list)
+
+# A bare name: a local, a top-level declaration, or a built-in. The
+# three lower to three different things, and the resolver decided which
+# one this is — after UFCS erasure a re-resolution could legitimately
+# give the OTHER answer.
+function name_expr(@b: ir_build.Lowering, r: resolved.Resolved, decls: [ast.Decl], id: i64, ty: i64, span: token.Span) -> i64
+    match r.uses[id]
+        # A module name standing alone is a resolver error, so a clean
+        # program never lowers one. It is a real Ref, though, so the arm
+        # is written rather than folded.
+        .module => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .local l =>
+            slot = ir_build.slot_of_local(b, l.at)
+            if slot.is_err()
+                return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+            return ir_build.load_slot(@b, slot_id: slot.must(), span: span)
+        .top t =>
+            if is_constant(decls, t.at)
+                # A constant is a zero-argument function, so reading its
+                # name is a call (§4.2: there are no mutable globals to
+                # read instead).
+                run = ir_build.args_run(@b, [])
+                return ir_build.emit(@b, op: .call(callee: .heroes_fn(decl: t.at), arguments: run, variadic: false), ty: ty, span: span)
+            # A function used as a value (§4.13): a pointer, no
+            # environment.
+            return ir_build.emit(@b, op: .func_ref(callee: callee_of(decls, t.at)), ty: ty, span: span)
+        .builtin bt => return ir_build.emit(@b, op: .func_ref(callee: .builtin_fn(at: bt.at)), ty: ty, span: span)
+        .unresolved => return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+    return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+
+function is_constant(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .constant_decl => true
+        .function_decl | .record_decl | .variant_decl | .test_decl => false
+
+# Which callee a declaration is: an extern's name must not be mangled,
+# so the two cannot share a case.
+function callee_of(decls: [ast.Decl], decl: i64) -> ir.Callee
+    match decls[decl].kind
+        .function_decl fd =>
+            if fd.value.is_extern
+                return .extern_fn(decl: decl)
+            return .heroes_fn(decl: decl)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return .heroes_fn(decl: decl)
+    return .heroes_fn(decl: decl)
+
+# An i64 literal, decoded by the same sign-and-magnitude carrier the
+# checker used. The checker reports the range first, so this is the net
+# rather than the gate — a literal reaching here out of range is a
+# frontend bug, and the diagnostic stays because a net that has never
+# fired is indistinguishable from no net.
+function emit_int(@b: ir_build.Lowering, a: ast.Ast, s: source.Source, id: i64, ty: i64, span: token.Span) -> i64
+    decoded = check_contextual.literal_value(a, s, id)
+    if decoded.is_err()
+        ir_build.push_diagnostic(@b, contextless_errors.int_out_of_range(source.span_text(s, span), span))
+        return ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))), ty: ty, span: span)
+    return ir_build.emit(@b, op: .lit(value: .int_const(value: decoded.must())), ty: ty, span: span)
+
+# The negative-literal fold: `-` directly on an int literal becomes one
+# constant with the sign inside.
+function fold_negative(@b: ir_build.Lowering, a: ast.Ast, s: source.Source, op: ast.UnaryOp, operand: i64, ty: i64, span: token.Span) -> i64?
+    is_neg: bool @ false
+    match op
+        .neg => is_neg @ true
+        .not | .bit_not => is_neg @ false
+    if !is_neg
+        return fail("no", "not a negation")
+    match a.exprs[operand].kind
+        .int_lit =>
+            inner = check_contextual.literal_value(a, s, operand)
+            if inner.is_err()
+                return fail("no", "not a plain literal")
+            lit = inner.must()
+            return ok(ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: true, magnitude: lit.magnitude))), ty: ty, span: span))
+        .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail("no", "not an int literal")
+        .name | .hole | .unary | .binary | .field | .index => return fail("no", "not an int literal")
+        .call | .method | .variant_case | .array | .map => return fail("no", "not an int literal")
+        .try_expr | .if_expr | .match_expr | .error => return fail("no", "not an int literal")
+    return fail("no", "unreached")
+
+function binary_op(op: ast.BinaryOp) -> ir.BinaryOp
+    return match op
+        .add => .add
+        .sub => .sub
+        .mul => .mul
+        .div => .div
+        .rem => .rem
+        .eq => .eq
+        .ne => .ne
+        .lt => .lt
+        .le => .le
+        .gt => .gt
+        .ge => .ge
+        .bit_and => .bit_and
+        .bit_or => .bit_or
+        .bit_xor => .bit_xor
+        .shl => .shl
+        .shr => .shr
+        # Handled one level up: they branch.
+        .and | .or => .eq
+
+## Tests
+
+function lowered(text: str) -> ir_state.Lowered
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    return lower(p.tree, out, c, s, p.decls)
+
+test "a function body flattens: loads, one add, and a return with a value"
+    got = lowered("function add(a: i64, b: i64) -> i64\n    return a + b\n")
+    assert got.program.functions.len() == 1
+    f = got.program.functions[0]
+    assert f.name == "add"
+    assert f.blocks.len() == 1
+    # load a, load b, add — three instructions, nothing nested.
+    assert f.blocks[0].insts.len() == 3
+    match f.blocks[0].insts[2].op
+        .binary bin =>
+            assert bin.left == 1
+            assert bin.right == 2
+        .lit | .load | .store | .unary | .cast | .call | .construct => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
+    match f.blocks[0].term
+        .return_term ret => assert ret.value.must() == 3
+        .jump | .branch | .switch_term | .unreachable | .open => assert false
+
+test "a constant IS a value, an extern has no blocks, a test returns nothing"
+    got = lowered("constant M: i64\n    40 + 2\n\nextern \"m.h\"\n    function f() -> i64\n\ntest \"t\"\n    _ = M\n")
+    assert got.program.functions.len() == 3
+    match got.program.functions[0].kind
+        .constant_kind => assert got.program.functions[0].blocks.len() == 1
+        .function_kind | .extern_kind | .test_kind => assert false
+    match got.program.functions[1].kind
+        .extern_kind => assert got.program.functions[1].blocks.len() == 0
+        .function_kind | .constant_kind | .test_kind => assert false
+    match got.program.functions[2].blocks[0].term
+        .return_term ret => assert ret.value.is_err()
+        .jump | .branch | .switch_term | .unreachable | .open => assert false
+
+test "a negative literal folds, a mutation stores through a place"
+    got = lowered("record P\n    x: i64\n\nfunction f() -> i64\n    v: i64 @ -128\n    p: P @ P(x: 1)\n    v @ v + 1\n    return v\n")
+    f = got.program.functions[0]
+    # The first instruction is the folded constant: negative inside.
+    match f.blocks[0].insts[0].op
+        .lit l =>
+            match l.value
+                .int_const ic =>
+                    assert ic.value.negative
+                    wanted: u64 = 128
+                    assert ic.value.magnitude == wanted
+                .float_const | .bool_const | .str_const | .null_ptr => assert false
+        .load | .store | .unary | .binary | .cast | .call | .construct => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
+
+test "string literals intern decoded, and twice is once"
+    got = lowered("function f() -> str\n    a = \"he\\nllo\"\n    b = \"he\\nllo\"\n    return a + b\n")
+    assert got.program.strings.len() == 1
+    assert got.program.strings[0] == "he\nllo"

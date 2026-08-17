@@ -120,8 +120,12 @@ variant AbortWhy
 variant IntConst
     int_const
         value: check_contextual.LitValue
+    # The SPELLED literal, not a decoded double: the bootstrap parses
+    # f64 only to reprint it into C, and Heroes deliberately has no
+    # str-to-float (everything comes from C, §1.11) — carrying the text
+    # is the same C output with one fewer lossy round-trip.
     float_const
-        value: f64
+        text: str
     bool_const
         value: bool
     str_const
