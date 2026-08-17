@@ -15,6 +15,7 @@
 # it catches is a wrong compiler.
 
 use token
+use ast
 use source
 use diag
 use diag_render
@@ -101,12 +102,20 @@ record Artifact
     link: [str]
     packages: [str]
     stopped: bool
+    # The pipeline pieces the link-failure explanation needs (panel
+    # 036 rider 3): the ffi mapping rebuilds probe lines and asks
+    # declaration(), so the tree, the declarations, the checked types
+    # and the program ride along. COW makes the copies cheap.
+    tree: ast.Ast
+    decls: [ast.Decl]
+    checked: check_state.Checked
+    program: ir_state.Program
 
-function halted() -> Artifact
+function halted(tree: ast.Ast, decls: [ast.Decl], c: check_state.Checked, p: ir_state.Program) -> Artifact
     none_c: [str] = []
     none_p: [str] = []
     none_t: [str] = []
-    return Artifact(c: "", tests: none_t, link: none_c, packages: none_p, stopped: true)
+    return Artifact(c: "", tests: none_t, link: none_c, packages: none_p, stopped: true, tree: tree, decls: decls, checked: c, program: p)
 
 # The pipeline to a translation unit. The failure's code carries the
 # exit: "diagnostics" is 1, "failed" is 2 — the caller maps e.code.
@@ -154,7 +163,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         print(ir_print.dump(p, c, s, parsed.decls))
         if c.holes.len() > 0
             print(check_holes.report(parsed.tree, out, c, s, parsed.decls))
-        return ok(halted())
+        return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
     # §4.16: the hole is not an error, and there is still no binary.
     # Both halves — and the files named are the ones the holes are IN,
     # not the file named on the command line.
@@ -186,7 +195,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
             if written.is_err()
                 cli_io.eprint(text: "error: cannot write " + options.output.must())
                 return fail("failed", "cannot write the artifact")
-        return ok(halted())
+        return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
     # A test build needs no main: the test blocks are the program.
     needs_main: bool @ false
     match options.target
@@ -208,7 +217,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         stop_n = stage(one, s)
         if !stop_n.is_err()
             return leave(stop_n.must())
-    return ok(Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false))
+    return ok(Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, tree: parsed.tree, decls: parsed.decls, checked: c, program: p))
 
 function leave(verdict: cli_table.Exit) -> Artifact?
     if verdict == .failed_exit
