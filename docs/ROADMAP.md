@@ -25,15 +25,13 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 `selfhost/`: **143 modules, 34,812 lines, 27,230 tests, zero PORT-DEBT** — the
 whole compiler, CLI included. Verified three ways: the port's C compiles under
-the full flag set, *that* compiler passes the differential (5 commands × 257
-corpus inputs × 2 streams, zero divergences), and the fixpoint is stable.
+the full flag set, *that* compiler passes the differential (5 × 257 × 2 streams,
+zero divergences), and the fixpoint is stable. Nine defects found getting there,
+five in the port and **four in the bootstrap**; four predictions scored, 036's
+spec-warden falsified. Record: `docs/journal/021-selfhost-port.md`.
 
-Nine defects found getting there, five in the port and **four in the
-bootstrap**; four predictions scored, 036's spec-warden falsified. Record:
-`docs/journal/021-selfhost-port.md`.
-
-Next: **M-selfhost-fixpoint** — the seed test first (B.c from a clean checkout
-with nothing but a C compiler), then the archive. That order is the row's own.
+Next: **M-selfhost-fixpoint** — the seed test first, then the archive (its row's
+own order).
 
 ---
 
