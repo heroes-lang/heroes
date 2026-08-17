@@ -1,0 +1,317 @@
+# The type table: what a type IS once the checker has it, as opposed to
+# how it was written (design.md §4.3, §4.6, §4.12).
+# Port of crates/heroes/src/types/table.rs — the checker's foundation.
+#
+# **Types are interned, and interning is the whole design.** Every
+# distinct type gets exactly one id, so `a == b` on two ids IS type
+# equality — no recursive comparison anywhere in the compiler, one place
+# that decides what "the same type" means, and a number later passes use
+# as a key.
+#
+# Port notes, three of them:
+# - Rust's index is `BTreeMap<Ty, TyId>` — a map keyed by the structure.
+#   Whether a variant value works as a Heroes map key is unmeasured
+#   ground, so the port keys by a CANONICAL STRING of the structure
+#   (`ty_key`): deterministic, injective by construction, and the ids
+#   still come from insertion order, so nothing about the table's
+#   behaviour rides on map ordering.
+# - Three case names are forced off Rust's spelling by the language
+#   itself: `int` and `case` are refused words, `func` is a foreign word
+#   the registry catches — so `int_ty`, `case_ty`, `function_ty`. The
+#   rest keep Rust's names.
+# - `Ty` is Copy in Rust, which is why a function type keeps its
+#   parameters in a side arena as a run; Heroes values are all copies, so
+#   the same shape is kept for the same reason wearing the other sign.
+
+use widths
+
+## What a type is
+
+record Params
+    start: i64
+    len: i64
+
+variant Ty
+    int_ty
+        kind: widths.IntKind
+    # The width is inside the case, exactly as the integer's is (panel
+    # 060: a bare F32 beside F64 was measured at 2 rustc errors and 19
+    # silent sites).
+    float_ty
+        kind: widths.FloatKind
+    bool
+    str
+    # `ptr` — an opaque C pointer (§4.19).
+    ptr
+    # `cstr` — a C string (§4.19).
+    cstr
+    # `()` — no value. A function written without `->` returns it, and a
+    # statement's type must be it (§4.14, panel 003).
+    unit
+    array
+        element: i64
+    # `T[N]` — a FIXED array, inline in whatever holds it, with N part of
+    # the type (§4.19, panel 062). A separate case from `array` because
+    # the representations are separate things: a `[T]` is a pointer to a
+    # counted heap block; this is the bytes themselves, at an offset a C
+    # compiler chose. Sharing one case would mean every emitter site
+    # asking WHICH — and the day one forgot, a memcpy of eight bytes
+    # would stand in for sixteen.
+    fixed
+        element: i64
+        length: i64
+    map
+        key: i64
+        value: i64
+    # `T?` — never nested: `T??` is rejected by the parser, so this
+    # node's argument is never itself a fallible.
+    fallible
+        payload: i64
+    function_ty
+        params: Params
+        result: i64
+    # A `record` or `variant`: index into the declarations. Two records
+    # with identical fields are DIFFERENT types — Heroes is nominal here,
+    # which is what makes `Point` and `Size` unconfusable.
+    named
+        decl: i64
+    # One CASE of a variant: declaration, case index. A case with fields
+    # is a small record (§4.2), and this is the type a pattern's payload
+    # binding has. It cannot be written in surface syntax; messages print
+    # it `Token.num`.
+    case_ty
+        decl: i64
+        at: i64
+    # The error side of a `T?` (§4.6): two str fields, code and msg,
+    # built in. `.err e` binds `e` to this.
+    failure
+    # A type parameter of the enclosing function, by position (§4.12).
+    generic
+        at: i64
+    # A type the checker could not work out. Its diagnostic has already
+    # been reported, and every rule involving it stays silent — one
+    # mistake, one message.
+    error
+
+## The table
+
+record Types
+    nodes: [Ty]
+    params: [i64]
+    # Canonical structure key -> id. This is what makes the ids canonical.
+    index: {str: i64}
+    # A parameter run's key -> where it starts, so `(function(i64) -> i64)`
+    # written twice interns to one id rather than two runs of equal
+    # content.
+    runs: {str: i64}
+
+# The canonical spelling of a structure — the map key Rust gets from
+# `Ord` on the enum. Injective by construction: every case has its own
+# prefix, every argument its own slot, and ids render in decimal.
+function ty_key(t: Ty) -> str
+    return match t
+        .int_ty k => "i:" + widths.int_name(k.kind)
+        .float_ty k => "f:" + widths.float_name(k.kind)
+        .bool => "b"
+        .str => "s"
+        .ptr => "p"
+        .cstr => "c"
+        .unit => "u"
+        .array a => "a:" + a.element.to_str()
+        .fixed x => "x:" + x.element.to_str() + ":" + x.length.to_str()
+        .map m => "m:" + m.key.to_str() + ":" + m.value.to_str()
+        .fallible o => "?:" + o.payload.to_str()
+        .function_ty f => "fn:" + f.params.start.to_str() + ":" + f.params.len.to_str() + ":" + f.result.to_str()
+        .named n => "n:" + n.decl.to_str()
+        .case_ty vc => "vc:" + vc.decl.to_str() + ":" + vc.at.to_str()
+        .failure => "fail"
+        .generic g => "g:" + g.at.to_str()
+        .error => "err"
+
+# The scalars are interned first, in a fixed order, so their ids are
+# constants the whole pass can name without a lookup — and `error` is
+# **id 0**, which is what lets the expression-type array be dense with a
+# default entry that already means "not typed, and something said why".
+function new_types() -> Types
+    nodes: [Ty] = []
+    params: [i64] = []
+    index: {str: i64} = {}
+    runs: {str: i64} = {}
+    t: Types @ Types(nodes: nodes, params: params, index: index, runs: runs)
+    prelude: [Ty] = [.error, .unit, .int_ty(kind: .i64), .float_ty(kind: .f64), .bool, .str, .ptr, .cstr, .failure]
+    for ty in prelude
+        _ = intern(@t, ty)
+    # The other seven widths go AFTER the nine above and never among
+    # them: the accessors below return hardcoded ids, and the prelude
+    # test says so in its failure message.
+    for kind in widths.int_kinds()
+        _ = intern(@t, .int_ty(kind: kind))
+    return t
+
+function error_ty(t: Types) -> i64
+    _ = t
+    return 0
+
+function unit_ty(t: Types) -> i64
+    _ = t
+    return 1
+
+# `i64`. The prelude's fixed order makes this a constant rather than a
+# lookup; the prelude test keeps the constant honest — a width inserted
+# into the middle of new_types' list would silently re-point every one.
+function int_ty_id(t: Types) -> i64
+    _ = t
+    return 2
+
+function f64_ty(t: Types) -> i64
+    _ = t
+    return 3
+
+function bool_ty(t: Types) -> i64
+    _ = t
+    return 4
+
+function str_ty(t: Types) -> i64
+    _ = t
+    return 5
+
+function failure_ty(t: Types) -> i64
+    _ = t
+    return 8
+
+function intern(@t: Types, ty: Ty) -> i64
+    key = ty_key(ty)
+    found = t.index[key]
+    if !found.is_err()
+        return found.must()
+    id = t.nodes.len()
+    t.nodes @ t.nodes.push(ty)
+    t.index[key] @ id
+    return id
+
+# Interns a function type, canonicalising its parameter run first.
+function intern_function(@t: Types, params: [i64], result: i64) -> i64
+    rendered: [str] @ []
+    for p in params
+        rendered @ rendered.push(p.to_str())
+    key = rendered.join(",")
+    start: i64 @ 0
+    found = t.runs[key]
+    if !found.is_err()
+        start @ found.must()
+    else
+        start @ t.params.len()
+        for p in params
+            t.params @ t.params.push(p)
+        t.runs[key] @ start
+    return intern(@t, .function_ty(params: Params(start: start, len: params.len()), result: result))
+
+# Whether a structure is already interned, WITHOUT interning it. One
+# caller class: a rule that needs to compare against `[str]` and must not
+# create the type as a side effect of asking.
+function lookup(t: Types, ty: Ty) -> i64?
+    return t.index[ty_key(ty)]
+
+function get(t: Types, id: i64) -> Ty
+    return t.nodes[id]
+
+function params_of(t: Types, params: Params) -> [i64]
+    out: [i64] @ []
+    i: i64 @ params.start
+    while i < params.start + params.len
+        out @ out.push(t.params[i])
+        i @ i + 1
+    return out
+
+# The types this one holds, one level down — an array's element, a map's
+# key and value, a fallible's payload, a function type's parameters and
+# result. Exists for the emitter's reachability walk.
+function contained(t: Types, id: i64) -> [i64]
+    return match get(t, id)
+        .array a => [a.element]
+        .fallible o => [o.payload]
+        .map m => [m.key, m.value]
+        .function_ty f =>
+            out: [i64] @ params_of(t, f.params)
+            out @ out.push(f.result)
+            out
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => []
+        .unit | .fixed | .named | .case_ty | .failure | .generic | .error => []
+
+# True where a type is, or contains, `error`. The checker uses it to stay
+# quiet: a mismatch between `error` and anything is a mistake already
+# reported somewhere else.
+function poisoned(t: Types, id: i64) -> bool
+    return match get(t, id)
+        .error => true
+        .array a => poisoned(t, a.element)
+        .fallible o => poisoned(t, o.payload)
+        .map m => poisoned(t, m.key) || poisoned(t, m.value)
+        .function_ty f =>
+            bad: bool @ poisoned(t, f.result)
+            for p in params_of(t, f.params)
+                if poisoned(t, p)
+                    bad @ true
+            bad
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => false
+        .unit | .fixed | .named | .case_ty | .failure | .generic => false
+
+## Tests
+
+test "the prelude ids match their accessors, in the fixed order"
+    t = new_types()
+    # A width inserted into the middle of new_types' prelude would
+    # silently re-point every accessor: these nine asserts are the guard.
+    assert get(t, error_ty(t)) == .error
+    assert get(t, unit_ty(t)) == .unit
+    assert get(t, int_ty_id(t)) == .int_ty(kind: .i64)
+    assert get(t, f64_ty(t)) == .float_ty(kind: .f64)
+    assert get(t, bool_ty(t)) == .bool
+    assert get(t, str_ty(t)) == .str
+    assert get(t, failure_ty(t)) == .failure
+    assert get(t, 6) == .ptr
+    assert get(t, 7) == .cstr
+
+test "interning is idempotent and equality of ids is equality of types"
+    t: Types @ new_types()
+    a = intern(@t, .array(element: int_ty_id(t)))
+    b = intern(@t, .array(element: int_ty_id(t)))
+    assert a == b
+    c = intern(@t, .array(element: str_ty(t)))
+    assert a != c
+    # The eight widths were interned by the prelude: asking again adds
+    # nothing.
+    before = t.nodes.len()
+    _ = intern(@t, .int_ty(kind: .u8))
+    assert t.nodes.len() == before
+
+test "a function type canonicalises its parameter run"
+    t: Types @ new_types()
+    one: [i64] = [int_ty_id(t), str_ty(t)]
+    two: [i64] = [int_ty_id(t), str_ty(t)]
+    f1 = intern_function(@t, one, result: bool_ty(t))
+    f2 = intern_function(@t, two, result: bool_ty(t))
+    assert f1 == f2
+    # Same parameters, different result: a different type, sharing the run.
+    f3 = intern_function(@t, one, result: unit_ty(t))
+    assert f1 != f3
+    match get(t, f1)
+        .function_ty f =>
+            assert params_of(t, f.params).len() == 2
+            assert params_of(t, f.params)[0] == int_ty_id(t)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => assert false
+        .array | .fixed | .map | .fallible | .named | .case_ty => assert false
+        .failure | .generic | .error => assert false
+
+test "contained walks one level down, and poison climbs back up"
+    t: Types @ new_types()
+    inner = intern(@t, .fallible(payload: int_ty_id(t)))
+    outer = intern(@t, .array(element: inner))
+    assert contained(t, outer).len() == 1
+    assert contained(t, outer)[0] == inner
+    assert contained(t, inner)[0] == int_ty_id(t)
+    assert !poisoned(t, outer)
+    hole = intern(@t, .array(element: error_ty(t)))
+    assert poisoned(t, hole)
+    keyed = intern(@t, .map(key: str_ty(t), value: hole))
+    assert poisoned(t, keyed)
