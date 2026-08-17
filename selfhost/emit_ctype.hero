@@ -124,7 +124,15 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
                     cases[case_key(decl: index, at: at)] @ emit_mangle.case_type(ty: name, case_name: source.span_text(s, one_case.name))
                     at @ at + 1
                 aggregates[index] @ name
-            .constant_decl | .function_decl | .test_decl => continue
+            # NOT `continue`: this loop keeps the declaration index
+            # itself, and a `continue` in a match arm jumps to the next
+            # iteration — skipping the increment below and shifting
+            # every later declaration by one. The class was found
+            # 2026-08-17 when the selfhost compiler refused its own
+            # parse.hero with a `no_size` cycle that does not exist
+            # (check_sized carried the same shape); the self-mutation is
+            # this language's no-op.
+            .constant_decl | .function_decl | .test_decl => index @ index
         index @ index + 1
     empty_options: {i64: str} = {}
     empty_funcs: {i64: str} = {}
@@ -385,3 +393,19 @@ test "the unit rule: no C type for unit or fixed, void only as a result"
     assert c_result(names, c: c, ty: unit_id) == "void"
     assert c_type(names, c: c, ty: check_table.int_ty_id(c.types)).must() == "int64_t"
     assert c_type(names, c: c, ty: check_table.str_ty(c.types)).must() == "HeroStr"
+
+# A fixed defect gets a case named after it (CLAUDE.md §9). Symptom:
+# in any file declaring a function BEFORE a record, every later
+# declaration's C type landed in the table under the previous
+# declaration's index — so `of(names, decl:)` answered with the wrong
+# name and a record could be emitted under a neighbour's typedef.
+# Cause: `.function_decl => continue` skipped the walk's own index
+# increment. Found 2026-08-17, one file over from check_sized's twin.
+test "fixedbugs: a function before the records does not shift the table"
+    text = "function first() -> i64\n    return 1\n\nrecord Point\n    x: i64\n\nrecord Size\n    w: i64\n\nfunction touch(p: Point, z: Size)\n    _ = p\n    _ = z\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    names = new_names(s, parsed.decls)
+    # Point is declaration 1 and Size is 2 — each named for itself.
+    assert of(names, decl: 1) == "h_t_Point"
+    assert of(names, decl: 2) == "h_t_Size"

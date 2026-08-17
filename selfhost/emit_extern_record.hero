@@ -51,7 +51,15 @@ function extern_record_assertions(@w: emit_writer.Writer, c: check_state.Checked
                         emit_writer.at_file(@w, file: found.file, at: found.line)
                         emit_writer.line(@w, text: line.must())
                         wrote @ true
-            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+            # NOT `continue`: this loop keeps the declaration index
+            # itself, and a `continue` in a match arm jumps to the next
+            # iteration — skipping the increment below and shifting
+            # every later declaration by one. The class was found
+            # 2026-08-17 when the selfhost compiler refused its own
+            # parse.hero with a `no_size` cycle that does not exist
+            # (check_sized carried the same shape); the self-mutation is
+            # this language's no-op.
+            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
         index @ index + 1
     if wrote
         emit_writer.at_generated(@w)
@@ -75,7 +83,15 @@ function completeness_probes(@w: emit_writer.Writer, c: check_state.Checked, nam
             .record_decl rec =>
                 if !rec.header.is_err() && !rec.partial && rec.fields.len() > 0
                     wanted @ wanted.push(index)
-            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+            # NOT `continue`: this loop keeps the declaration index
+            # itself, and a `continue` in a match arm jumps to the next
+            # iteration — skipping the increment below and shifting
+            # every later declaration by one. The class was found
+            # 2026-08-17 when the selfhost compiler refused its own
+            # parse.hero with a `no_size` cycle that does not exist
+            # (check_sized carried the same shape); the self-mutation is
+            # this language's no-op.
+            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
         index @ index + 1
     if wanted.len() == 0
         return

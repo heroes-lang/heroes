@@ -71,7 +71,16 @@ function collect(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl]) -> [Edge]
                 for one_case in v.cases
                     for field in one_case.fields
                         push_edge(@edges, a, r, from: index, name: field.name, ty: field.ty)
-            .constant_decl | .function_decl | .test_decl => continue
+            # NOT `continue`: this loop keeps its own index, and a
+            # `continue` in a match arm is a jump to the next iteration
+            # — it would skip the increment below and shift every later
+            # declaration's index by one. Measured: with `continue`
+            # here, `record Holder { a: Thing, b: Thing }` in a file
+            # that also declares a function reported `Thing contains
+            # itself`, because the shifted `from` collided with the
+            # resolver's correct `to`. The self-mutation is the no-op
+            # this language has (docs/debrief/DECIDE.md's item).
+            .constant_decl | .function_decl | .test_decl => index @ index
         index @ index + 1
     return edges
 
@@ -279,3 +288,17 @@ test "a T? is transparent and a variant payload carries edges"
     tagged = sized_file("variant Tree\n    leaf\n    node\n        left: Tree\n")
     assert tagged.diagnostics.len() == 1
     assert tagged.diagnostics[0].message == "`variant Tree` contains itself, so it has no size"
+
+# A fixed defect gets a case named after it (CLAUDE.md §9, Go's
+# test/fixedbugs). Symptom: `record Holder { a: Thing, b: Thing }`
+# reported `Thing contains itself`, with the caret on Holder.a, in any
+# file that also declared a function BEFORE the records. Cause:
+# `collect`'s `.function_decl => continue` skipped the loop's own
+# index increment, so every later declaration's `from` was one too
+# small and collided with the resolver's correct `to`. Found
+# 2026-08-17 by the selfhost compiler refusing its own parse.hero.
+test "fixedbugs: a function before two same-typed fields is not a cycle"
+    got = sized_file("function first() -> i64\n    return 1\n\nrecord Thing\n    n: i64\n\nrecord Holder\n    a: Thing\n    b: Thing\n")
+    assert got.diagnostics.len() == 0
+    # The order still names both aggregates, dependency first.
+    assert got.order.len() == 2

@@ -330,7 +330,15 @@ function generic_decls(decls: [ast.Decl]) -> {i64: i64}
             .function_decl fd =>
                 if fd.value.generics.len() > 0
                     found[index] @ fd.value.generics.len()
-            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+            # NOT `continue`: this loop keeps the declaration index
+            # itself, and a `continue` in a match arm jumps to the next
+            # iteration — skipping the increment below and shifting
+            # every later declaration by one. The class was found
+            # 2026-08-17 when the selfhost compiler refused its own
+            # parse.hero with a `no_size` cycle that does not exist
+            # (check_sized carried the same shape); the self-mutation is
+            # this language's no-op.
+            .constant_decl | .record_decl | .variant_decl | .test_decl => index @ index
         index @ index + 1
     return found
 
