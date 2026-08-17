@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Errors — Heroes diagnostics are a deliverable</title>
 <meta name="description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair — tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/errors.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Errors — Heroes diagnostics are a deliverable">
+<meta property="og:description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair — tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
+<meta property="og:url" content="https://heroes-lang.org/errors.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Errors — Heroes diagnostics are a deliverable">
+<meta name="twitter:description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair — tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -30,15 +41,18 @@
     <h1 class="page">Errors</h1>
     <span class="nod">· always crashing in the same car ·</span>
   </div>
-  <p class="lede">A diagnostic is a deliverable here, not plumbing. Every one
-  of these is real output, copied from the repository.</p>
+  <p class="lede">A diagnostic is a deliverable here, not plumbing: on the last
+  full run, 96% of injected plausible mistakes were compile errors before the
+  program ran, against 79% for the control. Every error below is real output,
+  copied from the repository.</p>
 
   <p>
     A model does not have the project open. It receives one message and must
     fix the program from that message alone — or spend a whole round-trip
     re-reading files, which the cost formula says is the most expensive thing
-    that can happen. So every diagnostic carries three things: the span, the
-    other end of the story, and the repair.
+    that can happen. So every diagnostic carries three things: the exact place
+    that is wrong, the other end of the story — where the thing it clashes with
+    was declared — and the repair.
   </p>
 
   <h2>The classic inversion</h2>
@@ -81,6 +95,11 @@
     The same diagnostics come out as JSON — stable machine-readable codes,
     spans, notes and fixes — when the thing doing the reading is a program.
   </p>
+  <p>The loop, as commands:</p>
+  <pre><code>$ heroes check program.hero              <span class="c"># the diagnostics above, on stderr</span>
+$ heroes check --apply program.hero      <span class="c"># the program with every certain fix applied</span>
+$ heroes check --apply --in-place program.hero
+$ heroes run program.hero</code></pre>
 
   <h2>Words from other languages, refused with the answer attached</h2>
   <p>
@@ -133,10 +152,18 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
   </p>
   <p>
     On the last full run: <b>502 of 529 injected mistakes caught, 96%</b> —
-    against <b>79%</b> for the control. The gap concentrates exactly where the
-    design predicted. Dropped argument labels go from 90% to zero, and a lazy
-    catch-all over a variant from 100% to 39%, because nothing else in a
-    conventional language is looking for either.
+    against <b>79%</b> for the control. The corpus is the twelve gallery
+    programs. The gap concentrates exactly where the design predicted: dropped
+    argument labels go from 90% to zero, and a lazy catch-all over a variant
+    from 100% to 39%, because nothing else in a conventional language is
+    looking for either.
+  </p>
+  <p>
+    And three operators score 100% in <i>both</i> arms — typos, mixed
+    integer/float arithmetic, mutating a name that was never declared — so the
+    thesis rules add nothing there: names and types catch those in any language.
+    A measurement that names where it adds nothing is the one worth believing
+    about where it adds everything.
   </p>
 
   <p class="next">

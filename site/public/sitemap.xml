@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://heroes-lang.org/index.html</loc><priority>1.0</priority></url>
+  <url><loc>https://heroes-lang.org/why.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/errors.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/selfhost.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/zen.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/log.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/docs/index.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/failure-is-a-value.html</loc><priority>0.6</priority></url>
+</urlset>

@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Heroes — a programming language made for LLMs</title>
 <meta name="description" content="Heroes is a small compiled language designed so that every plausible LLM mistake is a compile error. It compiles itself. Native binaries, no GC, no standard library — everything through the C FFI.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/index.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Heroes — a programming language made for LLMs">
+<meta property="og:description" content="Heroes is a small compiled language designed so that every plausible LLM mistake is a compile error. It compiles itself. Native binaries, no GC, no standard library — everything through the C FFI.">
+<meta property="og:url" content="https://heroes-lang.org/index.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Heroes — a programming language made for LLMs">
+<meta name="twitter:description" content="Heroes is a small compiled language designed so that every plausible LLM mistake is a compile error. It compiles itself. Native binaries, no GC, no standard library — everything through the C FFI.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -35,13 +46,13 @@
       </svg>
       <p class="kicker">A compiled programming language</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
-      <p class="promise">Every plausible mistake is a <em>compile error</em>.</p>
-      <p class="tagline">Made for <b>LLMs</b>, yet plain to human eyes. No
-      standard library, no garbage collector, native binaries — and it compiles
-      itself.</p>
+      <p class="promise">Every plausible LLM mistake is a <em>compile error</em>.</p>
+      <p class="tagline">Made for the machines that write code now, yet plain
+      to human eyes. No standard library, no garbage collector, native
+      binaries — and it compiles itself.</p>
       <div class="cta">
         <a class="primary" href="docs/index.html">Read the docs</a>
-        <a class="ghost" href="why.html">Why Heroes?</a>
+        <a class="ghost" href="errors.html">See a real error</a>
       </div>
     </div>
     <div>
@@ -68,36 +79,64 @@
         .open     =&gt; <span class="s">"`(`"</span>
         .close    =&gt; <span class="s">"`)`"</span></code></pre>
         </figure>
-        <p class="under">exhaustive — leave a case out and it does not compile &middot; <a href="docs/index.html">learn it →</a></p>
+        <p class="under">exhaustive — leave a case out and it does not compile &middot; <a href="docs/failure-is-a-value.html">see match at work →</a></p>
       </div>
     </div>
   </header>
 
   <ul class="figures">
-    <li><span class="n">3512</span><span class="what">tokens — the whole spec</span></li>
+    <li><span class="n">3512</span><span class="what">tokens — the whole spec, ceiling 4096</span></li>
     <li><span class="n">143</span><span class="what">modules — the compiler, in Heroes</span></li>
-    <li><span class="n">1</span><span class="what">hash — three generations of it</span></li>
+    <li><span class="n">1</span><span class="what">hash — three compilers, byte for byte</span></li>
   </ul>
 
   <h2>Native binaries, no runtime to install <span class="nod">· sound and vision ·</span></h2>
-  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-14">
-<pre><code><span class="c"># A position on the integer grid.</span>
-<span class="k">record</span> Point
-    x: <span class="t">i64</span>
-    y: <span class="t">i64</span>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="8-25">
+<pre><code><span class="k">variant</span> Expr
+    number
+        v: <span class="t">i64</span>
+    add
+        parts: [Expr]
+    multiply
+        parts: [Expr]
+    negate
+        inner: [Expr]
 
-<span class="c"># A rectangle, by two corners.</span>
-<span class="k">record</span> Rect
-    corner: Point
-    extent: Point</code></pre>
-    <figcaption>examples/gallery/01-points.hero, lines 6&ndash;14</figcaption>
+<span class="c"># Recursion over a variant is one `match` and one `for` — and the `match` is</span>
+<span class="c"># exhaustive or it does not compile.</span>
+<span class="k">function</span> value_of(e: Expr) -&gt; <span class="t">i64</span>
+    <span class="k">return</span> <span class="k">match</span> e
+        .number n   =&gt; n.v
+        .add a      =&gt; sum_of(a.parts)
+        .multiply m =&gt; product_of(m.parts)
+        .negate g   =&gt; <span class="n">0</span> - first_value(g.inner)</code></pre>
+    <figcaption>examples/gallery/11-trees.hero, lines 8&ndash;25</figcaption>
   </figure>
   <p>
-    Records, functions, exhaustive <code>match</code>, tests in the language.
-    Compiled through C to a native binary, reference-counted rather than
-    garbage-collected, and no conversion between number widths ever happens on
-    its own. Every code block on this site is a slice of a file in the
-    repository that compiles and runs — including that one.
+    That is a tree that contains itself, in a language with <b>no pointer and no
+    reference type</b> — the array is the only indirection there is, so the
+    whole thing still copies like a value. Construction names every field
+    (<code>Point(3, 4)</code> does not exist), <code>=</code> binds a name once
+    and forever, and tests live in the file they test. Compiled through C to a
+    native binary, reference-counted rather than garbage-collected. Every code
+    block on this site is a slice of a file in the repository that compiles and
+    runs — including that one.
+  </p>
+
+  <h2>Run it</h2>
+  <pre><code>$ git clone https://github.com/giuseppearici/heroes-lang
+$ cd heroes-lang &amp;&amp; cargo build
+$ ./target/debug/heroes run examples/gallery/03-fallible.hero
+read 42
+failed: not_a_digit (expected 0-9)
+20</code></pre>
+  <p>
+    There is no installer yet — building from source is the only way in, and it
+    is the supported one. It needs a Rust toolchain and clang, which
+    <code>heroes doctor</code> checks. Every capability is a subcommand of that
+    one binary (<code>heroes --help</code> prints the surface), and every
+    example on this site is a file in <code>examples/</code>, waiting to be
+    changed.
   </p>
 
   <h2>Three things that make it different</h2>
@@ -139,15 +178,21 @@
     language — even if each program costs more tokens to write.
   </blockquote>
   <p>
-    It is a claim, not a slogan, so it is measured — continuously, against a
-    control build of the same compiler with the safety rules switched off. The
-    whole specification fits in 3512 tokens against a hard ceiling of 4096,
-    because the spec is not documentation, it is the prompt.
+    It is a claim, not a slogan, so it is measured: on the twelve-program
+    gallery, <b>502 of 529 injected mistakes are compile errors — 96%, against
+    79%</b> for the same compiler with the thesis rules switched off. The whole
+    specification fits in 3512 tokens against a hard ceiling of 4096, because
+    the spec is not documentation, it is the prompt.
     <a href="why.html">The reasoning, and the answers to the obvious
     objections →</a>
   </p>
 
   <footer>
+    <p>Heroes is pre-release and built in the open: the fixpoint is measured,
+    the Rust bootstrap is not yet archived, and there is no installer — the
+    compiler builds from source. The record of every decision, panels and
+    measurements included, is public in the
+    <a href="https://github.com/giuseppearici/heroes-lang">repository</a>.</p>
     <p>The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977) —
     the quotation marks are his. The lightning bolt is borrowed from 1973, worn
     at a respectful angle. The section nods are song titles, nothing more: the

@@ -3,8 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why Heroes — the founding constraint, and the thesis</title>
+<title>Why Heroes — the thesis, and the founding constraint</title>
 <meta name="description" content="Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/why.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Why Heroes — the thesis, and the founding constraint">
+<meta property="og:description" content="Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.">
+<meta property="og:url" content="https://heroes-lang.org/why.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Why Heroes — the thesis, and the founding constraint">
+<meta name="twitter:description" content="Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -30,47 +41,12 @@
     <h1 class="page">Why Heroes</h1>
     <span class="nod">· rebel rebel ·</span>
   </div>
-  <p class="lede">Two constraints, both older than the grammar: no standard
-  library, and the reader is a machine.</p>
+  <p class="lede">Two constraints, both older than the grammar: the reader is a
+  machine, and there is no standard library.</p>
 
-  <h2>The founding constraint</h2>
+  <h2>The reader is a machine <span class="nod">· sound and vision ·</span></h2>
   <p>
-    The project did not start from a grammar. It started from a refusal:
-    <b>there is no standard library, and there never will be one.</b> A modern
-    standard library is more work than a compiler — it is the thing that kills
-    one-person languages. So Heroes ships a minimal runtime and gets everything
-    else from the enormous amount of C that already exists:
-  </p>
-  <pre><code>maths beyond arithmetic   <span class="c">→</span> libm          files, sockets  <span class="c">→</span> libc
-regular expressions       <span class="c">→</span> PCRE2         HTTP            <span class="c">→</span> libcurl
-JSON                      <span class="c">→</span> cJSON         SQL             <span class="c">→</span> SQLite
-graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code></pre>
-  <p>
-    That is not laziness, it is the leverage that makes a one-person language
-    viable — and it has a consequence the rest of the design obeys: <b>the
-    ergonomics of the C boundary rank alongside comprehension, not below
-    it.</b> A library Heroes cannot bind is C code its author has to keep
-    writing by hand, which is the one thing this refusal exists to prevent.
-  </p>
-
-  <h2>Which is why the compiler emits C</h2>
-  <p>
-    A program that borrows a C function should be checked against <i>the
-    library's own header</i> — not against a description the compiler invents
-    and hopes is right. Emitting C means clang does that checking, on every
-    build, for free: a wrong signature is a compile error rather than a
-    corrupted value at runtime. An earlier design emitted machine code through
-    a small intermediate language, and it was dropped the day someone noticed
-    the founding constraint had already decided the question.
-  </p>
-  <p>
-    It is not a decision about speed. Speed is explicitly not a goal of this
-    project — and explicitly not an excuse either.
-  </p>
-
-  <h2>The reader that reads most code <span class="nod">· sound and vision ·</span></h2>
-  <p>
-    The second reason is newer. Most code written today is written by a
+    Most code written today is written by a
     language model, and models fail in specific, catalogued, reproducible
     ways: they swap two arguments of the same type, forget a case, mutate a
     name they never declared, invent a keyword from another language. A
@@ -107,12 +83,73 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     a token in a place where no error actually lives.
   </p>
 
+  <h2>The founding constraint</h2>
+  <p>
+    The project did not start from a grammar. It started from a refusal:
+    <b>there is no standard library, and there never will be one.</b> A modern
+    standard library is more work than a compiler — it is the thing that kills
+    one-person languages. So Heroes ships a minimal runtime and gets everything
+    else from the enormous amount of C that already exists:
+  </p>
+  <pre><code>maths beyond arithmetic   <span class="c">→</span> libm          files, sockets  <span class="c">→</span> libc
+regular expressions       <span class="c">→</span> PCRE2         HTTP            <span class="c">→</span> libcurl
+JSON                      <span class="c">→</span> cJSON         SQL             <span class="c">→</span> SQLite
+graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code></pre>
+  <p>
+    A borrowing looks like this — and the header named on the first line is the
+    whole point, because that header is what clang checks the declarations
+    against:
+  </p>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
+<pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
+    <span class="k">function</span> sqrt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
+    <span class="k">function</span> pow(base: <span class="t">f64</span>, exponent: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
+    <span class="k">function</span> floor(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span></code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
+  </figure>
+  <p>
+    Without a header a declaration would be verified by nothing at all. Note
+    <code>pow(base:, exponent:)</code>: two parameters of the same type, so the
+    names are mandatory at every call — the rule holds at the C boundary too,
+    which is where getting an argument order wrong is least forgiving.
+  </p>
+  <p>
+    &ldquo;Nothing else&rdquo; needs one honest qualification: the language does
+    ship a small, <b>fixed</b> inventory of about thirty names —
+    <code>print</code>, <code>len</code>, <code>push</code>, <code>slice</code>,
+    <code>sort</code>, the conversions, <code>map</code>/<code>filter</code>/<code>fold</code>.
+    It is frozen and enumerable, so there is never a second place a function
+    could have come from. What it is not is a library that grows.
+  </p>
+  <p>
+    That is not laziness, it is the leverage that makes a one-person language
+    viable — and it has a consequence the rest of the design obeys: <b>the
+    ergonomics of the C boundary rank alongside comprehension, not below
+    it.</b> A library Heroes cannot bind is C code its author has to keep
+    writing by hand, which is the one thing this refusal exists to prevent.
+  </p>
+
+  <h2>Which is why the compiler emits C</h2>
+  <p>
+    A program that borrows a C function should be checked against <i>the
+    library's own header</i> — not against a description the compiler invents
+    and hopes is right. Emitting C means clang does that checking, on every
+    build, for free: a wrong signature is a compile error rather than a
+    corrupted value at runtime. An earlier design emitted machine code through
+    a small intermediate language, and it was dropped the day someone noticed
+    the founding constraint had already decided the question.
+  </p>
+  <p>
+    It is not a decision about speed. Speed is explicitly not a goal of this
+    project — and explicitly not an excuse either.
+  </p>
+
   <h2>The rules it lives by <span class="nod">· fashion ·</span></h2>
   <ul class="pillars">
     <li><b>Locality is the currency.</b> The meaning of a line is decided by that line plus the enclosing signature — never by something defined three files away. No inheritance, no macros, no exceptions, no implicit conversions, no null.</li>
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, no implicit conversions of any kind, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn — expected type, definition site, concrete fixes tagged <code>certain</code> or <code>guess</code>. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
-    <li><b>A program must not segfault.</b> That is a goal of the language, not a quality of its implementation — and where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens.</li>
+    <li><b>A program must not segfault.</b> That is a goal of the language, not a quality of its implementation — and where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens. The guarantee covers the language's own operations: index, slice, division and overflow all abort rather than corrupt. The one null that exists is quarantined at the C boundary — <code>ptr</code> and <code>cstr</code> are not <code>str</code>, and converting a null <code>cstr</code> aborts cleanly instead of crashing, which is why the spec says to test <code>c == nullptr</code> first. What a C function then does with what you passed it is still C.</li>
     <li><b>Small enough to compile itself.</b> The whole specification is measured at 3512 tokens against a hard ceiling of 4096 — five pages, and it is not documentation, it is the prompt.</li>
   </ul>
 
@@ -156,7 +193,22 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     no data races by construction, and reference cycles cannot exist — so
     refcounting with copy-on-write is complete memory management, no garbage
     collector. Locality becomes total: what a line means is decided by that
-    line.</dd>
+    line. The price is real, and the spec names it rather than hiding it:
+    &ldquo;<code>+</code> on <code>str</code> copies both sides and
+    <code>push</code> returns a copy — <code>xs @ xs.push(4)</code> — so
+    accumulating either in a loop is quadratic. <code>join</code> and
+    <code>repeat</code> build in one pass.&rdquo;</dd>
+
+    <dt>What is missing, and what is this language bad at?</dt>
+    <dd>Four things, named rather than discovered. <b>There is no concurrency
+    in v1</b> — the design document calls it &ldquo;the largest gap and it is
+    deliberate&rdquo;. <b>There are no lambdas</b>: a function value is an
+    ordinary top-level declaration, passed by name. <b>Accumulating strings or
+    arrays in a loop is quadratic</b> (above). And generics are on functions
+    only, with no constraints, always inferred. The runtime failure model is
+    the other half of the honesty: overflow aborts at every width, so does an
+    out-of-bounds index and a division by zero — deterministic aborts, never
+    undefined behaviour.</dd>
 
     <dt>How does a line end, if there are no semicolons?</dt>
     <dd>
@@ -173,8 +225,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
 
     <dt>What can a string hold?</dt>
     <dd>
-      Five escapes, and no more: <code>\n</code>, <code>\t</code>,
-      <code>\\</code>, plus <code>\"</code> inside a string and
+      Six escapes, and no more: <code>\n</code>, <code>\t</code>,
+      <code>\r</code>, <code>\\</code>, plus <code>\"</code> inside a string and
       <code>\'</code> inside a character literal — so every character has
       exactly one spelling. Any other letter after a backslash is a compile
       error carrying its own correction. That second half is the point:
