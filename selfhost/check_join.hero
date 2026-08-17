@@ -1,0 +1,116 @@
+# One rule for every branch join in the language.
+# Port of crates/heroes/src/types/join.rs.
+#
+# An `if` used as a value, a `match` used as a value, and a block whose
+# value is its last statement all ask the same question: given these
+# branches, what is the type of the whole thing? This file answers it
+# once.
+#
+# **A branch that diverges contributes no type** — `return`, `break` and
+# `continue` arrive as absence and are skipped. If every branch diverges
+# the join produces nothing, which is legal in statement position and an
+# error where a value is wanted.
+#
+# Why one routine rather than a rule per construct: panel 017's historian
+# objected on exactly that axis — C++ pays for the same design with a
+# bespoke clause per construct, and BECAUSE it is per-construct, `throw`
+# is usable in value position nowhere else. The stated withdrawal
+# condition was "a single shared join routine whose branch list carries
+# divergence as data, with no per-construct branch" — which is what this
+# is, in both compilers now.
+
+use token
+use ast
+use source
+use resolved
+use check_table
+use check_state
+use value_errors
+use flow_errors
+
+# One branch of a join: the type it produces, or absence if it diverges,
+# plus where to point if it disagrees with the others.
+record Branch
+    value: i64?
+    span: token.Span
+
+# The type of a join, or absence when every branch diverges.
+#
+# The first branch that produces a value sets the type; every later one
+# is checked against it, which keeps the error where the DISAGREEMENT is
+# rather than blaming the last branch for the first one's choice.
+# Port note: Rust calls this `join`, and Heroes reserves that name for
+# the string builtin -- the fifteenth reservation to review its own port.
+function join_branches(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], branches: [Branch]) -> i64?
+    result: i64? @ fail("diverges", "no branch has produced a value yet")
+    for branch in branches
+        if branch.value.is_err()
+            continue
+        ty = branch.value.must()
+        if result.is_err()
+            result @ ok(ty)
+            continue
+        expected = result.must()
+        if ty != expected && !check_table.poisoned(c.out.types, ty) && !check_table.poisoned(c.out.types, expected)
+            a = check_state.show(c, s, decls, expected)
+            b = check_state.show(c, s, decls, ty)
+            check_state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: branch.span))
+    return result
+
+# The join, where a value is required. `what` names the construct for the
+# message: an `if` and a `match` fail the same way and say so in their
+# own words.
+function join_for_value(@c: check_state.Checker, s: source.Source, decls: [ast.Decl], branches: [Branch], what: str, span: token.Span) -> i64
+    joined = join_branches(@c, s, decls, branches)
+    if joined.is_err()
+        check_state.push_diagnostic(@c, flow_errors.no_value(what, span))
+        return check_state.error_ty_of(c)
+    return joined.must()
+
+## Tests
+
+test "the first branch sets the type and the disagreement is blamed"
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: check_state.Checker @ check_state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "x\n")
+    d: [ast.Decl] = []
+    int_id = check_table.int_ty_id(c.out.types)
+    str_id = check_table.str_ty(c.out.types)
+    agreeing: [Branch] = [
+        Branch(value: ok(int_id), span: token.Span(start: 0, end: 1))
+        Branch(value: ok(int_id), span: token.Span(start: 2, end: 3))
+    ]
+    assert join_branches(@c, s, d, agreeing).must() == int_id
+    assert c.out.diagnostics.len() == 0
+    mixed: [Branch] = [
+        Branch(value: ok(int_id), span: token.Span(start: 0, end: 1))
+        Branch(value: ok(str_id), span: token.Span(start: 2, end: 3))
+    ]
+    _ = join_branches(@c, s, d, mixed)
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].message == "expected `i64`, found `str`"
+    # The caret sits on the branch that disagreed, not on the first.
+    assert c.out.diagnostics[0].span.start == 2
+
+test "a diverging branch contributes nothing, and all-diverging is legal"
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: check_state.Checker @ check_state.new_checker(out_of: r, expr_count: 0)
+    s = source.new_source(name: "t.hero", text: "x\n")
+    d: [ast.Decl] = []
+    int_id = check_table.int_ty_id(c.out.types)
+    skipping: [Branch] = [
+        Branch(value: fail("diverges", "a return"), span: token.Span(start: 0, end: 1))
+        Branch(value: ok(int_id), span: token.Span(start: 2, end: 3))
+    ]
+    assert join_branches(@c, s, d, skipping).must() == int_id
+    assert c.out.diagnostics.len() == 0
+    jumps_only: [Branch] = [
+        Branch(value: fail("diverges", "a return"), span: token.Span(start: 0, end: 1))
+        Branch(value: fail("diverges", "a break"), span: token.Span(start: 2, end: 3))
+    ]
+    assert join_branches(@c, s, d, jumps_only).is_err()
+    assert c.out.diagnostics.len() == 0
+    # Where a value is required, the all-jumps join says so.
+    _ = join_for_value(@c, s, d, jumps_only, what: "match", span: token.Span(start: 0, end: 5))
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "no_value"
