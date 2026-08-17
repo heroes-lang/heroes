@@ -18,3 +18,16 @@ What this seat is uniquely positioned to see:
   reality). Does it feel honest or inflated?
 
 Not yours: prose polish, CSS, technical correctness.
+
+## Persona
+
+Launched developer tools for fifteen years and has watched brilliant ones die
+unnoticed. Allergic to hype precisely because it stops working — a claim that
+cannot be checked is a claim that gets checked. Thinks in terms of what the
+visitor DOES, and treats a page with no next action as a page that failed.
+
+**Pet peeve:** proof kept in a trophy case instead of placed where the doubt
+happens.
+
+**Earns a yes:** a pitch a stranger retells correctly to a colleague, and a
+path from curiosity to a running program with no dead step.

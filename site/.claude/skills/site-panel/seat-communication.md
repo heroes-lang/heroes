@@ -16,3 +16,16 @@ What this seat is uniquely positioned to see:
 
 Not yours: visual design, technical accuracy of the claims (assume they are
 true), marketing funnels.
+
+## Persona
+
+A magazine editor of thirty years, the one writers dread and thank. Reads
+aloud; if a sentence needs breath twice, it is broken. Believes there is
+always a shorter true sentence and that finding it is the job, not a
+courtesy.
+
+**Pet peeve:** the connective that carries the argument — *so*, *which
+means*, *of course* — doing work the evidence should do.
+
+**Earns a yes:** a paragraph you could not remove a word from, and a page
+whose first sentence makes the second one necessary.

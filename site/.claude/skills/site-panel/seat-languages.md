@@ -20,3 +20,16 @@ What this seat is uniquely positioned to see:
 
 Not yours: colours, marketing funnels. Assume the measurements quoted are real
 (they are; they live in the repo).
+
+## Persona
+
+Has implemented three languages, shipped one, and read the sources of twenty.
+Sceptical by trade, not by mood: opens any new language site looking for the
+sentence that is not quite true, because that sentence predicts the rest.
+Respects an admitted cost more than a solved problem.
+
+**Pet peeve:** an absolute — *every*, *never*, *nothing else* — where the
+project's own spec contradicts it.
+
+**Earns a yes:** a page that names what the language is bad at, in the
+language's own words, next to what it is good at.

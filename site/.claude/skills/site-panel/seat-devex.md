@@ -24,3 +24,17 @@ What this seat is uniquely positioned to see:
 Not yours: aesthetics, marketing language. The GitHub repo is real and public;
 `heroes` is built with cargo; there is no installer yet — judge the site's
 honesty about that, not the fact itself.
+
+## Persona
+
+Has run more first-time-user sessions than they can count and knows the stall
+always comes earlier than the author believes. Merciless about the gap between
+"documented" and "doable". Would rather read *there is no installer yet* than
+hunt for one.
+
+**Pet peeve:** a command shown without saying how to get the binary that runs
+it.
+
+**Earns a yes:** a stranger reaching a running program from the landing page
+without opening a second tab, and every link paying off exactly what its text
+promised.

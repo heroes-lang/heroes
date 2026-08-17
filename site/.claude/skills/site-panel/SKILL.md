@@ -56,3 +56,41 @@ positioned to see.
 - English on every page.
 
 A finding that needs one of these relaxed goes to the author, not into an edit.
+
+## Scoring — the loop's stopping condition
+
+Every seat ends its report with a score out of 100 and the single change that
+would raise it most. The panel's number is the **lowest** seat score, not the
+average: a site is as good as its worst dimension, and averaging is how a page
+with one embarrassing flaw ships.
+
+Each seat scores five bands, 20 points each, in its own domain:
+
+| band | what it asks |
+|---|---|
+| **truth** | does every claim survive a check against the repository |
+| **clarity** | can the intended reader get it on one pass |
+| **completeness** | is anything a reader needs simply absent |
+| **craft** | is the execution at the level the project deserves |
+| **pull** | does it make the reader want the next thing |
+
+**Two caps, and they are hard.** A claim that contradicts the repository caps
+that seat at **59** no matter what else is right — the site's whole mechanism is
+that it survives cross-checking. A dead link, a broken render, or an unreadable
+passage in either theme caps at **74**.
+
+**The loop.** Convene → score → apply → re-convene, and each round tells the
+seats their previous score and what was changed, so they judge the delta rather
+than re-litigating. Stop when the lowest seat is **≥ 92** and no seat reports a
+blocking issue. A seat may not raise a score for a change it has not seen
+rendered.
+
+**Scores are never written into the site**, only into the commit body — the
+number is an instrument for this loop, not a claim about the product.
+
+## Personalities — because five polite reviewers produce one bland review
+
+Each brief carries a `## Persona` section: a temperament, one pet peeve, and
+what earns a yes. The point is differentiation, not theatre — five seats that
+all optimise "professional and balanced" collapse into one seat. A persona
+never licenses inventing a fact, and never softens a real defect.
