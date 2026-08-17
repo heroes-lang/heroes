@@ -41,10 +41,9 @@
     <h1 class="page">Errors</h1>
     <span class="nod">· always crashing in the same car ·</span>
   </div>
-  <p class="lede">A diagnostic is a deliverable here, not plumbing: on the last
-  full run, 96% of injected plausible mistakes were compile errors before the
-  program ran, against 79% for the control. Every error below is real output,
-  copied from the repository.</p>
+  <p class="lede">A diagnostic is a deliverable here, not plumbing — and the
+  claim behind it is measured per mistake, not averaged. Every error below is
+  real output, copied from the repository.</p>
 
   <p>
     A model does not have the project open. It receives one message and must
@@ -96,10 +95,15 @@
     spans, notes and fixes — when the thing doing the reading is a program.
   </p>
   <p>The loop, as commands:</p>
-  <pre><code>$ heroes check program.hero              <span class="c"># the diagnostics above, on stderr</span>
-$ heroes check --apply program.hero      <span class="c"># the program with every certain fix applied</span>
+  <pre><code>$ heroes check program.hero           <span class="c"># diagnostics, on stderr</span>
+$ heroes check --apply program.hero   <span class="c"># certain fixes applied</span>
 $ heroes check --apply --in-place program.hero
 $ heroes run program.hero</code></pre>
+  <p>
+    <code>heroes</code> there is the binary you built —
+    <code>./target/debug/heroes</code> from a fresh clone.
+    <a href="index.html#run">How to build it →</a>
+  </p>
 
   <h2>Words from other languages, refused with the answer attached</h2>
   <p>
@@ -155,20 +159,37 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     the difference between the columns is the only part that means anything.
   </p>
   <p>
-    On the last full run: <b>502 of 529 injected mistakes caught, 96%</b> —
-    against <b>79%</b> for the control. The corpus is the twelve gallery
-    programs. The gap concentrates exactly where the design predicted: dropped
-    argument labels go from 90% to zero, and a lazy catch-all over a variant
-    from 100% to 39%, because nothing else in a conventional language is
-    looking for either.
+    <code>heroes mutate</code> injects one plausible mistake at a time into
+    working programs — a swapped pair of same-typed arguments, a dropped label,
+    a lazy catch-all, a shadowed name — and counts how many the compiler turns
+    into compile errors. Then it runs the same corpus against the same compiler
+    with the thesis rules switched off. Measured 2026-08-18 over the twelve
+    gallery programs, 538 mutants:
+  </p>
+  <pre><code><span class="c">operator                        with the rules   without</span>
+a dropped argument label                91%         0%
+a shadowed name                        100%         0%
+a lazy catch-all on a variant          100%        39%
+two same-typed arguments swapped        80%        43%
+a dropped variant case                 100%       100%
+a typo in a name                       100%       100%
+mixed integer and float arithmetic     100%       100%</code></pre>
+  <p>
+    <b>The project refuses to pool these into a headline</b>, and the tool
+    prints the refusal every time it runs. The reason is the bottom three rows:
+    typos, missing cases and mixed arithmetic are caught by names and types in
+    any language, so averaging them in would inflate the result with work the
+    design did not do. The top four rows are the measurement — and the two
+    zeroes are the whole thesis, because nothing else in a conventional
+    language is looking for a dropped label or a shadowed name.
   </p>
   <p>
-    And three operators score 100% in <i>both</i> arms — typos, mixed
-    integer/float arithmetic, mutating a name that was never declared — so the
-    thesis rules add nothing there: names and types catch those in any language.
-    A measurement that names where it adds nothing is the one worth believing
-    about where it adds everything.
-  </p>
+    The residue is named too: swapped same-typed arguments are caught 80% of the
+    time, not 100%. Where a label is optional because the types already differ,
+    nothing is looking. A measurement that names where it adds nothing, and
+    where it falls short, is the one worth believing about where it adds
+    everything.
+  
 
   <p class="next">
     Next: <a href="selfhost.html">the compiler, written in its own

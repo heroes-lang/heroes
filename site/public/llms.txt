@@ -25,7 +25,7 @@ legal expression that reports what belongs in the gap instead of failing.
 
 - [Home](https://heroes-lang.org/index.html): what the language is, one real sample, the claim
 - [Why Heroes](https://heroes-lang.org/why.html): the founding constraint (no standard library), the thesis, the cost formula, the objections answered
-- [Errors](https://heroes-lang.org/errors.html): diagnostics as a deliverable — real output with machine-applicable fixes tagged `certain`, and the measured catch rate (96% vs a 79% control on 529 injected mistakes)
+- [Errors](https://heroes-lang.org/errors.html): diagnostics as a deliverable — real output with machine-applicable fixes tagged `certain`, and the per-mistake catch rates against a control build (a dropped argument label 91% vs 0%, a shadowed name 100% vs 0%, a lazy catch-all 100% vs 39%)
 - [Self-hosted](https://heroes-lang.org/selfhost.html): the fixpoint — 143 modules and 34,812 lines of Heroes emitting byte-identical C across three compiler generations
 - [The Zen](https://heroes-lang.org/zen.html): twenty lines the binary prints from `heroes this`
 - [Build log](https://heroes-lang.org/log.html): one postcard per milestone, newest first

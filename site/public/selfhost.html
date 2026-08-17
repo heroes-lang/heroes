@@ -123,11 +123,12 @@
   <h2>What it costs, since a hash is not the whole story</h2>
   <p>
     The project measured itself against ten other compiler source trees, and the
-    uncomfortable row is tinycc: 68,000 lines for <i>all</i> of C, where Heroes
+    uncomfortable row is tinycc: 68,000 lines for <i>all</i> of C, where the Rust bootstrap
     spends 30,000 on a subset and delegates every backend question to clang. Per
     unit of language covered, <b>this compiler is expensive</b>. The counterweight
     is in the same table and is the reason the port was possible at all: a comment
-    ratio of 0.51, nearly double the next highest of the eleven trees measured.
+    ratio of 0.51 — comment lines against code lines — nearly double the next
+    highest of them.
   </p>
 
   <h2>What is left</h2>

@@ -46,9 +46,8 @@
 
   <h2>The reader is a machine <span class="nod">· sound and vision ·</span></h2>
   <p>
-    Most code written today is written by a
-    language model, and models fail in specific, catalogued, reproducible
-    ways: they swap two arguments of the same type, forget a case, mutate a
+    Code is increasingly written by language models, and models fail in
+    specific, catalogued, reproducible ways: they swap two arguments of the same type, forget a case, mutate a
     name they never declared, invent a keyword from another language. A
     language can treat those as accidents or treat them as the design brief.
   </p>
@@ -118,8 +117,9 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     ship a small, <b>fixed</b> inventory of about thirty names —
     <code>print</code>, <code>len</code>, <code>push</code>, <code>slice</code>,
     <code>sort</code>, the conversions, <code>map</code>/<code>filter</code>/<code>fold</code>.
-    It is frozen and enumerable, so there is never a second place a function
-    could have come from. What it is not is a library that grows.
+    It is enumerable and closed-form, so there is never a second place a
+    function could have come from — and it changes only by a recorded decision,
+    not by accretion. What it is not is a library that grows.
   </p>
   <p>
     That is not laziness, it is the leverage that makes a one-person language
