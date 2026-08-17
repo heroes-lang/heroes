@@ -1,0 +1,163 @@
+# THE ORDER every typedef comes out in — one order over two kinds
+# (design.md §4.2, §4.6, §4.20; panel 023 R3). Port of
+# crates/heroes/src/emit/typeorder.rs.
+#
+# emit_types is the SHAPE a declaration takes in C; this file is the
+# sequence. C needs every struct complete before it is used by value,
+# and a forward typedef does not rescue a by-value field — measured,
+# the same two clang errors with and without it. The sequence spans
+# both kinds at once, because each can contain the other: record Box
+# { v: i64? } needs the option first and function grab() -> P? needs
+# the record first; the two-pass version answered the first with
+# "unknown type name" at exit 2.
+#
+# Port note: the Rust recurses carrying three &mut sets beside the
+# writer; here the ORDER is computed first as a pure walk (one record
+# of state, threaded functionally) and a second loop writes. An item
+# is one i64 — decl*2 for a declared aggregate, ty*2+1 for a generated
+# typedef — because the two index different tables. Pre-marking done
+# before the children is safe where the bootstrap's post-marking
+# needed an `open` belt: the checker refuses a by-value cycle (panel
+# 023), so the graph is a DAG either way.
+
+use ast
+use source
+use check_table
+use check_state
+use ir_phases
+use emit_ctype
+use emit_types
+use emit_writer
+use parse
+use resolve
+use checker
+use ir_lower
+use emit_ffi_lookup
+
+# Every typedef the program needs, each after everything it contains
+# by value. The seed order is the two old orders concatenated —
+# aggregates (panel 023's walk) then ascending type id — so a program
+# with no cross-kind containment emits byte-identically to the
+# two-pass form, and the double-emit determinism test still covers it.
+function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
+    seeds: [i64] @ []
+    for decl in emit_types.aggregates(c, decls)
+        seeds @ seeds.push(decl * 2)
+    count = check_table.len_of(c.types)
+    id: i64 @ 0
+    while id < count
+        if !ir_phases.mentions_generic(c, ty: id)
+            wanted: bool @ false
+            match check_table.get(c.types, id)
+                .fallible => wanted @ true
+                .function_ty =>
+                    if !names.funcs[id].is_err()
+                        wanted @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => wanted @ wanted
+                .array | .fixed | .map | .named => wanted @ wanted
+                .case_ty | .failure | .generic | .error => wanted @ wanted
+            if wanted
+                seeds @ seeds.push(id * 2 + 1)
+        id @ id + 1
+    state: Ordered @ Ordered(done: {}, out: [])
+    for seed in seeds
+        state @ visit(state, c, names, decls, item: seed)
+    # A struct typedef ends with its own blank line and a
+    # function-pointer typedef does not, so the group owes one exactly
+    # when the last thing written was the latter.
+    owed_blank: bool @ false
+    for item in state.out
+        if item % 2 == 0
+            emit_types.declared(@w, c, names, s, decls, decl: item / 2)
+            owed_blank @ false
+        else
+            ty = item / 2
+            match check_table.get(c.types, ty)
+                .fallible o =>
+                    emit_types.option(@w, c, names, name: emit_ctype.option_of(names, ty: ty), payload: o.payload)
+                    owed_blank @ false
+                .function_ty fn_ty =>
+                    emit_types.function_type(@w, c, names, name: names.funcs[ty].must(), params: fn_ty.params, result: fn_ty.result)
+                    owed_blank @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+                .array | .fixed | .map | .named => continue
+                .case_ty | .failure | .generic | .error => continue
+    if owed_blank
+        emit_writer.blank(@w)
+
+record Ordered
+    done: {i64: bool}
+    out: [i64]
+
+# One item, after everything it needs. Post-order, so a dependency
+# reached from two places is written once.
+function visit(state: Ordered, c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], item: i64) -> Ordered
+    if !state.done[item].is_err()
+        return state
+    st: Ordered @ state
+    st.done[item] @ true
+    for need in needs(c, names, decls, item: item)
+        st @ visit(st, c, names, decls, item: need)
+    st.out @ st.out.push(item)
+    return st
+
+# What an item must be declared AFTER: by-value containment only,
+# which is exactly what C needs a complete type for.
+function needs(c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], item: i64) -> [i64]
+    written: [i64] @ []
+    if item % 2 == 0
+        for field in emit_types.fields_of(decls, decl: item / 2)
+            found = check_state.written_type(c, field.ty)
+            if !found.is_err()
+                written @ written.push(found.must())
+        for one_case in emit_types.cases_of(decls, decl: item / 2)
+            for field in one_case.fields
+                found = check_state.written_type(c, field.ty)
+                if !found.is_err()
+                    written @ written.push(found.must())
+    else
+        match check_table.get(c.types, item / 2)
+            .fallible o => written @ written.push(o.payload)
+            .function_ty fn_ty =>
+                for p in check_table.params_of(c.types, fn_ty.params)
+                    written @ written.push(p)
+                written @ written.push(fn_ty.result)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written @ written
+            .array | .fixed | .map | .named => written @ written
+            .case_ty | .failure | .generic | .error => written @ written
+    out: [i64] @ []
+    for ty in written
+        match check_table.get(c.types, ty)
+            .named n => out @ out.push(n.decl * 2)
+            .case_ty ct => out @ out.push(ct.decl * 2)
+            .fallible => out @ out.push(ty * 2 + 1)
+            .function_ty =>
+                if !names.funcs[ty].is_err()
+                    out @ out.push(ty * 2 + 1)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .array | .fixed | .map | .failure | .generic | .error => continue
+    return out
+
+## Tests
+
+test "cross-kind containment lands each typedef after what it holds"
+    text = "record Box\n    v: i64?\n\nfunction grab(b: Box) -> Box?\n    if b.v.is_err()\n        return fail(\"empty\", \"no value\")\n    return ok(b)\n\nfunction main()\n    got = grab(b: Box(v: ok(3)))\n    if !got.is_err()\n        print(got.must().v.must())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names: emit_ctype.Names @ emit_ctype.new_names(s, parsed.decls)
+    names @ emit_ctype.with_options(names, module: "t", c: c)
+    names @ emit_ctype.with_functions(names, module: "t", c: c, p: low.program)
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    definitions(@w, c, names, s, parsed.decls)
+    got = emit_writer.finish(w)
+    # Box holds an i64? by value, so the option's typedef must come
+    # first; grab returns Box?, so that option must follow Box.
+    i64_opt = emit_ffi_lookup.char_index_of(text: got, needle: "0opt")
+    box_at = emit_ffi_lookup.char_index_of(text: got, needle: "typedef struct h_t_Box")
+    assert !i64_opt.is_err()
+    assert !box_at.is_err()
+    assert i64_opt.must() < box_at.must()
