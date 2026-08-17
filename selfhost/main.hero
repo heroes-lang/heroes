@@ -1,0 +1,120 @@
+# THE ONE COMMAND (CLAUDE.md §10, design.md §3.5): every capability is
+# a subcommand of `heroes`, never a second binary, script, or Makefile.
+# Port of crates/heroes-cli/src/main.rs — and the selfhost compiler's
+# own entry point, which is what makes this file the finish line's
+# front door.
+#
+# This file does three things and nothing else: parse argv against the
+# table, dispatch on the Tag, and turn the result into the exit code
+# the contract promises. The dispatch is an EXHAUSTIVE MATCH, so a
+# command added to the table without an arm here does not compile —
+# panel 016's condition, and the reason this file is boring.
+#
+# Port notes, each a parked DECIDE question answered provisionally
+# here: the library's text is read from its own file beside the
+# compiler (the bootstrap embeds it with include_str!), the runtime
+# hint is read from a HEROES_RUNTIME file rather than the environment
+# (the language has no getenv), the compiler fingerprint is the
+# version string alone (no current_exe), and the word width is 64 (the
+# platforms the fixpoint runs on). Each is one line, and each is where
+# the author's verdict lands.
+
+use source
+use cli_table
+use cli_argv
+use cli_io
+use cli_toolchain
+use cli_input
+use cli_lex
+use cli_syntax_cmds
+use cli_check
+use cli_verbs
+use cli_doctor
+use cli_help
+
+constant VERSION: str
+    "0.1.0"
+
+constant LIBRARY_PATH: str
+    "crates/heroes/src/library/source.hero"
+
+function main()
+    given = args()
+    parsed = cli_argv.parse(given, dir_probe: cli_toolchain.is_directory)
+    if parsed.is_err()
+        cli_io.eprint(text: "error: " + message_of(parsed))
+        exit(code: 2)
+    inv = parsed.must()
+    # The ones that answer without reading a program.
+    match inv.tag
+        .version_cmd =>
+            print("heroes " + VERSION)
+            exit(code: 0)
+        .help_cmd =>
+            print(cli_help.help())
+            exit(code: 0)
+        .this_cmd => exit(code: cli_table.exit_code(cli_doctor.run_this()))
+        .doctor_cmd => exit(code: cli_table.exit_code(cli_doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint())))
+        .mutate_cmd | .measure_cmd =>
+            cli_io.eprint(text: "error: `mutate` and `measure` are not in the selfhost compiler yet — the bootstrap has them")
+            exit(code: 2)
+        .lex_cmd | .parse_cmd | .check_cmd | .build_cmd | .run_cmd | .test_cmd | .fmt_cmd => print("")
+    # Everything left reads a file.
+    path = inv.file.default("")
+    library = read_file(LIBRARY_PATH).default("")
+    read = cli_input.read_compilation(path: path, library: library)
+    if read.is_err()
+        cli_io.eprint(text: "error: " + message_of_source(read))
+        exit(code: 2)
+    s: source.Source @ read.must()
+    verdict: cli_table.Exit @ .ok_exit
+    match inv.tag
+        .lex_cmd => verdict @ cli_lex.run(s, inv)
+        .parse_cmd => verdict @ cli_syntax_cmds.run_parse(s, inv)
+        .fmt_cmd => verdict @ cli_syntax_cmds.run_fmt(path: path, s: s, inv: inv)
+        .check_cmd => verdict @ cli_check.run(s, inv)
+        .build_cmd | .run_cmd | .test_cmd => verdict @ compiling(path: path, s: s, inv: inv)
+        .doctor_cmd | .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => verdict @ verdict
+    exit(code: cli_table.exit_code(verdict))
+
+# The three verbs that need the toolchain, and the one place it is
+# located: a missing runtime is the tool being unable to run, which is
+# exit 2 whatever the verb.
+function compiling(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
+    found = cli_toolchain.locate_toolchain(hint: runtime_hint(), fingerprint: VERSION)
+    if found.is_err()
+        cli_io.eprint(text: "error: " + message_of_toolchain(found))
+        return .failed_exit
+    t = found.must()
+    match inv.tag
+        .build_cmd => return cli_verbs.run_build(path: path, s: s, inv: inv, t: t, version: VERSION)
+        .run_cmd => return cli_verbs.run_run(path: path, s: s, inv: inv, t: t, version: VERSION)
+        .test_cmd => return cli_verbs.run_test(path: path, s: s, inv: inv, t: t, version: VERSION)
+        .lex_cmd | .parse_cmd | .check_cmd | .fmt_cmd | .doctor_cmd => return .ok_exit
+        .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
+    return .ok_exit
+
+# Where the runtime is, when it is not ./runtime. The bootstrap reads
+# $HEROES_RUNTIME; the language has no getenv, so the port reads a
+# one-line file of the same name — same channel, spelled the way this
+# language can spell it, and named in --help either way.
+function runtime_hint() -> str
+    found = read_file("HEROES_RUNTIME")
+    if found.is_err()
+        return ""
+    return cli_toolchain.trimmed(found.must())
+
+function message_of(failed: cli_argv.Invocation?) -> str
+    match failed
+        .ok => return ""
+        .err e => return e.msg
+
+function message_of_source(failed: source.Source?) -> str
+    match failed
+        .ok => return ""
+        .err e => return e.msg
+
+function message_of_toolchain(failed: cli_toolchain.Toolchain?) -> str
+    match failed
+        .ok => return ""
+        .err e => return e.msg
