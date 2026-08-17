@@ -1,0 +1,102 @@
+# What a PARTIAL record may not do, and how far the refusal reaches
+# (spec § FFI; panel 061, ratified 2026-08-15).
+# Port of crates/heroes/src/types/partial.rs.
+#
+# A group's record marked `partial` names some of the header's struct.
+# Every operation that COPIES the value is safe at any size (124 of 124
+# unnamed bytes survived a full round trip, measured). What is refused is
+# the three operations that READ the fields: `==` (structural, and the
+# generated walk reads a field list that is not the struct), `hash` (must
+# agree with `==` or a map breaks), and a map key (`hash` reached from a
+# place the author wrote no operator at).
+#
+# Construction is permitted, and that is a decision rather than an
+# omission: refusing it deletes the only expression that produces an
+# SDL_Event, and it buys no safety — the zero-fill is deterministic, and
+# the identical SEGV is reachable from a COMPLETE binding whose ptr field
+# is nullptr.
+#
+# The reach is TRANSITIVE for comparison ([Font] == [Font] reaches
+# Font_eq through hero_array_eq — four routes, all measured firing) and
+# per-declaration for construction.
+
+use ast
+use parse
+use resolved
+use check_table
+use check_state
+
+# Is this declaration a record its group marked `partial`?
+function is_partial(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .record_decl r => r.partial
+        .constant_decl | .function_decl | .variant_decl | .test_decl => false
+
+# The partial record this type REACHES, if any — itself, or one inside
+# it. Descends [T], {K: V}, T?, a record's fields and a VARIANT CASE's
+# fields, because each is a route by which the generated _eq or _hash of
+# the inner type is called; the variant case is the one a list of
+# container kinds would have missed. Returns the DECLARATION reached
+# rather than a boolean, so the diagnostic can name it (§4.17).
+function reaches(c: check_state.Checker, decls: [ast.Decl], ty: i64) -> i64?
+    return reaches_within(c, decls, ty: ty, depth: 0)
+
+# The bound is not a guess about nesting — it is what makes the walk
+# total: a GENERIC type in the arena can still be cyclic through a type
+# parameter, and this walk runs before monomorphisation removes those.
+# Sixteen is past anything a C header's struct can reach, and the
+# fallback is absence, the safe direction here.
+function reaches_within(c: check_state.Checker, decls: [ast.Decl], ty: i64, depth: i64) -> i64?
+    if depth > 16
+        return fail("absent", "past any header's nesting")
+    match check_table.get(c.out.types, ty)
+        .named n =>
+            if is_partial(decls, n.decl)
+                return ok(n.decl)
+            match decls[n.decl].kind
+                .record_decl r =>
+                    for field in r.fields
+                        found = through_field(c, decls, field_ty: field.ty, depth: depth)
+                        if !found.is_err()
+                            return found
+                .variant_decl v =>
+                    for one_case in v.cases
+                        for field in one_case.fields
+                            found = through_field(c, decls, field_ty: field.ty, depth: depth)
+                            if !found.is_err()
+                                return found
+                .constant_decl | .function_decl | .test_decl => return fail("absent", "not a data declaration")
+            return fail("absent", "no partial inside")
+        .array a => return reaches_within(c, decls, ty: a.element, depth: depth + 1)
+        .fallible o => return reaches_within(c, decls, ty: o.payload, depth: depth + 1)
+        .map m =>
+            in_key = reaches_within(c, decls, ty: m.key, depth: depth + 1)
+            if !in_key.is_err()
+                return in_key
+            return reaches_within(c, decls, ty: m.value, depth: depth + 1)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return fail("absent", "a scalar reaches nothing")
+        .unit | .fixed | .function_ty | .case_ty | .failure | .generic | .error => return fail("absent", "this shape reaches nothing")
+    return fail("absent", "unreached")
+
+function through_field(c: check_state.Checker, decls: [ast.Decl], field_ty: i64, depth: i64) -> i64?
+    written = check_state.written_type(c.out, field_ty)
+    if written.is_err()
+        return fail("absent", "the field's type was never lowered")
+    return reaches_within(c, decls, ty: written.must(), depth: depth + 1)
+
+## Tests
+
+test "the reach is transitive through array, fallible and map"
+    p = parse.parse("extern \"s.h\"\n    record Font partial\n        size: i64\n")
+    r: resolved.Resolved @ resolved.new_resolved()
+    c: check_state.Checker @ check_state.new_checker(out_of: r, expr_count: 0)
+    font = check_table.intern(@c.out.types, .named(decl: 0))
+    assert reaches(c, p.decls, font).must() == 0
+    xs = check_table.intern(@c.out.types, .array(element: font))
+    assert reaches(c, p.decls, xs).must() == 0
+    maybe = check_table.intern(@c.out.types, .fallible(payload: font))
+    assert reaches(c, p.decls, maybe).must() == 0
+    keyed = check_table.intern(@c.out.types, .map(key: check_table.str_ty(c.out.types), value: font))
+    assert reaches(c, p.decls, keyed).must() == 0
+    plain = check_table.intern(@c.out.types, .array(element: check_table.int_ty_id(c.out.types)))
+    assert reaches(c, p.decls, plain).is_err()
