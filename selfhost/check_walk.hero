@@ -39,6 +39,8 @@ use diag
 use ast
 use source
 use resolved
+use parse
+use resolve
 use builtins
 use digits
 use widths
@@ -1339,3 +1341,104 @@ function field_of_function_type(@c: check_state.Checker, a: ast.Ast, r: resolved
         .array | .fixed | .map | .fallible | .named => return fail("absent", "the field does not hold a function")
         .case_ty | .failure | .generic | .error => return fail("absent", "the field does not hold a function")
     return fail("absent", "unreached")
+
+## Tests
+
+# Parse, resolve, and walk every body — the driver's shape in miniature,
+# local to the tests until check_decls owns it. The checker's diagnostics
+# are the assertions' subject; the resolver keeps its own.
+function checked_program(text: str) -> check_state.Checker
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checker @ check_state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    for d in p.decls
+        match d.kind
+            .function_decl fd =>
+                names: [str] @ []
+                for g in fd.value.generics
+                    names @ names.push(source.span_text(s, g))
+                c.generic_names @ names
+                for param in fd.value.params
+                    ty = check_lower.lower_ty(@c, p.tree, out, param.ty)
+                    check_state.bind_local(@c, param.name, ty: ty)
+                result = check_lower.lower_ty(@c, p.tree, out, fd.value.result)
+                c.result @ result
+                c.fallible @ is_fallible(c, result)
+                if !fd.value.body.is_err()
+                    _ = block(@c, p.tree, out, s, p.decls, body: fd.value.body.must(), want: .nothing)
+            .constant_decl k =>
+                if !k.body.is_err()
+                    declared = check_lower.lower_ty(@c, p.tree, out, k.ty)
+                    _ = block(@c, p.tree, out, s, p.decls, body: k.body.must(), want: .value(ty: declared))
+            .test_decl t =>
+                _ = block(@c, p.tree, out, s, p.decls, body: t.body, want: .nothing)
+            .record_decl | .variant_decl => continue
+    return c
+
+function is_fallible(c: check_state.Checker, ty: i64) -> bool
+    return match check_table.get(c.out.types, ty)
+        .fallible => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .function_ty | .named => false
+        .case_ty | .failure | .generic | .error => false
+
+test "a real program checks clean, end to end through both ports"
+    c = checked_program("record Point\n    x: i64\n    y: i64\n\nfunction dist2(a: Point, b: Point) -> i64\n    dx = a.x - b.x\n    dy = a.y - b.y\n    return dx*dx + dy*dy\n\nfunction main()\n    print(dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)))\n")
+    assert c.out.diagnostics.len() == 0
+
+test "no promotions anywhere, and the width takes the literal"
+    mixed = checked_program("function f() -> f64\n    return 1 + 2.0\n")
+    assert mixed.out.diagnostics.len() == 1
+    assert mixed.out.diagnostics[0].code == "mixed_arithmetic"
+    fits = checked_program("function f() -> u8\n    b: u8 @ 255\n    return b\n")
+    assert fits.out.diagnostics.len() == 0
+    breaks = checked_program("function f() -> u8\n    b: u8 @ 300\n    return b\n")
+    assert breaks.out.diagnostics.len() == 1
+    assert breaks.out.diagnostics[0].code == "int_out_of_range"
+    assert breaks.out.diagnostics[0].message == "`300` does not fit a `u8`"
+
+test "a case with no type of its own takes the other side's"
+    c = checked_program("variant Token\n    plus\n    minus\n\nfunction f(t: Token) -> bool\n    return t == .plus\n")
+    assert c.out.diagnostics.len() == 0
+
+test "every case named, or the compiler names the missing ones"
+    open_match = checked_program("variant Token\n    plus\n    minus\n    star\n\nfunction f(t: Token) -> i64\n    return match t\n        .plus => 1\n        .minus => 2\n")
+    assert open_match.out.diagnostics.len() == 1
+    assert open_match.out.diagnostics[0].code == "non_exhaustive"
+    assert open_match.out.diagnostics[0].message == "this `match` does not cover `.star`"
+    banned = checked_program("variant Token\n    plus\n    minus\n\nfunction f(t: Token) -> i64\n    return match t\n        .plus => 1\n        _ => 0\n")
+    assert banned.out.diagnostics.len() == 1
+    assert banned.out.diagnostics[0].code == "wildcard_on_variant"
+
+test "a discarded value names the receiver trap, both repairs guesses"
+    c = checked_program("function f()\n    xs: [i64] @ [1]\n    xs.push(4)\n    print(xs.len())\n")
+    assert c.out.diagnostics.len() == 1
+    assert c.out.diagnostics[0].code == "discarded_value"
+    assert c.out.diagnostics[0].fixes.len() == 2
+    assert c.out.diagnostics[0].fixes[0].certainty == .guess
+
+test "two parameters of one type make the labels mandatory"
+    c = checked_program("function copy_to(from: i64, to: i64) -> i64\n    return from + to\n\nfunction main()\n    print(copy_to(1, 2))\n")
+    assert c.out.diagnostics.len() == 2
+    assert c.out.diagnostics[0].code == "needs_label"
+    assert c.out.diagnostics[0].message == "two of `copy_to`'s parameters are `i64`, so every one of them is named at the call site — this one is `from`"
+
+test "a generic call binds, substitutes, and is recorded by its span"
+    c = checked_program("function first<A>(xs: [A], fallback: A) -> A\n    if len(xs) > 0\n        return xs[0]\n    return fallback\n\nfunction main()\n    print(first([3, 1], 9))\n")
+    assert c.out.diagnostics.len() == 0
+    recorded: i64 @ 0
+    for k in keys(c.out.instantiations)
+        _ = k
+        recorded @ recorded + 1
+    assert recorded == 1
+
+test "the try operator and the else rule hold at the statement seam"
+    infallible = checked_program("function f(m: {str: i64}) -> i64\n    return m[\"k\"]?\n")
+    assert infallible.out.diagnostics.len() == 1
+    assert infallible.out.diagnostics[0].code == "try_in_infallible"
+    lopsided = checked_program("function f(c: bool) -> i64\n    x = if c\n        1\n    return x\n")
+    assert lopsided.out.diagnostics.len() == 1
+    assert lopsided.out.diagnostics[0].code == "if_without_else"
+    unit_ok = checked_program("function save() -> ()?\n    return ok()\n")
+    assert unit_ok.out.diagnostics.len() == 0
