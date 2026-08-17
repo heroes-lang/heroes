@@ -325,3 +325,29 @@ obligation.
 
 The three Part 11 harness predictions and the `-> ()?` one stay unscorable until
 metric 2 runs, which `docs/debrief/SCHEDULED.md` records as waiting for v1.
+
+
+## Predictions scored at M-selfhost-port close (2026-08-17)
+
+**The spec-warden's last open prediction — *"by M-selfhost-port, invoking clang
+from Heroes costs ≥25 spec tokens or a `PORT-DEBT` entry"* — is FALSIFIED, and
+the way it fails is the finding.**
+
+Measured at the close: `PORT-DEBT` in `selfhost/` is **0**, and the spec moved
+eleven times in this milestone for panels 066, 068, 069, 071, 074, 075, 078,
+079, 081 and 084 — **not once for this question**. The port invokes clang, and
+`pkg-config`, and the produced binary, through §4.19's FFI exactly as it already
+stood:
+
+    extern "stdlib.h"
+        function system(command: cstr) -> i32
+
+Zero tokens, zero debt, one declaration. Neither branch of the disjunction
+fired because the premise under both — that the language would have to grow, or
+the port would have to admit a gap — was answered by §1.11's own thesis: the
+compiler reaches its toolchain the way any Heroes program reaches C.
+
+What the prediction *did* buy is worth recording beside its falsification: it
+named the two honest ways to fail, so the third way — costing nothing — was
+measurable rather than assumed. `hero_spawn`, which this row was written
+around, was never needed and is not in `hero_os.h`.

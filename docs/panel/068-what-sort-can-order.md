@@ -160,3 +160,22 @@ above becomes final:
 where the record is a map key: `check` exit 0, then abort at 134), because it is
 a §1.12 crash and both the compiler-engineer and the ffi-pragmatist made fixing
 it condition 1 regardless of which option won.
+
+
+## Predictions scored at M-selfhost-port close (2026-08-17)
+
+**The spec-warden's refusal-falsifier holds in its consequence, and its
+mechanism was a third answer neither branch named.**
+
+*"Zero need an order on a record"* — **zero**, measured over all 143 modules:
+no map in the port is keyed by a record, so the refusal this row guards was
+never reached and the falsifier never fired.
+
+*"All 7 pair-keyed `ORDER:` marks port to nested maps"* — they did not, and
+nothing was lost. The port encodes the pair into one `i64` (`emit_ctype`'s
+`case_key(decl:, at:)`) rather than nesting two maps, so a composite key
+becomes a number and `sort(keys(…))` orders it directly. One site, not seven:
+the other six marks turned out to be single-keyed once the port reached them.
+
+The prediction asked to be falsified by *"one whose port record names the
+nesting as a loss"*. None does, because none nests.

@@ -148,3 +148,23 @@ brief carried a number that was wrong four times over, and every seat that
 measured found a different one. That is now two sittings running (066's dead
 premise, 067's line-count-against-a-token-formula). The instrument works; the
 seat that convenes it is the one that keeps needing correction.
+
+
+## Predictions scored at M-selfhost-port close (2026-08-17)
+
+**The ffi-pragmatist is CORRECT on both halves that name this milestone.**
+
+*"Zero exhaustiveness-only arms in `selfhost/` dispatch on an `extern` result"*
+— **zero**. The port declares three externs (`write` in `cli_io.hero`, `system`
+in `cli_toolchain.hero`, and the group `cli_toolchain` shares with
+`cli_libraries`), and every match reached from their results dispatches on a
+`T?`'s `.ok`/`.err` — a decision, not padding.
+
+*"F7 stays live because the port trips no container of `ptr`/`cstr`"* — the port
+holds **zero**. The only two occurrences in the tree are a comment and a
+program *inside a test string* in `emit_gate.hero`, which is the gate proving
+the refusal fires rather than the port relying on it.
+
+The seats predicting at M-selfhost-fixpoint stay open: the padding percentage,
+the mutation rates under `else`, the `???`-arms fix, and the literal-bodied arm
+counts are all fixpoint-close measurements and this close does not spend them.

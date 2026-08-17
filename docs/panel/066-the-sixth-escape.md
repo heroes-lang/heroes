@@ -152,3 +152,25 @@ investigates its own basis and withdraws is the mechanism working. It is worth
 recording here because 066, 067 and 068 were each briefed with something false
 and the seats caught all three; this is the sitting where the catching was done
 by the seat that had raised the objection.
+
+
+## The payment, registered at M-selfhost-port close (2026-08-17)
+
+Both seats' conditions are **MET**, measured at the close rather than asserted.
+
+The spec-warden's (i): `selfhost/scan.hero` carries
+`test "a stray carriage return is named and a crlf line ending is tolerated"`,
+whose body is `line_body(@l, "print(1)\rprint(2)\n")` — **written with the
+escape this panel bought**, which is the whole point of the clause: before it,
+that test could not be written at all. A second test,
+`"a raw carriage return inside a literal is refused with the escape as its
+repair"`, asserts the fix's replacement is `"\\r"`.
+
+The compiler-engineer's: `grep -c $'\r' selfhost/*.hero` is **0 for every one
+of the 143 files**.
+
+The clause is paid, not lapsed. Its fixpoint half — *"both binaries render
+byte-identical `unknown_escape` messages"* — is discharged by a stronger
+measurement than it asked for: the two compilers' emitted C is byte-identical
+over the whole 20,886,539-byte translation unit, and the differential compares
+every diagnostic of five commands over 257 inputs with zero divergences.
