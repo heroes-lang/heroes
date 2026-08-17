@@ -140,6 +140,29 @@ numbered milestone (`crates/heroes-cli/tests/milestones.rs`), because its entrie
 are dated records and keep the identifiers they were written with — the same
 footing as `docs/journal/` and `docs/panel/`. Every other page is watched.
 
+## Launch order — the repository goes public first
+
+`github.com/giuseppearici/heroes-lang` returned **404** on 2026-08-18. Every
+verification path on the site runs through it: the `git clone` line, the GitHub
+link in all eight navs, the twelve chapter file links, llms.txt's raw spec link,
+and the footer sentence saying the record "is public in the repository". This
+site's whole mechanism is *check me*; shipping it while the check 404s turns the
+project's best asset into its most visible broken promise. **Repo public first,
+site second.** Found by the panel's marketing seat, which tested the URL rather
+than assuming it.
+
+## Numbers on the site are re-run, never quoted from a record
+
+The measurement pages had figures from `docs/measurements/002-metric-3.md`
+(2026-08-04) presented as "the last full run" while `heroes mutate` gave
+different numbers on 2026-08-18. Re-run the tool before publishing any of them,
+and **date the result on the page**.
+
+And **never pool the mutation rates into one headline** — `heroes mutate` prints
+the prohibition (panel 011) every time it runs, and the site shipped the pooled
+number anyway for a full round. Per-operator or nothing. `forget-at-decl` is
+excluded from any summary because its catch rate is 100% by construction.
+
 ## One thing the publication gate owns
 
 `site/`'s Aladdin Sane bolt is iconography attached to an actively managed
