@@ -67,8 +67,8 @@ function fixed_array_length(want: str, expected: i64, got: i64, span: token.Span
 # error and not an abort — the one place a fixed array is SAFER than [T]
 # rather than merely different: the length is in the type, so the mistake
 # is visible without running the program.
-function fixed_index_out_of_range(shown: str, length: i64, got: i64, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(code: "fixed_index_out_of_range", message: "`" + shown + "` holds " + length.to_str() + ", so its last index is " + (length - 1).to_str() + ", and this is " + got.to_str() + " — a fixed array's length is part of its type, so the index is checked here rather than at run time", span: span)
+function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "fixed_index_out_of_range", message: "`" + shown + "` holds " + length.to_str() + ", so its last index is " + (length - 1).to_str() + ", and this is " + got_text + " — a fixed array's length is part of its type, so the index is checked here rather than at run time", span: span)
 
 # `i32[4]` in an ordinary record (panel 062).
 function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
@@ -108,7 +108,7 @@ test "the fixed-array messages carry both numbers and the last index"
     span = token.Span(start: 0, end: 4)
     short = fixed_array_length(want: "f32[4]", expected: 4, got: 3, span: span)
     assert short.message == "`f32[4]` holds exactly 4, and this literal has 3 — a fixed array's length is part of its type, so the two must agree (§4.19)"
-    past = fixed_index_out_of_range(shown: "i32[4]", length: 4, got: 7, span: span)
+    past = fixed_index_out_of_range(shown: "i32[4]", length: 4, got_text: "7", span: span)
     assert past.message == "`i32[4]` holds 4, so its last index is 3, and this is 7 — a fixed array's length is part of its type, so the index is checked here rather than at run time"
 
 test "a float key splits on is-a-float versus reaches-one"
