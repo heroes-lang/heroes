@@ -21,17 +21,16 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
     373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63
     gen1b.c (bootstrap) == gen3.c (heroes, in Heroes) == gen4.c (stage 2)
-    20,886,539 bytes · 724,245 lines · Apple clang 21.0.0, arm64-darwin
+    20,886,539 bytes · Apple clang 21.0.0, arm64-darwin
 
 `selfhost/`: **143 modules, 34,812 lines, 27,230 tests, zero PORT-DEBT** — the
-whole compiler, CLI included. Verified three ways: the port's C compiles under
-the full flag set, *that* compiler passes the differential (5 × 257 × 2 streams,
-zero divergences), and the fixpoint is stable. Nine defects found getting there,
-five in the port and **four in the bootstrap**; four predictions scored, 036's
-spec-warden falsified. Record: `docs/journal/021-selfhost-port.md`.
+whole compiler, CLI included. The port's C compiles under the full flag set,
+*that* compiler passes the differential (5 × 257 × 2 streams, zero divergences),
+and the fixpoint is stable. Nine defects found, five in the port and **four in
+the bootstrap**; four predictions scored, 036's falsified.
+Record: `docs/journal/021-selfhost-port.md`.
 
-Next: **M-selfhost-fixpoint** — the seed test first, then the archive (its row's
-own order).
+Next: **M-selfhost-fixpoint** — the seed test first, then the archive.
 
 ---
 
