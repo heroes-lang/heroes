@@ -138,7 +138,11 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
   <p>
     That is what lets a program be written skeleton-first: sketch the shape, let
     the compiler tell you what each gap needs, fill them in. The hole is a
-    question the compiler answers, not a failure it reports.
+    question the compiler answers, not a failure it reports. Two spellings in
+    that output belong to the C boundary and appear nowhere else:
+    <code>cstr</code> is a C string and <code>@status</code> marks a parameter
+    the callee may write into — a C out-parameter, named at the call site like
+    every other argument.
   </p>
 
   <h2>How this gets measured</h2>
