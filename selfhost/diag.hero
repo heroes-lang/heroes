@@ -8,6 +8,29 @@
 #   in this language, and a record's fields are the builder.
 
 use token
+use source
+
+## The kind
+
+# What kind of thing is being reported. Two, and the second is NOT a
+# claim about the program (panel 020): GCC has had this distinction
+# since 2.5.8 — sorry sits beside error in kinds.def and exits with
+# the same status. The local reason is mechanical: §9's #~ <code>
+# invariant keys off diagnostic codes, so a report outside this type
+# is a test class outside the invariant.
+variant Kind
+    error_kind
+    # The program is fine and THIS COMPILER is unfinished. Carries no
+    # fixes — no edit to the file will help — is never dropped by
+    # --permissive, and never applied by --apply.
+    unsupported_kind
+
+# The word that goes where `error` goes. It is the first thing read,
+# so it is the thing that has to be true.
+function word(k: Kind) -> str
+    return match k
+        .error_kind => "error"
+        .unsupported_kind => "unsupported"
 
 ## Certainty
 
@@ -28,6 +51,7 @@ record Fix
 ## The diagnostic
 
 record Diagnostic
+    kind: Kind
     code: str
     message: str
     span: token.Span
@@ -38,7 +62,41 @@ record Diagnostic
 function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
     fixes: [Fix] = []
     notes: [str] = []
-    return Diagnostic(code: code, message: message, span: span, fixes: fixes, notes: notes)
+    return Diagnostic(kind: .error_kind, code: code, message: message, span: span, fixes: fixes, notes: notes)
+
+# A form the backend cannot emit yet. The message names the CAPABILITY
+# and never the milestone (§4.17: everything needed without opening
+# another file, and a milestone id resolves only in the ROADMAP). The
+# constructor attaches NO note — panel 082 R1: the old unconditional
+# "no change to this file will fix this" was false on three of five
+# rows, and a note that denies a repair the author can make tells them
+# to stop looking. The note is the ROW'S decision, made where the code
+# is known.
+function new_unsupported(code: str, message: str, span: token.Span) -> Diagnostic
+    fixes: [Fix] = []
+    notes: [str] = []
+    return Diagnostic(kind: .unsupported_kind, code: code, message: message, span: span, fixes: fixes, notes: notes)
+
+# Whether this code is one of the rules the THESIS adds, as opposed to
+# a rule without which the program has no meaning. check --permissive
+# drops exactly these, which is what makes it the control arm Part 11
+# needs: the same compiler with §1 switched off. Every code traces to
+# a panel; machine_locked_path joined by panel 055's test — nothing
+# about the types is wrong, and C would take the program on exactly
+# one machine.
+function is_thesis_rule(d: Diagnostic) -> bool
+    codes = ["unused_binding", "shadowed_binding", "builtin_name_taken", "discarded_value", "bound_unit", "wildcard_on_variant", "marker_mismatch", "ufcs_on_mutable", "declaration_in_arm", "missing_label", "needs_label", "wrong_label", "declared_twice", "machine_locked_path"]
+    for one in codes
+        if d.code == one
+            return true
+    return false
+
+# `file:line:col: <kind>[code]: message` — the one-line form the
+# golden tests pin and a terminal scans; the file and line are the
+# ones the reader can open, which is locate's whole job.
+function render_line(d: Diagnostic, s: source.Source) -> str
+    found = source.locate(s, d.span.start)
+    return found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ": " + word(d.kind) + "[" + d.code + "]: " + d.message
 
 test "a diagnostic starts empty and grows by mutation"
     d: Diagnostic @ new_diagnostic(code: "tab_in_line", message: "a tab is a compile error — use spaces", span: token.Span(start: 3, end: 4))
@@ -47,3 +105,10 @@ test "a diagnostic starts empty and grows by mutation"
     d.fixes @ d.fixes.push(Fix(title: "t", replacement: "r", span: d.span, certainty: .certain))
     assert d.fixes.len() == 1
     assert d.fixes[0].certainty == .certain
+    assert d.kind == .error_kind
+    assert word(d.kind) == "error"
+    u = new_unsupported(code: "map_key", message: "a `{f64: T}` is not emitted yet", span: token.Span(start: 0, end: 1))
+    assert u.kind == .unsupported_kind
+    assert u.notes.len() == 0
+    assert is_thesis_rule(new_diagnostic(code: "needs_label", message: "m", span: u.span))
+    assert !is_thesis_rule(u)

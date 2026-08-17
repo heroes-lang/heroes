@@ -17,9 +17,10 @@
 # than tidiness: [()], [ptr] and {str: ptr} all checked clean at exit 0
 # and aborted at 134 with "this is a compiler bug" (panels 029, 067).
 #
-# Port note: the bootstrap's Diagnostic carries kind: Unsupported; the
-# port's diagnostic is its code, and the exit-code mapping is the
-# CLI's, where the kind is read.
+# The kind is unsupported_kind — panel 020's second word: the program
+# is fine and this compiler is unfinished. The debt the port note here
+# used to carry was discharged when diag grew Kind with the
+# diagnostics department.
 
 use ast
 use source
@@ -109,7 +110,7 @@ function refuse(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_st
         ordered @ before
     out: [diag.Diagnostic] @ []
     for one in ordered
-        d: diag.Diagnostic @ diag.new_diagnostic(code: one.code, message: one.what + " is not emitted yet", span: one.span)
+        d: diag.Diagnostic @ diag.new_unsupported(code: one.code, message: one.what + " is not emitted yet", span: one.span)
         d.notes @ d.notes.push(what_the_author_can_do(one.code))
         d.notes @ d.notes.push(subset())
         out @ out.push(d)
