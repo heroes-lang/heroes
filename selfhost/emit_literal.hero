@@ -1,0 +1,82 @@
+# A constant value as C text: the macro its width asks for (design.md
+# §3.1, §4.14; panels 020, 042). Port of crates/heroes/src/emit/literal.rs.
+#
+# Everything here turns a value the compiler already knows into the
+# characters clang will read; nothing here can abort, branch or
+# allocate.
+#
+# A bare -9223372036854775808 warns because C parses it as a negation
+# of an out-of-range positive, and a bare decimal above INT32_MAX is
+# only long on LP64 — so a macro is both the portable and the
+# warning-free spelling, and the macro has to match the width.
+# UINT64_C for the unsigned widths is not tidiness:
+# 18446744073709551615 through INT64_C is a constant C cannot
+# represent.
+#
+# THE FLOAT DIVERGENCE, stated rather than hidden (DECIDE.md item,
+# 2026-08-17): the bootstrap emits f64 literals as hex floats computed
+# FROM the f64 bits (%a, round-trip-exact). This port carries a float
+# literal as its SPELLED TEXT — Heroes has no str->f64 by design — so
+# it cannot compute the bits and emits the text. Zero float literals
+# exist in selfhost source today (measured), so the fixpoint's own
+# input never meets the divergence; the author's call on the three ways
+# out is queued.
+
+use check_contextual
+use widths
+use ir
+
+# A constant, in the C spelling its own width asks for. The width comes
+# from the caller (the instruction's own type, which the checker
+# recorded) — the constant emitter cannot know it and must not guess.
+function constant_text(value: ir.IntConst, kind: widths.IntKind?) -> str
+    match value
+        .int_const ic =>
+            # INT64_MIN by name: the macro route warns.
+            if ic.value.negative
+                min_magnitude: u64 = 9223372036854775808
+                if ic.value.magnitude == min_magnitude
+                    return "INT64_MIN"
+            unsigned: bool @ false
+            if !kind.is_err()
+                match kind.must()
+                    .u8 | .u16 | .u32 | .u64 => unsigned @ true
+                    .i8 | .i16 | .i32 | .i64 => unsigned @ unsigned
+            sign: str @ ""
+            if ic.value.negative
+                sign @ "-"
+            if unsigned
+                return "UINT64_C(" + sign + ic.value.magnitude.to_str() + ")"
+            return "INT64_C(" + sign + ic.value.magnitude.to_str() + ")"
+        .bool_const bc =>
+            if bc.value
+                return "true"
+            return "false"
+        # NULL would need a header; the cast needs none and is the same
+        # value.
+        .null_ptr => return "((void *)0)"
+        # The divergence documented above: the spelled text, verbatim.
+        .float_const fc => return fc.text
+        # A static block, laid out by clang: refcount -1 means "never
+        # freed", so a literal costs no allocation and decrefing one is
+        # a no-op.
+        .str_const sc => return "HERO_STR_LIT(hero_str_" + sc.at.to_str() + ")"
+    return ""
+
+## Tests
+
+test "the macro matches the width, and the minimum is spelled by name"
+    none: widths.IntKind? = fail("none", "no width")
+    plain = constant_text(.int_const(value: check_contextual.LitValue(negative: false, magnitude: 42)), kind: none)
+    assert plain == "INT64_C(42)"
+    negative = constant_text(.int_const(value: check_contextual.LitValue(negative: true, magnitude: 5)), kind: none)
+    assert negative == "INT64_C(-5)"
+    min_mag: u64 = 9223372036854775808
+    lowest = constant_text(.int_const(value: check_contextual.LitValue(negative: true, magnitude: min_mag)), kind: none)
+    assert lowest == "INT64_MIN"
+    big: u64 = 18446744073709551615
+    top = constant_text(.int_const(value: check_contextual.LitValue(negative: false, magnitude: big)), kind: ok(.u64))
+    assert top == "UINT64_C(18446744073709551615)"
+    assert constant_text(.bool_const(value: true), kind: none) == "true"
+    assert constant_text(.null_ptr, kind: none) == "((void *)0)"
+    assert constant_text(.str_const(at: 3), kind: none) == "HERO_STR_LIT(hero_str_3)"
