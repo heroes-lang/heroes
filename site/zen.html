@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Zen of Heroes</title>
+<meta name="description" content="Twenty lines the Heroes compiler carries in itself, printed by `heroes this`. The design principles of the language, and a tribute to David Bowie.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="why.html">Why Heroes</a></li>
+      <li><a href="docs/index.html">Docs</a></li>
+      <li><a href="errors.html">Errors</a></li>
+      <li><a href="selfhost.html">Self-hosted</a></li>
+      <li><a class="here" href="zen.html">Zen</a></li>
+      <li><a href="log.html">Log</a></li>
+    </ul>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <div class="page-head">
+    <h1 class="page">The Zen of Heroes</h1>
+    <span class="nod">· heroes ·</span>
+  </div>
+  <p class="lede">Twenty lines the compiler carries inside itself. Python has
+  <code>import this</code>; Heroes has <code>heroes this</code>.</p>
+
+  <ol class="zen">
+    <li>First of all and freely, this language is a tribute to the great David Bowie.</li>
+    <li>A modern language made for LLMs, yet plain to human eyes.</li>
+    <li>The machine has read everything, yet sees only the page before it.</li>
+    <li>What the eye can see is all there is, nothing but sound and vision.</li>
+    <li>One way to say each thing, and every program sings it in the same voice.</li>
+    <li>Although that way is not obvious at first, the Starman waiting in the sky already knows it.</li>
+    <li>The semantics you already know, a syntax nobody has seen before.</li>
+    <li>Turn and face the strange, for every strangeness here is deliberate.</li>
+    <li>Nothing changes behind your back, every change signs its name where it happens.</li>
+    <li>Every plausible mistake becomes a compile error before the program ever runs.</li>
+    <li>Unless you confess it honestly and write ??? in its place.</li>
+    <li>An honest hole in the program beats a confident guess every time.</li>
+    <li>A compile time error is an answer, a run time error is an ambush.</li>
+    <li>An error tells you how to fix the program, anything less is a complaint.</li>
+    <li>A repeated word is cheap, a forgotten one costs the whole program.</li>
+    <li>The specification is small and lives under pressure, every word must earn its place.</li>
+    <li>Nothing crashes and nothing leaks, ashes to ashes, what it takes it returns.</li>
+    <li>Where the pretty things and the robust disagree, the robust wins every time.</li>
+    <li>There is no standard library, everything comes from C, the man who sold the world.</li>
+    <li>We can be heroes, just for one day.</li>
+  </ol>
+
+  <h2>It ships with the compiler</h2>
+  <p>
+    This is not a page somebody wrote about the language. It is the language's
+    own text, and it is a command:
+  </p>
+  <pre><code>$ heroes this</code></pre>
+  <p>
+    Which is the point of putting it in the binary rather than in a document. A
+    document drifts away from the thing it describes; a subcommand ships with
+    it, and every one of these lines has a rule behind it that the compiler
+    actually enforces.
+  </p>
+
+  <h2>Where each line comes out in practice</h2>
+  <p>
+    Lines 3 and 4 are why nothing in this language means something decided three
+    files away — the meaning of a line comes from that line and the signature
+    above it. <a href="why.html">The reasoning is here.</a>
+  </p>
+  <p>
+    Lines 10 to 14 are the whole of the diagnostics design: a mistake caught
+    before the program runs, a hole you can write down honestly instead of
+    guessing, and an error that tells you the repair rather than filing a
+    complaint. <a href="errors.html">See them fire.</a>
+  </p>
+  <p>
+    Line 16 is the token budget — the specification is measured, not estimated,
+    and an addition has to name what it removes. Line 19 is the founding
+    constraint, which is also the reason the compiler emits C. And line 18 is a
+    tie-break with real teeth: where elegance and robustness disagree, the
+    language gives up the elegance.
+  </p>
+  <p>
+    Line 1 is the one that needs no defence, and line 20 is where the name comes
+    from. The irony lives in the packaging: you will never meet Bowie in an error
+    message.
+  </p>
+
+  <footer>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

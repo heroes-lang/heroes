@@ -12,6 +12,7 @@ so no page is a dead end:
 | `why.html` | the founding constraint, the thesis, the cost formula, the rules, the objections |
 | `errors.html` | diagnostics as a deliverable — real output, fixes, holes, the mutation numbers |
 | `selfhost.html` | the fixpoint: the hash, what it took, and what it found |
+| `zen.html` | `heroes this`, quoted verbatim — the twenty lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation |
 | `log.html` | the build log, one postcard per milestone, newest first |
 | `docs/` | the documentation: landing + chapters |
 | `style.css` | the only cross-page asset |
@@ -26,8 +27,8 @@ invisibly — one page's dark mode goes stale and nothing fails. The bolt stays
 inline SVG in every page, because it is markup.
 
 **The nav is duplicated in each page's markup**, which is the one repetition the
-no-JavaScript rule forces. Six items in a fixed order — Why Heroes · Docs ·
-Errors · Self-hosted · Log · GitHub — and the current page marks itself
+no-JavaScript rule forces. Seven items in a fixed order — Why Heroes · Docs ·
+Errors · Self-hosted · Zen · Log · GitHub — and the current page marks itself
 `class="here"`. Adding a page means editing that block everywhere; if that ever
 gets painful, the answer is a generator behind a `heroes` subcommand, not a
 script (CLAUDE.md §10).
