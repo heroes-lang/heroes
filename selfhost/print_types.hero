@@ -1,0 +1,52 @@
+# Types, written back out in surface syntax (design.md §4.15). Port of
+# crates/heroes/src/printer/types.rs.
+#
+# There is exactly one correct spelling of every type (§4.15's
+# canonical form), so this renderer has no options and no choices to
+# make. It is used by --dump-ast, by diagnostics as soon as they name
+# a type, and by heroes fmt — written once, used everywhere.
+
+use ast
+use source
+use parse
+
+function render_type(tree: ast.Ast, id: i64, s: source.Source) -> str
+    node = tree.types[id]
+    match node.kind
+        .named => return source.span_text(s, node.span)
+        .unit => return "()"
+        # i32[4] — the length is part of the type, so it is part of
+        # the text.
+        .fixed x => return render_type(tree, x.element, s) + "[" + x.length.to_str() + "]"
+        .array_of a => return "[" + render_type(tree, a.element, s) + "]"
+        .map_of m => return "{" + render_type(tree, m.key, s) + ": " + render_type(tree, m.value, s) + "}"
+        .fallible f => return render_type(tree, f.inner, s) + "?"
+        .function_type fn_ty =>
+            parts: [str] @ []
+            for param in fn_ty.params
+                parts @ parts.push(render_type(tree, param, s))
+            return "(function(" + parts.join(", ") + ") -> " + render_type(tree, fn_ty.result, s) + ")"
+        # A type the parser could not read. The diagnostic says why;
+        # the dump says WHERE, which is what makes a broken file still
+        # readable.
+        .error => return "<?>"
+    return "<?>"
+
+## Tests
+
+test "one spelling per type, nested shapes included"
+    text = "function f(a: i64, b: [str], c: {i64: f64}, d: i64?, e: u8[4], g: (function(i64) -> str))\n    _ = a\n    _ = b\n    _ = c\n    _ = d\n    _ = e\n    _ = g\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    fields: [i64] @ []
+    match parsed.decls[0].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                fields @ fields.push(p.ty)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+    assert render_type(parsed.tree, fields[0], s) == "i64"
+    assert render_type(parsed.tree, fields[1], s) == "[str]"
+    assert render_type(parsed.tree, fields[2], s) == "{i64: f64}"
+    assert render_type(parsed.tree, fields[3], s) == "i64?"
+    assert render_type(parsed.tree, fields[4], s) == "u8[4]"
+    assert render_type(parsed.tree, fields[5], s) == "(function(i64) -> str)"
