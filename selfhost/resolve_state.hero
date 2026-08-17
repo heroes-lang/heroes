@@ -136,15 +136,25 @@ function payload_binding() -> Binding
 
 ## The working state
 
+# One type parameter of the function being resolved: its name, and its
+# position in the angle list — `position` is what `TypeRef.generic` carries.
+record GenericParam
+    name: str
+    position: i64
+
+
 # The pass's working state. It owns everything and takes the tree and the
 # source as parameters — the Cyclone rule kept by a language that never had
 # the alternative.
 record Resolver
     out: resolved.Resolved
     scopes: Scopes
-    # Type parameters of the function being resolved: name -> position.
-    # Cleared at every declaration: generics are on functions only (§4.12).
-    generics: {str: i64}
+    # Type parameters of the function being resolved, IN POSITION ORDER —
+    # an array and not a map, because the did-you-mean ranks candidates in
+    # the order supplied and Rust's Vec order is positional, which a sorted
+    # map walk would silently replace with alphabetical. Cleared at every
+    # declaration: generics are on functions only (§4.12).
+    generics: [GenericParam]
     # Every field name declared anywhere in the program, keyed module ->
     # name. One narrow purpose: keep the unknown-function error off
     # `h.cb(n)` where `cb` is a field holding a function value (§4.13).
@@ -171,7 +181,7 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
     while j < type_count
         out.type_uses @ out.type_uses.push(.unresolved)
         j @ j + 1
-    generics: {str: i64} = {}
+    generics: [GenericParam] = []
     fields: {str: {str: bool}} = {}
     suggested: {str: {str: bool}} = {}
     module_reads: {str: {str: bool}} = {}
