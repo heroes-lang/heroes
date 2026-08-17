@@ -1,0 +1,149 @@
+# What a header CALLS the type: the tag it keeps in C's other
+# namespace, and the two ways naming it can go wrong (design.md §4.19;
+# panels 074, 077). Port of crates/heroes/src/emit/ffi_tag.rs.
+#
+# The seam with emit_ffi_record: that file answers "what are this
+# struct's FIELDS", this one "what is this struct CALLED". A field
+# mistake is fixed by changing a type on a field line; a naming
+# mistake by adding or correcting the tag marker — and one of the two
+# carries a CERTAIN fix that writes it for you. Both recognisers keep
+# §7's narrowing: the name is recovered from clang's own text and then
+# asked whether THIS PROGRAM declared it inside an extern group.
+
+use token
+use ast
+use source
+use diag
+use emit_externs
+use emit_ffi_lookup
+use parse
+use resolve
+use checker
+
+# clang's "must use 'struct' tag to refer to type 'Plain'" — the
+# header declares the struct ONLY as a tag, and the group's record did
+# not say so (panel 074). The fix is CERTAIN: clang emits this only
+# when the bare name resolves to a struct tag of that same spelling,
+# so `tag <name>` is what the header says, not a guess. The author is
+# free to rename afterwards — the whole point of the marker is that
+# the Heroes name and C's need not agree — but they need not, and
+# --apply gets them compiling first.
+function missing_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    quoted = emit_ffi_lookup.after(text: line, marker: "must use 'struct' tag to refer to type '")
+    if quoted.is_err()
+        return fail("none", "not a tag line")
+    name = emit_ffi_lookup.up_to_quote(quoted.must())
+    found = emit_ffi_lookup.declaration(s, decls, name: name)
+    if found.is_err()
+        return fail("none", "no group declares this name")
+    at: token.Span @ found.must().span
+    named = emit_ffi_lookup.name_span(s, decls, name: name)
+    if !named.is_err()
+        at @ named.must()
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_missing_tag", message: "`" + found.must().header + "` declares `" + name + "` as a struct **tag** and gives it no typedef, so C reaches it only as `struct " + name + "`", span: at)
+    d.notes @ d.notes.push("C keeps struct tags in a namespace of their own: say which tag with `tag`, and the Heroes name stays yours — `record FileStat tag stat` binds `struct stat` beside the `function stat` that fills it")
+    d.fixes @ d.fixes.push(diag.Fix(title: "name the header's tag: `tag " + name + "`", replacement: name + " tag " + name, span: at, certainty: .certain))
+    return ok(d)
+
+# clang's "incomplete definition of type 'struct NoSuchTag'" — the
+# group's record named a tag the header does not declare (panel 074).
+# This is the llm-ergonomist's condition of approval, and without it
+# the marker's own typo is exit 2: measured before this function
+# existed, a tag with no struct behind it produced "internal error",
+# the compiler blaming itself for the author's word. The caret lands
+# on the TAG, not the record's name, because the tag is the token to
+# change — and the two are different words now, which is the whole
+# point of the marker.
+function unknown_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    quoted = emit_ffi_lookup.after(text: line, marker: "incomplete definition of type 'struct ")
+    if quoted.is_err()
+        return fail("none", "not an incomplete-tag line")
+    tag_name = emit_ffi_lookup.up_to_quote(quoted.must())
+    found = record_by_tag(s, decls, tag_name: tag_name)
+    if found.is_err()
+        return fail("none", "no record names this tag")
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_unknown_tag", message: "`" + found.must().header + "` declares no `struct " + tag_name + "` — clang read the header and the tag is not there", span: found.must().span)
+    d.notes @ d.notes.push("`tag` names the struct tag C uses, and clang checks it against the header (§4.19): correct the spelling, or name the header that declares `struct " + tag_name + "`")
+    return ok(d)
+
+# The declaration whose tag is this name, and the header it was
+# declared under. The same declaration() narrowing one field over: a
+# tag nobody wrote stays exit 2 and the compiler's.
+record TaggedRecord
+    span: token.Span
+    header: str
+
+function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str) -> TaggedRecord?
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if rec.header.is_err() || rec.tag.is_err()
+                    continue
+                if source.span_text(s, rec.tag.must()) != tag_name
+                    continue
+                return ok(TaggedRecord(span: rec.tag.must(), header: emit_externs.unquoted(s, span: rec.header.must())))
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+    return fail("none", "no record names this tag")
+
+# clang's "use of 'utag' with tag type that does not match previous
+# declaration" — the tag names a UNION and the emitter spelled struct
+# (panel 077, predicted by its historian from the standard before
+# anyone ran it). C11 6.7.2.3#1a is a CONSTRAINT, so clang must refuse
+# `struct utag` against a header's `union utag`: panel 074's marker
+# closes every tagged union for free, and all that was missing was the
+# wiring. It does not reach `typedef union { … } X;`, where there is
+# no tag to mismatch — that shape is emit_extern_union's.
+function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    if !emit_ffi_lookup.has(text: line, needle: "with tag type that does not match previous declaration")
+        return fail("none", "not a tag-mismatch line")
+    quoted = emit_ffi_lookup.after(text: line, marker: "use of '")
+    if quoted.is_err()
+        return fail("none", "no tag on the line")
+    tag_name = emit_ffi_lookup.up_to_quote(quoted.must())
+    found = record_by_tag(s, decls, tag_name: tag_name)
+    if found.is_err()
+        return fail("none", "no record names this tag")
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_tag_is_a_union", message: "`" + found.must().header + "` declares `" + tag_name + "` as a `union`, not a struct — C keeps the two in one namespace and will not let one stand for the other", span: found.must().span)
+    d.notes @ d.notes.push("a group's `record` is the header's STRUCT (§4.19). A union has no `record` spelling in this language: reach it as a `ptr` and read it through C functions, or bind the one member you need as its own type")
+    return ok(d)
+
+## Tests
+
+test "missing_tag carries the certain fix that writes the marker"
+    text = "extern \"sys/stat.h\"\n    record Plain\n        n: i64\n\nfunction touch(v: Plain)\n    _ = v\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    line = "main.c:12:1: error: must use 'struct' tag to refer to type 'Plain'"
+    d = missing_tag(s, parsed.decls, line: line)
+    assert d.must().code == "ffi_missing_tag"
+    assert d.must().fixes.len() == 1
+    assert d.must().fixes[0].replacement == "Plain tag Plain"
+    assert d.must().fixes[0].certainty == .certain
+    # The caret is the name's own token.
+    assert source.span_text(s, d.must().span) == "Plain"
+    # A name no group declares is refused.
+    other = "main.c:12:1: error: must use 'struct' tag to refer to type 'Ghost'"
+    assert missing_tag(s, parsed.decls, line: other).is_err()
+
+test "unknown_tag and tag_is_a_union land the caret on the tag token"
+    text = "extern \"sys/stat.h\"\n    record FileStat tag statt\n        size: i64\n\nfunction touch(v: FileStat)\n    _ = v\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    line = "main.c:8:1: error: incomplete definition of type 'struct statt'"
+    d = unknown_tag(s, parsed.decls, line: line)
+    assert d.must().code == "ffi_unknown_tag"
+    assert d.must().message == "`sys/stat.h` declares no `struct statt` — clang read the header and the tag is not there"
+    assert source.span_text(s, d.must().span) == "statt"
+    u = "main.c:8:1: error: use of 'statt' with tag type that does not match previous declaration"
+    k = tag_is_a_union(s, parsed.decls, line: u)
+    assert k.must().code == "ffi_tag_is_a_union"
+    assert source.span_text(s, k.must().span) == "statt"
+    # A tag nobody wrote stays the compiler's.
+    ghost = "main.c:8:1: error: incomplete definition of type 'struct ghost'"
+    assert unknown_tag(s, parsed.decls, line: ghost).is_err()
