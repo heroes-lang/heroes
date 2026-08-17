@@ -30,7 +30,16 @@ pub(super) fn parse_type(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> TypeI
         let length = fixed_length(cur, ast, src, open);
         inner = ast.push_type(TypeNode {
             kind: TypeKind::Fixed(inner, length),
-            span: start.to(cur.previous_span()),
+            // **The third adjacent shape** of `previous_significant_span`'s
+            // repair (`cursor.rs`'s doc, 2026-08-12; the call and the method
+            // were the first two, 2026-08-17). A field's type is the last
+            // thing on its line, so a trailing comment always follows it:
+            // `xs: i64[4]   #~ fixed_outside_a_group` underlined 54 columns
+            // for 6, and every `#~` annotation §9 requires made the caret
+            // wrong on the very line it annotates. Found by the selfhost
+            // port, which computes it correctly, on the last two of 257
+            // differential inputs.
+            span: start.to(cur.previous_significant_span()),
         });
     }
     if !cur.at(TokenKind::Question) {
