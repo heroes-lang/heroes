@@ -20,9 +20,9 @@ function run(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     out = lexer.lex(s)
     if cli_argv.has(inv, spelling: "--dump-tokens")
         if cli_argv.has(inv, spelling: "--json")
-            print(json(out.tokens, s))
+            cli_io.print_artifact(text: json(out.tokens, s))
         else
-            print(text_dump(out.tokens, s))
+            cli_io.print_artifact(text: text_dump(out.tokens, s))
     for d in out.diagnostics
         cli_io.eprint(text: diag.render_line(d, s))
     if out.diagnostics.len() == 0

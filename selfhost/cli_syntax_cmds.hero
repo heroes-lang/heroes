@@ -27,7 +27,7 @@ function run_parse(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     if out.diagnostics.len() > 0
         return .diagnostics_exit
     if cli_argv.has(inv, spelling: "--dump-ast")
-        print(print_dump.dump_ast(out.tree, s, out.uses, out.decls))
+        cli_io.print_artifact(text: print_dump.dump_ast(out.tree, s, out.uses, out.decls))
     return .ok_exit
 
 # heroes fmt <file.hero> [--in-place]: stdout by default like gofmt;
@@ -42,7 +42,7 @@ function run_fmt(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_t
         return .diagnostics_exit
     formatted = print_fmt.format_file(out.tree, s, out.comments, out.uses, out.decls)
     if !cli_argv.has(inv, spelling: "--in-place")
-        print(formatted)
+        cli_io.print_artifact(text: formatted)
         return .ok_exit
     if formatted == source.user_text(s)
         return .ok_exit

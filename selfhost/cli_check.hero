@@ -43,11 +43,11 @@ function run(s: source.Source, inv: cli_argv.Invocation) -> cli_table.Exit
     if !stop_c.is_err()
         return stop_c.must()
     if cli_argv.has(inv, spelling: "--dump-scopes")
-        print(print_scopes.dump_scopes(out, s, parsed.decls))
+        cli_io.print_artifact(text: print_scopes.dump_scopes(out, s, parsed.decls))
     # §4.16: holes are output, not diagnostics. The program is fine;
     # it is unfinished, and the compiler says what belongs in the gaps.
     if c.holes.len() > 0
-        print(check_holes.report(parsed.tree, out, c, s, parsed.decls))
+        cli_io.print_artifact(text: check_holes.report(parsed.tree, out, c, s, parsed.decls))
     return .ok_exit
 
 # Print a stage's diagnostics in the form the flags asked for, and say
@@ -90,7 +90,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: cli_argv.
             else
                 cli_io.eprint(text: s.name + " unchanged: no `certain` fix applies to its " + kept.len().to_str() + " diagnostic(s)")
             return ok(.ok_exit)
-        print(repaired)
+        cli_io.print_artifact(text: repaired)
         return ok(.ok_exit)
     if cli_argv.has(inv, spelling: "--json")
         cli_io.eprint_raw(text: json(kept, s))

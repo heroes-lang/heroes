@@ -26,6 +26,20 @@ function eprint(text: str)
 function eprint_raw(text: str)
     _ = write(fd: 2, buf: text.cstr(), count: text.len().to_u64().must())
 
+# An ARTIFACT printed exactly as it is. `print` adds exactly one
+# trailing newline (spec § Built-ins), and every blob this compiler
+# hands to stdout — a dump, the formatted file, the generated C —
+# already ends with one, so printing it plainly grows a blank line at
+# the end. The bootstrap's `print!` adds nothing, so the two disagreed
+# on one byte per invocation: measured 2026-08-17 against the corpus,
+# and on `--emit-c` that one byte is the fixpoint.
+function print_artifact(text: str)
+    cs = text.chars()
+    if cs.len() > 0 && cs[cs.len() - 1] == "\n"
+        print(cs.slice(from: 0, to: cs.len() - 1).join(""))
+        return
+    print(text)
+
 ## Tests
 
 test "eprint writes and the write binding answers with a count"

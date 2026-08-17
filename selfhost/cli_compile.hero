@@ -160,15 +160,15 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     if problems_o.len() > 0
         return broken(problems_o, what: "the ownership pass produced an ill-formed program")
     if options.dump_ir
-        print(ir_print.dump(p, c, s, parsed.decls))
+        cli_io.print_artifact(text: ir_print.dump(p, c, s, parsed.decls))
         if c.holes.len() > 0
-            print(check_holes.report(parsed.tree, out, c, s, parsed.decls))
+            cli_io.print_artifact(text: check_holes.report(parsed.tree, out, c, s, parsed.decls))
         return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
     # §4.16: the hole is not an error, and there is still no binary.
     # Both halves — and the files named are the ones the holes are IN,
     # not the file named on the command line.
     if c.holes.len() > 0
-        print(check_holes.report(parsed.tree, out, c, s, parsed.decls))
+        cli_io.print_artifact(text: check_holes.report(parsed.tree, out, c, s, parsed.decls))
         files: [str] @ []
         for hole in c.holes
             found = source.locate(s, hole.span.start)
@@ -189,7 +189,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         return leave(stop_e.must())
     if options.emit_c
         if options.output.is_err()
-            print(emitted.c)
+            cli_io.print_artifact(text: emitted.c)
         else
             written = write_file(path: options.output.must(), text: emitted.c)
             if written.is_err()
