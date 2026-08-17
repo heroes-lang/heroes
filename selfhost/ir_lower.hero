@@ -484,6 +484,125 @@ function seal_join(@b: ir_build.Lowering, meet: i64, result: i64?, span: token.S
         return ir_build.unit_value()
     return ir_build.load_slot(@b, slot_id: result.must(), span: span)
 
+## T? — the four rows of Part 5's table that read a tag (§4.6)
+
+# A T? is a built-in variant with two cases, ok at tag 0 and err at tag
+# 1. Everything below is that one fact, applied: ok/fail are
+# constructions; .is_err() is a tag read and one comparison, NO branch;
+# .must() is a branch to the payload or an abort; .default(v) is a
+# branch and a join slot; e? is a branch and an EARLY RETURN THAT
+# COPIES OUT — §4.8's own sentence names ? beside return, so the error
+# edge owes the same chain.
+
+# ok and fail are built-ins so that the names resolve; here they are
+# constructions, because that is what they do (panel 002: they are
+# check-only, so which T? is being built was decided by the checker).
+function fallible_constructor(name: str) -> ir.Shape?
+    if name == "ok"
+        return ok(.ok_shape)
+    if name == "fail"
+        return ok(.fail_shape)
+    return fail("absent", "not a fallible constructor")
+
+function is_fallible_operation(name: str) -> bool
+    return name == "must" || name == "default" || name == "is_err"
+
+# .must(), .default(v), .is_err() — Part 5 calls all three "match", and
+# only two of them need an edge.
+function fallible_operation(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], name: str, receiver: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
+    subject = hold(@b, a, r, c, s, decls, held_expr: receiver, span: span)
+    int_id = check_table.int_ty_id(c.types)
+    if name == "is_err"
+        # A tag read and a comparison: no control flow at all, which is
+        # why this row of the table is the cheap one.
+        tag = read_tag(@b, c, subject: subject, span: span)
+        one = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 1))), ty: int_id, span: span)
+        return ir_build.emit(@b, op: .binary(op: .eq, left: tag, right: one), ty: ty, span: span)
+    if name == "must"
+        good = ir_build.block(@b, note: "must: ok")
+        bad = ir_build.block(@b, note: "must: abort")
+        branch_on_ok(@b, c, subject: subject, good: good, bad: bad, span: span)
+        ir_build.switch_to(@b, target: bad)
+        # THE FAILURE TRAVELS WITH THE ABORT. Without it the panic can
+        # only say that a .must() failed, which is the one thing the
+        # reader already knows; with it, it says the code and msg the
+        # author wrote (§4.6). The read happens INSIDE the abort block,
+        # so nothing counted crosses a block edge.
+        failure = payload_of(@b, subject: subject, at: 1, ty: check_table.failure_ty(c.types), span: span)
+        carried = ir_build.args_run(@b, [.value_arg(value: failure)])
+        ir_build.emit_void(@b, op: .abort_op(why: .must_abort, arguments: carried), ty: ir_build.unit_ty(b), span: span)
+        ir_build.terminate(@b, .unreachable)
+        ir_build.switch_to(@b, target: good)
+        return payload_of(@b, subject: subject, at: 0, ty: ty, span: span)
+    # .default(v): two edges into one slot, the same shape an if with a
+    # value has.
+    result = ir_build.synthetic(@b, prefix: "r", ty: ty)
+    good = ir_build.block(@b, note: "default: ok")
+    fallback = ir_build.block(@b, note: "default: else")
+    meet = ir_build.block(@b, note: "default: join")
+    branch_on_ok(@b, c, subject: subject, good: good, bad: fallback, span: span)
+    ir_build.switch_to(@b, target: good)
+    value = payload_of(@b, subject: subject, at: 0, ty: ty, span: span)
+    ir_build.store_slot(@b, slot_id: result, value: value, span: span)
+    ir_build.terminate(@b, .jump(to: meet))
+    ir_build.switch_to(@b, target: fallback)
+    fallback_value: i64 @ 0
+    if given.len() > 0
+        fallback_value @ expr(@b, a, r, c, s, decls, id: given[0].value)
+    else
+        fallback_value @ ir_build.emit(@b, op: .missing, ty: ty, span: span)
+    ir_build.store_slot(@b, slot_id: result, value: fallback_value, span: span)
+    ir_build.terminate(@b, .jump(to: meet))
+    ir_build.switch_to(@b, target: meet)
+    return ir_build.load_slot(@b, slot_id: result, span: span)
+
+# e? — propagate (§4.6). The error edge is an exit edge, so it copies
+# out. The error itself propagates UNCHANGED — err_shape wraps the
+# failure that already exists rather than re-reading its code and msg,
+# because a ? that rebuilt the error would lose whatever the callee put
+# there.
+function try_expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], inner: i64, ty: i64, span: token.Span) -> i64
+    subject = hold(@b, a, r, c, s, decls, held_expr: inner, span: span)
+    good = ir_build.block(@b, note: "?: ok")
+    bad = ir_build.block(@b, note: "?: propagate")
+    branch_on_ok(@b, c, subject: subject, good: good, bad: bad, span: span)
+    ir_build.switch_to(@b, target: bad)
+    failure = payload_of(@b, subject: subject, at: 1, ty: check_table.failure_ty(c.types), span: span)
+    # The caller's T?, carrying the callee's failure unchanged. The
+    # result type is the enclosing function's, which ? already required
+    # to be fallible.
+    run = ir_build.args_run(@b, [.value_arg(value: failure)])
+    wrapped = ir_build.emit(@b, op: .construct(shape: .err_shape, arguments: run), ty: ir_build.result_type(b), span: span)
+    copy_out(@b, c)
+    ir_build.terminate(@b, .return_term(value: ok(wrapped)))
+    ir_build.switch_to(@b, target: good)
+    return payload_of(@b, subject: subject, at: 0, ty: ty, span: span)
+
+# Puts the subject in a slot. Every one of these forms reads it twice —
+# once for the tag, once for the payload — and f()? must not call f
+# twice.
+function hold(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], held_expr: i64, span: token.Span) -> i64
+    ty = c.expr_types[held_expr]
+    value = expr(@b, a, r, c, s, decls, id: held_expr)
+    slot = ir_build.synthetic(@b, prefix: "f", ty: ty)
+    ir_build.store_slot(@b, slot_id: slot, value: value, span: span)
+    return slot
+
+function read_tag(@b: ir_build.Lowering, c: check_state.Checked, subject: i64, span: token.Span) -> i64
+    held = ir_build.load_slot(@b, slot_id: subject, span: span)
+    return ir_build.emit(@b, op: .tag_of(value: held), ty: check_table.int_ty_id(c.types), span: span)
+
+# The branch all three operations share: tag 0 is ok.
+function branch_on_ok(@b: ir_build.Lowering, c: check_state.Checked, subject: i64, good: i64, bad: i64, span: token.Span)
+    tag = read_tag(@b, c, subject: subject, span: span)
+    zero = ir_build.emit(@b, op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 0))), ty: check_table.int_ty_id(c.types), span: span)
+    fine = ir_build.emit(@b, op: .binary(op: .eq, left: tag, right: zero), ty: check_table.bool_ty(c.types), span: span)
+    ir_build.terminate(@b, .branch(cond: fine, then_to: good, else_to: bad))
+
+function payload_of(@b: ir_build.Lowering, subject: i64, at: i64, ty: i64, span: token.Span) -> i64
+    held = ir_build.load_slot(@b, slot_id: subject, span: span)
+    return ir_build.emit(@b, op: .payload(base: held, at: at), ty: ty, span: span)
+
 ## Expressions
 
 function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> i64
@@ -584,9 +703,8 @@ function expr(@b: ir_build.Lowering, a: ast.Ast, r: resolved.Resolved, c: check_
             # PORT-STUB (calls.rs): case construction arrives with the
             # next step.
             return ir_build.emit(@b, op: .missing, ty: ty, span: span)
-        .try_expr =>
-            # PORT-STUB (fallible.rs): `?` arrives with the next step.
-            return ir_build.emit(@b, op: .missing, ty: ty, span: span)
+        .try_expr t =>
+            return try_expr(@b, a, r, c, s, decls, inner: t.value, ty: ty, span: span)
         .if_expr ie =>
             return if_expr(@b, a, r, c, s, decls, branches: ie.branches, otherwise: ie.otherwise, ty: ty, span: span)
         .match_expr =>
@@ -827,3 +945,32 @@ test "a join every arm returned past is sealed unreachable"
                 .unreachable => sealed @ true
                 .jump | .branch | .switch_term | .return_term | .open => continue
     assert sealed
+
+test "? branches on the tag, and the error edge is a real exit edge"
+    got = lowered("function pick(ready: bool) -> i64?\n    if ready\n        return ok(3)\n    return fail(\"empty\", \"nothing here\")\n\nfunction outer(ready: bool) -> i64?\n    v = pick(ready)?\n    return ok(v + 1)\n")
+    f = got.program.functions[1]
+    assert f.name == "outer"
+    propagate_at: i64 @ 0 - 1
+    at: i64 @ 0
+    for blk in f.blocks
+        if blk.note == "?: propagate"
+            propagate_at @ at
+        at @ at + 1
+    assert propagate_at >= 0
+    # The propagate block reads the failure payload, wraps it UNCHANGED
+    # as err, and returns — an exit edge like any return.
+    match f.blocks[propagate_at].term
+        .return_term ret => assert !ret.value.is_err()
+        .jump | .branch | .switch_term | .unreachable | .open => assert false
+    wrapped: bool @ false
+    for inst in f.blocks[propagate_at].insts
+        match inst.op
+            .construct con =>
+                match con.shape
+                    .err_shape => wrapped @ true
+                    .record_shape | .case_shape | .array_shape => continue
+                    .map_shape | .ok_shape | .fail_shape => continue
+            .lit | .load | .store | .unary | .binary | .cast | .call => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
+    assert wrapped
