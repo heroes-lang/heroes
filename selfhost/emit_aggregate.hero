@@ -1,0 +1,262 @@
+# Records as C: construction, field reads, places with a path, and the
+# calls that keep a counted field alive (design.md §4.9, §4.10; panels
+# 021, 022, 060, 061). Port of crates/heroes/src/emit/aggregate.rs.
+#
+# One question: GIVEN A TYPE AND A FIELD INDEX, WHAT IS THE C FOR IT.
+# The field's name is needed to spell the member, and by the IR a field
+# is an index, so every function here walks from a type to a
+# declaration and back.
+#
+# The compound literal is designated, never positional: the IR already
+# holds the arguments in declared order, so the designators are
+# redundant — and that is exactly why they are written. A field added
+# to a record in the middle is then a clang error at every construction
+# site instead of a silent shift of every value one field along.
+#
+# Port note: Rust's Types bundle exists to thread four references
+# through six functions; Heroes passes the pieces, as every emit module
+# so far does. satellite_name lives in emit_ctype — the one home.
+
+use ast
+use source
+use check_table
+use check_state
+use ir
+use ir_state
+use emit_mangle
+use emit_ctype
+use parse
+use resolve
+use checker
+use token
+
+# The C member name of a field, and the type it holds. Absent where the
+# owner is not an aggregate or the index is past its fields — which by
+# here means the checker reported something already.
+record FieldRead
+    member: str
+    ty: i64
+
+function field(c: check_state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, index: i64) -> FieldRead?
+    # §4.6's built-in record: two strs, code then msg, with no
+    # declaration anywhere to read them from.
+    is_failure: bool @ false
+    match check_table.get(c.types, owner)
+        .failure => is_failure @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_failure @ is_failure
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_failure @ is_failure
+        .case_ty | .generic | .error => is_failure @ is_failure
+    if is_failure
+        member: str @ "msg"
+        if index == 0
+            member @ "code"
+        return ok(FieldRead(member: member, ty: check_table.str_ty(c.types)))
+    decl: i64 @ 0 - 1
+    case_at: i64 @ 0 - 1
+    match check_table.get(c.types, owner)
+        .named n => decl @ n.decl
+        .case_ty vc =>
+            decl @ vc.decl
+            case_at @ vc.at
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl @ decl
+        .array | .fixed | .map | .fallible | .function_ty => decl @ decl
+        .failure | .generic | .error => decl @ decl
+    if decl < 0
+        return fail("none", "not an aggregate")
+    fields: [ast.Field] @ []
+    foreign: bool @ false
+    match decls[decl].kind
+        .record_decl rec =>
+            fields @ rec.fields
+            if !rec.header.is_err()
+                foreign @ true
+        .variant_decl v =>
+            if case_at < 0 || case_at >= v.cases.len()
+                return fail("none", "not a case of this variant")
+            fields @ v.cases[case_at].fields
+        .constant_decl | .function_decl | .test_decl => return fail("none", "not an aggregate declaration")
+    if index >= fields.len()
+        return fail("none", "past the fields")
+    written = check_state.written_type(c, fields[index].ty)
+    if written.is_err()
+        return fail("none", "the field's type was never lowered")
+    return ok(FieldRead(member: emit_mangle.field_of(foreign: foreign, name: source.span_text(s, fields[index].name)), ty: written.must()))
+
+# The variant a case belongs to, and the case's own name, for spelling
+# a tag or a union member.
+record CaseNames
+    holder: str
+    case_name: str
+
+function case_names(names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: i64) -> CaseNames?
+    match decls[decl].kind
+        .variant_decl v =>
+            if at >= v.cases.len()
+                return fail("none", "no such case")
+            return ok(CaseNames(holder: emit_ctype.of(names, decl: decl), case_name: source.span_text(s, v.cases[at].name)))
+        .constant_decl | .function_decl | .record_decl | .test_decl => return fail("none", "not a variant")
+    return fail("none", "unreached")
+
+# A place as a C lvalue: the slot, then one .member per step. The path
+# is walked with the TYPE alongside it, because the member's spelling
+# comes from the declaration and each step changes which declaration
+# that is. An index step cannot appear yet — the container store owns
+# it — and the walk stops rather than producing something that
+# compiles.
+function place(c: check_state.Checked, s: source.Source, decls: [ast.Decl], f: ir_state.Function, at: ir.Place) -> str
+    slot = f.slots[at.root]
+    text: str @ emit_mangle.slot(index: at.root, name: slot.name)
+    ty: i64 @ slot.ty
+    for step in ir_state.steps_of(f, at.path)
+        match step
+            .field_step fs =>
+                found = field(c, s, decls, owner: ty, index: fs.at)
+                if found.is_err()
+                    return text
+                text @ text + "." + found.must().member
+                ty @ found.must().ty
+            .index_step => return text
+    return text
+
+# t3 = (h_m_Point){.f_x = t1, .f_y = t2};
+function construct(names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str]) -> str?
+    name = emit_ctype.of(names, decl: decl)
+    match decls[decl].kind
+        .record_decl rec =>
+            parts = designators(s, fields: rec.fields, arguments: arguments, foreign: !rec.header.is_err())
+            if parts.is_err()
+                return fail("none", "fewer arguments than fields")
+            # A record with no fields is error[empty_record], so this
+            # cannot be empty — and (T){} is not C11 anyway.
+            if parts.must().len() == 0
+                return fail("none", "an empty record cannot be built")
+            return ok("(" + name + "){" + parts.must().join(", ") + "}")
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail("none", "not a record")
+    return fail("none", "unreached")
+
+# t2 = (h_m_Token){.tag = h_m_Token_tag_word, .as.c_word = {.f_text = t1}};
+# The result is the WHOLE variant, not the case. A payload-free case
+# writes the tag alone — C zeroes the rest of a compound literal, so
+# the union is never left holding stale bytes.
+function construct_case(names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: i64, arguments: [str]) -> str?
+    both = case_names(names, s, decls, decl: decl, at: at)
+    if both.is_err()
+        return fail("none", "not a case")
+    tag_text = ".tag = " + emit_mangle.tag_of(ty: both.must().holder, case_name: both.must().case_name)
+    match decls[decl].kind
+        .variant_decl v =>
+            fields = v.cases[at].fields
+            if fields.len() == 0
+                return ok("(" + both.must().holder + "){" + tag_text + "}")
+            # A variant is never a group member, so foreign is false for
+            # every case payload — stated rather than assumed.
+            parts = designators(s, fields: fields, arguments: arguments, foreign: false)
+            if parts.is_err()
+                return fail("none", "fewer arguments than payload fields")
+            return ok("(" + both.must().holder + "){" + tag_text + ", .as." + emit_mangle.case_member(both.must().case_name) + " = {" + parts.must().join(", ") + "}}")
+        .constant_decl | .function_decl | .record_decl | .test_decl => return fail("none", "not a variant")
+    return fail("none", "unreached")
+
+# .f_x = t1 per field, in declared order. Designated, never positional
+# — the redundancy is the point.
+function designators(s: source.Source, fields: [ast.Field], arguments: [str], foreign: bool) -> [str]?
+    parts: [str] @ []
+    index: i64 @ 0
+    for one_field in fields
+        if index >= arguments.len()
+            return fail("none", "fewer arguments than fields")
+        parts @ parts.push("." + emit_mangle.field_of(foreign: foreign, name: source.span_text(s, one_field.name)) + " = " + arguments[index])
+        index @ index + 1
+    return ok(parts)
+
+# t3 = t2.tag; — what a switch reads.
+function tag(base: i64) -> str
+    return emit_mangle.value(base) + ".tag"
+
+# t5 = t4.as.c_num; — the payload of a case the match already selected.
+function payload_member(c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], f: ir_state.Function, base: i64, at: i64) -> str?
+    decl: i64 @ 0 - 1
+    match check_table.get(c.types, ir_state.value_type(f, base))
+        .named n => decl @ n.decl
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl @ decl
+        .array | .fixed | .map | .fallible | .function_ty | .case_ty => decl @ decl
+        .failure | .generic | .error => decl @ decl
+    if decl < 0
+        return fail("none", "not a variant value")
+    both = case_names(names, s, decls, decl: decl, at: at)
+    if both.is_err()
+        return fail("none", "no such case")
+    return ok(emit_mangle.value(base) + ".as." + emit_mangle.case_member(both.must().case_name))
+
+# t2 = t1.f_x;
+function read_field(c: check_state.Checked, s: source.Source, decls: [ast.Decl], f: ir_state.Function, base: i64, index: i64) -> str?
+    found = field(c, s, decls, owner: ir_state.value_type(f, base), index: index)
+    if found.is_err()
+        return fail("none", "not a field read")
+    return ok(emit_mangle.value(base) + "." + found.must().member)
+
+# h_m_Point_eq(&t1, &t2) — one call, generated per type, walking fields.
+function equality(c: check_state.Checked, names: emit_ctype.Names, ty: i64, left: i64, right: i64) -> str?
+    found = emit_ctype.satellite_name(names, c, ty: ty)
+    if found.is_err()
+        return fail("none", "no generated eq")
+    return ok(found.must() + "_eq(&" + emit_mangle.value(left) + ", &" + emit_mangle.value(right) + ")")
+
+# h_m_Holder_retain(&t1); — a VALUE, not a place, because that is what
+# the incref names; the aggregate is by value, so the generated
+# function takes its address. The name is not copy: nothing is copied,
+# the references inside just become owned.
+function retain(c: check_state.Checked, names: emit_ctype.Names, ty: i64, value: i64, keep: bool) -> str?
+    found = emit_ctype.satellite_name(names, c, ty: ty)
+    if found.is_err()
+        return fail("none", "no generated retain")
+    verb: str @ "release"
+    if keep
+        verb @ "retain"
+    return ok(found.must() + "_" + verb + "(&" + emit_mangle.value(value) + ")")
+
+## Tests
+
+record Setup
+    c: check_state.Checked
+    s: source.Source
+    decls: [ast.Decl]
+    names: emit_ctype.Names
+
+function ready(text: str) -> Setup
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    names = emit_ctype.new_names(s, p.decls)
+    return Setup(c: c, s: s, decls: p.decls, names: names)
+
+test "designated construction, a walked place, and the failure's fixed pair"
+    got = ready("record Point\n    x: i64\n    y: i64\n\nrecord Line\n    start_at: Point\n\nfunction main()\n    l: Line @ Line(start_at: Point(x: 1, y: 2))\n    l.start_at.x @ 3\n    print(l.start_at.x)\n")
+    built = construct(got.names, got.s, got.decls, decl: 0, arguments: ["t1", "t2"])
+    assert built.must() == "(h_t_Point){.f_x = t1, .f_y = t2}"
+    line = check_table.lookup(got.c.types, .named(decl: 1)).must()
+    slots: [ir_state.Slot] = [ir_state.Slot(name: "l", ty: line, kind: .local_slot)]
+    steps: [ir.PathStep] = [.field_step(at: 0), .field_step(at: 0)]
+    f = ir_state.Function(name: "t", decl: 2, kind: .function_kind, generics: [], params: [], result: 0, slots: slots, blocks: [], values: [line], arguments: [], steps: steps, instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    spot = place(got.c, got.s, got.decls, f, at: ir.Place(root: 0, path: ir.Run(start: 0, length: 2)))
+    assert spot == "h0_l.f_start_at.f_x"
+    failure_read = field(got.c, got.s, got.decls, owner: check_table.failure_ty(got.c.types), index: 1)
+    assert failure_read.must().member == "msg"
+
+test "a case writes its tag alone when bare, and the payload member when not"
+    got = ready("variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    _ = t\n")
+    bare = construct_case(got.names, got.s, got.decls, decl: 0, at: 1, arguments: [])
+    assert bare.must() == "(h_t_Tok){.tag = h_t_Tok_tag_plus}"
+    carrying = construct_case(got.names, got.s, got.decls, decl: 0, at: 0, arguments: ["t1"])
+    assert carrying.must() == "(h_t_Tok){.tag = h_t_Tok_tag_word, .as.c_word = {.f_text = t1}}"
+    tok = check_table.lookup(got.c.types, .named(decl: 0)).must()
+    f = ir_state.Function(name: "t", decl: 1, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [tok], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    read = payload_member(got.c, got.names, got.s, got.decls, f, base: 0, at: 0)
+    assert read.must() == "t0.as.c_word"
+    assert tag(base: 4) == "t4.tag"
+    same = equality(got.c, got.names, ty: tok, left: 1, right: 2)
+    assert same.must() == "h_t_Tok_eq(&t1, &t2)"
+    kept = retain(got.c, got.names, ty: tok, value: 7, keep: true)
+    assert kept.must() == "h_t_Tok_retain(&t7)"
