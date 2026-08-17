@@ -69,7 +69,12 @@ function assert_stop(@w: emit_writer.Writer, c: check_state.Checked, f: ir_state
                     entry = emit_builtins.to_str_entry(check_table.get(c.types, ir_state.value_type(f, v.value)))
                     if !entry.is_err()
                         rendered @ rendered.push(entry.must() + "(" + emit_mangle.value(v.value) + ")")
-                .inout_arg => continue
+                # NOT `continue`: it would skip this loop's own counter
+                # below. Harmless where the guard is only `> 0`, and
+                # a defect the day anyone reads the counter as a
+                # position — the class that cost four sites and the
+                # verifier on 2026-08-17.
+                .inout_arg => at @ at
         at @ at + 1
     if rendered.len() == 2
         emit_writer.line(@w, text: "    hero_panic_assert_sides(" + text_name + ", " + rendered[0] + ", " + rendered[1] + ");")
@@ -79,7 +84,12 @@ function assert_stop(@w: emit_writer.Writer, c: check_state.Checked, f: ir_state
         if walk > 0
             match arg
                 .value_arg v => emit_writer.line(@w, text: "    (void)" + emit_mangle.value(v.value) + ";")
-                .inout_arg => continue
+                # NOT `continue`: it would skip this loop's own counter
+                # below. Harmless where the guard is only `> 0`, and
+                # a defect the day anyone reads the counter as a
+                # position — the class that cost four sites and the
+                # verifier on 2026-08-17.
+                .inout_arg => walk @ walk
         walk @ walk + 1
     emit_writer.line(@w, text: "    hero_panic_assert(" + text_name + ");")
 

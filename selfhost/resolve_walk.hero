@@ -351,7 +351,6 @@ function walked(text: str) -> resolve_state.Resolver
     for d in p.decls
         resolved.declare_top(@r.out, module: "t", name: source.span_text(s, d.name), decl: i)
         i @ i + 1
-    at: i64 @ 0
     for d in p.decls
         match d.kind
             .function_decl fd =>
@@ -362,7 +361,6 @@ function walked(text: str) -> resolve_state.Resolver
                     statements(@r, p.tree, s, p.decls, fd.value.body.must().stmts)
                 resolve_state.close_scope(@r)
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
-        at @ at + 1
     resolve_state.report_unused(@r, s)
     return r
 

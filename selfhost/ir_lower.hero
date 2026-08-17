@@ -1453,7 +1453,6 @@ test "a while is three blocks and a for is four, continue landing on the step"
     # The continue arm jumps to the STEP block, not the test: the
     # increment owes itself to that path too.
     jumped: bool @ false
-    walk: i64 @ 0
     for blk in f.blocks
         if blk.note == "if: then"
             match blk.term
@@ -1461,7 +1460,6 @@ test "a while is three blocks and a for is four, continue landing on the step"
                     if j.to == step_at
                         jumped @ true
                 .branch | .switch_term | .return_term | .unreachable | .open => continue
-        walk @ walk + 1
     assert jumped
 
 test "an if in value position stores into $r and the join loads it"
