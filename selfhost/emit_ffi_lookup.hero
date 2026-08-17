@@ -177,6 +177,21 @@ function after(text: str, marker: str) -> str?
         index @ index + 1
     return ok(tail.join(""))
 
+# The lines of a tool's stderr. A trailing newline yields no empty
+# last line, matching what Rust's lines() gives the bootstrap.
+function lines(text: str) -> [str]
+    out: [str] @ []
+    run: [str] @ []
+    for ch in text.chars()
+        if ch == "\n"
+            out @ out.push(run.join(""))
+            run @ []
+        else
+            run @ run.push(ch)
+    if run.len() > 0
+        out @ out.push(run.join(""))
+    return out
+
 # The whitespace-separated words of a line, empty runs skipped — what
 # Rust's split_whitespace gives.
 function words(text: str) -> [str]
