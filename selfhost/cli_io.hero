@@ -1,0 +1,32 @@
+# The CLI's second stream (CLAUDE.md §10: the artifact on stdout,
+# diagnostics on stderr). New in the port — the bootstrap gets eprintln
+# from Rust; the selfhost compiler gets stderr the way any Heroes
+# program gets anything: from C (§1.11).
+#
+# THE FIRST REAL EXTERN GROUP IN THE SELFHOST TREE, and the shape is
+# chosen by the language's own refusals. stderr the OBJECT is exactly
+# what ffi_not_constant exists to refuse (§4.2: reading it twice could
+# give two answers), and that diagnostic's note names the route taken
+# here: reach C's objects through functions. POSIX's write(2) needs no
+# object at all — file descriptor 2 IS the error stream, as a number,
+# on every machine the fixpoint runs on.
+
+extern "unistd.h"
+    function write(fd: i32, buf: cstr, count: u64) -> i64
+
+# One line to stderr, newline included — the eprintln the commands
+# share. The return is checked only for being written at all: a CLI
+# whose error channel fails has nowhere left to say so.
+function eprint(text: str)
+    line = text + "\n"
+    _ = write(fd: 2, buf: line.cstr(), count: line.len().to_u64().must())
+
+## Tests
+
+test "eprint writes and the write binding answers with a count"
+    # The binding itself: write returns the byte count it wrote, and
+    # a five-byte line is five bytes on every POSIX.
+    line = "hero\n"
+    got = write(fd: 2, buf: line.cstr(), count: line.len().to_u64().must())
+    assert got == 5
+    eprint(text: "eprint says hello during the suite — this line is the test")
