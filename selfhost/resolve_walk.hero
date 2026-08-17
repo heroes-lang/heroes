@@ -1,0 +1,417 @@
+# The resolver's walk: statements, expressions, patterns, and the left of
+# `@` (design.md §4.4 the three line shapes, §4.7 loops and match, §4.9
+# calls, §4.11 UFCS, §4.16 holes; panels 015, 031).
+# Port of crates/heroes/src/resolve/{stmts,exprs,places}.rs — three files,
+# 434 lines, one module here.
+#
+# ## The map this file owes its reader (CLAUDE.md §11)
+#
+# **This is one module because the language leaves no choice.** The three
+# Rust files call each other in a ring: a statement holds expressions
+# (`x = e`), an expression holds blocks of statements (`if`, `match`), and
+# a mutation's place holds index expressions read on the way to the root —
+# `statement` → `expr` → `block`/`arm` → `statement`, with `place` →
+# `expr` closing the third arc. The edges that LEAVE the knot and stay
+# other modules: `resolve_state` (the stack and the counters),
+# `resolve_qualified` (the module-vs-UFCS decision), `resolve_errors` and
+# `module_errors` (the wording), `resolved` (the table).
+#
+# **The entry points**: `block` for a body in its own scope, `statements`
+# for a body in a scope the caller opened (a loop's, an arm's), `expr` for
+# one expression, `place` for the left of `@`. `resolve_decls` will drive
+# all four; nothing here reads a declaration.
+#
+# ## The two rules that decide every branch
+#
+# **The value is resolved before the name is bound** — `x = x + 1` must
+# say the right `x` is not defined, not resolve it to the binding being
+# created on the same line. And **a write is not a read**: in `v @ v + 1`
+# the root on the left is written, the indexes on the way are read, and
+# the unused rule counts only reads (§4.8's copy-out is the one exception,
+# handled in the sweep).
+
+use token
+use ast
+use source
+use resolved
+use builtins
+use parse
+use resolve_state
+use resolve_types
+use resolve_errors
+use resolve_qualified
+use module_errors
+
+## Statements
+
+# A block, in its own scope.
+function block(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], body: ast.Block)
+    resolve_state.open_scope(@r)
+    statements(@r, a, s, decls, body.stmts)
+    resolve_state.close_scope(@r)
+
+# The statements of a block, in a scope the caller has already opened —
+# which is how a loop variable and an arm's payload end up in the same
+# scope as the body they belong to.
+function statements(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], stmts: [i64])
+    for id in stmts
+        statement(@r, a, s, decls, id)
+
+function statement(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.stmts[id].kind
+        .bind b =>
+            expr(@r, a, s, decls, b.value)
+            if !b.ty.is_err()
+                resolve_types.resolve_type(@r, a, s, decls, b.ty.must())
+            _ = resolve_state.declare(@r, s, decls, b.name, resolve_state.bind_binding(ty: b.ty, value: b.value))
+        .declare d =>
+            expr(@r, a, s, decls, d.value)
+            resolve_types.resolve_type(@r, a, s, decls, d.ty)
+            _ = resolve_state.declare(@r, s, decls, d.name, resolve_state.cell_binding(ty: d.ty, value: d.value))
+        # The initialiser above is not counted as a write: a cell that is
+        # only ever initialised has been written once by definition, and
+        # counting it would blind the unused rule to every cell.
+        .mutate m =>
+            expr(@r, a, s, decls, m.value)
+            place(@r, a, s, decls, m.place)
+        .return_stmt rv =>
+            if !rv.value.is_err()
+                expr(@r, a, s, decls, rv.value.must())
+        .assert_stmt v => expr(@r, a, s, decls, v.value)
+        .expr_stmt v => expr(@r, a, s, decls, v.value)
+        .break_stmt | .continue_stmt | .error => return
+        .while_stmt w =>
+            expr(@r, a, s, decls, w.cond)
+            block(@r, a, s, decls, w.block)
+        .for_in f =>
+            # The iterable is resolved outside the loop's scope: `for x in
+            # x` must not find its own binding.
+            expr(@r, a, s, decls, f.iterable)
+            resolve_state.open_scope(@r)
+            _ = resolve_state.declare(@r, s, decls, f.name, resolve_state.loop_binding(iterable: f.iterable))
+            statements(@r, a, s, decls, f.block.stmts)
+            resolve_state.close_scope(@r)
+
+## Expressions
+
+function expr(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.exprs[id].kind
+        .name => bare_name(@r, a, s, decls, id)
+        # The module, not a flag: §4.16's suppression is file-wide, so a
+        # hole here must not quiet the unused rule in a module nobody is
+        # editing.
+        .hole => resolved.note_hole(@r.out, r.module)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => return
+        .null_ptr | .error => return
+        .unary u => expr(@r, a, s, decls, u.operand)
+        .binary b =>
+            expr(@r, a, s, decls, b.left)
+            expr(@r, a, s, decls, b.right)
+        # `p.x` — the base is a value, the field name is not a name in any
+        # scope; which record it belongs to is the checker's question.
+        # UNLESS the base is a module: then the three tokens are one
+        # qualified name and not a field at all — `grid.WALL` reads a
+        # constant next door.
+        .field f =>
+            if resolve_qualified.qualified(@r, a, s, decls, at: id, receiver: f.base, called: f.name)
+                return
+            expr(@r, a, s, decls, f.base)
+        .index i =>
+            expr(@r, a, s, decls, i.base)
+            expr(@r, a, s, decls, i.index)
+        .call c =>
+            expr(@r, a, s, decls, c.callee)
+            arguments(@r, a, s, decls, c.args)
+        .method m =>
+            # A module in receiver position is not a value, so it is
+            # decided before the receiver is resolved as one (panel 031 Q2).
+            if resolve_qualified.qualified(@r, a, s, decls, at: id, receiver: m.receiver, called: m.name)
+                arguments(@r, a, s, decls, m.args)
+                return
+            expr(@r, a, s, decls, m.receiver)
+            arguments(@r, a, s, decls, m.args)
+            method_name(@r, s, decls, at: id, called: m.name)
+        .variant_case v => arguments(@r, a, s, decls, v.args)
+        .array elements =>
+            for element in elements.elements
+                expr(@r, a, s, decls, element)
+        .map entries =>
+            for entry in entries.entries
+                expr(@r, a, s, decls, entry.key)
+                expr(@r, a, s, decls, entry.value)
+        .try_expr t => expr(@r, a, s, decls, t.value)
+        .if_expr branches =>
+            for branch in branches.branches
+                expr(@r, a, s, decls, branch.cond)
+                block(@r, a, s, decls, branch.block)
+            if !branches.otherwise.is_err()
+                block(@r, a, s, decls, branches.otherwise.must())
+        .match_expr m =>
+            expr(@r, a, s, decls, m.scrutinee)
+            for arm in m.arms
+                # One scope per arm: the payload bindings and the body live
+                # together, and two arms may bind the same name.
+                resolve_state.open_scope(@r)
+                for pattern in arm.patterns
+                    match pattern.kind
+                        .variant_case c =>
+                            if !c.binding.is_err()
+                                bind_payload(@r, s, decls, c.binding.must())
+                        .literal l => expr(@r, a, s, decls, l.value)
+                        .wildcard | .error => continue
+                match arm.body
+                    .one_stmt one => statement(@r, a, s, decls, one.at)
+                    .block bb => statements(@r, a, s, decls, bb.block.stmts)
+                resolve_state.close_scope(@r)
+
+# Port note: Rust calls this parameter `args`, and Heroes refuses it —
+# `args` is the builtin that reads the command line, and a built-in's name
+# is taken everywhere. The reservation reviewed its own port.
+function arguments(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], given: [ast.Arg])
+    for arg in given
+        expr(@r, a, s, decls, arg.value)
+
+# A payload binding. Two patterns of one arm may not bind the same name:
+# under `|` the two cases carry different payloads, so one name would mean
+# two things depending on which case matched.
+function bind_payload(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Decl], binding: token.Span)
+    text = source.span_text(s, binding)
+    if text != "_" && resolve_state.bound_in_current_scope(r, text)
+        resolve_state.push_diagnostic(@r, resolve_errors.duplicate_pattern_binding(text, span: binding))
+        return
+    _ = resolve_state.declare(@r, s, decls, binding, resolve_state.payload_binding())
+
+function bare_name(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+    span = a.exprs[id].span
+    text = source.span_text(s, span)
+    local = resolve_state.lookup_local(r, text)
+    if !local.is_err()
+        resolve_state.record_use(@r, at: id, to: .local(at: local.must()))
+        return
+    # This file's own declarations, then the library's, and no other
+    # file's: one top_visible instead of a flat lookup is where "always
+    # qualified" is enforced.
+    top = resolve_state.top_visible(r, text)
+    if !top.is_err()
+        decl = top.must()
+        # A variant names a type, never a value: its cases are the values,
+        # written `.case` (§4.5's ⇐ mode).
+        match decls[decl].kind
+            .variant_decl =>
+                resolve_state.push_diagnostic(@r, resolve_errors.variant_in_value_position(text, span: span))
+                return
+            .constant_decl | .function_decl | .record_decl | .test_decl => resolve_state.record_use(@r, at: id, to: .top(at: decl))
+        return
+    builtin = builtins.index_of(text)
+    if !builtin.is_err()
+        resolve_state.record_use(@r, at: id, to: .builtin(at: builtin.must()))
+        return
+    # A module name standing alone. It is not a value in any position — it
+    # can only be followed by a dot — and saying that is better than
+    # "unknown".
+    if resolved.is_used_module(r.out, from: r.module, module: text)
+        resolve_state.keyed_add(@r.module_reads, module: r.module, name: text)
+        resolve_state.push_diagnostic(@r, module_errors.module_is_not_a_value(text, span: span))
+        return
+    elsewhere = resolve_qualified.name_declared_elsewhere(@r, text, span)
+    if !elsewhere.is_err()
+        resolve_state.push_diagnostic(@r, elsewhere.must())
+        return
+    candidates = value_candidates(r)
+    near = resolve_state.near_names(@r, text, candidates)
+    resolve_state.push_diagnostic(@r, resolve_errors.unknown_name(text, near, span))
+
+# The name in `x.f(y)`. Locals are deliberately not consulted: a local
+# cannot be reached through a dot, so `f` is a top-level function, a
+# built-in, or — the case that makes this walk interesting — a FIELD of
+# the receiver holding a function value (§4.13). That third case is why
+# the entry stays unresolved rather than reported when the name is a field
+# somewhere in reach: the checker finishes the job with the receiver's
+# type in hand, and §4.17 gets the whole answer in one message.
+function method_name(@r: resolve_state.Resolver, s: source.Source, decls: [ast.Decl], at: i64, called: token.Span)
+    text = source.span_text(s, called)
+    top = resolve_state.top_visible(r, text)
+    if !top.is_err()
+        decl = top.must()
+        match decls[decl].kind
+            .function_decl => resolve_state.record_use(@r, at: at, to: .top(at: decl))
+            .record_decl => resolve_state.push_diagnostic(@r, resolve_errors.not_a_function(name: text, what: "a record", span: called))
+            .variant_decl => resolve_state.push_diagnostic(@r, resolve_errors.not_a_function(name: text, what: "a variant", span: called))
+            .constant_decl => resolve_state.push_diagnostic(@r, resolve_errors.not_a_function(name: text, what: "a constant", span: called))
+            .test_decl => return
+        return
+    builtin = builtins.index_of(text)
+    if !builtin.is_err()
+        resolve_state.record_use(@r, at: at, to: .builtin(at: builtin.must()))
+        return
+    if resolve_state.field_in_reach(r, text)
+        # Could be a function-valued field: the checker decides, with the type.
+        return
+    # `p.dist2(o)` where `dist2` is imported: UFCS finds only this file's
+    # functions, and this is the message that says so (panel 031 R5).
+    elsewhere = resolve_qualified.name_declared_elsewhere(@r, text, called)
+    if !elsewhere.is_err()
+        resolve_state.push_diagnostic(@r, elsewhere.must())
+        return
+    candidates = function_candidates(r, decls)
+    near = resolve_state.near_names(@r, text, candidates)
+    resolve_state.push_diagnostic(@r, resolve_errors.unknown_function(text, near, span: called))
+
+# Innermost first: the locals in scope, then the file's own declarations,
+# then the built-ins. The order is the did-you-mean's ranking (§4.16:
+# deterministic, capped where printed).
+function value_candidates(r: resolve_state.Resolver) -> [str]
+    candidates: [str] @ resolve_state.visible_locals(r)
+    for name in resolved.names_in(r.out, r.module)
+        candidates @ candidates.push(name)
+    for b in builtins.table()
+        candidates @ candidates.push(b.name)
+    return candidates
+
+function function_candidates(r: resolve_state.Resolver, decls: [ast.Decl]) -> [str]
+    candidates: [str] @ []
+    for name in resolved.names_in(r.out, r.module)
+        found = resolved.top_in(r.out, module: r.module, name: name)
+        is_function = match decls[found.must()].kind
+            .function_decl => true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => false
+        if is_function
+            candidates @ candidates.push(name)
+    for b in builtins.table()
+        candidates @ candidates.push(b.name)
+    return candidates
+
+## The left of `@`
+
+# Resolving a place is not the same as reading it: the root is WRITTEN,
+# and any index on the way (`xs[i] @ …`) is read. Keeping the two rules in
+# one walk is what makes "a read is a use and a write is not"
+# implementable at all.
+function place(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.exprs[id].kind
+        .name => write_root(@r, a, s, id)
+        # `grid.WALL @ 1` — a qualified constant, which is a top-level
+        # declaration and so not a place at all (§4.2: there are no mutable
+        # globals). Descending to the base would report `grid` as a name
+        # that is not in scope, which is wrong twice: the module IS in
+        # scope, and the mistake the author made was about `WALL`.
+        .field f =>
+            if !resolve_qualified.module_at(r, a, s, f.base).is_err()
+                resolve_state.push_diagnostic(@r, resolve_errors.no_mutable_globals(name: source.span_text(s, f.name), what: "top-level declaration", span: f.name))
+                return
+            place(@r, a, s, decls, f.base)
+        .index i =>
+            expr(@r, a, s, decls, i.index)
+            place(@r, a, s, decls, i.base)
+        # Not a place at all — the parser already said so (`not_a_place`).
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => expr(@r, a, s, decls, id)
+        .null_ptr | .hole | .unary | .binary | .call => expr(@r, a, s, decls, id)
+        .method | .variant_case | .array | .map | .try_expr => expr(@r, a, s, decls, id)
+        .if_expr | .match_expr | .error => expr(@r, a, s, decls, id)
+
+function write_root(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, id: i64)
+    span = a.exprs[id].span
+    text = source.span_text(s, span)
+    local = resolve_state.lookup_local(r, text)
+    if !local.is_err()
+        at = local.must()
+        if !r.out.locals[at].mutable
+            resolve_state.push_diagnostic(@r, resolve_errors.not_mutable(text, r.out.locals[at].kind, span))
+            return
+        # A write is recorded, and it is NOT a read: `v @ 1` alone leaves
+        # `v` unused. Writing through a field or an index is a write to the
+        # root for the same reason — with no aliasing anywhere (§4.10), a
+        # write nobody reads back is unobservable. Go left this hole open
+        # (golang/go#20802); Heroes closes it because it has no aliases.
+        r.out.uses[id] @ .local(at: at)
+        r.out.locals[at].writes @ r.out.locals[at].writes + 1
+        return
+    if !resolve_state.top_visible(r, text).is_err()
+        resolve_state.push_diagnostic(@r, resolve_errors.no_mutable_globals(name: text, what: "top-level declaration", span: span))
+        return
+    if !builtins.index_of(text).is_err()
+        resolve_state.push_diagnostic(@r, resolve_errors.no_mutable_globals(name: text, what: "built-in", span: span))
+        return
+    candidates = value_candidates(r)
+    near = resolve_state.near_names(@r, text, candidates)
+    resolve_state.push_diagnostic(@r, resolve_errors.unknown_name(text, near, span))
+
+## Tests
+
+# The tests parse REAL source and drive one function's body by hand — the
+# open-scope/declare-params/walk sequence is resolve_decls' job and lands
+# with it; duplicating four lines here beats depending on a file that does
+# not exist yet.
+function walked(text: str) -> resolve_state.Resolver
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: p.tree.exprs.len(), type_count: p.tree.types.len())
+    r.module @ "t"
+    i: i64 @ 0
+    for d in p.decls
+        resolved.declare_top(@r.out, module: "t", name: source.span_text(s, d.name), decl: i)
+        i @ i + 1
+    at: i64 @ 0
+    for d in p.decls
+        match d.kind
+            .function_decl fd =>
+                resolve_state.open_scope(@r)
+                for param in fd.value.params
+                    _ = resolve_state.declare(@r, s, p.decls, param.name, resolve_state.param_binding(ty: param.ty, mutable: param.mutable))
+                if !fd.value.body.is_err()
+                    statements(@r, p.tree, s, p.decls, fd.value.body.must().stmts)
+                resolve_state.close_scope(@r)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+        at @ at + 1
+    resolve_state.report_unused(@r, s)
+    return r
+
+test "the value is resolved before the name is bound"
+    r = walked("function f()\n    x = x + 1\n    print(x)\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "unknown_name"
+    # `f` is one edit from `x`? No — one edit REPLACES the whole name, and
+    # a one-letter name affords exactly one edit, so the function's own
+    # name is a legitimate candidate. The suggestion is the rule working,
+    # not noise: the test pins it so a "better" filter is caught.
+    assert r.out.diagnostics[0].message == "nothing named `x` is in scope — did you mean `f`?"
+
+test "for x in x does not find its own binding"
+    r = walked("function f()\n    for x in x\n        print(x)\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "unknown_name"
+
+test "a write is not a read, and the sweep says written-never-read"
+    r = walked("function f()\n    v: i64 @ 0\n    v @ 1\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "unused_binding"
+    assert r.out.diagnostics[0].message == "`v` is written and never read — a cell nothing reads is a value nobody uses"
+
+test "a plain binding refuses the write with the = wording"
+    r = walked("function f()\n    x = 1\n    x @ 2\n    print(x)\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "not_mutable"
+    assert r.out.diagnostics[0].fixes.len() == 1
+    assert r.out.diagnostics[0].fixes[0].certainty == .guess
+
+test "two patterns of one arm may not bind the same payload name"
+    r = walked("function f(t: i64) -> i64\n    return match t\n        .a x | .b x => 1\n")
+    # Two diagnostics, and both are right: the duplicate, and then the
+    # sweep on the FIRST binding — the body `1` never reads it, and one
+    # mistake in a pattern does not exempt the arm from the unused rule.
+    assert r.out.diagnostics.len() == 2
+    assert r.out.diagnostics[0].code == "duplicate_pattern_binding"
+    assert r.out.diagnostics[1].code == "unused_binding"
+
+test "sibling arms may bind the same name, and payloads count as reads"
+    r = walked("function f(t: i64) -> i64\n    return match t\n        .a x => x\n        .b x => x\n")
+    assert r.out.diagnostics.len() == 0
+
+test "an unknown method name is answered without a type in hand"
+    r = walked("function f(x: i64) -> i64\n    return x.dubble()\n")
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "unknown_function"
+
+test "an index on the way to the root is read, the root is written"
+    r = walked("function f()\n    xs: [i64] @ [1, 2]\n    i = 0\n    xs[i] @ 9\n    print(xs[i])\n")
+    assert r.out.diagnostics.len() == 0
