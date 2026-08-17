@@ -1,0 +1,51 @@
+# A type that would have to contain one of itself at every depth (panel
+# 023).
+# Port of crates/heroes/src/types/errors/sizes.rs.
+#
+# Its own file because size is its own subject: data_errors answers "does
+# this shape have that field", and this answers "can this shape exist at
+# all" — asked once per file over the declaration graph, and the only type
+# error in the language whose absence made the COMPILER look wrong:
+# `record Node` holding a `Node` reached clang as `field has incomplete
+# type`, exit 2, "the compiler is wrong".
+#
+# The fix is a GUESS, on published precedent: rustc's Box suggestion for
+# E0072 is marked cannot-be-applied-automatically, and Swift emits no
+# fix-it for structs at all. The local reason is decisive: `child: Node`
+# -> `children: [Node]` changes the field's cardinality AND its name, so
+# every use site moves with it — this must never be applied without a
+# human.
+
+use token
+use diag
+
+# `holder` contains itself; `steps` is the cycle as one line per edge.
+# `direct` distinguishes the two messages a reader needs: a
+# self-containing record is one line to read and the path adds nothing; a
+# mutual cycle is unreadable without it — Go printing only `invalid
+# recursive type T2` for a mutual pair was filed as a bug.
+function no_size(kind: str, holder: str, through: str, direct: bool, steps: [str], span: token.Span) -> diag.Diagnostic
+    message: str @ "`" + kind + " " + holder + "` contains itself through `" + through + "`, so it has no size"
+    if direct
+        message @ "`" + kind + " " + holder + "` contains itself, so it has no size"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "no_size", message: message, span: span)
+    if !direct
+        d.notes @ d.notes.push("the cycle is: " + steps.join(", then "))
+    d.notes @ d.notes.push("every value is an independent copy, so `" + holder + "` holding one more `" + holder + "` would need one at every depth")
+    d.notes @ d.notes.push("`[T]` holds its contents elsewhere, so it is how a type contains itself")
+    d.fixes @ d.fixes.push(diag.Fix(title: "hold them in an array: `[" + through + "]`", replacement: "", span: span, certainty: .guess))
+    return d
+
+## Tests
+
+test "a direct cycle is one line, a mutual one carries its path"
+    span = token.Span(start: 0, end: 4)
+    direct = no_size(kind: "record", holder: "Node", through: "Node", direct: true, steps: [], span: span)
+    assert direct.message == "`record Node` contains itself, so it has no size"
+    assert direct.notes.len() == 2
+    assert direct.fixes[0].certainty == .guess
+    path: [str] = ["`A` holds a `B`", "`B` holds an `A`"]
+    mutual = no_size(kind: "record", holder: "A", through: "B", direct: false, steps: path, span: span)
+    assert mutual.message == "`record A` contains itself through `B`, so it has no size"
+    assert mutual.notes.len() == 3
+    assert mutual.notes[0] == "the cycle is: `A` holds a `B`, then `B` holds an `A`"

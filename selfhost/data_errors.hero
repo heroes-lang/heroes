@@ -1,0 +1,146 @@
+# Fields, labels, cases and patterns — the messages about SHAPES.
+# Port of crates/heroes/src/types/errors/data.rs.
+#
+# Two of them carry certain fixes, and both are renames the compiler knows
+# are right: a wrong field label when the position says which field it is,
+# and a missing one when every field must be named anyway (§4.9).
+#
+# `no_field_and_no_function` is the message the compiler-engineer's
+# panel-015 veto bought: with the receiver's type in hand, both halves of
+# §4.11's lookup fit in one diagnostic instead of two passes each guessing
+# one.
+
+use token
+use diag
+
+function not_a_record(got: str, field: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "no_such_field", message: "`" + got + "` has no fields, so `." + field + "` cannot be read from it", span: span)
+
+function no_such_field(holder: str, field: str, known: [str], span: token.Span) -> diag.Diagnostic
+    tail: str @ ""
+    if known.len() > 0
+        quoted: [str] @ []
+        for f in known
+            quoted @ quoted.push("`" + f + "`")
+        tail @ " — `" + holder + "` has " + quoted.join(", ")
+    return diag.new_diagnostic(code: "no_such_field", message: "`" + holder + "` has no field `" + field + "`" + tail, span: span)
+
+# The combined message the compiler-engineer's panel-015 veto asked for.
+function no_field_and_no_function(holder: str, name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "unknown_function", message: "`" + holder + "` has no field `" + name + "`, and no function is named `" + name + "` — `x." + name + "(…)` means `" + name + "(x, …)`", span: span)
+
+## Fields, labels and markers
+
+function field_of_variant(holder: str, field: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "no_such_field", message: "`" + holder + "` is a variant, so `." + field + "` belongs to one of its cases — reach it through `match`", span: span)
+
+function missing_fields(holder: str, fields: [str], declared_at: str, span: token.Span) -> diag.Diagnostic
+    labelled: [str] @ []
+    for f in fields
+        labelled @ labelled.push(f + ":")
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "missing_fields", message: "`" + holder + "` is built with every field, named: " + labelled.join(", ") + " — all of them, always", span: span)
+    d.notes @ d.notes.push("`" + holder + "` is declared at " + declared_at)
+    return d
+
+# The span is the label's IDENTIFIER — the `:` is not in it — so the
+# replacement is the bare name. Applying `y:` here produced `y:: 2`, which
+# the .fixed goldens caught the first time they ran: a certain fix is a
+# claim that the result compiles, and only running it proves the claim.
+function wrong_label(holder: str, written: str, expected: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "wrong_label", message: "`" + holder + "` has nothing called `" + written + "` at this position — it is `" + expected + "`", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "write `" + expected + ":`", replacement: expected, span: span, certainty: .certain))
+    return d
+
+# §4.9's same-typed-argument rule. The message names the REASON — two
+# parameters share a type — because the rule looks arbitrary without it,
+# and a model that does not know why will drop the label again at the
+# next call. (This port dropped it eleven times in one day; the fix was
+# applied eleven times. The message works.)
+function needs_label(name: str, expected: str, shared: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "needs_label", message: "two of `" + name + "`'s parameters are `" + shared + "`, so every one of them is named at the call site — this one is `" + expected + "`", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "write `" + expected + ": `", replacement: expected + ": ", span: token.Span(start: span.start, end: span.start), certainty: .certain))
+    return d
+
+function missing_label(holder: str, expected: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "missing_label", message: "`" + holder + "`'s fields are always named — this one is `" + expected + "`", span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: "write `" + expected + ": `", replacement: expected + ": ", span: token.Span(start: span.start, end: span.start), certainty: .certain))
+    return d
+
+# §4.8: the marker is on the parameter AND at the call site, so a
+# mutating call cannot look like a reading one.
+function marker_mismatch(name: str, wants: bool, span: token.Span) -> diag.Diagnostic
+    message: str @ "`" + name + "` does not change this argument — the `@` says it does"
+    if wants
+        message @ "`" + name + "` changes this argument, so the call site writes `@` too"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "marker_mismatch", message: message, span: span)
+    if wants
+        d.fixes @ d.fixes.push(diag.Fix(title: "mark the argument: `@x`", replacement: "@", span: token.Span(start: span.start, end: span.start), certainty: .certain))
+    return d
+
+function ufcs_on_mutable(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "ufcs_on_mutable", message: "`" + name + "` changes its first argument, so it is called `" + name + "(@x, …)` — the dotted form would hide the `@`", span: span)
+
+## Patterns
+
+function not_matchable(got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "not_matchable", message: "`" + got + "` has no cases to match on", span: span)
+
+function case_on_non_variant(got: str, case_name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "not_matchable", message: "`." + case_name + "` is a variant case, and this value is a `" + got + "`", span: span)
+
+function no_such_case(holder: str, case_name: str, known: [str], span: token.Span) -> diag.Diagnostic
+    quoted: [str] @ []
+    for c in known
+        quoted @ quoted.push("`." + c + "`")
+    return diag.new_diagnostic(code: "no_such_case", message: "`" + holder + "` has no case `." + case_name + "` — it has " + quoted.join(", "), span: span)
+
+function duplicate_arm(case_name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "duplicate_arm", message: "`." + case_name + "` is already covered by an earlier arm", span: span)
+
+# §4.7's ban, with the reason attached: it is what keeps exhaustiveness
+# from becoming theatre when a case is added later.
+function wildcard_on_variant(got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "wildcard_on_variant", message: "`_` is not allowed as an arm over `" + got + "` — name every case, so that adding one breaks this `match` instead of silently falling through", span: span)
+
+function non_exhaustive(missing: [str], span: token.Span) -> diag.Diagnostic
+    quoted: [str] @ []
+    for c in missing
+        quoted @ quoted.push("`" + c + "`")
+    return diag.new_diagnostic(code: "non_exhaustive", message: "this `match` does not cover " + quoted.join(", "), span: span)
+
+function needs_wildcard(span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "non_exhaustive", message: "matching on `i64` or `str` cannot be exhaustive, so it needs a `_` arm", span: span)
+
+## Tests
+
+test "needs_label carries its reason and a zero-width insertion"
+    d = needs_label(name: "head", expected: "text", shared: "str", span: token.Span(start: 20, end: 24))
+    assert d.message == "two of `head`'s parameters are `str`, so every one of them is named at the call site — this one is `text`"
+    assert d.fixes[0].replacement == "text: "
+    assert d.fixes[0].span.start == 20 && d.fixes[0].span.end == 20
+    assert d.fixes[0].certainty == .certain
+
+test "wrong_label replaces the identifier alone, colon left in place"
+    d = wrong_label(holder: "Point", written: "z", expected: "y", span: token.Span(start: 10, end: 11))
+    assert d.fixes[0].replacement == "y"
+    assert d.fixes[0].span.end == 11
+    assert d.message == "`Point` has nothing called `z` at this position — it is `y`"
+
+test "the marker fix exists only in the direction that adds the @"
+    wants = marker_mismatch(name: "advance", wants: true, span: token.Span(start: 5, end: 6))
+    assert wants.fixes.len() == 1
+    assert wants.fixes[0].replacement == "@"
+    stray = marker_mismatch(name: "read", wants: false, span: token.Span(start: 5, end: 6))
+    assert stray.fixes.len() == 0
+    assert stray.message == "`read` does not change this argument — the `@` says it does"
+
+test "the pattern messages name what is known and what is missing"
+    span = token.Span(start: 0, end: 4)
+    cases: [str] = ["num", "plus"]
+    missing_case = no_such_case(holder: "Token", case_name: "minus", known: cases, span: span)
+    assert missing_case.message == "`Token` has no case `.minus` — it has `.num`, `.plus`"
+    left: [str] = ["lparen"]
+    partial_match = non_exhaustive(missing: left, span: span)
+    assert partial_match.message == "this `match` does not cover `lparen`"
+    banned = wildcard_on_variant(got: "Token", span: span)
+    assert banned.code == "wildcard_on_variant"
