@@ -1,0 +1,325 @@
+# The verifier — GHC's Core Lint, without GHC's tree (panel 019 point 1).
+# Port of crates/heroes/src/ir/verify.rs.
+#
+# GHC is the precedent usually cited for building a separate desugared
+# tree, and what Core actually bought GHC was not the tree: it was
+# LINT, "an 100% independent check on the type inference engine". So
+# panel 019 kept the single pass and bought the check separately.
+#
+# Every invariant here is one the lowering could plausibly break:
+# one terminator per block and never open (the C emits one goto+label
+# per block, so a block with no exit is C that falls through a label);
+# preds agrees with the terminators, recomputed with the builder's own
+# successors; every exit edge copies out every @ parameter — §4.8's
+# "copy-out happens always", the place panel 000 named as where this
+# project would actually stall.
+#
+# A violation is an INTERNAL error, not a diagnostic: it says the
+# compiler is wrong, so it exits 2 and never speaks in the language's
+# own vocabulary.
+#
+# One check deliberately absent: no generic in a lowered body. A
+# generic body lowers polymorphically by design (§4.12, amended by
+# panel 019); it is monomorphisation, the ownership pass and the
+# emitter that must assert its absence — ir_phases does, at their
+# phases.
+
+use token
+use ast
+use source
+use parse
+use resolve
+use checker
+use ir_lower
+use check_table
+use check_state
+use ir
+use ir_state
+use ir_build
+use ir_uses
+use ir_values
+use ir_phases
+
+# Whether this function's implementation is C's: an extern function's
+# code, or an extern constant's value (§4.19, panel 038). Both have no
+# blocks, and nothing else in the IR may have none. The question is
+# asked of the DECLARATION rather than of the kind: a rule written over
+# the kind would have to encode which kinds can come from a header, a
+# premise already falsified once (CLAUDE.md §11).
+function from_c(decls: [ast.Decl], f: ir_state.Function) -> bool
+    match decls[f.decl].kind
+        .function_decl fd => return fd.value.is_extern
+        .constant_decl k => return !k.header.is_err()
+        # Enumerated, never a catch-all: a record or a variant lowers to
+        # no function, so one here trips `no entry block` below.
+        .record_decl | .variant_decl | .test_decl => return false
+    return false
+
+# Every invariant violation, or an empty list. The message names the
+# function and the block, because a dump of a large program is not
+# where anyone wants to start searching — and the phase is in every
+# message, because "which pass produced this" is the first question a
+# violation raises and the compiler already knows the answer.
+function verify(p: ir_state.Program, c: check_state.Checked, decls: [ast.Decl]) -> [str]
+    problems: [str] @ []
+    for f in p.functions
+        label = f.name + " (" + ir_state.phase_name(p.phase) + "): "
+        if from_c(decls, f)
+            if f.blocks.len() > 0
+                problems @ problems.push(label + "what C provides has a body")
+            continue
+        if f.blocks.len() == 0
+            problems @ problems.push(label + "no entry block")
+            continue
+        index: i64 @ 0
+        for blk in f.blocks
+            at = label + "bb" + index.to_str() + ": "
+            check_terminator(f, blk, at: at, problems: @problems)
+            check_preds(f, index: index, blk: blk, at: at, problems: @problems)
+            check_instructions(f, blk, at: at, problems: @problems)
+            check_copy_out(f, blk, at: at, problems: @problems)
+            check_return_type(f, blk, c, at: at, problems: @problems)
+            ir_phases.check(p, f, blk, c, label: at, problems: @problems)
+            index @ index + 1
+        ir_values.check(f, label: label, problems: @problems)
+    return problems
+
+function check_terminator(f: ir_state.Function, blk: ir_state.Block, at: str, @problems: [str])
+    is_open: bool @ false
+    match blk.term
+        .open => is_open @ true
+        .jump | .branch | .switch_term | .return_term | .unreachable => is_open @ is_open
+    if is_open
+        problems @ problems.push(at + "no terminator")
+        return
+    for target in ir_build.successors(blk.term)
+        if target >= f.blocks.len()
+            problems @ problems.push(at + "jumps to bb" + target.to_str() + ", which does not exist")
+    match blk.term
+        .switch_term sw =>
+            if sw.cases.len() == 0
+                problems @ problems.push(at + "a switch with no cases")
+        .jump | .branch | .return_term | .unreachable | .open => return
+
+# preds is recomputed from the terminators with the builder's own
+# successors, so the two cannot drift: if this fires, one of them was
+# edited by hand.
+function check_preds(f: ir_state.Function, index: i64, blk: ir_state.Block, at: str, @problems: [str])
+    expected: [i64] @ []
+    other: i64 @ 0
+    for candidate in f.blocks
+        jumps_here: bool @ false
+        for target in ir_build.successors(candidate.term)
+            if target == index
+                jumps_here @ true
+        if jumps_here
+            already: bool @ false
+            for e in expected
+                if e == other
+                    already @ true
+            if !already
+                expected @ expected.push(other)
+        other @ other + 1
+    recorded = sorted(blk.preds)
+    wanted = sorted(expected)
+    if recorded != wanted
+        problems @ problems.push(at + "preds " + render_list(blk.preds) + " but " + render_list(wanted) + " jump here")
+
+# A hand-written insertion sort: block index lists are short, and the
+# resolver's sort is over diagnostics, not integers.
+function sorted(list: [i64]) -> [i64]
+    out: [i64] @ []
+    for v in list
+        at: i64 @ 0
+        while at < out.len() && out[at] <= v
+            at @ at + 1
+        before: [i64] @ out.slice(from: 0, to: at)
+        before @ before.push(v)
+        rest = out.slice(from: at, to: out.len())
+        for r in rest
+            before @ before.push(r)
+        out @ before
+    return out
+
+function render_list(list: [i64]) -> str
+    rendered: [str] @ []
+    for v in list
+        rendered @ rendered.push(v.to_str())
+    return "[" + rendered.join(", ") + "]"
+
+function check_instructions(f: ir_state.Function, blk: ir_state.Block, at: str, @problems: [str])
+    index: i64 @ 0
+    for inst in blk.insts
+        is_missing: bool @ false
+        is_abort: bool @ false
+        match inst.op
+            .missing => is_missing @ true
+            .func_ref fr =>
+                match fr.callee
+                    .indirect => problems @ problems.push(at + "the address of an address")
+                    .heroes_fn | .extern_fn | .builtin_fn => continue
+            .abort_op => is_abort @ true
+            .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+            .copy_out | .incref | .decref | .hole => continue
+        if is_missing
+            problems @ problems.push(at + "a form the lowering does not handle")
+        # An abort ends the program, so nothing may follow it and its
+        # block's terminator must say so.
+        if is_abort
+            if index + 1 != blk.insts.len()
+                problems @ problems.push(at + "an abort with instructions after it")
+            ends_unreachable: bool @ false
+            match blk.term
+                .unreachable => ends_unreachable @ true
+                .jump | .branch | .switch_term | .return_term | .open => ends_unreachable @ ends_unreachable
+            if !ends_unreachable
+                problems @ problems.push(at + "an abort in a block that does not end unreachable")
+        for value in ir_uses.operands(f, inst.op)
+            if value >= f.values.len()
+                problems @ problems.push(at + "names $" + value.to_str() + ", which is not a value")
+        for slot in ir_uses.slots_of(inst.op)
+            if slot >= f.slots.len()
+                problems @ problems.push(at + "names slot " + slot.to_str() + ", which does not exist")
+        index @ index + 1
+
+# §4.8: copy-out happens ALWAYS. Every block that returns must write
+# back every @ parameter — WHICH parameters, not how many: this check
+# once counted, so two copy-outs of one parameter and none of the other
+# passed, which is precisely the wrong program §4.8 exists to refuse
+# (sweep 001 audit S8's class, one milestone apart).
+function check_copy_out(f: ir_state.Function, blk: ir_state.Block, at: str, @problems: [str])
+    is_return: bool @ false
+    match blk.term
+        .return_term => is_return @ true
+        .jump | .branch | .switch_term | .unreachable | .open => is_return @ is_return
+    if !is_return
+        return
+    owed: [i64] @ []
+    for slot_id in f.params
+        match f.slots[slot_id].kind
+            .param_slot ps =>
+                if ps.mutable
+                    owed @ owed.push(slot_id)
+            .local_slot | .synthetic_slot => continue
+    if owed.len() == 0
+        return
+    written: [i64] @ []
+    for inst in blk.insts
+        match inst.op
+            .copy_out co => written @ written.push(co.param)
+            .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+            .func_ref | .abort_op | .incref | .decref | .hole | .missing => continue
+    written @ sorted(written)
+    owed @ sorted(owed)
+    if written == owed
+        return
+    missing: [str] @ []
+    for slot_id in owed
+        seen: bool @ false
+        for w in written
+            if w == slot_id
+                seen @ true
+        if !seen
+            missing @ missing.push("s" + slot_id.to_str())
+    # A duplicate is an adjacent pair once sorted — multiplicity, not
+    # membership: copying s0 out twice and s1 never is two writes for
+    # two parameters, which is exactly what counting could not see.
+    extra: [str] @ []
+    pair: i64 @ 1
+    while pair < written.len()
+        if written[pair] == written[pair - 1]
+            name = "s" + written[pair].to_str()
+            already: bool @ false
+            for e in extra
+                if e == name
+                    already @ true
+            if !already
+                extra @ extra.push(name)
+        pair @ pair + 1
+    for w in written
+        in_owed: bool @ false
+        for o in owed
+            if o == w
+                in_owed @ true
+        if !in_owed
+            name = "s" + w.to_str()
+            already: bool @ false
+            for e in extra
+                if e == name
+                    already @ true
+            if !already
+                extra @ extra.push(name)
+    said: str @ at + "returns after copying out " + written.len().to_str() + " of " + owed.len().to_str() + " `@` parameters"
+    if missing.len() > 0
+        said @ said + " — never " + missing.join(", ")
+    if extra.len() > 0
+        said @ said + " — twice " + extra.join(", ")
+    problems @ problems.push(said)
+
+function check_return_type(f: ir_state.Function, blk: ir_state.Block, c: check_state.Checked, at: str, @problems: [str])
+    match blk.term
+        .return_term ret =>
+            # A body that runs off its end returns nothing. That is
+            # right for a () result and a PROGRAM error otherwise, which
+            # the frontend already held back as missing_return — so the
+            # verifier does not second-guess it.
+            if ret.value.is_err()
+                return
+            value = ret.value.must()
+            if value < f.values.len()
+                got = ir_state.value_type(f, value)
+                if got != f.result && got != check_table.error_ty(c.types)
+                    problems @ problems.push(at + "returns a value of the wrong type")
+        .jump | .branch | .switch_term | .unreachable | .open => return
+
+## Tests
+
+function verified(text: str) -> [str]
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = ir_lower.lower(p.tree, out, c, s, p.decls)
+    return verify(low.program, c, p.decls)
+
+test "the port's own lowering verifies clean, loops and matches included"
+    clean = verified("record Point\n    x: i64\n    y: i64\n\nvariant Tok\n    word\n        text: str\n    plus\n\nfunction dist2(a: Point, b: Point) -> i64\n    dx = a.x - b.x\n    dy = a.y - b.y\n    return dx*dx + dy*dy\n\nfunction shout(t: Tok) -> str\n    return match t\n        .word w => w.text\n        .plus => \"+\"\n\nfunction total(xs: [i64]) -> i64\n    sum: i64 @ 0\n    for x in xs\n        if x == 0\n            continue\n        sum @ sum + x\n    return sum\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction main()\n    v: i64 @ 0\n    bump(@v)\n    print(total([1, 2, v]))\n")
+    assert clean.len() == 0
+
+test "an open block, a missing form and a wrong return are all named"
+    span = token.Span(start: 0, end: 1)
+    open_insts: [ir.Inst] = []
+    open_preds: [i64] = []
+    open_blk = ir_state.Block(preds: open_preds, insts: open_insts, term: .open, note: "t")
+    f = ir_state.Function(name: "bad", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [open_blk], values: [0], arguments: [], steps: [], instance: [], call_instances: {}, span: span)
+    p = ir_state.Program(phase: .lowered, functions: [f], strings: [])
+    text = "function bad()\n    return\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    problems = verify(p, c, parsed.decls)
+    assert problems.len() == 1
+    assert problems[0] == "bad (after lowering): bb0: no terminator"
+
+test "a return block that skips one @ parameter is caught by identity"
+    span = token.Span(start: 0, end: 1)
+    slots: [ir_state.Slot] = [ir_state.Slot(name: "a", ty: 2, kind: .param_slot(mutable: true)), ir_state.Slot(name: "b", ty: 2, kind: .param_slot(mutable: true))]
+    # Copies out s0 twice and s1 never: two writes for two parameters,
+    # which is exactly what counting could not see.
+    insts: [ir.Inst] = [ir.Inst(dest: fail("none", "void"), op: .copy_out(param: 0), ty: 1, span: span), ir.Inst(dest: fail("none", "void"), op: .copy_out(param: 0), ty: 1, span: span)]
+    preds: [i64] = []
+    blk = ir_state.Block(preds: preds, insts: insts, term: .return_term(value: fail("none", "no value")), note: "t")
+    f = ir_state.Function(name: "sneaky", decl: 0, kind: .function_kind, generics: [], params: [0, 1], result: 1, slots: slots, blocks: [blk], values: [0], arguments: [], steps: [], instance: [], call_instances: {}, span: span)
+    p = ir_state.Program(phase: .lowered, functions: [f], strings: [])
+    text = "function sneaky()\n    return\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    problems = verify(p, c, parsed.decls)
+    assert problems.len() == 1
+    assert problems[0] == "sneaky (after lowering): bb0: returns after copying out 2 of 2 `@` parameters — never s1 — twice s0"
