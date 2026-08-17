@@ -5,7 +5,12 @@ page (author instruction 2026-08-17: *"più a forma di siti di linguaggi, guarda
 go, rust — non voglio una mega scroll page"*). Every page carries the same nav,
 so no page is a dead end:
 
-| file | what it is |
+Everything that ships lives in **`site/public/`** — that directory is the whole
+deployable site, so Pages publishing it can never leak this README or the
+panel's briefs. Beside it, **`site/.claude/skills/site-panel/`** holds the
+five-seat review panel as a directory-scoped skill.
+
+| file (in `public/`) | what it is |
 |---|---|
 | `index.html` | the landing: hero, one sample, three cards, the claim. Short on purpose. |
 | | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;aprire un sito di un linguaggio con un errore è brutto&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |
@@ -41,8 +46,8 @@ capital letter is a premise about a convention the spec does not state. Blocks
 are generated *from* the source file, so highlighting and byte-fidelity arrive
 together.
 
-Not deployed yet. Cheapest route when wanted: GitHub Pages publishing this
-directory (`CNAME` is already here) + two DNS records at the registrar.
+Not deployed yet. Cheapest route when wanted: GitHub Pages publishing
+`site/public/` (`CNAME` is already in it) + two DNS records at the registrar.
 **Ask before wiring any of it — publishing is an outward-facing act**, one
 of the process's few remaining hard stops.
 
@@ -91,7 +96,7 @@ of the process's few remaining hard stops.
   first draft of this refresh shortened one and got the caret width, the line
   content and the fix text wrong in the process.
 
-## `site/docs/` — a skeleton, and who owns finishing it
+## `site/public/docs/` — a skeleton, and who owns finishing it
 
 The landing page lists all twelve chapters; **one** (`failure-is-a-value.html`)
 is written, as the exemplar that fixes the conventions. **M-documentation-site**
