@@ -1,0 +1,272 @@
+# One instruction, as C (design.md §3.1, §4.14; panels 020, 021, 062).
+# Port of crates/heroes/src/emit/inst.rs.
+#
+# The sibling of the IR's own print_inst, deliberately shaped like it:
+# the same match over the same ops, one arm each, so a new instruction
+# cannot be added to the IR without both failing to compile.
+#
+# Three rules meet here before any arm runs:
+# - a temporary NOBODY READS gets no declaration and no assignment, for
+#   the ops where that is safe (`_ = f(x)` once emitted int64_t t2;
+#   t2 = f(x); — -Wunused-but-set-variable on every FFI program that
+#   did the right thing);
+# - a value with NO C STORAGE gets no assignment and no target — a
+#   fixed value is rendered at its use site (the unit rule, twice);
+# - housekeeping the author did not write (copy-out, refcounts) points
+#   at the GENERATED file: lldb must not blame a user line for it.
+
+use ast
+use source
+use check_table
+use check_state
+use widths
+use ir
+use ir_state
+use emit_mangle
+use emit_ctype
+use emit_literal
+use emit_operator
+use emit_ops
+use emit_access
+use emit_abort
+use emit_construct
+use emit_container
+use emit_aggregate
+use emit_unread
+use emit_writer
+use token
+use check_contextual
+use parse
+use resolve
+use checker
+
+function emit(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], f: ir_state.Function, inst: ir.Inst, live_values: {i64: bool})
+    # §4.8's second half, the only instruction ABOUT the calling
+    # convention: housekeeping, so it points at the generated file.
+    is_copy_out: bool @ false
+    match inst.op
+        .copy_out co =>
+            emit_writer.at_generated(@w)
+            slot = f.slots[co.param]
+            emit_writer.line(@w, text: "    *" + emit_mangle.out_param(index: co.param, name: slot.name) + " = " + emit_mangle.slot(index: co.param, name: slot.name) + ";")
+            is_copy_out @ true
+        .lit | .load | .store | .unary | .binary | .cast | .call | .construct => is_copy_out @ is_copy_out
+        .field | .index | .map_get | .len_of | .tag_of | .payload => is_copy_out @ is_copy_out
+        .func_ref | .abort_op | .incref | .decref | .hole | .missing => is_copy_out @ is_copy_out
+    if is_copy_out
+        return
+    emit_writer.at_span(@w, s, offset: inst.span.start)
+    # A temporary nobody reads gets no declaration and no assignment,
+    # for the ops where that is safe.
+    discardable = emit_unread.may_lose_its_destination(inst.op)
+    discarded: bool @ false
+    if discardable && !inst.dest.is_err()
+        if live_values[inst.dest.must()].is_err()
+            discarded @ true
+    has_dest: bool @ false
+    if !inst.dest.is_err() && !emit_ctype.is_unit(c, ty: inst.ty) && !discarded
+        has_dest @ true
+    # A value with no C storage gets no assignment and therefore no
+    # target — decided from the TYPE, so a third producer of a fixed
+    # array cannot arrive and be assigned by accident.
+    storageless: bool @ false
+    match check_table.get(c.types, inst.ty)
+        .fixed => storageless @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => storageless @ storageless
+        .array | .map | .fallible | .function_ty | .named => storageless @ storageless
+        .case_ty | .failure | .generic | .error => storageless @ storageless
+    target: str? @ fail("none", "no destination")
+    if has_dest && !storageless
+        target @ ok(emit_mangle.value(inst.dest.must()))
+    match inst.op
+        .lit lt =>
+            if !target.is_err()
+                # The width comes from the instruction's own type, which
+                # the checker recorded — the constant emitter cannot
+                # know it and must not guess.
+                kind: widths.IntKind? @ fail("none", "not an integer")
+                match check_table.get(c.types, inst.ty)
+                    .int_ty ik => kind @ ok(ik.kind)
+                    .float_ty | .bool | .str | .ptr | .cstr | .unit => kind @ kind
+                    .array | .fixed | .map | .fallible | .function_ty | .named => kind @ kind
+                    .case_ty | .failure | .generic | .error => kind @ kind
+                emit_writer.line(@w, text: "    " + target.must() + " = " + emit_literal.constant_text(lt.value, kind: kind) + ";")
+        .load ld =>
+            if !target.is_err()
+                emit_writer.line(@w, text: "    " + target.must() + " = " + emit_aggregate.place(c, s, decls, f, at: ld.place) + ";")
+        .store st =>
+            # A store whose place ends in an index is copy-on-write, and
+            # the runtime owns the whole replacement.
+            has_index: bool @ false
+            for step in ir_state.steps_of(f, st.place.path)
+                match step
+                    .index_step => has_index @ true
+                    .field_step => continue
+            if has_index
+                lines = emit_container.write_element(c, names, s, decls, f, at: st.place, value: st.value)
+                if lines.is_err()
+                    emit_writer.line(@w, text: "    hero_unreachable(); /* not an element write */")
+                else
+                    for line in lines.must()
+                        emit_writer.line(@w, text: "    " + line)
+            else
+                if !emit_ctype.is_unit(c, ty: ir_state.value_type(f, st.value))
+                    emit_writer.line(@w, text: "    " + emit_aggregate.place(c, s, decls, f, at: st.place) + " = " + emit_mangle.value(st.value) + ";")
+        # Housekeeping the author did not write. Dispatched by TYPE: a
+        # str owns one block, so the runtime counts it; an aggregate
+        # owns nothing of its own and CONTAINS what is counted, so its
+        # generated function walks its fields — which is why this is
+        # retain/release and not copy.
+        .incref rc => reference(@w, c, names, f, value: rc.value, keep: true)
+        .decref rc => reference(@w, c, names, f, value: rc.value, keep: false)
+        .unary u => emit_operator.unary(@w, f, c, op: u.op, operand: u.operand, target: target)
+        .binary bin => emit_operator.binary(@w, c, names, f, op: bin.op, left: bin.left, right: bin.right, target: target)
+        .call cl =>
+            rendered: [str] @ []
+            for arg in ir_state.args_of(f, cl.arguments)
+                match arg
+                    .value_arg v => rendered @ rendered.push(emit_mangle.value(v.value))
+                    # A place, not a value: the callee gets its address.
+                    .inout_arg io => rendered @ rendered.push("&" + emit_aggregate.place(c, s, decls, f, at: io.place))
+            # This copy first: call_instances is substituted per copy.
+            instance: [i64] @ []
+            on_copy = f.call_instances[inst.span.start]
+            if !on_copy.is_err()
+                instance @ on_copy.must()
+            else
+                recorded = c.instantiations[inst.span.start]
+                if !recorded.is_err()
+                    instance @ recorded.must()
+            emit_ops.call(@w, p, f, c, names, s, decls, callee: cl.callee, run: cl.arguments, arguments: rendered, target: target, instance: instance)
+        .len_of ln => emit_access.len_read(@w, c, f, value: ln.value, target: target)
+        .index ix =>
+            # s[i] is a byte where xs[i] is an element: same op, split
+            # by operand type.
+            is_str: bool @ false
+            match check_table.get(c.types, ir_state.value_type(f, ix.base))
+                .str => is_str @ true
+                .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => is_str @ is_str
+                .array | .fixed | .map | .fallible | .function_ty | .named => is_str @ is_str
+                .case_ty | .failure | .generic | .error => is_str @ is_str
+            if is_str
+                emit_access.string_byte(@w, base: ix.base, index: ix.at, target: target)
+            else
+                emit_access.element(@w, c, names, f, base: ix.base, index: ix.at, target: target)
+        .construct con =>
+            match con.shape
+                .record_shape | .case_shape => emit_construct.record_or_case(@w, c, names, s, decls, f, shape: con.shape, run: con.arguments, target: target)
+                .array_shape => emit_construct.array(@w, c, names, f, ty: inst.ty, run: con.arguments, target: target)
+                .map_shape => emit_construct.map_literal(@w, c, names, f, ty: inst.ty, run: con.arguments, target: target)
+                .ok_shape | .fail_shape | .err_shape => emit_construct.option(@w, names, f, ty: inst.ty, shape: con.shape, run: con.arguments, target: target)
+        .map_get mg =>
+            if !target.is_err()
+                lines = emit_container.map_get(c, names, f, map_value: mg.map, key: mg.key, result: inst.ty, into: target.must())
+                if lines.is_err()
+                    emit_writer.line(@w, text: "    hero_unreachable(); /* not a map */")
+                else
+                    for line in lines.must()
+                        emit_writer.line(@w, text: "    " + line)
+        .abort_op ab =>
+            match ab.why
+                .must_abort => emit_abort.must_stop(@w, f, run: ab.arguments)
+                .assert_abort => emit_abort.assert_stop(@w, c, f, run: ab.arguments)
+        .tag_of tg => emit_access.tag_read(@w, c, f, base: tg.value, target: target)
+        .payload pl => emit_access.payload_read(@w, c, names, s, decls, f, base: pl.base, at: pl.at, target: target)
+        .field fl => emit_access.field_read(@w, c, s, decls, f, base: fl.base, at: fl.at, target: target)
+        # A function used as a value is the C function designator, which
+        # decays on its own — & would make the C say something the
+        # language does not.
+        .func_ref fr =>
+            match fr.callee
+                .heroes_fn h =>
+                    if !target.is_err()
+                        named: str @ "hero_unreachable"
+                        for candidate in p.functions
+                            if candidate.decl == h.decl
+                                named @ emit_mangle.function_name(module: source.component_at(s, candidate.span.start), name: candidate.name)
+                        emit_writer.line(@w, text: "    " + target.must() + " = " + named + ";")
+                .extern_fn | .builtin_fn | .indirect => emit_writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this form */")
+        # s.cstr() is FREE (§4.20's highest-return decision): every
+        # Heroes string is NUL-terminated, so handing C the byte pointer
+        # is a field read — the borrow is safe for the duration of the
+        # call.
+        .cast ca =>
+            match ca.kind
+                .str_to_cstr =>
+                    if !target.is_err()
+                        emit_writer.line(@w, text: "    " + target.must() + " = hero_str_cstr(" + emit_mangle.value(ca.operand) + ");")
+        .hole | .missing => emit_writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this form */")
+        .copy_out => return
+
+# The refcount line for one value, dispatched by type with the
+# aggregate fallback.
+function reference(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, f: ir_state.Function, value: i64, keep: bool)
+    emit_writer.at_generated(@w)
+    ty = ir_state.value_type(f, value)
+    name = emit_mangle.value(value)
+    line: str @ ""
+    match check_table.get(c.types, ty)
+        .str =>
+            if keep
+                line @ "    hero_str_incref(" + name + ");"
+            else
+                line @ "    hero_str_decref(" + name + ");"
+        .array =>
+            if keep
+                line @ "    hero_array_incref(" + name + ");"
+            else
+                line @ "    hero_array_decref(" + name + ");"
+        .map =>
+            if keep
+                line @ "    hero_map_incref(" + name + ");"
+            else
+                line @ "    hero_map_decref(" + name + ");"
+        # A T? and a failure are by value: reached by address, their own
+        # function decides which side of the union is live.
+        .failure =>
+            if keep
+                line @ "    hero_failure_retain(&" + name + ");"
+            else
+                line @ "    hero_failure_release(&" + name + ");"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => line @ line
+        .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
+        .generic | .error => line @ line
+    if line == ""
+        found = emit_aggregate.retain(c, names, ty: ty, value: value, keep: keep)
+        if found.is_err()
+            line @ "    hero_unreachable(); /* the gate refuses this type */"
+        else
+            line @ "    " + found.must() + ";"
+    emit_writer.line(@w, text: line)
+
+## Tests
+
+test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
+    text = "function shout()\n    print(1)\n\nfunction main()\n    shout()\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = emit_ctype.new_names(s, parsed.decls)
+    int_id = check_table.int_ty_id(c.types)
+    unit_id = check_table.unit_ty(c.types)
+    span = token.Span(start: 20, end: 21)
+    shout_f = ir_state.Function(name: "shout", decl: 0, kind: .function_kind, generics: [], params: [], result: unit_id, slots: [], blocks: [], values: [unit_id, int_id], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    p = ir_state.Program(phase: .lowered, functions: [shout_f], strings: [])
+    caller = ir_state.Function(name: "main", decl: 1, kind: .function_kind, generics: [], params: [], result: unit_id, slots: [], blocks: [], values: [unit_id, int_id, int_id], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 30, end: 31))
+    live: {i64: bool} @ {}
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    # A constant nobody reads: no line at all.
+    emit(@w, p, c, names, s, parsed.decls, caller, inst: ir.Inst(dest: ok(1), op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 7))), ty: int_id, span: span), live_values: live)
+    # A call to a ()-returning function: emitted for its effect, no
+    # destination.
+    run0 = ir.Run(start: 0, length: 0)
+    emit(@w, p, c, names, s, parsed.decls, caller, inst: ir.Inst(dest: fail("none", "void"), op: .call(callee: .heroes_fn(decl: 0), arguments: run0, variadic: false), ty: unit_id, span: span), live_values: live)
+    # A live constant with the width from its own type.
+    live[2] @ true
+    emit(@w, p, c, names, s, parsed.decls, caller, inst: ir.Inst(dest: ok(2), op: .lit(value: .int_const(value: check_contextual.LitValue(negative: false, magnitude: 7))), ty: int_id, span: span), live_values: live)
+    got = emit_writer.finish(w)
+    # The second content line under a source claim gets its restore —
+    # the writer's intent/claim repair, doing exactly its job.
+    assert got == "#line 2 \"t.hero\"\n    h_t_shout();\n#line 2 \"t.hero\"\n    t2 = INT64_C(7);\n"
