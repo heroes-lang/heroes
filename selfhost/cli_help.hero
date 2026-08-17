@@ -1,0 +1,72 @@
+# heroes --help: the table, plus the contract (panel 016). Port of
+# crates/heroes-cli/src/cli/help.rs.
+#
+# The exit codes are printed because a wrapper script has nowhere else
+# to read them, and HEROES_RUNTIME is printed because it is the one
+# input channel outside the argv table — a channel nobody can discover
+# is a channel that will be discovered by reading the source.
+#
+# NO MILESTONE IDENTIFIER APPEARS HERE. The footer once advertised
+# verbs §10's stopping rule had refused, with milestone ids §4.17
+# forbids — a reader given (M5b) grepped the repository and concluded
+# the toolchain was broken. What is left is the two commands that are
+# genuinely scheduled, with no date attached.
+
+use cli_table
+
+function help() -> str
+    out: str @ "heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n"
+    for command in cli_table.commands()
+        operand: str @ ""
+        match command.operand
+            .file_operand => operand @ " <file.hero>"
+            .optional_operand => operand @ " [file]"
+            .no_operand => operand @ operand
+        out @ out + "  " + command.name + operand + "\n      " + command.summary + "\n"
+        for flag in command.flags
+            spelling: str @ flag.spelling
+            if flag.value
+                spelling @ flag.spelling + " <path>"
+            out @ out + "      " + spelling + "  " + flag.what + "\n"
+    out @ out + "\n  --version · --help\n\n"
+    out @ out + "streams: the artifact on stdout, diagnostics and progress on stderr.\n"
+    out @ out + "exit:    0 nothing to report · 1 diagnostics were reported, no artifact was produced\n"
+    out @ out + "         2 the tool could not run. `run` forwards the program's own status.\n"
+    out @ out + "env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n"
+    out @ out + "         under the working directory or beside the compiler.\n\n"
+    out @ out + "Commands not built yet: lsp · cc\n"
+    return out
+
+## Tests
+
+function has(text: str, needle: str) -> bool
+    cs = text.chars()
+    needle_cs = needle.chars()
+    if needle_cs.len() == 0
+        return true
+    if needle_cs.len() > cs.len()
+        return false
+    start: i64 @ 0
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+        if matched
+            return true
+        start @ start + 1
+    return false
+
+test "the help is the table spoken, contract and env channel included"
+    text = help()
+    assert has(text: text, needle: "heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n  lex <file.hero>\n      check the token stream\n      --dump-tokens  print the token stream\n      --json  print it as JSON instead of text\n  parse <file.hero>\n      check the syntax\n      --dump-ast  print the syntax tree\n")
+    # A valued flag shows its <path>; an optional operand its [file].
+    assert has(text: text, needle: "      -o <path>  write the artifact here instead of under build/\n")
+    assert has(text: text, needle: "  measure [file]\n")
+    assert has(text: text, needle: "  doctor\n      check the toolchain (clang, CLT, arch, runtime, cache)\n")
+    # The contract and the one channel outside argv.
+    assert has(text: text, needle: "exit:    0 nothing to report · 1 diagnostics were reported, no artifact was produced\n         2 the tool could not run. `run` forwards the program's own status.\n")
+    assert has(text: text, needle: "env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n         under the working directory or beside the compiler.\n\nCommands not built yet: lsp · cc\n")

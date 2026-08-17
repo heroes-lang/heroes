@@ -149,6 +149,35 @@ function retired_flag(command: str, arg: str) -> str?
         return ok("--emit-c` alone (the `#line` directives are the artifact; the emitter's own tests are what read C without them")
     return fail("none", "not a retired flag")
 
+
+## The exit contract
+
+# In one place: printed in --help, asserted by the golden harness, and
+# the reason a wrapper can tell "your program is wrong" from "I could
+# not run". The gloss on 1 widened at M-scalars-run: an unsupported
+# form is a diagnostic about the COMPILER, and it exits 1 because 2
+# sends an agent to reinstall its toolchain (panel 020, measured).
+variant Exit
+    # Nothing to report.
+    ok_exit
+    # Diagnostics were reported and no artifact was produced. The tool
+    # worked.
+    diagnostics_exit
+    # The tool could not do its job: an unreadable file, a bad flag,
+    # no clang.
+    failed_exit
+    # run only: the program itself exited with this status. The
+    # program is the artifact, so its verdict is the command's.
+    program_exit
+        status: i64
+
+function exit_code(e: Exit) -> i64
+    return match e
+        .ok_exit => 0
+        .diagnostics_exit => 1
+        .failed_exit => 2
+        .program_exit p => p.status
+
 ## Tests
 
 test "the table is the pipeline's order and the flags carry their shapes"
@@ -176,3 +205,8 @@ test "the table is the pipeline's order and the flags carry their shapes"
     assert retired_flag(command: "fmt", arg: "--write").must() == "--in-place"
     assert retired_flag(command: "lex", arg: "--tokens").must() == "--dump-tokens"
     assert retired_flag(command: "build", arg: "--sanitize").is_err()
+    # The contract, in numbers.
+    assert exit_code(.ok_exit) == 0
+    assert exit_code(.diagnostics_exit) == 1
+    assert exit_code(.failed_exit) == 2
+    assert exit_code(.program_exit(status: 7)) == 7
