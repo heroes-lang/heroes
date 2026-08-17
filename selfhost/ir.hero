@@ -1,0 +1,323 @@
+# What the IR is made of: how it names things, and what an instruction
+# is (design.md Part 10 step 6, Part 5; panel 019).
+# Port of crates/heroes/src/ir/{ids,inst}.rs — one module, because the
+# ids exist only to be carried by the instructions.
+#
+# Every reference is an index into a dense table, and anything of
+# variable length is a RUN — a start and a length into an arena the
+# function owns. That is Rust's trick for keeping Op copyable, and it is
+# ALSO the Heroes shape: §4.10 makes the array the only indirection, so
+# the port reads the same two arrays the original does.
+#
+# The invariant, exactly as panel 019 restated it: NO INSTRUCTION
+# CONTAINS A NESTED EXPRESSION. The rule is about nesting, not arity —
+# print is variadic, a record construction is n-ary — and the arity is
+# variable in exactly two forms, call and construct, both holding their
+# arguments in a run.
+#
+# There is deliberately no and/or (they short-circuit, so they are
+# control flow and lower to branches) and no match (it becomes a switch
+# on a tag or a chain of branches on literals).
+#
+# Renames the port forced, so a reader of the Rust finds the same thing:
+# Const is IntConst here (`const` is a foreign word), Term::Switch is
+# `.switch_term` and Term::Return `.return_term` (foreign word, keyword),
+# Op::Len is `.len_of` and Abort::Must `.must_abort` (builtins), and
+# Rust's two run newtypes Args/Steps are ONE record Run — the type
+# distinction was compile-time-only and Heroes indices are honest i64s.
+
+use token
+use check_contextual
+
+# A run inside a function's args or steps arena: start and length.
+record Run
+    start: i64
+    length: i64
+
+# A place: where a store writes, and what an @ argument names. §4.8's
+# own sentence is the specification — "every place has exactly one root"
+# — so a place is a slot plus a path of field and index steps, never an
+# expression.
+record Place
+    root: i64
+    path: Run
+
+# One step of a place's path: `.x` by INDEX in the declaration (the name
+# was resolved once, by the checker, and no later pass compares strings
+# again), or `[i]` with the index already in a temporary.
+variant PathStep
+    field_step
+        at: i64
+    index_step
+        value: i64
+
+# One argument of a call. inout is `@l` at the call site: the callee
+# copies in and copies out, so the argument is a place, not a value.
+variant Arg
+    value_arg
+        value: i64
+    inout_arg
+        place: Place
+
+# What a call calls — the panel's most expensive finding. The resolver
+# decided this once; recording it here is what stops the emitter from
+# re-deriving it and mangling an extern, or failing to mangle a Heroes
+# function whose name collides with libc's.
+variant Callee
+    # A Heroes function or constant: index into the declarations. Mangled.
+    heroes_fn
+        decl: i64
+    # An extern function: unmangled by design (CLAUDE.md §7) — which is
+    # exactly why the two cannot share a case.
+    extern_fn
+        decl: i64
+    # A built-in: index into the builtins table.
+    builtin_fn
+        at: i64
+    # A function value (§4.13): a C function pointer in a temporary.
+    indirect
+        value: i64
+
+# What a construct builds. Every one is a surface form Part 5 calls
+# sugar and the IR still needs a single instruction for, because
+# expanding it here would put the layout decision in the wrong pass.
+variant Shape
+    # `Point(x: 3, y: 4)` — fields in DECLARED order, the named
+    # arguments already reordered (Part 5's row, erased here).
+    record_shape
+        decl: i64
+    # `.num(v: 12)` — a variant case.
+    case_shape
+        decl: i64
+        at: i64
+    array_shape
+    # `{ "a": 1 }` — arguments alternate key, value.
+    map_shape
+    # `ok(x)` — the success side of a T? (§4.6).
+    ok_shape
+    # `fail(code, msg)` — the error side, built from two strs.
+    fail_shape
+    # The error side, built from a failure that already exists. This is
+    # what `?` produces: the error propagates UNCHANGED into the
+    # caller's T?, so nothing re-reads its code and msg on the way.
+    err_shape
+
+# Why the program is stopping. Design.md's word — "aborts" — rather than
+# an exception, because §4.6 says no exceptions exist. An abort is
+# always the last instruction in its block, and the terminator is
+# unreachable: the C it becomes is a _Noreturn call.
+variant AbortWhy
+    # .must() on an error (§4.6). The runtime has the failure and prints it.
+    must_abort
+    # `assert e` failed (§4.18). Carries the source text of e, and both
+    # sides when e is a comparison — the spec promises both.
+    assert_abort
+
+# A literal that survived from the source. The integer carrier is the
+# same LitValue the checker used: sign and magnitude, because after
+# M-sized-integers the widths span i8's -128 to u64's largest, and no
+# 64-bit integer holds both ends.
+variant IntConst
+    int_const
+        value: check_contextual.LitValue
+    float_const
+        value: f64
+    bool_const
+        value: bool
+    str_const
+        at: i64
+    # §4.19's nullptr. Its own case rather than int 0: a pointer's zero
+    # is not an integer, and the emitter must not write one where a
+    # pointer is required.
+    null_ptr
+
+variant UnaryOp
+    # `-x`. Aborts on the smallest i64 (§4.3's overflow rule), which is
+    # why the dump marks it `!`.
+    neg
+    not_op
+    # `~x` — the bitwise complement, i64 only. It cannot abort: every
+    # int64_t has a complement, which is what makes it unlike neg.
+    bit_not
+
+variant BinaryOp
+    add
+    sub
+    mul
+    div
+    rem
+    # Structural, on everything, recursively (§4.3). One instruction
+    # carrying a type id; the descriptor pass turns it into a HeroDesc.eq
+    # call rather than lowering expanding it field by field.
+    eq
+    ne
+    lt
+    le
+    gt
+    ge
+    # The bitwise set (§4.14), i64 only. shl and shr are the two that
+    # can abort — a shift count outside 0..63 is UB in C, so the emitter
+    # guards it the way it guards division.
+    bit_and
+    bit_or
+    bit_xor
+    shl
+    shr
+
+# The only conversion the language performs without a call, and it
+# exists for one boundary: C (§4.19). Free at runtime (§1.11) — in the
+# IR so the dump SHOWS it, because §4.3 promises no implicit conversions
+# and an invisible one would be a lie.
+variant CastKind
+    str_to_cstr
+
+variant OpKind
+    lit
+        value: IntConst
+    load
+        place: Place
+    store
+        place: Place
+        value: i64
+    unary
+        op: UnaryOp
+        operand: i64
+    binary
+        op: BinaryOp
+        left: i64
+        right: i64
+    cast
+        kind: CastKind
+        operand: i64
+    # variadic is set for the one call shape clang verifies nothing
+    # about: a wrong argument count compiles, runs, and prints garbage,
+    # with no diagnostic anywhere.
+    call
+        callee: Callee
+        arguments: Run
+        variadic: bool
+    construct
+        shape: Shape
+        arguments: Run
+    # `p.x` as a READ. The base is already a value; the field an index.
+    field
+        base: i64
+        at: i64
+    # `xs[i]` and `s[i]`. Aborts out of bounds — hence `!` in the dump.
+    index
+        base: i64
+        at: i64
+    # `m[k]`, which is NOT `xs[i]`: it yields a V? and cannot abort
+    # (§4.9). Same surface syntax, different instruction.
+    map_get
+        map: i64
+        key: i64
+    len_of
+        value: i64
+    # The case index of a variant value, or 0/1 for a T?'s ok/err. What
+    # a switch reads.
+    tag_of
+        value: i64
+    # The payload of a known case. For a T?, case 0 is the ok value and
+    # case 1 the Failure.
+    payload
+        base: i64
+        at: i64
+    # A function as a value (§4.13) — a C function pointer, and no
+    # environment. It carries a Callee for the same reason a call does;
+    # indirect here would mean "the address of an address", which the
+    # verifier rejects.
+    func_ref
+        callee: Callee
+    # §4.8's second half, on an exit edge: write an @ parameter's slot
+    # back to the caller's place. Copy-out happens ALWAYS — including on
+    # early return and on `?` — so lowering emits one per @ parameter
+    # before every return.
+    copy_out
+        param: i64
+    # The program stops here. The terminator is unreachable.
+    abort_op
+        why: AbortWhy
+        arguments: Run
+    # One reference more, one fewer (panel 021). Inserted by the
+    # OWNERSHIP pass, never by lowering. They name a VALUE, not a place:
+    # releasing a slot is a load followed by a decref, which keeps one
+    # form instead of two and makes the dominance check cover it free.
+    incref
+        value: i64
+    decref
+        value: i64
+    # `???` (§4.16). A hole type-checks, so lowering must produce
+    # something; the verifier allows it and the emitter refuses it,
+    # which is how "no binary" is enforced without making a hole an error.
+    hole
+    # Scaffolding: a form the lowering does not handle yet. The verifier
+    # rejects it, so it cannot reach a golden or a backend.
+    missing
+
+# How a block ends. Exactly one, always — the verifier's first check,
+# and the reason the emitted C never falls through a label.
+variant Term
+    jump
+        to: i64
+    # Polarity is in the TEXT of the dump (`-> bb2 else bb4`), not in
+    # the reader's memory: inverting an unlabelled two-target branch was
+    # recorded as a silent wrong answer.
+    branch
+        cond: i64
+        then_to: i64
+        else_to: i64
+    # match on a variant: dense over the declaration's cases, exhaustive
+    # by the time it gets here, so there is no default edge.
+    switch_term
+        tag: i64
+        cases: [i64]
+    return_term
+        value: i64?
+    # A point the type system proves unreachable. Becomes
+    # hero_unreachable(); it is not an abort, it is a claim.
+    unreachable
+    # Only while a block is being built. The verifier rejects it.
+    open
+
+# One instruction: at most one destination, an operation, and the span
+# it came from. The span is not decoration — #line on source-line change
+# is emitted from it, and every message must be able to point back at
+# what the author wrote.
+record Inst
+    dest: i64?
+    op: OpKind
+    ty: i64
+    span: token.Span
+
+## Tests
+
+test "an instruction is flat: operands are ids, never expressions"
+    plus = Inst(dest: ok(2), op: .binary(op: .add, left: 0, right: 1), ty: 2, span: token.Span(start: 0, end: 3))
+    match plus.op
+        .binary b =>
+            assert b.left == 0
+            assert b.right == 1
+        .lit | .load | .store | .unary | .cast | .call | .construct => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
+    assert plus.dest.must() == 2
+
+test "a call's arguments are a run, and a void call has no destination"
+    shout = Inst(dest: fail("none", "print returns nothing"), op: .call(callee: .builtin_fn(at: 0), arguments: Run(start: 4, length: 2), variadic: true), ty: 0, span: token.Span(start: 9, end: 14))
+    assert shout.dest.is_err()
+    match shout.op
+        .call c =>
+            assert c.variadic
+            assert c.arguments.length == 2
+        .lit | .load | .store | .unary | .binary | .cast | .construct => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
+
+test "a place is a root and a path, and a switch is dense"
+    spot = Place(root: 3, path: Run(start: 0, length: 1))
+    assert spot.root == 3
+    fan: Term = .switch_term(tag: 7, cases: [1, 2, 3])
+    match fan
+        .switch_term sw => assert sw.cases.len() == 3
+        .jump | .branch | .return_term | .unreachable | .open => assert false
