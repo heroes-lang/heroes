@@ -1,0 +1,101 @@
+# What the author sees when the program stops (design.md §4.18; spec
+# line 163; panels 020, 042, 052). Port of crates/heroes/src/emit/abort.rs.
+#
+# The concern is single and it is not "aborting": it is THE TEXT A
+# PERSON READS AT THE MOMENT OF THE STOP. Everything here runs after
+# the program has already failed, so nothing it emits can be checked by
+# a later pass — a wrong entry point is a wrong message, at exit 1,
+# with no diagnostic anywhere. Both bodies point at the GENERATED file:
+# the panic call is housekeeping the author never wrote, and lldb must
+# not blame their line for it.
+
+use check_state
+use ir
+use ir_state
+use emit_mangle
+use emit_builtins
+use emit_writer
+use token
+use check_table
+use source
+use parse
+use resolve
+use checker
+
+# .must() on an error. The failure travels with the abort, so the panic
+# names the code and msg the author wrote rather than only that a
+# .must() failed.
+function must_stop(@w: emit_writer.Writer, f: ir_state.Function, run: ir.Run)
+    emit_writer.at_generated(@w)
+    given = ir_state.args_of(f, run)
+    if given.len() > 0
+        handled: bool @ false
+        match given[0]
+            .value_arg v =>
+                emit_writer.line(@w, text: "    hero_panic_must(" + emit_mangle.value(v.value) + ");")
+                handled @ true
+            .inout_arg => handled @ handled
+        if handled
+            return
+    emit_writer.line(@w, text: "    hero_unreachable(); /* a must with no failure */")
+
+# assert (§4.18, spec line 163: "shows the source expression and both
+# sides"). The IR carries three operands where the asserted expression
+# is a comparison and one where it is not, and each side is rendered
+# through the SAME to_str entry point print uses — so a side with no
+# rendering (a record, an array) falls back to the text alone rather
+# than inventing one. Discarding an unprintable side explicitly is what
+# keeps -Wunused-but-set-variable at zero, and the cast says
+# "deliberately" where silence would say "forgotten".
+function assert_stop(@w: emit_writer.Writer, c: check_state.Checked, f: ir_state.Function, run: ir.Run)
+    emit_writer.at_generated(@w)
+    given = ir_state.args_of(f, run)
+    if given.len() == 0
+        emit_writer.line(@w, text: "    hero_unreachable(); /* an assert with no text */")
+        return
+    text_name: str @ ""
+    match given[0]
+        .value_arg v => text_name @ emit_mangle.value(v.value)
+        .inout_arg => text_name @ text_name
+    if text_name == ""
+        emit_writer.line(@w, text: "    hero_unreachable(); /* an assert with no text */")
+        return
+    rendered: [str] @ []
+    at: i64 @ 0
+    for arg in given
+        if at > 0
+            match arg
+                .value_arg v =>
+                    entry = emit_builtins.to_str_entry(check_table.get(c.types, ir_state.value_type(f, v.value)))
+                    if !entry.is_err()
+                        rendered @ rendered.push(entry.must() + "(" + emit_mangle.value(v.value) + ")")
+                .inout_arg => continue
+        at @ at + 1
+    if rendered.len() == 2
+        emit_writer.line(@w, text: "    hero_panic_assert_sides(" + text_name + ", " + rendered[0] + ", " + rendered[1] + ");")
+        return
+    walk: i64 @ 0
+    for arg in given
+        if walk > 0
+            match arg
+                .value_arg v => emit_writer.line(@w, text: "    (void)" + emit_mangle.value(v.value) + ";")
+                .inout_arg => continue
+        walk @ walk + 1
+    emit_writer.line(@w, text: "    hero_panic_assert(" + text_name + ");")
+
+## Tests
+
+test "a comparison carries both sides, an unprintable side is discarded aloud"
+    text = "function main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    str_id = check_table.str_ty(c.types)
+    int_id = check_table.int_ty_id(c.types)
+    f = ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [str_id, int_id, int_id, str_id], arguments: [.value_arg(value: 0), .value_arg(value: 1), .value_arg(value: 2)], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    assert_stop(@w, c, f, run: ir.Run(start: 0, length: 3))
+    must_stop(@w, f, run: ir.Run(start: 0, length: 1))
+    got = emit_writer.finish(w)
+    assert got == "#line 2 \"t.c\"\n    hero_panic_assert_sides(t0, hero_int_to_str(t1), hero_int_to_str(t2));\n    hero_panic_must(t0);\n"

@@ -1,0 +1,146 @@
+# Reading one part of a composite value (design.md §4.6, §4.9, §4.20;
+# panels 022, 023). Port of crates/heroes/src/emit/access.rs.
+#
+# One shape asked five ways — tag, payload, field, index, len — and
+# what unites them is that each is a READ THAT CANNOT ALLOCATE. Two are
+# dispatched by the operand's type rather than by the op, both for the
+# same reason: a T? IS a variant by the time it reaches here, so tag
+# and payload read the same two members either way; and len counts
+# bytes on a str, elements on an array or a map, so the op is the same
+# op and the split is by operand type.
+
+use ast
+use source
+use check_table
+use check_state
+use ir_state
+use emit_mangle
+use emit_ctype
+use emit_aggregate
+use emit_container
+use emit_fallible
+use emit_writer
+use token
+use parse
+use resolve
+use checker
+
+# len — one built-in, three runtime entry points, chosen by what is
+# being counted. The three the checker accepts, NAMED: as a catch-all
+# the array answered for a record, a ptr and a T?, and hero_array_len
+# on any of them is a load through a pointer that is not a header.
+function len_read(@w: emit_writer.Writer, c: check_state.Checked, f: ir_state.Function, value: i64, target: str?)
+    if target.is_err()
+        return
+    counter: str @ ""
+    match check_table.get(c.types, ir_state.value_type(f, value))
+        .str => counter @ "hero_str_len"
+        .map => counter @ "hero_map_len"
+        .array => counter @ "hero_array_len"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => counter @ counter
+        .fixed | .fallible | .function_ty | .named => counter @ counter
+        .case_ty | .failure | .generic | .error => counter @ counter
+    if counter == ""
+        emit_writer.line(@w, text: "    hero_unreachable(); /* len counts a str, an array or a map */")
+        return
+    emit_writer.line(@w, text: "    " + target.must() + " = " + counter + "(" + emit_mangle.value(value) + ");")
+
+# s[i]: a byte, aborting out of range (spec line 142).
+function string_byte(@w: emit_writer.Writer, base: i64, index: i64, target: str?)
+    if target.is_err()
+        return
+    emit_writer.line(@w, text: "    " + target.must() + " = hero_str_byte(" + emit_mangle.value(base) + ", " + emit_mangle.value(index) + ");")
+
+# xs[i]: an element, read through the descriptor.
+function element(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, f: ir_state.Function, base: i64, index: i64, target: str?)
+    if target.is_err()
+        return
+    text = emit_container.read_element(c, names, f, base: base, index: index)
+    if text.is_err()
+        emit_writer.line(@w, text: "    hero_unreachable(); /* not an array */")
+        return
+    emit_writer.line(@w, text: "    " + target.must() + " = " + text.must() + ";")
+
+# Which case a variant — or a T? — is holding.
+function tag_read(@w: emit_writer.Writer, c: check_state.Checked, f: ir_state.Function, base: i64, target: str?)
+    if target.is_err()
+        return
+    is_fallible: bool @ false
+    match check_table.get(c.types, ir_state.value_type(f, base))
+        .fallible => is_fallible @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fallible @ is_fallible
+        .array | .fixed | .map | .function_ty | .named => is_fallible @ is_fallible
+        .case_ty | .failure | .generic | .error => is_fallible @ is_fallible
+    text: str @ emit_aggregate.tag(base: base)
+    if is_fallible
+        text @ emit_fallible.option_tag(base: base)
+    emit_writer.line(@w, text: "    " + target.must() + " = " + text + ";")
+
+# What that case is carrying.
+function payload_read(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], f: ir_state.Function, base: i64, at: i64, target: str?)
+    if target.is_err()
+        return
+    is_fallible: bool @ false
+    match check_table.get(c.types, ir_state.value_type(f, base))
+        .fallible => is_fallible @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fallible @ is_fallible
+        .array | .fixed | .map | .function_ty | .named => is_fallible @ is_fallible
+        .case_ty | .failure | .generic | .error => is_fallible @ is_fallible
+    if is_fallible
+        emit_writer.line(@w, text: "    " + target.must() + " = " + emit_fallible.option_payload(base: base, at: at) + ";")
+        return
+    text = emit_aggregate.payload_member(c, names, s, decls, f, base: base, at: at)
+    if text.is_err()
+        emit_writer.line(@w, text: "    hero_unreachable(); /* not a variant */")
+        return
+    emit_writer.line(@w, text: "    " + target.must() + " = " + text.must() + ";")
+
+# One field of a record. A C header may declare a member `const T *`,
+# and Heroes' ptr has no qualifier to receive it: without the cast the
+# assignment is a C11 constraint violation and the build dies at exit 2
+# on a header the author is entitled to bind. With it the same C is
+# conforming (6.3.2.3p7), the rule C/Rust/Zig converged on — UB
+# attaches to the OBJECT, not the pointer's qualifier — and Heroes has
+# no dereference for a ptr at all. The write-direction guard (panel
+# 058) lives elsewhere and keys on a parameter; this cast is on a field
+# READ the emitter generates.
+function field_read(@w: emit_writer.Writer, c: check_state.Checked, s: source.Source, decls: [ast.Decl], f: ir_state.Function, base: i64, at: i64, target: str?)
+    if target.is_err()
+        return
+    text = emit_aggregate.read_field(c, s, decls, f, base: base, index: at)
+    if text.is_err()
+        emit_writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this base */")
+        return
+    cast: str @ ""
+    found = emit_aggregate.field(c, s, decls, owner: ir_state.value_type(f, base), index: at)
+    if !found.is_err()
+        match check_table.get(c.types, found.must().ty)
+            .ptr => cast @ "(void *)"
+            .int_ty | .float_ty | .bool | .str | .cstr | .unit => cast @ cast
+            .array | .fixed | .map | .fallible | .function_ty | .named => cast @ cast
+            .case_ty | .failure | .generic | .error => cast @ cast
+    emit_writer.line(@w, text: "    " + target.must() + " = " + cast + text.must() + ";")
+
+## Tests
+
+test "len splits three ways, tag and payload split on the operand"
+    text = "record Point\n    x: i64\n\nvariant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    m: i64? = ok(3)\n    _ = t\n    _ = m\n    print(len(\"ab\"))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = emit_ctype.new_names(s, parsed.decls)
+    str_id = check_table.str_ty(c.types)
+    tok = check_table.lookup(c.types, .named(decl: 1)).must()
+    opt = check_table.lookup(c.types, .fallible(payload: check_table.int_ty_id(c.types))).must()
+    f = ir_state.Function(name: "t", decl: 2, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [str_id, tok, opt], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    len_read(@w, c, f, value: 0, target: ok("t9"))
+    tag_read(@w, c, f, base: 1, target: ok("t9"))
+    tag_read(@w, c, f, base: 2, target: ok("t9"))
+    payload_read(@w, c, names, s, parsed.decls, f, base: 1, at: 0, target: ok("t9"))
+    payload_read(@w, c, names, s, parsed.decls, f, base: 2, at: 1, target: ok("t9"))
+    string_byte(@w, base: 0, index: 2, target: ok("t9"))
+    got = emit_writer.finish(w)
+    assert got == "    t9 = hero_str_len(t0);\n    t9 = t1.tag;\n    t9 = t2.tag;\n    t9 = t1.as.c_word;\n    t9 = t2.as.err;\n    t9 = hero_str_byte(t0, t2);\n"
