@@ -1,0 +1,228 @@
+# The backend's front door: the IR becomes one C11 translation unit
+# (design.md §3.1; panels 020, 023). Port of the driver half of
+# crates/heroes/src/emit/mod.rs — the file that says the ORDER the
+# department writes in, and nothing else.
+#
+# A printer plus two mechanical passes — declaration ordering (Heroes'
+# top level is order-free with free mutual recursion, C's is not) and
+# the mangler. No analysis, no optimisation: the whole optimisation
+# pipeline is clang's, which design.md calls "a welcome side effect,
+# not a reason". What the emitter refuses, it refuses as a diagnostic
+# (exit 1) rather than as a second channel, and the C never mentions
+# the output path — which is what makes the double-emit determinism
+# diff a property of the emitter rather than of the invocation.
+
+use ast
+use source
+use diag
+use check_table
+use check_state
+use ir_state
+use emit_ctype
+use emit_writer
+use emit_decls
+use emit_gate
+use emit_typeorder
+use emit_perfn
+use emit_descriptors
+use emit_signature
+use emit_body
+use emit_builtins
+use emit_externs
+use parse
+use resolve
+use checker
+use ir_lower
+use ir_mono
+use ir_own
+
+# What came out. Exactly one of the two is interesting: with any
+# diagnostic the C is empty, because a translation unit missing the
+# form that was refused would compile into a program that quietly
+# does less.
+record Emitted
+    c: str
+    diagnostics: [diag.Diagnostic]
+    # The libraries every `link` named — DECLARED, NOT CALLED, the
+    # same rule design.md states for the flag itself: link-what-a-call
+    # -reaches would make the linker's arguments depend on dead-code
+    # analysis.
+    link: [str]
+    # The packages a group asked the machine about, kept apart because
+    # a name here is a QUESTION, answered by a file this program did
+    # not write.
+    packages: [str]
+
+# The test blocks in this program, in source order, by their titles.
+# heroes test needs the list before it runs anything: it compiles once
+# and runs the binary once per test, so each failure is its own
+# process and one abort does not hide the tests after it.
+function tests_of(p: ir_state.Program) -> [str]
+    out: [str] @ []
+    for f in p.functions
+        match f.kind
+            .test_kind => out @ out.push(f.name)
+            .function_kind | .constant_kind | .extern_kind => continue
+    return out
+
+# Where a program's main is, or nothing. A file with no entry point is
+# a perfectly good translation unit — it just cannot become a binary,
+# and the difference belongs to the caller.
+function entry_point(p: ir_state.Program) -> i64?
+    index: i64 @ 0
+    for f in p.functions
+        is_main: bool @ false
+        match f.kind
+            .function_kind => is_main @ f.name == "main"
+            .constant_kind | .extern_kind | .test_kind => is_main @ is_main
+        if is_main
+            return ok(index)
+        index @ index + 1
+    return fail("none", "no main in this program")
+
+function emit(p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
+    return emit_for(target: .program_build, p: p, c: c, s: s, decls: decls, version: version)
+
+# Emit one lowered program. The gate runs first and TO COMPLETION:
+# every unsupported form is reported, sorted by span, because a
+# message that carries the list is one round trip and three
+# invocations is three.
+function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
+    refused = emit_gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
+    if refused.len() > 0
+        none_link: [str] = []
+        none_pkg: [str] = []
+        return Emitted(c: "", diagnostics: refused, link: none_link, packages: none_pkg)
+    # The ROOT module names exactly two things: the generated .c in a
+    # #line directive, and the program-wide types the emitter invents.
+    # Every name from a declaration takes that declaration's own
+    # module instead (M-module-namespace's whole change here).
+    module = source.module_of(s.name)
+    # The author's functions, plus exactly the library functions they
+    # reach — computed BEFORE the type walk, because the types a
+    # pruned function mentions are not reachable either: unfiltered,
+    # read_file -> str? put two option structs and eight per-type
+    # functions into every translation unit in the language.
+    used = emit_builtins.reachable(p, s)
+    shown: [i64] @ []
+    index: i64 @ 0
+    for f in p.functions
+        if !source.is_library(s, f.span.start) || !used[f.decl].is_err()
+            shown @ shown.push(index)
+        index @ index + 1
+    reached: {i64: bool} @ {}
+    for at in shown
+        f = p.functions[at]
+        skipped: bool @ false
+        match f.kind
+            .test_kind =>
+                match target
+                    .program_build => skipped @ true
+                    .tests_build => skipped @ skipped
+            .function_kind | .constant_kind | .extern_kind => skipped @ skipped
+        if skipped
+            continue
+        reached[f.result] @ true
+        for slot in f.slots
+            reached[slot.ty] @ true
+        for blk in f.blocks
+            for inst in blk.insts
+                reached[inst.ty] @ true
+    # TRANSITIVELY, because a type names the types it holds: [int?] is
+    # one slot type and two declarations, and naming only the outer
+    # one left the inner int? unnamed under a rule that asserts every
+    # T? is named before anything mentions one. Found by the mutant
+    # corpus, which is where CLAUDE.md §9 says an invariant belongs.
+    frontier: [i64] @ keys(reached)
+    while frontier.len() > 0
+        id = frontier[frontier.len() - 1]
+        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+        for inner in check_table.contained(c.types, id)
+            if reached[inner].is_err()
+                reached[inner] @ true
+                frontier @ frontier.push(inner)
+    names: emit_ctype.Names @ emit_ctype.new_names(s, decls)
+    names @ emit_ctype.with_options(names, module: module, c: c)
+    names @ emit_ctype.with_functions(names, module: module, c: c, p: p)
+    w: emit_writer.Writer @ emit_writer.new_writer(source.stem_of(s.name))
+    emit_decls.prelude(@w, p, target: target, c: c, names: names, s: s, decls: decls, version: version)
+    # Types before anything that can mention one: every typedef in one
+    # containment order, then every per-type prototype, then the
+    # descriptors — an array literal names its element's descriptor,
+    # so the object must exist before a function body mentions it.
+    emit_typeorder.definitions(@w, c, names, s, decls)
+    emit_perfn.prototypes(@w, c, names, decls)
+    emit_descriptors.definitions(@w, c, names, decls, reachable: reached)
+    for at in shown
+        if emit_decls.emitted(p.functions[at], target: target)
+            emit_signature.prototype(@w, p.functions[at], c, names, s, decls)
+    for at in shown
+        if emit_decls.emitted(p.functions[at], target: target)
+            emit_body.definition(@w, p, c, names, s, decls, f: p.functions[at])
+    emit_perfn.bodies(@w, c, names, s, decls)
+    match target
+        .program_build =>
+            entry = entry_point(p)
+            if !entry.is_err()
+                emit_decls.shim(@w, p.functions[entry.must()], s)
+        .tests_build => emit_decls.test_shim(@w, p, s)
+    return Emitted(c: emit_writer.finish(w), diagnostics: [], link: emit_externs.libraries(p, s, decls), packages: emit_externs.packages(p, s, decls))
+
+## Tests
+
+function has(text: str, needle: str) -> bool
+    cs = text.chars()
+    needle_cs = needle.chars()
+    if needle_cs.len() == 0
+        return true
+    if needle_cs.len() > cs.len()
+        return false
+    start: i64 @ 0
+    while start <= cs.len() - needle_cs.len()
+        matched: bool @ true
+        offset: i64 @ 0
+        while offset < needle_cs.len()
+            if cs[start + offset] != needle_cs[offset]
+                matched @ false
+                break
+            offset @ offset + 1
+        if matched
+            return true
+        start @ start + 1
+    return false
+
+test "one program, one unit: prelude, order, shim — and the same bytes twice"
+    text = "record Box\n    v: i64?\n\nfunction grab(b: Box) -> i64\n    if b.v.is_err()\n        return 0\n    return b.v.must()\n\ntest \"grab reads the value\"\n    assert grab(b: Box(v: ok(3))) == 3\n\nfunction main()\n    print(grab(b: Box(v: ok(3))))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+    p: ir_state.Program @ low.program
+    cc: check_state.Checked @ c
+    mono_diags = ir_mono.run(@p, @cc, s, parsed.decls)
+    assert mono_diags.len() == 0
+    ir_own.run(@p, cc)
+    got = emit_for(target: .program_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test")
+    assert got.diagnostics.len() == 0
+    assert has(text: got.c, needle: "/* Generated by heroes 0.0.0-test from t.hero. Do not edit. */")
+    assert has(text: got.c, needle: "int main(")
+    assert has(text: got.c, needle: "h_t_main")
+    # §4.18: an ordinary build ignores the test block entirely.
+    assert !has(text: got.c, needle: "grab reads the value")
+    # The double-emit determinism rule, asserted where it is cheapest.
+    again = emit_for(target: .program_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test")
+    assert got.c == again.c
+    # The tests target: the test shim replaces main's, and tests_of
+    # hands the runner its titles.
+    tests = emit_for(target: .tests_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test")
+    assert tests.diagnostics.len() == 0
+    assert has(text: tests.c, needle: "int main(")
+    assert tests.c != got.c
+    titles = tests_of(p)
+    assert titles.len() == 1
+    assert titles[0] == "\"grab reads the value\""
+    assert !entry_point(p).is_err()
+    assert got.link.len() == 0
+    assert got.packages.len() == 0
