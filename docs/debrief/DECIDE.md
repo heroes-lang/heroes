@@ -401,3 +401,41 @@ program reaches C. The alternative (a runtime entry point wrapping
 posix_spawn with argv separation) is safer against quoting but grows the
 runtime; system() + careful quoting of the few paths we pass is v1. Veto or
 confirm.
+
+## The self-compilation cost, measured (M-selfhost-port, 2026-08-17)
+
+The port compiles small programs instantly and its own 34,512 lines not at
+all within 20 minutes. Measured with the -O0 selfhost binary, `check` only
+(frontend, no emit), wall clock:
+
+| input | modules pulled in | time |
+|---|---|---|
+| `token.hero` (193 lines) | 2 | 0s |
+| `parse.hero` | the lexer + parser subtree | 24s |
+| `checker.hero` | the frontend subtree | 152s |
+| `emit.hero` | + the whole backend | >600s (killed) |
+| `main.hero` (everything) | 143 | >1200s (killed) |
+
+Superlinear, and the shape says where to look before any guess: every
+`for … in xs` over a growing `[T]` in this port copies (COW value
+semantics, §4.20), and several walks are O(n) scans inside O(n) loops —
+`out_edges` in check_sized rescans every edge per node, `resolve_state`'s
+`top_visible` scans the table, `emit_ctype`'s tables are maps keyed by
+declaration. None of that is a language defect; it is the port written the
+way the Rust reads rather than the way this language costs.
+
+**This is CLAUDE.md §13's named case, and it is the author's to route.**
+Performance is not a goal *and not a licence*: where a cost stops a program
+the closure list needs from running at all, that is §1.0 compiler-need and
+it goes to the panel rather than to an assistant's optimisation instinct.
+The fixpoint (M-selfhost-fixpoint) is the v1 finish line and it cannot be
+reached at these numbers.
+
+**Before the panel is convened, two measurements are owed** and neither is
+an optimisation: (a) the same table with the selfhost binary built at -O2
+rather than -O0 — the compiler was measured in a debug build, which is not
+the configuration the fixpoint runs in; (b) a profile naming the top three
+call sites, so a sitting is briefed with where the time goes rather than
+with a guess about it. Queued rather than done because (b) needs an
+instrument this project does not yet have on the surface, and adding one is
+itself a §10 stopping-rule question.
