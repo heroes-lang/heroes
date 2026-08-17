@@ -157,7 +157,25 @@ fn postfix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
                 let start = ast.exprs[base.0 as usize].span;
                 base = if cur.at(TokenKind::LParen) {
                     let args = super::primary::call_args(cur, ast, src);
-                    let span = start.to(cur.previous_span());
+                    // **`previous_significant_span`, and this is that repair's
+                    // adjacent shape** (CLAUDE.md §1's fourth rule). The cursor
+                    // doc one file over describes the defect and dates it: built
+                    // from `previous_span` a span reaches the line's
+                    // `Terminator`, which sits past any trailing comment, so
+                    // `f() # a note` was underlined twenty-three columns wide for
+                    // a three-column statement. That was repaired for
+                    // **statements** on 2026-08-12 and left here, so a call and a
+                    // method kept swallowing the comment: measured 2026-08-17,
+                    // `sort(ps)` underlined 46 columns for 8, on six of the
+                    // `check/` goldens which had pinned the wrong width.
+                    //
+                    // Found by the SELFHOST PORT, which computes it correctly —
+                    // the differential over 257 corpus inputs is the instrument,
+                    // and CLAUDE.md §12's rule about which artifact wins applies
+                    // to two compilers as well as to a document: §4.17 says the
+                    // caret is the span, and a caret over a comment points at
+                    // something the author cannot fix.
+                    let span = start.to(cur.previous_significant_span());
                     ast.push_expr(super::ast::Expr {
                         kind: ExprKind::Method { receiver: base, name, args },
                         span,
@@ -172,7 +190,8 @@ fn postfix(cur: &mut Cursor, ast: &mut Ast, src: &Source) -> ExprId {
             TokenKind::LParen => {
                 let start = ast.exprs[base.0 as usize].span;
                 let args = super::primary::call_args(cur, ast, src);
-                let span = start.to(cur.previous_span());
+                // The same repair as the method above, and the same reason.
+                let span = start.to(cur.previous_significant_span());
                 base = ast.push_expr(super::ast::Expr {
                     kind: ExprKind::Call { callee: base, args },
                     span,

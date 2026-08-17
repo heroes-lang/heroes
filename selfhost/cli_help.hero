@@ -6,11 +6,15 @@
 # input channel outside the argv table — a channel nobody can discover
 # is a channel that will be discovered by reading the source.
 #
-# NO MILESTONE IDENTIFIER APPEARS HERE. The footer once advertised
-# verbs §10's stopping rule had refused, with milestone ids §4.17
-# forbids — a reader given (M5b) grepped the repository and concluded
-# the toolchain was broken. What is left is the two commands that are
-# genuinely scheduled, with no date attached.
+# NO MILESTONE IDENTIFIER APPEARS HERE — and this comment does not
+# spell one either, which is the rule catching its own explanation:
+# `no_living_file_names_a_numbered_milestone` fired on the first draft
+# of this paragraph, where the example was quoted verbatim. The footer
+# once advertised verbs §10's stopping rule had refused, tagged with
+# legacy numbered ids §4.17 forbids — a reader given one grepped the
+# repository for it and concluded the toolchain was broken. What is
+# left is the two commands that are genuinely scheduled, with no date
+# attached.
 
 use cli_table
 

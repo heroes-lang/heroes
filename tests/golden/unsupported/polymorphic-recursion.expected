@@ -2,6 +2,6 @@ error[polymorphic_recursion]: this call instantiates the function that contains 
   at tests/golden/unsupported/polymorphic-recursion.hero:30:16
      |
   30 |     return 1 + depth(wrap(x), n - 1)   #~ polymorphic_recursion
-     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |                ^^^^^^^^^^^^^^^^^^^^^
   note: a generic function is compiled once per type it is used at, so a chain that never repeats a type never ends
   note: pass the value along unchanged, or take the recursive step in a non-generic helper
