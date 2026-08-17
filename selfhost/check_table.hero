@@ -215,6 +215,9 @@ function lookup(t: Types, ty: Ty) -> i64?
 function get(t: Types, id: i64) -> Ty
     return t.nodes[id]
 
+function len_of(t: Types) -> i64
+    return t.nodes.len()
+
 function params_of(t: Types, params: Params) -> [i64]
     out: [i64] @ []
     i: i64 @ params.start
