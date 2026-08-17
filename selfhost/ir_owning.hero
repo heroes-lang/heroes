@@ -1,0 +1,78 @@
+# Which operations hand back a NEW reference (design.md §4.10; panels
+# 021, 022). Port of crates/heroes/src/owning.rs.
+#
+# The ownership pass decides WHERE an incref and a release go; this
+# decides WHAT needs one at all, and it is worth its own module because
+# it is the question the pass gets wrong silently. Every other mistake
+# in the ownership pass is a crash or a sanitiser report; a wrong
+# answer here is a LEAK, which nothing in an ordinary build reports —
+# it took the leak counter saying `3 heap blocks still live at exit` to
+# find the first one.
+#
+# Exhaustive matches rather than allow-lists on purpose: a new IR op
+# has to be classified here, loudly.
+
+use ir
+
+# Whether this operation hands back a new reference. Everything else
+# either borrows (a load, a field read) or produces something
+# uncounted. A call is owning because a Heroes function increfs what it
+# returns; a builtin because the runtime's constructors return +1. A
+# str literal is NOT: a literal is a static block whose refcount is
+# negative, so nothing owns it.
+#
+# `+` on a str ALLOCATES, and forgetting it was this pass's first
+# defect: three live blocks at exit, all tracing to one missing row.
+# The concatenation is a binary, which reads like arithmetic and is a
+# constructor — only the result type tells them apart, and this
+# function is called only when the result is refcounted, so binary here
+# can be nothing else.
+#
+# `m[k]` allocates, and it is the only one of its four lookalikes that
+# does: a field read, an element read and a payload read hand back a
+# borrowed view, but a map lookup BUILDS a V? around the value, and
+# building it copies the value through its descriptor, which increfs.
+# Found by the leak counter, and only with a heap-allocated value — a
+# str literal's negative refcount made the same missing decref
+# invisible.
+function allocates(op: ir.OpKind) -> bool
+    return match op
+        .call | .construct | .cast | .binary => true
+        .map_get => true
+        .field | .index | .payload => false
+        .lit | .load | .store | .unary | .len_of | .tag_of => false
+        .func_ref | .copy_out | .abort_op | .incref | .decref => false
+        .hole | .missing => false
+
+# Whether a constructor makes its result a SECOND OWNER of every
+# counted argument (rule 6). A record, a variant case and both sides of
+# a T? all hold their argument by value, so the new value is a second
+# owner. ok(x) was FIRST written as a wrap that consumes its argument,
+# on panel 021's note — but rule 5 came later and made every value
+# reaching a constructor borrowed, so consuming one is a release the
+# program never made; the note was older than the rule. A container
+# literal is built by push, whose copy already takes the array's own
+# reference per element — listed one shape at a time, so that landing a
+# container is a decision here.
+function retains_fields(shape: ir.Shape) -> bool
+    return match shape
+        .record_shape | .case_shape => true
+        .ok_shape | .err_shape | .fail_shape => true
+        .array_shape | .map_shape => false
+
+## Tests
+
+test "the four constructors own, the three lookalike reads borrow"
+    assert allocates(.call(callee: .builtin_fn(at: 0), arguments: ir.Run(start: 0, length: 0), variadic: false))
+    assert allocates(.map_get(map: 1, key: 2))
+    assert allocates(.binary(op: .add, left: 1, right: 2))
+    assert !allocates(.field(base: 1, at: 0))
+    assert !allocates(.index(base: 1, at: 2))
+    assert !allocates(.payload(base: 1, at: 0))
+    assert !allocates(.lit(value: .str_const(at: 0)))
+
+test "a record is a second owner, a container literal is not"
+    assert retains_fields(.record_shape(decl: 0))
+    assert retains_fields(.ok_shape)
+    assert !retains_fields(.array_shape)
+    assert !retains_fields(.map_shape)
