@@ -1,0 +1,120 @@
+# A function's C signature: the prototype, and the name a monomorphised
+# instance gets (design.md §3.1, §4.12; panel 029 R5).
+# Port of crates/heroes/src/emit/signature.rs.
+#
+# A prototype IS a signature and a semicolon, and a definition is the
+# same signature and a body — writing it in one place is what keeps a
+# declaration and its definition from disagreeing, which C answers with
+# `conflicting types` and the emitter must never provoke.
+#
+# Port note: the Rust prototype() asks decls::emitted first; here the
+# caller filters and prototype writes unconditionally — the filter
+# lives with the target logic, which is decls' concern.
+
+use ast
+use source
+use check_state
+use check_render
+use ir_state
+use emit_mangle
+use emit_ctype
+use emit_writer
+use token
+use check_table
+use parse
+use resolve
+use checker
+
+# The C name of one function: its mangled name, plus the hash of what
+# it was instantiated at when it is a monomorphised instance. The
+# rendering that is hashed is the CANONICAL one — render_instance — so
+# the port reproduces the same symbol from the same public spelling,
+# and the fixpoint does not depend on two implementations interning in
+# the same order.
+function instance_name(f: ir_state.Function, c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    module = source.component_at(s, f.span.start)
+    is_test: bool @ false
+    match f.kind
+        .test_kind => is_test @ true
+        .function_kind | .constant_kind | .extern_kind => is_test @ is_test
+    if is_test
+        return emit_mangle.test_name(module: module, index: f.decl)
+    if f.instance.len() == 0
+        return emit_mangle.function_name(module: module, name: f.name)
+    rendered = render_instance(c, s, decls, bound: f.instance)
+    return emit_mangle.instance_of(module: module, name: f.name, rendered: rendered)
+
+# The type arguments as one string — what the hash is taken over and
+# what the comment above an instance shows. Independent of the interner
+# ids, of the module, and of the file's name.
+function render_instance(c: check_state.Checked, s: source.Source, decls: [ast.Decl], bound: [i64]) -> str
+    rendered: [str] @ []
+    none: [str] = []
+    for t in bound
+        rendered @ rendered.push(check_render.render_ty(c.types, s, decls, t, none))
+    return rendered.join(", ")
+
+# int64_t h_mod_dist(int64_t h0_a, int64_t *ph1_b) — a mutable
+# parameter is a POINTER parameter: §4.8's copy-in/copy-out has no
+# other shape in C, because copy_out writes the CALLER's place and the
+# callee cannot otherwise reach it.
+function signature(f: ir_state.Function, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
+    name = instance_name(f, c, s, decls)
+    result = emit_ctype.c_result(names, c: c, ty: f.result)
+    params: [str] @ []
+    for slot_id in f.params
+        params @ params.push(one_param(f, c, names, slot_id: slot_id))
+    list: str @ "void"
+    if params.len() > 0
+        list @ params.join(", ")
+    return result + " " + name + "(" + list + ")"
+
+function one_param(f: ir_state.Function, c: check_state.Checked, names: emit_ctype.Names, slot_id: i64) -> str
+    declared = f.slots[slot_id]
+    ty: str @ "void"
+    found = emit_ctype.c_type(names, c: c, ty: declared.ty)
+    if !found.is_err()
+        ty @ found.must()
+    is_mutable: bool @ false
+    match declared.kind
+        .param_slot ps =>
+            if ps.mutable
+                is_mutable @ true
+        .local_slot | .synthetic_slot => is_mutable @ is_mutable
+    if is_mutable
+        return ty + " *" + emit_mangle.out_param(index: slot_id, name: declared.name)
+    return ty + " " + emit_mangle.slot(index: slot_id, name: declared.name)
+
+# The prototype: the signature and a semicolon. The caller has already
+# decided this function is emitted for the current target.
+function prototype(@w: emit_writer.Writer, f: ir_state.Function, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
+    emit_writer.at_generated(@w)
+    emit_writer.line(@w, text: signature(f, c, names, s, decls) + ";")
+
+## Tests
+
+test "the signature spells the pair rule, and an instance carries its hash"
+    text = "function dist(a: i64, @b: i64) -> i64\n    b @ b + a\n    return a\n\nfunction main()\n    v: i64 @ 0\n    print(dist(a: 1, b: @v))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = emit_ctype.new_names(s, parsed.decls)
+    int_id = check_table.int_ty_id(c.types)
+    slots: [ir_state.Slot] = [ir_state.Slot(name: "a", ty: int_id, kind: .param_slot(mutable: false)), ir_state.Slot(name: "b", ty: int_id, kind: .param_slot(mutable: true))]
+    f = ir_state.Function(name: "dist", decl: 0, kind: .function_kind, generics: [], params: [0, 1], result: int_id, slots: slots, blocks: [], values: [], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
+    assert signature(f, c, names, s, parsed.decls) == "int64_t h_t_dist(int64_t h0_a, int64_t *ph1_b)"
+    # An instance: the same function at [i64] carries the hash of the
+    # canonical rendering — the same polynomial the witness golden pins.
+    monod: ir_state.Function @ f
+    monod.instance @ [int_id]
+    named = instance_name(monod, c, s, parsed.decls)
+    assert named == "h_t_dist_" + emit_mangle.instance(render_instance(c, s, parsed.decls, bound: [int_id]))
+    # A test block is named by index, never by title.
+    tester: ir_state.Function @ f
+    tester.kind @ .test_kind
+    tester.decl @ 3
+    empty_params: [i64] = []
+    tester.params @ empty_params
+    assert instance_name(tester, c, s, parsed.decls) == "h_t_test3"
