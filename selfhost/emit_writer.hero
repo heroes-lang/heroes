@@ -1,0 +1,204 @@
+# The output, which has to count its own lines (design.md §3.1, panel
+# 020). Port of crates/heroes/src/emit/writer.rs.
+#
+# `#line N` anchors the NEXT line, and C then auto-increments. That one
+# sentence is why this is a record and not a str: "emit #line on
+# source-line change" cannot be implemented by comparing spans, because
+# a Heroes line that lowers to K lines of C drifts by K-1, silently.
+# The comparison has to be against WHAT CLANG CURRENTLY BELIEVES — the
+# effective line — which this writer tracks.
+#
+# And tracking the belief is half the job. The other half went missing
+# for the backend's whole life, repaired 2026-08-16: the belief was
+# honoured only at an at_file call, so an emitter that writes K lines
+# under one request positioned once, and lines 2..K walked forward a
+# source line each — measured as 550 C lines across 81 of 81 golden
+# programs landing on a blank line, the next declaration, or past the
+# end of the file. The repair is INTENT beside CLAIM: what was asked
+# for, as against what clang believes, with line() restoring the first
+# whenever the second has aged out from under it. Cost: +1.03%
+# generated lines, no content line changed.
+#
+# The asymmetry that makes this cheap: auto-increment is CORRECT while
+# the claim names the generated file (that file really does advance one
+# line per output line) and WRONG while it names a source file (K lines
+# of C belong to one Heroes line) — so a restore is emitted only
+# against a .hero claim.
+#
+# The generated name is derived from the SOURCE stem, never from -o:
+# the emitted C must not mention the output path, or the double-emit
+# determinism diff would be a property of the invocation instead of
+# the emitter.
+
+use source
+
+# What clang believes the next output line is: which file, and which
+# line in it. `none` — nothing claimed yet, the file is its own truth.
+variant Claim
+    no_claim
+    at
+        file: str
+        line: i64
+
+record Writer
+    out: str
+    # Lines pushed so far. The next line's number in the generated file
+    # is pushed + 1.
+    pushed: i64
+    claim: Claim
+    # What the emitter last ASKED for, as opposed to what clang
+    # currently believes. The two are the same only until a second line
+    # is written under one request; keeping just the belief is what let
+    # every multi-line lowering walk off the end of the author's file.
+    intent: Claim
+    generated: str
+
+function new_writer(module: str) -> Writer
+    return Writer(out: "", pushed: 0, claim: .no_claim, intent: .no_claim, generated: module + ".c")
+
+# One line of C. Everything goes through here, which is what keeps the
+# count honest. A claim on the generated file stays true for free under
+# auto-increment; a claim on a .hero file has to be re-asserted rather
+# than allowed to drift.
+function line(@w: Writer, text: str)
+    needs_restore: bool @ false
+    restore_file: str @ ""
+    restore_line: i64 @ 1
+    match w.intent
+        .at intended =>
+            if intended.file != w.generated && w.claim != w.intent
+                needs_restore @ true
+                restore_file @ intended.file
+                restore_line @ intended.line
+        .no_claim => needs_restore @ needs_restore
+    if needs_restore
+        restore(@w, file: restore_file, at: restore_line)
+    push_line(@w, text: text)
+
+# The unconditional half of line, and the one directive uses: writing
+# the #line itself must not ask whether a #line is needed. (push is a
+# builtin, hence the longer name.)
+function push_line(@w: Writer, text: str)
+    w.out @ w.out + text + "\n"
+    w.pushed @ w.pushed + 1
+    match w.claim
+        .at believed => w.claim @ .at(file: believed.file, line: believed.line + 1)
+        .no_claim => return
+
+# Re-state a claim the auto-increment has aged out from under. Same
+# bytes as directive, without touching intent — the intent is what is
+# being honoured.
+function restore(@w: Writer, file: str, at: i64)
+    w.claim @ .no_claim
+    push_line(@w, text: "#line " + at.to_str() + " \"" + escaped_path(file) + "\"")
+    w.claim @ .at(file: file, line: at)
+
+function blank(@w: Writer)
+    line(@w, text: "")
+
+# Point the next line at a file of the compilation, at that file's own
+# line. One entry point, and it replaced two: at_source/at_library
+# split wrongly with N modules — a #line for geom.hero claiming
+# main.hero at a line past its end is the compiler blaming the author
+# for a file they did not write in. The test is the INTENT, not the
+# claim: an aged-out claim is restored by line() at the moment a line
+# is actually written, so asking again for what is already intended
+# emits nothing here, and nothing at all if no line follows.
+function at_file(@w: Writer, file: str, at: i64)
+    wanted: i64 @ at
+    if wanted < 1
+        wanted @ 1
+    already: bool @ false
+    match w.intent
+        .at intended =>
+            if intended.file == file && intended.line == wanted
+                already @ true
+        .no_claim => already @ already
+    if already
+        return
+    directive(@w, file: file, at: wanted)
+
+# Point the next line at the generated file — around a prologue, a
+# copy-out, the shim: code no user line is responsible for.
+function at_generated(@w: Writer)
+    settled: bool @ false
+    match w.claim
+        .at believed =>
+            if believed.file == w.generated
+                settled @ true
+        .no_claim => settled @ settled
+    if settled
+        return
+    # This directive occupies one line first, so the next content line
+    # is pushed + 2.
+    next = w.pushed + 2
+    generated = w.generated
+    directive(@w, file: generated, at: next)
+
+function directive(@w: Writer, file: str, at: i64)
+    # Cleared first, so the push does not increment a claim this
+    # directive is about to replace. push, not line: writing a #line
+    # must not ask whether one is needed.
+    w.claim @ .no_claim
+    push_line(@w, text: "#line " + at.to_str() + " \"" + escaped_path(file) + "\"")
+    w.claim @ .at(file: file, line: at)
+    w.intent @ w.claim
+
+function finish(w: Writer) -> str
+    return w.out
+
+# A path inside a C string literal. A quote or a backslash in a file
+# name would otherwise end the directive early — and on Windows-style
+# paths the backslash is the separator, so this is not hypothetical.
+function escaped_path(path: str) -> str
+    out: str @ ""
+    for ch in path.chars()
+        if ch == "\""
+            out @ out + "\\\""
+        else if ch == "\\"
+            out @ out + "\\\\"
+        else
+            out @ out + ch
+    return out
+
+# Point the next line at whichever source a span actually came from.
+# Every caller that has a span and a Source goes through here rather
+# than choosing for itself, so "is this the author's code or the
+# library's" is answered in one place.
+function at_span(@w: Writer, s: source.Source, offset: i64)
+    found = source.locate(s, offset)
+    at_file(@w, file: found.file, at: found.line)
+
+## Tests
+
+test "a second line under a source claim gets its restore, the first does not"
+    w: Writer @ new_writer("m")
+    at_file(@w, file: "a.hero", at: 3)
+    line(@w, text: "x;")
+    line(@w, text: "y;")
+    assert finish(w) == "#line 3 \"a.hero\"\nx;\n#line 3 \"a.hero\"\ny;\n"
+
+test "a claim on the generated file rides auto-increment for free"
+    w: Writer @ new_writer("m")
+    at_generated(@w)
+    line(@w, text: "int a;")
+    line(@w, text: "int b;")
+    # One directive, no restores: m.c really does advance a line per line.
+    assert finish(w) == "#line 2 \"m.c\"\nint a;\nint b;\n"
+
+test "asking for what is already intended emits nothing"
+    w: Writer @ new_writer("m")
+    at_file(@w, file: "a.hero", at: 5)
+    at_file(@w, file: "a.hero", at: 5)
+    line(@w, text: "z;")
+    assert finish(w) == "#line 5 \"a.hero\"\nz;\n"
+    # A different line IS a new directive.
+    again: Writer @ new_writer("m")
+    at_file(@again, file: "a.hero", at: 5)
+    at_file(@again, file: "a.hero", at: 6)
+    line(@again, text: "z;")
+    assert finish(again) == "#line 5 \"a.hero\"\n#line 6 \"a.hero\"\nz;\n"
+
+test "a path with quotes or backslashes cannot end the directive early"
+    assert escaped_path("a\\b.hero") == "a\\\\b.hero"
+    assert escaped_path("we\"ird.hero") == "we\\\"ird.hero"
