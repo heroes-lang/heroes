@@ -21,7 +21,7 @@
 //! the runtime's, and the abort they raise is spec line 126's. This file only spells
 //! the calls.
 
-use crate::ir::{Function, Place, Step, ValueId};
+use crate::ir::{is_refcounted, Function, Place, Step, ValueId};
 use crate::types::{Ty, TyId};
 
 use super::aggregate::Types;
@@ -155,10 +155,35 @@ pub(super) fn write_element(
                 lvalue = format!("{lvalue}.{member}");
                 ty = next;
                 // A field is not an indirection: the record is inside a place we
-                // already own, so nothing to unshare. A trailing field store is
-                // rule 3's plain assignment and never reaches this function.
+                // already own, so nothing to unshare. A trailing field store is a
+                // plain assignment — done HERE when the path holds an index,
+                // because the array levels above it were unshared on the way
+                // down. (Until 2026-08-17 this arm returned None on `last`,
+                // claiming such a store never reaches this function; that is
+                // true only of an index-free path, and `xs[i].f @ v` — first
+                // written by the ported resolver — emitted hero_unreachable at
+                // exit 0's price: a runtime abort on a legal program.)
                 if last {
-                    return None;
+                    // `hero_array_set` releases the old ELEMENT through its
+                    // descriptor; this store replaces one FIELD of it, so
+                    // releasing the old value is this line's own job —
+                    // measured: without it, a heap `str` overwritten here was
+                    // `1 heap blocks still live at exit`.
+                    if is_refcounted(types.checked, ty) {
+                        let release = match types.checked.types.get(ty) {
+                            Ty::Str => format!("hero_str_decref({lvalue});"),
+                            Ty::Array(_) => format!("hero_array_decref({lvalue});"),
+                            Ty::Map(_, _) => format!("hero_map_decref({lvalue});"),
+                            Ty::Failure => format!("hero_failure_release(&({lvalue}));"),
+                            _ => {
+                                let name = types.satellite_name(ty)?;
+                                format!("{name}_release(&({lvalue}));")
+                            }
+                        };
+                        lines.push(release);
+                    }
+                    lines.push(format!("{lvalue} = {};", mangle::value(value.0)));
+                    return Some(lines);
                 }
             }
             Step::Index(index) => {

@@ -1,0 +1,51 @@
+# A store to a field REACHED THROUGH an index — `xs[i].f @ v` — aborted at
+# runtime on a legal program, and its repair then leaked the old value.
+#
+# **Symptom 1**: `panic: entered unreachable code — this is a compiler bug,
+# please report it`, exit 134, on a 10-line program. The dispatcher sends
+# every store whose place path holds an index to the copy-on-write walk
+# (`emit/container.rs::write_element`), but that walk's trailing-Field arm
+# answered `return None` under a comment claiming a trailing field store
+# never reaches it — true only of an index-free path. The premise expired
+# silently when the dispatch was written against `any(Index)`; CLAUDE.md
+# §11's class, found 2026-08-17 by the ported resolver, the first program
+# to count reads in `locals[i].reads`.
+#
+# **Symptom 2, in the first repair**: a plain assignment leaked the OLD
+# value — `1 heap blocks still live at exit` when the field held a heap
+# `str`. `hero_array_set` releases the old element through its descriptor;
+# a trailing-field store bypasses `set`, so the release is the emitter's
+# own line: typed decref for str/array/map, the satellite `_release` for
+# aggregates, nothing for scalars.
+#
+# **Fix, 2026-08-17**: write_element's trailing-Field arm releases the old
+# member when counted, then assigns. The COW spine above it was already
+# unshared on the way down, which the sharing assert below pins.
+
+record Cell
+    n: i64
+    tag: str
+
+record Row
+    cells: [Cell]
+    label: str
+
+function main()
+    rows: [Row] @ [Row(cells: [Cell(n: 1, tag: "x")], label: "a")]
+    # The witness: index then trailing field, scalar and counted.
+    rows[0].label @ "b"
+    rows[0].cells[0].n @ 9
+    # The leak shape: a heap str into the field, then overwritten.
+    rows[0].cells[0].tag @ "aa" + "bb"
+    rows[0].cells[0].tag @ "cc" + "dd"
+    # The aliasing trap panel 022 measured, through the fixed path: the
+    # write must unshare the spine, so the copy keeps what it saw.
+    kept = rows
+    rows[0].cells[0].n @ 10
+    assert kept[0].cells[0].n == 9
+    assert rows[0].cells[0].n == 10
+    # Two array levels, plain element store, and the map insert unmoved.
+    rows[0].cells[0] @ Cell(n: 7, tag: "z")
+    m: {str: i64} @ {}
+    m["k"] @ 3
+    print(rows[0].label, rows[0].cells[0].n, rows[0].cells[0].tag, m["k"].must())
