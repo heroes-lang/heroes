@@ -77,7 +77,7 @@
       così il lexer è passato da &ldquo;questo fallirà sul primo file, e ci costerà
       poco&rdquo; a funzionante, in un pomeriggio. Dodici cose che il linguaggio
       non riusciva a dire; undici sono costate un paio di righe ciascuna. Ma la
-      cosa migliore trovata è meglio di una lacuna: il compilatore originale un
+      scoperta migliore è stata meglio di una lacuna: il compilatore originale un
       giorno aveva rilasciato un bug perché la lista delle parole che possono
       chiudere una riga si era dimenticata una nuova arrivata, e il linguaggio
       nuovo rende quel bug esatto impossibile da scrivere. La macchina che si
@@ -127,7 +127,7 @@
     </li>
     <li>
       <span class="when">2026-08-13 · M-program-corpus: i programmi come strumento di misura</span>
-      <b>Sette programmi veri scritti, sei difetti del compilatore caduti giù.</b>
+      <b>Sette programmi veri scritti, e sono saltati fuori sei difetti del compilatore.</b>
       Un lettore di JSON, un convertitore Markdown, un foglio di calcolo, un
       risolutore di labirinti, un piccolo assemblatore con la sua macchina, un
       riassuntore di log, un gioco. Nessun test esistente avrebbe potuto trovare
@@ -143,7 +143,7 @@
       <b>Arrivano otto larghezze, e la parola <i>int</i> smette di essere una parola.</b>
       Il documento di progetto aveva rifiutato questa cosa nei termini più forti:
       mai in questa versione, la cosa più rischiosa che potremmo aggiungere. Poi è
-      stata chiesta comunque, e metà della spesa si è scoperto che era già stata
+      stata chiesta comunque, e si è scoperto che metà della spesa era già stata
       pagata anni prima da una decisione che non c&rsquo;entrava niente. Quello che
       rende pericolose più dimensioni di numero altrove è la conversione
       invisibile; questo linguaggio aveva vietato le conversioni invisibili
@@ -160,11 +160,11 @@
       stata quella ovvia: rifiutare la forma ambigua chiude il buco, ma dare anche
       al vecchio significato una scrittura tutta sua aggiunge la notazione che il
       progetto voleva comunque, nelle stesse tre righe di specifica. Altri tre
-      linguaggi sono arrivati a quella risposta ognuno per conto suo, ognuno dopo
+      linguaggi sono arrivati a quella risposta ognuno per conto suo, dopo
       esserci cascato.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-header-constants: nessuna cifra lasciata a poter essere sbagliata</span>
+      <span class="when">2026-08-12 · M-header-constants: nessuna cifra che si possa ancora sbagliare</span>
       <b>Le impostazioni di una libreria hanno nomi e numeri, e il linguaggio sapeva dire solo i numeri.</b>
       Per nominare un&rsquo;opzione, un programma doveva scrivere 10002, con un
       commento sopra che spiegava che la documentazione della libreria somma due a
@@ -179,7 +179,7 @@
     </li>
     <li>
       <span class="when">2026-08-12 · M-ffi-ladder: 1, dove doveva stampare 1.41</span>
-      <b>La promessa intorno a cui era organizzato tutto il linguaggio era falsa per la coppia che usa il suo stesso secondo esempio.</b>
+      <b>La promessa intorno a cui era organizzato tutto il linguaggio era falsa proprio per la coppia usata dal suo stesso secondo esempio.</b>
       L&rsquo;organizzazione era questa: quando un programma prende in prestito una
       funzione C, il compilatore non la descrive, punta alla descrizione della
       libreria e lascia che clang confronti le due. È il motivo per cui questo
@@ -213,8 +213,8 @@
       portato un puntatore nullo, in silenzio, sotto tutti i flag di warning che il
       progetto usa. La piccola libreria di base si poteva compilare una volta e
       distribuire? Un altro ha scritto la sola forma possibile, ha passato una
-      funzione su testo dove serviva una funzione su numeri, e non ha ottenuto
-      nessuna diagnostica e poi un crash. Le istanze generiche dovevano avere nomi
+      funzione su testo dove serviva una funzione su numeri, e non ha ricevuto
+      nessuna diagnostica: ha ricevuto un crash. Le istanze generiche dovevano avere nomi
       leggibili? Un terzo ha trovato due programmi legali che scrivono lo stesso
       nome. Niente di tutto questo era raggiungibile leggendo.
     </li>
@@ -222,8 +222,8 @@
       <span class="when">2026-08-10 · M-optional-map: gli ultimi due tipi, intrecciati</span>
       <b>I valori che possono fallire e le mappe non si potevano costruire in nessuno dei due ordini.</b>
       Cercare una chiave in una mappa restituisce &ldquo;il valore, oppure un
-      errore&rdquo;, quindi alla mappa serviva prima quel tipo, e quel tipo si è
-      scoperto essere contato per riferimento anche quando contiene un numero
+      errore&rdquo;, quindi alla mappa serviva prima quel tipo, e quel tipo, si è
+      scoperto, usa il reference counting anche quando contiene un numero
       semplice, perché il suo lato errore porta due stringhe. Il contenitore è
       stato costruito comunque, per istruzione dell&rsquo;autore, con un
       disaccordo permanente messo per iscritto invece di essere smussato: una
@@ -305,12 +305,12 @@
     </li>
     <li>
       <span class="when">2026-08-04 · M-name-resolution: il resolver</span>
-      <b>Una calcolatrice da 317 righe si è rifiutata di risolvere, esattamente su due righe.</b>
+      <b>Una calcolatrice da 317 righe non ha superato la risoluzione dei nomi, esattamente su due righe.</b>
       Dichiara i propri <code>map</code> e <code>fold</code>, e il linguaggio si
       riserva entrambi i nomi. Era la terza volta che quello stesso programma
       prendeva una regola che nessuno sapeva di aver scritto: un caso di
       <code>variant</code> chiamato <code>.var</code>, un <code>assert</code> dentro
-      un braccio, e adesso un nome. Non era mai stato compilato ed era comunque il
+      un ramo, e adesso un nome. Non era mai stato compilato ed era comunque il
       test migliore del repository. Per strada si è scoperto che chiamava una
       funzione di base che stava nell&rsquo;inventario del documento di progetto e
       mancava dalla specifica: senza quella il linguaggio non riusciva a mettere un
@@ -324,7 +324,7 @@
       con la riparazione già scritta &mdash; e stava anche nella sintassi che la
       specifica stessa usava per un tipo funzione: quindi un parametro di tipo
       funzione non passava nemmeno il lexer, e ogni parametro di quel genere era
-      inscrivibile. La domanda è stata mandata a cinque giudici con una
+      impossibile da scrivere. La domanda è stata mandata a cinque giudici con una
       raccomandazione allegata, e quattro l&rsquo;hanno rifiutata: le regole dello
       stesso progetto elencano <code>fn</code> fra gli errori che il registro esiste
       per prendere, sette linguaggi antenati scrivono un tipo funzione con la
@@ -349,7 +349,7 @@
     <li>
       <span class="when">2026-08-03 · M-day-zero</span>
       <b>Le fondazioni, e quattro programmi scritti prima del compilatore.</b>
-      Git, un workspace Rust, un&rsquo;impalcatura per i test golden verde con zero
+      Git, un workspace Rust, un&rsquo;infrastruttura per i test golden, verde con zero
       test, e la specifica del linguaggio congelata come base della misura (budget:
       1500 token, ancora non misurati: il conteggio è arrivato un giorno dopo, e ha
       cambiato il numero). Poi quattro programmi C scritti a mano: la forma esatta

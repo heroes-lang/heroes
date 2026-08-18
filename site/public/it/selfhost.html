@@ -107,7 +107,7 @@
     suite di test riproduce: 34.812 righe che contengono ogni forma del
     linguaggio, nelle proporzioni in cui il codice vero le usa. È con quel
     corpus che sono stati trovati cinque dei difetti del porting, ed erano una
-    trappola sola vestita in cinque modi: un salto di ciclo dentro un braccio di
+    trappola sola vestita in cinque modi: un salto di ciclo dentro un ramo di
     <code>match</code> saltava la riga che teneva aggiornato un indice mantenuto
     a mano. L&rsquo;originale in Rust percorre la stessa lista con un iterator:
     non c&rsquo;è nessun indice da dimenticare, quindi quell&rsquo;errore

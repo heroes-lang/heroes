@@ -91,7 +91,7 @@
   </header>
 
   <ul class="figures">
-    <li><span class="n">91% contro 0%</span><span class="what">etichette di argomento dimenticate, prese al volo</span></li>
+    <li><span class="n">91% contro 0%</span><span class="what">etichette di argomento saltate, prese al volo</span></li>
     <li><span class="n">3512</span><span class="what">token: tutta la specifica</span></li>
     <li><span class="n">1</span><span class="what">hash, tre compilatori</span></li>
   </ul>
@@ -140,7 +140,7 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    La riga in mezzo, in quell&rsquo;output, è un errore gestito: non
+    La riga in mezzo, in quell&rsquo;output, è un fallimento gestito: non
     è la compilazione che si rompe.
     <a href="docs/failure-is-a-value.html">Il capitolo dedicato</a> segue quel
     programma riga per riga. Un installer non esiste ancora: si compila dal
@@ -173,7 +173,7 @@ we can be heroes</code></pre>
   <h2>Tre cose che lo rendono diverso</h2>
   <ul class="cards">
     <li>
-      <h3>Gli errori non compilano</h3>
+      <h3>Uno sbaglio non compila</h3>
       <p>
         Due argomenti dello stesso tipo scambiati, un caso di
         <code>variant</code> dimenticato, un nome modificato che nessuno ha
@@ -214,7 +214,7 @@ we can be heroes</code></pre>
     globali modificabili, e l&rsquo;ordine delle dichiarazioni non conta mai.
     Sotto, il linguaggio che il compilatore implementa davvero è fatto di
     sette costrutti: tutto il resto che puoi scrivere è zucchero
-    sintattico che sparìsce prima della forma interna del compilatore, ed
+    sintattico che sparisce prima della forma interna del compilatore, ed
     è per questo che una persona sola riesce a finirlo.
   </p>
   <p>
