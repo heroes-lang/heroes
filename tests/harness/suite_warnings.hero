@@ -1,0 +1,130 @@
+# The generated C compiles with NO warnings at all — over the goldens and
+# over the corpus.
+#
+# Ports golden.rs:811 and corpus.rs:382. Two directories of cases and
+# fourteen real programs, each through `build` (-O0) and `run` (-O2),
+# because the two verbs are the two optimisation levels and clang's
+# warnings reach stderr even on success — a warning nobody sees cannot
+# falsify anything.
+#
+# WHY A ZERO-WARNING BAR AND NOT A LIST OF ACCEPTABLE ONES: the flag set
+# has `-Werror=` on four warnings and plain `-W` on
+# `-Wconditional-uninitialized`, which panel 020 adopted with a falsifiable
+# disposition — zero fires across the corpus promotes it to `-Werror=`,
+# one fire is a lowering bug and gets a case named after it. This test is
+# that measurement, standing. If it ever fails, read the warning before
+# touching it: clang has found something about the emitter.
+#
+# `tests/golden/run/` was held to this from M-scalars-run and the corpus
+# was not, which is how a dead temporary reached a real program — `_ =
+# f(x)?` on a fallible left an `int64_t t72;` that nothing read, and clang
+# said so on every build of `examples/maze/` while every golden stayed
+# silent.
+#
+# THE ONE EXEMPTION IS `ptr`, AND IT IS NOT A LIST OF FILE NAMES. A
+# program that hands C an `@` parameter of type `ptr` emits `void **`
+# where the header wants `sqlite3 **`; C converts `void *` to any object
+# pointer implicitly and does NOT convert `void **`. That warning is TRUE
+# and is forwarded rather than silenced (an M-ffi-ladder decision recorded
+# in examples/sqlite/main.hero's own header): a cast the emitter inserted
+# would compile clean and hide a real limit of `ptr`.
+#
+# So the assertion runs BOTH WAYS. A program with no `ptr` out-parameter
+# must produce no warning at all; one that has them MUST produce warnings,
+# and every one of them must be that warning. When Part 7 item 10 lands
+# and `ptr` stops erasing the type, this fails on the second half and the
+# exemption is deleted by whoever made it obsolete — which is what a
+# premise with a test under it looks like.
+
+use cases
+use report
+use shell
+use strings
+
+constant GOLDEN_DIRS: [str]
+    [
+        "tests/golden/run"
+        "tests/golden/emit"
+    ]
+
+constant EXAMPLES: str
+    "examples"
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    for dir in GOLDEN_DIRS
+        for item in cases.collect(scratch: scratch, dir: dir)?
+            judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source, erases: false)
+    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+        main = dir + "/main.hero"
+        if read_file(main).is_err()
+            continue
+        judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + strings.base_name(path: dir), main: main, erases: lends_a_ptr(scratch: scratch, dir: dir))
+    return ok(r)
+
+# One program under both verbs. `erases` says whether this program hands
+# C the address of a `ptr`, which is the one thing clang may complain
+# about — and then must.
+function judge(@r: report.Report, scratch: str, compiler: str, label: str, main: str, erases: bool)
+    for verb in ["build", "run"]
+        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " " + verb + " " + shell.sq(main))
+        if said.is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + main)
+            return
+        if shell.machine_lacks_the_library(said.must().err)
+            return
+        noise = warnings_in(said.must().err)
+        if !erases
+            if noise.len() > 0
+                report.keep_failure(@r, label: label + " under `" + verb + "`", detail: "  " + main + " produced clang warnings:\n    " + noise.join("\n    "))
+                return
+        else
+            if noise.len() == 0
+                report.keep_failure(@r, label: label + " under `" + verb + "`", detail: "  " + main + " lends a `ptr` and no longer warns — if `ptr` stopped erasing the type, delete this exemption instead of widening it")
+                return
+            for one in noise
+                if !strings.contains(text: one, needle: "incompatible pointer types")
+                    report.keep_failure(@r, label: label + " under `" + verb + "`", detail: "  " + main + " warns about something other than `ptr`:\n    " + one)
+                    return
+    report.keep_pass(@r)
+
+function warnings_in(err: str) -> [str]
+    found: [str] @ []
+    for row in strings.lines(err)
+        if strings.contains(text: row, needle: "warning:")
+            found @ found.push(row)
+    return found
+
+# Whether a module hands C the address of a `ptr` — an `@` parameter of
+# that type, which is what becomes `void **`.
+function lends_a_ptr(scratch: str, dir: str) -> bool
+    listing = shell.list_entries(scratch: scratch, dir: dir)
+    if listing.is_err()
+        return false
+    for entry in listing.must()
+        if strings.ends_with(text: entry, suffix: ".hero")
+            text = read_file(entry)
+            if !text.is_err()
+                for row in strings.lines(text.must())
+                    if strings.contains(text: row, needle: "@") && strings.contains(text: row, needle: ": ptr")
+                        return true
+    return false
+
+test "a warning line is found wherever clang puts it, and nothing else is"
+    said = "x.c:3:5: warning: unused variable 'a' [-Wunused-variable]\nx.c:9:1: note: here\n"
+    assert warnings_in(said).len() == 1
+    assert warnings_in("").len() == 0
+    assert warnings_in("no warnings here\n").len() == 0
+    # A `note:` mentioning the word is not a warning line; a real warning
+    # line always carries `warning:` itself.
+    assert warnings_in("  note: this warning: is quoted\n").len() == 1
+
+test "lending a ptr is read off the program"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/warnings"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/main.hero", text: "function main()\n    print(1)\n").is_err()
+    assert !lends_a_ptr(scratch: scratch, dir: tree)
+    assert !write_file(path: tree + "/db.hero", text: "extern \"sqlite3.h\"\n    function sqlite3_open(path: cstr, @out: ptr) -> i64\n").is_err()
+    assert lends_a_ptr(scratch: scratch, dir: tree)
