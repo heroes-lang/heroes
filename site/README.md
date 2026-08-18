@@ -15,7 +15,7 @@ five-seat review panel as a directory-scoped skill.
 | `index.html` | the landing: hero, one sample, three cards, the claim. Short on purpose. |
 | | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;aprire un sito di un linguaggio con un errore è brutto&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |
 | `why.html` | the founding constraint, the thesis, the cost formula, the rules, the objections |
-| `errors.html` | diagnostics as a deliverable — real output, fixes, holes, the mutation numbers |
+| `errors.html` | diagnostics as a deliverable — real output, fixes, holes, the mutation numbers. Not in the nav: it is a sub-page of `docs/`, linked from the docs landing, with a crumb and `Docs` marked current |
 | `selfhost.html` | the fixpoint: the hash, what it took, and what it found |
 | `zen.html` | `heroes this`, quoted verbatim — the twenty lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation |
 | `panel.html` | how a change is decided: the five seats and their differentiated briefs, the four vetoes, the historian's search obligation, the borrowed languages, and who is building this (author request 2026-08-18) |
@@ -36,20 +36,34 @@ inline SVG in every page, because it is markup.
 
 **The nav is duplicated in each page's markup**, which is the one repetition the
 no-JavaScript rule forces. Nine items in a fixed order — Why Heroes · Docs ·
-Errors · Self-hosted · Zen · Panel · Author · Log · GitHub — and the current page
+Self-hosted · Zen · Panel · Thanks · Author · Log · GitHub — and the current page
 marks itself `class="here"`. At nine items the row no longer fits a phone, so
 under 700px the list becomes **one horizontally scrolling line** with the mark
 and GitHub on the row above it: two rows of sticky chrome instead of three, no
 item dropped, and the item clipped at the right edge is the affordance. Adding a
 tenth item is the point where this stops working and something has to give.
 
-**`thanks.html` is the first page to be kept out of that row, deliberately**
-(2026-08-18). It is reachable from every page's footer — *"standing on a lot of
-other people's work"* — and from the sentence under `panel.html`'s borrowings
-list, which is where a reader who cares about lineage already is. That is the
-pattern for any further page: a route in from the page whose subject it
-continues, plus the footer, rather than a tenth nav item that costs the row on a
-phone. The current page is marked twice, in colour **and** with a
+**The row stays at nine, so a page enters it only by displacing one** (author
+instruction 2026-08-18). `thanks.html` went in and `errors.html` came out, and
+the exchange is the rule rather than the exception: a tenth item was built,
+measured and removed. Measured in that sitting, at the home page's own nav:
+nine items are a 517px list that stays on **one row down to 800px**, then two
+rows to 701px, then the scrolling line; the tenth item took the list to 584px
+and produced **three rows** of chrome between 720px and 701px, which is what
+"something has to give" meant. The first thing tried instead — reaching the page
+from every footer plus a sentence inside `panel.html` — failed the only test that
+counts: the author could not find it. **A page nobody can see from the chrome is
+not linked, whatever the link count says.**
+
+`errors.html` did not lose anything by moving: it is now a **sub-page of the
+documentation**, linked from the docs landing above the chapter list and carrying
+a `.crumb` (`Heroes / Docs / errors`) like a chapter does, and its nav marks
+**Docs** as the current item. That is the right shelf for it — diagnostics are
+documentation, and the page was competing with `why.html` for the same visitor.
+Its old routes are untouched: the home page's card, `why.html` and the docs
+chapter all still link it.
+
+The current page is marked twice, in colour **and** with a
 rule under it: colour alone is a signal a large minority of readers receive less
 of. Adding a page means editing that block everywhere; if that ever
 gets painful, the answer is a generator behind a `heroes` subcommand, not a
@@ -275,8 +289,10 @@ Three rules follow, and they bind every later edit:
 
 ## `site/public/docs/` — a skeleton, and who owns finishing it
 
-The landing page lists all twelve chapters; **one** (`failure-is-a-value.html`)
-is written, as the exemplar that fixes the conventions. **M-documentation-site**
+The landing page lists all twelve chapters, and above them links `errors.html`,
+which lives at the site root but belongs to this section; **one chapter**
+(`failure-is-a-value.html`) is written, as the exemplar that fixes the
+conventions. **M-documentation-site**
 owns writing the rest, and owns the rule that governs them:
 
 > Every code block on the site is a file in `examples/`.
