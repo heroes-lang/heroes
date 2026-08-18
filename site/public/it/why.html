@@ -117,14 +117,14 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
-    Senza un header, una dichiarazione non sarebbe verificata da nessuno. Nota
+    Senza un header, una dichiarazione non sarebbe verificata da niente. Nota
     <code>pow(base: exponent:)</code>: due parametri dello stesso tipo, quindi i
     nomi sono obbligatori a ogni chiamata. La regola vale anche al confine con il
     C, che è il posto dove sbagliare l&rsquo;ordine degli argomenti perdona
     meno.
   </p>
   <p>
-    &ldquo;Niente altro&rdquo; ha bisogno di una precisazione onesta: il
+    &ldquo;Nient&rsquo;altro&rdquo; ha bisogno di una precisazione onesta: il
     linguaggio porta con sé un inventario piccolo e <b>fisso</b> di una trentina
     di nomi: <code>print</code>, <code>len</code>, <code>push</code>,
     <code>slice</code>, <code>sort</code>, le conversioni,
@@ -149,7 +149,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     una descrizione che il compilatore si inventa sperando che sia giusta.
     Emettere C significa che quel controllo lo fa clang, a ogni build, gratis:
     una firma sbagliata diventa un errore di compilazione invece di un valore
-    corrotto a runtime. Un progetto precedente emetteva codice macchina passando
+    corrotto a runtime. Una versione precedente di questo progetto emetteva codice macchina passando
     da un piccolo linguaggio intermedio, ed è stato abbandonato il giorno in cui
     qualcuno si è accorto che il vincolo di partenza aveva già deciso la
     questione.
@@ -159,7 +159,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     progetto, e non è nemmeno una scusa.
   </p>
 
-  <h2>Quattro parole possono aprire una riga</h2>
+  <h2>Quattro parole possono aprire una riga al primo livello</h2>
   <p>
     Un file è una lista piatta di dichiarazioni, e ognuna comincia con la parola
     che dice che cosa è: <code>constant</code>, <code>function</code>,
@@ -189,7 +189,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     costruire e scomporre un <code>variant</code>, ciclare,
     <code>return</code>, le operazioni primitive. Tutto il resto è zucchero
     sintattico, cancellato prima della forma interna del compilatore, quindi non
-    costa niente al type checker, all&rsquo;abbassamento e al backend. Un nucleo
+    costa niente al type checker, alla traduzione verso la forma interna e al
+    backend. Un nucleo
     piccolo sotto una superficie senza sinonimi è quello che rende un compilatore
     finibile da una persona sola.
   </p>
@@ -221,7 +222,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     E la liberazione della memoria non è affidata al caso: il compilatore
     inserisce il conteggio come istruzioni vere e costruisce un solo percorso di
     pulizia per funzione, così ogni uscita da uno scope rilascia quello che quello
-    scope teneva. Tutto il runtime sotto questa roba è 3.139 righe di C, misurate
+    scope teneva. Tutto il runtime che sta sotto conta 3.139 righe di C, misurate
     il 2026-08-18.
   </p>
   <p>
@@ -229,7 +230,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     come una qualità della sua implementazione: <b>un programma non deve andare in
     segfault e non deve corrompere la memoria</b>. Le operazioni che in C vanno
     male in silenzio, qui vanno male ad alta voce. L&rsquo;overflow è controllato
-    su ogni larghezza usando le builtin di clang invece di finire in un
+    su ogni larghezza usando i builtin di clang invece di finire in un
     comportamento indefinito, il resto della divisione è protetto come la
     divisione, un indice oltre la fine ferma il programma: arresti
     deterministici, sempre nello stesso punto, a ogni esecuzione. E si misura
@@ -244,9 +245,9 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
   <ul class="pillars">
     <li><b>La località è la moneta.</b> Il senso di una riga è deciso da quella riga più la firma che la contiene, mai da qualcosa definito tre file più in là. Nessuna ereditarietà, nessuna macro, nessuna eccezione, nessuna conversione implicita, nessun null.</li>
     <li><b>Esattamente un modo di scrivere ogni cosa.</b> Un formatter canonico, una sola parola chiave per i cicli, nessuna conversione implicita di nessun tipo, nomi degli argomenti obbligatori dove i tipi potrebbero confondersi. Gli errori che i modelli fanno davvero diventano errori che il compilatore solleva davvero.</li>
-    <li><b>Errori scritti per essere letti da una macchina.</b> Ogni diagnostica porta tutto quello che serve per sistemare il programma in un solo giro: il tipo aspettato, il punto della definizione, riparazioni concrete etichettate <code>certain</code> o <code>guess</code>. I buchi tipati (<code>???</code>) permettono di costruire un programma prima lo scheletro.</li>
-    <li><b>Un programma non deve andare in segfault.</b> Questo è un obiettivo del linguaggio, non una qualità della sua implementazione, e dove due progetti ammissibili sono in disaccordo e uno dei due si può far schiantare, vince l&rsquo;altro, qualunque cosa costi in eleganza o in token. La garanzia copre le operazioni del linguaggio: indice, slice, divisione e overflow si fermano invece di corrompere. L&rsquo;unico null che esiste è messo in quarantena al confine con il C: <code>ptr</code> e <code>cstr</code> non sono <code>str</code>, e convertire un <code>cstr</code> nullo si arresta in modo pulito invece di schiantarsi, ed è per questo che la specifica dice di testare prima <code>c == nullptr</code>. Quello che poi una funzione C fa con quello che le hai passato è ancora C.</li>
-    <li><b>Piccolo abbastanza per compilare se stesso.</b> Tutta la specifica è misurata in 3512 token contro un tetto fisso di 4096: cinque pagine, e non è documentazione, è il prompt.</li>
+    <li><b>Errori scritti per essere letti da una macchina.</b> Ogni diagnostica porta tutto quello che serve per sistemare il programma in un solo giro: il tipo aspettato, il punto della definizione, riparazioni concrete etichettate <code>certain</code> o <code>guess</code>. I buchi tipati (<code>???</code>) permettono di costruire un programma partendo dallo scheletro.</li>
+    <li><b>Un programma non deve andare in segfault.</b> Questo è un obiettivo del linguaggio, non una qualità della sua implementazione, e dove due soluzioni ammissibili sono in disaccordo e uno dei due si può far schiantare, vince l&rsquo;altro, qualunque cosa costi in eleganza o in token. La garanzia copre le operazioni del linguaggio: indice, slice, divisione e overflow si fermano invece di corrompere. L&rsquo;unico null che esiste è messo in quarantena al confine con il C: <code>ptr</code> e <code>cstr</code> non sono <code>str</code>, e convertire un <code>cstr</code> nullo si arresta in modo pulito invece di schiantarsi, ed è per questo che la specifica dice di testare prima <code>c == nullptr</code>. Quello che poi una funzione C fa con quello che le hai passato è ancora C.</li>
+    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3512 token contro un tetto fisso di 4096: cinque pagine, e non è documentazione, è il prompt.</li>
   </ul>
 
   <h2>Le obiezioni ovvie <span class="nod">· quicksand, avoided ·</span></h2>
@@ -289,7 +290,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
 
     <dt>Perché la semantica a valori, con ogni assegnamento che è una copia?</dt>
     <dd>Nessun aliasing significa che nessuna funzione può modificare i tuoi dati
-    dietro le tue spalle, nessuna corsa critica sui dati per costruzione, e i
+    dietro le tue spalle, nessun data race per costruzione, e i
     cicli di riferimenti non possono esistere: quindi il reference counting con
     copy-on-write è una gestione della memoria completa, senza garbage collector.
     La località diventa totale: quello che significa una riga è deciso da quella
@@ -361,8 +362,9 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     poche pagine è anche un linguaggio che una persona sola può implementare: i
     due vincoli sono lo stesso vincolo travestito. Al momento misura 3512, e ne
     restano 584 da spendere. Il numero è misurato, non stimato, e quella
-    distinzione è costata due giorni al progetto: il budget veniva difeso a spanne, tenendo
-    d&rsquo;occhio il numero di parole, finché qualcuno non ha contato davvero e ha trovato la specifica un terzo più grande di quanto si
+    distinzione è costata due giorni al progetto: il budget veniva difeso a
+    spanne, tenendo d&rsquo;occhio il numero di parole, finché qualcuno non ha
+    contato davvero e ha trovato la specifica un terzo più grande di quanto si
     credesse. Adesso si conta con due tokenizzatori pubblicati, offline; dove non
     sono d&rsquo;accordo, vale il più grande.</dd>
   </dl>
