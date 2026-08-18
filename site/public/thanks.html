@@ -64,8 +64,7 @@
     compiler that got the project to self-hosting was written in Rust.
   </p>
   <ul class="lineage">
-    <li><b>C</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>,
+    <li><b>C</b>: <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>,
     who designed it;
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>, who
     wrote B, the language C came out of, and Unix with Ritchie; and
@@ -73,12 +72,11 @@
     who co-wrote the book that taught it to everyone. The whole of Part 11 of
     the design rests on the fact that their language is still there, and still
     linkable.</li>
-    <li><b>LLVM, clang</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>.
+    <li><b>LLVM, clang</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>.
     Heroes does not verify a foreign declaration itself; it arranges for clang
     to do it. A compiler that outsources its hardest checking to another
     compiler owes that compiler a mention.</li>
-    <li><b>Rust</b> &mdash; the Rust team, and Graydon Hoare, who started it.
+    <li><b>Rust</b>: the Rust team, and Graydon Hoare, who started it.
     The bootstrap compiler is Rust written in a deliberately narrow subset, and
     that subset is why porting it to Heroes was mechanical rather than a
     rewrite.</li>
@@ -92,7 +90,7 @@
     current research frontier, and it has a published argument.
   </p>
   <ul class="lineage">
-    <li><b>Hylo, formerly Val</b> &mdash; Dimitri Racordon, Denys Shabalin,
+    <li><b>Hylo, formerly Val</b>: Dimitri Racordon, Denys Shabalin,
     Daniel Zheng,
     <a href="https://en.wikipedia.org/wiki/David_Abrahams_(computer_programmer)">Dave
     Abrahams</a> and Brennan Saeta, the authors of <i>Native Implementation of
@@ -101,8 +99,7 @@
     disjoint trees. Everything the language does not need &mdash; a borrow
     checker, a cycle collector, lifetime annotations &mdash; is absent because of
     that one line.</li>
-    <li><b>Swift</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>, Doug
+    <li><b>Swift</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>, Doug
     Gregor, John McCall, Ted Kremenek and Joe Groff. Copy-on-write over
     reference counting, <code>inout</code> parameters (this language&rsquo;s
     <code>@</code>), and leading-dot variants. Swift is also the reassuring
@@ -110,19 +107,16 @@
     for over a decade. Heroes takes the half that works and declines
     <code>class</code>, and with it <code>weak</code> and
     <code>unowned</code>.</li>
-    <li><b>APL, J, K</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Kenneth E.
+    <li><b>APL, J, K</b>: <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Kenneth E.
     Iverson</a>,
     <a href="https://en.wikipedia.org/wiki/Roger_Hui">Roger Hui</a> and
     <a href="https://en.wikipedia.org/wiki/Arthur_Whitney_(computer_scientist)">Arthur
     Whitney</a>. Sixty years of value semantics over whole values, with no
     references in the surface language, and the evidence that this model is not
     what makes a language slow.</li>
-    <li><b>R</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Ross_Ihaka">Ross Ihaka</a> and
+    <li><b>R</b>: <a href="https://en.wikipedia.org/wiki/Ross_Ihaka">Ross Ihaka</a> and
     <a href="https://en.wikipedia.org/wiki/Robert_Gentleman_(statistician)">Robert
-    Gentleman</a>. <b>MATLAB</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Cleve_Moler">Cleve Moler</a>.
+    Gentleman</a>. <b>MATLAB</b>: <a href="https://en.wikipedia.org/wiki/Cleve_Moler">Cleve Moler</a>.
     Copy-on-write value semantics in the two languages that carried statistics
     and numerical computing for decades: millions of people who never needed a
     mutable reference to do real work.</li>
@@ -135,7 +129,7 @@
     first.
   </p>
   <ul class="lineage">
-    <li><b>Cyclone</b> &mdash; Dan Grossman,
+    <li><b>Cyclone</b>: Dan Grossman,
     <a href="https://en.wikipedia.org/wiki/Michael_W._Hicks">Michael Hicks</a>,
     Trevor Jim and
     <a href="https://en.wikipedia.org/wiki/Greg_Morrisett">Greg Morrisett</a>.
@@ -144,8 +138,7 @@
     discipline the Rust bootstrap compiler was written in, and it is why the
     port to Heroes was mechanical. The rule has their name on it in the
     repository.</li>
-    <li><b>Modula-3</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>,
+    <li><b>Modula-3</b>: <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>,
     James Donahue, Lucille Glassman, Mick Jordan, Bill Kalsow and
     <a href="https://en.wikipedia.org/wiki/Greg_Nelson_(computer_scientist)">Greg
     Nelson</a>. Unsafety with a fence around it: the model for keeping every
@@ -160,39 +153,33 @@
     were calibrated against work from the 1970s and 1980s rather than invented.
   </p>
   <ul class="lineage">
-    <li><b>Pascal, Modula, Oberon</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Niklaus_Wirth">Niklaus Wirth</a>,
+    <li><b>Pascal, Modula, Oberon</b>: <a href="https://en.wikipedia.org/wiki/Niklaus_Wirth">Niklaus Wirth</a>,
     with
     <a href="https://en.wikipedia.org/wiki/J%C3%BCrg_Gutknecht">J&uuml;rg
     Gutknecht</a> on Oberon. <code>record</code> and <code>variant</code> come
     from here. So do both calibrations: the Oberon report at sixteen pages is
     how long a specification is allowed to be, and Pascal-P4 at roughly four
     thousand lines is how big a self-hosting compiler is allowed to be. Wirth
-    also wrote an entire operating system in a language with no raw pointers,
-    which is the strongest existing argument that this whole approach
-    works.</li>
+    also wrote an entire operating system in a language with no raw pointers, and
+    nothing argues harder for this whole approach.</li>
   </ul>
 
   <h2>The types, and one idea deliberately declined</h2>
   <ul class="lineage">
-    <li><b>ML</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a> and
+    <li><b>ML</b>: <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a> and
     the group at Edinburgh, among them
     <a href="https://en.wikipedia.org/wiki/Michael_J._C._Gordon">Michael J. C.
     Gordon</a>. The product-and-sum pair Heroes calls <code>record</code> and
     <code>variant</code>, and the tradition tagged unions come out of.</li>
-    <li><b>The arrow</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Alonzo_Church">Alonzo Church</a>.
+    <li><b>The arrow</b>: <a href="https://en.wikipedia.org/wiki/Alonzo_Church">Alonzo Church</a>.
     <code>-&gt;</code> in a function type is the single most familiar piece of
     syntax in existence, and it reached Heroes through ML, Haskell, Rust, Swift
     and Python&rsquo;s type hints without changing shape. It was kept exactly as
     it was found.</li>
-    <li><b>The subroutine</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/David_Wheeler_(computer_scientist)">David
+    <li><b>The subroutine</b>: <a href="https://en.wikipedia.org/wiki/David_Wheeler_(computer_scientist)">David
     Wheeler</a>, on EDSAC in 1951. It is worth saying out loud that somebody had
     to invent the idea of calling a piece of code from more than one place.</li>
-    <li><b>Type inference</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/J._Roger_Hindley">J. Roger
+    <li><b>Type inference</b>: <a href="https://en.wikipedia.org/wiki/J._Roger_Hindley">J. Roger
     Hindley</a> and
     <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a>. This
     one is a thank-you for something Heroes does <i>not</i> use: whole-program
@@ -208,34 +195,31 @@
     one of these languages already knows most of Heroes.
   </p>
   <ul class="lineage">
-    <li><b>Go</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert
+    <li><b>Go</b>: <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert
     Griesemer</a>,
     <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> and
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>. One
     canonical format with no options, unused variables as errors, a line that
     ends without a semicolon, and the nerve to ship for a decade without
     generics.</li>
-    <li><b>Nim</b> &mdash; Andreas Rumpf. The foreign-function mechanism, the
+    <li><b>Nim</b>: Andreas Rumpf. The foreign-function mechanism, the
     per-module build cache, and <code>nim r</code>, which is
     <code>heroes run</code>. Also the standing warning the project repeats to
     itself: copy Nim&rsquo;s surface, never its implementation.</li>
-    <li><b>Zig</b> &mdash; Andrew Kelley. Tests living in the file they test,
+    <li><b>Zig</b>: Andrew Kelley. Tests living in the file they test,
     and NUL-terminated strings that can cross into C without a
     conversion.</li>
-    <li><b>Python</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Guido_van_Rossum">Guido van
+    <li><b>Python</b>: <a href="https://en.wikipedia.org/wiki/Guido_van_Rossum">Guido van
     Rossum</a>, and
     <a href="https://en.wikipedia.org/wiki/Tim_Peters_(software_engineer)">Tim
     Peters</a> for <code>import this</code>, which became
     <code>heroes this</code> &mdash; carried inside the binary rather than in a
     document that drifts. <a href="zen.html">It is here.</a></li>
-    <li><b>Odin, Jai</b> &mdash; the author of Odin, who publishes as
+    <li><b>Odin, Jai</b>: the author of Odin, who publishes as
     gingerBill, and
     <a href="https://en.wikipedia.org/wiki/Jonathan_Blow">Jonathan Blow</a>.
     One uniform way to write a declaration, whatever is being declared.</li>
-    <li><b>Ruby</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
+    <li><b>Ruby</b>: <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
     Matsumoto</a>. The reading rhythm &mdash; named blocks, named arguments, dot
     chains &mdash; taken as a target for how code should scan out loud, with the
     metaprogramming underneath left firmly alone.</li>
@@ -243,13 +227,13 @@
 
   <h2>Errors worth reading, and typed holes</h2>
   <ul class="lineage">
-    <li><b>Rust</b> &mdash; the Rust team, and <b>Elm</b> &mdash; Evan
+    <li><b>Rust</b>: the Rust team, and <b>Elm</b>: Evan
     Czaplicki. Between them they proved that the quality of an error message
     changes the whole experience of a language, and that it is a design
     deliverable rather than plumbing. Heroes aims the same effort at a different
     reader: a diagnostic here has to be fixable without opening a second
     file.</li>
-    <li><b>Idris</b> &mdash; Edwin Brady. <b>Agda</b> &mdash; Ulf Norell, and
+    <li><b>Idris</b>: Edwin Brady. <b>Agda</b>: Ulf Norell, and
     Catarina Coquand on the first version. Typed holes, moved out of proof
     assistants and into ordinary code: in Heroes, <code>???</code> is a legal
     expression, and the compiler answers it by saying what belongs in the
@@ -258,8 +242,7 @@
 
   <h2>Immutability at scale</h2>
   <ul class="lineage">
-    <li><b>Erlang</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Joe_Armstrong_(programmer)">Joe
+    <li><b>Erlang</b>: <a href="https://en.wikipedia.org/wiki/Joe_Armstrong_(programmer)">Joe
     Armstrong</a>, Robert Virding and Mike Williams. Immutability enforced
     absolutely, in systems with famously long uptimes, which is the proof that
     this is not a toy constraint. The motive is inverted and the inversion is
@@ -275,15 +258,14 @@
     still the reason one person can finish this.
   </p>
   <ul class="lineage">
-    <li><b>cfront</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
+    <li><b>cfront</b>: <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
     Stroustrup</a>. C++ began as a program that emitted C.</li>
-    <li><b>Vala</b> &mdash; J&uuml;rg Billeter, Raffaele Sandrini and Rico
-    Tzschichholz. <b>Chicken Scheme</b> &mdash; Felix Winkelmann.
-    <b>Cython</b> &mdash; Robert Bradshaw and Stefan Behnel. Three working
+    <li><b>Vala</b>: J&uuml;rg Billeter, Raffaele Sandrini and Rico
+    Tzschichholz. <b>Chicken Scheme</b>: Felix Winkelmann.
+    <b>Cython</b>: Robert Bradshaw and Stefan Behnel. Three working
     languages that went out through C, each one evidence the route is a choice
     and not a compromise.</li>
-    <li><b>Early Haskell</b> &mdash; designed by a committee, among them
+    <li><b>Early Haskell</b>: designed by a committee, among them
     <a href="https://en.wikipedia.org/wiki/Paul_Hudak">Paul Hudak</a>,
     <a href="https://en.wikipedia.org/wiki/John_Hughes_(computer_scientist)">John
     Hughes</a>,
@@ -317,12 +299,11 @@
     failure mode Heroes has: write a loop that changes one element at a time
     over a shared structure and you pay for a copy every time. The design says
     so out loud instead of hiding it.</li>
-    <li><b>Unison</b> &mdash; Paul Chiusano and R&uacute;nar Bjarnason. Code
+    <li><b>Unison</b>: Paul Chiusano and R&uacute;nar Bjarnason. Code
     stored as a tree with names as labels: the origin of an idea that was
     explored here at length and then dropped in favour of one readable
     syntax.</li>
-    <li><b>Ada</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean Ichbiah</a> for
+    <li><b>Ada</b>: <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean Ichbiah</a> for
     Ada 83, and Tucker Taft for Ada 95 through 2012. One refusal was borrowed
     whole: passing the same variable twice to one call when both can be written
     to. Ada allowed it for thirty-three years, watched what happened, and made
