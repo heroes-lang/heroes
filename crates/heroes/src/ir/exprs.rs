@@ -45,9 +45,27 @@ pub(super) fn expr(
             b.emit(Op::Const(Const::Int(value)), ty, span)
         }
         ExprKind::Float => {
-            // The parse cannot fail: the lexer already accepted the shape, and an
-            // out-of-range `f64` literal is an infinity rather than an error.
-            let value = src.slice(span).parse::<f64>().unwrap_or(0.0);
+            // **`_` is a digit separator and Rust's parser does not take one**, so
+            // it comes out before the parse — and the sentence that used to stand
+            // here (*"the parse cannot fail: the lexer already accepted the
+            // shape"*) was a premise written as a justification, falsified by the
+            // shortest program that uses the separator the spec grants:
+            // `x: f64 @ 1_0.5` printed **0.0** at exit 0, because
+            // `unwrap_or(0.0)` swallowed the error (measured 2026-08-18, panel
+            // 085 R6's sweep; `lexer/number.rs` accepts `_` between any two
+            // digits on both sides of the point).
+            //
+            // The fallback is now **loud**, which is CLAUDE.md §11's rule and
+            // the whole lesson of this defect: after the separators are gone,
+            // every shape `lexer/number.rs` can produce is `digits[.digits]`,
+            // which Rust parses, and an out-of-range literal is an infinity
+            // rather than an error. So a failure here is the compiler's bug and
+            // says so instead of inventing a number.
+            let text = src.slice(span);
+            let separatorless: String = text.chars().filter(|c| *c != '_').collect();
+            let value = separatorless.parse::<f64>().unwrap_or_else(|why| {
+                unreachable!("the lexer accepted `{text}` as a float literal: {why}")
+            });
             b.emit(Op::Const(Const::Float(value)), ty, span)
         }
         ExprKind::Bool => {
