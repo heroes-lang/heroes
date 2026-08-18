@@ -64,6 +64,52 @@ Two things force it, and each has an instrument:
    seed-built compiler, ~12 minutes, and the bytes must match), which belongs to
    a milestone close.
 
+## If the seed is already broken — how to get a compiler back
+
+This is the case the rest of this file exists to prevent, written down because
+*prevented* is not the same as *impossible*. Suppose someone pushed a change to
+`selfhost/` without regenerating the seed, the test was not run, and now the
+committed seed no longer builds today's source. Nobody has a working compiler.
+
+**The tags are the chain.** Every milestone tag from `m-selfhost-fixpoint` on
+carries its own `seed/heroes.c`, and each one was green at
+`the_seed_builds_from_a_clean_checkout` when it was made. So there is always a
+last-known-good rung to stand on:
+
+```sh
+git tag --list --sort=creatordate            # newest last
+git checkout <the newest tag whose seed builds>
+clang -I runtime seed/heroes.c runtime/runtime.c -o /tmp/heroes-old
+git checkout main
+/tmp/heroes-old build selfhost/main.hero --emit-c -o seed/heroes.c
+```
+
+The last line is the whole recovery: an **older compiler emitting the current
+source**. It works as long as the language the current source uses is one the
+older compiler can still read — which is the same condition the refresh rule is
+about, one rung further back. If that fails too, go one tag older and repeat; the
+chain only ends at `m-selfhost-fixpoint`, which is where the seed begins.
+
+Then re-verify, in this order, because the cheap check catches almost everything:
+
+```sh
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.7 s
+./heroes build selfhost/main.hero --emit-c -o /tmp/again.c    # ~12 min
+cmp seed/heroes.c /tmp/again.c                                # must be silent
+```
+
+**Why there is no uploaded executable, and why that is the safer answer.** A
+binary would have to be one per platform — arm64 Darwin, x86-64 Linux, Windows —
+and none of them can be read. Nobody can diff a Mach-O against the source it
+claims to come from, which is the objection Zig's checked-in `zig1.wasm` drew and
+answered by making it *reproducible* rather than by trusting it. `seed/heroes.c`
+is C: a reader can open it, a compiler can check it, and the same file works on
+every platform whose C compiler works. A binary would also be an outward-facing
+artifact, which CLAUDE.md §14 puts a hard stop in front of.
+
+The one thing a binary would buy is the 12-minute rung, and the chain above buys
+it for the price of a checkout.
+
 ## Why raw C, and why in git
 
 Both halves were measured rather than argued (panel 085 R1).
