@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il panel: come si decide un cambiamento in Heroes</title>
+<meta name="description" content="Cinque giudici esaminano ogni cambiamento al linguaggio Heroes, quattro di loro hanno diritto di veto, e ognuno riceve prove diverse di proposito. Più la poltrona dello storico, i linguaggi da cui Heroes ha preso in prestito, e chi lo sta costruendo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/panel.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/panel.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/panel.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/panel.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Il panel: come si decide un cambiamento in Heroes">
+<meta property="og:description" content="Cinque giudici esaminano ogni cambiamento al linguaggio Heroes, quattro di loro hanno diritto di veto, e ognuno riceve prove diverse di proposito. Più la poltrona dello storico, i linguaggi da cui Heroes ha preso in prestito, e chi lo sta costruendo.">
+<meta property="og:url" content="https://heroes-lang.org/it/panel.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Il panel: come si decide un cambiamento in Heroes">
+<meta name="twitter:description" content="Cinque giudici esaminano ogni cambiamento al linguaggio Heroes, quattro di loro hanno diritto di veto, e ognuno riceve prove diverse di proposito. Più la poltrona dello storico, i linguaggi da cui Heroes ha preso in prestito, e chi lo sta costruendo.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="why.html">Perché Heroes</a></li>
+      <li><a href="docs/index.html">Docs</a></li>
+      <li><a href="selfhost.html">Self-hosted</a></li>
+      <li><a href="zen.html">Zen</a></li>
+      <li><a class="here" href="panel.html">Panel</a></li>
+      <li><a href="thanks.html">Grazie</a></li>
+      <li><a href="author.html">Autore</a></li>
+      <li><a href="log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../panel.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <div class="page-head">
+    <h1 class="page">Il panel</h1>
+    <span class="nod">· under pressure ·</span>
+  </div>
+  <p class="lede">In questo linguaggio niente cambia perché sembrava una buona
+  idea. Prima lo esaminano cinque giudici, quattro di loro possono fermarlo, e a
+  ognuno vengono mostrate prove diverse di proposito.</p>
+
+  <p>
+    Un linguaggio costruito da una persona sola ha un modo di fallire peggiore di
+    tutti gli altri: l&rsquo;autore è d&rsquo;accordo con se stesso. Nella stanza
+    non c&rsquo;è nessuno il cui lavoro sia dire che un costrutto è elegante e
+    inutile, che una regola si legge bene e non si può implementare, o che la cosa
+    che si sta inventando ha già un nome e un articolo scientifico. Così il
+    progetto si è costruito quella stanza.
+  </p>
+  <p>
+    Il panel viene convocato prima che cambi il <i>linguaggio</i>: la specifica,
+    le regole del documento di progetto, la sintassi o il significato di quello
+    che si scrive, un&rsquo;intera classe di diagnostiche, o
+    l&rsquo;architettura sotto (il backend, la rappresentazione intermedia, la
+    forma della riga di comando). Cambiare il modo in cui il progetto insegna, o
+    in cui mette le cose per iscritto, non ha bisogno di nessun panel. La linea è
+    tracciata su quello che un programma scritto in Heroes può vedere.
+  </p>
+
+  <h2>Cinque poltrone, quattro veti <span class="nod">· five years ·</span></h2>
+  <p>
+    Ogni poltrona difende esattamente una cosa, e a ognuna viene consegnato un
+    dossier diverso. Quello è il meccanismo, non una comodità organizzativa: un
+    giudice che ha già letto il documento di progetto sa già quale dovrebbe essere
+    la risposta, quindi alla poltrona che parla per chi legge il documento non
+    viene mostrato mai.
+  </p>
+  <ul class="seats">
+    <li>
+      <span class="who">Chi legge<span class="veto">veto</span></span>
+      <div>
+        <p>Parla per l&rsquo;obiettivo: un modello linguistico riesce a capire
+        questa cosa dalla pagina che ha davanti? Riceve <b>solo</b> la specifica e
+        programmi di esempio, mai il documento di progetto e mai il repository,
+        così il suo verdetto è un esperimento e non un&rsquo;opinione. Il suo veto
+        copre tutto quello il cui significato non si può ricostruire in
+        locale.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">L&rsquo;ingegnere dei compilatori<span class="veto">veto</span></span>
+      <div>
+        <p>Parla per il tetto: quanto costa implementare questa cosa, ed è nucleo
+        o zucchero sintattico? Il suo dossier deve contenere il sorgente vero del
+        compilatore, non una descrizione. Il suo veto copre un nuovo costrutto nel
+        nucleo e tutto quello che spinge il compilatore oltre la dimensione che
+        una persona sola può finire.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">Il pragmatico del C<span class="veto">veto</span></span>
+      <div>
+        <p>Parla per il vincolo di partenza: non esiste una libreria standard,
+        quindi tutto quello che un programma tocca arriva dal C. Il suo dossier
+        deve contenere il C che servirebbe a un collegamento vero sotto la
+        proposta, e quella poltrona lo compila oppure mostra perché non si può. Il
+        suo veto copre tutto quello che rompe il confine con il C.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">Il custode della specifica<span class="veto">veto</span></span>
+      <div>
+        <p>Parla per il budget: la specifica intera deve continuare a stare in un
+        prompt, quindi ogni aggiunta deve dire che cosa toglie. Il suo dossier
+        deve portare il conteggio vero dei token prima e dopo, misurato, mai
+        stimato. Il suo veto scatta quando il budget misurato supera il tetto.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">Lo storico<span class="veto no-veto">consultivo</span></span>
+      <div>
+        <p>Parla per tutti quelli che hanno risolto la cosa prima. È
+        l&rsquo;unica poltrona senza veto, e l&rsquo;unica sotto obbligo di
+        ricerca: date, conteggi di righe e affermazioni vanno verificati sulle
+        fonti, perché un precedente inventato è peggio di nessun precedente. È la
+        poltrona di cui si parla qui sotto.</p>
+      </div>
+    </li>
+  </ul>
+  <p>
+    Due regole tengono in piedi tutto il meccanismo. Ogni giudice deve dichiarare
+    che cosa lo smentirebbe, così un verdetto è un&rsquo;affermazione che può
+    cadere e non una preferenza. E <b>il panel non blocca mai il lavoro</b>: la
+    sintesi adotta la lettura più conservativa, la segna come provvisoria, e la
+    mette in fila per la ratifica dell&rsquo;autore, così una revisione può essere
+    lenta senza che il progetto si fermi.
+  </p>
+  <p>
+    Niente entra sulla base di un verdetto e nient&rsquo;altro. Un cambiamento di
+    progetto ha bisogno della seduta scritta nel repository, di una riga nel
+    registro delle decisioni che dice che cosa è stato deciso e perché, e di un
+    proprio commit che cita il verdetto. È quel registro che distingue il
+    ragionamento dall&rsquo;improvvisazione quando le ragioni hanno tre mesi.
+    Finora ci sono state <b>83 sedute</b>, contate il 2026-08-18, e stanno tutte
+    nel <a href="https://github.com/giuseppearici/heroes-lang">repository</a>,
+    comprese quelle in cui la proposta ha perso.
+  </p>
+
+  <h2>Lo storico, e perché il passato ha una poltrona <span class="nod">· look back in anger ·</span></h2>
+  <p>
+    Quasi ogni domanda che si presenta a un linguaggio nuovo è già stata risolta
+    da qualcun altro, di solito decenni prima, spesso in un articolo che dice
+    anche esattamente quanto è costata. Deciderla da zero non è coraggioso, è
+    caro: il progetto ottiene una risposta peggiore e paga due volte la stessa
+    lezione.
+  </p>
+  <p>
+    Così una poltrona non fa altro che guardare indietro. Non ha veto, perché il
+    precedente è una prova e non un&rsquo;autorità, e porta la regola più severa
+    di tutto il panel: ogni data, ogni conteggio di righe, ogni affermazione su
+    quello che ha fatto un altro linguaggio va verificata su una fonte e citata.
+    Un precedente che nessuno ha verificato è il tipo di risposta sbagliata
+    detta con più sicurezza, e questa è la poltrona in cui quel fallimento è più
+    probabile.
+  </p>
+  <p>
+    Qui conta più che in un altro progetto, perché questo linguaggio non è nato
+    come linguaggio. Il suo autore ha scritto <i>Gli eroi del codice</i>, una
+    storia dei linguaggi di programmazione costruita come un viaggio onirico con
+    Bowie come guida, in uscita il 20 settembre 2026: ventun capitoli su FORTRAN,
+    COBOL, ALGOL, Lisp, Simula, Smalltalk, Prolog e gli altri, con note,
+    riferimenti e una cronologia dietro. La storia, qui, non è una decorazione
+    avvitata sopra un progetto: è il posto da cui il progetto è venuto, ed è il
+    posto da cui è venuto il nome. Chi ha appena passato ventun capitoli su come
+    è andata la prima volta ha una scusa in meno per ripeterne qualunque pezzo.
+    <a href="author.html">L&rsquo;autore, e il libro →</a>
+  </p>
+
+  <h2>Che cosa ha preso in prestito, e da chi</h2>
+  <p>
+    Qui niente è inventato dal nulla. Ogni prestito è messo per iscritto, così le
+    deviazioni sono deliberate, e così chi conosce già uno di questi linguaggi
+    conosce già la maggior parte di Heroes:
+  </p>
+  <ul class="lineage">
+    <li><b>Hylo, Val</b> la semantica a valori modificabili. Nessun aliasing
+    significa nessun ciclo, quindi il reference counting è completo senza nessun
+    raccoglitore. È il motivo per cui il progetto resta piccolo.</li>
+    <li><b>Swift</b> il copy-on-write sopra il reference counting,
+    <code>inout</code> (che qui è <code>@</code>), i <code>variant</code> con il
+    punto davanti. Heroes rinuncia a <code>class</code>, e con lui a
+    <code>weak</code> e <code>unowned</code>.</li>
+    <li><b>Cyclone</b> i riferimenti solo come parametri di funzione, che
+    cancella le annotazioni sulla durata di vita. Il compilatore è scritto in
+    quella disciplina, ed è per questo che portarlo qui è stato meccanico.</li>
+    <li><b>Go</b> la formattazione canonica, le variabili non usate come errori, e
+    la regola che chiude una riga senza punto e virgola.</li>
+    <li><b>Nim</b> il meccanismo della FFI, la cache per modulo e
+    <code>heroes run</code>. E anche l&rsquo;avvertimento: copia la superficie di
+    Nim, mai la sua implementazione.</li>
+    <li><b>Zig</b> i test nel file che testano, e le stringhe terminate da NUL che
+    passano nel C.</li>
+    <li><b>Ada</b> un rifiuto: la stessa variabile due volte nella stessa
+    chiamata, quando entrambi i lati possono scriverci. Illegale dal 2012, dopo
+    trentatré anni.</li>
+    <li><b>Pascal, ML, Wirth</b> <code>record</code> e <code>variant</code>, il
+    rapporto su Oberon in sedici pagine come misura di quanto può essere lunga una
+    specifica, e Pascal-P4 come misura di quanto può essere grande un compilatore
+    che compila se stesso.</li>
+    <li><b>Idris, Agda</b> i buchi tipati, spostati dagli assistenti di
+    dimostrazione alla generazione di codice: <code>???</code> è una domanda a cui
+    il compilatore risponde.</li>
+    <li><b>Rust, Elm</b> la prova che la qualità dei messaggi di errore cambia
+    tutto, puntata qui su un lettore diverso.</li>
+    <li><b>Erlang</b> l&rsquo;immutabilità su larga scala, con il motivo
+    invertito: lì si rinuncia alla condivisione per la concorrenza, in Heroes si
+    rinuncia per la leggibilità locale.</li>
+    <li><b>APL, K, R, MATLAB</b> citati in entrambe le direzioni. Contro, sulla
+    notazione: una sintassi compattissima non funziona per i modelli. A favore,
+    sul modello dei valori: sessant&rsquo;anni di prove, e l&rsquo;evidenza che
+    non è quello a rendere lento un linguaggio.</li>
+    <li><b>cfront, Vala, Chicken Scheme</b> la genealogia di chi emette C, e il
+    motivo per cui clang può controllare ogni dichiarazione esterna.</li>
+    <li><b>Python</b> <code>import this</code> è diventato
+    <code>heroes this</code>, portato dentro il binario invece che in un documento
+    che si allontana. <a href="zen.html">È qui.</a></li>
+  </ul>
+  <p>
+    I rifiuti vengono messi a verbale allo stesso modo, e con lo stesso metro: un
+    no permanente deve nominare il programma o il fatto sul compilatore che lo
+    smentirebbe, esattamente come deve farlo una funzionalità.
+  </p>
+  <p>
+    Ognuno dei linguaggi di quella lista è stato progettato da qualcuno, e la
+    maggior parte di quelle persone è ancora raggiungibile per nome. Sono nominate
+    una per una nella loro pagina.
+    <a href="thanks.html">I ringraziamenti, e i nomi &rarr;</a>
+  </p>
+
+  <h2>Chi sta costruendo questa cosa <span class="nod">· absolute beginners ·</span></h2>
+  <p>
+    Una persona sola: Giuseppe Arici, partner e CTO di Codermine, a Brescia, oltre
+    vent&rsquo;anni di software, e un libro sulla storia dei linguaggi di
+    programmazione. <b>Non aveva mai scritto un compilatore prima di questo</b>,
+    che è la premessa del progetto e non una scusa, ed è il motivo per cui qui
+    tutto viene messo per iscritto mentre succede.
+    <a href="author.html">Chi è, e il libro →</a>
+  </p>
+  <p>
+    Tutto quello che il progetto ha deciso, e tutto quello che ha sbagliato per
+    strada, è pubblico nel
+    <a href="https://github.com/giuseppearici/heroes-lang">repository</a>: le
+    sedute di cui sopra, le previsioni sbagliate, i difetti con i loro sintomi, e
+    le misure che non hanno fatto bella figura al progetto.
+  </p>
+
+  <p class="next">
+    Poi: <a href="log.html">il diario di costruzione</a>, dove queste decisioni
+    diventano milestone, dalla più recente.
+  </p>
+
+  <footer>
+    <p>Costruito da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="author.html"><i>Gli eroi del codice</i></a>. In piedi
+    <a href="thanks.html">sul lavoro di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

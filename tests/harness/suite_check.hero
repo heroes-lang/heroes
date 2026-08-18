@@ -1,0 +1,116 @@
+# tests/golden/check/ — every diagnostics case, through the real binary.
+#
+# Port of golden_check_cases_render_their_diagnostics
+# (crates/heroes-cli/tests/golden.rs:124). Three things are the test, and
+# all three come from that function's own comments:
+#
+# - the command is `check <relative path> --brief`, and the path is
+#   RELATIVE to the repository root, because the compiler echoes the path
+#   it was given and an expectation must not also record which directory
+#   ran the harness;
+# - what is diffed is STDERR, byte for byte, against the `.expected`
+#   file — diagnostics go to stderr by §10's contract;
+# - the exit code must be exactly 1, not merely non-zero. Panel 016's
+#   contract separates "the input has diagnostics" (1) from "the tool
+#   could not run" (2), so a case that started CRASHING instead of
+#   diagnosing would pass a non-zero test while saying something entirely
+#   different.
+#
+# UPDATE_GOLDEN is not implemented here and must not be: CLAUDE.md §9
+# forbids it in `check/` outright, and a flag that cannot be typed is a
+# rule that cannot be broken by accident.
+
+use cases
+use report
+use shell
+
+function run_all(scratch: str, compiler: str, dir: str) -> report.Report?
+    found = cases.collect(scratch: scratch, dir: dir)?
+    r: report.Report @ report.empty()
+    for item in found
+        expectation = read_file(item.expected)
+        if expectation.is_err()
+            report.keep_failure(@r, label: item.name, detail: "  cannot read " + item.expected)
+        else
+            said = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(item.source) + " --brief")
+            if said.is_err()
+                report.keep_failure(@r, label: item.name, detail: "  cannot run the compiler on " + item.source)
+            else
+                verdict(@r, item: item, expected: expectation.must(), said: said.must())
+    return ok(r)
+
+# One case's two questions, in the order a reader wants them: what it
+# printed, then how it ended. A case that prints the right diagnostic and
+# then exits 2 is still a failure, and the message says which half broke.
+function verdict(@r: report.Report, item: cases.Case, expected: str, said: shell.Run)
+    if said.err != expected
+        report.keep_failure(@r, label: item.name, detail: report.mismatch(what: item.source, expected: expected, actual: said.err))
+        return
+    if said.code != 1
+        report.keep_failure(@r, label: item.name, detail: "  " + item.source + " is a diagnostics case, so the compiler must exit 1 — it exited " + said.code.to_str())
+        return
+    report.keep_pass(@r)
+
+# A stand-in compiler: one shell script that says what the caller wants
+# and ends how the caller wants. The suite is tested against THIS rather
+# than against the real binary, for the reason CLAUDE.md §9 gives about
+# verifier checks — a check nobody has seen fail is a decoration — and
+# because a test that needed ./target/debug/heroes would die the day the
+# bootstrap is archived, which is the day this harness matters most.
+function stub(scratch: str, name: str, says: str, ends: i64) -> str?
+    path = scratch + "/" + name
+    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + " 1>&2\nexit " + ends.to_str() + "\n")?
+    made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))?
+    if made.code != 0
+        return fail("cannot_run", "cannot make " + path + " executable")
+    return ok(path)
+
+test "the check suite passes on a match and fails on either half"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/check"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/x.hero", text: "function main()\n    print(1)\n").is_err()
+    assert !write_file(path: tree + "/x.expected", text: "x.hero:1:1: error[boom]: a diagnostic\n").is_err()
+
+    # Both halves right: the text matches and it exits 1.
+    right = stub(scratch: scratch, name: "stub-right.sh", says: "x.hero:1:1: error[boom]: a diagnostic\n", ends: 1)
+    assert !right.is_err()
+    green = run_all(scratch: scratch, compiler: right.must(), dir: tree)
+    assert !green.is_err()
+    assert green.must().passed == 1
+    assert green.must().failed == 0
+
+    # The text differs: a failure, and the diff carries both sides.
+    wrong = stub(scratch: scratch, name: "stub-wrong.sh", says: "x.hero:1:1: error[other]: something else\n", ends: 1)
+    assert !wrong.is_err()
+    red = run_all(scratch: scratch, compiler: wrong.must(), dir: tree)
+    assert !red.is_err()
+    assert red.must().passed == 0
+    assert red.must().failed == 1
+    assert red.must().failures[0].len() > 0
+
+    # The right text at exit 0 — the shape panel 016's contract exists
+    # for: the compiler answered, but as if the program were clean.
+    quiet = stub(scratch: scratch, name: "stub-exit0.sh", says: "x.hero:1:1: error[boom]: a diagnostic\n", ends: 0)
+    assert !quiet.is_err()
+    silent = run_all(scratch: scratch, compiler: quiet.must(), dir: tree)
+    assert !silent.is_err()
+    assert silent.must().passed == 0
+    assert silent.must().failed == 1
+
+test "an unreadable expectation is a failure, not a skip"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/unreadable"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/y.hero", text: "function main()\n    print(1)\n").is_err()
+    # A directory where the expectation should be: it is listed by name,
+    # `find -type f` does not report it, so the pair check fires first.
+    made = shell.run(scratch: scratch, command: "mkdir -p " + shell.sq(tree + "/y.expected"))
+    assert !made.is_err()
+    got = run_all(scratch: scratch, compiler: "/bin/true", dir: tree)
+    code = match got
+        .ok _ => "ok"
+        .err e => e.code
+    assert code == "half_pair"

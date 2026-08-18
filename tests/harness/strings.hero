@@ -1,0 +1,123 @@
+# The byte-level string work every suite needs, in one place.
+#
+# The spec's built-in list (§ Strings, arrays, maps) has `len`, `slice`,
+# `chars` and `join`; it has no `ends_with`, no split and no basename, so
+# the harness writes them once here rather than four times in four
+# suites — a second copy is a second place for `ends_with` to be subtly
+# wrong.
+#
+# Port of the small string helpers spread through
+# crates/heroes-cli/tests/{golden,corpus,layout}.rs (Rust hands those out
+# in its standard library, which is exactly what design.md §1.11 says
+# Heroes does not have).
+#
+# WHY THESE COMPARE BYTES AND DO NOT SLICE. `slice` aborts when it splits
+# a character (spec:148), so `text.slice(from: len - suffix.len(), ...)`
+# on a name holding one multi-byte character is an abort rather than a
+# `false` — and a harness that dies on a filename is worse than no
+# harness. Indexing gives a `u8` for any in-range index and cannot abort,
+# so every predicate here walks bytes.
+
+# Whether `text` ends with `suffix`, byte for byte.
+function ends_with(text: str, suffix: str) -> bool
+    if suffix.len() > text.len()
+        return false
+    offset = text.len() - suffix.len()
+    i: i64 @ 0
+    while i < suffix.len()
+        if text[offset + i] != suffix[i]
+            return false
+        i @ i + 1
+    return true
+
+# `text` with `suffix` removed.
+#
+# The caller must have asked `ends_with` first — this returns `text`
+# untouched otherwise, rather than guessing. The slice is safe for the
+# same reason it is safe nowhere else in this file: an ASCII suffix that
+# matched proves the cut is on a character boundary, because no ASCII
+# byte appears inside a multi-byte UTF-8 sequence. Every suffix the
+# harness passes is a literal in its own source (`.hero`, `.expected`).
+function without_suffix(text: str, suffix: str) -> str
+    if !ends_with(text: text, suffix: suffix)
+        return text
+    return text.slice(from: 0, to: text.len() - suffix.len())
+
+# Split on one ASCII byte, keeping empty pieces.
+#
+# The separator is a byte and not a `str` because the one caller that
+# matters passes NUL, which no Heroes literal can spell: the language has
+# six escapes and `\0` is not one of them (spec:68). `find -print0`
+# writes that byte, and reading it is what makes a directory walk sound —
+# see shell.list_entries.
+function split_on(text: str, byte: u8) -> [str]
+    pieces: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == byte
+            pieces @ pieces.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    return pieces.push(text.slice(from: start, to: text.len()))
+
+# The lines of `text`, with no trailing empty piece for a final newline.
+function lines(text: str) -> [str]
+    pieces = split_on(text: text, byte: 10)
+    if pieces.len() > 0 && pieces[pieces.len() - 1].len() == 0
+        return pieces.slice(from: 0, to: pieces.len() - 1)
+    return pieces
+
+# The part of a path after its last `/`.
+function base_name(path: str) -> str
+    cut: i64 @ 0
+    i: i64 @ 0
+    while i < path.len()
+        if path[i] == 47
+            cut @ i + 1
+        i @ i + 1
+    return path.slice(from: cut, to: path.len())
+
+# `text` without leading or trailing spaces, tabs, newlines or returns.
+function trimmed(text: str) -> str
+    head: i64 @ 0
+    while head < text.len() && is_space(byte: text[head])
+        head @ head + 1
+    tail: i64 @ text.len()
+    while tail > head && is_space(byte: text[tail - 1])
+        tail @ tail - 1
+    return text.slice(from: head, to: tail)
+
+function is_space(byte: u8) -> bool
+    return byte == 32 || byte == 9 || byte == 10 || byte == 13
+
+test "ends_with and without_suffix agree on the harness's own suffixes"
+    assert ends_with(text: "a/b/foo.hero", suffix: ".hero")
+    assert !ends_with(text: "a/b/foo.hero", suffix: ".expected")
+    assert !ends_with(text: ".hero", suffix: "x.hero")
+    assert without_suffix(text: "a/b/foo.hero", suffix: ".hero") == "a/b/foo"
+    assert without_suffix(text: "a/b/foo.hero", suffix: ".expected") == "a/b/foo.hero"
+
+test "ends_with walks bytes, so a multi-byte character neither matches nor aborts"
+    # The e-acute is two bytes. A suffix comparison that ended inside it
+    # would abort if it sliced; walking bytes answers false instead, and
+    # a match on the whole character still answers true.
+    name = "pé.hero"
+    assert ends_with(text: name, suffix: ".hero")
+    assert ends_with(text: "pé", suffix: "é")
+    assert !ends_with(text: "pé", suffix: "e")
+    assert without_suffix(text: name, suffix: ".hero") == "pé"
+
+test "split_on keeps empty pieces and lines drops the trailing one"
+    assert split_on(text: "a,b", byte: 44).len() == 2
+    assert split_on(text: "a,,b", byte: 44).len() == 3
+    assert split_on(text: "", byte: 44).len() == 1
+    assert lines(text: "one\ntwo\n").len() == 2
+    assert lines(text: "one\ntwo").len() == 2
+    assert lines(text: "one\n\n").len() == 2
+
+test "base_name and trimmed"
+    assert base_name(path: "tests/golden/check/x.hero") == "x.hero"
+    assert base_name(path: "x.hero") == "x.hero"
+    assert trimmed(text: "  a b \n") == "a b"
+    assert trimmed(text: "\n\n") == ""

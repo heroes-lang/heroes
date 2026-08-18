@@ -1,0 +1,176 @@
+# The harness's entire contact with the operating system: run a command,
+# capture its two streams and the status a shell would print, and list a
+# directory.
+#
+# Port of what crates/heroes-cli/tests/*.rs get from Rust's
+# `std::process::Command` and `std::fs::read_dir`. design.md §1.11 is why
+# this file exists at all — Heroes has no standard library, so a process
+# and a directory arrive through C, and C's own `system()` is the one
+# entry point every platform this project builds on already has
+# (selfhost/cli_toolchain.hero:14 made the same call for clang).
+#
+# THREE THINGS HERE ARE MEASURED, NOT ASSUMED.
+#
+# 1. `sq` is the only way a path reaches the shell. Case names come from
+#    a directory listing, so an apostrophe in a filename is a command the
+#    harness did not mean to write. Measured: a file named `quo'te.hero`
+#    is listed and read back intact.
+#
+# 2. The status is decoded, never used raw. `system()` answers in
+#    waitpid's format — the exit code rides the high byte, a signal death
+#    the low seven bits (panel 070: a hardcoded 134 reported a SIGSEGV as
+#    an abort, and the instrument hid the defect from the person holding
+#    it). `heroes check` exiting 1 and a compiler killed by SIGHUP are
+#    both "1" if you forget this.
+#
+# 3. The directory walk survives a newline in a filename. Panel 085 R4
+#    measured `ls > file` + `read_file` splitting such a name into two
+#    entries at exit 0 — silently wrong, which CLAUDE.md §12's robustness
+#    rule forbids — and named `popen`/`readdir` as the only sound routes.
+#    There is a third and it costs no extern at all: `find -print0`
+#    separates names with the NUL byte, and a Heroes `str` carries that
+#    byte through `read_file` and byte indexing without trouble.
+#    Measured on both compilers: 3 entries for 3 files, the newline name
+#    whole, every one readable. The test below is that measurement, kept.
+
+use strings
+
+extern "stdlib.h"
+    function system(command: cstr) -> i32
+    function getenv(name: cstr) -> cstr
+
+# One finished command: what a shell would report, and both streams.
+record Run
+    code: i64
+    out: str
+    err: str
+
+# One argv word, quoted for the POSIX shell — single quotes, with every
+# embedded quote spelled '\''. Same function as
+# selfhost/cli_toolchain.hero:61, and it is here rather than shared
+# because a module is bound by file (spec:7) and this program is not that
+# one.
+function sq(text: str) -> str
+    out: str @ "'"
+    for ch in text.chars()
+        if ch == "'"
+            out @ out + "'\\''"
+        else
+            out @ out + ch
+    return out + "'"
+
+# waitpid's answer, as the number a shell prints.
+function status_of(raw: i64) -> i64
+    signal = raw % 128
+    if signal != 0 && raw % 256 != 0
+        return 128 + signal
+    return raw / 256
+
+# Run one command line with both streams captured to files under
+# `scratch`, and read them back.
+#
+# The two streams are separate files because that is the distinction the
+# goldens are about: `check/` diffs stderr while `run/` diffs stdout, and
+# a harness that merged them could not tell a diagnostic from a program's
+# output.
+function run(scratch: str, command: str) -> Run?
+    out_path = scratch + "/stdout"
+    err_path = scratch + "/stderr"
+    # THE PARENTHESES ARE THE WHOLE FUNCTION, and they were missing at
+    # first. A redirection binds to ONE command, so `a; b > f` sends only
+    # b's output to f, and `cd d && touch x > f` resolves f INSIDE d. Both
+    # showed up the moment this ran: a captured stream arrived on the
+    # terminal instead of in the file, and a listing command wrote its
+    # capture into the directory it had just entered ("No such file or
+    # directory", exit 1). The subshell takes the redirection for the
+    # whole line, in the working directory the harness started in, and
+    # `exit 3` inside it still answers 3.
+    line = "( " + command + " ) > " + sq(out_path) + " 2> " + sq(err_path)
+    raw = system(command: line.cstr()).to_i64().must()
+    if raw < 0
+        return fail("cannot_run", "the shell refused to run: " + command)
+    out = read_file(out_path)
+    if out.is_err()
+        return fail("cannot_run", "cannot read the captured stdout at " + out_path)
+    err = read_file(err_path)
+    if err.is_err()
+        return fail("cannot_run", "cannot read the captured stderr at " + err_path)
+    return ok(Run(code: status_of(raw: raw), out: out.must(), err: err.must()))
+
+# Every file directly inside `dir`, sorted, whatever its name holds.
+function list_entries(scratch: str, dir: str) -> [str]?
+    listing = scratch + "/listing"
+    line = "find " + sq(dir) + " -maxdepth 1 -type f -print0 > " + sq(listing)
+    raw = system(command: line.cstr()).to_i64().must()
+    if status_of(raw: raw) != 0
+        return fail("cannot_walk", "cannot list " + dir + " (find exited " + status_of(raw: raw).to_str() + ")")
+    text = read_file(listing)
+    if text.is_err()
+        return fail("cannot_walk", "cannot read the listing at " + listing)
+    entries: [str] @ []
+    for piece in strings.split_on(text: text.must(), byte: 0)
+        if piece.len() > 0
+            entries @ entries.push(piece)
+    return ok(entries.sort())
+
+# One environment variable, or "" where it is unset. The null test is the
+# contract, not caution: converting a null `cstr` aborts (spec:229).
+function env(name: str) -> str
+    got = getenv(name: name.cstr())
+    if got == nullptr
+        return ""
+    return got.to_str()
+
+function exists(path: str) -> bool
+    return status_of(raw: system(command: ("test -e " + sq(path)).cstr()).to_i64().must()) == 0
+
+function is_directory(path: str) -> bool
+    return status_of(raw: system(command: ("test -d " + sq(path)).cstr()).to_i64().must()) == 0
+
+function mkdir_all(path: str) -> ()?
+    if status_of(raw: system(command: ("mkdir -p " + sq(path)).cstr()).to_i64().must()) != 0
+        return fail("cannot_run", "cannot create the directory " + path)
+    return ok()
+
+function remove_tree(path: str) -> ()?
+    if status_of(raw: system(command: ("rm -rf " + sq(path)).cstr()).to_i64().must()) != 0
+        return fail("cannot_run", "cannot remove " + path)
+    return ok()
+
+test "a status is decoded the way a shell prints it"
+    # 1 << 8 is `exit 1`; 134 is the shape panel 070's hardcoded number
+    # got wrong — SIGABRT is 6, so waitpid says 6 and a shell says 134.
+    assert status_of(raw: 0) == 0
+    assert status_of(raw: 256) == 1
+    assert status_of(raw: 512) == 2
+    assert status_of(raw: 6) == 134
+    assert status_of(raw: 11) == 139
+
+test "a command's two streams come back apart, with its status"
+    scratch = "build/harness-selftest"
+    assert !mkdir_all(scratch).is_err()
+    said = run(scratch: scratch, command: "printf 'to out'; printf 'to err' 1>&2; exit 3")
+    assert !said.is_err()
+    assert said.must().out == "to out"
+    assert said.must().err == "to err"
+    assert said.must().code == 3
+
+test "the directory walk keeps a filename that contains a newline"
+    # Panel 085 R4's falsifier, kept as a test: this is the case `ls`
+    # splits in two at exit 0. If the NUL route ever stops working, this
+    # is what fires, and the harness stops trusting its own case list.
+    scratch = "build/harness-selftest"
+    hostile = scratch + "/hostile"
+    assert !remove_tree(hostile).is_err()
+    assert !mkdir_all(hostile).is_err()
+    made = run(scratch: scratch, command: "cd " + sq(hostile) + " && touch plain.hero 'two\nlines.hero' \"quo'te.hero\"")
+    assert !made.is_err()
+    assert made.must().code == 0
+    found = list_entries(scratch: scratch, dir: hostile)
+    assert !found.is_err()
+    assert found.must().len() == 3
+    readable: i64 @ 0
+    for entry in found.must()
+        if !read_file(entry).is_err()
+            readable @ readable + 1
+    assert readable == 3

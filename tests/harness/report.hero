@@ -1,0 +1,74 @@
+# The tally, and what a failing case prints.
+#
+# There is no assertion library here and there will not be one: a suite
+# records a pass or a failure and the run ends with a verdict, which is
+# all the Rust `#[test]` attribute was buying. What Rust does NOT buy is
+# the message, and that is the half worth porting carefully — a golden
+# mismatch that prints only "not equal" costs a second command to
+# understand, and design.md §4.17's rule for diagnostics is the same rule
+# for a test: everything needed to act, without opening another file.
+#
+# Failures are held and printed at the end rather than as they happen, so
+# the progress line stays one line per suite and the diffs are together
+# at the bottom where a reader looks first.
+
+record Report
+    passed: i64
+    failed: i64
+    failures: [str]
+
+function empty() -> Report
+    none: [str] = []
+    return Report(passed: 0, failed: 0, failures: none)
+
+function keep_pass(@r: Report)
+    r.passed @ r.passed + 1
+
+function keep_failure(@r: Report, label: str, detail: str)
+    r.failed @ r.failed + 1
+    r.failures @ r.failures.push("FAIL " + label + "\n" + detail)
+
+# Two texts, framed so the eye finds the edges. The frame is
+# golden.rs:145's, because a reader who has seen one of these should
+# recognise the next one.
+function mismatch(what: str, expected: str, actual: str) -> str
+    return "  " + what + "\n--- expected ---\n" + expected + "--- actual ---\n" + actual + "--- end ---"
+
+function tally(one: Report, two: Report) -> Report
+    # `+` joins numbers and strings, never arrays (spec:153), so the
+    # failures are pushed one at a time.
+    merged: [str] @ one.failures
+    for failure in two.failures
+        merged @ merged.push(failure)
+    return Report(passed: one.passed + two.passed, failed: one.failed + two.failed, failures: merged)
+
+# Prints every failure, then the count. The bool is the exit verdict.
+function verdict(r: Report, what: str) -> bool
+    for failure in r.failures
+        print(failure)
+    print(what + ": " + r.passed.to_str() + " passed, " + r.failed.to_str() + " failed")
+    return r.failed == 0
+
+test "a report counts, keeps its failures and prints its verdict"
+    r: Report @ empty()
+    keep_pass(@r)
+    keep_pass(@r)
+    keep_failure(@r, label: "check/x", detail: "  it said nothing")
+    assert r.passed == 2
+    assert r.failed == 1
+    assert r.failures.len() == 1
+    assert !verdict(r, "self-test")
+
+test "a mismatch shows both sides and where each begins"
+    shown = mismatch(what: "check/x.hero", expected: "one\n", actual: "two\n")
+    assert shown == "  check/x.hero\n--- expected ---\none\n--- actual ---\ntwo\n--- end ---"
+
+test "two reports add up, failures included"
+    one: Report @ empty()
+    keep_pass(@one)
+    two: Report @ empty()
+    keep_failure(@two, label: "run/y", detail: "  exit 2")
+    both = tally(one: one, two: two)
+    assert both.passed == 1
+    assert both.failed == 1
+    assert both.failures.len() == 1

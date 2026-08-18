@@ -1,0 +1,86 @@
+# The golden tree, read as pairs.
+#
+# Port of collect_cases at crates/heroes-cli/tests/golden.rs:54, and it
+# keeps that function's one sharp rule: an unpaired file is a BROKEN
+# TEST, not a skip. A `.hero` with no `.expected` and an expectation with
+# no source both stop the harness with the name of the offender, because
+# the failure they hide is a case that silently stopped running — which is
+# the same class of defect as an invariant that cannot fail (CLAUDE.md
+# §9).
+#
+# Anything else in the directory is ignored on purpose: `.fixed` files
+# belong to the certain-fix suite, and `.gitkeep` and editor droppings
+# are not cases.
+
+use shell
+use strings
+
+# One golden case: its source, its expectation, and the name a failure
+# message says.
+record Case
+    source: str
+    expected: str
+    name: str
+
+function collect(scratch: str, dir: str) -> [Case]?
+    entries = shell.list_entries(scratch: scratch, dir: dir)?
+    # Membership is asked of the listing rather than of the filesystem:
+    # one walk answers every question, and a `test -e` per case would be
+    # 200 more processes for an answer already in hand.
+    present: {str: bool} @ {}
+    for entry in entries
+        present[entry] @ true
+    cases: [Case] @ []
+    for entry in entries
+        if strings.ends_with(text: entry, suffix: ".hero")
+            stem = strings.without_suffix(text: entry, suffix: ".hero")
+            expectation = stem + ".expected"
+            if present[expectation].is_err()
+                return fail("half_pair", "golden case " + entry + " is missing its .expected file")
+            cases @ cases.push(Case(source: entry, expected: expectation, name: strings.base_name(path: stem)))
+        else if strings.ends_with(text: entry, suffix: ".expected")
+            owner = strings.without_suffix(text: entry, suffix: ".expected") + ".hero"
+            if present[owner].is_err()
+                return fail("orphan", "orphan expectation: " + entry + " has no .hero source")
+    return ok(cases)
+
+test "the collector pairs, orders and refuses a half pair"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/cases"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch b.hero b.expected a.hero a.expected a.fixed .gitkeep")
+    assert !made.is_err()
+    found = collect(scratch: scratch, dir: tree)
+    assert !found.is_err()
+    assert found.must().len() == 2
+    # Sorted, so a failure names the same case on every machine.
+    assert found.must()[0].name == "a"
+    assert found.must()[1].name == "b"
+    assert found.must()[0].expected == tree + "/a.expected"
+
+test "a source with no expectation stops the harness by name"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/half"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch lonely.hero")
+    assert !made.is_err()
+    found = collect(scratch: scratch, dir: tree)
+    code = match found
+        .ok _ => "ok"
+        .err e => e.code
+    assert code == "half_pair"
+
+test "an expectation with no source stops the harness by name"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/orphan"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    made = shell.run(scratch: scratch, command: "cd " + shell.sq(tree) + " && touch ghost.expected")
+    assert !made.is_err()
+    found = collect(scratch: scratch, dir: tree)
+    code = match found
+        .ok _ => "ok"
+        .err e => e.code
+    assert code == "orphan"
