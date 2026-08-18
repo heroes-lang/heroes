@@ -1,0 +1,120 @@
+# One invocation of the compiler, and everything a surface test asks
+# about it — as data.
+#
+# `surface.rs` is 69 tests over 2,139 lines, and the shape of most of them
+# is one sentence: run this argv, get this exit code, find these words on
+# this stream and not those. Written out as Heroes functions that would be
+# 69 near-identical blocks; written as a table it is 69 rows, and the rows
+# are readable side by side, which is how a reader checks that the surface
+# is covered.
+#
+# What does NOT fit the table gets a function of its own (suite_surface's
+# second half): a test that runs the binary it just built, one that
+# changes the child's working directory, one that drives clang instead of
+# the compiler, one that compares two invocations against each other.
+# Panel 016's contract is the reason those exist at all — the surface is
+# what a user types, so a test of it has to type.
+#
+# Every field is "don't care" until it is set. The CHAIN that sets them
+# lives in the module that writes the tables, and that is a fact about the
+# language rather than a preference: UFCS does not cross a module
+# boundary. `box.make(1).plus(2)` is `error[needs_qualifying]` — measured
+# on both compilers, with and without an argument — because a name from
+# another module is always written qualified (spec:8), and `x.f(y)` names
+# `f` unqualified. So `probe.Probe` travels between modules and the sugar
+# that builds one does not.
+
+use report
+use shell
+use strings
+
+record Probe
+    name: str
+    argv: str
+    code: i64
+    out_has: [str]
+    out_lacks: [str]
+    err_has: [str]
+    err_lacks: [str]
+    out_starts: str
+    err_starts: str
+    out_is: str
+    err_is: str
+    out_state: str
+    err_state: str
+    err_lines: i64
+    library_skip: bool
+
+# A probe with everything unasked. `code` is -1 for "do not care", which
+# is what the exit-code-only tests need to say about the streams.
+function probe(name: str, argv: str, code: i64) -> Probe
+    none: [str] = []
+    return Probe(name: name, argv: argv, code: code, out_has: none, out_lacks: none, err_has: none, err_lacks: none, out_starts: "", err_starts: "", out_is: "", err_is: "", out_state: "", err_state: "", err_lines: -1, library_skip: false)
+
+# Run one probe. Answers "" where it held, the failure text where it did
+# not, and "SKIP" where the machine lacks the library.
+function unmet(scratch: str, compiler: str, p: Probe) -> str
+    said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " " + p.argv)
+    if said.is_err()
+        return "  cannot run: " + p.argv
+    if p.library_skip && shell.machine_lacks_the_library(said.must().err)
+        return "SKIP"
+    out = said.must().out
+    err = said.must().err
+    wrong: [str] @ []
+    if p.code >= 0 && said.must().code != p.code
+        wrong @ wrong.push("    exited " + said.must().code.to_str() + ", not " + p.code.to_str())
+    if p.out_state == "empty" && out.len() > 0
+        wrong @ wrong.push("    stdout should be empty and holds " + out.len().to_str() + " bytes")
+    if p.out_state == "nonempty" && out.len() == 0
+        wrong @ wrong.push("    stdout is empty")
+    if p.err_state == "empty" && err.len() > 0
+        wrong @ wrong.push("    stderr should be empty and holds:\n" + err)
+    if p.err_state == "nonempty" && err.len() == 0
+        wrong @ wrong.push("    stderr is empty")
+    if p.out_is.len() > 0 && out != p.out_is
+        wrong @ wrong.push("    stdout is not what it must be\n--- expected ---\n" + p.out_is + "--- actual ---\n" + out + "--- end ---")
+    if p.err_is.len() > 0 && err != p.err_is
+        wrong @ wrong.push("    stderr is not what it must be\n--- expected ---\n" + p.err_is + "--- actual ---\n" + err + "--- end ---")
+    if p.out_starts.len() > 0 && !strings.starts_with(text: out, prefix: p.out_starts)
+        wrong @ wrong.push("    stdout does not start with `" + p.out_starts + "`, it starts:\n" + first_line(out))
+    if p.err_starts.len() > 0 && !strings.starts_with(text: err, prefix: p.err_starts)
+        wrong @ wrong.push("    stderr does not start with `" + p.err_starts + "`, it starts:\n" + first_line(err))
+    for needle in p.out_has
+        if !strings.contains(text: out, needle: needle)
+            wrong @ wrong.push("    stdout does not carry `" + needle + "`")
+    for needle in p.out_lacks
+        if strings.contains(text: out, needle: needle)
+            wrong @ wrong.push("    stdout carries `" + needle + "` and must not")
+    for needle in p.err_has
+        if !strings.contains(text: err, needle: needle)
+            wrong @ wrong.push("    stderr does not carry `" + needle + "`")
+    for needle in p.err_lacks
+        if strings.contains(text: err, needle: needle)
+            wrong @ wrong.push("    stderr carries `" + needle + "` and must not")
+    if p.err_lines >= 0 && strings.lines(err).len() != p.err_lines
+        wrong @ wrong.push("    stderr has " + strings.lines(err).len().to_str() + " lines, not " + p.err_lines.to_str())
+    if wrong.len() == 0
+        return ""
+    return "  `heroes " + p.argv + "`\n" + wrong.join("\n") + "\n  its stdout was:\n" + out + "  its stderr was:\n" + err
+
+function first_line(text: str) -> str
+    rows = strings.lines(text)
+    if rows.len() == 0
+        return "(nothing)"
+    return "      " + rows[0]
+
+# Run a table of probes into a report, with the skips floored: a machine
+# missing every library must say so rather than report green.
+function run_table(scratch: str, compiler: str, probes: [Probe], @r: report.Report)
+    skipped: i64 @ 0
+    for p in probes
+        wrong = unmet(scratch: scratch, compiler: compiler, p: p)
+        if wrong == "SKIP"
+            skipped @ skipped + 1
+        else if wrong.len() == 0
+            report.keep_pass(@r)
+        else
+            report.keep_failure(@r, label: "surface/" + p.name, detail: wrong)
+    if skipped > 0 && skipped * 3 >= probes.len()
+        report.keep_failure(@r, label: "surface", detail: "  " + skipped.to_str() + " of " + probes.len().to_str() + " probes were skipped for a missing library — this machine is not testing the surface")

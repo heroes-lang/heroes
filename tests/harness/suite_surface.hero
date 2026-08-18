@@ -1,0 +1,227 @@
+# The command surface: what a user types, and what comes back.
+#
+# Port of the table-shaped half of crates/heroes-cli/tests/surface.rs (69
+# tests, 2,139 lines). Panel 085 measured what the archive would leave of
+# it: 17 in-process successors that "test functions rather than the
+# binary — `cli_argv.parse(...)` returning a value is not `heroes check
+# x.hero --brief` exiting 1 with that stderr". This module types.
+#
+# Three groups here, each a table of `probe.Probe` rows:
+#   argv     the three exit codes, the streams, strictness, the stops
+#   help     what `--help` must say
+#   render   the four ways a diagnostic can be printed, and `--apply`
+#
+# The rest of surface.rs lands beside it: the FFI fixtures, the module
+# fixtures, `mutate`, `test`, and the handful that cannot be a row at all
+# because they run a second process, change the child's directory, or
+# compare two invocations against each other.
+#
+# EVERY PATH IS RELATIVE TO THE REPOSITORY ROOT, because the compiler
+# echoes the path it was given and an expectation must not also record
+# which directory ran the harness.
+
+use probe
+use report
+use strings
+
+# The chain that builds a row. It lives here rather than beside the record
+# because UFCS does not cross a module boundary (measured: `box.make(1)
+# .plus(2)` is error[needs_qualifying] on both compilers), and a table
+# written as nested calls is a table nobody proof-reads.
+function row(name: str, argv: str, code: i64) -> probe.Probe
+    return probe.probe(name: name, argv: argv, code: code)
+
+function out_has(p: probe.Probe, needle: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.out_has @ p.out_has.push(needle)
+    return out
+
+function out_lacks(p: probe.Probe, needle: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.out_lacks @ p.out_lacks.push(needle)
+    return out
+
+function err_has(p: probe.Probe, needle: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.err_has @ p.err_has.push(needle)
+    return out
+
+function err_lacks(p: probe.Probe, needle: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.err_lacks @ p.err_lacks.push(needle)
+    return out
+
+function out_starts(p: probe.Probe, prefix: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.out_starts @ prefix
+    return out
+
+function err_starts(p: probe.Probe, prefix: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.err_starts @ prefix
+    return out
+
+function out_is(p: probe.Probe, text: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.out_is @ text
+    return out
+
+function err_is(p: probe.Probe, text: str) -> probe.Probe
+    out: probe.Probe @ p
+    out.err_is @ text
+    return out
+
+function out_empty(p: probe.Probe) -> probe.Probe
+    out: probe.Probe @ p
+    out.out_state @ "empty"
+    return out
+
+function out_nonempty(p: probe.Probe) -> probe.Probe
+    out: probe.Probe @ p
+    out.out_state @ "nonempty"
+    return out
+
+function err_empty(p: probe.Probe) -> probe.Probe
+    out: probe.Probe @ p
+    out.err_state @ "empty"
+    return out
+
+function err_nonempty(p: probe.Probe) -> probe.Probe
+    out: probe.Probe @ p
+    out.err_state @ "nonempty"
+    return out
+
+function err_lines(p: probe.Probe, count: i64) -> probe.Probe
+    out: probe.Probe @ p
+    out.err_lines @ count
+    return out
+
+# Green where this machine lacks the C library the case binds — the same
+# rule every other suite carries, and floored by the caller.
+function may_skip(p: probe.Probe) -> probe.Probe
+    out: probe.Probe @ p
+    out.library_skip @ true
+    return out
+
+
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    probe.run_table(scratch: scratch, compiler: compiler, probes: argv_probes(), r: @r)
+    probe.run_table(scratch: scratch, compiler: compiler, probes: help_probes(), r: @r)
+    probe.run_table(scratch: scratch, compiler: compiler, probes: render_probes(), r: @r)
+    return ok(r)
+
+# **The three exit codes mean three different things** (panel 016): 0 the
+# input is clean, 1 the input has diagnostics, 2 the tool could not run.
+# The whole contract is falsifiable in five invocations.
+function argv_probes() -> [probe.Probe]
+    return [
+        row(name: "a clean file exits 0", argv: "check examples/gallery/01-points.hero", code: 0)
+        row(name: "a file with diagnostics exits 1", argv: "check tests/golden/check/shadowing.hero", code: 1)
+        row(name: "a file that is not there exits 2", argv: "check no/such/file.hero", code: 2)
+        row(name: "an unknown flag exits 2", argv: "check --nonsense examples/gallery/00-first.hero", code: 2)
+        row(name: "an unknown command exits 2", argv: "frobnicate", code: 2)
+
+        # The artifact on stdout, diagnostics on stderr — §10's contract,
+        # asked of both halves at once.
+        row(name: "a dump is the artifact", argv: "parse examples/gallery/00-first.hero --dump-ast", code: 0).out_nonempty().err_empty()
+        row(name: "a diagnostic is not an artifact", argv: "check tests/golden/check/shadowing.hero", code: 1).out_empty().err_nonempty()
+
+        # An unknown flag names what the command DOES accept, which is the
+        # difference between a refusal and a dead end.
+        row(name: "an unknown flag names what is accepted", argv: "check --dump-ast examples/gallery/00-first.hero", code: 2).err_starts("error: `check` does not accept `--dump-ast` — it accepts --dump-scopes")
+        row(name: "a verb with no flags says so", argv: "doctor --json", code: 2).err_has("takes no flags")
+
+        # A retired flag names its replacement rather than reporting that
+        # it is unknown: the user typed something that USED to work.
+        row(name: "a retired flag names its replacement", argv: "fmt --write examples/gallery/00-first.hero", code: 2).err_is("error: `--write` is no longer a flag of `fmt` — use `--in-place`\n")
+        row(name: "the refused --no-line names what to do instead", argv: "build examples/gallery/00-first.hero --no-line", code: 2).err_has("no longer a flag").err_has("--emit-c")
+
+        # A stage prints only when asked: `lex` alone is a check, not a
+        # dump. `--json` says HOW to print and never WHAT (§10).
+        row(name: "a stage is silent unless asked", argv: "lex examples/gallery/00-first.hero", code: 0).out_empty()
+        row(name: "a dump prints the tokens", argv: "lex examples/gallery/00-first.hero --dump-tokens", code: 0).out_has("ident main")
+        row(name: "json changes how, not what", argv: "lex examples/gallery/00-first.hero --dump-tokens --json", code: 0).out_starts("[\n").out_has("\"kind\"")
+        row(name: "json alone selects no output", argv: "lex examples/gallery/00-first.hero --json", code: 0).out_empty()
+
+        # A missing or doubled operand is named with the shape that works.
+        row(name: "a missing operand shows the shape", argv: "check", code: 2).err_is("error: `check` needs a file: `heroes check <file.hero>`\n")
+        row(name: "two files are refused", argv: "check a.hero b.hero", code: 2).err_has("takes one file")
+        row(name: "-o needs a path", argv: "build examples/gallery/00-first.hero -o", code: 2).err_has("needs a path")
+        row(name: "two stops are refused", argv: "build examples/gallery/00-first.hero --dump-ir --emit-c", code: 2).err_has("one artifact at a time")
+
+        # Arguments reach the program, and only through `run`.
+        row(name: "run passes arguments after --", argv: "run tests/golden/run/edges-file-args-exit.hero -- alpha beta", code: 0).out_has("arguments: 2")
+        row(name: "only run takes program arguments", argv: "check examples/gallery/00-first.hero -- x", code: 2).err_has("only `heroes run` does")
+
+        # The optimisation level is a flag with the verb's default, and
+        # two of them at once is a refusal rather than a last-wins.
+        row(name: "build takes -O2", argv: "build examples/gallery/00-first.hero -O2", code: 0)
+        row(name: "build takes -O0", argv: "build examples/gallery/00-first.hero -O0", code: 0)
+        row(name: "run takes -O0", argv: "run examples/gallery/00-first.hero -O0", code: 0)
+        row(name: "two levels are refused", argv: "build examples/gallery/00-first.hero -O0 -O2", code: 2).err_has("one level at a time")
+        row(name: "an unknown level names the two", argv: "build examples/gallery/00-first.hero -O1", code: 2).err_has("-O0, -O2")
+    ]
+
+# The help text is the surface's only documentation, so what it must
+# carry is asserted rather than reviewed.
+function help_probes() -> [probe.Probe]
+    return [
+        row(name: "help states the exit codes and the streams", argv: "--help", code: 0).out_has("1 diagnostics were reported, no artifact was produced").out_has("2 the tool could not run.").out_has("HEROES_RUNTIME").out_has("streams: the artifact on stdout")
+        row(name: "every flag in the table is documented", argv: "--help", code: 0).out_has("--dump-tokens").out_has("--json").out_has("--dump-ast").out_has("--dump-scopes").out_has("--in-place")
+        row(name: "measure states its default", argv: "--help", code: 0).out_has("(default: spec/heroes-spec.md)")
+        row(name: "measure runs with no operand", argv: "measure", code: 0)
+    ]
+
+# Four ways one diagnostic is printed — rich, brief, json, applied — and
+# the hole report, which is an ARTIFACT and goes to stdout at exit 0.
+function render_probes() -> [probe.Probe]
+    return [
+        row(name: "the rich form carries the line, the caret and the other end", argv: "check tests/golden/check/certain-labels.hero", code: 1).err_starts("error[wrong_label]: `Point` has nothing called `z` at this position — it is `y`\n").err_has("  at tests/golden/check/certain-labels.hero:10:21").err_has("    a = Point(x: 1, z: 2)").err_has("^").err_has("fix (certain): write `y:`")
+        row(name: "brief is one line per diagnostic", argv: "check tests/golden/check/certain-labels.hero --brief", code: 1).err_lines(3).err_starts("tests/golden/check/certain-labels.hero:")
+        row(name: "json is versioned and carries the fixes", argv: "check tests/golden/check/certain-labels.hero --json", code: 1).err_starts("{\n  \"schema\": 1,\n").err_has("\"code\": \"wrong_label\"").err_has("\"certainty\": \"certain\"").err_has("\"line\": 10")
+
+        # `--permissive` drops the diagnostics that exist for the thesis
+        # and keeps the rest — the control arm of Part 11's measurement,
+        # asserted on both sides so it cannot quietly become "drop
+        # everything".
+        row(name: "the thesis rules fire by default", argv: "check tests/golden/check/unused-bindings.hero --brief", code: 1).err_lines(4)
+        row(name: "permissive drops them", argv: "check tests/golden/check/unused-bindings.hero --brief --permissive", code: 0).err_empty()
+        row(name: "permissive keeps the rest", argv: "check tests/golden/check/unknown-type.hero --brief --permissive", code: 1)
+
+        # `--apply` writes the repaired program to stdout, certain fixes
+        # only, and never the library it did not read.
+        row(name: "apply repairs with certain fixes only", argv: "check tests/golden/check/certain-fixes.hero --apply", code: 0).out_has("print(total)").out_has("for _ in range(from: 0, to: 3)").out_has(".num _ => 1").out_lacks("The Heroes library")
+        row(name: "apply reaches a mutation", argv: "check tests/golden/check/not-mutable.hero --apply", code: 0).out_has("    x @ 2")
+
+        # A hole is not an error: the compiler reports what belongs there,
+        # on stdout, and the exit code stays 0.
+        row(name: "a hole is an artifact at exit 0", argv: "check examples/gallery/09-holes.hero", code: 0).out_has("hole at examples/gallery/09-holes.hero:").out_has("this function returns: Entry").out_has("expected type: str").out_has("in scope:").out_has("entries: [Entry]")
+    ]
+
+test "the tables are what this module is, so they are counted"
+    assert argv_probes().len() == 25
+    assert help_probes().len() == 4
+    assert render_probes().len() == 8
+
+test "a probe holds when everything it asks for is true"
+    scratch = "build/harness-selftest"
+    p = row(name: "the zen", argv: "this", code: 0).out_has("We can be heroes").err_empty()
+    assert probe.unmet(scratch: scratch, compiler: "./target/debug/heroes", p: p) == ""
+
+test "a probe names every way one invocation disappointed it"
+    scratch = "build/harness-selftest"
+    p = row(name: "wrong", argv: "this", code: 2).out_has("not there").err_nonempty()
+    wrong = probe.unmet(scratch: scratch, compiler: "./target/debug/heroes", p: p)
+    assert wrong.len() > 0
+    assert strings.contains(text: wrong, needle: "exited 0, not 2")
+    assert strings.contains(text: wrong, needle: "does not carry `not there`")
+    assert strings.contains(text: wrong, needle: "stderr is empty")
+
+test "the chain leaves the probe it was given alone"
+    one = row(name: "a", argv: "b", code: 0)
+    two = one.out_has("x").err_has("y")
+    assert one.out_has.len() == 0
+    assert two.out_has.len() == 1
+    assert two.err_has.len() == 1
