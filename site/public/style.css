@@ -6,130 +6,414 @@
    the only loud colours, gold for the quotation marks, poster-condensed caps
    on the system stack (never a webfont), Georgia serif body.
 
-   Why a file and not a <style> block per page: the site is four pages now and
+   Why a file and not a <style> block per page: the site is eight pages now and
    twelve chapters eventually, with no build step to keep copies honest. A
    duplicated palette drifts invisibly — one page's dark mode goes stale and
    nothing fails. This is the only cross-page asset; the bolt stays inline SVG
    in each page, because it is markup.
+
+   The art direction, in one paragraph, so a later edit knows what it is
+   editing. The page is a stage: one light source (the red/blue wash behind the
+   marquee), one motif (the 1973 bolt, used as mark, as section bullet, as the
+   pin on the build log, and once more on the line above the footer), one
+   quotation colour (gold, which is why the section nods — song titles, which
+   are quotations — are gold and not grey). Everything else is paper and ink.
+   Restraint is the whole discipline here: an accent used everywhere is an
+   accent used nowhere.
+
+   Sections:
+     1  tokens — colour, measure, motion
+     2  base — reset, body, selection, texture
+     3  shell — the page grid, and the two layouts
+     4  nav
+     5  headings, marquee, nods
+     6  prose — paragraphs, lists, quotes, links
+     7  code — panels, syntax, diagnostics, tables
+     8  home — hero, demo card, figures, cta, cards
+     9  subpage heads, docs, chapters
+    10  the build log
+    11  the zen
+    12  stats, the fixpoint, the panel page
+    13  footer
+    14  focus, motion, print
    --------------------------------------------------------------------------- */
 
+/* == 1. tokens ============================================================ */
+
 :root {
-  --bg: #0d0d12; --fg: #ece9e2; --dim: #9a9790;
-  --red: #e84b50; --blue: #3f7bff; --gold: #e6b450;
-  --card: #16161d; --line: #2b2b35; --code: #cdd6f4;
+  color-scheme: dark light;
+
+  /* Ink and paper. Two greys between background and card, so a panel can sit
+     on the stage without a border doing all the work. */
+  --bg: #0b0b10;
+  --stage: #101017;
+  --card: #14141d;
+  --line: #262633;
+  --line-soft: #1c1c26;
+  --fg: #efece4;
+  --dim: #9d998f;
+
+  /* The bolt's two colours, plus gold. `--link` is a separate token from
+     `--blue` on purpose: the bolt's blue is a graphic colour and fails text
+     contrast at body size on this background, so links get a lifted one.
+     A colour that carries meaning and a colour that draws a shape are two
+     different jobs, and one token cannot hold both. */
+  --red: #ef4a52;
+  --blue: #3f7bff;
+  --link: #7aa2ff;
+  --gold: #e8b552;
+  --code: #d6dcf2;
+
+  /* Measure and rhythm. Every vertical space on the page is a multiple of
+     0.4rem, so nothing is arbitrary. */
+  --gutter: clamp(1.15rem, 4vw, 2rem);
+  --shell: 64rem;            /* the nav bar's width, constant on every page */
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  /* The 1973 bolt, as a mask rather than a coloured image: a mask inherits
+     `background-color`, so the same declaration follows the theme instead of
+     freezing one hex per palette. */
+  --bolt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E");
+
+  /* Printed-poster grain. One 160px tile, generated in the file, so it costs
+     no request and no JavaScript. Kept under 4% — it should be felt, not
+     seen; a visible texture on a page of code is noise in both senses. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-opacity: 0.035;
 }
+
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f7f2e9; --fg: #191713; --dim: #6b6860;
-    --red: #c2262b; --blue: #1f4fd8; --gold: #8a5a00;
-    --card: #efe9dc; --line: #dcd4c2; --code: #24365e;
+    --bg: #f7f2e9;
+    --stage: #fffdf7;
+    --card: #f1ebdd;
+    --line: #dbd2be;
+    --line-soft: #e7e0d0;
+    --fg: #17150f;
+    --dim: #6a6559;
+    --red: #c2262b;
+    --blue: #1f4fd8;
+    --link: #1a45c4;
+    --gold: #8a5a00;
+    --code: #23345a;
+    --grain-opacity: 0.05;
   }
 }
-* { box-sizing: border-box; }
-body {
-  margin: 0; background: var(--bg); color: var(--fg);
-  font: 17px/1.65 Georgia, 'Times New Roman', serif;
-}
-main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
-main > p, main > dl, main > ul.pillars, main > ol.log,
-main > ol.zen, main > ol.chapters { max-width: 38rem; }
-main.home { max-width: 54rem; }
-/* The stage is 54rem so the hero, cards and code panels can breathe; prose is
-   held to the book measure, because 108 characters a line is not readable. */
-main.home > p, main.home > blockquote { max-width: 42rem; }
 
-/* ------- the nav bar: every page carries it, so no page is a dead end -------
-   Duplicated in each file's markup rather than injected, because the site has
-   no build step and no JavaScript. Keep the six items and their order in sync;
-   the current page marks itself with class="here". */
+/* == 2. base ============================================================== */
+
+* { box-sizing: border-box; }
+
+/* The stage light behind the hero is absolutely positioned and deliberately
+   wider than the page, which makes it part of the document's scroll width:
+   without this, a phone scrolls sideways into empty gradient. `clip` rather
+   than `hidden` because `hidden` would make the body a scroll container and
+   take the sticky nav down with it. */
+html, body { overflow-x: clip; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 1.0625rem/1.7 Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+}
+/* Light text on a dark stage renders heavier than it measures; this is the
+   one place where smoothing is a typographic decision and not a preference. */
+@media (prefers-color-scheme: dark) {
+  body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+}
+
+/* The grain sits above everything and receives nothing — a texture that eats
+   a click is a bug wearing a costume. */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--grain) repeat;
+  opacity: var(--grain-opacity);
+  pointer-events: none;
+}
+
+::selection { background: var(--red); color: #fff; }
+
+img, svg { max-width: 100%; }
+
+/* == 3. shell ============================================================= */
+
+/* Two layouts, and the difference is deliberate.
+
+   A reading page (why, errors, self-hosted, zen, log, docs, panel) is a column
+   of prose at the book measure, with code and figures allowed to bleed out
+   symmetrically into a wider track — the editorial move that lets a 70-column
+   diagnostic keep its alignment without stretching the prose to 110 characters
+   a line.
+
+   The home page is a stage instead: one left-hand axis, everything ranged off
+   it, prose held short inside a wide frame. Centring the landing would put the
+   hero on one axis and the paragraphs on another. */
+
+/* Three tracks, and the middle one is the only one with a size: the two
+   flexible tracks either side are the bleed, and they are what disappears
+   first when the screen gets narrow. Sizing the bleed instead — the obvious
+   way round — makes a phone keep 88px of empty margin and squeeze the prose
+   into what is left, which is what the first cut of this did. */
+main {
+  --measure: 38rem;          /* the reading column */
+  --wide: 49rem;             /* how far a code panel may bleed */
+  max-width: calc(var(--wide) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding: 2.8rem var(--gutter) 6rem;
+  display: grid;
+  grid-template-columns:
+    [wide-start] 1fr
+    [text-start] min(100%, var(--measure)) [text-end]
+    1fr [wide-end];
+}
+main > * { grid-column: text; }
+main > pre,
+main > figure,
+main > .stats,
+main > ol.chapters,
+main > ul.seats,
+main > .next,
+main > footer { grid-column: wide; }
+
+/* A section rule and a page title are the page's architecture, so they measure
+   the wide track and not the reading column — otherwise every hairline stops
+   short of the code blocks under it and the page reads as two grids. The text
+   inside them is pushed back onto the reading column by a padding that goes to
+   zero the moment the track is narrower than the measure. */
+main:not(.home) > h2,
+main:not(.home) > .page-head {
+  grid-column: wide;
+  padding-inline: max(0px, calc((100% - var(--measure)) / 2));
+}
+
+main.home {
+  display: block;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 6rem;
+}
+/* Prose on the stage stays at the book measure even though the frame is wide:
+   108 characters a line is not readable, and a landing page is still reading. */
+main.home > p,
+main.home > blockquote,
+main.home > footer p { max-width: 41rem; }
+
+/* == 4. nav =============================================================== */
+
+/* Duplicated in each file's markup rather than injected, because the site has
+   no build step and no JavaScript. Keep the items and their order in sync; the
+   current page marks itself with class="here". */
+
 nav.site {
-  border-bottom: 1px solid var(--line); background: var(--bg);
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; top: 0; z-index: 20;
+  border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(140%) blur(12px);
+  -webkit-backdrop-filter: saturate(140%) blur(12px);
 }
 nav.site > div {
-  max-width: 54rem; margin: 0 auto; padding: 0.7rem 1.25rem;
-  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+  max-width: var(--shell); margin: 0 auto;
+  padding: 0.65rem var(--gutter);
+  display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap;
 }
 nav.site .mark {
-  display: flex; align-items: center; gap: 0.45rem; text-decoration: none;
-  color: var(--fg); font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  display: flex; align-items: center; gap: 0.5rem; text-decoration: none;
+  color: var(--fg);
+  font-family: 'Avenir Next Condensed', 'HelveticaNeue-CondensedBold', 'Helvetica Neue', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
   font-size: 1.05rem;
 }
-nav.site .mark svg { width: 0.85rem; height: 1.15rem; display: block; }
+nav.site .mark svg {
+  width: 0.85rem; height: 1.15rem; display: block;
+  transition: transform 160ms ease;
+}
+nav.site .mark:hover svg { transform: rotate(8deg) scale(1.12); }
 nav.site ul {
-  display: flex; gap: 1.15rem; list-style: none; margin: 0; padding: 0;
+  display: flex; gap: 1.2rem; list-style: none; margin: 0; padding: 0;
   flex-wrap: wrap;
 }
 nav.site a:not(.mark) {
-  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 0.775rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim); text-decoration: none; letter-spacing: 0.04em;
+  padding-bottom: 2px; border-bottom: 1px solid transparent;
+  transition: color 120ms ease, border-color 120ms ease;
 }
-nav.site a:not(.mark):hover { color: var(--fg); }
-nav.site a.here { color: var(--red); }
+nav.site a:not(.mark):hover { color: var(--fg); border-bottom-color: var(--line); }
+/* The current page is named twice — colour and a rule under it — because
+   colour alone is a signal a third of readers get less of. */
+nav.site a.here { color: var(--red); border-bottom-color: var(--red); }
 nav.site .out { margin-left: auto; }
-@media (max-width: 620px) {
-  nav.site > div { gap: 0.6rem; }
-  nav.site ul { gap: 0.75rem; }
-  /* `.out` keeps its auto margin so GitHub stays on the mark's row: four wrapped
-     rows of sticky chrome was 19% of a phone viewport. And a clipped command is
-     a command nobody can type. */
-  pre { white-space: pre-wrap; }
+
+/* `.out` keeps its auto margin so GitHub stays on the mark's row: four wrapped
+   rows of sticky chrome was 19% of a phone viewport. The item list gets a
+   tighter setting rather than a smaller one — condensing the tracking is
+   cheaper for legibility than dropping the size again. */
+@media (max-width: 700px) {
+  nav.site > div { gap: 0.5rem 0.9rem; padding-block: 0.55rem; }
+  nav.site ul { gap: 0.55rem 0.85rem; }
+  nav.site a:not(.mark) { font-size: 0.72rem; letter-spacing: 0.02em; }
+  nav.site .mark { font-size: 0.95rem; }
 }
 
-/* ------- the marquee: condensed glam caps + the Aladdin Sane bolt ------- */
-header { position: relative; }
-h1 {
-  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
-  font-size: 4.6rem; margin: 0; line-height: 1;
+/* == 5. headings ========================================================== */
+
+/* The poster face. Condensed caps from the system stack — never a webfont,
+   so the page paints on the first byte and owes nobody a request. */
+h1, h2, h3, .cta a, .stats .n, .figures .n, .seats .who {
+  font-family: 'Avenir Next Condensed', 'HelveticaNeue-CondensedBold', 'Helvetica Neue', 'Roboto Condensed', 'Arial Narrow', sans-serif;
 }
-h1 .q { color: var(--gold); }
+
+header { position: relative; }
+
+h1 {
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em;
+  font-size: clamp(3rem, 9vw, 4.6rem); margin: 0; line-height: 0.95;
+  text-wrap: balance;
+}
+/* Bowie's own quotation marks, in the album's own irony. They keep out of the
+   two-plate misregistration below: gold printed twice reads as dirt. */
+h1 .q {
+  color: var(--gold); font-size: 0.82em; vertical-align: 0.05em;
+  text-shadow: none;
+}
+
 .bolt {
   position: absolute; top: -1.6rem; right: 0.2rem; width: 4.4rem; height: auto;
   transform: rotate(8deg); pointer-events: none;
 }
-@media (max-width: 480px) { h1 { font-size: 3rem; } .bolt { width: 3rem; } }
-.tagline { font-size: 1.25rem; color: var(--dim); margin: 0.9rem 0 0; font-style: italic; }
-.badge {
-  display: inline-block; margin-top: 1.5rem; padding: 0.2rem 0.7rem;
-  border: 1px solid var(--line); border-radius: 999px;
-  font: 0.8rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+.tagline {
+  font-size: 1.2rem; color: var(--dim); margin: 0.9rem 0 0; font-style: italic;
 }
-.badge a { color: var(--blue); text-decoration: none; }
 
-/* ------- section headings: poster caps, bolt bullet, red/blue ------- */
+/* Section headings read as a tracklist: the title on the left, the song nod
+   ranged right on the same line, a hairline above. Gold on the nod because a
+   song title is a quotation, and gold is this site's quotation colour. */
 h2 {
-  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
-  font-size: 1.15rem; color: var(--red); margin: 3.6rem 0 0.9rem;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.13em;
+  font-size: 1.1rem; color: var(--red); margin: 3.4rem 0 1rem;
+  display: flex; align-items: baseline; gap: 0.6rem 1rem; flex-wrap: wrap;
+  padding-top: 1.5rem; border-top: 1px solid var(--line);
 }
-/* A hairline above each section, so the page reads as chapters rather than as
-   one column of text with red words in it. The first one would sit on top of
-   the hero, so it is suppressed. */
-main > h2 { padding-top: 1.6rem; border-top: 1px solid var(--line); }
-main > h2:first-of-type { padding-top: 0; border-top: 0; }
-main.home > h2 { padding-top: 2rem; }
+main > h2:first-of-type { padding-top: 0; border-top: 0; margin-top: 2.6rem; }
+main.home > h2 { margin-top: 4.2rem; }
+
 h2::before {
-  content: ''; display: inline-block; width: 0.75em; height: 1em;
-  margin-right: 0.5rem; vertical-align: -0.12em;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%233f7bff' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E") no-repeat center / contain;
+  content: ''; flex: none; width: 0.7em; height: 0.95em;
+  background-color: var(--blue);
+  -webkit-mask: var(--bolt) no-repeat center / contain;
+  mask: var(--bolt) no-repeat center / contain;
+  transform: translateY(0.08em);
 }
 h2 .nod {
-  display: block; font-size: 0.72rem; letter-spacing: 0.22em; color: var(--dim);
-  margin-top: 0.15rem;
+  margin-left: auto; font-size: 0.68rem; letter-spacing: 0.22em;
+  color: color-mix(in srgb, var(--gold) 78%, var(--dim));
+  font-weight: 400; white-space: nowrap;
 }
 
+h3 {
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+  font-size: 0.92rem; color: var(--fg); margin: 2.6rem 0 0.6rem;
+}
+
+/* == 6. prose ============================================================= */
+
+p { margin: 0 0 1.2rem; }
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 1px; text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--link) 45%, transparent);
+  transition: text-decoration-color 120ms ease, color 120ms ease;
+}
+a:hover { text-decoration-color: currentColor; }
+
+b, strong { font-weight: 700; }
+
+/* The pull quote. The site's one loud typographic gesture, and it earns the
+   gold: the album this language is named after wears its title in quotation
+   marks, so the marks are the motif, blown up and set behind the text. */
 blockquote {
-  margin: 1.25rem 0; padding: 0.25rem 0 0.25rem 1.25rem;
-  border-left: 3px solid var(--gold); font-size: 1.15rem; font-style: italic;
+  position: relative;
+  margin: 1.8rem 0; padding: 0.2rem 0 0.2rem 1.6rem;
+  border-left: 2px solid var(--gold);
+  font-size: 1.2rem; line-height: 1.5; font-style: italic;
+  text-wrap: pretty;
 }
+/* The mark sits behind the first line, inside the quote's own box — outside it
+   it read as a stray glyph floating in the margin. */
+blockquote::before {
+  content: '\201C';
+  position: absolute; left: 1.1rem; top: -0.28em; z-index: -1;
+  font-size: 4.2rem; line-height: 1; color: var(--gold);
+  opacity: 0.18; pointer-events: none;
+}
+
+ul.pillars { list-style: none; padding: 0; margin: 1.4rem 0; }
+ul.pillars li {
+  margin: 1.1rem 0; padding-left: 1.5rem; position: relative;
+  text-wrap: pretty;
+}
+ul.pillars li::before {
+  content: ''; position: absolute; left: 0; top: 0.62em;
+  width: 0.7rem; height: 1px; background: var(--red);
+}
+ul.pillars b { font-style: normal; color: var(--fg); }
+
+dl.why dt {
+  font-weight: 700; margin-top: 2rem; color: var(--fg);
+  font-size: 1.05rem;
+}
+dl.why dd { margin: 0.4rem 0 0; color: color-mix(in srgb, var(--fg) 88%, var(--dim)); }
+
+/* == 7. code ============================================================== */
+
 pre {
-  background: var(--card); border: 1px solid var(--line); border-radius: 8px;
-  padding: 1.1rem 1.3rem; overflow-x: auto;
-  font: 0.86rem/1.55 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--code);
+  background-color: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.35rem;
+  margin: 1.6rem 0;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  tab-size: 4;
+  font: 0.845rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--code);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  /* Scroll shadows, in CSS alone: two opaque patches pinned to the content
+     (`local`) hide two shadows pinned to the frame (`scroll`), so the shadow
+     only shows on the side that still has code hiding off-screen. A block
+     that scrolls now says so. */
+  background-image:
+    linear-gradient(to right, var(--card) 40%, transparent),
+    linear-gradient(to left,  var(--card) 40%, transparent),
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,0.28), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.28), transparent);
+  background-position: left center, right center, left center, right center;
+  background-size: 3rem 100%, 3rem 100%, 1.1rem 100%, 1.1rem 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
 }
-/* ------- syntax colouring, done in markup because there is no JavaScript -----
+pre::-webkit-scrollbar { height: 8px; }
+pre::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+/* Inline code inside prose is a different object from a code block: it is a
+   word in a sentence, so it gets a tint rather than a box. */
+p > code, li > code, dd > code, dt > code, figcaption code {
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 0.08em 0.3em;
+}
+
+/* ------- syntax colouring, done in markup because there is no JavaScript ----
    The token classes are the lexer's own tables, not a guess: `.k` is
    `lexer/keywords.rs::keyword`, `.t` is spec § Types. Three accents only, as
    the style guide demands — red for the words the language reserves, blue for
@@ -149,270 +433,449 @@ pre .h { color: var(--red); font-style: italic; }  /* ??? — a hole is a questi
    lets the message reflow into the column while the caret rows — which are
    short — keep the alignment that makes them mean anything. */
 pre.diag { white-space: pre-wrap; }
-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.92em; }
-ul.pillars { list-style: none; padding: 0; margin: 1rem 0; }
-ul.pillars li { margin: 0.9rem 0; padding-left: 1.4rem; position: relative; }
-ul.pillars li::before { content: '—'; position: absolute; left: 0; color: var(--red); }
-ul.pillars b { font-style: normal; }
-dl.why dt { font-weight: 600; margin-top: 1.1rem; }
-dl.why dd { margin: 0.25rem 0 0 0; }
-ol.log { list-style: none; padding: 0; margin: 1rem 0; }
-ol.log li {
-  margin: 0; padding: 1.1rem 0 1.1rem 1.4rem; position: relative;
-  border-left: 2px solid var(--line);
-}
-ol.log li::before {
-  content: ''; position: absolute; left: -7px; top: 1.3rem;
-  width: 12px; height: 12px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E") no-repeat center / contain;
-}
-ol.log .when {
-  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
-  color: var(--dim); display: block;
-  text-transform: uppercase; letter-spacing: 0.1em;
-}
-ol.log b { font-style: normal; }
-a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
-/* Nothing on this site was focusable-visible before: a keyboard reader had to
-   guess where they were. */
-a:focus-visible {
-  outline: 2px solid var(--red); outline-offset: 3px; border-radius: 2px;
-}
-footer {
-  margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
-  color: var(--dim); font-size: 0.9rem;
-}
 
-/* ------- the fixpoint: three generations, one hash ------- */
-.fixpoint .hash {
-  color: var(--gold); word-break: break-all; display: block;
-}
-.stats {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: 1.4rem 1rem; margin: 1.6rem 0; padding: 0; list-style: none;
-}
-.stats li { margin: 0; }
-.stats .n {
-  display: block; color: var(--red); font-size: 1.6rem; line-height: 1.1;
-  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; letter-spacing: 0.02em;
-}
-.stats .what {
-  font: 0.76rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
-  color: var(--dim); display: block; margin-top: 0.15rem;
-}
-
-/* ------- the home page: a landing, not a scroll -------
-   The hero is a two-column stage: the promise on the left, and on the right the
-   thing this language actually sells — a real compile error, carrying its own
-   repair. Showing the diagnostic rather than a hello-world is the whole pitch in
-   one glance. Under it, the three numbers that make the claim checkable. */
-.hero {
-  position: relative; padding: 2.6rem 0 2.5rem;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center;
-}
-.hero > div { min-width: 0; }
-.hero > div:first-child { position: relative; }
-/* The bolt's own colours, thrown behind the marquee like stage light. */
-.hero::before {
-  content: ''; position: absolute; z-index: -1;
-  top: -6rem; left: -20%; right: -20%; height: 130%;
-  background:
-    radial-gradient(38rem 22rem at 22% 34%, color-mix(in srgb, var(--red) 20%, transparent), transparent 70%),
-    radial-gradient(32rem 20rem at 74% 62%, color-mix(in srgb, var(--blue) 17%, transparent), transparent 70%);
-  pointer-events: none;
-}
-/* Says what this is before it says what it is called — a visitor who has never
-   heard the name should not have to infer the category. */
-.hero .kicker {
-  margin: 0 0 0.6rem;
-  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
-  letter-spacing: 0.18em; text-transform: uppercase; color: var(--blue);
-}
-.hero h1 { font-size: 5.2rem; }
-.hero .promise {
-  font-size: 1.5rem; line-height: 1.3; margin: 1.1rem 0 0.6rem; font-weight: 700;
-}
-.hero .promise em { color: var(--red); font-style: normal; }
-.hero .tagline { font-size: 1.05rem; margin: 0.6rem 0 0; }
-.hero .bolt {
-  position: static; display: block; width: 2.6rem; height: auto;
-  margin: 0 0 0.9rem; transform: rotate(8deg);
-}
-
-/* The demo card's `bar` names the file, so it is that block's caption and the
-   figure carries no second one. */
-.demo figure.example { margin: 0; }
-.demo figure.example figcaption { display: none; }
-
-/* the demo card: a code panel, in the page's own furniture */
-.demo {
-  border: 1px solid var(--line); border-radius: 10px; background: var(--card);
-  overflow: hidden;
-}
-.demo .bar {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--line);
-  font: 0.72rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
-}
-.demo .bar::before {
-  content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%;
-  background: var(--dim); flex: none;
-}
-.demo pre {
-  border: 0; border-radius: 0; margin: 0; background: transparent;
-  font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap;
-}
-.demo .under {
-  padding: 0 0.9rem 0.8rem; margin: 0;
-  font: 0.72rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
-}
-.demo .under a { text-decoration: none; }
-
-/* A grid rather than a flex row: three columns by construction, so a caption
-   that grows wraps inside its own column instead of dropping the third figure
-   onto a line of its own and reading as an accident. */
-.figures {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem 1.5rem;
-  margin: 0 0 1rem; padding: 1.2rem 0 0; list-style: none;
-  border-top: 1px solid var(--line);
-}
-@media (max-width: 620px) { .figures { grid-template-columns: 1fr; } }
-.figures li { margin: 0; }
-.figures .n {
-  color: var(--red); font-size: 1.35rem;
-  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; letter-spacing: 0.02em;
-}
-.figures .what {
-  display: block; font: 0.74rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
-  color: var(--dim);
-}
-
-@media (prefers-color-scheme: light) { .hero::before { opacity: 0.7; } }
-
-@media (max-width: 780px) {
-  .hero { grid-template-columns: 1fr; gap: 1.8rem; padding-top: 2.5rem; }
-  .hero h1 { font-size: 3.4rem; }
-  .hero .promise { font-size: 1.25rem; }
-}
-
-.cta { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 1.8rem 0 0; }
-.cta a {
-  display: inline-block; padding: 0.5rem 1.1rem; border-radius: 999px;
-  text-decoration: none; border: 1px solid var(--red);
-  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
-  font-size: 0.9rem;
-}
-.cta a { transition: transform 120ms ease, background-color 120ms ease, color 120ms ease; }
-.cta a:hover { transform: translateY(-1px); }
-.cta a.primary { background: var(--red); color: var(--bg); border-color: var(--red); }
-.cta a.ghost { color: var(--red); }
-.cta a.ghost:hover { background: var(--red); color: var(--bg); }
-
-.cards {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: 1.6rem; margin: 1.5rem 0 0; padding: 0; list-style: none;
-}
-.cards li {
-  margin: 0; padding: 1.2rem 1.3rem; border: 1px solid var(--line);
-  border-radius: 10px; background: var(--card);
-  display: flex; flex-direction: column;
-}
-.cards a.more { margin-top: auto; }
-.cards li { transition: border-color 120ms ease; }
-.cards li:hover { border-color: var(--red); }
-.cards h3 { margin: 0 0 0.5rem; color: var(--fg); font-size: 0.9rem; }
-.cards p { margin: 0 0 0.7rem; font-size: 0.95rem; }
-.cards a.more {
-  font: 0.74rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
-  text-decoration: none; letter-spacing: 0.05em;
-}
-.cards a.more::after { content: ' →'; }
-
-/* ------- subpage headers: a title, not a marquee ------- */
-.page-head { padding: 1.5rem 0 0.5rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
-h1.page {
-  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
-  font-size: 2.8rem; margin: 0; line-height: 1.05;
-}
-.page-head .nod {
-  display: block; font: 0.72rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
-  letter-spacing: 0.22em; color: var(--dim); margin-top: 0.3rem;
-}
-.page-head .lede { font-size: 1.15rem; color: var(--dim); font-style: italic; margin: 0.7rem 0 1.2rem; }
-main > p.lede {
-  font-size: 1.2rem; line-height: 1.5; color: var(--fg); font-style: normal;
-  margin: 0 0 1.8rem; max-width: 34rem;
-}
-@media (max-width: 480px) { h1.page { font-size: 2rem; } }
-
-/* ------- documentation pages: book page, not marquee ------- */
-.crumb {
-  font: 0.8rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
-  color: var(--dim); margin: 0 0 2rem;
-}
-h1.chapter {
-  font-size: 2.4rem; letter-spacing: 0.01em; text-transform: none;
-  font-family: Georgia, 'Times New Roman', serif; font-weight: 700;
-}
-h3 {
-  font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
-  font-size: 0.95rem; color: var(--fg); margin: 2.4rem 0 0.6rem;
+/* A measured table, set as one row of monospace text. `.hi` is the row the
+   prose singles out: caught none of the time, in either arm. It is marked
+   rather than recoloured, because the number is not an error — it is the
+   honest row, and the page says so. */
+pre.table { font-size: 0.8rem; }
+pre.table .hi {
+  background: color-mix(in srgb, var(--red) 16%, transparent);
+  box-shadow: 0 0 0 0.22em color-mix(in srgb, var(--red) 16%, transparent);
+  border-radius: 2px; color: var(--fg);
 }
 
 /* Every code block on this site is a slice of a file that compiles and runs.
    `data-src` (+ optional `data-lines`) is the machine-readable half of that
    promise: M-documentation-site's drift check greps these attributes and diffs
    the block against the file. The figcaption is the same promise, for readers. */
-figure.example { margin: 1.5rem 0; }
-figure.example pre { margin: 0 0 0.4rem; }
+figure.example { margin: 1.8rem 0; }
+figure.example pre { margin: 0 0 0.45rem; }
 figure.example figcaption {
-  font: 0.76rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 0.74rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim); text-align: right;
 }
-figure.example figcaption::before { content: '↳ '; color: var(--dim); }
+figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
 
-/* The Zen: the compiler's own text (`heroes this`), quoted verbatim — including
-   the lyric fragments, which are the binary's packaging and not the site's copy.
-   Numbered like the command numbers them. */
-ol.zen { list-style: none; padding: 0; margin: 1.8rem 0; counter-reset: zen; }
-ol.zen li {
-  counter-increment: zen; position: relative;
-  padding: 0.5rem 0 0.5rem 2.6rem; font-size: 1.05rem;
-}
-ol.zen li::before {
-  content: counter(zen);
-  position: absolute; left: 0; top: 0.55rem; width: 1.8rem; text-align: right;
-  color: var(--red);
-  font: 700 0.9rem/1.65 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
-}
-ol.zen li:nth-child(1), ol.zen li:nth-child(20) { color: var(--gold); }
+/* == 8. home ============================================================== */
 
-ol.chapters { list-style: none; padding: 0; margin: 1.5rem 0; counter-reset: ch; }
-ol.chapters li {
-  counter-increment: ch; position: relative; padding: 0.55rem 0 0.55rem 2.4rem;
-  border-bottom: 1px solid var(--line);
+/* The hero is a two-column stage: the promise on the left, and on the right a
+   real program in the page's own furniture. Under it, three numbers that make
+   the claim checkable. */
+.hero {
+  position: relative;
+  padding: 3.4rem 0 3rem;
+  display: grid; grid-template-columns: 1.02fr 1fr; gap: 3rem;
+  align-items: center;
 }
-ol.chapters li::before {
-  content: counter(ch, decimal-leading-zero);
-  position: absolute; left: 0; top: 0.55rem; color: var(--dim);
-  font: 0.8rem/1.65 ui-monospace, 'SF Mono', Menlo, monospace;
+.hero > div { min-width: 0; }
+.hero > div:first-child { position: relative; }
+
+/* One light source, thrown from the bolt's own colours and raked along the
+   bolt's own angle. Two washes and a beam between them — the beam is what
+   stops it reading as a generic gradient. */
+.hero::before {
+  content: ''; position: absolute; z-index: -1;
+  top: -7rem; left: -22%; right: -22%; height: 145%;
+  background:
+    radial-gradient(34rem 20rem at 20% 30%, color-mix(in srgb, var(--red) 22%, transparent), transparent 68%),
+    radial-gradient(30rem 19rem at 76% 66%, color-mix(in srgb, var(--blue) 19%, transparent), transparent 68%),
+    linear-gradient(97deg, transparent 38%, color-mix(in srgb, var(--red) 7%, transparent) 47%, color-mix(in srgb, var(--blue) 7%, transparent) 53%, transparent 62%);
+  pointer-events: none;
 }
-ol.chapters .src {
-  display: block; font: 0.74rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+@media (prefers-color-scheme: light) { .hero::before { opacity: 0.72; } }
+
+/* Says what this is before it says what it is called — a visitor who has never
+   heard the name should not have to infer the category. */
+.hero .kicker {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin: 0 0 0.8rem;
+  font: 0.75rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue);
+}
+.hero .kicker::before {
+  content: ''; width: 1.7rem; height: 1px; background: var(--blue); flex: none;
+}
+.hero h1 {
+  font-size: clamp(3.4rem, 8.4vw, 5.6rem);
+  /* Out of register by a hair, the way a two-plate poster prints: the red
+     plate a little left, the blue a little right. It is the cover of Aladdin
+     Sane said in type instead of in paint, and it is the only place on the
+     site that says it. */
+  text-shadow:
+    -0.028em 0 0 color-mix(in srgb, var(--red) 62%, transparent),
+     0.028em 0 0 color-mix(in srgb, var(--blue) 62%, transparent);
+}
+.hero .promise {
+  font-size: clamp(1.3rem, 2.6vw, 1.6rem); line-height: 1.28;
+  margin: 1.2rem 0 0.6rem; font-weight: 700; text-wrap: balance;
+}
+.hero .promise em { color: var(--red); font-style: normal; }
+.hero .tagline { font-size: 1.02rem; margin: 0.7rem 0 0; max-width: 30rem; }
+.hero .bolt {
+  position: static; display: block; width: 2.8rem; height: auto;
+  margin: 0 0 1rem; transform: rotate(8deg);
+  filter: drop-shadow(0 0 1.6rem color-mix(in srgb, var(--red) 35%, transparent));
+}
+
+/* the demo card: a code panel, in the page's own furniture */
+.demo {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--stage); overflow: hidden;
+  box-shadow: 0 1.4rem 3rem -1.6rem rgba(0,0,0,0.55);
+}
+.demo .bar {
+  display: flex; align-items: center; gap: 0.55rem;
+  padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  font: 0.71rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+}
+.demo .bar::before {
+  content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--red); flex: none;
+  box-shadow: 0.75rem 0 0 color-mix(in srgb, var(--gold) 70%, transparent),
+              1.5rem 0 0 color-mix(in srgb, var(--blue) 70%, transparent);
+  margin-right: 1.5rem;
+}
+/* The demo card's `bar` names the file, so it is that block's caption and the
+   figure carries no second one. */
+.demo figure.example { margin: 0; }
+.demo figure.example figcaption { display: none; }
+.demo pre {
+  border: 0; border-radius: 0; margin: 0;
+  background: transparent; background-image: none;
+  font-size: 0.79rem; line-height: 1.55;
+}
+.demo .under {
+  padding: 0 0.95rem 0.85rem; margin: 0;
+  font: 0.71rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+}
+.demo .under a { text-decoration: none; }
+
+/* Three numbers, set as a band with hairlines above and below and rules
+   between them: a strip of evidence rather than three loose facts. */
+.figures {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  margin: 1.5rem 0 0; padding: 0; list-style: none;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.figures li {
+  margin: 0; padding: 1.15rem 1.4rem 1.15rem 0;
+}
+.figures li + li {
+  border-left: 1px solid var(--line-soft); padding-left: 1.4rem;
+}
+.figures .n {
+  display: block; color: var(--red); font-size: 1.5rem; line-height: 1.1;
+  font-weight: 700; letter-spacing: 0.01em; font-variant-numeric: tabular-nums;
+}
+.figures .what {
+  display: block; margin-top: 0.3rem;
+  font: 0.72rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim);
 }
+@media (max-width: 620px) {
+  .figures { grid-template-columns: 1fr; }
+  .figures li + li { border-left: 0; border-top: 1px solid var(--line-soft); padding-left: 0; }
+}
+
+.cta { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 2rem 0 0; }
+.cta a {
+  display: inline-block; padding: 0.55rem 1.25rem; border-radius: 999px;
+  text-decoration: none; border: 1px solid var(--red);
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+  font-size: 0.9rem;
+  transition: transform 140ms ease, background-color 140ms ease,
+              color 140ms ease, box-shadow 140ms ease;
+}
+.cta a.primary {
+  background: var(--red); color: var(--bg); border-color: var(--red);
+}
+.cta a.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.7rem 1.6rem -0.6rem color-mix(in srgb, var(--red) 75%, transparent);
+}
+.cta a.ghost { color: var(--red); }
+.cta a.ghost:hover { background: var(--red); color: var(--bg); transform: translateY(-2px); }
+
+.cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.4rem; margin: 1.6rem 0 0; padding: 0; list-style: none;
+}
+.cards li {
+  margin: 0; padding: 1.4rem 1.4rem 1.2rem; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--card);
+  display: flex; flex-direction: column; position: relative; overflow: hidden;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+/* A card lights up along its top edge on hover — the stage light again, at
+   the scale of one object. */
+.cards li::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: 2px;
+  background: linear-gradient(90deg, var(--red), var(--blue));
+  opacity: 0; transition: opacity 160ms ease;
+}
+.cards li:hover { border-color: color-mix(in srgb, var(--red) 55%, var(--line)); transform: translateY(-2px); }
+.cards li:hover::before { opacity: 1; }
+.cards h3 { margin: 0 0 0.6rem; color: var(--fg); font-size: 0.85rem; letter-spacing: 0.1em; }
+.cards p { margin: 0 0 1rem; font-size: 0.95rem; line-height: 1.6; }
+.cards a.more {
+  margin-top: auto;
+  font: 0.73rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-decoration: none; letter-spacing: 0.05em;
+}
+.cards a.more::after { content: ' \2192'; }
+
+/* == 9. subpage heads, docs =============================================== */
+
+/* A title, not a marquee: the reading pages announce themselves once and then
+   get out of the way. */
+.page-head {
+  padding: 1.4rem 0 1.1rem; border-bottom: 1px solid var(--line);
+  margin-bottom: 1.6rem;
+}
+h1.page {
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+  font-size: clamp(2.1rem, 6.5vw, 3rem); margin: 0; line-height: 1.02;
+}
+.page-head .nod {
+  display: block; font: 0.7rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.22em; margin-top: 0.45rem;
+  color: color-mix(in srgb, var(--gold) 78%, var(--dim));
+}
+.page-head .lede {
+  font-size: 1.15rem; color: var(--dim); font-style: italic; margin: 0.8rem 0 0;
+}
+main > p.lede {
+  font-size: 1.2rem; line-height: 1.55; color: var(--fg); font-style: normal;
+  margin: 0 0 2rem; max-width: 34rem; text-wrap: pretty;
+}
+
+.crumb {
+  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); margin: 0 0 2.2rem;
+}
+h1.chapter {
+  font-size: clamp(2rem, 5.5vw, 2.5rem); letter-spacing: 0.005em;
+  text-transform: none; line-height: 1.15;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-weight: 700; text-wrap: balance;
+  margin: 0 0 0.6rem;
+}
+/* A chapter's standfirst is a unit with its title, and needs air under it
+   before the body starts: without this it reads as the first paragraph. */
+h1.chapter + .tagline { margin: 0 0 2rem; }
+
+ol.chapters { list-style: none; padding: 0; margin: 1.6rem 0; counter-reset: ch; }
+ol.chapters li {
+  counter-increment: ch; position: relative;
+  padding: 0.75rem 0 0.75rem 3rem;
+  border-bottom: 1px solid var(--line-soft);
+  transition: background-color 140ms ease;
+}
+ol.chapters li:hover { background: color-mix(in srgb, var(--card) 60%, transparent); }
+ol.chapters li::before {
+  content: counter(ch, decimal-leading-zero);
+  position: absolute; left: 0.3rem; top: 0.8rem; color: var(--dim);
+  font: 0.78rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+}
+ol.chapters .src {
+  display: block; font: 0.73rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); margin-top: 0.15rem;
+}
 ol.chapters .soon {
-  font: 0.68rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 0.66rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
   text-transform: uppercase; letter-spacing: 0.12em;
   color: var(--dim); margin-left: 0.5rem; white-space: nowrap;
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.1rem 0.5rem;
 }
 ol.chapters li.todo { color: var(--dim); }
+
 .next {
-  margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
-  font-size: 0.95rem;
+  margin-top: 3.4rem; padding: 1.2rem 1.3rem;
+  border: 1px solid var(--line); border-left: 2px solid var(--red);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+  font-size: 0.98rem;
+}
+.next p { margin: 0; }
+
+/* == 10. the build log ==================================================== */
+
+ol.log { list-style: none; padding: 0; margin: 1.6rem 0 0; }
+ol.log li {
+  margin: 0; padding: 1.4rem 0 1.4rem 1.8rem; position: relative;
+  border-left: 1px solid var(--line);
+  text-wrap: pretty;
+}
+/* The bolt pins every entry to the line — the motif doing a job, which is the
+   only way it is allowed on this site. */
+ol.log li::before {
+  content: ''; position: absolute; left: -6px; top: 1.75rem;
+  width: 11px; height: 15px;
+  background-color: var(--red);
+  -webkit-mask: var(--bolt) no-repeat center / contain;
+  mask: var(--bolt) no-repeat center / contain;
+}
+ol.log li:first-child::before { background-color: var(--gold); }
+ol.log .when {
+  font: 0.74rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); display: block;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+ol.log b { font-style: normal; color: var(--fg); display: block; margin-bottom: 0.4rem; }
+/* Its own line: trailing a paragraph it reads as a stray link in the prose. */
+ol.log a.more {
+  display: block; margin-top: 0.7rem;
+  font: 0.73rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-decoration: none; letter-spacing: 0.05em;
+}
+ol.log a.more::after { content: ' \2192'; }
+
+/* == 11. the zen ========================================================== */
+
+/* The compiler's own text (`heroes this`), quoted verbatim — including the
+   lyric fragments, which are the binary's packaging and not the site's copy.
+   Numbered the way the command numbers them, and set larger than body copy:
+   twenty lines are the one page here that is read like a poster. */
+ol.zen { list-style: none; padding: 0; margin: 2rem 0; counter-reset: zen; }
+ol.zen li {
+  counter-increment: zen; position: relative;
+  padding: 0.6rem 0 0.6rem 3rem; font-size: 1.1rem; line-height: 1.5;
+  text-wrap: pretty;
+}
+ol.zen li::before {
+  content: counter(zen, decimal-leading-zero);
+  position: absolute; left: 0; top: 0.85rem; width: 2rem; text-align: right;
+  color: color-mix(in srgb, var(--red) 70%, transparent);
+  font: 700 0.85rem/1 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
+  letter-spacing: 0.08em;
+  transition: color 140ms ease;
+}
+ol.zen li:hover::before { color: var(--red); }
+/* The first line and the last: the tribute, and the song. */
+ol.zen li:nth-child(1), ol.zen li:nth-child(20) {
+  color: var(--gold); font-style: italic;
+}
+ol.zen li:nth-child(1)::before, ol.zen li:nth-child(20)::before { color: var(--gold); }
+
+/* == 12. stats, fixpoint, panel =========================================== */
+
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1.6rem 1.2rem; margin: 2rem 0; padding: 1.4rem 0; list-style: none;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.stats li { margin: 0; }
+.stats .n {
+  display: block; color: var(--red); font-size: 1.9rem; line-height: 1.05;
+  font-weight: 700; letter-spacing: 0.01em; font-variant-numeric: tabular-nums;
+}
+.stats .what {
+  font: 0.73rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--dim); display: block; margin-top: 0.35rem;
+}
+
+/* Three generations, one hash: the hash is the evidence, so it is the gold. */
+.fixpoint .hash {
+  color: var(--gold); word-break: break-all; display: block;
+  letter-spacing: 0.02em;
+}
+
+/* The panel's seats, and the languages this one borrowed from. Both are
+   lists of named things with a line of argument each, so they share a shape:
+   a name in the poster face, the argument in the reading face. */
+ul.seats, ul.lineage { list-style: none; padding: 0; margin: 1.6rem 0; }
+ul.seats li {
+  margin: 0; padding: 1.1rem 0; border-top: 1px solid var(--line-soft);
+  display: grid; grid-template-columns: 12rem 1fr; gap: 0.4rem 1.6rem;
+}
+ul.seats li:last-child { border-bottom: 1px solid var(--line-soft); }
+ul.seats .who {
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+  font-size: 0.86rem; color: var(--fg); padding-top: 0.15rem;
+}
+ul.seats .veto {
+  display: block; margin-top: 0.25rem;
+  font: 0.66rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--red);
+}
+ul.seats .no-veto { color: var(--dim); }
+ul.seats p { margin: 0; font-size: 0.98rem; }
+@media (max-width: 620px) {
+  ul.seats li { grid-template-columns: 1fr; }
+}
+
+ul.lineage li {
+  margin: 0.85rem 0; padding-left: 1.5rem; position: relative;
+  text-wrap: pretty;
+}
+ul.lineage li::before {
+  content: ''; position: absolute; left: 0; top: 0.62em;
+  width: 0.7rem; height: 1px; background: var(--blue);
+}
+ul.lineage b { color: var(--fg); }
+
+/* == 13. footer =========================================================== */
+
+/* One line, raked from red to blue, with the bolt sitting on it: the last
+   appearance of the motif, and the page's full stop. */
+footer {
+  position: relative; margin-top: 5rem; padding-top: 2.6rem;
+  color: var(--dim); font-size: 0.9rem; line-height: 1.6;
+}
+footer::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--red) 24%, var(--blue) 76%, transparent);
+  opacity: 0.5;
+}
+footer::after {
+  content: ''; position: absolute; top: -7px; left: 50%;
+  width: 10px; height: 14px; transform: translateX(-50%) rotate(8deg);
+  background-color: var(--red);
+  -webkit-mask: var(--bolt) no-repeat center / contain;
+  mask: var(--bolt) no-repeat center / contain;
+}
+footer p { margin: 0 0 0.9rem; }
+footer p:last-child { margin: 0; font-size: 0.82rem; opacity: 0.8; }
+footer a { color: var(--link); }
+
+/* == 14. focus, motion, print ============================================= */
+
+/* Nothing on this site was focusable-visible before: a keyboard reader had to
+   guess where they were. */
+a:focus-visible {
+  outline: 2px solid var(--red); outline-offset: 3px; border-radius: 2px;
+}
+pre:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Narrow screens: a code block scrolls rather than reflows, because wrapping
+   4-space indentation destroys the only structure the language has. Shell
+   transcripts and diagnostics are the exception — there a clipped command is a
+   command nobody can type, and the caret lines are short enough to survive. */
+@media (max-width: 620px) {
+  pre { white-space: pre-wrap; }
+  figure.example pre, .demo pre, pre.table { white-space: pre; }
+  .hero { grid-template-columns: 1fr; gap: 2rem; padding: 2.4rem 0 2rem; }
+  blockquote::before { display: none; }
+}
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; gap: 2.2rem; }
+  .hero .tagline { max-width: none; }
+}
+
+@media print {
+  body::after, nav.site, .hero::before { display: none; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  pre { background: #f4f4f4; border-color: #ccc; }
+  a { color: #000; }
 }

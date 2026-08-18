@@ -31,6 +31,7 @@
       <li><a href="errors.html">Errors</a></li>
       <li><a href="selfhost.html">Self-hosted</a></li>
       <li><a href="zen.html">Zen</a></li>
+      <li><a href="panel.html">Panel</a></li>
       <li><a href="log.html">Log</a></li>
     </ul>
     <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
@@ -141,6 +142,97 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   <p>
     It is not a decision about speed. Speed is explicitly not a goal of this
     project, and explicitly not an excuse either.
+  </p>
+
+  <h2>Four words can begin a top-level line</h2>
+  <p>
+    A file is a flat list of declarations, and each one starts with the word
+    that says what it is: <code>constant</code>, <code>function</code>,
+    <code>record</code>, <code>variant</code>. That is the entire inventory.
+    There is no class, no interface, no module block nested inside the file, no
+    attribute that changes what the next line means, and no mutable global
+    anywhere in the language.
+  </p>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-14">
+<pre><code><span class="c"># A position on the integer grid.</span>
+<span class="k">record</span> Point
+    x: <span class="t">i64</span>
+    y: <span class="t">i64</span>
+
+<span class="c"># A rectangle, by two corners.</span>
+<span class="k">record</span> Rect
+    corner: Point
+    extent: Point</code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 6&ndash;14</figcaption>
+  </figure>
+  <p>
+    Declaration order never matters, and mutual recursion needs no forward
+    declarations, so nothing in a file depends on where it sits in the file.
+    For a reader who arrives in the middle, the first word of a line is enough
+    to know what is being read, and there is no second place a declaration
+    could have come from.
+  </p>
+  <p>
+    Underneath the surface the language is smaller still. What the compiler
+    actually implements is <b>seven constructs</b>: bind a name, define and call
+    a function, build a record and read a field, build a variant and take it
+    apart with <code>match</code>, loop with <code>break</code> and
+    <code>continue</code>, <code>return</code>, and the primitive operations.
+    Everything else you can write is sugar, erased on the way into the
+    compiler's internal form, so it costs nothing in the type checker, nothing
+    in the lowering and nothing in the backend. A small core under a surface
+    with no synonyms is what makes a compiler one person can finish.
+  </p>
+
+  <h2>Memory, and why nothing collects it</h2>
+  <p>
+    Every value behaves as a copy: <code>b = a</code> means <code>b</code> is
+    independent of <code>a</code>, and it means that for records, arrays and
+    maps alike. That is the meaning. The implementation underneath is
+    copy-on-write over reference counting: before a mutation the runtime asks
+    whether anyone else is holding the same data, and copies only then,
+    otherwise it writes in place.
+  </p>
+  <p>
+    The consequence is the one worth reading twice. A reference cannot be
+    stored in a variable or in a field, because the language has no reference
+    type to store, so every value is a tree whose root is a name in the
+    program. A cycle cannot be built. Reference counting therefore cannot leak,
+    and the language needs <b>no garbage collector</b>, no cycle collector, no
+    <code>weak</code> or <code>unowned</code> annotations for the programmer to
+    get right, and no collection pause. Swift ships the same machinery and does
+    need those, because Swift also has <code>class</code>, with shared
+    references. Heroes takes the half that works and declines the half that
+    generates the complexity.
+  </p>
+  <p>
+    Freeing is not left to the runtime to guess, either. The compiler inserts
+    the counting as real instructions and builds one cleanup path per function,
+    so every way out of a scope, <code>return</code>, <code>?</code>,
+    <code>break</code>, <code>continue</code>, an abort, releases what that
+    scope was holding. The whole runtime that supports this is 3,139 lines of
+    C, measured 2026-08-18, and it is in the repository.
+  </p>
+  <p>
+    On top of that sits the promise the language treats as a goal rather than
+    as a quality of the implementation: <b>a program must not segfault and must
+    not corrupt memory</b>. So the operations that go wrong quietly in C go
+    wrong loudly here. Arithmetic overflow is checked at every width through
+    clang's own overflow builtins rather than being left to undefined
+    behaviour, remainder is guarded exactly like division, an index past the
+    end of an array stops the program, and each of these is a deterministic
+    abort with a message, at the same place, every run. Where two admissible
+    designs disagree and one of them can be made to crash, the other one wins,
+    whatever it costs in elegance or tokens.
+  </p>
+  <p>
+    None of that is asserted. <code>heroes build --sanitize</code> turns on the
+    address and undefined-behaviour sanitizers for the generated C, the runtime
+    counts what it allocated and reports anything still held at exit, and the
+    mutation corpus runs the whole thing on every program the project has. The
+    one hole is named rather than hidden: <code>ptr</code> and <code>cstr</code>
+    are the C boundary, they are not <code>str</code>, and what a C function
+    does with what you handed it is still C.
   </p>
 
   <h2>The rules it lives by <span class="nod">· fashion ·</span></h2>

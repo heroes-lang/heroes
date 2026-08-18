@@ -18,6 +18,7 @@ five-seat review panel as a directory-scoped skill.
 | `errors.html` | diagnostics as a deliverable — real output, fixes, holes, the mutation numbers |
 | `selfhost.html` | the fixpoint: the hash, what it took, and what it found |
 | `zen.html` | `heroes this`, quoted verbatim — the twenty lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation |
+| `panel.html` | how a change is decided: the five seats and their differentiated briefs, the four vetoes, the historian's search obligation, the borrowed languages, and who is building this (author request 2026-08-18) |
 | `log.html` | the build log, one postcard per milestone, newest first |
 | `docs/` | the documentation: landing + chapters |
 | `style.css` | the only cross-page asset |
@@ -32,9 +33,11 @@ invisibly — one page's dark mode goes stale and nothing fails. The bolt stays
 inline SVG in every page, because it is markup.
 
 **The nav is duplicated in each page's markup**, which is the one repetition the
-no-JavaScript rule forces. Seven items in a fixed order — Why Heroes · Docs ·
-Errors · Self-hosted · Zen · Log · GitHub — and the current page marks itself
-`class="here"`. Adding a page means editing that block everywhere; if that ever
+no-JavaScript rule forces. Eight items in a fixed order — Why Heroes · Docs ·
+Errors · Self-hosted · Zen · Panel · Log · GitHub — and the current page marks
+itself `class="here"`. The current page is marked twice, in colour **and** with a
+rule under it: colour alone is a signal a large minority of readers receive less
+of. Adding a page means editing that block everywhere; if that ever
 gets painful, the answer is a generator behind a `heroes` subcommand, not a
 script (CLAUDE.md §10).
 
@@ -70,11 +73,62 @@ of the process's few remaining hard stops.
   the build log are records; a duration is a boast.
 - Nods spent so far: sound and vision · fashion · quicksand, avoided ·
   changes · station to station · rebel rebel · always crashing in the same
-  car · a new career in a new town · oh! you pretty things · hunky dory.
+  car · a new career in a new town · oh! you pretty things · hunky dory ·
+  under pressure · five years · look back in anger · absolute beginners.
 - Ideas bank, still unspent: **M-selfhost-fixpoint's bootstrap retirement →
   "Ashes to Ashes"**; a 1.0 → "Golden Years". The fixpoint itself landed with
   M-selfhost-port and did *not* spend "Ashes to Ashes" — the retirement is a
   separate event and keeps the nod.
+
+## The visual system — what the art direction pass fixed (2026-08-18)
+
+The register above says *what* the site sounds like; this says what the design
+is allowed to do, so a later edit does not spend the same accent twice. The page
+is a stage with **one light source, one motif, one quotation colour**, and
+everything else is paper and ink.
+
+- **One light.** The red/blue wash lives behind the home hero and nowhere else.
+  It is absolutely positioned and wider than the page on purpose, which is why
+  `html, body { overflow-x: clip }` exists: without it a phone scrolls sideways
+  into empty gradient. `clip` rather than `hidden`, or the sticky nav goes with
+  it.
+- **One motif, four jobs.** The bolt is the nav mark, the `h2` bullet, the pin on
+  each build-log entry, and the full stop on the line above the footer. It is
+  drawn from a single `--bolt` token used as a **mask**, so it takes its colour
+  from the theme instead of freezing one hex per palette. Anywhere else it would
+  be decoration, and an accent used everywhere is an accent used nowhere.
+- **Gold is the quotation colour**, and it is used only where something is being
+  quoted: Bowie's own quotation marks in the marquee, the pull quotes, the
+  section nods (song titles *are* quotations), and the fixpoint hash, which is
+  the page's one piece of hard evidence.
+- **Two layouts, deliberately different.** The home is a stage: one left-hand
+  axis, wide frame, prose held to 41rem inside it. Every reading page is a
+  centred column at the book measure with code and figures bleeding
+  symmetrically into a wider track, so a 70-column diagnostic keeps its
+  alignment without stretching the prose. The grid sizes the **middle** track
+  and lets the bleed collapse first; sizing the bleed instead leaves a phone
+  with 88px of empty margin and squeezed prose, which is what the first cut did.
+- **The marquee prints out of register** — the red plate a hair left, the blue a
+  hair right, on the home `h1` only. It is the 1973 cover said in type. Once per
+  site; the gold quotation marks stay out of it, because gold printed twice
+  reads as dirt.
+- **Grain at ≤ 4%**, one 160px `feTurbulence` tile generated in the stylesheet
+  (no request, no JavaScript), fixed over the page and `pointer-events: none`.
+- **Two blues.** `--blue` draws shapes; `--link` is the text colour, lifted so it
+  passes contrast on this background. One token cannot do both jobs.
+- **Code blocks say when they scroll**: CSS-only scroll shadows, two `local`
+  patches hiding two `scroll` shadows. On narrow screens source blocks scroll
+  and never wrap (wrapping 4-space indentation destroys the only structure the
+  language has); shell transcripts and diagnostics wrap, because a clipped
+  command is a command nobody can type.
+
+**How to verify it, since the design seat judges from renders and not markup:**
+Chrome headless on macOS will not open a window narrower than about 590px, so a
+`--window-size=390` screenshot silently renders at 590 and clips, which reads as
+a layout bug that is not there. Load the page in a **390px iframe** inside a
+wider wrapper instead. Light mode has no headless flag either: extract the
+`prefers-color-scheme: light` token block into an override stylesheet and load
+it after `style.css`.
 
 ## The claims that have a gate on them
 
@@ -90,7 +144,13 @@ of the process's few remaining hard stops.
   for the port, `grep -rn "PORT-DEBT" selfhost/ | wc -l` for the workarounds.
   Note that journal 021 and the ROADMAP count *tests* (27,230) while a grep of
   `^test "` counts *test blocks* (447) — different questions, so never mix the
-  number of one with the word of the other.
+  number of one with the word of the other. The numbers `panel.html` and
+  `why.html` added on 2026-08-18: panel sittings are
+  `ls docs/panel/[0-9]*.md | wc -l` (83, and note the highest *number* is 085 —
+  the sequence has gaps, so the count and the last id are different questions),
+  and the runtime is `find runtime -name '*.c' -o -name '*.h' | xargs wc -l`
+  (3,139 lines, which includes `runtime/parts/`; a glob of `runtime/*.c` alone
+  gives 695 and answers nothing).
 - **Compiler output shown on the page is verbatim**, path and test annotations
   included. A trimmed-for-looks diagnostic is a fabricated diagnostic: the
   first draft of this refresh shortened one and got the caret width, the line

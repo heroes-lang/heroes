@@ -28,6 +28,7 @@ legal expression that reports what belongs in the gap instead of failing.
 - [Errors](https://heroes-lang.org/errors.html): diagnostics as a deliverable, real output with machine-applicable fixes tagged `certain`, and the per-mistake catch rates against a control build (a dropped argument label 91% vs 0%, a shadowed name 100% vs 0%, a lazy catch-all 100% vs 39%)
 - [Self-hosted](https://heroes-lang.org/selfhost.html): the fixpoint, 143 modules and 34,812 lines of Heroes emitting byte-identical C across three compiler generations
 - [The Zen](https://heroes-lang.org/zen.html): twenty lines the binary prints from `heroes this`
+- [The panel](https://heroes-lang.org/panel.html): how a change to the language is decided, five judges with differentiated briefs and four vetoes, the historian's seat, and what the design borrowed from Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal and the rest
 - [Build log](https://heroes-lang.org/log.html): one postcard per milestone, newest first
 - [Documentation](https://heroes-lang.org/docs/index.html): the language page by page; every code block is a slice of a repository file that compiles and runs
 

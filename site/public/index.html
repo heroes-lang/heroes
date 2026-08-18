@@ -31,6 +31,7 @@
       <li><a href="errors.html">Errors</a></li>
       <li><a href="selfhost.html">Self-hosted</a></li>
       <li><a href="zen.html">Zen</a></li>
+      <li><a href="panel.html">Panel</a></li>
       <li><a href="log.html">Log</a></li>
     </ul>
     <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
@@ -191,6 +192,32 @@ we can be heroes</code></pre>
       <a class="more" href="selfhost.html">The fixpoint</a>
     </li>
   </ul>
+
+  <h2>A small surface, no collector, and no crash</h2>
+  <p>
+    Four words can begin a top-level line: <code>constant</code>,
+    <code>function</code>, <code>record</code>, <code>variant</code>. That is
+    the whole inventory. No classes, no interfaces, no module blocks inside a
+    file, no mutable globals, and declaration order never matters. Underneath
+    it, the language the compiler implements is seven constructs; everything
+    else you can write is sugar that disappears before the compiler's internal
+    form, which is how one person finishes a compiler.
+  </p>
+  <p>
+    Memory is managed without a collector. Every value behaves as a copy, with
+    reference counting and copy-on-write underneath: the runtime copies only
+    when something is written and only if somebody else is holding the same
+    data. Because a reference cannot be stored anywhere, cycles cannot be
+    built, so reference counting cannot leak: no garbage collector, no cycle
+    collector, no <code>weak</code> annotations, no pause.
+  </p>
+  <p>
+    And a program must not segfault or corrupt memory, which is treated as a
+    goal of the language rather than as a quality of the implementation.
+    Arithmetic overflow, an index past the end, a division by zero: each one is
+    a deterministic abort with a message rather than undefined behaviour, at
+    every integer width. <a href="why.html">How all three work, in full →</a>
+  </p>
 
   <h2>The claim <span class="nod">· quicksand, avoided ·</span></h2>
   <blockquote>
