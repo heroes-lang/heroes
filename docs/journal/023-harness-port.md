@@ -2,6 +2,17 @@
 
 **Open.** Sections grow per step; the closing block is appended at the close.
 
+**Record note, step 1.** The six `tests/harness/*.hero` files, this journal and
+step 1's `DESIGN-LOG` line were **committed by another session** as `92e8b00`
+(*"site: it/author.html and it/panel.html"*), which ran `git add -A` while this
+session held them staged: two Claude Code sessions were splitting the repository
+that day, one on `site/` and one on the compiler. The history is not rewritten —
+another session is working in it — so the commit that carries this step's subject
+adds this note rather than the code, and `git log` reads correctly only with this
+paragraph. The lesson is cheap and general: with two sessions in one tree, stage
+and commit in the same breath, because a staged file belongs to whoever commits
+first.
+
 ## Goal
 
 Everything that asks whether this compiler is right is written in Rust and lives
