@@ -128,15 +128,29 @@ fn the_seed_builds_from_a_clean_checkout() {
     // include. Asked of the machine rather than of a `cfg!` list, which is
     // `corpus.rs`'s rule for the same class: the day the port stops binding it,
     // this starts running there instead of staying skipped for a reason nobody
-    // rechecks. It is recorded as **untested on Windows** rather than asserted —
-    // this machine is Darwin, and the first tag run on the third CI leg is what
-    // will say whether the message matches.
+    // rechecks.
+    //
+    // **Here the words really are clang's**, and that is the difference from
+    // `differential.rs`: there the *compiler* runs and answers with its own
+    // `error[ffi_missing_header]` (which the first version of that line missed, and
+    // the Windows leg said so). Here nothing but clang runs — the seed is C — so
+    // the condition is clang's own sentence, which every version of it spells
+    // `'unistd.h' file not found`. The header name comes from the seed's include
+    // list rather than from a memory of it, so a future seed that stops including
+    // it stops matching.
     let complaint = String::from_utf8_lossy(&built.stderr).into_owned();
-    if !built.status.success() && complaint.contains("unistd.h") && complaint.contains("not found")
+    if !built.status.success()
+        && complaint.contains("file not found")
+        && seed_text.lines().take(20).any(|line| {
+            line.starts_with("#include <")
+                && line.trim_start_matches("#include <").split('>').next().is_some_and(|header| {
+                    !header.is_empty() && complaint.contains(header)
+                })
+        })
     {
         eprintln!(
-            "SKIPPED: this platform has no <unistd.h>, which selfhost/cli_io.hero \
-             binds, so the seed cannot be built here at all:\n{complaint}"
+            "SKIPPED: a header the seed includes is not on this machine, so the seed \
+             cannot be built here at all:\n{complaint}"
         );
         return;
     }
