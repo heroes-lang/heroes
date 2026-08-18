@@ -265,6 +265,19 @@ nav.site a:not(.mark):hover { color: var(--fg); border-bottom-color: var(--line)
 nav.site a.here { color: var(--red); border-bottom-color: var(--red); }
 nav.site .out { margin-left: auto; }
 
+/* The language switch. There are two editions of the same site, so the control
+   is a two-letter badge beside the outbound link rather than a tenth item in
+   the row: the row is full at nine (see the README), and a language is not a
+   page. It takes over the auto margin so the pair sits right together, and it
+   keeps a box because a bare `IT` in the dim colour reads as an abbreviation
+   in the prose rather than as something you can press. */
+nav.site a.lang {
+  margin-left: auto;
+  padding: 0.16rem 0.42rem; border: 1px solid var(--line); border-radius: 3px;
+}
+nav.site a.lang:hover { color: var(--red); border-color: var(--red); }
+nav.site a.lang + .out { margin-left: 0; }
+
 /* Sticky chrome has a budget on a phone: four wrapped rows was 19% of the
    viewport, and eight items wrap to three rows on their own. So on narrow
    screens the item list takes a single line of its own and scrolls sideways,

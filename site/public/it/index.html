@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heroes: un linguaggio di programmazione fatto per gli LLM</title>
+<meta name="description" content="Heroes è un piccolo linguaggio compilato progettato perché ogni errore plausibile di un LLM diventi un errore di compilazione. Si compila da solo. Binari nativi, nessun GC, nessuna libreria standard: tutto passa dalla FFI verso il C.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/index.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/index.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/index.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/index.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Heroes: un linguaggio di programmazione fatto per gli LLM">
+<meta property="og:description" content="Heroes è un piccolo linguaggio compilato progettato perché ogni errore plausibile di un LLM diventi un errore di compilazione. Si compila da solo. Binari nativi, nessun GC, nessuna libreria standard: tutto passa dalla FFI verso il C.">
+<meta property="og:url" content="https://heroes-lang.org/it/index.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Heroes: un linguaggio di programmazione fatto per gli LLM">
+<meta name="twitter:description" content="Heroes è un piccolo linguaggio compilato progettato perché ogni errore plausibile di un LLM diventi un errore di compilazione. Si compila da solo. Binari nativi, nessun GC, nessuna libreria standard: tutto passa dalla FFI verso il C.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="why.html">Perché Heroes</a></li>
+      <li><a href="docs/index.html">Docs</a></li>
+      <li><a href="selfhost.html">Self-hosted</a></li>
+      <li><a href="zen.html">Zen</a></li>
+      <li><a href="panel.html">Panel</a></li>
+      <li><a href="thanks.html">Grazie</a></li>
+      <li><a href="author.html">Autore</a></li>
+      <li><a href="log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../index.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main class="home">
+  <header class="hero">
+    <div>
+      <!-- the Aladdin Sane bolt (1973): red over blue, worn at a jaunty angle -->
+      <svg class="bolt" viewBox="0 0 48 64" aria-hidden="true">
+        <path fill="var(--blue)" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z" transform="translate(3.5,3)"/>
+        <path fill="var(--red)"  d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z"/>
+      </svg>
+      <p class="kicker">Un linguaggio di programmazione compilato</p>
+      <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
+      <p class="promise">Ogni errore plausibile di un LLM è un <em>errore di compilazione</em>.</p>
+      <p class="tagline">Fatto per le macchine che oggi scrivono codice, e comunque
+      chiaro per un occhio umano. Nessuna libreria standard, nessun garbage
+      collector, binari nativi, e si compila da solo.</p>
+      <div class="cta">
+        <a class="primary" href="errors.html">Guarda un errore vero</a>
+        <a class="ghost" href="docs/failure-is-a-value.html">Leggi un capitolo</a>
+      </div>
+    </div>
+    <div>
+      <div class="demo">
+        <div class="bar">examples/gallery/02-tokens.hero</div>
+        <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="7-25">
+<pre><code><span class="k">variant</span> Token
+    number
+        value: <span class="t">i64</span>
+    word
+        text: <span class="t">str</span>
+    plus
+    times
+    open
+    close
+
+<span class="c"># What a token is called in a message.</span>
+<span class="k">function</span> name_of(t: Token) -&gt; <span class="t">str</span>
+    <span class="k">return</span> <span class="k">match</span> t
+        .number _ =&gt; <span class="s">"a number"</span>
+        .word _   =&gt; <span class="s">"a word"</span>
+        .plus     =&gt; <span class="s">"`+`"</span>
+        .times    =&gt; <span class="s">"`*`"</span>
+        .open     =&gt; <span class="s">"`(`"</span>
+        .close    =&gt; <span class="s">"`)`"</span></code></pre>
+        </figure>
+        <p class="under">esaustivo: se lasci fuori un caso, non compila &middot; <a href="docs/failure-is-a-value.html">vedi match all&rsquo;opera →</a></p>
+      </div>
+    </div>
+  </header>
+
+  <ul class="figures">
+    <li><span class="n">91% contro 0%</span><span class="what">etichette di argomento dimenticate, prese al volo</span></li>
+    <li><span class="n">3512</span><span class="what">token: tutta la specifica</span></li>
+    <li><span class="n">1</span><span class="what">hash, tre compilatori</span></li>
+  </ul>
+
+  <h2>Binari nativi, nessun runtime da installare <span class="nod">· sound and vision ·</span></h2>
+  <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="8-25">
+<pre><code><span class="k">variant</span> Expr
+    number
+        v: <span class="t">i64</span>
+    add
+        parts: [Expr]
+    multiply
+        parts: [Expr]
+    negate
+        inner: [Expr]
+
+<span class="c"># Recursion over a variant is one `match` and one `for` — and the `match` is</span>
+<span class="c"># exhaustive or it does not compile.</span>
+<span class="k">function</span> value_of(e: Expr) -&gt; <span class="t">i64</span>
+    <span class="k">return</span> <span class="k">match</span> e
+        .number n   =&gt; n.v
+        .add a      =&gt; sum_of(a.parts)
+        .multiply m =&gt; product_of(m.parts)
+        .negate g   =&gt; <span class="n">0</span> - first_value(g.inner)</code></pre>
+    <figcaption>examples/gallery/11-trees.hero, righe 8&ndash;25</figcaption>
+  </figure>
+  <p>
+    Quello è un albero che contiene se stesso, scritto in un linguaggio il
+    cui modello dei dati <b>non ha né puntatori né un tipo
+    riferimento</b>: l&rsquo;unica indirezione che esiste è
+    l&rsquo;array, quindi la struttura intera continua a copiarsi come un
+    valore. Viene compilata passando dal C fino a un binario nativo, e la
+    memoria è gestita contando i riferimenti, non con un garbage
+    collector.
+  </p>
+  <p>
+    Ogni blocco di codice su questo sito è una fetta di un file che sta
+    nel repository, che compila e gira. Anche quello qui sopra.
+  </p>
+
+  <h2 id="run">Provalo</h2>
+  <pre><code>$ git clone https://github.com/giuseppearici/heroes-lang
+$ cd heroes-lang &amp;&amp; cargo build
+$ ./target/debug/heroes run examples/gallery/03-fallible.hero
+read 42
+failed: not_a_digit (expected 0-9)
+20</code></pre>
+  <p>
+    La riga in mezzo, in quell&rsquo;output, è un errore gestito: non
+    è la compilazione che si rompe.
+    <a href="docs/failure-is-a-value.html">Il capitolo dedicato</a> segue quel
+    programma riga per riga. Un installer non esiste ancora: si compila dal
+    codice sorgente, ed è la strada supportata. Servono
+    <a href="https://rustup.rs">rustup</a> e clang: il repository fissa Rust
+    1.90.0 e rustup lo scarica alla prima build, e non ci sono crate di terze
+    parti, quindi non viene scaricato nient&rsquo;altro. Una volta compilato,
+    <code>./target/debug/heroes doctor</code> controlla l&rsquo;altra metà:
+    clang, il linker, l&rsquo;architettura, il runtime e la cache di build.
+  </p>
+  <p>
+    Poi scrivine uno tuo. Al file non serve nulla intorno: niente import,
+    niente header, niente file di progetto, solo un <code>main</code>.
+  </p>
+  <pre><code>$ printf 'function main()\n    print("we can be heroes")\n' &gt; hello.hero
+$ ./target/debug/heroes run hello.hero
+we can be heroes</code></pre>
+  <p>
+    <code>heroes run</code> compila quel file in un binario nativo e lo esegue,
+    da qualunque cartella, lasciandosi accanto i file intermedi in una cartella
+    <code>build/</code>. Ogni capacità è un sottocomando di
+    quell&rsquo;unico binario: <code>lex</code>, <code>parse</code>,
+    <code>check</code>, <code>build</code>, <code>run</code>, <code>test</code>,
+    <code>fmt</code>, <code>doctor</code>, <code>mutate</code>,
+    <code>measure</code>, <code>this</code>. E ogni esempio di questo sito
+    è un file dentro <code>examples/</code>, che aspetta solo di essere
+    modificato.
+  </p>
+
+  <h2>Tre cose che lo rendono diverso</h2>
+  <ul class="cards">
+    <li>
+      <h3>Gli errori non compilano</h3>
+      <p>
+        Due argomenti dello stesso tipo scambiati, un caso di
+        <code>variant</code> dimenticato, un nome modificato che nessuno ha
+        dichiarato, una parola chiave presa in prestito da un altro linguaggio:
+        ognuno di questi diventa una diagnostica che arriva con la sua riparazione
+        pronta, invece di un programma che gira ed è silenziosamente
+        sbagliato.
+      </p>
+      <a class="more" href="errors.html">Guarda un errore vero</a>
+    </li>
+    <li>
+      <h3>Nessuna libreria standard, di proposito</h3>
+      <p>
+        Un runtime minimo e nient&rsquo;altro. Matematica, file, socket, JSON,
+        HTTP, SQL e grafica arrivano tutti da librerie C attraverso
+        un&rsquo;unica FFI, dove clang controlla ogni dichiarazione contro
+        l&rsquo;header della libreria stessa.
+      </p>
+      <a class="more" href="why.html">Il vincolo di partenza</a>
+    </li>
+    <li>
+      <h3>Si compila da solo</h3>
+      <p>
+        Il compilatore è scritto in Heroes: 143 moduli, 34.812 righe. I
+        due compilatori producono lo stesso file C da 20 megabyte, byte per
+        byte, per tre generazioni di fila. Un solo hash.
+      </p>
+      <a class="more" href="selfhost.html">Il punto fisso</a>
+    </li>
+  </ul>
+
+  <h2>Una superficie piccola, nessun collector, e nessun crash</h2>
+  <p>
+    Quattro parole possono aprire una riga al primo livello del file:
+    <code>constant</code>, <code>function</code>, <code>record</code>,
+    <code>variant</code>. L&rsquo;inventario è tutto qui. Niente classi,
+    niente interfacce, niente blocchi di modulo dentro un file, niente variabili
+    globali modificabili, e l&rsquo;ordine delle dichiarazioni non conta mai.
+    Sotto, il linguaggio che il compilatore implementa davvero è fatto di
+    sette costrutti: tutto il resto che puoi scrivere è zucchero
+    sintattico che sparìsce prima della forma interna del compilatore, ed
+    è per questo che una persona sola riesce a finirlo.
+  </p>
+  <p>
+    La memoria viene gestita senza collector: ogni valore si comporta come una
+    copia, con reference counting e copy-on-write sotto il cofano. Siccome un
+    riferimento non può essere conservato in nessun posto, non si possono
+    costruire cicli, quindi il conteggio non può perdere memoria. Nessun
+    garbage collector, nessuna annotazione <code>weak</code>, nessuna pausa. E un
+    programma non deve andare in segfault né corrompere la memoria: questo
+    è un obiettivo del linguaggio, non una qualità della sua
+    implementazione. Un overflow, un indice oltre la fine, una divisione per
+    zero: ognuno di questi è un arresto deterministico, non un
+    comportamento indefinito. <a href="why.html">Tutti e tre, per esteso →</a>
+  </p>
+
+  <h2>La tesi <span class="nod">· quicksand, avoided ·</span></h2>
+  <blockquote>
+    Un linguaggio progettato perché ogni errore plausibile di un LLM sia
+    un errore di compilazione produrrà programmi funzionanti spendendo
+    meno token in totale di un linguaggio convenzionale, anche se ogni singolo
+    programma costa più token da scrivere.
+  </blockquote>
+  <p>
+    È una tesi, non uno slogan, quindi si misura, e la misura non è
+    mai un numero solo. <code>heroes mutate</code> inietta un errore plausibile
+    alla volta dentro programmi funzionanti e conta quanti il compilatore
+    ferma, poi ripassa lo stesso corpus contro se stesso con le regole della
+    tesi disattivate. La distanza fra le due colonne è tutto il
+    risultato, errore per errore, misurato il 2026-08-18:
+  </p>
+  <pre><code><span class="c">                           con le regole      senza</span>
+etichetta di argomento saltata      91%         0%
+nome che ne nasconde un altro      100%         0%
+catch-all pigro su un variant      100%        39%
+due argomenti dello stesso tipo     80%        43%
+nome scritto male                  100%       100%</code></pre>
+  <p>
+    L&rsquo;ultima riga è quella onesta: gli errori di battitura li
+    prendono i nomi e i tipi in qualunque linguaggio, e le regole non aggiungono
+    niente. Per questo il progetto si rifiuta di fare la media di questi numeri
+    in una cifra sola: una media nasconde sia i casi in cui il design fa tutto,
+    sia quelli in cui non fa niente.
+    <a href="errors.html">Il resto della tabella →</a>
+  </p>
+
+  <footer>
+    <p>Heroes è pre-release e viene costruito alla luce del sole: il punto
+    fisso è misurato, il bootstrap in Rust non è ancora
+    archiviato, e non c&rsquo;è un installer, il compilatore si costruisce
+    dal sorgente. Il registro di ogni decisione, panel e misure compresi, è
+    pubblico nel
+    <a href="https://github.com/giuseppearici/heroes-lang">repository</a>.</p>
+    <p>Il nome è un omaggio a <i>&ldquo;Heroes&rdquo;</i> di David Bowie
+    (1977), e le virgolette sono le sue. Il fulmine è preso in prestito
+    dal 1973, portato con rispetto. Gli occhiolini a inizio sezione sono titoli
+    di canzoni, nulla di più: l&rsquo;ironia sta nella confezione, e il
+    linguaggio si tiene le parole chiave sobrie. Bowie non lo incontrerai mai
+    dentro un messaggio di errore.</p>
+    <p>Costruito da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="author.html"><i>Gli eroi del codice</i></a>. In piedi
+    <a href="thanks.html">sul lavoro di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>
