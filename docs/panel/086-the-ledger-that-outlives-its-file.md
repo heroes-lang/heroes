@@ -169,6 +169,14 @@ that the archive does not happen until the check exists.
 | spec-warden | with R2: `heroes run tests/harness/main.hero` reports **`spec: 8 passed, 0 failed`**, and corrupting the newest ledger row gives **7 passed / 1 failed at exit 1**. Without R2: the newest row and `SPEC_TOKENS` disagree **within three spec amendments** | the second milestone close after this one |
 | historian | the next spec amendment after the archive appends its row to whichever file holds the enforced constant and its test, **not** to the archived ledger — falsified if the row lands in `archive/bootstrap-rs/` | the next spec-amending commit (`git log --stat`) |
 
+## Predictions scored — same day, at the close
+
+| seat | prediction | outcome |
+|---|---|---|
+| compiler-engineer | the anchored scan reports **exactly one** dead citation (design.md:357, allow-listed) and `suite_spec.hero` is ≤450 lines with no line >800 bytes | **half held, and the interesting half failed.** The byte width held: **794**, under 800. The line count did not: **475**, over 450 — and the excess is R2's own lock plus its two failure injections, so the prediction under-priced the thing its own verdict asked for. The citation half is **better than predicted and for a reason the rule did not see**: zero dead citations and no allow-list, because :357's path was repointed at the archive rather than exempted — but the scan first reported six passes over the very citations it was built for, because anchoring on *existing* roots stops recognising a path the moment its root moves. With a file-extension anchor added it found **nine** dead citations, all predating the archive |
+| spec-warden | `spec: 8 passed, 0 failed`, and corrupting the newest ledger row gives 7/1 at exit 1 | **held on both halves.** The suite reports 8; the corruption case is a test block in the module (`the lock fires when the record and the pin disagree`) rather than a hand experiment, so it fires on every run |
+| historian | the next spec amendment appends its row to the file holding the enforced constant, not to the archived ledger | **open** — no spec amendment since. Scored at the next one, by `git log --stat` |
+
 ## Author's verdict
 
 *(pending — `docs/debrief/DECIDE.md`)*

@@ -55,6 +55,14 @@ constant RECORD: [str]
         "vendor"
         "editors/vscode/icons"
         "site/log.html"
+        # **The archived bootstrap is a frozen tree, not a living file.** `crates/`
+        # became `archive/bootstrap-rs/` at M-bootstrap-archive; nothing builds it,
+        # nothing runs its tests, and its 25,482 lines of Rust name every milestone
+        # this project ever had under the spelling it had then. Walking it would
+        # report five years of history as today's claims — the same argument that
+        # kept `.claude/worktrees` out when it was a list of exclusions: a second
+        # tree's names are not this tree's.
+        "archive"
     ]
 
 # Files whose milestone identifiers are QUOTATIONS of the retired
@@ -63,9 +71,10 @@ constant RECORD: [str]
 # is: this module quotes `M0` and `M5b` in its own assertions.
 constant QUOTES_THE_OLD_SPELLING: [str]
     [
-        "crates/heroes/src/emit/tests/gate.rs"
-        "crates/heroes-cli/tests/milestones.rs"
-        "crates/heroes-cli/src/cli/help.rs"
+        # Three entries left this list at M-bootstrap-archive — the bootstrap's
+        # `emit/tests/gate.rs`, `tests/milestones.rs` and `cli/help.rs`. They are
+        # inside `archive/` now, which RECORD skips whole, so an exemption for them
+        # would be a line that cannot fire.
         "docs/debrief/QUEUE.md"
         "docs/ROADMAP.md"
         "CLAUDE.md"
@@ -263,16 +272,51 @@ function path_tokens(text: str, roots: {str: bool}) -> [str]
     return found
 
 # Whether this backticked token is a path claim: one word, no glob or brace, and
-# its first component is a directory this repository has.
+# then EITHER its first component is a directory this repository has, OR it ends in
+# a file extension.
+#
+# **The second half is not belt-and-braces, it is the hole the first half had.**
+# Anchoring on existing directories is self-adjusting in the wrong direction: the
+# moment `crates/` moved to `archive/bootstrap-rs/`, every citation of
+# `crates/heroes/src/measure/gate.rs` stopped being a path claim — because its root
+# had ceased to exist — so the check went green over exactly the citations it was
+# built to catch. Measured 2026-08-19, one commit after it landed: 6 passed, three
+# dead citations unseen. A file extension is a fact about the token itself and
+# survives the deletion of everything around it.
 function anchored(token: str, roots: {str: bool}) -> bool
     at = strings.index_of(text: token, needle: "/")
     if at.is_err()
         return false
-    if roots[token.slice(from: 0, to: at.must())].is_err()
-        return false
     for ch in token.chars()
         if ch == " " || ch == "*" || ch == "<" || ch == ">" || ch == "{" || ch == "}" || ch == "\"" || ch == "`"
             return false
+    if !roots[token.slice(from: 0, to: at.must())].is_err()
+        return true
+    return has_extension(token)
+
+# Whether the token's last component carries a `.suffix` of one to nine letters or
+# digits — `gate.rs`, `ci.yml`, `heroes-spec.md`. Not `docs/panel/042`, and not
+# `application/json`.
+function has_extension(token: str) -> bool
+    cs = token.chars()
+    dot: i64 @ -1
+    slash: i64 @ -1
+    i: i64 @ 0
+    while i < cs.len()
+        if cs[i] == "."
+            dot @ i
+        if cs[i] == "/"
+            slash @ i
+        i @ i + 1
+    if dot <= slash + 1 || dot == cs.len() - 1
+        return false
+    if cs.len() - 1 - dot > 9
+        return false
+    j: i64 @ dot + 1
+    while j < cs.len()
+        if cs[j].len() != 1 || (!is_lower(cs[j][0]) && !is_digit(cs[j][0]))
+            return false
+        j @ j + 1
     return true
 
 # A token names something if a file IS it, or if a file begins with it — which

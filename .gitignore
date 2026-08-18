@@ -1,5 +1,8 @@
-# Rust
+# Rust — the bootstrap compiler is archived (M-bootstrap-archive), and so is
+# everything cargo writes. The old `/target` stays listed for one reason: a
+# checkout made before the archive still has one.
 /target
+archive/bootstrap-rs/target
 
 # heroes build cache (generated C, runtime.o, binaries — all derived)
 /build

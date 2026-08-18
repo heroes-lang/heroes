@@ -17,20 +17,19 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-harness-port closed 2026-08-18, tag `m-harness-port`.** The net is in Heroes.
+**M-bootstrap-archive closed 2026-08-19, tag `m-bootstrap-archive`. There is no
+third language.** `crates/` is `archive/bootstrap-rs/` and design.md:82 is a fact.
 
-    heroes run tests/harness/main.hero -- <compiler>      # 688 checks, 3m35s
+    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.4 s
+    ./heroes run tests/harness/main.hero -- ./heroes              # 838 checks
 
-**3,630 lines of Heroes against 4,711 of Rust** — inside panel 085 R4's predicted
-2,500–3,760. No compiler line, no new surface. Every suite the Rust harness
-carries now has a successor: check · ir · emit · unsupported · run · annotations
-· determinism · fixes · lines · corpus · warnings · records · surface · special ·
-layout. **It found two defects on its first day** — a diagnostic the port printed
-with no code, position, snippet or notes, and a caret 71 columns wide that the
-`.expected` file had been pinning as correct since the case was written. Both
-repaired, seed regenerated and re-verified byte for byte.
-Record: `docs/journal/023-harness-port.md`. Next: **M-bootstrap-archive**, which
-is now a move rather than an amputation.
+Five successors landed before the move, each measured against what it replaced:
+`tests/emission/` (142 programs, both compilers green on the same bytes),
+`heroes measure` (3512, identical), `suite_spec.hero` (the §1.6 gate), `heroes
+mutate` (538 mutants, byte-identical report), CI's seed leg. Seed regenerated,
+fixpoint re-verified. Panel 086 moved the budget ledger to `docs/measurements/010`
+and gave it the agreement check it never had; two decisions wait in `DECIDE.md`.
+Record: `docs/journal/024-bootstrap-archive.md`. Next: **M-separate-compilation**.
 
 ---
 
@@ -41,7 +40,7 @@ is now a move rather than an amputation.
 | 1 | **M-selfhost-port** | The port | v1 |
 | 2 | **M-selfhost-fixpoint** | Fixpoint and the seed — **v1** | v1 |
 | 3 | **M-harness-port** | The net in Heroes — the golden harness, the corpus, the record checks — **done** | closure list (§1.0): nothing can ask whether the two compilers agree once the bootstrap is gone |
-| 4 | **M-bootstrap-archive** | `crates/` → `archive/bootstrap-rs/` — the third language dies here | v1's last clause (design.md:82) |
+| 4 | **M-bootstrap-archive** | `crates/` → `archive/bootstrap-rs/` — the third language dies here — **done** | v1's last clause (design.md:82) |
 | 5 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
 | 6 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
 | 7 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
@@ -128,15 +127,20 @@ plus `read_file` **splits a filename containing a newline into two entries at ex
 working on both compilers, with the wait status from `pclose`.
 
 ### M-bootstrap-archive — The third language dies
-`crates/` → `archive/bootstrap-rs/`, and **the move is the last commit, not the
-first**. What comes before it, in order: the differential replaced by something
-that survives its own oracle (a stored emission per program, regenerated
-deliberately, is the only shape left); `measure` ported and design.md:322/:349
-amended in the same commit; the `#~` invariant's runner carried over (86 files, 184
-annotations, one enforcer at `golden.rs:344`); CI's **four** cargo steps replaced,
-or `.github/workflows/ci.yml` becomes empty; and a `doctor` for a machine with no
-cargo. The seed is what makes the archive safe for a newcomer, and it is already
-here.
+**Closed 2026-08-19.** `crates/` → `archive/bootstrap-rs/`, and the move was the
+last commit rather than the first, because five things died with the bootstrap and
+each needed a successor first — every one of them measured against what it
+replaced: `tests/emission/` (142 programs, both compilers green on the same
+bytes), `heroes measure` (3440 / 3512 / spread 72, identical), `suite_spec.hero`
+(8 checks, replacing 435 lines in which every check was `cfg(test)`), `heroes
+mutate` (538 mutants, byte-identical report), and CI's seed leg. The `#~`
+invariant's runner needed nothing — M-harness-port had already carried it — and
+neither did `doctor`, which has never asked about cargo. Panel 086 moved the
+spec-budget ledger to `docs/measurements/010` and gave it the agreement check it
+had never had; `records/citations` was built the same day and found nine dead
+citations that predated the archive. The one number to carry forward: the
+compiler's own 482 tests cost 13 s through the Rust and ~16 minutes through the
+seed, which is the price of self-hosting and its own item in `DECIDE.md`.
 
 ### M-separate-compilation — Separate compilation
 One `.c` per module, prototypes across translation units, the per-module cache:
@@ -446,7 +450,9 @@ slug names both too.
 
 ```sh
 heroes doctor                                  # M-day-zero
-cargo build && cargo test                      # from M-token-stream on
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes         # M-bootstrap-archive: the way in
+heroes test selfhost/main.hero                 # the compiler's own tests
+heroes run tests/harness/main.hero -- ./heroes # the net (`cargo build && cargo test` until 2026-08-19)
 heroes lex ex.hero --dump-tokens [--json]      # M-token-stream
 heroes parse ex.hero --dump-ast                # M-syntax-tree
 heroes fmt ex.hero [--in-place]                # M-syntax-tree (the flag was --write until panel 016)
@@ -464,8 +470,9 @@ heroes test examples/maze/main.hero            # M-program-corpus: one program (
                                                #      argument is §10's question, not a given)
 heroes mutate                                  # M-program-corpus: the rate over the enlarged corpus
 heroes test selfhost/lexer.hero                # M-selfhost-probe: the ported lexer's own tests
-# M-selfhost-fixpoint — the fixpoint, on generated C:
-cargo run -- build selfhost/heroes.hero -o A
+# M-selfhost-fixpoint — the fixpoint, on generated C (the first line was
+# `cargo run --` until the archive; `seed/README.md` is the live ritual):
+heroes build selfhost/main.hero -o A
 ./A build selfhost/heroes.hero --emit-c -o B.c && clang … B.c -o B
 ./B build selfhost/heroes.hero --emit-c -o C.c && diff B.c C.c
 ```

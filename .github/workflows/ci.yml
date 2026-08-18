@@ -15,11 +15,12 @@
 #     met at `curl_easy_setopt`.
 #
 # Until this file, nothing tested any of it: the whole record was made on one
-# laptop. `cargo test` is what runs the corpus — `tests/corpus.rs` compiles and
-# runs every `examples/*/main.hero` at `-O0`, at `-O2` and under
-# `-fsanitize=address,undefined`, and `tests/golden.rs` does the same for
-# `tests/golden/run/` — so the three configurations are inside it rather than
-# beside it.
+# laptop. **What runs the corpus is the net, in Heroes** —
+# `tests/harness/suite_corpus.hero` compiles and runs every `examples/*/main.hero`
+# at `-O0`, at `-O2` and under `-fsanitize=address,undefined`, and `suite_run.hero`
+# does the same for `tests/golden/run/`, so the three configurations are inside it
+# rather than beside it. It was `cargo test` until 2026-08-19, when `crates/` was
+# archived and the four cargo steps left this file.
 #
 # **Which machines run is a separate question from which machines exist**, and
 # the two answers differ because one leg is not paid for in the same currency
@@ -74,17 +75,21 @@ jobs:
       #     0 at exit 0. Same source, two behaviours.
       #   - **Darwin arm64 — tags and `workflow_dispatch`.** Not narrowed for
       #     being less informative but for being *already read*: it is the
-      #     author's machine, so a local `cargo test` is this job, and it is the
-      #     only leg billed at ten Linux minutes to the minute.
-      #   - **Windows x86-64 — tags and `workflow_dispatch`. The third leg,
-      #     added the day the runtime could hold it** (author instruction
-      #     2026-08-14, "I want Windows too"). It is here because
-      #     `runtime/parts/f64.c` now compiles under a Windows target — the 18
-      #     errors panel 049 measured were all in that one file — and not because
-      #     the platform was named. A name in a document is a promise; a job is a
-      #     measurement. It rides with Darwin rather than with Linux because
-      #     nothing local reproduces it, so its result is worth having at the
-      #     moment somebody is looking at one.
+      #     author's machine, so a local run of the net is this job, and it is
+      #     the only leg billed at ten Linux minutes to the minute.
+      #   - **Windows x86-64 — tags and `workflow_dispatch`, and the archive cost
+      #     it almost everything.** It was added the day the runtime could hold it
+      #     (author instruction 2026-08-14, "I want Windows too") and it ran the
+      #     cargo legs, because `runtime/parts/f64.c` compiles under a Windows
+      #     target — the 18 errors panel 049 measured were all in that one file.
+      #     Those legs are gone with `crates/`, and the Heroes legs cannot replace
+      #     them here: `selfhost/cli_io.hero` binds `extern "unistd.h"`, so there
+      #     is no self-hosted compiler on a platform without POSIX headers. What
+      #     is left is the toolchain report below, which gates nothing and says so.
+      #     **That is a loss and it is written down rather than absorbed**
+      #     (`docs/debrief/DECIDE.md`): the honest answers are to give the port a
+      #     Windows I/O path, or to drop the leg. Keeping a green job that tests
+      #     nothing is the shape CLAUDE.md §9 calls a decoration.
       #
       # Nothing is untested by this: the third platform is read at the tag
       # instead of at the commit, which is the trade CLAUDE.md §14's per-
@@ -121,14 +126,6 @@ jobs:
           # was executed on the author's laptop and nowhere else, which is the
           # exact state the preamble above says this file exists to end.
           sudo apt-get install -y clang lldb pkg-config libsqlite3-dev libcurl4-openssl-dev
-
-      # **No toolchain step, on purpose.** `rust-toolchain.toml` pins the version
-      # and `rustup` — preinstalled on both runners — honours it for every
-      # `cargo` invocation in this directory. An action naming a version here
-      # would be a second home for the same number, and the first run of this
-      # workflow is what proved the cost: clippy 1.97 rejected forty `vec![…]`
-      # lines that clippy 1.90 accepts, and local and CI had never been compared.
-      - uses: Swatinem/rust-cache@v2.9.2
 
       - name: Install what the FFI examples bind
         if: runner.os == 'macOS'
@@ -173,6 +170,9 @@ jobs:
       # Windows carries clang with Visual Studio; pkg-config and the C libraries
       # the FFI examples bind are not there, so this leg is honest about what it
       # covers — see the note in `corpus.rs`.
+      # Windows reports and gates nothing — see the matrix note. The `::warning::`
+      # is deliberate: a leg that has stopped covering what it was added for
+      # should say so on every run, not once in a comment nobody opens.
       - name: Report the toolchain
         if: runner.os == 'Windows'
         # `llvm-pdbutil` is asked about because of what it would settle, and it is
@@ -192,43 +192,24 @@ jobs:
         # runner carries it, so the run says so instead of a document guessing.
         # `|| true`: this step reports, it does not gate.
         run: |
+          echo "::warning::this leg covers the toolchain only. The cargo steps left with `crates/` (2026-08-19) and the self-hosted compiler cannot be built here: selfhost/cli_io.hero binds unistd.h. See docs/debrief/DECIDE.md."
           clang --version
           where llvm-pdbutil 2>NUL || echo "llvm-pdbutil: not on PATH (DECIDE.md, the third CI leg)"
           where lldb 2>NUL || echo "lldb: not on PATH"
 
-      - name: Build the compiler
-        run: cargo build
-
-      # The toolchain check, before anything asks it to compile C. It is the one
-      # command that reports what this machine actually has, and the `arch` line
-      # in its output is how a reader tells the three jobs apart at a glance.
-      # `cargo run` rather than a path, because the path has a `.exe` on one of
-      # them and a leading `./` on the others.
-      - name: heroes doctor
-        run: cargo run --quiet -- doctor
-
-      # The Cyclone rule (CLAUDE.md §5) and every lint the repo has agreed to.
-      - name: cargo clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      # Everything: the crate tests, the golden harnesses, the CLI surface, and
-      # the corpus in its three configurations.
-      - name: cargo test
-        run: cargo test
-
-      # ─────────── Everything below this line survives the archive ───────────
+      # ─────────── Nothing here needs cargo, and nothing here is Rust ──────────
       #
-      # Every step above needs cargo. Every step below needs a **C compiler and
-      # nothing else**, which is exactly what `crates/` → `archive/bootstrap-rs/`
-      # leaves behind: the seed is C, the compiler it builds is Heroes, and the
-      # net is a Heroes program run by that compiler.
+      # These four steps need a **C compiler and nothing else**, which is what
+      # `crates/` → `archive/bootstrap-rs/` left behind: the seed is C, the
+      # compiler it builds is Heroes, and the net is a Heroes program run by that
+      # compiler.
       #
-      # THE TWO SETS RUN SIDE BY SIDE ON PURPOSE, until the move. A replacement
-      # nobody has watched pass is not a replacement — panel 085 measured what
-      # the archive would have deleted (four cargo steps, and CI becomes empty),
-      # and the honest order is to make the successor green first and delete the
-      # predecessor second. The move commit deletes the four steps above and
-      # nothing else in this file.
+      # **The four cargo steps that stood above them are gone** (the archive
+      # commit, 2026-08-19): `cargo build`, `cargo run -- doctor`, `cargo clippy`
+      # and `cargo test`. They ran beside these for one milestone-step on purpose
+      # — a replacement nobody has watched pass is not a replacement — and panel
+      # 085 measured what deleting them without a successor would have cost: this
+      # file becomes empty.
       #
       # NOT ON WINDOWS, and the reason is the compiler's own source rather than
       # this file's convenience: `selfhost/cli_io.hero` binds `extern

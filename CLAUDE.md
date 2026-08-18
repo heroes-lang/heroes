@@ -119,12 +119,19 @@ appended when given. No design change lands without `docs/panel/NNN-*.md` +
 a DESIGN-LOG line + its own commit citing the verdict.
 
 ## 5. The Heroes subset of Rust — the Cyclone rule
-References only as function parameters, never in structs or return types;
-owned data everywhere, indices for links; `BTreeMap`/`BTreeSet` only;
-iterator/`Option` closures fine, *stored* closures not. Enforced by
-`clippy.toml` (the reasons live there) + `#![forbid(unsafe_code)]`. Every
-necessary violation carries `// PORT-DEBT: <reason>` — the count is the
-distance from self-hosting and must not ratchet up.
+**Spent, and kept as the record of what it bought** (M-bootstrap-archive,
+2026-08-19). The Rust it governed is `archive/bootstrap-rs/`, which nothing
+builds and nothing lints any more, so this section constrains no code that is
+written from here on. It is not deleted, because it is the reason the port was a
+transcription rather than a rewrite: references only as function parameters, never
+in structs or return types; owned data everywhere, indices for links;
+`BTreeMap`/`BTreeSet` only; iterator/`Option` closures fine, *stored* closures
+not — enforced while it was live by `archive/bootstrap-rs/clippy.toml` (the
+reasons live there) + `#![forbid(unsafe_code)]`, with every necessary violation
+carrying `// PORT-DEBT: <reason>` and the count as the distance from
+self-hosting. The distance is now zero. **The rule that replaces it is the
+language**: `selfhost/` is written in Heroes, where value semantics and the
+absence of references are not a subset anybody has to remember.
 
 ## 6. Nim: copy the surface, never the implementation
 `importc`-style FFI, per-module cache, `nim r` → `heroes run`: yes.
@@ -185,7 +192,7 @@ that is not one, a name the header does not have, and, since panel 048, a symbol
 the **linker** cannot find because the group named no `link`. **The narrowing is
 `declaration()`, not whose text it is**: every class recovers a name and asks
 whether *this program* declared it `extern`, so a symbol nobody declared stays
-exit 2 and the compiler's. (§7 said for a milestone that `emit/ffi.rs` "matches
+exit 2 and the compiler's. (§7 said for a milestone that `archive/bootstrap-rs/heroes/src/emit/ffi.rs` "matches
 only the assertion messages this emitter writes" — already false when written,
 since `unknown_name` matches clang's own; §11's class, and the stronger rule was
 the true one all along.) Every other verdict on generated C is still the
@@ -244,9 +251,13 @@ thought of (`llvm-opt-fuzzer`'s `verifyModule`).
 
 ## 10. One command
 Any new capability is a `heroes` subcommand or flag. Never a second binary,
-never a script, never a Makefile. Declared exception with an expiry date:
-`cargo build`/`cargo test` build the compiler until the fixpoint
-(M-selfhost-fixpoint).
+never a script, never a Makefile. **The one declared exception has expired and is
+spent** (M-bootstrap-archive, 2026-08-19): `cargo build`/`cargo test` built the
+compiler until the fixpoint, and the way in is now one clang line over
+`seed/heroes.c` — `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`,
+3.4 s, measured. What runs the tests is the one command: `heroes test
+selfhost/main.hero` for the compiler's own, and `heroes run
+tests/harness/main.hero -- <compiler>` for the net.
 
 **The stopping rule** (panel 016): a capability enters the surface only if the
 fixpoint invocation, the golden harness or the Part 11 harness must type it, or
@@ -338,7 +349,7 @@ author must be able to open any file and read it without drowning.
 **The ~300 governs what a reader must hold in their head, so it binds the
 compiler's own code and not its tests** (author decision 2026-08-14): a test file
 is read one case at a time and a case is self-contained, which is why
-`surface.rs` at 1164 lines is legible and `emit/ffi.rs` at 573 was not. And the
+`surface.rs` at 1164 lines is legible and `archive/bootstrap-rs/heroes/src/emit/ffi.rs` at 573 was not. And the
 number is a threshold to think at, not a limit to round: `toolchain.rs` stays at
 400 by the same decision, because the cut that would take it under runs through
 the cache key `link` and `runtime_object` share, and a file split against its own
@@ -349,7 +360,7 @@ seam is harder to read than a long one.
 port's measurement). Heroes refuses module cycles — `module_cycle` fires on the
 `use` edge, whatever it carries, measured both ways — and a recursive-descent
 grammar is mutually recursive by construction, so its knots cannot be split at
-all: over `crates/heroes/src/syntax/`, **`expr`+`primary`+`control`+`stmt`+
+all: over `archive/bootstrap-rs/heroes/src/syntax/` (then `crates/heroes/src/syntax/`), **`expr`+`primary`+`control`+`stmt`+
 `name_stmt` is 1025 lines and `decl`+`data`+`externs`+`extern_members` is 736**,
 each one module or nothing. This is `toolchain.rs`'s reason at its limit: there
 the cut merely ran against a seam, here **no cut exists**, and a rule that cannot
@@ -451,7 +462,7 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 - **Order lives in the ROADMAP's order table and nowhere else** — the id claims
   nothing about position. `git tag --list --sort=creatordate` gives the chronology.
 - An id never reaches a diagnostic or any user-visible output (§8, asserted by
-  `emit/tests/gate.rs`).
+  `archive/bootstrap-rs/heroes/src/emit/tests/gate.rs`).
 - **Appending to a dated record uses that record's vocabulary**, with the new name
   in parentheses on first use — `scored at M8a close (M-module-namespace)`. The
   record is never rewritten: `docs/panel/`, `DESIGN-LOG.md`, `docs/journal/`,
@@ -460,8 +471,10 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 
 ## Commands
 ```
-cargo build && cargo test        # build the compiler, run all tests
-cargo clippy                     # Cyclone-rule enforcement
-./target/debug/heroes doctor     # toolchain check
-./target/debug/heroes <cmd>      # the one command (grows per milestone)
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.4 s)
+./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
+./heroes test selfhost/main.hero                             # its own tests (482)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (838 checks)
+./heroes doctor                                              # toolchain check
+./heroes <cmd>                                               # the one command
 ```

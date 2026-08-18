@@ -47,6 +47,7 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 021 | [the port](021-selfhost-port.md) | M-selfhost-port — the compiler twice over, and one hash | 2026-08-17 | `m-selfhost-port` |
 | 022 | [the seed](022-selfhost-fixpoint.md) | M-selfhost-fixpoint — the seed, and four defects the fixpoint could not see | 2026-08-18 | `m-selfhost-fixpoint` |
 | 023 | [the net](023-harness-port.md) | M-harness-port — the net, in Heroes, and the two defects it found on its first day | 2026-08-18 | `m-harness-port` |
+| 024 | [the attic](024-bootstrap-archive.md) | M-bootstrap-archive — the third language dies, and five instruments get successors first | 2026-08-19 | `m-bootstrap-archive` |
 
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what

@@ -33,29 +33,42 @@ one journal each, indexed at `docs/journal/README.md`.
 
 ## Build and try it
 
-Requires a recent Rust toolchain and clang. Tested on macOS arm64; Linux is
-expected to work and is **not yet verified by anything** (see the roadmap's CI
-entry).
+**A C compiler is the only thing you need.** `seed/heroes.c` is this compiler
+written in C — what it emits when it compiles itself — so there is no chicken and
+egg and no Rust:
 
 ```sh
-cargo build && cargo test        # build the compiler, run its tests
-./target/debug/heroes doctor     # check the toolchain it needs
-./target/debug/heroes run examples/gallery/00-first.hero
-./target/debug/heroes test examples/calculator.hero
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.4 s, measured
+./heroes doctor                                             # what this machine has
+./heroes run examples/gallery/00-first.hero
+./heroes test examples/calculator.hero
 ```
 
+The compiler you get is the real one: it compiles `selfhost/` — its own source,
+**37,137 lines of Heroes across 153 files**, 30,569 of them before the first test
+block — and what it emits for that is `seed/heroes.c` again, byte
+for byte. `seed/README.md` is that ritual, including how to get a compiler back if
+the seed ever stops building today's source.
+
 Every capability is a subcommand or a flag of the one binary — never a second
-binary, never a script, never a Makefile. `heroes --help` prints the current
-surface; `cargo` builds *the compiler* until the fixpoint, and that exception has
-an expiry date written into it.
+binary, never a script, never a Makefile; `heroes --help` prints the current
+surface. The Rust bootstrap that used to be the way in is
+`archive/bootstrap-rs/`, archived at M-bootstrap-archive and not maintained: the
+exception that let `cargo` build the compiler had an expiry date written into it,
+and this is it.
+
+Tested on macOS arm64 and Linux x86-64 (CI runs the whole net on both). Windows
+builds the runtime but not the compiler — `selfhost/cli_io.hero` binds
+`unistd.h`.
 
 ## The thesis, and how much of it is measured
 
 The design rule is a cost formula: a construct's cost is its token count times
 one plus the rate at which a model rewrites it wrongly. Two of its three
-instruments have run — the spec's measured size (2363 tokens of a hard 4096
-ceiling, counted by two vendored BPE tables so that neither can hide its own
-drift) and a mutation-based check over the compiler's own corpus. **The third,
+instruments have run — the spec's measured size (**3512** tokens of a hard 4096
+ceiling as of 2026-08-19, counted by two vendored BPE tables so that neither can
+hide its own drift, with every amendment's cost in
+`docs/measurements/010-spec-budget-ledger.md`) and a mutation-based check over the compiler's own corpus. **The third,
 the rewrite rate, has not run**, so the formula remains the design rule it always
 was and is not yet an audited one. This is written here rather than discovered by
 a reader, because measurement beats opinion in this project — including the

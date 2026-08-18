@@ -23,7 +23,9 @@ git tag --list --sort=creatordate
 tail -8 DESIGN-LOG.md
 head -40 docs/ROADMAP.md          # § Status + § The order: where we are, what is next
 cat docs/debrief/QUEUE.md         # open items = everything owed to the author
-cargo test --quiet 2>&1 | tail -2 # green or red, one line
+./heroes run tests/harness/main.hero -- ./heroes 2>&1 | tail -2   # green or red, one line
+                                  # (`cargo test` until M-bootstrap-archive; the
+                                  #  Rust it ran is archive/bootstrap-rs/ now)
 ```
 
 Determine: current milestone (from tags + commit messages), what the last
