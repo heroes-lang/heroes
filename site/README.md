@@ -122,6 +122,21 @@ everything else is paper and ink.
   (no request, no JavaScript), fixed over the page and `pointer-events: none`.
 - **Two blues.** `--blue` draws shapes; `--link` is the text colour, lifted so it
   passes contrast on this background. One token cannot do both jobs.
+- **Long pages are given parts.** A reading page numbers its own sections with
+  a CSS counter, set large and faint in the margin the bleed track leaves free
+  (it disappears under 900px, where that margin does not exist), and the rule
+  over each section carries the two stage colours through a `border-image`
+  gradient before fading into the hairline. `why.html`'s ten objections are a
+  numbered list rather than ten paragraphs in a row: a reader can enter
+  anywhere. This is what the author asked for on 2026-08-18, *"meno pagine di
+  testo lunghissimo"*, and it is a layout answer, not a copy answer, though the
+  copy was cut too.
+- **The bolt once more, as architecture**: blown up behind every reading page's
+  title at 9% and cropped by the head's own box. That is its fifth job and the
+  last one it gets.
+- **Evidence blocks get their own surface** (`.stats`, `ul.seats`): a tinted
+  card with a red left edge, so the measured parts of a page stop reading as
+  more prose.
 - **Code blocks say when they scroll**: CSS-only scroll shadows, two `local`
   patches hiding two `scroll` shadows. On narrow screens source blocks scroll
   and never wrap (wrapping 4-space indentation destroys the only structure the
@@ -157,19 +172,21 @@ copy could be wrong later:
    source", not "written in the open", not "source available". The *personal*
    GitHub profile is a different thing and is fine
    (`github.com/giuseppearici`, verified live 2026-08-18).
-4. **No personal data.** The public identifiers are the city (Brescia), the
-   company (Codermine) and an email address. No date of birth, no home address,
-   no tax code.
+4. **No personal data, and less of it than the brief allows** (author
+   instruction 2026-08-18, tightening their own brief). The site names the city
+   (Brescia) and the company (Codermine) and links the personal GitHub profile.
+   **No email addresses**: both were on the page for one revision and were
+   removed. No date of birth, no home address, no tax code.
 5. **Keep "he had never written a compiler before this one."** It is true and it
    turns the project's premise into a choice rather than a gap. Do not soften it
    into vagueness about "learning compilers", and do not inflate his compiler
    experience to compensate.
-6. **The talk is not the book.** A talk of the same name exists, with its own
-   thesis (the wall as metaphor, and "Heroes" recorded at Hansa beside the
-   Berlin Wall). The site names two scheduled dates, Pirloverflow Brescia
-   22 September 2026 and Codemotion Milan 28–29 October 2026. **Italian Agile
-   Days is a proposal that has not been sent: it must not appear** until the
-   author says otherwise.
+6. **No event agenda on this site** (author instruction 2026-08-18). A talk of
+   the same name exists, with its own thesis, and it had a section here for one
+   revision. It is gone: a language's site is not a speaking calendar, and a
+   calendar is the part of a page that goes stale on its own. If it ever comes
+   back, two things hold: the talk is never described as the book, and Italian
+   Agile Days is an unsent proposal that must not appear.
 
 **Author links are omitted on purpose.** `giuseppearici.com/en/` and
 `giuseppearici.com/en/books/heroes-of-code/` both returned **404** on

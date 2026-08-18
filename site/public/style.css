@@ -116,7 +116,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: 1.0625rem/1.7 Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font: 1.0625rem/1.72 Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
 }
@@ -191,6 +191,21 @@ main:not(.home) > .page-head {
   grid-column: wide;
   padding-inline: max(0px, calc((100% - var(--measure)) / 2));
 }
+
+/* Reading pages number their own sections, and the number is set large and
+   faint in the margin the bleed track leaves free. It is the one thing that
+   turns a long page into a page with parts: the eye can see how many there
+   are, and where it is. Below the width where that margin exists, it goes. */
+main:not(.home) { counter-reset: sec; }
+main:not(.home) > h2 { counter-increment: sec; }
+main:not(.home) > h2::after {
+  content: counter(sec, decimal-leading-zero);
+  position: absolute; left: 0.1rem; top: 1.35rem;
+  font-weight: 700; font-size: 2.1rem; line-height: 1;
+  color: color-mix(in srgb, var(--fg) 12%, transparent);
+  letter-spacing: -0.02em; pointer-events: none;
+}
+@media (max-width: 900px) { main:not(.home) > h2::after { display: none; } }
 
 main.home {
   display: block;
@@ -304,10 +319,18 @@ h1 .q {
    ranged right on the same line, a hairline above. Gold on the nod because a
    song title is a quotation, and gold is this site's quotation colour. */
 h2 {
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.13em;
-  font-size: 1.1rem; color: var(--red); margin: 3.4rem 0 1rem;
+  position: relative;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+  font-size: 1.18rem; color: var(--red); margin: 3.4rem 0 1.1rem;
   display: flex; align-items: baseline; gap: 0.6rem 1rem; flex-wrap: wrap;
-  padding-top: 1.5rem; border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  /* The rule over a section is not a neutral hairline: it carries the two
+     stage colours, fading out before it reaches the end of the measure. */
+  border-image: linear-gradient(90deg,
+      color-mix(in srgb, var(--red) 70%, transparent),
+      color-mix(in srgb, var(--blue) 45%, transparent) 38%,
+      var(--line) 72%) 1;
 }
 main > h2:first-of-type { padding-top: 0; border-top: 0; margin-top: 2.6rem; }
 main.home > h2 { margin-top: 4.2rem; }
@@ -332,7 +355,7 @@ h3 {
 
 /* == 6. prose ============================================================= */
 
-p { margin: 0 0 1.2rem; }
+p { margin: 0 0 1.3rem; }
 
 a {
   color: var(--link);
@@ -374,11 +397,32 @@ ul.pillars li::before {
 }
 ul.pillars b { font-style: normal; color: var(--fg); }
 
+/* The objections are a list of questions, so they are set as one: numbered,
+   ruled off from each other, the question in the poster face and the answer
+   in the reading face. Ten paragraphs of prose in a row read as a wall; ten
+   numbered exchanges read as something you can enter anywhere. */
+dl.why { counter-reset: q; margin: 1.8rem 0 0; }
 dl.why dt {
-  font-weight: 700; margin-top: 2rem; color: var(--fg);
-  font-size: 1.05rem;
+  counter-increment: q; position: relative;
+  margin-top: 2.4rem; padding-top: 1.3rem; padding-left: 2.6rem;
+  border-top: 1px solid var(--line-soft);
+  color: var(--fg); font-size: 1.06rem; font-weight: 700; line-height: 1.35;
+  text-wrap: pretty;
 }
-dl.why dd { margin: 0.4rem 0 0; color: color-mix(in srgb, var(--fg) 88%, var(--dim)); }
+dl.why dt::before {
+  content: counter(q, decimal-leading-zero);
+  position: absolute; left: 0; top: 1.45rem;
+  font: 0.74rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--red); letter-spacing: 0.06em;
+}
+dl.why dd {
+  margin: 0.55rem 0 0; padding-left: 2.6rem;
+  color: color-mix(in srgb, var(--fg) 88%, var(--dim));
+}
+@media (max-width: 620px) {
+  dl.why dt, dl.why dd { padding-left: 0; }
+  dl.why dt::before { position: static; display: block; margin-bottom: 0.3rem; }
+}
 
 /* == 7. code ============================================================== */
 
@@ -640,10 +684,24 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
 
 /* A title, not a marquee: the reading pages announce themselves once and then
    get out of the way. */
+/* The bolt, once per reading page, blown up behind the title and cropped by
+   the head's own box. Big enough to be architecture, faint enough that the
+   title never fights it. */
 .page-head {
-  padding: 1.4rem 0 1.1rem; border-bottom: 1px solid var(--line);
-  margin-bottom: 1.6rem;
+  position: relative; overflow: hidden;
+  padding: 1.6rem 0 1.2rem; border-bottom: 1px solid var(--line);
+  margin-bottom: 1.8rem;
 }
+.page-head::after {
+  content: ''; position: absolute; right: 0.5rem; top: -1.4rem;
+  width: 7rem; height: 9.5rem; transform: rotate(8deg);
+  background-color: var(--red);
+  opacity: 0.09;
+  -webkit-mask: var(--bolt) no-repeat center / contain;
+  mask: var(--bolt) no-repeat center / contain;
+  pointer-events: none;
+}
+@media (max-width: 620px) { .page-head::after { width: 4.5rem; height: 6rem; opacity: 0.07; } }
 h1.page {
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
   font-size: clamp(2.1rem, 6.5vw, 3rem); margin: 0; line-height: 1.02;
@@ -657,8 +715,8 @@ h1.page {
   font-size: 1.15rem; color: var(--dim); font-style: italic; margin: 0.8rem 0 0;
 }
 main > p.lede {
-  font-size: 1.2rem; line-height: 1.55; color: var(--fg); font-style: normal;
-  margin: 0 0 2rem; max-width: 34rem; text-wrap: pretty;
+  font-size: 1.32rem; line-height: 1.45; color: var(--fg); font-style: normal;
+  margin: 0 0 2.4rem; max-width: 33rem; text-wrap: pretty;
 }
 
 .crumb {
@@ -774,8 +832,10 @@ ol.zen li:nth-child(1)::before, ol.zen li:nth-child(20)::before { color: var(--g
 
 .stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 1.6rem 1.2rem; margin: 2rem 0; padding: 1.4rem 0; list-style: none;
-  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  gap: 1.6rem 1.2rem; margin: 2.2rem 0; padding: 1.5rem 1.6rem; list-style: none;
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+  border: 1px solid var(--line-soft); border-left: 2px solid var(--red);
+  border-radius: var(--radius);
 }
 .stats li { margin: 0; }
 .stats .n {
@@ -798,10 +858,13 @@ ol.zen li:nth-child(1)::before, ol.zen li:nth-child(20)::before { color: var(--g
    a name in the poster face, the argument in the reading face. */
 ul.seats, ul.lineage { list-style: none; padding: 0; margin: 1.6rem 0; }
 ul.seats li {
-  margin: 0; padding: 1.1rem 0; border-top: 1px solid var(--line-soft);
-  display: grid; grid-template-columns: 12rem 1fr; gap: 0.4rem 1.6rem;
+  margin: 0 0 0.7rem; padding: 1.1rem 1.3rem;
+  background: color-mix(in srgb, var(--card) 50%, transparent);
+  border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
+  display: grid; grid-template-columns: 11rem 1fr; gap: 0.4rem 1.5rem;
+  transition: border-color 140ms ease;
 }
-ul.seats li:last-child { border-bottom: 1px solid var(--line-soft); }
+ul.seats li:hover { border-color: color-mix(in srgb, var(--red) 40%, var(--line)); }
 ul.seats .who {
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
   font-size: 0.86rem; color: var(--fg); padding-top: 0.15rem;

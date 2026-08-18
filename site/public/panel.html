@@ -172,89 +172,56 @@
     languages already knows most of Heroes:
   </p>
   <ul class="lineage">
-    <li><b>Hylo and Val</b> supply the load-bearing idea: mutable value
-    semantics, memory safety with no borrow checker. If values are never
-    aliased, reference cycles cannot be built, so reference counting is
-    complete with no collector. That is the reason the whole design stays
-    small.</li>
-    <li><b>Swift</b> is the reassurance, because it is not a research language:
-    its structs, arrays and strings are values with copy-on-write over
-    reference counting, mechanically what Heroes does. Its <code>inout</code>
-    is this language's <code>@</code>, and its leading-dot variant syntax is
-    here too. Heroes declines <code>class</code>, and with it the cycles,
-    <code>weak</code> and <code>unowned</code>.</li>
-    <li><b>Cyclone</b> gives the discipline the compiler itself is written in:
-    references only as function parameters, which removes lifetime annotations
-    entirely, and which is why porting that compiler into Heroes was mechanical
-    rather than a rewrite.</li>
-    <li><b>Go</b> gives canonical formatting, unused variables as errors,
-    documentation by adjacency, and the rule that decides where a line ends
-    without semicolons. Also the patience: it shipped for a decade without
-    generics.</li>
-    <li><b>Nim</b> gives the FFI mechanism, the per-module build cache, and
-    <code>heroes run</code> itself. It is also the cautionary tale, so the
-    standing rule is to copy Nim's surface and never its implementation.</li>
-    <li><b>Zig</b> gives tests written in the source file they test, and the
-    NUL-terminated string design that lets a Heroes string cross into C.</li>
-    <li><b>Ada</b> gives one refusal: the same variable cannot be passed twice
-    to one call when both parameters can write to it. Ada lived with that for
-    thirty-three years and made it illegal in 2012, for the reason this
-    language was built around.</li>
-    <li><b>Pascal, ML and Wirth</b> give <code>record</code> and
-    <code>variant</code> as the product and sum pair, the sixteen-page Oberon
-    report as the calibration for how long a specification may be, and
-    Pascal-P4 as the size a self-hosting compiler is allowed to reach.</li>
-    <li><b>Idris and Agda</b> give typed holes, moved from proof assistants to
-    code generation: <code>???</code> is a question the compiler answers.</li>
-    <li><b>Rust and Elm</b> give the demonstration that error message quality
-    changes everything, aimed here at a different reader.</li>
-    <li><b>Erlang</b> gives the proof that immutability at scale works, with
-    the motive inverted: Erlang removes sharing for concurrency, Heroes removes
-    it for local readability.</li>
-    <li><b>APL, K, R and MATLAB</b> are cited in two directions at once.
-    Against, on notation: ultra-compact syntax fails for models. In favour, on
-    the value model: sixty years of value semantics over whole arrays, and the
-    evidence that this model is not what makes a language slow. They also
-    document its failure mode honestly, which is Heroes' too.</li>
-    <li><b>cfront, Vala, Chicken Scheme and early Haskell</b> are the
-    C-emission lineage: historically the dominant technique for languages built
-    by very few people, and the reason clang gets to check every foreign
-    declaration.</li>
-    <li><b>Python</b> gives one thing, and it is a joke with a rule inside it:
-    <code>import this</code> became <code>heroes this</code>, twenty lines the
-    compiler carries in its own binary rather than in a document that could
-    drift. <a href="zen.html">They are here.</a></li>
+    <li><b>Hylo, Val</b> mutable value semantics. No aliasing means no cycles,
+    so reference counting is complete with no collector. The reason the design
+    stays small.</li>
+    <li><b>Swift</b> copy-on-write over reference counting, <code>inout</code>
+    (this language's <code>@</code>), leading-dot variants. Heroes declines
+    <code>class</code>, and with it <code>weak</code> and <code>unowned</code>.</li>
+    <li><b>Cyclone</b> references only as function parameters, which deletes
+    lifetime annotations. The compiler is written in that discipline, which is
+    why porting it here was mechanical.</li>
+    <li><b>Go</b> canonical formatting, unused variables as errors, and the
+    rule that ends a line without a semicolon.</li>
+    <li><b>Nim</b> the FFI mechanism, the per-module cache and
+    <code>heroes run</code>. Also the cautionary tale: copy the surface, never
+    the implementation.</li>
+    <li><b>Zig</b> tests in the file they test, and the NUL-terminated strings
+    that cross into C.</li>
+    <li><b>Ada</b> one refusal: the same variable twice in one call, when both
+    can write to it. Illegal since 2012, after thirty-three years.</li>
+    <li><b>Pascal, ML, Wirth</b> <code>record</code> and <code>variant</code>,
+    the sixteen-page Oberon report as the size a specification may be, and
+    Pascal-P4 as the size a self-hosting compiler may be.</li>
+    <li><b>Idris, Agda</b> typed holes, moved from proof assistants to code
+    generation: <code>???</code> is a question the compiler answers.</li>
+    <li><b>Rust, Elm</b> the proof that error message quality changes
+    everything, aimed here at a different reader.</li>
+    <li><b>Erlang</b> immutability at scale, motive inverted: it drops sharing
+    for concurrency, Heroes drops it for local readability.</li>
+    <li><b>APL, K, R, MATLAB</b> cited both ways. Against on notation, compact
+    syntax fails for models. In favour on the value model, sixty years of it,
+    and the evidence that it is not what makes a language slow.</li>
+    <li><b>cfront, Vala, Chicken Scheme</b> the C-emission lineage, and the
+    reason clang gets to check every foreign declaration.</li>
+    <li><b>Python</b> <code>import this</code> became
+    <code>heroes this</code>, carried in the binary rather than in a document
+    that drifts. <a href="zen.html">Here.</a></li>
   </ul>
   <p>
-    The borrowings that were refused are recorded the same way. Ruby's reading
-    rhythm is worth taking and its mechanism is the worst case for locality.
-    APL's value model is in and its notation is out. A refusal on this project
-    has to name the program or the compiler fact that would prove it wrong,
-    exactly like a feature does, because a permanent no is otherwise the one
-    design act nobody has to justify.
+    Refusals are recorded the same way, and held to the same standard: a
+    permanent no has to name the program or the compiler fact that would prove
+    it wrong, exactly as a feature does.
   </p>
 
   <h2>Who is building this <span class="nod">· absolute beginners ·</span></h2>
   <p>
-    One person: Giuseppe Arici, partner and CTO at Codermine, in Brescia, with
-    over twenty years of software behind him, in Java, C#, Rails, iOS, Go,
-    microservices and DevOps, and a book on the history of programming
-    languages to his name. <b>He had never written a compiler before this
-    one.</b>
-  </p>
-  <p>
-    That is the premise of the project rather than an apology for it, and it is
-    why everything here is written down as it happens: the journal, the
-    decision log, the sittings above, the failed predictions and the
-    measurements. A first compiler, built by somebody who reads the history of
-    this craft for a living, in the open.
+    One person: Giuseppe Arici, partner and CTO at Codermine, in Brescia, over
+    twenty years of software, and a book on the history of programming
+    languages. <b>He had never written a compiler before this one</b>, which is
+    the premise of the project rather than an apology for it, and the reason
+    everything here is written down as it happens.
     <a href="author.html">Who he is, and the book →</a>
-  </p>
-  <p>
-    The name is Bowie's, and so is the irony: he put the quotation marks around
-    <i>&ldquo;Heroes&rdquo;</i> in 1977 to undercut the word. They stay in the
-    packaging, and they never reach the language: you will never meet Bowie in
-    an error message.
   </p>
   <p>
     Everything the project decided, and everything it got wrong on the way,
