@@ -201,9 +201,9 @@ function render_probes() -> [probe.Probe]
     ]
 
 test "the tables are what this module is, so they are counted"
-    assert argv_probes().len() == 25
+    assert argv_probes().len() == 26
     assert help_probes().len() == 4
-    assert render_probes().len() == 8
+    assert render_probes().len() == 9
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"
