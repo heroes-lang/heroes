@@ -230,3 +230,47 @@ made this file, so a misfiling is visible rather than silent.
   573 bootstrap tests did not, and the two times the instrument lied to me
 - **exit quiz** — the three LEARN items queued today (caret width, the counter
   class, the two streams)
+
+## M-selfhost-fixpoint closed 2026-08-18 — the seed, and four defects the fixpoint could not see
+
+Nine items closed in this milestone and every one is recorded above in
+`DECIDE.md`, `SCHEDULED.md` or its own commit. The index, because every commit
+subject cites this path:
+
+- **panel 085** — the seed's shape (A1: raw C, committed, refreshed in the commit
+  that breaks it) and the split (B4: the archive leaves this milestone). Two
+  vetoes ride with it, A2 and B2, both the compiler-engineer's.
+- **the archive blocker** — `selfhost/main.hero:45` read the standard library from
+  `crates/` at run time through `.default("")`, so the self-hosted compiler was
+  unusable outside the repository root and blamed the author's line for it. Panel
+  028 R3 had ruled the library embedded; the port had reversed a ratified
+  decision, invisibly, because nobody ran it anywhere else.
+- **`getenv` was one extern away** — the note said the language has no getenv, and
+  what the file spelling cost was a diagnostic that lied.
+- **three emitted-C divergences** — the `#line` file name (81 programs), float
+  literal spelling (19), and a fixed-array read that emitted an **undeclared
+  identifier** (3, at exit 2). Byte-identical emitted C went **26 → 127 of 127**.
+- **a silent 0.0** — `x: f64 @ 1_0.5` printed the wrong number at exit 0 in the
+  bootstrap for as long as the separator has existed.
+- **a fifth class for §7** — a field declared scalar where the header has an array
+  was the compiler's exit 2 and is now the author's exit 1.
+- **the instrument** — `tests/differential.rs`, whose expectation is the other
+  compiler, over 140 programs, and it fires.
+- **the seed** — `seed/heroes.c`, one clang line, tested from `git archive HEAD`.
+- **panel 065's two overdue predictions** — one confirmed, one falsified.
+
+`/learn` offers, all optional and all the author's call:
+
+- **a walkthrough of the seed chain**: how a 21 MB C file, one clang invocation
+  and no Heroes compiler produce a compiler that writes that same file again.
+  Three commands, and the middle one is the whole idea of bootstrapping.
+- **the four defects, as a diagnosis drill**: each one's raw symptom is in this
+  milestone's journal with its fixing commit, and none of the four is guessable
+  from the symptom — the `t20` one especially, where the emitted C names a
+  variable that appears nowhere else in the file.
+- **golden ratification** for the milestone's adversarial cases:
+  `fixedbugs/ffi-a-field-the-header-has-as-an-array.hero` and
+  `run/fixedbugs-a-float-with-a-digit-separator.hero`, both still marked pending.
+- **the hex float renderer, read line by line**: why `m - 1.0` is exact, why the
+  subnormal branch scales by a power of two instead of dividing, and why the nan
+  test has to come first (`<` on a nan aborts).
