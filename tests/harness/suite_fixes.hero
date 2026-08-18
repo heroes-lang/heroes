@@ -1,0 +1,106 @@
+# `x.fixed` — CLAUDE.md §8's promise, made executable.
+#
+# Port of applying_certain_fixes_produces_the_fixed_file_and_it_checks
+# _clean (crates/heroes-cli/tests/golden.rs:169). §8 says only a `certain`
+# fix is machine-applicable, which is a claim about every fix the compiler
+# tags that way, and this is the two-part test of it:
+#
+#   1. applying every certain fix to `x.hero` produces `x.fixed`, byte for
+#      byte — through the real binary (`check --apply`), so what is tested
+#      is the shipped path and not a helper's imitation of it;
+#   2. the repaired program then CHECKS CLEAN. A `certain` fix that leaves
+#      the file broken is a `guess` that lied, and the second half is what
+#      makes the tag mean something.
+#
+# Only `check/` cases carry `.fixed` files, and `cases.collect` ignores
+# them by design — a `.fixed` is not a case, it is a case's answer.
+
+use cases
+use report
+use shell
+use strings
+
+constant CHECK_DIR: str
+    "tests/golden/check"
+
+# Measured 2026-08-18: six cases carry a `.fixed`. golden.rs floors at 3.
+constant LEAST: i64
+    6
+
+# The golden tree's own answer, with the directory and the floor as
+# parameters so the tests below can point it at a tree they built.
+function run_default(scratch: str, compiler: str) -> report.Report?
+    return run_all(scratch: scratch, compiler: compiler, dir: CHECK_DIR, least: LEAST)
+
+function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Report?
+    # One directory walk answers "does this case have a .fixed?" for every
+    # case, where `test -e` would be sixty-five more processes.
+    present: {str: bool} @ {}
+    for entry in shell.list_entries(scratch: scratch, dir: dir)?
+        present[entry] @ true
+    r: report.Report @ report.empty()
+    seen: i64 @ 0
+    for item in cases.collect(scratch: scratch, dir: dir)?
+        repaired = strings.without_suffix(text: item.source, suffix: ".hero") + ".fixed"
+        if present[repaired].is_err()
+            continue
+        seen @ seen + 1
+        want = read_file(repaired)
+        if want.is_err()
+            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot read " + repaired)
+            continue
+        applied = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(item.source) + " --apply")
+        if applied.is_err()
+            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot run the compiler on " + item.source)
+            continue
+        if applied.must().out != want.must()
+            report.keep_failure(@r, label: "fixes/" + item.name, detail: report.mismatch(what: item.source + " --apply", expected: want.must(), actual: applied.must().out))
+            continue
+        rechecked = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(repaired) + " --brief")
+        if rechecked.is_err()
+            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  cannot run the compiler on " + repaired)
+            continue
+        if rechecked.must().code != 0
+            report.keep_failure(@r, label: "fixes/" + item.name, detail: "  " + repaired + " does not check clean after its fixes — a `certain` fix that leaves the file broken is a `guess` that lied:\n" + rechecked.must().err)
+            continue
+        report.keep_pass(@r)
+    if seen < least
+        report.keep_failure(@r, label: "fixes", detail: "  only " + seen.to_str() + " cases carry a `.fixed`, and there were " + least.to_str() + " — §8's machine-applicable promise is tested by these and nothing else")
+    return ok(r)
+
+test "the fixes suite catches a wrong application and a repair that does not check clean"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/fixes"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    # A real case with a real CERTAIN fix: `0XFF` has one upper-case base
+    # prefix, so the repair is unambiguous. The first draft of this test
+    # used an unused binding — whose fix is a `guess`, so `--apply` leaves
+    # the file alone and the repaired program still does not check clean.
+    # The suite caught that, which is the suite working.
+    broken = "function main()\n    mask = 0XFF\n    print(mask)\n"
+    assert !write_file(path: tree + "/u.hero", text: broken).is_err()
+    assert !write_file(path: tree + "/u.expected", text: "").is_err()
+    compiler = "./target/debug/heroes"
+
+    # What the compiler actually applies, captured once and stored as the
+    # `.fixed` — then the suite must agree with it.
+    applied = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(tree + "/u.hero") + " --apply")
+    assert !applied.is_err()
+    assert !write_file(path: tree + "/u.fixed", text: applied.must().out).is_err()
+    green = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert !green.is_err()
+    assert green.must().passed == 1
+    assert green.must().failed == 0
+
+    # The floor: the same one-case tree, told to expect two.
+    short = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 2)
+    assert !short.is_err()
+    assert short.must().failed == 1
+
+    # A `.fixed` that is not what the compiler produces.
+    assert !write_file(path: tree + "/u.fixed", text: "function main()\n    something else\n").is_err()
+    red = run_all(scratch: scratch, compiler: compiler, dir: tree, least: 1)
+    assert !red.is_err()
+    assert red.must().passed == 0
+    assert strings.contains(text: red.must().failures[0], needle: "--apply")
