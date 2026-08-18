@@ -68,6 +68,14 @@ const QUOTES_THE_OLD_SPELLING: &[&str] = &[
     "docs/debrief/QUEUE.md",
     "docs/ROADMAP.md",
     "CLAUDE.md",
+    // **The Heroes port of this very check**, which quotes the same numbers for
+    // the same reason: its boundary-rule test needs strings this repository
+    // really contains, and `(M6+)` is one of them. Added at M-harness-port,
+    // 2026-08-18, when the port went green and this test went red — the two
+    // lists are the same list in two languages, and they drifted the moment one
+    // of them was written (`tests/harness/suite_records.hero` carries the
+    // matching entry).
+    "tests/harness/suite_records.hero",
 ];
 
 /// A repository-relative path in the spelling this file's own tables use.
