@@ -181,7 +181,16 @@ function text() -> str
 
 ## Tests
 
-test "the embedded library is byte for byte the file the bootstrap embeds"
-    disk = read_file("crates/heroes/src/library/source.hero")
+# **THIS TEST HAS A RETIREMENT NOTICE, AND ITS OWN FAILURE IS THE NOTICE.** It
+# exists to prove the port transcribed the library correctly, by comparing the
+# embedded text against the bootstrap's copy — and since M-bootstrap-archive that
+# copy is frozen inside `archive/bootstrap-rs/`, where nothing is maintained. So
+# the day the library legitimately GROWS — a new built-in written in Heroes — this
+# test fails, and the right response is not to edit the archive: it is to delete
+# this test, because the bootstrap has stopped being an authority on what the
+# library should say. Until then it is free evidence that the transcription is
+# exact, and the fixpoint plus 142 blessed emissions already agree with it.
+test "the embedded library is byte for byte the file the bootstrap embedded"
+    disk = read_file("archive/bootstrap-rs/heroes/src/library/source.hero")
     assert !disk.is_err()
     assert text() == disk.must()

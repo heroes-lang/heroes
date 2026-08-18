@@ -1,6 +1,6 @@
 # 024 — M-bootstrap-archive: the third language dies
 
-**Open.** Sections grow per step; the closing block is appended at the close.
+**Closed 2026-08-19**, tag `m-bootstrap-archive`.
 
 ## Goal
 
@@ -90,3 +90,85 @@ business on that list. The split was real rather than arithmetic: everything tha
 answers a question about **one node or one span** went to `mutate_sites.hero`, and
 it had to happen anyway, because `mutate_typo` and `mutate_edits` each needed one
 function from the other and Heroes refuses module cycles.
+
+## The sitting: where a ledger lives when its file goes away
+
+Panel 086 was convened for one sentence and found a class. `gate.rs`'s doc comment
+held the **SPEC_TOKENS ledger** — 38 rows, one per spec amendment, each naming the
+delta and what paid for it — and two design.md Part 1 sentences named that file as
+its *live* home. Three seats, three measurements, one answer:
+
+- the ledger is **48,996 bytes**, max row 3,379 — 81% of the file it lived in;
+- it measures **12,757 tokens, 3.6× the spec it guards**, which is what killed the
+  option of moving it into the harness module that enforces the number: CLAUDE.md
+  §11's relaxation for tests rests on *"a case is read one at a time"*, and this is
+  not a case, it is a wall;
+- five of six comparable projects split figure from history (CPython's
+  `Misc/stable_abi.toml`, Go's `api/go1.*.txt`, Rust's `tidy`, TeX's
+  `errorlog.tex`, Linux's checkpatch), and **leaving the citation pointing into an
+  archive is the failure Linux built `make refcheckdocs` to catch**.
+
+And all three seats named the same missing mechanism, independently: *nothing had
+ever checked that the ledger's newest row and the enforced constant agree.* The
+coupling was **adjacency** — two lines apart in one file. The warden supplied the
+base rate for what adjacency is worth here: `REGISTRY_TOKENS` drifted +85 across
+eight milestones with no commit naming a delta.
+
+So the ledger became `docs/measurements/010-spec-budget-ledger.md` and the check
+became real: row count, newest figure, and today's measurement, all three or red.
+The sitting also narrowed a sentence rather than repealing it — *"a figure that
+lives in one place cannot die in another"* is about **that paragraph's** prose, so
+the rule is that **a number may live in a second place only if it is checked or
+dated**. A row is dated. A pin is checked.
+
+## What the new check found in its first hour
+
+`records/citations` — panel 086 R7, the anchored dead-citation rule — went green on
+the day it landed and **that was the defect**. It anchored on *existing* directory
+names, so the moment `crates/` became `archive/bootstrap-rs/`, every citation of
+`crates/heroes/src/measure/gate.rs` stopped being a path claim: the rule was
+self-adjusting in the wrong direction, and it reported six passes over exactly the
+citations it was built for. A file extension is a fact about the token that
+survives the deletion of everything around it, so the rule now accepts either
+anchor — and with that, it found **nine dead citations that predate the archive**:
+`emit/mangle.rs`, `ir/print.rs`, `types/holes.rs`, `ir/verify.rs`, `ir/mono.rs` and
+`emit/ffi.rs` in design.md and CLAUDE.md, written relative to a source root the
+reader was assumed to be standing in. None of them ever resolved from the
+repository root. Nobody had noticed, because nothing had looked.
+
+## What landed, and what carried forward
+
+**Closed 2026-08-19, tag `m-bootstrap-archive`. There is no third language.**
+
+    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    3.4 s
+    ./heroes test selfhost/main.hero                              482 tests
+    ./heroes run tests/harness/main.hero -- ./heroes               838 checks
+
+`crates/` → `archive/bootstrap-rs/`, and design.md:82's *"no third language
+anywhere"* is now a fact rather than a plan. What the milestone had to build first,
+because the archive would otherwise have made it unobservable:
+
+| landed | measured |
+|---|---|
+| `tests/emission/` — the differential's successor | 142 programs, 5.4 MB, **both compilers green against the same bytes** |
+| `heroes measure` in Heroes | 3440 / 3512 / spread 72 — **identical to the bootstrap's**, three published vectors matching |
+| `suite_spec.hero` — the §1.6 gate | 8 checks, green against both compilers |
+| `heroes mutate` in Heroes | 538 mutants, 512 (96%) / 414 (78%) — **byte-identical output**, `--survivors` included |
+| the seed, regenerated with both verbs inside it | 22,025,792 bytes, **fixpoint byte-identical**, 15m41s |
+| CI without cargo | four steps deleted, four added, none of them Rust |
+| `docs/measurements/010` + the lock | 38 rows, three-way agreement checked |
+| `records/citations` | 47 anchored occurrences, 9 dead ones found and repaired |
+
+**The port is 37,137 lines of Heroes across 153 files** (30,569 before the first
+test block), against 25,482 non-test lines of Rust it replaces.
+
+**What carried forward.** Two decisions are the author's and are in `DECIDE.md`
+with proposed wordings: CLAUDE.md §4's panel trigger still names the archived tree
+(and its brace form is the one citation shape the new check cannot read), and **the
+Windows CI leg now covers the toolchain and nothing else** — it ran the cargo
+steps, and the Heroes steps cannot replace them because `selfhost/cli_io.hero`
+binds `unistd.h`. That leg prints a warning on every run rather than staying
+quietly green, because a job that tests nothing is what §9 calls a decoration.
+One item goes to `SCHEDULED.md`: the `ORDER:` marker gap panel 086 R4 measured —
+4 of the bootstrap's 13 marks have no counterpart in the port, so the live
+inventory under-reports until they are marked.

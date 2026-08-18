@@ -32,8 +32,14 @@ open.
   asynchronous: adopt the conservative default, queue the ratification.
 - Write the code and the golden cases. Mark the milestone's 5 adversarial
   cases `# UNVERIFIED — pending debrief`; label bulk regression cases.
-- Run `cargo test` and `cargo clippy`; from M-scalars-run also the double-emit
-  determinism diff and the ASan `run/` goldens.
+- Run the tests, which since **M-bootstrap-archive** (2026-08-19) means the two
+  the one command gives: `heroes test selfhost/main.hero` for the compiler's own,
+  and `heroes run tests/harness/main.hero -- <compiler>` for the net — the second
+  one carries the double-emit determinism diff, the ASan `run/` goldens, the
+  blessed emissions and §11's file ceiling inside it. `cargo test` and `cargo
+  clippy` were this line until the archive; the Rust they ran is
+  `archive/bootstrap-rs/` and nothing builds it. Naming a suite runs only that
+  one, which is what makes a fast loop possible: `-- <compiler> records`.
 
 ## 3. On failure
 Diagnose and fix autonomously. Record symptom → cause → fix in the milestone

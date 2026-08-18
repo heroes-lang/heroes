@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/heroes", "crates/heroes-cli"]
+members = ["heroes", "heroes-cli"]
 
 [workspace.package]
 version = "0.0.1"

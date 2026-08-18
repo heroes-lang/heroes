@@ -451,6 +451,22 @@ in the same commit, **or** B4.
 | spec-warden | if B3 lands, `SPEC_TOKENS` and `heroes measure` diverge within two spec-amending commits, drift ≥ +30 by M-separate-compilation | M-separate-compilation close |
 | spec-warden | under A1, `git count-objects -vH` ≤ 10.0 MiB and the seed has ≤ 2 blobs at M-separate-compilation close; more means A1 was A4 in practice | M-separate-compilation close |
 
+## Predictions scored — at M-bootstrap-archive close, 2026-08-19
+
+Measured in the session that writes this, and the two that could not be scored say
+so rather than being renewed (panel 046 R2).
+
+| judge | prediction | outcome |
+|---|---|---|
+| compiler-engineer | `heroes run` on any program calling `range` exits 1 with `builtin_shape` unless `selfhost/main.hero:45` is repaired | **held, and the repair is in.** It was reproduced at the sitting; `main.hero` now reads the library through `library_source.text()` — compiled in, not read from disk — and the archive cannot break it |
+| ffi-pragmatist | `-std=c11` on **glibc** fails at the seed's `unistd.h` extern | **instrumented, not yet scored.** A CI step exists for it now (Linux only, reporting), which is the only way a prediction pays. Measured on Darwin the same day: `-std=c11` builds the seed in 3.6 s and produces a working binary — as panel 047 predicts, since `__STRICT_ANSI__` hides POSIX names on glibc and not on Darwin's headers |
+| ffi-pragmatist | if `golden.rs` is not ported before the archive, a second emitted-C divergence lands within one milestone | **void: the antecedent was removed.** `golden.rs` was ported at M-harness-port, one milestone after this sitting, so the condition never obtained. Recorded rather than dropped, because the reason it is void is the thing the sitting asked for |
+| spec-warden | if B3 lands, `SPEC_TOKENS` and `heroes measure` diverge within two spec-amending commits | **void: B4 landed, not B3.** The successor check exists (`suite_spec.hero`) and panel 086 R2 added the ledger agreement it did not have |
+| compiler-engineer | a third stored seed costs **> 5 MiB** gzipped | **not yet due** (its checkpoint is the second seed refresh after M-selfhost-fixpoint; this milestone is the first). Today's data point, measured: one seed is **21.01 MiB raw and 2.69 MiB gzipped**, git holds **3** versions of it, and `git count-objects -vH` reports **12.99 MiB** |
+| spec-warden | under A1, `git count-objects -vH` ≤ 10.0 MiB and the seed has ≤ 2 blobs at M-separate-compilation close | **not due, and already past both numbers**: 12.99 MiB and 3 versions today, one milestone early. Written down here so the M-separate-compilation close scores it against a measurement rather than a memory |
+| historian | `archive/bootstrap-rs/` is built, run or committed to at least once despite *"never maintained again"* | **open, and the clock starts now.** The directory exists as of 2026-08-19 and its own README is the only thing committed into it since. Nothing builds it and CI does not mention it |
+| compiler-engineer | the ported harness lands between 2,500 and 3,800 lines | scored at M-harness-port close: **3,630** |
+
 ---
 
 ## Author's verdict

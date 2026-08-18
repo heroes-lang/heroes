@@ -276,7 +276,15 @@ function verb_probes() -> [probe.Probe]
 
         # `mutate` refuses a corpus that does not compile, and prints the
         # survivors of one operator when asked for them.
-        row(name: "mutate refuses a corpus that does not compile", argv: "mutate crates/heroes/src/library/", code: 2).out_empty().err_has("this corpus does not compile").err_has("library/source.hero")
+        # The corpus that cannot compile is `tests/golden/check/` — 65 programs
+        # the compiler is SUPPOSED to refuse. It was the bootstrap's library
+        # directory until M-bootstrap-archive, which is a directory that no
+        # longer exists, and the row then failed for the wrong reason (`find:
+        # No such file or directory`). The new corpus is better than a repointed
+        # path: `check/` exists to hold refused programs, so this row cannot rot
+        # for want of a wrong one — and the count is deliberately not pinned
+        # here, because a new check case must not turn this red.
+        row(name: "mutate refuses a corpus that does not compile", argv: "mutate tests/golden/check", code: 2).out_empty().err_has("this corpus does not compile").err_has("already refused by").err_has("tests/golden/check/")
         row(name: "mutate accepts the gallery", argv: "mutate examples/gallery", code: 0)
         row(name: "mutate prints the survivors of one operator", argv: "mutate examples/gallery --operator swap-args --survivors", code: 0).out_has("| swap-args |").out_lacks("| typo-ident |")
         row(name: "an unknown operator names the ones there are", argv: "mutate --operator swapargs", code: 2).err_has("no operator `swapargs`").err_has("swap-args")

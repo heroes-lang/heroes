@@ -148,7 +148,7 @@ nobody had counted (panel 036). M-selfhost-probe prices it; the shape is a `hero
 panel 039's verification; author decision in `/decide`): **the mangler's typehash**.
 `h_library_map_<typehash>` reaches the generated C of any program that uses a
 generic, and the fixpoint compares that C byte for byte, so the port must compute
-the identical number — which `emit/mangle.rs` said in a comment while being FNV-1a,
+the identical number — which `archive/bootstrap-rs/heroes/src/emit/mangle.rs` said in a comment while being FNV-1a,
 whose every ingredient is inexpressible in Heroes: an unsigned offset basis
 (`int_out_of_range`, because `i64` is signed), a wrapping multiply (`panic: integer
 overflow`, because §4.3 makes overflow an abort), and `^` (`reserved_operator`).
@@ -363,7 +363,7 @@ was written in Oberon. That is the right order of magnitude for one person.
 
 **The spec has a budget; the compiler does not, and that is now a decision rather than a gap**
 (author 2026-08-12, taken in `/decide`; recorded by panel 020's compiler-engineer as an open
-question). Measured the same day: `crates/heroes/src` is **25,482 non-test lines**, 27,399 across
+question). Measured the same day: `archive/bootstrap-rs/heroes/src` (then `crates/heroes/src`) is **25,482 non-test lines**, 27,399 across
 both crates — against Pascal-P4's ~4,000 — and 21 files are over CLAUDE.md §11's ~300. A global
 ceiling was considered and refused, for a reason worth stating so nobody re-derives it as an
 oversight: the bootstrap compiler is **scaffolding with an expiry date** (CLAUDE.md §10's declared
@@ -1359,10 +1359,10 @@ m = { "mario": 30, "anna": 25 }
   tree it lives in changed at the archive (panel 086 R4). **The repointing is not the whole story and
   the numbers are the reason**: measured 2026-08-19 by two seats independently, `# ORDER:` marks
   **5 files / 6 occurrences** in `selfhost/` against **10 files / 13** in the bootstrap, and four
-  marks there — `ir/print.rs`, `emit/{descriptor_set,typedefs_generated,typedefs}.rs` — have no
+  marks there — `archive/bootstrap-rs/heroes/src/ir/print.rs`, `emit/{descriptor_set,typedefs_generated,typedefs}.rs` — have no
   marked counterpart in the port. So the live inventory under-reports until those are marked, which
   is `SCHEDULED.md`'s item rather than a sentence's problem. Kept out of prose deliberately: this
-  note once said *"exactly one place, `types/holes.rs`"*, and the tree had moved (the sweep of
+  note once said *"exactly one place, `archive/bootstrap-rs/heroes/src/types/holes.rs`"*, and the tree had moved (the sweep of
   2026-08-15 found thirteen; panel 065). The port owes each mark an explicit `sort`, and a
   missing one breaks two different nets: a walk into the emitted C breaks the
   M-selfhost-fixpoint diff at its first seam — the Rust bootstrap iterates sorted, a Heroes map
@@ -2327,7 +2327,7 @@ Everything in this table is gone **in the IR**, and the erasure is inspectable w
 way in** — the exception is generics, which the row above says so itself: monomorphisation is a
 *pass*, after type checking, so `Ty::Generic` is present in the IR until it runs (panel 029). The
 sentence used to claim lowering erased everything, which its own table contradicted two lines
-earlier; `ir/verify.rs` had documented the exception informally, which is how a false sentence
+earlier; `archive/bootstrap-rs/heroes/src/ir/verify.rs` had documented the exception informally, which is how a false sentence
 survives — the truth was written somewhere nobody compares it against. Three rows used to say `match` where
 they meant *a branch*: `match` is the surface's only destructuring construct, and the IR has no
 `match` either — it has `switch` on a variant tag and `branch` on a `bool`.
@@ -2405,7 +2405,7 @@ a one-line rejection here is falsified by this compiler's own output (every
 emitted unit asserts `__builtin_constant_p` twice, with no `extern` in the
 program), and Part 7 was vetoed because its preamble claims its items lose *only*
 on simplicity, which is false of a pass that would duplicate 1,754 lines of
-runtime semantics and contradict `ir/mono.rs`'s structural refusal of a depth
+runtime semantics and contradict `archive/bootstrap-rs/heroes/src/ir/mono.rs`'s structural refusal of a depth
 limit. **Three conditions return it to the table, jointly**: a measured Part 11
 effect that `extern constant` does not already close · a *structural* termination
 argument of `mono.rs:24-33`'s standard, never a quota (Rust shipped one and
@@ -2477,7 +2477,7 @@ are *on* the closure list.
     compiles and prints `5`: panel 042's eight widths gave the result type this row said did not
     exist, so *"no result type exists to correct it to"* is no longer true and must not go on
     being read as the reason. What still holds is the distinction the row closes with, and panel
-    052 measured it from the other side: `emit/ffi.rs`'s repair table can propose `i32` for a C
+    052 measured it from the other side: `archive/bootstrap-rs/heroes/src/emit/ffi.rs`'s repair table can propose `i32` for a C
     `int` and **cannot propose anything for a C `long`**, which is 64 bits on Darwin and Linux
     and 32 on Windows. A Heroes width is a number; a C width is a question about the machine.
     **The new falsifier, stated so it can expire in its turn**: a program the closure list or
