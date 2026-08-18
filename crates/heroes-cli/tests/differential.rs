@@ -88,7 +88,7 @@ fn run(program: &Path, root: &Path, args: &[String]) -> std::process::Output {
 /// port is the one failure mode that reports success — the same shape as the
 /// stale runtime object that cost two debugging detours before the cache key grew
 /// to cover the whole configuration (`commands/toolchain.rs`).
-fn build_the_port(root: &Path) -> PathBuf {
+fn build_the_port(root: &Path) -> Option<PathBuf> {
     let out = root.join("build").join("differential-port");
     let built = run(
         Path::new(env!("CARGO_BIN_EXE_heroes")),
@@ -100,14 +100,27 @@ fn build_the_port(root: &Path) -> PathBuf {
             slashed(&out),
         ],
     );
+    // **A platform with no POSIX headers has no second compiler to compare
+    // against**, and the reason is `selfhost/cli_io.hero`'s `extern "unistd.h"`
+    // rather than anything here. Asked of the machine, not of a `cfg!` list, so the
+    // day the port stops binding it this starts running instead of staying skipped
+    // for a reason nobody rechecks (`corpus.rs`'s rule for the same class).
+    let complaint = String::from_utf8_lossy(&built.stderr).into_owned();
+    if !built.status.success() && complaint.contains("unistd.h") && complaint.contains("not found")
+    {
+        eprintln!(
+            "SKIPPED: this platform has no <unistd.h>, which selfhost/cli_io.hero \
+             binds, so there is no self-hosted compiler here to differ from:\n{complaint}"
+        );
+        return None;
+    }
     assert!(
         built.status.success(),
         "the bootstrap could not build selfhost/main.hero — every other assertion \
          in this file is about the two compilers agreeing, and there is no second \
-         compiler until this succeeds\nstderr:\n{}",
-        String::from_utf8_lossy(&built.stderr)
+         compiler until this succeeds\nstderr:\n{complaint}"
     );
-    out
+    Some(out)
 }
 
 /// Every program both compilers should agree on: the goldens whose C is real
@@ -166,7 +179,9 @@ fn programs(root: &Path) -> Vec<PathBuf> {
 #[test]
 fn the_two_compilers_emit_the_same_c() {
     let root = workspace_root();
-    let port = build_the_port(&root);
+    let Some(port) = build_the_port(&root) else {
+        return;
+    };
     let bootstrap = PathBuf::from(env!("CARGO_BIN_EXE_heroes"));
     let mine = root.join("build").join("differential");
     std::fs::create_dir_all(&mine).expect("the scratch directory");
