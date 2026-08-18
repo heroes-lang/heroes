@@ -34,6 +34,16 @@ constant RECORD: [str]
         "docs/book"
         "docs/reasoning"
         "tests/golden"
+        # The blessed emissions: 5.4 MB of generated C, derived from the
+        # programs under `tests/golden/` and `examples/`. Reading it here
+        # would scan a megabyte-scale COPY of text this walk already reads
+        # at its source, and a milestone name in a program would be
+        # reported twice — once truly, once about a file nobody writes. The
+        # guard the walk would have given (`c_files` below) is stronger in
+        # `suite_emission.hero`: a `.c` in there that no program claims is
+        # a failure by name, which is more than "a C file lives outside the
+        # directories that own C".
+        "tests/emission"
         "DESIGN-LOG.md"
         "vendor"
         "editors/vscode/icons"

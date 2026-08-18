@@ -1,0 +1,324 @@
+# Every program's emitted C, blessed — the instrument that survives the
+# bootstrap.
+#
+# WHY THIS EXISTS. crates/heroes-cli/tests/differential.rs asks the one
+# question no golden can ask: do the TWO compilers emit the same C? Its
+# oracle is a second implementation, so it is the only test in this
+# repository that must go dark at the archive — and the day it was written
+# it found 101 of 127 programs disagreeing, in three classes, every one of
+# them invisible to every other instrument (panel 085 R6). Archiving the
+# bootstrap without a successor would archive the question with it.
+#
+# WHAT REPLACES THE ORACLE. The bytes under `tests/emission/`, one file
+# per program, written while both compilers still existed and the
+# differential was green over all of them. A blessed file is therefore not
+# one compiler's opinion: it is what two independent implementations
+# agreed on, byte for byte. This suite asks whether today's compiler still
+# says the same thing.
+#
+# WHAT IT CATCHES THAT NOTHING ELSE DOES. Both classes the differential
+# found are silent everywhere else. A float literal spelled in hex instead
+# of decimal is the same number, so `run/` prints the same output and
+# `corpus` behaves identically; a `#line` restore naming a file nothing
+# creates compiles clean, so `warnings` stays green. The difference is in
+# the bytes alone, and only something that stores the bytes can see it.
+#
+# WHY THE WHOLE C AND NOT A HASH. Measured on 2026-08-18: 142 programs,
+# 5.4 MB, 162,878 lines of C. A manifest of 142 hashes detects the same
+# changes for 142 lines — and cannot say WHAT changed, because once the
+# bootstrap is gone nothing can reconstruct the previous emission except an
+# old checkout and a rebuild. design.md §4.17's rule for a diagnostic is
+# the rule for a failure here: everything needed to act, without opening
+# another file. `seed/heroes.c` already pays this price at 21 MB for one
+# program, and it pays it for the same reason.
+#
+# BLESSING IS DELIBERATE, and it is typed:
+#
+#     UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission
+#
+# CLAUDE.md §9 follows the bytes: a regeneration that turns red green has
+# its diff read and quoted in the commit body. This is the one suite in the
+# harness that writes into the repository, which is why the guards below
+# are not decoration.
+#
+# THE FOUR GUARDS, each one a way an oracle stops being one:
+#   - the FLOOR: fewer programs than the last measured count is a red
+#     harness, never a smaller green one;
+#   - COLLISION: two programs mapping to one blessed file would leave one
+#     of them uncompared and say nothing;
+#   - ORPHANS: a blessed file no program claims is a program renamed or
+#     deleted, and the bytes left behind are checked by nobody;
+#   - the SKIP FLOOR: a machine missing every C library says so instead of
+#     reporting green, as every other suite here does.
+
+use report
+use shell
+use strings
+
+constant STORE: str
+    "tests/emission"
+
+# The golden directories whose cases reach the emitter. `check/` and
+# `unsupported/` are deliberately absent and it is not laziness: those
+# programs are refused before the emitter runs, so they have no C at all,
+# and their agreement is what the `check` and `unsupported` suites pin.
+#
+# `fixedbugs/` IS here, and the reason is worth knowing: those cases are
+# wrong FFI bindings, and the thing that refuses them is **clang**, at
+# build time. `--emit-c` never calls clang, so all fourteen emit — measured
+# — and their C is exactly where the two compilers disagreed on a fixed
+# array. They carry no `.expected`, which is why this suite reads the
+# directory itself instead of `cases.collect`: the pairing invariant
+# belongs to the suites whose artifact is a snapshot.
+constant GROUPS: [str]
+    [
+        "emit"
+        "fixedbugs"
+        "ir"
+        "run"
+    ]
+
+constant EXAMPLES: str
+    "examples"
+
+# The two names an example's entry point takes: `main.hero`, and the
+# single-file form `whole.hero` that `examples/calculator/` carries.
+constant ENTRIES: [str]
+    [
+        "main"
+        "whole"
+    ]
+
+# Measured 2026-08-18: 127 golden cases (emit 6 · fixedbugs 14 · ir 20 ·
+# run 87) and 15 example programs — `main.hero` in fourteen directories and
+# `examples/calculator/whole.hero`. The floor is the real count rather than
+# a round number below it, for the reason `suite_golden.hero` gives: slack
+# in a floor is a case that may stop running.
+constant LEAST: i64
+    142
+
+# One program and the bytes it was blessed to emit.
+record Program
+    source: str
+    stored: str
+    label: str
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    programs = collect(scratch)?
+    return sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: shell.env("UPDATE_EMISSION") == "1", least: LEAST)
+
+# Every program in the repository that reaches the emitter, with the path
+# its blessed emission lives at.
+#
+# The stored name is the program's own path flattened — `run/loop.hero`
+# becomes `run-loop.c` — rather than a mirrored tree, because one flat
+# directory is one `find` and one listing to check for orphans. Flattening
+# can in principle collide, so the sweep asks; it does not assume.
+function collect(scratch: str) -> [Program]?
+    found: [Program] @ []
+    for group in GROUPS
+        for entry in shell.list_entries(scratch: scratch, dir: "tests/golden/" + group)?
+            if strings.ends_with(text: entry, suffix: ".hero")
+                stem = strings.base_name(path: strings.without_suffix(text: entry, suffix: ".hero"))
+                found @ found.push(Program(source: entry, stored: STORE + "/" + group + "-" + stem + ".c", label: group + "/" + stem))
+    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+        base = strings.base_name(path: dir)
+        for entry in ENTRIES
+            source = dir + "/" + entry + ".hero"
+            if !read_file(source).is_err()
+                found @ found.push(Program(source: source, stored: STORE + "/examples-" + base + "-" + entry + ".c", label: "examples/" + base + "/" + entry))
+    return ok(found)
+
+# The sweep itself, with the store, the program list and the floor as
+# parameters — so the tests at the bottom can run it over a tree of their
+# own instead of over the repository.
+function sweep(scratch: str, compiler: str, store: str, programs: [Program], update: bool, least: i64) -> report.Report?
+    r: report.Report @ report.empty()
+    if programs.len() < least
+        report.keep_failure(@r, label: "emission", detail: "  " + programs.len().to_str() + " programs, and there were " + least.to_str() + " — an oracle that quietly stops comparing is worse than no oracle")
+    seen: {str: str} @ {}
+    skipped: i64 @ 0
+    for one in programs
+        earlier = seen[one.stored]
+        if !earlier.is_err()
+            report.keep_failure(@r, label: "emission/" + one.label, detail: "  " + one.stored + " is claimed by " + earlier.must() + " as well — two programs, one blessed file, and one of the two would stop being compared")
+            continue
+        seen[one.stored] @ one.label
+        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(one.source) + " --emit-c")
+        if said.is_err()
+            report.keep_failure(@r, label: "emission/" + one.label, detail: "  cannot run the compiler on " + one.source)
+            continue
+        # THE EXIT CODE FIRST, because a divergence there is the louder
+        # finding — the differential's own lesson: three programs got C
+        # from the port that does not compile, and comparing only the bytes
+        # would have reported "one file missing" and buried the reason. Every
+        # program in the list above emits, measured, `fixedbugs/` included:
+        # `--emit-c` never calls clang, so a wrong FFI binding still has C.
+        if said.must().code != 0
+            if shell.machine_lacks_the_library(said.must().err)
+                skipped @ skipped + 1
+            else
+                blame: str @ "  " + one.source + " emits nothing: exit " + said.must().code.to_str() + "\n"
+                if said.must().code == 2
+                    blame @ blame + "  exit 2 is the compiler blaming ITSELF — it wrote C it could not compile\n"
+                report.keep_failure(@r, label: "emission/" + one.label, detail: blame + said.must().err)
+            continue
+        judge(@r, one: one, emitted: said.must().out, update: update)
+    orphans(@r, scratch: scratch, store: store, seen: seen)
+    if skipped > 0 && skipped * 3 >= programs.len()
+        report.keep_failure(@r, label: "emission", detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for a missing library — this machine is not comparing emissions")
+    return ok(r)
+
+# One program's emission against its blessed bytes — or, under
+# `UPDATE_EMISSION`, in place of them.
+function judge(@r: report.Report, one: Program, emitted: str, update: bool)
+    if update
+        wrote = write_file(path: one.stored, text: emitted)
+        if wrote.is_err()
+            report.keep_failure(@r, label: "emission/" + one.label, detail: "  cannot write " + one.stored)
+        else
+            report.keep_pass(@r)
+        return
+    blessed = read_file(one.stored)
+    if blessed.is_err()
+        report.keep_failure(@r, label: "emission/" + one.label, detail: "  nothing blessed at " + one.stored + " — a new program's emission is blessed on purpose:\n    UPDATE_EMISSION=1 heroes run tests/harness/main.hero -- <compiler> emission")
+        return
+    if blessed.must() != emitted
+        report.keep_failure(@r, label: "emission/" + one.label, detail: "  " + one.source + " no longer emits what it was blessed to emit — " + one.stored + "\n" + differences(blessed: blessed.must(), emitted: emitted))
+        return
+    report.keep_pass(@r)
+
+# A blessed file no program claims.
+#
+# This is the guard against the quietest failure of all: a case renamed,
+# and its old emission still sitting there being compared to nothing. The
+# harness reports it and does not delete it — removing bytes from the
+# repository is the author's act, not an instrument's.
+function orphans(@r: report.Report, scratch: str, store: str, seen: {str: str})
+    listing = shell.list_entries(scratch: scratch, dir: store)
+    if listing.is_err()
+        report.keep_failure(@r, label: "emission/store", detail: "  cannot list " + store)
+        return
+    stray: [str] @ []
+    for entry in listing.must()
+        if strings.ends_with(text: entry, suffix: ".c") && seen[entry].is_err()
+            stray @ stray.push("    " + entry)
+    if stray.len() > 0
+        report.keep_failure(@r, label: "emission/store", detail: "  a blessed emission no program claims — a renamed or deleted program leaves one behind, and it is then bytes nobody compares:\n" + stray.join("\n") + "\n  delete it in the same commit as the program, or bless the program that should own it")
+    else
+        report.keep_pass(@r)
+
+# The first three differing lines, side by side with their numbers — enough
+# to name the class without printing a megabyte of C.
+function differences(blessed: str, emitted: str) -> str
+    left = strings.lines(blessed)
+    right = strings.lines(emitted)
+    shown: [str] @ []
+    i: i64 @ 0
+    while i < left.len() && i < right.len() && shown.len() < 3
+        if left[i] != right[i]
+            shown @ shown.push("  line " + (i + 1).to_str() + ":\n    blessed: " + left[i] + "\n    now:     " + right[i])
+        i @ i + 1
+    if shown.len() == 0
+        return "  every line they share is identical, and they are not the same length: " + blessed.len().to_str() + " bytes blessed, " + emitted.len().to_str() + " now"
+    return shown.join("\n") + "\n  (" + left.len().to_str() + " lines blessed, " + right.len().to_str() + " now)"
+
+# A stand-in compiler that emits a fixed text on stdout, as
+# `suite_golden.stub` does — the suites are tested against a stub rather
+# than against the real binary, because a test that needed
+# ./target/debug/heroes would die on the day this harness matters most.
+function emitter(scratch: str, name: str, says: str) -> str?
+    path = scratch + "/" + name
+    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + "\nexit 0\n")?
+    made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))?
+    if made.code != 0
+        return fail("cannot_run", "cannot make " + path + " executable")
+    return ok(path)
+
+# A one-program store, ready to bless or to compare against.
+function one_program_tree(scratch: str, name: str) -> Program?
+    tree = scratch + "/" + name
+    shell.remove_tree(tree)?
+    shell.mkdir_all(tree)?
+    write_file(path: tree + "/x.hero", text: "function main()\n    print(1)\n")?
+    return ok(Program(source: tree + "/x.hero", stored: tree + "/x.c", label: "one/x"))
+
+constant EMITTED: str
+    "/* Generated by heroes 0.0.1 from x.hero. Do not edit. */\nint main(void) { return 0; }\n"
+
+test "an emission that matches its blessed bytes passes, and a changed one fails by line"
+    scratch = "build/harness-selftest"
+    one = one_program_tree(scratch: scratch, name: "emission-match")
+    assert !one.is_err()
+    assert !write_file(path: one.must().stored, text: EMITTED).is_err()
+    programs: [Program] = [one.must()]
+
+    same = emitter(scratch: scratch, name: "stub-emit-same.sh", says: EMITTED)
+    assert !same.is_err()
+    green = sweep(scratch: scratch, compiler: same.must(), store: scratch + "/emission-match", programs: programs, update: false, least: 1)
+    assert !green.is_err()
+    assert green.must().passed == 2
+    assert green.must().failed == 0
+
+    # One byte of the second line different: the report must name the line
+    # and show both sides, because after the archive there is no second
+    # compiler to ask what changed.
+    changed = emitter(scratch: scratch, name: "stub-emit-changed.sh", says: "/* Generated by heroes 0.0.1 from x.hero. Do not edit. */\nint main(void) { return 1; }\n")
+    assert !changed.is_err()
+    red = sweep(scratch: scratch, compiler: changed.must(), store: scratch + "/emission-match", programs: programs, update: false, least: 1)
+    assert !red.is_err()
+    assert red.must().failed == 1
+    assert strings.contains(text: red.must().failures[0], needle: "line 2:")
+    assert strings.contains(text: red.must().failures[0], needle: "return 1;")
+
+test "a program with nothing blessed says how to bless it, and blessing writes the bytes"
+    scratch = "build/harness-selftest"
+    one = one_program_tree(scratch: scratch, name: "emission-new")
+    assert !one.is_err()
+    programs: [Program] = [one.must()]
+    stub = emitter(scratch: scratch, name: "stub-emit-new.sh", says: EMITTED)
+    assert !stub.is_err()
+
+    red = sweep(scratch: scratch, compiler: stub.must(), store: scratch + "/emission-new", programs: programs, update: false, least: 1)
+    assert !red.is_err()
+    assert red.must().failed == 1
+    assert strings.contains(text: red.must().failures[0], needle: "UPDATE_EMISSION=1")
+
+    blessed = sweep(scratch: scratch, compiler: stub.must(), store: scratch + "/emission-new", programs: programs, update: true, least: 1)
+    assert !blessed.is_err()
+    assert blessed.must().failed == 0
+    assert read_file(one.must().stored).default("") == EMITTED
+
+test "a blessed file no program claims is reported, and so is a collision and a short list"
+    scratch = "build/harness-selftest"
+    one = one_program_tree(scratch: scratch, name: "emission-orphan")
+    assert !one.is_err()
+    assert !write_file(path: one.must().stored, text: EMITTED).is_err()
+    store = scratch + "/emission-orphan"
+    assert !write_file(path: store + "/gone.c", text: "/* the emission of a program that was renamed */\n").is_err()
+    stub = emitter(scratch: scratch, name: "stub-emit-orphan.sh", says: EMITTED)
+    assert !stub.is_err()
+    programs: [Program] = [one.must()]
+
+    got = sweep(scratch: scratch, compiler: stub.must(), store: store, programs: programs, update: false, least: 1)
+    assert !got.is_err()
+    assert got.must().failed == 1
+    assert strings.contains(text: got.must().failures[0], needle: "gone.c")
+
+    # Two programs, one blessed file: the second must be reported rather
+    # than compared, and the floor must fire on a list below its count.
+    twice: [Program] = [
+        one.must()
+        Program(source: one.must().source, stored: one.must().stored, label: "one/twin")
+    ]
+    clash = sweep(scratch: scratch, compiler: stub.must(), store: store, programs: twice, update: false, least: 3)
+    assert !clash.is_err()
+    assert strings.contains(text: clash.must().failures[0], needle: "2 programs, and there were 3")
+    assert strings.contains(text: clash.must().failures[1], needle: "claimed by one/x as well")
+
+test "two emissions of different lengths report the lengths rather than a line"
+    grown = differences(blessed: "a\nb\n", emitted: "a\nb\nc\n")
+    assert strings.contains(text: grown, needle: "not the same length")
+    assert strings.contains(text: grown, needle: "4 bytes blessed")
+    shifted = differences(blessed: "a\nb\n", emitted: "a\nz\n")
+    assert strings.contains(text: shifted, needle: "line 2:")

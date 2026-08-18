@@ -40,15 +40,20 @@
 #   surface       what a user types: exit codes, streams, flags, rendering
 #   special       the surface tests no table row can express
 #   layout        §11's per-file ceiling over selfhost/, tests excluded
+#   emission      every program's emitted C against the bytes two
+#                 compilers agreed on (M-bootstrap-archive step 1)
 #
-# Still in Rust, and each one is a step of this milestone: the
-# nothing: every suite the Rust harness carries has a successor here.
+# Nothing is left in Rust that this cannot ask. The last one to arrive was
+# `emission`, and it is the only suite here whose ancestor could not be
+# ported: `differential.rs` compares TWO compilers, so its oracle dies with
+# the bootstrap, and what survives is the bytes it blessed.
 
 use report
 use shell
 use suite_annotations
 use suite_corpus
 use suite_determinism
+use suite_emission
 use suite_fixes
 use suite_golden
 use suite_layout
@@ -135,6 +140,18 @@ function main()
             print("harness: the determinism suite could not run")
             exit(2)
         print("  determinism: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The blessed emissions: the differential's successor, and the one
+    # suite that can WRITE into the repository — under UPDATE_EMISSION=1
+    # and nothing else.
+    if only == "" || only == "emission"
+        got = suite_emission.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the emission suite could not run")
+            exit(2)
+        print("  emission: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
