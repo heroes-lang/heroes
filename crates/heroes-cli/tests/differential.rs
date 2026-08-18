@@ -104,12 +104,24 @@ fn build_the_port(root: &Path) -> Option<PathBuf> {
     // against**, and the reason is `selfhost/cli_io.hero`'s `extern "unistd.h"`
     // rather than anything here. Asked of the machine, not of a `cfg!` list, so the
     // day the port stops binding it this starts running instead of staying skipped
-    // for a reason nobody rechecks (`corpus.rs`'s rule for the same class).
+    // for a reason nobody rechecks.
+    //
+    // **The condition is the diagnostic's own code, and the first version of this
+    // line got that wrong** (CI, Windows x86-64, 2026-08-18). It matched clang's
+    // raw text — `"unistd.h"` and `"not found"` — and the Windows leg went red
+    // anyway, because the compiler does not hand clang's words through here: it
+    // *has* a diagnostic for exactly this, `error[ffi_missing_header]`, at exit 1
+    // on the author's line. `corpus.rs::machine_lacks_the_library` already asks it
+    // that way and has since M-program-corpus, so the idiom existed and this
+    // invented a worse one. A guess about another platform's message, where the
+    // project's own convention was one file away.
     let complaint = String::from_utf8_lossy(&built.stderr).into_owned();
-    if !built.status.success() && complaint.contains("unistd.h") && complaint.contains("not found")
+    if !built.status.success()
+        && (complaint.contains("error[ffi_missing_header]")
+            || complaint.contains("error[ffi_package]"))
     {
         eprintln!(
-            "SKIPPED: this platform has no <unistd.h>, which selfhost/cli_io.hero \
+            "SKIPPED: this machine does not have a header the compiler's own source \
              binds, so there is no self-hosted compiler here to differ from:\n{complaint}"
         );
         return None;
