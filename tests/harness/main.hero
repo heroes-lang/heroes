@@ -35,6 +35,7 @@
 #   fixes         `.fixed` — every certain fix applied, and it checks clean
 #   lines         every `#line` lands on a line the author wrote
 #   corpus        examples/ — real programs, tests and output, three ways
+#   warnings      the generated C compiles without a single warning
 #
 # Still in Rust, and each one is a step of this milestone: the
 # the record checks
@@ -49,6 +50,7 @@ use suite_determinism
 use suite_fixes
 use suite_golden
 use suite_lines
+use suite_warnings
 use suite_run
 
 constant DEFAULT_COMPILER: str
@@ -154,6 +156,15 @@ function main()
             print("harness: the corpus suite could not run")
             exit(2)
         print("  corpus: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "warnings"
+        got = suite_warnings.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the warnings gate could not run")
+            exit(2)
+        print("  warnings: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
