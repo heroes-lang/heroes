@@ -1,0 +1,83 @@
+# The net, in Heroes — the harness that replaces `cargo test` when the
+# Rust bootstrap is archived (M-harness-port; panel 085 R4).
+#
+# WHY THIS EXISTS. Everything that asks whether the compiler is right
+# lives in crates/heroes-cli/tests/*.rs today, and all of it dies with
+# `crates/`. Panel 085 measured what would be left: nothing runs
+# `selfhost/`'s own tests, no selfhost test touches a golden, and 208
+# golden cases go dark. This program is the replacement, and it is a
+# PROGRAM rather than a subcommand because §10's stopping rule refuses
+# the flag — two existing invocations (`heroes run`, and the compiler
+# under test) already compose to it.
+#
+# HOW TO RUN IT
+#
+#     heroes run tests/harness/main.hero -- <compiler> [suite]
+#
+# from the repository root, always: the goldens hold paths relative to the
+# root, so the working directory is part of what the expectations pin. The
+# compiler defaults to ./target/debug/heroes while the bootstrap is still
+# the reference; after the archive it is the self-hosted binary, and the
+# point of naming it on the command line is that the SAME harness can be
+# pointed at either one.
+#
+# Exit: 0 all green · 1 something failed. That is §10's contract for a
+# tool whose artifact is a verdict.
+#
+# WHAT IS HERE SO FAR (this milestone lands one suite per step)
+#   check/  — every diagnostics case, stderr and exit 1
+#
+# Still in Rust, and each one is a step of this milestone: ir/, emit/,
+# unsupported/, run/ at two optimisation levels, the `#~` annotation
+# invariant (golden.rs:344 — CLAUDE.md §9's one unforgeable check), the
+# certain-fix suite, the corpus, the double-emit determinism diff, the
+# record checks (milestones.rs) and the file-length check (layout.rs,
+# which is a rewrite rather than a port).
+
+use report
+use shell
+use suite_check
+
+constant DEFAULT_COMPILER: str
+    "./target/debug/heroes"
+
+constant SCRATCH: str
+    "build/harness"
+
+function main()
+    given = args()
+    compiler: str @ DEFAULT_COMPILER
+    if given.len() > 0
+        compiler @ given[0]
+    only: str @ ""
+    if given.len() > 1
+        only @ given[1]
+
+    # The scratch directory is where the captured streams and the
+    # directory listings land. It is under build/ because that is the one
+    # directory this project already treats as disposable.
+    made = shell.mkdir_all(SCRATCH)
+    if made.is_err()
+        print("harness: cannot create " + SCRATCH)
+        exit(2)
+    if !shell.exists(compiler)
+        print("harness: no compiler at " + compiler)
+        print("  build one first, or name it: heroes run tests/harness/main.hero -- <compiler>")
+        exit(2)
+
+    total: report.Report @ report.empty()
+    ran: i64 @ 0
+
+    if only == "" || only == "check"
+        got = suite_check.run_all(scratch: SCRATCH, compiler: compiler, dir: "tests/golden/check")
+        if got.is_err()
+            print("harness: the check/ suite could not run")
+            exit(2)
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if ran == 0
+        print("harness: no suite named " + only)
+        exit(2)
+    if !report.verdict(total, "harness")
+        exit(1)
