@@ -318,8 +318,12 @@ it once: it read *"the observed mean of +30 tokens per amendment, so 4096 binds 
 amendments — a threshold that fires after five dozen panels is not an instrument"*, and the live
 mean is **roughly twice that** (panel 046, measured from the ledger). The ceiling is therefore about
 twenty amendments away rather than sixty, and the argument this paragraph makes is weaker than it
-was written to be. The live figures are the `SPEC_TOKENS` ledger in
-`crates/heroes/src/measure/gate.rs`, which moves in the same commit as the spec; read them there. Two checks are owed, both enforceable at
+was written to be. The live figures are two artifacts rather than one, and the split is
+panel 086's (2026-08-19, at the archive): the **history** is `docs/measurements/010-spec-budget-ledger.md`,
+one row per amendment with what it cost and what paid for it, moved verbatim out of the bootstrap
+before `crates/` was archived; the **figure** is `SPEC_TOKENS` in `tests/harness/suite_spec.hero`,
+which `heroes measure` re-derives and compares on every run, and which now also checks the ledger's
+newest row and its row count against itself. Read the history there and trust the figure here. Two checks are owed, both enforceable at
 2231 rather than at the ceiling, and both are queued rather than adopted here because they are
 architecture (CLAUDE.md §4): a **delta gate**, failing when a commit's spec delta exceeds ~+50 tokens
 without a named removal or a registered prediction — level-independent, so it survives the next
@@ -346,8 +350,13 @@ already moved once: over the document's first seven amendments the named-removal
 **zero** removals (2026-08-04, panel 024) — and that sentence stood here, unqualified, long after it
 stopped being true. It subtracts now, in a minority of sittings; the branch that has produced
 **nothing** is the registered prediction, which is what panel 046 repaired. No count is restated in
-this paragraph on purpose: the ledger in `crates/heroes/src/measure/gate.rs` carries them, moves in
-the same commit as the spec, and a figure that lives in one place cannot die in another.
+this paragraph on purpose: `docs/measurements/010-spec-budget-ledger.md` carries them, it moves in
+the same commit as the spec, and a figure that lives in one place cannot die in another. **Panel 086
+narrowed that last clause rather than repealing it** (2026-08-19): its subject is *this paragraph* —
+undated, unchecked prose — so the rule it states is that **a number may live in a second place only
+if it is checked or dated**. A ledger row is dated. `SPEC_TOKENS` in
+`tests/harness/suite_spec.hero` is checked, three ways, by the harness the archive left standing.
+Prose is neither, which is why none appears here.
 
 Historical calibration: Wirth's **Oberon report** is sixteen pages, and an entire operating system
 was written in Oberon. That is the right order of magnitude for one person.
@@ -1346,7 +1355,13 @@ m = { "mario": 30, "anna": 25 }
   Port note, and it now cuts the other way: the bootstrap leans on `BTreeMap`'s sorted order
   wherever a walk reaches something a test or a reader can see. Every such walk carries
   `// ORDER:` at the write site — the marker names the sort key and what observes the order —
-  and the inventory is `grep -rn "// ORDER:" crates/`, kept out of prose deliberately: this
+  and the inventory is `grep -rn "ORDER:" selfhost/` — the marker lost its `//` with the port and the
+  tree it lives in changed at the archive (panel 086 R4). **The repointing is not the whole story and
+  the numbers are the reason**: measured 2026-08-19 by two seats independently, `# ORDER:` marks
+  **5 files / 6 occurrences** in `selfhost/` against **10 files / 13** in the bootstrap, and four
+  marks there — `ir/print.rs`, `emit/{descriptor_set,typedefs_generated,typedefs}.rs` — have no
+  marked counterpart in the port. So the live inventory under-reports until those are marked, which
+  is `SCHEDULED.md`'s item rather than a sentence's problem. Kept out of prose deliberately: this
   note once said *"exactly one place, `types/holes.rs`"*, and the tree had moved (the sweep of
   2026-08-15 found thirteen; panel 065). The port owes each mark an explicit `sort`, and a
   missing one breaks two different nets: a walk into the emitted C breaks the
