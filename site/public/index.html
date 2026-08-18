@@ -205,19 +205,14 @@ we can be heroes</code></pre>
     form, which is how one person finishes a compiler.
   </p>
   <p>
-    Memory is managed without a collector. Every value behaves as a copy, with
-    reference counting and copy-on-write underneath: the runtime copies only
-    when something is written and only if somebody else is holding the same
-    data. Because a reference cannot be stored anywhere, cycles cannot be
-    built, so reference counting cannot leak: no garbage collector, no cycle
-    collector, no <code>weak</code> annotations, no pause.
-  </p>
-  <p>
-    And a program must not segfault or corrupt memory, which is treated as a
-    goal of the language rather than as a quality of the implementation.
-    Arithmetic overflow, an index past the end, a division by zero: each one is
-    a deterministic abort with a message rather than undefined behaviour, at
-    every integer width. <a href="why.html">How all three work, in full →</a>
+    Memory is managed without a collector: every value behaves as a copy, with
+    reference counting and copy-on-write underneath. Because a reference cannot
+    be stored anywhere, cycles cannot be built, so the counting cannot leak. No
+    garbage collector, no <code>weak</code> annotations, no pause. And a
+    program must not segfault or corrupt memory, which is a goal of the
+    language rather than a quality of its implementation: overflow, an index
+    past the end, a division by zero, each is a deterministic abort rather than
+    undefined behaviour. <a href="why.html">All three, in full →</a>
   </p>
 
   <h2>The claim <span class="nod">· quicksand, avoided ·</span></h2>
