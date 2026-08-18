@@ -7,7 +7,7 @@
 # ceiling had one live enforcer, and it was `cfg(test)` inside a crate about
 # to be archived.
 #
-# WHY THE SPEC IS WORTH SIX CHECKS. It is not documentation: §1.6 makes it
+# WHY THE SPEC IS WORTH SEVEN CHECKS. It is not documentation: §1.6 makes it
 # **the prompt** — the whole context a model writing Heroes ever has. So a
 # rule the compiler enforces and the spec omits is not terseness, it is a
 # wrong briefing, and this project shipped one for four milestones: panel 013
@@ -18,6 +18,9 @@
 #   budget      the spec measures what the record says, and so does the
 #               reserved-word registry — the number moves only in a commit
 #               that says why;
+#   ledger      the record of every amendment agrees with the pin, three ways:
+#               its row count, its newest figure, and today's measurement
+#               (panel 086 R2 — the check the ledger never had);
 #   headroom    the ceiling still has room for what is mortgaged against it;
 #   names       every name the compiler reserves appears in the spec, because
 #               a name a model cannot see is a name it will redeclare;
@@ -45,11 +48,24 @@ constant SPEC: str
 constant REGISTRY: str
     "spec/reserved-words.md"
 
-# design.md §1.6's ledger, as a number the harness can check. The ledger
-# itself — one row per amendment, with what it cost and what paid for it —
-# is `crates/heroes/src/measure/gate.rs`'s doc comment, and it is a record:
-# CLAUDE.md §14 does not rewrite one, so it moves rather than being restated
-# here (M-bootstrap-archive, the design.md amendment).
+# The ledger — one row per spec amendment, with what it cost and what paid for
+# it. It lived in `crates/heroes/src/measure/gate.rs`'s doc comment until panel
+# 086 moved it here, verbatim, ahead of the archive: `docs/measurements/` is the
+# one candidate directory that is both on CLAUDE.md §14's never-rewritten list
+# and already outside `suite_records.hero`'s walk.
+constant LEDGER: str
+    "docs/measurements/010-spec-budget-ledger.md"
+
+# Measured 2026-08-19: 38 rows. The count is pinned for the reason the alias
+# table's is — it is the tripwire that makes a SILENTLY DROPPED row fail, which
+# comparing the newest row alone would not.
+constant LEDGER_ROWS: i64
+    38
+
+# design.md §1.6's figure, pinned — the number `heroes measure` computes from the
+# spec, restated here because something re-derives and compares it on every run.
+# The HISTORY is the ledger above (`docs/measurements/010`), and `ledger` below is
+# what keeps the two from disagreeing.
 #
 # **Measured 2026-08-18, by both compilers, on this spec.** A spec amendment
 # turns this red, and the only way to green is to write the new number into
@@ -109,6 +125,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         report.keep_failure(@r, label: "spec", detail: "  cannot read " + SPEC)
         return ok(r)
     budget(@r, scratch: scratch, compiler: compiler)
+    ledger(@r, scratch: scratch, compiler: compiler)
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
     refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
     named(@r, spec: text.must(), reserved: reserved)
@@ -139,6 +156,61 @@ function budget(@r: report.Report, scratch: str, compiler: str)
         report.keep_failure(@r, label: "spec/headroom", detail: "  the spec plus the FFI floor is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " against the " + CEILING.to_str() + " ceiling — what is mortgaged no longer fits")
     else
         report.keep_pass(@r)
+
+# THE LOCK (panel 086 R2). Three numbers must agree: the record's row count and
+# `LEDGER_ROWS`, the newest row's figure and `SPEC_TOKENS`, and `SPEC_TOKENS` and
+# what `heroes measure` reports today.
+#
+# **This check is what the ledger has never had.** Its only coupling to the
+# enforced constant was ADJACENCY — the newest row sat two lines above
+# `pub const SPEC_TOKENS` — and adjacency is a habit, not a mechanism. Two seats
+# of panel 086 named the same hole independently, and the warden supplied the base
+# rate for what habits do here: `REGISTRY_TOKENS` drifted +85 across eight
+# milestones with no commit naming a delta, and one ledger row stood false for
+# 6h46m. The rule the sitting adopted: a number may live in a second place only if
+# it is checked or dated — a row is dated, a pin is checked, and this is what
+# checks the pin against the row.
+function ledger(@r: report.Report, scratch: str, compiler: str)
+    text = read_file(LEDGER)
+    if text.is_err()
+        report.keep_failure(@r, label: "spec/ledger", detail: "  cannot read " + LEDGER + " — the ledger is the record of every spec amendment, and panel 086 R1 put it there")
+        return
+    figures = ledger_figures(text.must())
+    if figures.len() != LEDGER_ROWS
+        report.keep_failure(@r, label: "spec/ledger", detail: "  " + LEDGER + " has " + figures.len().to_str() + " rows and the record says " + LEDGER_ROWS.to_str() + " — a row that vanishes takes an amendment's payment with it")
+        return
+    newest = figures[figures.len() - 1]
+    if newest != SPEC_TOKENS
+        report.keep_failure(@r, label: "spec/ledger", detail: "  the newest ledger row says " + newest.to_str() + " and SPEC_TOKENS says " + SPEC_TOKENS.to_str() + ".\n  These are the same number in two places, one dated and one checked: an\n  amendment moved one of them and not the other. Fix the one that is wrong in\n  the commit that made it wrong — " + LEDGER + " and this file.")
+        return
+    measured = maximum_of(scratch: scratch, compiler: compiler, path: SPEC)
+    if measured.is_err()
+        report.keep_failure(@r, label: "spec/ledger", detail: "  cannot measure " + SPEC + " — " + why(measured))
+        return
+    if measured.must() != newest
+        report.keep_failure(@r, label: "spec/ledger", detail: "  the ledger's newest row says " + newest.to_str() + " and the compiler measures " + measured.must().to_str() + " — the record and the document disagree")
+        return
+    report.keep_pass(@r)
+
+# Every ledger row's figure, in file order — the newest last.
+#
+# A row is a line opening `| ` whose FIRST CELL IS A NUMBER, which is a fact about
+# the line in hand rather than a premise about the table's shape: the header row
+# (`| value | when | …`) and the `|---|` separator are excluded because their
+# first cell is not a number, not because they are counted and subtracted.
+function ledger_figures(text: str) -> [i64]
+    found: [i64] @ []
+    for row in strings.lines(text)
+        if !strings.starts_with(text: row, prefix: "| ")
+            continue
+        rest = strings.without_prefix(text: row, prefix: "| ")
+        at = strings.index_of(text: rest, needle: " |")
+        if at.is_err()
+            continue
+        value = strings.to_number(strings.trimmed(rest.slice(from: 0, to: at.must())))
+        if !value.is_err()
+            found @ found.push(value.must())
+    return found
 
 # Why a measurement could not be taken — the compiler's own words, which is
 # what tells a reader whether the tables are missing or the tool is.
@@ -295,6 +367,26 @@ function advance_past(text: str, from: i64) -> i64
             seen @ seen + 1
         i @ i + 1
     return i - from
+
+test "the ledger's rows are read, and only the rows"
+    figures = ledger_figures("| value | when | what moved it |\n|---|---|---|\n| 2231 | panel 023 | the first |\n| 3512 | panel 084 | the newest |\n")
+    assert figures == [2231, 3512]
+    # The real record, which is what the check runs against.
+    real = read_file(LEDGER)
+    assert !real.is_err()
+    rows = ledger_figures(real.must())
+    assert rows.len() == LEDGER_ROWS
+    assert rows[rows.len() - 1] == SPEC_TOKENS
+
+test "the lock fires when the record and the pin disagree"
+    scratch = "build/harness-selftest"
+    assert !shell.mkdir_all(scratch).is_err()
+    # A corrupted newest row — the shape panel 086's warden predicts: 7 passed,
+    # 1 failed, and the failure prints both numbers.
+    figures = ledger_figures("| 2231 | panel 023 | first |\n| 9999 | panel 084 | newest |\n")
+    assert figures[figures.len() - 1] != SPEC_TOKENS
+    # A dropped row: the count guard, which comparing the newest alone misses.
+    assert ledger_figures("| 2231 | panel 023 | only |\n").len() != LEDGER_ROWS
 
 test "the compiler's two lists are read out of its own source"
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")

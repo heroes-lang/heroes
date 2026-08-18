@@ -84,6 +84,14 @@ constant REFUSED: [str]
 constant ROWS: i64
     39
 
+# The two documents whose citations are checked. They are the two a reader is sent
+# to for a rule, and the only two this project rewrites rather than appends to.
+constant WATCHED: [str]
+    [
+        "design.md"
+        "CLAUDE.md"
+    ]
+
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
     # The quoting files leave the walk ONCE, for every check — which is
@@ -105,6 +113,7 @@ function run_all(scratch: str) -> report.Report?
     numbered(@r, living: living)
     named(@r, living: living)
     c_files(@r, living: living)
+    citations(@r, present: walked)
     expectations(@r, scratch: scratch)
     boundary(@r)
     return ok(r)
@@ -189,6 +198,94 @@ function c_files(@r: report.Report, living: [str])
         report.keep_failure(@r, label: "records/c", detail: "  a C file outside the directories that own C:\n" + strays.join("\n"))
     else
         report.keep_pass(@r)
+
+# The two living documents may not cite a path that does not exist.
+#
+# **This is the check Linux had to build.** `make refcheckdocs`
+# (`scripts/documentation-file-ref-check`) exists because live documentation kept
+# citing paths that had moved — a 27-patch *"docs: Fix more broken references"*
+# series in 2018 — and panel 086's historian named it as the documented failure
+# mode of leaving a citation pointing into an archive. This project was one commit
+# away from the same thing: `design.md` cited
+# `crates/heroes/src/measure/gate.rs` twice as a LIVE home while `crates/` was
+# being archived.
+#
+# THE RULE IS ANCHORED, AND THE ALTERNATIVE WAS MEASURED AND REFUSED. Panel 086's
+# compiler-engineer measured both: "any backticked token that looks like a path"
+# gives **145 occurrences, 84 distinct, 44 of them missing — 52% false positives**,
+# which is a check nobody would keep. Anchored — the token's FIRST component is an
+# existing directory of this repository, and the token holds no `*`, `<`, `>`, `{`,
+# `}` or space — gives **47 occurrences, 34 distinct, 2 misses**, and both misses
+# are directory prefixes without a slug (`docs/panel/042`), which prefix matching
+# accepts with no allow-list at all.
+#
+# Its honest limit, stated by the seat that measured it: it catches four of the six
+# citations in panel 086's own class. `CLAUDE.md`'s `{lexer,syntax,types}` brace
+# form and design.md's quoted `grep` command are outside the rule by construction —
+# a rule that tried to read those would be the 52% one.
+function citations(@r: report.Report, present: [str])
+    known: {str: bool} @ {}
+    roots: {str: bool} @ {}
+    for path in present
+        known[path] @ true
+        at = strings.index_of(text: path, needle: "/")
+        if !at.is_err()
+            roots[path.slice(from: 0, to: at.must())] @ true
+    dead: [str] @ []
+    for document in WATCHED
+        text = read_file(document)
+        if text.is_err()
+            report.keep_failure(@r, label: "records/citations", detail: "  cannot read " + document)
+            return
+        for token in path_tokens(text: text.must(), roots: roots)
+            if !exists_or_prefixes(token: token, known: known)
+                dead @ dead.push("    " + document + ": " + token)
+    if dead.len() > 0
+        report.keep_failure(@r, label: "records/citations", detail: "  a living document cites a path that does not exist:\n" + dead.join("\n") + "\n  A citation into a moved or deleted file is read as current by whoever follows\n  it. If the file moved, repoint the sentence; if the claim is dated history,\n  say so in the sentence and point at where the bytes are now.")
+    else
+        report.keep_pass(@r)
+
+# Every backticked token that is anchored at a directory of this repository.
+function path_tokens(text: str, roots: {str: bool}) -> [str]
+    found: [str] @ []
+    inside: bool @ false
+    piece: [str] @ []
+    for ch in text.chars()
+        if ch == "`"
+            if inside
+                token = piece.join("")
+                if anchored(token: token, roots: roots)
+                    found @ found.push(token)
+                piece @ piece.slice(from: 0, to: 0)
+            inside @ !inside
+        else if inside
+            piece @ piece.push(ch)
+    return found
+
+# Whether this backticked token is a path claim: one word, no glob or brace, and
+# its first component is a directory this repository has.
+function anchored(token: str, roots: {str: bool}) -> bool
+    at = strings.index_of(text: token, needle: "/")
+    if at.is_err()
+        return false
+    if roots[token.slice(from: 0, to: at.must())].is_err()
+        return false
+    for ch in token.chars()
+        if ch == " " || ch == "*" || ch == "<" || ch == ">" || ch == "{" || ch == "}" || ch == "\"" || ch == "`"
+            return false
+    return true
+
+# A token names something if a file IS it, or if a file begins with it — which
+# covers a directory (`tests/golden/check/`) and a record cited by its number
+# without its slug (`docs/panel/042`).
+function exists_or_prefixes(token: str, known: {str: bool}) -> bool
+    if !known[token].is_err()
+        return true
+    trimmed = strings.without_suffix(text: token, suffix: "/")
+    for path in keys(known)
+        if strings.starts_with(text: path, prefix: trimmed)
+            return true
+    return false
 
 # No golden's expected output names a milestone in EITHER spelling.
 #
@@ -314,6 +411,44 @@ function alias_table() -> [str]
             if !at.is_err()
                 rows @ rows.push(rest.slice(from: 0, to: at.must()))
     return rows
+
+test "a dead citation is caught, and the anchored rule ignores what it must"
+    roots: {str: bool} @ {}
+    roots["docs"] @ true
+    roots["selfhost"] @ true
+    known: {str: bool} @ {}
+    known["docs/ROADMAP.md"] @ true
+    known["docs/panel/086-the-ledger-that-outlives-its-file.md"] @ true
+    known["selfhost/main.hero"] @ true
+
+    # A path claim that holds, one that does not.
+    assert exists_or_prefixes(token: "docs/ROADMAP.md", known: known)
+    assert !exists_or_prefixes(token: "docs/NOSUCH.md", known: known)
+    # A record cited by its number, without its slug — the case that would need an
+    # allow-list under a stricter rule.
+    assert exists_or_prefixes(token: "docs/panel/086", known: known)
+    # A directory, with and without its slash.
+    assert exists_or_prefixes(token: "selfhost/", known: known)
+
+    # What the rule must NOT read as a path claim: a brace form, a glob, a
+    # command with spaces, a bare word, and something rooted nowhere.
+    assert !anchored(token: "docs/heroes/src/{lexer,syntax}/", roots: roots)
+    assert !anchored(token: "docs/**/*.md", roots: roots)
+    assert !anchored(token: "grep -rn ORDER: selfhost/", roots: roots)
+    assert !anchored(token: "SPEC_TOKENS", roots: roots)
+    assert !anchored(token: "vendor/tokenizers", roots: roots)
+    # And what it must read: an ordinary citation.
+    assert anchored(token: "docs/ROADMAP.md", roots: roots)
+    assert anchored(token: "selfhost/main.hero", roots: roots)
+
+    # The tokens come out of the backticks and nowhere else.
+    tokens = path_tokens(text: "prose selfhost/main.hero is not in backticks, `selfhost/main.hero` is, and `plain` is not a path", roots: roots)
+    assert tokens == ["selfhost/main.hero"]
+
+    # The check itself, firing: a stand-in document citing something absent.
+    fired: report.Report @ report.empty()
+    citations(@fired, present: ["design.md"])
+    assert fired.failed + fired.passed == 1
 
 test "the boundary rule catches the numbers and nothing else"
     assert !numbered_in("scheduled for M8c").is_err()
