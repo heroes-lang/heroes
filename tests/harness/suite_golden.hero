@@ -32,6 +32,7 @@
 use cases
 use report
 use shell
+use strings
 
 # One suite, as data.
 record Shape
@@ -82,7 +83,7 @@ function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
             said = shell.run(scratch: scratch, command: line)
             if said.is_err()
                 report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot run the compiler on " + item.source)
-            else if shape.library_skip && said.must().err != expectation.must() && machine_lacks_the_library(said.must().err)
+            else if shape.library_skip && said.must().err != expectation.must() && shell.machine_lacks_the_library(said.must().err)
                 # The comparison comes FIRST and the skip only applies
                 # where the two disagree: a case whose expectation IS a
                 # missing-library diagnostic is testing exactly that, and
@@ -113,31 +114,6 @@ function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: st
         report.keep_failure(@r, label: label, detail: "  " + item.source + " must exit " + shape.want_code.to_str() + " — it exited " + said.code.to_str())
         return
     report.keep_pass(@r)
-
-# Whether a refusal is this machine's answer rather than the compiler's.
-# Two codes, both of them about a library that is not installed
-# (golden.rs:939 — raylib on the Windows leg, which has clang and no
-# pkg-config).
-function machine_lacks_the_library(text: str) -> bool
-    return contains(text: text, needle: "error[ffi_package]") || contains(text: text, needle: "error[ffi_missing_header]")
-
-function contains(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    start: i64 @ 0
-    while start + needle.len() <= text.len()
-        i: i64 @ 0
-        hit: bool @ true
-        while i < needle.len()
-            if text[start + i] != needle[i]
-                hit @ false
-                i @ needle.len()
-            else
-                i @ i + 1
-        if hit
-            return true
-        start @ start + 1
-    return false
 
 # A stand-in compiler: one shell script that says what the caller wants,
 # on the stream the caller wants, and ends how the caller wants. The
@@ -254,12 +230,4 @@ test "a machine missing the library skips, but a machine missing every library f
     # One case, one skip: that is 100% skipped, which the floor refuses.
     assert got.must().passed == 0
     assert got.must().failed == 1
-    assert contains(text: got.must().failures[0], needle: "not testing the refusals")
-
-test "contains finds a needle at every position and refuses a longer one"
-    assert contains(text: "abc", needle: "a")
-    assert contains(text: "abc", needle: "c")
-    assert contains(text: "abc", needle: "abc")
-    assert !contains(text: "abc", needle: "abcd")
-    assert !contains(text: "abc", needle: "ac")
-    assert contains(text: "aab", needle: "ab")
+    assert strings.contains(text: got.must().failures[0], needle: "not testing the refusals")

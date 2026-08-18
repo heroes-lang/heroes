@@ -85,7 +85,16 @@ function run(scratch: str, command: str) -> Run?
     # directory", exit 1). The subshell takes the redirection for the
     # whole line, in the working directory the harness started in, and
     # `exit 3` inside it still answers 3.
-    line = "( " + command + " ) > " + sq(out_path) + " 2> " + sq(err_path)
+    # **`exec 2>/dev/null` silences the SHELL, not the program.** A child
+    # killed by a signal makes sh announce it — `Abort trap: 6` — on its
+    # own stderr, which is the harness's, and `run/` has thirteen cases
+    # whose whole point is to abort: a green run printed thirteen lines
+    # that looked like failures. Measured: with the guard, stdout and
+    # stderr of the program are byte-identical, the status is still 134,
+    # and a command that does not exist still answers 127. The shell's own
+    # words are the only thing lost, and the harness reports the status
+    # rather than those words.
+    line = "exec 2>/dev/null; ( " + command + " ) > " + sq(out_path) + " 2> " + sq(err_path)
     raw = system(command: line.cstr()).to_i64().must()
     if raw < 0
         return fail("cannot_run", "the shell refused to run: " + command)
@@ -120,6 +129,19 @@ function env(name: str) -> str
     if got == nullptr
         return ""
     return got.to_str()
+
+# Whether a refusal is this MACHINE's answer rather than the compiler's.
+#
+# Two codes, both about a library that is not installed (golden.rs:939 —
+# raylib on the Windows leg, which carries clang and no pkg-config). It
+# lives here rather than in a suite because two suites ask it, and
+# because the question is about the machine, which is what this module
+# is: `unsupported/` may skip such a case, and `run/` may skip building
+# one. Every caller that skips must also floor its skips — a machine
+# missing every library would otherwise report green having tested
+# nothing.
+function machine_lacks_the_library(text: str) -> bool
+    return strings.contains(text: text, needle: "error[ffi_package]") || strings.contains(text: text, needle: "error[ffi_missing_header]")
 
 function exists(path: str) -> bool
     return status_of(raw: system(command: ("test -e " + sq(path)).cstr()).to_i64().must()) == 0

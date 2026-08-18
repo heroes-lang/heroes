@@ -91,6 +91,97 @@ function trimmed(text: str) -> str
 function is_space(byte: u8) -> bool
     return byte == 32 || byte == 9 || byte == 10 || byte == 13
 
+# Whether `needle` occurs anywhere in `text`, compared as bytes.
+#
+# Rust hands this out as `str::contains`; §1.11 says Heroes has no
+# standard library, so here it is. Byte comparison again, and for the
+# same reason as everything else in this file — a diagnostic's text is
+# UTF-8 and the needles are ASCII, so nothing may slice.
+function contains(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    start: i64 @ 0
+    while start + needle.len() <= text.len()
+        i: i64 @ 0
+        hit: bool @ true
+        while i < needle.len()
+            if text[start + i] != needle[i]
+                hit @ false
+                i @ needle.len()
+            else
+                i @ i + 1
+        if hit
+            return true
+        start @ start + 1
+    return false
+
+# Whether `text` starts with `prefix`, and the rest of it if so.
+function starts_with(text: str, prefix: str) -> bool
+    if prefix.len() > text.len()
+        return false
+    i: i64 @ 0
+    while i < prefix.len()
+        if text[i] != prefix[i]
+            return false
+        i @ i + 1
+    return true
+
+function without_prefix(text: str, prefix: str) -> str
+    if !starts_with(text: text, prefix: prefix)
+        return text
+    return text.slice(from: prefix.len(), to: text.len())
+
+# A decimal integer, or an error naming what was found instead.
+#
+# `to_i64` takes an integer or a float and NOT a `str` (measured: it is
+# `error[bad_operand]`), so an expectation's `!exit: 3` is parsed here.
+# The failure is a value rather than an abort because the text comes from
+# a file somebody edits: `!exit: three` is a broken case, and a broken
+# case must be reported by name, not by killing the harness.
+function to_number(text: str) -> i64?
+    body: str @ text
+    negative: bool @ false
+    if starts_with(text: text, prefix: "-")
+        negative @ true
+        body @ without_prefix(text: text, prefix: "-")
+    if body.len() == 0
+        return fail("not_a_number", "`" + text + "` has no digits")
+    value: i64 @ 0
+    i: i64 @ 0
+    while i < body.len()
+        digit = body[i]
+        if digit < 48 || digit > 57
+            return fail("not_a_number", "`" + text + "` is not a decimal integer")
+        value @ value * 10 + (digit - 48).to_i64().must()
+        i @ i + 1
+    if negative
+        return ok(0 - value)
+    return ok(value)
+
+test "contains finds a needle at every position and refuses a longer one"
+    assert contains(text: "abc", needle: "a")
+    assert contains(text: "abc", needle: "c")
+    assert contains(text: "abc", needle: "abc")
+    assert !contains(text: "abc", needle: "abcd")
+    assert !contains(text: "abc", needle: "ac")
+    assert contains(text: "aab", needle: "ab")
+
+test "starts_with and without_prefix"
+    assert starts_with(text: "!exit: 3", prefix: "!exit: ")
+    assert !starts_with(text: "!exit", prefix: "!exit: ")
+    assert without_prefix(text: "!exit: 3", prefix: "!exit: ") == "3"
+    assert without_prefix(text: "nope", prefix: "!exit: ") == "nope"
+
+test "to_number reads what a case can hold, and names what it cannot"
+    assert to_number("0").must() == 0
+    assert to_number("42").must() == 42
+    assert to_number("-7").must() == -7
+    assert to_number("134").must() == 134
+    assert to_number("").is_err()
+    assert to_number("-").is_err()
+    assert to_number("3x").is_err()
+    assert to_number("three").is_err()
+
 test "ends_with and without_suffix agree on the harness's own suffixes"
     assert ends_with(text: "a/b/foo.hero", suffix: ".hero")
     assert !ends_with(text: "a/b/foo.hero", suffix: ".expected")

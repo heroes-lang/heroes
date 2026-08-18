@@ -128,3 +128,18 @@ The lesson is the ordinary one and it paid immediately: the harness's own tests
 found the harness's own defect within a minute of existing. A capture that
 silently loses half its output would have made every later suite report
 mismatches whose cause was in this file.
+
+**Thirteen lines that looked like failures in a green run** (step 4). `run/` has
+thirteen cases whose whole point is to abort, and a shell announces a child
+killed by a signal — `Abort trap: 6` — on its **own** stderr, which is the
+harness's. So a run reporting `87 passed, 0 failed` printed thirteen alarming
+lines above the verdict. `exec 2>/dev/null;` at the head of the command line
+silences the shell without touching the program: measured, the program's stdout
+and stderr come back byte-identical, the status is still 134, and a command that
+does not exist still answers 127. What is lost is the shell's own words, and the
+harness reports the status rather than those words.
+
+This one is worth keeping in the record precisely because it is *not* a
+correctness defect. It is an instrument that shouts about a healthy patient, and
+panel 070's lesson — a hardcoded 134 that reported a SIGSEGV as an abort — is
+that an instrument nobody trusts is one nobody reads.
