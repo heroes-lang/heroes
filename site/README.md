@@ -19,6 +19,7 @@ five-seat review panel as a directory-scoped skill.
 | `selfhost.html` | the fixpoint: the hash, what it took, and what it found |
 | `zen.html` | `heroes this`, quoted verbatim — the twenty lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation |
 | `panel.html` | how a change is decided: the five seats and their differentiated briefs, the four vetoes, the historian's search obligation, the borrowed languages, and who is building this (author request 2026-08-18) |
+| `author.html` | Giuseppe Arici, the long bio in his own voice, the book, and what the book has to do with the language. Governed by § The author and the book below, which is not optional copy guidance |
 | `log.html` | the build log, one postcard per milestone, newest first |
 | `docs/` | the documentation: landing + chapters |
 | `style.css` | the only cross-page asset |
@@ -33,9 +34,13 @@ invisibly — one page's dark mode goes stale and nothing fails. The bolt stays
 inline SVG in every page, because it is markup.
 
 **The nav is duplicated in each page's markup**, which is the one repetition the
-no-JavaScript rule forces. Eight items in a fixed order — Why Heroes · Docs ·
-Errors · Self-hosted · Zen · Panel · Log · GitHub — and the current page marks
-itself `class="here"`. The current page is marked twice, in colour **and** with a
+no-JavaScript rule forces. Nine items in a fixed order — Why Heroes · Docs ·
+Errors · Self-hosted · Zen · Panel · Author · Log · GitHub — and the current page
+marks itself `class="here"`. At nine items the row no longer fits a phone, so
+under 700px the list becomes **one horizontally scrolling line** with the mark
+and GitHub on the row above it: two rows of sticky chrome instead of three, no
+item dropped, and the item clipped at the right edge is the affordance. Adding a
+tenth item is the point where this stops working and something has to give. The current page is marked twice, in colour **and** with a
 rule under it: colour alone is a signal a large minority of readers receive less
 of. Adding a page means editing that block everywhere; if that ever
 gets painful, the answer is a generator behind a `heroes` subcommand, not a
@@ -74,7 +79,8 @@ of the process's few remaining hard stops.
 - Nods spent so far: sound and vision · fashion · quicksand, avoided ·
   changes · station to station · rebel rebel · always crashing in the same
   car · a new career in a new town · oh! you pretty things · hunky dory ·
-  under pressure · five years · look back in anger · absolute beginners.
+  under pressure · five years · look back in anger · absolute beginners ·
+  moonage daydream · lady stardust.
 - Ideas bank, still unspent: **M-selfhost-fixpoint's bootstrap retirement →
   "Ashes to Ashes"**; a 1.0 → "Golden Years". The fixpoint itself landed with
   M-selfhost-port and did *not* spend "Ashes to Ashes" — the retirement is a
@@ -129,6 +135,49 @@ a layout bug that is not there. Load the page in a **390px iframe** inside a
 wider wrapper instead. Light mode has no headless flag either: extract the
 `prefers-color-scheme: light` token block into an override stylesheet and load
 it after `style.css`.
+
+## The author and the book — the rules this copy is under
+
+From the author's own brief, 2026-08-18. These are not style preferences, they
+are constraints on what the site may say, and every one of them is a way the
+copy could be wrong later:
+
+1. **One book, not two.** *Heroes of code* (Italian original: *Gli eroi del
+   codice*) is a history of programming languages whose *form* is a dream
+   journey with Bowie as the guide. Never write copy implying a Bowie book and a
+   separate history book. The Italian is the edition of record; the English is
+   the author's own translation.
+2. **Wording on the release.** Before **20 September 2026**: *"out on 20
+   September 2026"*. Never "published", "available", "on sale", "buy now". From
+   that date onward "published" is correct and an Amazon link by ISBN may go
+   live. An ISBN existing is not evidence a book is on sale: KDP issues them
+   when a listing is created, drafts included.
+3. **Never link or mention the book's repository.** It is private. No URL, no
+   `sameAs` in any structured data, and no phrasing implying openness: not "open
+   source", not "written in the open", not "source available". The *personal*
+   GitHub profile is a different thing and is fine
+   (`github.com/giuseppearici`, verified live 2026-08-18).
+4. **No personal data.** The public identifiers are the city (Brescia), the
+   company (Codermine) and an email address. No date of birth, no home address,
+   no tax code.
+5. **Keep "he had never written a compiler before this one."** It is true and it
+   turns the project's premise into a choice rather than a gap. Do not soften it
+   into vagueness about "learning compilers", and do not inflate his compiler
+   experience to compensate.
+6. **The talk is not the book.** A talk of the same name exists, with its own
+   thesis (the wall as metaphor, and "Heroes" recorded at Hansa beside the
+   Berlin Wall). The site names two scheduled dates, Pirloverflow Brescia
+   22 September 2026 and Codemotion Milan 28–29 October 2026. **Italian Agile
+   Days is a proposal that has not been sent: it must not appear** until the
+   author says otherwise.
+
+**Author links are omitted on purpose.** `giuseppearici.com/en/` and
+`giuseppearici.com/en/books/heroes-of-code/` both returned **404** on
+2026-08-18, and `heroesofcode.com` 301s to the second of them, so the site is
+still parked. The brief's own condition applies: omit rather than send visitors
+to a parking page. When the launch commit ships, add them to `author.html` and
+to the footer line. Test the URL first, the way the marketing seat tested the
+repository's.
 
 ## The claims that have a gate on them
 
