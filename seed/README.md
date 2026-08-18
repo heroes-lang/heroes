@@ -10,8 +10,9 @@ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 ```
 
 That is the whole of it: one command, no flags beyond the include path, no
-configure, no make. Measured on Apple clang 21.0.0, arm64-darwin: **3.7 s at no
-optimisation level, 27 s at `-O2`**. Any C11 compiler should do — the file was
+configure, no make. Measured on Apple clang 21.0.0, arm64-darwin: **3.4 s at no
+optimisation level** (2026-08-19, on the 22,025,792-byte seed this milestone
+regenerated; it was 3.7 s on the 21 MB one), 27 s at `-O2`. Any C11 compiler should do — the file was
 compiled clean under `-std=c11`, `gnu11`, `c17`, `gnu17`, `c23`, `gnu23`, under
 `-pedantic-errors` and under `-Wall -Werror`, all on one clang, which is what
 "any C compiler" is currently worth here.
@@ -59,10 +60,11 @@ Two things force it, and each has an instrument:
    from another compiler stops the build with that message rather than linking
    quietly. `the_seed_builds_from_a_clean_checkout` asserts the two numbers agree.
 2. **`selfhost/` uses a form the committed seed cannot parse.** The cheap check
-   is the build above — it is 3.7 s and it runs in the test. The expensive one is
+   is the build above — it is 3.4 s and it runs in the test. The expensive one is
    the full fixpoint (`heroes build selfhost/main.hero --emit-c` from the
-   seed-built compiler, ~12 minutes, and the bytes must match), which belongs to
-   a milestone close.
+   seed-built compiler, and the bytes must match), which belongs to a milestone
+   close: **15m41s measured 2026-08-19**, when `measure` and `mutate` joined the
+   port and the seed grew by a megabyte.
 
 ## If the seed is already broken — how to get a compiler back
 
@@ -93,8 +95,8 @@ chain only ends at `m-selfhost-fixpoint`, which is where the seed begins.
 Then re-verify, in this order, because the cheap check catches almost everything:
 
 ```sh
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.7 s
-./heroes build selfhost/main.hero --emit-c -o /tmp/again.c    # ~12 min
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.4 s
+./heroes build selfhost/main.hero --emit-c -o /tmp/again.c    # 15m41s
 cmp seed/heroes.c /tmp/again.c                                # must be silent
 ```
 

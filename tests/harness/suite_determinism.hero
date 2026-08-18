@@ -120,8 +120,8 @@ test "the determinism suite passes identical emissions and catches a wobbling on
     item = cases.Case(source: tree + "/x.hero", expected: tree + "/x.expected", name: "x")
 
     # The real compiler, twice: this is the property itself.
-    one = dumped(scratch: scratch, compiler: "./target/debug/heroes", item: item, flag: "--emit-c", into: "")
-    two = dumped(scratch: scratch, compiler: "./target/debug/heroes", item: item, flag: "--emit-c", into: "")
+    one = dumped(scratch: scratch, compiler: shell.some_compiler(), item: item, flag: "--emit-c", into: "")
+    two = dumped(scratch: scratch, compiler: shell.some_compiler(), item: item, flag: "--emit-c", into: "")
     assert !one.is_err()
     assert one.must() == two.must()
     assert one.must().len() > 0
@@ -145,5 +145,5 @@ test "an emission that fails is an error carrying the compiler's words"
     assert !write_file(path: tree + "/b.hero", text: "function main()\n    print(nope)\n").is_err()
     assert !write_file(path: tree + "/b.expected", text: "").is_err()
     item = cases.Case(source: tree + "/b.hero", expected: tree + "/b.expected", name: "b")
-    got = dumped(scratch: scratch, compiler: "./target/debug/heroes", item: item, flag: "--emit-c", into: "")
+    got = dumped(scratch: scratch, compiler: shell.some_compiler(), item: item, flag: "--emit-c", into: "")
     assert got.is_err()

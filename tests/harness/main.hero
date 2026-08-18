@@ -15,11 +15,15 @@
 #     heroes run tests/harness/main.hero -- <compiler> [suite]
 #
 # from the repository root, always: the goldens hold paths relative to the
-# root, so the working directory is part of what the expectations pin. The
-# compiler defaults to ./target/debug/heroes while the bootstrap is still
-# the reference; after the archive it is the self-hosted binary, and the
-# point of naming it on the command line is that the SAME harness can be
-# pointed at either one. Naming a suite runs only that one.
+# root, so the working directory is part of what the expectations pin. Naming
+# the compiler is how the SAME harness is pointed at either one; naming a
+# suite runs only that one.
+#
+# With no compiler named, the machine is asked rather than a path assumed
+# (`shell.some_compiler`): $HEROES_COMPILER, then `./heroes-from-seed` — what
+# CI builds out of `seed/heroes.c` with clang alone — then `./build/heroes-seed`,
+# then the bootstrap. That order is the archive's order, so this line does not
+# change on the day `crates/` moves.
 #
 # Exit: 0 all green · 1 something failed · 2 the harness could not run.
 # That is §10's contract for a tool whose artifact is a verdict.
@@ -65,15 +69,16 @@ use suite_surface
 use suite_warnings
 use suite_run
 
-constant DEFAULT_COMPILER: str
-    "./target/debug/heroes"
 
 constant SCRATCH: str
     "build/harness"
 
 function main()
     given = args()
-    compiler: str @ DEFAULT_COMPILER
+    # No compiler named: ask the machine which one is here (shell.some_compiler
+    # — the seed-built one first, the bootstrap last), so the same invocation
+    # works before and after `crates/` is archived.
+    compiler: str @ shell.some_compiler()
     if given.len() > 0
         compiler @ given[0]
     only: str @ ""
@@ -86,6 +91,9 @@ function main()
     made = shell.mkdir_all(SCRATCH)
     if made.is_err()
         print("harness: cannot create " + SCRATCH)
+        exit(2)
+    if compiler.len() == 0
+        print("harness: " + shell.no_compiler_anywhere())
         exit(2)
     if !shell.exists(compiler)
         print("harness: no compiler at " + compiler)

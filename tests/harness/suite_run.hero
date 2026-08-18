@@ -131,7 +131,8 @@ test "the run suite passes a matching program and catches each way one can fail"
     assert !write_file(path: tree + "/x.hero", text: "function main()\n    print(7)\n").is_err()
     assert !write_file(path: tree + "/x.expected", text: "7\n").is_err()
     item = cases.Case(source: tree + "/x.hero", expected: tree + "/x.expected", name: "x")
-    compiler = "./target/debug/heroes"
+    compiler = shell.some_compiler()
+    assert compiler.len() > 0
 
     green: report.Report @ report.empty()
     match_want = expectation.split("7\n").must()
@@ -163,6 +164,6 @@ test "a program that does not build is a failure naming clang's words"
     assert !write_file(path: tree + "/b.expected", text: "\n").is_err()
     item = cases.Case(source: tree + "/b.hero", expected: tree + "/b.expected", name: "b")
     r: report.Report @ report.empty()
-    _ = one_case(scratch: scratch, compiler: "./target/debug/heroes", binaries: scratch + "/binaries", item: item, want: expectation.split("").must(), r: @r)
+    _ = one_case(scratch: scratch, compiler: shell.some_compiler(), binaries: scratch + "/binaries", item: item, want: expectation.split("").must(), r: @r)
     assert r.failed == 1
     assert strings.contains(text: r.failures[0], needle: "did not build")
