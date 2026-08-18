@@ -1,0 +1,283 @@
+# The surface tests no table row can express.
+#
+# A row is "run this argv, get this exit code, find these words". These
+# are the ones that need something else: to run the binary the compiler
+# just wrote, to compare two invocations against each other, to write a
+# program and then run it, or to read a file back and prove it was NOT
+# touched.
+#
+# They are here rather than dropped because each one holds a promise
+# nothing else holds — and panel 085's whole argument for this milestone
+# is that a test with no successor is a promise that stops being checked
+# on the day the bootstrap is archived.
+
+use expectation
+use report
+use shell
+use strings
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    built_binary_runs(@r, scratch: scratch, compiler: compiler)
+    a_retired_flag_leaves_the_file_alone(@r, scratch: scratch, compiler: compiler)
+    the_split_program_prints_what_the_whole_one_prints(@r, scratch: scratch, compiler: compiler)
+    the_bare_invocation_is_the_help(@r, scratch: scratch, compiler: compiler)
+    the_levels_are_not_the_same_build(@r, scratch: scratch, compiler: compiler)
+    a_failing_test_says_what_and_where(@r, scratch: scratch, compiler: compiler)
+    the_specs_own_example_opens_a_database(@r, scratch: scratch, compiler: compiler)
+    a_search_path_is_one_word(@r, scratch: scratch, compiler: compiler)
+    a_search_path_that_names_nothing(@r, scratch: scratch, compiler: compiler)
+    return ok(r)
+
+# **`build` says where it put the binary, and the binary is there and
+# runs.** The path is parsed out of stderr the way a user would read it,
+# and then executed: a message naming a file that does not work is worse
+# than no message.
+function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
+    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero")
+    if said.is_err() || said.must().code != 0
+        report.keep_failure(@r, label: "special/build says where", detail: "  the build did not run")
+        return
+    if said.must().out.len() > 0
+        report.keep_failure(@r, label: "special/build says where", detail: "  a build's artifact is the binary, so stdout must be empty — it held:\n" + said.must().out)
+        return
+    rows = strings.lines(said.must().err)
+    if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "wrote build/")
+        report.keep_failure(@r, label: "special/build says where", detail: "  stderr does not open with `wrote build/`:\n" + said.must().err)
+        return
+    binary = strings.trimmed(strings.without_prefix(text: rows[0], prefix: "wrote "))
+    if !strings.ends_with(text: binary, suffix: "/00first")
+        report.keep_failure(@r, label: "special/build says where", detail: "  the binary is not named after the file: " + binary)
+        return
+    ran = shell.run(scratch: scratch, command: shell.sq(binary))
+    if ran.is_err() || ran.must().out != "20\n"
+        report.keep_failure(@r, label: "special/build says where", detail: "  the binary it named does not print 20:\n" + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).out)
+        return
+    report.keep_pass(@r)
+
+# **A retired flag names its replacement AND changes nothing.** The
+# second half is the one worth testing: `fmt --write` used to rewrite the
+# file, so a refusal that half-ran would be the worst outcome available.
+function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, compiler: str)
+    before = read_file("examples/gallery/00-first.hero")
+    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " fmt --write examples/gallery/00-first.hero")
+    after = read_file("examples/gallery/00-first.hero")
+    if said.is_err() || before.is_err() || after.is_err()
+        report.keep_failure(@r, label: "special/a retired flag", detail: "  cannot run the compiler or read the file")
+        return
+    if said.must().code != 2
+        report.keep_failure(@r, label: "special/a retired flag", detail: "  a retired flag is exit 2, and it exited " + said.must().code.to_str())
+        return
+    if before.must() != after.must()
+        report.keep_failure(@r, label: "special/a retired flag", detail: "  the file changed under a refused flag — a refusal that half-ran")
+        return
+    if !strings.contains(text: after.must(), needle: "print((2 + 3) * 4)")
+        report.keep_failure(@r, label: "special/a retired flag", detail: "  the file no longer holds what it held")
+        return
+    report.keep_pass(@r)
+
+# **Four modules and one file print the same thing.** Nothing else in the
+# harness compares two PROGRAMS: the goldens compare a program against a
+# recorded answer, and a recorded answer cannot notice that splitting a
+# program changed it.
+function the_split_program_prints_what_the_whole_one_prints(@r: report.Report, scratch: str, compiler: str)
+    split = shell.run(scratch: scratch, command: shell.sq(compiler) + " run examples/calculator/main.hero")
+    whole = shell.run(scratch: scratch, command: shell.sq(compiler) + " run examples/calculator/whole.hero")
+    if split.is_err() || whole.is_err()
+        report.keep_failure(@r, label: "special/split and whole", detail: "  cannot run the compiler")
+        return
+    if split.must().code != 0
+        report.keep_failure(@r, label: "special/split and whole", detail: "  the split program exited " + split.must().code.to_str())
+        return
+    if split.must().out != whole.must().out
+        report.keep_failure(@r, label: "special/split and whole", detail: report.mismatch(what: "examples/calculator/{main,whole}.hero", expected: whole.must().out, actual: split.must().out))
+        return
+    report.keep_pass(@r)
+
+# **Typing nothing is typing `--help`.** A tool whose bare invocation
+# says something else has two help texts, and one of them is the one
+# nobody maintains.
+function the_bare_invocation_is_the_help(@r: report.Report, scratch: str, compiler: str)
+    asked = shell.run(scratch: scratch, command: shell.sq(compiler) + " --help")
+    bare = shell.run(scratch: scratch, command: shell.sq(compiler))
+    if asked.is_err() || bare.is_err()
+        report.keep_failure(@r, label: "special/the bare invocation", detail: "  cannot run the compiler")
+        return
+    if asked.must().out != bare.must().out
+        report.keep_failure(@r, label: "special/the bare invocation", detail: "  `heroes` and `heroes --help` print different text, so there are two help texts")
+        return
+    report.keep_pass(@r)
+
+# **The optimisation level reaches clang.** Both builds succeed and their
+# stderr DIFFERS — which is a weaker claim than reading the flags out of
+# the command line, and a stronger one than trusting that a flag with a
+# name is a flag with an effect.
+function the_levels_are_not_the_same_build(@r: report.Report, scratch: str, compiler: str)
+    at_o2 = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero -O2")
+    at_o0 = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero -O0")
+    if at_o2.is_err() || at_o0.is_err()
+        report.keep_failure(@r, label: "special/the levels differ", detail: "  cannot run the compiler")
+        return
+    if at_o2.must().code != 0 || at_o0.must().code != 0
+        report.keep_failure(@r, label: "special/the levels differ", detail: "  a level did not build")
+        return
+    if at_o2.must().err == at_o0.must().err
+        report.keep_failure(@r, label: "special/the levels differ", detail: "  -O0 and -O2 say the same thing, so the level reaches nothing:\n" + at_o0.must().err)
+        return
+    report.keep_pass(@r)
+
+# **A failing test shows the expression and both sides, keeps the
+# brackets the author typed, and does not hide the tests after it.**
+# Three promises about the ONE thing a test harness must get right, and
+# all three need a program written for the occasion — a passing corpus
+# cannot demonstrate a failure.
+function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, compiler: str)
+    path = scratch + "/failing.hero"
+    body = "function twice(n: i64) -> i64\n    return n * 2\n\ntest \"holds\"\n    assert twice(2) == 4\n\ntest \"fails\"\n    assert twice(2) == 5\n\ntest \"brackets\"\n    assert (1 == 1) == (1 == 2)\n\ntest \"after the failure\"\n    assert true\n"
+    if write_file(path: path, text: body).is_err()
+        report.keep_failure(@r, label: "special/a failing test", detail: "  cannot write " + path)
+        return
+    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " test " + shell.sq(path))
+    if said.is_err()
+        report.keep_failure(@r, label: "special/a failing test", detail: "  cannot run the compiler")
+        return
+    wrong: [str] @ []
+    if said.must().code != 1
+        wrong @ wrong.push("    a failing test is exit 1, and it exited " + said.must().code.to_str())
+    if !strings.contains(text: said.must().out, needle: "ok   \"holds\"")
+        wrong @ wrong.push("    the passing test is not reported")
+    if !strings.contains(text: said.must().out, needle: "FAIL \"fails\"")
+        wrong @ wrong.push("    the failing test is not named")
+    # The tests after a failure still run: a harness that stops at the
+    # first failure hides every defect behind the first one.
+    if !strings.contains(text: said.must().out, needle: "ok   \"after the failure\"")
+        wrong @ wrong.push("    a test after the failure did not run")
+    # The expression, and both sides, and the author's own brackets.
+    if !strings.contains(text: said.must().err, needle: "assert failed: twice(2) == 5")
+        wrong @ wrong.push("    the failing expression is not shown")
+    if !strings.contains(text: said.must().err, needle: "left:  4")
+        wrong @ wrong.push("    the left side is not shown")
+    if !strings.contains(text: said.must().err, needle: "right: 5")
+        wrong @ wrong.push("    the right side is not shown")
+    if !strings.contains(text: said.must().err, needle: "assert failed: (1 == 1) == (1 == 2)")
+        wrong @ wrong.push("    the brackets the author typed are not kept")
+    if wrong.len() > 0
+        report.keep_failure(@r, label: "special/a failing test", detail: wrong.join("\n") + "\n  its stdout was:\n" + said.must().out + "  its stderr was:\n" + said.must().err)
+    else
+        report.keep_pass(@r)
+
+# **The spec's own FFI example opens a database.** The program under test
+# is not written here — it is CUT OUT OF `spec/heroes-spec.md` at run
+# time, so the day the spec's example stops compiling is the day this
+# goes red. design.md §1.6 makes the spec the whole language; an example
+# in it that does not run is a lie in the one document a reader is told
+# to trust.
+function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str, compiler: str)
+    spec = read_file("spec/heroes-spec.md")
+    if spec.is_err()
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot read spec/heroes-spec.md")
+        return
+    after = strings.index_of(text: spec.must(), needle: "## FFI")
+    if after.is_err()
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  the spec has no `## FFI` section")
+        return
+    rest = spec.must().slice(from: after.must(), to: spec.must().len())
+    blocks = strings.split_text(text: rest, separator: "```")
+    if blocks.len() < 2
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  the FFI section has no fenced block")
+        return
+    block = blocks[1]
+    if !strings.contains(text: block, needle: "extern \"sqlite3.h\"")
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  the FFI section's first block is not the sqlite example any more:\n" + block)
+        return
+    path = scratch + "/spec-ffi.hero"
+    program = block + "\nfunction main()\n    db: ptr @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
+    if write_file(path: path, text: program).is_err()
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot write " + path)
+        return
+    said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(path))
+    if said.is_err()
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot run the compiler")
+        return
+    if shell.machine_lacks_the_library(said.must().err)
+        report.keep_pass(@r)
+        return
+    if said.must().code != 0 || said.must().out != "0\n"
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  the spec's own example did not open a database: exit " + said.must().code.to_str() + ", stdout `" + said.must().out + "`\n" + said.must().err)
+        return
+    report.keep_pass(@r)
+
+# **A search path reaches clang as ONE argv word.** The path a user types
+# goes onto a command line, and a command line is a shell's input: a
+# directory named `inc; touch witness` must arrive as a directory name
+# and not as two commands. Measured by building the hostile directory and
+# then asking whether the witness exists — a negative that no amount of
+# quoting review can establish.
+function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: str)
+    hostile = scratch + "/inc; touch heroes-shell-escaped"
+    witness = "heroes-shell-escaped"
+    if shell.remove_tree(hostile).is_err() || shell.mkdir_all(hostile).is_err()
+        report.keep_failure(@r, label: "special/one argv word", detail: "  cannot build the hostile directory")
+        return
+    # The witness is removed first, so its ABSENCE afterwards means
+    # something. A test that never removed it would pass on a machine
+    # where it was never created.
+    _ = shell.run(scratch: scratch, command: "rm -f " + shell.sq(witness))
+    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(hostile))
+    if said.is_err()
+        report.keep_failure(@r, label: "special/one argv word", detail: "  cannot run the compiler")
+        return
+    if said.must().code != 0
+        report.keep_failure(@r, label: "special/one argv word", detail: "  the build failed with a legal (if hostile) directory name:\n" + said.must().err)
+        return
+    if shell.exists(witness)
+        report.keep_failure(@r, label: "special/one argv word", detail: "  `" + witness + "` exists: the search path was split by a shell somewhere between argv and clang")
+        _ = shell.run(scratch: scratch, command: "rm -f " + shell.sq(witness))
+        return
+    report.keep_pass(@r)
+
+# **A search path that names nothing is refused before clang sees it.**
+# Silence is the failure mode: a `-I` for a directory that is not there is
+# not an error to clang, so a typo would simply not find the header and
+# the diagnostic would be about a name instead of about a path.
+function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compiler: str)
+    for flag in ["--include", "--library"]
+        said = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero " + flag + " /no/such/directory")
+        if said.is_err()
+            report.keep_failure(@r, label: "special/a path that names nothing", detail: "  cannot run the compiler")
+            return
+        if said.must().code != 2
+            report.keep_failure(@r, label: "special/a path that names nothing", detail: "  " + flag + " /no/such/directory exited " + said.must().code.to_str() + ", not 2")
+            return
+        if !strings.contains(text: said.must().err, needle: "names no directory") || !strings.contains(text: said.must().err, needle: "in silence")
+            report.keep_failure(@r, label: "special/a path that names nothing", detail: "  " + flag + " does not say what would happen in silence:\n" + said.must().err)
+            return
+    # An existing but empty directory is fine: the refusal is about a
+    # path that is not there, never about one that is unhelpful.
+    empty = scratch + "/empty-search-path"
+    if shell.mkdir_all(empty).is_err()
+        report.keep_failure(@r, label: "special/a path that names nothing", detail: "  cannot create " + empty)
+        return
+    fine = shell.run(scratch: scratch, command: shell.sq(compiler) + " build examples/gallery/00-first.hero --include " + shell.sq(empty))
+    if fine.is_err() || fine.must().code != 0
+        report.keep_failure(@r, label: "special/a path that names nothing", detail: "  an existing but empty search path was refused")
+        return
+    report.keep_pass(@r)
+
+test "the failing-test probe is itself falsifiable"
+    # The one shape that would make the check above vacuous: a compiler
+    # that reports nothing at all. Asserted here rather than assumed,
+    # because every branch of it is a `contains` and a `contains` on an
+    # empty string is simply false — so the check can only be wrong by
+    # being too strict, never by being too kind.
+    assert !strings.contains(text: "", needle: "FAIL \"fails\"")
+    assert !strings.contains(text: "ok   \"holds\"\n", needle: "FAIL \"fails\"")
+    assert strings.contains(text: "ok   \"holds\"\nFAIL \"fails\"\n", needle: "FAIL \"fails\"")
+
+test "the expectation module reads what a special case needs"
+    # `unmet` is what the run/ and corpus suites use; the special cases
+    # here compare streams directly, and this test pins that the two
+    # agree about what "no output at all" means.
+    e = expectation.split("").must()
+    assert e.stdout == ""
+    assert expectation.unmet(e, out: "", err: "", code: 0).is_err()

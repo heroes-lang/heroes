@@ -38,6 +38,7 @@
 #   warnings      the generated C compiles without a single warning
 #   records       §14's identifiers, the alias table, stray C, the goldens
 #   surface       what a user types: exit codes, streams, flags, rendering
+#   special       the surface tests no table row can express
 #
 # Still in Rust, and each one is a step of this milestone: the
 # the file-length check (layout.rs, a rewrite rather than a port) and
@@ -52,6 +53,7 @@ use suite_fixes
 use suite_golden
 use suite_lines
 use suite_records
+use suite_special
 use suite_surface
 use suite_warnings
 use suite_run
@@ -188,6 +190,15 @@ function main()
             print("harness: the surface suite could not run")
             exit(2)
         print("  surface: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "special"
+        got = suite_special.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the special cases could not run")
+            exit(2)
+        print("  special: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
