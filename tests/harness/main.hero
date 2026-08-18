@@ -30,10 +30,10 @@
 #   emit/         the generated C11 — stdout, exit 0
 #   unsupported/  what the backend refuses — stderr, exit 1, no artifact
 #   run/          every program at -O0, -O2 and --sanitize
+#   annotations   §9's `#~` invariant over check/ and unsupported/
 #
-# Still in Rust, and each one is a step of this milestone: the `#~`
-# annotation invariant (golden.rs:344 —
-# CLAUDE.md §9's one unforgeable check), the IR dump's determinism, the
+# Still in Rust, and each one is a step of this milestone: the IR dump's
+# determinism, the
 # `#line` sweep over the whole `run/` corpus, the certain-fix suite, the
 # corpus, the double-emit determinism diff, the record checks
 # (milestones.rs) and the file-length check (layout.rs, a rewrite rather
@@ -41,6 +41,7 @@
 
 use report
 use shell
+use suite_annotations
 use suite_golden
 use suite_run
 
@@ -99,6 +100,18 @@ function main()
             print("harness: the run/ suite could not run")
             exit(2)
         print("  run: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The `#~` invariant reads files rather than running the compiler, so
+    # it takes no compiler at all — it is about whether the goldens agree
+    # with themselves.
+    if only == "" || only == "annotations"
+        got = suite_annotations.run_all(SCRATCH)
+        if got.is_err()
+            print("harness: the annotations sweep could not run")
+            exit(2)
+        print("  annotations: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

@@ -158,6 +158,67 @@ function to_number(text: str) -> i64?
         return ok(0 - value)
     return ok(value)
 
+# Where `needle` first occurs in `text`, or an error if it does not.
+function index_of(text: str, needle: str) -> i64?
+    if needle.len() > text.len()
+        return fail("absent", "`" + needle + "` is not in the text")
+    start: i64 @ 0
+    while start + needle.len() <= text.len()
+        i: i64 @ 0
+        hit: bool @ true
+        while i < needle.len()
+            if text[start + i] != needle[i]
+                hit @ false
+                i @ needle.len()
+            else
+                i @ i + 1
+        if hit
+            return ok(start)
+        start @ start + 1
+    return fail("absent", "`" + needle + "` is not in the text")
+
+# Split on a multi-byte separator, keeping empty pieces. `split_on`
+# takes one byte and this takes a string, because `#~` is two.
+function split_text(text: str, separator: str) -> [str]
+    pieces: [str] @ []
+    rest: str @ text
+    if separator.len() == 0
+        return pieces.push(text)
+    while true
+        at = index_of(text: rest, needle: separator)
+        if at.is_err()
+            return pieces.push(rest)
+        pieces @ pieces.push(rest.slice(from: 0, to: at.must()))
+        rest @ rest.slice(from: at.must() + separator.len(), to: rest.len())
+    return pieces
+
+# The words of `text`, with runs of spaces, tabs and newlines dropped.
+function words(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i <= text.len()
+        boundary: bool @ i == text.len()
+        if !boundary
+            boundary @ is_space(byte: text[i])
+        if boundary
+            if i > start
+                out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    return out
+
+test "index_of, split_text and words"
+    assert index_of(text: "a#~b", needle: "#~").must() == 1
+    assert index_of(text: "#~b", needle: "#~").must() == 0
+    assert index_of(text: "abc", needle: "#~").is_err()
+    assert split_text(text: " a #~v b", separator: "#~").len() == 2
+    assert split_text(text: "abc", separator: "#~").len() == 1
+    assert split_text(text: "x#~#~y", separator: "#~").len() == 3
+    assert words(" one\ttwo\n three ").len() == 3
+    assert words("").len() == 0
+    assert words("solo") == ["solo"]
+
 test "contains finds a needle at every position and refuses a longer one"
     assert contains(text: "abc", needle: "a")
     assert contains(text: "abc", needle: "c")
