@@ -20,6 +20,7 @@ five-seat review panel as a directory-scoped skill.
 | `zen.html` | `heroes this`, quoted verbatim — the twenty lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation |
 | `panel.html` | how a change is decided: the five seats and their differentiated briefs, the four vetoes, the historian's search obligation, the borrowed languages, and who is building this (author request 2026-08-18) |
 | `author.html` | Giuseppe Arici, the long bio in his own voice, the book, and what the book has to do with the language. Governed by § The author and the book below, which is not optional copy guidance |
+| `thanks.html` | the credits: the designers of every language the design borrowed from, named one by one, each with the borrowing beside them. Governed by § The thanks page below |
 | `log.html` | the build log, one postcard per milestone, newest first |
 | `docs/` | the documentation: landing + chapters |
 | `style.css` | the only cross-page asset |
@@ -40,7 +41,15 @@ marks itself `class="here"`. At nine items the row no longer fits a phone, so
 under 700px the list becomes **one horizontally scrolling line** with the mark
 and GitHub on the row above it: two rows of sticky chrome instead of three, no
 item dropped, and the item clipped at the right edge is the affordance. Adding a
-tenth item is the point where this stops working and something has to give. The current page is marked twice, in colour **and** with a
+tenth item is the point where this stops working and something has to give.
+
+**`thanks.html` is the first page to be kept out of that row, deliberately**
+(2026-08-18). It is reachable from every page's footer — *"standing on a lot of
+other people's work"* — and from the sentence under `panel.html`'s borrowings
+list, which is where a reader who cares about lineage already is. That is the
+pattern for any further page: a route in from the page whose subject it
+continues, plus the footer, rather than a tenth nav item that costs the row on a
+phone. The current page is marked twice, in colour **and** with a
 rule under it: colour alone is a signal a large minority of readers receive less
 of. Adding a page means editing that block everywhere; if that ever
 gets painful, the answer is a generator behind a `heroes` subcommand, not a
@@ -80,7 +89,7 @@ of the process's few remaining hard stops.
   changes · station to station · rebel rebel · always crashing in the same
   car · a new career in a new town · oh! you pretty things · hunky dory ·
   under pressure · five years · look back in anger · absolute beginners ·
-  moonage daydream · lady stardust.
+  moonage daydream · lady stardust · sons of the silent age.
 - Ideas bank, still unspent: **M-selfhost-fixpoint's bootstrap retirement →
   "Ashes to Ashes"**; a 1.0 → "Golden Years". The fixpoint itself landed with
   M-selfhost-port and did *not* spend "Ashes to Ashes" — the retirement is a
@@ -195,6 +204,48 @@ still parked. The brief's own condition applies: omit rather than send visitors
 to a parking page. When the launch commit ships, add them to `author.html` and
 to the footer line. Test the URL first, the way the marketing seat tested the
 repository's.
+
+## The thanks page — why every link on it was fetched
+
+`thanks.html` names people, which makes it the page where being wrong costs
+somebody else something. Two claims are made about each entry, and both are
+checked rather than recalled (CLAUDE.md §1):
+
+1. **Who designed what** comes from the language's own Wikipedia infobox
+   (`designer` / `developer`, read as wikitext on 2026-08-18) or from the paper
+   design.md already cites — never from the assistant's memory. That is where
+   *Tucker Taft for Ada 95 through 2012*, *Ulf Norell with Catarina Coquand on
+   Agda 1.0*, and the five authors of the mutable-value-semantics paper
+   (Racordon, Shabalin, Zheng, Abrahams, Saeta — first names from Crossref) came
+   from.
+2. **That the link points at the right human** comes from
+   `action=query&prop=description&titles=…&redirects=1`, which catches both ways
+   this goes wrong: a missing article, and — the nastier one — a title that
+   *resolves* to a different person. Nine real traps in one sitting: Andreas
+   Rumpf is a German classical archaeologist who died in 1966 (Wikipedia's Nim
+   infobox carries an editor's comment saying exactly *"Do not WP:LINK to late
+   German classical archaeologist"*), Edwin Brady is an Australian poet, Dan
+   Grossman is an American politician, James Cheney redirects to James Chaney,
+   Graydon Hoare redirects to the Rust article, Andrew Kelley to a soldier who
+   died in 1918, Jack Little and Robert Bradshaw are disambiguation pages, and
+   *Hylo* is a hamlet in Alberta. A page written from memory would have shipped
+   most of those as confident links.
+
+Three rules follow, and they bind every later edit:
+
+- **A missing link is written as a failed search, never as an impossibility.**
+  The page says the search came up empty; it never says the person has no
+  article. That is §1's negative-claim rule, and the reason it matters here is
+  that absence rests on the searcher's vocabulary. The best available evidence
+  for absence is the **language's own infobox**: Wikipedia links a designer who
+  has an article, so an unlinked name there is the encyclopedia's answer rather
+  than ours.
+- **The date on the page is part of the claim.** *"looked up and found, on
+  2026-08-18"* is in the copy. Re-run the checks before changing it, and change
+  it only after re-running them.
+- **Nobody on the page was asked, and the page says so.** No characterisation of
+  a living person beyond the borrowing itself, and no claim that anyone endorses
+  this language.
 
 ## The claims that have a gate on them
 

@@ -31,6 +31,7 @@ legal expression that reports what belongs in the gap instead of failing.
 - [The panel](https://heroes-lang.org/panel.html): how a change to the language is decided, five judges with differentiated briefs and four vetoes, the historian's seat, and what the design borrowed from Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal and the rest
 - [The author](https://heroes-lang.org/author.html): Giuseppe Arici, partner and CTO at Codermine in Brescia, author of *Heroes of code*, a history of programming languages framed as a dream journey with David Bowie as the guide, out on 20 September 2026. He had never written a compiler before this one
 - [Build log](https://heroes-lang.org/log.html): one postcard per milestone, newest first
+- [Thanks](https://heroes-lang.org/thanks.html): the designers of every language Heroes borrowed from, named one by one, with what each borrowing was; links go to English Wikipedia only where an article about that person was verified to exist
 - [Documentation](https://heroes-lang.org/docs/index.html): the language page by page; every code block is a slice of a repository file that compiles and runs
 
 ## Source
