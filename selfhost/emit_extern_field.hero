@@ -123,13 +123,49 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
         .float_ty | .bool | .str | .ptr | .cstr | .unit => is_int @ is_int
         .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
         .case_ty | .failure | .generic | .error => is_int @ is_int
+    # The sign test goes through HERO_C_UNSIGNED and not through a cast,
+    # and the difference is a whole exit code (panel 085 R7). The cast
+    # form `((__typeof__(place))-1 < 0)` is ILL-FORMED, not false, when
+    # the header's field is an array or a struct: `d_name: i8` against
+    # `char d_name[1024]` gave "used type 'char[1024]' where arithmetic
+    # or pointer type is required" — a clang error that is not this
+    # assertion failing, so the ffi mapping could not recognise it and
+    # the compiler took the blame for the author's extern at exit 2.
+    # C's && does not save it, because every operand is type-checked
+    # whether or not an earlier one is false. HERO_C_UNSIGNED is
+    # _Generic over a controlling expression, which lvalue-converts, so
+    # an array decays and lands on `default: 0` and the assertion FAILS
+    # where it used to break the build.
     if is_int
         spelling = widths.int_c_type(int_kind)
-        return ok("_Static_assert(__builtin_classify_type(" + place + ") == 1 && sizeof(" + place + ") == sizeof(" + spelling + ") && (((__typeof__(" + place + "))-1 < 0) == ((" + spelling + ")-1 < 0)), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
+        declared: str @ "0"
+        if !widths.int_signed(int_kind)
+            declared @ "1"
+        return ok("_Static_assert(__builtin_classify_type(" + place + ") == 1 && sizeof(" + place + ") == sizeof(" + spelling + ") && (" + unsignedness_of(place: place) + " == " + declared + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
     found = c_spelling(c, names, ty: ty)
     if found.is_err()
         return fail("none", "a type with no header layout")
     return ok("_Static_assert(_Generic(&" + place + ", " + found.must() + " *: 1, default: 0) && sizeof(" + place + ") == sizeof(" + found.must() + "), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
+
+# Whether a member's own C type is unsigned, as a constant expression
+# that is WELL-FORMED whatever that type turns out to be.
+#
+# This is emit_extern_assert's HERO_C_UNSIGNED written out rather than
+# called, and the duplication is deliberate: that macro is emitted
+# CONDITIONALLY, only where an extern FUNCTION has a result that needs
+# it, and a group holding nothing but a record emits no such preamble at
+# all. A field assertion that called it compiled in one program and
+# failed with "call to undeclared function HERO_C_UNSIGNED" in the next
+# — measured on a dirent.h group with one record and no function, which
+# is the shape a struct-only binding has. The rows keep the macro's own
+# order so a reader can diff the two by eye.
+#
+# _Generic lvalue-converts its controlling expression, so an array
+# member decays to a pointer and a struct member matches nothing: both
+# reach `default` instead of being a hard error, which is the whole
+# reason this replaced ((__typeof__(place))-1 < 0).
+function unsignedness_of(place: str) -> str
+    return "_Generic(" + place + ", unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0)"
 
 # The C type a field is declared as, for the association list. A nested
 # record is the header's OWN name — measured missing through a
@@ -168,7 +204,7 @@ test "the four branches: pointer, char array, integer by width+sign, float by id
     p_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
     assert p_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->p) == 5 && _Generic(((Probe *)0)->p, __typeof__(((Probe *)0)->p): 1, default: 0) && sizeof(((Probe *)0)->p) == sizeof(void *), \"heroes-ffi-field Probe p\");"
     count_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[2])
-    assert count_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->count) == 1 && sizeof(((Probe *)0)->count) == sizeof(int64_t) && (((__typeof__(((Probe *)0)->count))-1 < 0) == ((int64_t)-1 < 0)), \"heroes-ffi-field Probe count\");"
+    assert count_line.must() == "_Static_assert(__builtin_classify_type(((Probe *)0)->count) == 1 && sizeof(((Probe *)0)->count) == sizeof(int64_t) && (_Generic(((Probe *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), \"heroes-ffi-field Probe count\");"
     ratio_line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[3])
     assert ratio_line.must() == "_Static_assert(_Generic(&((Probe *)0)->ratio, float *: 1, default: 0) && sizeof(((Probe *)0)->ratio) == sizeof(float), \"heroes-ffi-field Probe ratio\");"
     # The integer-element array: flex tail first, then class+size+sign

@@ -85,6 +85,40 @@ fn a_parameter_wider_than_the_header_is_the_authors_error() {
     assert!(!said.contains("hero_ffi_probe"), "it showed the probe:\n{said}");
 }
 
+/// A **field** the header has as an array, declared as a scalar, is the author's
+/// mistake too — and it was the compiler's until 2026-08-18 (panel 085 R7).
+///
+/// CLAUDE.md §7 names four classes that recover a name and ask whether *this
+/// program* declared it `extern`. This was a fifth, unlisted because nobody had
+/// written the program that meets it: `d_name: i8` against `char d_name[1024]` was
+/// **exit 2**, `internal error`, on a `dirent.h` group anyone binding a directory
+/// entry writes first.
+///
+/// What this pins that no other test can: the failure is a **failed assertion**
+/// rather than a C type error. The old sign conjunct, `((__typeof__(place))-1 <
+/// 0)`, is ill-formed rather than false on an array member, and C type-checks every
+/// operand of `&&` whether or not an earlier one is false — so clang emitted an
+/// error that was not this assertion, `emit/ffi.rs` could not recognise it, and the
+/// class declined into the compiler's exit 2. If this test ever says `internal
+/// error` again, some conjunct has gone back to assuming the header's shape while
+/// asking about it.
+#[test]
+fn a_field_the_header_has_as_an_array_is_the_authors_error() {
+    let out =
+        heroes(&["build", "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"]);
+    let said = String::from_utf8_lossy(&out.stderr).into_owned();
+    if machine_lacks_the_library(&out) {
+        return;
+    }
+    assert_eq!(code(&out), 1, "exit 1: the input has diagnostics\n{said}");
+    assert!(said.contains("error[ffi_field_type]"), "{said}");
+    assert!(said.contains("`Dirent.d_name`"), "the author's own field name:\n{said}");
+    assert!(said.contains("ffi-a-field-the-header-has-as-an-array.hero:"), "their line:\n{said}");
+    // §7's exit-2 rule, and the three things §4.17 exists to prevent.
+    assert!(!said.contains("internal error"), "it blamed the compiler:\n{said}");
+    assert!(sends_nobody_to_generated_c(&said), "it sent the reader to generated C:\n{said}");
+}
+
 /// A parameter whose C type is the machine's **word** is the author's mistake too,
 /// and used to be the compiler's (author decision 2026-08-15, `/decide`).
 ///

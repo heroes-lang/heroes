@@ -215,12 +215,32 @@ pub(super) fn assertion(
     // vocabulary keeps that half: `timespec.tv_sec: i64` is accepted here and on
     // Linux and refused on Windows, correctly, because `long` is 32 there. What it
     // buys is *bindable on the machine in front of the author*.
+    // **The sign test goes through `HERO_C_UNSIGNED` and not through a cast, and
+    // the difference is a whole exit code** (2026-08-18, panel 085 R7's sweep).
+    // It used to read `((__typeof__({place}))-1 < 0)`, which is **ill-formed**
+    // rather than false when the header's field is an array or a struct: `d_name:
+    // i8` against `char d_name[1024]` gave *"used type 'char[1024]' where
+    // arithmetic or pointer type is required"* — a clang error that is not this
+    // assertion failing, so `emit/ffi.rs` could not recognise it and the compiler
+    // took the blame for the author's `extern` at **exit 2**. Measured on
+    // `dirent.h`: `i8` and `i64` both, while `cstr`, `bool`, `f64` and `i8[256]`
+    // were all correctly exit 1.
+    //
+    // C's `&&` does not save it: every operand is type-checked whether or not an
+    // earlier one is false, so the repair had to make the *expression* legal for
+    // any field type rather than merely unreachable. `HERO_C_UNSIGNED` is
+    // `_Generic` over the controlling expression, which lvalue-converts — an array
+    // decays to a pointer and lands on `default: 0`, a struct lands there too —
+    // so it is well-formed everywhere and the assertion **fails** where it used to
+    // break the build. The prelude already writes it for the result rows.
     if let Ty::Int(kind) = checked.types.get(ty) {
         let spelling = kind.c_type();
+        let declared = u8::from(!kind.signed());
+        let unsignedness = unsignedness_of(&place);
         return Some(format!(
             "_Static_assert(__builtin_classify_type({place}) == 1 \
              && sizeof({place}) == sizeof({spelling}) \
-             && (((__typeof__({place}))-1 < 0) == (({spelling})-1 < 0)), \
+             && ({unsignedness} == {declared}), \
              \"{FIELD_ASSERTION} {hero_name} {member}\");"
         ));
     }
@@ -230,6 +250,30 @@ pub(super) fn assertion(
          && sizeof({place}) == sizeof({spelling}), \
          \"{FIELD_ASSERTION} {hero_name} {member}\");"
     ))
+}
+
+/// Whether a member's own C type is unsigned, as a constant expression that is
+/// **well-formed whatever that type turns out to be**.
+///
+/// This is `extern_assert.rs`'s `HERO_C_UNSIGNED`, written out rather than called,
+/// and the duplication is deliberate: that macro is emitted **conditionally**, only
+/// where an `extern` *function* has a result that needs it, and a group holding
+/// nothing but a `record` emits no such preamble at all. A field assertion that
+/// called it compiled in one program and failed with *"call to undeclared function
+/// `HERO_C_UNSIGNED`"* in the next — measured on a `dirent.h` group with one record
+/// and no function, which is the shape a struct-only binding has. The rows are kept
+/// in the macro's own order so a reader can diff the two by eye.
+///
+/// `_Generic` lvalue-converts its controlling expression, so an array member decays
+/// to a pointer and a struct member matches nothing: both reach `default` instead of
+/// being a hard error, which is the whole reason this replaced
+/// `((__typeof__(place))-1 < 0)`.
+fn unsignedness_of(place: &str) -> String {
+    format!(
+        "_Generic({place}, unsigned char:1, unsigned short:1, unsigned int:1, \
+         unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), \
+         signed char:0, short:0, int:0, long:0, long long:0, default:0)"
+    )
 }
 
 /// The C type a field is declared as, for the association list.
