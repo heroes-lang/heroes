@@ -33,6 +33,7 @@ use cli_flags
 
 extern "stdlib.h"
     function system(command: cstr) -> i32
+    function getenv(name: cstr) -> cstr
 
 record Toolchain
     runtime: str
@@ -83,6 +84,18 @@ function run_clang(line: str, what: str, err_path: str) -> ()?
             cli_io.eprint_raw(text: noise)
         return ok()
     return fail("clang", what + " failed:\n" + noise)
+
+# One environment variable, or "" where it is unset.
+#
+# The null test is the whole function: `getenv` answers `NULL` for a
+# name nobody set, and converting a null `cstr` ABORTS by design
+# (spec:229 — "test `c == nullptr` first, because converting one
+# aborts"). So the guard is not defensive, it is the contract.
+function env(name: str) -> str
+    got = getenv(name: name.cstr())
+    if got == nullptr
+        return ""
+    return got.to_str()
 
 function trimmed(text: str) -> str
     cs = text.chars()

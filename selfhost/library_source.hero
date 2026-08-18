@@ -1,0 +1,187 @@
+# The Heroes library's own text, EMBEDDED — never read from disk.
+#
+# Panel 028 R3 ruled this and `crates/heroes/src/library/source.hero`
+# states the ruling in its own header: the library "is not on disk
+# beside the compiler: it is `include_str!`d into the binary, so there
+# is no discovery, no `$HEROES_LIBRARY`, and no decoy — clang cannot
+# type-check Heroes source, so a file here would have no analogue of
+# the runtime's `_Static_assert` guarding it".
+#
+# THE PORT HAD REVERSED IT, and the reversal was not visible from
+# inside the repository. `main.hero` read the text through
+# `read_file(LIBRARY_PATH).default("")`, so outside the repository root
+# the library was silently EMPTY and every program using `range`,
+# `map`, `filter`, `fold`, `read_file` or `args` was refused ON THE
+# AUTHOR'S OWN LINE — `builtin_shape`, exit 1, measured 2026-08-18
+# (panel 085 R5). The bootstrap accepted the same program at exit 0.
+#
+# Heroes has no `include_str!`, so the text is a value in this module
+# and the test below is what keeps it honest: it reads the file the
+# bootstrap embeds and asserts the two are byte for byte the same. To
+# regenerate after editing the library, rebuild this constant from that
+# file — one quoted line per source line, `\` and `"` escaped, joined
+# with newlines and one trailing newline.
+
+constant LINES: [str]
+    [
+        "# The Heroes library — Tier 2 of design.md §1.11, written in Heroes itself."
+        "#"
+        "# This file is compiled with every program. It is not on disk beside the"
+        "# compiler: it is `include_str!`d into the binary, so there is no discovery, no"
+        "# `$HEROES_LIBRARY`, and no decoy — clang cannot type-check Heroes source, so a"
+        "# file here would have no analogue of the runtime's `_Static_assert` guarding it"
+        "# (panel 028 R3)."
+        "#"
+        "# Rules for anything added here:"
+        "#   - it declares a name from the built-in inventory and nothing else. A helper"
+        "#     outside that table would take a name a user program is entitled to;"
+        "#   - it is ordinary Heroes, checked by the ordinary rules. That is the whole"
+        "#     claim of Tier 2, and §4.11's label rule is the first place it bites:"
+        "#     `range`'s two `i64` parameters make its labels mandatory at every call"
+        "#     site (panel 028 R1);"
+        "#   - a diagnostic raised in this file is a COMPILER BUG, not a user error, and"
+        "#     the pipeline reports it as one."
+        ""
+        "# The integers from `from` up to but not including `to`, in order."
+        "#"
+        "# `to` is excluded, matching `slice(from:, to:)` — the labels and the bound"
+        "# answer each other, which is why the spec states both on one line."
+        "# An empty range is not an error: `range(from: 3, to: 3)` and"
+        "# `range(from: 5, to: 2)` are both `[]`, so a loop over a range that has run out"
+        "# runs zero times rather than aborting."
+        "function range(from: i64, to: i64) -> [i64]"
+        "    out: [i64] @ []"
+        "    i: i64 @ from"
+        "    while i < to"
+        "        out @ push(out, i)"
+        "        i @ i + 1"
+        "    return out"
+        ""
+        "# Each element, transformed. `map(xs, f)` — the signature the spec writes out at"
+        "# line 93, which is why this one needs no explaining."
+        "function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]"
+        "    out: [B] @ []"
+        "    for x in xs"
+        "        out @ push(out, f(x))"
+        "    return out"
+        ""
+        "# The elements `f` keeps."
+        "function filter<A>(xs: [A], f: (function(A) -> bool)) -> [A]"
+        "    out: [A] @ []"
+        "    for x in xs"
+        "        if f(x)"
+        "            out @ push(out, x)"
+        "    return out"
+        ""
+        "# The elements combined into one value, FROM THE LEFT, with the accumulator"
+        "# passed FIRST — `f(total, x)`, never `f(x, total)`."
+        "#"
+        "# Both of those are decisions the spec now states (panel 029 R6) and this body is"
+        "# what makes them true. They were undecidable from the spec and the wrong guess"
+        "# was SILENT: with an accumulator and an element of the same type — `sum`,"
+        "# `concat`, `max`, every string builder — either order type-checks and the program"
+        "# prints a different answer."
+        "function fold<A, B>(xs: [A], start: B, f: (function(B, A) -> B)) -> B"
+        "    total: B @ start"
+        "    for x in xs"
+        "        total @ f(total, x)"
+        "    return total"
+        ""
+        "# The first element `f` accepts, or an error. `A?` rather than an index, so the"
+        "# caller gets the thing rather than a way to look it up again."
+        "function find<A>(xs: [A], f: (function(A) -> bool)) -> A?"
+        "    for x in xs"
+        "        if f(x)"
+        "            return ok(x)"
+        "    return fail(\"not_found\", \"no element satisfies the test\")"
+        ""
+        "# Does any element pass? Empty is false, which is the same rule as `fold` with a"
+        "# `false` start."
+        "function any<A>(xs: [A], f: (function(A) -> bool)) -> bool"
+        "    for x in xs"
+        "        if f(x)"
+        "            return true"
+        "    return false"
+        ""
+        "# Do all of them? Empty is true — vacuously, and it is the answer that makes"
+        "# `all(xs, f) == !any(xs, not_f)` hold at every length."
+        "function all<A>(xs: [A], f: (function(A) -> bool)) -> bool"
+        "    for x in xs"
+        "        if !f(x)"
+        "            return false"
+        "    return true"
+        ""
+        "# The program's three edges (§1.11, panel 036). They are HERE, in Heroes, rather"
+        "# than in the compiler, and the argument is worth the four lines it takes."
+        "#"
+        "# §1.7's test is mechanical: a `T?` is a per-translation-unit generated struct,"
+        "# so the C runtime cannot name one and `read_file -> str?` cannot be a runtime"
+        "# entry point without a second composition form in the emitter. Written here it"
+        "# needs none — `ok` and `fail` are the same constructors every other Tier-2"
+        "# function uses."
+        "#"
+        "# And the record runs the same way. Pascal predeclared file I/O, command-line"
+        "# access and termination; Kernighan's 1981 paper itemises all three as defects;"
+        "# Oberon predefines none of them; Nim reaches the same ergonomics from an"
+        "# auto-imported module. What crosses to C is only what the language cannot say."
+        ""
+        "extern \"hero_os.h\""
+        "    # The status codes the wrappers translate, named rather than copied. Before"
+        "    # M-header-constants this file compared `status` against `0`, `1` and `2`, and"
+        "    # `hero_os.h` says why they were chosen small: *\"small integers rather than"
+        "    # errno\"* — a value picked so a Heroes reader could carry it across by hand."
+        "    # Now the header is the only place they are written, and renumbering them there"
+        "    # cannot leave this file behind."
+        "    constant HERO_OS_OK: i64"
+        "    constant HERO_OS_NOT_FOUND: i64"
+        "    function hero_file_read(path: cstr, @status: i64) -> str"
+        "    function hero_file_write(path: cstr, text: str) -> i64"
+        "    function hero_args_count() -> i64"
+        "    function hero_args_at(index: i64) -> str"
+        "    function hero_exit(code: i64)"
+        ""
+        "# The whole file, or an error. The two codes are stable snake_case strings"
+        "# (§4.6), and they are distinguished because a caller almost always wants to:"
+        "# \"there is no such file\" is a different program state from \"the disk failed\"."
+        "function read_file(path: str) -> str?"
+        "    status: i64 @ 0"
+        "    text = hero_file_read(path.cstr(), @status)"
+        "    if status == HERO_OS_OK"
+        "        return ok(text)"
+        "    if status == HERO_OS_NOT_FOUND"
+        "        return fail(\"file_not_found\", \"no file at \" + path)"
+        "    return fail(\"read_failed\", \"could not read \" + path)"
+        ""
+        "# The text, written whole, replacing whatever was there."
+        "function write_file(path: str, text: str) -> ()?"
+        "    if hero_file_write(path.cstr(), text) == HERO_OS_OK"
+        "        return ok()"
+        "    return fail(\"write_failed\", \"could not write \" + path)"
+        ""
+        "# The arguments after the program's name — the off-by-one every language's first"
+        "# CLI program gets wrong, answered in the runtime and stated in the spec."
+        "function args() -> [str]"
+        "    out: [str] @ []"
+        "    i: i64 @ 0"
+        "    while i < hero_args_count()"
+        "        out @ push(out, hero_args_at(i))"
+        "        i @ i + 1"
+        "    return out"
+        ""
+        "# Ends the program with this status. It never returns, and the C function it"
+        "# calls says so with `_Noreturn` — which is what keeps clang's flow analysis from"
+        "# treating the code after it as reachable."
+        "function exit(code: i64)"
+        "    hero_exit(code)"
+    ]
+
+# The library source, exactly as the bootstrap embeds it.
+function text() -> str
+    return LINES.join("\n") + "\n"
+
+## Tests
+
+test "the embedded library is byte for byte the file the bootstrap embeds"
+    disk = read_file("crates/heroes/src/library/source.hero")
+    assert !disk.is_err()
+    assert text() == disk.must()

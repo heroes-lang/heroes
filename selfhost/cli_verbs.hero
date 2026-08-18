@@ -23,6 +23,7 @@ use cli_compile
 use cli_toolchain
 use cli_libraries
 use cli_input
+use library_source
 
 record Produced
     binary: str
@@ -201,7 +202,7 @@ function exit_of(failed: Produced?) -> cli_table.Exit
 ## Tests
 
 test "end to end: the port compiles a Heroes program and runs it"
-    library = read_file("crates/heroes/src/library/source.hero").must()
+    library = library_source.text()
     program = "function double_it(n: i64) -> i64\n    return n * 2\n\ntest \"doubling\"\n    assert double_it(n: 21) == 42\n\nfunction main()\n    print(double_it(n: 21))\n"
     _ = write_file(path: "build/selftest_e2e.hero", text: program)
     s = cli_input.read_compilation(path: "build/selftest_e2e.hero", library: library).must()

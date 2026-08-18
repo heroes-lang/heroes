@@ -11,13 +11,18 @@
 # panel 016's condition, and the reason this file is boring.
 #
 # Port notes, each a parked DECIDE question answered provisionally
-# here: the library's text is read from its own file beside the
-# compiler (the bootstrap embeds it with include_str!), the runtime
-# hint is read from a HEROES_RUNTIME file rather than the environment
-# (the language has no getenv), the compiler fingerprint is the
-# version string alone (no current_exe), and the word width is 64 (the
-# platforms the fixpoint runs on). Each is one line, and each is where
-# the author's verdict lands.
+# here: the compiler fingerprint is the version string alone (no
+# current_exe), and the word width is 64 (the platforms the fixpoint
+# runs on). Each is one line, and each is where the author's verdict
+# lands.
+#
+# TWO OF THOSE NOTES ARE GONE, and both were false rather than merely
+# provisional (panel 085). The library's text is EMBEDDED — see
+# library_source.hero — because panel 028 R3 ruled it embedded and
+# reading it from disk made every program outside the repository root
+# fail on the AUTHOR'S line; and the runtime hint comes from the real
+# environment, because "the language has no getenv" was a fact about
+# nobody having tried, not about the language: it is one extern.
 
 use source
 use cli_table
@@ -25,6 +30,7 @@ use cli_argv
 use cli_io
 use cli_toolchain
 use cli_input
+use library_source
 use cli_lex
 use cli_syntax_cmds
 use cli_check
@@ -41,8 +47,6 @@ use cli_help
 constant VERSION: str
     "0.0.1"
 
-constant LIBRARY_PATH: str
-    "crates/heroes/src/library/source.hero"
 
 function main()
     given = args()
@@ -74,7 +78,7 @@ function main()
     # Everything left reads a file.
     _ = reading
     path = inv.file.default("")
-    library = read_file(LIBRARY_PATH).default("")
+    library = library_source.text()
     read = cli_input.read_compilation(path: path, library: library)
     if read.is_err()
         cli_io.eprint(text: "error: " + message_of_source(read))
@@ -107,15 +111,20 @@ function compiling(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli
         .mutate_cmd | .measure_cmd | .this_cmd | .version_cmd | .help_cmd => return .ok_exit
     return .ok_exit
 
-# Where the runtime is, when it is not ./runtime. The bootstrap reads
-# $HEROES_RUNTIME; the language has no getenv, so the port reads a
-# one-line file of the same name — same channel, spelled the way this
-# language can spell it, and named in --help either way.
+# Where the runtime is, when it is not ./runtime — the REAL environment
+# variable, the same channel the bootstrap reads and the same one
+# --help names.
+#
+# It used to read a one-line FILE called HEROES_RUNTIME, on the note
+# "the language has no getenv". That note was false: getenv is one
+# `extern "stdlib.h"` away, exactly like the `system` this compiler
+# already calls, and §1.11 says so — everything comes from C. What the
+# file spelling cost was a DIAGNOSTIC THAT LIED: `locate_toolchain`
+# says "set HEROES_RUNTIME=<dir>", which every reader takes for an
+# environment variable, and under the port that route did nothing
+# (panel 085 R8, measured both ways).
 function runtime_hint() -> str
-    found = read_file("HEROES_RUNTIME")
-    if found.is_err()
-        return ""
-    return cli_toolchain.trimmed(found.must())
+    return cli_toolchain.env(name: "HEROES_RUNTIME")
 
 function message_of(failed: cli_argv.Invocation?) -> str
     match failed
