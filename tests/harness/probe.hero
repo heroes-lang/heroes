@@ -43,13 +43,14 @@ record Probe
     out_state: str
     err_state: str
     err_lines: i64
+    out_lines_max: i64
     library_skip: bool
 
 # A probe with everything unasked. `code` is -1 for "do not care", which
 # is what the exit-code-only tests need to say about the streams.
 function probe(name: str, argv: str, code: i64) -> Probe
     none: [str] = []
-    return Probe(name: name, argv: argv, code: code, out_has: none, out_lacks: none, err_has: none, err_lacks: none, out_starts: "", err_starts: "", out_is: "", err_is: "", out_state: "", err_state: "", err_lines: -1, library_skip: false)
+    return Probe(name: name, argv: argv, code: code, out_has: none, out_lacks: none, err_has: none, err_lacks: none, out_starts: "", err_starts: "", out_is: "", err_is: "", out_state: "", err_state: "", err_lines: -1, out_lines_max: -1, library_skip: false)
 
 # Run one probe. Answers "" where it held, the failure text where it did
 # not, and "SKIP" where the machine lacks the library.
@@ -94,6 +95,8 @@ function unmet(scratch: str, compiler: str, p: Probe) -> str
             wrong @ wrong.push("    stderr carries `" + needle + "` and must not")
     if p.err_lines >= 0 && strings.lines(err).len() != p.err_lines
         wrong @ wrong.push("    stderr has " + strings.lines(err).len().to_str() + " lines, not " + p.err_lines.to_str())
+    if p.out_lines_max >= 0 && strings.lines(out).len() > p.out_lines_max
+        wrong @ wrong.push("    stdout has " + strings.lines(out).len().to_str() + " lines, and must have at most " + p.out_lines_max.to_str())
     if wrong.len() == 0
         return ""
     return "  `heroes " + p.argv + "`\n" + wrong.join("\n") + "\n  its stdout was:\n" + out + "  its stderr was:\n" + err
