@@ -32,9 +32,10 @@
 #   run/          every program at -O0, -O2 and --sanitize
 #   annotations   §9's `#~` invariant over check/ and unsupported/
 #   determinism   the IR dump twice, the C twice and through -o
+#   fixes         `.fixed` — every certain fix applied, and it checks clean
+#   lines         every `#line` lands on a line the author wrote
 #
 # Still in Rust, and each one is a step of this milestone: the
-# `#line` sweep over the whole `run/` corpus, the certain-fix suite, the
 # corpus, the double-emit determinism diff, the record checks
 # (milestones.rs) and the file-length check (layout.rs, a rewrite rather
 # than a port).
@@ -43,7 +44,9 @@ use report
 use shell
 use suite_annotations
 use suite_determinism
+use suite_fixes
 use suite_golden
+use suite_lines
 use suite_run
 
 constant DEFAULT_COMPILER: str
@@ -122,6 +125,24 @@ function main()
             print("harness: the determinism suite could not run")
             exit(2)
         print("  determinism: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "fixes"
+        got = suite_fixes.run_default(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the fixes suite could not run")
+            exit(2)
+        print("  fixes: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "lines"
+        got = suite_lines.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the lines sweep could not run")
+            exit(2)
+        print("  lines: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
