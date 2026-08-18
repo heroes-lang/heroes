@@ -50,6 +50,40 @@ Worth naming precisely, because it is the shape CLAUDE.md §1 keeps warning
 about: the panel's claim was a **failed search** (two routes found) written as an
 **impossibility** (no third route exists). The language already had the answer.
 
+## What the net caught on its first day
+
+**Step 2 pointed the harness at the self-hosted compiler and it went red on 2 of
+102 cases — both of them real, and neither reachable by anything that existed
+before.** `tests/differential.rs` compares the two compilers over the *corpus*
+and over five commands' *streams*; nothing ran `build` over
+`tests/golden/unsupported/` on the port. So these two had been invisible, and
+they are exactly what panel 085 R4 said the archive would make permanent.
+
+1. **`unsupported/ffi-records-only-group-cannot-claim-its-package` — the port
+   does not render the diagnostic at all.** The bootstrap prints
+   `error[ffi_package]: …`, the `at file:25:5` line, the source line with its
+   caret, and four `note:` lines. The port prints
+   `heroes-ffi-package \`…\` is not installed on this machine` and four bare
+   lines: no code, no position, no snippet, no notes. Everything §4.17 says a
+   diagnostic must carry, gone — and this is the one class where the compiler is
+   allowed to blame the author's `extern` (CLAUDE.md §7), so the reader is left
+   without the line to fix.
+
+2. **`unsupported/ffi-writable-parameter` — the caret disagrees, and the
+   bootstrap is the one that is wrong.** Bootstrap underlines **75** columns,
+   the port **43**. 43 is `function strtok(s1: cstr, s2: cstr) -> cstr`; 75
+   reaches through the trailing spaces and swallows the `#~
+   ffi_writable_parameter` annotation. Measured across every other expectation
+   whose source line carries a `#~`: nine cases, and **every one stops at the
+   construct** (`record Color` → 5 columns, `named = a.reserved` → 18, `u: ()` →
+   1). So the long caret is this declaration's alone, and the `.expected` file
+   has been recording it as correct since the case was written.
+
+The second one is the sharper lesson, because it is not about the port: a golden
+can pin a defect, and the thing that exposed it was a **second implementation**
+disagreeing. That is the argument for keeping the differential alive past the
+archive, in the form the ROADMAP's `M-bootstrap-archive` entry already names.
+
 ## What broke and why
 
 **A captured stream that arrived on the terminal, and a capture file written into

@@ -1,116 +1,265 @@
-# tests/golden/check/ — every diagnostics case, through the real binary.
+# The four golden suites that ask one question with four sets of
+# parameters: run one command per case, diff ONE stream against the
+# `.expected` file, and check how the compiler ended.
 #
-# Port of golden_check_cases_render_their_diagnostics
-# (crates/heroes-cli/tests/golden.rs:124). Three things are the test, and
-# all three come from that function's own comments:
+# Ports golden.rs:124 (`check/`), :220 (`ir/`), :459 (`unsupported/`) and
+# :520 (`emit/`). One runner rather than four, because the four differ
+# only in the verb, the flag, which stream carries the artifact and the
+# exit code the case must produce — and a second copy is a second place
+# for the exit-code rule to drift. What is deliberately NOT folded in is
+# anything carrying a second question: the `#~` annotation invariant, the
+# IR dump's determinism, the `#line` sweep and the certain-fix suite each
+# get a module of their own.
 #
-# - the command is `check <relative path> --brief`, and the path is
-#   RELATIVE to the repository root, because the compiler echoes the path
-#   it was given and an expectation must not also record which directory
-#   ran the harness;
-# - what is diffed is STDERR, byte for byte, against the `.expected`
-#   file — diagnostics go to stderr by §10's contract;
-# - the exit code must be exactly 1, not merely non-zero. Panel 016's
-#   contract separates "the input has diagnostics" (1) from "the tool
-#   could not run" (2), so a case that started CRASHING instead of
-#   diagnosing would pass a non-zero test while saying something entirely
-#   different.
+# THE THREE RULES THAT ARE NOT ABOUT DIFFING, and each one is a defect
+# somebody already paid for:
 #
-# UPDATE_GOLDEN is not implemented here and must not be: CLAUDE.md §9
-# forbids it in `check/` outright, and a flag that cannot be typed is a
-# rule that cannot be broken by accident.
+# - the exit code is exact, never merely non-zero. Panel 016's contract
+#   separates "the input has diagnostics" (1) from "the tool could not
+#   run" (2), so a case that started CRASHING instead of diagnosing must
+#   not pass;
+# - a suite has a FLOOR. `tests/golden/ir` losing nineteen files would
+#   otherwise report green over the one that remained — the shape §9 calls
+#   an invariant that cannot fail;
+# - a skip is not a pass. `unsupported/` may skip a case whose diagnostic
+#   says this machine lacks the library, and the count is floored: a
+#   machine skipping everything says so instead of reporting green.
+#
+# UPDATE_GOLDEN is not implemented and must not be — CLAUDE.md §9 forbids
+# it in `check/` and `ir/`, and a flag that cannot be typed is a rule that
+# cannot be broken by accident.
 
 use cases
 use report
 use shell
 
-function run_all(scratch: str, compiler: str, dir: str) -> report.Report?
-    found = cases.collect(scratch: scratch, dir: dir)?
+# One suite, as data.
+record Shape
+    name: str
+    dir: str
+    verb: str
+    flag: str
+    on_stderr: bool
+    want_code: i64
+    least: i64
+    silent_stdout: bool
+    library_skip: bool
+
+# The floors are the case counts measured on 2026-08-18 (check 65 · ir 20
+# · emit 6 · unsupported 11), so a case that stops running is a red
+# harness rather than a smaller green one. golden.rs floored only three of
+# the four, and at hand-written numbers (20, 3, 3); a floor at the real
+# count is the same rule with the slack taken out.
+function shape_check() -> Shape
+    return Shape(name: "check", dir: "tests/golden/check", verb: "check", flag: "--brief", on_stderr: true, want_code: 1, least: 65, silent_stdout: false, library_skip: false)
+
+function shape_ir() -> Shape
+    return Shape(name: "ir", dir: "tests/golden/ir", verb: "build", flag: "--dump-ir", on_stderr: false, want_code: 0, least: 20, silent_stdout: false, library_skip: false)
+
+function shape_emit() -> Shape
+    return Shape(name: "emit", dir: "tests/golden/emit", verb: "build", flag: "--emit-c", on_stderr: false, want_code: 0, least: 6, silent_stdout: false, library_skip: false)
+
+# `unsupported/` runs a plain `build`: the case is a program the backend
+# REFUSES, so the artifact is the refusal on stderr and there must be
+# nothing on stdout at all.
+function shape_unsupported() -> Shape
+    return Shape(name: "unsupported", dir: "tests/golden/unsupported", verb: "build", flag: "", on_stderr: true, want_code: 1, least: 11, silent_stdout: true, library_skip: true)
+
+function run_all(scratch: str, compiler: str, shape: Shape) -> report.Report?
+    found = cases.collect(scratch: scratch, dir: shape.dir)?
     r: report.Report @ report.empty()
+    if found.len() < shape.least
+        report.keep_failure(@r, label: shape.name, detail: "  " + shape.dir + " has " + found.len().to_str() + " cases and had " + shape.least.to_str() + " — a golden that stopped running is not a golden")
+    skipped: i64 @ 0
     for item in found
         expectation = read_file(item.expected)
         if expectation.is_err()
-            report.keep_failure(@r, label: item.name, detail: "  cannot read " + item.expected)
+            report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot read " + item.expected)
         else
-            said = shell.run(scratch: scratch, command: shell.sq(compiler) + " check " + shell.sq(item.source) + " --brief")
+            line: str @ shell.sq(compiler) + " " + shape.verb + " " + shell.sq(item.source)
+            if shape.flag.len() > 0
+                line @ line + " " + shape.flag
+            said = shell.run(scratch: scratch, command: line)
             if said.is_err()
-                report.keep_failure(@r, label: item.name, detail: "  cannot run the compiler on " + item.source)
+                report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot run the compiler on " + item.source)
+            else if shape.library_skip && said.must().err != expectation.must() && machine_lacks_the_library(said.must().err)
+                # The comparison comes FIRST and the skip only applies
+                # where the two disagree: a case whose expectation IS a
+                # missing-library diagnostic is testing exactly that, and
+                # a skip keyed on the message alone would silence it
+                # everywhere (golden.rs:476).
+                skipped @ skipped + 1
             else
-                verdict(@r, item: item, expected: expectation.must(), said: said.must())
+                verdict(@r, shape: shape, item: item, expected: expectation.must(), said: said.must())
+    if skipped > 0 && skipped * 3 >= found.len()
+        report.keep_failure(@r, label: shape.name, detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not testing the refusals")
     return ok(r)
 
-# One case's two questions, in the order a reader wants them: what it
-# printed, then how it ended. A case that prints the right diagnostic and
-# then exits 2 is still a failure, and the message says which half broke.
-function verdict(@r: report.Report, item: cases.Case, expected: str, said: shell.Run)
-    if said.err != expected
-        report.keep_failure(@r, label: item.name, detail: report.mismatch(what: item.source, expected: expected, actual: said.err))
+# One case's questions, in the order a reader wants them: what it
+# printed, whether it wrote an artifact it should not have, then how it
+# ended.
+function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: str, said: shell.Run)
+    label = shape.name + "/" + item.name
+    actual: str @ said.out
+    if shape.on_stderr
+        actual @ said.err
+    if actual != expected
+        report.keep_failure(@r, label: label, detail: report.mismatch(what: item.source, expected: expected, actual: actual))
         return
-    if said.code != 1
-        report.keep_failure(@r, label: item.name, detail: "  " + item.source + " is a diagnostics case, so the compiler must exit 1 — it exited " + said.code.to_str())
+    if shape.silent_stdout && said.out.len() > 0
+        report.keep_failure(@r, label: label, detail: "  " + item.source + " is refused, so there is no artifact — it wrote " + said.out.len().to_str() + " bytes to stdout")
+        return
+    if said.code != shape.want_code
+        report.keep_failure(@r, label: label, detail: "  " + item.source + " must exit " + shape.want_code.to_str() + " — it exited " + said.code.to_str())
         return
     report.keep_pass(@r)
 
-# A stand-in compiler: one shell script that says what the caller wants
-# and ends how the caller wants. The suite is tested against THIS rather
-# than against the real binary, for the reason CLAUDE.md §9 gives about
-# verifier checks — a check nobody has seen fail is a decoration — and
-# because a test that needed ./target/debug/heroes would die the day the
-# bootstrap is archived, which is the day this harness matters most.
-function stub(scratch: str, name: str, says: str, ends: i64) -> str?
+# Whether a refusal is this machine's answer rather than the compiler's.
+# Two codes, both of them about a library that is not installed
+# (golden.rs:939 — raylib on the Windows leg, which has clang and no
+# pkg-config).
+function machine_lacks_the_library(text: str) -> bool
+    return contains(text: text, needle: "error[ffi_package]") || contains(text: text, needle: "error[ffi_missing_header]")
+
+function contains(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    start: i64 @ 0
+    while start + needle.len() <= text.len()
+        i: i64 @ 0
+        hit: bool @ true
+        while i < needle.len()
+            if text[start + i] != needle[i]
+                hit @ false
+                i @ needle.len()
+            else
+                i @ i + 1
+        if hit
+            return true
+        start @ start + 1
+    return false
+
+# A stand-in compiler: one shell script that says what the caller wants,
+# on the stream the caller wants, and ends how the caller wants. The
+# suites are tested against THIS rather than against the real binary, for
+# the reason CLAUDE.md §9 gives about verifier checks — a check nobody has
+# seen fail is a decoration — and because a test that needed
+# ./target/debug/heroes would die the day the bootstrap is archived, which
+# is the day this harness matters most.
+function stub(scratch: str, name: str, says: str, on_stderr: bool, ends: i64) -> str?
     path = scratch + "/" + name
-    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + " 1>&2\nexit " + ends.to_str() + "\n")?
+    stream: str @ ""
+    if on_stderr
+        stream @ " 1>&2"
+    write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(says) + stream + "\nexit " + ends.to_str() + "\n")?
     made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))?
     if made.code != 0
         return fail("cannot_run", "cannot make " + path + " executable")
     return ok(path)
 
-test "the check suite passes on a match and fails on either half"
-    scratch = "build/harness-selftest"
-    tree = scratch + "/check"
-    assert !shell.remove_tree(tree).is_err()
-    assert !shell.mkdir_all(tree).is_err()
-    assert !write_file(path: tree + "/x.hero", text: "function main()\n    print(1)\n").is_err()
-    assert !write_file(path: tree + "/x.expected", text: "x.hero:1:1: error[boom]: a diagnostic\n").is_err()
+# A one-case golden tree, for the tests below.
+function one_case_tree(scratch: str, name: str, expectation: str) -> str?
+    tree = scratch + "/" + name
+    shell.remove_tree(tree)?
+    shell.mkdir_all(tree)?
+    write_file(path: tree + "/x.hero", text: "function main()\n    print(1)\n")?
+    write_file(path: tree + "/x.expected", text: expectation)?
+    return ok(tree)
 
-    # Both halves right: the text matches and it exits 1.
-    right = stub(scratch: scratch, name: "stub-right.sh", says: "x.hero:1:1: error[boom]: a diagnostic\n", ends: 1)
+constant SAID: str
+    "x.hero:1:1: error[boom]: a diagnostic\n"
+
+test "a diagnostics suite passes on a match and fails on either half"
+    scratch = "build/harness-selftest"
+    tree = one_case_tree(scratch: scratch, name: "check", expectation: SAID)
+    assert !tree.is_err()
+    form = Shape(name: "check", dir: tree.must(), verb: "check", flag: "--brief", on_stderr: true, want_code: 1, least: 1, silent_stdout: false, library_skip: false)
+
+    right = stub(scratch: scratch, name: "stub-right.sh", says: SAID, on_stderr: true, ends: 1)
     assert !right.is_err()
-    green = run_all(scratch: scratch, compiler: right.must(), dir: tree)
+    green = run_all(scratch: scratch, compiler: right.must(), shape: form)
     assert !green.is_err()
     assert green.must().passed == 1
     assert green.must().failed == 0
 
-    # The text differs: a failure, and the diff carries both sides.
-    wrong = stub(scratch: scratch, name: "stub-wrong.sh", says: "x.hero:1:1: error[other]: something else\n", ends: 1)
+    wrong = stub(scratch: scratch, name: "stub-wrong.sh", says: "x.hero:1:1: error[other]: something else\n", on_stderr: true, ends: 1)
     assert !wrong.is_err()
-    red = run_all(scratch: scratch, compiler: wrong.must(), dir: tree)
+    red = run_all(scratch: scratch, compiler: wrong.must(), shape: form)
     assert !red.is_err()
     assert red.must().passed == 0
     assert red.must().failed == 1
-    assert red.must().failures[0].len() > 0
 
-    # The right text at exit 0 — the shape panel 016's contract exists
-    # for: the compiler answered, but as if the program were clean.
-    quiet = stub(scratch: scratch, name: "stub-exit0.sh", says: "x.hero:1:1: error[boom]: a diagnostic\n", ends: 0)
+    # The right text at exit 0 — panel 016's contract: the compiler
+    # answered, but as if the program were clean.
+    quiet = stub(scratch: scratch, name: "stub-exit0.sh", says: SAID, on_stderr: true, ends: 0)
     assert !quiet.is_err()
-    silent = run_all(scratch: scratch, compiler: quiet.must(), dir: tree)
+    silent = run_all(scratch: scratch, compiler: quiet.must(), shape: form)
     assert !silent.is_err()
-    assert silent.must().passed == 0
     assert silent.must().failed == 1
 
-test "an unreadable expectation is a failure, not a skip"
+test "an artifact suite reads stdout, and a diagnostic on stderr does not save it"
     scratch = "build/harness-selftest"
-    tree = scratch + "/unreadable"
-    assert !shell.remove_tree(tree).is_err()
-    assert !shell.mkdir_all(tree).is_err()
-    assert !write_file(path: tree + "/y.hero", text: "function main()\n    print(1)\n").is_err()
-    # A directory where the expectation should be: it is listed by name,
-    # `find -type f` does not report it, so the pair check fires first.
-    made = shell.run(scratch: scratch, command: "mkdir -p " + shell.sq(tree + "/y.expected"))
+    tree = one_case_tree(scratch: scratch, name: "ir", expectation: "fn main:\n  bb0:\n")
+    assert !tree.is_err()
+    form = Shape(name: "ir", dir: tree.must(), verb: "build", flag: "--dump-ir", on_stderr: false, want_code: 0, least: 1, silent_stdout: false, library_skip: false)
+
+    right = stub(scratch: scratch, name: "stub-dump.sh", says: "fn main:\n  bb0:\n", on_stderr: false, ends: 0)
+    assert !right.is_err()
+    green = run_all(scratch: scratch, compiler: right.must(), shape: form)
+    assert !green.is_err()
+    assert green.must().passed == 1
+
+    # The same text on the wrong stream: an artifact suite must not read
+    # it, so this is a mismatch against an empty stdout.
+    misplaced = stub(scratch: scratch, name: "stub-misplaced.sh", says: "fn main:\n  bb0:\n", on_stderr: true, ends: 0)
+    assert !misplaced.is_err()
+    red = run_all(scratch: scratch, compiler: misplaced.must(), shape: form)
+    assert !red.is_err()
+    assert red.must().failed == 1
+
+test "a refusal that writes an artifact fails, and so does a suite below its floor"
+    scratch = "build/harness-selftest"
+    tree = one_case_tree(scratch: scratch, name: "unsupported", expectation: SAID)
+    assert !tree.is_err()
+    refuse = Shape(name: "unsupported", dir: tree.must(), verb: "build", flag: "", on_stderr: true, want_code: 1, least: 1, silent_stdout: true, library_skip: true)
+
+    # Says the right refusal on stderr, exits 1 — and leaves a byte on
+    # stdout, which means it half-built something.
+    path = scratch + "/stub-leaky.sh"
+    assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s' " + shell.sq(SAID) + " 1>&2\nprintf 'x'\nexit 1\n").is_err()
+    made = shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path))
     assert !made.is_err()
-    got = run_all(scratch: scratch, compiler: "/bin/true", dir: tree)
-    code = match got
-        .ok _ => "ok"
-        .err e => e.code
-    assert code == "half_pair"
+    leaky = run_all(scratch: scratch, compiler: path, shape: refuse)
+    assert !leaky.is_err()
+    assert leaky.must().failed == 1
+
+    # The floor: the same one-case tree, told to expect two.
+    floored = Shape(name: "unsupported", dir: tree.must(), verb: "build", flag: "", on_stderr: true, want_code: 1, least: 2, silent_stdout: true, library_skip: true)
+    right = stub(scratch: scratch, name: "stub-refuse.sh", says: SAID, on_stderr: true, ends: 1)
+    assert !right.is_err()
+    short = run_all(scratch: scratch, compiler: right.must(), shape: floored)
+    assert !short.is_err()
+    assert short.must().passed == 1
+    assert short.must().failed == 1
+
+test "a machine missing the library skips, but a machine missing every library fails"
+    scratch = "build/harness-selftest"
+    tree = one_case_tree(scratch: scratch, name: "skipping", expectation: SAID)
+    assert !tree.is_err()
+    refuse = Shape(name: "unsupported", dir: tree.must(), verb: "build", flag: "", on_stderr: true, want_code: 1, least: 1, silent_stdout: true, library_skip: true)
+    absent = stub(scratch: scratch, name: "stub-nolib.sh", says: "x.hero:1:1: error[ffi_package]: pkg-config does not know raylib\n", on_stderr: true, ends: 1)
+    assert !absent.is_err()
+    got = run_all(scratch: scratch, compiler: absent.must(), shape: refuse)
+    assert !got.is_err()
+    # One case, one skip: that is 100% skipped, which the floor refuses.
+    assert got.must().passed == 0
+    assert got.must().failed == 1
+    assert contains(text: got.must().failures[0], needle: "not testing the refusals")
+
+test "contains finds a needle at every position and refuses a longer one"
+    assert contains(text: "abc", needle: "a")
+    assert contains(text: "abc", needle: "c")
+    assert contains(text: "abc", needle: "abc")
+    assert !contains(text: "abc", needle: "abcd")
+    assert !contains(text: "abc", needle: "ac")
+    assert contains(text: "aab", needle: "ab")
