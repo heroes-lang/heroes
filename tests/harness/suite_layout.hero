@@ -1,0 +1,154 @@
+# CLAUDE.md §11's per-file ceiling, enforced instead of remembered.
+#
+# NOT a port. `layout.rs` walks `crates/**/*.rs`; the compiler is
+# `selfhost/*.hero` now, and three things about it change the check
+# itself. This is the rewrite panel 085 R4 said it would have to be.
+#
+# 1. **A Heroes module holds its own tests.** The Rust excluded whole
+#    FILES — anything under a `tests/` directory, and any `tests.rs` —
+#    because §11's number "governs what a reader must hold in their head,
+#    and a test file is read one case at a time". In this language the
+#    cases live at the bottom of the module they test, so the exclusion
+#    has to be of SECTIONS rather than of files. Measured 2026-08-18, and
+#    the difference is the whole check: **30 of 144** files pass 300 lines
+#    counted whole, and **17** counted as code.
+#
+# 2. **The knot rule.** §11 yields entirely where the LANGUAGE forbids the
+#    seam: Heroes refuses module cycles (`module_cycle` fires on the `use`
+#    edge), and a recursive-descent grammar is mutually recursive by
+#    construction — so what is five files in the Rust is one file here,
+#    and no cut exists. `grammar_expr.hero` is that file.
+#
+# 3. **So a bare ceiling would go red on day one**, which is the shape §9
+#    calls a rule nobody can obey. What stands instead is a CEILING PER
+#    FILE: 300 by default, and for a file already past it the number it
+#    measures today. That number is a stop on growth, not an approval —
+#    the reasons are the author's to give (DECIDE.md), and until they are
+#    given this check says exactly what it knows: this file is this long,
+#    and it may not get longer.
+#
+# `tests/harness/` is excluded the way the Rust excluded `tests/`: it is
+# the net, not the compiler.
+
+use report
+use shell
+use strings
+
+constant COMPILER: str
+    "selfhost"
+
+# §11's number. A threshold to think at, not a limit to round.
+constant CEILING: i64
+    300
+
+# Files already past the ceiling, with the code-line count measured
+# 2026-08-18. **A stop on growth rather than a licence**: a file here that
+# grows is red, exactly as `toolchain.rs` reaching 425 against a decided
+# 400 was red in the Rust.
+constant DECIDED: [str]
+    [
+        "selfhost/ir_lower.hero 1389"
+        "selfhost/check_walk.hero 1385"
+        "selfhost/grammar_expr.hero 868"
+        "selfhost/print_fmt.hero 843"
+        "selfhost/parse_decl.hero 606"
+        "selfhost/ast.hero 495"
+        "selfhost/ir_print.hero 484"
+        "selfhost/emit_ctype.hero 377"
+        "selfhost/resolve_walk.hero 366"
+        "selfhost/ir_mono.hero 363"
+        "selfhost/check_builtins.hero 344"
+        "selfhost/resolve_cycles.hero 341"
+        "selfhost/emit_gate.hero 341"
+        "selfhost/resolve_state.hero 338"
+        "selfhost/cursor.hero 327"
+        "selfhost/modules.hero 311"
+        "selfhost/source.hero 304"
+    ]
+
+# Measured 2026-08-18: 144 modules. The floor is the Rust's own idea —
+# `assert!(files.len() > 100, "the walk is not reaching the tree")` — and
+# it exists because a walk that finds nothing reports green.
+constant LEAST: i64
+    140
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @ report.empty()
+    files = shell.list_entries(scratch: scratch, dir: COMPILER)?
+    modules: [str] @ []
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero")
+            modules @ modules.push(path)
+    if modules.len() < LEAST
+        report.keep_failure(@r, label: "layout", detail: "  the walk found " + modules.len().to_str() + " modules and had " + LEAST.to_str() + " — it is not reaching the tree")
+    over: [str] @ []
+    for path in modules
+        text = read_file(path)
+        if text.is_err()
+            report.keep_failure(@r, label: "layout/" + strings.base_name(path: path), detail: "  cannot read " + path)
+            continue
+        lines = code_lines(text.must())
+        limit = ceiling_for(path)
+        if lines > limit
+            if limit == CEILING
+                over @ over.push("    " + path + ": " + lines.to_str() + " lines of code, past §11's " + CEILING.to_str())
+            else
+                over @ over.push("    " + path + ": " + lines.to_str() + " lines of code, past the " + limit.to_str() + " it measured when this check was written — a file already over the ceiling may not grow further")
+    if over.len() > 0
+        report.keep_failure(@r, label: "layout", detail: "  CLAUDE.md §11: *split a module before it passes ~300 lines*, because \"the author must be able to open any file and read it without drowning\":\n" + over.join("\n") + "\n  Split along a seam that names a concern, never at a line count. Where the LANGUAGE forbids the seam — a knot of mutually recursive functions, which cannot be two modules because Heroes refuses module cycles — the file stays and its module doc owes a map: the cycle, the entry points, which function calls which.")
+    else
+        report.keep_pass(@r)
+    return ok(r)
+
+# The lines a reader must hold in their head: everything outside a `test`
+# block.
+#
+# A `test "..."` at column 0 opens one, and the block ends at the next
+# line that starts at column 0 and is not a comment — which is the same
+# boundary the language uses, since a block is what is indented under its
+# header.
+function code_lines(text: str) -> i64
+    count: i64 @ 0
+    inside: bool @ false
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "test \"")
+            inside @ true
+            continue
+        if inside && row.len() > 0 && !starts_indented(row) && !strings.starts_with(text: row, prefix: "#")
+            inside @ false
+        if !inside
+            count @ count + 1
+    return count
+
+function starts_indented(row: str) -> bool
+    return row[0] == 32 || row[0] == 9
+
+# The ceiling this file is held to: its DECIDED number, or §11's.
+function ceiling_for(path: str) -> i64
+    for entry in DECIDED
+        parts = strings.words(entry)
+        if parts.len() == 2 && parts[0] == path
+            number = strings.to_number(parts[1])
+            if !number.is_err()
+                return number.must()
+    return CEILING
+
+test "code_lines counts what a reader holds and not the cases"
+    program = "function f() -> i64\n    return 1\n\ntest \"one\"\n    assert f() == 1\n    assert true\n\nfunction g() -> i64\n    return 2\n"
+    # Five: the two functions' four lines, plus the blank line before the
+    # test. The blank line AFTER the test belongs to the case — a blank
+    # line does not close a block, which is the language's own rule and
+    # the reason this is asserted rather than assumed.
+    assert code_lines(program) == 5
+    assert code_lines("function f()\n    print(1)\n") == 2
+    assert code_lines("test \"only a test\"\n    assert true\n") == 0
+
+test "a comment inside a test block does not close it"
+    program = "test \"one\"\n    assert true\n# a comment at column 0, still inside the case's paragraph\n    assert true\nfunction after()\n    print(1)\n"
+    assert code_lines(program) == 2
+
+test "the ceiling is per file, and a decided file keeps its own"
+    assert ceiling_for("selfhost/ir_lower.hero") == 1389
+    assert ceiling_for("selfhost/source.hero") == 304
+    assert ceiling_for("selfhost/anything-else.hero") == CEILING
+    assert DECIDED.len() == 17
