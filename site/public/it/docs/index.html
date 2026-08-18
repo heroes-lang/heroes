@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentazione di Heroes: il linguaggio pagina per pagina</title>
+<meta name="description" content="Il linguaggio Heroes spiegato un'idea alla volta, in ordine di lettura e non di consultazione. Ogni blocco di codice è una fetta di un file del repository che compila e gira.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/docs/index.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/docs/index.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/index.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/docs/index.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Documentazione di Heroes: il linguaggio pagina per pagina">
+<meta property="og:description" content="Il linguaggio Heroes spiegato un'idea alla volta, in ordine di lettura e non di consultazione. Ogni blocco di codice è una fetta di un file del repository che compila e gira.">
+<meta property="og:url" content="https://heroes-lang.org/it/docs/index.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Documentazione di Heroes: il linguaggio pagina per pagina">
+<meta name="twitter:description" content="Il linguaggio Heroes spiegato un'idea alla volta, in ordine di lettura e non di consultazione. Ogni blocco di codice è una fetta di un file del repository che compila e gira.">
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Perché Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../zen.html">Zen</a></li>
+      <li><a href="../panel.html">Panel</a></li>
+      <li><a href="../thanks.html">Grazie</a></li>
+      <li><a href="../author.html">Autore</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../../docs/index.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <div class="page-head">
+    <h1 class="page">Documentazione</h1>
+    <span class="nod">· hunky dory ·</span>
+  </div>
+  <p class="lede">Il linguaggio, pagina per pagina, per chi non ha letto la
+  specifica e non dovrebbe essere costretto a farlo.</p>
+
+  <h2>Come si legge questa roba</h2>
+  <p>
+    Heroes ha una specifica, e non è deliberatamente un testo didattico: è lo
+    strumento di controllo, con un budget contato al token perché tutto il
+    linguaggio stia in un prompt. Leggerla insegna le regole come un regolamento
+    insegna un gioco. Queste pagine sono l&rsquo;altra cosa: un&rsquo;idea alla
+    volta, in ordine, con i ragionamenti lasciati dentro. Finché non sono scritte
+    tutte, il regolamento è anche l&rsquo;unica risposta completa:
+    <a href="https://github.com/giuseppearici/heroes-lang/blob/main/spec/heroes-spec.md">tutto
+    il linguaggio, 229 righe</a>.
+  </p>
+  <p>
+    <b>Ogni blocco di codice in questa documentazione è una fetta di un file del
+    repository che compila e gira.</b> Qui niente è battuto dentro la pagina
+    sperando che vada bene. Ogni blocco dice sotto da quale file viene, così puoi
+    aprirlo, eseguirlo e modificarlo, e così un controllo automatico può dirci il
+    giorno in cui la documentazione smette di corrispondere al linguaggio.
+  </p>
+
+  <h2>Gli errori, che sono parte del linguaggio</h2>
+  <p>
+    Qui una diagnostica è un prodotto finito e non una tubatura, quindi è
+    documentata come tutto il resto: che cosa stampa il compilatore, quali
+    riparazioni può applicare al tuo file al posto tuo, quali buchi ha ancora, e il
+    tasso misurato di errori presi per ogni tipo di sbaglio. Ogni errore mostrato è
+    output vero, copiato dal repository e non accorciato per fare bella figura.
+    <a href="../errors.html">Gli errori, e come si legge uno →</a>
+  </p>
+
+  <h2>I capitoli</h2>
+  <p>
+    Dodici capitoli, in ordine di insegnamento e non di consultazione. Uno è
+    scritto; gli altri sono in scrittura, e sono elencati qui perché la forma
+    dell&rsquo;insieme fa parte del piano. <b>Comincia da quello finito:</b>
+    <a href="failure-is-a-value.html">Il fallimento è un valore</a>, che non dà
+    per letto nessuno degli altri e fissa le convenzioni che seguiranno tutti.
+  </p>
+  <p>
+    Il codice di un capitolo non ancora scritto esiste già: il file nominato su
+    ogni riga compila, gira, ed è il materiale futuro di quel capitolo. Leggilo nel
+    repository mentre la prosa recupera.
+  </p>
+  <ol class="chapters">
+    <li class="todo">Un primo programma
+      <span class="soon">in corso</span>
+      <span class="src">file, disposizione, commenti come documentazione · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/00-first.hero">examples/gallery/00-first.hero</a></span>
+    </li>
+    <li class="todo">Record e funzioni
+      <span class="soon">in corso</span>
+      <span class="src">dichiarazioni, costruzione con i nomi, sintassi a chiamata di metodo · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/01-points.hero">examples/gallery/01-points.hero</a></span>
+    </li>
+    <li class="todo">Variant e match
+      <span class="soon">in corso</span>
+      <span class="src">esaustivo per forza, nessun catch-all · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/02-tokens.hero">examples/gallery/02-tokens.hero</a></span>
+    </li>
+    <li><a href="failure-is-a-value.html">Il fallimento è un valore</a>
+      <span class="src">niente null, niente eccezioni · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/03-fallible.hero">examples/gallery/03-fallible.hero</a></span>
+    </li>
+    <li class="todo">Il flusso di controllo
+      <span class="soon">in corso</span>
+      <span class="src">if, while, for, range · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/04-loops.hero">examples/gallery/04-loops.hero</a></span>
+    </li>
+    <li class="todo">Nomi e modifiche
+      <span class="soon">in corso</span>
+      <span class="src">= e @, e perché nascondere un nome è un errore · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/05-mutation.hero">examples/gallery/05-mutation.hero</a></span>
+    </li>
+    <li class="todo">Generici e valori funzione
+      <span class="soon">in corso</span>
+      <span class="src">una forma, molti tipi · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/06-generics.hero">examples/gallery/06-generics.hero</a></span>
+    </li>
+    <li class="todo">Le stringhe
+      <span class="soon">in corso</span>
+      <span class="src">sei escape, e i byte quando ti servono · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/07-strings.hero">examples/gallery/07-strings.hero</a></span>
+    </li>
+    <li class="todo">Le mappe
+      <span class="soon">in corso</span>
+      <span class="src">la ricerca restituisce un valore o un errore · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/10-maps.hero">examples/gallery/10-maps.hero</a></span>
+    </li>
+    <li class="todo">Valori fino in fondo
+      <span class="soon">in corso</span>
+      <span class="src">copie, e un albero senza nemmeno un puntatore · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/11-trees.hero">examples/gallery/11-trees.hero</a></span>
+    </li>
+    <li class="todo">Test e buchi
+      <span class="soon">in corso</span>
+      <span class="src">i test dentro il linguaggio, e ??? come domanda · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/09-holes.hero">examples/gallery/09-holes.hero</a></span>
+    </li>
+    <li class="todo">Il confine con il C
+      <span class="soon">in corso</span>
+      <span class="src">extern, header, e che cosa controlla clang per te · <a href="https://github.com/giuseppearici/heroes-lang/blob/main/examples/gallery/08-ffi.hero">examples/gallery/08-ffi.hero</a></span>
+    </li>
+  </ol>
+
+  <footer>
+    <p>Il nome è un omaggio a <i>&ldquo;Heroes&rdquo;</i> di David Bowie (1977), e
+    le virgolette sono le sue. Gli occhiolini a inizio sezione sono titoli di
+    canzoni, nulla di più: l&rsquo;ironia sta nella confezione, e il linguaggio si
+    tiene le parole chiave sobrie.</p>
+    <p>Costruito da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="../author.html"><i>Gli eroi del codice</i></a>. In piedi
+    <a href="../thanks.html">sul lavoro di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>
