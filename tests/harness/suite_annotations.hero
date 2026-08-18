@@ -1,0 +1,224 @@
+# CLAUDE.md §9's one unforgeable check: every diagnostic is annotated in
+# the source that provokes it.
+#
+# Port of every_diagnostic_is_annotated_in_the_source_that_provokes_it
+# (crates/heroes-cli/tests/golden.rs:344), and panel 085 named it first
+# among the tests with NO successor whatever — so this is the module that
+# milestone exists for.
+#
+# WHY IT IS WORTH MORE THAN THE EXPECTATION FILES IT DUPLICATES. §9
+# forbids `UPDATE_GOLDEN=1` in `check/` and relies on a human reading the
+# diff. A regenerator can rewrite `x.expected` — that is what regenerators
+# do — but it **cannot invent an annotation in `x.hero`**. Comparing the
+# two turns a convention into an invariant: to fake a green run you would
+# have to edit the program as well, in the right place, with the right
+# code. rustc's rule and rustc's reason, and the retrofit's own evidence
+# is that annotating all twenty-eight cases changed no `.expected` file by
+# a single byte.
+#
+# Two forms, and the second exists because the annotation cannot always
+# sit on the offending line (rustc has `//~^` and `//~v` for the same
+# reason):
+#
+#   #~ <code>…    a diagnostic with each code is expected ON THIS LINE
+#   #~v <code>…   on the NEXT line — `unterminated.hero` needs it because
+#                 a trailing comment would land inside the unterminated
+#                 string, and `missing-body.hero` because one diagnostic
+#                 points past the last line of the file.
+#
+# `.fixed` files are deliberately not looked at: a repaired program keeps
+# the annotations of diagnostics it no longer has, which is harmless — a
+# comment provokes nothing — and only the `.hero` cases produce
+# diagnostics.
+
+use cases
+use report
+use strings
+
+# `unsupported/` is in the sweep because its kind lives INSIDE the
+# diagnostic system precisely so that it inherits this invariant (panel
+# 020, the historian's decisive row): a report outside `Diagnostic` would
+# be the only test class in the repo exempt from §9.
+constant DIRECTORIES: [str]
+    [
+        "tests/golden/check"
+        "tests/golden/unsupported"
+    ]
+
+# Measured 2026-08-18 over those two directories: 181 pinned diagnostics
+# across 76 cases. golden.rs floors at 60, which is a number from when
+# there were sixty — a floor at the real count is the same rule with the
+# slack taken out, and it is the count this session ran rather than one
+# carried from a document.
+constant LEAST: i64
+    181
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @ report.empty()
+    annotated: i64 @ 0
+    for dir in DIRECTORIES
+        found = cases.collect(scratch: scratch, dir: dir)?
+        for item in found
+            source = read_file(item.source)
+            expectation = read_file(item.expected)
+            if source.is_err() || expectation.is_err()
+                report.keep_failure(@r, label: "annotations/" + item.name, detail: "  cannot read the case or its expectation")
+            else
+                claimed = sorted(claimed_by(source.must()))
+                reported = sorted(reported_by(expectation.must()))
+                annotated @ annotated + reported.len()
+                if claimed != reported
+                    report.keep_failure(@r, label: "annotations/" + item.name, detail: "  " + item.source + ": the annotations and the diagnostics disagree\n    annotated: " + claimed.join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one")
+                else
+                    report.keep_pass(@r)
+    if annotated < LEAST
+        report.keep_failure(@r, label: "annotations", detail: "  only " + annotated.to_str() + " annotated diagnostics, and there were " + LEAST.to_str() + " — annotations that stop being checked are the shape §9 calls a decoration")
+    return ok(r)
+
+# Both sides are compared as sorted `<line>:<code>` strings: Heroes sorts
+# numbers, strings and bools and not records (spec:172), and the pair is
+# what the comparison is about. The order is the same on both sides, which
+# is all a set comparison needs.
+function sorted(marks: [str]) -> [str]
+    return marks.sort()
+
+# Every annotation in a case, with `#~v` resolved to the next line.
+function claimed_by(text: str) -> [str]
+    found: [str] @ []
+    rows = strings.lines(text)
+    line: i64 @ 0
+    for row in rows
+        line @ line + 1
+        at = strings.index_of(text: row, needle: "#~")
+        if at.is_err()
+            continue
+        # One comment may carry both forms: `#~ empty_record #~v empty_variant`.
+        after = row.slice(from: at.must() + 2, to: row.len())
+        for chunk in strings.split_text(text: after, separator: "#~")
+            body = strings.trimmed(chunk)
+            delta: i64 @ 0
+            codes: str @ body
+            if strings.starts_with(text: body, prefix: "v")
+                delta @ 1
+                codes @ strings.without_prefix(text: body, prefix: "v")
+            for code in strings.words(codes)
+                found @ found.push((line + delta).to_str() + ":" + code)
+    return found
+
+# Every diagnostic in an expectation, as `<line>:<code>`.
+#
+# Two forms, because two commands print diagnostics: `check --brief`'s
+# one-liner `<file>:<line>:<col>: <kind>[<code>]: <message>`, and §4.17's
+# rich form, whose code and location are on consecutive lines. The KIND is
+# read rather than assumed — `error` was the only one until `unsupported`
+# arrived, and hard-coding it would have quietly exempted the new kind
+# from the invariant.
+function reported_by(text: str) -> [str]
+    found: [str] @ []
+    pending: str @ ""
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "  at ")
+            if pending.len() > 0
+                rest = strings.without_prefix(text: row, prefix: "  at ")
+                parts = strings.split_on(text: rest, byte: 58)
+                if parts.len() > 1
+                    number = strings.to_number(parts[1])
+                    if !number.is_err()
+                        found @ found.push(number.must().to_str() + ":" + pending)
+                pending @ ""
+            continue
+        code = code_of(row)
+        if code.is_err()
+            continue
+        # The one-line form carries its own location; the rich form's
+        # headline does not, so it waits for the `at` line.
+        parts = strings.split_on(text: row, byte: 58)
+        placed: bool @ false
+        if parts.len() > 1
+            number = strings.to_number(strings.trimmed(parts[1]))
+            if !number.is_err()
+                found @ found.push(number.must().to_str() + ":" + code.must())
+                placed @ true
+        if !placed
+            pending @ code.must()
+    return found
+
+# The `<code>` out of `…<kind>[<code>]:…`, for any kind.
+function code_of(row: str) -> str?
+    open = strings.index_of(text: row, needle: "[")
+    if open.is_err()
+        return fail("none", "no bracket")
+    tail = row.slice(from: open.must(), to: row.len())
+    close = strings.index_of(text: tail, needle: "]")
+    if close.is_err()
+        return fail("none", "no closing bracket")
+    before = row.slice(from: 0, to: open.must())
+    kind = last_word(before)
+    if kind.len() == 0 || !all_lower(kind)
+        return fail("none", "the word before the bracket is not a kind")
+    code = row.slice(from: open.must() + 1, to: open.must() + close.must())
+    # Digits belong: `indentation_not_multiple_of_4` is a code.
+    if code.len() == 0 || !all_code(code)
+        return fail("none", "the bracket does not hold a code")
+    return ok(code)
+
+# The word before the bracket, cut at a space or a colon.
+function last_word(text: str) -> str
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == 32 || text[i] == 58
+            start @ i + 1
+        i @ i + 1
+    return text.slice(from: start, to: text.len())
+
+function all_lower(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        if text[i] < 97 || text[i] > 122
+            return false
+    return true
+
+function all_code(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        byte = text[i]
+        lower = byte >= 97 && byte <= 122
+        digit = byte >= 48 && byte <= 57
+        if !lower && !digit && byte != 95
+            return false
+    return true
+
+test "an annotation is read on its line, and #~v on the next"
+    marks = claimed_by("function main()\n    x = 1   #~ unused_binding\n    y = 2   #~v empty_record\n")
+    assert marks.len() == 2
+    assert marks[0] == "2:unused_binding"
+    assert marks[1] == "4:empty_record"
+
+test "one comment may carry both forms and several codes"
+    marks = claimed_by("a   #~ one two #~v three\n")
+    assert marks.len() == 3
+    assert marks.sort() == ["1:one", "1:two", "2:three"]
+
+test "the one-line form carries its own location"
+    said = reported_by("x.hero:3:5: error[unused_binding]: `x` is never read\n")
+    assert said == ["3:unused_binding"]
+
+test "the rich form waits for its `at` line, whatever the kind"
+    text = "unsupported[pointer_element]: a `ptr` cannot live in a container\n  at x.hero:31:5\n     |\n  31 |     handles: [ptr] @ []\n     |     ^^^^^^^^^^^^^^^^^^^\n  note: a note in brackets [not_a_code]\n"
+    assert reported_by(text) == ["31:pointer_element"]
+
+test "a bracket that is not a code is not a diagnostic"
+    assert code_of("  note: install it [somewhere else]").is_err()
+    assert code_of("no brackets at all").is_err()
+    assert code_of("  Perhaps `x.pc'").is_err()
+    assert code_of("error[ffi_package]: ...").must() == "ffi_package"
+    assert code_of("unsupported[unit_field]: ...").must() == "unit_field"
+    assert code_of("x.hero:1:1: error[indentation_not_multiple_of_4]: ...").must() == "indentation_not_multiple_of_4"
+
+test "a case whose annotation disagrees with its diagnostic is caught"
+    # The whole point: this is what a regenerator cannot fake, because it
+    # would have to edit the .hero as well.
+    claimed = sorted(claimed_by("a   #~ unused_binding\n"))
+    reported = sorted(reported_by("x.hero:1:1: error[unused_variant]: ...\n"))
+    assert claimed != reported
+    same = sorted(reported_by("x.hero:1:1: error[unused_binding]: ...\n"))
+    assert claimed == same
