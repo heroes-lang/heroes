@@ -143,3 +143,55 @@ This one is worth keeping in the record precisely because it is *not* a
 correctness defect. It is an instrument that shouts about a healthy patient, and
 panel 070's lesson — a hardcoded 134 that reported a SIGSEGV as an abort — is
 that an instrument nobody trusts is one nobody reads.
+
+## What landed, and what carried forward
+
+**Closed 2026-08-18, tag `m-harness-port`.** The net is in Heroes and every suite
+the Rust harness carries has a successor.
+
+```
+heroes run tests/harness/main.hero -- <compiler>      # 688 checks
+```
+
+  check 65 · ir 20 · emit 6 · unsupported 11 · run 87 · annotations 76
+  · determinism 113 · fixes 6 · lines 87 · corpus 14 · warnings 107
+  · records 5 · surface 81 · special 9 · layout 1
+
+**3,630 lines of Heroes against the 4,711 of Rust they replace** — 0.77 of the
+denominator, inside panel 085 R4's predicted 2,500–3,760 and just under its
+~3,200 centre. No compiler line and no new surface, which is what §10's stopping
+rule required: `heroes run` and the compiler under test already compose to it.
+
+**What it found on its first day, and neither was reachable before.** The port
+printed a diagnostic with no code, no position, no snippet and no notes
+(`resolve_packages` asked one call too early to reach `emit_ffi.explain`), and
+`ffi-writable-parameter.expected` had been pinning a caret 71 columns wide where
+the declaration is 43 — the bootstrap's own defect, recorded as correct since the
+case was written, exposed by a second implementation disagreeing. Both repaired
+in step 3; the seed regenerated in the same commit and re-verified byte for byte.
+
+**The close found one more, and it is the port's first real debt.** `cargo test`
+went **red on `no_living_file_names_a_numbered_milestone`** while the Heroes
+harness reported `records: 5 passed, 0 failed`. Both are right about their own
+list and the lists had drifted: `suite_records.hero`'s boundary-rule test quotes
+`(M6+)` — a string this repository really contains — and the port's
+`QUOTES_THE_OLD_SPELLING` carried the file while the Rust's did not. **The two
+lists are the same list in two languages**, and they diverged the moment the
+second one was written. The Rust entry landed with the reason; the general shape
+is the one this milestone will keep meeting, because for as long as both
+harnesses exist every table in one has a twin in the other.
+
+**What carried forward.** One defect is recorded and not repaired
+(`DECIDE.md:466`, cause located): a record's descriptor can reach clang unused,
+because `descriptor_set.rs::generated` asks whether a type is REACHABLE and the
+warning asks whether the emitted C points at it. `emit/unread.rs` answers exactly
+that shape one artifact earlier, and the repair restructures when bodies are
+written — a step of its own. `layout`'s seventeen DECIDED entries carry measured
+numbers and no reasons: the reasons are the author's, and until they exist the
+check holds the line rather than blessing it.
+
+**What the milestone was for.** `M-bootstrap-archive` is now a move rather than
+an amputation: `tests/differential.rs` still dies with the bootstrap by
+construction, and that is the one thing this milestone deliberately did not
+replace — the ROADMAP's entry for the archive already asks for a successor that
+survives its own oracle.

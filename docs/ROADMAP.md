@@ -17,19 +17,20 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-selfhost-fixpoint closed 2026-08-18, tag `m-selfhost-fixpoint` — v1, THE SEED.**
+**M-harness-port closed 2026-08-18, tag `m-harness-port`.** The net is in Heroes.
 
-    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.7 s, no flags
-    21,008,434 bytes · 2.50 MiB of pack · and it re-emits itself byte for byte
+    heroes run tests/harness/main.hero -- <compiler>      # 688 checks, 3m35s
 
-Tested from `git archive HEAD`, not the working tree. **The archive of `crates/`
-did NOT happen and has its own chain** (panel 085 B4): the port read its library
-from `crates/` at run time, so the compiler failed outside this repository and
-blamed the author's line. And emitted C had never been compared between the two
-compilers — 26 of 127 agreed, then **127 of 127**, pinned by
-`tests/differential.rs`. `selfhost/` has **447 test blocks**, not 27,230.
-Record: `docs/journal/022-selfhost-fixpoint.md`. Next: **M-harness-port**, because
-the differential dies with the bootstrap and its expectation *is* the bootstrap.
+**3,630 lines of Heroes against 4,711 of Rust** — inside panel 085 R4's predicted
+2,500–3,760. No compiler line, no new surface. Every suite the Rust harness
+carries now has a successor: check · ir · emit · unsupported · run · annotations
+· determinism · fixes · lines · corpus · warnings · records · surface · special ·
+layout. **It found two defects on its first day** — a diagnostic the port printed
+with no code, position, snippet or notes, and a caret 71 columns wide that the
+`.expected` file had been pinning as correct since the case was written. Both
+repaired, seed regenerated and re-verified byte for byte.
+Record: `docs/journal/023-harness-port.md`. Next: **M-bootstrap-archive**, which
+is now a move rather than an amputation.
 
 ---
 
@@ -39,7 +40,7 @@ the differential dies with the bootstrap and its expectation *is* the bootstrap.
 |---|---|---|---|
 | 1 | **M-selfhost-port** | The port | v1 |
 | 2 | **M-selfhost-fixpoint** | Fixpoint and the seed — **v1** | v1 |
-| 3 | **M-harness-port** | The net in Heroes — the golden harness, the corpus, the record checks | closure list (§1.0): nothing can ask whether the two compilers agree once the bootstrap is gone |
+| 3 | **M-harness-port** | The net in Heroes — the golden harness, the corpus, the record checks — **done** | closure list (§1.0): nothing can ask whether the two compilers agree once the bootstrap is gone |
 | 4 | **M-bootstrap-archive** | `crates/` → `archive/bootstrap-rs/` — the third language dies here | v1's last clause (design.md:82) |
 | 5 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
 | 6 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
