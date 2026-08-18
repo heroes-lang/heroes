@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scritto in se stesso: il punto fisso di Heroes</title>
+<meta name="description" content="Il compilatore di Heroes è scritto in Heroes: 143 moduli, 34.812 righe, e tre compilatori che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/selfhost.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/selfhost.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/selfhost.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/selfhost.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Scritto in se stesso: il punto fisso di Heroes">
+<meta property="og:description" content="Il compilatore di Heroes è scritto in Heroes: 143 moduli, 34.812 righe, e tre compilatori che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<meta property="og:url" content="https://heroes-lang.org/it/selfhost.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Scritto in se stesso: il punto fisso di Heroes">
+<meta name="twitter:description" content="Il compilatore di Heroes è scritto in Heroes: 143 moduli, 34.812 righe, e tre compilatori che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="why.html">Perché Heroes</a></li>
+      <li><a href="docs/index.html">Docs</a></li>
+      <li><a class="here" href="selfhost.html">Self-hosted</a></li>
+      <li><a href="zen.html">Zen</a></li>
+      <li><a href="panel.html">Panel</a></li>
+      <li><a href="thanks.html">Grazie</a></li>
+      <li><a href="author.html">Autore</a></li>
+      <li><a href="log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../selfhost.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <div class="page-head">
+    <h1 class="page">Scritto in se stesso</h1>
+    <span class="nod">· a new career in a new town ·</span>
+  </div>
+  <p class="lede">Il compilatore adesso esiste due volte: una nel linguaggio con
+  cui è stato costruito, una nel linguaggio che costruisce.</p>
+
+  <p>
+    Un linguaggio è un giocattolo finché non riesce a esprimere il
+    proprio compilatore. Per farlo servono un albero con nodi di forme diverse,
+    tabelle dei simboli, liste, ricorsione, gestione degli errori e più
+    file: se un linguaggio riesce a scrivere quella roba, la discussione se sia
+    un linguaggio vero è chiusa. Era il traguardo dal primo giorno, e la
+    prova non è una suite di test.
+  </p>
+  <p>
+    La prova è questa: chiedere a entrambi i compilatori di scrivere lo
+    stesso programma in C, e confrontare i risultati lettera per lettera. Poi
+    compilare le lettere che ha scritto il compilatore nuovo, e chiedere a
+    <i>quel</i> compilatore di scrivere il programma una terza volta.
+  </p>
+  <pre class="fixpoint"><code>sha256  <span class="hash">373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63</span>
+
+  gen1b.c   il bootstrap, scritto in Rust
+  gen3.c    heroes, scritto in Heroes
+  gen4.c    il compilatore uscito da gen3.c
+
+<span class="c">  20.886.539 byte · 724.245 righe · tre compilatori · un hash</span></code></pre>
+  <p>
+    Quei tre nomi si leggono come una catena: il C che emette il bootstrap, il C
+    emesso dal compilatore che quel C ha costruito, e il C emesso dal
+    compilatore costruito da <i>quest&rsquo;ultimo</i>. Una cosa che si riproduce
+    identica, due volte di fila. Quanto è costato, misurato:
+  </p>
+  <ul class="stats">
+    <li><span class="n">143</span><span class="what">moduli di Heroes</span></li>
+    <li><span class="n">34.812</span><span class="what">righe</span></li>
+    <li><span class="n">0</span><span class="what">workaround rimasti</span></li>
+    <li><span class="n">2.570</span><span class="what">output confrontati, nessuna divergenza</span></li>
+  </ul>
+  <p>
+    E quello è il compilatore intero, non un pezzo: lexer, parser,
+    resolver, type checker, la rappresentazione intermedia con il suo
+    verificatore, la monomorfizzazione, il passo sulla proprietà dei
+    valori, il backend C, i controlli sulla FFI, le diagnostiche, il printer, il
+    formatter e la riga di comando.
+  </p>
+
+  <h2>La parte più bella è quello che è andato storto</h2>
+  <p>
+    Puntato sul proprio codice sorgente, il compilatore nuovo <b>l&rsquo;ha
+    rifiutato</b>, sostenendo che un pezzo della sua struttura contenesse se
+    stesso: cosa falsa. Quella singola lamentela sbagliata era il filo da tirare,
+    e tirandolo sono usciti cinque difetti veri nel compilatore nuovo e, cosa
+    più sorprendente, <b>quattro nel vecchio</b>. Compreso questo: la
+    sottolineatura che mostra al lettore dove sta l&rsquo;errore copriva la
+    piccola annotazione scritta su quella stessa riga con l&rsquo;unico scopo di
+    controllare quella sottolineatura. Il figlio ha corretto il padre.
+  </p>
+  <p>
+    Un compilatore puntato sul proprio sorgente è un corpus che nessuna
+    suite di test riproduce: 34.812 righe che contengono ogni forma del
+    linguaggio, nelle proporzioni in cui il codice vero le usa. È con quel
+    corpus che sono stati trovati cinque dei difetti del porting, ed erano una
+    trappola sola vestita in cinque modi: un salto di ciclo dentro un braccio di
+    <code>match</code> saltava la riga che teneva aggiornato un indice mantenuto
+    a mano. L&rsquo;originale in Rust percorre la stessa lista con un iterator:
+    non c&rsquo;è nessun indice da dimenticare, quindi quell&rsquo;errore
+    non avrebbe potuto farlo.
+  </p>
+
+  <h2>Venti milioni di lettere dietro tre parole</h2>
+  <p>
+    L&rsquo;ultima cosa rimasta fra i due file e l&rsquo;essere identici era un
+    messaggio che il compilatore vecchio aveva lasciato scritto per chi avrebbe
+    fatto questo lavoro, in tre punti diversi:
+  </p>
+  <blockquote>
+    questa lista esce in ordine qui, e la versione nuova dovrà un
+    ordinamento esplicito
+  </blockquote>
+  <p>
+    Tre ordinamenti, non pagati. Il risultato erano 20,8 megabyte di C in cui
+    tutte le <i>righe</i> combaciavano e la <i>sequenza</i> no, su 3.330 righe
+    delle 724.197 totali. Una mappa non ha un ordine: il linguaggio lo dice, e lo
+    intende in modo misurabile, quindi quell&rsquo;annotazione era corretta il
+    giorno in cui è stata scritta ed è rimasta corretta per mesi,
+    finché qualcuno non ne ha avuto bisogno.
+  </p>
+
+  <h2>Quanto costa, perché un hash non è tutta la storia</h2>
+  <p>
+    Il progetto si è misurato contro altri dieci alberi di sorgenti di
+    compilatori, e la riga scomoda è tinycc: 68.000 righe per
+    <i>tutto</i> il C, mentre il bootstrap in Rust ne spende 30.000 per un
+    sottoinsieme e delega a clang ogni domanda sul backend. Per unità di
+    linguaggio coperto, <b>questo compilatore è caro</b>. Il contrappeso
+    sta nella stessa tabella, ed è il motivo per cui il porting è
+    stato possibile: un rapporto di commenti di 0,51, righe di commento contro
+    righe di codice, quasi il doppio del secondo classificato.
+  </p>
+
+  <h2>Cosa manca</h2>
+  <p>
+    Non una misura. Due cose: bisogna mostrare il C generato che si costruisce da
+    un <a href="https://github.com/giuseppearici/heroes-lang">checkout pulito</a>
+    con nient&rsquo;altro che un compilatore C, che è come Go ha
+    rilasciato la 1.4 e come Zig distribuisce il suo bootstrap; e poi il
+    bootstrap in Rust va archiviato e non più mantenuto. Dopo di che il
+    quadro completo è Heroes → C → binario nativo, senza nessun terzo
+    linguaggio in mezzo.
+  </p>
+
+  <p class="next">
+    La versione giorno per giorno di tutto questo è il
+    <a href="log.html">diario di costruzione</a>.
+  </p>
+
+  <footer>
+    <p>Costruito da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="author.html"><i>Gli eroi del codice</i></a>. In piedi
+    <a href="thanks.html">sul lavoro di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

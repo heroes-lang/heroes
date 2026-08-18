@@ -82,6 +82,65 @@ Not deployed yet. Cheapest route when wanted: GitHub Pages publishing
 **Ask before wiring any of it — publishing is an outward-facing act**, one
 of the process's few remaining hard stops.
 
+## The Italian edition — `site/public/it/`
+
+The site ships in two languages (author instruction 2026-08-18: *"traduci tutto
+il sito anche in italiano … lascia in inglese i termini tecnici"*). This extends
+CLAUDE.md §11's declared exception — which already covers the two books — to the
+site, and the same rule applies: **neither edition is a machine translation of
+the other**, and where they diverge the Italian is fixed to read better rather
+than the English to read more literally, because the author studies from the
+Italian.
+
+Mechanics, all of them chosen so there is still no build step:
+
+- The Italian edition lives in **`site/public/it/`, same basenames**
+  (`it/why.html` is `why.html`), so the two trees map one to one and a missing
+  page is obvious. Italian pages link `../style.css` — one stylesheet for both.
+- **`lang="it"`** on the root element, and every page carries the three
+  `hreflang` alternates (`en`, `it`, `x-default` → the English page).
+- The switch is the **`a.lang` badge** in the nav beside the GitHub link, `IT` on
+  English pages and `EN` on Italian ones, with `hreflang`/`lang` on the anchor
+  and an Italian/English `title`. It is **not** a nav item: the row is full at
+  nine, and a language is not a page.
+- Nav labels: Italian where Italian is what a reader would say (Perché Heroes ·
+  Grazie · Autore), English where the English word *is* the Italian technical
+  usage (Docs · Self-hosted · Zen · Panel · Log). Keeping those also keeps the
+  row the same width, which is what the nine-item measurement was about.
+- Accented characters are **real UTF-8 characters** (`è`, not `&egrave;`); HTML
+  entities stay for typography only (`&mdash;`, `&rsquo;`, `&ldquo;`,
+  `&middot;`). The pages are `charset=utf-8` and an entity-per-accent source is
+  unreadable for the one person who has to proofread it.
+
+What must **never** be translated, because translating it would make the page
+lie:
+
+- **Code blocks.** They are slices of repository files and must keep matching
+  their `data-src` byte for byte, English comments inside the code included. The
+  drift check runs against the Italian pages too, for free. Only the
+  `figcaption` word changes (`lines` → `righe`).
+- **Compiler output, diagnostics, file paths, commands and keywords.**
+- **The twenty Zen lines.** They are what `heroes this` prints, and they carry
+  Bowie fragments; an Italian rendering would be both a false quotation of the
+  binary and a derivative of a lyric, which § Style guide refuses. `it/zen.html`
+  keeps the list in English under `lang="en"`, says in one paragraph why, and
+  explains the lines in Italian prose underneath. **It does not gloss them line
+  by line** — that was considered and refused for the same reason.
+- **The section nods**, which are song titles.
+
+Two things that are easy to get wrong and are therefore rules:
+
+- **Numbers take Italian conventions**: `34.812`, `2.570`, `0,51`, `20,8
+  megabyte`. ISO dates stay ISO (`2026-08-18`) because they are records. A
+  column-aligned block inside `<pre>` is **re-aligned on the rendered
+  characters**, not on the source: an `&rsquo;` is one glyph and eight
+  characters, and the first Italian mutation table was written straight over the
+  English column stops and did not line up.
+- **The book is named in Italian**: *Gli eroi del codice* is the edition of
+  record. The release wording rule in § The author and the book applies
+  unchanged in Italian: before 20 September 2026, *"in uscita il 20 settembre
+  2026"* — never *pubblicato*, *disponibile*, *in vendita*, *acquista*.
+
 ## Style guide — the site's register: 70s-glam Bowie, with discipline
 
 - **One motif**: the Aladdin Sane bolt (1973), red over blue, inline SVG
