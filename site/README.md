@@ -280,7 +280,16 @@ copy could be wrong later:
    back, two things hold: the talk is never described as the book, and Italian
    Agile Days is an unsent proposal that must not appear.
 
-**Author links are omitted on purpose.** `giuseppearici.com/en/` and
+**The book has one domain per edition** (author instruction 2026-08-18):
+`glieroidelcodice.it` for the Italian, `heroesofcode.com` for the English, each
+linked from its own edition's `author.html` on the title. **Both 301 to
+`giuseppearici.com` pages that returned 404 when this was written**, measured the
+same day, so today they are dead ends the way the parking pages below are. They
+are in the markup on the author's instruction, which outranks the rule under it;
+what that costs is a pre-publication check: **the two book domains must resolve
+before the site goes public**, and if they do not, the two links come out again.
+
+**Other author links are omitted on purpose.** `giuseppearici.com/en/` and
 `giuseppearici.com/en/books/heroes-of-code/` both returned **404** on
 2026-08-18, and `heroesofcode.com` 301s to the second of them, so the site is
 still parked. The brief's own condition applies: omit rather than send visitors

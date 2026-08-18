@@ -54,8 +54,8 @@
     essere <code>null</code>, e niente sulla riga ti dice se lo è. Una chiamata
     potrebbe lanciare un&rsquo;eccezione, e niente sulla riga ti dice se lo fa.
     Producono la stessa classe di bug: <b>il percorso non gestito</b>, l&rsquo;unico
-    tipo di errore che non solleva nessun errore di compilazione in tutti i
-    linguaggi che ce l&rsquo;hanno.
+    tipo di errore che non fa scattare nessun errore di compilazione in nessuno
+    dei linguaggi che ce l&rsquo;hanno.
   </p>
   <p>
     È quella la classe che Heroes esiste per eliminare, quindi non ha né
@@ -85,8 +85,8 @@
     <b>codice</b>, <code>"not_a_digit"</code>, è un nome corto e stabile in
     snake_case, fatto per essere confrontato da un programma: è la parte che non
     cambia quando qualcuno migliora il testo. Il <b>messaggio</b> è per chi legge
-    il fallimento. I codici sono il modo in cui prendi una strada o
-    l&rsquo;altra; i messaggi sono il modo in cui la spieghi.
+    il fallimento. I codici sono il modo in cui scegli che strada prendere a seconda di che cosa
+    è andato storto; i messaggi sono il modo in cui lo spieghi.
   </p>
 
   <h3>Passare un fallimento verso l&rsquo;alto: <code>?</code></h3>
@@ -176,7 +176,7 @@
     cosa&rdquo;, perché è proprio quel ramo il modo in cui un caso dimenticato
     diventa in silenzio un caso gestito. Se un giorno il linguaggio acquisisse una
     terza possibilità, ogni <code>match</code> di ogni programma smetterebbe di
-    compilare finché qualcuno non l&rsquo;ha guardato. È voluto: un cambiamento
+    compilare finché qualcuno non l&rsquo;avesse guardato. È voluto: un cambiamento
     nella forma dei dati deve rompere il codice che li legge, ad alta voce, al
     momento della build.
   </p>
@@ -209,14 +209,14 @@
   </figure>
   <p>
     <code>test</code> fa parte del linguaggio, non di una libreria, e un test vive
-    accanto al codice che prova. <code>heroes test</code> esegue tutti quelli che
+    accanto al codice che mette alla prova. <code>heroes test</code> esegue tutti quelli che
     stanno nel file.
   </p>
 
   <h3>Tutto insieme, in esecuzione</h3>
   <p>
     I quattro modi di leggere un valore che può fallire, nell&rsquo;ordine in cui
-    li si cerca (<code>?</code>, <code>match</code>, <code>.default()</code> e
+    li cerchi (<code>?</code>, <code>match</code>, <code>.default()</code> e
     <code>.must()</code>), stanno tutti in un file da cinquanta righe. Il suo
     <code>main</code>:
   </p>
@@ -246,8 +246,8 @@ failed: not_a_digit (expected 0-9)
     La firma di ogni funzione ti dice se può fallire. Ogni punto in cui un
     fallimento cambia il flusso è segnato su quella riga. Ogni modo di gestirne
     uno o affronta entrambi i casi oppure dice ad alta voce che sta saltando il
-    controllo. Non c&rsquo;è nessun <code>null</code> da dimenticare e nessun
-    lancio da mancare, e il percorso non gestito &mdash; l&rsquo;unico bug che
+    controllo. Non c&rsquo;è nessun <code>null</code> da dimenticare e nessuna
+    eccezione da lasciarsi scappare, e il percorso non gestito &mdash; l&rsquo;unico bug che
     nessun compilatore prende, nei linguaggi che lo permettono &mdash; non ha più
     nessun posto in cui nascondersi.
   </p>
