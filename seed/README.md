@@ -1,0 +1,79 @@
+# The seed — how to build Heroes with nothing but a C compiler
+
+`heroes.c` is the Heroes compiler, in C. It is what the compiler emits when it
+compiles itself, and it is here so that a clean checkout can build a working
+compiler with no Heroes compiler and no Rust.
+
+```sh
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+./heroes --version
+```
+
+That is the whole of it: one command, no flags beyond the include path, no
+configure, no make. Measured on Apple clang 21.0.0, arm64-darwin: **3.7 s at no
+optimisation level, 27 s at `-O2`**. Any C11 compiler should do — the file was
+compiled clean under `-std=c11`, `gnu11`, `c17`, `gnu17`, `c23`, `gnu23`, under
+`-pedantic-errors` and under `-Wall -Werror`, all on one clang, which is what
+"any C compiler" is currently worth here.
+
+The compiler it produces is the real one. It compiles programs, it compiles
+`selfhost/`, and what it emits for `selfhost/main.hero` is this file again, byte
+for byte.
+
+## What it needs beside itself
+
+Eighteen files, and they are all in the checkout:
+
+- `seed/heroes.c`
+- `runtime/heroes_runtime.h` and `runtime/hero_os.h` — `heroes.c` includes both,
+  which is why `-I runtime` is not optional
+- `runtime/runtime.c` and the **fourteen** files under `runtime/parts/`, which
+  `runtime.c` includes. Shipping `runtime.c` alone does not link.
+
+And at **run** time the compiler needs `runtime/` again — it compiles it — which
+it finds under the working directory, or wherever `$HEROES_RUNTIME` says.
+
+Nothing else. The standard library is inside the binary
+(`selfhost/library_source.hero`), because panel 028 R3 ruled it embedded: a
+library file on disk would be a file clang cannot type-check and therefore a
+decoy the `_Static_assert` cannot guard.
+
+## When this file must be regenerated
+
+**In the same commit as the change that breaks it**, by whoever has a working
+compiler in hand. That is not a preference. Generated C cannot be hand-patched:
+if the seed stops building today's `selfhost/`, the only thing that can make a
+new one is a Heroes compiler, and the only way to get one is a seed that works.
+Go's own "frozen" 1.4 bootstrap was respun at least twice because a frozen seed
+rots against the host; Go could patch theirs, because it was hand-written C.
+This is not (panel 085 R2).
+
+```sh
+heroes build selfhost/main.hero --emit-c -o seed/heroes.c
+```
+
+Two things force it, and each has an instrument:
+
+1. **`HERO_RUNTIME_ABI` moves.** The seed carries
+   `_Static_assert(HERO_RUNTIME_ABI == N, ...)` on its eighth line, so a runtime
+   from another compiler stops the build with that message rather than linking
+   quietly. `the_seed_builds_from_a_clean_checkout` asserts the two numbers agree.
+2. **`selfhost/` uses a form the committed seed cannot parse.** The cheap check
+   is the build above — it is 3.7 s and it runs in the test. The expensive one is
+   the full fixpoint (`heroes build selfhost/main.hero --emit-c` from the
+   seed-built compiler, ~12 minutes, and the bytes must match), which belongs to
+   a milestone close.
+
+## Why raw C, and why in git
+
+Both halves were measured rather than argued (panel 085 R1).
+
+**In git**, because the checkout is the artifact: a seed attached to a release
+and not to the repository is the shape of CVE-2024-3094, where the backdoor lived
+in the release tarball and not in the source anyone could read.
+
+**Raw**, because git delta-compresses plain text and cannot delta a compressed
+stream. Compressing first saves 0.20 MiB on the first copy and costs 1 to 2.4 MiB
+on every refresh after it: measured over three stored seeds, **2.74 MiB raw
+against 5.78 MiB gzipped**. And a `.gz` would need a decompressor on the one path
+that must not need one.
