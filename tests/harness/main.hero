@@ -31,9 +31,9 @@
 #   unsupported/  what the backend refuses — stderr, exit 1, no artifact
 #   run/          every program at -O0, -O2 and --sanitize
 #   annotations   §9's `#~` invariant over check/ and unsupported/
+#   determinism   the IR dump twice, the C twice and through -o
 #
-# Still in Rust, and each one is a step of this milestone: the IR dump's
-# determinism, the
+# Still in Rust, and each one is a step of this milestone: the
 # `#line` sweep over the whole `run/` corpus, the certain-fix suite, the
 # corpus, the double-emit determinism diff, the record checks
 # (milestones.rs) and the file-length check (layout.rs, a rewrite rather
@@ -42,6 +42,7 @@
 use report
 use shell
 use suite_annotations
+use suite_determinism
 use suite_golden
 use suite_run
 
@@ -112,6 +113,15 @@ function main()
             print("harness: the annotations sweep could not run")
             exit(2)
         print("  annotations: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "determinism"
+        got = suite_determinism.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the determinism suite could not run")
+            exit(2)
+        print("  determinism: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
