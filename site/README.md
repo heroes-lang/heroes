@@ -89,33 +89,59 @@ together.
 
 ## Looking at it before it is published — `site/serve.py`
 
-    python3 site/serve.py            # https://localhost:8443/
-    python3 site/serve.py --it       # opens the Italian edition
-    python3 site/serve.py --port 9443 --no-open
+The site answers on **its own name**, locally, over HTTPS, with a certificate the
+browser accepts without a word:
 
-Standard library only, plus the `openssl` that ships with macOS. It serves
-`public/` and nothing else, sends `Cache-Control: no-store` so a reload never
-shows yesterday's CSS, and makes a self-signed certificate on first run into
-`site/.cache/`, which `site/.gitignore` keeps out of the repository — it is a
-key, it is per-machine, and it expires. The browser warns once; the warning is
-correct and you accept it.
+    sudo python3 site/serve.py --host heroes-lang.org      # https://heroes-lang.org
+    python3 site/serve.py                                  # https://localhost:8443
+    python3 site/serve.py --host heroes-lang.org --port 8443   # no sudo
+    python3 site/serve.py --it                             # opens the Italian edition
+
+**Why the real name and not localhost.** Every absolute URL on these pages is
+`https://heroes-lang.org/...`: the `canonical` of all 22 pages, the three
+`hreflang` alternates on each of them, the `og:url`, the sitemap's 22 entries.
+Under `localhost` none of that is exercised — the canonical points somewhere
+else than the page you are reading, and the language switch crosses an origin.
+Served under the real name, a mistake in any of it shows up here rather than
+after the launch. `sudo` is only there because 443 is a privileged port; the
+script refuses it without root and prints both ways out.
+
+The setup, once per machine (2026-08-19):
+
+1. `127.0.0.1  heroes-lang.org` in `/etc/hosts`.
+2. `brew install mkcert nss` — `nss` is what makes Firefox trust it too.
+3. **`mkcert -install`** — creates a local CA and puts it in the system trust
+   store. It asks for your password, and it is the one step the script cannot do
+   for you: `security add-trusted-cert` needs a terminal that can prompt.
+
+Then `serve.py` does the rest. Per host, on first run, it writes a certificate
+into `site/.cache/` (git-ignored: it is a key, it is per-machine, it expires)
+carrying `subjectAltName` for the name, `localhost` and both loopback addresses
+— the field everyone forgets, and without which a browser rejects the
+certificate outright and makes it look like a server bug. Without `mkcert` it
+falls back to a self-signed certificate from `openssl`, which works and warns
+once. If `mkcert` made the certificate but its CA is **not** in the trust store,
+the script says so and prints the one command that fixes it, because that state
+is indistinguishable from a broken server if nobody tells you.
+
+Everything else it does is in service of not lying to you: it serves `public/`
+and nothing else, sends `Cache-Control: no-store` so a reload can never show
+yesterday's CSS, logs one line per request, and lives outside `public/` so it
+can never be deployed with the site.
 
 **Why it is a script and not a `heroes` subcommand.** CLAUDE.md §10 says every
 capability is a subcommand of the one binary, and §10's own stopping rule is
 what keeps this one out: a capability enters that surface only if the fixpoint
 invocation, the golden harness or the Part 11 harness must type it, or it has a
 measured Part 11 effect. Serving a static directory is none of those, and it is
-not a property of the language. It sits beside what it serves and outside
-`public/`, so it can never be deployed.
+not a property of the language, so `heroes serve` would be the actual breach.
 
-**Why HTTPS and not `python3 -m http.server`.** A browser gives an HTTP origin a
-different security context, so anything these pages might grow — a service
-worker, a clipboard call, an asset from another origin — behaves differently
-there than on the real site. Serving them over TLS locally deletes that class of
-surprise before it can exist. Verified on 2026-08-19: both editions, the
-stylesheet, a nested chapter and `sitemap.xml` all answer 200 with the right
-content type, a missing page answers 404, and the certificate carries the
-`subjectAltName` without which every modern browser refuses it outright.
+Verified by running it, 2026-08-19: under `heroes-lang.org` the certificate
+**verifies against the mkcert CA root** and both editions, the stylesheet, a
+nested chapter and `sitemap.xml` answer 200 with the right content type; a
+missing page answers 404; the no-store header is present; the key is mode 0600;
+and asking for port 443 without root exits with the two commands that work
+instead of a stack trace.
 
 Not deployed yet. Cheapest route when wanted: GitHub Pages publishing
 `site/public/` (`CNAME` is already in it) + two DNS records at the registrar.
