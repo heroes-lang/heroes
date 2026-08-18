@@ -1,0 +1,137 @@
+# The primitives every mutation operator is built out of: a text edit, a
+# span, and the four questions about a tree node that decide whether a site
+# is one.
+#
+# Split out of `mutate_edits.hero` on 2026-08-19 because that file reached 338
+# code lines and §11's ceiling is 300 — and a NEW file has no excuse to be on
+# `suite_layout`'s decided list, which is a stop on growth rather than an
+# approval. The seam is a real one rather than an arithmetic one: everything
+# here answers a question about ONE node or ONE span, and the operators above
+# it answer questions about a program.
+#
+# It is also where the language forced a shape: `mutate_typo` and
+# `mutate_edits` both need the one-character slip and the text edit, and Heroes
+# refuses module cycles (`module_cycle` fires on the `use` edge, whatever it
+# carries). Two modules that each need one function from the other cannot both
+# exist, so the shared half lives here and both use it.
+
+use ast
+use source
+use token
+
+
+# A plausible one-character slip: drop the middle character. `total` → `totl`,
+# which is §4.4's own example.
+#
+# It lives HERE rather than beside the three typo operators because
+# `mutate-undeclared` needs it too and Heroes refuses module cycles: two
+# modules each needing one function from the other cannot both exist, so the
+# shared half sits on the side nothing else imports (`mutate_typo` uses this
+# module, never the other way).
+function slipped(name: str) -> str
+    cs = name.chars()
+    middle = cs.len() / 2
+    out: [str] @ []
+    i: i64 @ 0
+    while i < cs.len()
+        if i != middle
+            out @ out.push(cs[i])
+        i @ i + 1
+    return out.join("")
+
+# Replace a span's text. Slicing at a span boundary is always on a character
+# boundary, because a span is made of token edges.
+function edit(s: source.Source, span: token.Span, replacement: str) -> str
+    return s.text.slice(from: 0, to: span.start) + replacement + s.text.slice(from: span.end, to: s.text.len())
+
+# Swap two spans' text — `first` comes before `second`, which is how the
+# argument list hands them over.
+function swapped(s: source.Source, first: token.Span, second: token.Span) -> str
+    left = source.span_text(s, first)
+    right = source.span_text(s, second)
+    return s.text.slice(from: 0, to: first.start) + right + s.text.slice(from: first.end, to: second.start) + left + s.text.slice(from: second.end, to: s.text.len())
+
+# Insert text at an offset.
+function inserted(s: source.Source, at: i64, addition: str) -> str
+    return s.text.slice(from: 0, to: at) + addition + s.text.slice(from: at, to: s.text.len())
+
+# The first byte of the line containing `at`.
+function line_start(s: source.Source, at: i64) -> i64
+    start: i64 @ at
+    while start > 0 && s.text[start - 1] != 10
+        start @ start - 1
+    return start
+
+# The arguments of a call, a method call or a variant case; none for anything
+# else.
+function args_of(e: ast.Expr) -> [ast.Arg]
+    none: [ast.Arg] = []
+    return match e.kind
+        .call c => c.args
+        .method m => m.args
+        .variant_case v => v.args
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => none
+        .null_ptr | .name | .hole | .error => none
+        .unary | .binary | .field | .index => none
+        .array | .map | .try_expr | .if_expr | .match_expr => none
+
+# An argument's full extent — its label, where it has one, through its value.
+function whole_arg(a: ast.Ast, arg: ast.Arg) -> token.Span
+    value = a.exprs[arg.value].span
+    return match arg.name
+        .ok label => token.Span(start: label.start, end: value.end)
+        .err _ => value
+
+function arms_of(e: ast.Expr) -> [ast.Arm]
+    none: [ast.Arm] = []
+    return match e.kind
+        .match_expr m => m.arms
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => none
+        .null_ptr | .name | .hole | .error => none
+        .unary | .binary | .field | .index => none
+        .call | .method | .variant_case => none
+        .array | .map | .try_expr | .if_expr => none
+
+function is_name(e: ast.Expr) -> bool
+    return match e.kind
+        .name => true
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => false
+        .null_ptr | .hole | .error => false
+        .unary | .binary | .field | .index => false
+        .call | .method | .variant_case => false
+        .array | .map | .try_expr | .if_expr | .match_expr => false
+
+function is_case(p: ast.Pattern) -> bool
+    return match p.kind
+        .variant_case => true
+        .wildcard | .literal | .error => false
+
+function is_int(e: ast.Expr) -> bool
+    return match e.kind
+        .int_lit => true
+        .float_lit | .str_lit | .char_lit | .bool_lit => false
+        .null_ptr | .name | .hole | .error => false
+        .unary | .binary | .field | .index => false
+        .call | .method | .variant_case => false
+        .array | .map | .try_expr | .if_expr | .match_expr => false
+
+function trim_end(text: str) -> str
+    cs = text.chars()
+    last: i64 @ cs.len()
+    while last > 0 && (cs[last - 1] == " " || cs[last - 1] == "\t" || cs[last - 1] == "\n" || cs[last - 1] == "\r")
+        last @ last - 1
+    return cs.slice(from: 0, to: last).join("")
+
+function index_of(text: str, needle: str) -> i64?
+    if needle.len() == 0 || needle.len() > text.len()
+        return fail("absent", "the needle is not there")
+    limit = text.len() - needle.len()
+    at: i64 @ 0
+    while at <= limit
+        k: i64 @ 0
+        while k < needle.len() && text[at + k] == needle[k]
+            k @ k + 1
+        if k == needle.len()
+            return ok(at)
+        at @ at + 1
+    return fail("absent", "the needle is not there")

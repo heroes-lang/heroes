@@ -1,0 +1,299 @@
+# Metric 3, offline: the silent-error rate (design.md Part 11).
+#
+# Port of crates/heroes/src/mutate/{mod,survivors}.rs. The thesis says every
+# plausible LLM mistake should be a compile error. This pass is the falsifier:
+# take a program that compiles, make one plausible mistake in it, and ask
+# whether the compiler notices. A mutant the compiler **rejects** is KILLED —
+# the design worked. One it **accepts** is SURVIVED, and that is a silent wrong
+# program, which the thesis says should not exist.
+#
+# THREE RULES FROM `harness/mutations/operators.md`, and they are what makes the
+# number mean anything:
+#
+# 1. the operators are data, not code — `mutate_ops` is that list;
+# 2. a mutant that fails to parse is EXCLUDED. It measures the lexer, not the
+#    thesis, and it is reported separately so the exclusion is visible rather
+#    than convenient;
+# 3. **two arms.** `check` and `check --permissive`, the second with the thesis
+#    rules dropped. The difference between the two columns *is* the measured
+#    effect of the design — a language that rejects everything maximises kill
+#    rate and proves nothing, which is why panel 011 made the control arm
+#    mandatory.
+#
+# One mutant per site, sites found in the arena's order, so a run is
+# reproducible from the compiler alone.
+
+use diag
+use modules
+use parse
+use resolve
+use checker
+use check_state
+use mutate_ops
+
+# One program of the corpus.
+record Program
+    name: str
+    text: str
+
+variant Fate
+    # The compiler rejected it: the mistake is loud.
+    killed
+    # The compiler accepted it: a silent wrong program.
+    survived
+    # It did not parse, so it measures the lexer and not the thesis.
+    excluded
+
+# One operator's score over a corpus, in both arms.
+record Score
+    operator: str
+    mutants: i64
+    excluded: i64
+    killed_strict: i64
+    killed_permissive: i64
+
+# One mutant the compiler accepted, and where the mistake was made.
+record Survivor
+    operator: str
+    file: str
+    # 1-based, in the ORIGINAL program — the line a reader would open.
+    line: i64
+    # The original line, or absent where the mutant added one.
+    before: str?
+    # The mutated line, or absent where the mutant deleted one.
+    after: str?
+
+# The scores and the survivors of one run. Two returns rather than two passes:
+# a survivor is discovered by the loop that scores it, so re-deriving the list
+# would run the whole frontend over every mutant a second time — and, worse,
+# would let the printed survivors and the printed rate come from two different
+# traversals. They must not be able to disagree.
+record Run
+    scores: [Score]
+    survivors: [Survivor]
+
+# Kill rate over the mutants that count, as a whole percentage.
+#
+# THE ROUNDING IS THE BOOTSTRAP'S, IN INTEGERS. Rust prints this with `{:.0}`,
+# which rounds an exact half to EVEN — `12.5` prints `12` — and Heroes has no
+# float formatting with a precision, so the tie is decided here instead of by a
+# printer. Everything else is the ordinary comparison of remainders. A run of
+# both compilers over the same corpus is what checks it.
+function rate(killed: i64, mutants: i64, excluded: i64) -> i64
+    counted = mutants - excluded
+    if counted <= 0
+        return 0
+    whole = 100 * killed / counted
+    rest = 100 * killed % counted
+    if 2 * rest > counted
+        return whole + 1
+    if 2 * rest < counted
+        return whole
+    if whole % 2 == 0
+        return whole
+    return whole + 1
+
+# One mutant through the real frontend. `permissive` drops the thesis rules,
+# which is exactly what `check --permissive` does.
+#
+# **THE WHOLE COMPILATION, NOT THE ONE FILE.** `mutate` measures what the
+# compiler catches, so it has to see what the compiler sees: the library and
+# every module the file names. Measured on a bare source, a module file scores
+# 100% caught on one unrelated complaint about a `use` line nobody loaded — a
+# number that is high and means nothing.
+function fate(name: str, text: str, library: str, permissive: bool) -> Fate
+    s = modules.load_text(path: name, root_text: text, library: library)
+    parsed = parse.parse_source(s)
+    if parsed.diagnostics.len() > 0
+        # A parse failure is an exclusion, not a kill: it measures the lexer.
+        return .excluded
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    if reports(diagnostics: out.diagnostics, permissive: permissive)
+        return .killed
+    if reports(diagnostics: c.diagnostics, permissive: permissive)
+        return .killed
+    return .survived
+
+function reports(diagnostics: [diag.Diagnostic], permissive: bool) -> bool
+    for d in diagnostics
+        if permissive && diag.is_thesis_rule(d)
+            continue
+        return true
+    return false
+
+# Whether a corpus program is one this measurement may use: it compiles, today,
+# with nothing to report.
+#
+# **The same pipeline that judges the mutants judges the base**, deliberately.
+# `heroes mutate` pointed at the library reported 77 sites and 100% killed
+# while `heroes check` refused that very corpus — every mutant killed by a
+# diagnostic that was already there. Metric 3's one number that can be wrong in
+# the flattering direction, found by a scaffold rather than by the harness
+# (panel 038; author decision 2026-08-12: refuse, do not silently exclude).
+function base_checks_clean(name: str, text: str, library: str) -> bool
+    return is_survived(fate(name: name, text: text, library: library, permissive: false))
+
+function is_survived(f: Fate) -> bool
+    return match f
+        .survived => true
+        .killed | .excluded => false
+
+# Run every operator over every source, and score them. `only` empty runs all
+# thirteen.
+function scored(sources: [Program], only: str, library: str) -> Run
+    scores: [Score] @ []
+    survived: [Survivor] @ []
+    for operator in mutate_ops.operators()
+        if only.len() > 0 && only != operator.id
+            continue
+        mutants: i64 @ 0
+        excluded: i64 @ 0
+        strict: i64 @ 0
+        permissive: i64 @ 0
+        for one in sources
+            for mutant in mutate_ops.apply(id: operator.id, name: one.name, text: one.text)
+                mutants @ mutants + 1
+                verdict = fate(name: one.name, text: mutant, library: library, permissive: false)
+                match verdict
+                    .excluded => excluded @ excluded + 1
+                    .killed =>
+                        strict @ strict + 1
+                        control = fate(name: one.name, text: mutant, library: library, permissive: true)
+                        match control
+                            .killed => permissive @ permissive + 1
+                            .survived | .excluded => permissive @ permissive
+                    .survived =>
+                        site = locate(operator: operator.id, file: one.name, original: one.text, mutant: mutant)
+                        if !site.is_err()
+                            survived @ survived.push(site.must())
+        scores @ scores.push(Score(operator: operator.id, mutants: mutants, excluded: excluded, killed_strict: strict, killed_permissive: permissive))
+    return Run(scores: scores, survivors: survived)
+
+# Where the two texts first disagree.
+#
+# **The site is derived from the two texts, not carried from the edit.** An
+# operator hands back a whole mutated program, so the site is the first line
+# where the two differ — a fact about the pair in hand, which is what CLAUDE.md
+# §11 asks a narrowing to rest on. The alternative was threading a span out of
+# all thirteen edits, which buys nothing: an edit that deletes a line
+# (`drop-case`) still differs first at the line it deleted.
+#
+# Absent only if the two are identical, which an operator is not supposed to
+# produce — and if one ever does, a survivor with no site is more honest than a
+# site invented for it.
+function locate(operator: str, file: str, original: str, mutant: str) -> Survivor?
+    before = lines_of(original)
+    after = lines_of(mutant)
+    longest: i64 @ before.len()
+    if after.len() > longest
+        longest @ after.len()
+    at: i64 @ 0
+    while at < longest
+        if at >= before.len() || at >= after.len() || before[at] != after[at]
+            return ok(Survivor(operator: operator, file: file, line: at + 1, before: at_line(lines: before, at: at), after: at_line(lines: after, at: at)))
+        at @ at + 1
+    return fail("identical", "the mutant is the original")
+
+function at_line(lines: [str], at: i64) -> str?
+    if at >= lines.len()
+        return fail("absent", "the mutant has no such line")
+    return ok(lines[at])
+
+function lines_of(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == 10
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+# The table, as text. Written to be pasted into `docs/measurements/NNN.md`.
+function report(scores: [Score]) -> str
+    out: str @ "| operator | mutants | excluded | killed (check) | killed (--permissive) |\n|---|---|---|---|---|\n"
+    mutants: i64 @ 0
+    excluded: i64 @ 0
+    strict: i64 @ 0
+    permissive: i64 @ 0
+    for score in scores
+        mutants @ mutants + score.mutants
+        excluded @ excluded + score.excluded
+        strict @ strict + score.killed_strict
+        permissive @ permissive + score.killed_permissive
+        out @ out + "| " + score.operator + " | " + score.mutants.to_str() + " | " + score.excluded.to_str() + " | " + score.killed_strict.to_str() + " (" + rate(killed: score.killed_strict, mutants: score.mutants, excluded: score.excluded).to_str() + "%) | " + score.killed_permissive.to_str() + " (" + rate(killed: score.killed_permissive, mutants: score.mutants, excluded: score.excluded).to_str() + "%) |\n"
+    out @ out + "| **total** | " + mutants.to_str() + " | " + excluded.to_str() + " | " + strict.to_str() + " (" + rate(killed: strict, mutants: mutants, excluded: excluded).to_str() + "%) | " + permissive.to_str() + " (" + rate(killed: permissive, mutants: mutants, excluded: excluded).to_str() + "%) |\n"
+    return out + "\nNever pool these into one headline (panel 011): a per-operator rate is\nthe measurement, and `forget-at-decl` is excluded from any summary because\nits catch rate is 100% by construction.\n"
+
+# The survivors as text, grouped by operator — written to be pasted into a
+# `docs/measurements/NNN.md` beside the table that raised the question.
+#
+# Empty is a result and says so: an operator with no survivors is the outcome
+# the thesis predicts, and a silent blank would read as a broken flag.
+function survivor_report(survivors: [Survivor]) -> str
+    if survivors.len() == 0
+        return "No surviving mutants: every mistake in this corpus is a compile error.\n"
+    out: str @ ""
+    operator: str @ ""
+    for one in survivors
+        if one.operator != operator
+            operator @ one.operator
+            out @ out + "\n" + operator + "\n"
+        out @ out + "  " + one.file + ":" + one.line.to_str() + "\n"
+        match one.before
+            .ok text => out @ out + "    - " + trimmed_end(text) + "\n"
+            .err _ => out @ out
+        match one.after
+            .ok text => out @ out + "    + " + trimmed_end(text) + "\n"
+            .err _ => out @ out
+    return out + "\nEach `+` line is a program this compiler accepts and should not: one\nplausible mistake, made once, that no diagnostic saw (design.md Part 11).\n"
+
+function trimmed_end(text: str) -> str
+    cs = text.chars()
+    last: i64 @ cs.len()
+    while last > 0 && (cs[last - 1] == " " || cs[last - 1] == "\t" || cs[last - 1] == "\r")
+        last @ last - 1
+    return cs.slice(from: 0, to: last).join("")
+
+test "the rate rounds the way the bootstrap's printer rounds"
+    assert rate(killed: 1, mutants: 2, excluded: 0) == 50
+    assert rate(killed: 1, mutants: 3, excluded: 0) == 33
+    assert rate(killed: 2, mutants: 3, excluded: 0) == 67
+    assert rate(killed: 3, mutants: 3, excluded: 0) == 100
+    assert rate(killed: 0, mutants: 3, excluded: 0) == 0
+    # Everything excluded: no denominator, and 0 rather than an abort.
+    assert rate(killed: 0, mutants: 3, excluded: 3) == 0
+    # The exact halves, rounded to even as `{:.0}` does: 12.5 → 12, 37.5 → 38.
+    assert rate(killed: 1, mutants: 8, excluded: 0) == 12
+    assert rate(killed: 3, mutants: 8, excluded: 0) == 38
+    # Excluded mutants leave the denominator: 1 of (4 - 2) is 50%.
+    assert rate(killed: 1, mutants: 4, excluded: 2) == 50
+
+test "a survivor's site is the first line the two texts disagree on"
+    original = "function main()\n    a = 1\n    print(a)\n"
+    changed = "function main()\n    a = 2\n    print(a)\n"
+    site = locate(operator: "typo-digit", file: "x.hero", original: original, mutant: changed)
+    assert !site.is_err()
+    assert site.must().line == 2
+    assert site.must().before.default("") == "    a = 1"
+    assert site.must().after.default("") == "    a = 2"
+
+test "a deleted line has a before and no after, and an added one the reverse"
+    original = "one\ntwo\nthree\n"
+    shorter = locate(operator: "drop-case", file: "x.hero", original: original, mutant: "one\ntwo\n")
+    assert !shorter.is_err()
+    assert shorter.must().line == 3
+    assert shorter.must().after.is_err()
+    longer = locate(operator: "shadow", file: "x.hero", original: "one\n", mutant: "one\none\n")
+    assert !longer.is_err()
+    assert longer.must().before.is_err()
+    # Identical texts have no site, and say so rather than inventing one.
+    assert locate(operator: "shadow", file: "x.hero", original: original, mutant: original).is_err()
+
+test "an empty run reports the outcome the thesis predicts"
+    none: [Survivor] = []
+    assert survivor_report(none) == "No surviving mutants: every mistake in this corpus is a compile error.\n"

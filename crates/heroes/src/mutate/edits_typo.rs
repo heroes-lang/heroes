@@ -165,8 +165,19 @@ fn neighbouring_digit(text: &str) -> Option<String> {
     Some(digits.into_iter().collect())
 }
 
-/// A plausible one-character slip: drop the middle character. `total` → `totl`,
-/// which is §4.4's own example.
+/// A plausible one-character slip: drop the middle character. `total` → **`toal`**
+/// — `len / 2` is index 2 of `t o t a l`, so the second `t` goes.
+///
+/// **This line said `totl` until 2026-08-19, and nothing had ever executed it**
+/// (found while porting the function to Heroes, and then measured on both
+/// compilers: `mutate --operator typo-ident --survivors` prints `print(toal)`).
+/// `totl` is the slip design.md:1027 and `harness/mutations/operators.md` use to
+/// ILLUSTRATE the class — an equally plausible one-character edit, one index
+/// over — so the class is right and only this sentence was wrong. Changing the
+/// code to match the illustration would move every number in
+/// `docs/measurements/002` and `007`, which is the wrong direction: the mutation
+/// operator is data, the illustration is prose, and prose is what gets corrected.
+/// Formerly: "`total` → `totl`, which is §4.4's own example."
 pub(super) fn typo(name: &str) -> String {
     let chars: Vec<char> = name.chars().collect();
     let middle = chars.len() / 2;

@@ -1,0 +1,157 @@
+# The operator table — the *data* half of `heroes mutate` (design.md Part 11).
+#
+# Port of crates/heroes/src/mutate/operators.rs. The first rule of this
+# measurement is that the operators are DATA, not code: they live in
+# `harness/mutations/operators.md` with the plausible-mistake class each
+# imitates and the §-rule that should kill it. This file is that list plus the
+# dispatch that turns an id into an edit; `mutate_edits` and `mutate_typo` are
+# the code.
+#
+# One consequence is worth stating because it looks like an omission: an
+# operator whose row names **no** rule that kills it is legal here. `typo-code`
+# is the first — it exists to measure a hole rather than to confirm a defence,
+# and an instrument that could only report success would not be one.
+
+use source
+use parse
+use mutate_edits
+use mutate_typo
+
+record Operator
+    id: str
+    imitates: str
+
+# THE COUNT IS READ, NEVER WRITTEN. The bootstrap's help said "twelve" while
+# there were thirteen, from the day panel 040's own falsifier arrived as
+# `boolean-twin` — a number in prose is a premise about the world and it
+# expires in silence (CLAUDE.md §11).
+function operators() -> [Operator]
+    return [
+        Operator(id: "swap-args", imitates: "classic LLM argument inversion")
+        Operator(id: "drop-case", imitates: "a forgotten variant case")
+        Operator(id: "forget-at-decl", imitates: "mutability confusion")
+        Operator(id: "mutate-undeclared", imitates: "a silent new variable in other languages")
+        Operator(id: "typo-ident", imitates: "a one-character edit")
+        Operator(id: "typo-code", imitates: "a one-character edit inside an error code")
+        Operator(id: "wildcard-variant", imitates: "a lazy catch-all")
+        Operator(id: "positional-named", imitates: "style transfer from Python")
+        Operator(id: "mix-int-float", imitates: "an implicit-conversion prior")
+        Operator(id: "shadow", imitates: "an inner-scope habit")
+        Operator(id: "drop-question", imitates: "forgotten error propagation")
+        Operator(id: "typo-digit", imitates: "a one-digit slip in a number copied from elsewhere")
+        Operator(id: "boolean-twin", imitates: "`&` for `&&`, the habit C and Java leave behind")
+    ]
+
+function known(id: str) -> bool
+    for one in operators()
+        if one.id == id
+            return true
+    return false
+
+function ids() -> [str]
+    out: [str] @ []
+    for one in operators()
+        out @ out.push(one.id)
+    return out
+
+# Every mutant one operator makes from one source.
+#
+# The source is parsed BARE — no library, no modules — because a mutation site
+# is a fact about the file's own tree. The mutant is then judged through the
+# whole compilation, which is `mutate_score.fate`'s job and a different
+# question.
+function apply(id: str, name: str, text: str) -> [str]
+    none: [str] = []
+    s = source.new_source(name: name, text: text)
+    parsed = parse.parse_source(s)
+    if parsed.diagnostics.len() > 0
+        return none
+    a = parsed.tree
+    if id == "swap-args"
+        return mutate_edits.swap_args(a, s)
+    if id == "drop-case"
+        return mutate_edits.drop_case(a, s)
+    if id == "forget-at-decl"
+        return mutate_edits.forget_at_decl(a, s)
+    if id == "mutate-undeclared"
+        return mutate_edits.mutate_undeclared(a, s)
+    if id == "typo-ident"
+        return mutate_typo.typo_ident(a, s)
+    if id == "typo-code"
+        return mutate_typo.typo_code(a, s)
+    if id == "wildcard-variant"
+        return mutate_edits.wildcard_variant(a, s)
+    if id == "positional-named"
+        return mutate_edits.positional_named(a, s)
+    if id == "mix-int-float"
+        return mutate_edits.mix_int_float(a, s)
+    if id == "shadow"
+        return mutate_edits.shadow(a, s)
+    if id == "drop-question"
+        return mutate_edits.drop_question(a, s)
+    if id == "typo-digit"
+        return mutate_typo.typo_digit(a: a, s: s, decls: parsed.decls)
+    if id == "boolean-twin"
+        return mutate_edits.boolean_twin(a, s)
+    return none
+
+test "the table is the list, and the count is read off it"
+    assert operators().len() == 13
+    assert known("swap-args")
+    assert known("boolean-twin")
+    assert !known("swapargs")
+    assert ids().len() == 13
+    assert ids()[0] == "swap-args"
+
+test "a program that does not parse yields no mutants at all"
+    # Rule 2: a mutant that fails to parse measures the lexer, not the thesis —
+    # and a source that does not parse has no sites to mutate in the first
+    # place.
+    assert apply(id: "swap-args", name: "x.hero", text: "function main(\n").len() == 0
+
+test "argument inversion finds the call and swaps label with value"
+    text = "function copy(from: i64, to: i64) -> i64\n    return from + to\n\nfunction main()\n    print(copy(from: 1, to: 2))\n"
+    mutants = apply(id: "swap-args", name: "x.hero", text: text)
+    assert mutants.len() >= 1
+    swapped: bool @ false
+    for one in mutants
+        if contains(text: one, needle: "copy(to: 2, from: 1)")
+            swapped @ true
+    assert swapped
+
+test "the one-character slip reaches an identifier and a mutation target"
+    text = "function main()\n    total: i64 @ 3\n    total @ total + 1\n    print(total)\n"
+    idents = apply(id: "typo-ident", name: "x.hero", text: text)
+    assert idents.len() >= 1
+    undeclared = apply(id: "mutate-undeclared", name: "x.hero", text: text)
+    assert undeclared.len() == 1
+    assert contains(text: undeclared[0], needle: "toal @ total + 1")
+
+test "the boolean twin is written where the operator was"
+    text = "function main()\n    a = true\n    b = false\n    if a && b\n        print(1)\n"
+    mutants = apply(id: "boolean-twin", name: "x.hero", text: text)
+    assert mutants.len() == 1
+    assert contains(text: mutants[0], needle: "if a & b")
+
+test "an implicit-conversion prior appends .0 to a decimal and leaves a base alone"
+    decimal = apply(id: "mix-int-float", name: "x.hero", text: "function main()\n    print(2 + 3)\n")
+    assert decimal.len() == 2
+    assert contains(text: decimal[0], needle: "2.0 + 3")
+    # `0xff.0` would die in the lexer, so the site is not one (panel 041).
+    based = apply(id: "mix-int-float", name: "x.hero", text: "function main()\n    print(0xff + 3)\n")
+    assert based.len() == 1
+    assert contains(text: based[0], needle: "0xff + 3.0")
+
+function contains(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    limit = text.len() - needle.len()
+    at: i64 @ 0
+    while at <= limit
+        k: i64 @ 0
+        while k < needle.len() && text[at + k] == needle[k]
+            k @ k + 1
+        if k == needle.len()
+            return true
+        at @ at + 1
+    return false
