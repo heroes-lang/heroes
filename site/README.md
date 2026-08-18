@@ -87,6 +87,36 @@ capital letter is a premise about a convention the spec does not state. Blocks
 are generated *from* the source file, so highlighting and byte-fidelity arrive
 together.
 
+## Looking at it before it is published — `site/serve.py`
+
+    python3 site/serve.py            # https://localhost:8443/
+    python3 site/serve.py --it       # opens the Italian edition
+    python3 site/serve.py --port 9443 --no-open
+
+Standard library only, plus the `openssl` that ships with macOS. It serves
+`public/` and nothing else, sends `Cache-Control: no-store` so a reload never
+shows yesterday's CSS, and makes a self-signed certificate on first run into
+`site/.cache/`, which `site/.gitignore` keeps out of the repository — it is a
+key, it is per-machine, and it expires. The browser warns once; the warning is
+correct and you accept it.
+
+**Why it is a script and not a `heroes` subcommand.** CLAUDE.md §10 says every
+capability is a subcommand of the one binary, and §10's own stopping rule is
+what keeps this one out: a capability enters that surface only if the fixpoint
+invocation, the golden harness or the Part 11 harness must type it, or it has a
+measured Part 11 effect. Serving a static directory is none of those, and it is
+not a property of the language. It sits beside what it serves and outside
+`public/`, so it can never be deployed.
+
+**Why HTTPS and not `python3 -m http.server`.** A browser gives an HTTP origin a
+different security context, so anything these pages might grow — a service
+worker, a clipboard call, an asset from another origin — behaves differently
+there than on the real site. Serving them over TLS locally deletes that class of
+surprise before it can exist. Verified on 2026-08-19: both editions, the
+stylesheet, a nested chapter and `sitemap.xml` all answer 200 with the right
+content type, a missing page answers 404, and the certificate carries the
+`subjectAltName` without which every modern browser refuses it outright.
+
 Not deployed yet. Cheapest route when wanted: GitHub Pages publishing
 `site/public/` (`CNAME` is already in it) + two DNS records at the registrar.
 **Ask before wiring any of it — publishing is an outward-facing act**, one
