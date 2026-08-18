@@ -1,0 +1,303 @@
+# The record checks: what the repository must be true of ITSELF.
+#
+# Port of crates/heroes-cli/tests/milestones.rs, five checks that read no
+# compiler output at all — they read the tree. Panel 085 named
+# `milestones.rs ×5` among the tests with no successor whatever, and this
+# is the module that answers it.
+#
+# The rule they all serve is CLAUDE.md §14: milestone identifiers are
+# NAMES, not numbers, and an identifier never reaches a diagnostic. What
+# the rename bought is an invariant, and without these checks it is a
+# one-time cleanup that rots on the next commit.
+
+use report
+use shell
+use strings
+
+# Dated records: a panel, a journal, a measurement, a defect report, a
+# story beat, a golden fixture, the design log. They KEEP the identifiers
+# they were written with, and appending to one uses that file's vocabulary
+# (§14) — so they are outside the walk rather than exceptions inside it.
+#
+# The rest are not records but noise: `vendor/` holds third-party byte
+# tables whose BPE bigrams contain `M6`-shaped pairs, and
+# `editors/vscode/icons/` holds SVG path data where `M14` is a moveto
+# command. `.claude/worktrees` is a whole second copy of the repository at
+# some other commit — walking into it made this invariant report the OTHER
+# tree's names as this one's (2026-08-12).
+constant RECORD: [str]
+    [
+        "docs/panel"
+        "docs/journal"
+        "docs/measurements"
+        "docs/defects"
+        "docs/book"
+        "docs/reasoning"
+        "tests/golden"
+        "DESIGN-LOG.md"
+        "vendor"
+        "editors/vscode/icons"
+        "site/log.html"
+        "target"
+        "build"
+        ".git"
+        ".claude/worktrees"
+    ]
+
+# Files whose milestone identifiers are QUOTATIONS of the retired
+# spelling, kept on purpose so a test can prove the legacy form is still
+# recognised. `tests/harness/` is here for the same reason the Rust file
+# is: this module quotes `M0` and `M5b` in its own assertions.
+constant QUOTES_THE_OLD_SPELLING: [str]
+    [
+        "crates/heroes/src/emit/tests/gate.rs"
+        "crates/heroes-cli/tests/milestones.rs"
+        "crates/heroes-cli/src/cli/help.rs"
+        "docs/debrief/QUEUE.md"
+        "docs/ROADMAP.md"
+        "CLAUDE.md"
+        "tests/harness/suite_records.hero"
+    ]
+
+# The one name deliberately written without being a milestone: the
+# runner-up § The names records as refused, so the reasoning survives the
+# decision.
+constant REFUSED: [str]
+    ["M-language"]
+
+# Measured 2026-08-18: 39 rows in the ROADMAP's alias table. The count is
+# asserted rather than derived on purpose — it is the tripwire that makes
+# a SILENTLY DROPPED row fail, which a set comparison alone would not.
+constant ROWS: i64
+    39
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @ report.empty()
+    # The quoting files leave the walk ONCE, for every check — which is
+    # what the Rust `walk` does and what the first draft of this port got
+    # wrong by filtering inside one check only. The three deliberate
+    # misspellings `milestones.rs` quotes (to say what this check catches)
+    # were reported as three real defects.
+    walked = shell.list_tree(scratch: scratch, dir: ".", skip: RECORD)?
+    living: [str] @ []
+    for path in walked
+        if !quoting(path)
+            living @ living.push(path)
+    numbered(@r, living: living)
+    named(@r, living: living)
+    c_files(@r, living: living)
+    expectations(@r, scratch: scratch)
+    boundary(@r)
+    return ok(r)
+
+# No living file names a numbered milestone.
+#
+# If this fires on a file you just wrote: the identifier is a name now —
+# the map is `docs/ROADMAP.md` § The names and the algorithm is CLAUDE.md
+# §14. If the file is a dated record, add it to RECORD and say why in the
+# commit.
+function numbered(@r: report.Report, living: [str])
+    offenders: [str] @ []
+    for path in living
+        text = read_file(path)
+        if text.is_err()
+            continue
+        found = numbered_in(text.must())
+        if !found.is_err()
+            offenders @ offenders.push("    " + path + ": " + found.must())
+    if offenders.len() > 0
+        report.keep_failure(@r, label: "records/numbered", detail: "  a living file names a numbered milestone — §14 says identifiers are names:\n" + offenders.join("\n"))
+    else
+        report.keep_pass(@r)
+
+# Every `M-<name>` in use has a row in the ROADMAP's alias table, and the
+# table has the number of rows it had. The map is parsed out of the
+# ROADMAP so the table cannot drift from the tree in EITHER direction: a
+# new milestone with no row fails here, and so does a row nobody uses
+# being the only place a name exists.
+function named(@r: report.Report, living: [str])
+    table = alias_table()
+    if table.len() != ROWS
+        report.keep_failure(@r, label: "records/table", detail: "  the alias table has " + table.len().to_str() + " rows, not " + ROWS.to_str())
+    known: {str: bool} @ {}
+    for row in table
+        known[row] @ true
+    for name in REFUSED
+        known[name] @ true
+    unknown: [str] @ []
+    for path in living
+        text = read_file(path)
+        if text.is_err()
+            continue
+        for name in names_used(text.must())
+            if known[name].is_err()
+                unknown @ unknown.push("    " + path + ": " + name)
+    if unknown.len() > 0
+        report.keep_failure(@r, label: "records/names", detail: "  a name with no row in the alias table:\n" + unknown.join("\n"))
+    else
+        report.keep_pass(@r)
+
+# No C file lives outside the directories that own C.
+#
+# This exists because a throwaway that measured `__builtin_classify_type`
+# was left in the repository root and `git add -A` committed and pushed it
+# (2026-08-14). The list is of DIRECTORIES that own C, not of file names:
+# a new runtime part or a fifth spike needs no edit here.
+function c_files(@r: report.Report, living: [str])
+    owns: [str] @ ["./runtime/", "./tools/spike/", "./seed/"]
+    strays: [str] @ []
+    for path in living
+        if !strings.ends_with(text: path, suffix: ".c") && !strings.ends_with(text: path, suffix: ".h")
+            continue
+        owned: bool @ false
+        for dir in owns
+            if strings.starts_with(text: path, prefix: dir)
+                owned @ true
+        if !owned
+            strays @ strays.push("    " + path)
+    if strays.len() > 0
+        report.keep_failure(@r, label: "records/c", detail: "  a C file outside the directories that own C:\n" + strays.join("\n"))
+    else
+        report.keep_pass(@r)
+
+# No golden's expected output names a milestone in EITHER spelling.
+#
+# The byte-pinned diagnostic text is where a leak from any diagnostic
+# would surface — not only from the emit gate, which is the only one with
+# a guard of its own. §4.17's standard: everything needed without opening
+# another file, and a milestone identifier is a pointer into a file the
+# reader does not have.
+function expectations(@r: report.Report, scratch: str)
+    none: [str] = []
+    listing = shell.list_tree(scratch: scratch, dir: "tests/golden", skip: none)
+    if listing.is_err()
+        report.keep_failure(@r, label: "records/expected", detail: "  cannot walk tests/golden")
+        return
+    offenders: [str] @ []
+    for path in listing.must()
+        if !strings.ends_with(text: path, suffix: ".expected")
+            continue
+        text = read_file(path)
+        if text.is_err()
+            continue
+        found = numbered_in(text.must())
+        if !found.is_err()
+            offenders @ offenders.push("    " + path + ": " + found.must())
+        for name in names_used(text.must())
+            offenders @ offenders.push("    " + path + ": " + name)
+    if offenders.len() > 0
+        report.keep_failure(@r, label: "records/expected", detail: "  a pinned diagnostic names a milestone:\n" + offenders.join("\n"))
+    else
+        report.keep_pass(@r)
+
+# The boundary rule, asserted in both directions — the check that keeps
+# the two checks above honest.
+function boundary(@r: report.Report)
+    caught: [str] @ ["scheduled for M8c", "at M5b the increfs", "M0 was day zero", "(M6+)"]
+    clean: [str] @ ["STAC-M3 Antuco benchmarks", "INT64_MIN % -1 does not trap on ARM64", "the RM64 encoding", "M-selfhost-fixpoint is v1", "hero_desc_str"]
+    wrong: [str] @ []
+    for text in caught
+        if numbered_in(text).is_err()
+            wrong @ wrong.push("    not caught: " + text)
+    for text in clean
+        if !numbered_in(text).is_err()
+            wrong @ wrong.push("    false positive: " + text)
+    if wrong.len() > 0
+        report.keep_failure(@r, label: "records/boundary", detail: "  the boundary rule is wrong:\n" + wrong.join("\n"))
+    else
+        report.keep_pass(@r)
+
+# An `M` followed by a digit at a word boundary — nothing alphanumeric,
+# `_` or `-` before the `M`, so `ARM64` is not a milestone and neither is
+# `STAC-M3`, kdb+'s benchmark suite: the one genuine false positive a
+# word-anchored search hits, and the reason the rule looks behind.
+function numbered_in(text: str) -> str?
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == 77 && opens_at(text: text, at: i) && i + 1 < text.len() && is_digit(text[i + 1])
+            last: i64 @ i + 4
+            if last > text.len()
+                last @ text.len()
+            return ok(text.slice(from: i, to: last))
+        i @ i + 1
+    return fail("none", "no numbered milestone")
+
+# Every `M-<name>` in the text, with a trailing hyphen left to the prose.
+function names_used(text: str) -> [str]
+    found: [str] @ []
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == 77 && opens_at(text: text, at: i) && i + 2 < text.len() && text[i + 1] == 45 && is_lower(text[i + 2])
+            last: i64 @ i + 2
+            while last < text.len() && (is_lower(text[last]) || text[last] == 45)
+                last @ last + 1
+            while last > i + 2 && text[last - 1] == 45
+                last @ last - 1
+            found @ found.push(text.slice(from: i, to: last))
+            i @ last
+        else
+            i @ i + 1
+    return found
+
+# Whether this file is one that quotes the retired spelling on purpose.
+function quoting(path: str) -> bool
+    for name in QUOTES_THE_OLD_SPELLING
+        if strings.ends_with(text: path, suffix: name)
+            return true
+    return false
+
+function opens_at(text: str, at: i64) -> bool
+    if at == 0
+        return true
+    before = text[at - 1]
+    if is_lower(before) || is_digit(before)
+        return false
+    if before >= 65 && before <= 90
+        return false
+    return before != 95 && before != 45
+
+function is_digit(byte: u8) -> bool
+    return byte >= 48 && byte <= 57
+
+function is_lower(byte: u8) -> bool
+    return byte >= 97 && byte <= 122
+
+# The names the ROADMAP's alias table carries: every row opening with
+# "| `M-".
+function alias_table() -> [str]
+    text = read_file("docs/ROADMAP.md")
+    if text.is_err()
+        none: [str] = []
+        return none
+    rows: [str] @ []
+    for row in strings.lines(text.must())
+        if strings.starts_with(text: row, prefix: "| `M-")
+            rest = strings.without_prefix(text: row, prefix: "| `")
+            at = strings.index_of(text: rest, needle: "`")
+            if !at.is_err()
+                rows @ rows.push(rest.slice(from: 0, to: at.must()))
+    return rows
+
+test "the boundary rule catches the numbers and nothing else"
+    assert !numbered_in("scheduled for M8c").is_err()
+    assert !numbered_in("at M5b the increfs").is_err()
+    assert !numbered_in("M0 was day zero").is_err()
+    assert !numbered_in("(M6+)").is_err()
+    assert numbered_in("STAC-M3 Antuco benchmarks").is_err()
+    assert numbered_in("INT64_MIN % -1 does not trap on ARM64").is_err()
+    assert numbered_in("the RM64 encoding").is_err()
+    assert numbered_in("M-selfhost-fixpoint is v1").is_err()
+    assert numbered_in("hero_desc_str").is_err()
+
+test "names_used reads a name and leaves the prose alone"
+    assert names_used("M-harness-port is next") == ["M-harness-port"]
+    assert names_used("see M-selfhost-fixpoint — and M-bootstrap-archive").len() == 2
+    # A trailing hyphen belongs to the prose, not to the name.
+    assert names_used("the M-harness-port- dash")[0] == "M-harness-port"
+    assert names_used("ARM-based").len() == 0
+    assert names_used("no names here").len() == 0
+
+test "the alias table is read out of the ROADMAP"
+    table = alias_table()
+    assert table.len() == ROWS
+    assert table[0].len() > 2

@@ -36,11 +36,11 @@
 #   lines         every `#line` lands on a line the author wrote
 #   corpus        examples/ — real programs, tests and output, three ways
 #   warnings      the generated C compiles without a single warning
+#   records       §14's identifiers, the alias table, stray C, the goldens
 #
 # Still in Rust, and each one is a step of this milestone: the
-# the record checks
-# (milestones.rs) and the file-length check (layout.rs, a rewrite rather
-# than a port).
+# the file-length check (layout.rs, a rewrite rather than a port) and
+# surface.rs's 69 tests over the command surface itself.
 
 use report
 use shell
@@ -50,6 +50,7 @@ use suite_determinism
 use suite_fixes
 use suite_golden
 use suite_lines
+use suite_records
 use suite_warnings
 use suite_run
 
@@ -165,6 +166,17 @@ function main()
             print("harness: the warnings gate could not run")
             exit(2)
         print("  warnings: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The record checks read the tree rather than the compiler, so they
+    # take no compiler at all.
+    if only == "" || only == "records"
+        got = suite_records.run_all(SCRATCH)
+        if got.is_err()
+            print("harness: the record checks could not run")
+            exit(2)
+        print("  records: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
