@@ -38,6 +38,7 @@ use cli_verbs
 use cli_doctor
 use cli_help
 use cli_measure
+use cli_mutate
 
 # The stamp the generated C carries, and it must MATCH THE BOOTSTRAP'S
 # for the fixpoint to be a comparison rather than a diff of two version
@@ -68,9 +69,7 @@ function main()
         .this_cmd => exit(code: cli_table.exit_code(cli_doctor.run_this()))
         .doctor_cmd => exit(code: cli_table.exit_code(cli_doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint())))
         .measure_cmd => exit(code: cli_table.exit_code(cli_measure.run(inv.file)))
-        .mutate_cmd =>
-            cli_io.eprint(text: "error: `mutate` is not in the selfhost compiler yet — the bootstrap has it")
-            exit(code: 2)
+        .mutate_cmd => exit(code: cli_table.exit_code(cli_mutate.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a
         # `print("")` here put a blank line above every diagnostic and
