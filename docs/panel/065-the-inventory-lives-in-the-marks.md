@@ -124,3 +124,44 @@ resolution — the compiler-engineer's reading stands, the count stays dated and
 panel-cited, the grep stays the only live inventory), the thirteen `// ORDER:`
 marks with one at `names_in` covering its six consumers, and the two
 order-pinning goldens.
+
+## Predictions scored — 2026-08-18, at M-selfhost-fixpoint
+
+**Overdue, and the overdue-ness is itself the finding.** The ffi-pragmatist's row
+said *"scored no later than M-selfhost-fixpoint"* and the compiler-engineer's said
+M-selfhost-port; the M-selfhost-port scoring commit (`f70cb0a`) scored panels 036,
+066, 067 and 068 and not this one. `/step`'s close checklist has the bullet that
+exists for exactly this recurrence and it was not run against this file. Found by
+panel 085's spec-warden while judging something else.
+
+| judge | prediction | result |
+|---|---|---|
+| compiler-engineer | ported `fixed_only_in_a_group` passes the tie-break golden **only by sorting on the map key**; a span-only sort swaps the pair at 2:8 | **CONFIRMED, mechanically** |
+| ffi-pragmatist | the first ordering defect in the port surfaces as a **golden-emit diff naming its case**, never as a raw `B.c`/`C.c` fixpoint diff | **FALSIFIED** |
+
+**The confirmation is exact.** `selfhost/check_ffi.hero:170` reads `for node in
+sort(keys(c.out.written_types))`, and the mark above it says in the port's own
+words that *"span.start ties on nested fixed arrays, so a span sort cannot replace
+this key: it decides which diagnostic prints first"*. Measured today on
+`tests/golden/check/nested-fixed-array-tiebreak.hero`: the bootstrap and the
+seed-built port produce **byte-identical** diagnostics, inner `i64[2]` first,
+`i64[2][3]` second, both at 9:8. The judge named the key, the tie and the column.
+
+**The falsification is worth more than the confirmation**, because it failed for a
+reason this panel had already written down. The ordering defect surfaced as
+**3,330 raw differences over 724,197 lines** of a 20.8 MB fixpoint diff — commit
+`a3bd7a0`'s own body records it — and not as a golden. Panel 065's synthesis states
+the mechanism in § two break classes: an unsorted diagnostic or dump walk breaks
+the golden diff *"only once the harness runs under the ported binary, which
+M-selfhost-port therefore must do"*. **It never did.** The goldens have never been
+run under the port, and the emit golden this sitting added
+(`tests/golden/emit/order-options-and-fn-typedefs`) pins the bootstrap's order
+against a stored file, which both compilers pass — a stored artifact cannot ask
+whether two compilers agree.
+
+What closes the gap is not a golden and could not have been: panel 085 built
+`crates/heroes-cli/tests/differential.rs`, whose expectation **is the other
+compiler**, over 140 programs. Run against the port as it stood at the
+M-selfhost-port tag, that instrument reports the divergence with the case's name
+and the two spellings side by side — which is the prediction's own wording,
+arriving one milestone late and through a different door.
