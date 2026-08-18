@@ -173,7 +173,7 @@
       type, without ever making the call.
     </li>
     <li>
-      <span class="when">2026-08-12 · M8a: the cheapest change was a verb</span>
+      <span class="when">2026-08-12 · M-module-namespace: the cheapest change was a verb</span>
       <b>Programs split into files, and eleven of thirteen decisions cost nothing.</b>
       Multiple files need rules: what happens when a file's name collides with
       one it imports, what happens when an import is never used. Both were
@@ -184,7 +184,7 @@
       covered both cases with nothing added.
     </li>
     <li>
-      <span class="when">2026-08-11 · M6: three vetoes, none by argument</span>
+      <span class="when">2026-08-11 · M-generics-library: three vetoes, none by argument</span>
       <b>The language reaches feature-complete, and every open dispute is settled by a compiler rather than a debate.</b>
       Should the runtime's per-type description gain a sixth entry? A judge wrote
       the header, compiled the unchanged runtime against it, and found that C
@@ -198,7 +198,7 @@
       reading.
     </li>
     <li>
-      <span class="when">2026-08-10 · M5d: the last two types, entangled</span>
+      <span class="when">2026-08-10 · M-optional-map: the last two types, entangled</span>
       <b>Fallible values and maps could not be built in either order.</b>
       Looking a key up in a map returns &ldquo;the value, or an error&rdquo;, so
       the map needed that type first, and that type turned out to be
@@ -211,7 +211,7 @@
       advance.
     </li>
     <li>
-      <span class="when">2026-08-10 · M5c: a tree that contains itself</span>
+      <span class="when">2026-08-10 · M-value-aggregates: a tree that contains itself</span>
       <b>Recursive data, in a language whose data model has no pointer and no reference type.</b>
       There is nothing to put in a field that stands for &ldquo;somewhere
       else&rdquo;, and yet the example the design was written around is a tree
@@ -225,7 +225,7 @@
       frees at zero is complete.
     </li>
     <li>
-      <span class="when">2026-08-05 · M5b: the check that refuted its own design</span>
+      <span class="when">2026-08-05 · M-strings-ownership: the check that refuted its own design</span>
       <b>The compiler learned to count references, and the watchdog fired twice in an hour.</b>
       The rule was: a value that owns a string is released at the end of the
       block that created it. The first refutation was instructive: an assertion
@@ -239,7 +239,7 @@
       milestone earlier had been for.
     </li>
     <li>
-      <span class="when">2026-08-04 · M5a: the first native binary</span>
+      <span class="when">2026-08-04 · M-scalars-run: the first native binary</span>
       <b>A program becomes an executable, and the longest argument was about a number between zero and two.</b>
       When a program is correct and the compiler simply is not finished yet, what
       exit code should it use? Two says &ldquo;the tool could not do its
@@ -254,7 +254,7 @@
       settled the question at one.
     </li>
     <li>
-      <span class="when">2026-08-04 · M4, desugaring, and the middle of the compiler</span>
+      <span class="when">2026-08-04 · M-ir-lowering, desugaring, and the middle of the compiler</span>
       <b>The textbook representation lost to a decade of evidence nobody had gone looking for.</b>
       LLVM, whose whole existence is single-assignment form, tells the authors
       of new languages not to build it: use stack slots and loads and stores, and
@@ -265,7 +265,7 @@
       one thing this project has formally renounced.
     </li>
     <li>
-      <span class="when">2026-08-04 · M3–M3d: the frontend, and the thesis gets a number</span>
+      <span class="when">2026-08-04 · M-typed-frontend: the frontend, and the thesis gets a number</span>
       <b>Names, types, exhaustiveness, and the first measurement, whose useful half is the column that shows nothing.</b>
       379 deliberate mistakes injected into working programs, 94% caught. But the
       same compiler with the thesis rules switched off catches 76%, and
@@ -277,7 +277,7 @@
       not to write down.
     </li>
     <li>
-      <span class="when">2026-08-04 · M3a: the resolver</span>
+      <span class="when">2026-08-04 · M-name-resolution: the resolver</span>
       <b>A 317-line calculator refused to resolve, at exactly two lines.</b>
       It declares its own <code>map</code> and <code>fold</code>, and the
       language reserves both names. That was the third time this one program
@@ -290,7 +290,7 @@
       nobody had tried.
     </li>
     <li>
-      <span class="when">2026-08-04 · M2: the parser, the tree, the formatter</span>
+      <span class="when">2026-08-04 · M-syntax-tree: the parser, the tree, the formatter</span>
       <b>The parser's first act was to discover the language could not write down the type of a function.</b>
       <code>fn</code> was in the registry of foreign words: an error with the
       repair pre-written, and also in the spec's own syntax for a function type,
@@ -303,7 +303,7 @@
       recommendation lost to the evidence, which is what the panel is for.
     </li>
     <li>
-      <span class="when">2026-08-04 · M1: the lexer</span>
+      <span class="when">2026-08-04 · M-token-stream: the lexer</span>
       <b>The first real code, and three things it found by being written.</b>
       Source text now becomes tokens: rigid indentation where a tab is an error
       rather than an interpretation, statement ends inferred so the language needs
@@ -317,7 +317,7 @@
       everyone believed.
     </li>
     <li>
-      <span class="when">2026-08-03 · M0, day zero</span>
+      <span class="when">2026-08-03 · M-day-zero</span>
       <b>Foundations, and four programs written before the compiler.</b>
       Git, a Rust workspace, a golden-test harness green with zero tests, and the
       language spec frozen as the measurement baseline (budget: 1500 tokens,
