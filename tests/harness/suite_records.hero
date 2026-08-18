@@ -22,9 +22,16 @@ use strings
 # The rest are not records but noise: `vendor/` holds third-party byte
 # tables whose BPE bigrams contain `M6`-shaped pairs, and
 # `editors/vscode/icons/` holds SVG path data where `M14` is a moveto
-# command. `.claude/worktrees` is a whole second copy of the repository at
-# some other commit — walking into it made this invariant report the OTHER
-# tree's names as this one's (2026-08-12).
+# command.
+#
+# **`target`, `build`, `.git` and `.claude/worktrees` were on this list until
+# 2026-08-19 and are not any more**, which is not an oversight: every one of them
+# is gitignored, and the walk asks GIT which files are this project's rather than
+# asking the filesystem what is there (`shell.project_files`). A list of
+# exclusions is a premise about which junk exists — it expired the day a parallel
+# session wrote a gitignored TLS key into `site/.cache/` and both record walks
+# read `M3KN` out of its base64. What remains here is what git cannot know: files
+# it tracks that are RECORDS.
 constant RECORD: [str]
     [
         "docs/panel"
@@ -48,10 +55,6 @@ constant RECORD: [str]
         "vendor"
         "editors/vscode/icons"
         "site/log.html"
-        "target"
-        "build"
-        ".git"
-        ".claude/worktrees"
     ]
 
 # Files whose milestone identifiers are QUOTATIONS of the retired
@@ -88,10 +91,16 @@ function run_all(scratch: str) -> report.Report?
     # wrong by filtering inside one check only. The three deliberate
     # misspellings `milestones.rs` quotes (to say what this check catches)
     # were reported as three real defects.
-    walked = shell.list_tree(scratch: scratch, dir: ".", skip: RECORD)?
+    # **Git answers which files are this project's** (shell.project_files), and
+    # RECORD then removes the ones that are RECORDS. The two questions used to be
+    # one `find` with a list of exclusions, and that list could not keep up with
+    # the world: a gitignored TLS key in `site/.cache/` was read as `M3KN` on
+    # 2026-08-19 — a milestone identifier, in a file nobody wrote and git already
+    # knew to ignore.
+    walked = shell.project_files(scratch)?
     living: [str] @ []
     for path in walked
-        if !quoting(path)
+        if !quoting(path) && !is_record(path)
             living @ living.push(path)
     numbered(@r, living: living)
     named(@r, living: living)
@@ -99,6 +108,15 @@ function run_all(scratch: str) -> report.Report?
     expectations(@r, scratch: scratch)
     boundary(@r)
     return ok(r)
+
+# Whether this path is one of the dated records — the pruning `find` used to do
+# with `-not -path`, done here now that the listing comes from git. Same rule as
+# the Rust twin's `rel == *r || rel.starts_with(&format!("{r}/"))`.
+function is_record(path: str) -> bool
+    for entry in RECORD
+        if path == entry || strings.starts_with(text: path, prefix: entry + "/")
+            return true
+    return false
 
 # No living file names a numbered milestone.
 #
@@ -154,7 +172,9 @@ function named(@r: report.Report, living: [str])
 # (2026-08-14). The list is of DIRECTORIES that own C, not of file names:
 # a new runtime part or a fifth spike needs no edit here.
 function c_files(@r: report.Report, living: [str])
-    owns: [str] @ ["./runtime/", "./tools/spike/", "./seed/"]
+    # No leading `./`: `git ls-files` spells a path from the repository root,
+    # where `find .` spelled it from the current directory.
+    owns: [str] @ ["runtime/", "tools/spike/", "seed/"]
     strays: [str] @ []
     for path in living
         if !strings.ends_with(text: path, suffix: ".c") && !strings.ends_with(text: path, suffix: ".h")
@@ -225,9 +245,16 @@ function numbered_in(text: str) -> str?
     i: i64 @ 0
     while i < text.len()
         if text[i] == 77 && opens_at(text: text, at: i) && i + 1 < text.len() && is_digit(text[i + 1])
-            last: i64 @ i + 4
-            if last > text.len()
-                last @ text.len()
+            # **Four bytes AT MOST, and never across a character.** `slice`
+            # aborts when it splits one (spec:148), and the Rust twin cannot:
+            # it reaches for `String::from_utf8_lossy`, which replaces a broken
+            # byte instead of stopping. Heroes has no lossy conversion, so the
+            # window stops at the first byte above ASCII — every byte in the
+            # answer is then one character wide. Found 2026-08-19 the first time
+            # this walk read a file with an em dash three bytes after an `M8a`.
+            last: i64 @ i + 1
+            while last < text.len() && last < i + 4 && text[last] < 128
+                last @ last + 1
             return ok(text.slice(from: i, to: last))
         i @ i + 1
     return fail("none", "no numbered milestone")

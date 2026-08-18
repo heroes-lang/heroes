@@ -138,6 +138,44 @@ function list_directories(scratch: str, dir: str) -> [str]?
             entries @ entries.push(piece)
     return ok(entries.sort())
 
+# Every file this project OWNS — asked of git, which is the only thing that
+# knows.
+#
+# **This exists because the alternative reported a TLS private key as a
+# milestone identifier** (2026-08-19, found by the first run of the whole net
+# from the seed-built compiler). `site/.cache/heroes-lang.org-key.pem` is a
+# local certificate a parallel session had just written; it is gitignored
+# (`site/.gitignore:4`), and both record walks — this one and its Rust twin —
+# read it anyway and found a milestone-shaped fragment in the base64. `cargo test`
+# was green at 00:05 and red at 00:47 with nothing committed in between. (The
+# fragment itself is not quoted here on purpose: this is a living file, and the
+# check that found it reads living files. `suite_records.hero` carries it, and
+# that file is on the list of deliberate quotations.)
+#
+# The old question was *"what files are under this directory, minus a list of
+# things I remembered to exclude"*, which is a premise about the world and
+# expires whenever the world grows a new kind of junk (CLAUDE.md §11). The new
+# question is *"what does git say belongs to this project"*: `--cached` for
+# tracked, `--others --exclude-standard` for what is new and not ignored — so a
+# file written one minute ago is still in scope, which is exactly the case the
+# record checks exist for, while ignored output is not.
+#
+# Paths come back WITHOUT a leading `./`, unlike `list_tree`.
+function project_files(scratch: str) -> [str]?
+    listing = scratch + "/listing-project"
+    line = "git ls-files --cached --others --exclude-standard -z > " + sq(listing)
+    raw = system(command: line.cstr()).to_i64().must()
+    if status_of(raw: raw) != 0
+        return fail("cannot_walk", "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists")
+    text = read_file(listing)
+    if text.is_err()
+        return fail("cannot_walk", "cannot read the listing at " + listing)
+    entries: [str] @ []
+    for piece in strings.split_on(text: text.must(), byte: 0)
+        if piece.len() > 0
+            entries @ entries.push(piece)
+    return ok(entries.sort())
+
 # Every file under `dir`, recursively, with whole subtrees pruned.
 #
 # The pruning is done by `find` and not in Heroes, and the reason is a
@@ -205,6 +243,42 @@ function env(name: str) -> str
 # nothing.
 function machine_lacks_the_library(text: str) -> bool
     return strings.contains(text: text, needle: "error[ffi_package]") || strings.contains(text: text, needle: "error[ffi_missing_header]")
+
+# The compilers this harness's own test blocks may use, in the order they are
+# tried. Read as: whatever the caller named, then what CI builds from the seed
+# with clang alone, then a local seed build, then the bootstrap.
+constant CANDIDATES: [str]
+    [
+        "./heroes-from-seed"
+        "./build/heroes-seed"
+        "./target/debug/heroes"
+    ]
+
+# A compiler these self-tests can run, asked of the MACHINE rather than
+# assumed from a path.
+#
+# **The path they must not name is the bootstrap's.** `./target/debug/heroes` is
+# what the archive deletes, and the day it goes is the day this harness matters
+# most — which is exactly why `suite_golden.hero`'s stubs exist. Nine self-tests
+# named it as a literal, so nine of them would have started failing on the move
+# commit, in the net that was built to survive it (found 2026-08-19, while
+# adding the seed leg to CI).
+#
+# An empty answer is a loud failure rather than a skip: the harness is being run
+# BY a compiler, so one exists, and if none of these paths holds it the test
+# says which four it looked at.
+function some_compiler() -> str
+    named = env(name: "HEROES_COMPILER")
+    if named.len() > 0 && exists(named)
+        return named
+    for path in CANDIDATES
+        if exists(path)
+            return path
+    return ""
+
+# What to print when there is none — the four places, named.
+function no_compiler_anywhere() -> str
+    return "no compiler found: set HEROES_COMPILER, or build one at " + CANDIDATES.join(" / ")
 
 function exists(path: str) -> bool
     return status_of(raw: system(command: ("test -e " + sq(path)).cstr()).to_i64().must()) == 0

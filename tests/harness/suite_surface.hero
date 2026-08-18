@@ -23,6 +23,7 @@
 use probe
 use report
 use strings
+use shell
 
 # The chain that builds a row. It lives here rather than beside the record
 # because UFCS does not cross a module boundary (measured: `box.make(1)
@@ -296,12 +297,12 @@ test "the tables are what this module is, so they are counted"
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"
     p = row(name: "the zen", argv: "this", code: 0).out_has("We can be heroes").err_empty()
-    assert probe.unmet(scratch: scratch, compiler: "./target/debug/heroes", p: p) == ""
+    assert probe.unmet(scratch: scratch, compiler: shell.some_compiler(), p: p) == ""
 
 test "a probe names every way one invocation disappointed it"
     scratch = "build/harness-selftest"
     p = row(name: "wrong", argv: "this", code: 2).out_has("not there").err_nonempty()
-    wrong = probe.unmet(scratch: scratch, compiler: "./target/debug/heroes", p: p)
+    wrong = probe.unmet(scratch: scratch, compiler: shell.some_compiler(), p: p)
     assert wrong.len() > 0
     assert strings.contains(text: wrong, needle: "exited 0, not 2")
     assert strings.contains(text: wrong, needle: "does not carry `not there`")

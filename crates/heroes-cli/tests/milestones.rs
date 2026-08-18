@@ -54,16 +54,6 @@ const RECORD: &[&str] = &[
     // multi-page one, and the exemption moved with it rather than being added to it —
     // the home page is not a record and is watched again (2026-08-17).
     "site/log.html",
-    "target",
-    "build",
-    ".git",
-    // **A nested checkout is not a living file of this tree.** A git worktree
-    // under `.claude/worktrees/` is a whole second copy of the repository at some
-    // other commit, and walking into it made this invariant report the *other*
-    // tree's names as this one's — three aliases that do not exist here and five
-    // numbered milestones that were retired here. The names it found were real;
-    // the tree they were in was not ours (2026-08-12).
-    ".claude/worktrees",
 ];
 
 /// Files whose milestone identifiers are **quotations of the retired spelling**, kept
@@ -102,20 +92,56 @@ fn slashed(path: &str) -> String {
     path.replace('\\', "/")
 }
 
-fn walk(dir: &Path, root: &Path, out: &mut Vec<PathBuf>) {
-    let entries = std::fs::read_dir(dir).expect("a readable directory");
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let rel = slashed(&path.strip_prefix(root).expect("inside the repo").to_string_lossy());
+/// Every file this project OWNS, minus the records — and **git answers the first
+/// half**, because the filesystem cannot.
+///
+/// This read `std::fs::read_dir` from a list of exclusions until 2026-08-19, when
+/// a parallel session wrote a local TLS certificate into `site/.cache/` — ignored
+/// by `site/.gitignore:4`, invisible to git, and read by this walk, which found a
+/// milestone-shaped fragment in its base64 and went red. `cargo test` was green at
+/// 00:05 and red at 00:47 with nothing committed in between.
+///
+/// A list of exclusions is a premise about which junk exists (CLAUDE.md §11); the
+/// question git answers is a fact about this project. `--cached` is what it tracks,
+/// `--others --exclude-standard` is what is new and not ignored — so a file written
+/// one minute ago is still in scope, which is the case these checks exist for.
+/// `target/`, `build/`, `.git/` and `.claude/worktrees/` left `RECORD` with this
+/// change, because every one of them is gitignored and git already omits them. The
+/// last of those is worth keeping the reason for: a git worktree under
+/// `.claude/worktrees/` is a whole second copy of the repository at another commit,
+/// and walking into it made this invariant report the *other* tree's names as this
+/// one's — three aliases that do not exist here, five numbered milestones retired
+/// here (2026-08-12). Git omits it now for the same reason it omits `target/`.
+///
+/// **The twin of this function is `tests/harness/shell.hero`'s `project_files`**,
+/// and the two are one instrument in two languages until the archive.
+fn project_files(root: &Path) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = Vec::new();
+    let listed = std::process::Command::new("git")
+        .current_dir(root)
+        .args(["ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+        .output()
+        .expect("`git ls-files` runs: these checks ask git which files are this project's");
+    assert!(
+        listed.status.success(),
+        "`git ls-files` failed, and there is no sound fallback — a `read_dir` walk \
+         reported a gitignored TLS key as a milestone identifier, which is why this \
+         function asks git instead:\n{}",
+        String::from_utf8_lossy(&listed.stderr)
+    );
+    for name in String::from_utf8_lossy(&listed.stdout).split('\0') {
+        if name.is_empty() {
+            continue;
+        }
+        let rel = slashed(name);
         if RECORD.iter().any(|r| rel == *r || rel.starts_with(&format!("{r}/"))) {
             continue;
         }
-        if path.is_dir() {
-            walk(&path, root, out);
-        } else if QUOTES_THE_OLD_SPELLING.iter().all(|q| rel != *q) {
-            out.push(path);
+        if QUOTES_THE_OLD_SPELLING.iter().all(|q| rel != *q) {
+            out.push(root.join(name));
         }
     }
+    out
 }
 
 /// Is there an `M` followed by a digit at a word boundary? The same boundary the
@@ -149,8 +175,7 @@ fn names_a_numbered_milestone(text: &str) -> Option<String> {
 #[test]
 fn no_living_file_names_a_numbered_milestone() {
     let root = repo();
-    let mut files = Vec::new();
-    walk(&root, &root, &mut files);
+    let files = project_files(&root);
     assert!(files.len() > 200, "the walk found only {} files — it is not walking", files.len());
 
     let mut offenders = Vec::new();
@@ -231,8 +256,7 @@ fn every_name_in_use_has_a_row_in_the_alias_table() {
     // § The names records as refused, so the reasoning survives the decision.
     let refused = ["M-language"];
 
-    let mut files = Vec::new();
-    walk(&root, &root, &mut files);
+    let files = project_files(&root);
     let mut unknown = Vec::new();
     for file in &files {
         let Ok(text) = std::fs::read_to_string(file) else { continue };
@@ -263,8 +287,7 @@ fn every_name_in_use_has_a_row_in_the_alias_table() {
 #[test]
 fn no_c_file_lives_outside_the_directories_that_own_c() {
     let root = repo();
-    let mut files = Vec::new();
-    walk(&root, &root, &mut files);
+    let files = project_files(&root);
     // **`seed/` owns C from M-selfhost-fixpoint on**, and it is a directory rather
     // than a file name for this rule's own stated reason: a second seed, or a
     // regenerated one, needs no edit here. What it holds is the compiler itself —

@@ -81,7 +81,8 @@ test "the fixes suite catches a wrong application and a repair that does not che
     broken = "function main()\n    mask = 0XFF\n    print(mask)\n"
     assert !write_file(path: tree + "/u.hero", text: broken).is_err()
     assert !write_file(path: tree + "/u.expected", text: "").is_err()
-    compiler = "./target/debug/heroes"
+    compiler = shell.some_compiler()
+    assert compiler.len() > 0
 
     # What the compiler actually applies, captured once and stored as the
     # `.fixed` — then the suite must agree with it.
