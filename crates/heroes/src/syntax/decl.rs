@@ -204,9 +204,22 @@ pub(super) fn function_tail(
             }
         }
     };
+    // **`previous_significant_span`, not `previous_span` — the 2026-08-12 caret
+    // repair, which reached statements and not this declaration.** An `extern`
+    // member has no body, so its extent ends at the last token a reader can
+    // see; `previous_span` answers with the line's `Terminator`, whose position
+    // is past any trailing comment. Measured 2026-08-18 on
+    // `tests/golden/unsupported/ffi-writable-parameter.hero`: 75 columns, the
+    // caret swallowing the case's own `#~ ffi_writable_parameter` annotation,
+    // against 43 for the same declaration with the comment deleted. So the span
+    // of a declaration depended on whether somebody had written a comment
+    // beside it, and the `.expected` file had been pinning the long one as
+    // correct since the case was written. What exposed it was the SELF-HOSTED
+    // compiler disagreeing — it never had the defect — through the Heroes
+    // harness of M-harness-port.
     let end = match &body {
         Some(block) => block.span,
-        None => cur.previous_span(),
+        None => cur.previous_significant_span(),
     };
     let (header, library) = match linkage {
         Linkage::Heroes => (None, None),
