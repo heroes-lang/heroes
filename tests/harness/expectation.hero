@@ -1,0 +1,120 @@
+# What a running program is expected to do, and the one reader of it.
+#
+# Port of crates/heroes-cli/tests/expectation/mod.rs, and it exists here
+# for the reason it exists there: two suites execute programs and diff
+# what comes out — `run/` and, when it lands, the corpus — so the
+# convention lives in one file rather than in whichever suite was written
+# first. A second copy is a second place for the meaning of `!exit: 0` to
+# drift.
+#
+# The convention is QBE's: the expected output lives in the case, and so
+# does the way the program ends. An expectation is the program's stdout,
+# optionally followed by one last line saying it does NOT end at exit 0
+# with a silent stderr:
+#
+#   !panic: <message>   an abort, and the text stderr must carry
+#   !exit: <code>       exit(code), and the status the shell must see
+#
+# Both exist because the interesting half of §4.14 is the aborts: a
+# program that overflows must STOP, and the wrong emitter does not crash
+# — it prints a wrapped number at exit 0. That is only a golden if the
+# harness can spell it. A case with no last line still has to exit 0, so
+# a program that starts exiting by accident is still a failure.
+
+use strings
+
+# How a case ends, when it does not end at exit 0 with nothing on stderr.
+variant Ending
+    silent
+    panics
+        message: str
+    exits
+        code: i64
+
+record Expectation
+    stdout: str
+    ending: Ending
+
+# Splits an expectation file into the stdout it promises and how it ends.
+#
+# A malformed ending is an error rather than a silent `silent`: `!exit:
+# three` is a broken case, and a harness that read it as "no ending
+# expected" would then demand exit 0 and report a mismatch about
+# something else entirely.
+function split(text: str) -> Expectation?
+    rows = strings.lines(text)
+    ending: Ending @ .silent
+    kept: [str] @ rows
+    if rows.len() > 0
+        last = rows[rows.len() - 1]
+        if strings.starts_with(text: last, prefix: "!panic: ")
+            ending @ .panics(message: strings.without_prefix(text: last, prefix: "!panic: "))
+            kept @ rows.slice(from: 0, to: rows.len() - 1)
+        else if strings.starts_with(text: last, prefix: "!exit: ")
+            code = strings.to_number(strings.trimmed(strings.without_prefix(text: last, prefix: "!exit: ")))
+            if code.is_err()
+                return fail("bad_expectation", "`" + last + "` is not an exit code")
+            ending @ .exits(code: code.must())
+            kept @ rows.slice(from: 0, to: rows.len() - 1)
+    out: str @ kept.join("\n")
+    if out.len() > 0
+        out @ out + "\n"
+    return ok(Expectation(stdout: out, ending: ending))
+
+# What a run must satisfy, as one verdict. `where` names the
+# configuration, so a failure says which of the three disagreed with the
+# other two — a mismatch that reports stdout alone looks identical
+# whether the program printed nothing, failed to build, aborted early or
+# was killed (golden.rs:62, paid for by a CI round trip on the first
+# Linux run this project ever had).
+function unmet(e: Expectation, out: str, err: str, code: i64) -> str?
+    if out != e.stdout
+        return ok("printed something else\n--- expected ---\n" + e.stdout + "--- actual ---\n" + out + "--- it ended: exit " + code.to_str() + ", and its stderr was ---\n" + err + "--- end ---")
+    match e.ending
+        .silent =>
+            if code != 0
+                return ok("must exit 0, and exited " + code.to_str() + "\n  its stderr was:\n" + err)
+        .exits x =>
+            if code != x.code
+                return ok("must exit " + x.code.to_str() + ", and exited " + code.to_str() + "\n  its stderr was:\n" + err)
+        .panics p =>
+            if !strings.contains(text: err, needle: p.message)
+                return ok("must abort saying `" + p.message + "`, and said:\n" + err)
+            if code == 0
+                return ok("must not exit 0: an abort that returns success is the silent wrong answer this case exists to catch")
+    return fail("met", "the run matched its expectation")
+
+test "an expectation with no ending is stdout and exit 0"
+    e = split("one\ntwo\n").must()
+    assert e.stdout == "one\ntwo\n"
+    assert e.ending == .silent
+    assert unmet(e, out: "one\ntwo\n", err: "", code: 0).is_err()
+    assert !unmet(e, out: "one\ntwo\n", err: "", code: 1).is_err()
+    assert !unmet(e, out: "one\n", err: "", code: 0).is_err()
+
+test "an empty expectation promises no output at all"
+    e = split("").must()
+    assert e.stdout == ""
+    assert unmet(e, out: "", err: "", code: 0).is_err()
+    assert !unmet(e, out: "x\n", err: "", code: 0).is_err()
+
+test "!exit takes the code off the stdout and demands it"
+    e = split("before\n!exit: 3\n").must()
+    assert e.stdout == "before\n"
+    assert e.ending == .exits(code: 3)
+    assert unmet(e, out: "before\n", err: "", code: 3).is_err()
+    assert !unmet(e, out: "before\n", err: "", code: 0).is_err()
+
+test "!panic asks stderr for the message and refuses a zero exit"
+    e = split("half\n!panic: index 5 is out of bounds\n").must()
+    assert e.stdout == "half\n"
+    assert unmet(e, out: "half\n", err: "hero: index 5 is out of bounds\n", code: 134).is_err()
+    # The right message at exit 0 — an abort that returned success.
+    assert !unmet(e, out: "half\n", err: "hero: index 5 is out of bounds\n", code: 0).is_err()
+    # Aborted, but about something else.
+    assert !unmet(e, out: "half\n", err: "hero: divide by zero\n", code: 134).is_err()
+
+test "a malformed ending is a broken case, not a silent one"
+    assert split("x\n!exit: three\n").is_err()
+    # `!exit` without the space is ordinary output, not an ending.
+    assert split("x\n!exit:3\n").must().ending == .silent

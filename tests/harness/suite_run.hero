@@ -1,0 +1,168 @@
+# tests/golden/run/ — every program, three configurations, one
+# expectation.
+#
+# Port of golden_run_cases_produce_their_output_at_both_optimisation
+# _levels (crates/heroes-cli/tests/golden.rs:707). The three
+# configurations are the test, and each one exists for a measured reason:
+#
+# -O0        `build -o <binary>`, then the harness runs the binary
+#            ITSELF — from the repository root, like the other two. That
+#            detail is a fixed defect: this leg used to execute from the
+#            crate's directory, so a program opening a relative path
+#            opened a DIFFERENT FILE at -O0 than at -O2, and the case
+#            that met it worked around it with an absolute path
+#            (2026-08-14).
+# -O2        `run`, which compiles and executes and forwards the
+#            program's own status. Same source, one optimisation level
+#            apart: this is what catches an emitter that leans on
+#            undefined behaviour, because -O2 is where C's UB stops being
+#            harmless.
+# --sanitize `run --sanitize`, which adds -fsanitize=address,undefined.
+#            NOT a leak gate — ASan's leak detector does not exist on
+#            Darwin arm64 and a 999-block leak exits 0 in silence there
+#            (panel 021); leaks are caught by hero_runtime_check_leaks()
+#            in every generated main, which runs in all three. What this
+#            adds is use-after-free and double-free, which is what
+#            reference counting gets wrong.
+#
+# A sanitiser's own words are checked separately from the expectation:
+# ASan and UBSan report on stderr and can leave the exit status alone, so
+# a program can print exactly the right thing while UBSan is saying
+# `runtime error:` underneath. Both spellings are refused.
+
+use cases
+use expectation
+use report
+use shell
+use strings
+
+constant RUN_DIR: str
+    "tests/golden/run"
+
+# Measured 2026-08-18: 87 cases. golden.rs floors at 10, which is a
+# number from when there were ten.
+constant LEAST: i64
+    87
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    found = cases.collect(scratch: scratch, dir: RUN_DIR)?
+    r: report.Report @ report.empty()
+    if found.len() < LEAST
+        report.keep_failure(@r, label: "run", detail: "  " + RUN_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str() + " — a golden that stopped running is not a golden")
+    binaries = scratch + "/binaries"
+    shell.mkdir_all(binaries)?
+    skipped: i64 @ 0
+    for item in found
+        text = read_file(item.expected)
+        if text.is_err()
+            report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot read " + item.expected)
+        else
+            want = expectation.split(text.must())
+            if want.is_err()
+                report.keep_failure(@r, label: "run/" + item.name, detail: "  " + item.expected + " is not a readable expectation — an ending must be `!panic: <message>` or `!exit: <code>`")
+            else
+                took = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: want.must(), r: @r)
+                if took
+                    skipped @ skipped + 1
+    # A skip is not a pass — the same floor the unsupported leg carries.
+    if skipped > 0 && skipped * 3 >= found.len()
+        report.keep_failure(@r, label: "run", detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not running the corpus")
+    return ok(r)
+
+# One case through the three configurations. Answers whether it was
+# SKIPPED, so the caller can floor the skips; a failure is recorded on
+# the spot and stops this case, because the second configuration's
+# verdict on a program that did not build says nothing.
+function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, want: expectation.Expectation, @r: report.Report) -> bool
+    binary = binaries + "/" + item.name
+    built = shell.run(scratch: scratch, command: shell.sq(compiler) + " build " + shell.sq(item.source) + " -o " + shell.sq(binary))
+    if built.is_err()
+        report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot run the compiler on " + item.source)
+        return false
+    # The machine's own answer, before the case's: a runner with no
+    # pkg-config was never given raylib, and that is nobody's defect.
+    if shell.machine_lacks_the_library(built.must().err)
+        return true
+    if built.must().code != 0
+        report.keep_failure(@r, label: "run/" + item.name, detail: "  did not build (exit " + built.must().code.to_str() + "):\n" + built.must().err)
+        return false
+
+    at_o0 = shell.run(scratch: scratch, command: shell.sq(binary))
+    if judged(@r, item: item, level: "-O0", want: want, said: at_o0)
+        return false
+    at_o2 = shell.run(scratch: scratch, command: shell.sq(compiler) + " run " + shell.sq(item.source))
+    if judged(@r, item: item, level: "-O2", want: want, said: at_o2)
+        return false
+    sanitised = shell.run(scratch: scratch, command: shell.sq(compiler) + " run " + shell.sq(item.source) + " --sanitize")
+    if sanitised.is_err()
+        report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot run the compiler on " + item.source)
+        return false
+    if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
+        report.keep_failure(@r, label: "run/" + item.name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
+        return false
+    if judged(@r, item: item, level: "--sanitize", want: want, said: sanitised)
+        return false
+    report.keep_pass(@r)
+    return false
+
+# One configuration against the expectation. Answers whether it FAILED,
+# so the caller stops asking about this case.
+function judged(@r: report.Report, item: cases.Case, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
+    if said.is_err()
+        report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot execute the case at " + level)
+        return true
+    wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+    if wrong.is_err()
+        return false
+    report.keep_failure(@r, label: "run/" + item.name + " at " + level, detail: "  " + item.source + " " + wrong.must())
+    return true
+
+test "the run suite passes a matching program and catches each way one can fail"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/run"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    binaries = scratch + "/binaries"
+    assert !shell.mkdir_all(binaries).is_err()
+
+    # A real program and a real compiler: the stand-in trick the golden
+    # suites use does not reach here, because this suite BUILDS and then
+    # RUNS, and a shell script cannot be told to do both convincingly.
+    assert !write_file(path: tree + "/x.hero", text: "function main()\n    print(7)\n").is_err()
+    assert !write_file(path: tree + "/x.expected", text: "7\n").is_err()
+    item = cases.Case(source: tree + "/x.hero", expected: tree + "/x.expected", name: "x")
+    compiler = "./target/debug/heroes"
+
+    green: report.Report @ report.empty()
+    match_want = expectation.split("7\n").must()
+    _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: match_want, r: @green)
+    assert green.passed == 1
+    assert green.failed == 0
+
+    # The wrong output.
+    red: report.Report @ report.empty()
+    other = expectation.split("8\n").must()
+    _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: other, r: @red)
+    assert red.passed == 0
+    assert red.failed == 1
+
+    # An expectation that demands an abort from a program that ends
+    # cleanly: the shape §4.14 cares about, in reverse.
+    quiet: report.Report @ report.empty()
+    aborting = expectation.split("7\n!panic: overflow\n").must()
+    _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: aborting, r: @quiet)
+    assert quiet.passed == 0
+    assert quiet.failed == 1
+
+test "a program that does not build is a failure naming clang's words"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/run-broken"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/b.hero", text: "function main()\n    print(nope)\n").is_err()
+    assert !write_file(path: tree + "/b.expected", text: "\n").is_err()
+    item = cases.Case(source: tree + "/b.hero", expected: tree + "/b.expected", name: "b")
+    r: report.Report @ report.empty()
+    _ = one_case(scratch: scratch, compiler: "./target/debug/heroes", binaries: scratch + "/binaries", item: item, want: expectation.split("").must(), r: @r)
+    assert r.failed == 1
+    assert strings.contains(text: r.failures[0], needle: "did not build")
