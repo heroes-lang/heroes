@@ -204,7 +204,11 @@ fn every_name_in_use_has_a_row_in_the_alias_table() {
         .filter_map(|l| l.split('`').next())
         .map(|n| format!("M-{n}"))
         .collect();
-    assert_eq!(table.len(), 37, "the alias table has {} rows, not 37: {table:?}", table.len());
+    // **39 since 2026-08-18**, when panel 085's B4 split the archive off the
+    // fixpoint and `M-harness-port` and `M-bootstrap-archive` joined the map. The
+    // count is asserted rather than derived on purpose — it is the tripwire that
+    // makes a *silently dropped* row fail, which a set comparison alone would not.
+    assert_eq!(table.len(), 39, "the alias table has {} rows, not 39: {table:?}", table.len());
 
     // The one name that is deliberately written without being a milestone: the runner-up
     // § The names records as refused, so the reasoning survives the decision.
@@ -244,7 +248,12 @@ fn no_c_file_lives_outside_the_directories_that_own_c() {
     let root = repo();
     let mut files = Vec::new();
     walk(&root, &root, &mut files);
-    let owns_c = ["runtime/", "tools/spike/"];
+    // **`seed/` owns C from M-selfhost-fixpoint on**, and it is a directory rather
+    // than a file name for this rule's own stated reason: a second seed, or a
+    // regenerated one, needs no edit here. What it holds is the compiler itself —
+    // `seed/heroes.c`, 21 MB of emitted C — which is the one artifact a clean
+    // checkout cannot rebuild without a working compiler (panel 085 R1).
+    let owns_c = ["runtime/", "tools/spike/", "seed/"];
     let mut strays = Vec::new();
     for file in &files {
         let rel = slashed(&file.strip_prefix(&root).expect("inside the repo").to_string_lossy());
