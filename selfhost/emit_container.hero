@@ -31,6 +31,7 @@ use emit_mangle
 use emit_ctype
 use emit_descriptors
 use emit_aggregate
+use emit_storageless
 use parse
 use resolve
 use checker
@@ -68,16 +69,25 @@ function build_array(c: check_state.Checked, names: emit_ctype.Names, result: i6
 # on the RESULT, so the element type is stated at every read and clang
 # checks the assignment. `{spelling} const *`, not `const {spelling} *`:
 # the two differ exactly when the element is itself a pointer.
-function read_element(c: check_state.Checked, names: emit_ctype.Names, f: ir_state.Function, base: i64, index: i64) -> str?
+function read_element(c: check_state.Checked, s: source.Source, decls: [ast.Decl], names: emit_ctype.Names, f: ir_state.Function, base: i64, index: i64) -> str?
     # A fixed array is subscripted directly, and guarded HERE (panel
     # 062): the subscript stays on an array-typed lvalue because that is
     # the only form UBSan's array-bounds can see, and the guard is the
     # compiler's because -Warray-bounds was measured not to fire on an
     # opaque index. Unsigned comparison so one test catches both ends.
-    # PORT note: the base spelling routes through storageless.fixed_text
-    # when that module lands; the Rust fallback (the plain temporary) is
-    # what this writes meanwhile — the same bytes for every case the
-    # tests cover today.
+    #
+    # THE BASE ROUTES THROUGH storageless.fixed_text, and the note that
+    # used to stand here instead is why (panel 085 R6). It said the
+    # routing would arrive "when that module lands", and the module
+    # landed — emit_construct.hero already calls it — while this call
+    # site kept the plain temporary. A fixed array is never DECLARED, so
+    # that temporary does not exist: the emitted C read `t20[...]` where
+    # `t20` appeared nowhere else in 20 MB of output, and `heroes build`
+    # was exit 2 with `use of undeclared identifier` on three ordinary
+    # programs. The note's closing clause — "the same bytes for every
+    # case the tests cover today" — was true only because no test
+    # covered it, which is CLAUDE.md §11's premise that expires in
+    # silence while the sentence around it still reads as correct.
     is_fixed: bool @ false
     fixed_len: i64 @ 0
     match check_table.get(c.types, ir_state.value_type(f, base))
@@ -89,7 +99,11 @@ function read_element(c: check_state.Checked, names: emit_ctype.Names, f: ir_sta
         .case_ty | .failure | .generic | .error => is_fixed @ is_fixed
     if is_fixed
         i = emit_mangle.value(index)
-        return ok(emit_mangle.value(base) + "[((uint64_t)(" + i + ") >= UINT64_C(" + fixed_len.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + i + "))]")
+        base_text: str @ emit_mangle.value(base)
+        rendered = emit_storageless.fixed_text(c, s, decls, f, value: base)
+        if !rendered.is_err()
+            base_text @ rendered.must()
+        return ok(base_text + "[((uint64_t)(" + i + ") >= UINT64_C(" + fixed_len.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + i + "))]")
     element: i64 @ 0 - 1
     match check_table.get(c.types, ir_state.value_type(f, base))
         .array arr => element @ arr.element
@@ -269,7 +283,7 @@ test "an array literal is new plus push/decref pairs, a read is a cast"
     assert lines.must()[1] == "{ HeroArrayHeader *grown = hero_array_push(t3, &t1);"
     assert lines.must()[2] == "  hero_array_decref(t3); t3 = grown; }"
     f = ir_state.Function(name: "t", decl: 0, kind: .function_kind, generics: [], params: [], result: 0, slots: [], blocks: [], values: [arr, check_table.int_ty_id(got.c.types)], arguments: [], steps: [], instance: [], call_instances: {}, span: token.Span(start: 0, end: 1))
-    read = read_element(got.c, got.names, f, base: 0, index: 1)
+    read = read_element(got.c, got.s, got.decls, got.names, f, base: 0, index: 1)
     assert read.must() == "*(int64_t const *)hero_array_at(t0, t1)"
 
 test "the session's own fixedbug: a trailing field behind an index releases then assigns"

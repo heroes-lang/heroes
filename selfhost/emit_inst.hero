@@ -151,7 +151,7 @@ function emit(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checke
             if is_str
                 emit_access.string_byte(@w, base: ix.base, index: ix.at, target: target)
             else
-                emit_access.element(@w, c, names, f, base: ix.base, index: ix.at, target: target)
+                emit_access.element(@w, c, s, decls, names, f, base: ix.base, index: ix.at, target: target)
         .construct con =>
             match con.shape
                 .record_shape | .case_shape => emit_construct.record_or_case(@w, c, names, s, decls, f, shape: con.shape, run: con.arguments, target: target)

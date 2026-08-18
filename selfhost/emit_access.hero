@@ -51,11 +51,13 @@ function string_byte(@w: emit_writer.Writer, base: i64, index: i64, target: str?
         return
     emit_writer.line(@w, text: "    " + target.must() + " = hero_str_byte(" + emit_mangle.value(base) + ", " + emit_mangle.value(index) + ");")
 
-# xs[i]: an element, read through the descriptor.
-function element(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, f: ir_state.Function, base: i64, index: i64, target: str?)
+# xs[i]: an element, read through the descriptor — or, for a fixed
+# array, subscripted in place, which is why `s` and `decls` are here:
+# the base spelling comes from storageless.fixed_text (panel 085 R6).
+function element(@w: emit_writer.Writer, c: check_state.Checked, s: source.Source, decls: [ast.Decl], names: emit_ctype.Names, f: ir_state.Function, base: i64, index: i64, target: str?)
     if target.is_err()
         return
-    text = emit_container.read_element(c, names, f, base: base, index: index)
+    text = emit_container.read_element(c, s, decls, names, f, base: base, index: index)
     if text.is_err()
         emit_writer.line(@w, text: "    hero_unreachable(); /* not an array */")
         return

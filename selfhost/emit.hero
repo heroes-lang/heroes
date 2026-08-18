@@ -144,7 +144,15 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
     names: emit_ctype.Names @ emit_ctype.new_names(s, decls)
     names @ emit_ctype.with_options(names, module: module, c: c)
     names @ emit_ctype.with_functions(names, module: module, c: c, p: p)
-    w: emit_writer.Writer @ emit_writer.new_writer(source.stem_of(s.name))
+    # `module`, not `stem_of` — the sanitised name, which is the one the
+    # compiler actually WRITES on disk (`build/<key>/whileloop.c`). The
+    # comment above already said the root module names the generated .c
+    # in a #line directive, and this line said otherwise: it spelled
+    # `while-loop.c`, a file nothing creates, on 81 of 127 programs
+    # (panel 085 R6). Internally inconsistent rather than merely
+    # different from the bootstrap, which is what settled which side had
+    # the bug.
+    w: emit_writer.Writer @ emit_writer.new_writer(module)
     emit_decls.prelude(@w, p, target: target, c: c, names: names, s: s, decls: decls, version: version)
     # Types before anything that can mention one: every typedef in one
     # containment order, then every per-type prototype, then the
