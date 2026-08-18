@@ -206,10 +206,13 @@ everything else is paper and ink.
   alignment without stretching the prose. The grid sizes the **middle** track
   and lets the bleed collapse first; sizing the bleed instead leaves a phone
   with 88px of empty margin and squeezed prose, which is what the first cut did.
-- **The marquee prints out of register** — the red plate a hair left, the blue a
-  hair right, on the home `h1` only. It is the 1973 cover said in type. Once per
-  site; the gold quotation marks stay out of it, because gold printed twice
-  reads as dirt.
+- **The name is set clean** (author instruction 2026-08-18). The home `h1`
+  carried a two-plate misregistration — red a hair left, blue a hair right, the
+  1973 cover said in type — and it is gone, along with the `h1 .q` override that
+  existed only to keep the gold quotation marks out of it. Nothing sits behind
+  those letters now. The two stage colours still carry the page from the wash
+  behind the hero and from the bolt, which is where they belong; do not put them
+  back into the type.
 - **Grain at ≤ 4%**, one 160px `feTurbulence` tile generated in the stylesheet
   (no request, no JavaScript), fixed over the page and `pointer-events: none`.
 - **Two blues.** `--blue` draws shapes; `--link` is the text colour, lifted so it

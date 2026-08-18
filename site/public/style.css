@@ -313,11 +313,9 @@ h1 {
   font-size: clamp(3rem, 9vw, 4.6rem); margin: 0; line-height: 0.95;
   text-wrap: balance;
 }
-/* Bowie's own quotation marks, in the album's own irony. They keep out of the
-   two-plate misregistration below: gold printed twice reads as dirt. */
+/* Bowie's own quotation marks, in the album's own irony. */
 h1 .q {
   color: var(--gold); font-size: 0.82em; vertical-align: 0.05em;
-  text-shadow: none;
 }
 
 .bolt {
@@ -563,15 +561,14 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
 .hero .kicker::before {
   content: ''; width: 1.7rem; height: 1px; background: var(--blue); flex: none;
 }
+/* The name is set clean: no shadow, no misregistration, nothing behind the
+   letters (author instruction 2026-08-18). The two-plate print effect that used
+   to sit here — red plate a hair left, blue a hair right — is gone, and with it
+   the `h1 .q` override that existed only to keep the gold quotation marks out
+   of it. The red and blue still carry the page: they are in the wash behind the
+   hero and in the bolt. */
 .hero h1 {
   font-size: clamp(3.4rem, 8.4vw, 5.6rem);
-  /* Out of register by a hair, the way a two-plate poster prints: the red
-     plate a little left, the blue a little right. It is the cover of Aladdin
-     Sane said in type instead of in paint, and it is the only place on the
-     site that says it. */
-  text-shadow:
-    -0.028em 0 0 color-mix(in srgb, var(--red) 62%, transparent),
-     0.028em 0 0 color-mix(in srgb, var(--blue) 62%, transparent);
 }
 .hero .promise {
   font-size: clamp(1.3rem, 2.6vw, 1.6rem); line-height: 1.28;
