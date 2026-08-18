@@ -127,11 +127,11 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     not by accretion. What it is not is a library that grows.
   </p>
   <p>
-    That is not laziness, it is the leverage that makes a one-person language
-    viable, and it has a consequence the rest of the design obeys: <b>the
+    Laziness has nothing to do with it. That leverage is what makes a one-person
+    language viable, and it has a consequence the rest of the design obeys: <b>the
     ergonomics of the C boundary rank alongside comprehension, not below
     it.</b> A library Heroes cannot bind is C code its author has to keep
-    writing by hand, which is the one thing this refusal exists to prevent.
+    writing by hand: the one thing this refusal exists to prevent.
   </p>
 
   <h2>Which is why the compiler emits C</h2>
@@ -229,7 +229,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, no implicit conversions of any kind, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn, expected type, definition site, concrete fixes tagged <code>certain</code> or <code>guess</code>. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
     <li><b>A program must not segfault.</b> That is a goal of the language, not a quality of its implementation, and where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens. The guarantee covers the language's own operations: index, slice, division and overflow all abort rather than corrupt. The one null that exists is quarantined at the C boundary, <code>ptr</code> and <code>cstr</code> are not <code>str</code>, and converting a null <code>cstr</code> aborts cleanly instead of crashing, which is why the spec says to test <code>c == nullptr</code> first. What a C function then does with what you passed it is still C.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification is measured at 3512 tokens against a hard ceiling of 4096: five pages, and it is not documentation, it is the prompt.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification is measured at 3512 tokens against a hard ceiling of 4096: five pages, and it is the prompt rather than documentation.</li>
   </ul>
 
   <h2>The obvious objections <span class="nod">· quicksand, avoided ·</span></h2>

@@ -134,12 +134,12 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     non per accumulo. Quello che non è, è una libreria che cresce.
   </p>
   <p>
-    Non è pigrizia, è la leva che rende praticabile un linguaggio fatto da una
-    persona, e ha una conseguenza che tutto il resto del progetto rispetta:
+    Con la pigrizia non c&rsquo;entra niente: è la leva che rende praticabile un
+    linguaggio fatto da una persona, e ha una conseguenza che tutto il resto del progetto rispetta:
     <b>l&rsquo;ergonomia del confine con il C conta quanto la comprensibilità,
     non meno.</b> Una libreria che Heroes non riesce a collegare è codice C che
-    il suo autore deve continuare a scrivere a mano, che è esattamente la cosa
-    che questo rifiuto esiste per evitare.
+    il suo autore deve continuare a scrivere a mano: esattamente la cosa che
+    questo rifiuto esiste per evitare.
   </p>
 
   <h2>Ed è per questo che il compilatore emette C</h2>
@@ -247,7 +247,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <li><b>Esattamente un modo di scrivere ogni cosa.</b> Un formatter canonico, una sola parola chiave per i cicli, nessuna conversione implicita di nessun tipo, nomi degli argomenti obbligatori dove i tipi potrebbero confondersi. Gli errori che i modelli fanno davvero diventano errori che il compilatore solleva davvero.</li>
     <li><b>Errori scritti per essere letti da una macchina.</b> Ogni diagnostica porta tutto quello che serve per sistemare il programma in un solo giro: il tipo aspettato, il punto della definizione, riparazioni concrete etichettate <code>certain</code> o <code>guess</code>. I buchi tipati (<code>???</code>) permettono di costruire un programma partendo dallo scheletro.</li>
     <li><b>Un programma non deve andare in segfault.</b> Questo è un obiettivo del linguaggio, non una qualità della sua implementazione, e dove due soluzioni ammissibili sono in disaccordo e uno dei due si può far schiantare, vince l&rsquo;altro, qualunque cosa costi in eleganza o in token. La garanzia copre le operazioni del linguaggio: indice, slice, divisione e overflow si fermano invece di corrompere. L&rsquo;unico null che esiste è messo in quarantena al confine con il C: <code>ptr</code> e <code>cstr</code> non sono <code>str</code>, e convertire un <code>cstr</code> nullo si arresta in modo pulito invece di schiantarsi, ed è per questo che la specifica dice di testare prima <code>c == nullptr</code>. Quello che poi una funzione C fa con quello che le hai passato è ancora C.</li>
-    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3512 token contro un tetto fisso di 4096: cinque pagine, e non è documentazione, è il prompt.</li>
+    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3512 token contro un tetto fisso di 4096: cinque pagine, ed è il prompt più che una documentazione.</li>
   </ul>
 
   <h2>Le obiezioni ovvie <span class="nod">· quicksand, avoided ·</span></h2>

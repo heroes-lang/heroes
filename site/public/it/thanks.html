@@ -67,8 +67,7 @@
     era scritto in Rust.
   </p>
   <ul class="lineage">
-    <li><b>C</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>, che
+    <li><b>C</b>: <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>, che
     l&rsquo;ha progettato;
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>, che ha
     scritto B, il linguaggio da cui è uscito il C, e Unix insieme a Ritchie; e
@@ -76,12 +75,11 @@
     coautore del libro che l&rsquo;ha insegnato a tutti. Tutta la Parte 11 del
     progetto si appoggia sul fatto che il loro linguaggio è ancora lì, e ancora
     collegabile.</li>
-    <li><b>LLVM, clang</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>.
+    <li><b>LLVM, clang</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>.
     Heroes non verifica da sé una dichiarazione esterna: si organizza perché lo
     faccia clang. Un compilatore che dà in appalto a un altro compilatore il suo
     controllo più difficile gli deve almeno una menzione.</li>
-    <li><b>Rust</b> &mdash; il team di Rust, e Graydon Hoare, che l&rsquo;ha
+    <li><b>Rust</b>: il team di Rust, e Graydon Hoare, che l&rsquo;ha
     avviato. Il compilatore di bootstrap è Rust scritto in un sottoinsieme
     volutamente ristretto, ed è quel sottoinsieme il motivo per cui portarlo in
     Heroes è stato meccanico invece di essere una riscrittura.</li>
@@ -96,7 +94,7 @@
     pubblicata.
   </p>
   <ul class="lineage">
-    <li><b>Hylo, prima Val</b> &mdash; Dimitri Racordon, Denys Shabalin, Daniel
+    <li><b>Hylo, prima Val</b>: Dimitri Racordon, Denys Shabalin, Daniel
     Zheng,
     <a href="https://en.wikipedia.org/wiki/David_Abrahams_(computer_programmer)">Dave
     Abrahams</a> e Brennan Saeta, autori di <i>Native Implementation of Mutable
@@ -105,8 +103,7 @@
     formano alberi separati. Tutto quello che a questo linguaggio non serve
     &mdash; un borrow checker, un raccoglitore di cicli, le annotazioni sulla
     durata di vita &mdash; è assente per via di quella riga.</li>
-    <li><b>Swift</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>, Doug
+    <li><b>Swift</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>, Doug
     Gregor, John McCall, Ted Kremenek e Joe Groff. Il copy-on-write sopra il
     reference counting, i parametri <code>inout</code> (che qui sono
     <code>@</code>) e i <code>variant</code> col punto davanti. Swift è anche il
@@ -114,19 +111,16 @@
     questo modello da più di dieci anni. Heroes prende la metà che funziona e
     rinuncia a <code>class</code>, e con esso a <code>weak</code> e
     <code>unowned</code>.</li>
-    <li><b>APL, J, K</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Kenneth E.
+    <li><b>APL, J, K</b>: <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Kenneth E.
     Iverson</a>,
     <a href="https://en.wikipedia.org/wiki/Roger_Hui">Roger Hui</a> e
     <a href="https://en.wikipedia.org/wiki/Arthur_Whitney_(computer_scientist)">Arthur
     Whitney</a>. Sessant&rsquo;anni di semantica a valori presi per intero, senza
     riferimenti nel linguaggio che si scrive, e la prova che non è questo modello
     a rendere lento un linguaggio.</li>
-    <li><b>R</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Ross_Ihaka">Ross Ihaka</a> e
+    <li><b>R</b>: <a href="https://en.wikipedia.org/wiki/Ross_Ihaka">Ross Ihaka</a> e
     <a href="https://en.wikipedia.org/wiki/Robert_Gentleman_(statistician)">Robert
-    Gentleman</a>. <b>MATLAB</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Cleve_Moler">Cleve Moler</a>. La
+    Gentleman</a>. <b>MATLAB</b>: <a href="https://en.wikipedia.org/wiki/Cleve_Moler">Cleve Moler</a>. La
     semantica a valori con copy-on-write nei due linguaggi che hanno portato sulle
     spalle la statistica e il calcolo numerico per decenni: milioni di persone a
     cui non è mai servito un riferimento modificabile per fare lavoro vero.</li>
@@ -139,7 +133,7 @@
     altre persone prima.
   </p>
   <ul class="lineage">
-    <li><b>Cyclone</b> &mdash; Dan Grossman,
+    <li><b>Cyclone</b>: Dan Grossman,
     <a href="https://en.wikipedia.org/wiki/Michael_W._Hicks">Michael Hicks</a>,
     Trevor Jim e
     <a href="https://en.wikipedia.org/wiki/Greg_Morrisett">Greg Morrisett</a>. I
@@ -148,8 +142,7 @@
     volte: è la disciplina in cui è stato scritto il compilatore di bootstrap in
     Rust, ed è il motivo per cui il porting verso Heroes è stato meccanico. Nel
     repository quella regola porta il loro nome.</li>
-    <li><b>Modula-3</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>, James
+    <li><b>Modula-3</b>: <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>, James
     Donahue, Lucille Glassman, Mick Jordan, Bill Kalsow e
     <a href="https://en.wikipedia.org/wiki/Greg_Nelson_(computer_scientist)">Greg
     Nelson</a>. Le operazioni pericolose, ma dentro un recinto: il modello per tenere
@@ -164,38 +157,32 @@
     inventato: sono tarati su lavori degli anni Settanta e Ottanta.
   </p>
   <ul class="lineage">
-    <li><b>Pascal, Modula, Oberon</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Niklaus_Wirth">Niklaus Wirth</a>, con
+    <li><b>Pascal, Modula, Oberon</b>: <a href="https://en.wikipedia.org/wiki/Niklaus_Wirth">Niklaus Wirth</a>, con
     <a href="https://en.wikipedia.org/wiki/J%C3%BCrg_Gutknecht">Jürg
     Gutknecht</a> su Oberon. <code>record</code> e <code>variant</code> vengono da
     qui. E anche le due tarature: il rapporto su Oberon in sedici pagine è quanto
     può essere lunga una specifica, e Pascal-P4 in circa quattromila righe è
     quanto può essere grande un compilatore che compila se stesso. Wirth ha anche
-    scritto un intero sistema operativo in un linguaggio senza puntatori grezzi,
-    che è l&rsquo;argomento più forte che esista a favore di tutto questo
-    approccio.</li>
+    scritto un intero sistema operativo in un linguaggio senza puntatori grezzi, e
+    non c&rsquo;è argomento più forte a favore di tutto questo approccio.</li>
   </ul>
 
   <h2>I tipi, e un&rsquo;idea rifiutata di proposito</h2>
   <ul class="lineage">
-    <li><b>ML</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a> e il
+    <li><b>ML</b>: <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a> e il
     gruppo di Edimburgo, fra cui
     <a href="https://en.wikipedia.org/wiki/Michael_J._C._Gordon">Michael J. C.
     Gordon</a>. La coppia prodotto-somma che Heroes chiama <code>record</code> e
     <code>variant</code>, e la tradizione da cui vengono le unioni etichettate.</li>
-    <li><b>La freccia</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Alonzo_Church">Alonzo Church</a>.
+    <li><b>La freccia</b>: <a href="https://en.wikipedia.org/wiki/Alonzo_Church">Alonzo Church</a>.
     <code>-&gt;</code> in un tipo funzione è il pezzo di sintassi più familiare che
     esista, ed è arrivato fino a Heroes passando per ML, Haskell, Rust, Swift e i
     type hint di Python senza cambiare forma. È stato tenuto esattamente com&rsquo;era.</li>
-    <li><b>La subroutine</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/David_Wheeler_(computer_scientist)">David
+    <li><b>La subroutine</b>: <a href="https://en.wikipedia.org/wiki/David_Wheeler_(computer_scientist)">David
     Wheeler</a>, su EDSAC nel 1951. Vale la pena dirlo ad alta voce: qualcuno ha
     dovuto inventare l&rsquo;idea di chiamare un pezzo di codice da più di un
     posto.</li>
-    <li><b>L&rsquo;inferenza dei tipi</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/J._Roger_Hindley">J. Roger Hindley</a> e
+    <li><b>L&rsquo;inferenza dei tipi</b>: <a href="https://en.wikipedia.org/wiki/J._Roger_Hindley">J. Roger Hindley</a> e
     <a href="https://en.wikipedia.org/wiki/Robin_Milner">Robin Milner</a>. Questo
     è un grazie per una cosa che Heroes <i>non</i> usa: l&rsquo;inferenza su tutto
     il programma è bellissima e allontana gli errori dalla loro causa, cosa che
@@ -210,34 +197,31 @@
     questi linguaggi conosce già la maggior parte di Heroes.
   </p>
   <ul class="lineage">
-    <li><b>Go</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert Griesemer</a>,
+    <li><b>Go</b>: <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert Griesemer</a>,
     <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> e
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>. Un solo
     formato canonico senza opzioni, le variabili non usate come errori, una riga
     che finisce senza punto e virgola, e il coraggio di andare avanti dieci anni
     senza generici.</li>
-    <li><b>Nim</b> &mdash; Andreas Rumpf. Il meccanismo per chiamare funzioni
+    <li><b>Nim</b>: Andreas Rumpf. Il meccanismo per chiamare funzioni
     esterne, la cache di build per modulo, e <code>nim r</code>, che è
     <code>heroes run</code>. E anche l&rsquo;avvertimento che il progetto si
     ripete da solo: copia la superficie di Nim, mai la sua implementazione.</li>
-    <li><b>Zig</b> &mdash; Andrew Kelley. I test che vivono nel file che testano,
+    <li><b>Zig</b>: Andrew Kelley. I test che vivono nel file che testano,
     e le stringhe terminate da NUL che possono passare nel C senza nessuna
     conversione.</li>
-    <li><b>Python</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Guido_van_Rossum">Guido van Rossum</a>,
+    <li><b>Python</b>: <a href="https://en.wikipedia.org/wiki/Guido_van_Rossum">Guido van Rossum</a>,
     e
     <a href="https://en.wikipedia.org/wiki/Tim_Peters_(software_engineer)">Tim
     Peters</a> per <code>import this</code>, che è diventato
     <code>heroes this</code> &mdash; portato dentro il binario invece che in un
     documento che si allontana. <a href="zen.html">È qui.</a></li>
-    <li><b>Odin, Jai</b> &mdash; l&rsquo;autore di Odin, che pubblica come
+    <li><b>Odin, Jai</b>: l&rsquo;autore di Odin, che pubblica come
     gingerBill, e
     <a href="https://en.wikipedia.org/wiki/Jonathan_Blow">Jonathan Blow</a>. Un
     solo modo uniforme di scrivere una dichiarazione, qualunque cosa si stia
     dichiarando.</li>
-    <li><b>Ruby</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
+    <li><b>Ruby</b>: <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
     Matsumoto</a>. Il ritmo di lettura &mdash; blocchi con un nome, argomenti con
     un nome, catene di punti &mdash; preso come obiettivo per come dovrebbe suonare
     il codice letto ad alta voce, lasciando perdere in blocco il metaprogramming
@@ -246,13 +230,13 @@
 
   <h2>Errori che vale la pena leggere, e buchi tipati</h2>
   <ul class="lineage">
-    <li><b>Rust</b> &mdash; il team di Rust, ed <b>Elm</b> &mdash; Evan
+    <li><b>Rust</b>: il team di Rust, ed <b>Elm</b>: Evan
     Czaplicki. Insieme hanno dimostrato che la qualità di un messaggio di errore
     cambia l&rsquo;esperienza intera di un linguaggio, e che è una cosa che si progetta, non un
     dettaglio tecnico. Heroes punta lo stesso sforzo su un lettore
     diverso: qui una diagnostica deve essere risolvibile senza aprire un secondo
     file.</li>
-    <li><b>Idris</b> &mdash; Edwin Brady. <b>Agda</b> &mdash; Ulf Norell, e
+    <li><b>Idris</b>: Edwin Brady. <b>Agda</b>: Ulf Norell, e
     Catarina Coquand sulla prima versione. I buchi tipati, portati fuori dagli
     assistenti di dimostrazione e messi nel codice normale: in Heroes
     <code>???</code> è un&rsquo;espressione legale, e il compilatore risponde
@@ -261,8 +245,7 @@
 
   <h2>Immutabilità su larga scala</h2>
   <ul class="lineage">
-    <li><b>Erlang</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Joe_Armstrong_(programmer)">Joe
+    <li><b>Erlang</b>: <a href="https://en.wikipedia.org/wiki/Joe_Armstrong_(programmer)">Joe
     Armstrong</a>, Robert Virding e Mike Williams. Immutabilità imposta in modo
     assoluto, in sistemi con tempi di attività leggendari, che è la prova che non
     è un vincolo da giocattolo. Il motivo è invertito, e l&rsquo;inversione è la
@@ -279,15 +262,14 @@
     finire questo.
   </p>
   <ul class="lineage">
-    <li><b>cfront</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
+    <li><b>cfront</b>: <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
     Stroustrup</a>. Il C++ è nato come un programma che emetteva C.</li>
-    <li><b>Vala</b> &mdash; Jürg Billeter, Raffaele Sandrini e Rico Tzschichholz.
-    <b>Chicken Scheme</b> &mdash; Felix Winkelmann. <b>Cython</b> &mdash; Robert
+    <li><b>Vala</b>: Jürg Billeter, Raffaele Sandrini e Rico Tzschichholz.
+    <b>Chicken Scheme</b>: Felix Winkelmann. <b>Cython</b>: Robert
     Bradshaw e Stefan Behnel. Tre linguaggi funzionanti che sono usciti
     passando dal C, ognuno una prova che quella strada è una scelta e non un
     compromesso.</li>
-    <li><b>Haskell degli inizi</b> &mdash; progettato da un comitato, fra cui
+    <li><b>Haskell degli inizi</b>: progettato da un comitato, fra cui
     <a href="https://en.wikipedia.org/wiki/Paul_Hudak">Paul Hudak</a>,
     <a href="https://en.wikipedia.org/wiki/John_Hughes_(computer_scientist)">John
     Hughes</a>,
@@ -322,12 +304,11 @@
     stesso modo di fallire che ha Heroes: scrivi un ciclo che cambia un elemento
     alla volta su una struttura condivisa e paghi una copia ogni volta. Il
     progetto lo dice ad alta voce invece di nasconderlo.</li>
-    <li><b>Unison</b> &mdash; Paul Chiusano e Rúnar Bjarnason. Il codice
+    <li><b>Unison</b>: Paul Chiusano e Rúnar Bjarnason. Il codice
     conservato come albero con i nomi come etichette: l&rsquo;origine di
     un&rsquo;idea che qui è stata esplorata a lungo e poi abbandonata in favore di
     una sola sintassi leggibile.</li>
-    <li><b>Ada</b> &mdash;
-    <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean Ichbiah</a> per Ada
+    <li><b>Ada</b>: <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean Ichbiah</a> per Ada
     83, e Tucker Taft da Ada 95 fino al 2012. Un rifiuto è stato preso in prestito
     per intero: passare la stessa variabile due volte alla stessa chiamata quando
     entrambi i lati possono scriverci. Ada l&rsquo;ha permesso per trentatré anni,
