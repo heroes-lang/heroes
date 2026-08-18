@@ -285,7 +285,7 @@ nav.site a.lang + .out { margin-left: 0; }
    margin, `ul` is ordered last and takes the full width). Two fixed rows
    instead of three, no item hidden, and the item clipped at the right edge is
    the affordance that says the row continues. */
-@media (max-width: 700px) {
+@media (max-width: 800px) {
   nav.site > div { gap: 0.45rem 0.9rem; padding-block: 0.55rem; }
   nav.site .mark { font-size: 0.95rem; }
   nav.site a:not(.mark) { font-size: 0.74rem; letter-spacing: 0.02em; }
