@@ -82,8 +82,7 @@
      |                     ^^
   fix (certain): write `from:`</code></pre>
   <p>
-    Le diagnostiche restano in inglese perché sono l&rsquo;output vero del
-    compilatore: qui non vengono tradotte, vengono copiate. Le annotazioni
+    Le annotazioni
     <code>#~ needs_label</code> stanno nel sorgente di proposito: sono il modo in
     cui la suite di test controlla che la sottolineatura cada dove il messaggio
     dice che cade. E il caret è l&rsquo;estensione esatta del problema, non la
@@ -130,8 +129,8 @@ tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserve
 tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language, use `constant`: `constant MAX: i64`
 tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language: an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
   <p>
-    Quella è la forma a una riga per diagnostica, che è quella che i test golden
-    fissano; la resa più ricca qui sopra è quello che stampa il comando. Tre di
+    Quella è la forma a una riga per diagnostica; la resa più ricca qui sopra è
+    quello che stampa il comando. Tre di
     quelle quattro portano una riparazione <code>certain</code>, quindi
     <code>--apply</code> converte un file intero di parole chiave prese in
     prestito in un solo passaggio.
