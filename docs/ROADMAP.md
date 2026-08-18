@@ -17,20 +17,19 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-selfhost-port closed 2026-08-17, tag `m-selfhost-port` — THE FIXPOINT.**
+**M-selfhost-fixpoint closed 2026-08-18, tag `m-selfhost-fixpoint` — v1, THE SEED.**
 
-    373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63
-    gen1b.c (bootstrap) == gen3.c (heroes, in Heroes) == gen4.c (stage 2)
-    20,886,539 bytes · Apple clang 21.0.0, arm64-darwin
+    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # 3.7 s, no flags
+    21,008,434 bytes · 2.50 MiB of pack · and it re-emits itself byte for byte
 
-`selfhost/`: **143 modules, 34,812 lines, 27,230 tests, zero PORT-DEBT** — the
-whole compiler, CLI included. The port's C compiles under the full flag set,
-*that* compiler passes the differential (5 × 257 × 2 streams, zero divergences),
-and the fixpoint is stable. Nine defects found, five in the port and **four in
-the bootstrap**; four predictions scored, 036's falsified.
-Record: `docs/journal/021-selfhost-port.md`.
-
-Next: **M-selfhost-fixpoint** — the seed test first, then the archive.
+Tested from `git archive HEAD`, not the working tree. **The archive of `crates/`
+did NOT happen and has its own chain** (panel 085 B4): the port read its library
+from `crates/` at run time, so the compiler failed outside this repository and
+blamed the author's line. And emitted C had never been compared between the two
+compilers — 26 of 127 agreed, then **127 of 127**, pinned by
+`tests/differential.rs`. `selfhost/` has **447 test blocks**, not 27,230.
+Record: `docs/journal/022-selfhost-fixpoint.md`. Next: **M-harness-port**, because
+the differential dies with the bootstrap and its expectation *is* the bootstrap.
 
 ---
 
@@ -39,17 +38,19 @@ Next: **M-selfhost-fixpoint** — the seed test first, then the archive.
 | order | id | what | warrant |
 |---|---|---|---|
 | 1 | **M-selfhost-port** | The port | v1 |
-| 2 | **M-selfhost-fixpoint** | Fixpoint — **v1**, and the bootstrap compiler is archived | v1 |
-| 3 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
-| 4 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
-| 5 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
-| 6 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
-| 7 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
-| 8 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
-| 9 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
-| 10 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
-| 11 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
-| 12 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
+| 2 | **M-selfhost-fixpoint** | Fixpoint and the seed — **v1** | v1 |
+| 3 | **M-harness-port** | The net in Heroes — the golden harness, the corpus, the record checks | closure list (§1.0): nothing can ask whether the two compilers agree once the bootstrap is gone |
+| 4 | **M-bootstrap-archive** | `crates/` → `archive/bootstrap-rs/` — the third language dies here | v1's last clause (design.md:82) |
+| 5 | **M-separate-compilation** | Separate compilation — one `.c` per module, prototypes across TUs, the cache | closure list (§1.0) — the build architecture |
+| 6 | **M-package-manager** | Packages — `heroes add`/`heroes fetch`, and bindings in place of a standard library | **scheduled, no warrant** |
+| 7 | **M-isolated-threads** | Concurrency (design.md Part 7.13) | **scheduled, no warrant** |
+| 8 | **M-qbe-backend** | QBE backend (Part 7.14) — the proof that the IR is not C in disguise | **scheduled, no warrant** |
+| 9 | **M-lsp-server** | `heroes lsp` | **scheduled, no warrant** |
+| 10 | **M-vscode-extension** | The VS Code extension, complete — LSP client, debugging, packaging | **scheduled, no warrant** |
+| 11 | **M-documentation-site** | The site — the whole language documented, anchored to programs that run | **scheduled, no warrant** |
+| 12 | **M-journey-book** | The journey — how this language came to be | **scheduled, no warrant** |
+| 13 | **M-guide-book** | The guide — the language, as a book you would find in a shop | §1.1: comprehension is the objective |
+| 14 | **M-publication-gate** | Publication readiness — the last gate before anything goes outward | CLAUDE.md §14 |
 
 Both books are **plain language, Italian and English** — the one declared
 exception to CLAUDE.md §11, recorded there.
@@ -94,18 +95,47 @@ in Heroes is where the source mapping stops being a nicety. A golden runs lldb i
 batch mode and asserts that a breakpoint on a `.hero` line is hit (CLAUDE.md §9:
 every claim gets a test that makes it fire).
 
-### M-selfhost-fixpoint — Fixpoint — **v1**
-A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty (generated C, not binaries;
-clang version pinned and recorded). Then `crates/heroes` → `archive/bootstrap-rs/`:
-the third language dies here. **Cold cache by construction**, since M-separate-compilation has not
-landed — which is what voids panel 030's prediction 7.
-**And the seed, decided here rather than discovered after the archive.** Once the
-Rust bootstrap is archived, a newcomer has no Heroes compiler and therefore no way
-to build one. The answer is the artifact the fixpoint already produces: **`B.c`,
-the generated C, is a release artifact** — any clang compiles it, and it is how Go
-shipped 1.4 and how Zig ships its bootstrap. It is tested from a clean checkout
-with nothing but a C compiler, and if that test is not written before the archive
-commit, the archive commit does not happen.
+### M-selfhost-fixpoint — Fixpoint and the seed — **v1**
+**Closed 2026-08-18.** A builds `B.c`, B builds `C.c`, `diff B.c C.c` empty
+(generated C, not binaries; clang version pinned and recorded) — done, and the
+seed with it: `seed/heroes.c`, one clang line, no flags, tested from `git archive
+HEAD` because a test run in the working tree proves nothing about a *checkout*.
+
+**The archive left this milestone** (panel 085 B4) and became the two rows above.
+Three reasons, all measured: the port read its standard library from `crates/` at
+run time, so the self-hosted compiler was already broken outside this repository
+and blamed the author's line for it; `tests/differential.rs` — the instrument that
+found that and two more — has the **bootstrap** as its expectation, so archiving it
+removes the only thing that can ask whether the two compilers agree; and
+`heroes measure` is not in the port, while design.md §1.6 cites
+`crates/heroes/src/measure/gate.rs` as the spec budget's live enforcer.
+
+### M-harness-port — The net, in Heroes
+The 4,279 lines of Rust harness (`golden` 1,095 · `surface` 2,105 · `corpus` 544 ·
+`milestones` 310 · `layout` 116 · `expectation` 109) become a Heroes program run by
+the one command. **No compiler lines and no new surface**: a 79-line probe ran 65
+of 65 `check/` cases green, and exit codes, separate streams, `getenv` and file
+comparison were each measured reachable today. Predicted **2,500–3,760 lines**,
+centre ~3,200, by three independent ratios.
+
+Two things a straight port would miss. `layout.rs` is a **rewrite** — it walks
+`crates/**/*.rs`, the compiler becomes `selfhost/*.hero`, and 29 of 143 selfhost
+files already exceed §11's 300 lines, so the check must carry the knot rule or it
+goes red on day one. And a directory walk has no sound cheap route: `ls > file`
+plus `read_file` **splits a filename containing a newline into two entries at exit
+0**, measured, which §1.12 forbids — so it is `popen`/`fgets`/`pclose`, measured
+working on both compilers, with the wait status from `pclose`.
+
+### M-bootstrap-archive — The third language dies
+`crates/` → `archive/bootstrap-rs/`, and **the move is the last commit, not the
+first**. What comes before it, in order: the differential replaced by something
+that survives its own oracle (a stored emission per program, regenerated
+deliberately, is the only shape left); `measure` ported and design.md:322/:349
+amended in the same commit; the `#~` invariant's runner carried over (86 files, 184
+annotations, one enforcer at `golden.rs:344`); CI's **four** cargo steps replaced,
+or `.github/workflows/ci.yml` becomes empty; and a `doctor` for a machine with no
+cargo. The seed is what makes the archive safe for a newcomer, and it is already
+here.
 
 ### M-separate-compilation — Separate compilation
 One `.c` per module, prototypes across translation units, the per-module cache:
@@ -332,6 +362,8 @@ code. `git tag --list --sort=creatordate` gives the same order from git itself.
 | M-struct-passing — the layout that is not ours | 2026-08-15 | `m-struct-passing` | [018](journal/018-struct-passing.md) |
 | M-complete-structs — every field form a C header can write | 2026-08-15 | `m-complete-structs` | [019](journal/019-complete-structs.md) |
 | M-selfhost-probe — the lexer ported, and the wall that was not there | 2026-08-15 | `m-selfhost-probe` | [020](journal/020-selfhost-probe.md) |
+| M-selfhost-port — the compiler twice over, and one hash | 2026-08-17 | `m-selfhost-port` | [021](journal/021-selfhost-port.md) |
+| M-selfhost-fixpoint — the seed, and four defects the fixpoint could not see | 2026-08-18 | `m-selfhost-fixpoint` | [022](journal/022-selfhost-fixpoint.md) |
 
 ## The names
 
