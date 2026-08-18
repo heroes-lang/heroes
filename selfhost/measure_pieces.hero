@@ -1,0 +1,162 @@
+# Pre-tokenisation: cutting text into the pieces BPE merges within.
+#
+# Port of crates/heroes/src/measure/pretokenize.rs. Before any merging
+# happens, a BPE tokeniser splits the text on a fixed pattern so that a
+# merge can never cross a boundary — which is why `"hello"` and `" hello"`
+# are two different tokens, and why a run of spaces is its own piece. Both
+# vendored tables use the GPT-2 pattern, which claude-legacy.json states in
+# its own `pat_str` field:
+#
+#     's|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+
+#
+# Alternatives, tried in order: a few English contractions; then an optional
+# single space followed by a run of letters, or of digits, or of anything
+# that is neither letter, digit nor space; then whitespace — greedily,
+# EXCEPT that a run of whitespace followed by a non-space gives back its
+# last character, so the space that opens the next word belongs to that
+# word.
+#
+# THE ONE PLACE THIS PORT IS NARROWER THAN THE RUST, AND IT IS WRITTEN AS A
+# CLAIM THAT CAN DIE. Rust asks `char::is_alphabetic` and `is_numeric`,
+# which answer for every script Unicode has; here a letter is `A-Z a-z`, a
+# digit is `0-9`, and every character above ASCII falls into the third
+# class. What makes the two agree is a fact about the input, and it is
+# measured rather than assumed: **spec/heroes-spec.md holds 53 non-ASCII
+# characters, 4 distinct — `·` `—` `→` `…` — and not one of them is a
+# letter or a digit in any language.** `tests/harness/suite_spec.hero` pins
+# that inventory, so the day the spec gains an accented letter the harness
+# says so instead of the count drifting in silence. A premise about the
+# world expires quietly; this one has a test under it (CLAUDE.md §11).
+
+# The seven contractions the pattern names, in the pattern's own order.
+constant CONTRACTIONS: [str]
+    [
+        "'s"
+        "'t"
+        "'re"
+        "'ve"
+        "'m"
+        "'ll"
+        "'d"
+    ]
+
+# Split `text` into pre-token pieces, in order. Joining the result gives
+# the input back, byte for byte — which is what the test below asserts,
+# because a pre-tokeniser that loses a character undercounts for free.
+function pieces_of(text: str) -> [str]
+    cs = text.chars()
+    out: [str] @ []
+    i: i64 @ 0
+    while i < cs.len()
+        taken: i64 @ contraction(cs: cs, at: i)
+        if taken == 0
+            taken @ run_of(cs: cs, at: i, kind: is_letter)
+        if taken == 0
+            taken @ run_of(cs: cs, at: i, kind: is_digit)
+        if taken == 0
+            taken @ run_of(cs: cs, at: i, kind: is_other)
+        if taken == 0
+            taken @ whitespace(cs: cs, at: i)
+        # Nothing matched at all: take one character rather than loop
+        # forever. The Rust says `unwrap_or(1)` for the same reason.
+        if taken == 0
+            taken @ 1
+        out @ out.push(cs.slice(from: i, to: i + taken).join(""))
+        i @ i + taken
+    return out
+
+# How many characters of a contraction start here, or 0.
+function contraction(cs: [str], at: i64) -> i64
+    for want in CONTRACTIONS
+        wanted = want.chars()
+        if at + wanted.len() <= cs.len() && cs.slice(from: at, to: at + wanted.len()) == wanted
+            return wanted.len()
+    return 0
+
+# ` ?<class>+` — an optional leading space, then one or more of the class.
+# The length is in characters, and 0 means the class does not match here.
+#
+# The class arrives as a function value (spec § Functions and calls), which
+# is how the Rust passes it too: three alternatives of the pattern differ in
+# nothing else, and three copies of this loop would be three places for the
+# optional space to be subtly wrong.
+function run_of(cs: [str], at: i64, kind: (function(str) -> bool)) -> i64
+    start: i64 @ at
+    if cs[at] == " " && at + 1 < cs.len() && kind(cs[at + 1])
+        start @ at + 1
+    if start >= cs.len() || !kind(cs[start])
+        return 0
+    last: i64 @ start
+    while last < cs.len() && kind(cs[last])
+        last @ last + 1
+    return last - at
+
+# `\s+(?!\S)|\s+` — a whitespace run, giving back its last character when
+# something non-space follows it, so that space joins the next word.
+function whitespace(cs: [str], at: i64) -> i64
+    if !is_space(cs[at])
+        return 0
+    last: i64 @ at
+    while last < cs.len() && is_space(cs[last])
+        last @ last + 1
+    stop: i64 @ last
+    if last < cs.len() && last > at
+        stop @ last - 1
+    if stop > at
+        return stop - at
+    return last - at
+
+function is_letter(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    b = ch[0]
+    return (b >= 65 && b <= 90) || (b >= 97 && b <= 122)
+
+function is_digit(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    return ch[0] >= 48 && ch[0] <= 57
+
+# Space, tab, newline, carriage return, vertical tab, form feed — C's
+# `isspace` set, which is what Rust's `is_whitespace` agrees with on ASCII.
+function is_space(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    b = ch[0]
+    return b == 32 || (b >= 9 && b <= 13)
+
+# Neither letter, digit, nor whitespace — the third `run` class, and where
+# every character above ASCII lands. See the module doc's claim.
+function is_other(ch: str) -> bool
+    return !is_space(ch) && !is_letter(ch) && !is_digit(ch)
+
+test "pre-tokenisation is lossless"
+    text = "function main()\n    print((2 + 3) * 4)\n"
+    assert pieces_of(text).join("") == text
+    weird = "  \t\nx··—→…9\n"
+    assert pieces_of(weird).join("") == weird
+
+test "the space before a word belongs to the word"
+    assert pieces_of("hello world") == ["hello", " world"]
+    assert pieces_of("a  b") == ["a", " ", " b"]
+    # A trailing whitespace run has nothing after it, so it keeps its last
+    # character: `\s+(?!\S)` fails and `\s+` takes the lot.
+    assert pieces_of("a  ") == ["a", "  "]
+
+test "letters, digits and everything else are three separate runs"
+    assert pieces_of("ab12!!") == ["ab", "12", "!!"]
+    assert pieces_of("x = 5") == ["x", " =", " 5"]
+
+test "a contraction is one piece, and it wins over the letter run"
+    assert pieces_of("don't") == ["don", "'t"]
+    assert pieces_of("it's") == ["it", "'s"]
+    assert pieces_of("they'll") == ["they", "'ll"]
+
+test "a character above ASCII is neither a letter nor a digit here"
+    assert !is_letter("—")
+    assert !is_digit("—")
+    assert !is_space("—")
+    assert is_other("—")
+    assert is_letter("Q")
+    assert is_digit("7")
+    assert is_space("\t")

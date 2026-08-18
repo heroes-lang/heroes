@@ -1,0 +1,275 @@
+# The BPE rank table and the merge loop.
+#
+# Port of crates/heroes/src/measure/bpe.rs. A BPE tokeniser is a ranked list
+# of byte sequences. To tokenise a piece, start with one part per byte and
+# repeatedly merge the LOWEST-ranked adjacent pair that appears in the
+# table, until no adjacent pair does; the token count is the number of parts
+# left. That is the whole algorithm — the vocabulary is where the work went,
+# and it is vendored (`vendor/tokenizers/README.md`).
+#
+# BASE64 IS THE KEY HERE, NOT A CODEC, AND THAT IS THE PORT'S ONE REAL
+# DEPARTURE. The Rust decodes every token to bytes and keys the table on
+# them. Heroes cannot: the language has no way to build a `str` out of
+# arbitrary bytes — `s[i]` gives a `u8` and nothing turns one back — so a
+# decoded table has nowhere to live. So the table keeps the spelling it
+# arrives in, and the LOOKUP is encoded instead: a candidate pair of bytes
+# is spelled in base64 before it is looked up. Sound because the encoding is
+# canonical and both tables are spelled the same way, measured rather than
+# assumed: cl100k's first line is `IQ== 0` and the claude table's field
+# opens `! 5 IQ== Ig==`, so both are standard base64 WITH padding, which is
+# what `spelled` writes. What proves it end to end is the harness: the three
+# published vectors and the spec's own measured size (suite_spec.hero).
+#
+# Two on-disk shapes are read, and neither is parsed as JSON — the same
+# decision the Rust made, for the same reason: both formats are regular
+# enough to scan, and a JSON reader is a module this compiler does not need.
+
+constant ALPHABET: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+# A table: every token's base64 spelling, and its rank.
+#
+# The alphabet rides along as characters because `spelled` indexes it per
+# byte and `chars()` on every call would rebuild sixty-four one-character
+# strings for each pair looked up.
+record Ranks
+    of: {str: i64}
+    alphabet: [str]
+
+function empty() -> Ranks
+    none: {str: i64} = {}
+    return Ranks(of: none, alphabet: ALPHABET.chars())
+
+function size(r: Ranks) -> i64
+    return keys(r.of).len()
+
+# `<base64> <rank>` per line — the `.tiktoken` shape. A line that does not
+# hold two fields is skipped rather than failing the run: a trailing newline
+# is not a corrupt table.
+#
+# The scan is over bytes and inserts as it goes. Collecting 100,256 lines
+# into an array first would be the quadratic shape spec:167 warns about, and
+# the map does not need it.
+function from_tiktoken(text: str) -> Ranks
+    r: Ranks @ empty()
+    start: i64 @ 0
+    i: i64 @ 0
+    while i <= text.len()
+        if i == text.len() || text[i] == 10
+            cut: i64 @ start
+            while cut < i && text[cut] != 32
+                cut @ cut + 1
+            if cut < i
+                rank = number_in(text: text, from: cut + 1, to: i)
+                if !rank.is_err()
+                    r.of[text.slice(from: start, to: cut)] @ rank.must()
+            start @ i + 1
+        i @ i + 1
+    return r
+
+# Anthropic's `claude-legacy.json`: the `bpe_ranks` field holds every token
+# in base64, space separated, in rank order, after a two-field header — so
+# the rank is the position, and the first two positions are not tokens.
+function from_claude_json(text: str) -> Ranks
+    r: Ranks @ empty()
+    field = string_field(text: text, name: "bpe_ranks")
+    if field.is_err()
+        return r
+    span = field.must()
+    rank: i64 @ 0
+    seen: i64 @ 0
+    start: i64 @ span.from
+    i: i64 @ span.from
+    while i <= span.to
+        if i == span.to || text[i] == 32
+            if i > start
+                if seen >= 2
+                    r.of[text.slice(from: start, to: i)] @ rank
+                    rank @ rank + 1
+                seen @ seen + 1
+            start @ i + 1
+        i @ i + 1
+    return r
+
+# Where a JSON string value begins and ends, without a parser: good enough
+# for one known field in one known file, and no more than that.
+record Span
+    from: i64
+    to: i64
+
+function string_field(text: str, name: str) -> Span?
+    key = "\"" + name + "\""
+    at = index_of(text: text, needle: key)?
+    open = index_of_byte(text: text, byte: 34, from: at + key.len())?
+    close = index_of_byte(text: text, byte: 34, from: open + 1)?
+    return ok(Span(from: open + 1, to: close))
+
+# How many tokens one pre-token piece costs.
+#
+# The parts are tracked as boundary offsets into the piece, so a merge drops
+# one boundary. Quadratic in the number of parts, which is fine: pieces are
+# words, not documents.
+function count_piece(r: Ranks, piece: str) -> i64
+    if piece.len() <= 1
+        return piece.len()
+    bounds: [i64] @ []
+    i: i64 @ 0
+    while i <= piece.len()
+        bounds @ bounds.push(i)
+        i @ i + 1
+    while bounds.len() > 2
+        best_rank: i64 @ -1
+        best_at: i64 @ -1
+        j: i64 @ 0
+        while j + 2 < bounds.len()
+            found = r.of[spelled(r: r, piece: piece, from: bounds[j], to: bounds[j + 2])]
+            if !found.is_err() && (best_rank == -1 || found.must() < best_rank)
+                best_rank @ found.must()
+                best_at @ j
+            j @ j + 1
+        if best_at == -1
+            break
+        bounds @ without(bounds: bounds, at: best_at + 1)
+    return bounds.len() - 1
+
+function without(bounds: [i64], at: i64) -> [i64]
+    out: [i64] @ []
+    i: i64 @ 0
+    while i < bounds.len()
+        if i != at
+            out @ out.push(bounds[i])
+        i @ i + 1
+    return out
+
+# One byte range of `piece`, in canonical padded base64 — the spelling the
+# tables use, so the answer is a key.
+function spelled(r: Ranks, piece: str, from: i64, to: i64) -> str
+    out: [str] @ []
+    i: i64 @ from
+    while i < to
+        first = piece[i].to_i64().must()
+        have: i64 @ 1
+        second: i64 @ 0
+        third: i64 @ 0
+        if i + 1 < to
+            second @ piece[i + 1].to_i64().must()
+            have @ 2
+        if i + 2 < to
+            third @ piece[i + 2].to_i64().must()
+            have @ 3
+        packed = (first << 16) | (second << 8) | third
+        out @ out.push(r.alphabet[(packed >> 18) & 63])
+        out @ out.push(r.alphabet[(packed >> 12) & 63])
+        if have >= 2
+            out @ out.push(r.alphabet[(packed >> 6) & 63])
+        else
+            out @ out.push("=")
+        if have == 3
+            out @ out.push(r.alphabet[packed & 63])
+        else
+            out @ out.push("=")
+        i @ i + 3
+    return out.join("")
+
+# The digits between two offsets, as a number.
+function number_in(text: str, from: i64, to: i64) -> i64?
+    if from >= to
+        return fail("not_a_number", "no digits")
+    value: i64 @ 0
+    i: i64 @ from
+    while i < to
+        b = text[i]
+        if b < 48 || b > 57
+            return fail("not_a_number", "not a digit")
+        value @ value * 10 + (b.to_i64().must() - 48)
+        i @ i + 1
+    return ok(value)
+
+function index_of(text: str, needle: str) -> i64?
+    if needle.len() == 0 || needle.len() > text.len()
+        return fail("absent", "the needle is not there")
+    limit = text.len() - needle.len()
+    at: i64 @ 0
+    while at <= limit
+        k: i64 @ 0
+        while k < needle.len() && text[at + k] == needle[k]
+            k @ k + 1
+        if k == needle.len()
+            return ok(at)
+        at @ at + 1
+    return fail("absent", "the needle is not there")
+
+function index_of_byte(text: str, byte: u8, from: i64) -> i64?
+    i: i64 @ from
+    while i < text.len()
+        if text[i] == byte
+            return ok(i)
+        i @ i + 1
+    return fail("absent", "the byte is not there")
+
+test "a byte range is spelled the way the tables spell it"
+    r = empty()
+    assert spelled(r: r, piece: "hello", from: 0, to: 5) == "aGVsbG8="
+    assert spelled(r: r, piece: "!", from: 0, to: 1) == "IQ=="
+    assert spelled(r: r, piece: "\"", from: 0, to: 1) == "Ig=="
+    # Three bytes need no padding; four need two characters and one `=`.
+    assert spelled(r: r, piece: "abc", from: 0, to: 3) == "YWJj"
+    assert spelled(r: r, piece: "abcd", from: 0, to: 4) == "YWJjZA=="
+    # A range, not the whole string.
+    assert spelled(r: r, piece: "xhelloy", from: 1, to: 6) == "aGVsbG8="
+
+test "the tiktoken shape loads, and a short line is skipped"
+    r = from_tiktoken("IQ== 0\nIg== 1\nbroken\n")
+    assert size(r) == 2
+    assert r.of["IQ=="].default(-1) == 0
+    assert r.of["Ig=="].default(-1) == 1
+
+test "the claude shape skips its two header fields and ranks by position"
+    r = from_claude_json("{\"pat_str\": \"x\", \"bpe_ranks\": \"! 5 IQ== Ig== Iw==\"}")
+    assert size(r) == 3
+    assert r.of["IQ=="].default(-1) == 0
+    assert r.of["Iw=="].default(-1) == 2
+    # A file without the field is an empty table, which the caller reports
+    # rather than counting against.
+    assert size(from_claude_json("{\"other\": \"1\"}")) == 0
+
+test "the merge loop counts parts, and merges the lowest rank first"
+    # A hand-made table over `abcd`: `ab` is cheaper than `bc`, so the
+    # first merge is `ab`, then `abc`, then `abcd` — one token.
+    table: {str: i64} @ {}
+    table[spelled(r: empty(), piece: "ab", from: 0, to: 2)] @ 0
+    table[spelled(r: empty(), piece: "bc", from: 0, to: 2)] @ 5
+    table[spelled(r: empty(), piece: "abc", from: 0, to: 3)] @ 1
+    table[spelled(r: empty(), piece: "abcd", from: 0, to: 4)] @ 2
+    r = Ranks(of: table, alphabet: ALPHABET.chars())
+    assert count_piece(r: r, piece: "abcd") == 1
+    assert count_piece(r: r, piece: "ab") == 1
+    assert count_piece(r: r, piece: "a") == 1
+    assert count_piece(r: r, piece: "") == 0
+    # Nothing in the table merges `xy`, so it stays two parts.
+    assert count_piece(r: r, piece: "xy") == 2
+    # `bcd` merges nothing at the front (`bc` is there, so it becomes
+    # `bc` + `d`): two parts.
+    assert count_piece(r: r, piece: "bcd") == 2
+
+test "the merge loop takes the cheapest pair even when a dearer one comes first"
+    table: {str: i64} @ {}
+    # `xy` at rank 9, `yz` at rank 1: the second merge must happen first.
+    table[spelled(r: empty(), piece: "xy", from: 0, to: 2)] @ 9
+    table[spelled(r: empty(), piece: "yz", from: 0, to: 2)] @ 1
+    r = Ranks(of: table, alphabet: ALPHABET.chars())
+    # `xyz` → `x` + `yz`, and nothing merges those two: two parts.
+    assert count_piece(r: r, piece: "xyz") == 2
+
+test "a number is read, and something that is not one is named"
+    assert number_in(text: "IQ== 407", from: 5, to: 8).default(-1) == 407
+    assert number_in(text: "12", from: 0, to: 2).default(-1) == 12
+    assert number_in(text: "1x", from: 0, to: 2).is_err()
+    assert number_in(text: "", from: 0, to: 0).is_err()
+
+test "the two searches find and refuse"
+    assert index_of(text: "abcabc", needle: "cab").default(-1) == 2
+    assert index_of(text: "abc", needle: "zz").is_err()
+    assert index_of(text: "abc", needle: "").is_err()
+    assert index_of_byte(text: "a\"b", byte: 34, from: 0).default(-1) == 1
+    assert index_of_byte(text: "ab", byte: 34, from: 0).is_err()

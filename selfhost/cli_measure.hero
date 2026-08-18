@@ -1,0 +1,188 @@
+# heroes measure [file] — the spec budget, measured (design.md §1.6).
+#
+# Port of crates/heroes-cli/src/commands/measure.rs, and the reason it is in
+# the port at all: design.md §1.6 names `crates/heroes/src/measure/gate.rs`
+# as the budget's live enforcer, so archiving the bootstrap without this
+# would make a Part 1 sentence false and leave the ceiling defended by
+# nothing (panel 085, the spec-warden's veto).
+#
+# §1.6 sets a MEASURED budget, and Part 10 has instructed since the first
+# draft: *"count it with a real tokeniser, not by estimation — the BPE
+# vocabulary contains arbitrary choices nobody predicts."* For two days the
+# repository defended the ceiling with a words × 1.33 heuristic, because the
+# count was assumed to need an API key. It does not (panel 011): two
+# published tables, vendored and offline, do the job, and the first real
+# count found the spec 33% larger than the heuristic claimed.
+#
+# TWO INSTRUMENTS, AND THE MAXIMUM BINDS. Neither is the tokeniser of the
+# model that actually reads the spec — that one is unpublished. Two tables
+# disagreeing is the honest error bar, so the report prints both and the
+# verdict uses the larger.
+#
+# WHERE THE TABLES COME FROM, and it is the one thing the port had to decide
+# for itself. The Rust resolves the repository root at COMPILE time
+# (`CARGO_MANIFEST_DIR`), which a Heroes program cannot do and should not
+# want to: panel 085 R5 measured what that class of trick costs when it
+# fails — the port read its standard library from `crates/` at run time,
+# and outside the repository every program was refused on the AUTHOR's line.
+# So the tables are read relative to the working directory, and their
+# absence is exit 2 in the tool's own name, never a silent empty table. That
+# is honest here in a way it would not be elsewhere: what this command
+# measures by default is `spec/heroes-spec.md`, a file in this repository,
+# so a run outside the repository has no question to answer.
+
+use cli_io
+use cli_table
+use measure_bpe
+use measure_pieces
+
+# The file the ceiling is actually about.
+constant SPEC: str
+    "spec/heroes-spec.md"
+
+constant VENDOR: str
+    "vendor/tokenizers"
+
+# design.md §1.6, raised to 4096 by author decision (2026-08-10, panel 024
+# retro-record). Measured, never estimated — that is the point of a budget.
+constant CEILING: i64
+    4096
+
+# The soft threshold, and it is deliberately NOT rescaled with the ceiling.
+# What the soft line is for is the moment an addition starts owing a named
+# removal or a pre-registered falsifiable prediction (panel 012). Rescaling
+# it in proportion would drop that burden overnight, which is the one thing
+# §1.6 says must survive a raise: "a spec that grows to fill the budget
+# because it can has failed §1.2 just as surely as one that breaches it".
+constant SOFT: i64
+    2000
+
+record Instrument
+    file: str
+    name: str
+    json: bool
+
+record Reading
+    instrument: str
+    vocabulary: i64
+    tokens: i64
+
+function instruments() -> [Instrument]
+    return [
+        Instrument(file: "claude-legacy.json", name: "claude-legacy", json: true)
+        Instrument(file: "cl100k_base.tiktoken", name: "cl100k_base", json: false)
+    ]
+
+function run(file: str?) -> cli_table.Exit
+    path = file.default(SPEC)
+    text = read_file(path)
+    if text.is_err()
+        cli_io.eprint(text: "error: cannot read `" + path + "`")
+        return .failed_exit
+    pieces = measure_pieces.pieces_of(text.must())
+    readings: [Reading] @ []
+    for one in instruments()
+        table_path = VENDOR + "/" + one.file
+        raw = read_file(table_path)
+        if raw.is_err()
+            cli_io.eprint(text: "error: cannot read `" + table_path + "` — `measure` reads its vendored tables from the repository root, and the file it measures by default lives there too")
+            return .failed_exit
+        ranks: measure_bpe.Ranks @ measure_bpe.empty()
+        if one.json
+            ranks @ measure_bpe.from_claude_json(raw.must())
+        else
+            ranks @ measure_bpe.from_tiktoken(raw.must())
+        if measure_bpe.size(ranks) == 0
+            cli_io.eprint(text: "error: `" + table_path + "` parsed to an empty table")
+            return .failed_exit
+        total: i64 @ 0
+        for piece in pieces
+            total @ total + measure_bpe.count_piece(r: ranks, piece: piece)
+        readings @ readings.push(Reading(instrument: one.name, vocabulary: measure_bpe.size(ranks), tokens: total))
+    return reported(path: path, readings: readings)
+
+# The report, byte for byte the bootstrap's: two readings, the binding
+# number, the error bar, and the verdict against the ceiling. A breach is
+# exit 1 — the input has something wrong with it — while an unreadable file
+# is exit 2, the tool unable to run (panel 016's contract).
+function reported(path: str, readings: [Reading]) -> cli_table.Exit
+    print(path)
+    highest: i64 @ 0
+    lowest: i64 @ -1
+    for one in readings
+        print("  " + padded(text: one.instrument, width: 16) + " " + aligned(number: one.tokens, width: 6) + "   (" + one.vocabulary.to_str() + " ranks)")
+        if one.tokens > highest
+            highest @ one.tokens
+        if lowest == -1 || one.tokens < lowest
+            lowest @ one.tokens
+    if lowest == -1
+        lowest @ 0
+    spread = highest - lowest
+    percent: i64 @ 0
+    if highest > 0
+        percent @ spread * 100 / highest
+    print("  " + padded(text: "maximum", width: 16) + " " + aligned(number: highest, width: 6) + "   the binding number")
+    print("  " + padded(text: "spread", width: 16) + " " + aligned(number: spread, width: 6) + "   the error bar (" + percent.to_str() + "%)")
+    print("")
+    if highest > CEILING
+        print("BREACH: " + highest.to_str() + " over the " + CEILING.to_str() + "-token ceiling (design.md §1.6).")
+        print("An amendment must be net-negative, or the ceiling moves — with a")
+        print("measurement, a panel, and a named alternative (panel 012).")
+        return .diagnostics_exit
+    if highest > SOFT
+        print("Above the soft " + SOFT.to_str() + ": an addition needs a named removal or a")
+        print("pre-registered falsifiable prediction (panel 012). Headroom: " + (CEILING - highest).to_str() + ".")
+    else
+        print("Under the soft " + SOFT.to_str() + ": Principle 0 alone. Headroom: " + (CEILING - highest).to_str() + ".")
+    return .ok_exit
+
+# Left-aligned in `width` columns, counted in characters.
+function padded(text: str, width: i64) -> str
+    out: str @ text
+    count: i64 @ text.chars().len()
+    while count < width
+        out @ out + " "
+        count @ count + 1
+    return out
+
+# Right-aligned in `width` columns.
+function aligned(number: i64, width: i64) -> str
+    shown = number.to_str()
+    out: str @ ""
+    count: i64 @ shown.chars().len()
+    while count < width
+        out @ out + " "
+        count @ count + 1
+    return out + shown
+
+test "a reading is laid out in the bootstrap's own columns"
+    readings: [Reading] = [
+        Reading(instrument: "claude-legacy", vocabulary: 64995, tokens: 3440)
+        Reading(instrument: "cl100k_base", vocabulary: 100256, tokens: 3512)
+    ]
+    # The verdict is printed, not returned as text — what this pins is the
+    # arithmetic and the branch, which is where a port goes wrong.
+    verdict = reported(path: "spec/heroes-spec.md", readings: readings)
+    assert cli_table.exit_code(verdict) == 0
+
+test "the columns are the bootstrap's widths"
+    assert padded(text: "claude-legacy", width: 16) == "claude-legacy   "
+    assert padded(text: "a name past the width", width: 4) == "a name past the width"
+    assert aligned(number: 3440, width: 6) == "  3440"
+    assert aligned(number: 0, width: 6) == "     0"
+    assert aligned(number: 1234567, width: 6) == "1234567"
+
+test "a breach is exit 1 and a clean measurement is exit 0"
+    over: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: CEILING + 1)]
+    assert cli_table.exit_code(reported(path: "x", readings: over)) == 1
+    under: [Reading] = [Reading(instrument: "one", vocabulary: 1, tokens: 10)]
+    assert cli_table.exit_code(reported(path: "x", readings: under)) == 0
+
+test "no operand measures the spec, and an unreadable file is the tool failing"
+    # The whole pipeline, on the real tables and the real spec: this is the
+    # one test here that costs a second, and it is the one that would have
+    # caught every mistake in the two modules under it.
+    none: str? = fail("no_operand", "measure was given no file")
+    assert cli_table.exit_code(run(none)) == 0
+    named: str? = ok("no/such/file.md")
+    assert cli_table.exit_code(run(named)) == 2
