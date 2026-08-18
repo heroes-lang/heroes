@@ -1,0 +1,383 @@
+# The spec, against its own budget and against the compiler.
+#
+# Ports the two Rust modules that are TESTS and therefore die with the
+# bootstrap: `crates/heroes/src/measure/gate.rs` (the §1.6 budget's gate) and
+# `crates/heroes/src/measure/spec.rs` (the spec-versus-compiler checks).
+# Panel 085's spec-warden vetoed the archive over exactly this — §1.6's
+# ceiling had one live enforcer, and it was `cfg(test)` inside a crate about
+# to be archived.
+#
+# WHY THE SPEC IS WORTH SIX CHECKS. It is not documentation: §1.6 makes it
+# **the prompt** — the whole context a model writing Heroes ever has. So a
+# rule the compiler enforces and the spec omits is not terseness, it is a
+# wrong briefing, and this project shipped one for four milestones: panel 013
+# ratified `(function(A) -> B)` while the spec still said `(fn(A) -> B)`,
+# which is a *reserved-word error in every position*.
+#
+# THE CHECKS
+#   budget      the spec measures what the record says, and so does the
+#               reserved-word registry — the number moves only in a commit
+#               that says why;
+#   headroom    the ceiling still has room for what is mortgaged against it;
+#   names       every name the compiler reserves appears in the spec, because
+#               a name a model cannot see is a name it will redeclare;
+#   offered     every name the spec offers exists, because a name a model
+#               reads and the compiler lacks is a call to nothing;
+#   rejected    no word the lexer refuses appears in the spec's code;
+#   inventory   the spec's characters above ASCII are punctuation, which is
+#               the premise `selfhost/measure_pieces.hero` is written on.
+#
+# WHERE THE COMPILER'S SIDE COMES FROM. The two lists — what it reserves and
+# what it refuses — are read out of `selfhost/`'s own source, not copied
+# here: `builtins.hero`'s table and `keywords.hero`'s match arms. A copy
+# would be a second place for the truth to live, and both extractions carry
+# a FLOOR, because an extractor that silently reads nothing turns two checks
+# into decorations.
+
+use report
+use shell
+use spec_text
+use strings
+
+constant SPEC: str
+    "spec/heroes-spec.md"
+
+constant REGISTRY: str
+    "spec/reserved-words.md"
+
+# design.md §1.6's ledger, as a number the harness can check. The ledger
+# itself — one row per amendment, with what it cost and what paid for it —
+# is `crates/heroes/src/measure/gate.rs`'s doc comment, and it is a record:
+# CLAUDE.md §14 does not rewrite one, so it moves rather than being restated
+# here (M-bootstrap-archive, the design.md amendment).
+#
+# **Measured 2026-08-18, by both compilers, on this spec.** A spec amendment
+# turns this red, and the only way to green is to write the new number into
+# the commit that made it true — which is precisely the moment panel 012's
+# rule asks for a named removal or a registered falsifiable prediction. The
+# check does not enforce that rule: it makes its question unavoidable, and
+# the answer lands in the commit body where a reader can audit it.
+constant SPEC_TOKENS: i64
+    3512
+
+# The registry's own size, gated separately — it is NOT part of §1.6's budget
+# (panel 035 D: the spec is *the prompt*, and compiler output can never be in
+# one). It gets a number anyway, because it grew +85 across eight milestones
+# with no commit ever naming a delta, for the plain reason that `measure`
+# defaults to the other file.
+constant REGISTRY_TOKENS: i64
+    916
+
+# The ceiling panel 024 set. Raising it is a panel.
+constant CEILING: i64
+    4096
+
+# The floor for file I/O, `args()` and `exit(code)` — panel 030 R3, which
+# refuted "they are plain externs" by compiling it. The floor belongs to the
+# FFI rather than to the milestone that pays it, so the name says so.
+constant FFI_FLOOR: i64
+    60
+
+constant BUILTIN_SOURCE: str
+    "selfhost/builtins.hero"
+
+constant KEYWORD_SOURCE: str
+    "selfhost/keywords.hero"
+
+# Measured 2026-08-18: 37 rows in the table, 23 words across the match arms.
+constant LEAST_BUILTINS: i64
+    37
+
+constant LEAST_FOREIGN: i64
+    23
+
+# Every character above ASCII the spec holds, sorted — the falsifier for the
+# pre-tokeniser's ASCII reading of "letter" and "digit". The SET is pinned
+# and the count is not: another em dash is not news, and a letter is.
+constant ABOVE_ASCII: [str]
+    [
+        "·"
+        "—"
+        "…"
+        "→"
+    ]
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    text = read_file(SPEC)
+    if text.is_err()
+        report.keep_failure(@r, label: "spec", detail: "  cannot read " + SPEC)
+        return ok(r)
+    budget(@r, scratch: scratch, compiler: compiler)
+    reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
+    refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
+    named(@r, spec: text.must(), reserved: reserved)
+    offered(@r, spec: text.must(), reserved: reserved)
+    rejected(@r, spec: text.must(), refused: refused)
+    inventory(@r, spec: text.must())
+    return ok(r)
+
+# The two gated numbers, and the headroom.
+function budget(@r: report.Report, scratch: str, compiler: str)
+    measured = maximum_of(scratch: scratch, compiler: compiler, path: SPEC)
+    if measured.is_err()
+        report.keep_failure(@r, label: "spec/budget", detail: "  cannot measure " + SPEC + " — " + why(measured))
+    else if measured.must() != SPEC_TOKENS
+        report.keep_failure(@r, label: "spec/budget", detail: "  the spec measures " + measured.must().to_str() + " and the record says " + SPEC_TOKENS.to_str() + " — a delta of " + (measured.must() - SPEC_TOKENS).to_str() + ".\n  If the change is intended, write the new number into SPEC_TOKENS in the SAME\n  commit, and put the delta plus its payment in the commit body: either a named\n  removal, or a registered falsifiable prediction naming BOTH the instrument that\n  will score it and the milestone it is scored at — and the instrument has to\n  exist today (panel 012, as amended by panel 046). A prediction naming an\n  instrument nobody has built is an observation, not a payment.\n  If it is not intended, the spec grew by accident, which is the case this\n  check exists for.")
+    else
+        report.keep_pass(@r)
+    registry = maximum_of(scratch: scratch, compiler: compiler, path: REGISTRY)
+    if registry.is_err()
+        report.keep_failure(@r, label: "spec/registry", detail: "  cannot measure " + REGISTRY)
+    else if registry.must() != REGISTRY_TOKENS
+        report.keep_failure(@r, label: "spec/registry", detail: "  the registry measures " + registry.must().to_str() + " and the record says " + REGISTRY_TOKENS.to_str() + " — write the new number down. It is not in §1.6's budget, and it grew +85 across eight milestones with nobody naming a delta.")
+    else
+        report.keep_pass(@r)
+    # The headroom, which is the one thing §1.6 says must survive every
+    # raise: it is real, not notional.
+    if SPEC_TOKENS + FFI_FLOOR >= CEILING
+        report.keep_failure(@r, label: "spec/headroom", detail: "  the spec plus the FFI floor is " + (SPEC_TOKENS + FFI_FLOOR).to_str() + " against the " + CEILING.to_str() + " ceiling — what is mortgaged no longer fits")
+    else
+        report.keep_pass(@r)
+
+# Why a measurement could not be taken — the compiler's own words, which is
+# what tells a reader whether the tables are missing or the tool is.
+function why(got: i64?) -> str
+    return match got
+        .ok _ => ""
+        .err e => e.msg
+
+# `heroes measure <path>`'s binding number. Exit 1 is a BREACH rather than a
+# failure to run, so the number is read either way and the verdict is this
+# suite's own.
+function maximum_of(scratch: str, compiler: str, path: str) -> i64?
+    said = shell.run(scratch: scratch, command: shell.sq(compiler) + " measure " + shell.sq(path))?
+    if said.code != 0 && said.code != 1
+        return fail("cannot_measure", "`measure` exited " + said.code.to_str() + ": " + said.err)
+    for row in strings.lines(said.out)
+        if strings.contains(text: row, needle: "the binding number")
+            words = strings.words(row)
+            if words.len() >= 2
+                return strings.to_number(words[1])
+    return fail("cannot_measure", "`measure` printed no binding number")
+
+# Every name the compiler reserves appears in the spec.
+function named(@r: report.Report, spec: str, reserved: [str])
+    if reserved.len() < LEAST_BUILTINS
+        report.keep_failure(@r, label: "spec/names", detail: "  " + reserved.len().to_str() + " built-ins read out of " + BUILTIN_SOURCE + " and there were " + LEAST_BUILTINS.to_str() + " — the extractor is reading the wrong shape, and this check was about to pass vacuously")
+        return
+    mentioned: {str: bool} @ {}
+    for word in spec_text.identifiers_in_code(spec)
+        mentioned[word] @ true
+    missing: [str] @ []
+    for name in reserved
+        if mentioned[name].is_err()
+            missing @ missing.push(name)
+    if missing.len() > 0
+        report.keep_failure(@r, label: "spec/names", detail: "  the compiler reserves these and the spec never mentions them: " + missing.join(" ") + "\n  A name a model cannot see is a name it will redeclare.")
+    else
+        report.keep_pass(@r)
+
+# Every name the spec offers exists in the compiler.
+function offered(@r: report.Report, spec: str, reserved: [str])
+    listed = spec_text.offered_builtins(spec)
+    if listed.is_err()
+        report.keep_failure(@r, label: "spec/offered", detail: "  the spec's `Built-ins:` sentence could not be read at all")
+        return
+    names = listed.must()
+    if names.len() < 10
+        report.keep_failure(@r, label: "spec/offered", detail: "  the built-in list reads as " + names.len().to_str() + " names, which is truncated: " + names.join(" "))
+        return
+    if names[names.len() - 1] != "range"
+        report.keep_failure(@r, label: "spec/offered", detail: "  the built-in list no longer ends at `range` — the sentence delimiter found the wrong full stop, and every name after it is now unchecked: " + names.join(" "))
+        return
+    known: {str: bool} @ {}
+    for name in reserved
+        known[name] @ true
+    absent: [str] @ []
+    for name in names
+        if known[name].is_err()
+            absent @ absent.push(name)
+    if absent.len() > 0
+        report.keep_failure(@r, label: "spec/offered", detail: "  the spec offers these and the compiler has no such built-in: " + absent.join(" "))
+    else
+        report.keep_pass(@r)
+
+# No word the lexer refuses appears in the spec's code.
+function rejected(@r: report.Report, spec: str, refused: [str])
+    if refused.len() < LEAST_FOREIGN
+        report.keep_failure(@r, label: "spec/rejected", detail: "  " + refused.len().to_str() + " refused words read out of " + KEYWORD_SOURCE + " and there were " + LEAST_FOREIGN.to_str() + " — the extractor is reading the wrong shape")
+        return
+    mentioned: {str: bool} @ {}
+    for word in spec_text.identifiers_in_code(spec)
+        mentioned[word] @ true
+    found: [str] @ []
+    for word in refused
+        if !mentioned[word].is_err()
+            found @ found.push(word)
+    if found.len() > 0
+        report.keep_failure(@r, label: "spec/rejected", detail: "  these appear in the spec's code and the lexer refuses them with a prescribed fix: " + found.join(" ") + "\n  `fn` is the case that happened: the registry called it an error AND the spec used it in the function type, so every function-typed annotation a model wrote from the spec was a compile error — for four milestones.")
+    else
+        report.keep_pass(@r)
+
+# The spec's characters above ASCII are the four punctuation marks the
+# pre-tokeniser was written against.
+function inventory(@r: report.Report, spec: str)
+    got = spec_text.above_ascii(spec)
+    if got == ABOVE_ASCII
+        report.keep_pass(@r)
+        return
+    report.keep_failure(@r, label: "spec/inventory", detail: "  the spec now holds " + got.join(" ") + " above ASCII, and the record says " + ABOVE_ASCII.join(" ") + ".\n  `selfhost/measure_pieces.hero` reads a letter as A-Z a-z and a digit as 0-9\n  where the Rust it ports asks Unicode. Ask of the new character: is it a\n  letter or a digit in any language? If it is, that claim is dead and the\n  token count has quietly drifted. If it is punctuation, add it here.")
+
+# Every quoted name after `marker` on its own line — the compiler's table,
+# read from the compiler's own source.
+function names_in_table(path: str, marker: str) -> [str]
+    text = read_file(path)
+    if text.is_err()
+        none: [str] = []
+        return none
+    found: [str] @ []
+    for row in strings.lines(text.must())
+        at = strings.index_of(text: row, needle: marker)
+        if at.is_err()
+            continue
+        quoted = first_quoted(text: row, from: at.must() + marker.len())
+        if !quoted.is_err()
+            found @ found.push(quoted.must())
+    return found
+
+# Every quoted word BEFORE `marker` on its own line — the match arms, where
+# one arm may carry several words: `"null" | "nil" | "None" =>`.
+function words_in_arms(path: str, marker: str) -> [str]
+    text = read_file(path)
+    if text.is_err()
+        none: [str] = []
+        return none
+    found: [str] @ []
+    for row in strings.lines(text.must())
+        at = strings.index_of(text: row, needle: marker)
+        if at.is_err()
+            continue
+        head = row.slice(from: 0, to: at.must())
+        cursor: i64 @ 0
+        while cursor < head.len()
+            quoted = first_quoted(text: head, from: cursor)
+            if quoted.is_err()
+                cursor @ head.len()
+            else
+                found @ found.push(quoted.must())
+                # Past the closing quote: two characters for the quotes
+                # themselves plus what they held.
+                cursor @ cursor + advance_past(text: head, from: cursor)
+    return found
+
+# The text of the first `"…"` at or after `from`.
+function first_quoted(text: str, from: i64) -> str?
+    opens: i64 @ from
+    while opens < text.len() && text[opens] != 34
+        opens @ opens + 1
+    if opens >= text.len()
+        return fail("unquoted", "no quoted text here")
+    closes: i64 @ opens + 1
+    while closes < text.len() && text[closes] != 34
+        closes @ closes + 1
+    if closes >= text.len()
+        return fail("unquoted", "the quote is not closed")
+    return ok(text.slice(from: opens + 1, to: closes))
+
+# How far past `from` the first quoted run ends — the cursor step that keeps
+# `words_in_arms` moving forward.
+function advance_past(text: str, from: i64) -> i64
+    i: i64 @ from
+    seen: i64 @ 0
+    while i < text.len() && seen < 2
+        if text[i] == 34
+            seen @ seen + 1
+        i @ i + 1
+    return i - from
+
+test "the compiler's two lists are read out of its own source"
+    reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
+    assert reserved.len() >= LEAST_BUILTINS
+    # Named rather than merely counted: a table read as the wrong shape can
+    # still be long.
+    joined = reserved.join(" ")
+    assert strings.contains(text: joined, needle: "print")
+    assert strings.contains(text: joined, needle: "to_str")
+    refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
+    assert refused.len() >= LEAST_FOREIGN
+    words = refused.join(" ")
+    assert strings.contains(text: words, needle: "fn")
+    assert strings.contains(text: words, needle: "struct")
+    # An arm carrying three words gives three, which a one-per-line reader
+    # would have missed.
+    assert strings.contains(text: words, needle: "nil")
+    assert strings.contains(text: words, needle: "None")
+    assert strings.contains(text: words, needle: "catch")
+
+test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail is a decoration"
+    reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
+    refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
+
+    # A document that mentions no built-in at all: every reserved name is
+    # missing, and the failure says so by name.
+    silent: report.Report @ report.empty()
+    named(@silent, spec: "a document with prose and no code spans", reserved: reserved)
+    assert silent.failed == 1
+    assert strings.contains(text: silent.failures[0], needle: "never mentions them")
+
+    # A document offering a name the compiler does not have. It trips the
+    # truncation guard first, which is itself the check: a list that reads as
+    # one name is a delimiter that broke.
+    invented: report.Report @ report.empty()
+    offered(@invented, spec: "Built-ins: `nosuchbuiltin` .", reserved: reserved)
+    assert invented.failed == 1
+    assert strings.contains(text: invented.failures[0], needle: "truncated")
+
+    # A refused word inside a code span — `fn` is the case that happened.
+    foreign: report.Report @ report.empty()
+    rejected(@foreign, spec: "the type is `(fn(A) -> B)` here", refused: refused)
+    assert foreign.failed == 1
+    assert strings.contains(text: foreign.failures[0], needle: "prescribed fix")
+
+    # A letter above ASCII: the pre-tokeniser's premise dying, which is the
+    # one thing this inventory exists to catch.
+    letter: report.Report @ report.empty()
+    inventory(@letter, spec: "a naïve sentence")
+    assert letter.failed == 1
+    assert strings.contains(text: letter.failures[0], needle: "is it a")
+
+    # And the floors: an extractor that reads the wrong shape reads nothing,
+    # and two checks would then pass vacuously.
+    empty_list: [str] = []
+    starved: report.Report @ report.empty()
+    named(@starved, spec: "`print`", reserved: empty_list)
+    rejected(@starved, spec: "`print`", refused: empty_list)
+    assert starved.failed == 2
+    assert strings.contains(text: starved.failures[0], needle: "vacuously")
+
+test "the binding number is read off `measure`, whatever the compiler is"
+    scratch = "build/harness-selftest"
+    assert !shell.mkdir_all(scratch).is_err()
+    path = scratch + "/stub-measure.sh"
+    assert !write_file(path: path, text: "#!/bin/sh\necho 'spec/heroes-spec.md'\necho '  maximum            9999   the binding number'\n").is_err()
+    assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(path)).is_err()
+    assert maximum_of(scratch: scratch, compiler: path, path: SPEC).default(-1) == 9999
+
+    mute = scratch + "/stub-mute.sh"
+    assert !write_file(path: mute, text: "#!/bin/sh\necho 'nothing useful'\n").is_err()
+    assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(mute)).is_err()
+    assert maximum_of(scratch: scratch, compiler: mute, path: SPEC).is_err()
+
+    # Exit 2 is the tool unable to run, and it must not be read as a number.
+    broken = scratch + "/stub-broken.sh"
+    assert !write_file(path: broken, text: "#!/bin/sh\necho 'error: no tables' 1>&2\nexit 2\n").is_err()
+    assert !shell.run(scratch: scratch, command: "chmod +x " + shell.sq(broken)).is_err()
+    assert maximum_of(scratch: scratch, compiler: broken, path: SPEC).is_err()
+
+test "a quoted word is read, and an unquoted line is refused"
+    assert first_quoted(text: "a \"word\" here", from: 0).default("") == "word"
+    assert first_quoted(text: "nothing quoted", from: 0).is_err()
+    assert first_quoted(text: "\"one\" \"two\"", from: 6).default("") == "two"
+    # An unterminated quote is not half a word.
+    assert first_quoted(text: "a \"open", from: 0).is_err()

@@ -59,6 +59,7 @@ use suite_golden
 use suite_layout
 use suite_lines
 use suite_records
+use suite_spec
 use suite_special
 use suite_surface
 use suite_warnings
@@ -217,6 +218,17 @@ function main()
             print("harness: the special cases could not run")
             exit(2)
         print("  special: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The spec's own gate: the budget, and whether the document and the
+    # compiler still name the same language.
+    if only == "" || only == "spec"
+        got = suite_spec.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the spec checks could not run")
+            exit(2)
+        print("  spec: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
