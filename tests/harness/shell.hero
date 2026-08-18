@@ -122,6 +122,44 @@ function list_entries(scratch: str, dir: str) -> [str]?
             entries @ entries.push(piece)
     return ok(entries.sort())
 
+# Every directory directly inside `dir`, sorted, `dir` itself excluded.
+function list_directories(scratch: str, dir: str) -> [str]?
+    listing = scratch + "/listing-dirs"
+    line = "find " + sq(dir) + " -maxdepth 1 -type d -print0 > " + sq(listing)
+    raw = system(command: line.cstr()).to_i64().must()
+    if status_of(raw: raw) != 0
+        return fail("cannot_walk", "cannot list the directories in " + dir)
+    text = read_file(listing)
+    if text.is_err()
+        return fail("cannot_walk", "cannot read the listing at " + listing)
+    entries: [str] @ []
+    for piece in strings.split_on(text: text.must(), byte: 0)
+        if piece.len() > 0 && piece != dir
+            entries @ entries.push(piece)
+    return ok(entries.sort())
+
+# How long a program may take before the harness stops waiting, as a
+# command prefix — or "" where this machine has no `timeout`.
+#
+# **A corpus program can hang, and a hang is worse than a failure here**
+# (2026-08-14, found by the author looking at their own screen): an
+# `examples/sdl/` binding linked SDL2, whose shim opens a MODAL DIALOG
+# when it cannot load SDL3, and two processes sat at 0% CPU for ninety
+# minutes waiting for a click nobody could give them. This harness runs
+# unattended, in three configurations: a program that never returns burns
+# the whole job rather than one case.
+#
+# Two minutes is the line between *slow* and *never*, chosen against the
+# slowest thing the corpus actually does — seconds, not minutes — so it is
+# not a performance budget in disguise (CLAUDE.md §13). `timeout` is
+# coreutils rather than POSIX, so its absence is asked of the machine
+# rather than assumed from the platform's name, and a machine without it
+# runs the corpus unguarded rather than not at all.
+function patience() -> str
+    if status_of(raw: system(command: "command -v timeout > /dev/null 2>&1".cstr()).to_i64().must()) == 0
+        return "timeout 120 "
+    return ""
+
 # One environment variable, or "" where it is unset. The null test is the
 # contract, not caution: converting a null `cstr` aborts (spec:229).
 function env(name: str) -> str

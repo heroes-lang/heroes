@@ -34,15 +34,17 @@
 #   determinism   the IR dump twice, the C twice and through -o
 #   fixes         `.fixed` — every certain fix applied, and it checks clean
 #   lines         every `#line` lands on a line the author wrote
+#   corpus        examples/ — real programs, tests and output, three ways
 #
 # Still in Rust, and each one is a step of this milestone: the
-# corpus, the double-emit determinism diff, the record checks
+# the record checks
 # (milestones.rs) and the file-length check (layout.rs, a rewrite rather
 # than a port).
 
 use report
 use shell
 use suite_annotations
+use suite_corpus
 use suite_determinism
 use suite_fixes
 use suite_golden
@@ -143,6 +145,15 @@ function main()
             print("harness: the lines sweep could not run")
             exit(2)
         print("  lines: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    if only == "" || only == "corpus"
+        got = suite_corpus.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the corpus suite could not run")
+            exit(2)
+        print("  corpus: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
