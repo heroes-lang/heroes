@@ -74,8 +74,8 @@
     Ogni posto difende esattamente una cosa, e a ognuno viene consegnato un
     dossier diverso. Quello è il meccanismo, non una comodità organizzativa: un
     giudice che ha già letto il documento di progetto sa già quale dovrebbe essere
-    la risposta, quindi al posto che parla per chi legge il documento non
-    viene mostrato mai.
+    la risposta, quindi il documento non viene mai mostrato al posto che parla per
+    chi legge.
   </p>
   <ul class="seats">
     <li>
@@ -104,7 +104,7 @@
       <div>
         <p>Parla per il vincolo di partenza: non esiste una libreria standard,
         quindi tutto quello che un programma tocca arriva dal C. Il suo dossier
-        deve contenere il C che servirebbe a un collegamento vero sotto la
+        deve contenere il C che servirebbe a un binding vero sotto la
         proposta, e chi occupa quel posto lo compila oppure mostra perché non si può. Il
         suo veto copre tutto quello che rompe il confine con il C.</p>
       </div>
@@ -124,7 +124,7 @@
         <p>Parla per tutti quelli che hanno risolto la cosa prima. È
         l&rsquo;unico posto senza veto, e l&rsquo;unico sotto obbligo di
         ricerca: date, conteggi di righe e affermazioni vanno verificati sulle
-        fonti, perché un precedente inventato è peggio di nessun precedente. È la
+        fonti, perché un precedente inventato è peggio di nessun precedente. È il
         posto di cui si parla qui sotto.</p>
       </div>
     </li>
@@ -138,8 +138,8 @@
     lenta senza che il progetto si fermi.
   </p>
   <p>
-    Niente entra sulla base di un verdetto e nient&rsquo;altro. Un cambiamento di
-    progetto ha bisogno della seduta scritta nel repository, di una riga nel
+    Un verdetto da solo non fa entrare niente. Un cambiamento al
+    design ha bisogno della seduta scritta nel repository, di una riga nel
     registro delle decisioni che dice che cosa è stato deciso e perché, e di un
     proprio commit che cita il verdetto. È quel registro che distingue il
     ragionamento dall&rsquo;improvvisazione quando le ragioni hanno tre mesi.
@@ -172,8 +172,8 @@
     Bowie come guida, in uscita il 20 settembre 2026: ventun capitoli su FORTRAN,
     COBOL, ALGOL, Lisp, Simula, Smalltalk, Prolog e gli altri, con note,
     riferimenti e una cronologia dietro. La storia, qui, non è una decorazione
-    avvitata sopra un progetto: è il posto da cui il progetto è venuto, ed è il
-    posto da cui è venuto il nome. Chi ha appena passato ventun capitoli su come
+    avvitata sopra un progetto: è da lì che è venuto il design, ed è da lì che è
+    venuto il nome. Chi ha appena passato ventun capitoli su come
     è andata la prima volta ha una scusa in meno per ripeterne qualunque pezzo.
     <a href="author.html">L&rsquo;autore, e il libro →</a>
   </p>
@@ -187,12 +187,12 @@
   <ul class="lineage">
     <li><b>Hylo, Val</b> la semantica a valori modificabili. Nessun aliasing
     significa nessun ciclo, quindi il reference counting è completo senza nessun
-    raccoglitore. È il motivo per cui il progetto resta piccolo.</li>
+    garbage collector. È il motivo per cui il design resta piccolo.</li>
     <li><b>Swift</b> il copy-on-write sopra il reference counting,
     <code>inout</code> (che qui è <code>@</code>), i <code>variant</code> con il
-    punto davanti. Heroes rinuncia a <code>class</code>, e con lui a
+    punto davanti. Heroes rinuncia a <code>class</code>, e con esso a
     <code>weak</code> e <code>unowned</code>.</li>
-    <li><b>Cyclone</b> i riferimenti solo come parametri di funzione, che
+    <li><b>Cyclone</b> i riferimenti solo come parametri di funzione, cosa che
     cancella le annotazioni sulla durata di vita. Il compilatore è scritto in
     quella disciplina, ed è per questo che portarlo qui è stato meccanico.</li>
     <li><b>Go</b> la formattazione canonica, le variabili non usate come errori, e
@@ -253,7 +253,7 @@
     strada, è pubblico nel
     <a href="https://github.com/giuseppearici/heroes-lang">repository</a>: le
     sedute di cui sopra, le previsioni sbagliate, i difetti con i loro sintomi, e
-    le misure che non hanno fatto bella figura al progetto.
+    le misure in cui il design non ha fatto bella figura.
   </p>
 
   <p class="next">

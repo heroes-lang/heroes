@@ -87,7 +87,7 @@
     Heroes è stato meccanico invece di essere una riscrittura.</li>
   </ul>
 
-  <h2>Il modello dei valori, che è tutto il progetto</h2>
+  <h2>Il modello dei valori, che è tutto il design</h2>
   <p>
     Una sola decisione rende piccolo tutto il resto: i valori non hanno mai due
     nomi, quindi non si possono costruire cicli di riferimenti, quindi il
@@ -112,14 +112,14 @@
     <code>@</code>) e i <code>variant</code> col punto davanti. Swift è anche il
     precedente rassicurante, perché non è un linguaggio di ricerca: porta avanti
     questo modello da più di dieci anni. Heroes prende la metà che funziona e
-    rinuncia a <code>class</code>, e con lui a <code>weak</code> e
+    rinuncia a <code>class</code>, e con esso a <code>weak</code> e
     <code>unowned</code>.</li>
     <li><b>APL, J, K</b> &mdash;
     <a href="https://en.wikipedia.org/wiki/Kenneth_E._Iverson">Kenneth E.
     Iverson</a>,
     <a href="https://en.wikipedia.org/wiki/Roger_Hui">Roger Hui</a> e
     <a href="https://en.wikipedia.org/wiki/Arthur_Whitney_(computer_scientist)">Arthur
-    Whitney</a>. Sessant&rsquo;anni di semantica a valori su interi array, senza
+    Whitney</a>. Sessant&rsquo;anni di semantica a valori presi per intero, senza
     riferimenti nel linguaggio che si scrive, e la prova che non è questo modello
     a rendere lento un linguaggio.</li>
     <li><b>R</b> &mdash;
@@ -135,7 +135,7 @@
   <h2>Sicurezza senza garbage collector</h2>
   <p>
     Un programma Heroes non deve andare in segfault e non deve corrompere la
-    memoria, e le strade per arrivarci senza un raccoglitore le hanno tracciate
+    memoria, e le strade per arrivarci senza un garbage collector le hanno tracciate
     altre persone prima.
   </p>
   <ul class="lineage">
@@ -188,8 +188,7 @@
     <a href="https://en.wikipedia.org/wiki/Alonzo_Church">Alonzo Church</a>.
     <code>-&gt;</code> in un tipo funzione è il pezzo di sintassi più familiare che
     esista, ed è arrivato fino a Heroes passando per ML, Haskell, Rust, Swift e i
-    type hint di Python senza cambiare forma. È stato tenuto esattamente come
-    l&rsquo;abbiamo trovato.</li>
+    type hint di Python senza cambiare forma. È stato tenuto esattamente com&rsquo;era.</li>
     <li><b>La subroutine</b> &mdash;
     <a href="https://en.wikipedia.org/wiki/David_Wheeler_(computer_scientist)">David
     Wheeler</a>, su EDSAC nel 1951. Vale la pena dirlo ad alta voce: qualcuno ha
@@ -256,7 +255,7 @@
     <li><b>Idris</b> &mdash; Edwin Brady. <b>Agda</b> &mdash; Ulf Norell, e
     Catarina Coquand sulla prima versione. I buchi tipati, portati fuori dagli
     assistenti di dimostrazione e messi nel codice normale: in Heroes
-    <code>???</code> è un&rsquo;espressione legale, e il compilatore le risponde
+    <code>???</code> è un&rsquo;espressione legale, e il compilatore risponde
     dicendo che cosa va nel buco.</li>
   </ul>
 
@@ -282,10 +281,10 @@
   <ul class="lineage">
     <li><b>cfront</b> &mdash;
     <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
-    Stroustrup</a>. Il C++ è cominciato come un programma che emetteva C.</li>
+    Stroustrup</a>. Il C++ è nato come un programma che emetteva C.</li>
     <li><b>Vala</b> &mdash; Jürg Billeter, Raffaele Sandrini e Rico Tzschichholz.
     <b>Chicken Scheme</b> &mdash; Felix Winkelmann. <b>Cython</b> &mdash; Robert
-    Bradshaw e Stefan Behnel. Quattro linguaggi funzionanti che sono usciti
+    Bradshaw e Stefan Behnel. Tre linguaggi funzionanti che sono usciti
     passando dal C, ognuno una prova che quella strada è una scelta e non un
     compromesso.</li>
     <li><b>Haskell degli inizi</b> &mdash; progettato da un comitato, fra cui
@@ -351,13 +350,12 @@
   <p class="next">
     Poi: <a href="panel.html">il panel</a>, dove ognuno di questi prestiti ha
     dovuto sopravvivere a cinque giudici, e dove le deviazioni si discutono invece
-    di darle per buone.
+    di essere date per buone.
   </p>
 
   <footer>
     <p>Fatto da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
-    <a href="author.html"><i>Gli eroi del codice</i></a>. Sulle spalle
-    <a href="thanks.html">di un sacco di altre persone</a>.</p>
+    <a href="author.html"><i>Gli eroi del codice</i></a>.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>
 </main>
