@@ -6,9 +6,9 @@
 # `crates/`. Panel 085 measured what would be left: nothing runs
 # `selfhost/`'s own tests, no selfhost test touches a golden, and 208
 # golden cases go dark. This program is the replacement, and it is a
-# PROGRAM rather than a subcommand because §10's stopping rule refuses
-# the flag — two existing invocations (`heroes run`, and the compiler
-# under test) already compose to it.
+# PROGRAM rather than a subcommand because §10's stopping rule refuses the
+# flag — two existing invocations (`heroes run`, and the compiler under
+# test) already compose to it.
 #
 # HOW TO RUN IT
 #
@@ -19,24 +19,28 @@
 # compiler defaults to ./target/debug/heroes while the bootstrap is still
 # the reference; after the archive it is the self-hosted binary, and the
 # point of naming it on the command line is that the SAME harness can be
-# pointed at either one.
+# pointed at either one. Naming a suite runs only that one.
 #
-# Exit: 0 all green · 1 something failed. That is §10's contract for a
-# tool whose artifact is a verdict.
+# Exit: 0 all green · 1 something failed · 2 the harness could not run.
+# That is §10's contract for a tool whose artifact is a verdict.
 #
-# WHAT IS HERE SO FAR (this milestone lands one suite per step)
-#   check/  — every diagnostics case, stderr and exit 1
+# WHAT IS HERE SO FAR (this milestone lands suites per step)
+#   check/        every diagnostics case — stderr, exit 1
+#   ir/           the lowered IR — stdout, exit 0
+#   emit/         the generated C11 — stdout, exit 0
+#   unsupported/  what the backend refuses — stderr, exit 1, no artifact
 #
-# Still in Rust, and each one is a step of this milestone: ir/, emit/,
-# unsupported/, run/ at two optimisation levels, the `#~` annotation
-# invariant (golden.rs:344 — CLAUDE.md §9's one unforgeable check), the
-# certain-fix suite, the corpus, the double-emit determinism diff, the
-# record checks (milestones.rs) and the file-length check (layout.rs,
-# which is a rewrite rather than a port).
+# Still in Rust, and each one is a step of this milestone: `run/` at two
+# optimisation levels, the `#~` annotation invariant (golden.rs:344 —
+# CLAUDE.md §9's one unforgeable check), the IR dump's determinism, the
+# `#line` sweep over the whole `run/` corpus, the certain-fix suite, the
+# corpus, the double-emit determinism diff, the record checks
+# (milestones.rs) and the file-length check (layout.rs, a rewrite rather
+# than a port).
 
 use report
 use shell
-use suite_check
+use suite_golden
 
 constant DEFAULT_COMPILER: str
     "./target/debug/heroes"
@@ -53,9 +57,9 @@ function main()
     if given.len() > 1
         only @ given[1]
 
-    # The scratch directory is where the captured streams and the
-    # directory listings land. It is under build/ because that is the one
-    # directory this project already treats as disposable.
+    # The scratch directory holds the captured streams and the directory
+    # listings. It is under build/ because that is the one directory this
+    # project already treats as disposable.
     made = shell.mkdir_all(SCRATCH)
     if made.is_err()
         print("harness: cannot create " + SCRATCH)
@@ -65,16 +69,24 @@ function main()
         print("  build one first, or name it: heroes run tests/harness/main.hero -- <compiler>")
         exit(2)
 
+    forms: [suite_golden.Shape] = [
+        suite_golden.shape_check()
+        suite_golden.shape_ir()
+        suite_golden.shape_emit()
+        suite_golden.shape_unsupported()
+    ]
+
     total: report.Report @ report.empty()
     ran: i64 @ 0
-
-    if only == "" || only == "check"
-        got = suite_check.run_all(scratch: SCRATCH, compiler: compiler, dir: "tests/golden/check")
-        if got.is_err()
-            print("harness: the check/ suite could not run")
-            exit(2)
-        total @ report.tally(one: total, two: got.must())
-        ran @ ran + 1
+    for form in forms
+        if only == "" || only == form.name
+            got = suite_golden.run_all(scratch: SCRATCH, compiler: compiler, shape: form)
+            if got.is_err()
+                print("harness: the " + form.name + "/ suite could not run")
+                exit(2)
+            print("  " + form.name + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+            total @ report.tally(one: total, two: got.must())
+            ran @ ran + 1
 
     if ran == 0
         print("harness: no suite named " + only)
