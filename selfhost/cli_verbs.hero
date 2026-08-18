@@ -70,7 +70,23 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
     # reported as itself rather than as a header clang could not find.
     package_flags = cli_libraries.resolve_packages(art.must().packages, build_dir: t.build)
     if package_flags.is_err()
-        cli_io.eprint(text: failure_text(package_flags))
+        # **A package failure is the AUTHOR's, so it goes through the same
+        # ffi mapping a clang failure does.** The bootstrap asks
+        # `resolve_packages` from INSIDE toolchain::link, so its marker
+        # text arrives at `explain` with everything else; the port asks it
+        # here, one call earlier, and the message used to be printed raw.
+        # Measured 2026-08-18 by tests/harness on
+        # `unsupported/ffi-records-only-group-cannot-claim-its-package`:
+        # the terminal got `heroes-ffi-package ...` and four bare lines —
+        # no code, no `at file:line:col`, no source snippet, no notes,
+        # which is every part of §4.17 at once, in the one class where the
+        # compiler is allowed to blame the author's own `extern` (§7).
+        message = failure_text(package_flags)
+        theirs = emit_ffi.explain(message, s, art.must().tree, art.must().decls, art.must().checked, art.must().program, word_bits: 64)
+        if theirs.len() > 0
+            _ = cli_compile.stage(theirs, s)
+            return fail("diagnostics", "the package could not answer")
+        cli_io.eprint(text: message)
         return fail("diagnostics", "the package could not answer")
     names: [str] @ []
     for name in art.must().link

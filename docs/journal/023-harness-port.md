@@ -70,19 +70,45 @@ they are exactly what panel 085 R4 said the archive would make permanent.
    without the line to fix.
 
 2. **`unsupported/ffi-writable-parameter` — the caret disagrees, and the
-   bootstrap is the one that is wrong.** Bootstrap underlines **75** columns,
-   the port **43**. 43 is `function strtok(s1: cstr, s2: cstr) -> cstr`; 75
+   bootstrap is the one that is wrong.** Bootstrap underlines **71** columns,
+   the port **43**. 43 is `function strtok(s1: cstr, s2: cstr) -> cstr`; 71
    reaches through the trailing spaces and swallows the `#~
-   ffi_writable_parameter` annotation. Measured across every other expectation
-   whose source line carries a `#~`: nine cases, and **every one stops at the
-   construct** (`record Color` → 5 columns, `named = a.reserved` → 18, `u: ()` →
-   1). So the long caret is this declaration's alone, and the `.expected` file
-   has been recording it as correct since the case was written.
+   ffi_writable_parameter` annotation. (Step 2's commit message says 75: that
+   number was counted by eye rather than measured, and 71 is what `awk` says
+   over the expectation file. The commit stands as written — a record is not
+   rewritten — and this is the correction, which is also CLAUDE.md §1's own rule
+   catching its author.) Measured across every other expectation whose source
+   line carries a `#~`: nine cases, and **every one stops at the construct**
+   (`record Color` → 5 columns, `named = a.reserved` → 18, `u: ()` → 1). So the
+   long caret is this declaration's alone, and the `.expected` file has been
+   recording it as correct since the case was written.
 
 The second one is the sharper lesson, because it is not about the port: a golden
 can pin a defect, and the thing that exposed it was a **second implementation**
 disagreeing. That is the argument for keeping the differential alive past the
 archive, in the form the ROADMAP's `M-bootstrap-archive` entry already names.
+
+**Both repaired in step 3, and each repair is one line of code.**
+
+- The port asks `resolve_packages` from the driver
+  (`selfhost/cli_verbs.hero:71`) while the bootstrap asks it from **inside**
+  `toolchain::link` (`toolchain.rs:219`) — so in the bootstrap the marker text
+  reaches `emit_ffi::explain` with every other clang failure and comes back a
+  `Diagnostic`, and in the port there was nothing left to do with a `fail` but
+  print it. The port's own mapper (`emit_ffi_build.package_problem`, tested,
+  byte-identical logic) had been **reachable by nothing**. Now the package
+  branch goes through `explain` exactly as the clang branch twelve lines below
+  it, and `diff` against the expectation is silent.
+- `decl.rs:207` closed an `extern` member's extent with `previous_span()` —
+  the last token *consumed* — and `previous_significant_span()`, written
+  2026-08-12 for this very defect on statements, was never applied to a
+  declaration. One word changed.
+
+Verified, all measured this session: `cargo test` **576 green**; the harness
+**102/102 in all four configurations**, where the self-hosted compiler testing
+itself had been 100/102; `seed/heroes.c` regenerated (21,040,755 bytes, panel
+085 A1's same-commit rule), it compiles in **3.3 s**, and the compiler it
+produces re-emits it **byte for byte** — `cmp` silent after **14m05s**.
 
 ## What broke and why
 
