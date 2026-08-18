@@ -1,0 +1,244 @@
+# Reading the spec as a document: its code spans, the names it offers, and
+# what it holds above ASCII.
+#
+# Port of the text machinery inside crates/heroes/src/measure/spec.rs. It is
+# a module of its own because the checks that use it are about three
+# different things (the budget, the built-ins, the lexer) and this is the one
+# thing they share: *where in the spec a claim about the language is made*.
+#
+# THE ANSWER IS "IN A CODE SPAN", AND THAT IS NOT A STYLE CHOICE. The spec's
+# prose contains the English words `all`, `has`, `find` and `map`; its code
+# spans contain the language's own names. A check that searched the prose
+# would fire on a sentence rather than on a claim, so every scan here is over
+# fenced blocks and backticked fragments only.
+#
+# EVERYTHING HERE WALKS CHARACTERS, NOT BYTES, AND THE FIRST DRAFT DID NOT.
+# `slice` aborts when it splits a character (spec:148), so a scan that indexes
+# bytes and then slices one — the obvious port of Rust's `char_indices` — dies
+# on the spec's own em dash: `panic: string slice splits a character`, measured
+# on the real document the first time this ran. `chars()` gives one-character
+# strings that can be compared and joined without ever cutting one in half,
+# which is why every function below takes `[str]` where the Rust takes `&str`.
+
+use strings
+
+# Every identifier written inside a code span — a backticked fragment or a
+# fenced block — in the order met, duplicates included.
+#
+# Two states, exactly as the Rust's `split("```")` and `split('`')` do
+# together: a fence flips whether we are inside a block, a lone backtick
+# flips whether we are inside a span.
+function identifiers_in_code(text: str) -> [str]
+    cs = text.chars()
+    found: [str] @ []
+    in_block: bool @ false
+    in_span: bool @ false
+    word: [str] @ []
+    i: i64 @ 0
+    while i < cs.len()
+        if fence_at(cs: cs, at: i)
+            in_block @ !in_block
+            in_span @ false
+            found @ flushed(found: found, word: word)
+            word @ word.slice(from: 0, to: 0)
+            i @ i + 3
+            continue
+        if cs[i] == "`"
+            if !in_block
+                in_span @ !in_span
+            found @ flushed(found: found, word: word)
+            word @ word.slice(from: 0, to: 0)
+            i @ i + 1
+            continue
+        if (in_block || in_span) && is_word_char(cs[i])
+            word @ word.push(cs[i])
+        else
+            found @ flushed(found: found, word: word)
+            word @ word.slice(from: 0, to: 0)
+        i @ i + 1
+    return flushed(found: found, word: word)
+
+function flushed(found: [str], word: [str]) -> [str]
+    if word.len() == 0
+        return found
+    return found.push(word.join(""))
+
+function fence_at(cs: [str], at: i64) -> bool
+    if at + 3 > cs.len()
+        return false
+    return cs[at] == "`" && cs[at + 1] == "`" && cs[at + 2] == "`"
+
+# `A-Z a-z 0-9 _` — what an identifier is made of, and the boundary the
+# Rust's `split(|c| !c.is_alphanumeric() && c != '_')` draws. A character
+# above ASCII is not one of them, which is right here for the reason it is
+# right in the pre-tokeniser: this document's non-ASCII characters are
+# punctuation (suite_spec.hero pins that).
+function is_word_char(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    b = ch[0]
+    if b >= 65 && b <= 90
+        return true
+    if b >= 97 && b <= 122
+        return true
+    if b >= 48 && b <= 57
+        return true
+    return b == 95
+
+# The names the spec offers as built-ins: the one sentence that opens with
+# `Built-ins:`, read as the backticked fragments inside it.
+#
+# THIS PARSER HAS A HISTORY AND IT IS THE POINT OF THE FUNCTION. Its Rust
+# ancestor used to end the list at the literal text of the *next* sentence,
+# with a blank line as a fallback its own comment admitted was wrong. Panel
+# 081 then spent that very sentence as a named removal — and the parser
+# dropped onto the condemned fallback, read `inf` out of the float-printing
+# sentence, and reported it as a missing built-in. Nothing about the language
+# had changed; a sentence somewhere else had. So the end is asked of the
+# value in hand: **this sentence's own full stop**, outside a code span
+# (CLAUDE.md §11).
+function offered_builtins(text: str) -> [str]?
+    cs = text.chars()
+    opens = at_marker(cs: cs, needle: "Built-ins:")
+    if opens.is_err()
+        return fail("no_list", "the spec has no `Built-ins:` sentence")
+    from = opens.must()
+    tail = cs.slice(from: from, to: cs.len())
+    sentence = tail.slice(from: 0, to: end_of_sentence(tail))
+    kept = without_prose_parentheses(sentence)
+    names: [str] @ []
+    inside: bool @ false
+    piece: [str] @ []
+    i: i64 @ 0
+    while i < kept.len()
+        if kept[i] == "`"
+            if inside
+                name = strings.trimmed(piece.join(""))
+                bare = strings.without_suffix(text: name, suffix: "(...)")
+                if bare.len() > 0 && !strings.contains(text: bare, needle: " ")
+                    names @ names.push(bare)
+                piece @ piece.slice(from: 0, to: 0)
+            inside @ !inside
+        else if inside
+            piece @ piece.push(kept[i])
+        i @ i + 1
+    return ok(names)
+
+# Where `needle` starts, in characters.
+function at_marker(cs: [str], needle: str) -> i64?
+    wanted = needle.chars()
+    if wanted.len() == 0 || wanted.len() > cs.len()
+        return fail("absent", "the marker is not there")
+    limit = cs.len() - wanted.len()
+    at: i64 @ 0
+    while at <= limit
+        if cs.slice(from: at, to: at + wanted.len()) == wanted
+            return ok(at)
+        at @ at + 1
+    return fail("absent", "the marker is not there")
+
+# How many characters this sentence runs to, counting only full stops OUTSIDE
+# a code span — `print(...)` and `slice(from:, to:)` carry dots of their own
+# and end nothing. A stop counts only when whitespace follows it, which is
+# what keeps `1.33` and `§1.6` from ending a sentence either.
+function end_of_sentence(cs: [str]) -> i64
+    in_span: bool @ false
+    i: i64 @ 0
+    while i < cs.len()
+        if cs[i] == "`"
+            in_span @ !in_span
+        else if cs[i] == "." && !in_span
+            if i + 1 >= cs.len()
+                return i
+            after = cs[i + 1]
+            if after == " " || after == "\n" || after == "\t" || after == "\r"
+                return i
+        i @ i + 1
+    return cs.len()
+
+# Every `(…)` group that is not inside a code span, dropped. The
+# `slice(from:, to:)` entry gained "(`to` excluded)" at M-strings-ownership,
+# and `to` is a word ABOUT a built-in rather than the name of one; code spans
+# are kept whole, so `print(...)` survives.
+function without_prose_parentheses(cs: [str]) -> [str]
+    out: [str] @ []
+    in_code: bool @ false
+    depth: i64 @ 0
+    i: i64 @ 0
+    while i < cs.len()
+        ch = cs[i]
+        if ch == "`"
+            in_code @ !in_code
+        if !in_code && ch == "("
+            depth @ depth + 1
+            i @ i + 1
+            continue
+        if !in_code && ch == ")" && depth > 0
+            depth @ depth - 1
+            i @ i + 1
+            continue
+        if depth == 0
+            out @ out.push(ch)
+        i @ i + 1
+    return out
+
+# Every distinct character above ASCII in `text`, sorted, one entry each.
+#
+# This exists for one claim in one file: `selfhost/measure_pieces.hero` reads
+# a letter as `A-Z a-z` and a digit as `0-9`, where the Rust it ports asks
+# Unicode. The two agree only while the spec's non-ASCII characters are
+# punctuation, so this is that premise's falsifier — and it pins the SET
+# rather than the count, because another em dash is not news and a letter is.
+function above_ascii(text: str) -> [str]
+    seen: {str: bool} @ {}
+    for ch in text.chars()
+        if ch.len() > 1
+            seen[ch] @ true
+    return keys(seen).sort()
+
+test "identifiers are read out of code spans and fences, never out of prose"
+    assert identifiers_in_code("plain words only").len() == 0
+    assert identifiers_in_code("a `len` and a `push`") == ["len", "push"]
+    # A fenced block: every identifier inside it, and the fence itself is
+    # not one.
+    fenced = "text\n```\nx = len(xs)\n```\nmore text\n"
+    assert identifiers_in_code(fenced) == ["x", "len", "xs"]
+    # `to_str` keeps its underscore; a dotted call is two names.
+    assert identifiers_in_code("`a.to_str()`") == ["a", "to_str"]
+    # The em dash that killed the byte-slicing draft, in a code span.
+    assert identifiers_in_code("`a — b`") == ["a", "b"]
+
+test "a sentence ends at its own full stop, not inside a code span"
+    assert end_of_sentence("one. two".chars()) == 3
+    assert end_of_sentence("`a.b` then. rest".chars()) == 10
+    # A decimal point ends nothing: no whitespace follows it.
+    assert end_of_sentence("1.33 and 2.5 end. here".chars()) == 16
+    assert end_of_sentence("no stop at all".chars()) == 14
+    # A full stop after a multi-byte character is still found, and counted
+    # in characters rather than in bytes.
+    assert end_of_sentence("a — b. c".chars()) == 5
+
+test "prose parentheses go, code spans stay"
+    assert without_prose_parentheses("a (dropped) b".chars()).join("") == "a  b"
+    assert without_prose_parentheses("`print(...)` stays".chars()).join("") == "`print(...)` stays"
+    assert without_prose_parentheses("a (b (c) d) e".chars()).join("") == "a  e"
+
+test "the built-in sentence is read out of the real spec"
+    text = read_file("spec/heroes-spec.md")
+    assert !text.is_err()
+    offered = offered_builtins(text.must())
+    assert !offered.is_err()
+    names = offered.must()
+    # The list is long, and it ENDS at `range` by construction — the pin
+    # that makes a shortened sentence loud instead of merely smaller.
+    assert names.len() > 10
+    assert names[names.len() - 1] == "range"
+    assert offered_builtins("a document with no such sentence").is_err()
+
+test "the marker is found in character space"
+    assert at_marker(cs: "a — Built-ins: x".chars(), needle: "Built-ins:").default(-1) == 4
+    assert at_marker(cs: "nothing".chars(), needle: "Built-ins:").is_err()
+
+test "the characters above ASCII are a set, sorted"
+    assert above_ascii("plain").len() == 0
+    assert above_ascii("a — b · c —") == ["·", "—"]
