@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Errori: le diagnostiche di Heroes, e i numeri dietro</title>
+<meta name="description" content="Una diagnostica qui è un prodotto finito, non tubatura: output vero, riparazioni applicabili a macchina etichettate certain, e il tasso di errori presi misurato errore per errore contro una build di controllo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/errors.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/errors.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/errors.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/errors.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Errori: le diagnostiche di Heroes, e i numeri dietro">
+<meta property="og:description" content="Una diagnostica qui è un prodotto finito, non tubatura: output vero, riparazioni applicabili a macchina etichettate certain, e il tasso di errori presi misurato errore per errore contro una build di controllo.">
+<meta property="og:url" content="https://heroes-lang.org/it/errors.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Errori: le diagnostiche di Heroes, e i numeri dietro">
+<meta name="twitter:description" content="Una diagnostica qui è un prodotto finito, non tubatura: output vero, riparazioni applicabili a macchina etichettate certain, e il tasso di errori presi misurato errore per errore contro una build di controllo.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="why.html">Perché Heroes</a></li>
+      <li><a class="here" href="docs/index.html">Docs</a></li>
+      <li><a href="selfhost.html">Self-hosted</a></li>
+      <li><a href="zen.html">Zen</a></li>
+      <li><a href="panel.html">Panel</a></li>
+      <li><a href="thanks.html">Grazie</a></li>
+      <li><a href="author.html">Autore</a></li>
+      <li><a href="log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../errors.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <p class="crumb"><a href="index.html">Heroes</a> / <a href="docs/index.html">Docs</a> / errori</p>
+  <div class="page-head">
+    <h1 class="page">Errori</h1>
+    <span class="nod">· always crashing in the same car ·</span>
+  </div>
+  <p class="lede">Qui una diagnostica è un prodotto finito, non una tubatura, e
+  la tesi che ci sta dietro si misura errore per errore, senza fare medie. Ogni
+  errore qui sotto è output vero, copiato dal repository.</p>
+
+  <p>
+    Un modello non ha il progetto aperto davanti. Riceve un messaggio e deve
+    sistemare il programma partendo da quel messaggio e da nient&rsquo;altro,
+    oppure spendere un giro completo a rileggere file, che secondo la formula del
+    costo è la cosa più cara che possa capitare. Per questo ogni diagnostica porta
+    tre cose: il punto esatto che è sbagliato, l&rsquo;altro capo della storia
+    (dove è stata dichiarata la cosa con cui va in conflitto), e la riparazione.
+  </p>
+
+  <h2>L&rsquo;inversione classica</h2>
+  <p>
+    Due parametri dello stesso tipo, argomenti nell&rsquo;ordine sbagliato. Nella
+    maggior parte dei linguaggi passa il controllo dei tipi senza un fiato e fa la
+    cosa sbagliata. Qui i nomi sono obbligatori proprio perché i tipi non possono
+    aiutare:
+  </p>
+  <pre class="diag"><code><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site: this one is `from`
+  at tests/golden/check/swapped-arguments.hero:16:21
+     |
+  16 |     print(copy_text("a", "b"))  <span class="c">#~ needs_label needs_label</span>
+     |                     ^^^
+  fix (certain): write `from: `
+
+<span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position, it is `from`
+  at tests/golden/check/swapped-arguments.hero:18:21
+     |
+  18 |     print(copy_text(to: "b", from: "a"))  <span class="c">#~ wrong_label wrong_label</span>
+     |                     ^^
+  fix (certain): write `from:`</code></pre>
+  <p>
+    Le diagnostiche restano in inglese perché sono l&rsquo;output vero del
+    compilatore: qui non vengono tradotte, vengono copiate. Le annotazioni
+    <code>#~ needs_label</code> stanno nel sorgente di proposito: sono il modo in
+    cui la suite di test controlla che la sottolineatura cada dove il messaggio
+    dice che cade. E il caret è l&rsquo;estensione esatta del problema, non la
+    riga: in una chiamata lunga, l&rsquo;argomento sbagliato viene puntato invece
+    di essere descritto.
+  </p>
+
+  <h2>Due tipi di riparazione, e solo una la può applicare una macchina</h2>
+  <p>
+    Una riparazione etichettata <code>certain</code> è una riparazione che il
+    compilatore ha <i>calcolato</i>, non indovinato: l&rsquo;annotazione mancante
+    che il checker ha appena dedotto, l&rsquo;unico candidato in scope per un nome
+    scritto male. <code>heroes check --apply</code> applica quelle, e il risultato
+    compila; l&rsquo;integrazione continua verifica esattamente questo. Una
+    riparazione etichettata <code>guess</code> è prosa per chi legge, e nessuno
+    strumento può applicarla, mai. Indovinare una riparazione che un modello
+    applicherebbe a occhi chiusi è peggio che spiegare.
+  </p>
+  <p>
+    Le stesse diagnostiche escono anche come JSON &mdash; codici stabili leggibili
+    da un programma, estensioni, note e riparazioni &mdash; per quando chi legge
+    è un programma.
+  </p>
+  <p>Il giro completo, in comandi:</p>
+  <pre><code>$ heroes check program.hero           <span class="c"># le diagnostiche, su stderr</span>
+$ heroes check --apply program.hero   <span class="c"># applica le riparazioni certain</span>
+$ heroes check --apply --in-place program.hero
+$ heroes run program.hero</code></pre>
+  <p>
+    Quel <code>heroes</code> è il binario che hai costruito tu:
+    <code>./target/debug/heroes</code> partendo da un clone pulito.
+    <a href="index.html#run">Come si costruisce →</a>
+  </p>
+
+  <h2>Parole di altri linguaggi, rifiutate con la risposta allegata</h2>
+  <p>
+    L&rsquo;errore più probabile di un modello con il pilota automatico è una
+    parola chiave importata da un&rsquo;altra parte. Ognuna è un errore di
+    compilazione che si porta dietro la propria soluzione, e questo la rende una
+    riparazione da un solo giro invece di una conversazione:
+  </p>
+  <pre class="diag"><code>tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language, use `record`: `record Point`
+tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language, bind with `=`: `x = 5`
+tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language, use `constant`: `constant MAX: i64`
+tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language: an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
+  <p>
+    Quella è la forma a una riga per diagnostica, che è quella che i test golden
+    fissano; la resa più ricca qui sopra è quello che stampa il comando. Tre di
+    quelle quattro portano una riparazione <code>certain</code>, quindi
+    <code>--apply</code> converte un file intero di parole chiave prese in
+    prestito in un solo passaggio.
+  </p>
+
+  <h2>Un programma incompiuto non è un programma rotto</h2>
+  <p>
+    <code>???</code> è un&rsquo;espressione legale in qualunque punto. Il
+    compilatore controlla i tipi di tutto quello che le sta intorno e poi dice che
+    cosa va nel buco: il tipo aspettato, che cosa c&rsquo;è in scope, e quali
+    funzioni restituiscono quel tipo. Non produce nessun binario, ed esce con
+    codice <b>zero</b>, perché uno scheletro in costruzione non è un errore:
+  </p>
+  <pre><code>hole at examples/gallery/09-holes.hero:26:74
+  expected type: str
+  in scope:
+    entries: [Entry]
+  functions that return it:
+    summary_of(entries: [Entry])
+      <span class="c"># The hole can be one argument of an otherwise finished line.</span>
+    library.hero_args_at(index: i64)
+    library.hero_file_read(path: cstr, @status: i64)</code></pre>
+  <p>
+    È questo che permette di scrivere un programma partendo dallo scheletro:
+    abbozzi la forma, ti fai dire dal compilatore che cosa serve in ogni buco, e
+    li riempi. Il buco è una domanda a cui il compilatore risponde, non un
+    fallimento che segnala. Due parole in quell&rsquo;output appartengono al
+    confine con il C e non compaiono da nessun&rsquo;altra parte:
+    <code>cstr</code> è una stringa C, e <code>@status</code> marca un parametro
+    su cui la funzione chiamata può scrivere &mdash; un parametro di uscita del C,
+    nominato al punto della chiamata come ogni altro argomento.
+  </p>
+
+  <h2>Come viene misurato tutto questo</h2>
+  <p>
+    Niente di quello che sta qui sopra vale qualcosa come affermazione, quindi
+    diventa un numero. <code>heroes mutate</code> prende programmi che funzionano,
+    inietta un errore plausibile alla volta, e conta quanti il compilatore
+    trasforma in errori di compilazione. Poi passa lo stesso corpus allo stesso
+    compilatore con le regole della tesi disattivate. La differenza fra le due
+    colonne è l&rsquo;unica parte che significa qualcosa.
+  </p>
+  <p>
+    Misurato il 2026-08-18 sui dodici programmi della galleria. Qui c&rsquo;è
+    ogni operatore che lo strumento genera, compresi quelli dove il design non fa
+    niente e quello dove fallisce:
+  </p>
+  <pre class="table"><code><span class="c">errore iniettato                            mutanti    presi senza regole</span>
+etichetta di argomento saltata                   46      91%           0%
+nome che ne nasconde un altro                    19     100%           0%
+catch-all pigro su un variant                    28     100%          39%
+due argomenti dello stesso tipo scambiati        56      80%          43%
+@ dimenticata su una dichiarazione               24      92%          92%
+caso di variant saltato                           8     100%         100%
+? saltato                                         2     100%         100%
+coppia di booleani scambiata                      4     100%         100%
+nome mai dichiarato                              23     100%         100%
+errore di battitura in un nome                  276     100%         100%
+aritmetica mista fra interi e float              49     100%         100%
+<span class="hi">errore di battitura in un codice d’errore</span>         3       0%           0%
+errore di battitura in una cifra                  0        –            –</code></pre>
+  <p>
+    <b>Il progetto si rifiuta di fare la media di questi numeri in una cifra
+    sola</b>, e lo strumento stampa quel rifiuto ogni volta che gira. Il motivo
+    sta nella tabella. Le prime quattro righe sono la misura: un&rsquo;etichetta
+    saltata e un nome che ne nasconde un altro vanno a zero senza le regole della
+    tesi, perché in un linguaggio convenzionale nessun altro li sta cercando. Le
+    righe centrali le prendono i nomi e i tipi in qualunque linguaggio, quindi
+    metterle nella media accrediterebbe al design un lavoro che non ha fatto. La
+    <code>@</code> dimenticata è esclusa da qualunque riassunto per istruzione
+    dello stesso progetto, perché il suo tasso è del 100 per cento per
+    costruzione.
+  </p>
+  <p>
+    Due righe vale la pena leggerle contro il titolone di questo stesso sito. Gli
+    argomenti dello stesso tipo scambiati vengono presi l&rsquo;80 per cento delle
+    volte, non il 100: dove l&rsquo;etichetta è facoltativa perché i tipi già
+    differiscono, non li sta cercando nessuno. E un errore di battitura dentro un
+    codice d&rsquo;errore non viene preso <b>mai</b>, in nessuno dei due casi,
+    perché un codice è una stringa e nessuna regola vincola come si scrive.
+    L&rsquo;ultima riga non ha generato niente da provare, quindi non ha nessun
+    tasso.
+  </p>
+  <p>
+    Questo è il senso di misurare. Un numero che facesse solo bella figura non
+    varrebbe la pena di stamparlo.
+  </p>
+
+  <p class="next">
+    Poi: <a href="selfhost.html">il compilatore, scritto nel suo stesso
+    linguaggio</a>.
+  </p>
+
+  <footer>
+    <p>Costruito da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="author.html"><i>Gli eroi del codice</i></a>. In piedi
+    <a href="thanks.html">sul lavoro di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>
