@@ -36,6 +36,15 @@ const RECORD: &[&str] = &[
     // notes (2026-08-12).
     "docs/reasoning",
     "tests/golden",
+    // The blessed emissions (M-bootstrap-archive step 1): 5.4 MB of generated C,
+    // derived from the programs under `tests/golden/` and `examples/`. This walk
+    // would be reading a megabyte-scale copy of text it already reads at the
+    // source, and the guard it would give — `no_c_file_lives_outside_the_places_
+    // that_own_c` below — is weaker than the one that directory already has:
+    // `tests/harness/suite_emission.hero` fails by name on a `.c` in there that no
+    // program claims. **The twin of this line is that file's own `RECORD`**, and
+    // the two are one list in two languages until the archive (journal 023).
+    "tests/emission",
     "DESIGN-LOG.md",
     "vendor",
     "editors/vscode/icons",
