@@ -44,6 +44,8 @@ is `docs/ROADMAP.md` § The names, and the rule is CLAUDE.md §14.
 | 018 | [struct passing](018-struct-passing.md) | M-struct-passing — the layout that is not ours | 2026-08-15 | `m-struct-passing` |
 | 019 | [complete structs](019-complete-structs.md) | M-complete-structs — every field form a C header can write | 2026-08-15 | `m-complete-structs` |
 | 020 | [the selfhost probe](020-selfhost-probe.md) | M-selfhost-probe — the lexer ported, and the wall that was not there | 2026-08-15 | `m-selfhost-probe` |
+| 021 | [the port](021-selfhost-port.md) | M-selfhost-port — the compiler twice over, and one hash | 2026-08-17 | `m-selfhost-port` |
+| 022 | [the seed](022-selfhost-fixpoint.md) | M-selfhost-fixpoint — the seed, and four defects the fixpoint could not see | 2026-08-18 | `m-selfhost-fixpoint` |
 
 `git tag --list --sort=creatordate` gives the same order from git itself, and
 `git checkout m5b` re-opens any milestone's code — which is what
