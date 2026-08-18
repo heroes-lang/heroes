@@ -403,8 +403,10 @@ So a number met in the record resolves here, and only here.
 | `M-struct-passing` | — | `m-struct-passing` | a struct crosses the FFI boundary by value — §4.19's ladder rung 5, and the third of the boundary that was unreachable |
 | `M-complete-structs` | — | `m-complete-structs` | every field form a C header can write — `partial`, `i32[4]`, and the completeness probe. **A new id rather than a reopening** (§14): the milestone before it says *a struct can cross*, this one says *every struct can be named*, and the work landed after `m-struct-passing` was tagged |
 | `M-selfhost-probe` | M8p | `m-selfhost-probe` | the lexer ported, to measure what self-hosting lacks |
-| `M-selfhost-port` | M8b | — | the port |
-| `M-selfhost-fixpoint` | M8c | — | the fixpoint — **v1** |
+| `M-selfhost-port` | M8b | `m-selfhost-port` | the port, and one hash for three compilers |
+| `M-selfhost-fixpoint` | M8c | `m-selfhost-fixpoint` | the fixpoint and the seed — **v1** |
+| `M-harness-port` | — | — | the net in Heroes: the golden harness, the corpus, the record checks. **A new id and not part of M8c** (§14): panel 085 B4 split the archive off the fixpoint, and the archive's precondition is a milestone of its own — 4,279 lines of Rust harness, and the instrument that dies with the bootstrap is the one whose expectation *is* the bootstrap |
+| `M-bootstrap-archive` | M8c, in part | — | `crates/` → `archive/bootstrap-rs/`. **The clause M8c was carrying and could not pay**: the port read its standard library from the directory being archived, so the compiler failed outside this repository, and `heroes measure` is still not in the port |
 | `M-separate-compilation` | M9 | — | one `.c` per module, prototypes across TUs, the cache |
 | `M-package-manager` | M10 | — | `heroes add`/`heroes fetch`, bindings in place of a standard library |
 | `M-isolated-threads` | M11 | — | Part 7.13: per-thread heaps, copying at the boundaries, no scheduler |
