@@ -1,0 +1,4 @@
+# The self-signed localhost certificate serve.py makes on first run. It is a
+# key, it is per-machine, and it expires: three reasons never to commit it.
+# Deleting this directory is how you get a fresh certificate.
+.cache/
