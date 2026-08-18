@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Failure is a value — Heroes documentation</title>
+<title>Failure is a value, Heroes documentation</title>
 <meta name="description" content="Heroes has no null and no exceptions. Absence and failure are types, propagation is visible on the line, and the unhandled path is a compile error.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/docs/failure-is-a-value.html">
 <meta name="theme-color" content="#0d0d12">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
-<meta property="og:title" content="Failure is a value — Heroes documentation">
+<meta property="og:title" content="Failure is a value, Heroes documentation">
 <meta property="og:description" content="Heroes has no null and no exceptions. Absence and failure are types, propagation is visible on the line, and the unhandled path is a compile error.">
 <meta property="og:url" content="https://heroes-lang.org/docs/failure-is-a-value.html">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Failure is a value — Heroes documentation">
+<meta name="twitter:title" content="Failure is a value, Heroes documentation">
 <meta name="twitter:description" content="Heroes has no null and no exceptions. Absence and failure are types, propagation is visible on the line, and the unhandled path is a compile error.">
 <link rel="stylesheet" href="../style.css">
 </head>
@@ -47,13 +47,13 @@
     and both of them are invisible in the code that uses them. A value might be
     <code>null</code>, and nothing on the line tells you whether it is. A call
     might throw, and nothing on the line tells you whether it does. Both produce
-    the same class of bug: <b>the unhandled path</b> — the one kind of mistake
-    that raises no compile error, in any language that has it.
+    the same class of bug: <b>the unhandled path</b>, the one kind of mistake
+    that raises no compile error in any language that has it.
   </p>
   <p>
     That is the class Heroes exists to remove, so it has neither. Instead, a
-    function that can fail says so in its type, and every reader — human or
-    model — can see it without opening another file.
+    function that can fail says so in its type, and every reader, human or
+    model, can see it without opening another file.
   </p>
 
   <h3>A type that means "or an error"</h3>
@@ -74,7 +74,7 @@
   </figure>
   <p>
     The error carries two things, and both are deliberate. The
-    <b>code</b> — <code>"not_a_digit"</code> — is a short, stable name in
+    <b>code</b>, <code>"not_a_digit"</code>, is a short, stable name in
     snake_case, meant to be compared by a program: it is the part that does not
     change when somebody improves the wording. The <b>message</b> is for
     whoever reads the failure. Codes are how you branch on what went wrong;
@@ -102,7 +102,7 @@
     Read the loop body. <code>digit_of(text[i])?</code> means: call it, and if
     it failed, <b>stop this function now and return that same error to my
     caller</b>. If it succeeded, carry on with the number it produced. One
-    character of syntax, in the exact place the control flow forks — which is
+    character of syntax, in the exact place the control flow forks, which is
     the whole difference from an exception. An exception also jumps out of the
     function, but it does it from a line that looks like it cannot.
   </p>
@@ -110,7 +110,7 @@
     Three other things are visible in that function, and all are worth naming
     now. <code>total: i64 @ 0</code> declares something that will change: the
     <code>@</code> marks mutability, and a name without it can never be
-    reassigned — plain <code>=</code> binds a name once and forever. The change
+    reassigned, plain <code>=</code> binds a name once and forever. The change
     itself is written the same way, <code>total @ total * 10 + …</code>, with
     the <code>@</code> at the place the value changes; there is no
     <code>=</code> for reassignment. And <code>range(from: 0, to: text.len())</code>
@@ -118,14 +118,14 @@
     its argument names are mandatory because both are <code>i64</code>, which is
     the same rule you will meet on the <a href="../errors.html">errors page</a>.
     <code>text.len()</code>, meanwhile, is the same call as
-    <code>len(text)</code> — method syntax is sugar, so a chain reads left to
+    <code>len(text)</code>: method syntax is sugar, so a chain reads left to
     right without anything being defined on a type.
   </p>
   <p>
     Notice also what <i>isn't</i> there: no <code>try</code>, no
     <code>catch</code>, no nesting, no error variable threaded through by hand.
     The failure path costs one character and the happy path reads as if failure
-    were impossible. Here it is again in a function that averages a list — the
+    were impossible. Here it is again in a function that averages a list, where the
     first bad character anywhere in the input stops everything:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="24-30">
@@ -142,7 +142,7 @@
   <h3>Looking inside: <code>match</code></h3>
   <p>
     When a function does want to handle the failure rather than pass it on, it
-    looks with <code>match</code> — the one construct in the language for taking
+    looks with <code>match</code>: the one construct in the language for taking
     a value apart:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="32-36">
@@ -155,10 +155,10 @@
   </figure>
   <p>
     An arm names the case with a leading dot and binds its payload to the name
-    after it — <code>.ok v</code> gives you the value as <code>v</code>, and
+    after it: <code>.ok v</code> gives you the value as <code>v</code>, and
     <code>_</code> discards a payload you do not need. Both arms are required. A
-    <code>match</code> that forgets a case does not compile, and — this is the part that matters for the thesis — <b>a catch-all
-    arm is forbidden here</b>. You cannot write the arm that means "anything
+    <code>match</code> that forgets a case does not compile. And this is the part
+    that matters for the thesis: <b>a catch-all arm is forbidden here</b>. You cannot write the arm that means "anything
     else", because that arm is how a forgotten case silently becomes a handled
     one. If the language ever gains a third possibility, every
     <code>match</code> in every program stops compiling until somebody has
@@ -178,7 +178,7 @@
   </figure>
   <p>
     <code>.default(0)</code> says: the value, or this if it failed. The result
-    is a plain <code>i64</code> — the failure has been dealt with, so the type
+    is a plain <code>i64</code>: the failure has been dealt with, so the type
     no longer carries one. Its sibling is <code>.must()</code>, which says the
     failure cannot happen here and <b>stops the program</b> if it does. Use it
     where you have already proved the value is good, and in tests:
@@ -199,9 +199,9 @@
 
   <h3>The whole thing, running</h3>
   <p>
-    The four ways of reading a fallible value, in the order you reach for
-    them — <code>?</code>, <code>match</code>, <code>.default()</code>,
-    <code>.must()</code> — are all in one fifty-line file. Its
+    The four ways of reading a fallible value, in the order you reach for them
+    (<code>?</code>, <code>match</code>, <code>.default()</code> and
+    <code>.must()</code>), are all in one fifty-line file. Its
     <code>main</code>:
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="47-50">
@@ -231,19 +231,19 @@ failed: not_a_digit (expected 0-9)
     failure changes the control flow is marked on that line. Every way of
     handling one either deals with both cases or says out loud that it is
     skipping the check. There is no <code>null</code> to forget and no throw to
-    miss, and the unhandled path — the one bug that no compiler catches in the
-    languages that allow it — has nowhere left to hide.
+    miss, and the unhandled path: the one bug that no compiler catches in the
+    languages that allow it, has nowhere left to hide.
   </p>
 
   <p class="next">
-    Next: <b>Control flow</b> — <code>if</code>, <code>while</code>,
+    Next: <b>Control flow</b>, <code>if</code>, <code>while</code>,
     <code>for</code>, and the one loop keyword. <a href="index.html">Back to the
     chapter list</a>.
   </p>
 
   <footer>
     <p>Every code block on this page is a slice of
-    <code>examples/gallery/03-fallible.hero</code> in the repository — copied,
+    <code>examples/gallery/03-fallible.hero</code> in the repository, copied,
     never retyped, and checked against the file.</p>
     <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
   </footer>

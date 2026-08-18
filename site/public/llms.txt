@@ -2,13 +2,13 @@
 
 > Heroes is a small compiled programming language designed so that every
 > plausible LLM mistake is a compile error. Made for LLMs, yet plain to human
-> eyes: no null, no exceptions, no implicit conversions, no standard library —
+> eyes: no null, no exceptions, no implicit conversions, no standard library:
 > everything comes from C through an FFI that clang verifies against the real
 > headers. The compiler is written in Heroes and reproduces itself byte for
 > byte (the fixpoint holds, three generations deep, one SHA-256).
 
-The entire language specification is deliberately small — measured at 3512
-tokens against a hard ceiling of 4096 — because the spec is not documentation,
+The entire language specification is deliberately small, measured at 3512
+tokens against a hard ceiling of 4096, because the spec is not documentation,
 it is the prompt. If you are a language model asked to write Heroes, read the
 spec first; it is the whole language:
 
@@ -18,22 +18,22 @@ Ground rules a generated program must respect: exactly one way to write
 anything (a canonical formatter; 4-space indentation, tabs are errors); named
 arguments are mandatory where two parameters share a type; `match` is
 exhaustive and `_` is forbidden on variants; failure is a value (`T?`,
-`ok`/`fail`/`?`) — there is no null and there are no exceptions; `???` is a
+`ok`/`fail`/`?`), there is no null and there are no exceptions; `???` is a
 legal expression that reports what belongs in the gap instead of failing.
 
 ## Pages
 
 - [Home](https://heroes-lang.org/index.html): what the language is, one real sample, the claim
 - [Why Heroes](https://heroes-lang.org/why.html): the founding constraint (no standard library), the thesis, the cost formula, the objections answered
-- [Errors](https://heroes-lang.org/errors.html): diagnostics as a deliverable — real output with machine-applicable fixes tagged `certain`, and the per-mistake catch rates against a control build (a dropped argument label 91% vs 0%, a shadowed name 100% vs 0%, a lazy catch-all 100% vs 39%)
-- [Self-hosted](https://heroes-lang.org/selfhost.html): the fixpoint — 143 modules and 34,812 lines of Heroes emitting byte-identical C across three compiler generations
+- [Errors](https://heroes-lang.org/errors.html): diagnostics as a deliverable, real output with machine-applicable fixes tagged `certain`, and the per-mistake catch rates against a control build (a dropped argument label 91% vs 0%, a shadowed name 100% vs 0%, a lazy catch-all 100% vs 39%)
+- [Self-hosted](https://heroes-lang.org/selfhost.html): the fixpoint, 143 modules and 34,812 lines of Heroes emitting byte-identical C across three compiler generations
 - [The Zen](https://heroes-lang.org/zen.html): twenty lines the binary prints from `heroes this`
 - [Build log](https://heroes-lang.org/log.html): one postcard per milestone, newest first
 - [Documentation](https://heroes-lang.org/docs/index.html): the language page by page; every code block is a slice of a repository file that compiles and runs
 
 ## Source
 
-- [Repository](https://github.com/giuseppearici/heroes-lang): the compiler, the spec, the design record — build with `cargo build`, then `./target/debug/heroes run examples/gallery/00-first.hero`
+- [Repository](https://github.com/giuseppearici/heroes-lang): the compiler, the spec, the design record, build with `cargo build`, then `./target/debug/heroes run examples/gallery/00-first.hero`
 - [Examples](https://github.com/giuseppearici/heroes-lang/tree/main/examples/gallery): twelve small programs, one per language idea; every code block on the site is anchored to one of these files
 
 ## Notes

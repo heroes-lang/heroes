@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why Heroes — the thesis, and the founding constraint</title>
+<title>Why Heroes: the thesis, and the founding constraint</title>
 <meta name="description" content="Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/why.html">
 <meta name="theme-color" content="#0d0d12">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
-<meta property="og:title" content="Why Heroes — the thesis, and the founding constraint">
+<meta property="og:title" content="Why Heroes: the thesis, and the founding constraint">
 <meta property="og:description" content="Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.">
 <meta property="og:url" content="https://heroes-lang.org/why.html">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Why Heroes — the thesis, and the founding constraint">
+<meta name="twitter:title" content="Why Heroes: the thesis, and the founding constraint">
 <meta name="twitter:description" content="Heroes started from a refusal: no standard library, ever. Everything comes from C through one FFI that clang verifies. And every plausible LLM mistake is a compile error.">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -54,7 +54,7 @@
   <blockquote>
     A language designed so that every plausible LLM mistake is a compile error
     will produce working programs in fewer total tokens than a conventional
-    language — even if each program costs more tokens to write.
+    language, even if each program costs more tokens to write.
   </blockquote>
   <p>
     That is a claim, and it is empirical rather than aesthetic, so it is
@@ -69,11 +69,10 @@
   <pre><code>real cost = program tokens × (1 + rewrite rate)</code></pre>
   <p>
     The two factors differ by orders of magnitude. A clever compact construct
-    might save five percent of a file's tokens. A single correction
-    round-trip — the model receives an error, re-reads a file, rewrites a
-    function, recompiles — costs five hundred to two thousand. On a
-    three-thousand-token program, <b>one correction round wipes out ten
-    syntactic optimisations.</b>
+    might save five percent of a file's tokens. A single correction round-trip
+    costs five hundred to two thousand: the model receives an error, re-reads a
+    file, rewrites a function, recompiles. On a three-thousand-token program,
+    <b>one correction round wipes out ten syntactic optimisations.</b>
   </p>
   <p>
     The instinct says <i>shorten everything and be careful</i>. The formula
@@ -86,7 +85,7 @@
   <p>
     The project did not start from a grammar. It started from a refusal:
     <b>there is no standard library, and there never will be one.</b> A modern
-    standard library is more work than a compiler — it is the thing that kills
+    standard library is more work than a compiler, it is the thing that kills
     one-person languages. So Heroes ships a minimal runtime and gets everything
     else from the enormous amount of C that already exists:
   </p>
@@ -95,7 +94,7 @@ regular expressions       <span class="c">→</span> PCRE2         HTTP         
 JSON                      <span class="c">→</span> cJSON         SQL             <span class="c">→</span> SQLite
 graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code></pre>
   <p>
-    A borrowing looks like this — and the header named on the first line is the
+    A borrowing looks like this, and the header named on the first line is the
     whole point, because that header is what clang checks the declarations
     against:
   </p>
@@ -108,22 +107,22 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   </figure>
   <p>
     Without a header a declaration would be verified by nothing at all. Note
-    <code>pow(base:, exponent:)</code>: two parameters of the same type, so the
-    names are mandatory at every call — the rule holds at the C boundary too,
+    <code>pow(base: exponent:)</code>: two parameters of the same type, so the
+    names are mandatory at every call: the rule holds at the C boundary too,
     which is where getting an argument order wrong is least forgiving.
   </p>
   <p>
     &ldquo;Nothing else&rdquo; needs one honest qualification: the language does
-    ship a small, <b>fixed</b> inventory of about thirty names —
+    ship a small, <b>fixed</b> inventory of about thirty names:
     <code>print</code>, <code>len</code>, <code>push</code>, <code>slice</code>,
     <code>sort</code>, the conversions, <code>map</code>/<code>filter</code>/<code>fold</code>.
     It is enumerable and closed-form, so there is never a second place a
-    function could have come from — and it changes only by a recorded decision,
+    function could have come from, and it changes only by a recorded decision,
     not by accretion. What it is not is a library that grows.
   </p>
   <p>
     That is not laziness, it is the leverage that makes a one-person language
-    viable — and it has a consequence the rest of the design obeys: <b>the
+    viable, and it has a consequence the rest of the design obeys: <b>the
     ergonomics of the C boundary rank alongside comprehension, not below
     it.</b> A library Heroes cannot bind is C code its author has to keep
     writing by hand, which is the one thing this refusal exists to prevent.
@@ -132,7 +131,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   <h2>Which is why the compiler emits C</h2>
   <p>
     A program that borrows a C function should be checked against <i>the
-    library's own header</i> — not against a description the compiler invents
+    library's own header</i>, not against a description the compiler invents
     and hopes is right. Emitting C means clang does that checking, on every
     build, for free: a wrong signature is a compile error rather than a
     corrupted value at runtime. An earlier design emitted machine code through
@@ -141,16 +140,16 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   </p>
   <p>
     It is not a decision about speed. Speed is explicitly not a goal of this
-    project — and explicitly not an excuse either.
+    project, and explicitly not an excuse either.
   </p>
 
   <h2>The rules it lives by <span class="nod">· fashion ·</span></h2>
   <ul class="pillars">
-    <li><b>Locality is the currency.</b> The meaning of a line is decided by that line plus the enclosing signature — never by something defined three files away. No inheritance, no macros, no exceptions, no implicit conversions, no null.</li>
+    <li><b>Locality is the currency.</b> The meaning of a line is decided by that line plus the enclosing signature, never by something defined three files away. No inheritance, no macros, no exceptions, no implicit conversions, no null.</li>
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, no implicit conversions of any kind, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
-    <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn — expected type, definition site, concrete fixes tagged <code>certain</code> or <code>guess</code>. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
-    <li><b>A program must not segfault.</b> That is a goal of the language, not a quality of its implementation — and where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens. The guarantee covers the language's own operations: index, slice, division and overflow all abort rather than corrupt. The one null that exists is quarantined at the C boundary — <code>ptr</code> and <code>cstr</code> are not <code>str</code>, and converting a null <code>cstr</code> aborts cleanly instead of crashing, which is why the spec says to test <code>c == nullptr</code> first. What a C function then does with what you passed it is still C.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification is measured at 3512 tokens against a hard ceiling of 4096 — five pages, and it is not documentation, it is the prompt.</li>
+    <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn, expected type, definition site, concrete fixes tagged <code>certain</code> or <code>guess</code>. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
+    <li><b>A program must not segfault.</b> That is a goal of the language, not a quality of its implementation, and where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens. The guarantee covers the language's own operations: index, slice, division and overflow all abort rather than corrupt. The one null that exists is quarantined at the C boundary, <code>ptr</code> and <code>cstr</code> are not <code>str</code>, and converting a null <code>cstr</code> aborts cleanly instead of crashing, which is why the spec says to test <code>c == nullptr</code> first. What a C function then does with what you passed it is still C.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification is measured at 3512 tokens against a hard ceiling of 4096: five pages, and it is not documentation, it is the prompt.</li>
   </ul>
 
   <h2>The obvious objections <span class="nod">· quicksand, avoided ·</span></h2>
@@ -159,13 +158,13 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <dd>Both produce the one class of bug that raises no compile error: the
     unhandled path. Absence is a type (<code>i64?</code>), failure is a value
     (<code>fail(code, msg)</code>), and propagation is visible on the line
-    (<code>?</code>). Invisible control flow is banned wholesale — exceptions,
-    inheritance, macros, operator overloading — because a model reads locally
+    (<code>?</code>). Invisible control flow is banned wholesale, exceptions,
+    inheritance, macros, operator overloading, because a model reads locally
     and cannot jump to a definition three files away.
     <a href="docs/failure-is-a-value.html">The chapter on this →</a></dd>
 
     <dt>Why do arguments need names when two parameters share a type?</dt>
-    <dd>Swapping two same-typed arguments is a classic model error — and the
+    <dd>Swapping two same-typed arguments is a classic model error, and the
     types match, so nothing catches it. <code>copy(from: a, to: b)</code>
     spends tokens exactly and only where that error lives. Where types already
     protect (<code>save(42, "mario")</code>), names stay optional.</dd>
@@ -173,7 +172,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <dt>Why refuse one integer type, and then ship eight widths?</dt>
     <dd>Conversion rules are the most expensive item a spec can carry and the
     number-one error source in C, so for a long time the answer was a single
-    <code>int</code>. Then the widths were asked for anyway — and the
+    <code>int</code>. Then the widths were asked for anyway, and the
     expensive half turned out to have been paid already: what makes several
     number sizes dangerous elsewhere is the <i>implicit</i> conversion, and
     implicit conversions had been banned from day one for an unrelated reason.
@@ -182,38 +181,38 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     conversion still written out by hand, and the word <code>int</code> became
     an error that names the widths.</dd>
 
-    <dt>Why is the formatting rigid — exactly 4 spaces, tabs are errors?</dt>
+    <dt>Why is the formatting rigid, exactly 4 spaces, tabs are errors?</dt>
     <dd>So that &ldquo;nearly right&rdquo; is a compile failure instead of a
     silently different program. A canonical formatter removes every style
     decision from the writer: any textual difference between two programs is a
     difference in meaning.</dd>
 
-    <dt>Why value semantics — every assignment a copy?</dt>
+    <dt>Why value semantics: every assignment a copy?</dt>
     <dd>No aliasing means no function can modify your data behind your back,
-    no data races by construction, and reference cycles cannot exist — so
+    no data races by construction, and reference cycles cannot exist, so
     refcounting with copy-on-write is complete memory management, no garbage
     collector. Locality becomes total: what a line means is decided by that
     line. The price is real, and the spec names it rather than hiding it:
     &ldquo;<code>+</code> on <code>str</code> copies both sides and
-    <code>push</code> returns a copy — <code>xs @ xs.push(4)</code> — so
+    <code>push</code> returns a copy, <code>xs @ xs.push(4)</code>, so
     accumulating either in a loop is quadratic. <code>join</code> and
     <code>repeat</code> build in one pass.&rdquo;</dd>
 
     <dt>What is missing, and what is this language bad at?</dt>
     <dd>Four things, named rather than discovered. <b>There is no concurrency
-    in v1</b> — the design document calls it &ldquo;the largest gap and it is
+    in v1</b>: the design document calls it &ldquo;the largest gap and it is
     deliberate&rdquo;. <b>There are no lambdas</b>: a function value is an
     ordinary top-level declaration, passed by name. <b>Accumulating strings or
     arrays in a loop is quadratic</b> (above). And generics are on functions
     only, with no constraints, always inferred. The runtime failure model is
     the other half of the honesty: overflow aborts at every width, so does an
-    out-of-bounds index and a division by zero — deterministic aborts, never
+    out-of-bounds index and a division by zero, deterministic aborts, never
     undefined behaviour.</dd>
 
     <dt>How does a line end, if there are no semicolons?</dt>
     <dd>
       The compiler adds the ending itself, but only when the line
-      <i>can</i> be over — when it finishes with a name, a value, a closing
+      <i>can</i> be over: when it finishes with a name, a value, a closing
       bracket, or one of a short list of words. A line ending in
       <code>+</code> is visibly unfinished, so it continues. Long
       expressions break inside brackets, where indentation stops meaning
@@ -227,7 +226,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <dd>
       Six escapes, and no more: <code>\n</code>, <code>\t</code>,
       <code>\r</code>, <code>\\</code>, plus <code>\"</code> inside a string and
-      <code>\'</code> inside a character literal — so every character has
+      <code>\'</code> inside a character literal, so every character has
       exactly one spelling. Any other letter after a backslash is a compile
       error carrying its own correction. That second half is the point:
       until it existed, <code>"a\nb"</code> compiled happily and printed a
@@ -239,10 +238,10 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
 
     <dt>Can the same variable be passed twice to one call?</dt>
     <dd>
-      No — not when both parameters can write to it. Mutable arguments are
+      No, not when both parameters can write to it. Mutable arguments are
       marked <code>@</code> at the call site and copied in and out, so two
       of them aimed at one variable would make the result depend on the
-      order the copies are written back — an order nothing specifies. Ada
+      order the copies are written back: an order nothing specifies. Ada
       lived with that for thirty-three years and then made it illegal in
       2012, for the reason this language was built around: an answer that
       depends on evaluation order is usually a bug. Rejecting it is what
@@ -253,7 +252,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <dt>And the spec is capped at 4096 tokens. Why cap it at all?</dt>
     <dd>Because the spec <i>is</i> the prompt. Every feature pays rent in it,
     and a language whose entire definition fits in a few pages is also a
-    language one person can implement — the two constraints are secretly the
+    language one person can implement: the two constraints are secretly the
     same one. It currently measures 3512, leaving 584 to spend. The number is
     measured, not estimated, and that distinction cost the project two days:
     the budget was defended with a word-count rule of thumb until someone
@@ -263,7 +262,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   </dl>
 
   <p class="next">
-    Next: <a href="errors.html">what an error looks like</a> — the part of the
+    Next: <a href="errors.html">what an error looks like</a>: the part of the
     thesis you can read in one screen.
   </p>
 

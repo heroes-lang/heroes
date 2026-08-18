@@ -31,6 +31,8 @@ body {
   font: 17px/1.65 Georgia, 'Times New Roman', serif;
 }
 main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+main > p, main > dl, main > ul.pillars, main > ol.log,
+main > ol.zen, main > ol.chapters { max-width: 38rem; }
 main.home { max-width: 54rem; }
 /* The stage is 54rem so the hero, cards and code panels can breathe; prose is
    held to the book measure, because 108 characters a line is not readable. */
@@ -100,8 +102,14 @@ h1 .q { color: var(--gold); }
 h2 {
   font-family: 'Avenir Next Condensed', 'Helvetica Neue', 'Arial Narrow', sans-serif;
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
-  font-size: 1.15rem; color: var(--red); margin: 3.2rem 0 0.75rem;
+  font-size: 1.15rem; color: var(--red); margin: 3.6rem 0 0.9rem;
 }
+/* A hairline above each section, so the page reads as chapters rather than as
+   one column of text with red words in it. The first one would sit on top of
+   the hero, so it is suppressed. */
+main > h2 { padding-top: 1.6rem; border-top: 1px solid var(--line); }
+main > h2:first-of-type { padding-top: 0; border-top: 0; }
+main.home > h2 { padding-top: 2rem; }
 h2::before {
   content: ''; display: inline-block; width: 0.75em; height: 1em;
   margin-right: 0.5rem; vertical-align: -0.12em;
@@ -165,6 +173,11 @@ ol.log .when {
 }
 ol.log b { font-style: normal; }
 a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+/* Nothing on this site was focusable-visible before: a keyboard reader had to
+   guess where they were. */
+a:focus-visible {
+  outline: 2px solid var(--red); outline-offset: 3px; border-radius: 2px;
+}
 footer {
   margin-top: 4.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
   color: var(--dim); font-size: 0.9rem;
@@ -292,8 +305,11 @@ footer {
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
   font-size: 0.9rem;
 }
+.cta a { transition: transform 120ms ease, background-color 120ms ease, color 120ms ease; }
+.cta a:hover { transform: translateY(-1px); }
 .cta a.primary { background: var(--red); color: var(--bg); border-color: var(--red); }
 .cta a.ghost { color: var(--red); }
+.cta a.ghost:hover { background: var(--red); color: var(--bg); }
 
 .cards {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
@@ -305,6 +321,8 @@ footer {
   display: flex; flex-direction: column;
 }
 .cards a.more { margin-top: auto; }
+.cards li { transition: border-color 120ms ease; }
+.cards li:hover { border-color: var(--red); }
 .cards h3 { margin: 0 0 0.5rem; color: var(--fg); font-size: 0.9rem; }
 .cards p { margin: 0 0 0.7rem; font-size: 0.95rem; }
 .cards a.more {
@@ -325,6 +343,10 @@ h1.page {
   letter-spacing: 0.22em; color: var(--dim); margin-top: 0.3rem;
 }
 .page-head .lede { font-size: 1.15rem; color: var(--dim); font-style: italic; margin: 0.7rem 0 1.2rem; }
+main > p.lede {
+  font-size: 1.2rem; line-height: 1.5; color: var(--fg); font-style: normal;
+  margin: 0 0 1.8rem; max-width: 34rem;
+}
 @media (max-width: 480px) { h1.page { font-size: 2rem; } }
 
 /* ------- documentation pages: book page, not marquee ------- */

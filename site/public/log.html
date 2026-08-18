@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The build log — Heroes, milestone by milestone</title>
+<title>The build log, Heroes, milestone by milestone</title>
 <meta name="description" content="Every milestone of the Heroes language, newest first: what landed, and what it found by being built. The postcard version of the project diary.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/log.html">
 <meta name="theme-color" content="#0d0d12">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
-<meta property="og:title" content="The build log — Heroes, milestone by milestone">
+<meta property="og:title" content="The build log, Heroes, milestone by milestone">
 <meta property="og:description" content="Every milestone of the Heroes language, newest first: what landed, and what it found by being built. The postcard version of the project diary.">
 <meta property="og:url" content="https://heroes-lang.org/log.html">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="The build log — Heroes, milestone by milestone">
+<meta name="twitter:title" content="The build log, Heroes, milestone by milestone">
 <meta name="twitter:description" content="Every milestone of the Heroes language, newest first: what landed, and what it found by being built. The postcard version of the project diary.">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -41,16 +41,16 @@
     <h1 class="page">The build log</h1>
     <span class="nod">· changes ·</span>
   </div>
-  <p class="lede">Newest first, one entry per milestone. The full diary —
-  decisions, adversarial reviews, predictions and what broke — lives in the
+  <p class="lede">Newest first, one entry per milestone. The full diary,
+  decisions, adversarial reviews, predictions and what broke, lives in the
   <a href="https://github.com/giuseppearici/heroes-lang">repository</a>; this is the postcard version.</p>
 
   <ol class="log">
     <li>
-      <span class="when">2026-08-17 · M-selfhost-port — the fixpoint</span>
+      <span class="when">2026-08-17 · M-selfhost-port: the fixpoint</span>
       <b>The compiler crosses into its own language, and the child corrects the parent.</b>
-      53,013 lines of Rust became 34,812 lines of Heroes — tests included on
-      both sides, since in Heroes they live in the file they test — module by
+      53,013 lines of Rust became 34,812 lines of Heroes, tests included on
+      both sides, since in Heroes they live in the file they test, module by
       module, with the goldens and the program corpus as the net. And then the
       two compilers were made to write out the same twenty-megabyte program in C
       and compared letter by letter. Not one letter different, three generations
@@ -61,10 +61,10 @@
       <a class="more" href="selfhost.html">The fixpoint</a>
     </li>
     <li>
-      <span class="when">2026-08-15 · M-selfhost-probe — the wall that was not there</span>
+      <span class="when">2026-08-15 · M-selfhost-probe: the wall that was not there</span>
       <b>Port one file, expect to fail, write down what the language cannot say.</b>
       The wall had been quietly removed three days earlier by a milestone about
-      something else, and nobody had gone back to re-read the plan's premise —
+      something else, and nobody had gone back to re-read the plan's premise,
       so the lexer went from &ldquo;this will fail on file one, cheaply&rdquo; to
       working, in an afternoon. Twelve things the language could not say; eleven
       cost a couple of lines each. The best find was better than a gap: the
@@ -74,22 +74,22 @@
       mistake its own builders had made the first time.
     </li>
     <li>
-      <span class="when">2026-08-15 · M-complete-structs — a refusal is a claim</span>
+      <span class="when">2026-08-15 · M-complete-structs: a refusal is a claim</span>
       <b>From 191 bindable C declarations to 349, and not one step was a new capability.</b>
       Each was a refusal with no way out. One told the author a description was
       missing a part they had in fact written down; another told them to correct
       a field when no correction existed, because the rule asked how the
       library's own text was spelled rather than what the thing was. The lesson
       is not that refusals should be softer: a refusal is a claim, and a claim no
-      program can satisfy is not conservative, it is wrong — and it is invisible
+      program can satisfy is not conservative, it is wrong, and it is invisible
       from the inside, because everything looks correctly strict.
     </li>
     <li>
-      <span class="when">2026-08-15 · M-struct-passing — the same size is not the same thing</span>
+      <span class="when">2026-08-15 · M-struct-passing: the same size is not the same thing</span>
       <b>A third of everything a real C library offers had been out of reach.</b>
       Bundles of values travelling as one thing could not cross the boundary. The
-      obvious fix — describe the bundle on both sides, then check the sizes and
-      positions agree — is wrong, and the way it is wrong is why this project
+      obvious fix, describe the bundle on both sides, then check the sizes and
+      positions agree, is wrong, and the way it is wrong is why this project
       exists: on this machine two bundles can have identical sizes, identical
       positions, pass every check anyone could write, and still arrive as
       garbage, because whole numbers and fractional numbers travel in different
@@ -98,11 +98,11 @@
       the same kind of thing</i> rather than <i>is it the same size</i>.
     </li>
     <li>
-      <span class="when">2026-08-14 · M-binding-fidelity — half a promise</span>
+      <span class="when">2026-08-14 · M-binding-fidelity, half a promise</span>
       <b>Declare a foreign function wrongly and the program will not build. It was true in one direction only.</b>
       What a C function <i>hands back</i> had been checked since the boundary
       existed; what it <i>takes</i> had never been checked at all, and two
-      independent readers demonstrated it the same way — pass a number too large
+      independent readers demonstrated it the same way, pass a number too large
       for the slot it is going into, compile without complaint, run, print
       something else. Forty-two per cent of everything anybody actually binds has
       a slot like that. The cure is a small function nobody ever calls, written
@@ -110,7 +110,7 @@
       number pointed at the line the author wrote.
     </li>
     <li>
-      <span class="when">2026-08-13 · M-program-corpus — programs as an instrument</span>
+      <span class="when">2026-08-13 · M-program-corpus, programs as an instrument</span>
       <b>Seven real programs written, six compiler faults fell out.</b>
       A JSON reader, a Markdown converter, a spreadsheet, a maze solver, a small
       assembler with its own machine, a log summariser, a game. No existing test
@@ -122,18 +122,18 @@
       still reads perfectly.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-sized-integers — the feared thing, one paragraph long</span>
+      <span class="when">2026-08-12 · M-sized-integers: the feared thing, one paragraph long</span>
       <b>Eight widths arrive, and the word <i>int</i> stops being a word.</b>
       The design document had refused this in its strongest terms: never in this
       version, the highest-risk thing we could add. Then it was asked for anyway
-      — and half the expense turned out to have been paid years earlier by an
+     , and half the expense turned out to have been paid years earlier by an
       unrelated decision. What makes multiple number sizes dangerous elsewhere is
       the invisible conversion; this language had banned invisible conversions
       from the start, for a completely different reason, so there was almost
       nothing left to write down.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-literal-bases — what 0700 means</span>
+      <span class="when">2026-08-12 · M-literal-bases: what 0700 means</span>
       <b>A reviewer wrote down the way everyone writes file permissions and asked what it meant.</b>
       Nobody had ever asked. It meant seven hundred. In every language this one
       borrows from it means four hundred and forty-eight, and a program using it
@@ -145,23 +145,23 @@
       bitten.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-header-constants — no digit left to be wrong</span>
+      <span class="when">2026-08-12 · M-header-constants: no digit left to be wrong</span>
       <b>A library's settings have names and numbers, and the language could only say the numbers.</b>
       To name one option a program had to write 10002, with a comment above it
-      explaining that the library's documentation adds two to ten thousand —
+      explaining that the library's documentation adds two to ten thousand:
       arithmetic done by hand, checked by nothing. The project measured how bad
       that was before fixing it, by building a tool that changes one digit and
       seeing whether anything complains: five such numbers in the examples, and
       nothing complained about any of them. Now the program names the setting and
       the library's own header supplies the value. The comment explaining the
-      arithmetic was deleted along with the number — an explanation that exists
+      arithmetic was deleted along with the number: an explanation that exists
       only because something cannot be checked disappears when it can.
     </li>
     <li>
-      <span class="when">2026-08-12 · M-ffi-ladder — 1, where it should print 1.41</span>
+      <span class="when">2026-08-12 · M-ffi-ladder, 1, where it should print 1.41</span>
       <b>The promise the whole language was arranged around was false for the pair its own second example uses.</b>
       The arrangement: when a program borrows a C function, the compiler does not
-      describe that function — it points at the library's description and lets
+      describe that function, it points at the library's description and lets
       clang check the two against each other. That is why this language emits C
       at all. But pointing at a description only checks what you <i>pass</i>,
       never what you get back, so a program declaring that square root returns a
@@ -171,22 +171,22 @@
       type, without ever making the call.
     </li>
     <li>
-      <span class="when">2026-08-12 · M8a — the cheapest change was a verb</span>
+      <span class="when">2026-08-12 · M8a: the cheapest change was a verb</span>
       <b>Programs split into files, and eleven of thirteen decisions cost nothing.</b>
       Multiple files need rules: what happens when a file's name collides with
       one it imports, what happens when an import is never used. Both were
-      already written down — a name may not be reused while it is visible,
-      anything bound and never read is an error — so the whole question was which
+      already written down: a name may not be reused while it is visible,
+      anything bound and never read is an error, so the whole question was which
       word to use for what an import does. The panel chose <i>binds</i>, the word
       the language already used for ordinary values, and the two existing rules
       covered both cases with nothing added.
     </li>
     <li>
-      <span class="when">2026-08-11 · M6 — three vetoes, none by argument</span>
+      <span class="when">2026-08-11 · M6: three vetoes, none by argument</span>
       <b>The language reaches feature-complete, and every open dispute is settled by a compiler rather than a debate.</b>
       Should the runtime's per-type description gain a sixth entry? A judge wrote
       the header, compiled the unchanged runtime against it, and found that C
-      fills a short initialiser list with zeros — so every existing description
+      fills a short initialiser list with zeros, so every existing description
       would have carried a null pointer, silently, under every warning flag the
       project uses. Could the small built-in library be compiled once and
       shipped? Another wrote the only shape that is possible, passed a text
@@ -196,10 +196,10 @@
       reading.
     </li>
     <li>
-      <span class="when">2026-08-10 · M5d — the last two types, entangled</span>
+      <span class="when">2026-08-10 · M5d: the last two types, entangled</span>
       <b>Fallible values and maps could not be built in either order.</b>
       Looking a key up in a map returns &ldquo;the value, or an error&rdquo;, so
-      the map needed that type first — and that type turned out to be
+      the map needed that type first, and that type turned out to be
       reference-counted even when it holds a plain number, because its error side
       carries two strings. The container was built anyway, on the author's
       instruction, with a standing disagreement written down rather than smoothed
@@ -209,10 +209,10 @@
       advance.
     </li>
     <li>
-      <span class="when">2026-08-10 · M5c — a tree that contains itself</span>
+      <span class="when">2026-08-10 · M5c: a tree that contains itself</span>
       <b>Recursive data, in a language whose data model has no pointer and no reference type.</b>
       There is nothing to put in a field that stands for &ldquo;somewhere
-      else&rdquo; — and yet the example the design was written around is a tree
+      else&rdquo;, and yet the example the design was written around is a tree
       of expressions holding its own children. The answer is that the
       <i>array</i> is the one indirection there is: an array is a pointer
       whatever it holds, so a shape that recurses through one has a finite size
@@ -223,28 +223,28 @@
       frees at zero is complete.
     </li>
     <li>
-      <span class="when">2026-08-05 · M5b — the check that refuted its own design</span>
+      <span class="when">2026-08-05 · M5b: the check that refuted its own design</span>
       <b>The compiler learned to count references, and the watchdog fired twice in an hour.</b>
       The rule was: a value that owns a string is released at the end of the
-      block that created it. The first refutation was instructive — an assertion
+      block that created it. The first refutation was instructive: an assertion
       carries the text of what it asserted into the failure path, and a literal
       is never freed, so it is safe there. The second was fatal: ask for half of
       a number and use it in a sentence, and the sentence's first half is built
       in one block and finished in another, because a fallible call opens a
       branch mid-expression. That is what <i>every</i> expression containing a
       fallible call looks like. The repair was to stop letting temporaries own
-      anything — which is exactly what an unfashionable representation chosen one
+      anything, which is exactly what an unfashionable representation chosen one
       milestone earlier had been for.
     </li>
     <li>
-      <span class="when">2026-08-04 · M5a — the first native binary</span>
+      <span class="when">2026-08-04 · M5a: the first native binary</span>
       <b>A program becomes an executable, and the longest argument was about a number between zero and two.</b>
       When a program is correct and the compiler simply is not finished yet, what
       exit code should it use? Two says &ldquo;the tool could not do its
       job&rdquo;, which is literally true. One judge was handed that message and
       asked what it would do next: it checked the compiler's version, ran the
       diagnostic command, searched the whole repository for an internal
-      identifier, and then told its user the toolchain looked broken — a sentence
+      identifier, and then told its user the toolchain looked broken: a sentence
       it afterwards reported as false. Another found that the C compiler
       everybody uses has had a diagnostic for exactly this since 1994, printing
       the word &ldquo;sorry&rdquo;, and then read one line further: it exits with
@@ -252,34 +252,34 @@
       settled the question at one.
     </li>
     <li>
-      <span class="when">2026-08-04 · M4 — desugaring, and the middle of the compiler</span>
+      <span class="when">2026-08-04 · M4, desugaring, and the middle of the compiler</span>
       <b>The textbook representation lost to a decade of evidence nobody had gone looking for.</b>
-      LLVM — whose whole existence is single-assignment form — tells the authors
+      LLVM, whose whole existence is single-assignment form, tells the authors
       of new languages not to build it: use stack slots and loads and stores, and
       let a later pass clean up, because that is what clang itself does. Rust's
       own middle representation chose the plain form in 2015 for the sake of
       error messages rather than speed, and has not changed since. Every
-      migration anyone could verify was made to produce faster machine code — the
+      migration anyone could verify was made to produce faster machine code, the
       one thing this project has formally renounced.
     </li>
     <li>
-      <span class="when">2026-08-04 · M3–M3d — the frontend, and the thesis gets a number</span>
-      <b>Names, types, exhaustiveness — and the first measurement, whose useful half is the column that shows nothing.</b>
+      <span class="when">2026-08-04 · M3–M3d: the frontend, and the thesis gets a number</span>
+      <b>Names, types, exhaustiveness, and the first measurement, whose useful half is the column that shows nothing.</b>
       379 deliberate mistakes injected into working programs, 94% caught. But the
       same compiler with the thesis rules switched off catches 76%, and
       <i>that</i> is the measurement: 18 points, concentrated in three operators.
       The lazy catch-all goes from 100% caught to 13%. Shadowing and dropped
       argument labels go to zero, because nothing else in the language looks for
       them. And typos score 100% in both arms, which means they are caught by
-      names and types like anywhere else — a fact that would have been very easy
+      names and types like anywhere else: a fact that would have been very easy
       not to write down.
     </li>
     <li>
-      <span class="when">2026-08-04 · M3a — the resolver</span>
+      <span class="when">2026-08-04 · M3a: the resolver</span>
       <b>A 317-line calculator refused to resolve, at exactly two lines.</b>
       It declares its own <code>map</code> and <code>fold</code>, and the
       language reserves both names. That was the third time this one program
-      caught a rule nobody knew they had written — a variant case called
+      caught a rule nobody knew they had written: a variant case called
       <code>.var</code>, an <code>assert</code> inside an arm, and now a name. It
       had never been compiled and it was still the best test in the repository.
       On the way it turned out to be calling a built-in that was in the design
@@ -288,10 +288,10 @@
       nobody had tried.
     </li>
     <li>
-      <span class="when">2026-08-04 · M2 — the parser, the tree, the formatter</span>
+      <span class="when">2026-08-04 · M2: the parser, the tree, the formatter</span>
       <b>The parser's first act was to discover the language could not write down the type of a function.</b>
-      <code>fn</code> was in the registry of foreign words — an error with the
-      repair pre-written — and also in the spec's own syntax for a function type,
+      <code>fn</code> was in the registry of foreign words: an error with the
+      repair pre-written, and also in the spec's own syntax for a function type,
       so a function-typed parameter failed to lex and every one of them in the
       language was unwritable. Five judges were sent the question with a
       recommendation attached, and four refused it: the project's own rules list
@@ -301,12 +301,12 @@
       recommendation lost to the evidence, which is what the panel is for.
     </li>
     <li>
-      <span class="when">2026-08-04 · M1 — the lexer</span>
+      <span class="when">2026-08-04 · M1: the lexer</span>
       <b>The first real code, and three things it found by being written.</b>
       Source text now becomes tokens: rigid indentation where a tab is an error
       rather than an interpretation, statement ends inferred so the language needs
-      no semicolons, and keywords borrowed from other languages —
-      <i>struct</i>, <i>let</i>, <i>while</i> — failing with the correction
+      no semicolons, and keywords borrowed from other languages,
+      <i>struct</i>, <i>let</i>, <i>while</i>, failing with the correction
       already written into the message. Writing it to the letter of the design
       exposed three holes in the design itself: the rule for ending a line cited
       Go but had dropped three of Go's words; strings had no way to hold a
@@ -315,13 +315,13 @@
       everyone believed.
     </li>
     <li>
-      <span class="when">2026-08-03 · M0 — day zero</span>
+      <span class="when">2026-08-03 · M0, day zero</span>
       <b>Foundations, and four programs written before the compiler.</b>
       Git, a Rust workspace, a golden-test harness green with zero tests, and the
       language spec frozen as the measurement baseline (budget: 1500 tokens,
-      still unmeasured — the counting came a day later, and changed the number).
-      Then four hand-written C programs — the exact shape the compiler must one
-      day emit — including a recursive tree with reference counting, verified
+      still unmeasured: the counting came a day later, and changed the number).
+      Then four hand-written C programs: the exact shape the compiler must one
+      day emit, including a recursive tree with reference counting, verified
       leak-free under AddressSanitizer. The machine found the first design bug
       before any human did: an unused-label warning that changed how every
       generated function will begin.
@@ -330,10 +330,10 @@
       <span class="when">2026-08-03 · before the code</span>
       <b>The plan meets five hostile experts.</b>
       Before a single token was lexed, the build plan was reviewed by five
-      adversarial reviewers — language design, compiler engineering, simplicity,
+      adversarial reviewers, language design, compiler engineering, simplicity,
       LLM ergonomics, didactics. Three said <i>object</i>. The thesis metric
       gained a control arm, two missing compiler passes were discovered, and the
-      backend switched from QBE to C emission — for the FFI, not for speed. The
+      backend switched from QBE to C emission, for the FFI, not for speed. The
       plan that survived is revision 2.
     </li>
     <li>
@@ -341,14 +341,14 @@
       <b>A 2000-line design document and one question.</b>
       The language arrived as a long design conversation: a compiled language
       with no standard library, built for the reader that isn't human. The first
-      engineering decision — which language writes the language — was overturned
+      engineering decision, which language writes the language, was overturned
       within the hour by a one-line question about the backend. Everything since
       has been argued in writing.
     </li>
   </ol>
 
-  <p class="next">These are the postcards. The letters — panels,
-  measurements, journals, every U-turn — are in the
+  <p class="next">These are the postcards. The letters: panels,
+  measurements, journals, every U-turn, are in the
   <a href="https://github.com/giuseppearici/heroes-lang">repository</a>.</p>
 
   <footer>

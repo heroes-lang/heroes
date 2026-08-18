@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Self-hosted — Heroes compiles Heroes, and the fixpoint holds</title>
+<title>Self-hosted, Heroes compiles Heroes, and the fixpoint holds</title>
 <meta name="description" content="The Heroes compiler is written in Heroes: 143 modules, 34,812 lines. Both compilers emit the same 20-megabyte C file, byte for byte, three generations deep. One hash.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/selfhost.html">
 <meta name="theme-color" content="#0d0d12">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
-<meta property="og:title" content="Self-hosted — Heroes compiles Heroes, and the fixpoint holds">
+<meta property="og:title" content="Self-hosted, Heroes compiles Heroes, and the fixpoint holds">
 <meta property="og:description" content="The Heroes compiler is written in Heroes: 143 modules, 34,812 lines. Both compilers emit the same 20-megabyte C file, byte for byte, three generations deep. One hash.">
 <meta property="og:url" content="https://heroes-lang.org/selfhost.html">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Self-hosted — Heroes compiles Heroes, and the fixpoint holds">
+<meta name="twitter:title" content="Self-hosted, Heroes compiles Heroes, and the fixpoint holds">
 <meta name="twitter:description" content="The Heroes compiler is written in Heroes: 143 modules, 34,812 lines. Both compilers emit the same 20-megabyte C file, byte for byte, three generations deep. One hash.">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -47,7 +47,7 @@
   <p>
     A language is a toy until it can express its own compiler. That needs a tree
     with heterogeneous nodes, symbol tables, lists, recursion, error handling and
-    multiple files — so if a language can write that, the argument about whether
+    multiple files, so if a language can write that, the argument about whether
     it is real is over. It was the finish line from the first day, and the test
     for it is not a test suite.
   </p>
@@ -85,8 +85,8 @@
 
   <h2>The best part is what went wrong</h2>
   <p>
-    Pointed at its own source, the new compiler <b>refused it</b> — claimed a
-    piece of its own structure contained itself, which was false. That one wrong
+    Pointed at its own source, the new compiler <b>refused it</b>, claiming
+    that a piece of its own structure contained itself, which was false. That one wrong
     complaint was the thread, and pulling it produced five real faults in the new
     compiler and, more surprising, <b>four in the old one</b>. Including this:
     the underline that shows a reader where an error is was covering the little
@@ -94,12 +94,12 @@
     underline. The child corrected the parent.
   </p>
   <p>
-    A compiler pointed at its own source is a corpus no test suite reproduces —
+    A compiler pointed at its own source is a corpus no test suite reproduces:
     34,812 lines holding every shape the language has, in the proportions real
     code has them. That corpus is how five of the port's faults were found, and
     they were one trap worn five ways: a loop jump inside a <code>match</code>
     arm skipped the line that keeps a hand-maintained index up to date. The Rust
-    original walks the same list with an iterator — there is no index to forget,
+    original walks the same list with an iterator: there is no index to forget,
     so it could never have made this mistake.
   </p>
 
@@ -115,7 +115,7 @@
   <p>
     Three sorts, unpaid. The result was 20.8 megabytes of C whose <i>lines</i>
     all matched and whose <i>sequence</i> did not, on 3,330 lines out of 724,197.
-    A map has no order — the language says so, and measurably means it — so the
+    A map has no order: the language says so, and measurably means it, so the
     note was correct on the day it was written and stayed correct for months
     until somebody needed it.
   </p>
@@ -127,15 +127,15 @@
     spends 30,000 on a subset and delegates every backend question to clang. Per
     unit of language covered, <b>this compiler is expensive</b>. The counterweight
     is in the same table and is the reason the port was possible at all: a comment
-    ratio of 0.51 — comment lines against code lines — nearly double the next
+    ratio of 0.51, comment lines against code lines, nearly double the next
     highest of them.
   </p>
 
   <h2>What is left</h2>
   <p>
     Not a measurement. Two things: the generated C has to be shown building from
-    a <a href="https://github.com/giuseppearici/heroes-lang">clean checkout</a> with nothing but a C compiler — which is how Go shipped 1.4
-    and how Zig ships its bootstrap — and then the Rust bootstrap gets archived
+    a <a href="https://github.com/giuseppearici/heroes-lang">clean checkout</a> with nothing but a C compiler, which is how Go shipped 1.4
+    and how Zig ships its bootstrap, and then the Rust bootstrap gets archived
     and never maintained again. After that the whole picture is Heroes → C →
     native binary, with no third language anywhere.
   </p>

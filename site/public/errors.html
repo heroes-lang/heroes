@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Errors — Heroes diagnostics are a deliverable</title>
-<meta name="description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair — tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
+<title>Errors, Heroes diagnostics are a deliverable</title>
+<meta name="description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair, tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/errors.html">
 <meta name="theme-color" content="#0d0d12">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
-<meta property="og:title" content="Errors — Heroes diagnostics are a deliverable">
-<meta property="og:description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair — tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
+<meta property="og:title" content="Errors, Heroes diagnostics are a deliverable">
+<meta property="og:description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair, tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
 <meta property="og:url" content="https://heroes-lang.org/errors.html">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Errors — Heroes diagnostics are a deliverable">
-<meta name="twitter:description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair — tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
+<meta name="twitter:title" content="Errors, Heroes diagnostics are a deliverable">
+<meta name="twitter:description" content="Every Heroes diagnostic carries the span, the other end of the story and the repair, tagged certain or guess. Holes report what belongs in the gap, at exit code zero.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -41,17 +41,17 @@
     <h1 class="page">Errors</h1>
     <span class="nod">· always crashing in the same car ·</span>
   </div>
-  <p class="lede">A diagnostic is a deliverable here, not plumbing — and the
+  <p class="lede">A diagnostic is a deliverable here, not plumbing, and the
   claim behind it is measured per mistake, not averaged. Every error below is
   real output, copied from the repository.</p>
 
   <p>
     A model does not have the project open. It receives one message and must
-    fix the program from that message alone — or spend a whole round-trip
+    fix the program from that message alone, or spend a whole round-trip
     re-reading files, which the cost formula says is the most expensive thing
     that can happen. So every diagnostic carries three things: the exact place
-    that is wrong, the other end of the story — where the thing it clashes with
-    was declared — and the repair.
+    that is wrong, the other end of the story (where the thing it clashes with
+    was declared), and the repair.
   </p>
 
   <h2>The classic inversion</h2>
@@ -60,14 +60,14 @@
     type-checks perfectly in most languages and does the wrong thing. Here the
     names are mandatory precisely because the types cannot help:
   </p>
-  <pre class="diag"><code><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`
+  <pre class="diag"><code><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site: this one is `from`
   at tests/golden/check/swapped-arguments.hero:16:21
      |
   16 |     print(copy_text("a", "b"))  <span class="c">#~ needs_label needs_label</span>
      |                     ^^^
   fix (certain): write `from: `
 
-<span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position — it is `from`
+<span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position, it is `from`
   at tests/golden/check/swapped-arguments.hero:18:21
      |
   18 |     print(copy_text(to: "b", from: "a"))  <span class="c">#~ wrong_label wrong_label</span>
@@ -76,14 +76,14 @@
   <p>
     The <code>#~ needs_label</code> notes are in the source on purpose: they are
     how the test suite checks that the underline lands where the message says it
-    does. And the caret is the span, not the line — in a long call the wrong
+    does. And the caret is the span, not the line: in a long call the wrong
     argument is pointed at rather than described.
   </p>
 
   <h2>Two kinds of fix, and only one is machine-applicable</h2>
   <p>
     A fix tagged <code>certain</code> is one the compiler computed rather than
-    guessed — the missing annotation the checker just inferred, the single
+    guessed: the missing annotation the checker just inferred, the single
     in-scope candidate for a typo'd name. <code>heroes check --apply</code>
     applies those and the result compiles; continuous integration asserts
     exactly that. A fix tagged <code>guess</code> is prose for the reader, and
@@ -91,8 +91,8 @@
     blindly is worse than explaining.
   </p>
   <p>
-    The same diagnostics come out as JSON — stable machine-readable codes,
-    spans, notes and fixes — when the thing doing the reading is a program.
+    The same diagnostics come out as JSON, stable machine-readable codes,
+    spans, notes and fixes: when the thing doing the reading is a program.
   </p>
   <p>The loop, as commands:</p>
   <pre><code>$ heroes check program.hero           <span class="c"># diagnostics, on stderr</span>
@@ -100,7 +100,7 @@ $ heroes check --apply program.hero   <span class="c"># certain fixes applied</s
 $ heroes check --apply --in-place program.hero
 $ heroes run program.hero</code></pre>
   <p>
-    <code>heroes</code> there is the binary you built —
+    <code>heroes</code> there is the binary you built:
     <code>./target/debug/heroes</code> from a fresh clone.
     <a href="index.html#run">How to build it →</a>
   </p>
@@ -111,10 +111,10 @@ $ heroes run program.hero</code></pre>
     somewhere else. Each one is a compile error carrying its own solution,
     which makes it a single-turn repair rather than a conversation:
   </p>
-  <pre class="diag"><code>tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
-tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
-tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
-tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
+  <pre class="diag"><code>tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language, use `record`: `record Point`
+tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language, bind with `=`: `x = 5`
+tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language, use `constant`: `constant MAX: i64`
+tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language: an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
   <p>
     That is the one-line-per-diagnostic form, which is what the golden tests
     pin; the fuller rendering above is what the command prints. Three of those
@@ -125,7 +125,7 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
   <h2>An unfinished program is not a broken one</h2>
   <p>
     <code>???</code> is a legal expression anywhere. The compiler type-checks
-    everything around it and then reports what belongs in the gap — the
+    everything around it and then reports what belongs in the gap: the
     expected type, what is in scope, and which functions return it. It produces
     no binary, and it exits <b>zero</b>, because a skeleton under construction
     is not an error:
@@ -145,51 +145,61 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     question the compiler answers, not a failure it reports. Two spellings in
     that output belong to the C boundary and appear nowhere else:
     <code>cstr</code> is a C string and <code>@status</code> marks a parameter
-    the callee may write into — a C out-parameter, named at the call site like
+    the callee may write into: a C out-parameter, named at the call site like
     every other argument.
   </p>
 
   <h2>How this gets measured</h2>
   <p>
     None of the above is worth anything as an assertion, so it is a number.
-    <code>heroes mutate</code> takes working programs and injects one plausible
-    mistake at a time — swapped arguments, a dropped label, a lazy catch-all, a
-    shadowed name — then counts how many the compiler catches. The same corpus
-    then runs against a control build with the thesis rules switched off, and
-    the difference between the columns is the only part that means anything.
+    <code>heroes mutate</code> takes working programs, injects one plausible
+    mistake at a time, and counts how many the compiler turns into compile
+    errors. Then it runs the same corpus against the same compiler with the
+    thesis rules switched off. The difference between the two columns is the
+    only part that means anything.
   </p>
   <p>
-    <code>heroes mutate</code> injects one plausible mistake at a time into
-    working programs — a swapped pair of same-typed arguments, a dropped label,
-    a lazy catch-all, a shadowed name — and counts how many the compiler turns
-    into compile errors. Then it runs the same corpus against the same compiler
-    with the thesis rules switched off. Measured 2026-08-18 over the twelve
-    gallery programs, 538 mutants:
+    Measured 2026-08-18 over the twelve gallery programs. Every operator the
+    tool generates is here, including the ones where the design does nothing and
+    the one it fails at:
   </p>
-  <pre><code><span class="c">operator                        with the rules   without</span>
-a dropped argument label                91%         0%
-a shadowed name                        100%         0%
-a lazy catch-all on a variant          100%        39%
-two same-typed arguments swapped        80%        43%
-a dropped variant case                 100%       100%
-a typo in a name                       100%       100%
-mixed integer and float arithmetic     100%       100%</code></pre>
+  <pre class="table"><code><span class="c">mistake injected                   mutants   caught   without the rules</span>
+a dropped argument label                46      91%          0%
+a shadowed name                         19     100%          0%
+a lazy catch-all on a variant           28     100%         39%
+two same-typed arguments swapped        56      80%         43%
+a forgotten @ on a declaration          24      92%         92%
+a dropped variant case                   8     100%        100%
+a dropped ?                              2     100%        100%
+a swapped pair of booleans               4     100%        100%
+a name that was never declared          23     100%        100%
+a typo in a name                       276     100%        100%
+mixed integer and float arithmetic      49     100%        100%
+<span class="hi">a typo in an error code</span>                  3       0%          0%
+a typo in a digit                        0        &ndash;           &ndash;</code></pre>
   <p>
-    <b>The project refuses to pool these into a headline</b>, and the tool
-    prints the refusal every time it runs. The reason is the bottom three rows:
-    typos, missing cases and mixed arithmetic are caught by names and types in
-    any language, so averaging them in would inflate the result with work the
-    design did not do. The top four rows are the measurement — and the two
-    zeroes are the whole thesis, because nothing else in a conventional
-    language is looking for a dropped label or a shadowed name.
+    <b>The project refuses to average these into one figure</b>, and the tool
+    prints the refusal every time it runs. The reason is in the table. The top
+    four rows are the measurement: a dropped label and a shadowed name go to
+    zero without the thesis rules, because nothing else in a conventional
+    language is looking for either. The middle rows are caught by names and
+    types in any language, so averaging them in would credit the design with
+    work it did not do. The forgotten <code>@</code> is excluded from any
+    summary on the project&rsquo;s own instruction, because its rate is 100 per
+    cent by construction.
   </p>
   <p>
-    The residue is named too: swapped same-typed arguments are caught 80% of the
-    time, not 100%. Where a label is optional because the types already differ,
-    nothing is looking. A measurement that names where it adds nothing, and
-    where it falls short, is the one worth believing about where it adds
-    everything.
-  
+    Two rows are worth reading against the site&rsquo;s own headline. Swapped
+    same-typed arguments are caught 80 per cent of the time, not 100: where a
+    label is optional because the types already differ, nothing is looking. And
+    a typo inside an error code is caught <b>none</b> of the time, in either
+    arm, because a code is a string and no rule constrains its spelling. The
+    last row generated nothing to test, so it has no rate at all.
+  </p>
+  <p>
+    That is what the measurement is for. A number that only ever flattered the
+    design would not be worth printing.
+  </p>
 
   <p class="next">
     Next: <a href="selfhost.html">the compiler, written in its own
