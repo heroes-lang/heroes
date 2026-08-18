@@ -11,4 +11,15 @@
   <url><loc>https://heroes-lang.org/thanks.html</loc><priority>0.6</priority></url>
   <url><loc>https://heroes-lang.org/docs/index.html</loc><priority>0.6</priority></url>
   <url><loc>https://heroes-lang.org/docs/failure-is-a-value.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/index.html</loc><priority>1.0</priority></url>
+  <url><loc>https://heroes-lang.org/it/why.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/errors.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/selfhost.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/zen.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/panel.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/author.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/log.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/thanks.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/index.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/failure-is-a-value.html</loc><priority>0.6</priority></url>
 </urlset>

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il fallimento è un valore, documentazione di Heroes</title>
+<meta name="description" content="Heroes non ha null e non ha eccezioni. L'assenza e il fallimento sono tipi, la propagazione si vede sulla riga, e il percorso non gestito è un errore di compilazione.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/docs/failure-is-a-value.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/docs/failure-is-a-value.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/failure-is-a-value.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/docs/failure-is-a-value.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Il fallimento è un valore, documentazione di Heroes">
+<meta property="og:description" content="Heroes non ha null e non ha eccezioni. L'assenza e il fallimento sono tipi, la propagazione si vede sulla riga, e il percorso non gestito è un errore di compilazione.">
+<meta property="og:url" content="https://heroes-lang.org/it/docs/failure-is-a-value.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Il fallimento è un valore, documentazione di Heroes">
+<meta name="twitter:description" content="Heroes non ha null e non ha eccezioni. L'assenza e il fallimento sono tipi, la propagazione si vede sulla riga, e il percorso non gestito è un errore di compilazione.">
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Perché Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../zen.html">Zen</a></li>
+      <li><a href="../panel.html">Panel</a></li>
+      <li><a href="../thanks.html">Grazie</a></li>
+      <li><a href="../author.html">Autore</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../../docs/failure-is-a-value.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / capitolo 4</p>
+
+  <h1 class="chapter">Il fallimento è un valore</h1>
+  <p class="tagline">Non esiste <code>null</code>, e non esistono eccezioni.</p>
+
+  <p>
+    La maggior parte dei linguaggi ti dà due modi perché una cosa manchi o vada
+    male, e sono entrambi invisibili nel codice che li usa. Un valore potrebbe
+    essere <code>null</code>, e niente sulla riga ti dice se lo è. Una chiamata
+    potrebbe lanciare un&rsquo;eccezione, e niente sulla riga ti dice se lo fa.
+    Producono la stessa classe di bug: <b>il percorso non gestito</b>, l&rsquo;unico
+    tipo di errore che non solleva nessun errore di compilazione in tutti i
+    linguaggi che ce l&rsquo;hanno.
+  </p>
+  <p>
+    È quella la classe che Heroes esiste per eliminare, quindi non ha né
+    l&rsquo;uno né l&rsquo;altro. Al loro posto, una funzione che può fallire lo
+    dice nel proprio tipo, e chi legge &mdash; persona o modello &mdash; lo vede
+    senza aprire un altro file.
+  </p>
+
+  <h3>Un tipo che significa &ldquo;oppure un errore&rdquo;</h3>
+  <p>
+    Scrivi <code>i64?</code> e hai detto: questo è un numero intero, oppure un
+    errore che spiega perché non c&rsquo;è. Non esiste una terza possibilità, e non
+    esiste un modo di usare il numero senza affrontare l&rsquo;altro caso. Dentro
+    una funzione così, <code>ok(v)</code> costruisce la risposta buona e
+    <code>fail(code, msg)</code> quella cattiva:
+  </p>
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="7-11">
+<pre><code><span class="c"># Parses a decimal digit. Fails on anything else.</span>
+<span class="k">function</span> digit_of(c: <span class="t">u8</span>) -&gt; <span class="t">i64</span>?
+    <span class="k">if</span> c &lt; <span class="s">'0'</span> || c &gt; <span class="s">'9'</span>
+        <span class="k">return</span> <span class="k">fail</span>(<span class="s">"not_a_digit"</span>, <span class="s">"expected 0-9"</span>)
+    <span class="k">return</span> ok(to_i64(c - <span class="s">'0'</span>).must())</code></pre>
+    <figcaption>examples/gallery/03-fallible.hero, righe 7&ndash;11</figcaption>
+  </figure>
+  <p>
+    L&rsquo;errore porta con sé due cose, ed entrambe sono volute. Il
+    <b>codice</b>, <code>"not_a_digit"</code>, è un nome corto e stabile in
+    snake_case, fatto per essere confrontato da un programma: è la parte che non
+    cambia quando qualcuno migliora il testo. Il <b>messaggio</b> è per chi legge
+    il fallimento. I codici sono il modo in cui prendi una strada o
+    l&rsquo;altra; i messaggi sono il modo in cui la spieghi.
+  </p>
+
+  <h3>Passare un fallimento verso l&rsquo;alto: <code>?</code></h3>
+  <p>
+    Il più delle volte una funzione che incontra un fallimento non ha niente di
+    utile da aggiungere e vuole solo fermarsi e passarlo avanti. È quello che fa
+    <code>?</code>, e lo fa <i>in modo visibile, sulla riga in cui succede</i>:
+  </p>
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="13-20">
+<pre><code><span class="c"># Reads a whole non-negative number. Empty input is an error, not a zero.</span>
+<span class="k">function</span> number_of(text: <span class="t">str</span>) -&gt; <span class="t">i64</span>?
+    <span class="k">if</span> text.len() == <span class="n">0</span>
+        <span class="k">return</span> <span class="k">fail</span>(<span class="s">"empty"</span>, <span class="s">"there is nothing to read"</span>)
+    total: <span class="t">i64</span> @ <span class="n">0</span>
+    <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: text.len())
+        total @ total * <span class="n">10</span> + digit_of(text[i])?
+    <span class="k">return</span> ok(total)</code></pre>
+    <figcaption>examples/gallery/03-fallible.hero, righe 13&ndash;20</figcaption>
+  </figure>
+  <p>
+    Leggi il corpo del ciclo. <code>digit_of(text[i])?</code> significa: chiamala,
+    e se è fallita <b>fermati subito e restituisci quello stesso errore a chi mi
+    ha chiamato</b>. Se è andata bene, continua con il numero che ha prodotto. Un
+    solo carattere di sintassi, esattamente nel punto in cui il flusso si biforca,
+    ed è tutta la differenza rispetto a un&rsquo;eccezione. Anche
+    un&rsquo;eccezione salta fuori dalla funzione, ma lo fa da una riga che sembra
+    non poterlo fare.
+  </p>
+  <p>
+    In quella funzione si vedono altre tre cose, e vale la pena nominarle subito.
+    <code>total: i64 @ 0</code> dichiara qualcosa che cambierà: la
+    <code>@</code> segna la modificabilità, e un nome senza <code>@</code> non può
+    mai essere riassegnato &mdash; il semplice <code>=</code> lega un nome una
+    volta e per sempre. La modifica stessa si scrive allo stesso modo,
+    <code>total @ total * 10 + …</code>, con la <code>@</code> nel punto in cui il
+    valore cambia; per la riassegnazione non c&rsquo;è nessun <code>=</code>. E
+    <code>range(from: 0, to: text.len())</code> conta da <code>from</code> fino a
+    <code>to</code> <i>escluso</i>; i nomi dei suoi argomenti sono obbligatori
+    perché entrambi sono <code>i64</code>, che è la stessa regola che incontrerai
+    nella <a href="../errors.html">pagina degli errori</a>.
+    <code>text.len()</code>, invece, è la stessa chiamata di
+    <code>len(text)</code>: la sintassi a metodo è zucchero sintattico, quindi una
+    catena si legge da sinistra a destra senza che niente sia definito su un
+    tipo.
+  </p>
+  <p>
+    Nota anche quello che <i>non</i> c&rsquo;è: nessun <code>try</code>, nessun
+    <code>catch</code>, nessun annidamento, nessuna variabile d&rsquo;errore
+    infilata a mano da una funzione all&rsquo;altra. Il percorso del fallimento
+    costa un carattere e il percorso buono si legge come se fallire fosse
+    impossibile. Eccolo di nuovo in una funzione che fa la media di una lista,
+    dove il primo carattere sbagliato in qualunque punto dell&rsquo;input ferma
+    tutto:
+  </p>
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="24-30">
+<pre><code><span class="k">function</span> average_of(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>?
+    sum: <span class="t">i64</span> @ <span class="n">0</span>
+    <span class="k">for</span> p <span class="k">in</span> parts
+        sum @ sum + number_of(p)?
+    <span class="k">if</span> parts.len() == <span class="n">0</span>
+        <span class="k">return</span> <span class="k">fail</span>(<span class="s">"empty"</span>, <span class="s">"no parts to average"</span>)
+    <span class="k">return</span> ok(sum / parts.len())</code></pre>
+    <figcaption>examples/gallery/03-fallible.hero, righe 24&ndash;30</figcaption>
+  </figure>
+
+  <h3>Guardarci dentro: <code>match</code></h3>
+  <p>
+    Quando una funzione vuole davvero gestire il fallimento invece di passarlo
+    avanti, ci guarda dentro con <code>match</code>: l&rsquo;unico costrutto del
+    linguaggio per smontare un valore.
+  </p>
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="32-36">
+<pre><code><span class="c"># Four ways to read a fallible value, in the order you reach for them.</span>
+<span class="k">function</span> report(text: <span class="t">str</span>) -&gt; <span class="t">str</span>
+    <span class="k">match</span> number_of(text)
+        .ok v  =&gt; <span class="k">return</span> <span class="s">"read "</span> + v.to_str()
+        .err e =&gt; <span class="k">return</span> <span class="s">"failed: "</span> + e.code + <span class="s">" ("</span> + e.msg + <span class="s">")"</span></code></pre>
+    <figcaption>examples/gallery/03-fallible.hero, righe 32&ndash;36</figcaption>
+  </figure>
+  <p>
+    Un braccio nomina il caso con un punto davanti e lega il suo contenuto al nome
+    che segue: <code>.ok v</code> ti dà il valore come <code>v</code>, e
+    <code>_</code> butta via un contenuto che non ti serve. Entrambi i bracci sono
+    obbligatori. Un <code>match</code> che dimentica un caso non compila. E questa
+    è la parte che conta per la tesi: <b>qui un braccio catch-all è vietato</b>.
+    Non puoi scrivere il braccio che significa &ldquo;qualunque altra
+    cosa&rdquo;, perché è proprio quel braccio il modo in cui un caso dimenticato
+    diventa in silenzio un caso gestito. Se un giorno il linguaggio acquisisse una
+    terza possibilità, ogni <code>match</code> di ogni programma smetterebbe di
+    compilare finché qualcuno non l&rsquo;ha guardato. È voluto: un cambiamento
+    nella forma dei dati deve rompere il codice che li legge, ad alta voce, al
+    momento della build.
+  </p>
+
+  <h3>Quando davvero non ti interessa</h3>
+  <p>
+    A volte un fallimento ha per davvero una risposta ovvia, e scriverci un
+    <code>match</code> è solo rumore. Esistono due scorciatoie:
+  </p>
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="38-39">
+<pre><code><span class="k">function</span> first_or_zero(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>
+    <span class="k">return</span> number_of(parts[<span class="n">0</span>]).default(<span class="n">0</span>)</code></pre>
+    <figcaption>examples/gallery/03-fallible.hero, righe 38&ndash;39</figcaption>
+  </figure>
+  <p>
+    <code>.default(0)</code> dice: il valore, oppure questo se è fallito. Il
+    risultato è un <code>i64</code> normale: il fallimento è stato affrontato,
+    quindi il tipo non ne porta più uno. Il suo fratello è <code>.must()</code>,
+    che dice che qui il fallimento non può succedere e <b>ferma il programma</b>
+    se succede. Usalo dove hai già dimostrato che il valore è buono, e nei
+    test:
+  </p>
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="41-45">
+<pre><code><span class="k">test</span> <span class="s">"a good number and a bad one"</span>
+    <span class="k">assert</span> number_of(<span class="s">"120"</span>).must() == <span class="n">120</span>
+    <span class="k">assert</span> number_of(<span class="s">"12x"</span>).is_err()
+    <span class="k">assert</span> report(<span class="s">"7"</span>) == <span class="s">"read 7"</span>
+    <span class="k">assert</span> first_or_zero([<span class="s">"oops"</span>]) == <span class="n">0</span></code></pre>
+    <figcaption>examples/gallery/03-fallible.hero, righe 41&ndash;45</figcaption>
+  </figure>
+  <p>
+    <code>test</code> fa parte del linguaggio, non di una libreria, e un test vive
+    accanto al codice che prova. <code>heroes test</code> esegue tutti quelli che
+    stanno nel file.
+  </p>
+
+  <h3>Tutto insieme, in esecuzione</h3>
+  <p>
+    I quattro modi di leggere un valore che può fallire, nell&rsquo;ordine in cui
+    li si cerca (<code>?</code>, <code>match</code>, <code>.default()</code> e
+    <code>.must()</code>), stanno tutti in un file da cinquanta righe. Il suo
+    <code>main</code>:
+  </p>
+  <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="47-50">
+<pre><code><span class="k">function</span> main()
+    print(report(<span class="s">"42"</span>))
+    print(report(<span class="s">"4b2"</span>))
+    print(average_of([<span class="s">"10"</span>, <span class="s">"20"</span>, <span class="s">"30"</span>]).default(-<span class="n">1</span>))</code></pre>
+    <figcaption>examples/gallery/03-fallible.hero, righe 47&ndash;50</figcaption>
+  </figure>
+  <p>E quello che stampa:</p>
+  <pre><code>$ heroes run examples/gallery/03-fallible.hero
+read 42
+failed: not_a_digit (expected 0-9)
+20</code></pre>
+  <p>
+    La riga in mezzo è quella interessante. <code>"4b2"</code> è fallito sul
+    secondo carattere, dentro <code>digit_of</code>, e l&rsquo;errore è risalito
+    attraverso <code>number_of</code> fino a <code>report</code> portandosi il
+    codice e il messaggio con cui è stato creato. La funzione in mezzo non dice
+    assolutamente niente sulla gestione degli errori, a parte quel singolo
+    <code>?</code> sulla riga dove succede.
+  </p>
+
+  <h3>Che cosa ci si compra</h3>
+  <p>
+    La firma di ogni funzione ti dice se può fallire. Ogni punto in cui un
+    fallimento cambia il flusso è segnato su quella riga. Ogni modo di gestirne
+    uno o affronta entrambi i casi oppure dice ad alta voce che sta saltando il
+    controllo. Non c&rsquo;è nessun <code>null</code> da dimenticare e nessun
+    lancio da mancare, e il percorso non gestito &mdash; l&rsquo;unico bug che
+    nessun compilatore prende, nei linguaggi che lo permettono &mdash; non ha più
+    nessun posto in cui nascondersi.
+  </p>
+
+  <p class="next">
+    Poi: <b>Il flusso di controllo</b>, <code>if</code>, <code>while</code>,
+    <code>for</code>, e l&rsquo;unica parola chiave per i cicli.
+    <a href="index.html">Torna all&rsquo;elenco dei capitoli</a>.
+  </p>
+
+  <footer>
+    <p>Ogni blocco di codice di questa pagina è una fetta di
+    <code>examples/gallery/03-fallible.hero</code> nel repository: copiata, mai
+    ribattuta a mano, e verificata contro il file.</p>
+    <p>Costruito da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="../author.html"><i>Gli eroi del codice</i></a>. In piedi
+    <a href="../thanks.html">sul lavoro di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

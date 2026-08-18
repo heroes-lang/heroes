@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il diario di costruzione di Heroes</title>
+<meta name="description" content="Una cartolina per milestone, dalla più recente: che cosa è stato costruito, che cosa si è rotto, e che cosa hanno trovato i giudici. Il diario completo sta nel repository.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/log.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/log.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/log.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/log.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Il diario di costruzione di Heroes">
+<meta property="og:description" content="Una cartolina per milestone, dalla più recente: che cosa è stato costruito, che cosa si è rotto, e che cosa hanno trovato i giudici. Il diario completo sta nel repository.">
+<meta property="og:url" content="https://heroes-lang.org/it/log.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Il diario di costruzione di Heroes">
+<meta name="twitter:description" content="Una cartolina per milestone, dalla più recente: che cosa è stato costruito, che cosa si è rotto, e che cosa hanno trovato i giudici. Il diario completo sta nel repository.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="why.html">Perché Heroes</a></li>
+      <li><a href="docs/index.html">Docs</a></li>
+      <li><a href="selfhost.html">Self-hosted</a></li>
+      <li><a href="zen.html">Zen</a></li>
+      <li><a href="panel.html">Panel</a></li>
+      <li><a href="thanks.html">Grazie</a></li>
+      <li><a href="author.html">Autore</a></li>
+      <li><a class="here" href="log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../log.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <div class="page-head">
+    <h1 class="page">Il diario di costruzione</h1>
+    <span class="nod">· changes ·</span>
+  </div>
+  <p class="lede">Dalla più recente, una voce per milestone. Il diario completo
+  &mdash; decisioni, revisioni ostili, previsioni e cose che si sono rotte &mdash;
+  vive nel
+  <a href="https://github.com/giuseppearici/heroes-lang">repository</a>; questa è
+  la versione cartolina.</p>
+
+  <ol class="log">
+    <li>
+      <span class="when">2026-08-17 · M-selfhost-port: il punto fisso</span>
+      <b>Il compilatore passa nel proprio linguaggio, e il figlio corregge il padre.</b>
+      53.013 righe di Rust sono diventate 34.812 righe di Heroes, test compresi da
+      entrambe le parti, perché in Heroes i test vivono nel file che provano,
+      modulo per modulo, con i test golden e il corpus di programmi come rete. E
+      poi i due compilatori sono stati messi a scrivere lo stesso programma da
+      venti megabyte in C, e i risultati confrontati lettera per lettera. Nemmeno
+      una lettera diversa, per tre generazioni di fila. Per strada sono usciti nove
+      difetti e quattro erano nel compilatore <i>vecchio</i>, che è
+      l&rsquo;argomento per fare questa cosa: un compilatore puntato sul proprio
+      sorgente è un corpus che nessuna suite di test riproduce. Nel codice portato
+      non è rimasto nemmeno un workaround.
+      <a class="more" href="selfhost.html">Il punto fisso</a>
+    </li>
+    <li>
+      <span class="when">2026-08-15 · M-selfhost-probe: il muro che non c&rsquo;era</span>
+      <b>Porta un file, aspettati di fallire, e scrivi che cosa il linguaggio non riesce a dire.</b>
+      Il muro era stato tolto in silenzio tre giorni prima da una milestone che
+      parlava di altro, e nessuno era tornato a rileggere la premessa del piano:
+      così il lexer è passato da &ldquo;questo fallirà sul primo file, e ci costerà
+      poco&rdquo; a funzionante, in un pomeriggio. Dodici cose che il linguaggio
+      non riusciva a dire; undici sono costate un paio di righe ciascuna. Ma la
+      cosa migliore trovata è meglio di una lacuna: il compilatore originale un
+      giorno aveva consegnato un bug perché la lista delle parole che possono
+      chiudere una riga si era dimenticata una nuova arrivata, e il linguaggio
+      nuovo rende quel bug esatto impossibile da scrivere. La macchina che si
+      stava ricostruendo ha rifiutato, per progetto, l&rsquo;errore che i suoi
+      stessi costruttori avevano fatto la prima volta.
+    </li>
+    <li>
+      <span class="when">2026-08-15 · M-complete-structs: un rifiuto è un&rsquo;affermazione</span>
+      <b>Da 191 dichiarazioni C collegabili a 349, e nemmeno un passo era una nuova funzionalità.</b>
+      Ognuno era un rifiuto senza via d&rsquo;uscita. Uno diceva all&rsquo;autore
+      che a una descrizione mancava una parte che lui aveva in realtà scritto; un
+      altro gli diceva di correggere un campo quando nessuna correzione esisteva,
+      perché la regola chiedeva come fosse scritto il testo della libreria invece
+      di che cosa fosse quella cosa. La lezione non è che i rifiuti dovrebbero
+      essere più morbidi: un rifiuto è un&rsquo;affermazione, e
+      un&rsquo;affermazione che nessun programma può soddisfare non è
+      conservativa, è sbagliata, ed è invisibile da dentro, perché tutto sembra
+      severo nel modo giusto.
+    </li>
+    <li>
+      <span class="when">2026-08-15 · M-struct-passing: la stessa dimensione non è la stessa cosa</span>
+      <b>Un terzo di tutto quello che offre una libreria C vera era fuori portata.</b>
+      I gruppi di valori che viaggiano come una cosa sola non riuscivano ad
+      attraversare il confine. La soluzione ovvia &mdash; descrivi il gruppo da
+      entrambi i lati, poi controlla che dimensioni e posizioni combacino &mdash; è
+      sbagliata, e il modo in cui è sbagliata è il motivo per cui questo progetto
+      esiste: su questa macchina due gruppi possono avere dimensioni identiche,
+      posizioni identiche, passare qualunque controllo si possa scrivere, e
+      arrivare comunque come spazzatura, perché i numeri interi e quelli con la
+      virgola viaggiano in registri diversi. La risposta è stata smettere di
+      descrivere il gruppo, usare la descrizione della libreria stessa, e poi
+      controllare ogni parte con la domanda <i>è la stessa specie di cosa</i>
+      invece di <i>è della stessa dimensione</i>.
+    </li>
+    <li>
+      <span class="when">2026-08-14 · M-binding-fidelity: metà di una promessa</span>
+      <b>Dichiara male una funzione esterna e il programma non si costruisce. Era vero in una sola direzione.</b>
+      Quello che una funzione C <i>restituisce</i> era controllato da quando esiste
+      il confine; quello che <i>prende</i> non era controllato affatto, e due
+      lettori indipendenti l&rsquo;hanno dimostrato allo stesso modo: passa un
+      numero troppo grande per lo spazio in cui deve entrare, compila senza una
+      protesta, esegui, stampa qualcos&rsquo;altro. Il quarantadue per cento di
+      tutto quello che uno collega davvero ha uno spazio così. La cura è una
+      piccola funzione che nessuno chiama mai, scritta solo perché il compilatore
+      C sia obbligato a guardare la conversione, con il numero di riga puntato
+      sulla riga che ha scritto l&rsquo;autore.
+    </li>
+    <li>
+      <span class="when">2026-08-13 · M-program-corpus: i programmi come strumento di misura</span>
+      <b>Sette programmi veri scritti, sei difetti del compilatore caduti giù.</b>
+      Un lettore di JSON, un convertitore Markdown, un foglio di calcolo, un
+      risolutore di labirinti, un piccolo assemblatore con la sua macchina, un
+      riassuntore di log, un gioco. Nessun test esistente avrebbe potuto trovare
+      nemmeno uno dei sei, e nessuno li ha trovati leggendo. Tre sono lo stesso
+      difetto vestito in modi diversi, ed è quello su cui questo progetto continua
+      a scrivere regole: una decisione che era corretta quando è stata presa,
+      appoggiata su qualcosa che riguarda il mondo intorno invece del valore che ha
+      davanti, che va storta in silenzio più tardi mentre il commento che la
+      spiegava continua a leggersi perfettamente.
+    </li>
+    <li>
+      <span class="when">2026-08-12 · M-sized-integers: la cosa temuta, lunga un paragrafo</span>
+      <b>Arrivano otto larghezze, e la parola <i>int</i> smette di essere una parola.</b>
+      Il documento di progetto aveva rifiutato questa cosa nei termini più forti:
+      mai in questa versione, la cosa più rischiosa che potremmo aggiungere. Poi è
+      stata chiesta comunque, e metà della spesa si è scoperto che era già stata
+      pagata anni prima da una decisione che non c&rsquo;entrava niente. Quello che
+      rende pericolose più dimensioni di numero altrove è la conversione
+      invisibile; questo linguaggio aveva vietato le conversioni invisibili
+      dall&rsquo;inizio, per un motivo completamente diverso, quindi era rimasto
+      quasi niente da scrivere.
+    </li>
+    <li>
+      <span class="when">2026-08-12 · M-literal-bases: che cosa significa 0700</span>
+      <b>Un revisore ha scritto il modo in cui tutti scrivono i permessi dei file e ha chiesto che cosa significasse.</b>
+      Non l&rsquo;aveva chiesto mai nessuno. Significava settecento. In tutti i
+      linguaggi da cui questo prende in prestito significa quattrocentoquarantotto,
+      e un programma che l&rsquo;avesse usato qui avrebbe compilato, girato,
+      impostato i permessi sbagliati e passato i propri test. La riparazione non è
+      stata quella ovvia: rifiutare la forma ambigua chiude il buco, ma dare anche
+      al vecchio significato una scrittura tutta sua aggiunge la notazione che il
+      progetto voleva comunque, nelle stesse tre righe di specifica. Altri tre
+      linguaggi sono arrivati a quella risposta ognuno per conto suo, ognuno dopo
+      essere stato morso.
+    </li>
+    <li>
+      <span class="when">2026-08-12 · M-header-constants: nessuna cifra lasciata a poter essere sbagliata</span>
+      <b>Le impostazioni di una libreria hanno nomi e numeri, e il linguaggio sapeva dire solo i numeri.</b>
+      Per nominare un&rsquo;opzione, un programma doveva scrivere 10002, con un
+      commento sopra che spiegava che la documentazione della libreria somma due a
+      diecimila: aritmetica fatta a mano, controllata da niente. Il progetto ha
+      misurato quanto fosse grave prima di sistemarlo, costruendo uno strumento che
+      cambia una cifra e guarda se qualcuno protesta: cinque numeri di quel tipo
+      negli esempi, e nessuno ha protestato per nessuno dei cinque. Adesso il
+      programma nomina l&rsquo;impostazione e il valore lo fornisce l&rsquo;header
+      della libreria. Il commento che spiegava l&rsquo;aritmetica è stato
+      cancellato insieme al numero: una spiegazione che esiste solo perché una cosa
+      non si può controllare sparisce quando si può.
+    </li>
+    <li>
+      <span class="when">2026-08-12 · M-ffi-ladder: 1, dove doveva stampare 1.41</span>
+      <b>La promessa intorno a cui era organizzato tutto il linguaggio era falsa per la coppia che usa il suo stesso secondo esempio.</b>
+      L&rsquo;organizzazione era questa: quando un programma prende in prestito una
+      funzione C, il compilatore non la descrive, punta alla descrizione della
+      libreria e lascia che clang confronti le due. È il motivo per cui questo
+      linguaggio emette C. Ma puntare a una descrizione controlla solo quello che
+      <i>passi</i>, mai quello che ti torna indietro, quindi un programma che
+      dichiarava che la radice quadrata restituisce un numero intero compilava
+      senza un fiato e stampava 1. Quattro prestiti sbagliati su sei passavano in
+      silenzio. La riparazione è una riga per prestito e non costa niente a
+      runtime: una domanda posta al compilatore C sul tipo di una chiamata, senza
+      mai fare quella chiamata.
+    </li>
+    <li>
+      <span class="when">2026-08-12 · M-module-namespace: il cambiamento più economico era un verbo</span>
+      <b>I programmi si dividono in file, e undici decisioni su tredici sono costate zero.</b>
+      Più file hanno bisogno di regole: che succede quando il nome di un file va in
+      conflitto con uno che importa, che succede quando un import non viene mai
+      usato. Erano già scritte entrambe: un nome non può essere riutilizzato mentre
+      è visibile, e tutto quello che viene legato e mai letto è un errore. Quindi
+      tutta la questione era quale parola usare per dire che cosa fa un import. Il
+      panel ha scelto <i>lega</i>, la parola che il linguaggio usava già per i
+      valori normali, e le due regole esistenti hanno coperto entrambi i casi senza
+      aggiungere niente.
+    </li>
+    <li>
+      <span class="when">2026-08-11 · M-generics-library: tre veti, nessuno per argomentazione</span>
+      <b>Il linguaggio arriva a essere completo, e ogni disputa aperta viene chiusa da un compilatore invece che da un dibattito.</b>
+      La descrizione per tipo del runtime doveva guadagnare una sesta voce? Un
+      giudice ha scritto l&rsquo;header, ha compilato il runtime invariato contro
+      di esso, e ha scoperto che il C riempie di zeri una lista di
+      inizializzazione troppo corta: quindi ogni descrizione esistente avrebbe
+      portato un puntatore nullo, in silenzio, sotto tutti i flag di warning che il
+      progetto usa. La piccola libreria di base si poteva compilare una volta e
+      distribuire? Un altro ha scritto la sola forma possibile, ha passato una
+      funzione su testo dove serviva una funzione su numeri, e non ha ottenuto
+      nessuna diagnostica e poi un crash. Le istanze generiche dovevano avere nomi
+      leggibili? Un terzo ha trovato due programmi legali che scrivono lo stesso
+      nome. Niente di tutto questo era raggiungibile leggendo.
+    </li>
+    <li>
+      <span class="when">2026-08-10 · M-optional-map: gli ultimi due tipi, intrecciati</span>
+      <b>I valori che possono fallire e le mappe non si potevano costruire in nessuno dei due ordini.</b>
+      Cercare una chiave in una mappa restituisce &ldquo;il valore, oppure un
+      errore&rdquo;, quindi alla mappa serviva prima quel tipo, e quel tipo si è
+      scoperto essere contato per riferimento anche quando contiene un numero
+      semplice, perché il suo lato errore porta due stringhe. Il contenitore è
+      stato costruito comunque, per istruzione dell&rsquo;autore, con un
+      disaccordo permanente messo per iscritto invece di essere smussato: una
+      revisione precedente sosteneva che la mappa non si può estendere, e che
+      cancellarla del tutto restituirebbe più budget di specifica di quanto costi
+      finirla. Se una verifica futura la cancella, il registro dirà che si sapeva
+      in anticipo.
+    </li>
+    <li>
+      <span class="when">2026-08-10 · M-value-aggregates: un albero che contiene se stesso</span>
+      <b>Dati ricorsivi, in un linguaggio il cui modello dei dati non ha né puntatori né un tipo riferimento.</b>
+      Non c&rsquo;è niente da mettere in un campo che significhi &ldquo;da
+      qualche altra parte&rdquo;, e però l&rsquo;esempio intorno a cui è stato
+      scritto tutto il progetto è un albero di espressioni che tiene i propri figli.
+      La risposta è che l&rsquo;<i>array</i> è l&rsquo;unica indirezione che
+      esiste: un array è un puntatore qualunque cosa contenga, quindi una forma che
+      ricorre passando per un array ha una dimensione finita e continua a copiarsi
+      come un valore. Il programma compila, stampa quattordici, e finisce con ogni
+      allocazione in ordine. Il motivo per cui non può perdere memoria è una frase
+      su che cosa può contenere un campo, non su come funziona la liberazione: un
+      campo non può contenere un riferimento, quindi ogni valore è un albero, e un
+      contatore che libera a zero è completo.
+    </li>
+    <li>
+      <span class="when">2026-08-05 · M-strings-ownership: il controllo che ha smentito il proprio progetto</span>
+      <b>Il compilatore ha imparato a contare i riferimenti, e il cane da guardia ha abbaiato due volte in un&rsquo;ora.</b>
+      La regola era: un valore che possiede una stringa viene rilasciato alla fine
+      del blocco che l&rsquo;ha creato. La prima smentita è stata istruttiva: una
+      assert si porta il testo di quello che ha affermato dentro il percorso di
+      fallimento, e un letterale non viene mai liberato, quindi lì è al sicuro. La
+      seconda è stata fatale: chiedi la metà di un numero e usala in una frase, e
+      la prima metà della frase viene costruita in un blocco e finita in un altro,
+      perché una chiamata che può fallire apre una diramazione in mezzo
+      all&rsquo;espressione. Ed è l&rsquo;aspetto di <i>ogni</i> espressione che
+      contiene una chiamata che può fallire. La riparazione è stata smettere di
+      lasciare che i valori temporanei possiedano qualcosa, che è esattamente il
+      motivo per cui una rappresentazione fuori moda era stata scelta una milestone
+      prima.
+    </li>
+    <li>
+      <span class="when">2026-08-04 · M-scalars-run: il primo binario nativo</span>
+      <b>Un programma diventa un eseguibile, e la discussione più lunga è stata su un numero fra zero e due.</b>
+      Quando un programma è corretto e il compilatore semplicemente non è ancora
+      finito, quale codice di uscita bisogna usare? Il due dice &ldquo;lo strumento
+      non è riuscito a fare il suo lavoro&rdquo;, che è letteralmente vero. A un
+      giudice è stato consegnato quel messaggio e gli è stato chiesto che cosa
+      avrebbe fatto dopo: ha controllato la versione del compilatore, ha eseguito
+      il comando di diagnosi, ha cercato in tutto il repository un identificatore
+      interno, e poi ha detto al proprio utente che la toolchain sembrava rotta
+      &mdash; una frase che lui stesso ha poi giudicato falsa. Un altro ha trovato
+      che il compilatore C che usano tutti ha una diagnostica esattamente per
+      questo caso dal 1994, e stampa la parola &ldquo;sorry&rdquo;, e poi ha letto
+      una riga più in basso: esce con il normale codice di errore. La prova che
+      sembrava sostenere il due ha chiuso la questione sull&rsquo;uno.
+    </li>
+    <li>
+      <span class="when">2026-08-04 · M-ir-lowering: lo zucchero che sparisce, e il centro del compilatore</span>
+      <b>La rappresentazione da manuale ha perso contro dieci anni di prove che nessuno era andato a cercare.</b>
+      LLVM, la cui esistenza intera è la forma a singolo assegnamento, dice agli
+      autori dei linguaggi nuovi di non costruirla: usa slot sullo stack con
+      letture e scritture, e lascia che un passaggio successivo faccia pulizia,
+      perché è quello che fa clang stesso. La rappresentazione intermedia di Rust
+      ha scelto la forma semplice nel 2015 per i messaggi di errore e non per la
+      velocità, e da allora non è cambiata. Ogni migrazione che si potesse
+      verificare era stata fatta per produrre codice macchina più veloce:
+      l&rsquo;unica cosa a cui questo progetto ha formalmente rinunciato.
+    </li>
+    <li>
+      <span class="when">2026-08-04 · M-typed-frontend: il frontend, e la tesi si prende un numero</span>
+      <b>Nomi, tipi, esaustività, e la prima misura, la cui metà utile è la colonna che non mostra niente.</b>
+      379 errori deliberati iniettati in programmi funzionanti, il 94% preso. Ma lo
+      stesso compilatore con le regole della tesi disattivate ne prende il 76%, ed è
+      <i>quella</i> la misura: 18 punti, concentrati in tre operatori. Il catch-all
+      pigro passa dal 100% preso al 13%. Nascondere un nome e saltare
+      un&rsquo;etichetta di argomento vanno a zero, perché nel linguaggio non c&rsquo;è
+      nient&rsquo;altro che li stia cercando. E gli errori di battitura fanno 100%
+      da entrambe le parti, cioè vengono presi da nomi e tipi come in qualunque
+      altro posto: un fatto che sarebbe stato molto facile non scrivere.
+    </li>
+    <li>
+      <span class="when">2026-08-04 · M-name-resolution: il resolver</span>
+      <b>Una calcolatrice da 317 righe si è rifiutata di risolvere, esattamente su due righe.</b>
+      Dichiara i propri <code>map</code> e <code>fold</code>, e il linguaggio si
+      riserva entrambi i nomi. Era la terza volta che quello stesso programma
+      prendeva una regola che nessuno sapeva di aver scritto: un caso di
+      <code>variant</code> chiamato <code>.var</code>, un <code>assert</code> dentro
+      un braccio, e adesso un nome. Non era mai stato compilato ed era comunque il
+      test migliore del repository. Per strada si è scoperto che chiamava una
+      funzione di base che stava nell&rsquo;inventario del documento di progetto e
+      mancava dalla specifica: senza quella il linguaggio non riusciva a mettere un
+      numero dentro una frase, e nessuno se ne era accorto perché nessuno aveva
+      provato.
+    </li>
+    <li>
+      <span class="when">2026-08-04 · M-syntax-tree: il parser, l&rsquo;albero, il formatter</span>
+      <b>Il primo atto del parser è stato scoprire che il linguaggio non riusciva a scrivere il tipo di una funzione.</b>
+      <code>fn</code> stava nel registro delle parole straniere &mdash; un errore
+      con la riparazione già scritta &mdash; e stava anche nella sintassi che la
+      specifica stessa usava per un tipo funzione: quindi un parametro di tipo
+      funzione non passava nemmeno il lexer, e ogni parametro di quel genere era
+      inscrivibile. La domanda è stata mandata a cinque giudici con una
+      raccomandazione allegata, e quattro l&rsquo;hanno rifiutata: le regole dello
+      stesso progetto elencano <code>fn</code> fra gli errori che il registro esiste
+      per prendere, sette linguaggi antenati scrivono un tipo funzione con la
+      parola che dichiara una funzione, e il tokenizzatore misura le due scritture
+      in modo identico. La raccomandazione ha perso contro le prove, che è il motivo
+      per cui il panel esiste.
+    </li>
+    <li>
+      <span class="when">2026-08-04 · M-token-stream: il lexer</span>
+      <b>Il primo codice vero, e tre cose che ha trovato solo perché è stato scritto.</b>
+      Il testo sorgente adesso diventa token: indentazione rigida dove un tab è un
+      errore e non un&rsquo;interpretazione, fine delle istruzioni dedotta così che
+      al linguaggio non servano i punti e virgola, e parole chiave prese in prestito
+      da altri linguaggi &mdash; <i>struct</i>, <i>let</i>, <i>while</i> &mdash;
+      che falliscono con la correzione già scritta dentro il messaggio. Scriverlo
+      alla lettera seguendo il progetto ha scoperto tre buchi nel progetto stesso:
+      la regola per chiudere una riga citava Go ma aveva perso tre delle parole di
+      Go; le stringhe non avevano modo di contenere un ritorno a capo, né una
+      virgoletta; e il budget che il progetto difendeva da due giorni non era mai
+      stato contato. Era un terzo più grande di quanto credessero tutti.
+    </li>
+    <li>
+      <span class="when">2026-08-03 · M-day-zero</span>
+      <b>Le fondazioni, e quattro programmi scritti prima del compilatore.</b>
+      Git, un workspace Rust, un&rsquo;impalcatura per i test golden verde con zero
+      test, e la specifica del linguaggio congelata come base della misura (budget:
+      1500 token, ancora non misurati: il conteggio è arrivato un giorno dopo, e ha
+      cambiato il numero). Poi quattro programmi C scritti a mano: la forma esatta
+      che il compilatore un giorno dovrà emettere, compreso un albero ricorsivo con
+      il conteggio dei riferimenti, verificato senza perdite di memoria sotto
+      AddressSanitizer. La macchina ha trovato il primo difetto di progetto prima di
+      qualunque essere umano: un warning su un&rsquo;etichetta non usata, che ha
+      cambiato il modo in cui inizierà ogni funzione generata.
+    </li>
+    <li>
+      <span class="when">2026-08-03 · prima del codice</span>
+      <b>Il piano incontra cinque esperti ostili.</b>
+      Prima che un singolo token passasse dal lexer, il piano di costruzione è stato
+      esaminato da cinque revisori ostili: progettazione di linguaggi, ingegneria
+      dei compilatori, semplicità, ergonomia per gli LLM, didattica. Tre hanno detto
+      <i>obietto</i>. La metrica della tesi si è guadagnata un braccio di controllo,
+      sono stati scoperti due passaggi mancanti nel compilatore, e il backend è
+      passato da QBE all&rsquo;emissione di C &mdash; per la FFI, non per la
+      velocità. Il piano che è sopravvissuto è la revisione 2.
+    </li>
+    <li>
+      <span class="when">2026-08-03 · l&rsquo;inizio</span>
+      <b>Un documento di progetto da 2000 righe e una domanda.</b>
+      Il linguaggio è arrivato come una lunga conversazione di progetto: un
+      linguaggio compilato senza libreria standard, costruito per il lettore che non
+      è umano. La prima decisione ingegneristica &mdash; quale linguaggio scrive il
+      linguaggio &mdash; è stata rovesciata nell&rsquo;arco di un&rsquo;ora da una
+      domanda di una riga sul backend. Da allora tutto viene discusso per iscritto.
+    </li>
+  </ol>
+
+  <p class="next">Queste sono le cartoline. Le lettere &mdash; i panel, le misure,
+  i diari, ogni inversione a U &mdash; stanno nel
+  <a href="https://github.com/giuseppearici/heroes-lang">repository</a>.</p>
+
+  <footer>
+    <p>Costruito da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="author.html"><i>Gli eroi del codice</i></a>. In piedi
+    <a href="thanks.html">sul lavoro di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

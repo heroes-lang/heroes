@@ -38,10 +38,20 @@ inline SVG in every page, because it is markup.
 no-JavaScript rule forces. Nine items in a fixed order — Why Heroes · Docs ·
 Self-hosted · Zen · Panel · Thanks · Author · Log · GitHub — and the current page
 marks itself `class="here"`. At nine items the row no longer fits a phone, so
-under 700px the list becomes **one horizontally scrolling line** with the mark
+under **800px** the list becomes **one horizontally scrolling line** with the mark
 and GitHub on the row above it: two rows of sticky chrome instead of three, no
 item dropped, and the item clipped at the right edge is the affordance. Adding a
 tenth item is the point where this stops working and something has to give.
+
+**That threshold was 700px until the Italian edition measured it** (2026-08-18).
+Italian nav labels are wider — *Perché Heroes*, plus the language badge — so the
+list goes from 517px to 540px, and at 701px the wrapped layout took **three rows**
+of sticky chrome, which is the exact thing the rule above forbids. Moving the
+query to 800px removes the wrapped state entirely: measured in both editions, one
+row down to 860px, then two rows all the way down, and no three-row band at any
+width. It is also **better for the English edition**, which used to spend 98px of
+chrome between 701 and 800px and now spends 80px. A layout number that only one
+language was ever measured at is a number that has not been measured.
 
 **The row stays at nine, so a page enters it only by displacing one** (author
 instruction 2026-08-18). `thanks.html` went in and `errors.html` came out, and
