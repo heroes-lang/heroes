@@ -6,6 +6,7 @@
   <url><loc>https://heroes-lang.org/selfhost.html</loc><priority>0.8</priority></url>
   <url><loc>https://heroes-lang.org/zen.html</loc><priority>0.8</priority></url>
   <url><loc>https://heroes-lang.org/panel.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/author.html</loc><priority>0.8</priority></url>
   <url><loc>https://heroes-lang.org/log.html</loc><priority>0.8</priority></url>
   <url><loc>https://heroes-lang.org/docs/index.html</loc><priority>0.6</priority></url>
   <url><loc>https://heroes-lang.org/docs/failure-is-a-value.html</loc><priority>0.6</priority></url>

@@ -176,6 +176,7 @@ main > pre,
 main > figure,
 main > .stats,
 main > ol.chapters,
+main > ol.tracks,
 main > ul.seats,
 main > .next,
 main > footer { grid-column: wide; }
@@ -249,15 +250,24 @@ nav.site a:not(.mark):hover { color: var(--fg); border-bottom-color: var(--line)
 nav.site a.here { color: var(--red); border-bottom-color: var(--red); }
 nav.site .out { margin-left: auto; }
 
-/* `.out` keeps its auto margin so GitHub stays on the mark's row: four wrapped
-   rows of sticky chrome was 19% of a phone viewport. The item list gets a
-   tighter setting rather than a smaller one — condensing the tracking is
-   cheaper for legibility than dropping the size again. */
+/* Sticky chrome has a budget on a phone: four wrapped rows was 19% of the
+   viewport, and eight items wrap to three rows on their own. So on narrow
+   screens the item list takes a single line of its own and scrolls sideways,
+   with the mark and GitHub sharing the row above it (`.out` keeps its auto
+   margin, `ul` is ordered last and takes the full width). Two fixed rows
+   instead of three, no item hidden, and the item clipped at the right edge is
+   the affordance that says the row continues. */
 @media (max-width: 700px) {
-  nav.site > div { gap: 0.5rem 0.9rem; padding-block: 0.55rem; }
-  nav.site ul { gap: 0.55rem 0.85rem; }
-  nav.site a:not(.mark) { font-size: 0.72rem; letter-spacing: 0.02em; }
+  nav.site > div { gap: 0.45rem 0.9rem; padding-block: 0.55rem; }
   nav.site .mark { font-size: 0.95rem; }
+  nav.site a:not(.mark) { font-size: 0.74rem; letter-spacing: 0.02em; }
+  nav.site ul {
+    order: 3; width: 100%; flex-wrap: nowrap; gap: 1rem;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  nav.site ul::-webkit-scrollbar { display: none; }
+  nav.site ul li { flex: none; }
 }
 
 /* == 5. headings ========================================================== */
@@ -806,6 +816,28 @@ ul.seats p { margin: 0; font-size: 0.98rem; }
 @media (max-width: 620px) {
   ul.seats li { grid-template-columns: 1fr; }
 }
+
+/* The book's chapters, set like the back of a record sleeve: numbered, two
+   columns, titles and nothing else. The counter follows document order, so it
+   keeps counting correctly down one column and up the next. */
+ol.tracks {
+  list-style: none; padding: 0; margin: 1.8rem 0; counter-reset: tr;
+  columns: 2; column-gap: 2.6rem;
+}
+ol.tracks li {
+  counter-increment: tr; break-inside: avoid;
+  position: relative; padding: 0.45rem 0 0.45rem 2.3rem;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 1rem; line-height: 1.4;
+}
+ol.tracks li::before {
+  content: counter(tr, decimal-leading-zero);
+  position: absolute; left: 0; top: 0.62rem;
+  font: 0.71rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: color-mix(in srgb, var(--red) 75%, transparent);
+  letter-spacing: 0.06em;
+}
+@media (max-width: 620px) { ol.tracks { columns: 1; } }
 
 ul.lineage li {
   margin: 0.85rem 0; padding-left: 1.5rem; position: relative;
