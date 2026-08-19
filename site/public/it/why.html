@@ -118,7 +118,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
   </figure>
   <p>
     Senza un header, una dichiarazione non sarebbe verificata da niente. Nota
-    <code>pow(base: exponent:)</code>: due parametri dello stesso tipo, quindi i
+    <code>pow(base:, exponent:)</code>: due parametri dello stesso tipo, quindi i
     nomi sono obbligatori a ogni chiamata. La regola vale anche al confine con il
     C, che è il posto dove sbagliare l&rsquo;ordine degli argomenti perdona
     meno.
@@ -155,8 +155,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     questione.
   </p>
   <p>
-    Non è una decisione sulla velocità. La velocità non è un obiettivo di questo
-    progetto, e non è nemmeno una scusa.
+    Non è una decisione sulla velocità, che in questo progetto non è né un
+    obiettivo né una scusa.
   </p>
 
   <h2>Quattro parole possono aprire una riga al primo livello</h2>
@@ -246,7 +246,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <li><b>La località è la moneta.</b> Il senso di una riga è deciso da quella riga più la firma che la contiene, mai da qualcosa definito tre file più in là. Nessuna ereditarietà, nessuna macro, nessuna eccezione, nessuna conversione implicita, nessun null.</li>
     <li><b>Esattamente un modo di scrivere ogni cosa.</b> Un formatter canonico, una sola parola chiave per i cicli, nessuna conversione implicita di nessun tipo, nomi degli argomenti obbligatori dove i tipi potrebbero confondersi. Gli errori che i modelli fanno davvero diventano errori che il compilatore solleva davvero.</li>
     <li><b>Errori scritti per essere letti da una macchina.</b> Ogni diagnostica porta tutto quello che serve per sistemare il programma in un solo giro: il tipo aspettato, il punto della definizione, riparazioni concrete etichettate <code>certain</code> o <code>guess</code>. I buchi tipati (<code>???</code>) permettono di costruire un programma partendo dallo scheletro.</li>
-    <li><b>Un programma non deve andare in segfault.</b> Questo è un obiettivo del linguaggio, non una qualità della sua implementazione, e dove due soluzioni ammissibili sono in disaccordo e uno dei due si può far schiantare, vince l&rsquo;altro, qualunque cosa costi in eleganza o in token. La garanzia copre le operazioni del linguaggio: indice, slice, divisione e overflow si fermano invece di corrompere. L&rsquo;unico null che esiste è messo in quarantena al confine con il C: <code>ptr</code> e <code>cstr</code> non sono <code>str</code>, e convertire un <code>cstr</code> nullo si arresta in modo pulito invece di schiantarsi, ed è per questo che la specifica dice di testare prima <code>c == nullptr</code>. Quello che poi una funzione C fa con quello che le hai passato è ancora C.</li>
+    <li><b>Un programma non deve andare in segfault.</b> Dove due soluzioni ammissibili sono in disaccordo e una delle due si può far schiantare, vince l&rsquo;altra, qualunque cosa costi in eleganza o in token. La sezione qui sopra ha l&rsquo;argomento per esteso, e l&rsquo;unico buco che lascia aperto.</li>
     <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3512 token contro un tetto fisso di 4096: cinque pagine, ed è il prompt più che una documentazione.</li>
   </ul>
 
