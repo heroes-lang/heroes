@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il confine con il C, documentazione di Heroes</title>
+<meta name="description" content="Non esiste una libreria standard, per sempre. Tutto il resto arriva dal C con extern, e clang controlla ogni dichiarazione contro l'header della libreria: un tipo sbagliato è un errore di compilazione, non un crash.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/it/docs/the-c-boundary.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/docs/the-c-boundary.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/the-c-boundary.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/docs/the-c-boundary.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Il confine con il C, documentazione di Heroes">
+<meta property="og:description" content="Non esiste una libreria standard, per sempre. Tutto il resto arriva dal C con extern, e clang controlla ogni dichiarazione contro l'header della libreria: un tipo sbagliato è un errore di compilazione, non un crash.">
+<meta property="og:url" content="https://heroes-lang.org/it/docs/the-c-boundary.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Il confine con il C, documentazione di Heroes">
+<meta name="twitter:description" content="Non esiste una libreria standard, per sempre. Tutto il resto arriva dal C con extern, e clang controlla ogni dichiarazione contro l'header della libreria: un tipo sbagliato è un errore di compilazione, non un crash.">
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Perché Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../zen.html">Zen</a></li>
+      <li><a href="../panel.html">Panel</a></li>
+      <li><a href="../thanks.html">Grazie</a></li>
+      <li><a href="../author.html">Autore</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../../docs/the-c-boundary.html" hreflang="en" lang="en" title="This page in English">EN</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / capitolo 12</p>
+
+  <h1 class="chapter">Il confine con il C</h1>
+  <p class="tagline">Tutto quello che il linguaggio non ha, e da dove arriva.</p>
+
+  <p>
+    Heroes non ha una libreria standard, e non l&rsquo;avrà mai. Tutto quello che
+    hai visto in questi capitoli &mdash; numeri, stringhe, array, mappe, la
+    stampa &mdash; è l&rsquo;inventario completo. File, socket, JSON, database,
+    grafica, matematica oltre l&rsquo;aritmetica: niente di tutto questo manca, e
+    niente di tutto questo arriverà. Arriva dal C, attraverso un meccanismo solo,
+    e questo capitolo è quel meccanismo.
+  </p>
+
+  <h3>Un gruppo nomina il suo header</h3>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
+<pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
+    <span class="k">function</span> sqrt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
+    <span class="k">function</span> pow(base: <span class="t">f64</span>, exponent: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
+    <span class="k">function</span> floor(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span></code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
+  </figure>
+  <p>
+    Tre funzioni C, utilizzabili dalla riga dopo in avanti. Il nome
+    dell&rsquo;header non è decorazione, ed è lì che gira tutto il progetto:
+    <b>clang legge quell&rsquo;header e controlla contro di lui ogni
+    dichiarazione del gruppo.</b> Un binding è l&rsquo;unico punto in cui un
+    programma può arrivare a un indirizzo che nessuno ha controllato, quindi è lì
+    che il linguaggio spende le sue attenzioni.
+  </p>
+
+  <h3>Che cosa prende, quel controllo</h3>
+  <p>
+    Sbaglia a scrivere un nome e non ti becchi un errore del linker alla fine di
+    una compilazione lunga. Ti becchi questo, sulla tua riga, con allegata la
+    risposta dell&rsquo;header stesso:
+  </p>
+  <pre><code>$ heroes build ffi.hero
+error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header and could not find it
+  at ffi.hero:15:5
+     |
+  15 |     function flooor(x: f64) -&gt; f64
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`
+  fix (guess): the header declares `floor`</code></pre>
+  <p>
+    Quell&rsquo;ultima riga merita una seconda occhiata. Il compilatore non ha
+    tirato a indovinare da una lista che si tiene in tasca: ha chiesto a clang,
+    che aveva l&rsquo;header vero aperto davanti, e clang ha capito cosa volevi.
+  </p>
+  <p>
+    Sbaglia un tipo e la risposta arriva dallo stesso posto:
+  </p>
+  <pre><code>$ heroes build ffi.hero
+error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h` says, and clang read it
+  at ffi.hero:22:5
+     |
+  22 |     function puts(s: cstr) -&gt; cstr
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` is checked against the real header (§4.19): correct the result type, or name the header that declares this `puts`</code></pre>
+  <p>
+    Nella maggior parte dei linguaggi una dichiarazione verso l&rsquo;esterno è
+    una promessa che nessuno verifica: sbagliala e il programma compila, gira, e
+    corrompe qualcosa. Qui la promessa viene controllata contro la libreria che
+    deve mantenerla.
+  </p>
+
+  <h3>Il confine si vede nei tipi</h3>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="17-22">
+<pre><code><span class="c"># `cstr` is a C string and `ptr` an opaque pointer. Neither is a `str`:</span>
+<span class="c"># the boundary is visible in the type. A second group, because this one</span>
+<span class="c"># comes from a different header — and on macOS neither needs `link`, since</span>
+<span class="c"># libm and libc are already there.</span>
+<span class="k">extern</span> <span class="s">"stdio.h"</span>
+    <span class="k">function</span> puts(s: <span class="t">cstr</span>) -&gt; <span class="t">i64</span></code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, righe 17&ndash;22</figcaption>
+  </figure>
+  <p>
+    <code>cstr</code> è una stringa C e <code>ptr</code> è un puntatore opaco.
+    Nessuno dei due è uno <code>str</code>, e nessuna conversione avviene alle
+    tue spalle: <code>s.cstr()</code> presta al C una stringa di Heroes perché la
+    legga, e <code>c.to_str()</code> ne ricopia una indietro. Prima controlla
+    <code>c == nullptr</code>, perché convertirne una nulla ferma il programma.
+  </p>
+  <p>
+    Così un valore che arriva dal C resta marcato come tale ovunque vada, e la
+    riga in cui smette di essere straniero è una riga che puoi vedere.
+  </p>
+
+  <h3>Come si usano</h3>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="24-31">
+<pre><code><span class="c"># The hypotenuse, in the language's own arithmetic plus one C call.</span>
+<span class="c">#</span>
+<span class="c"># Both sides are `f64`, so §4.9 makes the names mandatory at the call site. C's</span>
+<span class="c"># numeric APIs are where same-typed parameters cluster — `pow(base:, exponent:)`</span>
+<span class="c"># is the same shape — so this is where the rule is felt most and where argument</span>
+<span class="c"># inversion would be silent without it.</span>
+<span class="k">function</span> hypotenuse(a: <span class="t">f64</span>, b: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
+    <span class="k">return</span> sqrt(a * a + b * b)</code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, righe 24&ndash;31</figcaption>
+  </figure>
+  <p>
+    Una funzione C si chiama come tutte le altre, e la regola delle etichette
+    obbligatorie del <a href="records-and-functions.html">capitolo 2</a> vale
+    anche per lei. E qui conta più che altrove: le interfacce numeriche del C
+    sono piene di coppie dello stesso tipo, e <code>pow(base:, exponent:)</code>
+    è esattamente la forma in cui invertire l&rsquo;ordine sarebbe silenzioso.
+  </p>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="33-35">
+<pre><code><span class="c"># No implicit conversions: an `i64` becomes an `f64` because you said so.</span>
+<span class="k">function</span> diagonal_of(width: <span class="t">i64</span>, height: <span class="t">i64</span>) -&gt; <span class="t">f64</span>
+    <span class="k">return</span> hypotenuse(a: to_f64(width), b: to_f64(height))</code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, righe 33&ndash;35</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="37-39">
+<pre><code><span class="c"># `pow` is C's, `floor` is C's, and the rounding is yours.</span>
+<span class="k">function</span> rounded_power(base: <span class="t">f64</span>, exponent: <span class="t">f64</span>) -&gt; <span class="t">i64</span>
+    <span class="k">return</span> to_i64(floor(pow(base: base, exponent: exponent))).must()</code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, righe 37&ndash;39</figcaption>
+  </figure>
+  <p>
+    Nessun numero cambia tipo da solo. <code>to_f64</code> funziona sempre,
+    quindi ti dà un valore; <code>to_i64</code> può fallire, perché il numero con
+    la virgola potrebbe non starci dentro, quindi ti dà un <code>i64?</code> e
+    questa riga risponde con <code>.must()</code>.
+  </p>
+
+  <h3>Dove sta la libreria è un problema della macchina</h3>
+  <p>
+    <code>link "m"</code> nomina una libreria da collegare. Quando non basta
+    &mdash; e per qualunque cosa abbia dipendenze di sistema non basta &mdash; un
+    gruppo può nominare un <b>package</b> al suo posto:
+  </p>
+  <pre><code>extern "raylib.h" package "raylib"</code></pre>
+  <p>
+    Quella riga chiede al sistema dove stanno header e librerie e che
+    cos&rsquo;altro serve a quella libreria: i framework su macOS,
+    <code>-lGL -lX11</code> su Linux, in una scrittura sola che è la stessa
+    dappertutto. Se la risposta contiene qualcosa che questo compilatore non è
+    disposto a passare avanti, viene rifiutata, e il messaggio dice che cosa
+    aveva chiesto il package.
+  </p>
+  <p>
+    Un gruppo può anche dichiarare una <code>constant</code>, il cui valore
+    arriva dall&rsquo;header e non dal tuo file, e un <code>record</code> che
+    ricalca una struct C campo per campo. Tutti e due vengono controllati allo
+    stesso modo, da clang, contro la cosa vera.
+  </p>
+
+  <h3>Il programma</h3>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="41-43">
+<pre><code><span class="k">test</span> <span class="s">"the C library does the maths"</span>
+    <span class="k">assert</span> hypotenuse(a: <span class="n">3.0</span>, b: <span class="n">4.0</span>) == <span class="n">5.0</span>
+    <span class="k">assert</span> rounded_power(base: <span class="n">2.0</span>, exponent: <span class="n">10.0</span>) == <span class="n">1024</span></code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, righe 41&ndash;43</figcaption>
+  </figure>
+  <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="45-49">
+<pre><code><span class="k">function</span> main()
+    print(
+        <span class="s">"the 16:9 diagonal of a 1920-wide screen: "</span>,
+        diagonal_of(width: <span class="n">1920</span>, height: <span class="n">1080</span>)
+    )</code></pre>
+    <figcaption>examples/gallery/08-ffi.hero, righe 45&ndash;49</figcaption>
+  </figure>
+  <pre><code>$ heroes run examples/gallery/08-ffi.hero
+the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
+  <p>
+    Due librerie C, quattro dichiarazioni, nessun wrapper e nessun generatore di
+    binding. Nel repository, SQLite, curl, SDL e raylib sono legati allo stesso
+    modo: un gruppo, un header, e le dichiarazioni che servono a quel programma.
+  </p>
+
+  <h3>E quello è il linguaggio</h3>
+  <p>
+    Dodici capitoli, e li hai visti tutti: quattro parole che possono aprire una
+    riga di primo livello, un modo solo di smontare un valore, un modo solo di
+    fallire, un modo solo di cambiare qualcosa, e una porta sola verso tutto il
+    resto. Quello che resta da imparare non è altro linguaggio: è che cosa ci
+    puoi costruire.
+  </p>
+
+  <p class="next">
+    <a href="index.html">Torna all&rsquo;elenco dei capitoli</a> &middot;
+    <a href="../errors.html">la pagina degli errori</a>, che è l&rsquo;altra
+    metà di questa documentazione &middot;
+    <a href="../why.html">perché il linguaggio ha questa forma</a>.
+  </p>
+
+  <footer>
+    <p>Ogni blocco di codice di questa pagina è una fetta di
+    <code>examples/gallery/08-ffi.hero</code> nel repository. Le due diagnostiche
+    sono quello stesso file con un nome scritto male e un tipo di ritorno
+    cambiato, compilato come <code>ffi.hero</code>.</p>
+    <p>Fatto da Giuseppe Arici, CTO di Codermine, Brescia. Autore di
+    <a href="../author.html"><i>Gli eroi del codice</i></a>. Sulle spalle
+    <a href="../thanks.html">di un sacco di altre persone</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,25 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://heroes-lang.org/index.html</loc><priority>1.0</priority></url>
-  <url><loc>https://heroes-lang.org/why.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/errors.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/selfhost.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/zen.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/panel.html</loc><priority>0.8</priority></url>
   <url><loc>https://heroes-lang.org/author.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/log.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/thanks.html</loc><priority>0.6</priority></url>
-  <url><loc>https://heroes-lang.org/docs/index.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/a-first-program.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/bindings-and-mutation.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/control-flow.html</loc><priority>0.6</priority></url>
   <url><loc>https://heroes-lang.org/docs/failure-is-a-value.html</loc><priority>0.6</priority></url>
-  <url><loc>https://heroes-lang.org/it/index.html</loc><priority>1.0</priority></url>
-  <url><loc>https://heroes-lang.org/it/why.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/it/errors.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/it/selfhost.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/it/zen.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/it/panel.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/docs/generics-and-function-values.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/index.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/maps.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/records-and-functions.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/strings.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/tests-and-holes.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/the-c-boundary.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/values-all-the-way-down.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/docs/variants-and-match.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/errors.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/index.html</loc><priority>1.0</priority></url>
+  <url><loc>https://heroes-lang.org/log.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/panel.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/selfhost.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/thanks.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/why.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/zen.html</loc><priority>0.8</priority></url>
   <url><loc>https://heroes-lang.org/it/author.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/it/log.html</loc><priority>0.8</priority></url>
-  <url><loc>https://heroes-lang.org/it/thanks.html</loc><priority>0.6</priority></url>
-  <url><loc>https://heroes-lang.org/it/docs/index.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/a-first-program.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/bindings-and-mutation.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/control-flow.html</loc><priority>0.6</priority></url>
   <url><loc>https://heroes-lang.org/it/docs/failure-is-a-value.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/generics-and-function-values.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/index.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/maps.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/records-and-functions.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/strings.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/tests-and-holes.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/the-c-boundary.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/values-all-the-way-down.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/docs/variants-and-match.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/errors.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/index.html</loc><priority>1.0</priority></url>
+  <url><loc>https://heroes-lang.org/it/log.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/panel.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/selfhost.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/thanks.html</loc><priority>0.6</priority></url>
+  <url><loc>https://heroes-lang.org/it/why.html</loc><priority>0.8</priority></url>
+  <url><loc>https://heroes-lang.org/it/zen.html</loc><priority>0.8</priority></url>
 </urlset>
