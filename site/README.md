@@ -428,15 +428,36 @@ Three rules follow, and they bind every later edit:
   first draft of this refresh shortened one and got the caret width, the line
   content and the fix text wrong in the process.
 
-## `site/public/docs/` — a skeleton, and who owns finishing it
+## `site/public/docs/` — twelve chapters, written
 
-The landing page lists all twelve chapters, and above them links `errors.html`,
-which lives at the site root but belongs to this section; **one chapter**
-(`failure-is-a-value.html`) is written, as the exemplar that fixes the
-conventions. **M-documentation-site**
-owns writing the rest, and owns the rule that governs them:
+The landing page lists all twelve chapters and links `errors.html` above them,
+which lives at the site root but belongs to this section. **All twelve are
+written, in both editions** (2026-08-19), on the conventions
+`failure-is-a-value.html` fixed as the exemplar. The rule they all obey:
 
 > Every code block on the site is a file in `examples/`.
+
+**Blocks are generated from the file, never retyped.** The generator that did
+it lives outside the repository (a scratchpad script), and the check that it
+was worth trusting is that regenerating the exemplar's hand-written blocks
+reproduced them byte for byte, which is also the check that its token classes
+match the lexer's own tables. Anything that regenerates a block later has the
+same obligation: `.k` is `keyword` in `selfhost/keywords.hero`, `.t` is the
+spec's type list, and a user's own type stays uncoloured.
+
+**Every diagnostic on a chapter page is real output, produced in the session
+that wrote the page**, by copying the gallery file and making one edit — the
+edit is named in that page's footer, so a reader can reproduce it. No
+diagnostic on this site was typed by hand.
+
+**A chapter carries the previous chapter as well as the next one.** Twelve
+chapters read in order need a way back that is not the browser button; the
+backward link is set quieter than the forward one, because leaving is not the
+default.
+
+The order is fixed by the landing page's list and by the `prev`/`next` links,
+which have to agree: adding or moving a chapter means editing three places,
+and the link check catches only the dead ones, not the wrong ones.
 
 The convention that makes that rule checkable, and which every chapter must
 follow:
@@ -457,8 +478,11 @@ check compares *text content*, not markup. Blocks are copied from the file,
 never retyped. The showcase page follows the convention too, so the rule has no
 exceptions to explain later.
 
-Unwritten chapters are listed with a dim `in progress` tag and **no link** —
-never a dead one.
+The `in progress` tag and its `.todo` row are kept in the stylesheet although
+no chapter uses them now: a thirteenth chapter would be listed that way, with a
+dim tag and **no link** — never a dead one. The same rule governed the twelve
+while they were being written, and it is why `check.py`'s dead-link pass has
+never had anything to report.
 
 ## Keeping it current — on demand, not per milestone
 

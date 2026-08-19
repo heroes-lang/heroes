@@ -818,7 +818,13 @@ ol.log .when {
   text-transform: uppercase; letter-spacing: 0.1em;
   margin-bottom: 0.35rem;
 }
-ol.log b { font-style: normal; color: var(--fg); display: block; margin-bottom: 0.4rem; }
+/* The lead line is what the page is skimmed by: twenty entries is more than
+   anyone reads end to end, so the headline is set above body size and given
+   room, and the note under it is read only where the headline earned it. */
+ol.log b {
+  font-style: normal; color: var(--fg); display: block;
+  font-size: 1.08rem; line-height: 1.4; margin-bottom: 0.55rem;
+}
 /* Its own line: trailing a paragraph it reads as a stray link in the prose. */
 ol.log a.more {
   display: block; margin-top: 0.7rem;
