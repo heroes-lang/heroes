@@ -364,6 +364,14 @@ h3 {
   font-size: 0.92rem; color: var(--fg); margin: 2.6rem 0 0.6rem;
 }
 
+/* Code keeps its own case inside a heading, and the language decides that
+   case: `m[k]` set as `M[K]` and `chars()` as `CHARS()` are not the names the
+   compiler answers to. The poster styling is the page's; the spelling is the
+   program's, and where they disagree the program wins. */
+h1 code, h2 code, h3 code, .cards h3 code, dt code {
+  text-transform: none; letter-spacing: 0;
+}
+
 /* == 6. prose ============================================================= */
 
 p { margin: 0 0 1.3rem; }
