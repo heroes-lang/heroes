@@ -756,15 +756,35 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
    A filter cannot read a custom property, so the two inks are written into the
    filter's own tables; `--plate-light` here is the same colour, and it is what
    the transparent corners of a cut-out print on. */
+/* The text runs alongside it, which is what a float is for — and a float needs
+   a block container, because `main` is a grid and a grid item ignores `float`
+   outright. Hence `.byline`, holding the portrait and the lede and nothing else:
+   the `h2` under it stays a direct child of `main`, because the section counter
+   is `main:not(.home) > h2` and nesting it would drop the number in silence.
+   `flow-root` makes the wrapper contain the float without clipping it, so a
+   portrait taller than the lede can never reach into the section below. */
+.byline { display: flow-root; }
 .portrait {
-  width: 11.5rem; margin: 0 0 1.8rem;
+  float: right;
+  /* Wider than the space it takes from the prose: it hangs into the right bleed
+     by the same amount a code panel does, so its outer edge lands on the line
+     every figure on the site is already aligned to, and the reading column only
+     gives up the difference. */
+  width: 16.5rem;
+  margin: 0.35rem calc((var(--measure) - var(--wide)) / 2) 1.5rem 1.9rem;
   border-radius: var(--radius); overflow: hidden;
   border: 1px solid var(--line);
   background: var(--plate-light);
   filter: url(#duotone);
 }
 .portrait img { display: block; width: 100%; height: auto; }
-@media (max-width: 620px) { .portrait { width: 9.5rem; } }
+/* Below 900px the bleed tracks are gone, so hanging into them would hang off
+   the screen. */
+@media (max-width: 900px) { .portrait { width: 13rem; margin-right: 0; } }
+/* And on a phone a float would leave the lede in a three-word column. */
+@media (max-width: 620px) {
+  .portrait { float: none; width: 11rem; margin: 0 0 1.4rem; }
+}
 
 /* The filter carries the whole photograph, so a browser that cannot resolve it
    would show it untouched rather than broken — the graceful direction. */
