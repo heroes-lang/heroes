@@ -81,7 +81,8 @@ script (CLAUDE.md §10).
 
 **Syntax colouring is spans in the markup**, for the same reason. The token
 classes are the lexer's own tables rather than a guess — `.k` is
-`crates/heroes/src/lexer/keywords.rs::keyword`, `.t` is spec § Types — and a
+`selfhost/keywords.hero`'s `keyword` (it was `crates/heroes/src/lexer/keywords.rs`
+until M-bootstrap-archive), `.t` is spec § Types — and a
 user's own type is deliberately left uncoloured, because inferring it from a
 capital letter is a premise about a convention the spec does not state. Blocks
 are generated *from* the source file, so highlighting and byte-fidelity arrive
@@ -98,8 +99,8 @@ browser accepts without a word:
     python3 site/serve.py --it                             # opens the Italian edition
 
 **Why the real name and not localhost.** Every absolute URL on these pages is
-`https://heroes-lang.org/...`: the `canonical` of all 22 pages, the three
-`hreflang` alternates on each of them, the `og:url`, the sitemap's 22 entries.
+`https://heroes-lang.org/...`: the `canonical` of all 44 pages, the three
+`hreflang` alternates on each of them, the `og:url`, the sitemap's 44 entries.
 Under `localhost` none of that is exercised — the canonical points somewhere
 else than the page you are reading, and the language switch crosses an origin.
 Served under the real name, a mistake in any of it shows up here rather than
