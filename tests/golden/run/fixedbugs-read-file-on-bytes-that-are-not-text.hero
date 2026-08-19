@@ -1,0 +1,75 @@
+# A file that is not text is a VALUE, not a death (panel 087, 2026-08-19).
+#
+# Symptom: `read_file` on a file whose bytes are not valid UTF-8 killed the
+# process — `panic: hero_str_from_bytes: not well-formed UTF-8`, exit 134 — and a
+# program handling both `.ok` and `.err` reached NEITHER arm. The project's own
+# test net went red on it the day the repository acquired its first tracked JPEG,
+# and `docs/defects/002-the-guard-the-language-took-away.md` is the record: the
+# Rust bootstrap's record walk survived the same input because `read_to_string`
+# returns `Err`, and the Heroes port transcribed that guard faithfully to a place
+# where it could never fire.
+#
+# Cause: `runtime/parts/os.c` called `hero_str_from_bytes` unguarded, and
+# `hero_os.h` had three statuses with no code for "these bytes are not text" —
+# so the one failure a `str?` could not report was the one that had no status.
+#
+# Fix: a pre-check at the caller. `hero_utf8_valid` is asked BEFORE the
+# conversion, and the abort inside `hero_str_from_bytes` is deliberately left
+# alone — `hero_str_chars` takes one byte off an invalid sequence and depends on
+# it for the language-wide well-formedness invariant, so a weaker conversion
+# would have traded this defect for a worse one.
+#
+# The fixture is built rather than committed, and that is forced rather than
+# tidy: `write_file` takes a `str`, a `str` is UTF-8 by definition (spec:51), so
+# **no Heroes program can create a file that is not text**. The bytes have to
+# come through C. 0xFF is a byte no well-formed UTF-8 sequence contains.
+#
+# `build/` for the path, for the reason `edges-file-args-exit.hero` records: it
+# is this project's own directory, it exists wherever the compiler does, and a
+# relative path was a different file under each of the three configurations.
+
+extern "stdio.h"
+    function fopen(path: cstr, mode: cstr) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+constant NOT_TEXT: str
+    "build/heroes-golden-not-text.bin"
+
+constant IS_TEXT: str
+    "build/heroes-golden-is-text.txt"
+
+# Two bytes no UTF-8 decoder accepts, written through C because the language
+# cannot say them.
+function put_two_bad_bytes(path: str) -> bool
+    handle = fopen(path: path.cstr(), mode: "wb".cstr())
+    if handle == nullptr
+        return false
+    _ = fputc(c: 255, stream: handle)
+    _ = fputc(c: 254, stream: handle)
+    _ = fclose(stream: handle)
+    return true
+
+function main()
+    if !put_two_bad_bytes(path: NOT_TEXT)
+        print("cannot build the fixture")
+        return
+    # The arm that was unreachable. Its code is `read_failed` and not something
+    # sharper because the Tier-2 wrapper collapses the status on purpose — panel
+    # 087's two compiling seats disagreed about naming it, and `DECIDE.md` holds
+    # the question. What this case pins is that a branch is reached AT ALL.
+    match read_file(NOT_TEXT)
+        .ok text => print("unexpected: ", len(text), " bytes")
+        .err e   => print("not text: ", e.code)
+    # The good path, in the same case, because a guard that rejects everything
+    # would pass a test that only checks the rejection.
+    match write_file(path: IS_TEXT, text: "caffè\n")
+        .ok _  => print("wrote the text one")
+        .err e => print("write failed: ", e.code)
+    match read_file(IS_TEXT)
+        .ok text => print("text: ", len(text), " bytes")
+        .err e   => print("text failed: ", e.code)
+    # And the third state stays distinguishable: absent is not unreadable.
+    match read_file("build/heroes-golden-no-such-file")
+        .ok _  => print("unexpected")
+        .err e => print("missing: ", e.code)
