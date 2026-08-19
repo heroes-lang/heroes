@@ -116,21 +116,27 @@
     non poterlo fare.
   </p>
   <p>
-    In quella funzione si vedono altre tre cose, e vale la pena nominarle subito.
+    In quella funzione si vedono altre tre cose, e ognuna ha un capitolo suo.
+  </p>
+  <p>
     <code>total: i64 @ 0</code> dichiara qualcosa che cambierà: la
-    <code>@</code> segna la modificabilità, e un nome senza <code>@</code> non può
-    mai essere riassegnato &mdash; il semplice <code>=</code> lega un nome una
-    volta e per sempre. La modifica stessa si scrive allo stesso modo,
-    <code>total @ total * 10 + …</code>, con la <code>@</code> nel punto in cui il
-    valore cambia; per la riassegnazione non c&rsquo;è nessun <code>=</code>. E
+    <code>@</code> lo segna, e un nome legato con il semplice <code>=</code> non
+    può mai essere riassegnato. La modifica si scrive allo stesso modo,
+    <code>total @ total * 10 + …</code>, con la <code>@</code> nel punto in cui
+    il valore si sposta &mdash; per la riassegnazione non c&rsquo;è nessun
+    <code>=</code>.
+    <a href="bindings-and-mutation.html">Il capitolo dedicato &rarr;</a>
+  </p>
+  <p>
     <code>range(from: 0, to: text.len())</code> conta da <code>from</code> fino a
-    <code>to</code> <i>escluso</i>; i nomi dei suoi argomenti sono obbligatori
-    perché entrambi sono <code>i64</code>, che è la stessa regola che incontrerai
-    nella <a href="../errors.html">pagina degli errori</a>.
-    <code>text.len()</code>, invece, è la stessa chiamata di
-    <code>len(text)</code>: la sintassi a metodo è zucchero sintattico, quindi una
-    catena si legge da sinistra a destra senza che niente sia definito su un
-    tipo.
+    <code>to</code> <i>escluso</i>. I nomi dei due argomenti sono obbligatori
+    perché tutti e due sono <code>i64</code>.
+    <a href="records-and-functions.html">La regola, e il perché &rarr;</a>
+  </p>
+  <p>
+    <code>text.len()</code> è la stessa chiamata di <code>len(text)</code>: la
+    sintassi a metodo è zucchero sintattico, quindi una catena si legge da
+    sinistra a destra senza che niente sia definito su un tipo.
   </p>
   <p>
     Nota anche quello che <i>non</i> c&rsquo;è: nessun <code>try</code>, nessun

@@ -113,19 +113,27 @@
     function, but it does it from a line that looks like it cannot.
   </p>
   <p>
-    Three other things are visible in that function, and all are worth naming
-    now. <code>total: i64 @ 0</code> declares something that will change: the
-    <code>@</code> marks mutability, and a name without it can never be
-    reassigned, plain <code>=</code> binds a name once and forever. The change
-    itself is written the same way, <code>total @ total * 10 + …</code>, with
-    the <code>@</code> at the place the value changes; there is no
-    <code>=</code> for reassignment. And <code>range(from: 0, to: text.len())</code>
-    counts from <code>from</code> up to but <i>not including</i> <code>to</code>;
-    its argument names are mandatory because both are <code>i64</code>, which is
-    the same rule you will meet on the <a href="../errors.html">errors page</a>.
-    <code>text.len()</code>, meanwhile, is the same call as
-    <code>len(text)</code>: method syntax is sugar, so a chain reads left to
-    right without anything being defined on a type.
+    Three other things are visible in that function, and each one has a chapter
+    of its own.
+  </p>
+  <p>
+    <code>total: i64 @ 0</code> declares something that will change: the
+    <code>@</code> marks it, and a name bound with plain <code>=</code> can
+    never be reassigned. The change is written the same way,
+    <code>total @ total * 10 + …</code>, with the <code>@</code> where the
+    value moves &mdash; there is no <code>=</code> for reassignment.
+    <a href="bindings-and-mutation.html">The chapter on that &rarr;</a>
+  </p>
+  <p>
+    <code>range(from: 0, to: text.len())</code> counts from <code>from</code> up
+    to but <i>not including</i> <code>to</code>. Both argument names are
+    mandatory, because both arguments are <code>i64</code>.
+    <a href="records-and-functions.html">The rule, and why &rarr;</a>
+  </p>
+  <p>
+    <code>text.len()</code> is the same call as <code>len(text)</code>: method
+    syntax is sugar, so a chain reads left to right without anything being
+    defined on a type.
   </p>
   <p>
     Notice also what <i>isn't</i> there: no <code>try</code>, no
