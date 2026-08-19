@@ -64,6 +64,18 @@
   --gold: #e8b552;
   --code: #d6dcf2;
 
+  /* The author's portrait is printed as two plates: `--plate-dark` for the
+     shadows, `--plate-light` for the highlights. Blue and cream rather than blue
+     and red, because the red/blue pair is the home hero's wash, and § The visual
+     system spends it there and nowhere else.
+
+     `--plate-light` is live: it is the ground a cut-out prints on. The dark one
+     is recorded here rather than used, because an SVG filter cannot read a custom
+     property and the values live in the page's own `#duotone` tables — change
+     one and change the other. */
+  --plate-dark: #101c38;
+  --plate-light: #f2ead9;
+
   /* Measure and rhythm. Every vertical space on the page is a multiple of
      0.4rem, so nothing is arbitrary. */
   --gutter: clamp(1.15rem, 4vw, 2rem);
@@ -97,6 +109,7 @@
     --link: #1a45c4;
     --gold: #8a5a00;
     --code: #23345a;
+    --plate-light: #f6efe0;
     --grain-opacity: 0.05;
   }
 }
@@ -728,6 +741,35 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   pointer-events: none;
 }
 @media (max-width: 620px) { .page-head::after { width: 4.5rem; height: 6rem; opacity: 0.07; } }
+
+/* The author's portrait, printed as two inks.
+
+   A real duotone maps every tone to a colour between two plates, and CSS blend
+   modes cannot do that — `lighten` and `multiply` only clamp the ends and leave
+   the midtones grey, which is a warm photograph rather than a duotone. So the
+   mapping is an SVG filter, inline in the page the way the bolt is: one
+   `feColorMatrix` takes the photograph to luminance, and one
+   `feComponentTransfer` maps 0 to the dark plate and 1 to the light one, per
+   channel. No build step, no script, no request — and the file that ships stays
+   the photograph, so replacing it needs no tool.
+
+   A filter cannot read a custom property, so the two inks are written into the
+   filter's own tables; `--plate-light` here is the same colour, and it is what
+   the transparent corners of a cut-out print on. */
+.portrait {
+  width: 11.5rem; margin: 0 0 1.8rem;
+  border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--plate-light);
+  filter: url(#duotone);
+}
+.portrait img { display: block; width: 100%; height: auto; }
+@media (max-width: 620px) { .portrait { width: 9.5rem; } }
+
+/* The filter carries the whole photograph, so a browser that cannot resolve it
+   would show it untouched rather than broken — the graceful direction. */
+svg.ink { position: absolute; width: 0; height: 0; overflow: hidden; }
+}
 h1.page {
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
   font-size: clamp(2.1rem, 6.5vw, 3rem); margin: 0; line-height: 1.02;
@@ -740,7 +782,7 @@ h1.page {
 .page-head .lede {
   font-size: 1.15rem; color: var(--dim); font-style: italic; margin: 0.8rem 0 0;
 }
-main > p.lede {
+main p.lede {
   font-size: 1.32rem; line-height: 1.45; color: var(--fg); font-style: normal;
   margin: 0 0 2.4rem; max-width: 33rem; text-wrap: pretty;
 }
