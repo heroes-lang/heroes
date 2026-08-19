@@ -638,6 +638,14 @@ figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
   font: 0.72rem/1.45 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim);
 }
+/* Each number says in one sentence what was counted. A bare figure on a
+   landing page is a boast; a figure with its method is evidence. */
+.figures .how {
+  display: block; margin-top: 0.6rem;
+  font-size: 0.88rem; line-height: 1.55;
+  color: color-mix(in srgb, var(--fg) 76%, var(--dim));
+}
+.figures .how a { white-space: nowrap; }
 @media (max-width: 620px) {
   .figures { grid-template-columns: 1fr; }
   .figures li + li { border-left: 0; border-top: 1px solid var(--line-soft); padding-left: 0; }

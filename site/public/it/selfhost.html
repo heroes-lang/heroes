@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Scritto in se stesso: il punto fisso di Heroes</title>
-<meta name="description" content="Il compilatore di Heroes è scritto in Heroes: 143 moduli, 34.812 righe, e tre compilatori che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<meta name="description" content="Il compilatore di Heroes è scritto in Heroes: 153 moduli, 37.146 righe, e tre generazioni che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/it/selfhost.html">
 <link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/selfhost.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Scritto in se stesso: il punto fisso di Heroes">
-<meta property="og:description" content="Il compilatore di Heroes è scritto in Heroes: 143 moduli, 34.812 righe, e tre compilatori che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<meta property="og:description" content="Il compilatore di Heroes è scritto in Heroes: 153 moduli, 37.146 righe, e tre generazioni che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
 <meta property="og:url" content="https://heroes-lang.org/it/selfhost.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Scritto in se stesso: il punto fisso di Heroes">
-<meta name="twitter:description" content="Il compilatore di Heroes è scritto in Heroes: 143 moduli, 34.812 righe, e tre compilatori che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
+<meta name="twitter:description" content="Il compilatore di Heroes è scritto in Heroes: 153 moduli, 37.146 righe, e tre generazioni che producono lo stesso file C byte per byte. Un solo hash, e i nove difetti che il confronto ha trovato.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -78,8 +78,8 @@
     identica, due volte di fila. Quanto è costato, misurato:
   </p>
   <ul class="stats">
-    <li><span class="n">143</span><span class="what">moduli di Heroes</span></li>
-    <li><span class="n">34.812</span><span class="what">righe</span></li>
+    <li><span class="n">153</span><span class="what">moduli di Heroes</span></li>
+    <li><span class="n">37.146</span><span class="what">righe</span></li>
     <li><span class="n">0</span><span class="what">workaround rimasti</span></li>
     <li><span class="n">2.570</span><span class="what">output confrontati, nessuna divergenza</span></li>
   </ul>
@@ -104,7 +104,7 @@
   </p>
   <p>
     Un compilatore puntato sul proprio sorgente è un corpus che nessuna
-    suite di test riproduce: 34.812 righe che contengono ogni forma del
+    suite di test riproduce: 37.146 righe che contengono ogni forma del
     linguaggio, nelle proporzioni in cui il codice vero le usa. È con quel
     corpus che sono stati trovati cinque dei difetti del porting, ed erano una
     trappola sola vestita in cinque modi: un salto di ciclo dentro un ramo di
@@ -137,22 +137,27 @@
   <p>
     Il progetto si è confrontato con i sorgenti di altri dieci
     compilatori, e la riga scomoda è tinycc: 68.000 righe per
-    <i>tutto</i> il C, mentre il bootstrap in Rust ne spende 30.000 per un
-    sottoinsieme e delega a clang ogni domanda sul backend. Per unità di
+    <i>tutto</i> il C, mentre il bootstrap in Rust ne spendeva 30.000 per un
+    sottoinsieme e delegava a clang ogni domanda sul backend. Per unità di
     linguaggio coperto, <b>questo compilatore è caro</b>. Il contrappeso
     sta nella stessa tabella, ed è il motivo per cui il porting è
     stato possibile: un rapporto di commenti di 0,51, righe di commento contro
     righe di codice, quasi il doppio del secondo classificato.
   </p>
 
-  <h2>Cosa manca</h2>
+  <h2>E poi il terzo linguaggio è morto <span class="nod">· ashes to ashes ·</span></h2>
   <p>
-    Qui non c&rsquo;è un numero da dare. Ci sono due cose: bisogna mostrare il C generato che si costruisce da
-    un <a href="https://github.com/giuseppearici/heroes-lang">checkout pulito</a>
-    con nient&rsquo;altro che un compilatore C, che è come Go ha
-    rilasciato la 1.4 e come Zig distribuisce il suo bootstrap; e poi il
-    bootstrap in Rust va archiviato e non più mantenuto. Dopo di che il
-    quadro completo è Heroes → C → binario nativo, senza nessun terzo
+    Dopo l&rsquo;hash restavano due cose in sospeso, e sono state pagate
+    entrambe. Il C generato doveva costruirsi da un
+    <a href="https://github.com/giuseppearici/heroes-lang">checkout pulito</a>
+    con nient&rsquo;altro che un compilatore C, come Go ha rilasciato la 1.4 e
+    come Zig distribuisce il suo bootstrap. Si costruisce, in una riga:
+  </p>
+  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes</code></pre>
+  <p>
+    E il compilatore con cui era nato il primo è stato archiviato: nessuno lo
+    costruisce, nessuno lo controlla, resta lì solo come testimonianza. Adesso il
+    quadro completo è Heroes &rarr; C &rarr; binario nativo, senza nessun terzo
     linguaggio in mezzo.
   </p>
 
