@@ -47,6 +47,32 @@
     <h1 class="page">The author</h1>
     <span class="nod">· moonage daydream ·</span>
   </div>
+  <!-- The two plates the portrait is printed with (site/README.md § The visual
+       system). Inline, not a data URI: a same-document fragment is the only
+       filter reference every browser resolves. The matrix takes the photograph
+       to luminance; the table maps black to the dark plate and white to the
+       light one, so every tone in between lands on the line between two inks. -->
+  <svg class="ink" aria-hidden="true" focusable="false">
+    <filter id="duotone" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0
+                                           0.2126 0.7152 0.0722 0 0
+                                           0.2126 0.7152 0.0722 0 0
+                                           0      0      0      1 0"/>
+      <feComponentTransfer>
+        <feFuncR type="gamma" exponent="0.72"/>
+        <feFuncG type="gamma" exponent="0.72"/>
+        <feFuncB type="gamma" exponent="0.72"/>
+      </feComponentTransfer>
+      <feComponentTransfer>
+        <feFuncR type="table" tableValues="0.0627 0.9490"/>
+        <feFuncG type="table" tableValues="0.1098 0.9176"/>
+        <feFuncB type="table" tableValues="0.2196 0.8510"/>
+      </feComponentTransfer>
+    </filter>
+  </svg>
+  <figure class="portrait">
+    <img src="images/giuseppe-arici.jpg" alt="Giuseppe Arici, smiling, in a cap with a yellow bird on it.">
+  </figure>
   <p class="lede">Giuseppe Arici has been writing software for over twenty
   years: Java, C#, Rails, iOS, Go, microservices, DevOps. A cap for every
   language. He is a partner and CTO at Codermine, in Brescia, and the author of

@@ -23,7 +23,8 @@ five-seat review panel as a directory-scoped skill.
 | `thanks.html` | the credits: the designers of every language the design borrowed from, named one by one, each with the borrowing beside them. Governed by § The thanks page below |
 | `log.html` | the build log, one postcard per milestone, newest first |
 | `docs/` | the documentation: landing + chapters |
-| `style.css` | the only cross-page asset |
+| `style.css` | the only cross-page *stylesheet* |
+| `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `author.html` |
 
 Still no build step, no JavaScript, no external assets; light/dark via
 `prefers-color-scheme`. The domain (heroes-lang.org) is already owned by the
@@ -284,6 +285,36 @@ everything else is paper and ink.
   anywhere. This is what the author asked for on 2026-08-18, *"meno pagine di
   testo lunghissimo"*, and it is a layout answer, not a copy answer, though the
   copy was cut too.
+- **The portrait is printed, not pasted** (author instruction 2026-08-19:
+  *"usa questa immagine duotonata nella pagina autore"*). The photograph on
+  `author.html` is duotoned to two of the site's inks — a deep blue in the
+  shadows, cream in the highlights — so it belongs to the palette instead of
+  sitting on top of it. **Blue and cream, not blue and red**, because the red/blue
+  pair is the hero wash and the first rule in this list spends it there and
+  nowhere else.
+  - **It is an SVG filter inline in the page, and it has to be.** CSS blend modes
+    cannot do a duotone: `lighten` and `multiply` clamp the two ends and leave the
+    midtones grey, which is a warm photograph and not two inks. Rendered and
+    compared before this was written. The filter is one `feColorMatrix` to
+    luminance, one `feComponentTransfer` at `gamma 0.72` to lift the midtones
+    (without it the shaded half of the face goes muddy — also rendered and
+    compared), and one more mapping black to the dark plate and white to the
+    light one. Inline rather than a `data:` URI because a same-document fragment
+    is the only filter reference every browser resolves.
+  - **The file that ships stays the photograph**: no tool touches it, replacing it
+    is a copy, and the JPEG's white ground becomes the cream plate on its own, so
+    the frame reads as a print on paper. Verified in both themes: on the dark
+    stage the cream frame is the bright object on the page; in light mode it is
+    within a few values of the paper, so the portrait reads as printed straight
+    onto it with only the hairline border around it.
+  - `--plate-light` is a live token (the ground a cut-out would print on).
+    `--plate-dark` is **recorded** rather than used: a filter cannot read a custom
+    property, so the numbers live in the filter's own tables. Change one, change
+    the other.
+  - The image is served at **720×720 and 121 KB** for a frame 184px wide — four
+    times the display size, which is the headroom to grow the frame later. It
+    arrived at 1024×1024 and 837 KB; the original is not in the repository, so ask
+    the author for it before enlarging the frame past 720.
 - **The bolt once more, as architecture**: blown up behind every reading page's
   title at 9% and cropped by the head's own box. That is its fifth job and the
   last one it gets.
@@ -340,6 +371,14 @@ copy could be wrong later:
    calendar is the part of a page that goes stale on its own. If it ever comes
    back, two things hold: the talk is never described as the book, and Italian
    Agile Days is an unsent proposal that must not appear.
+
+7. **The portrait is the author's own photograph, supplied by them** for this
+   page (2026-08-19). It is the only picture of a person on the site, and rule 4
+   still governs everything around it: the page names the city and the company
+   and links the personal GitHub profile, and nothing else. The alt text
+   describes the photograph and names the cap, because the lede's own line is
+   *"a cap for every language"* and a reader who cannot see the picture should
+   still get the joke.
 
 **The book has one domain per edition** (author instruction 2026-08-18):
 `glieroidelcodice.it` for the Italian, `heroesofcode.com` for the English, each
