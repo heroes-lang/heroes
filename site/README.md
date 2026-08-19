@@ -311,10 +311,30 @@ everything else is paper and ink.
     `--plate-dark` is **recorded** rather than used: a filter cannot read a custom
     property, so the numbers live in the filter's own tables. Change one, change
     the other.
-  - The image is served at **720×720 and 121 KB** for a frame 184px wide — four
-    times the display size, which is the headroom to grow the frame later. It
-    arrived at 1024×1024 and 837 KB; the original is not in the repository, so ask
-    the author for it before enlarging the frame past 720.
+  - **The prose runs alongside it** (author instruction 2026-08-19: *"fagli
+    girare il testo a fianco e dagliela più grande"*), which needs a `float`, and
+    a `float` needs a block container: `main` is a grid and **a grid item ignores
+    `float` outright**, which is why the first attempt put the portrait above the
+    lede. Hence `.byline`, holding the portrait and the lede and nothing else.
+    Two things it must keep doing: the `h2` below stays a **direct child of
+    `main`**, because the section counter is `main:not(.home) > h2` and nesting it
+    drops the number in silence; and the wrapper is `display: flow-root`, so a
+    portrait taller than the lede is contained rather than reaching into the
+    section below — and contained without clipping, which `overflow: hidden`
+    would not manage.
+  - **It hangs into the right bleed** by the same amount a code panel does, so
+    its outer edge lands on the line every figure on the site is aligned to and
+    the reading column only gives up the difference. At 16.5rem the lede runs
+    eight lines and ends within two pixels of the portrait's bottom edge — that
+    alignment is luck rather than design, and it is worth not disturbing.
+  - Three widths, each rendered: at 1000px the float and the bleed; at 860px the
+    bleed tracks are gone, so the portrait drops to 13rem and its negative margin
+    to zero; under 620px the float goes and it sits above the lede at 11rem,
+    because a float there leaves the lede in a three-word column.
+  - The image is served at **720×720 and 121 KB** for a frame 264px wide, which
+    leaves it sharp on a 2× screen and some headroom above that. It arrived at
+    1024×1024 and 837 KB; the original is not in the repository, so ask the author
+    for it before enlarging the frame much further.
 - **The bolt once more, as architecture**: blown up behind every reading page's
   title at 9% and cropped by the head's own box. That is its fifth job and the
   last one it gets.
