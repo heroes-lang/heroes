@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A first program, Heroes documentation</title>
+<meta name="description" content="A Heroes file needs nothing around it: no imports, no header, no project file. Indentation is the structure, comments are the documentation, and one file is one module.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/docs/a-first-program.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/a-first-program.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/docs/a-first-program.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/docs/a-first-program.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="A first program, Heroes documentation">
+<meta property="og:description" content="A Heroes file needs nothing around it: no imports, no header, no project file. Indentation is the structure, comments are the documentation, and one file is one module.">
+<meta property="og:url" content="https://heroes-lang.org/docs/a-first-program.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="A first program, Heroes documentation">
+<meta name="twitter:description" content="A Heroes file needs nothing around it: no imports, no header, no project file. Indentation is the structure, comments are the documentation, and one file is one module.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Why Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../zen.html">Zen</a></li>
+      <li><a href="../panel.html">Panel</a></li>
+      <li><a href="../thanks.html">Thanks</a></li>
+      <li><a href="../author.html">Author</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../it/docs/a-first-program.html" hreflang="it" lang="it" title="Questa pagina in italiano">IT</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 1</p>
+
+  <h1 class="chapter">A first program</h1>
+  <p class="tagline">A file, a <code>main</code>, and nothing around it.</p>
+
+  <p>
+    Most languages ask for some ceremony before your first line runs: an import
+    of the thing that prints, a class to hold the function, a project file that
+    says which files exist. Heroes asks for none of it. A program is a file, and
+    a file that can run is one that declares <code>main</code>.
+  </p>
+
+  <h3>The whole program</h3>
+  <figure class="example" data-src="examples/gallery/00-first.hero" data-lines="7-8">
+<pre><code><span class="k">function</span> main()
+    print((<span class="n">2</span> + <span class="n">3</span>) * <span class="n">4</span>)</code></pre>
+    <figcaption>examples/gallery/00-first.hero, lines 7&ndash;8</figcaption>
+  </figure>
+  <pre><code>$ heroes run examples/gallery/00-first.hero
+20</code></pre>
+  <p>
+    <code>function main()</code> declares where the program starts. It takes
+    nothing and gives nothing back, which is why there is no arrow and no type
+    after the brackets: a function that returns something says so with
+    <code>-&gt; i64</code>, and one that does not stays silent about it.
+    <code>print</code> is built into the language rather than imported from
+    anywhere; it writes its arguments one after the other and ends the line.
+  </p>
+
+  <h3>What is not in that file</h3>
+  <p>
+    Every absence below is a decision, and the reason is always the same one:
+    the fewer places a fact can hide, the fewer ways a reader &mdash; human or
+    model &mdash; can be wrong about it.
+  </p>
+  <ul>
+    <li>No import or include line. <code>print</code>, <code>len</code> and the
+    rest of the built-ins are simply there.</li>
+    <li>No class and no namespace block. A file is already the unit.</li>
+    <li>No semicolons and no braces. A line ends at the end of the line, and a
+    block is what is indented under it.</li>
+    <li>No project file, no manifest, no build script. The compiler is given a
+    file, not a configuration.</li>
+    <li>No forward declarations. Declaration order never matters, so two
+    functions can call each other without either being announced first.</li>
+  </ul>
+
+  <h3>The indentation <em>is</em> the structure</h3>
+  <p>
+    A block is four spaces deeper than the line that opens it. Not three, not
+    eight, not a tab: exactly four, at every level. That is rigid on purpose,
+    and the compiler tells you so rather than guessing what you meant:
+  </p>
+  <pre><code>$ heroes check hello.hero
+error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per level; found 2
+  at hello.hero:2:1
+    |
+  2 |   print("hi")
+    | ^^</code></pre>
+  <p>
+    A tab is its own error with its own message. The point of the rule is that
+    there is exactly one way to write any program, so two files that do the same
+    thing look the same, and a difference in a diff is a difference in meaning.
+    <code>heroes fmt</code> prints that one form for you if you ever drift from
+    it.
+  </p>
+
+  <h3>Comments are where the documentation lives</h3>
+  <p>
+    There is no separate documentation syntax to learn, because a comment
+    already is one. <code>#</code> runs to the end of the line and may contain
+    markdown; <code>##</code> opens a section, which is how a file gets a title
+    and a heading:
+  </p>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="1-4">
+<pre><code><span class="c">## Points</span>
+<span class="c">#</span>
+<span class="c"># Records, their constructors, and UFCS. Every field is named at the call</span>
+<span class="c"># site, always — `Point(3, 4)` does not exist.</span></code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 1&ndash;4</figcaption>
+  </figure>
+  <p>
+    A comment sitting directly above a declaration documents that declaration.
+    Nothing else marks it as documentation, and nothing has to:
+  </p>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-9">
+<pre><code><span class="c"># A position on the integer grid.</span>
+<span class="k">record</span> Point
+    x: <span class="t">i64</span>
+    y: <span class="t">i64</span></code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 6&ndash;9</figcaption>
+  </figure>
+
+  <h3>One file is one module</h3>
+  <p>
+    When one file is not enough, another file beside it is a module you can
+    name. <code>use</code> brings it in:
+  </p>
+  <figure class="example" data-src="examples/calculator/main.hero" data-lines="31-31">
+<pre><code><span class="k">use</span> eval</code></pre>
+    <figcaption>examples/calculator/main.hero, line 31</figcaption>
+  </figure>
+  <p>
+    That binds <code>eval.hero</code>, in the same directory, to the name
+    <code>eval</code>, and everything it declares is then written with that name
+    in front: <code>eval.calculate(text, env)</code>. There are no aliases and
+    no wildcard import, so a qualified name always says where it came from, and
+    every module you use needs its own <code>use</code> line. Looking up an
+    unfamiliar name is reading, never searching.
+  </p>
+
+  <h3>The verbs</h3>
+  <p>
+    One binary does everything, and each subcommand answers a different question
+    about the same file:
+  </p>
+  <pre><code>$ heroes check program.hero    <span class="c"># names and types, no binary</span>
+$ heroes run program.hero      <span class="c"># compile and execute</span>
+$ heroes build program.hero    <span class="c"># compile only</span>
+$ heroes test program.hero     <span class="c"># run the file's tests</span>
+$ heroes fmt program.hero      <span class="c"># print the canonical form</span></code></pre>
+  <p>
+    <code>test</code> is the interesting one, because tests are part of the
+    language rather than a library you choose. The points file above carries two
+    of them:
+  </p>
+  <pre><code>$ heroes test examples/gallery/01-points.hero
+ok   "the 3-4-5 triangle"
+ok   "a rectangle keeps its size when it moves"
+2 tests, all passed</code></pre>
+
+  <p class="next">
+    Next: <b><a href="records-and-functions.html">Records and functions</a></b>,
+    where the data gets a shape and every argument gets a name.
+    <a href="index.html">Back to the chapter list</a>.
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of a file in the repository:
+    <code>examples/gallery/00-first.hero</code>,
+    <code>examples/gallery/01-points.hero</code> and
+    <code>examples/calculator/main.hero</code>.</p>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>
