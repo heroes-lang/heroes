@@ -25,7 +25,7 @@ legal expression that reports what belongs in the gap instead of failing.
 
 - [Home](https://heroes-lang.org/index.html): what the language is, one real sample, the claim
 - [Why Heroes](https://heroes-lang.org/why.html): the founding constraint (no standard library), the thesis, the cost formula, the objections answered
-- [Self-hosted](https://heroes-lang.org/selfhost.html): the fixpoint, 143 modules and 34,812 lines of Heroes emitting byte-identical C across three compiler generations
+- [Self-hosted](https://heroes-lang.org/selfhost.html): the fixpoint, 153 modules and 37,146 lines of Heroes emitting byte-identical C across three compiler generations
 - [The Zen](https://heroes-lang.org/zen.html): twenty lines the binary prints from `heroes this`
 - [The panel](https://heroes-lang.org/panel.html): how a change to the language is decided, five judges with differentiated briefs and four vetoes, the historian's seat, and what the design borrowed from Hylo, Swift, Cyclone, Go, Nim, Zig, Ada, Pascal and the rest
 - [The author](https://heroes-lang.org/author.html): Giuseppe Arici, partner and CTO at Codermine in Brescia, author of *Heroes of code*, a history of programming languages framed as a dream journey with David Bowie as the guide, out on 20 September 2026. He had never written a compiler before this one
@@ -42,12 +42,13 @@ in both, because they are quotations of real files and real output.
 
 ## Source
 
-- [Repository](https://github.com/giuseppearici/heroes-lang): the compiler, the spec, the design record, build with `cargo build`, then `./target/debug/heroes run examples/gallery/00-first.hero`
+- [Repository](https://github.com/giuseppearici/heroes-lang): the compiler, the spec, the design record; build with `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, then `./heroes run examples/gallery/00-first.hero`
 - [Examples](https://github.com/giuseppearici/heroes-lang/tree/main/examples/gallery): twelve small programs, one per language idea; every code block on the site is anchored to one of these files
 
 ## Notes
 
-- Status: pre-release, built in the open. The fixpoint is measured; the Rust
-  bootstrap is not yet archived; there is no installer yet.
+- Status: built in the open, not packaged. The fixpoint is measured; the
+  bootstrap compiler is archived and no longer builds; there is no installer,
+  and the way in is a C compiler and one command.
 - Diagnostics are machine-readable: `heroes check --json` emits schema 1 with
   stable snake_case codes, spans, notes and fixes.

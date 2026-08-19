@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Self-hosted, Heroes compiles Heroes, and the fixpoint holds</title>
-<meta name="description" content="The Heroes compiler is written in Heroes: 143 modules, 34,812 lines. Both compilers emit the same 20-megabyte C file, byte for byte, three generations deep. One hash.">
+<meta name="description" content="The Heroes compiler is written in Heroes: 153 modules, 37,146 lines. Three generations of it emit the same C file, byte for byte. One hash, and the bootstrap compiler is gone.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/selfhost.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/selfhost.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Self-hosted, Heroes compiles Heroes, and the fixpoint holds">
-<meta property="og:description" content="The Heroes compiler is written in Heroes: 143 modules, 34,812 lines. Both compilers emit the same 20-megabyte C file, byte for byte, three generations deep. One hash.">
+<meta property="og:description" content="The Heroes compiler is written in Heroes: 153 modules, 37,146 lines. Three generations of it emit the same C file, byte for byte. One hash, and the bootstrap compiler is gone.">
 <meta property="og:url" content="https://heroes-lang.org/selfhost.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Self-hosted, Heroes compiles Heroes, and the fixpoint holds">
-<meta name="twitter:description" content="The Heroes compiler is written in Heroes: 143 modules, 34,812 lines. Both compilers emit the same 20-megabyte C file, byte for byte, three generations deep. One hash.">
+<meta name="twitter:description" content="The Heroes compiler is written in Heroes: 153 modules, 37,146 lines. Three generations of it emit the same C file, byte for byte. One hash, and the bootstrap compiler is gone.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -77,8 +77,8 @@
     took, measured:
   </p>
   <ul class="stats">
-    <li><span class="n">143</span><span class="what">modules of Heroes</span></li>
-    <li><span class="n">34,812</span><span class="what">lines</span></li>
+    <li><span class="n">153</span><span class="what">modules of Heroes</span></li>
+    <li><span class="n">37,146</span><span class="what">lines</span></li>
     <li><span class="n">0</span><span class="what">workarounds left</span></li>
     <li><span class="n">2,570</span><span class="what">outputs compared, no divergence</span></li>
   </ul>
@@ -101,7 +101,7 @@
   </p>
   <p>
     A compiler pointed at its own source is a corpus no test suite reproduces:
-    34,812 lines holding every shape the language has, in the proportions real
+    37,146 lines holding every shape the language has, in the proportions real
     code has them. That corpus is how five of the port's faults were found, and
     they were one trap worn five ways: a loop jump inside a <code>match</code>
     arm skipped the line that keeps a hand-maintained index up to date. The Rust
@@ -130,20 +130,27 @@
   <p>
     The project measured itself against ten other compiler source trees, and the
     uncomfortable row is tinycc: 68,000 lines for <i>all</i> of C, where the Rust bootstrap
-    spends 30,000 on a subset and delegates every backend question to clang. Per
+    spent 30,000 on a subset and delegated every backend question to clang. Per
     unit of language covered, <b>this compiler is expensive</b>. The counterweight
     is in the same table and is the reason the port was possible at all: a comment
     ratio of 0.51, comment lines against code lines, nearly double the next
     highest of them.
   </p>
 
-  <h2>What is left</h2>
+  <h2>Then the third language died <span class="nod">· ashes to ashes ·</span></h2>
   <p>
-    Not a measurement. Two things: the generated C has to be shown building from
-    a <a href="https://github.com/giuseppearici/heroes-lang">clean checkout</a> with nothing but a C compiler, which is how Go shipped 1.4
-    and how Zig ships its bootstrap, and then the Rust bootstrap gets archived
-    and never maintained again. After that the whole picture is Heroes → C →
-    native binary, with no third language anywhere.
+    Two things were owed after the hash, and both have been paid. The generated
+    C had to be shown building from a
+    <a href="https://github.com/giuseppearici/heroes-lang">clean checkout</a>
+    with nothing but a C compiler, the way Go shipped 1.4 and the way Zig ships
+    its bootstrap. It does, in one line:
+  </p>
+  <pre><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes</code></pre>
+  <p>
+    And the compiler the first one was written in has been archived: nothing
+    builds it, nothing lints it, and it is kept only as a record. The whole
+    picture is now Heroes &rarr; C &rarr; native binary, with no third language
+    anywhere in it.
   </p>
 
   <p class="next">

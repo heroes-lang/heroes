@@ -228,11 +228,12 @@ Two things that are easy to get wrong and are therefore rules:
   changes · station to station · rebel rebel · always crashing in the same
   car · a new career in a new town · oh! you pretty things · hunky dory ·
   under pressure · five years · look back in anger · absolute beginners ·
-  moonage daydream · lady stardust · sons of the silent age.
-- Ideas bank, still unspent: **M-selfhost-fixpoint's bootstrap retirement →
-  "Ashes to Ashes"**; a 1.0 → "Golden Years". The fixpoint itself landed with
-  M-selfhost-port and did *not* spend "Ashes to Ashes" — the retirement is a
-  separate event and keeps the nod.
+  moonage daydream · lady stardust · sons of the silent age · ashes to ashes.
+- **"Ashes to Ashes" is spent** (2026-08-19), on the section of `selfhost.html`
+  that reports the bootstrap's retirement — which is the event the bank was
+  holding it for. M-bootstrap-archive closed the same day, so the section that
+  used to be headed *What is left* now says both owed things are paid.
+- Ideas bank, still unspent: a 1.0 → "Golden Years".
 
 ## The visual system — what the art direction pass fixed (2026-08-18)
 
@@ -400,14 +401,17 @@ Three rules follow, and they bind every later edit:
 
 ## The claims that have a gate on them
 
-- **"v1"** appears on the site only when `M-selfhost-fixpoint` closes. The
-  fixpoint is measured and stable (2026-08-17), but that milestone still owes
-  the seed test — `B.c` built from a clean checkout with nothing but a C
-  compiler — and then the archive of `crates/heroes`. Until then the page says
-  the compiler is written in Heroes and the fixpoint holds, which is what was
-  measured, and describes the archive as what remains.
+- **The gate on "v1" has opened, and the site still does not use the word**
+  (2026-08-19). Both conditions this bullet named are met and were re-measured
+  the day it was rewritten: `clang -I runtime seed/heroes.c runtime/runtime.c -o
+  heroes` builds the compiler from a clean checkout with nothing but clang, and
+  `crates/` is now `archive/bootstrap-rs/`. What changed on the pages is the
+  facts — the build instructions, the counts, and `selfhost.html`'s closing
+  section — **not** the label: calling the language *v1* in public is a release
+  decision and it is the author's, so it waits for them rather than arriving as
+  a side effect of a documentation pass.
 - **Numbers are re-measured in the session that writes them** (CLAUDE.md §1),
-  and **the unit has to match the record's**: `./target/debug/heroes measure`
+  and **the unit has to match the record's**: `./heroes measure`
   for spec tokens, `find selfhost -name "*.hero" | wc -l` and `| xargs wc -l`
   for the port, `grep -rn "PORT-DEBT" selfhost/ | wc -l` for the workarounds.
   Note that journal 021 and the ROADMAP count *tests* (27,230) while a grep of

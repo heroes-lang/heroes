@@ -91,9 +91,29 @@
   </header>
 
   <ul class="figures">
-    <li><span class="n">91% vs 0%</span><span class="what">dropped argument labels caught</span></li>
-    <li><span class="n">3512</span><span class="what">tokens: the whole spec</span></li>
-    <li><span class="n">1</span><span class="what">hash, three compilers</span></li>
+    <li>
+      <span class="n">91% vs 0%</span>
+      <span class="what">a dropped argument label</span>
+      <span class="how">Take programs that work, drop one argument label, and
+      count what the compiler stops: 91 out of every 100. The same compiler with
+      the rules switched off stops none of them.
+      <a href="errors.html">the whole table &rarr;</a></span>
+    </li>
+    <li>
+      <span class="n">3512</span>
+      <span class="what">tokens of specification</span>
+      <span class="how">The entire language is 229 lines. It fits in a prompt
+      with room left for your program, and the compiler counts its own budget so
+      the number cannot drift.
+      <a href="why.html">why that is the design &rarr;</a></span>
+    </li>
+    <li>
+      <span class="n">1</span>
+      <span class="what">hash, three compilers</span>
+      <span class="how">The compiler is written in Heroes and compiles itself.
+      Ask three generations of it to write out the same C and you get one file,
+      to the byte. <a href="selfhost.html">the fixpoint &rarr;</a></span>
+    </li>
   </ul>
 
   <h2>Native binaries, no runtime to install <span class="nod">· sound and vision ·</span></h2>
@@ -131,29 +151,36 @@
   </p>
 
   <h2 id="run">Run it</h2>
+  <p>
+    There is no installer, and there is nothing to install. The repository
+    carries the compiler as one generated C file, so a C compiler is the only
+    thing your machine needs:
+  </p>
   <pre><code>$ git clone https://github.com/giuseppearici/heroes-lang
-$ cd heroes-lang &amp;&amp; cargo build
-$ ./target/debug/heroes run examples/gallery/03-fallible.hero
+$ cd heroes-lang
+$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+$ ./heroes run examples/gallery/03-fallible.hero
 read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
+    That C file is not a hand-written bootstrap. It is what the compiler prints
+    when it compiles itself, so the thing you just built is the language
+    building the language, with no other toolchain in the room.
+    <code>./heroes doctor</code> checks the rest of what a build needs: clang,
+    the linker, the architecture, the runtime and the build cache.
+  </p>
+  <p>
     The middle line of that output is a failure being handled, not the build
     breaking. <a href="docs/failure-is-a-value.html">The chapter on it</a> walks
-    through that program line by line. There is no installer yet: building from
-    source is the only way in, and it is the supported one. It needs
-    <a href="https://rustup.rs">rustup</a> and clang: the repository pins Rust
-    1.90.0 and rustup fetches it on the first build, and there are no
-    third-party crates, so nothing else is downloaded. Once built,
-    <code>./target/debug/heroes doctor</code> checks the other half: clang, the
-    linker, the architecture, the runtime and the build cache.
+    through that program line by line.
   </p>
   <p>
     Then write your own. The file needs nothing else: no imports, no header, no
     project file, just a <code>main</code>.
   </p>
   <pre><code>$ printf 'function main()\n    print("we can be heroes")\n' &gt; hello.hero
-$ ./target/debug/heroes run hello.hero
+$ ./heroes run hello.hero
 we can be heroes</code></pre>
   <p>
     <code>heroes run</code> compiles that to a native binary and executes it,
@@ -161,9 +188,8 @@ we can be heroes</code></pre>
     folder beside you. Every capability is a subcommand of that one binary:
     <code>lex</code>, <code>parse</code>, <code>check</code>, <code>build</code>,
     <code>run</code>, <code>test</code>, <code>fmt</code>, <code>doctor</code>,
-    <code>mutate</code>, <code>measure</code>, <code>this</code>, and every
-    example on this site is a file in <code>examples/</code>, waiting to be
-    changed.
+    <code>mutate</code>, <code>measure</code>, <code>this</code>. Every example
+    on this site is a file in <code>examples/</code>, waiting to be changed.
   </p>
 
   <h2>Three things that make it different</h2>
@@ -190,9 +216,10 @@ we can be heroes</code></pre>
     <li>
       <h3>It compiles itself</h3>
       <p>
-        The compiler is written in Heroes, 143 modules, 34,812 lines. Both
-        compilers emit the same 20-megabyte C file, byte for byte, three
-        generations deep. One hash.
+        The compiler is written in Heroes: 153 modules, 37,146 lines. Ask three
+        generations of it to write the same program out in C, and the three
+        files match to the byte. The language it was first built in has left the
+        repository.
       </p>
       <a class="more" href="selfhost.html">The fixpoint</a>
     </li>
@@ -248,10 +275,9 @@ a typo in a name               100%       100%</code></pre>
   </p>
 
   <footer>
-    <p>Heroes is pre-release and built in the open: the fixpoint is measured,
-    the Rust bootstrap is not yet archived, and there is no installer, the
-    compiler builds from source. The record of every decision, panels and
-    measurements included, is public in the
+    <p>Heroes is built in the open and it is not packaged yet: no installer and
+    no releases, so the way in is a C compiler and one command. The record of
+    every decision, panels and measurements included, is public in the
     <a href="https://github.com/giuseppearici/heroes-lang">repository</a>.</p>
     <p>The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977), and the quotation marks are his. The lightning bolt is borrowed from 1973, worn
     at a respectful angle. You will never meet Bowie in an error message.</p>
