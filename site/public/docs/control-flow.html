@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control flow, Heroes documentation</title>
+<meta name="description" content="Two loops and one conditional. if takes only bool because there is no truthiness, for walks a sequence, while repeats on a condition, and a range is an ordinary function call.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/docs/control-flow.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/control-flow.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/docs/control-flow.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/docs/control-flow.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Control flow, Heroes documentation">
+<meta property="og:description" content="Two loops and one conditional. if takes only bool because there is no truthiness, for walks a sequence, while repeats on a condition, and a range is an ordinary function call.">
+<meta property="og:url" content="https://heroes-lang.org/docs/control-flow.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Control flow, Heroes documentation">
+<meta name="twitter:description" content="Two loops and one conditional. if takes only bool because there is no truthiness, for walks a sequence, while repeats on a condition, and a range is an ordinary function call.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Why Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../zen.html">Zen</a></li>
+      <li><a href="../panel.html">Panel</a></li>
+      <li><a href="../thanks.html">Thanks</a></li>
+      <li><a href="../author.html">Author</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../it/docs/control-flow.html" hreflang="it" lang="it" title="Questa pagina in italiano">IT</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 5</p>
+
+  <h1 class="chapter">Control flow</h1>
+  <p class="tagline">Two loops, one conditional, and no clever forms.</p>
+
+  <p>
+    There is one way to ask a question and two ways to repeat something. No
+    <code>do…while</code>, no three-part <code>for(;;)</code> header, no
+    <code>switch</code> with fall-through, no ternary operator, no loop labels.
+    Each of those is a second way to write something the language already has,
+    and every second way is a place a reader can be surprised.
+  </p>
+
+  <h3><code>if</code>, and only <code>bool</code></h3>
+  <p>
+    A condition is a <code>bool</code> or it is a compile error. There is no
+    rule about zero being false or an empty string being false, because there is
+    no truthiness at all:
+  </p>
+  <pre><code>$ heroes check loops.hero
+error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no truthiness in this language
+  at loops.hero:12:12
+     |
+  12 |         if x
+     |            ^</code></pre>
+  <p>
+    <code>if</code>, <code>else if</code> and <code>else</code> are the whole
+    set, the condition takes no brackets, and the body is what is indented under
+    it. <code>if</code> is also an <i>expression</i>, so a value can be chosen
+    with one instead of by assigning in two branches &mdash; which is why the
+    language has no ternary and does not miss it.
+  </p>
+
+  <h3><code>for x in xs</code>: walking a sequence</h3>
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="7-14">
+<pre><code><span class="c"># The largest element. Fails on nothing: an empty array has no largest, so</span>
+<span class="c"># the caller is asked for a floor instead.</span>
+<span class="k">function</span> largest_or(xs: [<span class="t">i64</span>], floor: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
+    best: <span class="t">i64</span> @ floor
+    <span class="k">for</span> x <span class="k">in</span> xs
+        <span class="k">if</span> x &gt; best
+            best @ x
+    <span class="k">return</span> best</code></pre>
+    <figcaption>examples/gallery/04-loops.hero, lines 7&ndash;14</figcaption>
+  </figure>
+  <p>
+    There is no index, no counter and no end condition to get wrong: the loop
+    takes each element in turn and the variable is a fresh copy each time round.
+  </p>
+  <p>
+    The <code>@</code> on <code>best</code> is the other half of this chapter and
+    gets its <a href="index.html">own chapter next</a>. In one line:
+    <code>best: i64 @ floor</code> declares a name that is allowed to change,
+    and <code>best @ x</code> changes it. A name bound with <code>=</code>
+    cannot change, ever, so the mutable parts of a program are exactly the lines
+    with an <code>@</code> on them and you can find them by looking.
+  </p>
+
+  <h3>Leaving early: <code>break</code></h3>
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="16-23">
+<pre><code><span class="c"># Sums until the running total would pass a limit, then stops.</span>
+<span class="k">function</span> sum_until(xs: [<span class="t">i64</span>], limit: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
+    total: <span class="t">i64</span> @ <span class="n">0</span>
+    <span class="k">for</span> x <span class="k">in</span> xs
+        <span class="k">if</span> total + x &gt; limit
+            <span class="k">break</span>
+        total @ total + x
+    <span class="k">return</span> total</code></pre>
+    <figcaption>examples/gallery/04-loops.hero, lines 16&ndash;23</figcaption>
+  </figure>
+
+  <h3>Skipping one: <code>continue</code></h3>
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="25-32">
+<pre><code><span class="c"># Counts the even ones, and shows `continue` earning its keep.</span>
+<span class="k">function</span> even_count(xs: [<span class="t">i64</span>]) -&gt; <span class="t">i64</span>
+    seen: <span class="t">i64</span> @ <span class="n">0</span>
+    <span class="k">for</span> x <span class="k">in</span> xs
+        <span class="k">if</span> x % <span class="n">2</span> != <span class="n">0</span>
+            <span class="k">continue</span>
+        seen @ seen + <span class="n">1</span>
+    <span class="k">return</span> seen</code></pre>
+    <figcaption>examples/gallery/04-loops.hero, lines 25&ndash;32</figcaption>
+  </figure>
+  <p>
+    Both jumps apply to the loop they are written in. There are no labels to
+    break out of an outer loop, so when you need that, the inner loop becomes a
+    function and <code>return</code> does the work &mdash; which also gives the
+    thing you were doing a name.
+  </p>
+
+  <h3><code>while</code>: repeating on a condition</h3>
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="34-42">
+<pre><code><span class="c"># The conditional loop, with the counter visible: `while cond` has no header</span>
+<span class="c"># that hides where the index changes.</span>
+<span class="k">function</span> digits_in(n: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
+    left: <span class="t">i64</span> @ n
+    digits: <span class="t">i64</span> @ <span class="n">1</span>
+    <span class="k">while</span> left &gt;= <span class="n">10</span>
+        left @ left / <span class="n">10</span>
+        digits @ digits + <span class="n">1</span>
+    <span class="k">return</span> digits</code></pre>
+    <figcaption>examples/gallery/04-loops.hero, lines 34&ndash;42</figcaption>
+  </figure>
+  <p>
+    A <code>while</code> takes a condition and nothing else. The classic
+    three-part header packs the start, the test and the step into one line where
+    the step is easy to forget; here the step is a statement in the body, in the
+    order it happens.
+  </p>
+
+  <h3>Counting: a range is a function call</h3>
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="44-50">
+<pre><code><span class="c"># The loop variable is not needed, so it is `_` — the same wildcard a pattern</span>
+<span class="c"># uses, and the reason an unused name is never an accident here.</span>
+<span class="k">function</span> repeat_dash(times: <span class="t">i64</span>) -&gt; <span class="t">str</span>
+    out: <span class="t">str</span> @ <span class="s">""</span>
+    <span class="k">for</span> _ <span class="k">in</span> range(from: <span class="n">0</span>, to: times)
+        out @ out + <span class="s">"-"</span>
+    <span class="k">return</span> out</code></pre>
+    <figcaption>examples/gallery/04-loops.hero, lines 44&ndash;50</figcaption>
+  </figure>
+  <p>
+    <code>range</code> is not syntax. It is an ordinary function that returns a
+    list of numbers, <code>from</code> included and <code>to</code> excluded, and
+    both arguments are named for the reason
+    <a href="records-and-functions.html">chapter 2</a> gave: they are both
+    <code>i64</code>, so the compiler cannot tell them apart and makes you say
+    which is which. The off-by-one you would normally reread twice is written
+    down.
+  </p>
+  <p>
+    <code>_</code> is the loop variable when there is nothing to call it. It is
+    the same <code>_</code> that discards a payload in a <code>match</code>: it
+    binds nothing, so it can never be an unused name &mdash; and an unused name
+    <i>is</i> an error here, which is what makes <code>_</code> worth having.
+  </p>
+
+  <h3>All of it, running</h3>
+  <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="60-62">
+<pre><code><span class="k">function</span> main()
+    print(repeat_dash(<span class="n">20</span>))
+    print(<span class="s">"digits in 2026: "</span>, digits_in(<span class="n">2026</span>))</code></pre>
+    <figcaption>examples/gallery/04-loops.hero, lines 60&ndash;62</figcaption>
+  </figure>
+  <pre><code>$ heroes run examples/gallery/04-loops.hero
+--------------------
+digits in 2026: 4</code></pre>
+  <p>
+    One honest note about that first line. Adding to a string in a loop copies
+    the whole string every time, so it costs more the longer it gets;
+    <code>repeat</code> and <code>join</code> build in one pass and are the right
+    tools when the loop is long. Twenty dashes will never notice. The
+    <a href="index.html">strings chapter</a> comes back to this.
+  </p>
+
+  <p class="next">
+    Next: <b>Bindings and mutation</b>, where <code>=</code> and <code>@</code>
+    get the page they deserve, and shadowing a name turns out to be an error
+    &mdash; being written.
+    <a href="index.html">Back to the chapter list</a>.
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of
+    <code>examples/gallery/04-loops.hero</code> in the repository. The
+    diagnostic is that file with one condition replaced, checked as
+    <code>loops.hero</code>.</p>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>
