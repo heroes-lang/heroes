@@ -113,8 +113,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   </figure>
   <p>
     Without a header a declaration would be verified by nothing at all. Note
-    <code>pow(base: exponent:)</code>: two parameters of the same type, so the
-    names are mandatory at every call: the rule holds at the C boundary too,
+    <code>pow(base:, exponent:)</code>: two parameters of the same type, so the
+    names are mandatory at every call. The rule holds at the C boundary too,
     which is where getting an argument order wrong is least forgiving.
   </p>
   <p>
@@ -145,8 +145,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     the founding constraint had already decided the question.
   </p>
   <p>
-    It is not a decision about speed. Speed is explicitly not a goal of this
-    project, and explicitly not an excuse either.
+    It is not a decision about speed, which is neither a goal of this project
+    nor an excuse in it.
   </p>
 
   <h2>Four words can begin a top-level line</h2>
@@ -227,8 +227,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   <ul class="pillars">
     <li><b>Locality is the currency.</b> The meaning of a line is decided by that line plus the enclosing signature, never by something defined three files away. No inheritance, no macros, no exceptions, no implicit conversions, no null.</li>
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, no implicit conversions of any kind, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
-    <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn, expected type, definition site, concrete fixes tagged <code>certain</code> or <code>guess</code>. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
-    <li><b>A program must not segfault.</b> That is a goal of the language, not a quality of its implementation, and where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens. The guarantee covers the language's own operations: index, slice, division and overflow all abort rather than corrupt. The one null that exists is quarantined at the C boundary, <code>ptr</code> and <code>cstr</code> are not <code>str</code>, and converting a null <code>cstr</code> aborts cleanly instead of crashing, which is why the spec says to test <code>c == nullptr</code> first. What a C function then does with what you passed it is still C.</li>
+    <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn: the expected type, the definition site, and concrete fixes tagged <code>certain</code> or <code>guess</code>. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
+    <li><b>A program must not segfault.</b> Where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens. The section above has the argument and the one hole it leaves open.</li>
     <li><b>Small enough to compile itself.</b> The whole specification is measured at 3512 tokens against a hard ceiling of 4096: five pages, and it is the prompt rather than documentation.</li>
   </ul>
 
@@ -238,9 +238,9 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <dd>Both produce the one class of bug that raises no compile error: the
     unhandled path. Absence is a type (<code>i64?</code>), failure is a value
     (<code>fail(code, msg)</code>), and propagation is visible on the line
-    (<code>?</code>). Invisible control flow is banned wholesale, exceptions,
-    inheritance, macros, operator overloading, because a model reads locally
-    and cannot jump to a definition three files away.
+    (<code>?</code>). Invisible control flow is banned wholesale &mdash; exceptions,
+    inheritance, macros, operator overloading &mdash; because a model reads
+    locally and cannot jump to a definition three files away.
     <a href="docs/failure-is-a-value.html">The chapter on this →</a></dd>
 
     <dt>Why do arguments need names when two parameters share a type?</dt>
@@ -285,8 +285,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     ordinary top-level declaration, passed by name. <b>Accumulating strings or
     arrays in a loop is quadratic</b> (above). And generics are on functions
     only, with no constraints, always inferred. The runtime failure model is
-    the other half of the honesty: overflow aborts at every width, so does an
-    out-of-bounds index and a division by zero, deterministic aborts, never
+    the other half of the honesty: overflow aborts at every width, and so do an
+    out-of-bounds index and a division by zero. Deterministic aborts, never
     undefined behaviour.</dd>
 
     <dt>How does a line end, if there are no semicolons?</dt>
@@ -342,8 +342,8 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   </dl>
 
   <p class="next">
-    Next: <a href="errors.html">what an error looks like</a>: the part of the
-    thesis you can read in one screen.
+    Next: <a href="errors.html">what an error looks like</a> &mdash; the part
+    of the thesis you can read in one screen.
   </p>
 
   <footer>

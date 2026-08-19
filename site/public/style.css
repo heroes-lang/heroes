@@ -785,6 +785,14 @@ ol.chapters li.todo { color: var(--dim); }
   font-size: 0.98rem;
 }
 .next p { margin: 0; }
+/* The way back. A chapter is read in order, so the box that offers the next
+   one has to offer the previous one too, or the only way back is the browser
+   button. Set quieter than the forward link: leaving is not the default. */
+.next .back {
+  display: block; margin-top: 0.75rem;
+  padding-top: 0.7rem; border-top: 1px solid var(--line-soft);
+  font-size: 0.9rem; color: var(--dim);
+}
 
 /* == 10. the build log ==================================================== */
 
