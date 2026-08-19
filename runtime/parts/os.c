@@ -111,6 +111,25 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
         *status = HERO_OS_FAILED;
         return hero_str_from_bytes("", 0);
     }
+    /* **The bytes are not text, and that is a value rather than a death** (panel
+     * 087). `hero_str_from_bytes` aborts on ill-formed UTF-8, and that abort is
+     * load-bearing everywhere else — `hero_str_chars` takes one byte off an
+     * invalid sequence and depends on it for the language-wide well-formedness
+     * invariant — so the repair is a pre-check at the *caller*, never a weaker
+     * conversion. Asking first is what turns the fourth program state into a
+     * `status` the wrapper can translate.
+     *
+     * Before this, `read_file` was typed `-> str?` (spec:179) and killed the
+     * process on a photograph: a program handling both `.ok` and `.err` reached
+     * neither arm. The Rust bootstrap's own record walk survived the same input
+     * because `read_to_string` returns `Err`, and the Heroes port transcribed
+     * that guard faithfully to `suite_records.hero:148` — where it could never
+     * fire. `docs/defects/002` is the record. */
+    if (!hero_utf8_valid(buffer, (int64_t)got)) {
+        hero_release(buffer);
+        *status = HERO_OS_NOT_TEXT;
+        return hero_str_from_bytes("", 0);
+    }
     HeroStr text = hero_str_from_bytes(buffer, (int64_t)got);
     hero_release(buffer);
     *status = HERO_OS_OK;
