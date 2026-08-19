@@ -7,6 +7,14 @@ archive/bootstrap-rs/target
 # heroes build cache (generated C, runtime.o, binaries — all derived)
 /build
 
+# The compiler itself. Both names are in CLAUDE.md § Commands: `heroes` is what
+# the one clang line over `seed/heroes.c` produces, and `heroes-next` is what
+# that binary builds from `selfhost/main.hero`. Every checkout that follows the
+# README makes one, and a parallel session staging with `git add -A` would
+# commit a multi-megabyte binary that nothing in this repository reads.
+/heroes
+/heroes-next
+
 # bootstrap stages (derived)
 stage[0-9]
 *.o
