@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Records and functions, Heroes documentation</title>
+<meta name="description" content="Records hold fields by value and are always built with field names. Where two parameters share a type, the call site must name them, which is how a swapped pair of arguments becomes a compile error.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/docs/records-and-functions.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/records-and-functions.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/docs/records-and-functions.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/docs/records-and-functions.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Records and functions, Heroes documentation">
+<meta property="og:description" content="Records hold fields by value and are always built with field names. Where two parameters share a type, the call site must name them, which is how a swapped pair of arguments becomes a compile error.">
+<meta property="og:url" content="https://heroes-lang.org/docs/records-and-functions.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Records and functions, Heroes documentation">
+<meta name="twitter:description" content="Records hold fields by value and are always built with field names. Where two parameters share a type, the call site must name them, which is how a swapped pair of arguments becomes a compile error.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Why Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../zen.html">Zen</a></li>
+      <li><a href="../panel.html">Panel</a></li>
+      <li><a href="../thanks.html">Thanks</a></li>
+      <li><a href="../author.html">Author</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../it/docs/records-and-functions.html" hreflang="it" lang="it" title="Questa pagina in italiano">IT</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 2</p>
+
+  <h1 class="chapter">Records and functions</h1>
+  <p class="tagline">Data with a shape, and calls that cannot be read backwards.</p>
+
+  <p>
+    A record is a named group of fields. It is the only way to give data a
+    shape, there is nothing behind it, and it behaves like a number does: when
+    you pass one to a function, the function gets a copy.
+  </p>
+
+  <h3>Declaring one</h3>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-9">
+<pre><code><span class="c"># A position on the integer grid.</span>
+<span class="k">record</span> Point
+    x: <span class="t">i64</span>
+    y: <span class="t">i64</span></code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 6&ndash;9</figcaption>
+  </figure>
+  <p>
+    Each field is a name and a type, one per line, indented under the
+    declaration. A field can be another record, and the record still holds it by
+    value &mdash; a <code>Rect</code> does not point at two points, it
+    <i>contains</i> them:
+  </p>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="11-14">
+<pre><code><span class="c"># A rectangle, by two corners.</span>
+<span class="k">record</span> Rect
+    corner: Point
+    extent: Point</code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 11&ndash;14</figcaption>
+  </figure>
+
+  <h3>Building one: every field is named</h3>
+  <p>
+    There is one way to make a record, and it names each field:
+  </p>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="45-49">
+<pre><code><span class="k">function</span> main()
+    a = Point(x: <span class="n">0</span>, y: <span class="n">0</span>)
+    b = Point(x: <span class="n">3</span>, y: <span class="n">4</span>)
+    print(<span class="s">"distance squared: "</span>, a.dist2(b: b))
+    print(<span class="s">"midpoint x: "</span>, a.midpoint(b: b).x)</code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 45&ndash;49</figcaption>
+  </figure>
+  <p>
+    <code>Point(3, 4)</code> does not exist. Not "is discouraged" &mdash; it is
+    not a form the language has, so it is a compile error with the repair
+    attached:
+  </p>
+  <pre><code>$ heroes check points.hero
+error[missing_label]: `Point`'s fields are always named — this one is `x`
+  at points.hero:46:15
+     |
+  46 |     a = Point(0, 0)
+     |               ^
+  fix (certain): write `x: `</code></pre>
+  <p>
+    The cost is four characters at the call site. What it buys is that
+    <code>Point(y: 4, x: 3)</code> and <code>Point(x: 3, y: 4)</code> are the
+    same point and neither can quietly become the other. This is the whole
+    argument of the language in miniature: pay a few tokens where a mistake is
+    plausible, and stop paying attention there forever.
+  </p>
+
+  <h3>Functions, and where the names become mandatory</h3>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="21-24">
+<pre><code><span class="k">function</span> dist2(a: Point, b: Point) -&gt; <span class="t">i64</span>
+    dx = a.x - b.x
+    dy = a.y - b.y
+    <span class="k">return</span> dx * dx + dy * dy</code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 21&ndash;24</figcaption>
+  </figure>
+  <p>
+    A signature is always written out in full: every parameter has a type, and a
+    result is announced with <code>-&gt;</code>. Inside, <code>dx = …</code>
+    binds a name to a value once; there is no type on it because the compiler
+    can see what it is, and that inference never crosses the function boundary.
+  </p>
+  <p>
+    Now the rule that makes this chapter worth its own page. <b>When two
+    parameters of one function share a type, the call site must name
+    them.</b> <code>dist2</code> takes two <code>Point</code>s, so it does:
+  </p>
+  <pre><code>$ heroes check points.hero
+error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of them is named at the call site — this one is `b`
+  at points.hero:48:41
+     |
+  48 |     print("distance squared: ", a.dist2(b))
+     |                                         ^
+  fix (certain): write `b: `</code></pre>
+  <p>
+    Two arguments of the same type in the wrong order is the mistake no type
+    checker can see, because both orders type-check. It is also the mistake a
+    model on autopilot makes most often. The rule spends tokens in exactly that
+    spot and nowhere else: where the types already differ, the compiler can tell
+    the arguments apart and no label is required.
+  </p>
+
+  <h3>A call can be written from either end</h3>
+  <p>
+    <code>x.f(y)</code> means <code>f(x, y)</code>. That is the whole rule, and
+    it is sugar: there are no methods, nothing is attached to a type, and
+    nothing is looked up at run time.
+  </p>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="33-36">
+<pre><code><span class="c"># Reads as a sentence, and it is one function call: `translate(r, by)`.</span>
+<span class="k">function</span> translate(r: Rect, by: Point) -&gt; Rect
+    moved = Point(x: r.corner.x + by.x, y: r.corner.y + by.y)
+    <span class="k">return</span> Rect(corner: moved, extent: r.extent)</code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 33&ndash;36</figcaption>
+  </figure>
+  <p>
+    So <code>unit.translate(p).area()</code> and
+    <code>area(translate(unit, p))</code> are the same call, and you write
+    whichever one reads better where you are standing. Chains stay left to right
+    without anyone having to define a class.
+  </p>
+
+  <h3>Tests live next to what they test</h3>
+  <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="38-43">
+<pre><code><span class="k">test</span> <span class="s">"the 3-4-5 triangle"</span>
+    <span class="k">assert</span> dist2(a: Point(x: <span class="n">0</span>, y: <span class="n">0</span>), b: Point(x: <span class="n">3</span>, y: <span class="n">4</span>)) == <span class="n">25</span>
+
+<span class="k">test</span> <span class="s">"a rectangle keeps its size when it moves"</span>
+    unit = Rect(corner: Point(x: <span class="n">0</span>, y: <span class="n">0</span>), extent: Point(x: <span class="n">2</span>, y: <span class="n">3</span>))
+    <span class="k">assert</span> unit.translate(Point(x: <span class="n">10</span>, y: <span class="n">10</span>)).area() == unit.area()</code></pre>
+    <figcaption>examples/gallery/01-points.hero, lines 38&ndash;43</figcaption>
+  </figure>
+  <p>
+    <code>test</code> is a top-level declaration like any other, and an ordinary
+    build ignores it. The second test is the interesting one: it says that
+    moving a rectangle does not resize it, which is a property rather than a
+    number, and it reads as one sentence because of the call syntax above.
+  </p>
+  <pre><code>$ heroes test examples/gallery/01-points.hero
+ok   "the 3-4-5 triangle"
+ok   "a rectangle keeps its size when it moves"
+2 tests, all passed</code></pre>
+
+  <h3>What is deliberately missing</h3>
+  <p>
+    No inheritance, no interfaces, no overloading, no default parameter values,
+    no variadic functions of your own. Every one of those makes the question
+    <i>which code does this call actually run</i> require reading a second file,
+    and answering that question in one place is the point of the language.
+  </p>
+
+  <p class="next">
+    Next: <b>Variants and match</b>, where a value can be one of several shapes
+    and forgetting one stops the build &mdash; being written.
+    <a href="index.html">Back to the chapter list</a>.
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of
+    <code>examples/gallery/01-points.hero</code> in the repository. The two
+    diagnostics are that file with one label removed, checked as
+    <code>points.hero</code>.</p>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>
