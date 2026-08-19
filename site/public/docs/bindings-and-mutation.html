@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bindings and mutation, Heroes documentation</title>
+<meta name="description" content="= binds a name once and forever, @ declares a cell that may change, and a function that changes its argument says so in the signature and at the call site. Shadowing a name is a compile error.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://heroes-lang.org/docs/bindings-and-mutation.html">
+<link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/bindings-and-mutation.html">
+<link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/docs/bindings-and-mutation.html">
+<link rel="alternate" hreflang="x-default" href="https://heroes-lang.org/docs/bindings-and-mutation.html">
+<meta name="theme-color" content="#0d0d12">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Heroes">
+<meta property="og:title" content="Bindings and mutation, Heroes documentation">
+<meta property="og:description" content="= binds a name once and forever, @ declares a cell that may change, and a function that changes its argument says so in the signature and at the call site. Shadowing a name is a compile error.">
+<meta property="og:url" content="https://heroes-lang.org/docs/bindings-and-mutation.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bindings and mutation, Heroes documentation">
+<meta name="twitter:description" content="= binds a name once and forever, @ declares a cell that may change, and a function that changes its argument says so in the signature and at the call site. Shadowing a name is a compile error.">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="site">
+  <div>
+    <a class="mark" href="../index.html">
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      <li><a href="../why.html">Why Heroes</a></li>
+      <li><a class="here" href="index.html">Docs</a></li>
+      <li><a href="../selfhost.html">Self-hosted</a></li>
+      <li><a href="../zen.html">Zen</a></li>
+      <li><a href="../panel.html">Panel</a></li>
+      <li><a href="../thanks.html">Thanks</a></li>
+      <li><a href="../author.html">Author</a></li>
+      <li><a href="../log.html">Log</a></li>
+    </ul>
+    <a class="lang" href="../it/docs/bindings-and-mutation.html" hreflang="it" lang="it" title="Questa pagina in italiano">IT</a>
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>
+<main>
+  <p class="crumb"><a href="../index.html">Heroes</a> / <a href="index.html">Docs</a> / chapter 6</p>
+
+  <h1 class="chapter">Bindings and mutation</h1>
+  <p class="tagline">One symbol marks everything in a program that can change.</p>
+
+  <p>
+    Two lines out of three in most code do not change anything. The trouble is
+    that they look exactly like the ones that do, so finding the part of a
+    program that moves means reading all of it. Here the moving parts carry a
+    mark, and there is only one.
+  </p>
+
+  <h3><code>=</code> binds once. <code>@</code> declares something that changes</h3>
+  <pre><code>x = 5              <span class="c"># a name for a value, forever</span>
+v: i64 @ 0         <span class="c"># a cell that may change — the type is required</span>
+v @ v + 1          <span class="c"># changing it</span></code></pre>
+  <p>
+    <code>=</code> gives a value a name and that is the end of it. <code>@</code>
+    does three jobs with one symbol: it declares a cell, it marks every line
+    that writes to one, and &mdash; later on this page &mdash; it marks a
+    function that changes what it is given. There is no separate assignment
+    operator, so a line that changes something can never be mistaken for a line
+    that introduces something.
+  </p>
+  <p>
+    The type on a cell is not optional, and that is deliberate: a name whose
+    value will change over time is a name whose type a reader cannot infer from
+    one line. Try to change a plain binding and the compiler explains the
+    difference:
+  </p>
+  <pre><code>$ heroes check mutation.hero
+error[not_mutable]: `start` was bound with `=`, which binds once, forever — a cell is declared with its type: `start: &lt;type&gt; @ &lt;value&gt;`
+  at mutation.hero:31:5
+     |
+  31 |     start @ start + 1
+     |     ^^^^^
+  fix (guess): declare `start` as a cell: `start: &lt;type&gt; @ &lt;value&gt;`</code></pre>
+  <p>
+    That fix is tagged <code>guess</code> rather than <code>certain</code>,
+    because the compiler cannot know which of the two you meant &mdash; you may
+    have wanted a cell, or you may have written to the wrong name. Only
+    <code>certain</code> fixes can be applied for you.
+  </p>
+
+  <h3>A name means one thing while you can see it</h3>
+  <p>
+    Reusing a name that is already in scope is not allowed, even when the new
+    one would be a different thing:
+  </p>
+  <pre><code>$ heroes check mutation.hero
+error[shadowed_binding]: `start` is already in scope, bound at line 30 — shadowing is an error here: a name means one thing for as long as it is visible
+  at mutation.hero:31:5
+     |
+  31 |     start = r.pos + 1
+     |     ^^^^^</code></pre>
+  <p>
+    Shadowing is the mistake that produces no symptom: the code compiles, runs,
+    and quietly uses the wrong one of two things with the same name. It is also
+    near the top of what a model writing code gets wrong, which is why the
+    compiler treats it as an error rather than a warning nobody reads.
+  </p>
+
+  <h3>Every value is a copy</h3>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="44-49">
+<pre><code><span class="k">test</span> <span class="s">"values are copies"</span>
+    a = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
+    b: [<span class="t">i64</span>] @ a
+    b @ b.push(<span class="n">4</span>)
+    <span class="k">assert</span> a.len() == <span class="n">3</span>
+    <span class="k">assert</span> b.len() == <span class="n">4</span></code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, lines 44&ndash;49</figcaption>
+  </figure>
+  <p>
+    <code>b</code> starts as a copy of <code>a</code>, and pushing onto it leaves
+    <code>a</code> alone. This holds for arrays, maps, strings and records alike,
+    at any depth: nothing in this language aliases anything, so no change made
+    over here can appear over there. Under the surface the compiler shares the
+    memory until somebody writes, and copies only then &mdash; but that is an
+    implementation detail you are never asked to think about.
+  </p>
+  <p>
+    Note also <code>b @ b.push(4)</code>. <code>push</code> hands back a new
+    array rather than changing one in place, so the result has to be put
+    somewhere, and the <code>@</code> is where it goes.
+  </p>
+
+  <h3>When a function does need to change its argument</h3>
+  <p>
+    Copies everywhere would make a cursor over some text impossible to write, so
+    there is one exception, and it is spelled out on both sides of the call. A
+    parameter marked <code>@</code> is changed by the function:
+  </p>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="19-21">
+<pre><code><span class="c"># The `@` is the whole signature's news: this one moves.</span>
+<span class="k">function</span> advance(@r: Reader)
+    r.pos @ r.pos + <span class="n">1</span></code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, lines 19&ndash;21</figcaption>
+  </figure>
+  <p>
+    And the call site says so too, or it does not compile:
+  </p>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="23-26">
+<pre><code><span class="c"># Consumes spaces. The caller sees `@r` and knows the reader moved.</span>
+<span class="k">function</span> skip_spaces(@r: Reader)
+    <span class="k">while</span> !at_end(r) &amp;&amp; here(r) == <span class="s">' '</span>
+        advance(@r)</code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, lines 23&ndash;26</figcaption>
+  </figure>
+  <pre><code>$ heroes check mutation.hero
+error[marker_mismatch]: `advance` changes this argument, so the call site writes `@` too
+  at mutation.hero:26:17
+     |
+  26 |         advance(r)
+     |                 ^
+  fix (certain): mark the argument: `@x`</code></pre>
+  <p>
+    This is the difference between reading a call and reading a function. In
+    most languages, whether <code>advance(r)</code> modifies <code>r</code>
+    depends on <code>advance</code>, on the type of <code>r</code>, and
+    sometimes on the platform. Here the answer is in the character you are
+    looking at.
+  </p>
+  <p>
+    The meaning is <b>copy in, copy out</b>: the function works on its own copy
+    and the caller's value is replaced when it returns. That happens on every
+    exit, early <code>return</code> included, so there is no path where half the
+    changes arrive.
+  </p>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="28-33">
+<pre><code><span class="c"># Reads a run of letters and hands it back, leaving the reader after it.</span>
+<span class="k">function</span> word_at(@r: Reader) -&gt; <span class="t">str</span>
+    start = r.pos
+    <span class="k">while</span> !at_end(r) &amp;&amp; here(r) &gt;= <span class="s">'a'</span> &amp;&amp; here(r) &lt;= <span class="s">'z'</span>
+        advance(@r)
+    <span class="k">return</span> r.text.slice(from: start, to: r.pos)</code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, lines 28&ndash;33</figcaption>
+  </figure>
+  <p>
+    A function may change its argument <i>and</i> return something, as this one
+    does: the reader moves past the word, and the word comes back. One thing it
+    cannot do is be called as a method: <code>r.word_at()</code> is not allowed
+    when the first parameter is <code>@</code>, because that spelling would hide
+    the mark this whole chapter is about.
+  </p>
+
+  <h3>A binding nobody reads is an error</h3>
+  <pre><code>$ heroes check mutation.hero
+error[unused_binding]: `spare` is bound and never read — remove the binding, or read it
+  at mutation.hero:53:5
+     |
+  53 |     spare = 5
+     |     ^^^^^</code></pre>
+  <p>
+    An unused name is usually a leftover from an edit, or a line whose result was
+    supposed to be used and is not. Both are worth stopping for. When you really
+    do want to throw a result away, say so with <code>_ = f(x)</code>: the
+    discard is written down rather than implied, and <code>_</code> binds
+    nothing so it can be repeated.
+  </p>
+
+  <h3>The program</h3>
+  <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="51-53">
+<pre><code><span class="k">function</span> main()
+    r: Reader @ Reader(text: <span class="s">"one two"</span>, pos: <span class="n">0</span>)
+    print(word_at(@r))</code></pre>
+    <figcaption>examples/gallery/05-mutation.hero, lines 51&ndash;53</figcaption>
+  </figure>
+  <pre><code>$ heroes run examples/gallery/05-mutation.hero
+one</code></pre>
+
+  <p class="next">
+    Next: <b>Generics and function values</b>, one shape that works for many
+    types, and functions passed around as values &mdash; being written.
+    <a href="index.html">Back to the chapter list</a>.
+  </p>
+
+  <footer>
+    <p>Every code block on this page is a slice of
+    <code>examples/gallery/05-mutation.hero</code> in the repository. The four
+    diagnostics are that file with one line changed or added each time, checked
+    as <code>mutation.hero</code>.</p>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="../author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="../thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>
+</main>
+</body>
+</html>

@@ -94,7 +94,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   </p>
   <p>
     The <code>@</code> on <code>best</code> is the other half of this chapter and
-    gets its <a href="index.html">own chapter next</a>. In one line:
+    gets <a href="bindings-and-mutation.html">the next chapter</a> to itself. In one line:
     <code>best: i64 @ floor</code> declares a name that is allowed to change,
     and <code>best @ x</code> changes it. A name bound with <code>=</code>
     cannot change, ever, so the mutable parts of a program are exactly the lines
@@ -194,14 +194,13 @@ digits in 2026: 4</code></pre>
     One honest note about that first line. Adding to a string in a loop copies
     the whole string every time, so it costs more the longer it gets;
     <code>repeat</code> and <code>join</code> build in one pass and are the right
-    tools when the loop is long. Twenty dashes will never notice. The
-    <a href="index.html">strings chapter</a> comes back to this.
+    tools when the loop is long. Twenty dashes will never notice. The strings chapter comes back to this.
   </p>
 
   <p class="next">
-    Next: <b>Bindings and mutation</b>, where <code>=</code> and <code>@</code>
-    get the page they deserve, and shadowing a name turns out to be an error
-    &mdash; being written.
+    Next: <b><a href="bindings-and-mutation.html">Bindings and mutation</a></b>,
+    where <code>=</code> and <code>@</code> get the page they deserve, and
+    shadowing a name turns out to be an error.
     <a href="index.html">Back to the chapter list</a>.
   </p>
 
