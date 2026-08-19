@@ -80,8 +80,8 @@
     <li><b>Only functions are generic.</b> A <code>record</code> or a
     <code>variant</code> is always a concrete type. When you need a generic
     container, an array or a map is already one.</li>
-    <li><b>No constraints.</b> There is no way to say "any <code>A</code> that
-    can be compared". If a function needs an operation on <code>A</code>, it
+    <li><b>No constraints.</b> There is no way to say &ldquo;any <code>A</code>
+    that can be compared&rdquo;. If a function needs an operation on <code>A</code>, it
     takes that operation as an argument, like <code>f</code> above.</li>
     <li><b>Never written at the call site.</b> The types are inferred from the
     arguments, or it is an error. <code>each&lt;i64, str&gt;(…)</code> is not a
@@ -198,8 +198,8 @@ error[type_mismatch]: expected `bool`, found `i64`
   </p>
 
   <p class="next">
-    Next: <b>Strings</b>, where bytes and characters are two different jobs and
-    the language refuses to blur them &mdash; being written.
+    Next: <b><a href="strings.html">Strings</a></b>, where bytes and characters
+    are two different jobs and the language refuses to blur them.
     <a href="index.html">Back to the chapter list</a>.
   </p>
 
