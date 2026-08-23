@@ -76,28 +76,11 @@ void h_adversarialdivergingarms_0opt1_release(h_adversarialdivergingarms_0opt1 *
 bool h_adversarialdivergingarms_0opt1_eq(const h_adversarialdivergingarms_0opt1 *a, const h_adversarialdivergingarms_0opt1 *b);
 uint64_t h_adversarialdivergingarms_0opt1_hash(const void *elem);
 
-static void h_adversarialdivergingarms_Step_desc_copy(void *dst, const void *src) {
-    *(h_adversarialdivergingarms_Step *)dst = *(const h_adversarialdivergingarms_Step *)src;
-}
-static void h_adversarialdivergingarms_Step_desc_drop(void *elem) {
-    (void)elem;
-}
-static bool h_adversarialdivergingarms_Step_desc_eq(const void *a, const void *b) {
-    return h_adversarialdivergingarms_Step_eq((const h_adversarialdivergingarms_Step *)a, (const h_adversarialdivergingarms_Step *)b);
-}
-static const HeroDesc h_adversarialdivergingarms_Step_desc = {
-    sizeof(h_adversarialdivergingarms_Step),
-    h_adversarialdivergingarms_Step_desc_copy,
-    h_adversarialdivergingarms_Step_desc_drop,
-    h_adversarialdivergingarms_Step_desc_eq,
-    h_adversarialdivergingarms_Step_hash,
-};
-
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) {
-#line 101 "adversarialdivergingarms.c"
+#line 84 "adversarialdivergingarms.c"
     int64_t h1_seen;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -132,11 +115,11 @@ bb0:
     t2 = h0_xs;
 #line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
     t18 = h2_xs0;
-#line 136 "adversarialdivergingarms.c"
+#line 119 "adversarialdivergingarms.c"
     hero_array_incref(t2);
 #line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
     h2_xs0 = t2;
-#line 140 "adversarialdivergingarms.c"
+#line 123 "adversarialdivergingarms.c"
     hero_array_decref(t18);
 #line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
     t3 = INT64_C(0);
@@ -202,7 +185,7 @@ bb4:
     t17 = h1_seen;
 #line 18 "tests/golden/ir/adversarial-diverging-arms.hero"
     t19 = h2_xs0;
-#line 206 "adversarialdivergingarms.c"
+#line 189 "adversarialdivergingarms.c"
     hero_array_decref(t19);
     return t17;
 bb6:

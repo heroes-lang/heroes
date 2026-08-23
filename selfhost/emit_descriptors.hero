@@ -105,8 +105,12 @@ function through_pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i6
 # 061). The four function pointers are cast to the descriptor's own
 # signatures: the price of a generic runtime in C, paid once per type
 # here rather than at every call site.
-function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], reachable: {i64: bool})
-    wanted = emit_descriptor_set.generated(c, decls, reachable: reachable)
+#
+# `constructed` narrows one of the worklist's three sources and nothing
+# else — see `emit_descriptor_set.generated`, which is where the two sets
+# meet.
+function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool})
+    wanted = emit_descriptor_set.generated(c, decls, reachable: reachable, constructed: constructed)
     for ty in wanted
         prefix: str @ ""
         c_type: str @ ""

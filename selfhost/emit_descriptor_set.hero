@@ -23,6 +23,21 @@
 # arm calling its payload's descriptor, and collecting without
 # expanding left that payload out at exit 2. `seen` guards the queue
 # rather than the answer: an array is expanded and never generated.
+#
+# The first source takes TWO answers, and the second one arrived on
+# 2026-08-23. Reachable says the container was interned; `constructed`
+# says an instruction in this unit actually builds one. Only the second
+# makes the emitter write the address, so a `[Probe]` that a signature
+# interned and nobody builds got a descriptor nothing pointed at —
+# -Wunused-const-variable on the harness's own probe.hero, against
+# CLAUDE.md §7's zero-warning bar. The other two sources stay
+# reachability-driven and must: `emit_perfn` writes an option's `_eq` and
+# `_hash` whether or not any instruction builds one, and an aggregate's
+# `_hash` walks its T? fields the same way. Getting THAT wrong is the
+# expensive direction — the first attempt at this narrowing pruned an
+# option's own descriptor and `examples/tree` stopped compiling with
+# `use of undeclared identifier` at exit 2, which is the failure this
+# module's first paragraph is about.
 
 use ast
 use check_table
@@ -38,7 +53,7 @@ use checker
 # walk is the sort, and the emitted order must be a function of the
 # program, not of the interner's insertion order (the double-emit
 # determinism test is what that buys).
-function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: bool}) -> [i64]
+function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}) -> [i64]
     wanted: {i64: bool} @ {}
     queue: [i64] @ []
     count = check_table.len_of(c.types)
@@ -53,10 +68,36 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
             # ordinary build does not emit them.
             if !reachable[id].is_err()
                 match check_table.get(c.types, id)
-                    .array arr => queue @ queue.push(arr.element)
+                    # REACHABLE IS NOT ENOUGH FOR A CONTAINER, and this
+                    # is the only place the two sets differ. The element,
+                    # key and value descriptors exist because
+                    # `build_array` and `build_map` write their addresses
+                    # — and those are reached only from a `construct`
+                    # (emit_construct:74,:85). A `[Probe]` that a
+                    # signature interned and nobody builds took this
+                    # branch for the language's whole life and produced a
+                    # descriptor nothing pointed at:
+                    # -Wunused-const-variable on `probe.hero`, the
+                    # harness's own file, against §7's zero-warning bar
+                    # (found 2026-08-18, repaired 2026-08-23).
+                    #
+                    # `m[k]` needs no rule of its own: `map_get` copies
+                    # through the VALUE's descriptor, and its result is a
+                    # `V?` whose payload is that value — so the fallible
+                    # branch below already queues it, from a type the
+                    # instruction itself made reachable.
+                    .array arr =>
+                        if !constructed[id].is_err()
+                            queue @ queue.push(arr.element)
                     .map m =>
-                        queue @ queue.push(m.key)
-                        queue @ queue.push(m.value)
+                        if !constructed[id].is_err()
+                            queue @ queue.push(m.key)
+                            queue @ queue.push(m.value)
+                    # Reachable is enough for an option, and it has to
+                    # be: `emit_perfn` writes `_eq` and `_hash` for
+                    # EVERY option entry in the unit whether or not any
+                    # instruction builds one, and both take the payload
+                    # descriptor's address.
                     .fallible o => queue @ queue.push(o.payload)
                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => id @ id
                     .fixed | .function_ty | .named | .case_ty => id @ id
@@ -138,8 +179,14 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     while id < count
         reachable[id] @ true
         id @ id + 1
-    got = generated(c, p.decls, reachable: reachable)
     point = check_table.lookup(c.types, .named(decl: 0)).must()
+    # Constructed: this program writes `[Point(x: 1)]`, so the array type
+    # is in. Marked by hand rather than lowered, which keeps the case
+    # about the worklist; the driver fills the same map from the
+    # `construct` instructions and nothing else.
+    constructed: {i64: bool} @ {}
+    constructed[check_table.lookup(c.types, .array(element: point)).must()] @ true
+    got = generated(c, p.decls, reachable: reachable, constructed: constructed)
     saw_point: bool @ false
     saw_option: bool @ false
     for one in got
@@ -161,3 +208,36 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     while walk < got.len()
         assert got[walk - 1] < got[walk]
         walk @ walk + 1
+
+test "an array a signature interned and nobody builds gets no descriptor"
+    # THE CASE THAT FIRED FOR REAL, on the harness's own probe.hero:
+    # `[Row]` exists because `count` takes one, `count` is emitted like
+    # every function, and nothing in the unit ever builds an array of
+    # Row — so `&h_t_Row_desc` appears nowhere and a definition of it is
+    # -Wunused-const-variable against CLAUDE.md §7's zero-warning bar.
+    # Row buys a descriptor from no other source: no option holds it and
+    # no aggregate has a T? field.
+    text = "record Row\n    n: i64\n\nfunction count(rows: [Row]) -> i64\n    return rows.len()\n\nfunction main()\n    print(1)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    reachable: {i64: bool} @ {}
+    count_types = check_table.len_of(c.types)
+    id: i64 @ 0
+    while id < count_types
+        reachable[id] @ true
+        id @ id + 1
+    # Nothing constructed: the empty map is the whole point of the case.
+    nothing: {i64: bool} @ {}
+    assert generated(c, p.decls, reachable: reachable, constructed: nothing).len() == 0
+    # And the same program WITH the array built asks for Row's
+    # descriptor, which is what keeps this from passing for the wrong
+    # reason.
+    row = check_table.lookup(c.types, .named(decl: 0)).must()
+    built: {i64: bool} @ {}
+    built[check_table.lookup(c.types, .array(element: row)).must()] @ true
+    got = generated(c, p.decls, reachable: reachable, constructed: built)
+    assert got.len() == 1
+    assert got[0] == row
