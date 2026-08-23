@@ -474,7 +474,7 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.4 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
 ./heroes test selfhost/main.hero                             # its own tests (482)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (838 checks)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (845 checks, 2026-08-23)
 ./heroes doctor                                              # toolchain check
 ./heroes <cmd>                                               # the one command
 ```

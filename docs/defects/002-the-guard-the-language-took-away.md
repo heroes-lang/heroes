@@ -4,9 +4,11 @@ Date: 2026-08-19, opening M-separate-compilation. **Found by running the baselin
 net before touching anything**, which is the only reason it was found at all: it
 had been in the tree for one commit and CI would have reported it as a pass.
 
-**Status: open.** The repair is a language change (`read_file`'s contract), so it
-is a panel path — CLAUDE.md §4. This file is the record of the finding; the panel
-and the fix get their own commits.
+**Status: fixed 2026-08-19** (panel 087, commit `f343fdd`) — see § The repair at
+the end of this file. The sentence that stood here said *"the repair is a language
+change (`read_file`'s contract), so it is a panel path"*; the panel path was right
+and the prediction was wrong, and that is the most useful thing this file records.
+The finding and the fix have their own commits, as this line asked.
 
 Severity: **★★★** — a legal program is killed. And the killed program is the
 project's own test net.
@@ -132,3 +134,42 @@ and two of them are valid-UTF-8 `.hero` fixtures with raw carriage returns
 drop `.hero` files from a walk whose job is to read them.
 
 That is a panel question and it goes to the panel as one.
+
+## The repair — 2026-08-19, panel 087, commit `f343fdd`
+
+**The second answer won, and it cost five lines of C and zero spec tokens.** The
+panel shrank the proposal by two thirds: `spec:179` already types the built-in as
+fallible, so the document was never wrong and the runtime was the thing that lied
+— paying tokens to *describe* this behaviour would have written a defect into the
+spec. §12's rule ("the compiler has the bug") applied to the one place the spec
+cannot see.
+
+`runtime/parts/os.c:130` asks `hero_utf8_valid` before converting, releases the
+buffer, sets the new `HERO_OS_NOT_TEXT` (`runtime/hero_os.h:51`) and returns the
+empty str — keeping `hero_os.h:44`'s promise that on anything but OK the string
+owns nothing. **The abort inside `hero_str_from_bytes` is deliberately untouched**:
+`hero_str_chars` (`runtime/parts/text.c:87`) takes one byte off an invalid
+sequence and depends on that abort for the language-wide well-formedness
+invariant, so a weaker conversion would have traded this defect for a worse one.
+That was the ffi-pragmatist's uncast veto and it decided the shape. The case is
+`tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero`, which
+builds its own fixture through `extern "stdio.h"` because **no Heroes program can
+create a file that is not text** — `write_file` takes a `str`, and a `str` is
+UTF-8 by definition.
+
+Re-measured 2026-08-23, in the session that writes this paragraph rather than
+recalled from the fix's own commit:
+
+- the five-line reproducer above → `fail: read_failed`, exit **0** (was `panic:
+  hero_str_from_bytes: not well-formed UTF-8`, exit 134)
+- the guard at `suite_records.hero:148` is **reachable at last**: the call that
+  killed the process returns `.err`, which is the only thing that branch tests
+
+**What the fix did not close, and both are queued in `docs/debrief/DECIDE.md`**:
+the status is collapsed into `read_failed`, so the message still says *could not
+read* about a file that read perfectly well (naming it `file_not_text` is one
+`constant` line and the two compiling seats disagreed, so it is the author's);
+and three of panel 087's four doors are untouched — `args()` has no error channel
+at all, `spec:229` sends a binding author through a null test and then kills them
+anyway, and a "is this pointer safe" predicate is categorically unbindable
+because every `cstr` argument is wrapped in `hero_cstr_nonnull`.
