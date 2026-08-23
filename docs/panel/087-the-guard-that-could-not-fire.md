@@ -307,4 +307,31 @@ hardest (panel 056's process note).
 
 ## Author's verdict
 
-*(pending — `docs/debrief/DECIDE.md`)*
+**Ratified 2026-08-23** (author instruction, *"ratifica tutto"* — blanket over
+panels 085, 086 and 087, recorded as one; this section says what the yes does and
+does not settle here). The section itself was added four days late: this file
+shipped without one, so for four days there was nothing for the author to answer
+and no item in `DECIDE.md` asking — recorded because a sitting nobody can ratify
+is a failure of the process, not of the sitting.
+
+**The resolution is final as it landed**: the pre-check in `runtime/parts/os.c`,
+`HERO_OS_NOT_TEXT` in the header, **no spec change (+0 tokens)**, no library
+change, no ABI bump, and the abort inside `hero_str_from_bytes` untouched because
+`hero_str_chars` depends on it. Re-measured in the session that recorded this
+verdict: the five-line reproducer is `fail: read_failed` at exit **0**, the net is
+**845 passed, 0 failed, exit 0** with a summary line where it used to abort at 134
+with no summary at all, and `heroes measure` reports **maximum 3512** — which is
+prediction 1 already true, though it is formally scored at M-separate-compilation's
+close along with 2, 4 and 5.
+
+**What the yes does not settle: the nine queued items, all of them.** The first is
+the only one that changes what a program sees — `file_not_text` as its own `e.code`
+— and the compiler-engineer's reversal condition is unchanged: a **named reader in
+the same commit** (`cli_input.hero:24-28` widened so `heroes check <a binary>` says
+why) plus a golden that fires the arm. Until then the message says *could not read*
+about a file that read perfectly well, which this ratification accepts as a stated
+cost rather than a settled question. The three doors the fix did not touch —
+`args()` with no error channel, `spec:229`'s null test, the unbindable null-safety
+predicate — and `spec:14`'s false sentence, the ~12 unnamed aborts, the bytes
+reader, the extern-group pruning and `suite_determinism.hero:13-14`'s missing
+instrument all stay open where the sitting left them.

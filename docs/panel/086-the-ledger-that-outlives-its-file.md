@@ -179,4 +179,28 @@ that the archive does not happen until the check exists.
 
 ## Author's verdict
 
-*(pending — `docs/debrief/DECIDE.md`)*
+**Ratified 2026-08-23** (author instruction, *"ratifica tutto"* — blanket over
+panels 085, 086 and 087, recorded as one; this section says what the yes does and
+does not settle here).
+
+**R1–R7 are final as they landed**, and each was verified in the session that
+recorded this verdict rather than taken from the close's own commit: the 38 rows
+are at `docs/measurements/010-spec-budget-ledger.md`; the three-way lock is green
+inside the net (`spec: 8 passed, 0 failed`) and `heroes measure` reports **maximum
+3512**, which is the figure the newest row and `SPEC_TOKENS` are locked to;
+`design.md:322` and `:349` name both halves and say which is which; the forwarding
+pointer is at `archive/bootstrap-rs/heroes/src/measure/gate.rs:100-101`; and R7's
+anchored dead-citation check is live at `tests/harness/suite_records.hero:235`.
+
+**What the yes does not settle.** **R4's gap stays work rather than a decision** —
+four `ORDER:` marks in the bootstrap (`ir/print.rs`,
+`emit/{descriptor_set,typedefs_generated,typedefs}.rs`) still have no counterpart
+in the port, and the item is in `SCHEDULED.md` for the next milestone that touches
+ordering or emission. **R6 deliberately left CLAUDE.md:112 to the author and it is
+still open** in `DECIDE.md` — with a finding beside it now: the same stale
+`crates/` pointer is in `.claude/skills/panel/SKILL.md:44` and
+`.claude/skills/step/SKILL.md:70`, measured 2026-08-23, and the first of those is
+why four of panel 087's five seats were sent to rebuild a compiler that no longer
+lives there. R7's own honest limit stands: CLAUDE.md:112's brace form is one of the
+two citations its rule cannot check, so fixing §4's wording without braces gains a
+checked citation.
