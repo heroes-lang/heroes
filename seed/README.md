@@ -53,7 +53,9 @@ This is not (panel 085 R2).
 heroes build selfhost/main.hero --emit-c -o seed/heroes.c
 ```
 
-Two things force it, and each has an instrument:
+Three things force it, and each has an instrument — the third was added
+2026-08-23 (author decision, `/decide`) because it is the one a green build
+cannot see:
 
 1. **`HERO_RUNTIME_ABI` moves.** The seed carries
    `_Static_assert(HERO_RUNTIME_ABI == N, ...)` on its eighth line, so a runtime
@@ -65,6 +67,19 @@ Two things force it, and each has an instrument:
    seed-built compiler, and the bytes must match), which belongs to a milestone
    close: **15m41s measured 2026-08-19**, when `measure` and `mutate` joined the
    port and the seed grew by a megabyte.
+3. **Anything else `selfhost/` says changes what the compiler DOES** — a
+   different diagnostic, a different byte in the emitted C, a new library
+   function. This is the condition the first two miss and the one that bites:
+   the library's own text (`selfhost/library_source.hero`) moves neither the ABI
+   nor the grammar, so a stale seed passes condition 2's 3.4 s build **and the
+   compiler it makes carries yesterday's library**. Every job after it then tests
+   something nobody wrote. Its instrument is CI's *The seed is what today's source
+   emits* — the fixpoint of condition 2, run as a `cmp` on Linux at tags — and
+   until 2026-08-23 that instrument existed only as a sentence in
+   `tests/harness/suite_determinism.hero` claiming it did (panel 087). The rule of
+   thumb needs no instrument to apply: **if the diff touches `selfhost/`, the seed
+   is regenerated in the same commit.** The two conditions above are what make it
+   *loud* when you forget; this one is why you should not rely on them.
 
 ## If the seed is already broken — how to get a compiler back
 

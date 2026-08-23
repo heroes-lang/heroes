@@ -67,7 +67,11 @@ Milestone close — the checklist (this is its only copy):
 - a DESIGN-LOG line per decision made;
 - **score every prediction whose milestone this is**, and lapse the ones you
   cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/debrief/SCHEDULED.md
-  crates/heroes/src/measure/gate.rs docs/panel/*.md`. A prediction is scored, or
+  docs/measurements/010-spec-budget-ledger.md docs/panel/*.md`. (It named
+  `crates/heroes/src/measure/gate.rs` until 2026-08-23 — doubly dead: the tree is
+  archived, and panel 086 moved the ledger's 38 rows out of that doc comment into
+  the record above, where `tests/harness/suite_spec.hero` locks them to
+  `SPEC_TOKENS`.) A prediction is scored, or
   it is marked `lapsed` in the ledger row that spent it and the clause it bought
   goes back to `DECIDE.md` to be re-argued under the removal branch — **never
   renewed with a new milestone name** (panel 046 R2). This bullet exists because

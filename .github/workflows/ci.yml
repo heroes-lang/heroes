@@ -255,8 +255,19 @@ jobs:
 
       # The compiler's own tests: 482 of them, inside the modules they test,
       # which is where a Heroes module keeps them.
+      #
+      # **Tags and `workflow_dispatch` only** (author decision 2026-08-23,
+      # `/decide`). Running them means compiling the whole 37,137-line compiler
+      # with the compiler: 13 s through the archived Rust bootstrap, **20m35s
+      # measured 2026-08-23** through the seed-built one. That is the price of
+      # self-hosting and not a regression — but CLAUDE.md §13 says performance is
+      # not a licence either, so it is a decision on the record rather than a
+      # wait nobody chose. What the tag-only trade gives up is exactly the 482
+      # in-module assertions; the net below stays on every push and drives the
+      # same compiler over 845 checks. The local loop is untouched: `heroes test`
+      # through an already-built binary is the 13 s number again.
       - name: The compiler's own tests
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
         run: ./heroes-from-seed test selfhost/main.hero
 
       # The net: every suite the Rust harness carries, run by the compiler that
@@ -266,3 +277,31 @@ jobs:
       - name: The net, in Heroes
         if: runner.os != 'Windows'
         run: ./heroes-from-seed run tests/harness/main.hero -- ./heroes-from-seed
+
+      # THE SEED IS WHAT TODAY'S SOURCE EMITS — and until 2026-08-23 nothing
+      # asked. `tests/harness/suite_determinism.hero:13` claimed this repository
+      # "now has one that matters — `seed/heroes.c` is checked by `cmp` against
+      # what the seed-built compiler emits"; two independent greps found no such
+      # check anywhere (panel 087, the compiler-engineer), and the step above
+      # builds FROM the seed without ever comparing it. What that let through is
+      # the case `seed/README.md`'s two forcing conditions both miss: a change to
+      # the LIBRARY TEXT moves neither the ABI assert nor the grammar, so a stale
+      # seed builds in 3.4 s and every job after it runs a compiler carrying
+      # yesterday's library. A third condition is written down now (author
+      # decision 2026-08-23, `/decide`), and this is its instrument.
+      #
+      # Linux, tags and `workflow_dispatch`: the emission is **15m41s measured**,
+      # and Linux is the cheap leg. It is a valid host for the comparison because
+      # the emitted C is host-independent, verified rather than assumed —
+      # `seed/heroes.c` contains **zero** absolute paths and its `#line`
+      # directives carry the relative `selfhost/*.hero` (so any checkout matches
+      # from the repository root), and `word_bits`, the one platform-varying
+      # quantity the port derives, reaches diagnostics only and never the C.
+      # If this ever goes red with a diff that is only spellings, THAT is the
+      # finding: the seed would be platform-specific, which nobody has decided,
+      # and it goes to `docs/debrief/DECIDE.md` rather than being papered over.
+      - name: The seed is what today's source emits
+        if: runner.os == 'Linux' && (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
+        run: |
+          ./heroes-from-seed build selfhost/main.hero --emit-c -o /tmp/seed-fresh.c
+          cmp seed/heroes.c /tmp/seed-fresh.c
