@@ -41,8 +41,14 @@ is a full panel.
    do not stage dissent.
 
 2. **Prepare each judge's input** (this is the step that matters):
-   - `compiler-engineer` ← the proposal + pointers into `crates/heroes/src/`
-     (it must cite files and line counts).
+   - `compiler-engineer` ← the proposal + pointers into `selfhost/` and
+     `runtime/` (it must cite files and line counts). **Never `crates/`**: that
+     tree is `archive/bootstrap-rs/`, nothing builds it, and a seat sent there
+     measures a compiler that no longer ships. Give it the cheap route in the
+     brief too — the seed builds in 3.4 s (`clang -I runtime seed/heroes.c
+     runtime/runtime.c -o heroes`), while rebuilding from `selfhost/` is ~20
+     minutes and kills a seat on the watchdog, which is what happened to four of
+     five at panel 087.
    - `llm-ergonomist` ← ONLY `spec/heroes-spec.md`, the proposal as a spec
      diff, and 1–3 concrete tasks. **Never design.md, never the repo.** Where
      a status-quo-vs-proposal comparison is possible, present the two variants

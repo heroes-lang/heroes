@@ -109,9 +109,18 @@ that is easy to omit and the only one that lets the author disagree.
 
 ## 4. Panel — path-based triggers, asynchronous
 Convene `/panel` before changing the *language*: `spec/**`, design.md Parts
-1–11, surface syntax or semantics (`crates/heroes/src/{lexer,syntax,types}/`
-behaviour, not internals), a diagnostic *class*, or architecture (backend,
-IR, tool surface). The teaching process (design.md Part 0, the skills) is
+1–11, surface syntax or semantics (what `selfhost/`'s lexer, grammar and checker
+DO, not how they do it), a diagnostic *class*, or architecture (backend,
+IR, tool surface). **The parenthesis named `crates/heroes/src/{lexer,syntax,types}/`
+until 2026-08-23**, four days after M-bootstrap-archive moved that tree to
+`archive/bootstrap-rs/`: the trigger for the commonest panel path pointed into an
+archive, and the brief that convenes those panels pointed there too — which is how
+four of panel 087's five seats died on a watchdog rebuilding a compiler that had
+moved. Naming the behaviour rather than the files is what the parenthesis always
+meant, and dropping the braces is not cosmetic: the brace form is one of the two
+citation shapes `tests/harness/suite_records.hero`'s dead-citation check cannot
+read (panel 086 R7's measured limit), so this sentence is now checked by an
+instrument instead of by memory. The teaching process (design.md Part 0, the skills) is
 amended by author instruction, no panel. The panel never blocks: the
 synthesis adopts the most conservative resolution `provisional — author
 ratification pending` and queues the decision; the author's verdict is

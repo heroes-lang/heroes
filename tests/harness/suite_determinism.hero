@@ -11,7 +11,13 @@
 # earlier. Determinism is what makes that comparison mean anything: two
 # runs that differ turn every later byte-for-byte claim into noise, and
 # this repository now has one that matters — `seed/heroes.c` is checked by
-# `cmp` against what the seed-built compiler emits.
+# `cmp` against what the seed-built compiler emits, in CI's *The seed is
+# what today's source emits*, Linux at tags. That sentence stood here for
+# four days while the check DID NOT EXIST (panel 087, found by two
+# independent greps); it is true from 2026-08-23, and the reason it is
+# named with its home is that a comment asserting an instrument is worth
+# nothing without one — CLAUDE.md §11's premise that expires in silence.
+# It runs at the tag and not here because the emission is 15m41s.
 #
 # The `-o` leg is a second property with its own reason: the C is
 # identical whether it goes to stdout or through `-o`, BECAUSE the emitted
