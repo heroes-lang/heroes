@@ -16,9 +16,15 @@
  * live-block counter. M-value-aggregates adds the descriptor ABI and `[T]`, with the
  * representation spike 04 froze — the map and COW's write-back follow.
  *
- * HERO_RUNTIME_ABI is 3 because the declarations changed shape (CLAUDE.md §7):
+ * HERO_RUNTIME_ABI moves whenever the declarations change shape (CLAUDE.md §7):
  * every generated translation unit _Static_asserts it, so a `runtime/` from
- * another milestone is a compile error rather than a wrong answer.
+ * another milestone is a compile error rather than a wrong answer. **The number
+ * itself is below and nowhere else** — this line said "is 3" while the `#define`
+ * said 14, for eleven milestones, and a reader who trusted the prose was reading
+ * a count that had expired in silence (found by panel 088's ffi-pragmatist,
+ * 2026-08-23; CLAUDE.md §11's named failure). What the stamp catches is version
+ * skew and not a decoy: a `runtime/` that copies the number passes, and the cache
+ * key is what covers a decoy's contents.
  */
 
 #ifndef HEROES_RUNTIME_H

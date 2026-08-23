@@ -17,15 +17,17 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-separate-compilation is open (2026-08-19), no step landed yet.** The baseline net,
-run before touching anything, found `docs/defects/002` — a legal program killed on a
-file that is not text — and panel 087 repaired it in five lines of runtime C for **zero
-spec tokens**. Panels 085, 086 and 087 ratified 2026-08-23, no sitting pending. Waiting,
-same day: 20 open questions in `DECIDE.md` · two `SCHEDULED.md` items due here (panel
-087's unpruned extern asserts, 13 lines × 153 TUs, and panel 086 R4's `ORDER:` walks).
+**M-separate-compilation is open (2026-08-19); two repairs landed, no step yet.** The
+baseline net found `docs/defects/002` (panel 087, five lines of runtime C, +0 spec
+tokens), and a dead descriptor in every unit that named a container type it never
+built (panel 088's neighbour, `/decide` 3c). Panels 085–087 ratified 2026-08-23;
+**088 is pending**. Waiting, same day: **21** open questions in `DECIDE.md`, of which
+one is the next thing worth doing — **the compiler's 46× is not `push`**, measured, and
+`emit_writer.hero:82` is the suspect. Two `SCHEDULED.md` items are due here (panel 087's
+unpruned extern asserts, 13 lines × 153 TUs, and panel 086 R4's `ORDER:` walks).
 
-    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.4 s
-    ./heroes run tests/harness/main.hero -- ./heroes              # 845 checks, green 2026-08-23
+    clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.95 s
+    ./heroes run tests/harness/main.hero -- ./heroes              # 1132 checks, green 2026-08-23
 
 Before it: **M-bootstrap-archive closed 2026-08-19**, tag `m-bootstrap-archive` —
 `crates/` is `archive/bootstrap-rs/`, design.md:82 is a fact, there is no third
