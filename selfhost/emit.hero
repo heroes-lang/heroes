@@ -111,6 +111,16 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
             shown @ shown.push(index)
         index @ index + 1
     reached: {i64: bool} @ {}
+    # Which container types this unit actually BUILDS, riding the same
+    # walk so it costs nothing. Reachability cannot answer it and
+    # over-answers: `[Probe]` is interned because a function takes one,
+    # so `probe.hero` got a descriptor for `Probe` that nothing pointed
+    # at — `-Wunused-const-variable` against §7's zero-warning bar, on
+    # the harness's own file (2026-08-18). A `construct` is the only
+    # instruction that reaches `build_array`/`build_map`
+    # (emit_construct:74,:85), which are the only callers that ask for an
+    # element's, a key's or a value's descriptor.
+    constructed: {i64: bool} @ {}
     for at in shown
         f = p.functions[at]
         skipped: bool @ false
@@ -128,6 +138,12 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
         for blk in f.blocks
             for inst in blk.insts
                 reached[inst.ty] @ true
+                match inst.op
+                    .construct => constructed[inst.ty] @ true
+                    .lit | .load | .field | .payload | .tag_of | .len_of | .call => reached[inst.ty] @ true
+                    .func_ref | .store | .unary | .binary | .cast => reached[inst.ty] @ true
+                    .index | .map_get | .copy_out | .abort_op => reached[inst.ty] @ true
+                    .incref | .decref | .hole | .missing => reached[inst.ty] @ true
     # TRANSITIVELY, because a type names the types it holds: [int?] is
     # one slot type and two declarations, and naming only the outer
     # one left the inner int? unnamed under a rule that asserts every
@@ -160,7 +176,7 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
     # so the object must exist before a function body mentions it.
     emit_typeorder.definitions(@w, c, names, s, decls)
     emit_perfn.prototypes(@w, c, names, decls)
-    emit_descriptors.definitions(@w, c, names, decls, reachable: reached)
+    emit_descriptors.definitions(@w, c, names, decls, reachable: reached, constructed: constructed)
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             emit_signature.prototype(@w, p.functions[at], c, names, s, decls)
@@ -175,6 +191,7 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
                 emit_decls.shim(@w, p.functions[entry.must()], s)
         .tests_build => emit_decls.test_shim(@w, p, s)
     return Emitted(c: emit_writer.finish(w), diagnostics: [], link: emit_externs.libraries(p, s, decls), packages: emit_externs.packages(p, s, decls))
+
 
 ## Tests
 

@@ -54,6 +54,7 @@
 use report
 use shell
 use strings
+use suite_descriptors
 
 constant STORE: str
     "tests/emission"
@@ -164,6 +165,15 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
                 report.keep_failure(@r, label: "emission/" + one.label, detail: blame + said.must().err)
             continue
         judge(@r, one: one, emitted: said.must().out, update: update)
+        # The same fresh bytes, asked the descriptor invariant. This is
+        # the only place in the harness holding a FRESH emission of every
+        # program, so asking here costs one function call and catches a
+        # pruning mistake at the moment it is made — the blessed files
+        # cannot, because they are yesterday's answer. One rule, two
+        # callers: `suite_descriptors` runs it over the committed bytes,
+        # this runs it over the bytes just written, and neither owns a
+        # copy of the scanner.
+        suite_descriptors.judge(@r, label: "emission/" + one.label + " descriptors", c: said.must().out)
     orphans(@r, scratch: scratch, store: store, seen: seen)
     if skipped > 0 && skipped * 3 >= programs.len()
         report.keep_failure(@r, label: "emission", detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for a missing library — this machine is not comparing emissions")

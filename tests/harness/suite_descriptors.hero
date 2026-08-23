@@ -1,0 +1,187 @@
+# Every descriptor the blessed C names is defined in it, and every one it
+# defines is named — both directions, over `tests/emission/`, with no
+# compiler run at all.
+#
+# WHY IT EXISTS. `static const HeroDesc x_desc` that nothing points at is
+# `-Wunused-const-variable`, and CLAUDE.md §7's bar is zero warnings; one
+# that something points at and nobody defined is `use of undeclared
+# identifier` at exit 2 — the compiler blaming itself for a correct
+# program. Both are decided by one pruning rule (`emit.descriptors_for`),
+# and until 2026-08-23 nothing asked either question. `warnings` covers
+# `tests/golden/run`, `tests/golden/emit` and `examples/`, so
+# `tests/golden/ir/` reaches no compiler at all — and 2 of the 144
+# blessed emissions were carrying a dead descriptor when this was written
+# (`ir-adversarial-diverging-arms.c` -> `Step`,
+# `ir-place-paths.c` -> `Row`), measured before the pruning landed.
+#
+# WHY OVER THE BLESSED BYTES. They are in the repository already, so this
+# costs no compilation and covers every program the emission suite
+# covers. It is also where the TEXTUAL question belongs: asking it inside
+# the compiler means writing the bodies twice, which was measured at
+# **+39%** on emission (the net's own C, 20.97 s -> 29.03 s) for bytes
+# that were identical on every program without a dead descriptor. The
+# emitter therefore prunes from the IR and this asks the C whether it got
+# it right — the cheap half in the build, the exact half in the harness.
+#
+# THE RUNTIME'S FIVE ARE NOT IN SCOPE and the rule says so by shape, not
+# by a list: `&hero_desc_int` and its siblings live in the runtime, so a
+# unit names them and never defines them. Only a name the mangler wrote —
+# `h_<module>_…_desc` — has to be defined where it is used.
+
+use report
+use shell
+use strings
+
+constant EMISSIONS: str
+    "tests/emission"
+
+# The compiler's own emission, committed raw — the biggest program in the
+# repository (22 MB, 100 generated descriptors) and the one whose C no
+# other suite scans. If the invariant breaks here, what breaks is the way
+# in for a stranger with a C compiler.
+constant SEED: str
+    "seed/heroes.c"
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @ report.empty()
+    for entry in shell.list_entries(scratch: scratch, dir: EMISSIONS)?
+        if !strings.ends_with(text: entry, suffix: ".c")
+            continue
+        text = read_file(entry)
+        if text.is_err()
+            report.keep_failure(@r, label: "descriptors/" + strings.base_name(path: entry), detail: "  cannot read " + entry)
+            continue
+        judge(@r, label: "descriptors/" + strings.base_name(path: entry), c: text.must())
+    seed = read_file(SEED)
+    if seed.is_err()
+        report.keep_failure(@r, label: "descriptors/seed", detail: "  cannot read " + SEED)
+    else
+        judge(@r, label: "descriptors/seed", c: seed.must())
+    return ok(r)
+
+# One translation unit, both directions. The messages name the pruning
+# rule rather than the symptom, because the symptom is in clang's words
+# and the decision is in ours.
+function judge(@r: report.Report, label: str, c: str)
+    defined = defined_in(c)
+    named = named_in(c)
+    for name in keys(defined)
+        if named[name].is_err()
+            report.keep_failure(@r, label: label, detail: "  defines " + name + " and nothing takes its address: clang says -Wunused-const-variable. `emit_descriptor_set.generated` put it in the set and the C disagrees — its `constructed` narrowing is where that is decided")
+            return
+    for name in keys(named)
+        if defined[name].is_err()
+            report.keep_failure(@r, label: label, detail: "  takes the address of " + name + " and never defines it: this is `use of undeclared identifier` at exit 2, the compiler blaming itself for a correct program. A source of descriptors is missing from `emit_descriptor_set.generated` — the first attempt at its `constructed` narrowing lost an option's own descriptor exactly this way, and examples/tree stopped compiling")
+            return
+    report.keep_pass(@r)
+
+# Every `&h_…_desc` in the text. Byte reads and no `chars()`: a unit is
+# up to 22 MB and one `str` per character would be millions of
+# allocations. The only slices land INSIDE an identifier, where every
+# byte is alnum or `_` — so a slice here cannot split a character, which
+# is a fact about the value rather than a premise that the emitter stays
+# ASCII (CLAUDE.md §11).
+function named_in(c: str) -> {str: bool}
+    found: {str: bool} @ {}
+    n = c.len()
+    at: i64 @ 0
+    while at < n
+        if c[at] != '&'
+            at @ at + 1
+            continue
+        start = at + 1
+        end: i64 @ start
+        while end < n && is_name_byte(c[end])
+            end @ end + 1
+        # `> 5`, not `>= 5`: `&_desc` is a suffix, not a name.
+        if end - start > 5 && c.slice(from: end - 5, to: end) == "_desc" && c.slice(from: start, to: start + 2) == "h_"
+            found[c.slice(from: start, to: end)] @ true
+        # `end`, not `at + 1`: one pass over the unit.
+        at @ end
+    return found
+
+# Every `static const HeroDesc <name> = {` in the text. The emitter
+# writes that line and nothing else does, so the opener is the whole
+# rule.
+#
+# A BYTE WALK AND NOT `strings.lines`, and the reason is measured: the
+# biggest text here is `seed/heroes.c` at 22 MB and 724k lines, and
+# `split_on` never finished on it — over ten minutes and killed, because
+# `pieces @ pieces.push(x)` copies the whole array per push
+# (`runtime/parts/array.c:110` allocates len+1 and copies every element),
+# so building n pieces is O(n²): 25k pushes 0.9 s, 50k 3.0 s, 100k 11.7 s
+# — quadrupling for a doubling, measured 2026-08-23 and queued in
+# DECIDE.md. This walk allocates once per HIT instead of once per line.
+function defined_in(c: str) -> {str: bool}
+    found: {str: bool} @ {}
+    opener = "static const HeroDesc "
+    n = c.len()
+    width = opener.len()
+    at: i64 @ 0
+    while at + width < n
+        # `s` is the opener's first byte: the cheap test that keeps this
+        # to one comparison per byte. The match itself compares BYTES and
+        # never slices — a slice at an arbitrary offset aborts where it
+        # would split a character (spec:148), and this text is somebody
+        # else's file rather than a value with a known shape.
+        if c[at] != 's' || !matches_at(c: c, at: at, needle: opener)
+            at @ at + 1
+            continue
+        start = at + width
+        end: i64 @ start
+        while end < n && is_name_byte(c[end])
+            end @ end + 1
+        if end > start
+            found[c.slice(from: start, to: end)] @ true
+        at @ end
+    return found
+
+# Whether `needle` sits at `at`, byte for byte. No slice, so no abort on
+# a text whose bytes are not this scanner's business.
+function matches_at(c: str, at: i64, needle: str) -> bool
+    k: i64 @ 0
+    while k < needle.len()
+        if at + k >= c.len() || c[at + k] != needle[k]
+            return false
+        k @ k + 1
+    return true
+
+function is_name_byte(b: u8) -> bool
+    return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '_'
+
+## Tests
+
+test "both directions fire, and the runtime's own descriptors are not asked to be defined"
+    good = "static const HeroDesc h_m_P_desc = {\n};\nt0 = hero_array_new(&h_m_P_desc, 1);\n"
+    r1: report.Report @ report.empty()
+    judge(@r1, label: "good", c: good)
+    assert r1.failed == 0
+    assert r1.passed == 1
+
+    # Defined and never pointed at: the warning this pruning exists for.
+    unused = "static const HeroDesc h_m_P_desc = {\n};\n"
+    r2: report.Report @ report.empty()
+    judge(@r2, label: "unused", c: unused)
+    assert r2.failed == 1
+
+    # Pointed at and never defined: the exit-2 direction, which is worse.
+    missing = "t0 = hero_array_new(&h_m_Q_desc, 1);\n"
+    r3: report.Report @ report.empty()
+    judge(@r3, label: "missing", c: missing)
+    assert r3.failed == 1
+
+    # The runtime's five are named by every program that holds an array
+    # of scalars and defined by none of them.
+    runtime = "t0 = hero_array_new(&hero_desc_int, 1);\n"
+    r4: report.Report @ report.empty()
+    judge(@r4, label: "runtime", c: runtime)
+    assert r4.failed == 0
+
+test "the scanners read what the emitter writes"
+    text = "static const HeroDesc h_t_Row_desc = {\n    sizeof(h_t_Row),\n};\nx = (&h_t_Row_desc)->hash(&v);\n"
+    assert defined_in(text)["h_t_Row_desc"].must()
+    assert named_in(text)["h_t_Row_desc"].must()
+    assert defined_in(text)["h_t_Missing_desc"].is_err()
+    # A `_desc` that is not a name, and one that is not the mangler's.
+    assert named_in("&_desc\n").len() == 0
+    assert named_in("&hero_desc_str\n").len() == 0
