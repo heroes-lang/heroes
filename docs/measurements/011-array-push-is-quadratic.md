@@ -84,6 +84,43 @@ wrong; and any in-place path has to survive `--sanitize` plus
 `hero_runtime_check_leaks()`, which is where an aliasing mistake shows up as a
 use-after-free rather than as a wrong answer.
 
+## Corrections — 2026-08-23, hours later, from panel 088
+
+**Two sentences above are wrong and the record says so rather than being
+rewritten.** The ffi-pragmatist measured both; the coordinator verified both by
+hand before writing this.
+
+1. **"A capacity field is an `HERO_RUNTIME_ABI` bump and a seed regeneration" is
+   false — the field already exists.** `runtime/heroes_runtime.h:273` declares
+   `int64_t cap;` in `HeroArrayHeader` and `runtime/parts/array.c:58` writes it.
+   Nothing ever reads it for an array: `grep -rn -- "->cap" runtime/` answers only
+   `array.c:58` (the write) and `map.c`/`map-write.c` (a different struct). So an
+   in-place path changes no layout, needs no ABI bump and needs no new seed.
+2. **This file convened a panel on a question `design.md` had already answered,
+   and that is the finding worth keeping.** `design.md:1531-1535` says, in so many
+   words: *"What does **not** work is making `push` append in place when the
+   refcount is 1: panel 037 implemented it and the gate never fires (the ownership
+   pass's own slot makes the count 2 at every accumulator push) … The sound form is
+   a **place store** — `p @ push(p, v)` recognised at lowering, uniqueness taken
+   from the place rather than guessed from a count — and it waits for
+   M-selfhost-probe to measure whether anything needs it."* It also records the
+   workaround with its numbers: accumulate in chunks, **527,000 output lines in
+   0.5 s against 403 s in one flat array**. CLAUDE.md §1 names this exact failure
+   ("a silence read as an open question") and prescribes the grep that would have
+   caught it. It was not run.
+
+**What the sitting therefore is**: not a discovery, but the measurement
+`design.md` was waiting for — M-selfhost-probe closed on 2026-08-15 without taking
+it — plus a working prototype of the form `design.md` already named. The gate's
+failure is now measured rather than remembered: an instrumented
+`hero_array_push` reports `pushes=100000 rc1=0 rc2=100000` on the canonical
+accumulator, and over `heroes check tests/harness/main.hero` the rc==1 path
+reaches **14.4%** of the copy work (186,189,031 of 1,294,923,330 elements).
+
+A third correction, found on the way and belonging to another file: the prose at
+`runtime/heroes_runtime.h:19` still reads *"HERO_RUNTIME_ABI is 3"* over
+`#define HERO_RUNTIME_ABI 14` at line 31.
+
 ## The instrument this leaves behind
 
 None yet, and that is deliberate — a benchmark asserted at a wall-clock threshold
