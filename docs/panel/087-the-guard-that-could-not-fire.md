@@ -304,3 +304,7 @@ the item for CLAUDE.md §4's own stale path; the skill needs the same correction
 **The freeze held.** The working tree was untouched from the first brief until this
 file was written, which is the rule that binds the seat that convened the sitting
 hardest (panel 056's process note).
+
+## Author's verdict
+
+*(pending — `docs/debrief/DECIDE.md`)*

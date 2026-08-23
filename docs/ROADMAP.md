@@ -17,19 +17,19 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 ## Status
 
-**M-bootstrap-archive closed 2026-08-19, tag `m-bootstrap-archive`. There is no
-third language.** `crates/` is `archive/bootstrap-rs/` and design.md:82 is a fact.
+**M-separate-compilation is open (2026-08-19), no step landed yet.** The baseline net,
+run before touching anything, found `docs/defects/002` — a legal program killed on a
+file that is not text — and panel 087 repaired it in five lines of runtime C for
+**zero spec tokens**. Waiting, measured 2026-08-23: ratification of 085, 086, 087 ·
+23 open questions in `DECIDE.md` · two `SCHEDULED.md` items due here, panel 087's
+unpruned extern asserts (13 lines × 153 TUs) and panel 086 R4's four `ORDER:` walks.
 
     clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.4 s
-    ./heroes run tests/harness/main.hero -- ./heroes              # 838 checks
+    ./heroes run tests/harness/main.hero -- ./heroes              # 845 checks, green 2026-08-23
 
-Five successors landed before the move, each measured against what it replaced:
-`tests/emission/` (142 programs, both compilers green on the same bytes),
-`heroes measure` (3512, identical), `suite_spec.hero` (the §1.6 gate), `heroes
-mutate` (538 mutants, byte-identical report), CI's seed leg. Seed regenerated,
-fixpoint re-verified. Panel 086 moved the budget ledger to `docs/measurements/010`
-and gave it the agreement check it never had; two decisions wait in `DECIDE.md`.
-Record: `docs/journal/024-bootstrap-archive.md`. Next: **M-separate-compilation**.
+Before it: **M-bootstrap-archive closed 2026-08-19**, tag `m-bootstrap-archive` —
+`crates/` is `archive/bootstrap-rs/`, design.md:82 is a fact, there is no third
+language. Record: `docs/journal/024-bootstrap-archive.md`.
 
 ---
 
