@@ -471,4 +471,24 @@ so rather than being renewed (panel 046 R2).
 
 ## Author's verdict
 
-*(pending — `docs/debrief/DECIDE.md`)*
+**Ratified 2026-08-23** (author instruction, *"ratifica tutto"* — blanket over
+panels 085, 086 and 087, recorded as one; this section says what the yes does and
+does not settle here).
+
+**R1 (A1, the seed committed raw) and R4 (B4, the archive as its own milestone)
+are final**, and so are R2, R3, R5–R8 as they landed. The yes is not a rubber
+stamp on a closed milestone: the artifact was re-verified in the session that
+recorded this verdict — `clang -I runtime seed/heroes.c runtime/runtime.c -o
+heroes` in **3.75 s**, and the compiler that line produces then ran the whole net
+at **845 passed, 0 failed, exit 0**. That is R1's claim executed four days after
+the tag, on a machine that had nothing else of the compiler on it.
+
+**What the yes does not settle, and both keep their conditions unchanged.** The
+compiler-engineer's two vetoes stay armed: **A2** (compressing the seed) lifts only
+on three consecutive real refreshes where gzip stays under raw, and **B2** (a
+`heroes golden`-shaped subcommand) lifts only on a harness capability that `heroes
+run <harness>.hero` cannot express — §10's third clause refuses it until then. And
+**R7's mirror is still open**: a fixed array declared where the header has a scalar
+(`d_type: i8[4]` against `unsigned char`) is `internal error` at exit **2**, the
+compiler blaming itself for the author's `extern`, and it waits in `DECIDE.md` with
+its repair undecided.

@@ -19,10 +19,10 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 
 **M-separate-compilation is open (2026-08-19), no step landed yet.** The baseline net,
 run before touching anything, found `docs/defects/002` — a legal program killed on a
-file that is not text — and panel 087 repaired it in five lines of runtime C for
-**zero spec tokens**. Waiting, measured 2026-08-23: ratification of 085, 086, 087 ·
-23 open questions in `DECIDE.md` · two `SCHEDULED.md` items due here, panel 087's
-unpruned extern asserts (13 lines × 153 TUs) and panel 086 R4's four `ORDER:` walks.
+file that is not text — and panel 087 repaired it in five lines of runtime C for **zero
+spec tokens**. Panels 085, 086 and 087 ratified 2026-08-23, no sitting pending. Waiting,
+same day: 20 open questions in `DECIDE.md` · two `SCHEDULED.md` items due here (panel
+087's unpruned extern asserts, 13 lines × 153 TUs, and panel 086 R4's `ORDER:` walks).
 
     clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.4 s
     ./heroes run tests/harness/main.hero -- ./heroes              # 845 checks, green 2026-08-23
