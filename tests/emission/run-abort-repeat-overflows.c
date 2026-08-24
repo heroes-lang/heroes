@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "abortrepeatoverflows.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "abortrepeatoverflows.c"
 
 HERO_STR_STATIC(hero_str_0, "before");
 HERO_STR_STATIC(hero_str_1, "abcd");
@@ -73,7 +79,7 @@ void h_abortrepeatoverflows_main(void);
 
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
 void h_abortrepeatoverflows_main(void) {
-#line 77 "abortrepeatoverflows.c"
+#line 83 "abortrepeatoverflows.c"
     uint64_t h0_n;
     HeroStr h1_own1 = {0};
     HeroStr t1 = {0};
@@ -107,7 +113,7 @@ bb0:
     t8 = h1_own1;
 #line 25 "tests/golden/run/abort-repeat-overflows.hero"
     h1_own1 = t5;
-#line 111 "abortrepeatoverflows.c"
+#line 117 "abortrepeatoverflows.c"
     hero_str_decref(t8);
 #line 25 "tests/golden/run/abort-repeat-overflows.hero"
     t6 = hero_str_len(t5);
@@ -123,7 +129,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t9 = h1_own1;
-#line 127 "abortrepeatoverflows.c"
+#line 133 "abortrepeatoverflows.c"
     hero_str_decref(t9);
     return;
 }

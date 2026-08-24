@@ -1,6 +1,6 @@
 # The Heroes library's own text, EMBEDDED — never read from disk.
 #
-# Panel 028 R3 ruled this and `crates/heroes/src/library/source.hero`
+# Panel 028 R3 ruled this and `archive/bootstrap-rs/heroes/src/library/source.hero`
 # states the ruling in its own header: the library "is not on disk
 # beside the compiler: it is `include_str!`d into the binary, so there
 # is no discovery, no `$HEROES_LIBRARY`, and no decoy — clang cannot
@@ -140,6 +140,47 @@ constant LINES: [str]
         "    function hero_args_at(index: i64) -> str"
         "    function hero_exit(code: i64)"
         ""
+        "extern \"heroes_runtime.h\""
+        "    # The text conversion that reports instead of dying (panel 089). Its codes"
+        "    # live in the header for the same reason `hero_os.h`'s do, one group up."
+        "    constant HERO_STR_OK: i64"
+        "    function hero_str_try_from_cstr(p: cstr, @status: i64) -> str"
+        ""
+        "# Text that came from C, or the reason it is not text (panel 089, adopting the"
+        "# second-name form panel 059 reserved when it refused `to_str` as the carrier)."
+        "#"
+        "# `c.to_str()` copies a C string in and ABORTS on a null pointer or on bytes"
+        "# that are not UTF-8 — right for the program's own bytes, wrong for the"
+        "# environment's. A SQLite TEXT column another program wrote, a Latin-1 `PATH`,"
+        "# an argument the shell handed over: none of those are the program's mistake,"
+        "# and §1.12 says a Heroes program must not be killed by them. Every language"
+        "# whose string carries a UTF-8 invariant ships two names here and none of them"
+        "# aborts; the one that made this conversion infallible is JNI, and its runtime"
+        "# kills the VM instead."
+        "#"
+        "# It is a Tier-2 function and not a built-in for §1.7's mechanical reason,"
+        "# which design.md:476-480 already applied to `read_file`: a `T?` is a"
+        "# per-translation-unit struct the C runtime cannot name, so the built-in route"
+        "# costs a second composition arm in the emitter and this route costs zero"
+        "# backend lines."
+        "#"
+        "# **The null test is HERE and not in C, and that is the whole trick.** The"
+        "# emitter wraps every `cstr` on its way into a C function with a guard that"
+        "# aborts on a null pointer, so a C-side `if (p == NULL)` can never run: the"
+        "# guard fires first. Measured — this function's first draft put the test in C"
+        "# and died at `panic: a null cstr was passed to a C function`, exit 134, on"
+        "# the very case it exists for. What is closed is asking **C** whether a"
+        "# pointer is null; the language answers that itself with `== nullptr`, so the"
+        "# question never has to cross (panel 089, compiler-engineer)."
+        "function validated(c: cstr) -> str?"
+        "    if c == nullptr"
+        "        return fail(\"null_cstr\", \"a null `cstr` holds no text\")"
+        "    status: i64 @ 0"
+        "    text = hero_str_try_from_cstr(c, @status)"
+        "    if status == HERO_STR_OK"
+        "        return ok(text)"
+        "    return fail(\"not_text\", \"the bytes behind this `cstr` are not UTF-8\")"
+        ""
         "# The whole file, or an error. The two codes are stable snake_case strings"
         "# (§4.6), and they are distinguished because a caller almost always wants to:"
         "# \"there is no such file\" is a different program state from \"the disk failed\"."
@@ -181,16 +222,22 @@ function text() -> str
 
 ## Tests
 
-# **THIS TEST HAS A RETIREMENT NOTICE, AND ITS OWN FAILURE IS THE NOTICE.** It
-# exists to prove the port transcribed the library correctly, by comparing the
-# embedded text against the bootstrap's copy — and since M-bootstrap-archive that
-# copy is frozen inside `archive/bootstrap-rs/`, where nothing is maintained. So
-# the day the library legitimately GROWS — a new built-in written in Heroes — this
-# test fails, and the right response is not to edit the archive: it is to delete
-# this test, because the bootstrap has stopped being an authority on what the
-# library should say. Until then it is free evidence that the transcription is
-# exact, and the fixpoint plus 142 blessed emissions already agree with it.
-test "the embedded library is byte for byte the file the bootstrap embedded"
-    disk = read_file("archive/bootstrap-rs/heroes/src/library/source.hero")
-    assert !disk.is_err()
-    assert text() == disk.must()
+# **THE BOOTSTRAP-EQUALITY TEST WAS RETIRED HERE ON 2026-08-24, BY ITS OWN
+# WRITTEN INSTRUCTION.** It compared this embedded text byte for byte against
+# `archive/bootstrap-rs/heroes/src/library/source.hero`, and it carried its own
+# retirement notice: *"the day the library legitimately GROWS — a new built-in
+# written in Heroes — this test fails, and the right response is not to edit the
+# archive: it is to delete this test, because the bootstrap has stopped being an
+# authority on what the library should say."*
+#
+# That day is this one. Panel 089 added `validated`, the first legitimate growth
+# of the library since the archive, so the test fired exactly as designed and
+# was deleted rather than worked around. Nothing was edited inside
+# `archive/bootstrap-rs/`, which is the outcome the notice existed to force.
+#
+# What still checks this text is not weaker for its going: the fixpoint compares
+# the emitted C byte for byte, the blessed emissions in `tests/emission/` carry
+# the library's own symbols, and every program in the corpus uses `range`, `map`,
+# `fold` and `read_file` from here. What is genuinely lost is the *transcription*
+# evidence — that the port copied the bootstrap's library correctly — and that
+# question is answered for good: it has been true through a fixpoint.

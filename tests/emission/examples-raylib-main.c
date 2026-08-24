@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <raylib.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -33,7 +34,7 @@ _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->type) == 1 && siz
 #line 101 "examples/raylib/main.hero"
 _Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params");
              _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->params[0]) == 1 && sizeof(((AutomationEvent *)0)->params[0]) == sizeof(int32_t) && (((__typeof__(((AutomationEvent *)0)->params[0]))-1 < 0) == ((int32_t)-1 < 0)) && __builtin_types_compatible_p(__typeof__(((AutomationEvent *)0)->params), __typeof__(((AutomationEvent *)0)->params[0])[4]), "heroes-ffi-field AutomationEvent params");
-#line 36 "main.c"
+#line 37 "main.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
@@ -46,7 +47,7 @@ __attribute__((unused)) static void hero_ffi_complete_h_main_Vector2(void) { Vec
 __attribute__((unused)) static void hero_ffi_complete_h_main_Rectangle(void) { Rectangle v = {0,0,0,0}; (void)v; }
 #line 98 "examples/raylib/main.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_main_AutomationEvent(void) { AutomationEvent v = {0,0,{0}}; (void)v; }
-#line 49 "main.c"
+#line 50 "main.c"
 #pragma clang diagnostic pop
 
 #line 62 "examples/raylib/main.hero"
@@ -57,7 +58,7 @@ _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union V
 _Static_assert(__builtin_classify_type(*(Rectangle *)0) != 13, "heroes-ffi-union Rectangle x y width height");
 #line 98 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(AutomationEvent *)0) != 13, "heroes-ffi-union AutomationEvent frame type params");
-#line 60 "main.c"
+#line 61 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -93,6 +94,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 75 "examples/raylib/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_SetRandomSeed(uint32_t a0) { (void)SetRandomSeed(a0); }
@@ -114,7 +118,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 117 "main.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 123 "main.c"
 
 HERO_STR_STATIC(hero_str_0, "raylib answered ");
 HERO_STR_STATIC(hero_str_1, " ");
@@ -155,7 +161,7 @@ void h_main_main(void);
 
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
-#line 158 "main.c"
+#line 164 "main.c"
     Color h0_red;
     Vector2 h1_mid;
     AutomationEvent h2_event;
@@ -370,7 +376,7 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 373 "main.c"
+#line 379 "main.c"
 }
 bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

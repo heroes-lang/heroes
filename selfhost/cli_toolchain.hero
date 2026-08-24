@@ -1,7 +1,7 @@
 # Everything between the generated C and a running binary: where the
 # runtime is, what clang is invoked with, and what is cached where
 # (design.md §3.1; panels 020, 036, 055). Port of the toolchain half
-# of crates/heroes-cli/src/commands/toolchain.rs.
+# of archive/bootstrap-rs/heroes-cli/src/commands/toolchain.rs.
 #
 # THE CACHE KEY IS THE WHOLE CONFIGURATION, not the source. Measured
 # in the bootstrap: hero_print_int changed with runtime.o not
@@ -85,17 +85,17 @@ function run_clang(line: str, what: str, err_path: str) -> ()?
         return ok()
     return fail("clang", what + " failed:\n" + noise)
 
-# One environment variable, or "" where it is unset.
+# One environment variable, or "" where it is unset OR unreadable.
 #
-# The null test is the whole function: `getenv` answers `NULL` for a
-# name nobody set, and converting a null `cstr` ABORTS by design
-# (spec:229 — "test `c == nullptr` first, because converting one
-# aborts"). So the guard is not defensive, it is the contract.
+# **This killed the compiler until 2026-08-24, and the null test
+# everybody looked at was not the reason**: `getenv` also answers a
+# pointer to whatever bytes the environment holds, and `to_str` aborts
+# on bytes that are not UTF-8. `HEROES_RUNTIME=$'\xff\xfe' heroes
+# doctor` was exit 134 (panel 089). `validated` subsumes both cases,
+# and "" is right for both because every call site asks only whether
+# the string is empty.
 function env(name: str) -> str
-    got = getenv(name: name.cstr())
-    if got == nullptr
-        return ""
-    return got.to_str()
+    return validated(c: getenv(name: name.cstr())).default("")
 
 function trimmed(text: str) -> str
     cs = text.chars()

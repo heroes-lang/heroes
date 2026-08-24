@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "fixedbugsafieldwinsthedotoverafreefunction.c"
 
 typedef int64_t (*h_fixedbugsafieldwinsthedotoverafreefunction_0fn0)(int64_t);
 typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_Holder {
@@ -99,7 +105,7 @@ void h_fixedbugsafieldwinsthedotoverafreefunction_main(void);
 
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_double_it(int64_t h0_n) {
-#line 103 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 109 "fixedbugsafieldwinsthedotoverafreefunction.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -113,12 +119,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     return t3;
-#line 117 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 123 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n) {
-#line 122 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 128 "fixedbugsafieldwinsthedotoverafreefunction.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -141,12 +147,12 @@ bb0:
     if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     return t6;
-#line 145 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 151 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 void h_fixedbugsafieldwinsthedotoverafreefunction_main(void) {
-#line 150 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 156 "fixedbugsafieldwinsthedotoverafreefunction.c"
     h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s;
     h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v;
     h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0;
@@ -265,7 +271,7 @@ bb3:
     hero_print_end();
 #line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     goto bb1;
-#line 269 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 275 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 bool h_fixedbugsafieldwinsthedotoverafreefunction_Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b) {
     if (!(a->f_tag == b->f_tag)) return false;

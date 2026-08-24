@@ -23,9 +23,14 @@ tokens), a dead descriptor in every unit that named a container type it never
 built (panel 088's neighbour, `/decide` 3c), and — 2026-08-24 — the compiler's
 **last POSIX binding**, which had made the self-hosted compiler unbuildable on
 Windows (`hero_write_err`, `/decide` 3a; the Windows CI leg runs every step again,
-untested from here until the first tag). **Panels 085–088 all ratified.** Waiting: **12**
-open questions in `DECIDE.md`, and **eleven of them are one brief** — the 089
-sitting on the C boundary, assembled and deliberately *not* convened. The 46×
+untested from here until the first tag). **Panels 085–088 all ratified; 089 held 2026-08-24 and pending.** Waiting: **14**
+open questions in `DECIDE.md`. **Panel 089 landed the fallible text conversion**
+— `validated(c: cstr) -> str?` as a Tier-2 library function, zero checker and
+zero emitter lines, ABI held at 15, spec 3506 → 3530 (+24 net against a −15 named
+removal) — and it closed a defect nobody had looked for: **the shipping compiler
+could be killed by an environment variable**. Its own brief was wrong four times
+and the five seats found all four, which is what that file is worth reading for.
+`args()` is now the only one of panel 087's four doors still open. The 46×
 question is **answered, repaired, and closed all the way down** (measurements 012
 and 013): the writer and the loader fell to two repairs, then the author pulled
 panel 037's trigger and the **place store landed** — the compiler builds itself in

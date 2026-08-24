@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "abortarrayindex.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "abortarrayindex.c"
 
 typedef struct h_abortarrayindex_0opt0 {
     int64_t tag;
@@ -69,7 +75,7 @@ void h_abortarrayindex_main(void);
 
 #line 4 "tests/golden/run/abort-array-index.hero"
 void h_abortarrayindex_main(void) {
-#line 73 "abortarrayindex.c"
+#line 79 "abortarrayindex.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     int64_t t1;
@@ -112,15 +118,15 @@ bb0:
     t11 = h1_own1;
 #line 5 "tests/golden/run/abort-array-index.hero"
     h1_own1 = t4;
-#line 116 "abortarrayindex.c"
+#line 122 "abortarrayindex.c"
     hero_array_decref(t11);
 #line 5 "tests/golden/run/abort-array-index.hero"
     t12 = h0_xs;
-#line 120 "abortarrayindex.c"
+#line 126 "abortarrayindex.c"
     hero_array_incref(t4);
 #line 5 "tests/golden/run/abort-array-index.hero"
     h0_xs = t4;
-#line 124 "abortarrayindex.c"
+#line 130 "abortarrayindex.c"
     hero_array_decref(t12);
 #line 6 "tests/golden/run/abort-array-index.hero"
     t5 = h0_xs;
@@ -144,11 +150,11 @@ bb0:
     hero_print_end();
 #line 7 "tests/golden/run/abort-array-index.hero"
     t13 = h0_xs;
-#line 148 "abortarrayindex.c"
+#line 154 "abortarrayindex.c"
     hero_array_decref(t13);
 #line 7 "tests/golden/run/abort-array-index.hero"
     t14 = h1_own1;
-#line 152 "abortarrayindex.c"
+#line 158 "abortarrayindex.c"
     hero_array_decref(t14);
     return;
 }

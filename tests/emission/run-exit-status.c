@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "exitstatus.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "exitstatus.c"
 
 HERO_STR_STATIC(hero_str_0, "before");
 HERO_STR_STATIC(hero_str_1, "after");
@@ -73,7 +79,7 @@ void h_library_exit(int64_t h0_code);
 
 #line 18 "tests/golden/run/exit-status.hero"
 void h_exitstatus_main(void) {
-#line 77 "exitstatus.c"
+#line 83 "exitstatus.c"
     HeroStr t1 = {0};
     int64_t t2;
     HeroStr t3 = {0};
@@ -97,22 +103,22 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/exit-status.hero"
     return;
-#line 101 "exitstatus.c"
+#line 107 "exitstatus.c"
 }
 
-#line 148 "<heroes library>"
+#line 189 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 106 "exitstatus.c"
+#line 112 "exitstatus.c"
     int64_t t1;
     goto bb0;
 bb0:
-#line 149 "<heroes library>"
+#line 190 "<heroes library>"
     t1 = h0_code;
-#line 149 "<heroes library>"
+#line 190 "<heroes library>"
     hero_exit(t1);
-#line 149 "<heroes library>"
+#line 190 "<heroes library>"
     return;
-#line 116 "exitstatus.c"
+#line 122 "exitstatus.c"
 }
 void h_exitstatus_0opt0_retain(const h_exitstatus_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

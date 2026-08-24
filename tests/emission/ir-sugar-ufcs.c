@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "sugarufcs.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "sugarufcs.c"
 
 typedef struct h_sugarufcs_0opt0 {
     int64_t tag;
@@ -70,7 +76,7 @@ void h_sugarufcs_main(void);
 
 #line 4 "tests/golden/ir/sugar-ufcs.hero"
 int64_t h_sugarufcs_double(int64_t h0_n) {
-#line 74 "sugarufcs.c"
+#line 80 "sugarufcs.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -84,12 +90,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 5 "tests/golden/ir/sugar-ufcs.hero"
     return t3;
-#line 88 "sugarufcs.c"
+#line 94 "sugarufcs.c"
 }
 
 #line 7 "tests/golden/ir/sugar-ufcs.hero"
 void h_sugarufcs_main(void) {
-#line 93 "sugarufcs.c"
+#line 99 "sugarufcs.c"
     HeroArrayHeader * h0_own0 = {0};
     int64_t t1;
     int64_t t2;
@@ -118,7 +124,7 @@ bb0:
     t6 = h0_own0;
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     h0_own0 = t3;
-#line 122 "sugarufcs.c"
+#line 128 "sugarufcs.c"
     hero_array_decref(t6);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t4 = hero_array_len(t3);
@@ -130,7 +136,7 @@ bb0:
     hero_print_end();
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t7 = h0_own0;
-#line 134 "sugarufcs.c"
+#line 140 "sugarufcs.c"
     hero_array_decref(t7);
     return;
 }

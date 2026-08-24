@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "mustaborts.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "mustaborts.c"
 
 HERO_STR_STATIC(hero_str_0, "odd");
 HERO_STR_STATIC(hero_str_1, "not divisible by two");
@@ -85,7 +91,7 @@ void h_mustaborts_main(void);
 
 #line 18 "tests/golden/run/must-aborts.hero"
 h_mustaborts_0opt0 h_mustaborts_half(int64_t h0_n) {
-#line 89 "mustaborts.c"
+#line 95 "mustaborts.c"
     h_mustaborts_0opt0 h1_own1 = {0};
     h_mustaborts_0opt0 h2_own2 = {0};
     int64_t t1;
@@ -142,18 +148,18 @@ bb1:
     t13 = h1_own1;
 #line 21 "tests/golden/run/must-aborts.hero"
     h1_own1 = t12;
-#line 146 "mustaborts.c"
+#line 152 "mustaborts.c"
     h_mustaborts_0opt0_release(&t13);
 #line 21 "tests/golden/run/must-aborts.hero"
-#line 149 "mustaborts.c"
+#line 155 "mustaborts.c"
     h_mustaborts_0opt0_retain(&t12);
 #line 21 "tests/golden/run/must-aborts.hero"
     t15 = h1_own1;
-#line 153 "mustaborts.c"
+#line 159 "mustaborts.c"
     h_mustaborts_0opt0_release(&t15);
 #line 21 "tests/golden/run/must-aborts.hero"
     t16 = h2_own2;
-#line 157 "mustaborts.c"
+#line 163 "mustaborts.c"
     h_mustaborts_0opt0_release(&t16);
     return t12;
 bb2:
@@ -161,10 +167,10 @@ bb2:
     t6 = HERO_STR_LIT(hero_str_0);
 #line 20 "tests/golden/run/must-aborts.hero"
     t7 = HERO_STR_LIT(hero_str_1);
-#line 165 "mustaborts.c"
+#line 171 "mustaborts.c"
     hero_str_incref(t6);
 #line 20 "tests/golden/run/must-aborts.hero"
-#line 168 "mustaborts.c"
+#line 174 "mustaborts.c"
     hero_str_incref(t7);
 #line 20 "tests/golden/run/must-aborts.hero"
     t8 = (h_mustaborts_0opt0){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -172,18 +178,18 @@ bb2:
     t14 = h2_own2;
 #line 20 "tests/golden/run/must-aborts.hero"
     h2_own2 = t8;
-#line 176 "mustaborts.c"
+#line 182 "mustaborts.c"
     h_mustaborts_0opt0_release(&t14);
 #line 20 "tests/golden/run/must-aborts.hero"
-#line 179 "mustaborts.c"
+#line 185 "mustaborts.c"
     h_mustaborts_0opt0_retain(&t8);
 #line 20 "tests/golden/run/must-aborts.hero"
     t17 = h1_own1;
-#line 183 "mustaborts.c"
+#line 189 "mustaborts.c"
     h_mustaborts_0opt0_release(&t17);
 #line 20 "tests/golden/run/must-aborts.hero"
     t18 = h2_own2;
-#line 187 "mustaborts.c"
+#line 193 "mustaborts.c"
     h_mustaborts_0opt0_release(&t18);
     return t8;
 bb3:
@@ -192,7 +198,7 @@ bb3:
 
 #line 23 "tests/golden/run/must-aborts.hero"
 void h_mustaborts_main(void) {
-#line 196 "mustaborts.c"
+#line 202 "mustaborts.c"
     h_mustaborts_0opt0 h0_f0 = {0};
     h_mustaborts_0opt0 h1_f1 = {0};
     h_mustaborts_0opt0 h2_own2 = {0};
@@ -235,15 +241,15 @@ bb0:
     t21 = h2_own2;
 #line 24 "tests/golden/run/must-aborts.hero"
     h2_own2 = t2;
-#line 239 "mustaborts.c"
+#line 245 "mustaborts.c"
     h_mustaborts_0opt0_release(&t21);
 #line 24 "tests/golden/run/must-aborts.hero"
     t22 = h0_f0;
-#line 243 "mustaborts.c"
+#line 249 "mustaborts.c"
     h_mustaborts_0opt0_retain(&t2);
 #line 24 "tests/golden/run/must-aborts.hero"
     h0_f0 = t2;
-#line 247 "mustaborts.c"
+#line 253 "mustaborts.c"
     h_mustaborts_0opt0_release(&t22);
 #line 24 "tests/golden/run/must-aborts.hero"
     t3 = h0_f0;
@@ -273,15 +279,15 @@ bb1:
     t23 = h3_own3;
 #line 25 "tests/golden/run/must-aborts.hero"
     h3_own3 = t12;
-#line 277 "mustaborts.c"
+#line 283 "mustaborts.c"
     h_mustaborts_0opt0_release(&t23);
 #line 25 "tests/golden/run/must-aborts.hero"
     t24 = h1_f1;
-#line 281 "mustaborts.c"
+#line 287 "mustaborts.c"
     h_mustaborts_0opt0_retain(&t12);
 #line 25 "tests/golden/run/must-aborts.hero"
     h1_f1 = t12;
-#line 285 "mustaborts.c"
+#line 291 "mustaborts.c"
     h_mustaborts_0opt0_release(&t24);
 #line 25 "tests/golden/run/must-aborts.hero"
     t13 = h1_f1;
@@ -299,7 +305,7 @@ bb2:
     t7 = h0_f0;
 #line 24 "tests/golden/run/must-aborts.hero"
     t8 = t7.as.err;
-#line 303 "mustaborts.c"
+#line 309 "mustaborts.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -313,19 +319,19 @@ bb3:
     hero_print_end();
 #line 25 "tests/golden/run/must-aborts.hero"
     t25 = h0_f0;
-#line 317 "mustaborts.c"
+#line 323 "mustaborts.c"
     h_mustaborts_0opt0_release(&t25);
 #line 25 "tests/golden/run/must-aborts.hero"
     t26 = h1_f1;
-#line 321 "mustaborts.c"
+#line 327 "mustaborts.c"
     h_mustaborts_0opt0_release(&t26);
 #line 25 "tests/golden/run/must-aborts.hero"
     t27 = h2_own2;
-#line 325 "mustaborts.c"
+#line 331 "mustaborts.c"
     h_mustaborts_0opt0_release(&t27);
 #line 25 "tests/golden/run/must-aborts.hero"
     t28 = h3_own3;
-#line 329 "mustaborts.c"
+#line 335 "mustaborts.c"
     h_mustaborts_0opt0_release(&t28);
     return;
 bb4:
@@ -333,7 +339,7 @@ bb4:
     t17 = h1_f1;
 #line 25 "tests/golden/run/must-aborts.hero"
     t18 = t17.as.err;
-#line 337 "mustaborts.c"
+#line 343 "mustaborts.c"
     hero_panic_must(t18);
     hero_unreachable();
 }

@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "fixedbugsconcatleaked.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "fixedbugsconcatleaked.c"
 
 HERO_STR_STATIC(hero_str_0, "hi ");
 HERO_STR_STATIC(hero_str_1, "Ziggy");
@@ -76,7 +82,7 @@ void h_fixedbugsconcatleaked_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-concat-leaked.hero"
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name) {
-#line 80 "fixedbugsconcatleaked.c"
+#line 86 "fixedbugsconcatleaked.c"
     HeroStr h1_own1 = {0};
     HeroStr t1 = {0};
     HeroStr t2 = {0};
@@ -95,21 +101,21 @@ bb0:
     t4 = h1_own1;
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_own1 = t3;
-#line 99 "fixedbugsconcatleaked.c"
+#line 105 "fixedbugsconcatleaked.c"
     hero_str_decref(t4);
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
-#line 102 "fixedbugsconcatleaked.c"
+#line 108 "fixedbugsconcatleaked.c"
     hero_str_incref(t3);
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t5 = h1_own1;
-#line 106 "fixedbugsconcatleaked.c"
+#line 112 "fixedbugsconcatleaked.c"
     hero_str_decref(t5);
     return t3;
 }
 
 #line 20 "tests/golden/run/fixedbugs-concat-leaked.hero"
 void h_fixedbugsconcatleaked_main(void) {
-#line 113 "fixedbugsconcatleaked.c"
+#line 119 "fixedbugsconcatleaked.c"
     HeroStr h0_s = {0};
     HeroStr h1_out = {0};
     int64_t h2_i;
@@ -156,7 +162,7 @@ bb0:
     t20 = h3_own3;
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h3_own3 = t2;
-#line 160 "fixedbugsconcatleaked.c"
+#line 166 "fixedbugsconcatleaked.c"
     hero_str_decref(t20);
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_str(t2);
@@ -166,11 +172,11 @@ bb0:
     t3 = HERO_STR_LIT(hero_str_2);
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t21 = h0_s;
-#line 170 "fixedbugsconcatleaked.c"
+#line 176 "fixedbugsconcatleaked.c"
     hero_str_incref(t3);
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h0_s = t3;
-#line 174 "fixedbugsconcatleaked.c"
+#line 180 "fixedbugsconcatleaked.c"
     hero_str_decref(t21);
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t4 = h0_s;
@@ -182,7 +188,7 @@ bb0:
     t22 = h4_own4;
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h4_own4 = t6;
-#line 186 "fixedbugsconcatleaked.c"
+#line 192 "fixedbugsconcatleaked.c"
     hero_str_decref(t22);
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_str(t6);
@@ -192,11 +198,11 @@ bb0:
     t7 = HERO_STR_LIT(hero_str_3);
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t23 = h1_out;
-#line 196 "fixedbugsconcatleaked.c"
+#line 202 "fixedbugsconcatleaked.c"
     hero_str_incref(t7);
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_out = t7;
-#line 200 "fixedbugsconcatleaked.c"
+#line 206 "fixedbugsconcatleaked.c"
     hero_str_decref(t23);
 #line 25 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t8 = INT64_C(0);
@@ -226,15 +232,15 @@ bb2:
     t24 = h5_own5;
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h5_own5 = t14;
-#line 230 "fixedbugsconcatleaked.c"
+#line 236 "fixedbugsconcatleaked.c"
     hero_str_decref(t24);
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t25 = h1_out;
-#line 234 "fixedbugsconcatleaked.c"
+#line 240 "fixedbugsconcatleaked.c"
     hero_str_incref(t14);
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_out = t14;
-#line 238 "fixedbugsconcatleaked.c"
+#line 244 "fixedbugsconcatleaked.c"
     hero_str_decref(t25);
 #line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t15 = h2_i;
@@ -258,23 +264,23 @@ bb3:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t26 = h0_s;
-#line 262 "fixedbugsconcatleaked.c"
+#line 268 "fixedbugsconcatleaked.c"
     hero_str_decref(t26);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t27 = h1_out;
-#line 266 "fixedbugsconcatleaked.c"
+#line 272 "fixedbugsconcatleaked.c"
     hero_str_decref(t27);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t28 = h3_own3;
-#line 270 "fixedbugsconcatleaked.c"
+#line 276 "fixedbugsconcatleaked.c"
     hero_str_decref(t28);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t29 = h4_own4;
-#line 274 "fixedbugsconcatleaked.c"
+#line 280 "fixedbugsconcatleaked.c"
     hero_str_decref(t29);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t30 = h5_own5;
-#line 278 "fixedbugsconcatleaked.c"
+#line 284 "fixedbugsconcatleaked.c"
     hero_str_decref(t30);
     return;
 }

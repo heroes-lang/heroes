@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <ffi-const-pointer.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -10,14 +11,14 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((Handle *)0)->pMethods) == 5 && _Generic(((Handle *)0)->pMethods, __typeof__(((Handle *)0)->pMethods): 1, default: 0) && sizeof(((Handle *)0)->pMethods) == sizeof(void *), "heroes-ffi-field Handle pMethods");
 #line 31 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 _Static_assert(__builtin_classify_type(((Handle *)0)->id) == 1 && sizeof(((Handle *)0)->id) == sizeof(int32_t) && (_Generic(((Handle *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Handle id");
-#line 14 "fficonstpointer.c"
+#line 15 "fficonstpointer.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #line 29 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_fficonstpointer_Handle(void) { Handle v = {0,0}; (void)v; }
-#line 21 "fficonstpointer.c"
+#line 22 "fficonstpointer.c"
 #pragma clang diagnostic pop
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
@@ -51,6 +52,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -60,7 +64,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 64 "fficonstpointer.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 70 "fficonstpointer.c"
 
 HERO_STR_STATIC(hero_str_0, " ");
 
@@ -106,7 +112,7 @@ void h_fficonstpointer_main(void);
 
 #line 37 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 void h_fficonstpointer_main(void) {
-#line 110 "fficonstpointer.c"
+#line 116 "fficonstpointer.c"
     Handle h0_h;
     void * h1_p;
     h_fficonstpointer_0opt0 h2_f0 = {0};
@@ -178,15 +184,15 @@ bb0:
     t27 = h4_own4;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h4_own4 = t10;
-#line 182 "fficonstpointer.c"
+#line 188 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t27);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t28 = h2_f0;
-#line 186 "fficonstpointer.c"
+#line 192 "fficonstpointer.c"
     h_fficonstpointer_0opt0_retain(&t10);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h2_f0 = t10;
-#line 190 "fficonstpointer.c"
+#line 196 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t28);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t11 = h2_f0;
@@ -234,7 +240,7 @@ bb1:
     t29 = h5_own5;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h5_own5 = t24;
-#line 238 "fficonstpointer.c"
+#line 244 "fficonstpointer.c"
     hero_str_decref(t29);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_str(t24);
@@ -248,7 +254,7 @@ bb1:
     t30 = h6_own6;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h6_own6 = t26;
-#line 252 "fficonstpointer.c"
+#line 258 "fficonstpointer.c"
     hero_str_decref(t30);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_str(t26);
@@ -256,19 +262,19 @@ bb1:
     hero_print_end();
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t31 = h2_f0;
-#line 260 "fficonstpointer.c"
+#line 266 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t31);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t32 = h4_own4;
-#line 264 "fficonstpointer.c"
+#line 270 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t32);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t33 = h5_own5;
-#line 268 "fficonstpointer.c"
+#line 274 "fficonstpointer.c"
     hero_str_decref(t33);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t34 = h6_own6;
-#line 272 "fficonstpointer.c"
+#line 278 "fficonstpointer.c"
     hero_str_decref(t34);
     return;
 bb2:
@@ -276,7 +282,7 @@ bb2:
     t15 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t16 = t15.as.err;
-#line 280 "fficonstpointer.c"
+#line 286 "fficonstpointer.c"
     hero_panic_must(t16);
     hero_unreachable();
 }

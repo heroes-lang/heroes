@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <stdio.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -38,6 +39,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 46 "tests/golden/run/ffi-constant.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fficonstant_sqrt(double a0) { (void)sqrt(a0); }
@@ -49,7 +53,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 53 "fficonstant.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 59 "fficonstant.c"
 
 typedef struct h_fficonstant_0opt0 {
     int64_t tag;
@@ -82,25 +88,25 @@ void h_fficonstant_main(void);
 
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
-#line 86 "fficonstant.c"
+#line 92 "fficonstant.c"
     return M_PI;
 }
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 92 "fficonstant.c"
+#line 98 "fficonstant.c"
     return SEEK_SET;
 }
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 98 "fficonstant.c"
+#line 104 "fficonstant.c"
     return SEEK_END;
 }
 
 #line 52 "tests/golden/run/ffi-constant.hero"
 void h_fficonstant_main(void) {
-#line 104 "fficonstant.c"
+#line 110 "fficonstant.c"
     double t1;
     double t2;
     double t3;
@@ -148,7 +154,7 @@ bb0:
     hero_print_end();
 #line 58 "tests/golden/run/ffi-constant.hero"
     return;
-#line 152 "fficonstant.c"
+#line 158 "fficonstant.c"
 }
 void h_fficonstant_0opt0_retain(const h_fficonstant_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

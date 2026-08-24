@@ -2,13 +2,14 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 #include <dirent.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
 #line 40 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
 _Static_assert(__builtin_classify_type(((struct dirent *)0)->d_name) == 1 && sizeof(((struct dirent *)0)->d_name) == sizeof(int8_t) && (_Generic(((struct dirent *)0)->d_name, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Dirent d_name");
-#line 12 "ffiafieldtheheaderhasasanarray.c"
+#line 13 "ffiafieldtheheaderhasasanarray.c"
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -35,6 +36,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -44,7 +48,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 48 "ffiafieldtheheaderhasasanarray.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 54 "ffiafieldtheheaderhasasanarray.c"
 
 typedef struct h_ffiafieldtheheaderhasasanarray_0opt0 {
     int64_t tag;
@@ -76,7 +82,7 @@ void h_ffiafieldtheheaderhasasanarray_main(void);
 
 #line 42 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
 void h_ffiafieldtheheaderhasasanarray_main(void) {
-#line 80 "ffiafieldtheheaderhasasanarray.c"
+#line 86 "ffiafieldtheheaderhasasanarray.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -88,7 +94,7 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
     return;
-#line 92 "ffiafieldtheheaderhasasanarray.c"
+#line 98 "ffiafieldtheheaderhasasanarray.c"
 }
 bool h_ffiafieldtheheaderhasasanarray_Dirent_eq(const struct dirent *a, const struct dirent *b) {
     hero_panic("h_ffiafieldtheheaderhasasanarray_Dirent_eq: a partial record has no structural equality");

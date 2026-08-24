@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "regressionwildcardbindsnothing.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "regressionwildcardbindsnothing.c"
 
 typedef enum h_regressionwildcardbindsnothing_Token_tag {
     h_regressionwildcardbindsnothing_Token_tag_num = 0,
@@ -90,7 +96,7 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs);
 
 #line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_kind_of(h_regressionwildcardbindsnothing_Token h0_t) {
-#line 94 "regressionwildcardbindsnothing.c"
+#line 100 "regressionwildcardbindsnothing.c"
     h_regressionwildcardbindsnothing_Token h1_s0;
     int64_t h2_r0;
     h_regressionwildcardbindsnothing_Token t1;
@@ -141,12 +147,12 @@ bb3:
     h2_r0 = t5;
 #line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     goto bb1;
-#line 145 "regressionwildcardbindsnothing.c"
+#line 151 "regressionwildcardbindsnothing.c"
 }
 
 #line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
-#line 150 "regressionwildcardbindsnothing.c"
+#line 156 "regressionwildcardbindsnothing.c"
     int64_t h1_n;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -176,11 +182,11 @@ bb0:
     t2 = h0_xs;
 #line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t15 = h2_xs0;
-#line 180 "regressionwildcardbindsnothing.c"
+#line 186 "regressionwildcardbindsnothing.c"
     hero_array_incref(t2);
 #line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_xs0 = t2;
-#line 184 "regressionwildcardbindsnothing.c"
+#line 190 "regressionwildcardbindsnothing.c"
     hero_array_decref(t15);
 #line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t3 = INT64_C(0);
@@ -230,7 +236,7 @@ bb4:
     t14 = h1_n;
 #line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t16 = h2_xs0;
-#line 234 "regressionwildcardbindsnothing.c"
+#line 240 "regressionwildcardbindsnothing.c"
     hero_array_decref(t16);
     return t14;
 }

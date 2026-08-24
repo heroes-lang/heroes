@@ -33,7 +33,7 @@ function mixed_arithmetic(op: str, left: str, right: str, span: token.Span) -> d
 function bad_operand(op: str, allowed: str, got: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(code: "bad_operand", message: "`" + op + "` takes " + allowed + ", found `" + got + "`", span: span)
     if got == "cstr"
-        d.notes @ d.notes.push("a `cstr` is C's string, not this language's — `c.to_str()` copies one into a `str`. Test `c == nullptr` first, because converting one aborts")
+        d.notes @ d.notes.push("a `cstr` is C's string, not this language's — `c.validated()` copies one into a `str?`, which is `null_cstr` for a null pointer and `not_text` for bytes that are not UTF-8")
     return d
 
 # `sort` was handed an array of something the language does not order
@@ -125,7 +125,7 @@ test "the cstr stop carries its route, every other operand does not"
     span = token.Span(start: 0, end: 3)
     stopped = bad_operand(op: "+", allowed: "two of one numeric type", got: "cstr", span: span)
     assert stopped.notes.len() == 1
-    assert stopped.notes[0] == "a `cstr` is C's string, not this language's — `c.to_str()` copies one into a `str`. Test `c == nullptr` first, because converting one aborts"
+    assert stopped.notes[0] == "a `cstr` is C's string, not this language's — `c.validated()` copies one into a `str?`, which is `null_cstr` for a null pointer and `not_text` for bytes that are not UTF-8"
     plain = bad_operand(op: "&", allowed: "`i64`", got: "bool", span: span)
     assert plain.notes.len() == 0
     assert plain.message == "`&` takes `i64`, found `bool`"

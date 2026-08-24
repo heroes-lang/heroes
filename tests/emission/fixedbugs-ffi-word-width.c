@@ -4,6 +4,7 @@
 #include <hero_os.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -35,6 +36,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 44 "tests/golden/fixedbugs/ffi-word-width.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiwordwidth_malloc(int64_t a0) { (void)malloc(a0); }
@@ -50,7 +54,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 54 "ffiwordwidth.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 60 "ffiwordwidth.c"
 
 HERO_STR_STATIC(hero_str_0, "unreachable");
 
@@ -82,7 +88,7 @@ void h_ffiwordwidth_main(void);
 
 #line 50 "tests/golden/fixedbugs/ffi-word-width.hero"
 void h_ffiwordwidth_main(void) {
-#line 86 "ffiwordwidth.c"
+#line 92 "ffiwordwidth.c"
     void * h0_p;
     int64_t t1;
     void * t2;
@@ -108,7 +114,7 @@ bb0:
     hero_print_end();
 #line 53 "tests/golden/fixedbugs/ffi-word-width.hero"
     return;
-#line 112 "ffiwordwidth.c"
+#line 118 "ffiwordwidth.c"
 }
 void h_ffiwordwidth_0opt0_retain(const h_ffiwordwidth_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

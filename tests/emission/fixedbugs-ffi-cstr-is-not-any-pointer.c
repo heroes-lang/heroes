@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <ffi-const-pointer.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -33,6 +34,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -42,7 +46,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 46 "fficstrisnotanypointer.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 52 "fficstrisnotanypointer.c"
 
 typedef struct h_fficstrisnotanypointer_0opt0 {
     int64_t tag;
@@ -72,7 +78,7 @@ void h_fficstrisnotanypointer_main(void);
 
 #line 35 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
 void h_fficstrisnotanypointer_main(void) {
-#line 76 "fficstrisnotanypointer.c"
+#line 82 "fficstrisnotanypointer.c"
     HeroStr h0_own0 = {0};
     const char * t1;
     HeroStr t2 = {0};
@@ -88,7 +94,7 @@ bb0:
     t3 = h0_own0;
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     h0_own0 = t2;
-#line 92 "fficstrisnotanypointer.c"
+#line 98 "fficstrisnotanypointer.c"
     hero_str_decref(t3);
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     hero_print_str(t2);
@@ -96,7 +102,7 @@ bb0:
     hero_print_end();
 #line 36 "tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero"
     t4 = h0_own0;
-#line 100 "fficstrisnotanypointer.c"
+#line 106 "fficstrisnotanypointer.c"
     hero_str_decref(t4);
     return;
 }

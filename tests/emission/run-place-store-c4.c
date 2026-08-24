@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "placestorec4.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "placestorec4.c"
 
 HERO_STR_STATIC(hero_str_0, " ");
 
@@ -71,7 +77,7 @@ void h_placestorec4_main(void);
 
 #line 15 "tests/golden/run/place-store-c4.hero"
 void h_placestorec4_main(void) {
-#line 75 "placestorec4.c"
+#line 81 "placestorec4.c"
     HeroArrayHeader * h0_xs = {0};
     int64_t h1_i;
     int64_t h2_total;
@@ -133,15 +139,15 @@ bb0:
     t45 = h6_own6;
 #line 16 "tests/golden/run/place-store-c4.hero"
     h6_own6 = t1;
-#line 137 "placestorec4.c"
+#line 143 "placestorec4.c"
     hero_array_decref(t45);
 #line 16 "tests/golden/run/place-store-c4.hero"
     t46 = h0_xs;
-#line 141 "placestorec4.c"
+#line 147 "placestorec4.c"
     hero_array_incref(t1);
 #line 16 "tests/golden/run/place-store-c4.hero"
     h0_xs = t1;
-#line 145 "placestorec4.c"
+#line 151 "placestorec4.c"
     hero_array_decref(t46);
 #line 17 "tests/golden/run/place-store-c4.hero"
     t2 = INT64_C(0);
@@ -231,11 +237,11 @@ bb3:
     t29 = h0_xs;
 #line 28 "tests/golden/run/place-store-c4.hero"
     t47 = h3_xs0;
-#line 235 "placestorec4.c"
+#line 241 "placestorec4.c"
     hero_array_incref(t29);
 #line 28 "tests/golden/run/place-store-c4.hero"
     h3_xs0 = t29;
-#line 239 "placestorec4.c"
+#line 245 "placestorec4.c"
     hero_array_decref(t47);
 #line 28 "tests/golden/run/place-store-c4.hero"
     t30 = INT64_C(0);
@@ -297,15 +303,15 @@ bb7:
     hero_print_end();
 #line 30 "tests/golden/run/place-store-c4.hero"
     t48 = h0_xs;
-#line 301 "placestorec4.c"
+#line 307 "placestorec4.c"
     hero_array_decref(t48);
 #line 30 "tests/golden/run/place-store-c4.hero"
     t49 = h3_xs0;
-#line 305 "placestorec4.c"
+#line 311 "placestorec4.c"
     hero_array_decref(t49);
 #line 30 "tests/golden/run/place-store-c4.hero"
     t50 = h6_own6;
-#line 309 "placestorec4.c"
+#line 315 "placestorec4.c"
     hero_array_decref(t50);
     return;
 }

@@ -6,10 +6,14 @@
 # for a C helper with a `static char[4096]`. That escape is one line long, invisible
 # to every rule this compiler has, and strictly worse than what the stop refused.
 #
-# So the note names the operation and its guard, which is what §4.17 asks: an error
-# carries what is needed to repair the program without opening another file.
+# So the note names the operation and both ways it can fail, which is what §4.17 asks:
+# an error carries what is needed to repair the program without opening another file.
 #
-# It is a **note and not a `Fix`**: the repair is `v.to_str()`, and building that
+# The note named `to_str` and a null test until panel 089 (2026-08-24), and that was
+# the shape the sitting existed to fix: it sent the reader through a guard that does
+# not save them, because `to_str` also aborts on bytes that are not UTF-8.
+#
+# It is a **note and not a `Fix`**: the repair is `v.validated()`, and building that
 # replacement needs the operand's own source text, which the diagnostics module does
 # not have. A `Fix` with a span and no text would be worse than none (CLAUDE.md §8).
 

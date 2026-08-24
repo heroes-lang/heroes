@@ -4,6 +4,7 @@
 #include <hero_os.h>
 #include <string.h>
 #include <stdlib.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -35,6 +36,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 38 "tests/golden/run/ffi-read-back-a-cstr.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffireadbackacstr_strerror(int32_t a0) { (void)strerror(a0); }
@@ -48,7 +52,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 52 "ffireadbackacstr.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 58 "ffireadbackacstr.c"
 
 HERO_STR_STATIC(hero_str_0, "HEROES_NO_SUCH_VARIABLE_059");
 HERO_STR_STATIC(hero_str_1, "absent, and to_str was never called");
@@ -81,7 +87,7 @@ void h_ffireadbackacstr_main(void);
 
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
 void h_ffireadbackacstr_main(void) {
-#line 85 "ffireadbackacstr.c"
+#line 91 "ffireadbackacstr.c"
     HeroStr h0_first = {0};
     HeroStr h1_second = {0};
     const char * h2_absent;
@@ -132,15 +138,15 @@ bb0:
     t23 = h3_own3;
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h3_own3 = t3;
-#line 136 "ffireadbackacstr.c"
+#line 142 "ffireadbackacstr.c"
     hero_str_decref(t23);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t24 = h0_first;
-#line 140 "ffireadbackacstr.c"
+#line 146 "ffireadbackacstr.c"
     hero_str_incref(t3);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h0_first = t3;
-#line 144 "ffireadbackacstr.c"
+#line 150 "ffireadbackacstr.c"
     hero_str_decref(t24);
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t4 = INT64_C(2);
@@ -152,15 +158,15 @@ bb0:
     t25 = h4_own4;
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h4_own4 = t6;
-#line 156 "ffireadbackacstr.c"
+#line 162 "ffireadbackacstr.c"
     hero_str_decref(t25);
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t26 = h1_second;
-#line 160 "ffireadbackacstr.c"
+#line 166 "ffireadbackacstr.c"
     hero_str_incref(t6);
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h1_second = t6;
-#line 164 "ffireadbackacstr.c"
+#line 170 "ffireadbackacstr.c"
     hero_str_decref(t26);
 #line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t7 = h0_first;
@@ -204,23 +210,23 @@ bb0:
 bb1:
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t28 = h0_first;
-#line 208 "ffireadbackacstr.c"
+#line 214 "ffireadbackacstr.c"
     hero_str_decref(t28);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t29 = h1_second;
-#line 212 "ffireadbackacstr.c"
+#line 218 "ffireadbackacstr.c"
     hero_str_decref(t29);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t30 = h3_own3;
-#line 216 "ffireadbackacstr.c"
+#line 222 "ffireadbackacstr.c"
     hero_str_decref(t30);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t31 = h4_own4;
-#line 220 "ffireadbackacstr.c"
+#line 226 "ffireadbackacstr.c"
     hero_str_decref(t31);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t32 = h5_own5;
-#line 224 "ffireadbackacstr.c"
+#line 230 "ffireadbackacstr.c"
     hero_str_decref(t32);
     return;
 bb2:
@@ -242,7 +248,7 @@ bb3:
     t27 = h5_own5;
 #line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h5_own5 = t22;
-#line 246 "ffireadbackacstr.c"
+#line 252 "ffireadbackacstr.c"
     hero_str_decref(t27);
 #line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
     hero_print_str(t22);
@@ -250,7 +256,7 @@ bb3:
     hero_print_end();
 #line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
     goto bb1;
-#line 254 "ffireadbackacstr.c"
+#line 260 "ffireadbackacstr.c"
 }
 void h_ffireadbackacstr_0opt0_retain(const h_ffireadbackacstr_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

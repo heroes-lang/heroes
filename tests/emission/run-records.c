@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "records.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "records.c"
 
 typedef struct h_records_Point {
     int64_t f_x;
@@ -85,7 +91,7 @@ void h_records_main(void);
 
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) {
-#line 89 "records.c"
+#line 95 "records.c"
     int64_t h2_dx;
     int64_t h3_dy;
     h_records_Point t1;
@@ -147,12 +153,12 @@ bb0:
     if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
     return t17;
-#line 151 "records.c"
+#line 157 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) {
-#line 156 "records.c"
+#line 162 "records.c"
     h_records_Point t1;
     int64_t t2;
     int64_t t3;
@@ -178,12 +184,12 @@ bb0:
     t7 = (h_records_Point){.f_x = t4, .f_y = t6};
 #line 24 "tests/golden/run/records.hero"
     return t7;
-#line 182 "records.c"
+#line 188 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
 void h_records_main(void) {
-#line 187 "records.c"
+#line 193 "records.c"
     h_records_Point h0_p;
     h_records_Point h1_q;
     h_records_Pair h2_both;
@@ -358,7 +364,7 @@ bb0:
     hero_print_end();
 #line 44 "tests/golden/run/records.hero"
     return;
-#line 362 "records.c"
+#line 368 "records.c"
 }
 bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

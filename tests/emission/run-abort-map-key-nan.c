@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "abortmapkeynan.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "abortmapkeynan.c"
 
 typedef struct h_abortmapkeynan_0opt0 {
     int64_t tag;
@@ -83,7 +89,7 @@ int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks);
 
 #line 24 "tests/golden/run/abort-map-key-nan.hero"
 double h_abortmapkeynan_nan(void) {
-#line 87 "abortmapkeynan.c"
+#line 93 "abortmapkeynan.c"
     double t1;
     double t2;
     double t3;
@@ -97,12 +103,12 @@ bb0:
     t3 = t1 / t2;
 #line 25 "tests/golden/run/abort-map-key-nan.hero"
     return t3;
-#line 101 "abortmapkeynan.c"
+#line 107 "abortmapkeynan.c"
 }
 
 #line 33 "tests/golden/run/abort-map-key-nan.hero"
 void h_abortmapkeynan_main(void) {
-#line 106 "abortmapkeynan.c"
+#line 112 "abortmapkeynan.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     double t1;
@@ -136,7 +142,7 @@ bb0:
     t8 = h0_own0;
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
     h0_own0 = t3;
-#line 140 "abortmapkeynan.c"
+#line 146 "abortmapkeynan.c"
     hero_array_decref(t8);
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
     t4 = h_abortmapkeynan_count_1ad16c(t3);
@@ -156,7 +162,7 @@ bb0:
     t9 = h1_own1;
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     h1_own1 = t6;
-#line 160 "abortmapkeynan.c"
+#line 166 "abortmapkeynan.c"
     hero_array_decref(t9);
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     t7 = h_abortmapkeynan_count_1ad16c(t6);
@@ -166,11 +172,11 @@ bb0:
     hero_print_end();
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     t10 = h0_own0;
-#line 170 "abortmapkeynan.c"
+#line 176 "abortmapkeynan.c"
     hero_array_decref(t10);
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     t11 = h1_own1;
-#line 174 "abortmapkeynan.c"
+#line 180 "abortmapkeynan.c"
     hero_array_decref(t11);
     return;
 }
@@ -179,7 +185,7 @@ bb0:
 /* count<f64> */
 #line 27 "tests/golden/run/abort-map-key-nan.hero"
 int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks) {
-#line 183 "abortmapkeynan.c"
+#line 189 "abortmapkeynan.c"
     HeroMapHeader * h1_m = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -216,25 +222,25 @@ bb0:
     t18 = h5_own5;
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     h5_own5 = t1;
-#line 220 "abortmapkeynan.c"
+#line 226 "abortmapkeynan.c"
     hero_map_decref(t18);
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     t19 = h1_m;
-#line 224 "abortmapkeynan.c"
+#line 230 "abortmapkeynan.c"
     hero_map_incref(t1);
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     h1_m = t1;
-#line 228 "abortmapkeynan.c"
+#line 234 "abortmapkeynan.c"
     hero_map_decref(t19);
 #line 29 "tests/golden/run/abort-map-key-nan.hero"
     t2 = h0_ks;
 #line 29 "tests/golden/run/abort-map-key-nan.hero"
     t20 = h2_xs0;
-#line 234 "abortmapkeynan.c"
+#line 240 "abortmapkeynan.c"
     hero_array_incref(t2);
 #line 29 "tests/golden/run/abort-map-key-nan.hero"
     h2_xs0 = t2;
-#line 238 "abortmapkeynan.c"
+#line 244 "abortmapkeynan.c"
     hero_array_decref(t20);
 #line 29 "tests/golden/run/abort-map-key-nan.hero"
     t3 = INT64_C(0);
@@ -292,15 +298,15 @@ bb4:
     t17 = hero_map_len(t16);
 #line 31 "tests/golden/run/abort-map-key-nan.hero"
     t21 = h1_m;
-#line 296 "abortmapkeynan.c"
+#line 302 "abortmapkeynan.c"
     hero_map_decref(t21);
 #line 31 "tests/golden/run/abort-map-key-nan.hero"
     t22 = h2_xs0;
-#line 300 "abortmapkeynan.c"
+#line 306 "abortmapkeynan.c"
     hero_array_decref(t22);
 #line 31 "tests/golden/run/abort-map-key-nan.hero"
     t23 = h5_own5;
-#line 304 "abortmapkeynan.c"
+#line 310 "abortmapkeynan.c"
     hero_map_decref(t23);
     return t17;
 }

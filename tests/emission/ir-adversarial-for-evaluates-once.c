@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "adversarialforevaluatesonce.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "adversarialforevaluatesonce.c"
 
 HERO_STR_STATIC(hero_str_0, "built");
 
@@ -72,7 +78,7 @@ int64_t h_adversarialforevaluatesonce_total(void);
 
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 HeroArrayHeader * h_adversarialforevaluatesonce_numbers(void) {
-#line 76 "adversarialforevaluatesonce.c"
+#line 82 "adversarialforevaluatesonce.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroStr t1 = {0};
     int64_t t2;
@@ -113,21 +119,21 @@ bb0:
     t6 = h0_own0;
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h0_own0 = t5;
-#line 117 "adversarialforevaluatesonce.c"
+#line 123 "adversarialforevaluatesonce.c"
     hero_array_decref(t6);
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-#line 120 "adversarialforevaluatesonce.c"
+#line 126 "adversarialforevaluatesonce.c"
     hero_array_incref(t5);
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t7 = h0_own0;
-#line 124 "adversarialforevaluatesonce.c"
+#line 130 "adversarialforevaluatesonce.c"
     hero_array_decref(t7);
     return t5;
 }
 
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 int64_t h_adversarialforevaluatesonce_total(void) {
-#line 131 "adversarialforevaluatesonce.c"
+#line 137 "adversarialforevaluatesonce.c"
     int64_t h0_sum;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -166,15 +172,15 @@ bb0:
     t18 = h4_own4;
 #line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h4_own4 = t2;
-#line 170 "adversarialforevaluatesonce.c"
+#line 176 "adversarialforevaluatesonce.c"
     hero_array_decref(t18);
 #line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t19 = h1_xs0;
-#line 174 "adversarialforevaluatesonce.c"
+#line 180 "adversarialforevaluatesonce.c"
     hero_array_incref(t2);
 #line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h1_xs0 = t2;
-#line 178 "adversarialforevaluatesonce.c"
+#line 184 "adversarialforevaluatesonce.c"
     hero_array_decref(t19);
 #line 13 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t3 = INT64_C(0);
@@ -232,11 +238,11 @@ bb4:
     t17 = h0_sum;
 #line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t20 = h1_xs0;
-#line 236 "adversarialforevaluatesonce.c"
+#line 242 "adversarialforevaluatesonce.c"
     hero_array_decref(t20);
 #line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t21 = h4_own4;
-#line 240 "adversarialforevaluatesonce.c"
+#line 246 "adversarialforevaluatesonce.c"
     hero_array_decref(t21);
     return t17;
 }

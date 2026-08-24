@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "functions.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "functions.c"
 
 typedef struct h_functions_0opt0 {
     int64_t tag;
@@ -72,7 +78,7 @@ int64_t h_functions_fib(int64_t h0_n);
 
 #line 6 "tests/golden/run/functions.hero"
 bool h_functions_is_even(int64_t h0_n) {
-#line 76 "functions.c"
+#line 82 "functions.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -113,12 +119,12 @@ bb2:
 bb3:
 #line 8 "tests/golden/run/functions.hero"
     goto bb1;
-#line 117 "functions.c"
+#line 123 "functions.c"
 }
 
 #line 11 "tests/golden/run/functions.hero"
 bool h_functions_is_odd(int64_t h0_n) {
-#line 122 "functions.c"
+#line 128 "functions.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -159,12 +165,12 @@ bb2:
 bb3:
 #line 13 "tests/golden/run/functions.hero"
     goto bb1;
-#line 163 "functions.c"
+#line 169 "functions.c"
 }
 
 #line 16 "tests/golden/run/functions.hero"
 void h_functions_main(void) {
-#line 168 "functions.c"
+#line 174 "functions.c"
     int64_t t1;
     bool t2;
     int64_t t3;
@@ -199,12 +205,12 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/functions.hero"
     return;
-#line 203 "functions.c"
+#line 209 "functions.c"
 }
 
 #line 21 "tests/golden/run/functions.hero"
 int64_t h_functions_fib(int64_t h0_n) {
-#line 208 "functions.c"
+#line 214 "functions.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -260,7 +266,7 @@ bb2:
 bb3:
 #line 23 "tests/golden/run/functions.hero"
     goto bb1;
-#line 264 "functions.c"
+#line 270 "functions.c"
 }
 void h_functions_0opt0_retain(const h_functions_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

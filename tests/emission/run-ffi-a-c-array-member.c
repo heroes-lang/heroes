@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <raylib.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -82,7 +83,7 @@ _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDisto
 #line 77 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) != 0, "heroes-ffi-flex VrDeviceInfo chromaAbCorrection");
              _Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
-#line 76 "ffiacarraymember.c"
+#line 77 "ffiacarraymember.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
@@ -93,12 +94,12 @@ __attribute__((unused)) static void hero_ffi_complete_h_ffiacarraymember_Matrix(
 __attribute__((unused)) static void hero_ffi_complete_h_ffiacarraymember_VrStereoConfig(void) { VrStereoConfig v = {{0},{0},{0},{0},{0},{0},{0},{0}}; (void)v; }
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_ffiacarraymember_VrDeviceInfo(void) { VrDeviceInfo v = {0,0,0,0,0,0,0,{0},{0}}; (void)v; }
-#line 87 "ffiacarraymember.c"
+#line 88 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(*(VrDeviceInfo *)0) != 13, "heroes-ffi-union VrDeviceInfo hResolution vResolution hScreenSize vScreenSize eyeToScreenDistance lensSeparationDistance interpupillaryDistance lensDistortionValues chromaAbCorrection");
-#line 92 "ffiacarraymember.c"
+#line 93 "ffiacarraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -130,6 +131,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 78 "tests/golden/run/ffi-a-c-array-member.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_LoadVrStereoConfig(VrDeviceInfo a0) { (void)LoadVrStereoConfig(a0); }
@@ -143,7 +147,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 137 "ffiacarraymember.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 143 "ffiacarraymember.c"
 
 typedef struct h_ffiacarraymember_0opt0 {
     int64_t tag;
@@ -179,7 +185,7 @@ void h_ffiacarraymember_main(void);
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
-#line 173 "ffiacarraymember.c"
+#line 179 "ffiacarraymember.c"
     VrDeviceInfo h0_device;
     VrStereoConfig h1_config;
     int32_t t1;
@@ -307,7 +313,7 @@ bb0:
     UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 301 "ffiacarraymember.c"
+#line 307 "ffiacarraymember.c"
 }
 bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;
