@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <raylib.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
 #line 41 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(_Generic(&((Matrix *)0)->m0, float *: 1, default: 0) && sizeof(((Matrix *)0)->m0) == sizeof(float), "heroes-ffi-field Matrix m0");

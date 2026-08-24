@@ -125,7 +125,7 @@ function used(p: ir_state.Program, c: check_state.Checked, decls: [ast.Decl]) ->
                     .map_get mg =>
                         reach(@operated, c, decls, ty: ir_state.value_type(f, mg.map), depth: 0)
                         reach(@operated, c, decls, ty: ir_state.value_type(f, mg.key), depth: 0)
-                    .lit | .load | .store | .unary | .cast | .call | .func_ref => continue
+                    .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref => continue
                     .field | .index | .len_of | .tag_of | .payload => continue
                     .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     return Used(constructed: constructed, operated: operated)

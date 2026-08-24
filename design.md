@@ -1536,6 +1536,18 @@ this project reporting success. The sound form is a **place store** — `p @ pus
 lowering, uniqueness taken from the place rather than guessed from a count — and it waits for
 M-selfhost-probe to measure whether anything needs it.
 
+**Landed 2026-08-24** (author decision closing panels 037/088; the probe had
+closed without the measurement, docs/measurements/012 finally took it):
+`selfhost/ir_place_store.hero` rewrites the bare-place pattern between mono
+and own, `hero_array_push_owned(**slot, value)` grows on a true refcount of 1
+with doubling, and the accumulator paragraph above stays as the record of why
+the count had to come from the place. What honest counts exposed on the way —
+a borrowed load outliving an `@` call on its own root, alive for eleven
+milestones only because rule 5's synthetic slots held every accumulator at
+refcount 2 — is repaired in the ownership pass (`load_survives_write`) and
+recorded in docs/measurements/013. Chunked accumulation stays correct and
+stays cheap; it is simply no longer the only linear shape.
+
 This is the one place where copy-on-write elegance presents a bill.
 
 ### 4.11 UFCS

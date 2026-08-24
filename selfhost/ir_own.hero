@@ -58,6 +58,7 @@ use checker
 use ir_lower
 use ir_mono
 use ir_verify
+use ir_place_store
 
 # Insert the reference counting. Idempotent by construction: advance_to
 # refuses a second run.
@@ -80,9 +81,31 @@ function rewrite(f: ir_state.Function, c: check_state.Checked) -> ir_state.Funct
     index: i64 @ 0
     while index < worked.blocks.len()
         out: [ir.Inst] @ []
+        pos: i64 @ 0
         for inst in worked.blocks[index].insts
+            here = pos
+            pos @ pos + 1
             handled: bool @ false
             match inst.op
+                # A borrowed load whose value outlives a write to its own
+                # root loses its header the moment counts are honest
+                # (ir_place_store.load_survives_write says why). Give it a
+                # reference of its own, and rule 5's slot machinery does
+                # the rest.
+                .load ld =>
+                    survives: bool @ false
+                    if !inst.dest.is_err() && ir_layout.is_refcounted(c, inst.ty)
+                        survives @ ir_place_store.load_survives_write(worked, worked.blocks[index].insts, worked.blocks[index].term, load_at: here, root: ld.place.root, value: inst.dest.must())
+                    if survives
+                        out @ out.push(inst)
+                        out @ out.push(ir.Inst(dest: fail("none", "void"), op: .incref(value: inst.dest.must()), ty: inst.ty, span: inst.span))
+                        slot = own_slot(@worked, ty: inst.ty)
+                        place = ir.Place(root: slot, path: ir.Run(start: 0, length: 0))
+                        old = fresh(next_value: @next_value, worked: @worked, ty: inst.ty)
+                        out @ out.push(ir.Inst(dest: ok(old), op: .load(place: place), ty: inst.ty, span: inst.span))
+                        out @ out.push(ir.Inst(dest: fail("none", "void"), op: .store(place: place, value: inst.dest.must()), ty: inst.ty, span: inst.span))
+                        out @ out.push(ir.Inst(dest: fail("none", "void"), op: .decref(value: old), ty: inst.ty, span: inst.span))
+                        handled @ true
                 # Rule 3: the old value dies when the slot is
                 # overwritten, and the new one must be alive before it
                 # does.
@@ -116,7 +139,7 @@ function rewrite(f: ir_state.Function, c: check_state.Checked) -> ir_state.Funct
                                     if ir_layout.is_refcounted(c, arg_ty)
                                         out @ out.push(ir.Inst(dest: fail("none", "void"), op: .incref(value: v.value), ty: arg_ty, span: inst.span))
                                 .inout_arg => continue
-                .lit | .load | .unary | .binary | .cast | .call => handled @ handled
+                .lit | .push_owned | .unary | .binary | .cast | .call => handled @ handled
                 .field | .index | .map_get | .len_of | .tag_of | .payload => handled @ handled
                 .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => handled @ handled
             if handled
@@ -244,7 +267,7 @@ test "a store expands to load-incref-store-decref, and the sweep closes returns"
         match inst.op
             .incref => incref_at @ at
             .decref => last_decref @ at
-            .lit | .load | .store | .unary | .binary | .cast | .call | .construct => at @ at
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
             .field | .index | .map_get | .len_of | .tag_of | .payload => at @ at
             .func_ref | .copy_out | .abort_op | .hole | .missing => at @ at
         at @ at + 1

@@ -264,7 +264,7 @@ function check_op(@found: [GateNote], op: ir.OpKind, span: token.Span)
         .hole => note(@found, code: "hole", what: "a hole (`???`)", span: span)
         # The verifier rejects this before the emitter is asked.
         .missing => note(@found, code: "missing", what: "a form the compiler cannot lower", span: span)
-        .lit | .load | .store | .unary | .binary | .cast | .construct => return
+        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => return
         .field | .index | .map_get | .len_of | .tag_of | .payload => return
         .func_ref | .copy_out | .abort_op | .incref | .decref => return
 
@@ -293,7 +293,7 @@ function check_fixed_flow(@found: [GateNote], c: check_state.Checked, f: ir_stat
                             if is_fixed_value(c, f, value: v.value) && !is_a_written_literal(f, value: v.value)
                                 note(@found, code: "fixed_flow", what: "a fixed array copied from another value", span: span)
                         .inout_arg => continue
-        .lit | .load | .unary | .binary | .cast | .call => return
+        .lit | .load | .push_owned | .unary | .binary | .cast | .call => return
         .field | .index | .map_get | .len_of | .tag_of | .payload => return
         .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return
 
@@ -318,7 +318,7 @@ function is_a_written_literal(f: ir_state.Function, value: i64) -> bool
                             .array_shape => return true
                             .record_shape | .case_shape | .map_shape => return false
                             .ok_shape | .fail_shape | .err_shape => return false
-                    .lit | .load | .store | .unary | .binary | .cast | .call => return false
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return false
                     .field | .index | .map_get | .len_of | .tag_of | .payload => return false
                     .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return false
     return false

@@ -73,7 +73,7 @@ function fixed_text(c: check_state.Checked, s: source.Source, decls: [ast.Decl],
                         if !inner.is_err()
                             base_text @ inner.must()
                         return ok(base_text + "." + found.must().member)
-                    .lit | .load | .store | .unary | .binary | .cast | .call => return fail("none", "not a producer of a fixed value")
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => return fail("none", "not a producer of a fixed value")
                     .index | .map_get | .len_of | .tag_of | .payload => return fail("none", "not a producer of a fixed value")
                     .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => return fail("none", "not a producer of a fixed value")
     return fail("none", "no instruction produces this value")

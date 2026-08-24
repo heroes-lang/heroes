@@ -1,0 +1,30 @@
+# Panel 037 item 2's `c4.hero` — named there 2026-08-12, found missing by
+# panel 088 R6, landed with the place store (author decision 2026-08-24,
+# ir_place_store.hero). The CANONICAL accumulator: `xs @ xs.push(v)` on a
+# bare local, the language's commonest line, the shape the pass rewrites
+# to one growing instruction.
+#
+# What this file asserts is the SEMANTICS across the rewrite: order,
+# length, the values themselves, and a pushed value computed FROM the
+# accumulator — read before the grow, in both shapes. It runs identically
+# under the classic lowering and under the pass; the fixpoint and this
+# file's own diff are what make that a fact rather than a hope.
+#
+# `# UNVERIFIED — pending debrief`
+
+function main()
+    xs: [i64] @ []
+    i: i64 @ 0
+    while i < 10000
+        xs @ xs.push(i)
+        i @ i + 1
+    print(xs.len())
+    print(xs[0], " ", xs[9999])
+    # The pushed value may READ the accumulator: it is computed before
+    # the grow, so it sees the pre-push array in both shapes.
+    xs @ xs.push(xs.len())
+    print(xs[10000])
+    total: i64 @ 0
+    for v in xs
+        total @ total + v
+    print(total)

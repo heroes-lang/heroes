@@ -60,7 +60,7 @@ function dump(p: ir_state.Program, c: check_state.Checked, s: source.Source, dec
                             match lt.value
                                 .str_const sc => live[sc.at] @ true
                                 .int_const | .float_const | .bool_const | .null_ptr => continue
-                        .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                        .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                         .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                         .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     out: str @ ""
@@ -207,6 +207,7 @@ function operation(f: ir_state.Function, inst: ir.Inst, c: check_state.Checked, 
         .lit lt => return "const " + constant_text(lt.value)
         .load ld => return "load " + written(f, ld.place, c, s, decls)
         .store st => return "store " + written(f, st.place, c, s, decls) + " <- " + value_name(st.value)
+        .push_owned pg => return "push_owned " + written(f, pg.place, c, s, decls) + " <- " + value_name(pg.value)
         .unary u =>
             word: str @ "neg"
             bang: str @ ""

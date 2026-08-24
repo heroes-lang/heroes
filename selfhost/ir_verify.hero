@@ -168,7 +168,7 @@ function check_instructions(f: ir_state.Function, blk: ir_state.Block, at: str, 
                     .indirect => problems @ problems.push(at + "the address of an address")
                     .heroes_fn | .extern_fn | .builtin_fn => is_abort @ is_abort
             .abort_op => is_abort @ true
-            .lit | .load | .store | .unary | .binary | .cast | .call | .construct => is_abort @ is_abort
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => is_abort @ is_abort
             .field | .index | .map_get | .len_of | .tag_of | .payload => is_abort @ is_abort
             .copy_out | .incref | .decref | .hole => is_abort @ is_abort
         if is_missing
@@ -217,7 +217,7 @@ function check_copy_out(f: ir_state.Function, blk: ir_state.Block, at: str, @pro
     for inst in blk.insts
         match inst.op
             .copy_out co => written @ written.push(co.param)
-            .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
             .field | .index | .map_get | .len_of | .tag_of | .payload => continue
             .func_ref | .abort_op | .incref | .decref | .hole | .missing => continue
     written @ sorted(written)

@@ -314,3 +314,20 @@ non-loop does the loop.
 - **spec-warden: CONFIRMED at the probe's scope.** Zero programs failed to
   terminate because of `push`; the 55-test selfhost suite runs to completion.
   The fixpoint half of the sentence stays open until M-selfhost-fixpoint.
+
+## The landing — 2026-08-24, by author decision ("approvo panel 037")
+
+Item 2's second trigger — *"or the author declares a stage unacceptable"* —
+was pulled on 2026-08-24, with the measurement M-selfhost-probe never took
+finally in hand (docs/measurements/012: after two repairs that needed no
+decision, 78% of the compiler's remaining build sat in `p @ push(p, v)`).
+The place store landed as adopted here: recognised at lowering
+(`selfhost/ir_place_store.hero`, an IR-to-IR pass between mono and own),
+uniqueness taken from the place (`hero_array_push_owned(**slot)`),
+`HERO_RUNTIME_ABI` bumped to 15 as this item required, and `c4.hero` /
+`c5.hero` exist at last as `tests/golden/run/place-store-c4/c5.hero` (panel
+088 R6 had found them named here and present nowhere). The compiler building
+itself: 944.76 s → **188.51 s**. The record of what landing exposed — a
+borrowed load kept alive for two years of milestones by rule 5's accidental
+refcount 2 — is measurement 013's.
+

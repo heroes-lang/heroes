@@ -50,7 +50,7 @@ function emit(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checke
             slot = f.slots[co.param]
             emit_writer.line(@w, text: "    *" + emit_mangle.out_param(index: co.param, name: slot.name) + " = " + emit_mangle.slot(index: co.param, name: slot.name) + ";")
             is_copy_out @ true
-        .lit | .load | .store | .unary | .binary | .cast | .call | .construct => is_copy_out @ is_copy_out
+        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => is_copy_out @ is_copy_out
         .field | .index | .map_get | .len_of | .tag_of | .payload => is_copy_out @ is_copy_out
         .func_ref | .abort_op | .incref | .decref | .hole | .missing => is_copy_out @ is_copy_out
     if is_copy_out
@@ -117,6 +117,12 @@ function emit(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checke
         # owns nothing of its own and CONTAINS what is counted, so its
         # generated function walks its fields — which is why this is
         # retain/release and not copy.
+        .push_owned pg =>
+            # The place store (ir_place_store.hero): the slot's own
+            # address, so the runtime sees the true refcount and grows
+            # or copies on it. One line where the classic shape spent
+            # a call, a copy of every element, a decref and a store.
+            emit_writer.line(@w, text: "    hero_array_push_owned(&" + emit_aggregate.place(c, s, decls, f, at: pg.place) + ", &" + emit_mangle.value(pg.value) + ");")
         .incref rc => reference(@w, c, names, f, value: rc.value, keep: true)
         .decref rc => reference(@w, c, names, f, value: rc.value, keep: false)
         .unary u => emit_operator.unary(@w, f, c, op: u.op, operand: u.operand, target: target)

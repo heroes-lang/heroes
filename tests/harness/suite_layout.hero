@@ -53,7 +53,7 @@ constant DECIDED: [str]
         "selfhost/print_fmt.hero 843"
         "selfhost/parse_decl.hero 606"
         "selfhost/ast.hero 495"
-        "selfhost/ir_print.hero 484"
+        "selfhost/ir_print.hero 485"
         "selfhost/emit_ctype.hero 377"
         "selfhost/resolve_walk.hero 366"
         "selfhost/ir_mono.hero 363"

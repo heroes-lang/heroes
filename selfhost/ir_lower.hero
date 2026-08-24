@@ -1399,7 +1399,7 @@ test "a function body flattens: loads, one add, and a return with a value"
         .binary bin =>
             assert bin.left == 1
             assert bin.right == 2
-        .lit | .load | .store | .unary | .cast | .call | .construct => assert false
+        .lit | .load | .store | .push_owned | .unary | .cast | .call | .construct => assert false
         .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
         .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
     match f.blocks[0].term
@@ -1431,7 +1431,7 @@ test "a negative literal folds, a mutation stores through a place"
                     wanted: u64 = 128
                     assert ic.value.magnitude == wanted
                 .float_const | .bool_const | .str_const | .null_ptr => assert false
-        .load | .store | .unary | .binary | .cast | .call | .construct => assert false
+        .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => assert false
         .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
         .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
 
@@ -1525,7 +1525,7 @@ test "? branches on the tag, and the error edge is a real exit edge"
                     .err_shape => wrapped @ true
                     .record_shape | .case_shape | .array_shape => continue
                     .map_shape | .ok_shape | .fail_shape => continue
-            .lit | .load | .store | .unary | .binary | .cast | .call => continue
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call => continue
             .field | .index | .map_get | .len_of | .tag_of | .payload => continue
             .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     assert wrapped
@@ -1549,7 +1549,7 @@ test "an @ argument is a place, and a record construction is not a call"
                         .record_shape => built @ true
                         .case_shape | .array_shape | .map_shape => continue
                         .ok_shape | .fail_shape | .err_shape => continue
-                .lit | .load | .store | .unary | .binary | .cast => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast => continue
                 .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                 .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     assert passed_place
@@ -1573,7 +1573,7 @@ test "UFCS puts the receiver first, and print is variadic with no destination"
                             assert inst.dest.is_err()
                             printed @ true
                         .extern_fn | .indirect => continue
-                .lit | .load | .store | .unary | .binary | .cast | .construct => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
                 .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                 .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     assert ufcs_two
@@ -1590,7 +1590,7 @@ test "must branches to the payload or an abort that carries the failure"
                     .abort_op ab =>
                         assert ab.arguments.length == 1
                         aborted @ true
-                    .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                     .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
             match blk.term
@@ -1612,7 +1612,7 @@ test "an assert carries its text and both sides, and a str side rides a slot"
                     .abort_op ab =>
                         if ab.arguments.length == 3
                             carried_three @ true
-                    .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                     .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
     assert carried_three
@@ -1637,7 +1637,7 @@ test "a bare assert carries only its text, and an i64 side rides no slot"
             for inst in blk.insts
                 match inst.op
                     .abort_op ab => counts @ counts.push(ab.arguments.length)
-                    .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                     .func_ref | .copy_out | .incref | .decref | .hole | .missing => continue
     assert counts.len() == 2
