@@ -29,6 +29,15 @@
 # the emitted C must not mention the output path, or the double-emit
 # determinism diff would be a property of the invocation instead of
 # the emitter.
+#
+# The accumulation is chunked (design.md §4.10's remedy, panel 088 R5).
+# This module's first shape was `out @ out + text`, which copies the
+# whole buffer once per emitted line (spec:167) — quadratic in output
+# lines, and the compiler emits 764k of them for itself. A flat [str]
+# joined once would only move the cost: `push` copies every element
+# too (design.md §4.10, measured). So: lines land in `chunk`, every
+# CHUNK_LINES of them are joined into one str pushed onto `chunks`,
+# and finish joins once. Before/after: docs/measurements/012.
 
 use source
 
@@ -40,8 +49,19 @@ variant Claim
         file: str
         line: i64
 
+# One flush every this many lines. The inner array costs n*K/2 element
+# copies over n lines, the outer (n/K)^2/2; they balance at K = cuberoot(2n),
+# which is 115 for the compiler's own 764k lines. 128 stays within 2x of
+# that balance from 100k lines to 1M, and a small output never flushes.
+constant CHUNK_LINES: i64
+    128
+
 record Writer
-    out: str
+    # The output. Neither a flat str (`+` copies both sides) nor a flat
+    # [str] (`push` copies every element) survives 764k lines; both are
+    # measured quadratic (design.md §4.10, docs/measurements/012).
+    chunk: [str]
+    chunks: [str]
     # Lines pushed so far. The next line's number in the generated file
     # is pushed + 1.
     pushed: i64
@@ -54,7 +74,7 @@ record Writer
     generated: str
 
 function new_writer(module: str) -> Writer
-    return Writer(out: "", pushed: 0, claim: .no_claim, intent: .no_claim, generated: module + ".c")
+    return Writer(chunk: [], chunks: [], pushed: 0, claim: .no_claim, intent: .no_claim, generated: module + ".c")
 
 # One line of C. Everything goes through here, which is what keeps the
 # count honest. A claim on the generated file stays true for free under
@@ -79,7 +99,10 @@ function line(@w: Writer, text: str)
 # the #line itself must not ask whether a #line is needed. (push is a
 # builtin, hence the longer name.)
 function push_line(@w: Writer, text: str)
-    w.out @ w.out + text + "\n"
+    w.chunk @ w.chunk.push(text + "\n")
+    if len(w.chunk) == CHUNK_LINES
+        w.chunks @ w.chunks.push(join(w.chunk, ""))
+        w.chunk @ []
     w.pushed @ w.pushed + 1
     match w.claim
         .at believed => w.claim @ .at(file: believed.file, line: believed.line + 1)
@@ -144,8 +167,11 @@ function directive(@w: Writer, file: str, at: i64)
     w.claim @ .at(file: file, line: at)
     w.intent @ w.claim
 
+# One pass over the bytes: the ragged last chunk is joined and pushed
+# onto a copy of `chunks` (finish takes w by value, so w is untouched
+# and finishing twice gives the same str), then everything joins once.
 function finish(w: Writer) -> str
-    return w.out
+    return join(w.chunks.push(join(w.chunk, "")), "")
 
 # A path inside a C string literal. A quote or a backslash in a file
 # name would otherwise end the directive early — and on Windows-style
@@ -202,3 +228,22 @@ test "asking for what is already intended emits nothing"
 test "a path with quotes or backslashes cannot end the directive early"
     assert escaped_path("a\\b.hero") == "a\\\\b.hero"
     assert escaped_path("we\"ird.hero") == "we\\\"ird.hero"
+
+test "the chunk flush loses no line and adds none"
+    w: Writer @ new_writer("m")
+    n: i64 @ 0
+    while n < CHUNK_LINES + 3
+        line(@w, text: "x;")
+        blank(@w)
+        n @ n + 1
+    # Crosses the flush boundary twice and ends on a ragged chunk; the
+    # blank lines would expose a separator smuggled in by a join.
+    assert finish(w) == repeat("x;\n\n", (CHUNK_LINES + 3).to_u64().must())
+
+test "a writer that ends exactly on a chunk boundary adds nothing"
+    w: Writer @ new_writer("m")
+    n: i64 @ 0
+    while n < CHUNK_LINES
+        line(@w, text: "y;")
+        n @ n + 1
+    assert finish(w) == repeat("y;\n", CHUNK_LINES.to_u64().must())

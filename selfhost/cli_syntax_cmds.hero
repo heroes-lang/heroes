@@ -9,6 +9,7 @@
 # parser's guess about it — the one thing a formatter must never do.
 
 use source
+use source_extent
 use diag
 use parse
 use print_dump
@@ -44,7 +45,7 @@ function run_fmt(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_t
     if !cli_argv.has(inv, spelling: "--in-place")
         cli_io.print_artifact(text: formatted)
         return .ok_exit
-    if formatted == source.user_text(s)
+    if formatted == source_extent.user_text(s)
         return .ok_exit
     written = write_file(path: path, text: formatted)
     if written.is_err()

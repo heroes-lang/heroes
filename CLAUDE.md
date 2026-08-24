@@ -480,10 +480,10 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
 
 ## Commands
 ```
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.4 s)
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (3.5 s)
 ./heroes build selfhost/main.hero -o heroes-next             # the compiler, from Heroes
-./heroes test selfhost/main.hero                             # its own tests (482, 20m35s)
-./heroes run tests/harness/main.hero -- ./heroes             # the net (845 checks, 2026-08-23)
+./heroes test selfhost/main.hero                             # its own tests (488, 7m26s, 2026-08-24)
+./heroes run tests/harness/main.hero -- ./heroes             # the net (1132 checks, 2026-08-24)
 ./heroes doctor                                              # toolchain check
 ./heroes <cmd>                                               # the one command
 ```

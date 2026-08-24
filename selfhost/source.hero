@@ -148,14 +148,36 @@ function from_files(inputs: [InputFile]) -> Source
     name = inputs[0].name
     text: str @ ""
     table: [FileEntry] @ []
+    # `lines_before` is the newline count of the accumulated text, kept
+    # incrementally: the first shape of this line re-ran starts_of over
+    # the WHOLE concatenation once per file, which read every byte of an
+    # N-file compilation ~N/2 times and grew the starts array by push
+    # inside each pass — measured as most of the compiler's load time
+    # (docs/measurements/012). Counting only what each step appends is
+    # the same number read once.
+    newlines: i64 @ 0
     for input in inputs
         if table.len() > 0
             if text[text.len() - 1] != '\n'
                 text @ text + "\n"
+                newlines @ newlines + 1
             text @ text + "\n"
-        table @ table.push(FileEntry(name: input.name, module: input.module, component: module_of(input.module), start: text.len(), lines_before: starts_of(text).len() - 1, is_library: input.is_library))
+            newlines @ newlines + 1
+        table @ table.push(FileEntry(name: input.name, module: input.module, component: module_of(input.module), start: text.len(), lines_before: newlines, is_library: input.is_library))
         text @ text + input.text
+        newlines @ newlines + newlines_in(input.text)
     return Source(name: name, text: text, line_starts: starts_of(text), files: table)
+
+# The '\n' count of one segment — what `starts_of(text).len() - 1` answers
+# for a whole text, without building the array.
+function newlines_in(text: str) -> i64
+    count: i64 @ 0
+    i: i64 @ 0
+    while i < text.len()
+        if text[i] == '\n'
+            count @ count + 1
+        i @ i + 1
+    return count
 
 # Byte offset of the first byte of each line. starts[0] == 0, and the length
 # is the number of lines, which is what makes it double as a line count.
@@ -274,32 +296,6 @@ function span_text(s: Source, span: token.Span) -> str
 function line_start_of(s: Source, offset: i64) -> i64
     return s.line_starts[floor_start(s.line_starts, offset)]
 
-## The root's own extent
-
-# The last offset INSIDE THE ROOT FILE — where a diagnostic about the file
-# as a whole puts its caret. `text.len()` is not that offset once anything
-# is appended: it lands in whichever file happens to be last, which is how
-# `no_entry_point` came out as a compiler bug at exit 2 for the commonest
-# mistake in the language (2026-08-12).
-function root_end(s: Source) -> i64
-    if s.files.len() > 1
-        return s.files[1].start - 1
-    return s.text.len()
-
-# Exactly what the author wrote in the file they named, with everything
-# appended to it removed. Anything that hands a program BACK — `fmt`,
-# applied fixes — must go through this, or it writes the whole compilation
-# into one of its files.
-function user_text(s: Source) -> str
-    return text_of(s, 0)
-
-# One file's own text, without the blank line that joins it to the next.
-function text_of(s: Source, index: i64) -> str
-    start = s.files[index].start
-    if index + 1 < s.files.len()
-        return s.text.slice(from: start, to: s.files[index + 1].start - 1)
-    return s.text.slice(from: start, to: s.text.len())
-
 ## Tests
 
 test "a module is the stem however the path was written"
@@ -350,16 +346,12 @@ test "elsewhere names the file only when it is not already on screen"
     # The other end in geom.hero: the long form, with GEOM's own line number.
     assert elsewhere(s, here: 0, there: s.files[1].start) == "geom.hero:1"
 
-test "the library is appended, unopenable, and the root keeps its offsets"
+test "the library is appended and unopenable"
     s = with_library(name: "main.hero", user: "constant A: i64\n    1\n", library: "function range()\n    return\n")
     assert !is_library(s, 0)
     assert is_library(s, s.files[1].start)
     assert s.files[1].name == "<heroes library>"
     assert s.files[1].module == "library"
-    # The root's extent stops before the joiner, not at text.len().
-    assert root_end(s) == s.files[1].start - 1
-    # What the author wrote comes back exactly, appendix removed.
-    assert user_text(s) == "constant A: i64\n    1\n"
 
 test "a file without a trailing newline is closed before the joiner"
     inputs: [InputFile] = [
@@ -369,8 +361,21 @@ test "a file without a trailing newline is closed before the joiner"
     s = from_files(inputs)
     # a.hero's 21 bytes, the added closer, the blank line: b starts at 23.
     assert s.files[1].start == 23
-    # The LAST file is left exactly as written — nothing appended after it.
-    assert text_of(s, 1) == "constant B: i64\n    2\n"
+
+test "lines_before is the newline count of everything before the file"
+    inputs: [InputFile] = [
+        user_file(name: "a.hero", text: "constant A: i64\n    1\n")
+        user_file(name: "b.hero", text: "constant B: i64\n    2")
+        user_file(name: "c.hero", text: "constant C: i64\n    3\n")
+    ]
+    s = from_files(inputs)
+    assert s.files[0].lines_before == 0
+    # a.hero's two lines, then the blank joiner line.
+    assert s.files[1].lines_before == 3
+    # b.hero's own newline, the closer its missing one costs, the joiner.
+    assert s.files[2].lines_before == 6
+    # And the numbers agree with what locate answers through them.
+    assert file_line_of(s, s.files[2].start) == 1
 
 test "the column counts characters, not bytes"
     # `è` is two bytes; the caret after it must say column 3, not 4.
