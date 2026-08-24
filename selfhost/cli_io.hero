@@ -3,28 +3,46 @@
 # from Rust; the selfhost compiler gets stderr the way any Heroes
 # program gets anything: from C (§1.11).
 #
-# THE FIRST REAL EXTERN GROUP IN THE SELFHOST TREE, and the shape is
-# chosen by the language's own refusals. stderr the OBJECT is exactly
-# what ffi_not_constant exists to refuse (§4.2: reading it twice could
-# give two answers), and that diagnostic's note names the route taken
-# here: reach C's objects through functions. POSIX's write(2) needs no
-# object at all — file descriptor 2 IS the error stream, as a number,
-# on every machine the fixpoint runs on.
+# THE SHAPE IS CHOSEN BY THE LANGUAGE'S OWN REFUSALS. stderr the
+# OBJECT is exactly what ffi_not_constant exists to refuse (§4.2:
+# reading it twice could give two answers), and that diagnostic's note
+# names the route: reach C's objects through functions. So the stream
+# arrives as a function call whatever is on the other side.
+#
+# WHICH FUNCTION CHANGED, AND WHY IT IS THE RUNTIME'S (author decision
+# 2026-08-24). This module used to bind POSIX's write(2) directly —
+# file descriptor 2 IS the error stream, as a number, on every machine
+# the fixpoint ran on. The trouble is which machines those were: the
+# binding put `#include <unistd.h>` into `seed/heroes.c`, and neither
+# MSVC nor clang-cl ships that header, so the self-hosted compiler
+# could not be built on Windows at all. Nothing caught it because the
+# Rust bootstrap had no such dependency, so the third CI leg was
+# testing a compiler that did not have the problem.
+#
+# The route out is not a platform arm — this language has no `#if`, by
+# design — but `hero_write_err` in `runtime/parts/os.c`, over
+# `fwrite(…, stderr)`, which is C89 and needs no POSIX. The platform
+# question lives in the runtime's C, the one file in this project that
+# is allowed to know what machine it is on, and `hero_os.h` is a
+# header this tree already binds everywhere else. It also closes a
+# §1.12 hole rather than only moving an include: write(2) may write
+# FEWER bytes than it was given, and both shipping call sites below
+# threw the count away, so a truncated diagnostic was indistinguishable
+# from a whole one. `hero_write_err` writes all of it or the process
+# has no error channel left, so there is no count left to discard.
 
-extern "unistd.h"
-    function write(fd: i32, buf: cstr, count: u64) -> i64
+extern "hero_os.h"
+    function hero_write_err(text: str)
 
 # One line to stderr, newline included — the eprintln the commands
-# share. The return is checked only for being written at all: a CLI
-# whose error channel fails has nowhere left to say so.
+# share.
 function eprint(text: str)
-    line = text + "\n"
-    _ = write(fd: 2, buf: line.cstr(), count: line.len().to_u64().must())
+    hero_write_err(text: text + "\n")
 
 # The same channel, no newline added — for a blob that already ends
 # with one (the rich renderer's, the JSON's).
 function eprint_raw(text: str)
-    _ = write(fd: 2, buf: text.cstr(), count: text.len().to_u64().must())
+    hero_write_err(text: text)
 
 # An ARTIFACT printed exactly as it is. `print` adds exactly one
 # trailing newline (spec § Built-ins), and every blob this compiler
@@ -42,10 +60,38 @@ function print_artifact(text: str)
 
 ## Tests
 
-test "eprint writes and the write binding answers with a count"
-    # The binding itself: write returns the byte count it wrote, and
-    # a five-byte line is five bytes on every POSIX.
-    line = "hero\n"
-    got = write(fd: 2, buf: line.cstr(), count: line.len().to_u64().must())
-    assert got == 5
+test "the error channel takes every shape a diagnostic arrives in"
+    # THERE IS NO COUNT TO ASSERT, and that is the repair rather than a
+    # gap in this test: `hero_write_err` returns nothing because the
+    # count `write(2)` used to return was discarded at two of three
+    # call sites, which made a truncated diagnostic look like a whole
+    # one. What replaces the assertion is an instrument that already
+    # exists and is far larger than this file: every
+    # `tests/golden/check/` case compares the diagnostic text that
+    # leaves through here BYTE FOR BYTE — 65 `check` plus 76
+    # `annotations` checks in the net — so a short write is 141 red
+    # checks, not a silent missing tail.
+    #
+    # What is checked here is the shapes NEXT TO the one that provoked
+    # the change (CLAUDE.md §1): the empty blob, which must not reach
+    # `fwrite` at all; bytes that are not characters, where a length in
+    # the wrong unit would truncate mid-sequence; a blob that already
+    # ends in a newline, which is `eprint_raw`'s whole reason; and one
+    # past the stdio buffer, where a write is split into more than one
+    # call to the platform.
+    #
+    # A GENUINE partial write cannot be forced from inside this
+    # language — it needs a full pipe or a closing reader — so the long
+    # case here crosses the buffer boundary and no more. That is why
+    # the 141 byte-comparing checks above are named as the instrument
+    # and this test is not: a test that cannot fail is not evidence.
+    eprint_raw(text: "")
     eprint(text: "eprint says hello during the suite — this line is the test")
+    eprint(text: "multi-byte: ziggy ★ stardust — 3-byte and 4-byte: 𝅘𝅥𝅮")
+    eprint_raw(text: "already ends with its own newline\n")
+    long: str @ "buffer-crossing ".repeat(count: 512)
+    eprint_raw(text: long + "\n")
+    # The bytes are what the channel is measured in, not the characters
+    # — the one place a wrong unit would cut a sequence in half.
+    assert "ziggy ★".len() == 9
+    assert long.len() == 8192

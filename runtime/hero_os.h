@@ -9,7 +9,7 @@
  * A SEPARATE HEADER, AND THAT IS THE POINT (design.md §1.11, panel 036).
  *
  * These are not built-ins. `read_file`, `write_file`, `args` and `exit` are
- * written **in Heroes**, in `crates/heroes/src/library/source.hero`, over
+ * written **in Heroes**, in `selfhost/library_source.hero`, over
  * `extern` declarations against this file — so they arrive by the same door as
  * SQLite and libm, and clang checks their signatures against these declarations
  * exactly as it checks a binding against `<sqlite3.h>`.
@@ -62,6 +62,19 @@ HeroStr hero_file_read(const char *path, int64_t *status);
 
 /* The text, written whole, replacing whatever was there. Returns a status. */
 int64_t hero_file_write(const char *path, HeroStr text);
+
+/* One blob to the error stream, written whole, no newline added and no status
+ * returned (author decision 2026-08-24; `runtime/parts/os.c` carries the whole
+ * argument). It exists so the compiler's own `eprint` does not have to bind
+ * POSIX: `selfhost/cli_io.hero` reached `write(2)` through `extern "unistd.h"`,
+ * which put that header into `seed/heroes.c` and made the self-hosted compiler
+ * unbuildable on a platform without POSIX headers.
+ *
+ * No status because there is nothing a caller could do with one, and because the
+ * count `write(2)` returns was being discarded at two of three call sites — a
+ * short write that looked like a whole one. This writes all of it or the process
+ * has no error channel left. */
+void hero_write_err(HeroStr text);
 
 /* The arguments after the program's name: `hero_args_count()` of them, each
  * `hero_args_at(i)` an owned `str` (+1).

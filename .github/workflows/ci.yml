@@ -77,19 +77,31 @@ jobs:
       #     being less informative but for being *already read*: it is the
       #     author's machine, so a local run of the net is this job, and it is
       #     the only leg billed at ten Linux minutes to the minute.
-      #   - **Windows x86-64 — tags and `workflow_dispatch`, and the archive cost
-      #     it almost everything.** It was added the day the runtime could hold it
-      #     (author instruction 2026-08-14, "I want Windows too") and it ran the
-      #     cargo legs, because `runtime/parts/f64.c` compiles under a Windows
-      #     target — the 18 errors panel 049 measured were all in that one file.
-      #     Those legs are gone with `crates/`, and the Heroes legs cannot replace
-      #     them here: `selfhost/cli_io.hero` binds `extern "unistd.h"`, so there
-      #     is no self-hosted compiler on a platform without POSIX headers. What
-      #     is left is the toolchain report below, which gates nothing and says so.
-      #     **That is a loss and it is written down rather than absorbed**
-      #     (`docs/debrief/DECIDE.md`): the honest answers are to give the port a
-      #     Windows I/O path, or to drop the leg. Keeping a green job that tests
-      #     nothing is the shape CLAUDE.md §9 calls a decoration.
+      #   - **Windows x86-64 — tags and `workflow_dispatch`, and it covers the
+      #     whole net again as of 2026-08-24.** It was added the day the runtime
+      #     could hold it (author instruction 2026-08-14, "I want Windows too")
+      #     and it ran the cargo legs, because `runtime/parts/f64.c` compiles
+      #     under a Windows target — the 18 errors panel 049 measured were all in
+      #     that one file. Those legs left with `crates/`, and for five days the
+      #     Heroes legs could not replace them: `selfhost/cli_io.hero` bound
+      #     `extern "unistd.h"`, so there was no self-hosted compiler on a
+      #     platform without POSIX headers, and what was left was a toolchain
+      #     report that gated nothing. **That was written down as a loss rather
+      #     than absorbed, and the loss is now repaired** (author decision
+      #     2026-08-24, `/decide` answers `3a` + `a1`): the port's only raw POSIX
+      #     extern became `hero_write_err` in `runtime/parts/os.c` over
+      #     `fwrite(…, stderr)`, which is C89, so the seed has no POSIX include
+      #     left and every step below runs here.
+      #
+      #     **UNTESTED ON WINDOWS FROM HERE, and that is stated rather than
+      #     implied**: nobody has a Windows machine in this project, so the first
+      #     tag run after 2026-08-24 is the instrument for this whole paragraph.
+      #     Two platform differences are predicted and handled rather than
+      #     discovered — `shell: bash` on every step, because `windows-latest`
+      #     defaults to `pwsh` and these are bash scripts, and
+      #     `matrix.exe`/`.exe` on the built binary, because clang honours `-o`
+      #     exactly and Windows will not execute a file without the extension.
+      #     A red leg naming something else is the finding, not a regression.
       #
       # Nothing is untested by this: the third platform is read at the tag
       # instead of at the commit, which is the trade CLAUDE.md §14's per-
@@ -98,8 +110,8 @@ jobs:
         include: >-
           ${{ fromJSON(
           (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
-          && '[{"name":"Linux x86-64","os":"ubuntu-latest"},{"name":"Darwin arm64","os":"macos-14"},{"name":"Windows x86-64","os":"windows-latest"}]'
-          || '[{"name":"Linux x86-64","os":"ubuntu-latest"}]'
+          && '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""},{"name":"Darwin arm64","os":"macos-14","exe":""},{"name":"Windows x86-64","os":"windows-latest","exe":".exe"}]'
+          || '[{"name":"Linux x86-64","os":"ubuntu-latest","exe":""}]'
           ) }}
 
     steps:
@@ -169,12 +181,17 @@ jobs:
 
       # Windows carries clang with Visual Studio; pkg-config and the C libraries
       # the FFI examples bind are not there, so this leg is honest about what it
-      # covers — see the note in `corpus.rs`.
-      # Windows reports and gates nothing — see the matrix note. The `::warning::`
-      # is deliberate: a leg that has stopped covering what it was added for
-      # should say so on every run, not once in a comment nobody opens.
+      # covers — the FFI examples SKIP here, which is itself a live test of the
+      # skip rule.
+      # **This step no longer says the leg gates nothing** (2026-08-24): the
+      # steps below it run here now, because `hero_write_err` took the port's
+      # only POSIX extern out of the seed. What it still reports is the one thing
+      # this platform genuinely does not cover — the debugger — and it reports it
+      # rather than gating, so a missing `llvm-pdbutil` is a line in the log and
+      # not a red job.
       - name: Report the toolchain
         if: runner.os == 'Windows'
+        shell: cmd
         # `llvm-pdbutil` is asked about because of what it would settle, and it is
         # asked as a QUESTION rather than asserted (CLAUDE.md §1: a negative claim
         # rests on the searcher's vocabulary rather than on the world).
@@ -192,7 +209,7 @@ jobs:
         # runner carries it, so the run says so instead of a document guessing.
         # `|| true`: this step reports, it does not gate.
         run: |
-          echo "::warning::this leg covers the toolchain only. The cargo steps left with `crates/` (2026-08-19) and the self-hosted compiler cannot be built here: selfhost/cli_io.hero binds unistd.h. See docs/debrief/DECIDE.md."
+          echo "::notice::this leg builds and tests the compiler again as of 2026-08-24 — the seed's POSIX include is gone (hero_write_err). What is still uncovered here is the DEBUGGER: lldb.exe exits 0xC0000135 before running a command. The FFI examples skip for want of pkg-config, which exercises the skip rule."
           clang --version
           where llvm-pdbutil 2>NUL || echo "llvm-pdbutil: not on PATH (DECIDE.md, the third CI leg)"
           where lldb 2>NUL || echo "lldb: not on PATH"
@@ -218,13 +235,13 @@ jobs:
       # differential.rs` asks of the machine, asked the same way. Windows keeps
       # the cargo legs and says what it covers.
       - name: Build the compiler from the seed — no cargo, no Rust
-        if: runner.os != 'Windows'
+        shell: bash
         # The command is `seed/README.md`'s own line, unchanged. If the real
         # build ever needs a flag that file does not print, this goes red — the
         # same pin `the_seed_builds_from_a_clean_checkout` puts on it.
         run: |
-          clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-from-seed
-          ./heroes-from-seed --version
+          clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-from-seed${{ matrix.exe }}
+          ./heroes-from-seed${{ matrix.exe }} --version
 
       # **One step that exists to score a prediction**, which is the only way a
       # prediction pays (panel 046 R1). Panel 085's ffi-pragmatist predicted that
@@ -250,8 +267,8 @@ jobs:
       # writable cache — and it has never asked about cargo, which is what makes
       # this a rename rather than a rewrite.
       - name: heroes doctor, from the seed-built compiler
-        if: runner.os != 'Windows'
-        run: ./heroes-from-seed doctor
+        shell: bash
+        run: ./heroes-from-seed${{ matrix.exe }} doctor
 
       # The compiler's own tests: 482 of them, inside the modules they test,
       # which is where a Heroes module keeps them.
@@ -267,16 +284,17 @@ jobs:
       # same compiler over 845 checks. The local loop is untouched: `heroes test`
       # through an already-built binary is the 13 s number again.
       - name: The compiler's own tests
-        if: runner.os != 'Windows' && (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
-        run: ./heroes-from-seed test selfhost/main.hero
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: ./heroes-from-seed${{ matrix.exe }} test selfhost/main.hero
 
       # The net: every suite the Rust harness carries, run by the compiler that
       # survives, against the compiler that survives. This is the configuration
       # the archive leaves behind — the one panel 085 R4 called "life after the
       # archive" — so it is the one that has to be green before the move.
       - name: The net, in Heroes
-        if: runner.os != 'Windows'
-        run: ./heroes-from-seed run tests/harness/main.hero -- ./heroes-from-seed
+        shell: bash
+        run: ./heroes-from-seed${{ matrix.exe }} run tests/harness/main.hero -- ./heroes-from-seed${{ matrix.exe }}
 
       # THE SEED IS WHAT TODAY'S SOURCE EMITS — and until 2026-08-23 nothing
       # asked. `tests/harness/suite_determinism.hero:13` claimed this repository
@@ -303,5 +321,5 @@ jobs:
       - name: The seed is what today's source emits
         if: runner.os == 'Linux' && (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
         run: |
-          ./heroes-from-seed build selfhost/main.hero --emit-c -o /tmp/seed-fresh.c
+          ./heroes-from-seed${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/seed-fresh.c
           cmp seed/heroes.c /tmp/seed-fresh.c

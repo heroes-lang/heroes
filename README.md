@@ -58,15 +58,17 @@ exception that let `cargo` build the compiler had an expiry date written into it
 and this is it.
 
 Tested on macOS arm64 and Linux x86-64 (CI runs the whole net on both). Windows
-builds the runtime but not the compiler — `selfhost/cli_io.hero` binds
-`unistd.h`.
+runs the same steps at every tag as of 2026-08-24 — the compiler stopped binding
+`unistd.h`, so there is no POSIX header in `seed/heroes.c` any more — **and the
+first tag run after that date is what confirms it**, because nobody in this
+project has a Windows machine to try it on.
 
 ## The thesis, and how much of it is measured
 
 The design rule is a cost formula: a construct's cost is its token count times
 one plus the rate at which a model rewrites it wrongly. Two of its three
-instruments have run — the spec's measured size (**3512** tokens of a hard 4096
-ceiling as of 2026-08-19, counted by two vendored BPE tables so that neither can
+instruments have run — the spec's measured size (**3506** tokens of a hard 4096
+ceiling as of 2026-08-24, counted by two vendored BPE tables so that neither can
 hide its own drift, with every amendment's cost in
 `docs/measurements/010-spec-budget-ledger.md`) and a mutation-based check over the compiler's own corpus. **The third,
 the rewrite rate, has not run**, so the formula remains the design rule it always

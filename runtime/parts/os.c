@@ -152,6 +152,53 @@ int64_t hero_file_write(const char *path, HeroStr text) {
     return fclose(file) == 0 ? HERO_OS_OK : HERO_OS_FAILED;
 }
 
+/* The error stream, written whole. No status, and that absence is the point.
+ *
+ * WHY IT IS HERE RATHER THAN A POSIX BINDING IN THE COMPILER (author decision
+ * 2026-08-24). `selfhost/cli_io.hero` reached `write(2)` through
+ * `extern "unistd.h"`, so `seed/heroes.c` `#include`d that header and the
+ * self-hosted compiler could not be built on a platform without POSIX headers —
+ * measured on the archive's own CI leg, which had been green while testing a
+ * compiler that did not have the problem. `fwrite` to `stderr` is C89 and needs
+ * no POSIX at all, and putting it here keeps the platform question in the one
+ * file in this project that is allowed to know what machine it is on. It also
+ * removes the seed's only POSIX include.
+ *
+ * WHY IT RETURNS NOTHING. `write(2)` may write fewer bytes than it was given,
+ * and two of the compiler's three call sites discarded the count — a §1.12 hole
+ * where a truncated diagnostic would look like a complete one. The loop below is
+ * the answer: this writes all of it or the process has no error channel left, so
+ * there is no count for a caller to ignore.
+ *
+ * NO `fflush`, AND THAT IS MEASURED RATHER THAN ASSUMED. C11 7.21.3p7 says the
+ * standard error stream is not fully buffered, and the case that matters was run
+ * before this was written: `fwrite(m, 1, n, stderr)` followed by `abort()`
+ * delivers the text to a file **and** through a pipe, exit 134 (2026-08-23, the
+ * measurement in this decision's queue item). The instrument that catches a
+ * regression already exists and is large: every `tests/golden/check/` case
+ * compares the diagnostic text that leaves through here byte for byte — 65
+ * `check` plus 76 `annotations` checks in the net — so a truncating write is 141
+ * red checks rather than a silent short line. */
+void hero_write_err(HeroStr text) {
+    int64_t len = hero_str_len(text);
+    if (len <= 0) {
+        return;
+    }
+    hero_stdout_is_bytes();
+    const char *bytes = hero_str_cstr(text);
+    size_t left = (size_t)len;
+    while (left > 0) {
+        size_t put = fwrite(bytes, 1, left, stderr);
+        if (put == 0) {
+            /* Nowhere left to say so: a CLI whose error channel has failed
+             * cannot report that its error channel has failed. */
+            return;
+        }
+        bytes += put;
+        left -= put;
+    }
+}
+
 /* The truncation is deliberate and is the reason `exit` is not a plain `extern`:
  * C's `exit` takes an `i64`, Heroes' `i64` is `int64_t`, and binding one to the
  * other is `conflicting types for 'exit'` (panel 030 R3, reproduced on clang 21).
