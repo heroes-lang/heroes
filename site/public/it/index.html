@@ -93,20 +93,20 @@
 
   <ul class="figures">
     <li>
-      <span class="n">91% contro 0%</span>
-      <span class="what">un&rsquo;etichetta di argomento saltata</span>
-      <span class="how">Prendi programmi che funzionano, togli l&rsquo;etichetta a
-      un argomento e conta quanti il compilatore ferma: 91 su 100. Lo stesso
-      compilatore con le regole spente non ne ferma nemmeno uno.
-      <a href="errors.html">la tabella intera &rarr;</a></span>
+      <span class="n">231</span>
+      <span class="what">righe: tutto il linguaggio</span>
+      <span class="how">La specifica completa è una manciata di pagine: entra in
+      un prompt e lascia posto al tuo programma. A contarla è il compilatore
+      stesso, quindi il numero non può scappare di mano.
+      <a href="why.html">perché è questa la scelta &rarr;</a></span>
     </li>
     <li>
-      <span class="n">3548</span>
-      <span class="what">token di specifica</span>
-      <span class="how">Tutto il linguaggio sta in 231 righe: entra in un prompt e
-      lascia posto al tuo programma. A contarli è il compilatore stesso, quindi
-      non è un numero scritto a mano da qualcuno.
-      <a href="why.html">perché è questa la scelta &rarr;</a></span>
+      <span class="n">0</span>
+      <span class="what">null, eccezioni, garbage collector</span>
+      <span class="how">Un valore che manca e un fallimento sono tipi che si
+      vedono sulla riga, non sorprese mentre il programma gira. E la memoria si
+      gestisce contando le copie, senza collector e senza pause.
+      <a href="docs/failure-is-a-value.html">come funziona il fallimento &rarr;</a></span>
     </li>
     <li>
       <span class="n">1</span>
@@ -114,7 +114,7 @@
       <span class="how">Il compilatore è scritto in Heroes e compila se stesso.
       Chiedi a tre sue generazioni di riscrivere lo stesso programma in C e
       ottieni un unico file, byte per byte.
-      <a href="selfhost.html">il punto fisso &rarr;</a></span>
+      <a href="selfhost.html">tutta la storia &rarr;</a></span>
     </li>
   </ul>
 
@@ -232,7 +232,7 @@ we can be heroes</code></pre>
         coincidono byte per byte. Il linguaggio con cui era nato ha lasciato il
         repository.
       </p>
-      <a class="more" href="selfhost.html">Il punto fisso</a>
+      <a class="more" href="selfhost.html">Come fa a compilarsi da solo</a>
     </li>
   </ul>
 
@@ -269,26 +269,19 @@ we can be heroes</code></pre>
     programma costa più token da scrivere.
   </blockquote>
   <p>
-    È una tesi, non uno slogan, quindi si misura, e la misura non è
-    mai un numero solo. <code>heroes mutate</code> inietta un errore plausibile
-    alla volta dentro programmi funzionanti e conta quanti il compilatore
-    ferma, poi ripassa lo stesso corpus contro se stesso con le regole della
-    tesi disattivate. La distanza fra le due colonne è tutto il
-    risultato, errore per errore, misurato il 2026-08-25:
+    È una tesi, non uno slogan, quindi si misura. <code>heroes mutate</code>
+    prende programmi che funzionano, ci pianta dentro uno sbaglio realistico
+    alla volta &mdash; due argomenti dello stesso tipo scambiati, un caso
+    dimenticato in un <code>match</code>, un nome riusato &mdash; e conta
+    quanti il compilatore ferma. Poi rifà lo stesso giro con le regole della
+    tesi spente, e la distanza fra le due prove è il risultato, tenuto sbaglio
+    per sbaglio: alcuni sbagli li ferma solo la tesi, altri li fermerebbe
+    qualunque linguaggio, e uno non lo ferma ancora nessuno. Una media
+    nasconderebbe proprio questo, e infatti non c&rsquo;è.
   </p>
-  <pre><code><span class="c">                          con le regole      senza</span>
-etichetta di argomento saltata      91%         0%
-nome che ne nasconde un altro      100%         0%
-catch-all pigro su un variant      100%        39%
-due argomenti dello stesso tipo     80%        43%
-nome scritto male                  100%       100%</code></pre>
   <p>
-    L&rsquo;ultima riga è quella onesta: gli errori di battitura li
-    prendono i nomi e i tipi in qualunque linguaggio, e le regole non aggiungono
-    niente. Per questo il progetto si rifiuta di fare la media di questi numeri
-    in una cifra sola: una media nasconde sia i casi in cui il design fa tutto,
-    sia quelli in cui non fa niente.
-    <a href="errors.html">Il resto della tabella →</a>
+    <a href="errors.html">La tabella intera, rilanciata il 2026-08-25, è nella
+    pagina degli errori &rarr;</a>
   </p>
 
   <footer>
