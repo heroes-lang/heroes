@@ -229,7 +229,7 @@ function env(name: str) -> str
     got = getenv(name: name.cstr())
     if got == nullptr
         return ""
-    return got.to_str()
+    return got.validated().default("")
 
 # Whether a refusal is this MACHINE's answer rather than the compiler's.
 #

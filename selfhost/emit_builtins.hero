@@ -127,14 +127,12 @@ function entry(name: str, f: ir_state.Function, c: check_state.Checked, run: ir.
     if name == "to_str"
         if first.is_err()
             return "hero_unreachable"
-        is_cstr: bool @ false
-        match first.must()
-            .cstr => is_cstr @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .unit => is_cstr @ is_cstr
-            .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-            .case_ty | .failure | .generic | .error => is_cstr @ is_cstr
-        if is_cstr
-            return "hero_str_from_cstr"
+        # The `cstr` branch was HERE and is gone (panel 090). The checker
+        # refuses a `cstr` before lowering reaches this line, so a branch
+        # for one would be unreachable code claiming to be a route.
+        # `hero_str_from_cstr` stays in the runtime — `os.c:62`'s
+        # `hero_args_at` is its other caller — but nothing the emitter
+        # writes reaches it any more.
         found = to_str_entry(first.must())
         if found.is_err()
             return "hero_unreachable"

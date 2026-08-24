@@ -110,17 +110,17 @@ bb0:
 #line 111 "exitstatus.c"
 }
 
-#line 210 "<heroes library>"
+#line 211 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 116 "exitstatus.c"
     int64_t t1;
     goto bb0;
 bb0:
-#line 211 "<heroes library>"
+#line 212 "<heroes library>"
     t1 = h0_code;
-#line 211 "<heroes library>"
+#line 212 "<heroes library>"
     hero_exit(t1);
-#line 211 "<heroes library>"
+#line 212 "<heroes library>"
     return;
 #line 126 "exitstatus.c"
 }

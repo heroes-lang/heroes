@@ -127,7 +127,8 @@ binds nothing, so it is never unused and may repeat.
 - An arm's body is one statement, inline, or an indented block; a block's value
   is its last expression. A `match` may stand as a statement. A jump (`return`,
   `break`, `continue`) is a valid arm body: it yields no value and does not
-  constrain the `match`'s type.
+  constrain the `match`'s type. An arm that does nothing is a block holding
+  `_ = 0` — `continue` is not one.
 
 `if cond` / `else if` / `else` take only `bool` — there is no truthiness.
 Loops: `while cond` and `for x in xs`; `break` and `continue` exist; ranges
@@ -180,8 +181,9 @@ separator and exactly one trailing newline. A float prints a point or
 exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`; a `bool` prints `true` or `false`.
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
-after the program name) · `exit(code: i64)` (ends the program) ·
-`validated(c: cstr) -> str?` (text from C) · `args_checked() -> [str?]`.
+after the program name; one that is not UTF-8 aborts) · `exit(code: i64)` (ends
+the program) · `validated(c: cstr) -> str?` (text from C) ·
+`args_checked() -> [str?]` (which does not).
 
 ## Tests and holes
 ```
@@ -223,9 +225,6 @@ array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`.
 `record Font partial` names only some, and then comparing it and using it as a
 map key are compile errors — for it and for any value holding it. Its size stays
 C's, not the field list's.
-
-A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
-usually there. How much more is the platform's answer, not this language's.
 
 A group's `constant` has no body: the header holds the value. `s.cstr()` lends a
 `str` to C to read and `c.validated()` copies one back as a `str?`. A C
