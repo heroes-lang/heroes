@@ -80,7 +80,7 @@ burden of preventing a swap.
    program); and how a reader resolves `mode_t` to a width and a sign, which the
    spec demands and the header does not give. Filed as their own items.
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 1. **The word is `tag`**, in the modifier slot beside `partial`, spelled
    `record FileStat tag stat partial`. The free-form string is **vetoed by both
@@ -138,4 +138,8 @@ rule, and the exit-2 it fixes is a defect under any spelling.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: **the word is `tag`**, in the modifier slot beside `partial` — `record FileStat tag stat partial`. The free-form string is vetoed by both seats; `as` is objected to by the seat that owns the question; `c_name` is the named runner-up and returns if condition 3 is not met. The spec sentence lands as the warden's **fold** rather than an appended clause, which is where its token cost went.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.

@@ -61,7 +61,7 @@ exists, field or no field. One rule, two passes, two answers.
 | **spec-warden** | **approve shape 1 at +0 tokens** · approve B's rewording · **veto any spec sentence for B** | **Ruled defect A a §12 bug rather than an addition**, and quoted the two lines that entail it: design.md **§4.2:845** (*"a variant case **is** a small record, so it is written as one — no special case"*) and **§4.11:1534**. The refusal was one predicate in `types/construct.rs`, while `ir/layout.rs` had carried the `Ty::Case` arm since panel 068. Then ruled the whole of defect B free: a compile diagnostic is spec business only where a program can **read** it (`e.code`) or where the message **is** the feature (`???`) — *"this is neither"* — and the repair B must name is already at `spec:222`, so the message must **point** at it rather than the document restate it (+26 priced and refused). Measured the workaround at **7 tokens**, and said why that is not the cost: the message asserts a declared field is absent, so the reader's first repair edits a correct declaration |
 | **llm-ergonomist** (spec-only, blind; contamination disclosed) | **approve shape 1** conditionally · **veto shape 2** · **veto shape 3** | *"The spec teaches what the compiler refuses"* — the document's own `match` example reads a field off a matched payload (`.num n => n.v`), so a reader has **more** textual warrant for the variant form than for the record form, and the variant form is what was refused. Vetoed keeping the refusal because legality would then depend on **how the value was bound** — neither on the line nor in the signature. Wrote three messages in the compiler's voice, and checked its own vocabulary against the document, rejecting *case*, *receiver*, *resolve*, *ambiguous*, *member*, *flexible*, *layout* as words the spec never uses. Asked that one question be **re-run on a fresh seat**, because it destroyed its own copy of the sitting's measurement |
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 1. **Shape 1 lands, and it is a §12 bug fix rather than a language change**:
    `field_of_function_type` gains its `Ty::Case` arm, because design.md says a
@@ -122,4 +122,8 @@ for those two; defect A did not need them.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: **shape 1 lands as a §12 bug fix rather than a language change** — `field_of_function_type` gains its `Ty::Case` arm, because design.md says a case payload is a record and the layout pass already agreed. The precedence repair rides in the same commit **because it is the same rule**: the lowering asks the field first, which two independent places in the codebase already stated.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.

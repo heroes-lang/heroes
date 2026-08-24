@@ -61,7 +61,7 @@ measurement: **Go has shipped `==` over C-union bytes for ~15 years with no
 public bug report**. Refusing it goes further than Go, and the justification has
 to be §12's robustness tie-break rather than precedent.
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 1. **The predicate becomes `__builtin_classify_type(*(T *)0) != 13`**, replacing
    panel 073's `sizeof(T) >= Σ sizeof(field)`, which is **incomplete for a padded
@@ -128,4 +128,8 @@ emitter strings; reverting is a revert, and the spec sentence is one line.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: the union predicate becomes `__builtin_classify_type(*(T *)0) != 13`, replacing panel 073's `sizeof(T) >= Σ sizeof(field)` — **incomplete for a padded union and blind at one declared field**. The yes also ratifies why that mattered: `SDL_Event` **is** a padded union, so the flagship case was still printing a false number three hours after the sitting that thought it had repaired it. CLAUDE.md §1's fourth shape — a repair shipped without its adjacent shapes — and this sitting is the fix.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.

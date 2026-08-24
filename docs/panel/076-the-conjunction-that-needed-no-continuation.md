@@ -84,7 +84,7 @@ the cap collide in `hash` and are still told apart by `eq`.
 | **llm-ergonomist** (spec-only, blind, contamination disclosed) | **veto 4** · approve 2 · approve 3 with the message rewritten · 1 splits | *"The spec recruits the program."* `children: [Node]` is a tree and `==` is recursive are **two adjacent sentences**, and the crashing program is their composition — *"the word `recursively` is the promise that segfaults."* Counted **eleven named aborts** in the document: a reader closes it believing failure modes are enumerable and named. And: **"stack" means nothing to a spec-only reader** — the word never appears, nor "memory", nor "recursion". A message must name the program's own act with both numbers |
 | **historian** (advisory) | approve 3 · **object to 3 as the answer to item A** | Fifteen systems. **OCaml ran this experiment for twenty years and abandoned it**: OCaml 4 had exactly this shape, its author told users to *"never rely on it — treat it as a debugging aid"*, and **OCaml 5 replaced it with a check the compiler emits into the function prologue**. Erlang's `eq()` is iterative **by construction** (`DECLARE_WSTACK`). *"Rust's `Drop` has overflowed since 2019, unfixed; Heroes already beat Rust there at panel 070. Stopping short on `==` gives that back."* **Two corrections to the brief**: `rust-lang/rust#69533` is **closed** (fixed 2020-03-19), and `runtime/heroes_runtime.h:19` says *"HERO_RUNTIME_ABI is 3"* eleven bumps after it became 14 |
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 1. **Candidate 1 (a depth bound) is refused**, on the warden's veto and a
    measurement rather than an argument: an environment variable moves the cliff,
@@ -146,4 +146,8 @@ reverting is a revert, and no golden was regenerated.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: **the `==` worklist lands in the RUNTIME and the emitter is not touched**, and a depth bound is **refused on the warden's veto plus a measurement** — an environment variable moves the cliff, `ulimit` moves it, `-O` moves it 2.6×, and the rewrite such a bound would teach costs +210 program tokens and crashes anyway. A limit that three unrelated knobs can move is not a limit a document can state.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.
