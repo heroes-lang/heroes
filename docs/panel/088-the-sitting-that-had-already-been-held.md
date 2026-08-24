@@ -4,7 +4,8 @@
 il panel"*) within the hour the finding was measured.
 **Trigger** architecture — the runtime's mutation primitives and, once the spec
 was read properly, `spec/heroes-spec.md:167-169`. CLAUDE.md §4.
-**Status** `provisional — author ratification pending`.
+**Status** `ratified 2026-08-24` (author answer `1a` in `/decide`; § Author's
+verdict says what the yes settles and what it does not).
 **Seats** five. The last two were convened late by a coordinator error; see
 § Process notes, which is longer than usual because three of the errors are the
 coordinator's.
@@ -322,5 +323,14 @@ fires; the spec amendment in the landing commit (R3's pre-registered −4
 wording direction: **3506** measured against the predicted 3508, falsifier
 ≥3512); and item 2's ABI bump honoured — 15 — rather than overturned in
 writing. Predictions scored in docs/measurements/013 § Panel 088 predictions.
-O1/O3's closure and O4's veto stand as adopted; the formal ratification of
-the sitting's remaining record stays queued in `docs/debrief/DECIDE.md`.
+O1/O3's closure and O4's veto stand as adopted.
+
+**2026-08-24, later the same day: the formal ratification arrived** (author
+answer `1a` in `/decide`), and it is the last of four sittings that spent
+days unratifiable because no list carried the item asking. What the yes
+settles is this sitting's own contribution — the measurement panel 037 had
+asked for and M-selfhost-probe never took, and the finding that it said
+**not yet** at a moment when the compiler already self-hosted. What it does
+not settle is anything about the landing, which was R2's row and was
+ratified on its own. O1/O3 stay **closed** rather than deferred and O4 stays
+**vetoed** on §1.11.
