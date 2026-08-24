@@ -1,7 +1,8 @@
 # 089 — Text from C, and the sitting whose brief was wrong four times
 
 Date: 2026-08-24. Full lane, five judges, differentiated inputs.
-**Status** `provisional — author ratification pending`.
+**Status** `ratified 2026-08-24` (author instruction, *"ok a tutte le ratifiche"*;
+§ Author's verdict says what the yes settles and what it does not).
 
 Convened on author instruction — *"convoca il panel e sistema il problema
 scegliendo la soluzione più robusta anche se implica usare più token"* — which
@@ -225,4 +226,29 @@ a positive and a negative control after that.
 
 ## Author's verdict
 
-Pending.
+**2026-08-24: ratified** (author instruction, *"ok a tutte le ratifiche e alla
+modifica al CLAUDE.md"*, given the same day the sitting closed and after reading
+the synthesis rather than clause by clause).
+
+**What the yes settles.** The second-name form is what this language does at the
+C text boundary: `validated(c: cstr) -> str?` as a **Tier-2 library function**,
+over a runtime entry point that validates **once**, with the ABI held at 15 and
+zero checker and zero emitter lines. It settles that (A) is closed — the
+compiler-engineer's veto stands and panel 059's ratified refusal of `to_str` as
+the carrier stands with it — and that (C) is closed, on the historian's
+unanimous field evidence and JNI's measured lack of a stable equilibrium. It
+settles the spec at **3530**, +24 net against the −15 named removal, and it
+settles that removal as §1.4 redundancy **paid back** rather than protection
+deleted, which the CLAUDE.md correction below makes true in the contract as well.
+
+**What the yes does NOT settle**, and all four remain open in
+`docs/debrief/DECIDE.md`: retiring `cstr.to_str()` — the ffi-pragmatist's third
+condition, unmet and deliberately so, because it is a surface removal; `args()`,
+now the only one of panel 087's four doors still open; the two riders that seat
+compiled (`char *` struct fields, `char **` out-parameters); and the shape of a
+lossy third form, which the historian predicts will be asked for within two
+years.
+
+**Ratified with it, in the same instruction**: CLAUDE.md §12's SEGV sentence,
+corrected below in its own commit — the sentence this sitting's payment rested
+on.
