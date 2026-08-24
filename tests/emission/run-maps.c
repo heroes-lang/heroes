@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "maps.c"
+#line 53 "maps.c"
 
 HERO_STR_STATIC(hero_str_0, "a");
 HERO_STR_STATIC(hero_str_1, "b");
@@ -137,7 +141,7 @@ void h_maps_main(void);
 
 #line 34 "tests/golden/run/maps.hero"
 void h_maps_main(void) {
-#line 141 "maps.c"
+#line 145 "maps.c"
     HeroMapHeader * h0_m = {0};
     h_maps_0opt0 h1_f0 = {0};
     h_maps_0opt0 h2_f1 = {0};
@@ -597,15 +601,15 @@ bb0:
     t254 = h35_own35;
 #line 35 "tests/golden/run/maps.hero"
     h35_own35 = t7;
-#line 601 "maps.c"
+#line 605 "maps.c"
     hero_map_decref(t254);
 #line 35 "tests/golden/run/maps.hero"
     t255 = h0_m;
-#line 605 "maps.c"
+#line 609 "maps.c"
     hero_map_incref(t7);
 #line 35 "tests/golden/run/maps.hero"
     h0_m = t7;
-#line 609 "maps.c"
+#line 613 "maps.c"
     hero_map_decref(t255);
 #line 36 "tests/golden/run/maps.hero"
     t8 = h0_m;
@@ -641,15 +645,15 @@ bb0:
     t256 = h36_own36;
 #line 37 "tests/golden/run/maps.hero"
     h36_own36 = t12;
-#line 645 "maps.c"
+#line 649 "maps.c"
     h_maps_0opt0_release(&t256);
 #line 37 "tests/golden/run/maps.hero"
     t257 = h1_f0;
-#line 649 "maps.c"
+#line 653 "maps.c"
     h_maps_0opt0_retain(&t12);
 #line 37 "tests/golden/run/maps.hero"
     h1_f0 = t12;
-#line 653 "maps.c"
+#line 657 "maps.c"
     h_maps_0opt0_release(&t257);
 #line 37 "tests/golden/run/maps.hero"
     t13 = h1_f0;
@@ -687,15 +691,15 @@ bb0:
     t258 = h37_own37;
 #line 37 "tests/golden/run/maps.hero"
     h37_own37 = t20;
-#line 691 "maps.c"
+#line 695 "maps.c"
     h_maps_0opt0_release(&t258);
 #line 37 "tests/golden/run/maps.hero"
     t259 = h2_f1;
-#line 695 "maps.c"
+#line 699 "maps.c"
     h_maps_0opt0_retain(&t20);
 #line 37 "tests/golden/run/maps.hero"
     h2_f1 = t20;
-#line 699 "maps.c"
+#line 703 "maps.c"
     h_maps_0opt0_release(&t259);
 #line 37 "tests/golden/run/maps.hero"
     t21 = h2_f1;
@@ -739,15 +743,15 @@ bb0:
     t260 = h38_own38;
 #line 38 "tests/golden/run/maps.hero"
     h38_own38 = t28;
-#line 743 "maps.c"
+#line 747 "maps.c"
     h_maps_0opt0_release(&t260);
 #line 38 "tests/golden/run/maps.hero"
     t261 = h3_f2;
-#line 747 "maps.c"
+#line 751 "maps.c"
     h_maps_0opt0_retain(&t28);
 #line 38 "tests/golden/run/maps.hero"
     h3_f2 = t28;
-#line 751 "maps.c"
+#line 755 "maps.c"
     h_maps_0opt0_release(&t261);
 #line 38 "tests/golden/run/maps.hero"
     t29 = h3_f2;
@@ -811,15 +815,15 @@ bb3:
     t262 = h39_own39;
 #line 39 "tests/golden/run/maps.hero"
     h39_own39 = t39;
-#line 815 "maps.c"
+#line 819 "maps.c"
     h_maps_0opt0_release(&t262);
 #line 39 "tests/golden/run/maps.hero"
     t263 = h5_f3;
-#line 819 "maps.c"
+#line 823 "maps.c"
     h_maps_0opt0_retain(&t39);
 #line 39 "tests/golden/run/maps.hero"
     h5_f3 = t39;
-#line 823 "maps.c"
+#line 827 "maps.c"
     h_maps_0opt0_release(&t263);
 #line 39 "tests/golden/run/maps.hero"
     t40 = h5_f3;
@@ -883,15 +887,15 @@ bb6:
     t264 = h40_own40;
 #line 40 "tests/golden/run/maps.hero"
     h40_own40 = t50;
-#line 887 "maps.c"
+#line 891 "maps.c"
     h_maps_0opt0_release(&t264);
 #line 40 "tests/golden/run/maps.hero"
     t265 = h7_f4;
-#line 891 "maps.c"
+#line 895 "maps.c"
     h_maps_0opt0_retain(&t50);
 #line 40 "tests/golden/run/maps.hero"
     h7_f4 = t50;
-#line 895 "maps.c"
+#line 899 "maps.c"
     h_maps_0opt0_release(&t265);
 #line 40 "tests/golden/run/maps.hero"
     t51 = h7_f4;
@@ -931,7 +935,7 @@ bb6:
     t266 = h41_own41;
 #line 42 "tests/golden/run/maps.hero"
     h41_own41 = t62;
-#line 935 "maps.c"
+#line 939 "maps.c"
     hero_map_decref(t266);
 #line 42 "tests/golden/run/maps.hero"
     t63 = hero_map_eq(t55, t62);
@@ -959,7 +963,7 @@ bb6:
     t267 = h42_own42;
 #line 43 "tests/golden/run/maps.hero"
     h42_own42 = t69;
-#line 963 "maps.c"
+#line 967 "maps.c"
     hero_map_decref(t267);
 #line 43 "tests/golden/run/maps.hero"
     t70 = hero_map_eq(t64, t69);
@@ -993,7 +997,7 @@ bb6:
     t268 = h43_own43;
 #line 44 "tests/golden/run/maps.hero"
     h43_own43 = t78;
-#line 997 "maps.c"
+#line 1001 "maps.c"
     hero_map_decref(t268);
 #line 44 "tests/golden/run/maps.hero"
     t79 = hero_map_eq(t71, t78);
@@ -1019,15 +1023,15 @@ bb6:
     t269 = h44_own44;
 #line 46 "tests/golden/run/maps.hero"
     h44_own44 = t84;
-#line 1023 "maps.c"
+#line 1027 "maps.c"
     hero_map_decref(t269);
 #line 46 "tests/golden/run/maps.hero"
     t270 = h8_d;
-#line 1027 "maps.c"
+#line 1031 "maps.c"
     hero_map_incref(t84);
 #line 46 "tests/golden/run/maps.hero"
     h8_d = t84;
-#line 1031 "maps.c"
+#line 1035 "maps.c"
     hero_map_decref(t270);
 #line 47 "tests/golden/run/maps.hero"
     t85 = h8_d;
@@ -1059,15 +1063,15 @@ bb6:
     t271 = h45_own45;
 #line 47 "tests/golden/run/maps.hero"
     h45_own45 = t89;
-#line 1063 "maps.c"
+#line 1067 "maps.c"
     h_maps_0opt0_release(&t271);
 #line 47 "tests/golden/run/maps.hero"
     t272 = h9_f5;
-#line 1067 "maps.c"
+#line 1071 "maps.c"
     h_maps_0opt0_retain(&t89);
 #line 47 "tests/golden/run/maps.hero"
     h9_f5 = t89;
-#line 1071 "maps.c"
+#line 1075 "maps.c"
     h_maps_0opt0_release(&t272);
 #line 47 "tests/golden/run/maps.hero"
     t90 = h9_f5;
@@ -1119,7 +1123,7 @@ bb9:
     t273 = h46_own46;
 #line 49 "tests/golden/run/maps.hero"
     h46_own46 = t101;
-#line 1123 "maps.c"
+#line 1127 "maps.c"
     hero_str_decref(t273);
 #line 49 "tests/golden/run/maps.hero"
     t102 = INT64_C(2);
@@ -1133,7 +1137,7 @@ bb9:
     t274 = h47_own47;
 #line 49 "tests/golden/run/maps.hero"
     h47_own47 = t105;
-#line 1137 "maps.c"
+#line 1141 "maps.c"
     hero_str_decref(t274);
 #line 49 "tests/golden/run/maps.hero"
     t106 = hero_map_new(&hero_desc_int, &hero_desc_str, 2);
@@ -1145,15 +1149,15 @@ bb9:
     t275 = h48_own48;
 #line 49 "tests/golden/run/maps.hero"
     h48_own48 = t106;
-#line 1149 "maps.c"
+#line 1153 "maps.c"
     hero_map_decref(t275);
 #line 49 "tests/golden/run/maps.hero"
     t276 = h11_ns;
-#line 1153 "maps.c"
+#line 1157 "maps.c"
     hero_map_incref(t106);
 #line 49 "tests/golden/run/maps.hero"
     h11_ns = t106;
-#line 1157 "maps.c"
+#line 1161 "maps.c"
     hero_map_decref(t276);
 #line 50 "tests/golden/run/maps.hero"
     t107 = h11_ns;
@@ -1181,15 +1185,15 @@ bb9:
     t277 = h49_own49;
 #line 50 "tests/golden/run/maps.hero"
     h49_own49 = t109;
-#line 1185 "maps.c"
+#line 1189 "maps.c"
     h_maps_0opt1_release(&t277);
 #line 50 "tests/golden/run/maps.hero"
     t278 = h12_f6;
-#line 1189 "maps.c"
+#line 1193 "maps.c"
     h_maps_0opt1_retain(&t109);
 #line 50 "tests/golden/run/maps.hero"
     h12_f6 = t109;
-#line 1193 "maps.c"
+#line 1197 "maps.c"
     h_maps_0opt1_release(&t278);
 #line 50 "tests/golden/run/maps.hero"
     t110 = h12_f6;
@@ -1209,11 +1213,11 @@ bb10:
     t115 = t114.as.ok;
 #line 50 "tests/golden/run/maps.hero"
     t279 = h13_r3;
-#line 1213 "maps.c"
+#line 1217 "maps.c"
     hero_str_incref(t115);
 #line 50 "tests/golden/run/maps.hero"
     h13_r3 = t115;
-#line 1217 "maps.c"
+#line 1221 "maps.c"
     hero_str_decref(t279);
     goto bb12;
 bb11:
@@ -1221,11 +1225,11 @@ bb11:
     t116 = HERO_STR_LIT(hero_str_8);
 #line 50 "tests/golden/run/maps.hero"
     t280 = h13_r3;
-#line 1225 "maps.c"
+#line 1229 "maps.c"
     hero_str_incref(t116);
 #line 50 "tests/golden/run/maps.hero"
     h13_r3 = t116;
-#line 1229 "maps.c"
+#line 1233 "maps.c"
     hero_str_decref(t280);
     goto bb12;
 bb12:
@@ -1261,15 +1265,15 @@ bb12:
     t281 = h50_own50;
 #line 51 "tests/golden/run/maps.hero"
     h50_own50 = t120;
-#line 1265 "maps.c"
+#line 1269 "maps.c"
     h_maps_0opt1_release(&t281);
 #line 51 "tests/golden/run/maps.hero"
     t282 = h14_f7;
-#line 1269 "maps.c"
+#line 1273 "maps.c"
     h_maps_0opt1_retain(&t120);
 #line 51 "tests/golden/run/maps.hero"
     h14_f7 = t120;
-#line 1273 "maps.c"
+#line 1277 "maps.c"
     h_maps_0opt1_release(&t282);
 #line 51 "tests/golden/run/maps.hero"
     t121 = h14_f7;
@@ -1289,11 +1293,11 @@ bb13:
     t126 = t125.as.ok;
 #line 51 "tests/golden/run/maps.hero"
     t283 = h15_r4;
-#line 1293 "maps.c"
+#line 1297 "maps.c"
     hero_str_incref(t126);
 #line 51 "tests/golden/run/maps.hero"
     h15_r4 = t126;
-#line 1297 "maps.c"
+#line 1301 "maps.c"
     hero_str_decref(t283);
     goto bb15;
 bb14:
@@ -1301,11 +1305,11 @@ bb14:
     t127 = HERO_STR_LIT(hero_str_8);
 #line 51 "tests/golden/run/maps.hero"
     t284 = h15_r4;
-#line 1305 "maps.c"
+#line 1309 "maps.c"
     hero_str_incref(t127);
 #line 51 "tests/golden/run/maps.hero"
     h15_r4 = t127;
-#line 1309 "maps.c"
+#line 1313 "maps.c"
     hero_str_decref(t284);
     goto bb15;
 bb15:
@@ -1341,15 +1345,15 @@ bb15:
     t285 = h51_own51;
 #line 53 "tests/golden/run/maps.hero"
     h51_own51 = t137;
-#line 1345 "maps.c"
+#line 1349 "maps.c"
     hero_map_decref(t285);
 #line 53 "tests/golden/run/maps.hero"
     t286 = h16_ps;
-#line 1349 "maps.c"
+#line 1353 "maps.c"
     hero_map_incref(t137);
 #line 53 "tests/golden/run/maps.hero"
     h16_ps = t137;
-#line 1353 "maps.c"
+#line 1357 "maps.c"
     hero_map_decref(t286);
 #line 54 "tests/golden/run/maps.hero"
     t138 = h16_ps;
@@ -1377,25 +1381,25 @@ bb15:
     t287 = h52_own52;
 #line 54 "tests/golden/run/maps.hero"
     h52_own52 = t140;
-#line 1381 "maps.c"
+#line 1385 "maps.c"
     h_maps_0opt2_release(&t287);
 #line 54 "tests/golden/run/maps.hero"
     t288 = h17_got;
-#line 1385 "maps.c"
+#line 1389 "maps.c"
     h_maps_0opt2_retain(&t140);
 #line 54 "tests/golden/run/maps.hero"
     h17_got = t140;
-#line 1389 "maps.c"
+#line 1393 "maps.c"
     h_maps_0opt2_release(&t288);
 #line 55 "tests/golden/run/maps.hero"
     t141 = h17_got;
 #line 55 "tests/golden/run/maps.hero"
     t289 = h18_f8;
-#line 1395 "maps.c"
+#line 1399 "maps.c"
     h_maps_0opt2_retain(&t141);
 #line 55 "tests/golden/run/maps.hero"
     h18_f8 = t141;
-#line 1399 "maps.c"
+#line 1403 "maps.c"
     h_maps_0opt2_release(&t289);
 #line 55 "tests/golden/run/maps.hero"
     t142 = h18_f8;
@@ -1467,7 +1471,7 @@ bb18:
     t290 = h53_own53;
 #line 56 "tests/golden/run/maps.hero"
     h53_own53 = t162;
-#line 1471 "maps.c"
+#line 1475 "maps.c"
     hero_map_decref(t290);
 #line 56 "tests/golden/run/maps.hero"
     t163 = hero_map_eq(t153, t162);
@@ -1481,15 +1485,15 @@ bb18:
     t291 = h54_own54;
 #line 58 "tests/golden/run/maps.hero"
     h54_own54 = t164;
-#line 1485 "maps.c"
+#line 1489 "maps.c"
     hero_map_decref(t291);
 #line 58 "tests/golden/run/maps.hero"
     t292 = h20_e;
-#line 1489 "maps.c"
+#line 1493 "maps.c"
     hero_map_incref(t164);
 #line 58 "tests/golden/run/maps.hero"
     h20_e = t164;
-#line 1493 "maps.c"
+#line 1497 "maps.c"
     hero_map_decref(t292);
 #line 59 "tests/golden/run/maps.hero"
     t165 = h20_e;
@@ -1521,15 +1525,15 @@ bb18:
     t293 = h55_own55;
 #line 59 "tests/golden/run/maps.hero"
     h55_own55 = t169;
-#line 1525 "maps.c"
+#line 1529 "maps.c"
     h_maps_0opt0_release(&t293);
 #line 59 "tests/golden/run/maps.hero"
     t294 = h21_f9;
-#line 1529 "maps.c"
+#line 1533 "maps.c"
     h_maps_0opt0_retain(&t169);
 #line 59 "tests/golden/run/maps.hero"
     h21_f9 = t169;
-#line 1533 "maps.c"
+#line 1537 "maps.c"
     h_maps_0opt0_release(&t294);
 #line 59 "tests/golden/run/maps.hero"
     t170 = h21_f9;
@@ -1553,7 +1557,7 @@ bb18:
     t295 = h56_own56;
 #line 60 "tests/golden/run/maps.hero"
     h56_own56 = t175;
-#line 1557 "maps.c"
+#line 1561 "maps.c"
     hero_map_decref(t295);
 #line 60 "tests/golden/run/maps.hero"
     t176 = hero_map_eq(t174, t175);
@@ -1567,15 +1571,15 @@ bb18:
     t296 = h57_own57;
 #line 63 "tests/golden/run/maps.hero"
     h57_own57 = t177;
-#line 1571 "maps.c"
+#line 1575 "maps.c"
     hero_map_decref(t296);
 #line 63 "tests/golden/run/maps.hero"
     t297 = h22_w;
-#line 1575 "maps.c"
+#line 1579 "maps.c"
     hero_map_incref(t177);
 #line 63 "tests/golden/run/maps.hero"
     h22_w = t177;
-#line 1579 "maps.c"
+#line 1583 "maps.c"
     hero_map_decref(t297);
 #line 64 "tests/golden/run/maps.hero"
     t178 = HERO_STR_LIT(hero_str_11);
@@ -1625,15 +1629,15 @@ bb18:
     t298 = h58_own58;
 #line 67 "tests/golden/run/maps.hero"
     h58_own58 = t188;
-#line 1629 "maps.c"
+#line 1633 "maps.c"
     h_maps_0opt0_release(&t298);
 #line 67 "tests/golden/run/maps.hero"
     t299 = h23_f10;
-#line 1633 "maps.c"
+#line 1637 "maps.c"
     h_maps_0opt0_retain(&t188);
 #line 67 "tests/golden/run/maps.hero"
     h23_f10 = t188;
-#line 1637 "maps.c"
+#line 1641 "maps.c"
     h_maps_0opt0_release(&t299);
 #line 67 "tests/golden/run/maps.hero"
     t189 = h23_f10;
@@ -1693,15 +1697,15 @@ bb21:
     t300 = h59_own59;
 #line 67 "tests/golden/run/maps.hero"
     h59_own59 = t199;
-#line 1697 "maps.c"
+#line 1701 "maps.c"
     h_maps_0opt0_release(&t300);
 #line 67 "tests/golden/run/maps.hero"
     t301 = h25_f11;
-#line 1701 "maps.c"
+#line 1705 "maps.c"
     h_maps_0opt0_retain(&t199);
 #line 67 "tests/golden/run/maps.hero"
     h25_f11 = t199;
-#line 1705 "maps.c"
+#line 1709 "maps.c"
     h_maps_0opt0_release(&t301);
 #line 67 "tests/golden/run/maps.hero"
     t200 = h25_f11;
@@ -1749,15 +1753,15 @@ bb24:
     t302 = h60_own60;
 #line 70 "tests/golden/run/maps.hero"
     h60_own60 = t208;
-#line 1753 "maps.c"
+#line 1757 "maps.c"
     hero_map_decref(t302);
 #line 70 "tests/golden/run/maps.hero"
     t303 = h27_big;
-#line 1757 "maps.c"
+#line 1761 "maps.c"
     hero_map_incref(t208);
 #line 70 "tests/golden/run/maps.hero"
     h27_big = t208;
-#line 1761 "maps.c"
+#line 1765 "maps.c"
     hero_map_decref(t303);
 #line 71 "tests/golden/run/maps.hero"
     t209 = INT64_C(0);
@@ -1787,7 +1791,7 @@ bb26:
     t304 = h61_own61;
 #line 73 "tests/golden/run/maps.hero"
     h61_own61 = t215;
-#line 1791 "maps.c"
+#line 1795 "maps.c"
     hero_str_decref(t304);
 #line 73 "tests/golden/run/maps.hero"
     t216 = hero_str_concat(t213, t215);
@@ -1795,7 +1799,7 @@ bb26:
     t305 = h62_own62;
 #line 73 "tests/golden/run/maps.hero"
     h62_own62 = t216;
-#line 1799 "maps.c"
+#line 1803 "maps.c"
     hero_str_decref(t305);
 #line 73 "tests/golden/run/maps.hero"
     t217 = h28_i;
@@ -1825,15 +1829,15 @@ bb27:
     t306 = h63_own63;
 #line 76 "tests/golden/run/maps.hero"
     h63_own63 = t223;
-#line 1829 "maps.c"
+#line 1833 "maps.c"
     hero_array_decref(t306);
 #line 76 "tests/golden/run/maps.hero"
     t307 = h30_xs0;
-#line 1833 "maps.c"
+#line 1837 "maps.c"
     hero_array_incref(t223);
 #line 76 "tests/golden/run/maps.hero"
     h30_xs0 = t223;
-#line 1837 "maps.c"
+#line 1841 "maps.c"
     hero_array_decref(t307);
 #line 76 "tests/golden/run/maps.hero"
     t224 = INT64_C(0);
@@ -1863,11 +1867,11 @@ bb29:
     t231 = *(HeroStr const *)hero_array_at(t229, t230);
 #line 76 "tests/golden/run/maps.hero"
     t308 = h32_k;
-#line 1867 "maps.c"
+#line 1871 "maps.c"
     hero_str_incref(t231);
 #line 76 "tests/golden/run/maps.hero"
     h32_k = t231;
-#line 1871 "maps.c"
+#line 1875 "maps.c"
     hero_str_decref(t308);
 #line 77 "tests/golden/run/maps.hero"
     t232 = h29_total;
@@ -1897,15 +1901,15 @@ bb29:
     t309 = h64_own64;
 #line 77 "tests/golden/run/maps.hero"
     h64_own64 = t235;
-#line 1901 "maps.c"
+#line 1905 "maps.c"
     h_maps_0opt0_release(&t309);
 #line 77 "tests/golden/run/maps.hero"
     t310 = h33_f12;
-#line 1905 "maps.c"
+#line 1909 "maps.c"
     h_maps_0opt0_retain(&t235);
 #line 77 "tests/golden/run/maps.hero"
     h33_f12 = t235;
-#line 1909 "maps.c"
+#line 1913 "maps.c"
     h_maps_0opt0_release(&t310);
 #line 77 "tests/golden/run/maps.hero"
     t236 = h33_f12;
@@ -1943,7 +1947,7 @@ bb31:
     t311 = h65_own65;
 #line 78 "tests/golden/run/maps.hero"
     h65_own65 = t251;
-#line 1947 "maps.c"
+#line 1951 "maps.c"
     hero_array_decref(t311);
 #line 78 "tests/golden/run/maps.hero"
     t252 = hero_array_len(t251);
@@ -1959,227 +1963,227 @@ bb31:
     hero_print_end();
 #line 78 "tests/golden/run/maps.hero"
     t312 = h0_m;
-#line 1963 "maps.c"
+#line 1967 "maps.c"
     hero_map_decref(t312);
 #line 78 "tests/golden/run/maps.hero"
     t313 = h1_f0;
-#line 1967 "maps.c"
+#line 1971 "maps.c"
     h_maps_0opt0_release(&t313);
 #line 78 "tests/golden/run/maps.hero"
     t314 = h2_f1;
-#line 1971 "maps.c"
+#line 1975 "maps.c"
     h_maps_0opt0_release(&t314);
 #line 78 "tests/golden/run/maps.hero"
     t315 = h3_f2;
-#line 1975 "maps.c"
+#line 1979 "maps.c"
     h_maps_0opt0_release(&t315);
 #line 78 "tests/golden/run/maps.hero"
     t316 = h5_f3;
-#line 1979 "maps.c"
+#line 1983 "maps.c"
     h_maps_0opt0_release(&t316);
 #line 78 "tests/golden/run/maps.hero"
     t317 = h7_f4;
-#line 1983 "maps.c"
+#line 1987 "maps.c"
     h_maps_0opt0_release(&t317);
 #line 78 "tests/golden/run/maps.hero"
     t318 = h8_d;
-#line 1987 "maps.c"
+#line 1991 "maps.c"
     hero_map_decref(t318);
 #line 78 "tests/golden/run/maps.hero"
     t319 = h9_f5;
-#line 1991 "maps.c"
+#line 1995 "maps.c"
     h_maps_0opt0_release(&t319);
 #line 78 "tests/golden/run/maps.hero"
     t320 = h11_ns;
-#line 1995 "maps.c"
+#line 1999 "maps.c"
     hero_map_decref(t320);
 #line 78 "tests/golden/run/maps.hero"
     t321 = h12_f6;
-#line 1999 "maps.c"
+#line 2003 "maps.c"
     h_maps_0opt1_release(&t321);
 #line 78 "tests/golden/run/maps.hero"
     t322 = h13_r3;
-#line 2003 "maps.c"
+#line 2007 "maps.c"
     hero_str_decref(t322);
 #line 78 "tests/golden/run/maps.hero"
     t323 = h14_f7;
-#line 2007 "maps.c"
+#line 2011 "maps.c"
     h_maps_0opt1_release(&t323);
 #line 78 "tests/golden/run/maps.hero"
     t324 = h15_r4;
-#line 2011 "maps.c"
+#line 2015 "maps.c"
     hero_str_decref(t324);
 #line 78 "tests/golden/run/maps.hero"
     t325 = h16_ps;
-#line 2015 "maps.c"
+#line 2019 "maps.c"
     hero_map_decref(t325);
 #line 78 "tests/golden/run/maps.hero"
     t326 = h17_got;
-#line 2019 "maps.c"
+#line 2023 "maps.c"
     h_maps_0opt2_release(&t326);
 #line 78 "tests/golden/run/maps.hero"
     t327 = h18_f8;
-#line 2023 "maps.c"
+#line 2027 "maps.c"
     h_maps_0opt2_release(&t327);
 #line 78 "tests/golden/run/maps.hero"
     t328 = h20_e;
-#line 2027 "maps.c"
+#line 2031 "maps.c"
     hero_map_decref(t328);
 #line 78 "tests/golden/run/maps.hero"
     t329 = h21_f9;
-#line 2031 "maps.c"
+#line 2035 "maps.c"
     h_maps_0opt0_release(&t329);
 #line 78 "tests/golden/run/maps.hero"
     t330 = h22_w;
-#line 2035 "maps.c"
+#line 2039 "maps.c"
     hero_map_decref(t330);
 #line 78 "tests/golden/run/maps.hero"
     t331 = h23_f10;
-#line 2039 "maps.c"
+#line 2043 "maps.c"
     h_maps_0opt0_release(&t331);
 #line 78 "tests/golden/run/maps.hero"
     t332 = h25_f11;
-#line 2043 "maps.c"
+#line 2047 "maps.c"
     h_maps_0opt0_release(&t332);
 #line 78 "tests/golden/run/maps.hero"
     t333 = h27_big;
-#line 2047 "maps.c"
+#line 2051 "maps.c"
     hero_map_decref(t333);
 #line 78 "tests/golden/run/maps.hero"
     t334 = h30_xs0;
-#line 2051 "maps.c"
+#line 2055 "maps.c"
     hero_array_decref(t334);
 #line 78 "tests/golden/run/maps.hero"
     t335 = h32_k;
-#line 2055 "maps.c"
+#line 2059 "maps.c"
     hero_str_decref(t335);
 #line 78 "tests/golden/run/maps.hero"
     t336 = h33_f12;
-#line 2059 "maps.c"
+#line 2063 "maps.c"
     h_maps_0opt0_release(&t336);
 #line 78 "tests/golden/run/maps.hero"
     t337 = h35_own35;
-#line 2063 "maps.c"
+#line 2067 "maps.c"
     hero_map_decref(t337);
 #line 78 "tests/golden/run/maps.hero"
     t338 = h36_own36;
-#line 2067 "maps.c"
+#line 2071 "maps.c"
     h_maps_0opt0_release(&t338);
 #line 78 "tests/golden/run/maps.hero"
     t339 = h37_own37;
-#line 2071 "maps.c"
+#line 2075 "maps.c"
     h_maps_0opt0_release(&t339);
 #line 78 "tests/golden/run/maps.hero"
     t340 = h38_own38;
-#line 2075 "maps.c"
+#line 2079 "maps.c"
     h_maps_0opt0_release(&t340);
 #line 78 "tests/golden/run/maps.hero"
     t341 = h39_own39;
-#line 2079 "maps.c"
+#line 2083 "maps.c"
     h_maps_0opt0_release(&t341);
 #line 78 "tests/golden/run/maps.hero"
     t342 = h40_own40;
-#line 2083 "maps.c"
+#line 2087 "maps.c"
     h_maps_0opt0_release(&t342);
 #line 78 "tests/golden/run/maps.hero"
     t343 = h41_own41;
-#line 2087 "maps.c"
+#line 2091 "maps.c"
     hero_map_decref(t343);
 #line 78 "tests/golden/run/maps.hero"
     t344 = h42_own42;
-#line 2091 "maps.c"
+#line 2095 "maps.c"
     hero_map_decref(t344);
 #line 78 "tests/golden/run/maps.hero"
     t345 = h43_own43;
-#line 2095 "maps.c"
+#line 2099 "maps.c"
     hero_map_decref(t345);
 #line 78 "tests/golden/run/maps.hero"
     t346 = h44_own44;
-#line 2099 "maps.c"
+#line 2103 "maps.c"
     hero_map_decref(t346);
 #line 78 "tests/golden/run/maps.hero"
     t347 = h45_own45;
-#line 2103 "maps.c"
+#line 2107 "maps.c"
     h_maps_0opt0_release(&t347);
 #line 78 "tests/golden/run/maps.hero"
     t348 = h46_own46;
-#line 2107 "maps.c"
+#line 2111 "maps.c"
     hero_str_decref(t348);
 #line 78 "tests/golden/run/maps.hero"
     t349 = h47_own47;
-#line 2111 "maps.c"
+#line 2115 "maps.c"
     hero_str_decref(t349);
 #line 78 "tests/golden/run/maps.hero"
     t350 = h48_own48;
-#line 2115 "maps.c"
+#line 2119 "maps.c"
     hero_map_decref(t350);
 #line 78 "tests/golden/run/maps.hero"
     t351 = h49_own49;
-#line 2119 "maps.c"
+#line 2123 "maps.c"
     h_maps_0opt1_release(&t351);
 #line 78 "tests/golden/run/maps.hero"
     t352 = h50_own50;
-#line 2123 "maps.c"
+#line 2127 "maps.c"
     h_maps_0opt1_release(&t352);
 #line 78 "tests/golden/run/maps.hero"
     t353 = h51_own51;
-#line 2127 "maps.c"
+#line 2131 "maps.c"
     hero_map_decref(t353);
 #line 78 "tests/golden/run/maps.hero"
     t354 = h52_own52;
-#line 2131 "maps.c"
+#line 2135 "maps.c"
     h_maps_0opt2_release(&t354);
 #line 78 "tests/golden/run/maps.hero"
     t355 = h53_own53;
-#line 2135 "maps.c"
+#line 2139 "maps.c"
     hero_map_decref(t355);
 #line 78 "tests/golden/run/maps.hero"
     t356 = h54_own54;
-#line 2139 "maps.c"
+#line 2143 "maps.c"
     hero_map_decref(t356);
 #line 78 "tests/golden/run/maps.hero"
     t357 = h55_own55;
-#line 2143 "maps.c"
+#line 2147 "maps.c"
     h_maps_0opt0_release(&t357);
 #line 78 "tests/golden/run/maps.hero"
     t358 = h56_own56;
-#line 2147 "maps.c"
+#line 2151 "maps.c"
     hero_map_decref(t358);
 #line 78 "tests/golden/run/maps.hero"
     t359 = h57_own57;
-#line 2151 "maps.c"
+#line 2155 "maps.c"
     hero_map_decref(t359);
 #line 78 "tests/golden/run/maps.hero"
     t360 = h58_own58;
-#line 2155 "maps.c"
+#line 2159 "maps.c"
     h_maps_0opt0_release(&t360);
 #line 78 "tests/golden/run/maps.hero"
     t361 = h59_own59;
-#line 2159 "maps.c"
+#line 2163 "maps.c"
     h_maps_0opt0_release(&t361);
 #line 78 "tests/golden/run/maps.hero"
     t362 = h60_own60;
-#line 2163 "maps.c"
+#line 2167 "maps.c"
     hero_map_decref(t362);
 #line 78 "tests/golden/run/maps.hero"
     t363 = h61_own61;
-#line 2167 "maps.c"
+#line 2171 "maps.c"
     hero_str_decref(t363);
 #line 78 "tests/golden/run/maps.hero"
     t364 = h62_own62;
-#line 2171 "maps.c"
+#line 2175 "maps.c"
     hero_str_decref(t364);
 #line 78 "tests/golden/run/maps.hero"
     t365 = h63_own63;
-#line 2175 "maps.c"
+#line 2179 "maps.c"
     hero_array_decref(t365);
 #line 78 "tests/golden/run/maps.hero"
     t366 = h64_own64;
-#line 2179 "maps.c"
+#line 2183 "maps.c"
     h_maps_0opt0_release(&t366);
 #line 78 "tests/golden/run/maps.hero"
     t367 = h65_own65;
-#line 2183 "maps.c"
+#line 2187 "maps.c"
     hero_array_decref(t367);
     return;
 bb32:
@@ -2209,7 +2213,7 @@ bb34:
     h29_total = t244;
 #line 77 "tests/golden/run/maps.hero"
     goto bb30;
-#line 2213 "maps.c"
+#line 2217 "maps.c"
 }
 bool h_maps_Point_eq(const h_maps_Point *a, const h_maps_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

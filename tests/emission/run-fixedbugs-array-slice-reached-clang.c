@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "fixedbugsarrayslicereachedclang.c"
+#line 53 "fixedbugsarrayslicereachedclang.c"
 
 HERO_STR_STATIC(hero_str_0, "abcde");
 
@@ -77,7 +81,7 @@ void h_fixedbugsarrayslicereachedclang_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
 void h_fixedbugsarrayslicereachedclang_main(void) {
-#line 81 "fixedbugsarrayslicereachedclang.c"
+#line 85 "fixedbugsarrayslicereachedclang.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_ys = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -139,15 +143,15 @@ bb0:
     t21 = h2_own2;
 #line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h2_own2 = t4;
-#line 143 "fixedbugsarrayslicereachedclang.c"
+#line 147 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t21);
 #line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t22 = h0_xs;
-#line 147 "fixedbugsarrayslicereachedclang.c"
+#line 151 "fixedbugsarrayslicereachedclang.c"
     hero_array_incref(t4);
 #line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h0_xs = t4;
-#line 151 "fixedbugsarrayslicereachedclang.c"
+#line 155 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t22);
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t5 = h0_xs;
@@ -161,15 +165,15 @@ bb0:
     t23 = h3_own3;
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h3_own3 = t8;
-#line 165 "fixedbugsarrayslicereachedclang.c"
+#line 169 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t23);
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t24 = h1_ys;
-#line 169 "fixedbugsarrayslicereachedclang.c"
+#line 173 "fixedbugsarrayslicereachedclang.c"
     hero_array_incref(t8);
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h1_ys = t8;
-#line 173 "fixedbugsarrayslicereachedclang.c"
+#line 177 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t24);
 #line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t9 = h1_ys;
@@ -209,7 +213,7 @@ bb0:
     t25 = h4_own4;
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h4_own4 = t20;
-#line 213 "fixedbugsarrayslicereachedclang.c"
+#line 217 "fixedbugsarrayslicereachedclang.c"
     hero_str_decref(t25);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     hero_print_str(t20);
@@ -217,23 +221,23 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t26 = h0_xs;
-#line 221 "fixedbugsarrayslicereachedclang.c"
+#line 225 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t26);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t27 = h1_ys;
-#line 225 "fixedbugsarrayslicereachedclang.c"
+#line 229 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t27);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t28 = h2_own2;
-#line 229 "fixedbugsarrayslicereachedclang.c"
+#line 233 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t28);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t29 = h3_own3;
-#line 233 "fixedbugsarrayslicereachedclang.c"
+#line 237 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t29);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t30 = h4_own4;
-#line 237 "fixedbugsarrayslicereachedclang.c"
+#line 241 "fixedbugsarrayslicereachedclang.c"
     hero_str_decref(t30);
     return;
 }

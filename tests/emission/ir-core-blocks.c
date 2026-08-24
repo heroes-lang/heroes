@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "coreblocks.c"
+#line 53 "coreblocks.c"
 
 HERO_STR_STATIC(hero_str_0, "zero");
 HERO_STR_STATIC(hero_str_1, "one");
@@ -80,7 +84,7 @@ HeroStr h_coreblocks_named(int64_t h0_n);
 
 #line 5 "tests/golden/ir/core-blocks.hero"
 int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor) {
-#line 84 "coreblocks.c"
+#line 88 "coreblocks.c"
     int64_t h2_i;
     int64_t h3_v;
     int64_t t1;
@@ -202,12 +206,12 @@ bb8:
 bb9:
 #line 13 "tests/golden/ir/core-blocks.hero"
     goto bb7;
-#line 206 "coreblocks.c"
+#line 210 "coreblocks.c"
 }
 
 #line 17 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
-#line 211 "coreblocks.c"
+#line 215 "coreblocks.c"
     int64_t h1_s0;
     HeroStr h2_r0 = {0};
     int64_t t1;
@@ -243,11 +247,11 @@ bb0:
 bb1:
 #line 18 "tests/golden/ir/core-blocks.hero"
     t11 = h2_r0;
-#line 247 "coreblocks.c"
+#line 251 "coreblocks.c"
     hero_str_incref(t11);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t15 = h2_r0;
-#line 251 "coreblocks.c"
+#line 255 "coreblocks.c"
     hero_str_decref(t15);
     return t11;
 bb2:
@@ -255,11 +259,11 @@ bb2:
     t8 = HERO_STR_LIT(hero_str_0);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
-#line 259 "coreblocks.c"
+#line 263 "coreblocks.c"
     hero_str_incref(t8);
 #line 18 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t8;
-#line 263 "coreblocks.c"
+#line 267 "coreblocks.c"
     hero_str_decref(t12);
     goto bb1;
 bb3:
@@ -277,11 +281,11 @@ bb4:
     t9 = HERO_STR_LIT(hero_str_1);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
-#line 281 "coreblocks.c"
+#line 285 "coreblocks.c"
     hero_str_incref(t9);
 #line 18 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t9;
-#line 285 "coreblocks.c"
+#line 289 "coreblocks.c"
     hero_str_decref(t13);
     goto bb1;
 bb5:
@@ -291,11 +295,11 @@ bb6:
     t10 = HERO_STR_LIT(hero_str_2);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
-#line 295 "coreblocks.c"
+#line 299 "coreblocks.c"
     hero_str_incref(t10);
 #line 18 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t10;
-#line 299 "coreblocks.c"
+#line 303 "coreblocks.c"
     hero_str_decref(t14);
     goto bb1;
 }

@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "strings.c"
+#line 53 "strings.c"
 
 HERO_STR_STATIC(hero_str_0, "hello");
 HERO_STR_STATIC(hero_str_1, " ");
@@ -81,7 +85,7 @@ void h_strings_main(void);
 
 #line 5 "tests/golden/run/strings.hero"
 void h_strings_main(void) {
-#line 85 "strings.c"
+#line 89 "strings.c"
     HeroStr h0_greeting = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -132,11 +136,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_0);
 #line 6 "tests/golden/run/strings.hero"
     t27 = h0_greeting;
-#line 136 "strings.c"
+#line 140 "strings.c"
     hero_str_incref(t1);
 #line 6 "tests/golden/run/strings.hero"
     h0_greeting = t1;
-#line 140 "strings.c"
+#line 144 "strings.c"
     hero_str_decref(t27);
 #line 7 "tests/golden/run/strings.hero"
     t2 = h0_greeting;
@@ -154,7 +158,7 @@ bb0:
     t28 = h1_own1;
 #line 8 "tests/golden/run/strings.hero"
     h1_own1 = t5;
-#line 158 "strings.c"
+#line 162 "strings.c"
     hero_str_decref(t28);
 #line 8 "tests/golden/run/strings.hero"
     t6 = HERO_STR_LIT(hero_str_2);
@@ -164,7 +168,7 @@ bb0:
     t29 = h2_own2;
 #line 8 "tests/golden/run/strings.hero"
     h2_own2 = t7;
-#line 168 "strings.c"
+#line 172 "strings.c"
     hero_str_decref(t29);
 #line 8 "tests/golden/run/strings.hero"
     hero_print_str(t7);
@@ -200,7 +204,7 @@ bb0:
     t30 = h3_own3;
 #line 11 "tests/golden/run/strings.hero"
     h3_own3 = t16;
-#line 204 "strings.c"
+#line 208 "strings.c"
     hero_str_decref(t30);
 #line 11 "tests/golden/run/strings.hero"
     hero_print_str(t16);
@@ -232,7 +236,7 @@ bb0:
     t31 = h4_own4;
 #line 13 "tests/golden/run/strings.hero"
     h4_own4 = t24;
-#line 236 "strings.c"
+#line 240 "strings.c"
     hero_str_decref(t31);
 #line 13 "tests/golden/run/strings.hero"
     t25 = true;
@@ -242,7 +246,7 @@ bb0:
     t32 = h5_own5;
 #line 13 "tests/golden/run/strings.hero"
     h5_own5 = t26;
-#line 246 "strings.c"
+#line 250 "strings.c"
     hero_str_decref(t32);
 #line 13 "tests/golden/run/strings.hero"
     hero_print_str(t24);
@@ -252,27 +256,27 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/run/strings.hero"
     t33 = h0_greeting;
-#line 256 "strings.c"
+#line 260 "strings.c"
     hero_str_decref(t33);
 #line 13 "tests/golden/run/strings.hero"
     t34 = h1_own1;
-#line 260 "strings.c"
+#line 264 "strings.c"
     hero_str_decref(t34);
 #line 13 "tests/golden/run/strings.hero"
     t35 = h2_own2;
-#line 264 "strings.c"
+#line 268 "strings.c"
     hero_str_decref(t35);
 #line 13 "tests/golden/run/strings.hero"
     t36 = h3_own3;
-#line 268 "strings.c"
+#line 272 "strings.c"
     hero_str_decref(t36);
 #line 13 "tests/golden/run/strings.hero"
     t37 = h4_own4;
-#line 272 "strings.c"
+#line 276 "strings.c"
     hero_str_decref(t37);
 #line 13 "tests/golden/run/strings.hero"
     t38 = h5_own5;
-#line 276 "strings.c"
+#line 280 "strings.c"
     hero_str_decref(t38);
     return;
 }

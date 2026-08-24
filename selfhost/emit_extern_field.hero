@@ -21,6 +21,7 @@ use check_state
 use widths
 use emit_mangle
 use emit_ctype
+use emit_assert_spelling
 use parse
 use resolve
 use checker
@@ -114,6 +115,30 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
     # refuses a wrong enum field is the SIGN conjunct — the "an enum
     # (3)" sentence was false, clang promotes the classify operand and
     # an enum answers 1 (panel 071, measured against SDL3).
+    # A `cstr` FIELD asks the same question a `cstr` RESULT does, and until
+    # 2026-08-24 it asked a stricter one: the fallback below wants the member's
+    # ADDRESS to be `const char **`, so a header whose member is a plain `char *`
+    # — `struct passwd`'s `pw_name`, `pw_dir`, `pw_shell` — was refused with
+    # `ffi_field_type`, a field the author had spelled correctly. Reproduced
+    # before the repair; panel 089's ffi-pragmatist compiled the repair.
+    #
+    # **Widening here is sound because `cstr` is read-only from the Heroes side.**
+    # `const` on the pointee restricts WRITES, and the language offers none
+    # through a `cstr`: a program can compare it to `nullptr`, hand it onward, or
+    # copy it in with `validated`. Where a write could reach C — a parameter the
+    # header declares `char *` — `ffi_writable_parameter` is the guard, and it is
+    # untouched by this.
+    #
+    # The spellings are `emit_assert_spelling.CSTR_SPELLINGS`, shared with
+    # `HERO_RET_CSTR` so the set cannot drift between the two positions.
+    is_cstr: bool @ false
+    match check_table.get(c.types, ty)
+        .cstr => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit => is_cstr @ is_cstr
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error => is_cstr @ is_cstr
+    if is_cstr
+        return ok("_Static_assert(_Generic(" + place + ", " + emit_assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + c_type + " " + member + "\");")
     is_int: bool @ false
     int_kind: widths.IntKind @ .i64
     match check_table.get(c.types, ty)
@@ -188,6 +213,49 @@ function c_spelling(c: check_state.Checked, names: emit_ctype.Names, ty: i64) ->
     return fail("none", "unreached")
 
 ## Tests
+
+# A `cstr` field asks the six spellings, not the address's identity — the
+# branch added 2026-08-24 (panel 089's rider 1). The assertion below is what
+# makes `struct passwd`'s `pw_name` bindable: a plain `char *` member, which
+# the fallback's `_Generic(&place, const char **: 1, ...)` refused.
+#
+# **This test fires if the branch is removed**, which is the point: without it
+# a `cstr` field falls through to the fallback and the emitted text is the
+# address form, so the equality below fails rather than the compile.
+test "a cstr field accepts every spelling C gives a string, not just const char *"
+    text = "extern \"m.h\"\n    record Probe\n        name: cstr\n\nfunction touch(p: Probe) -> i64\n    return 1\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = emit_ctype.new_names(s, parsed.decls)
+    fields: [ast.Field] @ []
+    match parsed.decls[0].kind
+        .record_decl rec => fields @ rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+    line = assertion(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[0])
+    got = line.must()
+    # all six, and the plain `char *` first — the one the old form refused
+    assert strings_has(text: got, needle: "char *:1")
+    assert strings_has(text: got, needle: "const char *:1")
+    assert strings_has(text: got, needle: "signed char *:1")
+    assert strings_has(text: got, needle: "unsigned char *:1")
+    # and NOT the address-identity form the fallback writes
+    assert !strings_has(text: got, needle: "const char * *:")
+    assert !strings_has(text: got, needle: "&((Probe *)0)->name")
+
+# A substring test, local because this module has no strings dependency and
+# one `use` for one predicate is a worse trade than six lines.
+function strings_has(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+    return false
 
 test "the four branches: pointer, char array, integer by width+sign, float by identity"
     text = "extern \"m.h\"\n    record Probe\n        p: ptr\n        name: u8[4]\n        count: i64\n        ratio: f32\n\nfunction touch(x: Probe)\n    _ = x\n\nfunction main()\n    print(1)\n"

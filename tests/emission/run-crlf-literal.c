@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "crlfliteral.c"
+#line 53 "crlfliteral.c"
 
 HERO_STR_STATIC(hero_str_0, "\015\n");
 HERO_STR_STATIC(hero_str_1, "GET ");
@@ -84,20 +88,20 @@ void h_crlfliteral_main(void);
 
 #line 8 "tests/golden/run/crlf-literal.hero"
 HeroStr h_crlfliteral_crlf(void) {
-#line 88 "crlfliteral.c"
+#line 92 "crlfliteral.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 9 "tests/golden/run/crlf-literal.hero"
     t1 = HERO_STR_LIT(hero_str_0);
-#line 94 "crlfliteral.c"
+#line 98 "crlfliteral.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 11 "tests/golden/run/crlf-literal.hero"
 HeroStr h_crlfliteral_request(HeroStr h0_host, HeroStr h1_path) {
-#line 101 "crlfliteral.c"
+#line 105 "crlfliteral.c"
     HeroStr h2_line = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -159,7 +163,7 @@ bb0:
     t17 = h3_own3;
 #line 12 "tests/golden/run/crlf-literal.hero"
     h3_own3 = t3;
-#line 163 "crlfliteral.c"
+#line 167 "crlfliteral.c"
     hero_str_decref(t17);
 #line 12 "tests/golden/run/crlf-literal.hero"
     t4 = HERO_STR_LIT(hero_str_2);
@@ -169,7 +173,7 @@ bb0:
     t18 = h4_own4;
 #line 12 "tests/golden/run/crlf-literal.hero"
     h4_own4 = t5;
-#line 173 "crlfliteral.c"
+#line 177 "crlfliteral.c"
     hero_str_decref(t18);
 #line 12 "tests/golden/run/crlf-literal.hero"
     t6 = h_crlfliteral_crlf();
@@ -177,7 +181,7 @@ bb0:
     t19 = h5_own5;
 #line 12 "tests/golden/run/crlf-literal.hero"
     h5_own5 = t6;
-#line 181 "crlfliteral.c"
+#line 185 "crlfliteral.c"
     hero_str_decref(t19);
 #line 12 "tests/golden/run/crlf-literal.hero"
     t7 = hero_str_concat(t5, t6);
@@ -185,15 +189,15 @@ bb0:
     t20 = h6_own6;
 #line 12 "tests/golden/run/crlf-literal.hero"
     h6_own6 = t7;
-#line 189 "crlfliteral.c"
+#line 193 "crlfliteral.c"
     hero_str_decref(t20);
 #line 12 "tests/golden/run/crlf-literal.hero"
     t21 = h2_line;
-#line 193 "crlfliteral.c"
+#line 197 "crlfliteral.c"
     hero_str_incref(t7);
 #line 12 "tests/golden/run/crlf-literal.hero"
     h2_line = t7;
-#line 197 "crlfliteral.c"
+#line 201 "crlfliteral.c"
     hero_str_decref(t21);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t8 = h2_line;
@@ -205,7 +209,7 @@ bb0:
     t22 = h7_own7;
 #line 13 "tests/golden/run/crlf-literal.hero"
     h7_own7 = t10;
-#line 209 "crlfliteral.c"
+#line 213 "crlfliteral.c"
     hero_str_decref(t22);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t11 = h0_host;
@@ -215,7 +219,7 @@ bb0:
     t23 = h8_own8;
 #line 13 "tests/golden/run/crlf-literal.hero"
     h8_own8 = t12;
-#line 219 "crlfliteral.c"
+#line 223 "crlfliteral.c"
     hero_str_decref(t23);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t13 = h_crlfliteral_crlf();
@@ -223,7 +227,7 @@ bb0:
     t24 = h9_own9;
 #line 13 "tests/golden/run/crlf-literal.hero"
     h9_own9 = t13;
-#line 227 "crlfliteral.c"
+#line 231 "crlfliteral.c"
     hero_str_decref(t24);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t14 = hero_str_concat(t12, t13);
@@ -231,7 +235,7 @@ bb0:
     t25 = h10_own10;
 #line 13 "tests/golden/run/crlf-literal.hero"
     h10_own10 = t14;
-#line 235 "crlfliteral.c"
+#line 239 "crlfliteral.c"
     hero_str_decref(t25);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t15 = h_crlfliteral_crlf();
@@ -239,7 +243,7 @@ bb0:
     t26 = h11_own11;
 #line 13 "tests/golden/run/crlf-literal.hero"
     h11_own11 = t15;
-#line 243 "crlfliteral.c"
+#line 247 "crlfliteral.c"
     hero_str_decref(t26);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t16 = hero_str_concat(t14, t15);
@@ -247,61 +251,61 @@ bb0:
     t27 = h12_own12;
 #line 13 "tests/golden/run/crlf-literal.hero"
     h12_own12 = t16;
-#line 251 "crlfliteral.c"
+#line 255 "crlfliteral.c"
     hero_str_decref(t27);
 #line 13 "tests/golden/run/crlf-literal.hero"
-#line 254 "crlfliteral.c"
+#line 258 "crlfliteral.c"
     hero_str_incref(t16);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t28 = h2_line;
-#line 258 "crlfliteral.c"
+#line 262 "crlfliteral.c"
     hero_str_decref(t28);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t29 = h3_own3;
-#line 262 "crlfliteral.c"
+#line 266 "crlfliteral.c"
     hero_str_decref(t29);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t30 = h4_own4;
-#line 266 "crlfliteral.c"
+#line 270 "crlfliteral.c"
     hero_str_decref(t30);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t31 = h5_own5;
-#line 270 "crlfliteral.c"
+#line 274 "crlfliteral.c"
     hero_str_decref(t31);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t32 = h6_own6;
-#line 274 "crlfliteral.c"
+#line 278 "crlfliteral.c"
     hero_str_decref(t32);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t33 = h7_own7;
-#line 278 "crlfliteral.c"
+#line 282 "crlfliteral.c"
     hero_str_decref(t33);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t34 = h8_own8;
-#line 282 "crlfliteral.c"
+#line 286 "crlfliteral.c"
     hero_str_decref(t34);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t35 = h9_own9;
-#line 286 "crlfliteral.c"
+#line 290 "crlfliteral.c"
     hero_str_decref(t35);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t36 = h10_own10;
-#line 290 "crlfliteral.c"
+#line 294 "crlfliteral.c"
     hero_str_decref(t36);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t37 = h11_own11;
-#line 294 "crlfliteral.c"
+#line 298 "crlfliteral.c"
     hero_str_decref(t37);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t38 = h12_own12;
-#line 298 "crlfliteral.c"
+#line 302 "crlfliteral.c"
     hero_str_decref(t38);
     return t16;
 }
 
 #line 15 "tests/golden/run/crlf-literal.hero"
 void h_crlfliteral_main(void) {
-#line 305 "crlfliteral.c"
+#line 309 "crlfliteral.c"
     HeroStr h0_e = {0};
     HeroStr h1_r = {0};
     HeroStr h2_own2 = {0};
@@ -361,15 +365,15 @@ bb0:
     t40 = h2_own2;
 #line 17 "tests/golden/run/crlf-literal.hero"
     h2_own2 = t1;
-#line 365 "crlfliteral.c"
+#line 369 "crlfliteral.c"
     hero_str_decref(t40);
 #line 17 "tests/golden/run/crlf-literal.hero"
     t41 = h0_e;
-#line 369 "crlfliteral.c"
+#line 373 "crlfliteral.c"
     hero_str_incref(t1);
 #line 17 "tests/golden/run/crlf-literal.hero"
     h0_e = t1;
-#line 373 "crlfliteral.c"
+#line 377 "crlfliteral.c"
     hero_str_decref(t41);
 #line 18 "tests/golden/run/crlf-literal.hero"
     t2 = h0_e;
@@ -415,15 +419,15 @@ bb0:
     t42 = h3_own3;
 #line 24 "tests/golden/run/crlf-literal.hero"
     h3_own3 = t13;
-#line 419 "crlfliteral.c"
+#line 423 "crlfliteral.c"
     hero_str_decref(t42);
 #line 24 "tests/golden/run/crlf-literal.hero"
     t43 = h1_r;
-#line 423 "crlfliteral.c"
+#line 427 "crlfliteral.c"
     hero_str_incref(t13);
 #line 24 "tests/golden/run/crlf-literal.hero"
     h1_r = t13;
-#line 427 "crlfliteral.c"
+#line 431 "crlfliteral.c"
     hero_str_decref(t43);
 #line 25 "tests/golden/run/crlf-literal.hero"
     t14 = h1_r;
@@ -499,19 +503,19 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/crlf-literal.hero"
     t44 = h0_e;
-#line 503 "crlfliteral.c"
+#line 507 "crlfliteral.c"
     hero_str_decref(t44);
 #line 29 "tests/golden/run/crlf-literal.hero"
     t45 = h1_r;
-#line 507 "crlfliteral.c"
+#line 511 "crlfliteral.c"
     hero_str_decref(t45);
 #line 29 "tests/golden/run/crlf-literal.hero"
     t46 = h2_own2;
-#line 511 "crlfliteral.c"
+#line 515 "crlfliteral.c"
     hero_str_decref(t46);
 #line 29 "tests/golden/run/crlf-literal.hero"
     t47 = h3_own3;
-#line 515 "crlfliteral.c"
+#line 519 "crlfliteral.c"
     hero_str_decref(t47);
     return;
 }

@@ -24,6 +24,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_PTR(malloc((int64_t)0)), "heroes-ffi-return malloc ptr");
 _Static_assert(HERO_RET_UNIT(free((void *)0)), "heroes-ffi-return free ()");
 _Static_assert(HERO_RET_I32(fseek((void *)0, (uint64_t)0, (int32_t)0)), "heroes-ffi-return fseek i32");
@@ -35,6 +36,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -53,10 +55,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 60 "ffiwordwidth.c"
+#line 64 "ffiwordwidth.c"
 
 HERO_STR_STATIC(hero_str_0, "unreachable");
 
@@ -88,7 +92,7 @@ void h_ffiwordwidth_main(void);
 
 #line 50 "tests/golden/fixedbugs/ffi-word-width.hero"
 void h_ffiwordwidth_main(void) {
-#line 92 "ffiwordwidth.c"
+#line 96 "ffiwordwidth.c"
     void * h0_p;
     int64_t t1;
     void * t2;
@@ -114,7 +118,7 @@ bb0:
     hero_print_end();
 #line 53 "tests/golden/fixedbugs/ffi-word-width.hero"
     return;
-#line 118 "ffiwordwidth.c"
+#line 122 "ffiwordwidth.c"
 }
 void h_ffiwordwidth_0opt0_retain(const h_ffiwordwidth_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

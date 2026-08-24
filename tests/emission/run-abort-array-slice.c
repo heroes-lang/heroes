@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "abortarrayslice.c"
+#line 53 "abortarrayslice.c"
 
 typedef struct h_abortarrayslice_0opt0 {
     int64_t tag;
@@ -75,7 +79,7 @@ void h_abortarrayslice_main(void);
 
 #line 5 "tests/golden/run/abort-array-slice.hero"
 void h_abortarrayslice_main(void) {
-#line 79 "abortarrayslice.c"
+#line 83 "abortarrayslice.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -128,15 +132,15 @@ bb0:
     t15 = h1_own1;
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h1_own1 = t4;
-#line 132 "abortarrayslice.c"
+#line 136 "abortarrayslice.c"
     hero_array_decref(t15);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t16 = h0_xs;
-#line 136 "abortarrayslice.c"
+#line 140 "abortarrayslice.c"
     hero_array_incref(t4);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h0_xs = t4;
-#line 140 "abortarrayslice.c"
+#line 144 "abortarrayslice.c"
     hero_array_decref(t16);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t5 = h0_xs;
@@ -150,7 +154,7 @@ bb0:
     t17 = h2_own2;
 #line 7 "tests/golden/run/abort-array-slice.hero"
     h2_own2 = t8;
-#line 154 "abortarrayslice.c"
+#line 158 "abortarrayslice.c"
     hero_array_decref(t17);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t9 = hero_array_len(t8);
@@ -170,7 +174,7 @@ bb0:
     t18 = h3_own3;
 #line 8 "tests/golden/run/abort-array-slice.hero"
     h3_own3 = t13;
-#line 174 "abortarrayslice.c"
+#line 178 "abortarrayslice.c"
     hero_array_decref(t18);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t14 = hero_array_len(t13);
@@ -180,19 +184,19 @@ bb0:
     hero_print_end();
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t19 = h0_xs;
-#line 184 "abortarrayslice.c"
+#line 188 "abortarrayslice.c"
     hero_array_decref(t19);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t20 = h1_own1;
-#line 188 "abortarrayslice.c"
+#line 192 "abortarrayslice.c"
     hero_array_decref(t20);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t21 = h2_own2;
-#line 192 "abortarrayslice.c"
+#line 196 "abortarrayslice.c"
     hero_array_decref(t21);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t22 = h3_own3;
-#line 196 "abortarrayslice.c"
+#line 200 "abortarrayslice.c"
     hero_array_decref(t22);
     return;
 }
