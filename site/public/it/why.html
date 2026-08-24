@@ -222,8 +222,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     E la liberazione della memoria non è affidata al caso: il compilatore
     inserisce il conteggio come istruzioni vere e costruisce un solo percorso di
     pulizia per funzione, così ogni uscita da uno scope rilascia quello che quello
-    scope teneva. Tutto il runtime che sta sotto conta 3.350 righe di C, misurate
-    il 2026-08-24.
+    scope teneva. Tutto il runtime che sta sotto conta 3.388 righe di C, misurate
+    il 2026-08-25.
   </p>
   <p>
     Sopra a tutto sta la promessa che il linguaggio tratta come un obiettivo e non
@@ -247,7 +247,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <li><b>Esattamente un modo di scrivere ogni cosa.</b> Un formatter canonico, una sola parola chiave per i cicli, nessuna conversione implicita di nessun tipo, nomi degli argomenti obbligatori dove i tipi potrebbero confondersi. Gli errori che i modelli fanno davvero diventano errori che il compilatore solleva davvero.</li>
     <li><b>Errori scritti per essere letti da una macchina.</b> Ogni diagnostica porta tutto quello che serve per sistemare il programma in un solo giro: il tipo aspettato, il punto della definizione, riparazioni concrete etichettate <code>certain</code> o <code>guess</code>. I buchi tipati (<code>???</code>) permettono di costruire un programma partendo dallo scheletro.</li>
     <li><b>Un programma non deve andare in segfault.</b> Dove due soluzioni ammissibili sono in disaccordo e una delle due si può far schiantare, vince l&rsquo;altra, qualunque cosa costi in eleganza o in token. La sezione qui sopra ha l&rsquo;argomento per esteso, e l&rsquo;unico buco che lascia aperto.</li>
-    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3530 token contro un tetto fisso di 4096: cinque pagine, ed è il prompt più che una documentazione.</li>
+    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3548 token contro un tetto fisso di 4096: cinque pagine, ed è il prompt più che una documentazione.</li>
   </ul>
 
   <h2>Le obiezioni ovvie <span class="nod">· quicksand, avoided ·</span></h2>
@@ -362,8 +362,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <dd>Perché la specifica <i>è</i> il prompt. Ogni funzionalità paga
     l&rsquo;affitto lì dentro, e un linguaggio la cui definizione completa sta in
     poche pagine è anche un linguaggio che una persona sola può implementare: i
-    due vincoli sono lo stesso vincolo travestito. Al momento misura 3530, e ne
-    restano 566 da spendere. Il numero è misurato, non stimato, e quella
+    due vincoli sono lo stesso vincolo travestito. Al momento misura 3548, e ne
+    restano 548 da spendere. Il numero è misurato, non stimato, e quella
     distinzione è costata due giorni al progetto: il budget veniva difeso a
     spanne, tenendo d&rsquo;occhio il numero di parole, finché qualcuno non ha
     contato davvero e ha trovato la specifica un terzo più grande di quanto si
