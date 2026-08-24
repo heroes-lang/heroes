@@ -10,6 +10,7 @@
 # type-checks everything else, the holes go to stdout, exit 0.
 
 use source
+use source_extent
 use diag
 use diag_render
 use parse
@@ -80,7 +81,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: cli_argv.
             # (panel 071): a file can have diagnostics and no
             # applicable repair, and "applied 1 fix" over an untouched
             # file is the surface lying about itself.
-            changed = repaired != source.user_text(s)
+            changed = repaired != source_extent.user_text(s)
             if changed
                 written = write_file(path: s.name, text: repaired)
                 if written.is_err()
@@ -166,7 +167,7 @@ function quote(text: str) -> str
 function apply(diagnostics: [diag.Diagnostic], s: source.Source) -> str
     edits: [diag.Fix] @ []
     elsewhere: [str] @ []
-    limit = source.root_end(s)
+    limit = source_extent.root_end(s)
     for d in diagnostics
         for fix in d.fixes
             if fix.certainty != .certain
@@ -200,7 +201,7 @@ function apply(diagnostics: [diag.Diagnostic], s: source.Source) -> str
         for one in ordered.slice(from: at, to: ordered.len())
             head @ head.push(one)
         ordered @ head
-    text: str @ source.user_text(s)
+    text: str @ source_extent.user_text(s)
     index: i64 @ ordered.len() - 1
     while index >= 0
         fix = ordered[index]

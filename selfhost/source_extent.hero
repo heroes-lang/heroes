@@ -1,0 +1,55 @@
+# The root's own extent — where the author's file ends once the library
+# (and any other file) is appended after it (design.md §3.1). Split from
+# source.hero 2026-08-24: the loader repair (docs/measurements/012) took
+# that module past its frozen ceiling, and this was the one section whose
+# users are all under theirs.
+#
+# The one rule: `text.len()` stops meaning "the end of the author's file"
+# the moment anything is appended. A diagnostic caret about the whole
+# file, `fmt`, an applied fix — everything that points at or hands back
+# THE FILE goes through here, or it acts on the whole concatenation.
+
+use source
+
+# The last offset INSIDE THE ROOT FILE — where a diagnostic about the file
+# as a whole puts its caret. `text.len()` is not that offset once anything
+# is appended: it lands in whichever file happens to be last, which is how
+# `no_entry_point` came out as a compiler bug at exit 2 for the commonest
+# mistake in the language (2026-08-12).
+function root_end(s: source.Source) -> i64
+    if s.files.len() > 1
+        return s.files[1].start - 1
+    return s.text.len()
+
+# Exactly what the author wrote in the file they named, with everything
+# appended to it removed. Anything that hands a program BACK — `fmt`,
+# applied fixes — must go through this, or it writes the whole compilation
+# into one of its files.
+function user_text(s: source.Source) -> str
+    return text_of(s, 0)
+
+# One file's own text, without the blank line that joins it to the next.
+function text_of(s: source.Source, index: i64) -> str
+    start = s.files[index].start
+    if index + 1 < s.files.len()
+        return s.text.slice(from: start, to: s.files[index + 1].start - 1)
+    return s.text.slice(from: start, to: s.text.len())
+
+## Tests
+
+test "the root's extent stops before the joiner, not at text.len()"
+    s = source.with_library(name: "main.hero", user: "constant A: i64\n    1\n", library: "function range()\n    return\n")
+    assert root_end(s) == s.files[1].start - 1
+    # What the author wrote comes back exactly, appendix removed.
+    assert user_text(s) == "constant A: i64\n    1\n"
+
+test "a file's own text comes back without the joiner"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "a.hero", text: "constant A: i64\n    1")
+        source.user_file(name: "b.hero", text: "constant B: i64\n    2\n")
+    ]
+    s = source.from_files(inputs)
+    # The LAST file is left exactly as written — nothing appended after it.
+    assert text_of(s, 1) == "constant B: i64\n    2\n"
+    # The closed first file keeps the newline its closer added, joiner removed.
+    assert text_of(s, 0) == "constant A: i64\n    1\n"

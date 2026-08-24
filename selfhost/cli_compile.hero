@@ -17,6 +17,7 @@
 use token
 use ast
 use source
+use source_extent
 use diag
 use diag_render
 use parse
@@ -207,7 +208,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         # rule would turn the user's own mistake into internal error
         # exit 2 — the message panel 020 measured sending an agent to
         # reinstall its toolchain.
-        end = source.root_end(s)
+        end = source_extent.root_end(s)
         at: i64 @ end - 1
         if at < 0
             at @ 0

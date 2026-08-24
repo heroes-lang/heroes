@@ -22,6 +22,7 @@
 use token
 use diag
 use source
+use source_extent
 use state
 use layout
 use scan
@@ -58,7 +59,7 @@ function lex(s: source.Source) -> LexOutput
     for entry in s.files
         _ = entry
         offset = s.files[index].start
-        one = lex_one(source.text_of(s, index))
+        one = lex_one(source_extent.text_of(s, index))
         for t in one.tokens
             # Each file's own eof is dropped; the compilation gets one,
             # below, at the root's end. The `continue` here belongs to
@@ -76,7 +77,7 @@ function lex(s: source.Source) -> LexOutput
             moved.fixes @ fixes
             diagnostics @ diagnostics.push(moved)
         index @ index + 1
-    at = source.root_end(s)
+    at = source_extent.root_end(s)
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))
     return LexOutput(tokens: tokens, diagnostics: diagnostics)
 
@@ -230,5 +231,5 @@ test "fixedbugs: a file's brackets and indent do not cross into the next"
     # The one eof sits at the ROOT's end, never in the library.
     last = out.tokens[out.tokens.len() - 1]
     assert last.kind == .eof
-    assert last.span.start == source.root_end(s)
+    assert last.span.start == source_extent.root_end(s)
     assert source.is_root(s, last.span.start)
