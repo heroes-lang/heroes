@@ -67,14 +67,14 @@
     type-checks perfectly in most languages and does the wrong thing. Here the
     names are mandatory precisely because the types cannot help:
   </p>
-  <pre class="diag"><code><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site: this one is `from`
+  <pre class="diag"><code><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`
   at tests/golden/check/swapped-arguments.hero:16:21
      |
   16 |     print(copy_text("a", "b"))  <span class="c">#~ needs_label needs_label</span>
      |                     ^^^
   fix (certain): write `from: `
 
-<span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position, it is `from`
+<span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position — it is `from`
   at tests/golden/check/swapped-arguments.hero:18:21
      |
   18 |     print(copy_text(to: "b", from: "a"))  <span class="c">#~ wrong_label wrong_label</span>
@@ -118,10 +118,10 @@ $ heroes run program.hero</code></pre>
     somewhere else. Each one is a compile error carrying its own solution,
     which makes it a single-turn repair rather than a conversation:
   </p>
-  <pre class="diag"><code>tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language, use `record`: `record Point`
-tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language, bind with `=`: `x = 5`
-tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language, use `constant`: `constant MAX: i64`
-tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language: an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
+  <pre class="diag"><code>tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
   <p>
     That is the one-line-per-diagnostic form; the fuller rendering above is what
     the command prints. Three of those
@@ -145,7 +145,8 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     summary_of(entries: [Entry])
       <span class="c"># The hole can be one argument of an otherwise finished line.</span>
     library.hero_args_at(index: i64)
-    library.hero_file_read(path: cstr, @status: i64)</code></pre>
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
   <p>
     That is what lets a program be written skeleton-first: sketch the shape, let
     the compiler tell you what each gap needs, fill them in. The hole is a
@@ -166,7 +167,7 @@ tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_
     only part that means anything.
   </p>
   <p>
-    Measured over the twelve gallery programs, and last re-run on 2026-08-19,
+    Measured over the twelve gallery programs, and last re-run on 2026-08-24,
     which returned this table unchanged. Every operator the tool generates is
     here, including the ones where the design does nothing and the one it fails
     at:

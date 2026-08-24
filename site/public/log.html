@@ -53,6 +53,52 @@
 
   <ol class="log">
     <li>
+      <span class="when">2026-08-19 · M-bootstrap-archive: the attic</span>
+      <b>The old compiler went into the attic, and half the project&rsquo;s instruments turned out to be living in it.</b>
+      Not the tests of the language: the instruments <i>about</i> it. The thing
+      that counts how big the specification is, the thing that injects one
+      plausible mistake at a time and counts what the compiler catches, the
+      question &ldquo;do the two compilers agree&rdquo;. So five successors were
+      built first, and each one had to prove itself against the thing it
+      replaced: the new counter agrees with the old one to the token, the
+      mutation report came back identical letter for letter, and the
+      two-compiler comparison was frozen into 142 files of generated C &mdash;
+      the last thing two independent implementations ever agreed on, written
+      down while both were still alive. The final check written that day, the
+      one that shouts when a document cites a file that is not there, promptly
+      found nine dead pointers that had been wrong long before the move. Nobody
+      had noticed. Nothing had looked.
+      <a class="more" href="selfhost.html">The third language dies</a>
+    </li>
+    <li>
+      <span class="when">2026-08-18 · M-harness-port: the net, in Heroes</span>
+      <b>Everything that checks the compiler was written in the language being retired, so the net was rewritten in the language itself.</b>
+      A program that uses the compiler the way a person does &mdash; type a
+      command, read what comes back, compare it to what was promised &mdash;
+      688 checks. Pointed at the new compiler testing itself, it went red on
+      two things nobody could have seen before. One was an error message with
+      nothing in it &mdash; no code, no line, no piece of the program &mdash;
+      printed in the one situation where the compiler is allowed to say the
+      mistake is yours. The other was an underline drawn too long, which the
+      old compiler&rsquo;s own golden file had been recording as correct since
+      the day it was written. No review found that one. What found it was a
+      second implementation disagreeing.
+    </li>
+    <li>
+      <span class="when">2026-08-18 · M-selfhost-fixpoint: the seed</span>
+      <b>The way in became one clang command, and taking the ladder away caught the compiler cheating.</b>
+      The repository now carries the compiler as one generated C file, so a
+      machine that has never heard of this language builds it with nothing but
+      a C compiler. Preparing to delete the bootstrap turned up two things. The
+      new compiler had been reading its own base library from a path pointing
+      into the very folder that was about to go &mdash; and when the file was
+      missing it did not complain: it carried on with an empty library and
+      blamed the author&rsquo;s program. And the check that the two compilers
+      agree had never looked at the thing it is about: it compared what they
+      <i>say</i>, never the files they <i>write</i>. Asked properly, over 127
+      programs, 26 agreed. Three faults later the answer is 127 out of 127.
+    </li>
+    <li>
       <span class="when">2026-08-17 · M-selfhost-port: the fixpoint</span>
       <b>The compiler crosses into its own language, and the child corrects the parent.</b>
       53,013 lines of Rust became 34,812 lines of Heroes, tests included on

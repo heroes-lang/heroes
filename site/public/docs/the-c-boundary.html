@@ -120,8 +120,12 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <code>cstr</code> is a C string and <code>ptr</code> is an opaque pointer.
     Neither is a <code>str</code>, and no conversion happens behind your back:
     <code>s.cstr()</code> lends a Heroes string to C to read, and
-    <code>c.to_str()</code> copies one back. Test <code>c == nullptr</code>
-    first, because converting a null one stops the program.
+    <code>c.validated()</code> copies one back as a <code>str?</code> &mdash; a
+    value or an error, because text arriving from C is a claim, not a fact: the
+    pointer may be null, and the bytes may not be UTF-8. Handle it like any
+    other fallible value. The other direction is guarded too: a null
+    <code>cstr</code> handed to a C function stops the program with a panic
+    that says so, instead of letting C crash on it.
   </p>
   <p>
     So a value that came from C is marked as such everywhere it goes, and the

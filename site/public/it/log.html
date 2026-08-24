@@ -55,6 +55,58 @@
 
   <ol class="log">
     <li>
+      <span class="when">2026-08-19 · M-bootstrap-archive: in soffitta</span>
+      <b>Il vecchio compilatore è finito in soffitta, e si è scoperto che dentro ci abitava metà degli strumenti del progetto.</b>
+      Non i test del linguaggio: gli strumenti che parlano <i>del</i>
+      linguaggio. Quello che conta quanto è grande la specifica, quello che
+      inietta uno sbaglio plausibile alla volta e conta quanti il compilatore ne
+      prende, la domanda &ldquo;i due compilatori sono d&rsquo;accordo?&rdquo;.
+      Così prima sono stati costruiti cinque successori, e ognuno ha dovuto
+      dimostrare di valere quello che sostituiva: il contatore nuovo dà lo
+      stesso numero del vecchio, al token; il rapporto delle mutazioni è
+      tornato identico lettera per lettera; e il confronto fra i due
+      compilatori è stato congelato in 142 file di C generato &mdash;
+      l&rsquo;ultima cosa su cui due implementazioni indipendenti sono state
+      d&rsquo;accordo, messa per iscritto quando erano vive tutte e due.
+      L&rsquo;ultimo controllo scritto quel giorno, quello che urla quando un
+      documento cita un file che non esiste, ha trovato subito nove puntatori
+      morti, sbagliati da ben prima del trasloco. Nessuno se n&rsquo;era
+      accorto. Niente aveva guardato.
+      <a class="more" href="selfhost.html">Il terzo linguaggio è morto</a>
+    </li>
+    <li>
+      <span class="when">2026-08-18 · M-harness-port: la rete, in Heroes</span>
+      <b>Tutto quello che controlla il compilatore era scritto nel linguaggio che stava per andare in pensione, così la rete è stata riscritta nel linguaggio stesso.</b>
+      Un programma che usa il compilatore come lo userebbe una persona &mdash;
+      scrive un comando, legge quello che torna, lo confronta con quello che
+      era stato promesso &mdash; 688 controlli. Puntato sul compilatore nuovo
+      che prova se stesso, è andato in rosso su due cose che nessuno poteva
+      vedere prima. Una era un messaggio di errore vuoto &mdash; senza codice,
+      senza riga, senza il pezzo di programma sotto &mdash; stampato proprio
+      nell&rsquo;unico caso in cui il compilatore può dire &ldquo;lo sbaglio è
+      tuo&rdquo;. L&rsquo;altra era una sottolineatura troppo lunga, che il
+      file d&rsquo;oro del compilatore vecchio registrava come giusta dal
+      giorno in cui era stata scritta. Quella non l&rsquo;ha trovata nessuna
+      rilettura: l&rsquo;ha trovata una seconda implementazione che non era
+      d&rsquo;accordo.
+    </li>
+    <li>
+      <span class="when">2026-08-18 · M-selfhost-fixpoint: il seme</span>
+      <b>La porta d&rsquo;ingresso è diventata un solo comando clang, e togliere la scala ha colto il compilatore in fallo.</b>
+      Il repository adesso porta con sé il compilatore come un unico file C
+      generato, quindi una macchina che non ha mai sentito nominare questo
+      linguaggio lo costruisce con un compilatore C e basta. Preparando la
+      cancellazione del bootstrap sono saltate fuori due cose. Il compilatore
+      nuovo leggeva la sua libreria di base da un percorso che puntava dentro
+      la cartella che stava per sparire &mdash; e se il file mancava non
+      protestava: andava avanti con una libreria vuota e dava la colpa al
+      programma dell&rsquo;autore. E il controllo che i due compilatori siano
+      d&rsquo;accordo non aveva mai guardato la cosa di cui parla: confrontava
+      quello che <i>dicono</i>, mai i file che <i>scrivono</i>. Posta bene la
+      domanda, su 127 programmi, 26 erano d&rsquo;accordo. Tre difetti dopo, la
+      risposta è 127 su 127.
+    </li>
+    <li>
       <span class="when">2026-08-17 · M-selfhost-port: il punto fisso</span>
       <b>Il compilatore passa nel proprio linguaggio, e il figlio corregge il padre.</b>
       53.013 righe di Rust sono diventate 34.812 righe di Heroes, test compresi da

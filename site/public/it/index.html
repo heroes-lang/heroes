@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Heroes: un linguaggio di programmazione fatto per gli LLM</title>
-<meta name="description" content="Heroes è un piccolo linguaggio compilato progettato perché ogni errore plausibile di un LLM diventi un errore di compilazione. Si compila da solo. Binari nativi, nessun GC, nessuna libreria standard: tutto passa dalla FFI verso il C.">
+<meta name="description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C — e ogni errore plausibile di un LLM è un errore di compilazione.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/it/index.html">
 <link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/index.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Heroes: un linguaggio di programmazione fatto per gli LLM">
-<meta property="og:description" content="Heroes è un piccolo linguaggio compilato progettato perché ogni errore plausibile di un LLM diventi un errore di compilazione. Si compila da solo. Binari nativi, nessun GC, nessuna libreria standard: tutto passa dalla FFI verso il C.">
+<meta property="og:description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C — e ogni errore plausibile di un LLM è un errore di compilazione.">
 <meta property="og:url" content="https://heroes-lang.org/it/index.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Heroes: un linguaggio di programmazione fatto per gli LLM">
-<meta name="twitter:description" content="Heroes è un piccolo linguaggio compilato progettato perché ogni errore plausibile di un LLM diventi un errore di compilazione. Si compila da solo. Binari nativi, nessun GC, nessuna libreria standard: tutto passa dalla FFI verso il C.">
+<meta name="twitter:description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C — e ogni errore plausibile di un LLM è un errore di compilazione.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -52,10 +52,11 @@
       </svg>
       <p class="kicker">Un linguaggio di programmazione compilato</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
-      <p class="promise">Ogni errore plausibile di un LLM è un <em>errore di compilazione</em>.</p>
+      <p class="promise">Così piccolo da stare in un prompt, così vero da <em>compilare se stesso</em>.</p>
       <p class="tagline">Fatto per le macchine che oggi scrivono codice, e comunque
       chiaro per un occhio umano. Nessuna libreria standard, nessun garbage
-      collector, binari nativi, e si compila da solo.</p>
+      collector, binari nativi &mdash; e ogni errore plausibile di un LLM è un
+      errore di compilazione.</p>
       <div class="cta">
         <a class="primary" href="errors.html">Guarda un errore vero</a>
         <a class="ghost" href="docs/failure-is-a-value.html">Leggi un capitolo</a>
@@ -100,9 +101,9 @@
       <a href="errors.html">la tabella intera &rarr;</a></span>
     </li>
     <li>
-      <span class="n">3512</span>
+      <span class="n">3530</span>
       <span class="what">token di specifica</span>
-      <span class="how">Tutto il linguaggio sta in 229 righe: entra in un prompt e
+      <span class="how">Tutto il linguaggio sta in 231 righe: entra in un prompt e
       lascia posto al tuo programma. A contarli è il compilatore stesso, quindi
       non è un numero scritto a mano da qualcuno.
       <a href="why.html">perché è questa la scelta &rarr;</a></span>
@@ -167,7 +168,7 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    Quel file C non è un avvio scritto a mano: è quello che stampa il
+    Quel file C non è un bootstrap scritto a mano: è quello che stampa il
     compilatore quando compila se stesso. Quindi la cosa che hai appena
     costruito è il linguaggio che costruisce il linguaggio, senza nessun altro
     strumento nella stanza. <code>./heroes doctor</code> controlla il resto di
@@ -226,7 +227,7 @@ we can be heroes</code></pre>
     <li>
       <h3>Si compila da solo</h3>
       <p>
-        Il compilatore è scritto in Heroes: 153 moduli, 37.146 righe. Chiedi a
+        Il compilatore è scritto in Heroes: 155 moduli, 37.824 righe. Chiedi a
         tre sue generazioni di riscrivere lo stesso programma in C e i tre file
         coincidono byte per byte. Il linguaggio con cui era nato ha lasciato il
         repository.
@@ -273,7 +274,7 @@ we can be heroes</code></pre>
     alla volta dentro programmi funzionanti e conta quanti il compilatore
     ferma, poi ripassa lo stesso corpus contro se stesso con le regole della
     tesi disattivate. La distanza fra le due colonne è tutto il
-    risultato, errore per errore, misurato il 2026-08-18:
+    risultato, errore per errore, misurato il 2026-08-24:
   </p>
   <pre><code><span class="c">                          con le regole      senza</span>
 etichetta di argomento saltata      91%         0%
