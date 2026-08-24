@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <SDL3/SDL.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -34,6 +35,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -43,7 +47,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 47 "main.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 53 "main.c"
 
 HERO_STR_STATIC(hero_str_0, "sdl3 named its build: ");
 HERO_STR_STATIC(hero_str_1, "sdl3 knows a way to draw: ");
@@ -76,7 +82,7 @@ void h_main_main(void);
 
 #line 52 "examples/sdl/main.hero"
 void h_main_main(void) {
-#line 80 "main.c"
+#line 86 "main.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     const char * t2;
@@ -102,7 +108,7 @@ bb0:
     t11 = h0_own0;
 #line 56 "examples/sdl/main.hero"
     h0_own0 = t3;
-#line 106 "main.c"
+#line 112 "main.c"
     hero_str_decref(t11);
 #line 56 "examples/sdl/main.hero"
     t4 = hero_str_len(t3);
@@ -132,7 +138,7 @@ bb0:
     hero_print_end();
 #line 60 "examples/sdl/main.hero"
     t12 = h0_own0;
-#line 136 "main.c"
+#line 142 "main.c"
     hero_str_decref(t12);
     return;
 }

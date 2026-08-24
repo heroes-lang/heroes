@@ -138,6 +138,21 @@ bool hero_utf8_valid(const char *p, int64_t len);
 HeroStr hero_str_from_bytes(const char *p, int64_t len);
 HeroStr hero_str_repeat(HeroStr s, uint64_t n); /* n copies, one allocation */
 HeroStr hero_str_from_cstr(const char *p); /* strlen, then from_bytes */
+
+/* The same conversion with a status instead of a grave (panel 089). The Heroes
+ * side is `validated(c: cstr) -> str?` in the Tier-2 library, and these three
+ * codes are what it branches on — small integers rather than errno, for the
+ * reason `hero_os.h` gives about its own set: the `e.code` string a program sees
+ * must be the same on every platform.
+ *
+ * **The codes are written HERE and nowhere else.** M-header-constants moved
+ * `hero_os.h`'s set into its header for exactly this, and `library_source.hero`
+ * records the rule in its own words: the header is the only place they live, so
+ * renumbering cannot leave the Heroes side behind. */
+#define HERO_STR_OK 0
+#define HERO_STR_NULL 1
+#define HERO_STR_NOT_TEXT 2
+HeroStr hero_str_try_from_cstr(const char *p, int64_t *status);
 /* The same guard on the outbound side: a `cstr` handed to a C function, which is
    the path `hero_str_from_cstr` never sees (panel 053, CLAUDE.md §12). */
 const char *hero_cstr_nonnull(const char *p);

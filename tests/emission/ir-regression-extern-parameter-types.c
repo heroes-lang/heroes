@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <stdlib.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -33,6 +34,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 11 "tests/golden/ir/regression-extern-parameter-types.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_regressionexternparametertypes_sqrt(double a0) { (void)sqrt(a0); }
@@ -46,7 +50,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 50 "regressionexternparametertypes.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 56 "regressionexternparametertypes.c"
 
 typedef struct h_regressionexternparametertypes_0opt0 {
     int64_t tag;
@@ -77,7 +83,7 @@ int64_t h_regressionexternparametertypes_distance(int64_t h0_a, int64_t h1_b);
 
 #line 16 "tests/golden/ir/regression-extern-parameter-types.hero"
 double h_regressionexternparametertypes_hypotenuse(double h0_a, double h1_b) {
-#line 81 "regressionexternparametertypes.c"
+#line 87 "regressionexternparametertypes.c"
     double t1;
     double t2;
     double t3;
@@ -106,12 +112,12 @@ bb0:
     t8 = sqrt(t7);
 #line 17 "tests/golden/ir/regression-extern-parameter-types.hero"
     return t8;
-#line 110 "regressionexternparametertypes.c"
+#line 116 "regressionexternparametertypes.c"
 }
 
 #line 19 "tests/golden/ir/regression-extern-parameter-types.hero"
 int64_t h_regressionexternparametertypes_distance(int64_t h0_a, int64_t h1_b) {
-#line 115 "regressionexternparametertypes.c"
+#line 121 "regressionexternparametertypes.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -128,7 +134,7 @@ bb0:
     t4 = abs(t3);
 #line 20 "tests/golden/ir/regression-extern-parameter-types.hero"
     return t4;
-#line 132 "regressionexternparametertypes.c"
+#line 138 "regressionexternparametertypes.c"
 }
 void h_regressionexternparametertypes_0opt0_retain(const h_regressionexternparametertypes_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "adversarialcontinuesteps.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "adversarialcontinuesteps.c"
 
 typedef struct h_adversarialcontinuesteps_0opt0 {
     int64_t tag;
@@ -69,7 +75,7 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs);
 
 #line 7 "tests/golden/ir/adversarial-continue-steps.hero"
 int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) {
-#line 73 "adversarialcontinuesteps.c"
+#line 79 "adversarialcontinuesteps.c"
     int64_t h1_count;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -108,11 +114,11 @@ bb0:
     t2 = h0_xs;
 #line 9 "tests/golden/ir/adversarial-continue-steps.hero"
     t23 = h2_xs0;
-#line 112 "adversarialcontinuesteps.c"
+#line 118 "adversarialcontinuesteps.c"
     hero_array_incref(t2);
 #line 9 "tests/golden/ir/adversarial-continue-steps.hero"
     h2_xs0 = t2;
-#line 116 "adversarialcontinuesteps.c"
+#line 122 "adversarialcontinuesteps.c"
     hero_array_decref(t23);
 #line 9 "tests/golden/ir/adversarial-continue-steps.hero"
     t3 = INT64_C(0);
@@ -176,7 +182,7 @@ bb4:
     t22 = h1_count;
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     t24 = h2_xs0;
-#line 180 "adversarialcontinuesteps.c"
+#line 186 "adversarialcontinuesteps.c"
     hero_array_decref(t24);
     return t22;
 bb5:
@@ -198,7 +204,7 @@ bb6:
 bb7:
 #line 12 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb5;
-#line 202 "adversarialcontinuesteps.c"
+#line 208 "adversarialcontinuesteps.c"
 }
 void h_adversarialcontinuesteps_0opt0_retain(const h_adversarialcontinuesteps_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

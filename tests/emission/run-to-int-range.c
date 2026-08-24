@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "tointrange.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "tointrange.c"
 
 typedef struct h_tointrange_0opt0 {
     int64_t tag;
@@ -81,7 +87,7 @@ void h_tointrange_main(void);
 
 #line 19 "tests/golden/run/to-int-range.hero"
 void h_tointrange_main(void) {
-#line 85 "tointrange.c"
+#line 91 "tointrange.c"
     h_tointrange_0opt0 h0_f0 = {0};
     h_tointrange_0opt0 h1_f1 = {0};
     h_tointrange_0opt0 h2_f2 = {0};
@@ -192,15 +198,15 @@ bb0:
     t57 = h6_own6;
 #line 20 "tests/golden/run/to-int-range.hero"
     h6_own6 = t2;
-#line 196 "tointrange.c"
+#line 202 "tointrange.c"
     h_tointrange_0opt0_release(&t57);
 #line 20 "tests/golden/run/to-int-range.hero"
     t58 = h0_f0;
-#line 200 "tointrange.c"
+#line 206 "tointrange.c"
     h_tointrange_0opt0_retain(&t2);
 #line 20 "tests/golden/run/to-int-range.hero"
     h0_f0 = t2;
-#line 204 "tointrange.c"
+#line 210 "tointrange.c"
     h_tointrange_0opt0_release(&t58);
 #line 20 "tests/golden/run/to-int-range.hero"
     t3 = h0_f0;
@@ -240,15 +246,15 @@ bb1:
     t59 = h7_own7;
 #line 21 "tests/golden/run/to-int-range.hero"
     h7_own7 = t13;
-#line 244 "tointrange.c"
+#line 250 "tointrange.c"
     h_tointrange_0opt0_release(&t59);
 #line 21 "tests/golden/run/to-int-range.hero"
     t60 = h1_f1;
-#line 248 "tointrange.c"
+#line 254 "tointrange.c"
     h_tointrange_0opt0_retain(&t13);
 #line 21 "tests/golden/run/to-int-range.hero"
     h1_f1 = t13;
-#line 252 "tointrange.c"
+#line 258 "tointrange.c"
     h_tointrange_0opt0_release(&t60);
 #line 21 "tests/golden/run/to-int-range.hero"
     t14 = h1_f1;
@@ -266,7 +272,7 @@ bb2:
     t7 = h0_f0;
 #line 20 "tests/golden/run/to-int-range.hero"
     t8 = t7.as.err;
-#line 270 "tointrange.c"
+#line 276 "tointrange.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -294,15 +300,15 @@ bb3:
     t61 = h8_own8;
 #line 22 "tests/golden/run/to-int-range.hero"
     h8_own8 = t23;
-#line 298 "tointrange.c"
+#line 304 "tointrange.c"
     h_tointrange_0opt0_release(&t61);
 #line 22 "tests/golden/run/to-int-range.hero"
     t62 = h2_f2;
-#line 302 "tointrange.c"
+#line 308 "tointrange.c"
     h_tointrange_0opt0_retain(&t23);
 #line 22 "tests/golden/run/to-int-range.hero"
     h2_f2 = t23;
-#line 306 "tointrange.c"
+#line 312 "tointrange.c"
     h_tointrange_0opt0_release(&t62);
 #line 22 "tests/golden/run/to-int-range.hero"
     t24 = h2_f2;
@@ -320,7 +326,7 @@ bb4:
     t18 = h1_f1;
 #line 21 "tests/golden/run/to-int-range.hero"
     t19 = t18.as.err;
-#line 324 "tointrange.c"
+#line 330 "tointrange.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb5:
@@ -348,15 +354,15 @@ bb5:
     t63 = h9_own9;
 #line 23 "tests/golden/run/to-int-range.hero"
     h9_own9 = t33;
-#line 352 "tointrange.c"
+#line 358 "tointrange.c"
     h_tointrange_0opt0_release(&t63);
 #line 23 "tests/golden/run/to-int-range.hero"
     t64 = h3_f3;
-#line 356 "tointrange.c"
+#line 362 "tointrange.c"
     h_tointrange_0opt0_retain(&t33);
 #line 23 "tests/golden/run/to-int-range.hero"
     h3_f3 = t33;
-#line 360 "tointrange.c"
+#line 366 "tointrange.c"
     h_tointrange_0opt0_release(&t64);
 #line 23 "tests/golden/run/to-int-range.hero"
     t34 = h3_f3;
@@ -388,15 +394,15 @@ bb5:
     t65 = h10_own10;
 #line 24 "tests/golden/run/to-int-range.hero"
     h10_own10 = t40;
-#line 392 "tointrange.c"
+#line 398 "tointrange.c"
     h_tointrange_0opt0_release(&t65);
 #line 24 "tests/golden/run/to-int-range.hero"
     t66 = h4_f4;
-#line 396 "tointrange.c"
+#line 402 "tointrange.c"
     h_tointrange_0opt0_retain(&t40);
 #line 24 "tests/golden/run/to-int-range.hero"
     h4_f4 = t40;
-#line 400 "tointrange.c"
+#line 406 "tointrange.c"
     h_tointrange_0opt0_release(&t66);
 #line 24 "tests/golden/run/to-int-range.hero"
     t41 = h4_f4;
@@ -414,7 +420,7 @@ bb6:
     t28 = h2_f2;
 #line 22 "tests/golden/run/to-int-range.hero"
     t29 = t28.as.err;
-#line 418 "tointrange.c"
+#line 424 "tointrange.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb7:
@@ -446,15 +452,15 @@ bb7:
     t67 = h11_own11;
 #line 25 "tests/golden/run/to-int-range.hero"
     h11_own11 = t52;
-#line 450 "tointrange.c"
+#line 456 "tointrange.c"
     h_tointrange_0opt0_release(&t67);
 #line 25 "tests/golden/run/to-int-range.hero"
     t68 = h5_f5;
-#line 454 "tointrange.c"
+#line 460 "tointrange.c"
     h_tointrange_0opt0_retain(&t52);
 #line 25 "tests/golden/run/to-int-range.hero"
     h5_f5 = t52;
-#line 458 "tointrange.c"
+#line 464 "tointrange.c"
     h_tointrange_0opt0_release(&t68);
 #line 25 "tests/golden/run/to-int-range.hero"
     t53 = h5_f5;
@@ -470,51 +476,51 @@ bb7:
     hero_print_end();
 #line 25 "tests/golden/run/to-int-range.hero"
     t69 = h0_f0;
-#line 474 "tointrange.c"
+#line 480 "tointrange.c"
     h_tointrange_0opt0_release(&t69);
 #line 25 "tests/golden/run/to-int-range.hero"
     t70 = h1_f1;
-#line 478 "tointrange.c"
+#line 484 "tointrange.c"
     h_tointrange_0opt0_release(&t70);
 #line 25 "tests/golden/run/to-int-range.hero"
     t71 = h2_f2;
-#line 482 "tointrange.c"
+#line 488 "tointrange.c"
     h_tointrange_0opt0_release(&t71);
 #line 25 "tests/golden/run/to-int-range.hero"
     t72 = h3_f3;
-#line 486 "tointrange.c"
+#line 492 "tointrange.c"
     h_tointrange_0opt0_release(&t72);
 #line 25 "tests/golden/run/to-int-range.hero"
     t73 = h4_f4;
-#line 490 "tointrange.c"
+#line 496 "tointrange.c"
     h_tointrange_0opt0_release(&t73);
 #line 25 "tests/golden/run/to-int-range.hero"
     t74 = h5_f5;
-#line 494 "tointrange.c"
+#line 500 "tointrange.c"
     h_tointrange_0opt0_release(&t74);
 #line 25 "tests/golden/run/to-int-range.hero"
     t75 = h6_own6;
-#line 498 "tointrange.c"
+#line 504 "tointrange.c"
     h_tointrange_0opt0_release(&t75);
 #line 25 "tests/golden/run/to-int-range.hero"
     t76 = h7_own7;
-#line 502 "tointrange.c"
+#line 508 "tointrange.c"
     h_tointrange_0opt0_release(&t76);
 #line 25 "tests/golden/run/to-int-range.hero"
     t77 = h8_own8;
-#line 506 "tointrange.c"
+#line 512 "tointrange.c"
     h_tointrange_0opt0_release(&t77);
 #line 25 "tests/golden/run/to-int-range.hero"
     t78 = h9_own9;
-#line 510 "tointrange.c"
+#line 516 "tointrange.c"
     h_tointrange_0opt0_release(&t78);
 #line 25 "tests/golden/run/to-int-range.hero"
     t79 = h10_own10;
-#line 514 "tointrange.c"
+#line 520 "tointrange.c"
     h_tointrange_0opt0_release(&t79);
 #line 25 "tests/golden/run/to-int-range.hero"
     t80 = h11_own11;
-#line 518 "tointrange.c"
+#line 524 "tointrange.c"
     h_tointrange_0opt0_release(&t80);
     return;
 bb8:
@@ -522,7 +528,7 @@ bb8:
     t45 = h4_f4;
 #line 24 "tests/golden/run/to-int-range.hero"
     t46 = t45.as.err;
-#line 526 "tointrange.c"
+#line 532 "tointrange.c"
     hero_panic_must(t46);
     hero_unreachable();
 }

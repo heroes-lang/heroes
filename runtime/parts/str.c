@@ -248,6 +248,47 @@ HeroStr hero_str_from_bytes(const char *p, int64_t len) {
     return r;
 }
 
+/* **The same copy, but the caller decides what a bad pointer means** (panel 089,
+   the resolution's item 1). `hero_str_from_cstr` above aborts on a null pointer
+   and on bytes that are not UTF-8, which is right for the *program's* own bytes
+   and wrong for the *environment's*: a SQLite TEXT column another program wrote,
+   a Latin-1 `PATH`, an argument the shell handed over. This is that conversion
+   with a status instead of a grave, and the Heroes side turns the status into a
+   `str?` — the exact contract `hero_file_read` already has, down to the promise
+   that on anything but OK the returned string is empty and owns nothing.
+
+   **It is written BESIDE `hero_str_from_bytes` rather than on top of it, and
+   that is a measurement rather than a preference** (panel 089, ffi-pragmatist
+   condition 1). The obvious composition — validate, then call `from_bytes` —
+   walks the bytes twice, and validation dominates the copy 25:1, so it measured
+   **1.96×** the cost of today's conversion on 16 MiB. One walk, then `alloc` and
+   `memcpy` directly, measured **0.87×** — cheaper than what it replaces. A
+   fallible conversion that made every good binding slower would be a §13 tax on
+   the boundary §1.11 says is the only way anything gets into this language.
+
+   `hero_str_from_bytes`'s abort is deliberately NOT weakened: `hero_str_chars`
+   depends on it for the language-wide well-formedness invariant (panel 087, and
+   panel 089 measured the mechanism — `chars` hands the offending byte straight
+   back to `from_bytes` and dies inside it). Nothing here calls it. */
+HeroStr hero_str_try_from_cstr(const char *p, int64_t *status) {
+    if (p == NULL) {
+        *status = HERO_STR_NULL;
+        return hero_str_empty();
+    }
+    size_t n = strlen(p);
+    if (n > (size_t)INT64_MAX) hero_panic("string length overflow");
+    int64_t len = (int64_t)n;
+    if (!hero_utf8_valid(p, len)) {
+        *status = HERO_STR_NOT_TEXT;
+        return hero_str_empty();
+    }
+    *status = HERO_STR_OK;
+    if (len == 0) return hero_str_empty();
+    HeroStr r = hero_str_alloc(len);
+    memcpy((char *)(void *)(uintptr_t)r.ptr, p, (size_t)len);
+    return r;
+}
+
 /* **A `cstr` on its way INTO C, checked** (panel 053; CLAUDE.md §12's robustness
    rule). `hero_str_from_cstr` above guards the path where C's string comes into
    Heroes; this guards the path where it goes straight back out — `strstr(getenv(

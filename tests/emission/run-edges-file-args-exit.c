@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "edgesfileargsexit.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "edgesfileargsexit.c"
 
 HERO_STR_STATIC(hero_str_0, "build/heroes-golden-edges.txt");
 HERO_STR_STATIC(hero_str_1, "one\ntwo\nthree\n");
@@ -52,12 +58,12 @@ HERO_STR_STATIC(hero_str_7, "build/heroes-no-such-file-at-all");
 HERO_STR_STATIC(hero_str_8, "unexpected");
 HERO_STR_STATIC(hero_str_9, "missing: ");
 HERO_STR_STATIC(hero_str_10, "arguments: ");
-HERO_STR_STATIC(hero_str_13, "file_not_found");
-HERO_STR_STATIC(hero_str_14, "no file at ");
-HERO_STR_STATIC(hero_str_15, "read_failed");
-HERO_STR_STATIC(hero_str_16, "could not read ");
-HERO_STR_STATIC(hero_str_17, "write_failed");
-HERO_STR_STATIC(hero_str_18, "could not write ");
+HERO_STR_STATIC(hero_str_17, "file_not_found");
+HERO_STR_STATIC(hero_str_18, "no file at ");
+HERO_STR_STATIC(hero_str_19, "read_failed");
+HERO_STR_STATIC(hero_str_20, "could not read ");
+HERO_STR_STATIC(hero_str_21, "write_failed");
+HERO_STR_STATIC(hero_str_22, "could not write ");
 
 typedef struct h_edgesfileargsexit_0opt0 {
     int64_t tag;
@@ -93,20 +99,20 @@ HeroArrayHeader * h_library_args(void);
 
 #line 20 "tests/golden/run/edges-file-args-exit.hero"
 HeroStr h_edgesfileargsexit_PATH(void) {
-#line 97 "edgesfileargsexit.c"
+#line 103 "edgesfileargsexit.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/edges-file-args-exit.hero"
     t1 = HERO_STR_LIT(hero_str_0);
-#line 103 "edgesfileargsexit.c"
+#line 109 "edgesfileargsexit.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 23 "tests/golden/run/edges-file-args-exit.hero"
 void h_edgesfileargsexit_main(void) {
-#line 110 "edgesfileargsexit.c"
+#line 116 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0 h0_s0 = {0};
     HeroFailure h1_e = {0};
     h_edgesfileargsexit_0opt1 h2_s1 = {0};
@@ -193,7 +199,7 @@ bb0:
     t40 = h7_own7;
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
     h7_own7 = t1;
-#line 197 "edgesfileargsexit.c"
+#line 203 "edgesfileargsexit.c"
     hero_str_decref(t40);
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
     t2 = HERO_STR_LIT(hero_str_1);
@@ -203,15 +209,15 @@ bb0:
     t41 = h8_own8;
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
     h8_own8 = t3;
-#line 207 "edgesfileargsexit.c"
+#line 213 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t41);
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
     t42 = h0_s0;
-#line 211 "edgesfileargsexit.c"
+#line 217 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_retain(&t3);
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
     h0_s0 = t3;
-#line 215 "edgesfileargsexit.c"
+#line 221 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t42);
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
     t4 = h0_s0;
@@ -235,7 +241,7 @@ bb1:
     t43 = h9_own9;
 #line 27 "tests/golden/run/edges-file-args-exit.hero"
     h9_own9 = t12;
-#line 239 "edgesfileargsexit.c"
+#line 245 "edgesfileargsexit.c"
     hero_str_decref(t43);
 #line 27 "tests/golden/run/edges-file-args-exit.hero"
     t13 = h_library_read_file(t12);
@@ -243,15 +249,15 @@ bb1:
     t44 = h10_own10;
 #line 27 "tests/golden/run/edges-file-args-exit.hero"
     h10_own10 = t13;
-#line 247 "edgesfileargsexit.c"
+#line 253 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t44);
 #line 27 "tests/golden/run/edges-file-args-exit.hero"
     t45 = h2_s1;
-#line 251 "edgesfileargsexit.c"
+#line 257 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_retain(&t13);
 #line 27 "tests/golden/run/edges-file-args-exit.hero"
     h2_s1 = t13;
-#line 255 "edgesfileargsexit.c"
+#line 261 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t45);
 #line 27 "tests/golden/run/edges-file-args-exit.hero"
     t14 = h2_s1;
@@ -285,11 +291,11 @@ bb3:
     t8 = t7.as.err;
 #line 26 "tests/golden/run/edges-file-args-exit.hero"
     t46 = h1_e;
-#line 289 "edgesfileargsexit.c"
+#line 295 "edgesfileargsexit.c"
     hero_failure_retain(&t8);
 #line 26 "tests/golden/run/edges-file-args-exit.hero"
     h1_e = t8;
-#line 293 "edgesfileargsexit.c"
+#line 299 "edgesfileargsexit.c"
     hero_failure_release(&t46);
 #line 26 "tests/golden/run/edges-file-args-exit.hero"
     t9 = HERO_STR_LIT(hero_str_3);
@@ -315,15 +321,15 @@ bb4:
     t47 = h11_own11;
 #line 32 "tests/golden/run/edges-file-args-exit.hero"
     h11_own11 = t28;
-#line 319 "edgesfileargsexit.c"
+#line 325 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t47);
 #line 32 "tests/golden/run/edges-file-args-exit.hero"
     t48 = h5_s2;
-#line 323 "edgesfileargsexit.c"
+#line 329 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_retain(&t28);
 #line 32 "tests/golden/run/edges-file-args-exit.hero"
     h5_s2 = t28;
-#line 327 "edgesfileargsexit.c"
+#line 333 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t48);
 #line 32 "tests/golden/run/edges-file-args-exit.hero"
     t29 = h5_s2;
@@ -347,11 +353,11 @@ bb5:
     t17 = t16.as.ok;
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
     t49 = h3_text;
-#line 351 "edgesfileargsexit.c"
+#line 357 "edgesfileargsexit.c"
     hero_str_incref(t17);
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
     h3_text = t17;
-#line 355 "edgesfileargsexit.c"
+#line 361 "edgesfileargsexit.c"
     hero_str_decref(t49);
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
     t18 = HERO_STR_LIT(hero_str_4);
@@ -379,11 +385,11 @@ bb6:
     t23 = t22.as.err;
 #line 29 "tests/golden/run/edges-file-args-exit.hero"
     t50 = h4_e;
-#line 383 "edgesfileargsexit.c"
+#line 389 "edgesfileargsexit.c"
     hero_failure_retain(&t23);
 #line 29 "tests/golden/run/edges-file-args-exit.hero"
     h4_e = t23;
-#line 387 "edgesfileargsexit.c"
+#line 393 "edgesfileargsexit.c"
     hero_failure_release(&t50);
 #line 29 "tests/golden/run/edges-file-args-exit.hero"
     t24 = HERO_STR_LIT(hero_str_6);
@@ -409,7 +415,7 @@ bb7:
     t51 = h12_own12;
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     h12_own12 = t38;
-#line 413 "edgesfileargsexit.c"
+#line 419 "edgesfileargsexit.c"
     hero_array_decref(t51);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t39 = hero_array_len(t38);
@@ -421,55 +427,55 @@ bb7:
     hero_print_end();
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t53 = h0_s0;
-#line 425 "edgesfileargsexit.c"
+#line 431 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t53);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t54 = h1_e;
-#line 429 "edgesfileargsexit.c"
+#line 435 "edgesfileargsexit.c"
     hero_failure_release(&t54);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t55 = h2_s1;
-#line 433 "edgesfileargsexit.c"
+#line 439 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t55);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t56 = h3_text;
-#line 437 "edgesfileargsexit.c"
+#line 443 "edgesfileargsexit.c"
     hero_str_decref(t56);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t57 = h4_e;
-#line 441 "edgesfileargsexit.c"
+#line 447 "edgesfileargsexit.c"
     hero_failure_release(&t57);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t58 = h5_s2;
-#line 445 "edgesfileargsexit.c"
+#line 451 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t58);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t59 = h6_e;
-#line 449 "edgesfileargsexit.c"
+#line 455 "edgesfileargsexit.c"
     hero_failure_release(&t59);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t60 = h7_own7;
-#line 453 "edgesfileargsexit.c"
+#line 459 "edgesfileargsexit.c"
     hero_str_decref(t60);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t61 = h8_own8;
-#line 457 "edgesfileargsexit.c"
+#line 463 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t61);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t62 = h9_own9;
-#line 461 "edgesfileargsexit.c"
+#line 467 "edgesfileargsexit.c"
     hero_str_decref(t62);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t63 = h10_own10;
-#line 465 "edgesfileargsexit.c"
+#line 471 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t63);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t64 = h11_own11;
-#line 469 "edgesfileargsexit.c"
+#line 475 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t64);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t65 = h12_own12;
-#line 473 "edgesfileargsexit.c"
+#line 479 "edgesfileargsexit.c"
     hero_array_decref(t65);
     return;
 bb8:
@@ -489,11 +495,11 @@ bb9:
     t33 = t32.as.err;
 #line 34 "tests/golden/run/edges-file-args-exit.hero"
     t52 = h6_e;
-#line 493 "edgesfileargsexit.c"
+#line 499 "edgesfileargsexit.c"
     hero_failure_retain(&t33);
 #line 34 "tests/golden/run/edges-file-args-exit.hero"
     h6_e = t33;
-#line 497 "edgesfileargsexit.c"
+#line 503 "edgesfileargsexit.c"
     hero_failure_release(&t52);
 #line 34 "tests/golden/run/edges-file-args-exit.hero"
     t34 = HERO_STR_LIT(hero_str_9);
@@ -509,24 +515,24 @@ bb9:
     hero_print_end();
 #line 34 "tests/golden/run/edges-file-args-exit.hero"
     goto bb7;
-#line 513 "edgesfileargsexit.c"
+#line 519 "edgesfileargsexit.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 518 "edgesfileargsexit.c"
+#line 524 "edgesfileargsexit.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 524 "edgesfileargsexit.c"
+#line 530 "edgesfileargsexit.c"
     return HERO_OS_NOT_FOUND;
 }
 
-#line 120 "<heroes library>"
+#line 161 "<heroes library>"
 h_edgesfileargsexit_0opt1 h_library_read_file(HeroStr h0_path) {
-#line 530 "edgesfileargsexit.c"
+#line 536 "edgesfileargsexit.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -587,225 +593,225 @@ h_edgesfileargsexit_0opt1 h_library_read_file(HeroStr h0_path) {
     h_edgesfileargsexit_0opt1 t50 = {0};
     goto bb0;
 bb0:
-#line 121 "<heroes library>"
+#line 162 "<heroes library>"
     t1 = INT64_C(0);
-#line 121 "<heroes library>"
+#line 162 "<heroes library>"
     h1_status = t1;
-#line 122 "<heroes library>"
+#line 163 "<heroes library>"
     t2 = h0_path;
-#line 122 "<heroes library>"
+#line 163 "<heroes library>"
     t3 = hero_str_cstr(t2);
-#line 122 "<heroes library>"
+#line 163 "<heroes library>"
     t4 = hero_file_read(hero_cstr_nonnull(t3), &h1_status);
-#line 122 "<heroes library>"
+#line 163 "<heroes library>"
     t23 = h3_own3;
-#line 122 "<heroes library>"
+#line 163 "<heroes library>"
     h3_own3 = t4;
-#line 605 "edgesfileargsexit.c"
+#line 611 "edgesfileargsexit.c"
     hero_str_decref(t23);
-#line 122 "<heroes library>"
+#line 163 "<heroes library>"
     t24 = h2_text;
-#line 609 "edgesfileargsexit.c"
+#line 615 "edgesfileargsexit.c"
     hero_str_incref(t4);
-#line 122 "<heroes library>"
+#line 163 "<heroes library>"
     h2_text = t4;
-#line 613 "edgesfileargsexit.c"
+#line 619 "edgesfileargsexit.c"
     hero_str_decref(t24);
-#line 123 "<heroes library>"
+#line 164 "<heroes library>"
     t5 = h1_status;
-#line 123 "<heroes library>"
+#line 164 "<heroes library>"
     t6 = h_library_HERO_OS_OK();
-#line 123 "<heroes library>"
+#line 164 "<heroes library>"
     t7 = t5 == t6;
-#line 123 "<heroes library>"
+#line 164 "<heroes library>"
     if (t7) goto bb2; else goto bb3;
-#line 123 "<heroes library>"
+#line 164 "<heroes library>"
 bb1:
-#line 125 "<heroes library>"
+#line 166 "<heroes library>"
     t10 = h1_status;
-#line 125 "<heroes library>"
+#line 166 "<heroes library>"
     t11 = h_library_HERO_OS_NOT_FOUND();
-#line 125 "<heroes library>"
+#line 166 "<heroes library>"
     t12 = t10 == t11;
-#line 125 "<heroes library>"
+#line 166 "<heroes library>"
     if (t12) goto bb5; else goto bb6;
-#line 125 "<heroes library>"
+#line 166 "<heroes library>"
 bb2:
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t8 = h2_text;
-#line 637 "edgesfileargsexit.c"
+#line 643 "edgesfileargsexit.c"
     hero_str_incref(t8);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t9 = (h_edgesfileargsexit_0opt1){.tag = INT64_C(0), .as.ok = t8};
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t25 = h4_own4;
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     h4_own4 = t9;
-#line 645 "edgesfileargsexit.c"
+#line 651 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t25);
-#line 124 "<heroes library>"
-#line 648 "edgesfileargsexit.c"
+#line 165 "<heroes library>"
+#line 654 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_retain(&t9);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t30 = h2_text;
-#line 652 "edgesfileargsexit.c"
+#line 658 "edgesfileargsexit.c"
     hero_str_decref(t30);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t31 = h3_own3;
-#line 656 "edgesfileargsexit.c"
+#line 662 "edgesfileargsexit.c"
     hero_str_decref(t31);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t32 = h4_own4;
-#line 660 "edgesfileargsexit.c"
+#line 666 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t32);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t33 = h5_own5;
-#line 664 "edgesfileargsexit.c"
+#line 670 "edgesfileargsexit.c"
     hero_str_decref(t33);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t34 = h6_own6;
-#line 668 "edgesfileargsexit.c"
+#line 674 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t34);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t35 = h7_own7;
-#line 672 "edgesfileargsexit.c"
+#line 678 "edgesfileargsexit.c"
     hero_str_decref(t35);
-#line 124 "<heroes library>"
+#line 165 "<heroes library>"
     t36 = h8_own8;
-#line 676 "edgesfileargsexit.c"
+#line 682 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t36);
     return t9;
 bb3:
     goto bb1;
 bb4:
-#line 127 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_15);
-#line 127 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_16);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
+    t18 = HERO_STR_LIT(hero_str_19);
+#line 168 "<heroes library>"
+    t19 = HERO_STR_LIT(hero_str_20);
+#line 168 "<heroes library>"
     t20 = h0_path;
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t21 = hero_str_concat(t19, t20);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t26 = h5_own5;
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     h5_own5 = t21;
-#line 694 "edgesfileargsexit.c"
-    hero_str_decref(t26);
-#line 127 "<heroes library>"
-#line 697 "edgesfileargsexit.c"
-    hero_str_incref(t18);
-#line 127 "<heroes library>"
 #line 700 "edgesfileargsexit.c"
+    hero_str_decref(t26);
+#line 168 "<heroes library>"
+#line 703 "edgesfileargsexit.c"
+    hero_str_incref(t18);
+#line 168 "<heroes library>"
+#line 706 "edgesfileargsexit.c"
     hero_str_incref(t21);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t22 = (h_edgesfileargsexit_0opt1){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t27 = h6_own6;
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     h6_own6 = t22;
-#line 708 "edgesfileargsexit.c"
+#line 714 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t27);
-#line 127 "<heroes library>"
-#line 711 "edgesfileargsexit.c"
+#line 168 "<heroes library>"
+#line 717 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_retain(&t22);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t37 = h2_text;
-#line 715 "edgesfileargsexit.c"
+#line 721 "edgesfileargsexit.c"
     hero_str_decref(t37);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t38 = h3_own3;
-#line 719 "edgesfileargsexit.c"
+#line 725 "edgesfileargsexit.c"
     hero_str_decref(t38);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t39 = h4_own4;
-#line 723 "edgesfileargsexit.c"
+#line 729 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t39);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t40 = h5_own5;
-#line 727 "edgesfileargsexit.c"
+#line 733 "edgesfileargsexit.c"
     hero_str_decref(t40);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t41 = h6_own6;
-#line 731 "edgesfileargsexit.c"
+#line 737 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t41);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t42 = h7_own7;
-#line 735 "edgesfileargsexit.c"
+#line 741 "edgesfileargsexit.c"
     hero_str_decref(t42);
-#line 127 "<heroes library>"
+#line 168 "<heroes library>"
     t43 = h8_own8;
-#line 739 "edgesfileargsexit.c"
+#line 745 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t43);
     return t22;
 bb5:
-#line 126 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_13);
-#line 126 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_14);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
+    t13 = HERO_STR_LIT(hero_str_17);
+#line 167 "<heroes library>"
+    t14 = HERO_STR_LIT(hero_str_18);
+#line 167 "<heroes library>"
     t15 = h0_path;
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t16 = hero_str_concat(t14, t15);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t28 = h7_own7;
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     h7_own7 = t16;
-#line 755 "edgesfileargsexit.c"
-    hero_str_decref(t28);
-#line 126 "<heroes library>"
-#line 758 "edgesfileargsexit.c"
-    hero_str_incref(t13);
-#line 126 "<heroes library>"
 #line 761 "edgesfileargsexit.c"
+    hero_str_decref(t28);
+#line 167 "<heroes library>"
+#line 764 "edgesfileargsexit.c"
+    hero_str_incref(t13);
+#line 167 "<heroes library>"
+#line 767 "edgesfileargsexit.c"
     hero_str_incref(t16);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t17 = (h_edgesfileargsexit_0opt1){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t29 = h8_own8;
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     h8_own8 = t17;
-#line 769 "edgesfileargsexit.c"
+#line 775 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t29);
-#line 126 "<heroes library>"
-#line 772 "edgesfileargsexit.c"
+#line 167 "<heroes library>"
+#line 778 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_retain(&t17);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t44 = h2_text;
-#line 776 "edgesfileargsexit.c"
+#line 782 "edgesfileargsexit.c"
     hero_str_decref(t44);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t45 = h3_own3;
-#line 780 "edgesfileargsexit.c"
+#line 786 "edgesfileargsexit.c"
     hero_str_decref(t45);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t46 = h4_own4;
-#line 784 "edgesfileargsexit.c"
+#line 790 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t46);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t47 = h5_own5;
-#line 788 "edgesfileargsexit.c"
+#line 794 "edgesfileargsexit.c"
     hero_str_decref(t47);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t48 = h6_own6;
-#line 792 "edgesfileargsexit.c"
+#line 798 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t48);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t49 = h7_own7;
-#line 796 "edgesfileargsexit.c"
+#line 802 "edgesfileargsexit.c"
     hero_str_decref(t49);
-#line 126 "<heroes library>"
+#line 167 "<heroes library>"
     t50 = h8_own8;
-#line 800 "edgesfileargsexit.c"
+#line 806 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt1_release(&t50);
     return t17;
 bb6:
     goto bb4;
 }
 
-#line 130 "<heroes library>"
+#line 171 "<heroes library>"
 h_edgesfileargsexit_0opt0 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 809 "edgesfileargsexit.c"
+#line 815 "edgesfileargsexit.c"
     HeroStr h2_own2 = {0};
     h_edgesfileargsexit_0opt0 h3_own3 = {0};
     h_edgesfileargsexit_0opt0 h4_own4 = {0};
@@ -832,98 +838,98 @@ h_edgesfileargsexit_0opt0 h_library_write_file(HeroStr h0_path, HeroStr h1_text)
     h_edgesfileargsexit_0opt0 t21 = {0};
     goto bb0;
 bb0:
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
     t1 = h0_path;
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
     t2 = hero_str_cstr(t1);
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
     t3 = h1_text;
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
     t4 = hero_file_write(hero_cstr_nonnull(t2), t3);
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
     t5 = h_library_HERO_OS_OK();
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
     t6 = t4 == t5;
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
     if (t6) goto bb2; else goto bb3;
-#line 131 "<heroes library>"
+#line 172 "<heroes library>"
 bb1:
-#line 133 "<heroes library>"
-    t8 = HERO_STR_LIT(hero_str_17);
-#line 133 "<heroes library>"
-    t9 = HERO_STR_LIT(hero_str_18);
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
+    t8 = HERO_STR_LIT(hero_str_21);
+#line 174 "<heroes library>"
+    t9 = HERO_STR_LIT(hero_str_22);
+#line 174 "<heroes library>"
     t10 = h0_path;
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     t11 = hero_str_concat(t9, t10);
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     t13 = h2_own2;
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     h2_own2 = t11;
-#line 864 "edgesfileargsexit.c"
-    hero_str_decref(t13);
-#line 133 "<heroes library>"
-#line 867 "edgesfileargsexit.c"
-    hero_str_incref(t8);
-#line 133 "<heroes library>"
 #line 870 "edgesfileargsexit.c"
+    hero_str_decref(t13);
+#line 174 "<heroes library>"
+#line 873 "edgesfileargsexit.c"
+    hero_str_incref(t8);
+#line 174 "<heroes library>"
+#line 876 "edgesfileargsexit.c"
     hero_str_incref(t11);
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     t12 = (h_edgesfileargsexit_0opt0){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t11}};
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     t14 = h3_own3;
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     h3_own3 = t12;
-#line 878 "edgesfileargsexit.c"
+#line 884 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t14);
-#line 133 "<heroes library>"
-#line 881 "edgesfileargsexit.c"
+#line 174 "<heroes library>"
+#line 887 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_retain(&t12);
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     t16 = h2_own2;
-#line 885 "edgesfileargsexit.c"
+#line 891 "edgesfileargsexit.c"
     hero_str_decref(t16);
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     t17 = h3_own3;
-#line 889 "edgesfileargsexit.c"
+#line 895 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t17);
-#line 133 "<heroes library>"
+#line 174 "<heroes library>"
     t18 = h4_own4;
-#line 893 "edgesfileargsexit.c"
+#line 899 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t18);
     return t12;
 bb2:
-#line 132 "<heroes library>"
+#line 173 "<heroes library>"
     t7 = (h_edgesfileargsexit_0opt0){.tag = INT64_C(0)};
-#line 132 "<heroes library>"
+#line 173 "<heroes library>"
     t15 = h4_own4;
-#line 132 "<heroes library>"
+#line 173 "<heroes library>"
     h4_own4 = t7;
-#line 903 "edgesfileargsexit.c"
+#line 909 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t15);
-#line 132 "<heroes library>"
-#line 906 "edgesfileargsexit.c"
+#line 173 "<heroes library>"
+#line 912 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_retain(&t7);
-#line 132 "<heroes library>"
+#line 173 "<heroes library>"
     t19 = h2_own2;
-#line 910 "edgesfileargsexit.c"
+#line 916 "edgesfileargsexit.c"
     hero_str_decref(t19);
-#line 132 "<heroes library>"
+#line 173 "<heroes library>"
     t20 = h3_own3;
-#line 914 "edgesfileargsexit.c"
+#line 920 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t20);
-#line 132 "<heroes library>"
+#line 173 "<heroes library>"
     t21 = h4_own4;
-#line 918 "edgesfileargsexit.c"
+#line 924 "edgesfileargsexit.c"
     h_edgesfileargsexit_0opt0_release(&t21);
     return t7;
 bb3:
     goto bb1;
 }
 
-#line 137 "<heroes library>"
+#line 178 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 927 "edgesfileargsexit.c"
+#line 933 "edgesfileargsexit.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -947,79 +953,79 @@ HeroArrayHeader * h_library_args(void) {
     HeroStr t19 = {0};
     goto bb0;
 bb0:
-#line 138 "<heroes library>"
+#line 179 "<heroes library>"
     t1 = hero_array_new(&hero_desc_str, 1);
-#line 138 "<heroes library>"
+#line 179 "<heroes library>"
     t14 = h2_own2;
-#line 138 "<heroes library>"
+#line 179 "<heroes library>"
     h2_own2 = t1;
-#line 957 "edgesfileargsexit.c"
+#line 963 "edgesfileargsexit.c"
     hero_array_decref(t14);
-#line 138 "<heroes library>"
+#line 179 "<heroes library>"
     t15 = h0_out;
-#line 961 "edgesfileargsexit.c"
+#line 967 "edgesfileargsexit.c"
     hero_array_incref(t1);
-#line 138 "<heroes library>"
+#line 179 "<heroes library>"
     h0_out = t1;
-#line 965 "edgesfileargsexit.c"
+#line 971 "edgesfileargsexit.c"
     hero_array_decref(t15);
-#line 139 "<heroes library>"
+#line 180 "<heroes library>"
     t2 = INT64_C(0);
-#line 139 "<heroes library>"
+#line 180 "<heroes library>"
     h1_i = t2;
-#line 139 "<heroes library>"
+#line 180 "<heroes library>"
     goto bb1;
-#line 139 "<heroes library>"
+#line 180 "<heroes library>"
 bb1:
-#line 140 "<heroes library>"
+#line 181 "<heroes library>"
     t3 = h1_i;
-#line 140 "<heroes library>"
+#line 181 "<heroes library>"
     t4 = hero_args_count();
-#line 140 "<heroes library>"
+#line 181 "<heroes library>"
     t5 = t3 < t4;
-#line 140 "<heroes library>"
+#line 181 "<heroes library>"
     if (t5) goto bb2; else goto bb3;
-#line 140 "<heroes library>"
+#line 181 "<heroes library>"
 bb2:
-#line 141 "<heroes library>"
+#line 182 "<heroes library>"
     t7 = h1_i;
-#line 141 "<heroes library>"
+#line 182 "<heroes library>"
     t8 = hero_args_at(t7);
-#line 141 "<heroes library>"
+#line 182 "<heroes library>"
     t16 = h3_own3;
-#line 141 "<heroes library>"
+#line 182 "<heroes library>"
     h3_own3 = t8;
-#line 993 "edgesfileargsexit.c"
+#line 999 "edgesfileargsexit.c"
     hero_str_decref(t16);
-#line 141 "<heroes library>"
+#line 182 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
-#line 142 "<heroes library>"
+#line 183 "<heroes library>"
     t10 = h1_i;
-#line 142 "<heroes library>"
+#line 183 "<heroes library>"
     t11 = INT64_C(1);
-#line 142 "<heroes library>"
+#line 183 "<heroes library>"
     if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 142 "<heroes library>"
+#line 183 "<heroes library>"
     h1_i = t12;
-#line 142 "<heroes library>"
+#line 183 "<heroes library>"
     goto bb1;
-#line 142 "<heroes library>"
+#line 183 "<heroes library>"
 bb3:
-#line 143 "<heroes library>"
+#line 184 "<heroes library>"
     t13 = h0_out;
-#line 1011 "edgesfileargsexit.c"
+#line 1017 "edgesfileargsexit.c"
     hero_array_incref(t13);
-#line 143 "<heroes library>"
+#line 184 "<heroes library>"
     t17 = h0_out;
-#line 1015 "edgesfileargsexit.c"
+#line 1021 "edgesfileargsexit.c"
     hero_array_decref(t17);
-#line 143 "<heroes library>"
+#line 184 "<heroes library>"
     t18 = h2_own2;
-#line 1019 "edgesfileargsexit.c"
+#line 1025 "edgesfileargsexit.c"
     hero_array_decref(t18);
-#line 143 "<heroes library>"
+#line 184 "<heroes library>"
     t19 = h3_own3;
-#line 1023 "edgesfileargsexit.c"
+#line 1029 "edgesfileargsexit.c"
     hero_str_decref(t19);
     return t13;
 }

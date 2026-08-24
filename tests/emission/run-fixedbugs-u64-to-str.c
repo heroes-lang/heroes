@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "fixedbugsu64tostr.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "fixedbugsu64tostr.c"
 
 typedef struct h_fixedbugsu64tostr_0opt0 {
     int64_t tag;
@@ -69,7 +75,7 @@ void h_fixedbugsu64tostr_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
 void h_fixedbugsu64tostr_main(void) {
-#line 73 "fixedbugsu64tostr.c"
+#line 79 "fixedbugsu64tostr.c"
     uint64_t h0_n;
     uint64_t h1_small;
     HeroStr h2_own2 = {0};
@@ -105,7 +111,7 @@ bb0:
     t8 = h2_own2;
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h2_own2 = t4;
-#line 109 "fixedbugsu64tostr.c"
+#line 115 "fixedbugsu64tostr.c"
     hero_str_decref(t8);
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t4);
@@ -123,7 +129,7 @@ bb0:
     t9 = h3_own3;
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h3_own3 = t7;
-#line 127 "fixedbugsu64tostr.c"
+#line 133 "fixedbugsu64tostr.c"
     hero_str_decref(t9);
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t7);
@@ -131,11 +137,11 @@ bb0:
     hero_print_end();
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t10 = h2_own2;
-#line 135 "fixedbugsu64tostr.c"
+#line 141 "fixedbugsu64tostr.c"
     hero_str_decref(t10);
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t11 = h3_own3;
-#line 139 "fixedbugsu64tostr.c"
+#line 145 "fixedbugsu64tostr.c"
     hero_str_decref(t11);
     return;
 }

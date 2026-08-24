@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <stdlib.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -32,6 +33,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 30 "tests/golden/fixedbugs/ffi-pointer-return.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffipointerreturn_getenv(const char * a0) { (void)getenv(a0); }
@@ -43,7 +47,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 47 "ffipointerreturn.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 53 "ffipointerreturn.c"
 
 HERO_STR_STATIC(hero_str_0, "PATH");
 
@@ -75,7 +81,7 @@ void h_ffipointerreturn_main(void);
 
 #line 32 "tests/golden/fixedbugs/ffi-pointer-return.hero"
 void h_ffipointerreturn_main(void) {
-#line 79 "ffipointerreturn.c"
+#line 85 "ffipointerreturn.c"
     HeroStr t1 = {0};
     const char * t2;
     int64_t t3;
@@ -93,7 +99,7 @@ bb0:
     hero_print_end();
 #line 33 "tests/golden/fixedbugs/ffi-pointer-return.hero"
     return;
-#line 97 "ffipointerreturn.c"
+#line 103 "ffipointerreturn.c"
 }
 void h_ffipointerreturn_0opt0_retain(const h_ffipointerreturn_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

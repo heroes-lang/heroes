@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <sqlite3.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -42,6 +43,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 34 "examples/sqlite/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqlite3_open(const char * a0, void * * a1) { (void)sqlite3_open(a0, a1); }
@@ -65,7 +69,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 69 "main.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 75 "main.c"
 
 HERO_STR_STATIC(hero_str_0, ":memory:");
 HERO_STR_STATIC(hero_str_1, "cannot open the database");
@@ -108,19 +114,19 @@ void h_main_main(void);
 
 #line 32 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_OK(void) {
-#line 112 "main.c"
+#line 118 "main.c"
     return SQLITE_OK;
 }
 
 #line 33 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_ROW(void) {
-#line 118 "main.c"
+#line 124 "main.c"
     return SQLITE_ROW;
 }
 
 #line 45 "examples/sqlite/main.hero"
 int64_t h_main_run(void * h0_db, HeroStr h1_sql) {
-#line 124 "main.c"
+#line 130 "main.c"
     __attribute__((unused)) void * h2_error;
     void * t1;
     void * t2;
@@ -149,12 +155,12 @@ bb0:
     t7 = sqlite3_exec(t2, hero_cstr_nonnull(t4), t5, t6, &h2_error);
 #line 47 "examples/sqlite/main.hero"
     return t7;
-#line 153 "main.c"
+#line 159 "main.c"
 }
 
 #line 50 "examples/sqlite/main.hero"
 int64_t h_main_first_int(void * h0_db, HeroStr h1_sql) {
-#line 158 "main.c"
+#line 164 "main.c"
     void * h2_statement;
     __attribute__((unused)) void * h3_tail;
     int64_t h4_rc;
@@ -274,12 +280,12 @@ bb5:
 bb6:
 #line 64 "examples/sqlite/main.hero"
     goto bb4;
-#line 278 "main.c"
+#line 284 "main.c"
 }
 
 #line 68 "examples/sqlite/main.hero"
 void h_main_main(void) {
-#line 283 "main.c"
+#line 289 "main.c"
     void * h0_db;
     void * t1;
     HeroStr t2 = {0};
@@ -381,7 +387,7 @@ bb2:
 bb3:
 #line 71 "examples/sqlite/main.hero"
     goto bb1;
-#line 385 "main.c"
+#line 391 "main.c"
 }
 void h_main_0opt0_retain(const h_main_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <stdio.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -32,6 +33,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 13 "tests/golden/run/ffi-cstr.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fficstr_puts(const char * a0) { (void)puts(a0); }
@@ -43,7 +47,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 47 "fficstr.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 53 "fficstr.c"
 
 HERO_STR_STATIC(hero_str_0, "!");
 HERO_STR_STATIC(hero_str_1, "hello from C");
@@ -79,7 +85,7 @@ void h_fficstr_main(void);
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 83 "fficstr.c"
+#line 89 "fficstr.c"
     HeroStr h1_own1 = {0};
     HeroStr t1 = {0};
     HeroStr t2 = {0};
@@ -98,21 +104,21 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 102 "fficstr.c"
+#line 108 "fficstr.c"
     hero_str_decref(t4);
 #line 16 "tests/golden/run/ffi-cstr.hero"
-#line 105 "fficstr.c"
+#line 111 "fficstr.c"
     hero_str_incref(t3);
 #line 16 "tests/golden/run/ffi-cstr.hero"
     t5 = h1_own1;
-#line 109 "fficstr.c"
+#line 115 "fficstr.c"
     hero_str_decref(t5);
     return t3;
 }
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 116 "fficstr.c"
+#line 122 "fficstr.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     const char * t2;
@@ -138,7 +144,7 @@ bb0:
     t9 = h0_own0;
 #line 23 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 142 "fficstr.c"
+#line 148 "fficstr.c"
     hero_str_decref(t9);
 #line 23 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_cstr(t5);
@@ -152,7 +158,7 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t10 = h0_own0;
-#line 156 "fficstr.c"
+#line 162 "fficstr.c"
     hero_str_decref(t10);
     return;
 }

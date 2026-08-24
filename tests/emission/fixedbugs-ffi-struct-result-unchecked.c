@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <stdlib.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -14,7 +15,7 @@ _Static_assert(__builtin_classify_type(((div_t *)0)->rem) == 1 && sizeof(((div_t
 _Static_assert(__builtin_classify_type(((ldiv_t *)0)->quot) == 1 && sizeof(((ldiv_t *)0)->quot) == sizeof(int64_t) && (_Generic(((ldiv_t *)0)->quot, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ldiv_t quot");
 #line 54 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 _Static_assert(__builtin_classify_type(((ldiv_t *)0)->rem) == 1 && sizeof(((ldiv_t *)0)->rem) == sizeof(int64_t) && (_Generic(((ldiv_t *)0)->rem, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ldiv_t rem");
-#line 18 "ffistructresultunchecked.c"
+#line 19 "ffistructresultunchecked.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
@@ -23,7 +24,7 @@ _Static_assert(__builtin_classify_type(((ldiv_t *)0)->rem) == 1 && sizeof(((ldiv
 __attribute__((unused)) static void hero_ffi_complete_h_ffistructresultunchecked_div_t(void) { div_t v = {0,0}; (void)v; }
 #line 52 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_ffistructresultunchecked_ldiv_t(void) { ldiv_t v = {0,0}; (void)v; }
-#line 27 "ffistructresultunchecked.c"
+#line 28 "ffistructresultunchecked.c"
 #pragma clang diagnostic pop
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
@@ -53,6 +54,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 56 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffistructresultunchecked_div(int32_t a0, int32_t a1) { (void)div(a0, a1); }
@@ -64,7 +68,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 68 "ffistructresultunchecked.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 74 "ffistructresultunchecked.c"
 
 HERO_STR_STATIC(hero_str_0, "nothing calls div, and that used to be enough to ship a binary");
 
@@ -100,7 +106,7 @@ void h_ffistructresultunchecked_main(void);
 
 #line 58 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 void h_ffistructresultunchecked_main(void) {
-#line 104 "ffistructresultunchecked.c"
+#line 110 "ffistructresultunchecked.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
@@ -112,7 +118,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     return;
-#line 116 "ffistructresultunchecked.c"
+#line 122 "ffistructresultunchecked.c"
 }
 bool h_ffistructresultunchecked_div_t_eq(const div_t *a, const div_t *b) {
     if (!(a->quot == b->quot)) return false;

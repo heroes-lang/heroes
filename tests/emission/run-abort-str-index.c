@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "abortstrindex.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "abortstrindex.c"
 
 HERO_STR_STATIC(hero_str_0, "abc");
 
@@ -71,7 +77,7 @@ void h_abortstrindex_main(void);
 
 #line 7 "tests/golden/run/abort-str-index.hero"
 void h_abortstrindex_main(void) {
-#line 75 "abortstrindex.c"
+#line 81 "abortstrindex.c"
     HeroStr h0_s = {0};
     HeroStr t1 = {0};
     HeroStr t2 = {0};
@@ -88,11 +94,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_0);
 #line 8 "tests/golden/run/abort-str-index.hero"
     t8 = h0_s;
-#line 92 "abortstrindex.c"
+#line 98 "abortstrindex.c"
     hero_str_incref(t1);
 #line 8 "tests/golden/run/abort-str-index.hero"
     h0_s = t1;
-#line 96 "abortstrindex.c"
+#line 102 "abortstrindex.c"
     hero_str_decref(t8);
 #line 9 "tests/golden/run/abort-str-index.hero"
     t2 = h0_s;
@@ -116,7 +122,7 @@ bb0:
     hero_print_end();
 #line 10 "tests/golden/run/abort-str-index.hero"
     t9 = h0_s;
-#line 120 "abortstrindex.c"
+#line 126 "abortstrindex.c"
     hero_str_decref(t9);
     return;
 }

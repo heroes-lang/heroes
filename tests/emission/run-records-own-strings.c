@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "recordsownstrings.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "recordsownstrings.c"
 
 HERO_STR_STATIC(hero_str_0, "hello, ");
 HERO_STR_STATIC(hero_str_1, "ada");
@@ -93,7 +99,7 @@ void h_recordsownstrings_main(void);
 
 #line 24 "tests/golden/run/records-own-strings.hero"
 HeroStr h_recordsownstrings_greet(h_recordsownstrings_Person h0_p) {
-#line 97 "recordsownstrings.c"
+#line 103 "recordsownstrings.c"
     HeroStr h1_own1 = {0};
     HeroStr t1 = {0};
     h_recordsownstrings_Person t2 = {0};
@@ -115,21 +121,21 @@ bb0:
     t5 = h1_own1;
 #line 25 "tests/golden/run/records-own-strings.hero"
     h1_own1 = t4;
-#line 119 "recordsownstrings.c"
+#line 125 "recordsownstrings.c"
     hero_str_decref(t5);
 #line 25 "tests/golden/run/records-own-strings.hero"
-#line 122 "recordsownstrings.c"
+#line 128 "recordsownstrings.c"
     hero_str_incref(t4);
 #line 25 "tests/golden/run/records-own-strings.hero"
     t6 = h1_own1;
-#line 126 "recordsownstrings.c"
+#line 132 "recordsownstrings.c"
     hero_str_decref(t6);
     return t4;
 }
 
 #line 27 "tests/golden/run/records-own-strings.hero"
 void h_recordsownstrings_main(void) {
-#line 133 "recordsownstrings.c"
+#line 139 "recordsownstrings.c"
     h_recordsownstrings_Person h0_p = {0};
     h_recordsownstrings_Person h1_q = {0};
     h_recordsownstrings_Pair h2_both = {0};
@@ -210,11 +216,11 @@ bb0:
     t40 = h3_own3;
 #line 30 "tests/golden/run/records-own-strings.hero"
     h3_own3 = t3;
-#line 214 "recordsownstrings.c"
+#line 220 "recordsownstrings.c"
     hero_str_decref(t40);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t4 = INT64_C(36);
-#line 218 "recordsownstrings.c"
+#line 224 "recordsownstrings.c"
     hero_str_incref(t3);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t5 = (h_recordsownstrings_Person){.f_name = t3, .f_age = t4};
@@ -222,15 +228,15 @@ bb0:
     t41 = h4_own4;
 #line 30 "tests/golden/run/records-own-strings.hero"
     h4_own4 = t5;
-#line 226 "recordsownstrings.c"
+#line 232 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t41);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t42 = h0_p;
-#line 230 "recordsownstrings.c"
+#line 236 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t5);
 #line 30 "tests/golden/run/records-own-strings.hero"
     h0_p = t5;
-#line 234 "recordsownstrings.c"
+#line 240 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t42);
 #line 31 "tests/golden/run/records-own-strings.hero"
     t6 = h0_p;
@@ -240,7 +246,7 @@ bb0:
     t43 = h5_own5;
 #line 31 "tests/golden/run/records-own-strings.hero"
     h5_own5 = t7;
-#line 244 "recordsownstrings.c"
+#line 250 "recordsownstrings.c"
     hero_str_decref(t43);
 #line 31 "tests/golden/run/records-own-strings.hero"
     hero_print_str(t7);
@@ -250,11 +256,11 @@ bb0:
     t8 = h0_p;
 #line 32 "tests/golden/run/records-own-strings.hero"
     t44 = h1_q;
-#line 254 "recordsownstrings.c"
+#line 260 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t8);
 #line 32 "tests/golden/run/records-own-strings.hero"
     h1_q = t8;
-#line 258 "recordsownstrings.c"
+#line 264 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t44);
 #line 33 "tests/golden/run/records-own-strings.hero"
     t9 = h1_q;
@@ -268,7 +274,7 @@ bb0:
     t11 = HERO_STR_LIT(hero_str_3);
 #line 34 "tests/golden/run/records-own-strings.hero"
     t12 = INT64_C(45);
-#line 272 "recordsownstrings.c"
+#line 278 "recordsownstrings.c"
     hero_str_incref(t11);
 #line 34 "tests/golden/run/records-own-strings.hero"
     t13 = (h_recordsownstrings_Person){.f_name = t11, .f_age = t12};
@@ -276,15 +282,15 @@ bb0:
     t45 = h6_own6;
 #line 34 "tests/golden/run/records-own-strings.hero"
     h6_own6 = t13;
-#line 280 "recordsownstrings.c"
+#line 286 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t45);
 #line 34 "tests/golden/run/records-own-strings.hero"
     t46 = h1_q;
-#line 284 "recordsownstrings.c"
+#line 290 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t13);
 #line 34 "tests/golden/run/records-own-strings.hero"
     h1_q = t13;
-#line 288 "recordsownstrings.c"
+#line 294 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t46);
 #line 35 "tests/golden/run/records-own-strings.hero"
     t14 = h1_q;
@@ -304,10 +310,10 @@ bb0:
     t18 = h0_p;
 #line 36 "tests/golden/run/records-own-strings.hero"
     t19 = h1_q;
-#line 308 "recordsownstrings.c"
+#line 314 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t18);
 #line 36 "tests/golden/run/records-own-strings.hero"
-#line 311 "recordsownstrings.c"
+#line 317 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t19);
 #line 36 "tests/golden/run/records-own-strings.hero"
     t20 = (h_recordsownstrings_Pair){.f_one = t18, .f_two = t19};
@@ -315,15 +321,15 @@ bb0:
     t47 = h7_own7;
 #line 36 "tests/golden/run/records-own-strings.hero"
     h7_own7 = t20;
-#line 319 "recordsownstrings.c"
+#line 325 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t47);
 #line 36 "tests/golden/run/records-own-strings.hero"
     t48 = h2_both;
-#line 323 "recordsownstrings.c"
+#line 329 "recordsownstrings.c"
     h_recordsownstrings_Pair_retain(&t20);
 #line 36 "tests/golden/run/records-own-strings.hero"
     h2_both = t20;
-#line 327 "recordsownstrings.c"
+#line 333 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t48);
 #line 37 "tests/golden/run/records-own-strings.hero"
     t21 = h2_both;
@@ -349,10 +355,10 @@ bb0:
     t28 = h0_p;
 #line 38 "tests/golden/run/records-own-strings.hero"
     t29 = h1_q;
-#line 353 "recordsownstrings.c"
+#line 359 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t28);
 #line 38 "tests/golden/run/records-own-strings.hero"
-#line 356 "recordsownstrings.c"
+#line 362 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t29);
 #line 38 "tests/golden/run/records-own-strings.hero"
     t30 = (h_recordsownstrings_Pair){.f_one = t28, .f_two = t29};
@@ -360,7 +366,7 @@ bb0:
     t49 = h8_own8;
 #line 38 "tests/golden/run/records-own-strings.hero"
     h8_own8 = t30;
-#line 364 "recordsownstrings.c"
+#line 370 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t49);
 #line 38 "tests/golden/run/records-own-strings.hero"
     t31 = h_recordsownstrings_Pair_eq(&t27, &t30);
@@ -386,11 +392,11 @@ bb0:
     t37 = h1_q;
 #line 42 "tests/golden/run/records-own-strings.hero"
     t50 = h1_q;
-#line 390 "recordsownstrings.c"
+#line 396 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t37);
 #line 42 "tests/golden/run/records-own-strings.hero"
     h1_q = t37;
-#line 394 "recordsownstrings.c"
+#line 400 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t50);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t38 = h1_q;
@@ -402,39 +408,39 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/run/records-own-strings.hero"
     t51 = h0_p;
-#line 406 "recordsownstrings.c"
+#line 412 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t51);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t52 = h1_q;
-#line 410 "recordsownstrings.c"
+#line 416 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t52);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t53 = h2_both;
-#line 414 "recordsownstrings.c"
+#line 420 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t53);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t54 = h3_own3;
-#line 418 "recordsownstrings.c"
+#line 424 "recordsownstrings.c"
     hero_str_decref(t54);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t55 = h4_own4;
-#line 422 "recordsownstrings.c"
+#line 428 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t55);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t56 = h5_own5;
-#line 426 "recordsownstrings.c"
+#line 432 "recordsownstrings.c"
     hero_str_decref(t56);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t57 = h6_own6;
-#line 430 "recordsownstrings.c"
+#line 436 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t57);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t58 = h7_own7;
-#line 434 "recordsownstrings.c"
+#line 440 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t58);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t59 = h8_own8;
-#line 438 "recordsownstrings.c"
+#line 444 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t59);
     return;
 }

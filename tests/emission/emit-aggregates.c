@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "aggregates.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "aggregates.c"
 
 HERO_STR_STATIC(hero_str_0, "a");
 HERO_STR_STATIC(hero_str_1, "b");
@@ -116,7 +122,7 @@ void h_aggregates_main(void);
 
 #line 37 "tests/golden/emit/aggregates.hero"
 int64_t h_aggregates_width(h_aggregates_Shape h0_s) {
-#line 120 "aggregates.c"
+#line 126 "aggregates.c"
     h_aggregates_Shape h1_s0 = {0};
     int64_t h2_r0;
     h_aggregates_Shape_c_line h3_l = {0};
@@ -139,11 +145,11 @@ bb0:
     t1 = h0_s;
 #line 38 "tests/golden/emit/aggregates.hero"
     t10 = h1_s0;
-#line 143 "aggregates.c"
+#line 149 "aggregates.c"
     h_aggregates_Shape_retain(&t1);
 #line 38 "tests/golden/emit/aggregates.hero"
     h1_s0 = t1;
-#line 147 "aggregates.c"
+#line 153 "aggregates.c"
     h_aggregates_Shape_release(&t10);
 #line 38 "tests/golden/emit/aggregates.hero"
     t2 = h1_s0;
@@ -165,11 +171,11 @@ bb1:
     t9 = h2_r0;
 #line 38 "tests/golden/emit/aggregates.hero"
     t12 = h1_s0;
-#line 169 "aggregates.c"
+#line 175 "aggregates.c"
     h_aggregates_Shape_release(&t12);
 #line 38 "tests/golden/emit/aggregates.hero"
     t13 = h3_l;
-#line 173 "aggregates.c"
+#line 179 "aggregates.c"
     h_aggregates_Shape_c_line_release(&t13);
     return t9;
 bb2:
@@ -187,11 +193,11 @@ bb3:
     t6 = t5.as.c_line;
 #line 40 "tests/golden/emit/aggregates.hero"
     t11 = h3_l;
-#line 191 "aggregates.c"
+#line 197 "aggregates.c"
     h_aggregates_Shape_c_line_retain(&t6);
 #line 40 "tests/golden/emit/aggregates.hero"
     h3_l = t6;
-#line 195 "aggregates.c"
+#line 201 "aggregates.c"
     h_aggregates_Shape_c_line_release(&t11);
 #line 40 "tests/golden/emit/aggregates.hero"
     t7 = h3_l;
@@ -201,12 +207,12 @@ bb3:
     h2_r0 = t8;
 #line 38 "tests/golden/emit/aggregates.hero"
     goto bb1;
-#line 205 "aggregates.c"
+#line 211 "aggregates.c"
 }
 
 #line 42 "tests/golden/emit/aggregates.hero"
 void h_aggregates_main(void) {
-#line 210 "aggregates.c"
+#line 216 "aggregates.c"
     h_aggregates_Outer h0_o = {0};
     HeroStr h1_own1 = {0};
     h_aggregates_Inner h2_own2 = {0};
@@ -265,10 +271,10 @@ bb0:
     t23 = h1_own1;
 #line 43 "tests/golden/emit/aggregates.hero"
     h1_own1 = t3;
-#line 269 "aggregates.c"
+#line 275 "aggregates.c"
     hero_str_decref(t23);
 #line 43 "tests/golden/emit/aggregates.hero"
-#line 272 "aggregates.c"
+#line 278 "aggregates.c"
     hero_str_incref(t3);
 #line 43 "tests/golden/emit/aggregates.hero"
     t4 = (h_aggregates_Inner){.f_name = t3};
@@ -276,11 +282,11 @@ bb0:
     t24 = h2_own2;
 #line 43 "tests/golden/emit/aggregates.hero"
     h2_own2 = t4;
-#line 280 "aggregates.c"
+#line 286 "aggregates.c"
     h_aggregates_Inner_release(&t24);
 #line 43 "tests/golden/emit/aggregates.hero"
     t5 = INT64_C(2);
-#line 284 "aggregates.c"
+#line 290 "aggregates.c"
     h_aggregates_Inner_retain(&t4);
 #line 43 "tests/golden/emit/aggregates.hero"
     t6 = (h_aggregates_Outer){.f_inner = t4, .f_n = t5};
@@ -288,15 +294,15 @@ bb0:
     t25 = h3_own3;
 #line 43 "tests/golden/emit/aggregates.hero"
     h3_own3 = t6;
-#line 292 "aggregates.c"
+#line 298 "aggregates.c"
     h_aggregates_Outer_release(&t25);
 #line 43 "tests/golden/emit/aggregates.hero"
     t26 = h0_o;
-#line 296 "aggregates.c"
+#line 302 "aggregates.c"
     h_aggregates_Outer_retain(&t6);
 #line 43 "tests/golden/emit/aggregates.hero"
     h0_o = t6;
-#line 300 "aggregates.c"
+#line 306 "aggregates.c"
     h_aggregates_Outer_release(&t26);
 #line 44 "tests/golden/emit/aggregates.hero"
     t7 = h0_o;
@@ -312,7 +318,7 @@ bb0:
     t10 = h0_o;
 #line 45 "tests/golden/emit/aggregates.hero"
     t11 = HERO_STR_LIT(hero_str_2);
-#line 316 "aggregates.c"
+#line 322 "aggregates.c"
     hero_str_incref(t11);
 #line 45 "tests/golden/emit/aggregates.hero"
     t12 = (h_aggregates_Inner){.f_name = t11};
@@ -320,11 +326,11 @@ bb0:
     t27 = h4_own4;
 #line 45 "tests/golden/emit/aggregates.hero"
     h4_own4 = t12;
-#line 324 "aggregates.c"
+#line 330 "aggregates.c"
     h_aggregates_Inner_release(&t27);
 #line 45 "tests/golden/emit/aggregates.hero"
     t13 = INT64_C(2);
-#line 328 "aggregates.c"
+#line 334 "aggregates.c"
     h_aggregates_Inner_retain(&t12);
 #line 45 "tests/golden/emit/aggregates.hero"
     t14 = (h_aggregates_Outer){.f_inner = t12, .f_n = t13};
@@ -332,7 +338,7 @@ bb0:
     t28 = h5_own5;
 #line 45 "tests/golden/emit/aggregates.hero"
     h5_own5 = t14;
-#line 336 "aggregates.c"
+#line 342 "aggregates.c"
     h_aggregates_Outer_release(&t28);
 #line 45 "tests/golden/emit/aggregates.hero"
     t15 = h_aggregates_Outer_eq(&t10, &t14);
@@ -346,7 +352,7 @@ bb0:
     t17 = t16.f_inner;
 #line 46 "tests/golden/emit/aggregates.hero"
     t18 = INT64_C(5);
-#line 350 "aggregates.c"
+#line 356 "aggregates.c"
     h_aggregates_Inner_retain(&t17);
 #line 46 "tests/golden/emit/aggregates.hero"
     t19 = (h_aggregates_Shape){.tag = h_aggregates_Shape_tag_line, .as.c_line = {.f_from = t17, .f_len = t18}};
@@ -354,7 +360,7 @@ bb0:
     t29 = h6_own6;
 #line 46 "tests/golden/emit/aggregates.hero"
     h6_own6 = t19;
-#line 358 "aggregates.c"
+#line 364 "aggregates.c"
     h_aggregates_Shape_release(&t29);
 #line 46 "tests/golden/emit/aggregates.hero"
     t20 = h_aggregates_width(t19);
@@ -368,7 +374,7 @@ bb0:
     t30 = h7_own7;
 #line 47 "tests/golden/emit/aggregates.hero"
     h7_own7 = t21;
-#line 372 "aggregates.c"
+#line 378 "aggregates.c"
     h_aggregates_Shape_release(&t30);
 #line 47 "tests/golden/emit/aggregates.hero"
     t22 = h_aggregates_width(t21);
@@ -378,35 +384,35 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/emit/aggregates.hero"
     t31 = h0_o;
-#line 382 "aggregates.c"
+#line 388 "aggregates.c"
     h_aggregates_Outer_release(&t31);
 #line 47 "tests/golden/emit/aggregates.hero"
     t32 = h1_own1;
-#line 386 "aggregates.c"
+#line 392 "aggregates.c"
     hero_str_decref(t32);
 #line 47 "tests/golden/emit/aggregates.hero"
     t33 = h2_own2;
-#line 390 "aggregates.c"
+#line 396 "aggregates.c"
     h_aggregates_Inner_release(&t33);
 #line 47 "tests/golden/emit/aggregates.hero"
     t34 = h3_own3;
-#line 394 "aggregates.c"
+#line 400 "aggregates.c"
     h_aggregates_Outer_release(&t34);
 #line 47 "tests/golden/emit/aggregates.hero"
     t35 = h4_own4;
-#line 398 "aggregates.c"
+#line 404 "aggregates.c"
     h_aggregates_Inner_release(&t35);
 #line 47 "tests/golden/emit/aggregates.hero"
     t36 = h5_own5;
-#line 402 "aggregates.c"
+#line 408 "aggregates.c"
     h_aggregates_Outer_release(&t36);
 #line 47 "tests/golden/emit/aggregates.hero"
     t37 = h6_own6;
-#line 406 "aggregates.c"
+#line 412 "aggregates.c"
     h_aggregates_Shape_release(&t37);
 #line 47 "tests/golden/emit/aggregates.hero"
     t38 = h7_own7;
-#line 410 "aggregates.c"
+#line 416 "aggregates.c"
     h_aggregates_Shape_release(&t38);
     return;
 }

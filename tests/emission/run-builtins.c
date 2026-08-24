@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "builtins.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "builtins.c"
 
 HERO_STR_STATIC(hero_str_0, "pearl");
 HERO_STR_STATIC(hero_str_1, "aladdin");
@@ -95,7 +101,7 @@ void h_builtins_main(void);
 
 #line 19 "tests/golden/run/builtins.hero"
 void h_builtins_main(void) {
-#line 99 "builtins.c"
+#line 105 "builtins.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_sorted = {0};
     HeroArrayHeader * h2_names = {0};
@@ -401,15 +407,15 @@ bb0:
     t160 = h12_own12;
 #line 20 "tests/golden/run/builtins.hero"
     h12_own12 = t4;
-#line 405 "builtins.c"
+#line 411 "builtins.c"
     hero_array_decref(t160);
 #line 20 "tests/golden/run/builtins.hero"
     t161 = h0_xs;
-#line 409 "builtins.c"
+#line 415 "builtins.c"
     hero_array_incref(t4);
 #line 20 "tests/golden/run/builtins.hero"
     h0_xs = t4;
-#line 413 "builtins.c"
+#line 419 "builtins.c"
     hero_array_decref(t161);
 #line 21 "tests/golden/run/builtins.hero"
     t5 = h0_xs;
@@ -419,15 +425,15 @@ bb0:
     t162 = h13_own13;
 #line 21 "tests/golden/run/builtins.hero"
     h13_own13 = t6;
-#line 423 "builtins.c"
+#line 429 "builtins.c"
     hero_array_decref(t162);
 #line 21 "tests/golden/run/builtins.hero"
     t163 = h1_sorted;
-#line 427 "builtins.c"
+#line 433 "builtins.c"
     hero_array_incref(t6);
 #line 21 "tests/golden/run/builtins.hero"
     h1_sorted = t6;
-#line 431 "builtins.c"
+#line 437 "builtins.c"
     hero_array_decref(t163);
 #line 22 "tests/golden/run/builtins.hero"
     t7 = h1_sorted;
@@ -511,15 +517,15 @@ bb0:
     t164 = h14_own14;
 #line 26 "tests/golden/run/builtins.hero"
     h14_own14 = t29;
-#line 515 "builtins.c"
+#line 521 "builtins.c"
     hero_array_decref(t164);
 #line 26 "tests/golden/run/builtins.hero"
     t165 = h2_names;
-#line 519 "builtins.c"
+#line 525 "builtins.c"
     hero_array_incref(t29);
 #line 26 "tests/golden/run/builtins.hero"
     h2_names = t29;
-#line 523 "builtins.c"
+#line 529 "builtins.c"
     hero_array_decref(t165);
 #line 27 "tests/golden/run/builtins.hero"
     t30 = h2_names;
@@ -529,7 +535,7 @@ bb0:
     t166 = h15_own15;
 #line 27 "tests/golden/run/builtins.hero"
     h15_own15 = t31;
-#line 533 "builtins.c"
+#line 539 "builtins.c"
     hero_array_decref(t166);
 #line 27 "tests/golden/run/builtins.hero"
     t32 = HERO_STR_LIT(hero_str_3);
@@ -539,7 +545,7 @@ bb0:
     t167 = h16_own16;
 #line 27 "tests/golden/run/builtins.hero"
     h16_own16 = t33;
-#line 543 "builtins.c"
+#line 549 "builtins.c"
     hero_str_decref(t167);
 #line 27 "tests/golden/run/builtins.hero"
     hero_print_str(t33);
@@ -569,15 +575,15 @@ bb0:
     t168 = h17_own17;
 #line 29 "tests/golden/run/builtins.hero"
     h17_own17 = t37;
-#line 573 "builtins.c"
+#line 579 "builtins.c"
     hero_array_decref(t168);
 #line 29 "tests/golden/run/builtins.hero"
     t169 = h3_fs;
-#line 577 "builtins.c"
+#line 583 "builtins.c"
     hero_array_incref(t37);
 #line 29 "tests/golden/run/builtins.hero"
     h3_fs = t37;
-#line 581 "builtins.c"
+#line 587 "builtins.c"
     hero_array_decref(t169);
 #line 30 "tests/golden/run/builtins.hero"
     t38 = h3_fs;
@@ -587,7 +593,7 @@ bb0:
     t170 = h18_own18;
 #line 30 "tests/golden/run/builtins.hero"
     h18_own18 = t39;
-#line 591 "builtins.c"
+#line 597 "builtins.c"
     hero_array_decref(t170);
 #line 30 "tests/golden/run/builtins.hero"
     t40 = INT64_C(0);
@@ -603,7 +609,7 @@ bb0:
     t171 = h19_own19;
 #line 30 "tests/golden/run/builtins.hero"
     h19_own19 = t44;
-#line 607 "builtins.c"
+#line 613 "builtins.c"
     hero_array_decref(t171);
 #line 30 "tests/golden/run/builtins.hero"
     t45 = INT64_C(2);
@@ -653,15 +659,15 @@ bb0:
     t172 = h20_own20;
 #line 34 "tests/golden/run/builtins.hero"
     h20_own20 = t52;
-#line 657 "builtins.c"
+#line 663 "builtins.c"
     hero_array_decref(t172);
 #line 34 "tests/golden/run/builtins.hero"
     t173 = h4_flags;
-#line 661 "builtins.c"
+#line 667 "builtins.c"
     hero_array_incref(t52);
 #line 34 "tests/golden/run/builtins.hero"
     h4_flags = t52;
-#line 665 "builtins.c"
+#line 671 "builtins.c"
     hero_array_decref(t173);
 #line 35 "tests/golden/run/builtins.hero"
     t53 = h4_flags;
@@ -671,15 +677,15 @@ bb0:
     t174 = h21_own21;
 #line 35 "tests/golden/run/builtins.hero"
     h21_own21 = t54;
-#line 675 "builtins.c"
+#line 681 "builtins.c"
     hero_array_decref(t174);
 #line 35 "tests/golden/run/builtins.hero"
     t175 = h5_ordered;
-#line 679 "builtins.c"
+#line 685 "builtins.c"
     hero_array_incref(t54);
 #line 35 "tests/golden/run/builtins.hero"
     h5_ordered = t54;
-#line 683 "builtins.c"
+#line 689 "builtins.c"
     hero_array_decref(t175);
 #line 36 "tests/golden/run/builtins.hero"
     t55 = h5_ordered;
@@ -735,15 +741,15 @@ bb0:
     t176 = h22_own22;
 #line 39 "tests/golden/run/builtins.hero"
     h22_own22 = t73;
-#line 739 "builtins.c"
+#line 745 "builtins.c"
     hero_array_decref(t176);
 #line 39 "tests/golden/run/builtins.hero"
     t177 = h6_tail;
-#line 743 "builtins.c"
+#line 749 "builtins.c"
     hero_array_incref(t73);
 #line 39 "tests/golden/run/builtins.hero"
     h6_tail = t73;
-#line 747 "builtins.c"
+#line 753 "builtins.c"
     hero_array_decref(t177);
 #line 40 "tests/golden/run/builtins.hero"
     t74 = h6_tail;
@@ -759,7 +765,7 @@ bb0:
     t178 = h23_own23;
 #line 40 "tests/golden/run/builtins.hero"
     h23_own23 = t78;
-#line 763 "builtins.c"
+#line 769 "builtins.c"
     hero_str_decref(t178);
 #line 40 "tests/golden/run/builtins.hero"
     hero_print_int(t75);
@@ -779,7 +785,7 @@ bb0:
     t179 = h24_own24;
 #line 41 "tests/golden/run/builtins.hero"
     h24_own24 = t82;
-#line 783 "builtins.c"
+#line 789 "builtins.c"
     hero_array_decref(t179);
 #line 41 "tests/golden/run/builtins.hero"
     t83 = hero_array_len(t82);
@@ -795,7 +801,7 @@ bb0:
     t180 = h25_own25;
 #line 41 "tests/golden/run/builtins.hero"
     h25_own25 = t87;
-#line 799 "builtins.c"
+#line 805 "builtins.c"
     hero_array_decref(t180);
 #line 41 "tests/golden/run/builtins.hero"
     t88 = hero_array_len(t87);
@@ -811,15 +817,15 @@ bb0:
     t181 = h26_own26;
 #line 44 "tests/golden/run/builtins.hero"
     h26_own26 = t89;
-#line 815 "builtins.c"
+#line 821 "builtins.c"
     hero_array_decref(t181);
 #line 44 "tests/golden/run/builtins.hero"
     t182 = h7_empty;
-#line 819 "builtins.c"
+#line 825 "builtins.c"
     hero_array_incref(t89);
 #line 44 "tests/golden/run/builtins.hero"
     h7_empty = t89;
-#line 823 "builtins.c"
+#line 829 "builtins.c"
     hero_array_decref(t182);
 #line 45 "tests/golden/run/builtins.hero"
     t90 = HERO_STR_LIT(hero_str_6);
@@ -833,7 +839,7 @@ bb0:
     t183 = h27_own27;
 #line 45 "tests/golden/run/builtins.hero"
     h27_own27 = t93;
-#line 837 "builtins.c"
+#line 843 "builtins.c"
     hero_str_decref(t183);
 #line 45 "tests/golden/run/builtins.hero"
     t94 = HERO_STR_LIT(hero_str_8);
@@ -859,7 +865,7 @@ bb0:
     t184 = h28_own28;
 #line 46 "tests/golden/run/builtins.hero"
     h28_own28 = t97;
-#line 863 "builtins.c"
+#line 869 "builtins.c"
     hero_array_decref(t184);
 #line 46 "tests/golden/run/builtins.hero"
     t98 = HERO_STR_LIT(hero_str_7);
@@ -869,7 +875,7 @@ bb0:
     t185 = h29_own29;
 #line 46 "tests/golden/run/builtins.hero"
     h29_own29 = t99;
-#line 873 "builtins.c"
+#line 879 "builtins.c"
     hero_str_decref(t185);
 #line 46 "tests/golden/run/builtins.hero"
     t100 = HERO_STR_LIT(hero_str_8);
@@ -885,11 +891,11 @@ bb0:
     t101 = HERO_STR_LIT(hero_str_10);
 #line 49 "tests/golden/run/builtins.hero"
     t186 = h8_word;
-#line 889 "builtins.c"
+#line 895 "builtins.c"
     hero_str_incref(t101);
 #line 49 "tests/golden/run/builtins.hero"
     h8_word = t101;
-#line 893 "builtins.c"
+#line 899 "builtins.c"
     hero_str_decref(t186);
 #line 50 "tests/golden/run/builtins.hero"
     t102 = h8_word;
@@ -905,7 +911,7 @@ bb0:
     t187 = h30_own30;
 #line 50 "tests/golden/run/builtins.hero"
     h30_own30 = t106;
-#line 909 "builtins.c"
+#line 915 "builtins.c"
     hero_array_decref(t187);
 #line 50 "tests/golden/run/builtins.hero"
     t107 = hero_array_len(t106);
@@ -925,7 +931,7 @@ bb0:
     t188 = h31_own31;
 #line 51 "tests/golden/run/builtins.hero"
     h31_own31 = t109;
-#line 929 "builtins.c"
+#line 935 "builtins.c"
     hero_array_decref(t188);
 #line 51 "tests/golden/run/builtins.hero"
     t110 = HERO_STR_LIT(hero_str_11);
@@ -935,7 +941,7 @@ bb0:
     t189 = h32_own32;
 #line 51 "tests/golden/run/builtins.hero"
     h32_own32 = t111;
-#line 939 "builtins.c"
+#line 945 "builtins.c"
     hero_str_decref(t189);
 #line 51 "tests/golden/run/builtins.hero"
     hero_print_str(t111);
@@ -949,7 +955,7 @@ bb0:
     t190 = h33_own33;
 #line 53 "tests/golden/run/builtins.hero"
     h33_own33 = t113;
-#line 953 "builtins.c"
+#line 959 "builtins.c"
     hero_array_decref(t190);
 #line 53 "tests/golden/run/builtins.hero"
     t114 = HERO_STR_LIT(hero_str_12);
@@ -959,7 +965,7 @@ bb0:
     t191 = h34_own34;
 #line 53 "tests/golden/run/builtins.hero"
     h34_own34 = t115;
-#line 963 "builtins.c"
+#line 969 "builtins.c"
     hero_str_decref(t191);
 #line 53 "tests/golden/run/builtins.hero"
     t116 = h8_word;
@@ -977,7 +983,7 @@ bb0:
     t192 = h35_own35;
 #line 54 "tests/golden/run/builtins.hero"
     h35_own35 = t119;
-#line 981 "builtins.c"
+#line 987 "builtins.c"
     hero_array_decref(t192);
 #line 54 "tests/golden/run/builtins.hero"
     t120 = HERO_STR_LIT(hero_str_12);
@@ -987,7 +993,7 @@ bb0:
     t193 = h36_own36;
 #line 54 "tests/golden/run/builtins.hero"
     h36_own36 = t121;
-#line 991 "builtins.c"
+#line 997 "builtins.c"
     hero_str_decref(t193);
 #line 54 "tests/golden/run/builtins.hero"
     t122 = HERO_STR_LIT(hero_str_12);
@@ -1013,15 +1019,15 @@ bb0:
     t194 = h37_own37;
 #line 56 "tests/golden/run/builtins.hero"
     h37_own37 = t125;
-#line 1017 "builtins.c"
+#line 1023 "builtins.c"
     h_builtins_0opt0_release(&t194);
 #line 56 "tests/golden/run/builtins.hero"
     t195 = h9_f0;
-#line 1021 "builtins.c"
+#line 1027 "builtins.c"
     h_builtins_0opt0_retain(&t125);
 #line 56 "tests/golden/run/builtins.hero"
     h9_f0 = t125;
-#line 1025 "builtins.c"
+#line 1031 "builtins.c"
     h_builtins_0opt0_release(&t195);
 #line 56 "tests/golden/run/builtins.hero"
     t126 = h9_f0;
@@ -1057,15 +1063,15 @@ bb1:
     t196 = h38_own38;
 #line 56 "tests/golden/run/builtins.hero"
     h38_own38 = t136;
-#line 1061 "builtins.c"
+#line 1067 "builtins.c"
     h_builtins_0opt0_release(&t196);
 #line 56 "tests/golden/run/builtins.hero"
     t197 = h10_f1;
-#line 1065 "builtins.c"
+#line 1071 "builtins.c"
     h_builtins_0opt0_retain(&t136);
 #line 56 "tests/golden/run/builtins.hero"
     h10_f1 = t136;
-#line 1069 "builtins.c"
+#line 1075 "builtins.c"
     h_builtins_0opt0_release(&t197);
 #line 56 "tests/golden/run/builtins.hero"
     t137 = h10_f1;
@@ -1083,7 +1089,7 @@ bb2:
     t130 = h9_f0;
 #line 56 "tests/golden/run/builtins.hero"
     t131 = t130.as.err;
-#line 1087 "builtins.c"
+#line 1093 "builtins.c"
     hero_panic_must(t131);
     hero_unreachable();
 bb3:
@@ -1107,15 +1113,15 @@ bb3:
     t198 = h39_own39;
 #line 56 "tests/golden/run/builtins.hero"
     h39_own39 = t146;
-#line 1111 "builtins.c"
+#line 1117 "builtins.c"
     h_builtins_0opt0_release(&t198);
 #line 56 "tests/golden/run/builtins.hero"
     t199 = h11_f2;
-#line 1115 "builtins.c"
+#line 1121 "builtins.c"
     h_builtins_0opt0_retain(&t146);
 #line 56 "tests/golden/run/builtins.hero"
     h11_f2 = t146;
-#line 1119 "builtins.c"
+#line 1125 "builtins.c"
     h_builtins_0opt0_release(&t199);
 #line 56 "tests/golden/run/builtins.hero"
     t147 = h11_f2;
@@ -1133,7 +1139,7 @@ bb4:
     t141 = h10_f1;
 #line 56 "tests/golden/run/builtins.hero"
     t142 = t141.as.err;
-#line 1137 "builtins.c"
+#line 1143 "builtins.c"
     hero_panic_must(t142);
     hero_unreachable();
 bb5:
@@ -1169,163 +1175,163 @@ bb5:
     hero_print_end();
 #line 57 "tests/golden/run/builtins.hero"
     t200 = h0_xs;
-#line 1173 "builtins.c"
+#line 1179 "builtins.c"
     hero_array_decref(t200);
 #line 57 "tests/golden/run/builtins.hero"
     t201 = h1_sorted;
-#line 1177 "builtins.c"
+#line 1183 "builtins.c"
     hero_array_decref(t201);
 #line 57 "tests/golden/run/builtins.hero"
     t202 = h2_names;
-#line 1181 "builtins.c"
+#line 1187 "builtins.c"
     hero_array_decref(t202);
 #line 57 "tests/golden/run/builtins.hero"
     t203 = h3_fs;
-#line 1185 "builtins.c"
+#line 1191 "builtins.c"
     hero_array_decref(t203);
 #line 57 "tests/golden/run/builtins.hero"
     t204 = h4_flags;
-#line 1189 "builtins.c"
+#line 1195 "builtins.c"
     hero_array_decref(t204);
 #line 57 "tests/golden/run/builtins.hero"
     t205 = h5_ordered;
-#line 1193 "builtins.c"
+#line 1199 "builtins.c"
     hero_array_decref(t205);
 #line 57 "tests/golden/run/builtins.hero"
     t206 = h6_tail;
-#line 1197 "builtins.c"
+#line 1203 "builtins.c"
     hero_array_decref(t206);
 #line 57 "tests/golden/run/builtins.hero"
     t207 = h7_empty;
-#line 1201 "builtins.c"
+#line 1207 "builtins.c"
     hero_array_decref(t207);
 #line 57 "tests/golden/run/builtins.hero"
     t208 = h8_word;
-#line 1205 "builtins.c"
+#line 1211 "builtins.c"
     hero_str_decref(t208);
 #line 57 "tests/golden/run/builtins.hero"
     t209 = h9_f0;
-#line 1209 "builtins.c"
+#line 1215 "builtins.c"
     h_builtins_0opt0_release(&t209);
 #line 57 "tests/golden/run/builtins.hero"
     t210 = h10_f1;
-#line 1213 "builtins.c"
+#line 1219 "builtins.c"
     h_builtins_0opt0_release(&t210);
 #line 57 "tests/golden/run/builtins.hero"
     t211 = h11_f2;
-#line 1217 "builtins.c"
+#line 1223 "builtins.c"
     h_builtins_0opt0_release(&t211);
 #line 57 "tests/golden/run/builtins.hero"
     t212 = h12_own12;
-#line 1221 "builtins.c"
+#line 1227 "builtins.c"
     hero_array_decref(t212);
 #line 57 "tests/golden/run/builtins.hero"
     t213 = h13_own13;
-#line 1225 "builtins.c"
+#line 1231 "builtins.c"
     hero_array_decref(t213);
 #line 57 "tests/golden/run/builtins.hero"
     t214 = h14_own14;
-#line 1229 "builtins.c"
+#line 1235 "builtins.c"
     hero_array_decref(t214);
 #line 57 "tests/golden/run/builtins.hero"
     t215 = h15_own15;
-#line 1233 "builtins.c"
+#line 1239 "builtins.c"
     hero_array_decref(t215);
 #line 57 "tests/golden/run/builtins.hero"
     t216 = h16_own16;
-#line 1237 "builtins.c"
+#line 1243 "builtins.c"
     hero_str_decref(t216);
 #line 57 "tests/golden/run/builtins.hero"
     t217 = h17_own17;
-#line 1241 "builtins.c"
+#line 1247 "builtins.c"
     hero_array_decref(t217);
 #line 57 "tests/golden/run/builtins.hero"
     t218 = h18_own18;
-#line 1245 "builtins.c"
+#line 1251 "builtins.c"
     hero_array_decref(t218);
 #line 57 "tests/golden/run/builtins.hero"
     t219 = h19_own19;
-#line 1249 "builtins.c"
+#line 1255 "builtins.c"
     hero_array_decref(t219);
 #line 57 "tests/golden/run/builtins.hero"
     t220 = h20_own20;
-#line 1253 "builtins.c"
+#line 1259 "builtins.c"
     hero_array_decref(t220);
 #line 57 "tests/golden/run/builtins.hero"
     t221 = h21_own21;
-#line 1257 "builtins.c"
+#line 1263 "builtins.c"
     hero_array_decref(t221);
 #line 57 "tests/golden/run/builtins.hero"
     t222 = h22_own22;
-#line 1261 "builtins.c"
+#line 1267 "builtins.c"
     hero_array_decref(t222);
 #line 57 "tests/golden/run/builtins.hero"
     t223 = h23_own23;
-#line 1265 "builtins.c"
+#line 1271 "builtins.c"
     hero_str_decref(t223);
 #line 57 "tests/golden/run/builtins.hero"
     t224 = h24_own24;
-#line 1269 "builtins.c"
+#line 1275 "builtins.c"
     hero_array_decref(t224);
 #line 57 "tests/golden/run/builtins.hero"
     t225 = h25_own25;
-#line 1273 "builtins.c"
+#line 1279 "builtins.c"
     hero_array_decref(t225);
 #line 57 "tests/golden/run/builtins.hero"
     t226 = h26_own26;
-#line 1277 "builtins.c"
+#line 1283 "builtins.c"
     hero_array_decref(t226);
 #line 57 "tests/golden/run/builtins.hero"
     t227 = h27_own27;
-#line 1281 "builtins.c"
+#line 1287 "builtins.c"
     hero_str_decref(t227);
 #line 57 "tests/golden/run/builtins.hero"
     t228 = h28_own28;
-#line 1285 "builtins.c"
+#line 1291 "builtins.c"
     hero_array_decref(t228);
 #line 57 "tests/golden/run/builtins.hero"
     t229 = h29_own29;
-#line 1289 "builtins.c"
+#line 1295 "builtins.c"
     hero_str_decref(t229);
 #line 57 "tests/golden/run/builtins.hero"
     t230 = h30_own30;
-#line 1293 "builtins.c"
+#line 1299 "builtins.c"
     hero_array_decref(t230);
 #line 57 "tests/golden/run/builtins.hero"
     t231 = h31_own31;
-#line 1297 "builtins.c"
+#line 1303 "builtins.c"
     hero_array_decref(t231);
 #line 57 "tests/golden/run/builtins.hero"
     t232 = h32_own32;
-#line 1301 "builtins.c"
+#line 1307 "builtins.c"
     hero_str_decref(t232);
 #line 57 "tests/golden/run/builtins.hero"
     t233 = h33_own33;
-#line 1305 "builtins.c"
+#line 1311 "builtins.c"
     hero_array_decref(t233);
 #line 57 "tests/golden/run/builtins.hero"
     t234 = h34_own34;
-#line 1309 "builtins.c"
+#line 1315 "builtins.c"
     hero_str_decref(t234);
 #line 57 "tests/golden/run/builtins.hero"
     t235 = h35_own35;
-#line 1313 "builtins.c"
+#line 1319 "builtins.c"
     hero_array_decref(t235);
 #line 57 "tests/golden/run/builtins.hero"
     t236 = h36_own36;
-#line 1317 "builtins.c"
+#line 1323 "builtins.c"
     hero_str_decref(t236);
 #line 57 "tests/golden/run/builtins.hero"
     t237 = h37_own37;
-#line 1321 "builtins.c"
+#line 1327 "builtins.c"
     h_builtins_0opt0_release(&t237);
 #line 57 "tests/golden/run/builtins.hero"
     t238 = h38_own38;
-#line 1325 "builtins.c"
+#line 1331 "builtins.c"
     h_builtins_0opt0_release(&t238);
 #line 57 "tests/golden/run/builtins.hero"
     t239 = h39_own39;
-#line 1329 "builtins.c"
+#line 1335 "builtins.c"
     h_builtins_0opt0_release(&t239);
     return;
 bb6:
@@ -1333,7 +1339,7 @@ bb6:
     t151 = h11_f2;
 #line 56 "tests/golden/run/builtins.hero"
     t152 = t151.as.err;
-#line 1337 "builtins.c"
+#line 1343 "builtins.c"
     hero_panic_must(t152);
     hero_unreachable();
 }

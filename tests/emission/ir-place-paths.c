@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "placepaths.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "placepaths.c"
 
 typedef struct h_placepaths_Row {
     HeroArrayHeader * f_cells;
@@ -86,7 +92,7 @@ int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c)
 
 #line 12 "tests/golden/ir/place-paths.hero"
 void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) {
-#line 90 "placepaths.c"
+#line 96 "placepaths.c"
     h_placepaths_Grid h0_g = {0};
     int64_t t1;
     int64_t t2;
@@ -104,14 +110,14 @@ bb0:
     hero_array_unshare(&(h0_g.f_rows));
 #line 13 "tests/golden/ir/place-paths.hero"
     hero_array_set(&((*(h_placepaths_Row *)hero_array_at_mut(h0_g.f_rows, t1)).f_cells), t2, &t3);
-#line 108 "placepaths.c"
+#line 114 "placepaths.c"
     *ph0_g = h0_g;
     return;
 }
 
 #line 15 "tests/golden/ir/place-paths.hero"
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) {
-#line 115 "placepaths.c"
+#line 121 "placepaths.c"
     h_placepaths_Grid t1 = {0};
     HeroArrayHeader * t2 = {0};
     int64_t t3;
@@ -137,7 +143,7 @@ bb0:
     t7 = *(int64_t const *)hero_array_at(t5, t6);
 #line 16 "tests/golden/ir/place-paths.hero"
     return t7;
-#line 141 "placepaths.c"
+#line 147 "placepaths.c"
 }
 void h_placepaths_Row_retain(const h_placepaths_Row *v) {
     hero_array_incref(v->f_cells);

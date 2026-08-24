@@ -56,7 +56,8 @@ declarations. There are no mutable globals. Constants use SCREAMING_CASE.
 
 - No implicit conversions, widths included: `a + b` needs both the same type, and
   `1 + 2.0` is an error. Convert with `to_<type>`, and the name says whether it
-  can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value; `to_i8`
+  can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value — a
+  `cstr` uses `validated`, a `str?`; `to_i8`
   … `to_u64` give a `T?`, because the number may not fit. `to_i64` takes a float
   too, truncating toward zero. Nothing fails to fit a float: too large is `inf`,
   and `to_f32` rounds.
@@ -178,7 +179,8 @@ separator and exactly one trailing newline. A float prints a point or
 exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`; a `bool` prints `true` or `false`.
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
-after the program name) · `exit(code: i64)` (ends the program).
+after the program name) · `exit(code: i64)` (ends the program) ·
+`validated(c: cstr) -> str?` (text from C).
 
 ## Tests and holes
 ```
@@ -225,5 +227,5 @@ A header shows more than ISO C's names — `M_PI`, `strdup` and `fileno` are
 usually there. How much more is the platform's answer, not this language's.
 
 A group's `constant` has no body: the header holds the value. `s.cstr()` lends a
-`str` to C to read and `c.to_str()` copies one back — test `c == nullptr` first,
-because converting one aborts. A C out-parameter is an `@` parameter.
+`str` to C to read and `c.validated()` copies one back as a `str?`. A C
+out-parameter is an `@` parameter.

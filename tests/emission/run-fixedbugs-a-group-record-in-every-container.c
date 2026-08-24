@@ -3,6 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 #include <raylib.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -14,19 +15,19 @@ _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 #line 38 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 18 "fixedbugsagrouprecordineverycontainer.c"
+#line 19 "fixedbugsagrouprecordineverycontainer.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_fixedbugsagrouprecordineverycontainer_Color(void) { Color v = {0,0,0,0}; (void)v; }
-#line 25 "fixedbugsagrouprecordineverycontainer.c"
+#line 26 "fixedbugsagrouprecordineverycontainer.c"
 #pragma clang diagnostic pop
 
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
-#line 30 "fixedbugsagrouprecordineverycontainer.c"
+#line 31 "fixedbugsagrouprecordineverycontainer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -56,6 +57,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 39 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsagrouprecordineverycontainer_ColorToInt(Color a0) { (void)ColorToInt(a0); }
@@ -67,7 +71,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 71 "fixedbugsagrouprecordineverycontainer.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 77 "fixedbugsagrouprecordineverycontainer.c"
 
 typedef struct h_fixedbugsagrouprecordineverycontainer_0opt0 {
     int64_t tag;
@@ -140,7 +146,7 @@ void h_fixedbugsagrouprecordineverycontainer_main(void);
 
 #line 41 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 void h_fixedbugsagrouprecordineverycontainer_main(void) {
-#line 144 "fixedbugsagrouprecordineverycontainer.c"
+#line 150 "fixedbugsagrouprecordineverycontainer.c"
     Color h0_a;
     Color h1_b;
     Color h2_c;
@@ -329,15 +335,15 @@ bb0:
     t71 = h10_own10;
 #line 49 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h10_own10 = t24;
-#line 333 "fixedbugsagrouprecordineverycontainer.c"
+#line 339 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_decref(t71);
 #line 49 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t72 = h3_xs;
-#line 337 "fixedbugsagrouprecordineverycontainer.c"
+#line 343 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_incref(t24);
 #line 49 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h3_xs = t24;
-#line 341 "fixedbugsagrouprecordineverycontainer.c"
+#line 347 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_decref(t72);
 #line 50 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t25 = h3_xs;
@@ -367,15 +373,15 @@ bb0:
     t73 = h11_own11;
 #line 53 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h11_own11 = t32;
-#line 371 "fixedbugsagrouprecordineverycontainer.c"
+#line 377 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t73);
 #line 53 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t74 = h4_m;
-#line 375 "fixedbugsagrouprecordineverycontainer.c"
+#line 381 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_incref(t32);
 #line 53 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h4_m = t32;
-#line 379 "fixedbugsagrouprecordineverycontainer.c"
+#line 385 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t74);
 #line 54 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t33 = INT64_C(1);
@@ -409,15 +415,15 @@ bb0:
     t75 = h12_own12;
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h12_own12 = t37;
-#line 413 "fixedbugsagrouprecordineverycontainer.c"
+#line 419 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t75);
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t76 = h5_f0;
-#line 417 "fixedbugsagrouprecordineverycontainer.c"
+#line 423 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_retain(&t37);
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h5_f0 = t37;
-#line 421 "fixedbugsagrouprecordineverycontainer.c"
+#line 427 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t76);
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t38 = h5_f0;
@@ -449,15 +455,15 @@ bb1:
     t77 = h13_own13;
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h13_own13 = t48;
-#line 453 "fixedbugsagrouprecordineverycontainer.c"
+#line 459 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t77);
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t78 = h6_keyed;
-#line 457 "fixedbugsagrouprecordineverycontainer.c"
+#line 463 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_incref(t48);
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h6_keyed = t48;
-#line 461 "fixedbugsagrouprecordineverycontainer.c"
+#line 467 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t78);
 #line 57 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t49 = h0_a;
@@ -491,15 +497,15 @@ bb1:
     t79 = h14_own14;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h14_own14 = t53;
-#line 495 "fixedbugsagrouprecordineverycontainer.c"
+#line 501 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t79);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t80 = h7_f1;
-#line 499 "fixedbugsagrouprecordineverycontainer.c"
+#line 505 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt1_retain(&t53);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h7_f1 = t53;
-#line 503 "fixedbugsagrouprecordineverycontainer.c"
+#line 509 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t80);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t54 = h7_f1;
@@ -517,7 +523,7 @@ bb2:
     t42 = h5_f0;
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t43 = t42.as.err;
-#line 521 "fixedbugsagrouprecordineverycontainer.c"
+#line 527 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb3:
@@ -537,25 +543,25 @@ bb3:
     t81 = h15_own15;
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h15_own15 = t63;
-#line 541 "fixedbugsagrouprecordineverycontainer.c"
+#line 547 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t81);
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t82 = h8_maybe;
-#line 545 "fixedbugsagrouprecordineverycontainer.c"
+#line 551 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_retain(&t63);
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h8_maybe = t63;
-#line 549 "fixedbugsagrouprecordineverycontainer.c"
+#line 555 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t82);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t64 = h8_maybe;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t83 = h9_f2;
-#line 555 "fixedbugsagrouprecordineverycontainer.c"
+#line 561 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_retain(&t64);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h9_f2 = t64;
-#line 559 "fixedbugsagrouprecordineverycontainer.c"
+#line 565 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t83);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t65 = h9_f2;
@@ -579,55 +585,55 @@ bb3:
     hero_print_end();
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t84 = h3_xs;
-#line 583 "fixedbugsagrouprecordineverycontainer.c"
+#line 589 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_decref(t84);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t85 = h4_m;
-#line 587 "fixedbugsagrouprecordineverycontainer.c"
+#line 593 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t85);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t86 = h5_f0;
-#line 591 "fixedbugsagrouprecordineverycontainer.c"
+#line 597 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t86);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t87 = h6_keyed;
-#line 595 "fixedbugsagrouprecordineverycontainer.c"
+#line 601 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t87);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t88 = h7_f1;
-#line 599 "fixedbugsagrouprecordineverycontainer.c"
+#line 605 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t88);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t89 = h8_maybe;
-#line 603 "fixedbugsagrouprecordineverycontainer.c"
+#line 609 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t89);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t90 = h9_f2;
-#line 607 "fixedbugsagrouprecordineverycontainer.c"
+#line 613 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t90);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t91 = h10_own10;
-#line 611 "fixedbugsagrouprecordineverycontainer.c"
+#line 617 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_decref(t91);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t92 = h11_own11;
-#line 615 "fixedbugsagrouprecordineverycontainer.c"
+#line 621 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t92);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t93 = h12_own12;
-#line 619 "fixedbugsagrouprecordineverycontainer.c"
+#line 625 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t93);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t94 = h13_own13;
-#line 623 "fixedbugsagrouprecordineverycontainer.c"
+#line 629 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t94);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t95 = h14_own14;
-#line 627 "fixedbugsagrouprecordineverycontainer.c"
+#line 633 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t95);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t96 = h15_own15;
-#line 631 "fixedbugsagrouprecordineverycontainer.c"
+#line 637 "fixedbugsagrouprecordineverycontainer.c"
     h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t96);
     return;
 bb4:
@@ -635,7 +641,7 @@ bb4:
     t58 = h7_f1;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t59 = t58.as.err;
-#line 639 "fixedbugsagrouprecordineverycontainer.c"
+#line 645 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t59);
     hero_unreachable();
 }

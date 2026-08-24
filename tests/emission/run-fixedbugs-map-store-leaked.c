@@ -2,6 +2,7 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
@@ -30,6 +31,9 @@ _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-retur
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
+_Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
+_Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
+_Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
@@ -39,7 +43,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 43 "fixedbugsmapstoreleaked.c"
+#line 121 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+#line 49 "fixedbugsmapstoreleaked.c"
 
 HERO_STR_STATIC(hero_str_0, "a");
 HERO_STR_STATIC(hero_str_1, "x");
@@ -76,7 +82,7 @@ void h_fixedbugsmapstoreleaked_main(void);
 
 #line 18 "tests/golden/run/fixedbugs-map-store-leaked.hero"
 void h_fixedbugsmapstoreleaked_main(void) {
-#line 80 "fixedbugsmapstoreleaked.c"
+#line 86 "fixedbugsmapstoreleaked.c"
     HeroMapHeader * h0_m = {0};
     h_fixedbugsmapstoreleaked_0opt0 h1_f0 = {0};
     HeroStr h2_r0 = {0};
@@ -129,15 +135,15 @@ bb0:
     t23 = h3_own3;
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h3_own3 = t1;
-#line 133 "fixedbugsmapstoreleaked.c"
+#line 139 "fixedbugsmapstoreleaked.c"
     hero_map_decref(t23);
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t24 = h0_m;
-#line 137 "fixedbugsmapstoreleaked.c"
+#line 143 "fixedbugsmapstoreleaked.c"
     hero_map_incref(t1);
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h0_m = t1;
-#line 141 "fixedbugsmapstoreleaked.c"
+#line 147 "fixedbugsmapstoreleaked.c"
     hero_map_decref(t24);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t2 = HERO_STR_LIT(hero_str_0);
@@ -151,10 +157,10 @@ bb0:
     t25 = h4_own4;
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h4_own4 = t5;
-#line 155 "fixedbugsmapstoreleaked.c"
+#line 161 "fixedbugsmapstoreleaked.c"
     hero_str_decref(t25);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-#line 158 "fixedbugsmapstoreleaked.c"
+#line 164 "fixedbugsmapstoreleaked.c"
     hero_str_incref(t5);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_set(&(h0_m), &t2, &t5);
@@ -170,10 +176,10 @@ bb0:
     t26 = h5_own5;
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h5_own5 = t9;
-#line 174 "fixedbugsmapstoreleaked.c"
+#line 180 "fixedbugsmapstoreleaked.c"
     hero_str_decref(t26);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-#line 177 "fixedbugsmapstoreleaked.c"
+#line 183 "fixedbugsmapstoreleaked.c"
     hero_str_incref(t9);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_set(&(h0_m), &t6, &t9);
@@ -203,15 +209,15 @@ bb0:
     t27 = h6_own6;
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h6_own6 = t12;
-#line 207 "fixedbugsmapstoreleaked.c"
+#line 213 "fixedbugsmapstoreleaked.c"
     h_fixedbugsmapstoreleaked_0opt0_release(&t27);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t28 = h1_f0;
-#line 211 "fixedbugsmapstoreleaked.c"
+#line 217 "fixedbugsmapstoreleaked.c"
     h_fixedbugsmapstoreleaked_0opt0_retain(&t12);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h1_f0 = t12;
-#line 215 "fixedbugsmapstoreleaked.c"
+#line 221 "fixedbugsmapstoreleaked.c"
     h_fixedbugsmapstoreleaked_0opt0_release(&t28);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t13 = h1_f0;
@@ -231,11 +237,11 @@ bb1:
     t18 = t17.as.ok;
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t29 = h2_r0;
-#line 235 "fixedbugsmapstoreleaked.c"
+#line 241 "fixedbugsmapstoreleaked.c"
     hero_str_incref(t18);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h2_r0 = t18;
-#line 239 "fixedbugsmapstoreleaked.c"
+#line 245 "fixedbugsmapstoreleaked.c"
     hero_str_decref(t29);
     goto bb3;
 bb2:
@@ -243,11 +249,11 @@ bb2:
     t19 = HERO_STR_LIT(hero_str_5);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t30 = h2_r0;
-#line 247 "fixedbugsmapstoreleaked.c"
+#line 253 "fixedbugsmapstoreleaked.c"
     hero_str_incref(t19);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h2_r0 = t19;
-#line 251 "fixedbugsmapstoreleaked.c"
+#line 257 "fixedbugsmapstoreleaked.c"
     hero_str_decref(t30);
     goto bb3;
 bb3:
@@ -267,31 +273,31 @@ bb3:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t31 = h0_m;
-#line 271 "fixedbugsmapstoreleaked.c"
+#line 277 "fixedbugsmapstoreleaked.c"
     hero_map_decref(t31);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t32 = h1_f0;
-#line 275 "fixedbugsmapstoreleaked.c"
+#line 281 "fixedbugsmapstoreleaked.c"
     h_fixedbugsmapstoreleaked_0opt0_release(&t32);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t33 = h2_r0;
-#line 279 "fixedbugsmapstoreleaked.c"
+#line 285 "fixedbugsmapstoreleaked.c"
     hero_str_decref(t33);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t34 = h3_own3;
-#line 283 "fixedbugsmapstoreleaked.c"
+#line 289 "fixedbugsmapstoreleaked.c"
     hero_map_decref(t34);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t35 = h4_own4;
-#line 287 "fixedbugsmapstoreleaked.c"
+#line 293 "fixedbugsmapstoreleaked.c"
     hero_str_decref(t35);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t36 = h5_own5;
-#line 291 "fixedbugsmapstoreleaked.c"
+#line 297 "fixedbugsmapstoreleaked.c"
     hero_str_decref(t36);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t37 = h6_own6;
-#line 295 "fixedbugsmapstoreleaked.c"
+#line 301 "fixedbugsmapstoreleaked.c"
     h_fixedbugsmapstoreleaked_0opt0_release(&t37);
     return;
 }
