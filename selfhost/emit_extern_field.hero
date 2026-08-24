@@ -103,7 +103,42 @@ function assertion(c: check_state.Checked, names: emit_ctype.Names, s: source.So
             # The length stays exact, asked of the field's OWN element
             # type — __typeof__(place[0])[n] — so the count is decided
             # and the element never re-litigated.
-            return ok(flex_line + "\n             _Static_assert(__builtin_classify_type(" + place + "[0]) == 1 && sizeof(" + place + "[0]) == sizeof(" + elem.must() + ") && (((__typeof__(" + place + "[0]))-1 < 0) == ((" + elem.must() + ")-1 < 0)) && __builtin_types_compatible_p(__typeof__(" + place + "), __typeof__(" + place + "[0])[" + fixed_len.to_str() + "]), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
+            # THE ELEMENT IS ASKED THROUGH THE MEMBER'S ADDRESS, NEVER THROUGH
+            # A SUBSCRIPT, and that is what stops this branch blaming the
+            # compiler for the author's `extern` (§7; the mirror panel 085 R7
+            # left open, repaired 2026-08-24).
+            #
+            # The old form subscripted — `place[0]` — and a header whose member
+            # is a SCALAR made every one of those subscripts ill-formed:
+            # `i8[4]` against `struct dirent`'s `unsigned char d_type` was
+            # `error: subscripted value is not an array`, three times, and so
+            # `internal error: compiling the generated C failed` at **exit 2**
+            # for a declaration the author wrote. C's `&&` does not save it —
+            # every operand is type-checked whether or not an earlier one is
+            # false — which is the same fact that moved the SIGN test off a cast
+            # at panel 085 R7 and the same fact again one position over.
+            #
+            # `&place` is `T (*)[N]` for an array member and `T *` for a scalar,
+            # and both are well-formed. Each association's expression is a
+            # constant over a C TYPE NAME rather than over the member, so it is
+            # well-formed no matter what the member turns out to be, and a
+            # scalar lands on `default: 0` — the assertion FAILS, at exit 1, on
+            # the author's own line, where it used to break the build.
+            #
+            # **Width and sign, never type identity** (panel 064): C's integer
+            # ABI is those two and nothing else, so all twelve of C's integer
+            # types are enumerated and each row asks whether ITS width and sign
+            # match the declared element's. The twelve are the set
+            # `HERO_C_INTEGER` already lists, kept in step by
+            # `emit_assert_spelling.C_INTEGER_TYPES`.
+            #
+            # The LENGTH needs no separate conjunct any more: it is inside every
+            # association as `(*)[N]`, so a right element at a wrong count lands
+            # on `default: 0` like anything else.
+            rows: [str] @ []
+            for c_int in emit_assert_spelling.C_INTEGER_TYPES
+                rows @ rows.push(c_int + " (*)[" + fixed_len.to_str() + "]: (sizeof(" + c_int + ") == sizeof(" + elem.must() + ") && (((" + c_int + ")-1 < 0) == ((" + elem.must() + ")-1 < 0)))")
+            return ok(flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + rows.join(", ") + ", default: 0), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
         return ok(flex_line + "\n             _Static_assert(_Generic(&" + place + ", " + elem.must() + " (*)[" + fixed_len.to_str() + "]: 1, default: 0) && sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") >= sizeof(" + elem.must() + "[" + fixed_len.to_str() + "]), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");")
     # An integer field asks WIDTH AND SIGN, never type identity (panel
     # 064): C's integer ABI is width and sign and nothing else, while

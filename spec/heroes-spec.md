@@ -11,7 +11,8 @@ Heroes is a small compiled language. This document is the whole language.
   declaration documents it; `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
   compile error. No braces, no semicolons, no parentheses around conditions.
-- Syntax is ASCII-only; strings and comments may contain any UTF-8.
+- Syntax is ASCII-only; comments may contain any UTF-8, strings any but a raw
+  carriage return.
 
 ## Top-level declarations
 Every top-level line starts with its kind. A `constant`'s name takes `: type`;
@@ -185,7 +186,7 @@ after the program name) · `exit(code: i64)` (ends the program) ·
 ## Tests and holes
 ```
 test "3-4-5 triangle"
-    assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25
+    assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25
 ```
 `test` blocks run only when asked for; ordinary builds ignore them. An
 `assert` failure shows the source expression and both sides.

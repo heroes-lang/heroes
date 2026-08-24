@@ -60,7 +60,7 @@ constant LEDGER: str
 # table's is — it is the tripwire that makes a SILENTLY DROPPED row fail, which
 # comparing the newest row alone would not.
 constant LEDGER_ROWS: i64
-    41
+    42
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -74,7 +74,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    3541
+    3553
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
