@@ -26,6 +26,7 @@ use ir
 use ir_state
 use ir_layout
 use ir_owning
+use ir_place_store
 
 function check(p: ir_state.Program, f: ir_state.Function, blk: ir_state.Block, c: check_state.Checked, label: str, @problems: [str])
     match p.phase
@@ -34,7 +35,7 @@ function check(p: ir_state.Program, f: ir_state.Function, blk: ir_state.Block, c
             for inst in blk.insts
                 match inst.op
                     .incref | .decref => has_rc @ true
-                    .lit | .load | .store | .unary | .binary | .cast | .call | .construct => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                     .func_ref | .copy_out | .abort_op | .hole | .missing => continue
             if has_rc
@@ -48,6 +49,7 @@ function check(p: ir_state.Program, f: ir_state.Function, blk: ir_state.Block, c
             no_generic_survives(f, blk, c, label: label, problems: @problems)
             released_on_return(f, blk, c, label: label, problems: @problems)
             owning_temporaries_move_into_slots(blk, c, label: label, problems: @problems)
+            ir_place_store.verify(blk, f, c, label: label, problems: @problems)
 
 # Every type in this block is concrete. Checked at mono AND at owned,
 # because the second is where a survivor would do its damage.
@@ -128,7 +130,7 @@ function last_write(blk: ir_state.Block, slot_at: i64) -> i64
             .store st =>
                 if st.place.root == slot_at && st.place.path.length == 0
                     floor @ at + 1
-            .lit | .load | .unary | .binary | .cast | .call | .construct => at @ at
+            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
             .field | .index | .map_get | .len_of | .tag_of | .payload => at @ at
             .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => at @ at
         at @ at + 1
@@ -142,7 +144,7 @@ function released_after(blk: ir_state.Block, slot_at: i64, floor: i64) -> bool
                 .decref rc =>
                     if loaded_from(blk, value: rc.value, slot_at: slot_at, floor: floor, before: at)
                         return true
-                .lit | .load | .store | .unary | .binary | .cast | .call | .construct => at @ at
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
                 .field | .index | .map_get | .len_of | .tag_of | .payload => at @ at
                 .func_ref | .copy_out | .abort_op | .incref | .hole | .missing => at @ at
         at @ at + 1
@@ -159,7 +161,7 @@ function loaded_from(blk: ir_state.Block, value: i64, slot_at: i64, floor: i64, 
                     .load ld =>
                         if ld.place.root == slot_at && ld.place.path.length == 0
                             return true
-                    .lit | .store | .unary | .binary | .cast | .call | .construct => at @ at
+                    .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
                     .field | .index | .map_get | .len_of | .tag_of | .payload => at @ at
                     .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => at @ at
         at @ at + 1
@@ -189,7 +191,7 @@ function owning_temporaries_move_into_slots(blk: ir_state.Block, c: check_state.
                 .store st =>
                     if st.value == dest
                         moved @ true
-                .lit | .load | .unary | .binary | .cast | .call | .construct => continue
+                .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct => continue
                 .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                 .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
         if !moved

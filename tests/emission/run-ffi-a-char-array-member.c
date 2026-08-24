@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <ffi-a-char-array-member.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
 #line 35 "tests/golden/run/ffi-a-char-array-member.hero"
 _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name");

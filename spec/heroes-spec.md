@@ -164,9 +164,9 @@ Precedence, strongest first: call and `.` → unary `-` `!` `~` → `* / %` → 
 `s.chars()`, which yields single-character `str`. Multi-line literals
 separate elements by newline; single-line by comma.
 
-Value semantics has a price: `+` on `str` copies both sides and `push` returns a
-copy — `xs @ xs.push(4)` — so accumulating either in a loop is quadratic. `join`
-and `repeat` build in one pass.
+`+` on `str` copies both sides — a concatenation loop is quadratic; `join` and
+`repeat` build in one pass. `xs @ xs.push(4)` grows in place while nothing else
+holds `xs`.
 
 Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` (`to` excluded) ·
 `chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (a number, `str` or `bool`, never a type parameter; a `nan` aborts) ·

@@ -183,6 +183,9 @@ variant OpKind
     store
         place: Place
         value: i64
+    push_owned  # the place store: `p @ p.push(v)`, one growing instruction — ir_place_store.hero teaches it (panels 037/088)
+        place: Place
+        value: i64
     unary
         op: UnaryOp
         operand: i64
@@ -193,9 +196,8 @@ variant OpKind
     cast
         kind: CastKind
         operand: i64
-    # variadic is set for the one call shape clang verifies nothing
-    # about: a wrong argument count compiles, runs, and prints garbage,
-    # with no diagnostic anywhere.
+    # variadic marks the one call shape clang verifies nothing about: a
+    # wrong argument count compiles, runs and prints garbage, silently.
     call
         callee: Callee
         arguments: Run
@@ -302,7 +304,7 @@ test "an instruction is flat: operands are ids, never expressions"
         .binary b =>
             assert b.left == 0
             assert b.right == 1
-        .lit | .load | .store | .unary | .cast | .call | .construct => assert false
+        .lit | .load | .store | .push_owned | .unary | .cast | .call | .construct => assert false
         .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
         .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
     assert plus.dest.must() == 2
@@ -314,7 +316,7 @@ test "a call's arguments are a run, and a void call has no destination"
         .call c =>
             assert c.variadic
             assert c.arguments.length == 2
-        .lit | .load | .store | .unary | .binary | .cast | .construct => assert false
+        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => assert false
         .field | .index | .map_get | .len_of | .tag_of | .payload => assert false
         .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => assert false
 

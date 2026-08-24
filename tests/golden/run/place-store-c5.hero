@@ -1,0 +1,62 @@
+# Panel 037 item 2's `c5.hero` — the sharing half, landed with the place
+# store (author decision 2026-08-24, ir_place_store.hero). Five shapes
+# that MUST NOT grow in place, each an aliasing accident the rewrite
+# could have introduced and did not:
+#
+#   1. `ys = xs` before the push — the header is shared, the runtime
+#      copies, ys keeps its length.
+#   2. `ys = xs.push(v)` as a VALUE — not the pattern; xs untouched.
+#   3. the pushed value HOLDS the accumulator (built from it one line
+#      earlier): the stored copy keeps the pre-push array. This is the
+#      snapshot the two panel 088 prototypes disagreed on; the one
+#      without the guard exited 138.
+#   4. the pushed value BORROWS from inside the array being grown
+#      (`ws @ ws.push(ws[0])`): the value is read before the grow and
+#      the runtime never realloc-moves the block it reads from.
+#   5. an `@` escape in the pushed value (`qs @ qs.push(bump(@qs))`):
+#      the classic order is observable — receiver first — so the pass
+#      refuses the rewrite (a write to the root between load and store)
+#      and the answer matches the classic one exactly.
+#
+# `# UNVERIFIED — pending debrief`
+
+record Node
+    kids: [Node]
+
+function bump(@v: [i64]) -> i64
+    v @ v.push(99)
+    return v.len()
+
+function main()
+    # 1: sharing.
+    xs: [i64] @ []
+    xs @ xs.push(1)
+    xs @ xs.push(2)
+    ys = xs
+    xs @ xs.push(3)
+    print(xs.len(), " ", ys.len())
+    # 2: push as a value.
+    zs = xs.push(4)
+    print(xs.len(), " ", zs.len())
+    # 3: the self-snapshot on a bare place.
+    hs: [Node] @ []
+    hs @ hs.push(Node(kids: []))
+    root = Node(kids: hs)
+    hs @ hs.push(root)
+    print(hs.len(), " ", root.kids.len(), " ", hs[1].kids.len())
+    # 3b: the same through a field path (not the pattern; the classic
+    # shape must keep its snapshot too).
+    holder: Node @ Node(kids: [])
+    holder.kids @ holder.kids.push(Node(kids: []))
+    holder.kids @ holder.kids.push(holder)
+    print(holder.kids.len(), " ", holder.kids[1].kids.len())
+    # 4: the value borrows from inside the array being grown.
+    ws: [str] @ []
+    ws @ ws.push("a")
+    ws @ ws.push(ws[0])
+    print(ws.len(), " ", ws[1])
+    # 5: the @ escape — classic order, receiver first.
+    qs: [i64] @ []
+    qs @ qs.push(1)
+    qs @ qs.push(bump(@qs))
+    print(qs.len(), " ", qs[1])

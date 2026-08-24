@@ -312,4 +312,15 @@ was that *"leave the spec false"* reached the ballot at all.
 
 ## Author's verdict
 
-*(pending — `docs/debrief/DECIDE.md`)*
+**2026-08-24: "approvo panel 037"** — the author pulled R2's trigger, the one
+this sitting said was theirs alone, one day after the sitting closed and with
+R5's measurement (docs/measurements/012) in hand. The place store landed the
+same session under R4's five conditions: `**` signature; the copy-guard, with
+`place-store-c5.hero` carrying the firing case this file's prototypes
+disagreed on; `Place.path.len == 0`, held by ir_verify with a test that
+fires; the spec amendment in the landing commit (R3's pre-registered −4
+wording direction: **3506** measured against the predicted 3508, falsifier
+≥3512); and item 2's ABI bump honoured — 15 — rather than overturned in
+writing. Predictions scored in docs/measurements/013 § Panel 088 predictions.
+O1/O3's closure and O4's veto stand as adopted; the formal ratification of
+the sitting's remaining record stays queued in `docs/debrief/DECIDE.md`.

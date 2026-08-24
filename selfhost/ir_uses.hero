@@ -26,6 +26,10 @@ function operands(f: ir_state.Function, op: ir.OpKind) -> [i64]
             out @ path_values(f, st.place)
             out @ out.push(st.value)
             return out
+        .push_owned pg =>
+            out @ path_values(f, pg.place)
+            out @ out.push(pg.value)
+            return out
         .unary u => out @ out.push(u.operand)
         .cast ca => out @ out.push(ca.operand)
         # A refcount operation reads the value it adjusts. Saying so
@@ -101,6 +105,7 @@ function slots_of(op: ir.OpKind) -> [i64]
     match op
         .load ld => out @ out.push(ld.place.root)
         .store st => out @ out.push(st.place.root)
+        .push_owned pg => out @ out.push(pg.place.root)
         .copy_out co => out @ out.push(co.param)
         .lit | .unary | .binary | .cast | .call | .construct => return out
         .field | .index | .map_get | .len_of | .tag_of | .payload => return out

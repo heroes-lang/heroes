@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <raylib.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
 #line 36 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Texture *)0)->id) == 1 && sizeof(((Texture *)0)->id) == sizeof(uint32_t) && (_Generic(((Texture *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Texture id");

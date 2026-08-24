@@ -151,7 +151,7 @@ function calls_in(f: ir_state.Function, generic: {i64: bool}, c: check_state.Che
                                 continue
                             found @ found.push(FoundCall(instance: Instance(decl: h.decl, bound: recorded.must()), span: inst.span))
                         .extern_fn | .builtin_fn | .indirect => continue
-                .lit | .load | .store | .unary | .binary | .cast | .construct => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
                 .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                 .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     return found

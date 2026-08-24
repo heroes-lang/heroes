@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <stdlib.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
 #line 49 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 _Static_assert(__builtin_classify_type(((div_t *)0)->quot) == 1 && sizeof(((div_t *)0)->quot) == sizeof(int32_t) && (_Generic(((div_t *)0)->quot, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field div_t quot");

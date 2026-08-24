@@ -3,7 +3,7 @@
 #include <math.h>
 #include <hero_os.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -1258,7 +1258,6 @@ HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_closurelist_
     int64_t h5_x;
     HeroArrayHeader * h6_own6 = {0};
     HeroStr h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
     HeroArrayHeader * t1 = {0};
     HeroArrayHeader * t2 = {0};
     int64_t t3;
@@ -1269,11 +1268,9 @@ HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_closurelist_
     HeroArrayHeader * t8 = {0};
     int64_t t9;
     int64_t t10;
-    HeroArrayHeader * t11 = {0};
     h_closurelist_0fn0 t12;
     int64_t t13;
     HeroStr t14 = {0};
-    HeroArrayHeader * t15 = {0};
     int64_t t16;
     int64_t t17;
     int64_t t18;
@@ -1285,10 +1282,7 @@ HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_closurelist_
     HeroArrayHeader * t24 = {0};
     HeroArrayHeader * t25 = {0};
     HeroArrayHeader * t26 = {0};
-    HeroArrayHeader * t27 = {0};
-    HeroArrayHeader * t28 = {0};
-    HeroStr t29 = {0};
-    HeroArrayHeader * t30 = {0};
+    HeroStr t27 = {0};
     goto bb0;
 bb0:
 #line 37 "<heroes library>"
@@ -1297,25 +1291,25 @@ bb0:
     t20 = h6_own6;
 #line 37 "<heroes library>"
     h6_own6 = t1;
-#line 1301 "closurelist.c"
+#line 1295 "closurelist.c"
     hero_array_decref(t20);
 #line 37 "<heroes library>"
     t21 = h2_out;
-#line 1305 "closurelist.c"
+#line 1299 "closurelist.c"
     hero_array_incref(t1);
 #line 37 "<heroes library>"
     h2_out = t1;
-#line 1309 "closurelist.c"
+#line 1303 "closurelist.c"
     hero_array_decref(t21);
 #line 38 "<heroes library>"
     t2 = h0_xs;
 #line 38 "<heroes library>"
     t22 = h3_xs0;
-#line 1315 "closurelist.c"
+#line 1309 "closurelist.c"
     hero_array_incref(t2);
 #line 38 "<heroes library>"
     h3_xs0 = t2;
-#line 1319 "closurelist.c"
+#line 1313 "closurelist.c"
     hero_array_decref(t22);
 #line 38 "<heroes library>"
     t3 = INT64_C(0);
@@ -1346,8 +1340,6 @@ bb2:
 #line 38 "<heroes library>"
     h5_x = t10;
 #line 39 "<heroes library>"
-    t11 = h2_out;
-#line 39 "<heroes library>"
     t12 = h1_f;
 #line 39 "<heroes library>"
     t13 = h5_x;
@@ -1357,25 +1349,13 @@ bb2:
     t23 = h7_own7;
 #line 39 "<heroes library>"
     h7_own7 = t14;
-#line 1361 "closurelist.c"
+#line 1353 "closurelist.c"
     hero_str_decref(t23);
 #line 39 "<heroes library>"
-    t15 = hero_array_push(t11, &t14);
+    hero_array_push_owned(&h2_out, &t14);
 #line 39 "<heroes library>"
-    t24 = h8_own8;
-#line 39 "<heroes library>"
-    h8_own8 = t15;
-#line 1369 "closurelist.c"
-    hero_array_decref(t24);
-#line 39 "<heroes library>"
-    t25 = h2_out;
-#line 1373 "closurelist.c"
-    hero_array_incref(t15);
-#line 39 "<heroes library>"
-    h2_out = t15;
-#line 1377 "closurelist.c"
-    hero_array_decref(t25);
     goto bb3;
+#line 39 "<heroes library>"
 bb3:
 #line 38 "<heroes library>"
     t16 = h4_i0;
@@ -1391,28 +1371,24 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1395 "closurelist.c"
+#line 1375 "closurelist.c"
     hero_array_incref(t19);
 #line 40 "<heroes library>"
-    t26 = h2_out;
-#line 1399 "closurelist.c"
+    t24 = h2_out;
+#line 1379 "closurelist.c"
+    hero_array_decref(t24);
+#line 40 "<heroes library>"
+    t25 = h3_xs0;
+#line 1383 "closurelist.c"
+    hero_array_decref(t25);
+#line 40 "<heroes library>"
+    t26 = h6_own6;
+#line 1387 "closurelist.c"
     hero_array_decref(t26);
 #line 40 "<heroes library>"
-    t27 = h3_xs0;
-#line 1403 "closurelist.c"
-    hero_array_decref(t27);
-#line 40 "<heroes library>"
-    t28 = h6_own6;
-#line 1407 "closurelist.c"
-    hero_array_decref(t28);
-#line 40 "<heroes library>"
-    t29 = h7_own7;
-#line 1411 "closurelist.c"
-    hero_str_decref(t29);
-#line 40 "<heroes library>"
-    t30 = h8_own8;
-#line 1415 "closurelist.c"
-    hero_array_decref(t30);
+    t27 = h7_own7;
+#line 1391 "closurelist.c"
+    hero_str_decref(t27);
     return t19;
 }
 bool h_closurelist_Point_eq(const h_closurelist_Point *a, const h_closurelist_Point *b) {

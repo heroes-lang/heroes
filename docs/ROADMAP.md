@@ -21,10 +21,13 @@ was growing about 66 lines per close; `/step`'s checklist now keeps § Status at
 baseline net found `docs/defects/002` (panel 087, five lines of runtime C, +0 spec
 tokens), and a dead descriptor in every unit that named a container type it never
 built (panel 088's neighbour, `/decide` 3c). Panels 085–087 ratified 2026-08-23;
-**088 is pending**. Waiting: **20** open questions in `DECIDE.md`. The 46× question is **answered
-and repaired** (measurement 012, 2026-08-24): the writer and the loader were 56%
-of the compiler's build — **944.76 → 424.67 s (2.22×)**, tests 2.77× — and **78%
-of what remains waits on one decision, DECIDE R2 (the place store)**. Two `SCHEDULED.md` items are due here (panel 087's
+**088 is pending**. Waiting: **19** open questions in `DECIDE.md`. The 46× question is **answered,
+repaired, and closed all the way down** (measurements 012 and 013, 2026-08-24):
+the writer and the loader fell to two repairs, then the author pulled panel 037's
+trigger ("approvo panel 037") and the **place store landed** — the compiler
+builds itself in **188.51 s against 944.76 s a day earlier (5.01×)**, suite
+6.2× faster, spec 6 tokens lighter, one masked use-after-free found and
+repaired on the way (measurement 013). Two `SCHEDULED.md` items are due here (panel 087's
 unpruned extern asserts, 13 lines × 153 TUs, and panel 086 R4's `ORDER:` walks).
 
     clang -I runtime seed/heroes.c runtime/runtime.c -o heroes    # 3.95 s

@@ -31,6 +31,7 @@ use ir_lower
 use ir_verify
 use ir_mono
 use ir_own
+use ir_place_store
 use ir_print
 use emit_decls
 use emit
@@ -156,6 +157,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     problems_m = ir_verify.verify(p, c, parsed.decls)
     if problems_m.len() > 0
         return broken(problems_m, what: "monomorphisation produced an ill-formed program")
+    ir_place_store.run(@p)
     ir_own.run(@p, c)
     problems_o = ir_verify.verify(p, c, parsed.decls)
     if problems_o.len() > 0

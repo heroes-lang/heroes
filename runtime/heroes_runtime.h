@@ -34,7 +34,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 14
+#define HERO_RUNTIME_ABI 15
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -375,6 +375,21 @@ void *hero_array_at_mut(HeroArrayHeader *a, int64_t index);
  * outermost unshare, because the value may live inside the very container being
  * copied (`n.children[0] @ n`). */
 void hero_array_set(HeroArrayHeader **slot, int64_t index, const void *value);
+
+/* The place store: `p @ p.push(v)` on a bare place, recognised at lowering
+ * (panels 037 and 088; landed by author decision 2026-08-24). `**` and not a
+ * returned pointer, for hero_array_set's reason — and because the slot is what
+ * makes uniqueness knowable: the classic call-and-store shape increfs its
+ * arguments, so `hero_array_push` can never see a true count (panel 037: the
+ * gate fired on 0 of 100,000 accumulator pushes). Here the emitter passes the
+ * place itself; refcount 1 with room appends in place, anything else copies
+ * into a geometrically grown block. The value is BORROWED (copied in, like
+ * `hero_array_push`), never moved — and the copy is guarded: copying the value
+ * may incref this very array (`n.kids @ n.kids.push(n)`), and committing the
+ * longer length then would nest the array inside itself, so the refcount is
+ * re-read across the copy and a moved count undoes and takes the copying path,
+ * which snapshots. */
+void hero_array_push_owned(HeroArrayHeader **slot, const void *value);
 
 /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
  *

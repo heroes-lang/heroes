@@ -183,7 +183,7 @@ function calls_of(f: ir_state.Function) -> [i64]
                     match fr.callee
                         .heroes_fn h => found @ found.push(h.decl)
                         .extern_fn | .builtin_fn | .indirect => continue
-                .lit | .load | .store | .unary | .binary | .cast | .construct => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
                 .field | .index | .map_get | .len_of | .tag_of | .payload => continue
                 .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
     return found

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <dirent.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 14, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
 
 #line 40 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
 _Static_assert(__builtin_classify_type(((struct dirent *)0)->d_name) == 1 && sizeof(((struct dirent *)0)->d_name) == sizeof(int8_t) && (_Generic(((struct dirent *)0)->d_name, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Dirent d_name");
