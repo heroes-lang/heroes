@@ -130,7 +130,8 @@ hole at holes.hero:26:74
     summary_of(entries: [Entry])
       # The hole can be one argument of an otherwise finished line.
     library.hero_args_at(index: i64)
-    library.hero_file_read(path: cstr, @status: i64)</code></pre>
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
   <p>
     Leggi il secondo. Il compilatore ha capito che il pezzo mancante deve essere
     uno <code>str</code>, ha elencato quello che c&rsquo;è a disposizione nel
@@ -153,7 +154,17 @@ hole at holes.hero:22:5
   position: statement — any type, or none
   this function returns: Entry
   in scope:
-    entries: [Entry]</code></pre>
+    entries: [Entry]
+hole at holes.hero:26:74
+  expected type: str
+  in scope:
+    entries: [Entry]
+  functions that return it:
+    summary_of(entries: [Entry])
+      # The hole can be one argument of an otherwise finished line.
+    library.hero_args_at(index: i64)
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
   <p>
     Questo è lo scambio, ed è buono: un programma scritto a metà è un programma
     di cui il compilatore ti parla, e non può mai essere scambiato per uno

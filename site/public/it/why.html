@@ -134,8 +134,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     non per accumulo. Quello che non è, è una libreria che cresce.
   </p>
   <p>
-    Con la pigrizia non c&rsquo;entra niente: è la leva che rende praticabile un
-    linguaggio fatto da una persona, e ha una conseguenza che tutto il resto del progetto rispetta:
+    La pigrizia non c&rsquo;entra niente: quella leva è ciò che rende praticabile
+    un linguaggio fatto da una persona sola, e ha una conseguenza che tutto il resto del progetto rispetta:
     <b>l&rsquo;ergonomia del confine con il C conta quanto la comprensibilità,
     non meno.</b> Una libreria che Heroes non riesce a collegare è codice C che
     il suo autore deve continuare a scrivere a mano: esattamente la cosa che
@@ -186,7 +186,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     file. Sotto, il linguaggio è ancora più piccolo: quello che il compilatore
     implementa davvero sono <b>sette costrutti</b> &mdash; legare un nome,
     definire e chiamare una funzione, costruire e leggere un <code>record</code>,
-    costruire e scomporre un <code>variant</code>, ciclare,
+    costruire e scomporre un <code>variant</code>, eseguire un ciclo,
     <code>return</code>, le operazioni primitive. Tutto il resto è zucchero
     sintattico, cancellato prima della forma interna del compilatore, quindi non
     costa niente al type checker, alla traduzione verso la forma interna e al
@@ -222,8 +222,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     E la liberazione della memoria non è affidata al caso: il compilatore
     inserisce il conteggio come istruzioni vere e costruisce un solo percorso di
     pulizia per funzione, così ogni uscita da uno scope rilascia quello che quello
-    scope teneva. Tutto il runtime che sta sotto conta 3.139 righe di C, misurate
-    il 2026-08-18.
+    scope teneva. Tutto il runtime che sta sotto conta 3.350 righe di C, misurate
+    il 2026-08-24.
   </p>
   <p>
     Sopra a tutto sta la promessa che il linguaggio tratta come un obiettivo e non
@@ -247,7 +247,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <li><b>Esattamente un modo di scrivere ogni cosa.</b> Un formatter canonico, una sola parola chiave per i cicli, nessuna conversione implicita di nessun tipo, nomi degli argomenti obbligatori dove i tipi potrebbero confondersi. Gli errori che i modelli fanno davvero diventano errori che il compilatore solleva davvero.</li>
     <li><b>Errori scritti per essere letti da una macchina.</b> Ogni diagnostica porta tutto quello che serve per sistemare il programma in un solo giro: il tipo aspettato, il punto della definizione, riparazioni concrete etichettate <code>certain</code> o <code>guess</code>. I buchi tipati (<code>???</code>) permettono di costruire un programma partendo dallo scheletro.</li>
     <li><b>Un programma non deve andare in segfault.</b> Dove due soluzioni ammissibili sono in disaccordo e una delle due si può far schiantare, vince l&rsquo;altra, qualunque cosa costi in eleganza o in token. La sezione qui sopra ha l&rsquo;argomento per esteso, e l&rsquo;unico buco che lascia aperto.</li>
-    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3512 token contro un tetto fisso di 4096: cinque pagine, ed è il prompt più che una documentazione.</li>
+    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3530 token contro un tetto fisso di 4096: cinque pagine, ed è il prompt più che una documentazione.</li>
   </ul>
 
   <h2>Le obiezioni ovvie <span class="nod">· quicksand, avoided ·</span></h2>
@@ -277,7 +277,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     comunque, e si è scoperto che la metà costosa era già stata pagata: quello che
     rende pericolose più dimensioni di numero altrove è la conversione
     <i>implicita</i>, e le conversioni implicite erano vietate dal primo giorno per
-    un motivo che non aveva niente a che fare. Così <code>i8</code> fino a
+    un motivo che non c&rsquo;entrava niente. Così <code>i8</code> fino a
     <code>u64</code> più <code>f32</code> e <code>f64</code> sono arrivati al
     prezzo di circa un paragrafo, ogni conversione ancora scritta a mano, e la
     parola <code>int</code> è diventata un errore che elenca le larghezze.</dd>
@@ -295,18 +295,20 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     copy-on-write è una gestione della memoria completa, senza garbage collector.
     La località diventa totale: quello che significa una riga è deciso da quella
     riga. Il prezzo è reale, e la specifica lo dice invece di nasconderlo:
-    &ldquo;<code>+</code> su <code>str</code> copia entrambi i lati e
-    <code>push</code> restituisce una copia, <code>xs @ xs.push(4)</code>, quindi
-    accumulare l&rsquo;uno o l&rsquo;altro dentro un ciclo è quadratico.
-    <code>join</code> e <code>repeat</code> costruiscono in un solo
-    passaggio.&rdquo;</dd>
+    &ldquo;<code>+</code> su <code>str</code> copia entrambi i lati &mdash;
+    un ciclo di concatenazioni è quadratico; <code>join</code> e
+    <code>repeat</code> costruiscono in una passata sola.
+    <code>xs @ xs.push(4)</code> cresce sul posto finché nessun altro tiene
+    <code>xs</code>.&rdquo;</dd>
 
     <dt>Cosa manca, e in cosa questo linguaggio è scarso?</dt>
     <dd>Quattro cose, nominate invece di lasciarle scoprire. <b>Nella v1 non
     c&rsquo;è concorrenza</b>: il documento di progetto la chiama &ldquo;la lacuna
     più grande, ed è deliberata&rdquo;. <b>Non ci sono lambda</b>: un valore di
     tipo funzione è una normale dichiarazione al primo livello, passata per nome.
-    <b>Accumulare stringhe o array dentro un ciclo è quadratico</b> (sopra). E i
+    <b>Accumulare stringhe dentro un ciclo è quadratico</b> (sopra &mdash;
+    far crescere un array con <code>xs @ xs.push(4)</code> non lo è: cresce sul
+    posto). E i
     generici stanno solo sulle funzioni, senza vincoli, sempre dedotti.
     L&rsquo;altra metà dell&rsquo;onestà è il modello dei fallimenti a runtime:
     l&rsquo;overflow si arresta su ogni larghezza, e così fanno un indice fuori
@@ -360,8 +362,8 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <dd>Perché la specifica <i>è</i> il prompt. Ogni funzionalità paga
     l&rsquo;affitto lì dentro, e un linguaggio la cui definizione completa sta in
     poche pagine è anche un linguaggio che una persona sola può implementare: i
-    due vincoli sono lo stesso vincolo travestito. Al momento misura 3512, e ne
-    restano 584 da spendere. Il numero è misurato, non stimato, e quella
+    due vincoli sono lo stesso vincolo travestito. Al momento misura 3530, e ne
+    restano 566 da spendere. Il numero è misurato, non stimato, e quella
     distinzione è costata due giorni al progetto: il budget veniva difeso a
     spanne, tenendo d&rsquo;occhio il numero di parole, finché qualcuno non ha
     contato davvero e ha trovato la specifica un terzo più grande di quanto si

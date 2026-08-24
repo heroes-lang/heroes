@@ -14,6 +14,7 @@ five-seat review panel as a directory-scoped skill.
 |---|---|
 | `index.html` | the landing: hero, one sample, three cards, the claim. Short on purpose. |
 | | The hero says **&ldquo;a compiled programming language&rdquo;** above the name, because a visitor who has never heard of Heroes should not have to infer the category (author instruction 2026-08-17). Its code panel shows **working code, never a diagnostic** — *&ldquo;aprire un sito di un linguaggio con un errore è brutto&rdquo;*, same date. The errors have their own page. In that panel the `bar` names the file, so the figure carries no second caption. |
+| | The promise line under the name **leans on something that is not an error** (author instruction 2026-08-24: *&ldquo;cambia il claim in home page facendo leva su qualcosa che non sia un errore&rdquo;*): it now reads *&ldquo;Small enough to fit in a prompt, real enough to compile itself&rdquo;*, both halves measured. The thesis has not left the page — it closed the tagline and it still owns § The claim — it just no longer leads. |
 | `why.html` | the founding constraint, the thesis, the cost formula, the rules, the objections |
 | `errors.html` | diagnostics as a deliverable — real output, fixes, holes, the mutation numbers. Not in the nav: it is a sub-page of `docs/`, linked from the docs landing, with a crumb and `Docs` marked current |
 | `selfhost.html` | the fixpoint: the hash, what it took, and what it found |

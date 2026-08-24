@@ -124,8 +124,13 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <code>cstr</code> è una stringa C e <code>ptr</code> è un puntatore opaco.
     Nessuno dei due è uno <code>str</code>, e nessuna conversione avviene alle
     tue spalle: <code>s.cstr()</code> presta al C una stringa di Heroes perché la
-    legga, e <code>c.to_str()</code> ne ricopia una indietro. Prima controlla
-    <code>c == nullptr</code>, perché convertirne una nulla ferma il programma.
+    legga, e <code>c.validated()</code> ne ricopia una indietro come
+    <code>str?</code> &mdash; un valore oppure un errore, perché il testo che
+    arriva dal C è una promessa, non un fatto: il puntatore può essere nullo, e
+    i byte possono non essere UTF-8. Lo gestisci come qualunque altro valore
+    fallibile. Anche la direzione opposta è protetta: un <code>cstr</code> nullo
+    passato a una funzione C ferma il programma con un panic che dice il perché,
+    invece di lasciare che sia il C a schiantarsi.
   </p>
   <p>
     Così un valore che arriva dal C resta marcato come tale ovunque vada, e la

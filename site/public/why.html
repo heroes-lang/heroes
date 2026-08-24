@@ -207,7 +207,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     Freeing is not guesswork either: the compiler inserts the counting as real
     instructions and builds one cleanup path per function, so every way out of
     a scope releases what that scope held. The whole runtime under this is
-    3,139 lines of C, measured 2026-08-18.
+    3,350 lines of C, measured 2026-08-24.
   </p>
   <p>
     On top sits the promise the language treats as a goal rather than as a
@@ -229,7 +229,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <li><b>Exactly one way to write anything.</b> A canonical formatter, one loop keyword, no implicit conversions of any kind, mandatory named arguments where types could be confused. Errors that models actually make become errors the compiler actually raises.</li>
     <li><b>Errors written to be read by a machine.</b> Every diagnostic carries everything needed to fix the program in one turn: the expected type, the definition site, and concrete fixes tagged <code>certain</code> or <code>guess</code>. Typed holes (<code>???</code>) let a program be built skeleton-first.</li>
     <li><b>A program must not segfault.</b> Where two admissible designs disagree and one of them can be made to crash, the other wins, whatever it costs in elegance or tokens. The section above has the argument and the one hole it leaves open.</li>
-    <li><b>Small enough to compile itself.</b> The whole specification is measured at 3512 tokens against a hard ceiling of 4096: five pages, and it is the prompt rather than documentation.</li>
+    <li><b>Small enough to compile itself.</b> The whole specification is measured at 3530 tokens against a hard ceiling of 4096: five pages, and it is the prompt rather than documentation.</li>
   </ul>
 
   <h2>The obvious objections <span class="nod">· quicksand, avoided ·</span></h2>
@@ -273,17 +273,18 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     refcounting with copy-on-write is complete memory management, no garbage
     collector. Locality becomes total: what a line means is decided by that
     line. The price is real, and the spec names it rather than hiding it:
-    &ldquo;<code>+</code> on <code>str</code> copies both sides and
-    <code>push</code> returns a copy, <code>xs @ xs.push(4)</code>, so
-    accumulating either in a loop is quadratic. <code>join</code> and
-    <code>repeat</code> build in one pass.&rdquo;</dd>
+    &ldquo;<code>+</code> on <code>str</code> copies both sides &mdash; a
+    concatenation loop is quadratic; <code>join</code> and <code>repeat</code>
+    build in one pass. <code>xs @ xs.push(4)</code> grows in place while
+    nothing else holds <code>xs</code>.&rdquo;</dd>
 
     <dt>What is missing, and what is this language bad at?</dt>
     <dd>Four things, named rather than discovered. <b>There is no concurrency
     in v1</b>: the design document calls it &ldquo;the largest gap and it is
     deliberate&rdquo;. <b>There are no lambdas</b>: a function value is an
-    ordinary top-level declaration, passed by name. <b>Accumulating strings or
-    arrays in a loop is quadratic</b> (above). And generics are on functions
+    ordinary top-level declaration, passed by name. <b>Accumulating strings in
+    a loop is quadratic</b> (above &mdash; growing an array with
+    <code>xs @ xs.push(4)</code> is not: it grows in place). And generics are on functions
     only, with no constraints, always inferred. The runtime failure model is
     the other half of the honesty: overflow aborts at every width, and so do an
     out-of-bounds index and a division by zero. Deterministic aborts, never
@@ -333,7 +334,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <dd>Because the spec <i>is</i> the prompt. Every feature pays rent in it,
     and a language whose entire definition fits in a few pages is also a
     language one person can implement: the two constraints are secretly the
-    same one. It currently measures 3512, leaving 584 to spend. The number is
+    same one. It currently measures 3530, leaving 566 to spend. The number is
     measured, not estimated, and that distinction cost the project two days:
     the budget was defended with a word-count rule of thumb until someone
     actually counted, and found the spec a third larger than believed. It is
