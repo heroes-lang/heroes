@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "adversarialnestedshortcircuit.c"
+#line 53 "adversarialnestedshortcircuit.c"
 
 HERO_STR_STATIC(hero_str_0, "a");
 HERO_STR_STATIC(hero_str_1, "b");
@@ -80,7 +84,7 @@ bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c);
 
 #line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_loud(HeroStr h0_tag, bool h1_answer) {
-#line 84 "adversarialnestedshortcircuit.c"
+#line 88 "adversarialnestedshortcircuit.c"
     HeroStr t1 = {0};
     bool t2;
     goto bb0;
@@ -95,12 +99,12 @@ bb0:
     t2 = h1_answer;
 #line 9 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t2;
-#line 99 "adversarialnestedshortcircuit.c"
+#line 103 "adversarialnestedshortcircuit.c"
 }
 
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c) {
-#line 104 "adversarialnestedshortcircuit.c"
+#line 108 "adversarialnestedshortcircuit.c"
     bool h3_b0;
     bool h4_b1;
     HeroStr t1 = {0};
@@ -164,7 +168,7 @@ bb4:
     t11 = h3_b0;
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t11;
-#line 168 "adversarialnestedshortcircuit.c"
+#line 172 "adversarialnestedshortcircuit.c"
 }
 void h_adversarialnestedshortcircuit_0opt0_retain(const h_adversarialnestedshortcircuit_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

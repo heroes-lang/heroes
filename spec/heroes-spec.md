@@ -180,7 +180,7 @@ exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`; a `bool` prints `true` or `f
 Files and the process, also provided: `read_file(path: str) -> str?` ·
 `write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
 after the program name) · `exit(code: i64)` (ends the program) ·
-`validated(c: cstr) -> str?` (text from C).
+`validated(c: cstr) -> str?` (text from C) · `args_checked() -> [str?]`.
 
 ## Tests and holes
 ```

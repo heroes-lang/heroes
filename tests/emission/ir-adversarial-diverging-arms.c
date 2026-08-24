@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "adversarialdivergingarms.c"
+#line 53 "adversarialdivergingarms.c"
 
 typedef enum h_adversarialdivergingarms_Step_tag {
     h_adversarialdivergingarms_Step_tag_stop = 0,
@@ -86,7 +90,7 @@ int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) {
-#line 90 "adversarialdivergingarms.c"
+#line 94 "adversarialdivergingarms.c"
     int64_t h1_seen;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -121,11 +125,11 @@ bb0:
     t2 = h0_xs;
 #line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
     t18 = h2_xs0;
-#line 125 "adversarialdivergingarms.c"
+#line 129 "adversarialdivergingarms.c"
     hero_array_incref(t2);
 #line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
     h2_xs0 = t2;
-#line 129 "adversarialdivergingarms.c"
+#line 133 "adversarialdivergingarms.c"
     hero_array_decref(t18);
 #line 13 "tests/golden/ir/adversarial-diverging-arms.hero"
     t3 = INT64_C(0);
@@ -191,7 +195,7 @@ bb4:
     t17 = h1_seen;
 #line 18 "tests/golden/ir/adversarial-diverging-arms.hero"
     t19 = h2_xs0;
-#line 195 "adversarialdivergingarms.c"
+#line 199 "adversarialdivergingarms.c"
     hero_array_decref(t19);
     return t17;
 bb6:

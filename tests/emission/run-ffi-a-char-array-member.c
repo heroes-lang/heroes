@@ -44,6 +44,7 @@ _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, 
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_I32(tag_first((Tag){0})), "heroes-ffi-return tag_first i32");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
@@ -53,6 +54,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -67,10 +69,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 73 "ffiachararraymember.c"
+#line 77 "ffiachararraymember.c"
 
 HERO_STR_STATIC(hero_str_0, " ");
 
@@ -116,7 +120,7 @@ void h_ffiachararraymember_main(void);
 
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
 void h_ffiachararraymember_main(void) {
-#line 119 "ffiachararraymember.c"
+#line 123 "ffiachararraymember.c"
     Tag h0_t;
     h_ffiachararraymember_0opt0 h1_f0 = {0};
     h_ffiachararraymember_0opt0 h2_f1 = {0};
@@ -203,15 +207,15 @@ bb0:
     t44 = h4_own4;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h4_own4 = t10;
-#line 206 "ffiachararraymember.c"
+#line 210 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t44);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t45 = h1_f0;
-#line 210 "ffiachararraymember.c"
+#line 214 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_retain(&t10);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h1_f0 = t10;
-#line 214 "ffiachararraymember.c"
+#line 218 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t45);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t11 = h1_f0;
@@ -245,15 +249,15 @@ bb1:
     t46 = h5_own5;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h5_own5 = t23;
-#line 248 "ffiachararraymember.c"
+#line 252 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t46);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t47 = h2_f1;
-#line 252 "ffiachararraymember.c"
+#line 256 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_retain(&t23);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h2_f1 = t23;
-#line 256 "ffiachararraymember.c"
+#line 260 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t47);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t24 = h2_f1;
@@ -271,7 +275,7 @@ bb2:
     t15 = h1_f0;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t16 = t15.as.err;
-#line 274 "ffiachararraymember.c"
+#line 278 "ffiachararraymember.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
@@ -291,15 +295,15 @@ bb3:
     t48 = h6_own6;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h6_own6 = t35;
-#line 294 "ffiachararraymember.c"
+#line 298 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t48);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t49 = h3_f2;
-#line 298 "ffiachararraymember.c"
+#line 302 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_retain(&t35);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h3_f2 = t35;
-#line 302 "ffiachararraymember.c"
+#line 306 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t49);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t36 = h3_f2;
@@ -317,7 +321,7 @@ bb4:
     t28 = h2_f1;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t29 = t28.as.err;
-#line 320 "ffiachararraymember.c"
+#line 324 "ffiachararraymember.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb5:
@@ -335,27 +339,27 @@ bb5:
     hero_print_end();
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t50 = h1_f0;
-#line 338 "ffiachararraymember.c"
+#line 342 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t50);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t51 = h2_f1;
-#line 342 "ffiachararraymember.c"
+#line 346 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t51);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t52 = h3_f2;
-#line 346 "ffiachararraymember.c"
+#line 350 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t52);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t53 = h4_own4;
-#line 350 "ffiachararraymember.c"
+#line 354 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t53);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t54 = h5_own5;
-#line 354 "ffiachararraymember.c"
+#line 358 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t54);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t55 = h6_own6;
-#line 358 "ffiachararraymember.c"
+#line 362 "ffiachararraymember.c"
     h_ffiachararraymember_0opt0_release(&t55);
     return;
 bb6:
@@ -363,7 +367,7 @@ bb6:
     t40 = h3_f2;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t41 = t40.as.err;
-#line 366 "ffiachararraymember.c"
+#line 370 "ffiachararraymember.c"
     hero_panic_must(t41);
     hero_unreachable();
 }

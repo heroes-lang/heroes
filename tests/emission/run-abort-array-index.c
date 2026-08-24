@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "abortarrayindex.c"
+#line 53 "abortarrayindex.c"
 
 typedef struct h_abortarrayindex_0opt0 {
     int64_t tag;
@@ -75,7 +79,7 @@ void h_abortarrayindex_main(void);
 
 #line 4 "tests/golden/run/abort-array-index.hero"
 void h_abortarrayindex_main(void) {
-#line 79 "abortarrayindex.c"
+#line 83 "abortarrayindex.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     int64_t t1;
@@ -118,15 +122,15 @@ bb0:
     t11 = h1_own1;
 #line 5 "tests/golden/run/abort-array-index.hero"
     h1_own1 = t4;
-#line 122 "abortarrayindex.c"
+#line 126 "abortarrayindex.c"
     hero_array_decref(t11);
 #line 5 "tests/golden/run/abort-array-index.hero"
     t12 = h0_xs;
-#line 126 "abortarrayindex.c"
+#line 130 "abortarrayindex.c"
     hero_array_incref(t4);
 #line 5 "tests/golden/run/abort-array-index.hero"
     h0_xs = t4;
-#line 130 "abortarrayindex.c"
+#line 134 "abortarrayindex.c"
     hero_array_decref(t12);
 #line 6 "tests/golden/run/abort-array-index.hero"
     t5 = h0_xs;
@@ -150,11 +154,11 @@ bb0:
     hero_print_end();
 #line 7 "tests/golden/run/abort-array-index.hero"
     t13 = h0_xs;
-#line 154 "abortarrayindex.c"
+#line 158 "abortarrayindex.c"
     hero_array_decref(t13);
 #line 7 "tests/golden/run/abort-array-index.hero"
     t14 = h1_own1;
-#line 158 "abortarrayindex.c"
+#line 162 "abortarrayindex.c"
     hero_array_decref(t14);
     return;
 }

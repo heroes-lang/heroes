@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "abortsortnan.c"
+#line 53 "abortsortnan.c"
 
 typedef struct h_abortsortnan_0opt0 {
     int64_t tag;
@@ -75,7 +79,7 @@ void h_abortsortnan_main(void);
 
 #line 14 "tests/golden/run/abort-sort-nan.hero"
 void h_abortsortnan_main(void) {
-#line 79 "abortsortnan.c"
+#line 83 "abortsortnan.c"
     double h0_zero;
     double h1_n;
     HeroArrayHeader * h2_own2 = {0};
@@ -139,7 +143,7 @@ bb0:
     t18 = h2_own2;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h2_own2 = t7;
-#line 143 "abortsortnan.c"
+#line 147 "abortsortnan.c"
     hero_array_decref(t18);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t8 = hero_array_sort(t7);
@@ -147,7 +151,7 @@ bb0:
     t19 = h3_own3;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h3_own3 = t8;
-#line 151 "abortsortnan.c"
+#line 155 "abortsortnan.c"
     hero_array_decref(t19);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t9 = INT64_C(0);
@@ -181,7 +185,7 @@ bb0:
     t20 = h4_own4;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h4_own4 = t14;
-#line 185 "abortsortnan.c"
+#line 189 "abortsortnan.c"
     hero_array_decref(t20);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t15 = hero_array_sort(t14);
@@ -189,7 +193,7 @@ bb0:
     t21 = h5_own5;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h5_own5 = t15;
-#line 193 "abortsortnan.c"
+#line 197 "abortsortnan.c"
     hero_array_decref(t21);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t16 = INT64_C(0);
@@ -201,19 +205,19 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t22 = h2_own2;
-#line 205 "abortsortnan.c"
+#line 209 "abortsortnan.c"
     hero_array_decref(t22);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t23 = h3_own3;
-#line 209 "abortsortnan.c"
+#line 213 "abortsortnan.c"
     hero_array_decref(t23);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t24 = h4_own4;
-#line 213 "abortsortnan.c"
+#line 217 "abortsortnan.c"
     hero_array_decref(t24);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t25 = h5_own5;
-#line 217 "abortsortnan.c"
+#line 221 "abortsortnan.c"
     hero_array_decref(t25);
     return;
 }

@@ -98,7 +98,7 @@ function extern_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check
         # six spellings, because C's char is distinct from both signed
         # and unsigned char and real headers return all three. const
         # void * is refused — the whole repair.
-        emit_writer.line(@w, text: "#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)")
+        emit_writer.line(@w, text: "#define HERO_RET_CSTR(c) _Generic((c), " + emit_assert_spelling.CSTR_SPELLINGS + ", default:0)")
     for f in externs
         extern_name = source.span_text(s, decls[f.decl].name)
         check_macro = emit_assert_spelling.return_check(c, ty: f.result)

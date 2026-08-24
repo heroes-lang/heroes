@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "adversarialjoinslot.c"
+#line 53 "adversarialjoinslot.c"
 
 typedef struct h_adversarialjoinslot_0opt0 {
     int64_t tag;
@@ -77,7 +81,7 @@ void h_adversarialjoinslot_main(void);
 
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_pick(bool h0_c) {
-#line 81 "adversarialjoinslot.c"
+#line 85 "adversarialjoinslot.c"
     int64_t h1_r0;
     int64_t h2_v;
     bool t1;
@@ -117,12 +121,12 @@ bb3:
     h1_r0 = t3;
 #line 18 "tests/golden/run/adversarial-join-slot.hero"
     goto bb1;
-#line 121 "adversarialjoinslot.c"
+#line 125 "adversarialjoinslot.c"
 }
 
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) {
-#line 126 "adversarialjoinslot.c"
+#line 130 "adversarialjoinslot.c"
     int64_t h2_r0;
     int64_t h3_r1;
     int64_t h4_v;
@@ -188,12 +192,12 @@ bb6:
     h3_r1 = t4;
 #line 26 "tests/golden/run/adversarial-join-slot.hero"
     goto bb4;
-#line 192 "adversarialjoinslot.c"
+#line 196 "adversarialjoinslot.c"
 }
 
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
 void h_adversarialjoinslot_main(void) {
-#line 197 "adversarialjoinslot.c"
+#line 201 "adversarialjoinslot.c"
     int64_t h0_i;
     int64_t h1_total;
     bool t1;
@@ -332,7 +336,7 @@ bb3:
     hero_print_end();
 #line 42 "tests/golden/run/adversarial-join-slot.hero"
     return;
-#line 336 "adversarialjoinslot.c"
+#line 340 "adversarialjoinslot.c"
 }
 void h_adversarialjoinslot_0opt0_retain(const h_adversarialjoinslot_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

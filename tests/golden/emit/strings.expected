@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "strings.c"
+#line 53 "strings.c"
 
 HERO_STR_STATIC(hero_str_0, "hi ");
 HERO_STR_STATIC(hero_str_1, "good day ");
@@ -80,7 +84,7 @@ void h_strings_main(void);
 
 #line 7 "tests/golden/emit/strings.hero"
 HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
-#line 84 "strings.c"
+#line 88 "strings.c"
     HeroStr h2_prefix = {0};
     HeroStr h3_own3 = {0};
     HeroStr t1 = {0};
@@ -100,11 +104,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_0);
 #line 8 "tests/golden/emit/strings.hero"
     t7 = h2_prefix;
-#line 104 "strings.c"
+#line 108 "strings.c"
     hero_str_incref(t1);
 #line 8 "tests/golden/emit/strings.hero"
     h2_prefix = t1;
-#line 108 "strings.c"
+#line 112 "strings.c"
     hero_str_decref(t7);
 #line 9 "tests/golden/emit/strings.hero"
     t2 = h1_formal;
@@ -122,18 +126,18 @@ bb1:
     t8 = h3_own3;
 #line 11 "tests/golden/emit/strings.hero"
     h3_own3 = t6;
-#line 126 "strings.c"
+#line 130 "strings.c"
     hero_str_decref(t8);
 #line 11 "tests/golden/emit/strings.hero"
-#line 129 "strings.c"
+#line 133 "strings.c"
     hero_str_incref(t6);
 #line 11 "tests/golden/emit/strings.hero"
     t10 = h2_prefix;
-#line 133 "strings.c"
+#line 137 "strings.c"
     hero_str_decref(t10);
 #line 11 "tests/golden/emit/strings.hero"
     t11 = h3_own3;
-#line 137 "strings.c"
+#line 141 "strings.c"
     hero_str_decref(t11);
     return t6;
 bb2:
@@ -141,11 +145,11 @@ bb2:
     t3 = HERO_STR_LIT(hero_str_1);
 #line 10 "tests/golden/emit/strings.hero"
     t9 = h2_prefix;
-#line 145 "strings.c"
+#line 149 "strings.c"
     hero_str_incref(t3);
 #line 10 "tests/golden/emit/strings.hero"
     h2_prefix = t3;
-#line 149 "strings.c"
+#line 153 "strings.c"
     hero_str_decref(t9);
     goto bb1;
 bb3:
@@ -154,7 +158,7 @@ bb3:
 
 #line 13 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
-#line 158 "strings.c"
+#line 162 "strings.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     bool t2;
@@ -173,7 +177,7 @@ bb0:
     t4 = h0_own0;
 #line 14 "tests/golden/emit/strings.hero"
     h0_own0 = t3;
-#line 177 "strings.c"
+#line 181 "strings.c"
     hero_str_decref(t4);
 #line 14 "tests/golden/emit/strings.hero"
     hero_print_str(t3);
@@ -181,7 +185,7 @@ bb0:
     hero_print_end();
 #line 14 "tests/golden/emit/strings.hero"
     t5 = h0_own0;
-#line 185 "strings.c"
+#line 189 "strings.c"
     hero_str_decref(t5);
     return;
 }

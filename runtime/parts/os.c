@@ -62,6 +62,34 @@ HeroStr hero_args_at(int64_t index) {
     return hero_str_from_cstr(hero_argv[index + 1]);
 }
 
+/* The same argument, BORROWED and unconverted — the one input a program cannot
+ * decline to receive, handed over as bytes so the program can decide (panel 089's
+ * ffi-pragmatist, queued there and landed 2026-08-24).
+ *
+ * `hero_args_at` above converts EAGERLY, which is why no `cstr` ever reaches a
+ * Heroes program and why `validated` — which rescues every other C string in the
+ * language — cannot rescue argv. Measured before this existed: `./prog $'\xff\xfe'`
+ * was `panic: hero_str_from_bytes: not well-formed UTF-8`, exit 134, for an
+ * argument the shell chose and the program never asked for.
+ *
+ * **Out of range is NULL and not a panic**, and that is the whole difference from
+ * its neighbour: a caller that must branch cannot branch on a panic. `args_at`
+ * keeps its abort because an out-of-range index is the program's own mistake
+ * (§4.9's rule for every index in this language); this one is reached only by the
+ * library's own loop, which cannot go out of range, and NULL is what makes it
+ * checkable rather than fatal if it ever does.
+ *
+ * Borrowed, not owned: the bytes belong to `main`'s argv and outlive every
+ * Heroes value built from them. Nothing here allocates, so nothing here can leak;
+ * the copy happens in `validated`, through the one allocation point §4.20
+ * insists on. */
+const char *hero_args_raw(int64_t index) {
+    if (index < 0 || index >= hero_args_count()) {
+        return NULL;
+    }
+    return hero_argv[index + 1];
+}
+
 /* The whole file, read with `fseek`/`ftell`/`fread`.
  *
  * A binary read (`"rb"`), because a `str` is bytes: §4.3 measures and indexes a

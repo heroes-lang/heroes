@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "sugarvariantcase.c"
+#line 53 "sugarvariantcase.c"
 
 typedef enum h_sugarvariantcase_Token_tag {
     h_sugarvariantcase_Token_tag_num = 0,
@@ -96,7 +100,7 @@ h_sugarvariantcase_Token h_sugarvariantcase_one(void);
 
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
 int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) {
-#line 100 "sugarvariantcase.c"
+#line 104 "sugarvariantcase.c"
     h_sugarvariantcase_Token h1_s0;
     int64_t h2_r0;
     h_sugarvariantcase_Token_c_num h3_n;
@@ -159,12 +163,12 @@ bb3:
     h2_r0 = t8;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
     goto bb1;
-#line 163 "sugarvariantcase.c"
+#line 167 "sugarvariantcase.c"
 }
 
 #line 14 "tests/golden/ir/sugar-variant-case.hero"
 h_sugarvariantcase_Token h_sugarvariantcase_one(void) {
-#line 168 "sugarvariantcase.c"
+#line 172 "sugarvariantcase.c"
     int64_t t1;
     h_sugarvariantcase_Token t2;
     goto bb0;
@@ -175,7 +179,7 @@ bb0:
     t2 = (h_sugarvariantcase_Token){.tag = h_sugarvariantcase_Token_tag_num, .as.c_num = {.f_v = t1}};
 #line 15 "tests/golden/ir/sugar-variant-case.hero"
     return t2;
-#line 179 "sugarvariantcase.c"
+#line 183 "sugarvariantcase.c"
 }
 bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;

@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "regressionwildcardbindsnothing.c"
+#line 53 "regressionwildcardbindsnothing.c"
 
 typedef enum h_regressionwildcardbindsnothing_Token_tag {
     h_regressionwildcardbindsnothing_Token_tag_num = 0,
@@ -96,7 +100,7 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs);
 
 #line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_kind_of(h_regressionwildcardbindsnothing_Token h0_t) {
-#line 100 "regressionwildcardbindsnothing.c"
+#line 104 "regressionwildcardbindsnothing.c"
     h_regressionwildcardbindsnothing_Token h1_s0;
     int64_t h2_r0;
     h_regressionwildcardbindsnothing_Token t1;
@@ -147,12 +151,12 @@ bb3:
     h2_r0 = t5;
 #line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     goto bb1;
-#line 151 "regressionwildcardbindsnothing.c"
+#line 155 "regressionwildcardbindsnothing.c"
 }
 
 #line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
-#line 156 "regressionwildcardbindsnothing.c"
+#line 160 "regressionwildcardbindsnothing.c"
     int64_t h1_n;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -182,11 +186,11 @@ bb0:
     t2 = h0_xs;
 #line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t15 = h2_xs0;
-#line 186 "regressionwildcardbindsnothing.c"
+#line 190 "regressionwildcardbindsnothing.c"
     hero_array_incref(t2);
 #line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_xs0 = t2;
-#line 190 "regressionwildcardbindsnothing.c"
+#line 194 "regressionwildcardbindsnothing.c"
     hero_array_decref(t15);
 #line 20 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t3 = INT64_C(0);
@@ -236,7 +240,7 @@ bb4:
     t14 = h1_n;
 #line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t16 = h2_xs0;
-#line 240 "regressionwildcardbindsnothing.c"
+#line 244 "regressionwildcardbindsnothing.c"
     hero_array_decref(t16);
     return t14;
 }

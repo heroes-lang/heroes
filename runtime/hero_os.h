@@ -86,6 +86,16 @@ void hero_args_set(int argc, char **argv);
 int64_t hero_args_count(void);
 HeroStr hero_args_at(int64_t index);
 
+/* The same argument, BORROWED and unconverted, so a program can decide what to do
+ * about bytes that are not text (panel 089). `hero_args_at` converts eagerly and
+ * aborts on ill-formed input — right for a program that knows its arguments are
+ * text, wrong for the one input a program cannot decline to receive.
+ *
+ * Out of range is **NULL rather than a panic**, unlike its neighbour: a caller
+ * that must branch cannot branch on a panic. The bytes belong to `main`'s argv,
+ * so nothing here allocates and nothing here can leak. */
+const char *hero_args_raw(int64_t index);
+
 /* Ends the program with this status, and never returns.
  *
  * `_Noreturn` is not decoration: without it clang's flow analysis treats the

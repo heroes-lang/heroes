@@ -51,6 +51,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -63,10 +64,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 70 "fficonstpointer.c"
+#line 73 "fficonstpointer.c"
 
 HERO_STR_STATIC(hero_str_0, " ");
 
@@ -112,7 +115,7 @@ void h_fficonstpointer_main(void);
 
 #line 37 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 void h_fficonstpointer_main(void) {
-#line 116 "fficonstpointer.c"
+#line 119 "fficonstpointer.c"
     Handle h0_h;
     void * h1_p;
     h_fficonstpointer_0opt0 h2_f0 = {0};
@@ -184,15 +187,15 @@ bb0:
     t27 = h4_own4;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h4_own4 = t10;
-#line 188 "fficonstpointer.c"
+#line 191 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t27);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t28 = h2_f0;
-#line 192 "fficonstpointer.c"
+#line 195 "fficonstpointer.c"
     h_fficonstpointer_0opt0_retain(&t10);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h2_f0 = t10;
-#line 196 "fficonstpointer.c"
+#line 199 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t28);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t11 = h2_f0;
@@ -240,7 +243,7 @@ bb1:
     t29 = h5_own5;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h5_own5 = t24;
-#line 244 "fficonstpointer.c"
+#line 247 "fficonstpointer.c"
     hero_str_decref(t29);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_str(t24);
@@ -254,7 +257,7 @@ bb1:
     t30 = h6_own6;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h6_own6 = t26;
-#line 258 "fficonstpointer.c"
+#line 261 "fficonstpointer.c"
     hero_str_decref(t30);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_str(t26);
@@ -262,19 +265,19 @@ bb1:
     hero_print_end();
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t31 = h2_f0;
-#line 266 "fficonstpointer.c"
+#line 269 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t31);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t32 = h4_own4;
-#line 270 "fficonstpointer.c"
+#line 273 "fficonstpointer.c"
     h_fficonstpointer_0opt0_release(&t32);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t33 = h5_own5;
-#line 274 "fficonstpointer.c"
+#line 277 "fficonstpointer.c"
     hero_str_decref(t33);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t34 = h6_own6;
-#line 278 "fficonstpointer.c"
+#line 281 "fficonstpointer.c"
     hero_str_decref(t34);
     return;
 bb2:
@@ -282,7 +285,7 @@ bb2:
     t15 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t16 = t15.as.err;
-#line 286 "fficonstpointer.c"
+#line 289 "fficonstpointer.c"
     hero_panic_must(t16);
     hero_unreachable();
 }

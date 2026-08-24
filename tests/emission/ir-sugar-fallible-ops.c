@@ -22,6 +22,7 @@ _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compile
 #define HERO_RET_STR(c) _Generic((c), HeroStr:1, default:0)
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
+#define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -30,6 +31,7 @@ _Static_assert(HERO_RET_STR(hero_file_read(0, (int64_t *)0)), "heroes-ffi-return
 _Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
+_Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
 _Static_assert(HERO_RET_UNIT(hero_exit((int64_t)0)), "heroes-ffi-return hero_exit ()");
 _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
@@ -42,10 +44,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(con
 #line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
 #line 115 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+#line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
-#line 121 "<heroes library>"
+#line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
-#line 49 "sugarfallibleops.c"
+#line 53 "sugarfallibleops.c"
 
 typedef struct h_sugarfallibleops_0opt0 {
     int64_t tag;
@@ -87,7 +91,7 @@ int64_t h_sugarfallibleops_widen(h_sugarfallibleops_0opt0 h0_v);
 
 #line 4 "tests/golden/ir/sugar-fallible-ops.hero"
 int64_t h_sugarfallibleops_widen(h_sugarfallibleops_0opt0 h0_v) {
-#line 91 "sugarfallibleops.c"
+#line 95 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0 h1_f0 = {0};
     h_sugarfallibleops_0opt0 h2_f1 = {0};
     int64_t h3_r0;
@@ -130,11 +134,11 @@ bb0:
     t1 = h0_v;
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t24 = h1_f0;
-#line 134 "sugarfallibleops.c"
+#line 138 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_retain(&t1);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     h1_f0 = t1;
-#line 138 "sugarfallibleops.c"
+#line 142 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t24);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t2 = h1_f0;
@@ -152,11 +156,11 @@ bb1:
     t15 = h0_v;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t25 = h4_f2;
-#line 156 "sugarfallibleops.c"
+#line 160 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_retain(&t15);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     h4_f2 = t15;
-#line 160 "sugarfallibleops.c"
+#line 164 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t25);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t16 = h4_f2;
@@ -174,11 +178,11 @@ bb2:
     t6 = h0_v;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t26 = h2_f1;
-#line 178 "sugarfallibleops.c"
+#line 182 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_retain(&t6);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     h2_f1 = t6;
-#line 182 "sugarfallibleops.c"
+#line 186 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t26);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t7 = h2_f1;
@@ -218,15 +222,15 @@ bb6:
     t14 = h3_r0;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t27 = h1_f0;
-#line 222 "sugarfallibleops.c"
+#line 226 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t27);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t28 = h2_f1;
-#line 226 "sugarfallibleops.c"
+#line 230 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t28);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t29 = h4_f2;
-#line 230 "sugarfallibleops.c"
+#line 234 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t29);
     return t14;
 bb7:
@@ -236,15 +240,15 @@ bb7:
     t23 = t22.as.ok;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t30 = h1_f0;
-#line 240 "sugarfallibleops.c"
+#line 244 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t30);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t31 = h2_f1;
-#line 244 "sugarfallibleops.c"
+#line 248 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t31);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t32 = h4_f2;
-#line 248 "sugarfallibleops.c"
+#line 252 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t32);
     return t23;
 bb8:
@@ -252,7 +256,7 @@ bb8:
     t20 = h4_f2;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t21 = t20.as.err;
-#line 256 "sugarfallibleops.c"
+#line 260 "sugarfallibleops.c"
     hero_panic_must(t21);
     hero_unreachable();
 }
