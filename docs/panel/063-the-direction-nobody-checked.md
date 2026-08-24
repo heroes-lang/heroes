@@ -230,7 +230,7 @@ flips to `object` on this and the other does not flip on the reverse. The eviden
 the measurement and the 6-line patch are carried to the queue intact so the full
 panel starts from a finished answer rather than a question.
 
-## Resolution — provisional, author ratification pending
+## Resolution — `ratified 2026-08-24` (author instruction, *"ok ratifica anche quelli"*; § Author's verdict below)
 
 1. **Q1 = `__builtin_types_compatible_p`.** `_Generic` is refused on the
    completeness constraint, `sizeof` on the two attacks it accepts.
@@ -282,3 +282,30 @@ the same day on exactly that question — was asking for.
 ## Author's verdict
 
 _Pending._
+
+## Author's verdict
+
+**2026-08-24: ratified** (author instruction, *"ok ratifica anche quelli"*).
+
+**Verified in the port rather than in the Rust the sitting measured**, which
+matters because the tree it ran against is now `archive/bootstrap-rs/`:
+`selfhost/emit_extern_assert.hero:95` emits
+`#define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)`,
+and `HERO_RET_UNIT` uses the same builtin at :78 — Q1 as resolved, `_Generic`
+refused, and R5's *"emitted conditionally, only where a record result exists"*
+held: `tests/emission/run-ffi-libm.c` carries `HERO_RET_UNIT` and not
+`HERO_RET_RECORD`.
+
+**What the yes settles**: Q1 `__builtin_types_compatible_p`; Q2 no probe, the
+assertion in the unevaluated operand; Q3 no new diagnostic class; R5's
+conditional emission. Both reserved vetoes stayed unspent — nothing reached a
+call site, and no fifth assertion class was added — so the soundness lane was
+the right lane and this ratification does not owe a re-run.
+
+**What the yes does not settle**: Q4, which the sitting itself queued to a **full**
+panel and which stays queued; R6's struct-`constant` hole, which is owed a
+falsifiable claim with a test that fires when it dies rather than a comment; and
+R7's three §9 cases. The lane's own stated cost also stands unpaid: no
+spec-warden priced `spec:194` (expected 0 tokens, an assumption the sitting did
+not measure), and no blind seat tested whether a reader predicts that a *result*
+is checked while a *parameter* is converted silently.

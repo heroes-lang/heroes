@@ -2,7 +2,7 @@
 
 **Convened** 2026-08-05, before M5c's first line. **Trigger**: CLAUDE.md §4 —
 architecture (the descriptor pass) and a proposal that claimed to overturn a frozen
-spike. **Status**: `provisional — author ratification pending`.
+spike. **Status**: `ratified 2026-08-24` (author instruction, *"ok ratifica anche quelli"*).
 
 One veto, and it is the most valuable finding in five panels: **the proposal's COW
 was unsound, and nothing in this project could have seen it**. A judge compiled
@@ -331,3 +331,30 @@ than the compiler's behaviour.
 What it does **not** settle: anything this file keys to a measurement that has not
 been taken. Those stay open on their own terms, listed in `docs/debrief/QUEUE.md`,
 and a blanket yes cannot make a number arrive.
+
+## Author's verdict
+
+**2026-08-24: ratified** (author instruction, *"ok ratifica anche quelli"*, six
+weeks after the sitting and after every one of its resolutions had shipped).
+
+**Verified with the yes rather than recalled**, because a ratification taken from
+a six-week-old file is a ratification taken from memory. Two records with
+**seven bytes of padding** compare equal and one finds the other as a map key —
+`equal: true  found via the twin: 1`, exit 0 — so `eq` and `hash` walk **fields**,
+and `grep memcmp seed/heroes.c` returns **0**. That is R1's load-bearing
+requirement and it is the one whose failure mode the sitting called *"a silent
+wrong answer generator"*: no compile error, no sanitiser report, just two equal
+records hashing apart.
+
+**What the yes settles**: the value representation this language is built on —
+records as C structs by value, variants as tagged unions by value, `[T]` and
+`{K: V}` (and `str`) as the only reference-counted things; `HeroDesc.copy`
+shallow plus incref; `hash` emitted for **every** type and never NULL, Go's
+cheaper rule refused on exactly that ground; a payload-free case omitted from the
+union.
+
+**What the yes does not settle, and is superseded rather than overturned**: the
+`HERO_RUNTIME_ABI → 3` in R1. The number is **15** today and has moved with every
+change of shape since; the *rule* — the stamp moves when the declarations change
+shape — is what stands. CLAUDE.md §14 does not rewrite a dated record, so the 3
+stays on the page.

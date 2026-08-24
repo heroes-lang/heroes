@@ -136,7 +136,7 @@ verify a parameter's type without new vocabulary. It is dead:
 Recorded at length because a coordinator's proposal is the one a panel is least
 likely to refuse, and this one was refused twice.
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, *"ok ratifica anche quelli"*; § Author's verdict below)
 
 **The veto stands: no `clong`, no `culong`, no `csize`.** The engineer holds veto
 power on implementation cost and core-vs-sugar, and its case is measured: a new
@@ -324,3 +324,31 @@ _Pending._
   unchanged. The second half (the paired `run/` golden emitting identical
   `ffi_parameter_type` text) was conditional on adopting the amendment as
   proposed, which the sitting did not; it is not scoreable as written.
+
+## Author's verdict
+
+**2026-08-24: ratified** (author instruction, *"ok ratifica anche quelli"*).
+
+**What the yes is NOT.** It is not a permanent refusal, and the coordinator put it
+to the author as one before checking — the correction is on the record here. The
+row is **Part 7 item 10, not a Part 6 row** (the spec-warden's own finding in the
+verdict table), so `clong`/`culong`/`csize` are **deferred until the closure list
+compiles itself**, which is what Part 7's preamble means, rather than rejected
+with a falsifier owed under §12. Ratifying it costs the language nothing it could
+not take back.
+
+**Verified with the yes**: `clong`, `culong` and `csize` occur **0 times** in
+`spec/heroes-spec.md` and **0 times** across `selfhost/` — the veto is still in
+force and nothing drifted in. And what landed instead is still there:
+`selfhost/emit_extern_field.hero` asserts an integer field by
+`__builtin_classify_type` plus `sizeof` plus sign rather than by type identity,
+which is the sitting's real content — **C's integer ABI is width and sign alone**,
+while for floats, pointers and records identity *is* the ABI and the branch keeps
+them there, so panel 060's `f64`-over-`float` counterexample stays refused.
+
+**What the yes settles**: the engineer's veto on a new scalar (core under §1.7 —
+checker *and* lowering *and* backend, erased nowhere — and not on the closure
+list), and the 9-line relaxation as the answer to the falsifier the row's own text
+did not name. The relaxation is **strictly monotone**: an exact-identity match
+necessarily has the same class, size and sign, so it cannot regress an accepted
+program — provable rather than tested, and that is why it needed no migration.
