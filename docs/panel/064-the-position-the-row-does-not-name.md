@@ -312,21 +312,6 @@ is queued rather than fixed:
 
 ## Author's verdict
 
-_Pending._
-
-## Scored at M-selfhost-probe close (2026-08-15)
-
-- **spec-warden, first half: falsified in letter, by one comment.** `size_t`
-  occurs **6** times in `crates/heroes/src` today, not 5: panel 063's
-  follow-up work added a doc comment naming it (`emit/extern_record.rs:190`).
-  All six are comments or message text — the substance (no probe, no
-  vocabulary, nothing that tells `size_t` from `unsigned long`) holds
-  unchanged. The second half (the paired `run/` golden emitting identical
-  `ffi_parameter_type` text) was conditional on adopting the amendment as
-  proposed, which the sitting did not; it is not scoreable as written.
-
-## Author's verdict
-
 **2026-08-24: ratified** (author instruction, *"ok ratifica anche quelli"*).
 
 **What the yes is NOT.** It is not a permanent refusal, and the coordinator put it
@@ -352,3 +337,14 @@ list), and the 9-line relaxation as the answer to the falsifier the row's own te
 did not name. The relaxation is **strictly monotone**: an exact-identity match
 necessarily has the same class, size and sign, so it cannot regress an accepted
 program — provable rather than tested, and that is why it needed no migration.
+
+## Scored at M-selfhost-probe close (2026-08-15)
+
+- **spec-warden, first half: falsified in letter, by one comment.** `size_t`
+  occurs **6** times in `crates/heroes/src` today, not 5: panel 063's
+  follow-up work added a doc comment naming it (`emit/extern_record.rs:190`).
+  All six are comments or message text — the substance (no probe, no
+  vocabulary, nothing that tells `size_t` from `unsigned long`) holds
+  unchanged. The second half (the paired `run/` golden emitting identical
+  `ffi_parameter_type` text) was conditional on adopting the amendment as
+  proposed, which the sitting did not; it is not scoreable as written.

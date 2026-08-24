@@ -124,3 +124,25 @@ silently. / Unless explicitly silenced."). Law 20 is the language's name.
 (retro-record; no ratification pending). One-off exception to §10's stopping
 rule under the containment sentence above. Implementation lands in its own
 commit citing this file.
+
+## Author's verdict
+
+**Settled 2026-08-16, BEFORE the sitting, and this section exists so an
+instrument can see that.** This file is a `retro-record`: the author's
+instruction was given in advance, the sitting recorded real objections against a
+decision already taken, and its own text says *"no ratification pending"*.
+
+Nothing here is being ratified now. The section is added on 2026-08-24 because
+`tests/harness/suite_records.hero` now requires **every** panel file to carry
+exactly one `## Author's verdict` that does not read `Pending`, and a rule with
+an exception is a rule the next exception breaks. A retro-record answers the
+question the check asks — *has the author spoken about this sitting?* — with a
+yes that predates the sitting, so it belongs under the same heading as every
+other yes rather than beside the check as a special case.
+
+**A note this file earned the hard way**: the phrase *"no ratification pending"*
+is why four separate attempts to count the unratified sittings on 2026-08-24
+reported this file as pending. They were matching the string `ratification
+pending`, which this sentence contains inside its own negation. That is the
+whole argument for a check that asks the value in hand — one section, not
+`Pending` — instead of one that greps the vocabulary.

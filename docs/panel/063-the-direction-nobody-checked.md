@@ -281,10 +281,6 @@ the same day on exactly that question — was asking for.
 
 ## Author's verdict
 
-_Pending._
-
-## Author's verdict
-
 **2026-08-24: ratified** (author instruction, *"ok ratifica anche quelli"*).
 
 **Verified in the port rather than in the Rust the sitting measured**, which

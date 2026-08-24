@@ -32,6 +32,12 @@ use strings
 # session wrote a gitignored TLS key into `site/.cache/` and both record walks
 # read `M3KN` out of its base64. What remains here is what git cannot know: files
 # it tracks that are RECORDS.
+# The one heading this project's sittings answer under. It is a CONSTANT because
+# the check and the message that explains the check must not be able to disagree
+# about it — the shape CLAUDE.md §11 calls a premise that expires in silence.
+constant VERDICT_HEADING: str
+    "\n## Author's verdict"
+
 constant RECORD: [str]
     [
         "docs/panel"
@@ -125,6 +131,7 @@ function run_all(scratch: str) -> report.Report?
     citations(@r, present: walked)
     expectations(@r, scratch: scratch)
     boundary(@r)
+    verdicts(@r, present: walked)
     return ok(r)
 
 # Whether this path is one of the dated records — the pruning `find` used to do
@@ -363,6 +370,114 @@ function expectations(@r: report.Report, scratch: str)
 
 # The boundary rule, asserted in both directions — the check that keeps
 # the two checks above honest.
+# EVERY SITTING CARRIES ITS AUTHOR'S VERDICT, AND IT DOES NOT SAY `Pending`.
+#
+# CLAUDE.md §4 says a panel never blocks: it adopts a conservative default,
+# ships it, and queues the author's ratification. That contract has one hole and
+# it is not in the rule — it is that NOTHING ASKS. Panels 085, 086 and 087 sat
+# unratifiable for four days because no list carried the item; panels 069 to 079
+# sat for eight, eleven of them, and were found by accident on 2026-08-24 while
+# ratifying three others.
+#
+# **WHY THIS CHECK ASKS THE VALUE AND NOT THE VOCABULARY** (CLAUDE.md §11's own
+# distinction, and this is the measurement that proves it). Five attempts to
+# count the unratified by hand that day returned 51, 7, 16, 12 and 11, every one
+# wrong differently:
+#   - `## Author's verdict` was a recent convention, so old sittings ratified by
+#     a DESIGN-LOG line looked unratified;
+#   - **the phrase `ratification pending` CONTAINS the string `ratif`**, so a
+#     grep for *ratified* counted every unratified sitting as ratified;
+#   - `docs/panel/080` says *"no ratification pending"* and matched as pending,
+#     its own negation read as the thing it denies;
+#   - and a yes is written as *ratified*, *author decision*, *author instruction*
+#     or *decided by the author*, across four different files.
+# Every one of those failures is a premise about the WORLD — about which words
+# the record happens to use. This check rests on a fact about the FILE IN HAND:
+# it has exactly one verdict section, and that section does not open with
+# `Pending`. A vocabulary can drift; a section either exists or it does not.
+#
+# The rule has NO EXCEPTION, deliberately. `080` is a retro-record settled before
+# its own sitting, and rather than teach the check about retro-records it was
+# given a verdict section saying so — a rule with an exception is a rule the next
+# exception breaks.
+function verdicts(@r: report.Report, present: [str])
+    offenders: [str] @ []
+    for path in present
+        if !is_sitting(path)
+            continue
+        if sitting_number(path).default(0) < VERDICT_FLOOR
+            continue
+        text = read_file(path)
+        if text.is_err()
+            report.keep_failure(@r, label: "records/verdicts", detail: "  cannot read " + path)
+            return
+        pieces = strings.split_text(text: text.must(), separator: VERDICT_HEADING)
+        if pieces.len() != 2
+            offenders @ offenders.push("    " + path + ": " + (pieces.len() - 1).to_str() + " verdict sections, want exactly 1")
+            continue
+        if opens_pending(text: pieces[1])
+            offenders @ offenders.push("    " + path + ": the verdict still reads `Pending`")
+    if offenders.len() > 0
+        report.keep_failure(@r, label: "records/verdicts", detail: "  a sitting has no answer from the author:\n" + offenders.join("\n") + "\n  CLAUDE.md §4: a panel never blocks, it queues the author's ratification — so\n  something has to ask. Give the file one `" + VERDICT_HEADING.slice(from: 1, to: VERDICT_HEADING.len()) + "` section saying what the yes\n  settles and what it does not. A sitting settled BEFORE it ran is a retro-record\n  and says so under the same heading; there is no exception to teach this check.")
+    else
+        report.keep_pass(@r)
+
+# WHERE THE RULE STARTS, AND WHY IT IS A NUMBER.
+#
+# Measured 2026-08-24, on the check's first run: **57 sittings below 063 carry no
+# verdict section at all**, and every one of them is nonetheless RATIFIED — by a
+# `DESIGN-LOG.md` line, by `docs/panel/OPEN-QUESTIONS.md`, or by a blanket author
+# instruction. They predate the convention rather than break it. CLAUDE.md §14
+# says a dated record is not rewritten, so this check does not demand that 57
+# files be retrofitted to satisfy an instrument invented after them.
+#
+# 063 is the floor because it is exact rather than round: every sitting from 063
+# up carries a verdict, and no sitting below it does. If that ever stops being
+# true the floor moves DOWN with a line saying which sitting moved it — never up,
+# because raising it would hide the thing the check exists to find.
+constant VERDICT_FLOOR: i64
+    63
+
+# The sitting's number, or an error where the name does not start with one.
+function sitting_number(path: str) -> i64?
+    rest = strings.without_prefix(text: path, prefix: "docs/panel/")
+    at = strings.index_of(text: rest, needle: "-")
+    if at.is_err()
+        return fail("unnumbered", "no `-` after the number in " + path)
+    return strings.to_number(text: rest.slice(from: 0, to: at.must()))
+
+# A numbered sitting under `docs/panel/`. `OPEN-QUESTIONS.md` is not one: it is
+# the watch list, it has no resolution, and nobody ratifies it.
+function is_sitting(path: str) -> bool
+    if !strings.starts_with(text: path, prefix: "docs/panel/")
+        return false
+    if !strings.ends_with(text: path, suffix: ".md")
+        return false
+    rest = path.slice(from: "docs/panel/".len(), to: path.len())
+    if rest.len() == 0
+        return false
+    # The BYTE, not a one-character slice: `<` and friends take a number in this
+    # language and never a `str` (spec § Operators), which is the first thing
+    # this function got wrong.
+    first = rest[0]
+    return first >= '0' && first <= '9'
+
+# Does this section OPEN with the stub? Only the first non-empty line is asked,
+# and the emphasis markers are stepped over, because a real verdict may quote the
+# word `pending` while saying what it settles — 089's does, twice. Asking the
+# first line asks whether anybody answered; asking the whole section would ask
+# what they wrote about, which is a different question and not this one.
+function opens_pending(text: str) -> bool
+    for line in strings.lines(text: text)
+        bare: str @ ""
+        for ch in line.chars()
+            if ch != "*" && ch != " " && ch != "\t" && ch != "_"
+                bare @ bare + ch
+        if bare.len() == 0
+            continue
+        return strings.starts_with(text: bare, prefix: "Pending")
+    return true
+
 function boundary(@r: report.Report)
     caught: [str] @ ["scheduled for M8c", "at M5b the increfs", "M0 was day zero", "(M6+)"]
     clean: [str] @ ["STAC-M3 Antuco benchmarks", "INT64_MIN % -1 does not trap on ARM64", "the RM64 encoding", "M-selfhost-fixpoint is v1", "hero_desc_str"]
