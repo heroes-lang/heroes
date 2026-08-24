@@ -90,7 +90,7 @@ backbone of the platform §1.11 says everything comes from. It cost the judge a
 shim header to run item D's experiment at all: a one-line `typedef` whose entire
 content is a name, which is exactly the shim §1.11 exists to abolish.
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 1. **B is refused on a veto and the item is struck**, not deferred: the field
    binds. What survives is a **diagnostic** repair — `ffi_field_type` must be
@@ -160,4 +160,8 @@ their zero values make the return assertion fail first.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: **B is refused on a veto and STRUCK rather than deferred** — the field binds — leaving a diagnostic repair (`ffi_field_type` must be able to say `u32`) and the deletion of a false premise that CLAUDE.md §11 would otherwise have required a test for. **D is refused as scoped.** A struck item is stronger than a deferred one, and the yes is what makes that stick.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.

@@ -172,7 +172,7 @@ majority answer.
    `emit/typedefs.rs` goes **291 → 303**, past §11's ceiling, so the change
    carries a split.
 
-## The resolution — provisional, and narrower than the sitting's own answer
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 1. **Candidate 2 is refused** on four compiles, and the refutation is recorded
    with its C: no spelling names a struct under both shapes, and the helper
@@ -233,4 +233,8 @@ and the answer was still not enough, which is the more useful result.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: **candidates 2 and 3 are both refused, and the refutations are recorded with the C that produced them** — no spelling names a struct under both shapes, the helper typedef dies on the acceptance case itself, and a probe can bind *a different type of the same name*, which is legal C11 and would silently corrupt every field assertion built on it. The sitting's own note that its resolution is **narrower than its answer** stands: the yes ratifies the narrow half and nothing beyond it.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.

@@ -103,7 +103,7 @@ program the author is entitled to write**, it predates every option here, and
 not cause it — it only hides it when the two operands happen to share a pointer,
 which is the same sentence as the rest of this sitting.
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 1. **Option 3 is refused on two vetoes**, both measured rather than argued: 19
    sites across 7 files including a divide guard, and a hand-written replacement
@@ -195,4 +195,8 @@ language** — which is the one CLAUDE.md §13 forbids as a reason.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: option 3 is **refused on two vetoes**, both measured — 19 sites across 7 files including a divide guard, and a hand-written replacement that compiles, is equally wrong, and can forget a field. It does not return without a program the closure list needs that option 2 makes wrong, and the count that would show one is **0 of 20** `selfhost/` files containing a float-reaching `==`. The refusal carries its own falsifier, which is what §12 asks of a refusal.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.

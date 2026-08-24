@@ -92,7 +92,7 @@ live (`==` at **52043**), which is true and is not a veto.
    a known class for a C emitter. The instrument is not blind — **the case was
    simply never written**, and writing one turns this red today.
 
-## The resolution — provisional, author ratification pending
+## The resolution — `ratified 2026-08-24` (author instruction, batch over 069-079; § Author's verdict below)
 
 **The panel rule's conservative default, applied to a genuine clash: adopt what
 both compiling seats measured and neither vetoed, and hold what one of them
@@ -166,4 +166,8 @@ making is one the C standard does not permit it to make.
 
 ## Author's verdict
 
-*Pending.*
+**2026-08-24: ratified** (author instruction, *"ratifica anche quelle 11"* — a batch yes over panels 069-079, given after being told plainly that every one had shipped as a provisional default and that the tree had been green over all of them for eight days. The author was offered the alternative of reading each first and chose the batch.)
+
+What the yes settles: the panel rule's **conservative default applied to a genuine clash between two compiling seats** — adopt what both measured and neither vetoed, hold what one of them vetoed. **(d) is refused** by both compiling seats and by the coordinator's own measurement. The yes ratifies that disposition, not a preference between the seats.
+
+**On the batch.** This is the fourth blanket ratification in this project's record and the largest. It closes a gap of eight days in which eleven sittings sat queued with nobody asking — the same shape panels 085-087 sat in for four. What the batch does NOT do is re-open anything each sitting left explicitly open: every reserved veto, queued follow-up and unmet condition inside this file stands exactly as written, and a yes over the resolution is not a yes over the questions the resolution deferred.
