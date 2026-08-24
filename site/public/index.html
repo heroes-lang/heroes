@@ -92,27 +92,27 @@
 
   <ul class="figures">
     <li>
-      <span class="n">91% vs 0%</span>
-      <span class="what">a dropped argument label</span>
-      <span class="how">Take programs that work, drop one argument label, and
-      count what the compiler stops: 91 out of every 100. The same compiler with
-      the rules switched off stops none of them.
-      <a href="errors.html">the whole table &rarr;</a></span>
+      <span class="n">231</span>
+      <span class="what">lines &mdash; the whole language</span>
+      <span class="how">The complete specification is a few pages: it fits in a
+      prompt with room left for your program, and the compiler counts its own
+      budget so the number cannot drift.
+      <a href="why.html">why that is the design &rarr;</a></span>
     </li>
     <li>
-      <span class="n">3548</span>
-      <span class="what">tokens of specification</span>
-      <span class="how">The entire language is 231 lines. It fits in a prompt
-      with room left for your program, and the compiler counts its own budget so
-      the number cannot drift.
-      <a href="why.html">why that is the design &rarr;</a></span>
+      <span class="n">0</span>
+      <span class="what">null, exceptions, garbage collector</span>
+      <span class="how">A missing value and a failure are types you can see on
+      the line, not surprises while the program runs. And memory is managed by
+      counting copies, with no collector and no pause.
+      <a href="docs/failure-is-a-value.html">how failure works &rarr;</a></span>
     </li>
     <li>
       <span class="n">1</span>
       <span class="what">hash, three compilers</span>
       <span class="how">The compiler is written in Heroes and compiles itself.
       Ask three generations of it to write out the same C and you get one file,
-      to the byte. <a href="selfhost.html">the fixpoint &rarr;</a></span>
+      to the byte. <a href="selfhost.html">the whole story &rarr;</a></span>
     </li>
   </ul>
 
@@ -221,7 +221,7 @@ we can be heroes</code></pre>
         files match to the byte. The language it was first built in has left the
         repository.
       </p>
-      <a class="more" href="selfhost.html">The fixpoint</a>
+      <a class="more" href="selfhost.html">How it compiles itself</a>
     </li>
   </ul>
 
@@ -253,25 +253,18 @@ we can be heroes</code></pre>
     language, even if each program costs more tokens to write.
   </blockquote>
   <p>
-    It is a claim, not a slogan, so it is measured, and the measurement is
-    never one number. <code>heroes mutate</code> injects one plausible mistake
-    at a time into working programs and counts what the compiler catches, then
-    runs the same corpus against itself with the thesis rules switched off. The
-    gap between the two columns is the whole result, per mistake, measured
-    2026-08-25:
+    It is a claim, not a slogan, so it is measured. <code>heroes mutate</code>
+    takes programs that work, plants one realistic mistake at a time &mdash;
+    two same-typed arguments swapped, a case left out of a <code>match</code>,
+    a name reused &mdash; and counts how many the compiler stops. Then it does
+    the same run with the thesis rules switched off, and the distance between
+    the two runs is the result, kept mistake by mistake: some mistakes only the
+    thesis catches, some any language would catch, and one nothing catches yet.
+    An average would hide exactly that, so there is none.
   </p>
-  <pre><code>                        <span class="c">with the rules   without</span>
-a dropped argument label        91%         0%
-a shadowed name                100%         0%
-a lazy catch-all on a variant  100%        39%
-two same-typed arguments        80%        43%
-a typo in a name               100%       100%</code></pre>
   <p>
-    The last row is the honest one: typos are caught by names and types in any
-    language, and the rules add nothing. That is why the project refuses to
-    average these into a single figure: an average hides both the operators
-    where the design does everything and the ones where it does nothing.
-    <a href="errors.html">The rest of the table →</a>
+    <a href="errors.html">The whole table, re-run 2026-08-25, is on the errors
+    page &rarr;</a>
   </p>
 
   <footer>
