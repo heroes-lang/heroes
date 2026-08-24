@@ -1,0 +1,41 @@
+# THE SPECIFICATION'S OWN EXAMPLE, EXECUTED — because for seven days it did not
+# compile (found 2026-08-17, repaired 2026-08-24).
+#
+# `spec/heroes-spec.md` § Tests and holes showed:
+#
+#     test "3-4-5 triangle"
+#         assert dist2(Point(x: 0, y: 0), Point(x: 3, y: 4)) == 25
+#
+# and § Functions and calls, ninety lines above it, says: *"When two parameters in
+# a signature share a type, named arguments are mandatory at the call site"*.
+# `dist2` takes two `Point`s. So the document's own example broke the document's
+# own rule, twice on one line — `error[needs_label]` at exit 1, with the certain
+# fixes `a: ` and `b: `. **Both compilers refused it identically**, which is the
+# part worth keeping: the bootstrap and the port disagreed about nothing, and the
+# first program the ported checker ever turned down was the specification's.
+#
+# The repair was two labels, and this file is what stops it happening again. A
+# document's example is a claim, and an unexecuted claim is the shape this project
+# calls a premise that expires in silence (CLAUDE.md §11): the rule at § Functions
+# changed under the example and the example went on reading as correct.
+#
+# **Keep this file byte-identical to the specification's example.** If the two
+# ever diverge, one of them is wrong, and this test is how you find out which.
+
+record Point
+    x: i64
+    y: i64
+
+function dist2(a: Point, b: Point) -> i64
+    dx = b.x - a.x
+    dy = b.y - a.y
+    return dx*dx + dy*dy
+
+test "3-4-5 triangle"
+    assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25
+
+# The same call as the test, so `run/` has an artifact to compare. A 3-4-5
+# triangle's squared hypotenuse is 25, which is the one number this file asserts
+# and the one it prints.
+function main()
+    print(dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)))

@@ -35,6 +35,31 @@ use checker
 # FIELD, and cannot use the macro — field assertions are emitted at
 # `emit_decls.hero:84` and the macros at `:86`, so the `#define` has not been
 # written yet when a field assertion needs it. Same set, two syntaxes, one source.
+# C'S TWELVE INTEGER TYPES, IN ONE PLACE.
+#
+# `HERO_C_INTEGER` folds them into a `_Generic` over a VALUE; the field emitter
+# spreads them as array-pointer associations over a member's ADDRESS, because a
+# subscript is ill-formed when the header's member turns out to be a scalar. Two
+# syntaxes, one set — and it is a constant for §11's reason: the set written
+# twice would drift, and the drift would be silent in the direction that matters,
+# a real C type nobody enumerated landing on `default: 0` and reading as "the
+# header disagrees" when it agrees perfectly.
+constant C_INTEGER_TYPES: [str]
+    [
+        "_Bool"
+        "char"
+        "signed char"
+        "short"
+        "int"
+        "long"
+        "long long"
+        "unsigned char"
+        "unsigned short"
+        "unsigned int"
+        "unsigned long"
+        "unsigned long long"
+    ]
+
 constant CSTR_SPELLINGS: str
     "char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1"
 
