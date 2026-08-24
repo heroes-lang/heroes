@@ -72,6 +72,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 73 "fficonstpointer.c"
 
 HERO_STR_STATIC(hero_str_0, " ");
+HERO_STR_STATIC(hero_str_3, "null_cstr");
+HERO_STR_STATIC(hero_str_4, "a null `cstr` holds no text");
+HERO_STR_STATIC(hero_str_5, "not_text");
+HERO_STR_STATIC(hero_str_6, "the bytes behind this `cstr` are not UTF-8");
 
 typedef struct h_fficonstpointer_0opt0 {
     int64_t tag;
@@ -112,17 +116,21 @@ bool h_fficonstpointer_0opt2_eq(const h_fficonstpointer_0opt2 *a, const h_fficon
 uint64_t h_fficonstpointer_0opt2_hash(const void *elem);
 
 void h_fficonstpointer_main(void);
+int64_t h_library_HERO_STR_OK(void);
+h_fficonstpointer_0opt1 h_library_validated(const char * h0_c);
 
 #line 37 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 void h_fficonstpointer_main(void) {
-#line 119 "fficonstpointer.c"
+#line 125 "fficonstpointer.c"
     Handle h0_h;
     void * h1_p;
     h_fficonstpointer_0opt0 h2_f0 = {0};
     void * h3_b;
-    h_fficonstpointer_0opt0 h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
+    h_fficonstpointer_0opt1 h4_f1 = {0};
+    h_fficonstpointer_0opt1 h5_f2 = {0};
+    h_fficonstpointer_0opt0 h6_own6 = {0};
+    h_fficonstpointer_0opt1 h7_own7 = {0};
+    h_fficonstpointer_0opt1 h8_own8 = {0};
     Handle t1;
     Handle t2;
     void * t3;
@@ -146,17 +154,37 @@ void h_fficonstpointer_main(void) {
     void * t21;
     bool t22;
     const char * t23;
-    HeroStr t24 = {0};
-    const char * t25;
-    HeroStr t26 = {0};
-    h_fficonstpointer_0opt0 t27 = {0};
-    h_fficonstpointer_0opt0 t28 = {0};
-    HeroStr t29 = {0};
-    HeroStr t30 = {0};
-    h_fficonstpointer_0opt0 t31 = {0};
-    h_fficonstpointer_0opt0 t32 = {0};
-    HeroStr t33 = {0};
-    HeroStr t34 = {0};
+    h_fficonstpointer_0opt1 t24 = {0};
+    h_fficonstpointer_0opt1 t25 = {0};
+    int64_t t26;
+    int64_t t27;
+    bool t28;
+    h_fficonstpointer_0opt1 t29 = {0};
+    HeroFailure t30 = {0};
+    h_fficonstpointer_0opt1 t31 = {0};
+    HeroStr t32 = {0};
+    const char * t33;
+    h_fficonstpointer_0opt1 t34 = {0};
+    h_fficonstpointer_0opt1 t35 = {0};
+    int64_t t36;
+    int64_t t37;
+    bool t38;
+    h_fficonstpointer_0opt1 t39 = {0};
+    HeroFailure t40 = {0};
+    h_fficonstpointer_0opt1 t41 = {0};
+    HeroStr t42 = {0};
+    h_fficonstpointer_0opt0 t43 = {0};
+    h_fficonstpointer_0opt0 t44 = {0};
+    h_fficonstpointer_0opt1 t45 = {0};
+    h_fficonstpointer_0opt1 t46 = {0};
+    h_fficonstpointer_0opt1 t47 = {0};
+    h_fficonstpointer_0opt1 t48 = {0};
+    h_fficonstpointer_0opt0 t49 = {0};
+    h_fficonstpointer_0opt1 t50 = {0};
+    h_fficonstpointer_0opt1 t51 = {0};
+    h_fficonstpointer_0opt0 t52 = {0};
+    h_fficonstpointer_0opt1 t53 = {0};
+    h_fficonstpointer_0opt1 t54 = {0};
     goto bb0;
 bb0:
 #line 38 "tests/golden/fixedbugs/ffi-const-pointer.hero"
@@ -184,19 +212,19 @@ bb0:
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t10 = (h_fficonstpointer_0opt0){.tag = INT64_C(0), .as.ok = (int64_t)t9};
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t27 = h4_own4;
+    t43 = h6_own6;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h4_own4 = t10;
-#line 191 "fficonstpointer.c"
-    h_fficonstpointer_0opt0_release(&t27);
+    h6_own6 = t10;
+#line 219 "fficonstpointer.c"
+    h_fficonstpointer_0opt0_release(&t43);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t28 = h2_f0;
-#line 195 "fficonstpointer.c"
+    t44 = h2_f0;
+#line 223 "fficonstpointer.c"
     h_fficonstpointer_0opt0_retain(&t10);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h2_f0 = t10;
-#line 199 "fficonstpointer.c"
-    h_fficonstpointer_0opt0_release(&t28);
+#line 227 "fficonstpointer.c"
+    h_fficonstpointer_0opt0_release(&t44);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t11 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
@@ -238,56 +266,350 @@ bb1:
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t23 = (const char *)get_name();
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t24 = hero_str_from_cstr(t23);
+    t24 = h_library_validated(t23);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t29 = h5_own5;
+    t45 = h7_own7;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h5_own5 = t24;
-#line 247 "fficonstpointer.c"
-    hero_str_decref(t29);
+    h7_own7 = t24;
+#line 275 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t45);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_str(t24);
+    t46 = h4_f1;
+#line 279 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_retain(&t24);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_end();
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t25 = (const char *)get_utext();
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t26 = hero_str_from_cstr(t25);
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t30 = h6_own6;
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h6_own6 = t26;
-#line 261 "fficonstpointer.c"
-    hero_str_decref(t30);
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_str(t26);
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_end();
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t31 = h2_f0;
-#line 269 "fficonstpointer.c"
-    h_fficonstpointer_0opt0_release(&t31);
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t32 = h4_own4;
-#line 273 "fficonstpointer.c"
-    h_fficonstpointer_0opt0_release(&t32);
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t33 = h5_own5;
-#line 277 "fficonstpointer.c"
-    hero_str_decref(t33);
-#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t34 = h6_own6;
-#line 281 "fficonstpointer.c"
-    hero_str_decref(t34);
-    return;
+    h4_f1 = t24;
+#line 283 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t46);
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t25 = h4_f1;
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t26 = t25.tag;
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t27 = INT64_C(0);
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t28 = t26 == t27;
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    if (t28) goto bb3; else goto bb4;
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 bb2:
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t15 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t16 = t15.as.err;
-#line 289 "fficonstpointer.c"
+#line 301 "fficonstpointer.c"
     hero_panic_must(t16);
     hero_unreachable();
+bb3:
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t31 = h4_f1;
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t32 = t31.as.ok;
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    hero_print_str(t32);
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    hero_print_end();
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t33 = (const char *)get_utext();
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t34 = h_library_validated(t33);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t47 = h8_own8;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    h8_own8 = t34;
+#line 321 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t47);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t48 = h5_f2;
+#line 325 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_retain(&t34);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    h5_f2 = t34;
+#line 329 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t48);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t35 = h5_f2;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t36 = t35.tag;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t37 = INT64_C(0);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t38 = t36 == t37;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    if (t38) goto bb5; else goto bb6;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+bb4:
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t29 = h4_f1;
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t30 = t29.as.err;
+#line 347 "fficonstpointer.c"
+    hero_panic_must(t30);
+    hero_unreachable();
+bb5:
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t41 = h5_f2;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t42 = t41.as.ok;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    hero_print_str(t42);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    hero_print_end();
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t49 = h2_f0;
+#line 361 "fficonstpointer.c"
+    h_fficonstpointer_0opt0_release(&t49);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t50 = h4_f1;
+#line 365 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t50);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t51 = h5_f2;
+#line 369 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t51);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t52 = h6_own6;
+#line 373 "fficonstpointer.c"
+    h_fficonstpointer_0opt0_release(&t52);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t53 = h7_own7;
+#line 377 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t53);
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t54 = h8_own8;
+#line 381 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t54);
+    return;
+bb6:
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t39 = h5_f2;
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
+    t40 = t39.as.err;
+#line 389 "fficonstpointer.c"
+    hero_panic_must(t40);
+    hero_unreachable();
+}
+
+#line 121 "<heroes library>"
+int64_t h_library_HERO_STR_OK(void) {
+#line 396 "fficonstpointer.c"
+    return HERO_STR_OK;
+}
+
+#line 151 "<heroes library>"
+h_fficonstpointer_0opt1 h_library_validated(const char * h0_c) {
+#line 402 "fficonstpointer.c"
+    int64_t h1_status;
+    HeroStr h2_text = {0};
+    HeroStr h3_own3 = {0};
+    h_fficonstpointer_0opt1 h4_own4 = {0};
+    h_fficonstpointer_0opt1 h5_own5 = {0};
+    h_fficonstpointer_0opt1 h6_own6 = {0};
+    const char * t1;
+    const char * t2;
+    bool t3;
+    HeroStr t4 = {0};
+    HeroStr t5 = {0};
+    h_fficonstpointer_0opt1 t6 = {0};
+    int64_t t7;
+    const char * t8;
+    HeroStr t9 = {0};
+    int64_t t10;
+    int64_t t11;
+    bool t12;
+    HeroStr t13 = {0};
+    h_fficonstpointer_0opt1 t14 = {0};
+    HeroStr t15 = {0};
+    HeroStr t16 = {0};
+    h_fficonstpointer_0opt1 t17 = {0};
+    HeroStr t18 = {0};
+    HeroStr t19 = {0};
+    h_fficonstpointer_0opt1 t20 = {0};
+    h_fficonstpointer_0opt1 t21 = {0};
+    h_fficonstpointer_0opt1 t22 = {0};
+    HeroStr t23 = {0};
+    HeroStr t24 = {0};
+    h_fficonstpointer_0opt1 t25 = {0};
+    h_fficonstpointer_0opt1 t26 = {0};
+    h_fficonstpointer_0opt1 t27 = {0};
+    HeroStr t28 = {0};
+    HeroStr t29 = {0};
+    h_fficonstpointer_0opt1 t30 = {0};
+    h_fficonstpointer_0opt1 t31 = {0};
+    h_fficonstpointer_0opt1 t32 = {0};
+    HeroStr t33 = {0};
+    HeroStr t34 = {0};
+    h_fficonstpointer_0opt1 t35 = {0};
+    h_fficonstpointer_0opt1 t36 = {0};
+    h_fficonstpointer_0opt1 t37 = {0};
+    goto bb0;
+bb0:
+#line 152 "<heroes library>"
+    t1 = h0_c;
+#line 152 "<heroes library>"
+    t2 = ((void *)0);
+#line 152 "<heroes library>"
+    t3 = t1 == t2;
+#line 152 "<heroes library>"
+    if (t3) goto bb2; else goto bb3;
+#line 152 "<heroes library>"
+bb1:
+#line 154 "<heroes library>"
+    t7 = INT64_C(0);
+#line 154 "<heroes library>"
+    h1_status = t7;
+#line 155 "<heroes library>"
+    t8 = h0_c;
+#line 155 "<heroes library>"
+    t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), &h1_status);
+#line 155 "<heroes library>"
+    t18 = h3_own3;
+#line 155 "<heroes library>"
+    h3_own3 = t9;
+#line 470 "fficonstpointer.c"
+    hero_str_decref(t18);
+#line 155 "<heroes library>"
+    t19 = h2_text;
+#line 474 "fficonstpointer.c"
+    hero_str_incref(t9);
+#line 155 "<heroes library>"
+    h2_text = t9;
+#line 478 "fficonstpointer.c"
+    hero_str_decref(t19);
+#line 156 "<heroes library>"
+    t10 = h1_status;
+#line 156 "<heroes library>"
+    t11 = h_library_HERO_STR_OK();
+#line 156 "<heroes library>"
+    t12 = t10 == t11;
+#line 156 "<heroes library>"
+    if (t12) goto bb5; else goto bb6;
+#line 156 "<heroes library>"
+bb2:
+#line 153 "<heroes library>"
+    t4 = HERO_STR_LIT(hero_str_3);
+#line 153 "<heroes library>"
+    t5 = HERO_STR_LIT(hero_str_4);
+#line 494 "fficonstpointer.c"
+    hero_str_incref(t4);
+#line 153 "<heroes library>"
+#line 497 "fficonstpointer.c"
+    hero_str_incref(t5);
+#line 153 "<heroes library>"
+    t6 = (h_fficonstpointer_0opt1){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
+#line 153 "<heroes library>"
+    t20 = h4_own4;
+#line 153 "<heroes library>"
+    h4_own4 = t6;
+#line 505 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t20);
+#line 153 "<heroes library>"
+#line 508 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_retain(&t6);
+#line 153 "<heroes library>"
+    t23 = h2_text;
+#line 512 "fficonstpointer.c"
+    hero_str_decref(t23);
+#line 153 "<heroes library>"
+    t24 = h3_own3;
+#line 516 "fficonstpointer.c"
+    hero_str_decref(t24);
+#line 153 "<heroes library>"
+    t25 = h4_own4;
+#line 520 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t25);
+#line 153 "<heroes library>"
+    t26 = h5_own5;
+#line 524 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t26);
+#line 153 "<heroes library>"
+    t27 = h6_own6;
+#line 528 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t27);
+    return t6;
+bb3:
+    goto bb1;
+bb4:
+#line 158 "<heroes library>"
+    t15 = HERO_STR_LIT(hero_str_5);
+#line 158 "<heroes library>"
+    t16 = HERO_STR_LIT(hero_str_6);
+#line 538 "fficonstpointer.c"
+    hero_str_incref(t15);
+#line 158 "<heroes library>"
+#line 541 "fficonstpointer.c"
+    hero_str_incref(t16);
+#line 158 "<heroes library>"
+    t17 = (h_fficonstpointer_0opt1){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
+#line 158 "<heroes library>"
+    t21 = h5_own5;
+#line 158 "<heroes library>"
+    h5_own5 = t17;
+#line 549 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t21);
+#line 158 "<heroes library>"
+#line 552 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_retain(&t17);
+#line 158 "<heroes library>"
+    t28 = h2_text;
+#line 556 "fficonstpointer.c"
+    hero_str_decref(t28);
+#line 158 "<heroes library>"
+    t29 = h3_own3;
+#line 560 "fficonstpointer.c"
+    hero_str_decref(t29);
+#line 158 "<heroes library>"
+    t30 = h4_own4;
+#line 564 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t30);
+#line 158 "<heroes library>"
+    t31 = h5_own5;
+#line 568 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t31);
+#line 158 "<heroes library>"
+    t32 = h6_own6;
+#line 572 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t32);
+    return t17;
+bb5:
+#line 157 "<heroes library>"
+    t13 = h2_text;
+#line 578 "fficonstpointer.c"
+    hero_str_incref(t13);
+#line 157 "<heroes library>"
+    t14 = (h_fficonstpointer_0opt1){.tag = INT64_C(0), .as.ok = t13};
+#line 157 "<heroes library>"
+    t22 = h6_own6;
+#line 157 "<heroes library>"
+    h6_own6 = t14;
+#line 586 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t22);
+#line 157 "<heroes library>"
+#line 589 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_retain(&t14);
+#line 157 "<heroes library>"
+    t33 = h2_text;
+#line 593 "fficonstpointer.c"
+    hero_str_decref(t33);
+#line 157 "<heroes library>"
+    t34 = h3_own3;
+#line 597 "fficonstpointer.c"
+    hero_str_decref(t34);
+#line 157 "<heroes library>"
+    t35 = h4_own4;
+#line 601 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t35);
+#line 157 "<heroes library>"
+    t36 = h5_own5;
+#line 605 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t36);
+#line 157 "<heroes library>"
+    t37 = h6_own6;
+#line 609 "fficonstpointer.c"
+    h_fficonstpointer_0opt1_release(&t37);
+    return t14;
+bb6:
+    goto bb4;
 }
 bool h_fficonstpointer_Handle_eq(const Handle *a, const Handle *b) {
     if (!(a->pMethods == b->pMethods)) return false;

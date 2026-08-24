@@ -19,4 +19,4 @@ extern "stdio.h"
     constant EOF: ()  #~ ffi_constant_type
 
 function main()
-    print(to_str(sqlite3_libversion()))
+    print(validated(c: sqlite3_libversion()).must())

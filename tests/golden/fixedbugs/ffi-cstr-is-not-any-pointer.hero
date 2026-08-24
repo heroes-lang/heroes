@@ -33,4 +33,4 @@ extern "ffi-const-pointer.h"
     function get_blob() -> cstr                     #~ ffi_return_type
 
 function main()
-    print(get_blob().to_str())
+    print(get_blob().validated().must())

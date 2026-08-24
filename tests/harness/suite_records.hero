@@ -415,8 +415,8 @@ function verdicts(@r: report.Report, present: [str])
         if pieces.len() != 2
             offenders @ offenders.push("    " + path + ": " + (pieces.len() - 1).to_str() + " verdict sections, want exactly 1")
             continue
-        if opens_pending(text: pieces[1])
-            offenders @ offenders.push("    " + path + ": the verdict still reads `Pending`")
+        if opens_pending(text: pieces[1]) && !queued(path: path)
+            offenders @ offenders.push("    " + path + ": the verdict reads `Pending` and no open item in " + QUEUE + " names it")
     if offenders.len() > 0
         report.keep_failure(@r, label: "records/verdicts", detail: "  a sitting has no answer from the author:\n" + offenders.join("\n") + "\n  CLAUDE.md §4: a panel never blocks, it queues the author's ratification — so\n  something has to ask. Give the file one `" + VERDICT_HEADING.slice(from: 1, to: VERDICT_HEADING.len()) + "` section saying what the yes\n  settles and what it does not. A sitting settled BEFORE it ran is a retro-record\n  and says so under the same heading; there is no exception to teach this check.")
     else
@@ -445,6 +445,41 @@ function sitting_number(path: str) -> i64?
     if at.is_err()
         return fail("unnumbered", "no `-` after the number in " + path)
     return strings.to_number(text: rest.slice(from: 0, to: at.must()))
+
+# **A PENDING VERDICT IS FINE — A PENDING VERDICT NOBODY IS ASKING ABOUT IS NOT**,
+# and the difference is the whole defect this check was built for (corrected
+# 2026-08-25, hours after the check landed, by the check firing on the panel held
+# that evening).
+#
+# The first version failed on any `Pending`, which made every freshly-held sitting
+# a red build until the author answered — and CLAUDE.md §4 says in its own words
+# that **a panel never blocks**: it adopts a conservative default, ships it, and
+# QUEUES the ratification. A check that contradicts the contract it enforces is
+# worse than no check.
+#
+# What actually went wrong with panels 085-087, and with 069-079 for eight days,
+# was never that they were pending. It was that **no list carried the item**, so
+# nothing asked. So that is what this asks: a sitting may say `Pending` for as
+# long as it likes, provided an OPEN item in `docs/debrief/DECIDE.md` names it.
+# The pair is the invariant; neither half alone is.
+constant QUEUE: str
+    "docs/debrief/DECIDE.md"
+
+# Does an OPEN item in the queue name this sitting? The number is the key, because
+# a panel file's name changes and its number does not (CLAUDE.md §14: an id is
+# never renamed once it is in the record).
+function queued(path: str) -> bool
+    number = sitting_number(path)
+    if number.is_err()
+        return false
+    text = read_file(QUEUE)
+    if text.is_err()
+        return false
+    needle = "panel " + number.must().to_str()
+    for line in strings.lines(text: text.must())
+        if strings.starts_with(text: line, prefix: "- [ ] ") && strings.contains(text: line, needle: needle)
+            return true
+    return false
 
 # A numbered sitting under `docs/panel/`. `OPEN-QUESTIONS.md` is not one: it is
 # the watch list, it has no resolution, and nobody ratifies it.

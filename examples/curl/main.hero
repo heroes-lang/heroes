@@ -46,7 +46,7 @@ extern "curl/curl.h" link "curl"
     function curl_easy_cleanup(handle: ptr)
 
 function main()
-    print("libcurl: ", to_str(curl_version()))
+    print("libcurl: ", validated(c: curl_version()).default("<unnamed>"))
     handle = curl_easy_init()
     # The variadic call. `CURLOPT_URL` takes a string, and that is a fact about
     # this option rather than about the function — which is exactly what a
@@ -55,8 +55,8 @@ function main()
     if rc == CURLE_OK
         print("the url was accepted")
     else
-        print("setopt refused it: ", to_str(curl_easy_strerror(rc.to_u32().must())))
+        print("setopt refused it: ", validated(c: curl_easy_strerror(rc.to_u32().must())).default("<unnamed>"))
     # A code the library knows and this program never provokes: the point is
     # that the message comes from libcurl, not from a table written here.
-    print("code 1 means: ", to_str(curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL.to_u32().must())))
+    print("code 1 means: ", validated(c: curl_easy_strerror(CURLE_UNSUPPORTED_PROTOCOL.to_u32().must())).default("<unnamed>"))
     curl_easy_cleanup(handle)

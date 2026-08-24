@@ -75,7 +75,7 @@ function ffi_constant(@c: check_state.Checker, s: source.Source, decls: [ast.Dec
         return
     why: str @ ""
     match check_table.get(c.out.types, declared)
-        .str => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and convert with `to_str`, which copies (§4.20)"
+        .str => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and read it with `validated`, which copies and may fail (§4.20)"
         .unit => why @ "a `constant` names a value, and `()` is a type rather than a value"
         .int_ty | .float_ty | .bool | .ptr | .cstr | .error => return
         .array | .fixed | .map | .fallible | .function_ty | .named => return
@@ -107,7 +107,7 @@ function ffi_field(@c: check_state.Checker, s: source.Source, decls: [ast.Decl],
     # note about str's reference count printed under an [i64] field sends
     # the reader to the wrong repair with full confidence.
     why = match check_table.get(c.out.types, ty)
-        .str => "a `str` is this runtime's own value, with a reference count before its bytes, so no C struct holds one: declare the field `cstr` and convert with `to_str`, which copies"
+        .str => "a `str` is this runtime's own value, with a reference count before its bytes, so no C struct holds one: declare the field `cstr` and read it with `validated`, which copies and may fail"
         .array | .map => "a C struct holds a pointer to its elements, never the elements: declare the field `ptr` and reach them through the header's own accessors"
         .fallible => "`T?` is this language's own two-word value and no header declares one: a C function reports failure in its result or an out-parameter (§4.19)"
         .unit => "`()` is a type rather than a value, so nothing can hold one — drop the field"
@@ -287,7 +287,7 @@ test "a group field takes a fixed array of scalars, and a str is routed"
     ffi_field(@c, s, d, ty: check_table.str_ty(c.out.types), span: span)
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "ffi_field_type"
-    assert c.out.diagnostics[0].notes[0] == "a `str` is this runtime's own value, with a reference count before its bytes, so no C struct holds one: declare the field `cstr` and convert with `to_str`, which copies"
+    assert c.out.diagnostics[0].notes[0] == "a `str` is this runtime's own value, with a reference count before its bytes, so no C struct holds one: declare the field `cstr` and read it with `validated`, which copies and may fail"
 
 test "a unit parameter cannot stand, though a unit result may"
     text = "extern \"m.h\"\n    function odd(n: ()) -> i32\n"

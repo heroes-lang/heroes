@@ -100,13 +100,13 @@ function conversion_call(@c: check_state.Checker, s: source.Source, decls: [ast.
             return ok(check_table.intern(@c.out.types, .float_ty(kind: .f32)))
         return ok(arg_error(@c, s, decls, name: "to_f32", allowed: "an integer or a float", got: given[0], span: span))
     if name == "to_str" && given.len() == 1
+        # A `cstr` is not here: it aborted where `spec:60` promised it could not (panel 090).
         keeps = match check_table.get(c.out.types, given[0])
-            .int_ty | .float_ty | .bool | .str | .cstr => true
-            .ptr | .unit | .array | .fixed | .map | .fallible => false
-            .function_ty | .named | .case_ty | .failure | .generic | .error => false
+            .int_ty | .float_ty | .bool | .str => true
+            .cstr | .ptr | .unit | .array | .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => false
         if keeps
             return ok(check_table.str_ty(c.out.types))
-        return ok(arg_error(@c, s, decls, name: "to_str", allowed: "an integer, a float, `bool`, `str` or `cstr`", got: given[0], span: span))
+        return ok(arg_error(@c, s, decls, name: "to_str", allowed: "an integer, a float, `bool` or `str`", got: given[0], span: span))
     return fail("not_a_conversion", "this name is the list's, not the family's")
 
 # The width `to_<name>` converts to, when the suffix names one.

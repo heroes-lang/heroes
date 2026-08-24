@@ -60,7 +60,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 61 "ffireadbackacstr.c"
 
 HERO_STR_STATIC(hero_str_0, "HEROES_NO_SUCH_VARIABLE_059");
-HERO_STR_STATIC(hero_str_1, "absent, and to_str was never called");
+HERO_STR_STATIC(hero_str_1, "absent: ");
+HERO_STR_STATIC(hero_str_4, "null_cstr");
+HERO_STR_STATIC(hero_str_5, "a null `cstr` holds no text");
+HERO_STR_STATIC(hero_str_6, "not_text");
+HERO_STR_STATIC(hero_str_7, "the bytes behind this `cstr` are not UTF-8");
 
 typedef struct h_ffireadbackacstr_0opt0 {
     int64_t tag;
@@ -87,48 +91,87 @@ bool h_ffireadbackacstr_0opt1_eq(const h_ffireadbackacstr_0opt1 *a, const h_ffir
 uint64_t h_ffireadbackacstr_0opt1_hash(const void *elem);
 
 void h_ffireadbackacstr_main(void);
+int64_t h_library_HERO_STR_OK(void);
+h_ffireadbackacstr_0opt0 h_library_validated(const char * h0_c);
 
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
 void h_ffireadbackacstr_main(void) {
-#line 94 "ffireadbackacstr.c"
-    HeroStr h0_first = {0};
-    HeroStr h1_second = {0};
-    const char * h2_absent;
-    HeroStr h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
+#line 100 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0 h0_f0 = {0};
+    HeroStr h1_first = {0};
+    h_ffireadbackacstr_0opt0 h2_f1 = {0};
+    HeroStr h3_second = {0};
+    const char * h4_absent;
+    h_ffireadbackacstr_0opt0 h5_s0 = {0};
+    HeroStr h6_text = {0};
+    HeroFailure h7_e = {0};
+    h_ffireadbackacstr_0opt0 h8_own8 = {0};
+    h_ffireadbackacstr_0opt0 h9_own9 = {0};
+    h_ffireadbackacstr_0opt0 h10_own10 = {0};
     int32_t t1;
     const char * t2;
-    HeroStr t3 = {0};
-    int32_t t4;
-    const char * t5;
-    HeroStr t6 = {0};
-    HeroStr t7 = {0};
-    HeroStr t8 = {0};
-    bool t9;
-    HeroStr t10 = {0};
-    int64_t t11;
-    int64_t t12;
-    bool t13;
-    HeroStr t14 = {0};
-    const char * t15;
-    const char * t16;
-    const char * t17;
-    const char * t18;
-    bool t19;
-    HeroStr t20 = {0};
-    const char * t21;
+    h_ffireadbackacstr_0opt0 t3 = {0};
+    h_ffireadbackacstr_0opt0 t4 = {0};
+    int64_t t5;
+    int64_t t6;
+    bool t7;
+    h_ffireadbackacstr_0opt0 t8 = {0};
+    HeroFailure t9 = {0};
+    h_ffireadbackacstr_0opt0 t10 = {0};
+    HeroStr t11 = {0};
+    int32_t t12;
+    const char * t13;
+    h_ffireadbackacstr_0opt0 t14 = {0};
+    h_ffireadbackacstr_0opt0 t15 = {0};
+    int64_t t16;
+    int64_t t17;
+    bool t18;
+    h_ffireadbackacstr_0opt0 t19 = {0};
+    HeroFailure t20 = {0};
+    h_ffireadbackacstr_0opt0 t21 = {0};
     HeroStr t22 = {0};
     HeroStr t23 = {0};
     HeroStr t24 = {0};
-    HeroStr t25 = {0};
+    bool t25;
     HeroStr t26 = {0};
-    HeroStr t27 = {0};
-    HeroStr t28 = {0};
-    HeroStr t29 = {0};
+    int64_t t27;
+    int64_t t28;
+    bool t29;
     HeroStr t30 = {0};
-    HeroStr t31 = {0};
-    HeroStr t32 = {0};
+    const char * t31;
+    const char * t32;
+    const char * t33;
+    h_ffireadbackacstr_0opt0 t34 = {0};
+    h_ffireadbackacstr_0opt0 t35 = {0};
+    int64_t t36;
+    h_ffireadbackacstr_0opt0 t37 = {0};
+    HeroStr t38 = {0};
+    HeroStr t39 = {0};
+    h_ffireadbackacstr_0opt0 t40 = {0};
+    HeroFailure t41 = {0};
+    HeroStr t42 = {0};
+    HeroFailure t43 = {0};
+    HeroStr t44 = {0};
+    h_ffireadbackacstr_0opt0 t45 = {0};
+    h_ffireadbackacstr_0opt0 t46 = {0};
+    HeroStr t47 = {0};
+    h_ffireadbackacstr_0opt0 t48 = {0};
+    h_ffireadbackacstr_0opt0 t49 = {0};
+    HeroStr t50 = {0};
+    h_ffireadbackacstr_0opt0 t51 = {0};
+    h_ffireadbackacstr_0opt0 t52 = {0};
+    HeroStr t53 = {0};
+    HeroFailure t54 = {0};
+    h_ffireadbackacstr_0opt0 t55 = {0};
+    HeroStr t56 = {0};
+    h_ffireadbackacstr_0opt0 t57 = {0};
+    HeroStr t58 = {0};
+    h_ffireadbackacstr_0opt0 t59 = {0};
+    HeroStr t60 = {0};
+    HeroFailure t61 = {0};
+    h_ffireadbackacstr_0opt0 t62 = {0};
+    h_ffireadbackacstr_0opt0 t63 = {0};
+    h_ffireadbackacstr_0opt0 t64 = {0};
     goto bb0;
 bb0:
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -136,130 +179,482 @@ bb0:
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t2 = (const char *)strerror(t1);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t3 = hero_str_from_cstr(t2);
+    t3 = h_library_validated(t2);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t23 = h3_own3;
+    t45 = h8_own8;
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    h3_own3 = t3;
-#line 145 "ffireadbackacstr.c"
-    hero_str_decref(t23);
+    h8_own8 = t3;
+#line 188 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t45);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t24 = h0_first;
-#line 149 "ffireadbackacstr.c"
-    hero_str_incref(t3);
+    t46 = h0_f0;
+#line 192 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_retain(&t3);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    h0_first = t3;
-#line 153 "ffireadbackacstr.c"
-    hero_str_decref(t24);
-#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t4 = INT64_C(2);
-#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t5 = (const char *)strerror(t4);
-#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t6 = hero_str_from_cstr(t5);
-#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t25 = h4_own4;
-#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    h4_own4 = t6;
-#line 165 "ffireadbackacstr.c"
-    hero_str_decref(t25);
-#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t26 = h1_second;
-#line 169 "ffireadbackacstr.c"
-    hero_str_incref(t6);
-#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    h1_second = t6;
-#line 173 "ffireadbackacstr.c"
-    hero_str_decref(t26);
-#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t7 = h0_first;
-#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t8 = h1_second;
-#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t9 = hero_str_eq(t7, t8);
-#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    hero_print_bool(t9);
-#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    hero_print_end();
-#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t10 = h0_first;
-#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t11 = hero_str_len(t10);
-#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t12 = INT64_C(0);
-#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t13 = t11 > t12;
-#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    hero_print_bool(t13);
-#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    hero_print_end();
-#line 50 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t14 = HERO_STR_LIT(hero_str_0);
-#line 50 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t15 = hero_str_cstr(t14);
-#line 50 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t16 = (const char *)getenv(hero_cstr_nonnull(t15));
-#line 50 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    h2_absent = t16;
-#line 51 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t17 = h2_absent;
-#line 51 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t18 = ((void *)0);
-#line 51 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t19 = t17 == t18;
-#line 51 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    if (t19) goto bb2; else goto bb3;
-#line 51 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h0_f0 = t3;
+#line 196 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t46);
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t4 = h0_f0;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t5 = t4.tag;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t6 = INT64_C(0);
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t7 = t5 == t6;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    if (t7) goto bb1; else goto bb2;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
 bb1:
-#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t28 = h0_first;
-#line 217 "ffireadbackacstr.c"
-    hero_str_decref(t28);
-#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t29 = h1_second;
-#line 221 "ffireadbackacstr.c"
-    hero_str_decref(t29);
-#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t30 = h3_own3;
-#line 225 "ffireadbackacstr.c"
-    hero_str_decref(t30);
-#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t31 = h4_own4;
-#line 229 "ffireadbackacstr.c"
-    hero_str_decref(t31);
-#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t32 = h5_own5;
-#line 233 "ffireadbackacstr.c"
-    hero_str_decref(t32);
-    return;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t10 = h0_f0;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t11 = t10.as.ok;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t47 = h1_first;
+#line 216 "ffireadbackacstr.c"
+    hero_str_incref(t11);
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h1_first = t11;
+#line 220 "ffireadbackacstr.c"
+    hero_str_decref(t47);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t12 = INT64_C(2);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t13 = (const char *)strerror(t12);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t14 = h_library_validated(t13);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t48 = h9_own9;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h9_own9 = t14;
+#line 232 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t48);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t49 = h2_f1;
+#line 236 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_retain(&t14);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h2_f1 = t14;
+#line 240 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t49);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t15 = h2_f1;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t16 = t15.tag;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t17 = INT64_C(0);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t18 = t16 == t17;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    if (t18) goto bb3; else goto bb4;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
 bb2:
-#line 52 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t20 = HERO_STR_LIT(hero_str_1);
-#line 52 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    hero_print_str(t20);
-#line 52 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    hero_print_end();
-#line 52 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    goto bb1;
-#line 52 "tests/golden/run/ffi-read-back-a-cstr.hero"
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t8 = h0_f0;
+#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t9 = t8.as.err;
+#line 258 "ffireadbackacstr.c"
+    hero_panic_must(t9);
+    hero_unreachable();
 bb3:
-#line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t21 = h2_absent;
-#line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t22 = hero_str_from_cstr(t21);
-#line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t27 = h5_own5;
-#line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    h5_own5 = t22;
-#line 255 "ffireadbackacstr.c"
-    hero_str_decref(t27);
-#line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    hero_print_str(t22);
-#line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t21 = h2_f1;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t22 = t21.as.ok;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t50 = h3_second;
+#line 268 "ffireadbackacstr.c"
+    hero_str_incref(t22);
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h3_second = t22;
+#line 272 "ffireadbackacstr.c"
+    hero_str_decref(t50);
+#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t23 = h1_first;
+#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t24 = h3_second;
+#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t25 = hero_str_eq(t23, t24);
+#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_bool(t25);
+#line 47 "tests/golden/run/ffi-read-back-a-cstr.hero"
     hero_print_end();
-#line 54 "tests/golden/run/ffi-read-back-a-cstr.hero"
+#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t26 = h1_first;
+#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t27 = hero_str_len(t26);
+#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t28 = INT64_C(0);
+#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t29 = t27 > t28;
+#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_bool(t29);
+#line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_end();
+#line 55 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t30 = HERO_STR_LIT(hero_str_0);
+#line 55 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t31 = hero_str_cstr(t30);
+#line 55 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t32 = (const char *)getenv(hero_cstr_nonnull(t31));
+#line 55 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h4_absent = t32;
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t33 = h4_absent;
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t34 = h_library_validated(t33);
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t51 = h10_own10;
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h10_own10 = t34;
+#line 312 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t51);
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t52 = h5_s0;
+#line 316 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_retain(&t34);
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h5_s0 = t34;
+#line 320 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t52);
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t35 = h5_s0;
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t36 = t35.tag;
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    switch (t36) {
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+        case 0: goto bb6;
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+        case 1: goto bb7;
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+        default: hero_unreachable();
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    }
+#line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
+bb4:
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t19 = h2_f1;
+#line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t20 = t19.as.err;
+#line 342 "ffireadbackacstr.c"
+    hero_panic_must(t20);
+    hero_unreachable();
+bb5:
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t55 = h0_f0;
+#line 348 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t55);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t56 = h1_first;
+#line 352 "ffireadbackacstr.c"
+    hero_str_decref(t56);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t57 = h2_f1;
+#line 356 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t57);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t58 = h3_second;
+#line 360 "ffireadbackacstr.c"
+    hero_str_decref(t58);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t59 = h5_s0;
+#line 364 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t59);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t60 = h6_text;
+#line 368 "ffireadbackacstr.c"
+    hero_str_decref(t60);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t61 = h7_e;
+#line 372 "ffireadbackacstr.c"
+    hero_failure_release(&t61);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t62 = h8_own8;
+#line 376 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t62);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t63 = h9_own9;
+#line 380 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t63);
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t64 = h10_own10;
+#line 384 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t64);
+    return;
+bb6:
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t37 = h5_s0;
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t38 = t37.as.ok;
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t53 = h6_text;
+#line 394 "ffireadbackacstr.c"
+    hero_str_incref(t38);
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h6_text = t38;
+#line 398 "ffireadbackacstr.c"
+    hero_str_decref(t53);
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t39 = h6_text;
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_str(t39);
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_end();
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    goto bb5;
+#line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
+bb7:
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t40 = h5_s0;
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t41 = t40.as.err;
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t54 = h7_e;
+#line 416 "ffireadbackacstr.c"
+    hero_failure_retain(&t41);
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h7_e = t41;
+#line 420 "ffireadbackacstr.c"
+    hero_failure_release(&t54);
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t42 = HERO_STR_LIT(hero_str_1);
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t43 = h7_e;
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    t44 = t43.code;
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_str(t42);
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_str(t44);
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    hero_print_end();
+#line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    goto bb5;
+#line 436 "ffireadbackacstr.c"
+}
+
+#line 121 "<heroes library>"
+int64_t h_library_HERO_STR_OK(void) {
+#line 441 "ffireadbackacstr.c"
+    return HERO_STR_OK;
+}
+
+#line 151 "<heroes library>"
+h_ffireadbackacstr_0opt0 h_library_validated(const char * h0_c) {
+#line 447 "ffireadbackacstr.c"
+    int64_t h1_status;
+    HeroStr h2_text = {0};
+    HeroStr h3_own3 = {0};
+    h_ffireadbackacstr_0opt0 h4_own4 = {0};
+    h_ffireadbackacstr_0opt0 h5_own5 = {0};
+    h_ffireadbackacstr_0opt0 h6_own6 = {0};
+    const char * t1;
+    const char * t2;
+    bool t3;
+    HeroStr t4 = {0};
+    HeroStr t5 = {0};
+    h_ffireadbackacstr_0opt0 t6 = {0};
+    int64_t t7;
+    const char * t8;
+    HeroStr t9 = {0};
+    int64_t t10;
+    int64_t t11;
+    bool t12;
+    HeroStr t13 = {0};
+    h_ffireadbackacstr_0opt0 t14 = {0};
+    HeroStr t15 = {0};
+    HeroStr t16 = {0};
+    h_ffireadbackacstr_0opt0 t17 = {0};
+    HeroStr t18 = {0};
+    HeroStr t19 = {0};
+    h_ffireadbackacstr_0opt0 t20 = {0};
+    h_ffireadbackacstr_0opt0 t21 = {0};
+    h_ffireadbackacstr_0opt0 t22 = {0};
+    HeroStr t23 = {0};
+    HeroStr t24 = {0};
+    h_ffireadbackacstr_0opt0 t25 = {0};
+    h_ffireadbackacstr_0opt0 t26 = {0};
+    h_ffireadbackacstr_0opt0 t27 = {0};
+    HeroStr t28 = {0};
+    HeroStr t29 = {0};
+    h_ffireadbackacstr_0opt0 t30 = {0};
+    h_ffireadbackacstr_0opt0 t31 = {0};
+    h_ffireadbackacstr_0opt0 t32 = {0};
+    HeroStr t33 = {0};
+    HeroStr t34 = {0};
+    h_ffireadbackacstr_0opt0 t35 = {0};
+    h_ffireadbackacstr_0opt0 t36 = {0};
+    h_ffireadbackacstr_0opt0 t37 = {0};
+    goto bb0;
+bb0:
+#line 152 "<heroes library>"
+    t1 = h0_c;
+#line 152 "<heroes library>"
+    t2 = ((void *)0);
+#line 152 "<heroes library>"
+    t3 = t1 == t2;
+#line 152 "<heroes library>"
+    if (t3) goto bb2; else goto bb3;
+#line 152 "<heroes library>"
+bb1:
+#line 154 "<heroes library>"
+    t7 = INT64_C(0);
+#line 154 "<heroes library>"
+    h1_status = t7;
+#line 155 "<heroes library>"
+    t8 = h0_c;
+#line 155 "<heroes library>"
+    t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), &h1_status);
+#line 155 "<heroes library>"
+    t18 = h3_own3;
+#line 155 "<heroes library>"
+    h3_own3 = t9;
+#line 515 "ffireadbackacstr.c"
+    hero_str_decref(t18);
+#line 155 "<heroes library>"
+    t19 = h2_text;
+#line 519 "ffireadbackacstr.c"
+    hero_str_incref(t9);
+#line 155 "<heroes library>"
+    h2_text = t9;
+#line 523 "ffireadbackacstr.c"
+    hero_str_decref(t19);
+#line 156 "<heroes library>"
+    t10 = h1_status;
+#line 156 "<heroes library>"
+    t11 = h_library_HERO_STR_OK();
+#line 156 "<heroes library>"
+    t12 = t10 == t11;
+#line 156 "<heroes library>"
+    if (t12) goto bb5; else goto bb6;
+#line 156 "<heroes library>"
+bb2:
+#line 153 "<heroes library>"
+    t4 = HERO_STR_LIT(hero_str_4);
+#line 153 "<heroes library>"
+    t5 = HERO_STR_LIT(hero_str_5);
+#line 539 "ffireadbackacstr.c"
+    hero_str_incref(t4);
+#line 153 "<heroes library>"
+#line 542 "ffireadbackacstr.c"
+    hero_str_incref(t5);
+#line 153 "<heroes library>"
+    t6 = (h_ffireadbackacstr_0opt0){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
+#line 153 "<heroes library>"
+    t20 = h4_own4;
+#line 153 "<heroes library>"
+    h4_own4 = t6;
+#line 550 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t20);
+#line 153 "<heroes library>"
+#line 553 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_retain(&t6);
+#line 153 "<heroes library>"
+    t23 = h2_text;
+#line 557 "ffireadbackacstr.c"
+    hero_str_decref(t23);
+#line 153 "<heroes library>"
+    t24 = h3_own3;
+#line 561 "ffireadbackacstr.c"
+    hero_str_decref(t24);
+#line 153 "<heroes library>"
+    t25 = h4_own4;
+#line 565 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t25);
+#line 153 "<heroes library>"
+    t26 = h5_own5;
+#line 569 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t26);
+#line 153 "<heroes library>"
+    t27 = h6_own6;
+#line 573 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t27);
+    return t6;
+bb3:
     goto bb1;
-#line 263 "ffireadbackacstr.c"
+bb4:
+#line 158 "<heroes library>"
+    t15 = HERO_STR_LIT(hero_str_6);
+#line 158 "<heroes library>"
+    t16 = HERO_STR_LIT(hero_str_7);
+#line 583 "ffireadbackacstr.c"
+    hero_str_incref(t15);
+#line 158 "<heroes library>"
+#line 586 "ffireadbackacstr.c"
+    hero_str_incref(t16);
+#line 158 "<heroes library>"
+    t17 = (h_ffireadbackacstr_0opt0){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
+#line 158 "<heroes library>"
+    t21 = h5_own5;
+#line 158 "<heroes library>"
+    h5_own5 = t17;
+#line 594 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t21);
+#line 158 "<heroes library>"
+#line 597 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_retain(&t17);
+#line 158 "<heroes library>"
+    t28 = h2_text;
+#line 601 "ffireadbackacstr.c"
+    hero_str_decref(t28);
+#line 158 "<heroes library>"
+    t29 = h3_own3;
+#line 605 "ffireadbackacstr.c"
+    hero_str_decref(t29);
+#line 158 "<heroes library>"
+    t30 = h4_own4;
+#line 609 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t30);
+#line 158 "<heroes library>"
+    t31 = h5_own5;
+#line 613 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t31);
+#line 158 "<heroes library>"
+    t32 = h6_own6;
+#line 617 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t32);
+    return t17;
+bb5:
+#line 157 "<heroes library>"
+    t13 = h2_text;
+#line 623 "ffireadbackacstr.c"
+    hero_str_incref(t13);
+#line 157 "<heroes library>"
+    t14 = (h_ffireadbackacstr_0opt0){.tag = INT64_C(0), .as.ok = t13};
+#line 157 "<heroes library>"
+    t22 = h6_own6;
+#line 157 "<heroes library>"
+    h6_own6 = t14;
+#line 631 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t22);
+#line 157 "<heroes library>"
+#line 634 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_retain(&t14);
+#line 157 "<heroes library>"
+    t33 = h2_text;
+#line 638 "ffireadbackacstr.c"
+    hero_str_decref(t33);
+#line 157 "<heroes library>"
+    t34 = h3_own3;
+#line 642 "ffireadbackacstr.c"
+    hero_str_decref(t34);
+#line 157 "<heroes library>"
+    t35 = h4_own4;
+#line 646 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t35);
+#line 157 "<heroes library>"
+    t36 = h5_own5;
+#line 650 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t36);
+#line 157 "<heroes library>"
+    t37 = h6_own6;
+#line 654 "ffireadbackacstr.c"
+    h_ffireadbackacstr_0opt0_release(&t37);
+    return t14;
+bb6:
+    goto bb4;
 }
 void h_ffireadbackacstr_0opt0_retain(const h_ffireadbackacstr_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

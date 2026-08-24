@@ -41,14 +41,18 @@ extern "stdlib.h"
     function getenv(name: cstr) -> cstr
 
 function main()
-    first = strerror(code: 1).to_str()
-    second = strerror(code: 2).to_str()
+    first = strerror(code: 1).validated().must()
+    second = strerror(code: 2).validated().must()
     # `false` here is the whole point: a borrow would make these one string.
     print(first == second)
     print(len(first) > 0)
 
+    # **The null test is GONE and that is the repair** (panel 090). This golden
+    # was written for `to_str`, which aborts on a null pointer, so it had to
+    # guard — and panel 087 measured that the guard does not save you anyway,
+    # because ill-formed bytes abort too. `validated` answers both as a `str?`,
+    # so the branch is where it belongs: on the value, not before it.
     absent = getenv(name: "HEROES_NO_SUCH_VARIABLE_059".cstr())
-    if absent == nullptr
-        print("absent, and to_str was never called")
-    else
-        print(absent.to_str())
+    match absent.validated()
+        .ok text => print(text)
+        .err e => print("absent: ", e.code)
