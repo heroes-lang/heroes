@@ -429,8 +429,18 @@ library the author must leave C code around for; bug-proof, because a binding is
 the one place where a Heroes program can reach an address nobody checked. Panel
 053 measured the shape of that: `to_str` on a null `cstr` is a **clean abort**
 (the runtime guards it), and a null `cstr` handed straight to another C function
-is a **SEGV in libsystem** — so the hole is not where three of its four options
-were looking.
+**was a SEGV in libsystem** — so the hole was not where three of its four options
+were looking. **That second half stopped being true and the sentence is corrected
+rather than deleted** (author instruction 2026-08-24, panel 089's spec-warden;
+measured twice that day, by that seat and by the coordinator): the same program
+is now `panic: a null `cstr` was passed to a C function`, **exit 134**, because
+`guard_cstr_arguments` wraps every `cstr` argument on its way out. The date is
+kept because the measurement was right when it was taken; the closure is added
+because **a contract that states a danger the compiler has already shut will fund
+the wrong decision next time** — and it nearly did: panel 089's whole payment,
+the −15 tokens that deleted `spec:229`'s null-test advice, is §1.4 redundancy
+**paid back** only because the compiler is loud in both directions. Under the
+stale sentence that removal would have looked like deleting a warning.
 
 ## 13. Where not to go
 Performance (a non-goal, never a justification — **and never a licence either**,
