@@ -93,11 +93,14 @@ constant QUOTES_THE_OLD_SPELLING: [str]
 constant REFUSED: [str]
     ["M-language"]
 
-# Measured 2026-08-18: 39 rows in the ROADMAP's alias table. The count is
-# asserted rather than derived on purpose — it is the tripwire that makes
-# a SILENTLY DROPPED row fail, which a set comparison alone would not.
+# Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
+# M-package-layout was scheduled — author decision 2026-08-25, `/decide`).
+# The count is asserted rather than derived on purpose — it is the tripwire
+# that makes a SILENTLY DROPPED row fail, which a set comparison alone
+# would not. It fired on the row that added it, which is the intended
+# direction: a new milestone reaches this number before it reaches a tag.
 constant ROWS: i64
-    39
+    40
 
 # The two documents whose citations are checked. They are the two a reader is sent
 # to for a rule, and the only two this project rewrites rather than appends to.
