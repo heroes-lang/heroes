@@ -152,7 +152,7 @@ function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit
         emit_writer.line(@w, text: "static bool " + prefix + "_desc_eq(const void *a, const void *b) {")
         emit_writer.line(@w, text: "    return " + prefix + "_eq((const " + c_type + " *)a, (const " + c_type + " *)b);")
         emit_writer.line(@w, text: "}")
-        emit_writer.line(@w, text: "static const HeroDesc " + prefix + "_desc = {")
+        emit_writer.line(@w, text: "HERO_TU_QUIET static const HeroDesc " + prefix + "_desc = {")
         emit_writer.line(@w, text: "    sizeof(" + c_type + "),")
         emit_writer.line(@w, text: "    " + prefix + "_desc_copy,")
         emit_writer.line(@w, text: "    " + prefix + "_desc_drop,")

@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "sugarvariantcase.c"
+#line 43 "sugarvariantcase.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "sugarvariantcase.c"
+#line 61 "sugarvariantcase.c"
 #pragma clang diagnostic pop
 
 typedef enum h_sugarvariantcase_Token_tag {
@@ -89,25 +91,25 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b);
-uint64_t h_sugarvariantcase_Token_c_num_hash(const void *elem);
-bool h_sugarvariantcase_Token_eq(const h_sugarvariantcase_Token *a, const h_sugarvariantcase_Token *b);
-uint64_t h_sugarvariantcase_Token_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b);
+HERO_TU_LOCAL uint64_t h_sugarvariantcase_Token_c_num_hash(const void *elem);
+HERO_TU_LOCAL bool h_sugarvariantcase_Token_eq(const h_sugarvariantcase_Token *a, const h_sugarvariantcase_Token *b);
+HERO_TU_LOCAL uint64_t h_sugarvariantcase_Token_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t);
 h_sugarvariantcase_Token h_sugarvariantcase_one(void);
 
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
 int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) {
-#line 111 "sugarvariantcase.c"
+#line 113 "sugarvariantcase.c"
     h_sugarvariantcase_Token h1_s0;
     int64_t h2_r0;
     h_sugarvariantcase_Token_c_num h3_n;
@@ -170,12 +172,12 @@ bb3:
     h2_r0 = t8;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
     goto bb1;
-#line 174 "sugarvariantcase.c"
+#line 176 "sugarvariantcase.c"
 }
 
 #line 14 "tests/golden/ir/sugar-variant-case.hero"
 h_sugarvariantcase_Token h_sugarvariantcase_one(void) {
-#line 179 "sugarvariantcase.c"
+#line 181 "sugarvariantcase.c"
     int64_t t1;
     h_sugarvariantcase_Token t2;
     goto bb0;
@@ -186,21 +188,21 @@ bb0:
     t2 = (h_sugarvariantcase_Token){.tag = h_sugarvariantcase_Token_tag_num, .as.c_num = {.f_v = t1}};
 #line 15 "tests/golden/ir/sugar-variant-case.hero"
     return t2;
-#line 190 "sugarvariantcase.c"
+#line 192 "sugarvariantcase.c"
 }
-bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b) {
+HERO_TU_LOCAL bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;
     return true;
 }
 
-uint64_t h_sugarvariantcase_Token_c_num_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_sugarvariantcase_Token_c_num_hash(const void *elem) {
     const h_sugarvariantcase_Token_c_num *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_v)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-bool h_sugarvariantcase_Token_eq(const h_sugarvariantcase_Token *a, const h_sugarvariantcase_Token *b) {
+HERO_TU_LOCAL bool h_sugarvariantcase_Token_eq(const h_sugarvariantcase_Token *a, const h_sugarvariantcase_Token *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
         case h_sugarvariantcase_Token_tag_num: return h_sugarvariantcase_Token_c_num_eq(&a->as.c_num, &b->as.c_num);
@@ -209,7 +211,7 @@ bool h_sugarvariantcase_Token_eq(const h_sugarvariantcase_Token *a, const h_suga
     hero_unreachable();
 }
 
-uint64_t h_sugarvariantcase_Token_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_sugarvariantcase_Token_hash(const void *elem) {
     const h_sugarvariantcase_Token *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -220,7 +222,7 @@ uint64_t h_sugarvariantcase_Token_hash(const void *elem) {
     hero_unreachable();
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -228,7 +230,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -236,13 +238,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -252,7 +254,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -260,7 +262,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -268,13 +270,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

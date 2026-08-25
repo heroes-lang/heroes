@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "mustaborts.c"
+#line 43 "mustaborts.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "mustaborts.c"
+#line 61 "mustaborts.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1d4477, "odd");
@@ -84,25 +86,25 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-void h_0opt_e201354_release(h_0opt_e201354 *v);
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-uint64_t h_0opt_e201354_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 h_0opt_e201354 h_mustaborts_half(int64_t h0_n);
 void h_mustaborts_main(void);
 
 #line 18 "tests/golden/run/must-aborts.hero"
 h_0opt_e201354 h_mustaborts_half(int64_t h0_n) {
-#line 106 "mustaborts.c"
+#line 108 "mustaborts.c"
     h_0opt_e201354 h1_own1 = {0};
     h_0opt_e201354 h2_own2 = {0};
     int64_t t1;
@@ -159,18 +161,18 @@ bb1:
     t13 = h1_own1;
 #line 21 "tests/golden/run/must-aborts.hero"
     h1_own1 = t12;
-#line 163 "mustaborts.c"
+#line 165 "mustaborts.c"
     h_0opt_e201354_release(&t13);
 #line 21 "tests/golden/run/must-aborts.hero"
-#line 166 "mustaborts.c"
+#line 168 "mustaborts.c"
     h_0opt_e201354_retain(&t12);
 #line 21 "tests/golden/run/must-aborts.hero"
     t15 = h1_own1;
-#line 170 "mustaborts.c"
+#line 172 "mustaborts.c"
     h_0opt_e201354_release(&t15);
 #line 21 "tests/golden/run/must-aborts.hero"
     t16 = h2_own2;
-#line 174 "mustaborts.c"
+#line 176 "mustaborts.c"
     h_0opt_e201354_release(&t16);
     return t12;
 bb2:
@@ -178,10 +180,10 @@ bb2:
     t6 = HERO_STR_LIT(hero_str_1d4477);
 #line 20 "tests/golden/run/must-aborts.hero"
     t7 = HERO_STR_LIT(hero_str_7fc615fd);
-#line 182 "mustaborts.c"
+#line 184 "mustaborts.c"
     hero_str_incref(t6);
 #line 20 "tests/golden/run/must-aborts.hero"
-#line 185 "mustaborts.c"
+#line 187 "mustaborts.c"
     hero_str_incref(t7);
 #line 20 "tests/golden/run/must-aborts.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -189,18 +191,18 @@ bb2:
     t14 = h2_own2;
 #line 20 "tests/golden/run/must-aborts.hero"
     h2_own2 = t8;
-#line 193 "mustaborts.c"
+#line 195 "mustaborts.c"
     h_0opt_e201354_release(&t14);
 #line 20 "tests/golden/run/must-aborts.hero"
-#line 196 "mustaborts.c"
+#line 198 "mustaborts.c"
     h_0opt_e201354_retain(&t8);
 #line 20 "tests/golden/run/must-aborts.hero"
     t17 = h1_own1;
-#line 200 "mustaborts.c"
+#line 202 "mustaborts.c"
     h_0opt_e201354_release(&t17);
 #line 20 "tests/golden/run/must-aborts.hero"
     t18 = h2_own2;
-#line 204 "mustaborts.c"
+#line 206 "mustaborts.c"
     h_0opt_e201354_release(&t18);
     return t8;
 bb3:
@@ -209,7 +211,7 @@ bb3:
 
 #line 23 "tests/golden/run/must-aborts.hero"
 void h_mustaborts_main(void) {
-#line 213 "mustaborts.c"
+#line 215 "mustaborts.c"
     h_0opt_e201354 h0_f0 = {0};
     h_0opt_e201354 h1_f1 = {0};
     h_0opt_e201354 h2_own2 = {0};
@@ -252,15 +254,15 @@ bb0:
     t21 = h2_own2;
 #line 24 "tests/golden/run/must-aborts.hero"
     h2_own2 = t2;
-#line 256 "mustaborts.c"
+#line 258 "mustaborts.c"
     h_0opt_e201354_release(&t21);
 #line 24 "tests/golden/run/must-aborts.hero"
     t22 = h0_f0;
-#line 260 "mustaborts.c"
+#line 262 "mustaborts.c"
     h_0opt_e201354_retain(&t2);
 #line 24 "tests/golden/run/must-aborts.hero"
     h0_f0 = t2;
-#line 264 "mustaborts.c"
+#line 266 "mustaborts.c"
     h_0opt_e201354_release(&t22);
 #line 24 "tests/golden/run/must-aborts.hero"
     t3 = h0_f0;
@@ -290,15 +292,15 @@ bb1:
     t23 = h3_own3;
 #line 25 "tests/golden/run/must-aborts.hero"
     h3_own3 = t12;
-#line 294 "mustaborts.c"
+#line 296 "mustaborts.c"
     h_0opt_e201354_release(&t23);
 #line 25 "tests/golden/run/must-aborts.hero"
     t24 = h1_f1;
-#line 298 "mustaborts.c"
+#line 300 "mustaborts.c"
     h_0opt_e201354_retain(&t12);
 #line 25 "tests/golden/run/must-aborts.hero"
     h1_f1 = t12;
-#line 302 "mustaborts.c"
+#line 304 "mustaborts.c"
     h_0opt_e201354_release(&t24);
 #line 25 "tests/golden/run/must-aborts.hero"
     t13 = h1_f1;
@@ -316,7 +318,7 @@ bb2:
     t7 = h0_f0;
 #line 24 "tests/golden/run/must-aborts.hero"
     t8 = t7.as.err;
-#line 320 "mustaborts.c"
+#line 322 "mustaborts.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -330,19 +332,19 @@ bb3:
     hero_print_end();
 #line 25 "tests/golden/run/must-aborts.hero"
     t25 = h0_f0;
-#line 334 "mustaborts.c"
+#line 336 "mustaborts.c"
     h_0opt_e201354_release(&t25);
 #line 25 "tests/golden/run/must-aborts.hero"
     t26 = h1_f1;
-#line 338 "mustaborts.c"
+#line 340 "mustaborts.c"
     h_0opt_e201354_release(&t26);
 #line 25 "tests/golden/run/must-aborts.hero"
     t27 = h2_own2;
-#line 342 "mustaborts.c"
+#line 344 "mustaborts.c"
     h_0opt_e201354_release(&t27);
 #line 25 "tests/golden/run/must-aborts.hero"
     t28 = h3_own3;
-#line 346 "mustaborts.c"
+#line 348 "mustaborts.c"
     h_0opt_e201354_release(&t28);
     return;
 bb4:
@@ -350,11 +352,11 @@ bb4:
     t17 = h1_f1;
 #line 25 "tests/golden/run/must-aborts.hero"
     t18 = t17.as.err;
-#line 354 "mustaborts.c"
+#line 356 "mustaborts.c"
     hero_panic_must(t18);
     hero_unreachable();
 }
-void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -362,7 +364,7 @@ void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     }
 }
 
-void h_0opt_e201354_release(h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -370,13 +372,13 @@ void h_0opt_e201354_release(h_0opt_e201354 *v) {
     }
 }
 
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_e201354_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
     const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -386,7 +388,7 @@ uint64_t h_0opt_e201354_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -394,7 +396,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -402,13 +404,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -418,7 +420,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -426,7 +428,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -434,13 +436,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

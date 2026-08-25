@@ -6,6 +6,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #line 36 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Texture *)0)->id) == 1 && sizeof(((Texture *)0)->id) == sizeof(uint32_t) && (_Generic(((Texture *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Texture id");
@@ -41,7 +43,7 @@ _Static_assert(_Generic(&((Camera2D *)0)->target, Vector2 *: 1, default: 0) && s
 _Static_assert(_Generic(&((Camera2D *)0)->rotation, float *: 1, default: 0) && sizeof(((Camera2D *)0)->rotation) == sizeof(float), "heroes-ffi-field Camera2D rotation");
 #line 55 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Camera2D *)0)->zoom, float *: 1, default: 0) && sizeof(((Camera2D *)0)->zoom) == sizeof(float), "heroes-ffi-field Camera2D zoom");
-#line 45 "fixedbugsanestedrecordandatypedpointer.c"
+#line 47 "fixedbugsanestedrecordandatypedpointer.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
@@ -54,7 +56,7 @@ __attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordan
 __attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Vector2(void) { Vector2 v = {0,0}; (void)v; }
 #line 51 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_fixedbugsanestedrecordandatypedpointer_Camera2D(void) { Camera2D v = {{0},{0},0,0}; (void)v; }
-#line 58 "fixedbugsanestedrecordandatypedpointer.c"
+#line 60 "fixedbugsanestedrecordandatypedpointer.c"
 #pragma clang diagnostic pop
 
 #line 35 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
@@ -65,7 +67,7 @@ _Static_assert(__builtin_classify_type(*(Font *)0) != 13, "heroes-ffi-union Font
 _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union Vector2 x y");
 #line 51 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(*(Camera2D *)0) != 13, "heroes-ffi-union Camera2D offset target rotation zoom");
-#line 69 "fixedbugsanestedrecordandatypedpointer.c"
+#line 71 "fixedbugsanestedrecordandatypedpointer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -124,7 +126,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 128 "fixedbugsanestedrecordandatypedpointer.c"
+#line 130 "fixedbugsanestedrecordandatypedpointer.c"
 #pragma clang diagnostic pop
 
 typedef struct h_0opt_f87774a {
@@ -142,28 +144,28 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b);
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Texture_hash(const void *elem);
-bool h_fixedbugsanestedrecordandatypedpointer_Font_eq(const Font *a, const Font *b);
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Font_hash(const void *elem);
-bool h_fixedbugsanestedrecordandatypedpointer_Vector2_eq(const Vector2 *a, const Vector2 *b);
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Vector2_hash(const void *elem);
-bool h_fixedbugsanestedrecordandatypedpointer_Camera2D_eq(const Camera2D *a, const Camera2D *b);
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Camera2D_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Texture_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Font_eq(const Font *a, const Font *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Font_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Vector2_eq(const Vector2 *a, const Vector2 *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Vector2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Camera2D_eq(const Camera2D *a, const Camera2D *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Camera2D_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsanestedrecordandatypedpointer_main(void);
 
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 void h_fixedbugsanestedrecordandatypedpointer_main(void) {
-#line 167 "fixedbugsanestedrecordandatypedpointer.c"
+#line 169 "fixedbugsanestedrecordandatypedpointer.c"
     Camera2D h0_c;
     Vector2 h1_p;
     Font h2_empty;
@@ -285,9 +287,9 @@ bb0:
     hero_print_end();
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     return;
-#line 289 "fixedbugsanestedrecordandatypedpointer.c"
+#line 291 "fixedbugsanestedrecordandatypedpointer.c"
 }
-bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b) {
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b) {
     if (!(a->id == b->id)) return false;
     if (!(a->width == b->width)) return false;
     if (!(a->height == b->height)) return false;
@@ -296,7 +298,7 @@ bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const
     return true;
 }
 
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Texture_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Texture_hash(const void *elem) {
     const Texture *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u32)->hash(&v->id)) * UINT64_C(0x100000001b3);
@@ -307,7 +309,7 @@ uint64_t h_fixedbugsanestedrecordandatypedpointer_Texture_hash(const void *elem)
     return h;
 }
 
-bool h_fixedbugsanestedrecordandatypedpointer_Font_eq(const Font *a, const Font *b) {
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Font_eq(const Font *a, const Font *b) {
     if (!(a->baseSize == b->baseSize)) return false;
     if (!(a->glyphCount == b->glyphCount)) return false;
     if (!(a->glyphPadding == b->glyphPadding)) return false;
@@ -317,7 +319,7 @@ bool h_fixedbugsanestedrecordandatypedpointer_Font_eq(const Font *a, const Font 
     return true;
 }
 
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Font_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Font_hash(const void *elem) {
     const Font *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->baseSize)) * UINT64_C(0x100000001b3);
@@ -329,13 +331,13 @@ uint64_t h_fixedbugsanestedrecordandatypedpointer_Font_hash(const void *elem) {
     return h;
 }
 
-bool h_fixedbugsanestedrecordandatypedpointer_Vector2_eq(const Vector2 *a, const Vector2 *b) {
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Vector2_eq(const Vector2 *a, const Vector2 *b) {
     if (!(a->x == b->x)) return false;
     if (!(a->y == b->y)) return false;
     return true;
 }
 
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Vector2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Vector2_hash(const void *elem) {
     const Vector2 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_f32)->hash(&v->x)) * UINT64_C(0x100000001b3);
@@ -343,7 +345,7 @@ uint64_t h_fixedbugsanestedrecordandatypedpointer_Vector2_hash(const void *elem)
     return h;
 }
 
-bool h_fixedbugsanestedrecordandatypedpointer_Camera2D_eq(const Camera2D *a, const Camera2D *b) {
+HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Camera2D_eq(const Camera2D *a, const Camera2D *b) {
     if (!(h_fixedbugsanestedrecordandatypedpointer_Vector2_eq(&a->offset, &b->offset))) return false;
     if (!(h_fixedbugsanestedrecordandatypedpointer_Vector2_eq(&a->target, &b->target))) return false;
     if (!(a->rotation == b->rotation)) return false;
@@ -351,7 +353,7 @@ bool h_fixedbugsanestedrecordandatypedpointer_Camera2D_eq(const Camera2D *a, con
     return true;
 }
 
-uint64_t h_fixedbugsanestedrecordandatypedpointer_Camera2D_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsanestedrecordandatypedpointer_Camera2D_hash(const void *elem) {
     const Camera2D *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ h_fixedbugsanestedrecordandatypedpointer_Vector2_hash(&v->offset)) * UINT64_C(0x100000001b3);
@@ -361,7 +363,7 @@ uint64_t h_fixedbugsanestedrecordandatypedpointer_Camera2D_hash(const void *elem
     return h;
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -369,7 +371,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -377,13 +379,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -393,7 +395,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -401,7 +403,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -409,13 +411,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "main.c"
+#line 43 "main.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "main.c"
+#line 61 "main.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_28, "(");
@@ -140,42 +142,42 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_node_Note_retain(const h_node_Note *v);
-void h_node_Note_release(h_node_Note *v);
-bool h_node_Note_eq(const h_node_Note *a, const h_node_Note *b);
-uint64_t h_node_Note_hash(const void *elem);
-bool h_node_Node_c_number_eq(const h_node_Node_c_number *a, const h_node_Node_c_number *b);
-uint64_t h_node_Node_c_number_hash(const void *elem);
-bool h_node_Node_c_add_eq(const h_node_Node_c_add *a, const h_node_Node_c_add *b);
-uint64_t h_node_Node_c_add_hash(const void *elem);
-bool h_node_Node_c_multiply_eq(const h_node_Node_c_multiply *a, const h_node_Node_c_multiply *b);
-uint64_t h_node_Node_c_multiply_hash(const void *elem);
-bool h_node_Node_c_negate_eq(const h_node_Node_c_negate *a, const h_node_Node_c_negate *b);
-uint64_t h_node_Node_c_negate_hash(const void *elem);
-void h_node_Node_c_annotated_retain(const h_node_Node_c_annotated *v);
-void h_node_Node_c_annotated_release(h_node_Node_c_annotated *v);
-bool h_node_Node_c_annotated_eq(const h_node_Node_c_annotated *a, const h_node_Node_c_annotated *b);
-uint64_t h_node_Node_c_annotated_hash(const void *elem);
-void h_node_Node_retain(const h_node_Node *v);
-void h_node_Node_release(h_node_Node *v);
-bool h_node_Node_eq(const h_node_Node *a, const h_node_Node *b);
-uint64_t h_node_Node_hash(const void *elem);
-void h_node_Tree_retain(const h_node_Tree *v);
-void h_node_Tree_release(h_node_Tree *v);
-bool h_node_Tree_eq(const h_node_Tree *a, const h_node_Tree *b);
-uint64_t h_node_Tree_hash(const void *elem);
-void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v);
-void h_0opt_c7472a6_release(h_0opt_c7472a6 *v);
-bool h_0opt_c7472a6_eq(const h_0opt_c7472a6 *a, const h_0opt_c7472a6 *b);
-uint64_t h_0opt_c7472a6_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_node_Note_retain(const h_node_Note *v);
+HERO_TU_LOCAL void h_node_Note_release(h_node_Note *v);
+HERO_TU_LOCAL bool h_node_Note_eq(const h_node_Note *a, const h_node_Note *b);
+HERO_TU_LOCAL uint64_t h_node_Note_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_Node_c_number_eq(const h_node_Node_c_number *a, const h_node_Node_c_number *b);
+HERO_TU_LOCAL uint64_t h_node_Node_c_number_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_Node_c_add_eq(const h_node_Node_c_add *a, const h_node_Node_c_add *b);
+HERO_TU_LOCAL uint64_t h_node_Node_c_add_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_Node_c_multiply_eq(const h_node_Node_c_multiply *a, const h_node_Node_c_multiply *b);
+HERO_TU_LOCAL uint64_t h_node_Node_c_multiply_hash(const void *elem);
+HERO_TU_LOCAL bool h_node_Node_c_negate_eq(const h_node_Node_c_negate *a, const h_node_Node_c_negate *b);
+HERO_TU_LOCAL uint64_t h_node_Node_c_negate_hash(const void *elem);
+HERO_TU_LOCAL void h_node_Node_c_annotated_retain(const h_node_Node_c_annotated *v);
+HERO_TU_LOCAL void h_node_Node_c_annotated_release(h_node_Node_c_annotated *v);
+HERO_TU_LOCAL bool h_node_Node_c_annotated_eq(const h_node_Node_c_annotated *a, const h_node_Node_c_annotated *b);
+HERO_TU_LOCAL uint64_t h_node_Node_c_annotated_hash(const void *elem);
+HERO_TU_LOCAL void h_node_Node_retain(const h_node_Node *v);
+HERO_TU_LOCAL void h_node_Node_release(h_node_Node *v);
+HERO_TU_LOCAL bool h_node_Node_eq(const h_node_Node *a, const h_node_Node *b);
+HERO_TU_LOCAL uint64_t h_node_Node_hash(const void *elem);
+HERO_TU_LOCAL void h_node_Tree_retain(const h_node_Tree *v);
+HERO_TU_LOCAL void h_node_Tree_release(h_node_Tree *v);
+HERO_TU_LOCAL bool h_node_Tree_eq(const h_node_Tree *a, const h_node_Tree *b);
+HERO_TU_LOCAL uint64_t h_node_Tree_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v);
+HERO_TU_LOCAL void h_0opt_c7472a6_release(h_0opt_c7472a6 *v);
+HERO_TU_LOCAL bool h_0opt_c7472a6_eq(const h_0opt_c7472a6 *a, const h_0opt_c7472a6 *b);
+HERO_TU_LOCAL uint64_t h_0opt_c7472a6_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_node_Node_desc_copy(void *dst, const void *src) {
     *(h_node_Node *)dst = *(const h_node_Node *)src;
@@ -187,7 +189,7 @@ static void h_node_Node_desc_drop(void *elem) {
 static bool h_node_Node_desc_eq(const void *a, const void *b) {
     return h_node_Node_eq((const h_node_Node *)a, (const h_node_Node *)b);
 }
-static const HeroDesc h_node_Node_desc = {
+HERO_TU_QUIET static const HeroDesc h_node_Node_desc = {
     sizeof(h_node_Node),
     h_node_Node_desc_copy,
     h_node_Node_desc_drop,
@@ -205,7 +207,7 @@ static void h_node_Note_desc_drop(void *elem) {
 static bool h_node_Note_desc_eq(const void *a, const void *b) {
     return h_node_Note_eq((const h_node_Note *)a, (const h_node_Note *)b);
 }
-static const HeroDesc h_node_Note_desc = {
+HERO_TU_QUIET static const HeroDesc h_node_Note_desc = {
     sizeof(h_node_Note),
     h_node_Note_desc_copy,
     h_node_Note_desc_drop,
@@ -223,7 +225,7 @@ static void h_0opt_c7472a6_desc_drop(void *elem) {
 static bool h_0opt_c7472a6_desc_eq(const void *a, const void *b) {
     return h_0opt_c7472a6_eq((const h_0opt_c7472a6 *)a, (const h_0opt_c7472a6 *)b);
 }
-static const HeroDesc h_0opt_c7472a6_desc = {
+HERO_TU_QUIET static const HeroDesc h_0opt_c7472a6_desc = {
     sizeof(h_0opt_c7472a6),
     h_0opt_c7472a6_desc_copy,
     h_0opt_c7472a6_desc_drop,
@@ -241,7 +243,7 @@ HeroStr h_node_render(h_node_Tree h0_t, int64_t h1_at);
 
 #line 14 "examples/tree/main.hero"
 void h_main_main(void) {
-#line 245 "main.c"
+#line 247 "main.c"
     h_node_Tree h0_t = {0};
     int64_t h1_two;
     int64_t h2_three;
@@ -380,15 +382,15 @@ bb0:
     t62 = h12_own12;
 #line 15 "examples/tree/main.hero"
     h12_own12 = t1;
-#line 384 "main.c"
+#line 386 "main.c"
     h_node_Tree_release(&t62);
 #line 15 "examples/tree/main.hero"
     t63 = h0_t;
-#line 388 "main.c"
+#line 390 "main.c"
     h_node_Tree_retain(&t1);
 #line 15 "examples/tree/main.hero"
     h0_t = t1;
-#line 392 "main.c"
+#line 394 "main.c"
     h_node_Tree_release(&t63);
 #line 18 "examples/tree/main.hero"
     t2 = INT64_C(2);
@@ -398,7 +400,7 @@ bb0:
     t64 = h13_own13;
 #line 18 "examples/tree/main.hero"
     h13_own13 = t3;
-#line 402 "main.c"
+#line 404 "main.c"
     h_node_Node_release(&t64);
 #line 18 "examples/tree/main.hero"
     t4 = h_node_add_node(&h0_t, t3);
@@ -412,7 +414,7 @@ bb0:
     t65 = h14_own14;
 #line 19 "examples/tree/main.hero"
     h14_own14 = t6;
-#line 416 "main.c"
+#line 418 "main.c"
     h_node_Node_release(&t65);
 #line 19 "examples/tree/main.hero"
     t7 = h_node_add_node(&h0_t, t6);
@@ -426,7 +428,7 @@ bb0:
     t66 = h15_own15;
 #line 20 "examples/tree/main.hero"
     h15_own15 = t9;
-#line 430 "main.c"
+#line 432 "main.c"
     h_node_Node_release(&t66);
 #line 20 "examples/tree/main.hero"
     t10 = h_node_add_node(&h0_t, t9);
@@ -440,7 +442,7 @@ bb0:
     t67 = h16_own16;
 #line 21 "examples/tree/main.hero"
     h16_own16 = t12;
-#line 444 "main.c"
+#line 446 "main.c"
     h_node_Node_release(&t67);
 #line 21 "examples/tree/main.hero"
     t13 = h_node_add_node(&h0_t, t12);
@@ -456,7 +458,7 @@ bb0:
     t68 = h17_own17;
 #line 24 "examples/tree/main.hero"
     h17_own17 = t16;
-#line 460 "main.c"
+#line 462 "main.c"
     h_node_Node_release(&t68);
 #line 24 "examples/tree/main.hero"
     t17 = h_node_add_node(&h0_t, t16);
@@ -472,7 +474,7 @@ bb0:
     t69 = h18_own18;
 #line 25 "examples/tree/main.hero"
     h18_own18 = t20;
-#line 476 "main.c"
+#line 478 "main.c"
     h_node_Node_release(&t69);
 #line 25 "examples/tree/main.hero"
     t21 = h_node_add_node(&h0_t, t20);
@@ -486,7 +488,7 @@ bb0:
     t70 = h19_own19;
 #line 26 "examples/tree/main.hero"
     h19_own19 = t23;
-#line 490 "main.c"
+#line 492 "main.c"
     h_node_Node_release(&t70);
 #line 26 "examples/tree/main.hero"
     t24 = h_node_add_node(&h0_t, t23);
@@ -502,7 +504,7 @@ bb0:
     t71 = h20_own20;
 #line 27 "examples/tree/main.hero"
     h20_own20 = t27;
-#line 506 "main.c"
+#line 508 "main.c"
     h_node_Node_release(&t71);
 #line 27 "examples/tree/main.hero"
     t28 = h_node_add_node(&h0_t, t27);
@@ -518,7 +520,7 @@ bb0:
     t72 = h21_own21;
 #line 29 "examples/tree/main.hero"
     h21_own21 = t31;
-#line 522 "main.c"
+#line 524 "main.c"
     hero_str_decref(t72);
 #line 29 "examples/tree/main.hero"
     hero_print_str(t31);
@@ -560,15 +562,15 @@ bb0:
     t73 = h22_own22;
 #line 37 "examples/tree/main.hero"
     h22_own22 = t41;
-#line 564 "main.c"
+#line 566 "main.c"
     h_node_Tree_release(&t73);
 #line 37 "examples/tree/main.hero"
     t74 = h9_u;
-#line 568 "main.c"
+#line 570 "main.c"
     h_node_Tree_retain(&t41);
 #line 37 "examples/tree/main.hero"
     h9_u = t41;
-#line 572 "main.c"
+#line 574 "main.c"
     h_node_Tree_release(&t74);
 #line 38 "examples/tree/main.hero"
     t42 = INT64_C(2);
@@ -578,7 +580,7 @@ bb0:
     t75 = h23_own23;
 #line 38 "examples/tree/main.hero"
     h23_own23 = t43;
-#line 582 "main.c"
+#line 584 "main.c"
     h_node_Node_release(&t75);
 #line 38 "examples/tree/main.hero"
     h_node_add_node(&h9_u, t43);
@@ -588,15 +590,15 @@ bb0:
     t76 = h24_own24;
 #line 39 "examples/tree/main.hero"
     h24_own24 = t45;
-#line 592 "main.c"
+#line 594 "main.c"
     h_node_Tree_release(&t76);
 #line 39 "examples/tree/main.hero"
     t77 = h10_v;
-#line 596 "main.c"
+#line 598 "main.c"
     h_node_Tree_retain(&t45);
 #line 39 "examples/tree/main.hero"
     h10_v = t45;
-#line 600 "main.c"
+#line 602 "main.c"
     h_node_Tree_release(&t77);
 #line 40 "examples/tree/main.hero"
     t46 = INT64_C(2);
@@ -606,7 +608,7 @@ bb0:
     t78 = h25_own25;
 #line 40 "examples/tree/main.hero"
     h25_own25 = t47;
-#line 610 "main.c"
+#line 612 "main.c"
     h_node_Node_release(&t78);
 #line 40 "examples/tree/main.hero"
     h_node_add_node(&h10_v, t47);
@@ -630,15 +632,15 @@ bb0:
     t79 = h26_own26;
 #line 44 "examples/tree/main.hero"
     h26_own26 = t54;
-#line 634 "main.c"
+#line 636 "main.c"
     h_node_Node_release(&t79);
 #line 44 "examples/tree/main.hero"
     t80 = h11_absent;
-#line 638 "main.c"
+#line 640 "main.c"
     h_node_Node_retain(&t54);
 #line 44 "examples/tree/main.hero"
     h11_absent = t54;
-#line 642 "main.c"
+#line 644 "main.c"
     h_node_Node_release(&t80);
 #line 45 "examples/tree/main.hero"
     t55 = h11_absent;
@@ -648,7 +650,7 @@ bb0:
     t81 = h27_own27;
 #line 45 "examples/tree/main.hero"
     h27_own27 = t56;
-#line 652 "main.c"
+#line 654 "main.c"
     h_node_Node_release(&t81);
 #line 45 "examples/tree/main.hero"
     t57 = h_node_Node_eq(&t55, &t56);
@@ -666,7 +668,7 @@ bb0:
     t82 = h28_own28;
 #line 46 "examples/tree/main.hero"
     h28_own28 = t60;
-#line 670 "main.c"
+#line 672 "main.c"
     h_node_Node_release(&t82);
 #line 46 "examples/tree/main.hero"
     t61 = h_node_Node_eq(&t58, &t60);
@@ -676,94 +678,94 @@ bb0:
     hero_print_end();
 #line 46 "examples/tree/main.hero"
     t83 = h0_t;
-#line 680 "main.c"
+#line 682 "main.c"
     h_node_Tree_release(&t83);
 #line 46 "examples/tree/main.hero"
     t84 = h9_u;
-#line 684 "main.c"
+#line 686 "main.c"
     h_node_Tree_release(&t84);
 #line 46 "examples/tree/main.hero"
     t85 = h10_v;
-#line 688 "main.c"
+#line 690 "main.c"
     h_node_Tree_release(&t85);
 #line 46 "examples/tree/main.hero"
     t86 = h11_absent;
-#line 692 "main.c"
+#line 694 "main.c"
     h_node_Node_release(&t86);
 #line 46 "examples/tree/main.hero"
     t87 = h12_own12;
-#line 696 "main.c"
+#line 698 "main.c"
     h_node_Tree_release(&t87);
 #line 46 "examples/tree/main.hero"
     t88 = h13_own13;
-#line 700 "main.c"
+#line 702 "main.c"
     h_node_Node_release(&t88);
 #line 46 "examples/tree/main.hero"
     t89 = h14_own14;
-#line 704 "main.c"
+#line 706 "main.c"
     h_node_Node_release(&t89);
 #line 46 "examples/tree/main.hero"
     t90 = h15_own15;
-#line 708 "main.c"
+#line 710 "main.c"
     h_node_Node_release(&t90);
 #line 46 "examples/tree/main.hero"
     t91 = h16_own16;
-#line 712 "main.c"
+#line 714 "main.c"
     h_node_Node_release(&t91);
 #line 46 "examples/tree/main.hero"
     t92 = h17_own17;
-#line 716 "main.c"
+#line 718 "main.c"
     h_node_Node_release(&t92);
 #line 46 "examples/tree/main.hero"
     t93 = h18_own18;
-#line 720 "main.c"
+#line 722 "main.c"
     h_node_Node_release(&t93);
 #line 46 "examples/tree/main.hero"
     t94 = h19_own19;
-#line 724 "main.c"
+#line 726 "main.c"
     h_node_Node_release(&t94);
 #line 46 "examples/tree/main.hero"
     t95 = h20_own20;
-#line 728 "main.c"
+#line 730 "main.c"
     h_node_Node_release(&t95);
 #line 46 "examples/tree/main.hero"
     t96 = h21_own21;
-#line 732 "main.c"
+#line 734 "main.c"
     hero_str_decref(t96);
 #line 46 "examples/tree/main.hero"
     t97 = h22_own22;
-#line 736 "main.c"
+#line 738 "main.c"
     h_node_Tree_release(&t97);
 #line 46 "examples/tree/main.hero"
     t98 = h23_own23;
-#line 740 "main.c"
+#line 742 "main.c"
     h_node_Node_release(&t98);
 #line 46 "examples/tree/main.hero"
     t99 = h24_own24;
-#line 744 "main.c"
+#line 746 "main.c"
     h_node_Tree_release(&t99);
 #line 46 "examples/tree/main.hero"
     t100 = h25_own25;
-#line 748 "main.c"
+#line 750 "main.c"
     h_node_Node_release(&t100);
 #line 46 "examples/tree/main.hero"
     t101 = h26_own26;
-#line 752 "main.c"
+#line 754 "main.c"
     h_node_Node_release(&t101);
 #line 46 "examples/tree/main.hero"
     t102 = h27_own27;
-#line 756 "main.c"
+#line 758 "main.c"
     h_node_Node_release(&t102);
 #line 46 "examples/tree/main.hero"
     t103 = h28_own28;
-#line 760 "main.c"
+#line 762 "main.c"
     h_node_Node_release(&t103);
     return;
 }
 
 #line 56 "examples/tree/node.hero"
 h_node_Tree h_node_new_tree(void) {
-#line 767 "main.c"
+#line 769 "main.c"
     HeroArrayHeader * h0_nodes = {0};
     HeroArrayHeader * h1_own1 = {0};
     h_node_Tree h2_own2 = {0};
@@ -784,19 +786,19 @@ bb0:
     t4 = h1_own1;
 #line 57 "examples/tree/node.hero"
     h1_own1 = t1;
-#line 788 "main.c"
+#line 790 "main.c"
     hero_array_decref(t4);
 #line 57 "examples/tree/node.hero"
     t5 = h0_nodes;
-#line 792 "main.c"
+#line 794 "main.c"
     hero_array_incref(t1);
 #line 57 "examples/tree/node.hero"
     h0_nodes = t1;
-#line 796 "main.c"
+#line 798 "main.c"
     hero_array_decref(t5);
 #line 58 "examples/tree/node.hero"
     t2 = h0_nodes;
-#line 800 "main.c"
+#line 802 "main.c"
     hero_array_incref(t2);
 #line 58 "examples/tree/node.hero"
     t3 = (h_node_Tree){.f_nodes = t2};
@@ -804,29 +806,29 @@ bb0:
     t6 = h2_own2;
 #line 58 "examples/tree/node.hero"
     h2_own2 = t3;
-#line 808 "main.c"
+#line 810 "main.c"
     h_node_Tree_release(&t6);
 #line 58 "examples/tree/node.hero"
-#line 811 "main.c"
+#line 813 "main.c"
     h_node_Tree_retain(&t3);
 #line 58 "examples/tree/node.hero"
     t7 = h0_nodes;
-#line 815 "main.c"
+#line 817 "main.c"
     hero_array_decref(t7);
 #line 58 "examples/tree/node.hero"
     t8 = h1_own1;
-#line 819 "main.c"
+#line 821 "main.c"
     hero_array_decref(t8);
 #line 58 "examples/tree/node.hero"
     t9 = h2_own2;
-#line 823 "main.c"
+#line 825 "main.c"
     h_node_Tree_release(&t9);
     return t3;
 }
 
 #line 60 "examples/tree/node.hero"
 int64_t h_node_add_node(h_node_Tree *ph0_t, h_node_Node h1_node) {
-#line 830 "main.c"
+#line 832 "main.c"
     h_node_Tree h0_t = {0};
     HeroArrayHeader * h2_own2 = {0};
     h_node_Tree t1 = {0};
@@ -856,15 +858,15 @@ bb0:
     t10 = h2_own2;
 #line 61 "examples/tree/node.hero"
     h2_own2 = t4;
-#line 860 "main.c"
+#line 862 "main.c"
     hero_array_decref(t10);
 #line 61 "examples/tree/node.hero"
     t11 = h0_t.f_nodes;
-#line 864 "main.c"
+#line 866 "main.c"
     hero_array_incref(t4);
 #line 61 "examples/tree/node.hero"
     h0_t.f_nodes = t4;
-#line 868 "main.c"
+#line 870 "main.c"
     hero_array_decref(t11);
 #line 62 "examples/tree/node.hero"
     t5 = h0_t;
@@ -876,18 +878,18 @@ bb0:
     t8 = INT64_C(1);
 #line 62 "examples/tree/node.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 880 "main.c"
+#line 882 "main.c"
     *ph0_t = h0_t;
 #line 60 "examples/tree/node.hero"
     t12 = h2_own2;
-#line 884 "main.c"
+#line 886 "main.c"
     hero_array_decref(t12);
     return t9;
 }
 
 #line 69 "examples/tree/node.hero"
 int64_t h_node_evaluate(h_node_Tree h0_t, int64_t h1_at) {
-#line 891 "main.c"
+#line 893 "main.c"
     h_node_Node h2_s0 = {0};
     int64_t h3_r0;
     h_node_Node_c_number h4_n;
@@ -958,11 +960,11 @@ bb0:
     t4 = *(h_node_Node const *)hero_array_at(t2, t3);
 #line 70 "examples/tree/node.hero"
     t48 = h2_s0;
-#line 962 "main.c"
+#line 964 "main.c"
     h_node_Node_retain(&t4);
 #line 70 "examples/tree/node.hero"
     h2_s0 = t4;
-#line 966 "main.c"
+#line 968 "main.c"
     h_node_Node_release(&t48);
 #line 70 "examples/tree/node.hero"
     t5 = h2_s0;
@@ -992,11 +994,11 @@ bb1:
     t47 = h3_r0;
 #line 70 "examples/tree/node.hero"
     t50 = h2_s0;
-#line 996 "main.c"
+#line 998 "main.c"
     h_node_Node_release(&t50);
 #line 70 "examples/tree/node.hero"
     t51 = h8_a;
-#line 1000 "main.c"
+#line 1002 "main.c"
     h_node_Node_c_annotated_release(&t51);
     return t47;
 bb2:
@@ -1104,11 +1106,11 @@ bb6:
     t41 = t40.as.c_annotated;
 #line 75 "examples/tree/node.hero"
     t49 = h8_a;
-#line 1108 "main.c"
+#line 1110 "main.c"
     h_node_Node_c_annotated_retain(&t41);
 #line 75 "examples/tree/node.hero"
     h8_a = t41;
-#line 1112 "main.c"
+#line 1114 "main.c"
     h_node_Node_c_annotated_release(&t49);
 #line 75 "examples/tree/node.hero"
     t42 = h0_t;
@@ -1130,12 +1132,12 @@ bb7:
     h3_r0 = t46;
 #line 70 "examples/tree/node.hero"
     goto bb1;
-#line 1134 "main.c"
+#line 1136 "main.c"
 }
 
 #line 79 "examples/tree/node.hero"
 int64_t h_node_depth(h_node_Tree h0_t, int64_t h1_at) {
-#line 1139 "main.c"
+#line 1141 "main.c"
     h_node_Node h2_s0 = {0};
     int64_t h3_r0;
     h_node_Node_c_add h4_a;
@@ -1209,11 +1211,11 @@ bb0:
     t4 = *(h_node_Node const *)hero_array_at(t2, t3);
 #line 80 "examples/tree/node.hero"
     t52 = h2_s0;
-#line 1213 "main.c"
+#line 1215 "main.c"
     h_node_Node_retain(&t4);
 #line 80 "examples/tree/node.hero"
     h2_s0 = t4;
-#line 1217 "main.c"
+#line 1219 "main.c"
     h_node_Node_release(&t52);
 #line 80 "examples/tree/node.hero"
     t5 = h2_s0;
@@ -1243,11 +1245,11 @@ bb1:
     t51 = h3_r0;
 #line 80 "examples/tree/node.hero"
     t54 = h2_s0;
-#line 1247 "main.c"
+#line 1249 "main.c"
     h_node_Node_release(&t54);
 #line 80 "examples/tree/node.hero"
     t55 = h7_a;
-#line 1251 "main.c"
+#line 1253 "main.c"
     h_node_Node_c_annotated_release(&t55);
     return t51;
 bb2:
@@ -1357,11 +1359,11 @@ bb6:
     t43 = t42.as.c_annotated;
 #line 85 "examples/tree/node.hero"
     t53 = h7_a;
-#line 1361 "main.c"
+#line 1363 "main.c"
     h_node_Node_c_annotated_retain(&t43);
 #line 85 "examples/tree/node.hero"
     h7_a = t43;
-#line 1365 "main.c"
+#line 1367 "main.c"
     h_node_Node_c_annotated_release(&t53);
 #line 85 "examples/tree/node.hero"
     t44 = INT64_C(1);
@@ -1387,12 +1389,12 @@ bb7:
     h3_r0 = t50;
 #line 80 "examples/tree/node.hero"
     goto bb1;
-#line 1391 "main.c"
+#line 1393 "main.c"
 }
 
 #line 88 "examples/tree/node.hero"
 int64_t h_node_deeper(int64_t h0_left, int64_t h1_right) {
-#line 1396 "main.c"
+#line 1398 "main.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -1424,12 +1426,12 @@ bb2:
 bb3:
 #line 90 "examples/tree/node.hero"
     goto bb1;
-#line 1428 "main.c"
+#line 1430 "main.c"
 }
 
 #line 95 "examples/tree/node.hero"
 HeroStr h_node_render(h_node_Tree h0_t, int64_t h1_at) {
-#line 1433 "main.c"
+#line 1435 "main.c"
     h_node_Node h2_s0 = {0};
     HeroStr h3_r0 = {0};
     h_node_Node_c_number h4_n;
@@ -1569,11 +1571,11 @@ bb0:
     t4 = *(h_node_Node const *)hero_array_at(t2, t3);
 #line 96 "examples/tree/node.hero"
     t62 = h2_s0;
-#line 1573 "main.c"
+#line 1575 "main.c"
     h_node_Node_retain(&t4);
 #line 96 "examples/tree/node.hero"
     h2_s0 = t4;
-#line 1577 "main.c"
+#line 1579 "main.c"
     h_node_Node_release(&t62);
 #line 96 "examples/tree/node.hero"
     t5 = h2_s0;
@@ -1601,83 +1603,83 @@ bb0:
 bb1:
 #line 96 "examples/tree/node.hero"
     t61 = h3_r0;
-#line 1605 "main.c"
+#line 1607 "main.c"
     hero_str_incref(t61);
 #line 96 "examples/tree/node.hero"
     t86 = h2_s0;
-#line 1609 "main.c"
+#line 1611 "main.c"
     h_node_Node_release(&t86);
 #line 96 "examples/tree/node.hero"
     t87 = h3_r0;
-#line 1613 "main.c"
+#line 1615 "main.c"
     hero_str_decref(t87);
 #line 96 "examples/tree/node.hero"
     t88 = h8_a;
-#line 1617 "main.c"
+#line 1619 "main.c"
     h_node_Node_c_annotated_release(&t88);
 #line 96 "examples/tree/node.hero"
     t89 = h9_own9;
-#line 1621 "main.c"
+#line 1623 "main.c"
     hero_str_decref(t89);
 #line 96 "examples/tree/node.hero"
     t90 = h10_own10;
-#line 1625 "main.c"
+#line 1627 "main.c"
     hero_str_decref(t90);
 #line 96 "examples/tree/node.hero"
     t91 = h11_own11;
-#line 1629 "main.c"
+#line 1631 "main.c"
     hero_str_decref(t91);
 #line 96 "examples/tree/node.hero"
     t92 = h12_own12;
-#line 1633 "main.c"
+#line 1635 "main.c"
     hero_str_decref(t92);
 #line 96 "examples/tree/node.hero"
     t93 = h13_own13;
-#line 1637 "main.c"
+#line 1639 "main.c"
     hero_str_decref(t93);
 #line 96 "examples/tree/node.hero"
     t94 = h14_own14;
-#line 1641 "main.c"
+#line 1643 "main.c"
     hero_str_decref(t94);
 #line 96 "examples/tree/node.hero"
     t95 = h15_own15;
-#line 1645 "main.c"
+#line 1647 "main.c"
     hero_str_decref(t95);
 #line 96 "examples/tree/node.hero"
     t96 = h16_own16;
-#line 1649 "main.c"
+#line 1651 "main.c"
     hero_str_decref(t96);
 #line 96 "examples/tree/node.hero"
     t97 = h17_own17;
-#line 1653 "main.c"
+#line 1655 "main.c"
     hero_str_decref(t97);
 #line 96 "examples/tree/node.hero"
     t98 = h18_own18;
-#line 1657 "main.c"
+#line 1659 "main.c"
     hero_str_decref(t98);
 #line 96 "examples/tree/node.hero"
     t99 = h19_own19;
-#line 1661 "main.c"
+#line 1663 "main.c"
     hero_str_decref(t99);
 #line 96 "examples/tree/node.hero"
     t100 = h20_own20;
-#line 1665 "main.c"
+#line 1667 "main.c"
     hero_str_decref(t100);
 #line 96 "examples/tree/node.hero"
     t101 = h21_own21;
-#line 1669 "main.c"
+#line 1671 "main.c"
     hero_str_decref(t101);
 #line 96 "examples/tree/node.hero"
     t102 = h22_own22;
-#line 1673 "main.c"
+#line 1675 "main.c"
     hero_str_decref(t102);
 #line 96 "examples/tree/node.hero"
     t103 = h23_own23;
-#line 1677 "main.c"
+#line 1679 "main.c"
     hero_str_decref(t103);
 #line 96 "examples/tree/node.hero"
     t104 = h24_own24;
-#line 1681 "main.c"
+#line 1683 "main.c"
     hero_str_decref(t104);
     return t61;
 bb2:
@@ -1697,15 +1699,15 @@ bb2:
     t63 = h9_own9;
 #line 97 "examples/tree/node.hero"
     h9_own9 = t11;
-#line 1701 "main.c"
+#line 1703 "main.c"
     hero_str_decref(t63);
 #line 96 "examples/tree/node.hero"
     t64 = h3_r0;
-#line 1705 "main.c"
+#line 1707 "main.c"
     hero_str_incref(t11);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t11;
-#line 1709 "main.c"
+#line 1711 "main.c"
     hero_str_decref(t64);
     goto bb1;
 bb3:
@@ -1729,7 +1731,7 @@ bb3:
     t65 = h10_own10;
 #line 98 "examples/tree/node.hero"
     h10_own10 = t18;
-#line 1733 "main.c"
+#line 1735 "main.c"
     hero_str_decref(t65);
 #line 98 "examples/tree/node.hero"
     t19 = hero_str_concat(t14, t18);
@@ -1737,7 +1739,7 @@ bb3:
     t66 = h11_own11;
 #line 98 "examples/tree/node.hero"
     h11_own11 = t19;
-#line 1741 "main.c"
+#line 1743 "main.c"
     hero_str_decref(t66);
 #line 98 "examples/tree/node.hero"
     t20 = HERO_STR_LIT(hero_str_87741);
@@ -1747,7 +1749,7 @@ bb3:
     t67 = h12_own12;
 #line 98 "examples/tree/node.hero"
     h12_own12 = t21;
-#line 1751 "main.c"
+#line 1753 "main.c"
     hero_str_decref(t67);
 #line 98 "examples/tree/node.hero"
     t22 = h0_t;
@@ -1761,7 +1763,7 @@ bb3:
     t68 = h13_own13;
 #line 98 "examples/tree/node.hero"
     h13_own13 = t25;
-#line 1765 "main.c"
+#line 1767 "main.c"
     hero_str_decref(t68);
 #line 98 "examples/tree/node.hero"
     t26 = hero_str_concat(t21, t25);
@@ -1769,7 +1771,7 @@ bb3:
     t69 = h14_own14;
 #line 98 "examples/tree/node.hero"
     h14_own14 = t26;
-#line 1773 "main.c"
+#line 1775 "main.c"
     hero_str_decref(t69);
 #line 98 "examples/tree/node.hero"
     t27 = HERO_STR_LIT(hero_str_29);
@@ -1779,15 +1781,15 @@ bb3:
     t70 = h15_own15;
 #line 98 "examples/tree/node.hero"
     h15_own15 = t28;
-#line 1783 "main.c"
+#line 1785 "main.c"
     hero_str_decref(t70);
 #line 96 "examples/tree/node.hero"
     t71 = h3_r0;
-#line 1787 "main.c"
+#line 1789 "main.c"
     hero_str_incref(t28);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t28;
-#line 1791 "main.c"
+#line 1793 "main.c"
     hero_str_decref(t71);
     goto bb1;
 bb4:
@@ -1811,7 +1813,7 @@ bb4:
     t72 = h16_own16;
 #line 99 "examples/tree/node.hero"
     h16_own16 = t35;
-#line 1815 "main.c"
+#line 1817 "main.c"
     hero_str_decref(t72);
 #line 99 "examples/tree/node.hero"
     t36 = hero_str_concat(t31, t35);
@@ -1819,7 +1821,7 @@ bb4:
     t73 = h17_own17;
 #line 99 "examples/tree/node.hero"
     h17_own17 = t36;
-#line 1823 "main.c"
+#line 1825 "main.c"
     hero_str_decref(t73);
 #line 99 "examples/tree/node.hero"
     t37 = HERO_STR_LIT(hero_str_876be);
@@ -1829,7 +1831,7 @@ bb4:
     t74 = h18_own18;
 #line 99 "examples/tree/node.hero"
     h18_own18 = t38;
-#line 1833 "main.c"
+#line 1835 "main.c"
     hero_str_decref(t74);
 #line 99 "examples/tree/node.hero"
     t39 = h0_t;
@@ -1843,7 +1845,7 @@ bb4:
     t75 = h19_own19;
 #line 99 "examples/tree/node.hero"
     h19_own19 = t42;
-#line 1847 "main.c"
+#line 1849 "main.c"
     hero_str_decref(t75);
 #line 99 "examples/tree/node.hero"
     t43 = hero_str_concat(t38, t42);
@@ -1851,7 +1853,7 @@ bb4:
     t76 = h20_own20;
 #line 99 "examples/tree/node.hero"
     h20_own20 = t43;
-#line 1855 "main.c"
+#line 1857 "main.c"
     hero_str_decref(t76);
 #line 99 "examples/tree/node.hero"
     t44 = HERO_STR_LIT(hero_str_29);
@@ -1861,15 +1863,15 @@ bb4:
     t77 = h21_own21;
 #line 99 "examples/tree/node.hero"
     h21_own21 = t45;
-#line 1865 "main.c"
+#line 1867 "main.c"
     hero_str_decref(t77);
 #line 96 "examples/tree/node.hero"
     t78 = h3_r0;
-#line 1869 "main.c"
+#line 1871 "main.c"
     hero_str_incref(t45);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t45;
-#line 1873 "main.c"
+#line 1875 "main.c"
     hero_str_decref(t78);
     goto bb1;
 bb5:
@@ -1893,7 +1895,7 @@ bb5:
     t79 = h22_own22;
 #line 100 "examples/tree/node.hero"
     h22_own22 = t52;
-#line 1897 "main.c"
+#line 1899 "main.c"
     hero_str_decref(t79);
 #line 100 "examples/tree/node.hero"
     t53 = hero_str_concat(t48, t52);
@@ -1901,15 +1903,15 @@ bb5:
     t80 = h23_own23;
 #line 100 "examples/tree/node.hero"
     h23_own23 = t53;
-#line 1905 "main.c"
+#line 1907 "main.c"
     hero_str_decref(t80);
 #line 96 "examples/tree/node.hero"
     t81 = h3_r0;
-#line 1909 "main.c"
+#line 1911 "main.c"
     hero_str_incref(t53);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t53;
-#line 1913 "main.c"
+#line 1915 "main.c"
     hero_str_decref(t81);
     goto bb1;
 bb6:
@@ -1919,11 +1921,11 @@ bb6:
     t55 = t54.as.c_annotated;
 #line 101 "examples/tree/node.hero"
     t82 = h8_a;
-#line 1923 "main.c"
+#line 1925 "main.c"
     h_node_Node_c_annotated_retain(&t55);
 #line 101 "examples/tree/node.hero"
     h8_a = t55;
-#line 1927 "main.c"
+#line 1929 "main.c"
     h_node_Node_c_annotated_release(&t82);
 #line 101 "examples/tree/node.hero"
     t56 = h0_t;
@@ -1937,15 +1939,15 @@ bb6:
     t83 = h24_own24;
 #line 101 "examples/tree/node.hero"
     h24_own24 = t59;
-#line 1941 "main.c"
+#line 1943 "main.c"
     hero_str_decref(t83);
 #line 96 "examples/tree/node.hero"
     t84 = h3_r0;
-#line 1945 "main.c"
+#line 1947 "main.c"
     hero_str_incref(t59);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t59;
-#line 1949 "main.c"
+#line 1951 "main.c"
     hero_str_decref(t84);
     goto bb1;
 bb7:
@@ -1953,29 +1955,29 @@ bb7:
     t60 = HERO_STR_LIT(hero_str_109fb3);
 #line 96 "examples/tree/node.hero"
     t85 = h3_r0;
-#line 1957 "main.c"
+#line 1959 "main.c"
     hero_str_incref(t60);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t60;
-#line 1961 "main.c"
+#line 1963 "main.c"
     hero_str_decref(t85);
     goto bb1;
 }
-void h_node_Note_retain(const h_node_Note *v) {
+HERO_TU_LOCAL void h_node_Note_retain(const h_node_Note *v) {
     hero_str_incref(v->f_text);
 }
 
-void h_node_Note_release(h_node_Note *v) {
+HERO_TU_LOCAL void h_node_Note_release(h_node_Note *v) {
     hero_str_decref(v->f_text);
 }
 
-bool h_node_Note_eq(const h_node_Note *a, const h_node_Note *b) {
+HERO_TU_LOCAL bool h_node_Note_eq(const h_node_Note *a, const h_node_Note *b) {
     if (!(hero_str_eq(a->f_text, b->f_text))) return false;
     if (!(a->f_line == b->f_line)) return false;
     return true;
 }
 
-uint64_t h_node_Note_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Note_hash(const void *elem) {
     const h_node_Note *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
@@ -1983,25 +1985,25 @@ uint64_t h_node_Note_hash(const void *elem) {
     return h;
 }
 
-bool h_node_Node_c_number_eq(const h_node_Node_c_number *a, const h_node_Node_c_number *b) {
+HERO_TU_LOCAL bool h_node_Node_c_number_eq(const h_node_Node_c_number *a, const h_node_Node_c_number *b) {
     if (!(a->f_value == b->f_value)) return false;
     return true;
 }
 
-uint64_t h_node_Node_c_number_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Node_c_number_hash(const void *elem) {
     const h_node_Node_c_number *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-bool h_node_Node_c_add_eq(const h_node_Node_c_add *a, const h_node_Node_c_add *b) {
+HERO_TU_LOCAL bool h_node_Node_c_add_eq(const h_node_Node_c_add *a, const h_node_Node_c_add *b) {
     if (!(a->f_left == b->f_left)) return false;
     if (!(a->f_right == b->f_right)) return false;
     return true;
 }
 
-uint64_t h_node_Node_c_add_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Node_c_add_hash(const void *elem) {
     const h_node_Node_c_add *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_left)) * UINT64_C(0x100000001b3);
@@ -2009,13 +2011,13 @@ uint64_t h_node_Node_c_add_hash(const void *elem) {
     return h;
 }
 
-bool h_node_Node_c_multiply_eq(const h_node_Node_c_multiply *a, const h_node_Node_c_multiply *b) {
+HERO_TU_LOCAL bool h_node_Node_c_multiply_eq(const h_node_Node_c_multiply *a, const h_node_Node_c_multiply *b) {
     if (!(a->f_left == b->f_left)) return false;
     if (!(a->f_right == b->f_right)) return false;
     return true;
 }
 
-uint64_t h_node_Node_c_multiply_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Node_c_multiply_hash(const void *elem) {
     const h_node_Node_c_multiply *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_left)) * UINT64_C(0x100000001b3);
@@ -2023,33 +2025,33 @@ uint64_t h_node_Node_c_multiply_hash(const void *elem) {
     return h;
 }
 
-bool h_node_Node_c_negate_eq(const h_node_Node_c_negate *a, const h_node_Node_c_negate *b) {
+HERO_TU_LOCAL bool h_node_Node_c_negate_eq(const h_node_Node_c_negate *a, const h_node_Node_c_negate *b) {
     if (!(a->f_operand == b->f_operand)) return false;
     return true;
 }
 
-uint64_t h_node_Node_c_negate_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Node_c_negate_hash(const void *elem) {
     const h_node_Node_c_negate *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_operand)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_node_Node_c_annotated_retain(const h_node_Node_c_annotated *v) {
+HERO_TU_LOCAL void h_node_Node_c_annotated_retain(const h_node_Node_c_annotated *v) {
     h_0opt_c7472a6_retain(&v->f_note);
 }
 
-void h_node_Node_c_annotated_release(h_node_Node_c_annotated *v) {
+HERO_TU_LOCAL void h_node_Node_c_annotated_release(h_node_Node_c_annotated *v) {
     h_0opt_c7472a6_release(&v->f_note);
 }
 
-bool h_node_Node_c_annotated_eq(const h_node_Node_c_annotated *a, const h_node_Node_c_annotated *b) {
+HERO_TU_LOCAL bool h_node_Node_c_annotated_eq(const h_node_Node_c_annotated *a, const h_node_Node_c_annotated *b) {
     if (!(a->f_operand == b->f_operand)) return false;
     if (!(h_0opt_c7472a6_eq(&a->f_note, &b->f_note))) return false;
     return true;
 }
 
-uint64_t h_node_Node_c_annotated_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Node_c_annotated_hash(const void *elem) {
     const h_node_Node_c_annotated *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_operand)) * UINT64_C(0x100000001b3);
@@ -2057,21 +2059,21 @@ uint64_t h_node_Node_c_annotated_hash(const void *elem) {
     return h;
 }
 
-void h_node_Node_retain(const h_node_Node *v) {
+HERO_TU_LOCAL void h_node_Node_retain(const h_node_Node *v) {
     switch (v->tag) {
         case h_node_Node_tag_annotated: h_node_Node_c_annotated_retain(&v->as.c_annotated); break;
         default: break;
     }
 }
 
-void h_node_Node_release(h_node_Node *v) {
+HERO_TU_LOCAL void h_node_Node_release(h_node_Node *v) {
     switch (v->tag) {
         case h_node_Node_tag_annotated: h_node_Node_c_annotated_release(&v->as.c_annotated); break;
         default: break;
     }
 }
 
-bool h_node_Node_eq(const h_node_Node *a, const h_node_Node *b) {
+HERO_TU_LOCAL bool h_node_Node_eq(const h_node_Node *a, const h_node_Node *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
         case h_node_Node_tag_number: return h_node_Node_c_number_eq(&a->as.c_number, &b->as.c_number);
@@ -2084,7 +2086,7 @@ bool h_node_Node_eq(const h_node_Node *a, const h_node_Node *b) {
     hero_unreachable();
 }
 
-uint64_t h_node_Node_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Node_hash(const void *elem) {
     const h_node_Node *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -2099,27 +2101,27 @@ uint64_t h_node_Node_hash(const void *elem) {
     hero_unreachable();
 }
 
-void h_node_Tree_retain(const h_node_Tree *v) {
+HERO_TU_LOCAL void h_node_Tree_retain(const h_node_Tree *v) {
     hero_array_incref(v->f_nodes);
 }
 
-void h_node_Tree_release(h_node_Tree *v) {
+HERO_TU_LOCAL void h_node_Tree_release(h_node_Tree *v) {
     hero_array_decref(v->f_nodes);
 }
 
-bool h_node_Tree_eq(const h_node_Tree *a, const h_node_Tree *b) {
+HERO_TU_LOCAL bool h_node_Tree_eq(const h_node_Tree *a, const h_node_Tree *b) {
     if (!(hero_array_eq(a->f_nodes, b->f_nodes))) return false;
     return true;
 }
 
-uint64_t h_node_Tree_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_node_Tree_hash(const void *elem) {
     const h_node_Tree *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_nodes)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v) {
+HERO_TU_LOCAL void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v) {
     if (v->tag == INT64_C(0)) {
         h_node_Note_retain(&v->as.ok);
     } else {
@@ -2127,7 +2129,7 @@ void h_0opt_c7472a6_retain(const h_0opt_c7472a6 *v) {
     }
 }
 
-void h_0opt_c7472a6_release(h_0opt_c7472a6 *v) {
+HERO_TU_LOCAL void h_0opt_c7472a6_release(h_0opt_c7472a6 *v) {
     if (v->tag == INT64_C(0)) {
         h_node_Note_release(&v->as.ok);
     } else {
@@ -2135,13 +2137,13 @@ void h_0opt_c7472a6_release(h_0opt_c7472a6 *v) {
     }
 }
 
-bool h_0opt_c7472a6_eq(const h_0opt_c7472a6 *a, const h_0opt_c7472a6 *b) {
+HERO_TU_LOCAL bool h_0opt_c7472a6_eq(const h_0opt_c7472a6 *a, const h_0opt_c7472a6 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&h_node_Note_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_c7472a6_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_c7472a6_hash(const void *elem) {
     const h_0opt_c7472a6 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -2151,7 +2153,7 @@ uint64_t h_0opt_c7472a6_hash(const void *elem) {
     return (h ^ (&h_node_Note_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -2159,7 +2161,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -2167,13 +2169,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -2183,7 +2185,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -2191,7 +2193,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -2199,13 +2201,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

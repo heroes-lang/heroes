@@ -220,6 +220,9 @@ function option_of(names: Names, ty: i64) -> str
 record OptionEntry
     name: str
     payload: i64
+    # The option's OWN type id — what a per-TU filter asks about
+    # (emit_synth.Wanted, panel 093 R2 as tightened by measurement).
+    at: i64
 
 function option_entries(names: Names, c: check_state.Checked) -> [OptionEntry]
     out: [OptionEntry] @ []
@@ -236,7 +239,7 @@ function option_entries(names: Names, c: check_state.Checked) -> [OptionEntry]
     # now checked by an instrument rather than remembered (§4.9).
     for id in sort(keys(names.options))
         match check_table.get(c.types, id)
-            .fallible o => out @ out.push(OptionEntry(name: names.options[id].must(), payload: o.payload))
+            .fallible o => out @ out.push(OptionEntry(name: names.options[id].must(), payload: o.payload, at: id))
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
             .array | .fixed | .map | .function_ty | .named => continue
             .case_ty | .failure | .generic | .error => continue

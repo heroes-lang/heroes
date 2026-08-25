@@ -6,6 +6,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #line 63 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *)0)->r) == sizeof(uint8_t) && (_Generic(((Color *)0)->r, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color r");
@@ -34,7 +36,7 @@ _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->type) == 1 && siz
 #line 101 "examples/raylib/main.hero"
 _Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params");
              _Static_assert(_Generic(&((AutomationEvent *)0)->params, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field AutomationEvent params");
-#line 37 "main.c"
+#line 39 "main.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
@@ -47,7 +49,7 @@ __attribute__((unused)) static void hero_ffi_complete_h_main_Vector2(void) { Vec
 __attribute__((unused)) static void hero_ffi_complete_h_main_Rectangle(void) { Rectangle v = {0,0,0,0}; (void)v; }
 #line 98 "examples/raylib/main.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_main_AutomationEvent(void) { AutomationEvent v = {0,0,{0}}; (void)v; }
-#line 50 "main.c"
+#line 52 "main.c"
 #pragma clang diagnostic pop
 
 #line 62 "examples/raylib/main.hero"
@@ -58,7 +60,7 @@ _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union V
 _Static_assert(__builtin_classify_type(*(Rectangle *)0) != 13, "heroes-ffi-union Rectangle x y width height");
 #line 98 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(AutomationEvent *)0) != 13, "heroes-ffi-union AutomationEvent frame type params");
-#line 61 "main.c"
+#line 63 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -129,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 132 "main.c"
+#line 134 "main.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_106b1639, "raylib answered ");
@@ -150,28 +152,28 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_main_Color_eq(const Color *a, const Color *b);
-uint64_t h_main_Color_hash(const void *elem);
-bool h_main_Vector2_eq(const Vector2 *a, const Vector2 *b);
-uint64_t h_main_Vector2_hash(const void *elem);
-bool h_main_Rectangle_eq(const Rectangle *a, const Rectangle *b);
-uint64_t h_main_Rectangle_hash(const void *elem);
-bool h_main_AutomationEvent_eq(const AutomationEvent *a, const AutomationEvent *b);
-uint64_t h_main_AutomationEvent_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b);
+HERO_TU_LOCAL uint64_t h_main_Color_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_Vector2_eq(const Vector2 *a, const Vector2 *b);
+HERO_TU_LOCAL uint64_t h_main_Vector2_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_Rectangle_eq(const Rectangle *a, const Rectangle *b);
+HERO_TU_LOCAL uint64_t h_main_Rectangle_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_AutomationEvent_eq(const AutomationEvent *a, const AutomationEvent *b);
+HERO_TU_LOCAL uint64_t h_main_AutomationEvent_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_main_main(void);
 
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
-#line 174 "main.c"
+#line 176 "main.c"
     Color h0_red;
     Vector2 h1_mid;
     AutomationEvent h2_event;
@@ -386,9 +388,9 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 389 "main.c"
+#line 391 "main.c"
 }
-bool h_main_Color_eq(const Color *a, const Color *b) {
+HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;
     if (!(a->g == b->g)) return false;
     if (!(a->b == b->b)) return false;
@@ -396,7 +398,7 @@ bool h_main_Color_eq(const Color *a, const Color *b) {
     return true;
 }
 
-uint64_t h_main_Color_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_main_Color_hash(const void *elem) {
     const Color *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u8)->hash(&v->r)) * UINT64_C(0x100000001b3);
@@ -406,13 +408,13 @@ uint64_t h_main_Color_hash(const void *elem) {
     return h;
 }
 
-bool h_main_Vector2_eq(const Vector2 *a, const Vector2 *b) {
+HERO_TU_LOCAL bool h_main_Vector2_eq(const Vector2 *a, const Vector2 *b) {
     if (!(a->x == b->x)) return false;
     if (!(a->y == b->y)) return false;
     return true;
 }
 
-uint64_t h_main_Vector2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_main_Vector2_hash(const void *elem) {
     const Vector2 *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_f32)->hash(&v->x)) * UINT64_C(0x100000001b3);
@@ -420,7 +422,7 @@ uint64_t h_main_Vector2_hash(const void *elem) {
     return h;
 }
 
-bool h_main_Rectangle_eq(const Rectangle *a, const Rectangle *b) {
+HERO_TU_LOCAL bool h_main_Rectangle_eq(const Rectangle *a, const Rectangle *b) {
     if (!(a->x == b->x)) return false;
     if (!(a->y == b->y)) return false;
     if (!(a->width == b->width)) return false;
@@ -428,7 +430,7 @@ bool h_main_Rectangle_eq(const Rectangle *a, const Rectangle *b) {
     return true;
 }
 
-uint64_t h_main_Rectangle_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_main_Rectangle_hash(const void *elem) {
     const Rectangle *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_f32)->hash(&v->x)) * UINT64_C(0x100000001b3);
@@ -438,14 +440,14 @@ uint64_t h_main_Rectangle_hash(const void *elem) {
     return h;
 }
 
-bool h_main_AutomationEvent_eq(const AutomationEvent *a, const AutomationEvent *b) {
+HERO_TU_LOCAL bool h_main_AutomationEvent_eq(const AutomationEvent *a, const AutomationEvent *b) {
     if (!(a->frame == b->frame)) return false;
     if (!(a->type == b->type)) return false;
     if (!((a->params[0] == b->params[0] && a->params[1] == b->params[1] && a->params[2] == b->params[2] && a->params[3] == b->params[3]))) return false;
     return true;
 }
 
-uint64_t h_main_AutomationEvent_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_main_AutomationEvent_hash(const void *elem) {
     const AutomationEvent *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u32)->hash(&v->frame)) * UINT64_C(0x100000001b3);
@@ -457,7 +459,7 @@ uint64_t h_main_AutomationEvent_hash(const void *elem) {
     return h;
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -465,7 +467,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -473,13 +475,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -489,7 +491,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -497,7 +499,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -505,13 +507,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

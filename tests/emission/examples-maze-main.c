@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "main.c"
+#line 43 "main.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "main.c"
+#line 61 "main.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_55806e41, "usage: maze <file.maze>");
@@ -138,34 +140,34 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_grid_Grid_retain(const h_grid_Grid *v);
-void h_grid_Grid_release(h_grid_Grid *v);
-bool h_grid_Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b);
-uint64_t h_grid_Grid_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_7f9f63e_retain(const h_0opt_7f9f63e *v);
-void h_0opt_7f9f63e_release(h_0opt_7f9f63e *v);
-bool h_0opt_7f9f63e_eq(const h_0opt_7f9f63e *a, const h_0opt_7f9f63e *b);
-uint64_t h_0opt_7f9f63e_hash(const void *elem);
-void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v);
-void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v);
-bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *a, const h_0opt_2270cbe7 *b);
-uint64_t h_0opt_2270cbe7_hash(const void *elem);
-void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *v);
-void h_0opt_473cb9ae_release(h_0opt_473cb9ae *v);
-bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *a, const h_0opt_473cb9ae *b);
-uint64_t h_0opt_473cb9ae_hash(const void *elem);
-void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-void h_0opt_e201354_release(h_0opt_e201354 *v);
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-uint64_t h_0opt_e201354_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_grid_Grid_retain(const h_grid_Grid *v);
+HERO_TU_LOCAL void h_grid_Grid_release(h_grid_Grid *v);
+HERO_TU_LOCAL bool h_grid_Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b);
+HERO_TU_LOCAL uint64_t h_grid_Grid_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_7f9f63e_retain(const h_0opt_7f9f63e *v);
+HERO_TU_LOCAL void h_0opt_7f9f63e_release(h_0opt_7f9f63e *v);
+HERO_TU_LOCAL bool h_0opt_7f9f63e_eq(const h_0opt_7f9f63e *a, const h_0opt_7f9f63e *b);
+HERO_TU_LOCAL uint64_t h_0opt_7f9f63e_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v);
+HERO_TU_LOCAL void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v);
+HERO_TU_LOCAL bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *a, const h_0opt_2270cbe7 *b);
+HERO_TU_LOCAL uint64_t h_0opt_2270cbe7_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *v);
+HERO_TU_LOCAL void h_0opt_473cb9ae_release(h_0opt_473cb9ae *v);
+HERO_TU_LOCAL bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *a, const h_0opt_473cb9ae *b);
+HERO_TU_LOCAL uint64_t h_0opt_473cb9ae_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_grid_Grid_desc_copy(void *dst, const void *src) {
     *(h_grid_Grid *)dst = *(const h_grid_Grid *)src;
@@ -177,7 +179,7 @@ static void h_grid_Grid_desc_drop(void *elem) {
 static bool h_grid_Grid_desc_eq(const void *a, const void *b) {
     return h_grid_Grid_eq((const h_grid_Grid *)a, (const h_grid_Grid *)b);
 }
-static const HeroDesc h_grid_Grid_desc = {
+HERO_TU_QUIET static const HeroDesc h_grid_Grid_desc = {
     sizeof(h_grid_Grid),
     h_grid_Grid_desc_copy,
     h_grid_Grid_desc_drop,
@@ -226,7 +228,7 @@ void h_library_exit(int64_t h0_code);
 
 #line 17 "examples/maze/main.hero"
 void h_main_main(void) {
-#line 230 "main.c"
+#line 232 "main.c"
     HeroArrayHeader * h0_given = {0};
     h_0opt_f87774a h1_s0 = {0};
     HeroFailure h2_e = {0};
@@ -290,15 +292,15 @@ bb0:
     t29 = h4_own4;
 #line 18 "examples/maze/main.hero"
     h4_own4 = t1;
-#line 294 "main.c"
+#line 296 "main.c"
     hero_array_decref(t29);
 #line 18 "examples/maze/main.hero"
     t30 = h0_given;
-#line 298 "main.c"
+#line 300 "main.c"
     hero_array_incref(t1);
 #line 18 "examples/maze/main.hero"
     h0_given = t1;
-#line 302 "main.c"
+#line 304 "main.c"
     hero_array_decref(t30);
 #line 19 "examples/maze/main.hero"
     t2 = h0_given;
@@ -324,15 +326,15 @@ bb1:
     t31 = h5_own5;
 #line 22 "examples/maze/main.hero"
     h5_own5 = t11;
-#line 328 "main.c"
+#line 330 "main.c"
     h_0opt_f87774a_release(&t31);
 #line 22 "examples/maze/main.hero"
     t32 = h1_s0;
-#line 332 "main.c"
+#line 334 "main.c"
     h_0opt_f87774a_retain(&t11);
 #line 22 "examples/maze/main.hero"
     h1_s0 = t11;
-#line 336 "main.c"
+#line 338 "main.c"
     h_0opt_f87774a_release(&t32);
 #line 22 "examples/maze/main.hero"
     t12 = h1_s0;
@@ -370,39 +372,39 @@ bb3:
 bb4:
 #line 17 "examples/maze/main.hero"
     t38 = h0_given;
-#line 374 "main.c"
+#line 376 "main.c"
     hero_array_decref(t38);
 #line 17 "examples/maze/main.hero"
     t39 = h1_s0;
-#line 378 "main.c"
+#line 380 "main.c"
     h_0opt_f87774a_release(&t39);
 #line 17 "examples/maze/main.hero"
     t40 = h2_e;
-#line 382 "main.c"
+#line 384 "main.c"
     hero_failure_release(&t40);
 #line 17 "examples/maze/main.hero"
     t41 = h3_text;
-#line 386 "main.c"
+#line 388 "main.c"
     hero_str_decref(t41);
 #line 17 "examples/maze/main.hero"
     t42 = h4_own4;
-#line 390 "main.c"
+#line 392 "main.c"
     hero_array_decref(t42);
 #line 17 "examples/maze/main.hero"
     t43 = h5_own5;
-#line 394 "main.c"
+#line 396 "main.c"
     h_0opt_f87774a_release(&t43);
 #line 17 "examples/maze/main.hero"
     t44 = h6_own6;
-#line 398 "main.c"
+#line 400 "main.c"
     hero_str_decref(t44);
 #line 17 "examples/maze/main.hero"
     t45 = h7_own7;
-#line 402 "main.c"
+#line 404 "main.c"
     hero_str_decref(t45);
 #line 17 "examples/maze/main.hero"
     t46 = h8_own8;
-#line 406 "main.c"
+#line 408 "main.c"
     hero_str_decref(t46);
     return;
 bb5:
@@ -412,11 +414,11 @@ bb5:
     t15 = t14.as.err;
 #line 23 "examples/maze/main.hero"
     t33 = h2_e;
-#line 416 "main.c"
+#line 418 "main.c"
     hero_failure_retain(&t15);
 #line 23 "examples/maze/main.hero"
     h2_e = t15;
-#line 420 "main.c"
+#line 422 "main.c"
     hero_failure_release(&t33);
 #line 23 "examples/maze/main.hero"
     t16 = HERO_STR_LIT(hero_str_2d78c599);
@@ -432,7 +434,7 @@ bb5:
     t34 = h6_own6;
 #line 23 "examples/maze/main.hero"
     h6_own6 = t20;
-#line 436 "main.c"
+#line 438 "main.c"
     hero_str_decref(t34);
 #line 23 "examples/maze/main.hero"
     t21 = HERO_STR_LIT(hero_str_1dce);
@@ -442,7 +444,7 @@ bb5:
     t35 = h7_own7;
 #line 23 "examples/maze/main.hero"
     h7_own7 = t22;
-#line 446 "main.c"
+#line 448 "main.c"
     hero_str_decref(t35);
 #line 23 "examples/maze/main.hero"
     t23 = h2_e;
@@ -454,7 +456,7 @@ bb5:
     t36 = h8_own8;
 #line 23 "examples/maze/main.hero"
     h8_own8 = t25;
-#line 458 "main.c"
+#line 460 "main.c"
     hero_str_decref(t36);
 #line 23 "examples/maze/main.hero"
     h_main_stop(t25);
@@ -468,11 +470,11 @@ bb6:
     t27 = t26.as.ok;
 #line 24 "examples/maze/main.hero"
     t37 = h3_text;
-#line 472 "main.c"
+#line 474 "main.c"
     hero_str_incref(t27);
 #line 24 "examples/maze/main.hero"
     h3_text = t27;
-#line 476 "main.c"
+#line 478 "main.c"
     hero_str_decref(t37);
 #line 24 "examples/maze/main.hero"
     t28 = h3_text;
@@ -480,12 +482,12 @@ bb6:
     h_main_lay_out(t28);
 #line 24 "examples/maze/main.hero"
     goto bb4;
-#line 484 "main.c"
+#line 486 "main.c"
 }
 
 #line 26 "examples/maze/main.hero"
 void h_main_stop(HeroStr h0_message) {
-#line 489 "main.c"
+#line 491 "main.c"
     HeroStr t1 = {0};
     int64_t t2;
     goto bb0;
@@ -502,12 +504,12 @@ bb0:
     h_library_exit(t2);
 #line 28 "examples/maze/main.hero"
     return;
-#line 506 "main.c"
+#line 508 "main.c"
 }
 
 #line 30 "examples/maze/main.hero"
 void h_main_lay_out(HeroStr h0_text) {
-#line 511 "main.c"
+#line 513 "main.c"
     h_0opt_7f9f63e h1_s0 = {0};
     HeroFailure h2_e = {0};
     h_grid_Grid h3_g = {0};
@@ -552,15 +554,15 @@ bb0:
     t17 = h4_own4;
 #line 31 "examples/maze/main.hero"
     h4_own4 = t2;
-#line 556 "main.c"
+#line 558 "main.c"
     h_0opt_7f9f63e_release(&t17);
 #line 31 "examples/maze/main.hero"
     t18 = h1_s0;
-#line 560 "main.c"
+#line 562 "main.c"
     h_0opt_7f9f63e_retain(&t2);
 #line 31 "examples/maze/main.hero"
     h1_s0 = t2;
-#line 564 "main.c"
+#line 566 "main.c"
     h_0opt_7f9f63e_release(&t18);
 #line 31 "examples/maze/main.hero"
     t3 = h1_s0;
@@ -580,27 +582,27 @@ bb0:
 bb1:
 #line 30 "examples/maze/main.hero"
     t23 = h1_s0;
-#line 584 "main.c"
+#line 586 "main.c"
     h_0opt_7f9f63e_release(&t23);
 #line 30 "examples/maze/main.hero"
     t24 = h2_e;
-#line 588 "main.c"
+#line 590 "main.c"
     hero_failure_release(&t24);
 #line 30 "examples/maze/main.hero"
     t25 = h3_g;
-#line 592 "main.c"
+#line 594 "main.c"
     h_grid_Grid_release(&t25);
 #line 30 "examples/maze/main.hero"
     t26 = h4_own4;
-#line 596 "main.c"
+#line 598 "main.c"
     h_0opt_7f9f63e_release(&t26);
 #line 30 "examples/maze/main.hero"
     t27 = h5_own5;
-#line 600 "main.c"
+#line 602 "main.c"
     hero_str_decref(t27);
 #line 30 "examples/maze/main.hero"
     t28 = h6_own6;
-#line 604 "main.c"
+#line 606 "main.c"
     hero_str_decref(t28);
     return;
 bb2:
@@ -610,11 +612,11 @@ bb2:
     t6 = t5.as.err;
 #line 32 "examples/maze/main.hero"
     t19 = h2_e;
-#line 614 "main.c"
+#line 616 "main.c"
     hero_failure_retain(&t6);
 #line 32 "examples/maze/main.hero"
     h2_e = t6;
-#line 618 "main.c"
+#line 620 "main.c"
     hero_failure_release(&t19);
 #line 32 "examples/maze/main.hero"
     t7 = h2_e;
@@ -628,7 +630,7 @@ bb2:
     t20 = h5_own5;
 #line 32 "examples/maze/main.hero"
     h5_own5 = t10;
-#line 632 "main.c"
+#line 634 "main.c"
     hero_str_decref(t20);
 #line 32 "examples/maze/main.hero"
     t11 = h2_e;
@@ -640,7 +642,7 @@ bb2:
     t21 = h6_own6;
 #line 32 "examples/maze/main.hero"
     h6_own6 = t13;
-#line 644 "main.c"
+#line 646 "main.c"
     hero_str_decref(t21);
 #line 32 "examples/maze/main.hero"
     h_main_stop(t13);
@@ -654,11 +656,11 @@ bb3:
     t15 = t14.as.ok;
 #line 33 "examples/maze/main.hero"
     t22 = h3_g;
-#line 658 "main.c"
+#line 660 "main.c"
     h_grid_Grid_retain(&t15);
 #line 33 "examples/maze/main.hero"
     h3_g = t15;
-#line 662 "main.c"
+#line 664 "main.c"
     h_grid_Grid_release(&t22);
 #line 33 "examples/maze/main.hero"
     t16 = h3_g;
@@ -666,12 +668,12 @@ bb3:
     h_main_walk(t16);
 #line 33 "examples/maze/main.hero"
     goto bb1;
-#line 670 "main.c"
+#line 672 "main.c"
 }
 
 #line 35 "examples/maze/main.hero"
 void h_main_walk(h_grid_Grid h0_g) {
-#line 675 "main.c"
+#line 677 "main.c"
     h_0opt_2270cbe7 h1_s0 = {0};
     HeroFailure h2_e = {0};
     HeroArrayHeader * h3_path = {0};
@@ -717,15 +719,15 @@ bb0:
     t18 = h4_own4;
 #line 36 "examples/maze/main.hero"
     h4_own4 = t2;
-#line 721 "main.c"
+#line 723 "main.c"
     h_0opt_2270cbe7_release(&t18);
 #line 36 "examples/maze/main.hero"
     t19 = h1_s0;
-#line 725 "main.c"
+#line 727 "main.c"
     h_0opt_2270cbe7_retain(&t2);
 #line 36 "examples/maze/main.hero"
     h1_s0 = t2;
-#line 729 "main.c"
+#line 731 "main.c"
     h_0opt_2270cbe7_release(&t19);
 #line 36 "examples/maze/main.hero"
     t3 = h1_s0;
@@ -745,27 +747,27 @@ bb0:
 bb1:
 #line 35 "examples/maze/main.hero"
     t24 = h1_s0;
-#line 749 "main.c"
+#line 751 "main.c"
     h_0opt_2270cbe7_release(&t24);
 #line 35 "examples/maze/main.hero"
     t25 = h2_e;
-#line 753 "main.c"
+#line 755 "main.c"
     hero_failure_release(&t25);
 #line 35 "examples/maze/main.hero"
     t26 = h3_path;
-#line 757 "main.c"
+#line 759 "main.c"
     hero_array_decref(t26);
 #line 35 "examples/maze/main.hero"
     t27 = h4_own4;
-#line 761 "main.c"
+#line 763 "main.c"
     h_0opt_2270cbe7_release(&t27);
 #line 35 "examples/maze/main.hero"
     t28 = h5_own5;
-#line 765 "main.c"
+#line 767 "main.c"
     hero_str_decref(t28);
 #line 35 "examples/maze/main.hero"
     t29 = h6_own6;
-#line 769 "main.c"
+#line 771 "main.c"
     hero_str_decref(t29);
     return;
 bb2:
@@ -775,11 +777,11 @@ bb2:
     t6 = t5.as.err;
 #line 37 "examples/maze/main.hero"
     t20 = h2_e;
-#line 779 "main.c"
+#line 781 "main.c"
     hero_failure_retain(&t6);
 #line 37 "examples/maze/main.hero"
     h2_e = t6;
-#line 783 "main.c"
+#line 785 "main.c"
     hero_failure_release(&t20);
 #line 37 "examples/maze/main.hero"
     t7 = h2_e;
@@ -793,7 +795,7 @@ bb2:
     t21 = h5_own5;
 #line 37 "examples/maze/main.hero"
     h5_own5 = t10;
-#line 797 "main.c"
+#line 799 "main.c"
     hero_str_decref(t21);
 #line 37 "examples/maze/main.hero"
     t11 = h2_e;
@@ -805,7 +807,7 @@ bb2:
     t22 = h6_own6;
 #line 37 "examples/maze/main.hero"
     h6_own6 = t13;
-#line 809 "main.c"
+#line 811 "main.c"
     hero_str_decref(t22);
 #line 37 "examples/maze/main.hero"
     h_main_stop(t13);
@@ -819,11 +821,11 @@ bb3:
     t15 = t14.as.ok;
 #line 38 "examples/maze/main.hero"
     t23 = h3_path;
-#line 823 "main.c"
+#line 825 "main.c"
     hero_array_incref(t15);
 #line 38 "examples/maze/main.hero"
     h3_path = t15;
-#line 827 "main.c"
+#line 829 "main.c"
     hero_array_decref(t23);
 #line 38 "examples/maze/main.hero"
     t16 = h0_g;
@@ -833,12 +835,12 @@ bb3:
     h_main_show(t16, t17);
 #line 38 "examples/maze/main.hero"
     goto bb1;
-#line 837 "main.c"
+#line 839 "main.c"
 }
 
 #line 40 "examples/maze/main.hero"
 void h_main_show(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
-#line 842 "main.c"
+#line 844 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     HeroStr h4_line = {0};
@@ -879,15 +881,15 @@ bb0:
     t19 = h5_own5;
 #line 41 "examples/maze/main.hero"
     h5_own5 = t3;
-#line 883 "main.c"
+#line 885 "main.c"
     hero_array_decref(t19);
 #line 41 "examples/maze/main.hero"
     t20 = h2_xs0;
-#line 887 "main.c"
+#line 889 "main.c"
     hero_array_incref(t3);
 #line 41 "examples/maze/main.hero"
     h2_xs0 = t3;
-#line 891 "main.c"
+#line 893 "main.c"
     hero_array_decref(t20);
 #line 41 "examples/maze/main.hero"
     t4 = INT64_C(0);
@@ -917,11 +919,11 @@ bb2:
     t11 = *(HeroStr const *)hero_array_at(t9, t10);
 #line 41 "examples/maze/main.hero"
     t21 = h4_line;
-#line 921 "main.c"
+#line 923 "main.c"
     hero_str_incref(t11);
 #line 41 "examples/maze/main.hero"
     h4_line = t11;
-#line 925 "main.c"
+#line 927 "main.c"
     hero_str_decref(t21);
 #line 42 "examples/maze/main.hero"
     t12 = h4_line;
@@ -959,22 +961,22 @@ bb4:
     hero_print_end();
 #line 43 "examples/maze/main.hero"
     t22 = h2_xs0;
-#line 963 "main.c"
+#line 965 "main.c"
     hero_array_decref(t22);
 #line 43 "examples/maze/main.hero"
     t23 = h4_line;
-#line 967 "main.c"
+#line 969 "main.c"
     hero_str_decref(t23);
 #line 43 "examples/maze/main.hero"
     t24 = h5_own5;
-#line 971 "main.c"
+#line 973 "main.c"
     hero_array_decref(t24);
     return;
 }
 
 #line 47 "examples/maze/main.hero"
 HeroArrayHeader * h_main_drawn(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
-#line 978 "main.c"
+#line 980 "main.c"
     HeroMapHeader * h2_on = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -1119,25 +1121,25 @@ bb0:
     t90 = h19_own19;
 #line 48 "examples/maze/main.hero"
     h19_own19 = t1;
-#line 1123 "main.c"
+#line 1125 "main.c"
     hero_map_decref(t90);
 #line 48 "examples/maze/main.hero"
     t91 = h2_on;
-#line 1127 "main.c"
+#line 1129 "main.c"
     hero_map_incref(t1);
 #line 48 "examples/maze/main.hero"
     h2_on = t1;
-#line 1131 "main.c"
+#line 1133 "main.c"
     hero_map_decref(t91);
 #line 49 "examples/maze/main.hero"
     t2 = h1_path;
 #line 49 "examples/maze/main.hero"
     t92 = h3_xs0;
-#line 1137 "main.c"
+#line 1139 "main.c"
     hero_array_incref(t2);
 #line 49 "examples/maze/main.hero"
     h3_xs0 = t2;
-#line 1141 "main.c"
+#line 1143 "main.c"
     hero_array_decref(t92);
 #line 49 "examples/maze/main.hero"
     t3 = INT64_C(0);
@@ -1195,15 +1197,15 @@ bb4:
     t93 = h20_own20;
 #line 51 "examples/maze/main.hero"
     h20_own20 = t16;
-#line 1199 "main.c"
+#line 1201 "main.c"
     hero_array_decref(t93);
 #line 51 "examples/maze/main.hero"
     t94 = h6_out;
-#line 1203 "main.c"
+#line 1205 "main.c"
     hero_array_incref(t16);
 #line 51 "examples/maze/main.hero"
     h6_out = t16;
-#line 1207 "main.c"
+#line 1209 "main.c"
     hero_array_decref(t94);
 #line 52 "examples/maze/main.hero"
     t17 = INT64_C(0);
@@ -1217,15 +1219,15 @@ bb4:
     t95 = h21_own21;
 #line 52 "examples/maze/main.hero"
     h21_own21 = t20;
-#line 1221 "main.c"
+#line 1223 "main.c"
     hero_array_decref(t95);
 #line 52 "examples/maze/main.hero"
     t96 = h7_xs1;
-#line 1225 "main.c"
+#line 1227 "main.c"
     hero_array_incref(t20);
 #line 52 "examples/maze/main.hero"
     h7_xs1 = t20;
-#line 1229 "main.c"
+#line 1231 "main.c"
     hero_array_decref(t96);
 #line 52 "examples/maze/main.hero"
     t21 = INT64_C(0);
@@ -1261,15 +1263,15 @@ bb6:
     t97 = h22_own22;
 #line 53 "examples/maze/main.hero"
     h22_own22 = t29;
-#line 1265 "main.c"
+#line 1267 "main.c"
     hero_array_decref(t97);
 #line 53 "examples/maze/main.hero"
     t98 = h10_pieces;
-#line 1269 "main.c"
+#line 1271 "main.c"
     hero_array_incref(t29);
 #line 53 "examples/maze/main.hero"
     h10_pieces = t29;
-#line 1273 "main.c"
+#line 1275 "main.c"
     hero_array_decref(t98);
 #line 54 "examples/maze/main.hero"
     t30 = INT64_C(0);
@@ -1283,15 +1285,15 @@ bb6:
     t99 = h23_own23;
 #line 54 "examples/maze/main.hero"
     h23_own23 = t33;
-#line 1287 "main.c"
+#line 1289 "main.c"
     hero_array_decref(t99);
 #line 54 "examples/maze/main.hero"
     t100 = h11_xs2;
-#line 1291 "main.c"
+#line 1293 "main.c"
     hero_array_incref(t33);
 #line 54 "examples/maze/main.hero"
     h11_xs2 = t33;
-#line 1295 "main.c"
+#line 1297 "main.c"
     hero_array_decref(t100);
 #line 54 "examples/maze/main.hero"
     t34 = INT64_C(0);
@@ -1315,67 +1317,67 @@ bb7:
 bb8:
 #line 64 "examples/maze/main.hero"
     t89 = h6_out;
-#line 1319 "main.c"
+#line 1321 "main.c"
     hero_array_incref(t89);
 #line 64 "examples/maze/main.hero"
     t105 = h2_on;
-#line 1323 "main.c"
+#line 1325 "main.c"
     hero_map_decref(t105);
 #line 64 "examples/maze/main.hero"
     t106 = h3_xs0;
-#line 1327 "main.c"
+#line 1329 "main.c"
     hero_array_decref(t106);
 #line 64 "examples/maze/main.hero"
     t107 = h6_out;
-#line 1331 "main.c"
+#line 1333 "main.c"
     hero_array_decref(t107);
 #line 64 "examples/maze/main.hero"
     t108 = h7_xs1;
-#line 1335 "main.c"
+#line 1337 "main.c"
     hero_array_decref(t108);
 #line 64 "examples/maze/main.hero"
     t109 = h10_pieces;
-#line 1339 "main.c"
+#line 1341 "main.c"
     hero_array_decref(t109);
 #line 64 "examples/maze/main.hero"
     t110 = h11_xs2;
-#line 1343 "main.c"
+#line 1345 "main.c"
     hero_array_decref(t110);
 #line 64 "examples/maze/main.hero"
     t111 = h18_f0;
-#line 1347 "main.c"
+#line 1349 "main.c"
     h_0opt_473cb9ae_release(&t111);
 #line 64 "examples/maze/main.hero"
     t112 = h19_own19;
-#line 1351 "main.c"
+#line 1353 "main.c"
     hero_map_decref(t112);
 #line 64 "examples/maze/main.hero"
     t113 = h20_own20;
-#line 1355 "main.c"
+#line 1357 "main.c"
     hero_array_decref(t113);
 #line 64 "examples/maze/main.hero"
     t114 = h21_own21;
-#line 1359 "main.c"
+#line 1361 "main.c"
     hero_array_decref(t114);
 #line 64 "examples/maze/main.hero"
     t115 = h22_own22;
-#line 1363 "main.c"
+#line 1365 "main.c"
     hero_array_decref(t115);
 #line 64 "examples/maze/main.hero"
     t116 = h23_own23;
-#line 1367 "main.c"
+#line 1369 "main.c"
     hero_array_decref(t116);
 #line 64 "examples/maze/main.hero"
     t117 = h24_own24;
-#line 1371 "main.c"
+#line 1373 "main.c"
     hero_str_decref(t117);
 #line 64 "examples/maze/main.hero"
     t118 = h25_own25;
-#line 1375 "main.c"
+#line 1377 "main.c"
     hero_str_decref(t118);
 #line 64 "examples/maze/main.hero"
     t119 = h26_own26;
-#line 1379 "main.c"
+#line 1381 "main.c"
     h_0opt_473cb9ae_release(&t119);
     return t89;
 bb9:
@@ -1451,7 +1453,7 @@ bb12:
     t101 = h24_own24;
 #line 63 "examples/maze/main.hero"
     h24_own24 = t84;
-#line 1455 "main.c"
+#line 1457 "main.c"
     hero_str_decref(t101);
 #line 63 "examples/maze/main.hero"
     hero_array_push_owned(&h6_out, &t84);
@@ -1509,7 +1511,7 @@ bb18:
     t102 = h25_own25;
 #line 58 "examples/maze/main.hero"
     h25_own25 = t62;
-#line 1513 "main.c"
+#line 1515 "main.c"
     hero_str_decref(t102);
 #line 58 "examples/maze/main.hero"
     hero_array_push_owned(&h10_pieces, &t62);
@@ -1543,15 +1545,15 @@ bb19:
     t103 = h26_own26;
 #line 59 "examples/maze/main.hero"
     h26_own26 = t66;
-#line 1547 "main.c"
+#line 1549 "main.c"
     h_0opt_473cb9ae_release(&t103);
 #line 59 "examples/maze/main.hero"
     t104 = h18_f0;
-#line 1551 "main.c"
+#line 1553 "main.c"
     h_0opt_473cb9ae_retain(&t66);
 #line 59 "examples/maze/main.hero"
     h18_f0 = t66;
-#line 1555 "main.c"
+#line 1557 "main.c"
     h_0opt_473cb9ae_release(&t104);
 #line 59 "examples/maze/main.hero"
     t67 = h18_f0;
@@ -1581,64 +1583,64 @@ bb21:
     hero_array_push_owned(&h10_pieces, &t76);
 #line 62 "examples/maze/main.hero"
     goto bb13;
-#line 1585 "main.c"
+#line 1587 "main.c"
 }
 
 #line 21 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_EMPTY_MAZE(void) {
-#line 1590 "main.c"
+#line 1592 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 22 "examples/maze/grid.hero"
     t1 = HERO_STR_LIT(hero_str_440ce163);
-#line 1596 "main.c"
+#line 1598 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 24 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_MISSING_MARK(void) {
-#line 1603 "main.c"
+#line 1605 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 25 "examples/maze/grid.hero"
     t1 = HERO_STR_LIT(hero_str_38cfc0b5);
-#line 1609 "main.c"
+#line 1611 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 27 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_RAGGED_MAZE(void) {
-#line 1616 "main.c"
+#line 1618 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 28 "examples/maze/grid.hero"
     t1 = HERO_STR_LIT(hero_str_74ceed9d);
-#line 1622 "main.c"
+#line 1624 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 30 "examples/maze/grid.hero"
 HeroStr h_grid_ERR_REPEATED_MARK(void) {
-#line 1629 "main.c"
+#line 1631 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 31 "examples/maze/grid.hero"
     t1 = HERO_STR_LIT(hero_str_51bdfc8e);
-#line 1635 "main.c"
+#line 1637 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 38 "examples/maze/grid.hero"
 uint8_t h_grid_WALL(void) {
-#line 1642 "main.c"
+#line 1644 "main.c"
     uint8_t t1;
     goto bb0;
 bb0:
@@ -1646,12 +1648,12 @@ bb0:
     t1 = UINT64_C(35);
 #line 39 "examples/maze/grid.hero"
     return t1;
-#line 1650 "main.c"
+#line 1652 "main.c"
 }
 
 #line 41 "examples/maze/grid.hero"
 uint8_t h_grid_START(void) {
-#line 1655 "main.c"
+#line 1657 "main.c"
     uint8_t t1;
     goto bb0;
 bb0:
@@ -1659,12 +1661,12 @@ bb0:
     t1 = UINT64_C(83);
 #line 42 "examples/maze/grid.hero"
     return t1;
-#line 1663 "main.c"
+#line 1665 "main.c"
 }
 
 #line 44 "examples/maze/grid.hero"
 uint8_t h_grid_GOAL(void) {
-#line 1668 "main.c"
+#line 1670 "main.c"
     uint8_t t1;
     goto bb0;
 bb0:
@@ -1672,12 +1674,12 @@ bb0:
     t1 = UINT64_C(69);
 #line 45 "examples/maze/grid.hero"
     return t1;
-#line 1676 "main.c"
+#line 1678 "main.c"
 }
 
 #line 47 "examples/maze/grid.hero"
 HeroArrayHeader * h_grid_split_lines(HeroStr h0_text) {
-#line 1681 "main.c"
+#line 1683 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_start;
     int64_t h3_i;
@@ -1732,15 +1734,15 @@ bb0:
     t37 = h4_own4;
 #line 48 "examples/maze/grid.hero"
     h4_own4 = t1;
-#line 1736 "main.c"
+#line 1738 "main.c"
     hero_array_decref(t37);
 #line 48 "examples/maze/grid.hero"
     t38 = h1_out;
-#line 1740 "main.c"
+#line 1742 "main.c"
     hero_array_incref(t1);
 #line 48 "examples/maze/grid.hero"
     h1_out = t1;
-#line 1744 "main.c"
+#line 1746 "main.c"
     hero_array_decref(t38);
 #line 49 "examples/maze/grid.hero"
     t2 = INT64_C(0);
@@ -1816,7 +1818,7 @@ bb5:
     t39 = h5_own5;
 #line 53 "examples/maze/grid.hero"
     h5_own5 = t17;
-#line 1820 "main.c"
+#line 1822 "main.c"
     hero_str_decref(t39);
 #line 53 "examples/maze/grid.hero"
     hero_array_push_owned(&h1_out, &t17);
@@ -1838,23 +1840,23 @@ bb6:
 bb7:
 #line 58 "examples/maze/grid.hero"
     t36 = h1_out;
-#line 1842 "main.c"
+#line 1844 "main.c"
     hero_array_incref(t36);
 #line 58 "examples/maze/grid.hero"
     t41 = h1_out;
-#line 1846 "main.c"
+#line 1848 "main.c"
     hero_array_decref(t41);
 #line 58 "examples/maze/grid.hero"
     t42 = h4_own4;
-#line 1850 "main.c"
+#line 1852 "main.c"
     hero_array_decref(t42);
 #line 58 "examples/maze/grid.hero"
     t43 = h5_own5;
-#line 1854 "main.c"
+#line 1856 "main.c"
     hero_str_decref(t43);
 #line 58 "examples/maze/grid.hero"
     t44 = h6_own6;
-#line 1858 "main.c"
+#line 1860 "main.c"
     hero_str_decref(t44);
     return t36;
 bb8:
@@ -1872,7 +1874,7 @@ bb8:
     t40 = h6_own6;
 #line 57 "examples/maze/grid.hero"
     h6_own6 = t34;
-#line 1876 "main.c"
+#line 1878 "main.c"
     hero_str_decref(t40);
 #line 57 "examples/maze/grid.hero"
     hero_array_push_owned(&h1_out, &t34);
@@ -1882,12 +1884,12 @@ bb8:
 bb9:
 #line 57 "examples/maze/grid.hero"
     goto bb7;
-#line 1886 "main.c"
+#line 1888 "main.c"
 }
 
 #line 60 "examples/maze/grid.hero"
 h_0opt_7f9f63e h_grid_read(HeroStr h0_text) {
-#line 1891 "main.c"
+#line 1893 "main.c"
     HeroArrayHeader * h1_rows = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -2140,15 +2142,15 @@ bb0:
     t87 = h12_own12;
 #line 61 "examples/maze/grid.hero"
     h12_own12 = t1;
-#line 2144 "main.c"
+#line 2146 "main.c"
     hero_array_decref(t87);
 #line 61 "examples/maze/grid.hero"
     t88 = h1_rows;
-#line 2148 "main.c"
+#line 2150 "main.c"
     hero_array_incref(t1);
 #line 61 "examples/maze/grid.hero"
     h1_rows = t1;
-#line 2152 "main.c"
+#line 2154 "main.c"
     hero_array_decref(t88);
 #line 62 "examples/maze/grid.hero"
     t2 = h0_text;
@@ -2158,15 +2160,15 @@ bb0:
     t89 = h13_own13;
 #line 62 "examples/maze/grid.hero"
     h13_own13 = t3;
-#line 2162 "main.c"
+#line 2164 "main.c"
     hero_array_decref(t89);
 #line 62 "examples/maze/grid.hero"
     t90 = h2_xs0;
-#line 2166 "main.c"
+#line 2168 "main.c"
     hero_array_incref(t3);
 #line 62 "examples/maze/grid.hero"
     h2_xs0 = t3;
-#line 2170 "main.c"
+#line 2172 "main.c"
     hero_array_decref(t90);
 #line 62 "examples/maze/grid.hero"
     t4 = INT64_C(0);
@@ -2196,11 +2198,11 @@ bb2:
     t11 = *(HeroStr const *)hero_array_at(t9, t10);
 #line 62 "examples/maze/grid.hero"
     t91 = h4_line;
-#line 2200 "main.c"
+#line 2202 "main.c"
     hero_str_incref(t11);
 #line 62 "examples/maze/grid.hero"
     h4_line = t11;
-#line 2204 "main.c"
+#line 2206 "main.c"
     hero_str_decref(t91);
 #line 63 "examples/maze/grid.hero"
     t12 = h4_line;
@@ -2266,11 +2268,11 @@ bb8:
     t32 = h1_rows;
 #line 68 "examples/maze/grid.hero"
     t92 = h6_xs1;
-#line 2270 "main.c"
+#line 2272 "main.c"
     hero_array_incref(t32);
 #line 68 "examples/maze/grid.hero"
     h6_xs1 = t32;
-#line 2274 "main.c"
+#line 2276 "main.c"
     hero_array_decref(t92);
 #line 68 "examples/maze/grid.hero"
     t33 = INT64_C(0);
@@ -2286,14 +2288,14 @@ bb9:
     t93 = h14_own14;
 #line 66 "examples/maze/grid.hero"
     h14_own14 = t25;
-#line 2290 "main.c"
+#line 2292 "main.c"
     hero_str_decref(t93);
 #line 66 "examples/maze/grid.hero"
     t26 = HERO_STR_LIT(hero_str_6503602c);
-#line 2294 "main.c"
+#line 2296 "main.c"
     hero_str_incref(t25);
 #line 66 "examples/maze/grid.hero"
-#line 2297 "main.c"
+#line 2299 "main.c"
     hero_str_incref(t26);
 #line 66 "examples/maze/grid.hero"
     t27 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = {.code = t25, .msg = t26}};
@@ -2301,102 +2303,102 @@ bb9:
     t94 = h15_own15;
 #line 66 "examples/maze/grid.hero"
     h15_own15 = t27;
-#line 2305 "main.c"
+#line 2307 "main.c"
     h_0opt_7f9f63e_release(&t94);
 #line 66 "examples/maze/grid.hero"
-#line 2308 "main.c"
+#line 2310 "main.c"
     h_0opt_7f9f63e_retain(&t27);
 #line 66 "examples/maze/grid.hero"
     t110 = h1_rows;
-#line 2312 "main.c"
+#line 2314 "main.c"
     hero_array_decref(t110);
 #line 66 "examples/maze/grid.hero"
     t111 = h2_xs0;
-#line 2316 "main.c"
+#line 2318 "main.c"
     hero_array_decref(t111);
 #line 66 "examples/maze/grid.hero"
     t112 = h4_line;
-#line 2320 "main.c"
+#line 2322 "main.c"
     hero_str_decref(t112);
 #line 66 "examples/maze/grid.hero"
     t113 = h6_xs1;
-#line 2324 "main.c"
+#line 2326 "main.c"
     hero_array_decref(t113);
 #line 66 "examples/maze/grid.hero"
     t114 = h8_line;
-#line 2328 "main.c"
+#line 2330 "main.c"
     hero_str_decref(t114);
 #line 66 "examples/maze/grid.hero"
     t115 = h9_g;
-#line 2332 "main.c"
+#line 2334 "main.c"
     h_grid_Grid_release(&t115);
 #line 66 "examples/maze/grid.hero"
     t116 = h10_f0;
-#line 2336 "main.c"
+#line 2338 "main.c"
     h_0opt_e201354_release(&t116);
 #line 66 "examples/maze/grid.hero"
     t117 = h11_f1;
-#line 2340 "main.c"
+#line 2342 "main.c"
     h_0opt_e201354_release(&t117);
 #line 66 "examples/maze/grid.hero"
     t118 = h12_own12;
-#line 2344 "main.c"
+#line 2346 "main.c"
     hero_array_decref(t118);
 #line 66 "examples/maze/grid.hero"
     t119 = h13_own13;
-#line 2348 "main.c"
+#line 2350 "main.c"
     hero_array_decref(t119);
 #line 66 "examples/maze/grid.hero"
     t120 = h14_own14;
-#line 2352 "main.c"
+#line 2354 "main.c"
     hero_str_decref(t120);
 #line 66 "examples/maze/grid.hero"
     t121 = h15_own15;
-#line 2356 "main.c"
+#line 2358 "main.c"
     h_0opt_7f9f63e_release(&t121);
 #line 66 "examples/maze/grid.hero"
     t122 = h16_own16;
-#line 2360 "main.c"
+#line 2362 "main.c"
     h_grid_Grid_release(&t122);
 #line 66 "examples/maze/grid.hero"
     t123 = h17_own17;
-#line 2364 "main.c"
+#line 2366 "main.c"
     h_0opt_e201354_release(&t123);
 #line 66 "examples/maze/grid.hero"
     t124 = h18_own18;
-#line 2368 "main.c"
+#line 2370 "main.c"
     hero_str_decref(t124);
 #line 66 "examples/maze/grid.hero"
     t125 = h19_own19;
-#line 2372 "main.c"
+#line 2374 "main.c"
     hero_str_decref(t125);
 #line 66 "examples/maze/grid.hero"
     t126 = h20_own20;
-#line 2376 "main.c"
+#line 2378 "main.c"
     hero_str_decref(t126);
 #line 66 "examples/maze/grid.hero"
     t127 = h21_own21;
-#line 2380 "main.c"
+#line 2382 "main.c"
     hero_str_decref(t127);
 #line 66 "examples/maze/grid.hero"
     t128 = h22_own22;
-#line 2384 "main.c"
+#line 2386 "main.c"
     h_0opt_7f9f63e_release(&t128);
 #line 66 "examples/maze/grid.hero"
     t129 = h23_own23;
-#line 2388 "main.c"
+#line 2390 "main.c"
     h_0opt_e201354_release(&t129);
 #line 66 "examples/maze/grid.hero"
     t130 = h24_own24;
-#line 2392 "main.c"
+#line 2394 "main.c"
     h_0opt_7f9f63e_release(&t130);
 #line 66 "examples/maze/grid.hero"
     t131 = h25_own25;
-#line 2396 "main.c"
+#line 2398 "main.c"
     h_0opt_7f9f63e_release(&t131);
 #line 66 "examples/maze/grid.hero"
     t132 = h26_own26;
-#line 2400 "main.c"
+#line 2402 "main.c"
     h_0opt_7f9f63e_release(&t132);
     return t27;
 bb10:
@@ -2422,11 +2424,11 @@ bb12:
     t40 = *(HeroStr const *)hero_array_at(t38, t39);
 #line 68 "examples/maze/grid.hero"
     t95 = h8_line;
-#line 2426 "main.c"
+#line 2428 "main.c"
     hero_str_incref(t40);
 #line 68 "examples/maze/grid.hero"
     h8_line = t40;
-#line 2430 "main.c"
+#line 2432 "main.c"
     hero_str_decref(t95);
 #line 69 "examples/maze/grid.hero"
     t41 = h8_line;
@@ -2460,7 +2462,7 @@ bb14:
     t58 = h1_rows;
 #line 71 "examples/maze/grid.hero"
     t59 = hero_array_len(t58);
-#line 2464 "main.c"
+#line 2466 "main.c"
     hero_array_incref(t56);
 #line 71 "examples/maze/grid.hero"
     t60 = (h_grid_Grid){.f_rows = t56, .f_width = t57, .f_height = t59};
@@ -2468,15 +2470,15 @@ bb14:
     t96 = h16_own16;
 #line 71 "examples/maze/grid.hero"
     h16_own16 = t60;
-#line 2472 "main.c"
+#line 2474 "main.c"
     h_grid_Grid_release(&t96);
 #line 71 "examples/maze/grid.hero"
     t97 = h9_g;
-#line 2476 "main.c"
+#line 2478 "main.c"
     h_grid_Grid_retain(&t60);
 #line 71 "examples/maze/grid.hero"
     h9_g = t60;
-#line 2480 "main.c"
+#line 2482 "main.c"
     h_grid_Grid_release(&t97);
 #line 72 "examples/maze/grid.hero"
     t61 = h9_g;
@@ -2488,15 +2490,15 @@ bb14:
     t98 = h17_own17;
 #line 72 "examples/maze/grid.hero"
     h17_own17 = t63;
-#line 2492 "main.c"
+#line 2494 "main.c"
     h_0opt_e201354_release(&t98);
 #line 72 "examples/maze/grid.hero"
     t99 = h10_f0;
-#line 2496 "main.c"
+#line 2498 "main.c"
     h_0opt_e201354_retain(&t63);
 #line 72 "examples/maze/grid.hero"
     h10_f0 = t63;
-#line 2500 "main.c"
+#line 2502 "main.c"
     h_0opt_e201354_release(&t99);
 #line 72 "examples/maze/grid.hero"
     t64 = h10_f0;
@@ -2520,7 +2522,7 @@ bb16:
     t100 = h18_own18;
 #line 70 "examples/maze/grid.hero"
     h18_own18 = t45;
-#line 2524 "main.c"
+#line 2526 "main.c"
     hero_str_decref(t100);
 #line 70 "examples/maze/grid.hero"
     t46 = HERO_STR_LIT(hero_str_79da4a2b);
@@ -2532,7 +2534,7 @@ bb16:
     t101 = h19_own19;
 #line 70 "examples/maze/grid.hero"
     h19_own19 = t48;
-#line 2536 "main.c"
+#line 2538 "main.c"
     hero_str_decref(t101);
 #line 70 "examples/maze/grid.hero"
     t49 = hero_str_concat(t46, t48);
@@ -2540,7 +2542,7 @@ bb16:
     t102 = h20_own20;
 #line 70 "examples/maze/grid.hero"
     h20_own20 = t49;
-#line 2544 "main.c"
+#line 2546 "main.c"
     hero_str_decref(t102);
 #line 70 "examples/maze/grid.hero"
     t50 = HERO_STR_LIT(hero_str_41c48f73);
@@ -2550,13 +2552,13 @@ bb16:
     t103 = h21_own21;
 #line 70 "examples/maze/grid.hero"
     h21_own21 = t51;
-#line 2554 "main.c"
+#line 2556 "main.c"
     hero_str_decref(t103);
 #line 70 "examples/maze/grid.hero"
-#line 2557 "main.c"
+#line 2559 "main.c"
     hero_str_incref(t45);
 #line 70 "examples/maze/grid.hero"
-#line 2560 "main.c"
+#line 2562 "main.c"
     hero_str_incref(t51);
 #line 70 "examples/maze/grid.hero"
     t52 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = {.code = t45, .msg = t51}};
@@ -2564,102 +2566,102 @@ bb16:
     t104 = h22_own22;
 #line 70 "examples/maze/grid.hero"
     h22_own22 = t52;
-#line 2568 "main.c"
+#line 2570 "main.c"
     h_0opt_7f9f63e_release(&t104);
 #line 70 "examples/maze/grid.hero"
-#line 2571 "main.c"
+#line 2573 "main.c"
     h_0opt_7f9f63e_retain(&t52);
 #line 70 "examples/maze/grid.hero"
     t133 = h1_rows;
-#line 2575 "main.c"
+#line 2577 "main.c"
     hero_array_decref(t133);
 #line 70 "examples/maze/grid.hero"
     t134 = h2_xs0;
-#line 2579 "main.c"
+#line 2581 "main.c"
     hero_array_decref(t134);
 #line 70 "examples/maze/grid.hero"
     t135 = h4_line;
-#line 2583 "main.c"
+#line 2585 "main.c"
     hero_str_decref(t135);
 #line 70 "examples/maze/grid.hero"
     t136 = h6_xs1;
-#line 2587 "main.c"
+#line 2589 "main.c"
     hero_array_decref(t136);
 #line 70 "examples/maze/grid.hero"
     t137 = h8_line;
-#line 2591 "main.c"
+#line 2593 "main.c"
     hero_str_decref(t137);
 #line 70 "examples/maze/grid.hero"
     t138 = h9_g;
-#line 2595 "main.c"
+#line 2597 "main.c"
     h_grid_Grid_release(&t138);
 #line 70 "examples/maze/grid.hero"
     t139 = h10_f0;
-#line 2599 "main.c"
+#line 2601 "main.c"
     h_0opt_e201354_release(&t139);
 #line 70 "examples/maze/grid.hero"
     t140 = h11_f1;
-#line 2603 "main.c"
+#line 2605 "main.c"
     h_0opt_e201354_release(&t140);
 #line 70 "examples/maze/grid.hero"
     t141 = h12_own12;
-#line 2607 "main.c"
+#line 2609 "main.c"
     hero_array_decref(t141);
 #line 70 "examples/maze/grid.hero"
     t142 = h13_own13;
-#line 2611 "main.c"
+#line 2613 "main.c"
     hero_array_decref(t142);
 #line 70 "examples/maze/grid.hero"
     t143 = h14_own14;
-#line 2615 "main.c"
+#line 2617 "main.c"
     hero_str_decref(t143);
 #line 70 "examples/maze/grid.hero"
     t144 = h15_own15;
-#line 2619 "main.c"
+#line 2621 "main.c"
     h_0opt_7f9f63e_release(&t144);
 #line 70 "examples/maze/grid.hero"
     t145 = h16_own16;
-#line 2623 "main.c"
+#line 2625 "main.c"
     h_grid_Grid_release(&t145);
 #line 70 "examples/maze/grid.hero"
     t146 = h17_own17;
-#line 2627 "main.c"
+#line 2629 "main.c"
     h_0opt_e201354_release(&t146);
 #line 70 "examples/maze/grid.hero"
     t147 = h18_own18;
-#line 2631 "main.c"
+#line 2633 "main.c"
     hero_str_decref(t147);
 #line 70 "examples/maze/grid.hero"
     t148 = h19_own19;
-#line 2635 "main.c"
+#line 2637 "main.c"
     hero_str_decref(t148);
 #line 70 "examples/maze/grid.hero"
     t149 = h20_own20;
-#line 2639 "main.c"
+#line 2641 "main.c"
     hero_str_decref(t149);
 #line 70 "examples/maze/grid.hero"
     t150 = h21_own21;
-#line 2643 "main.c"
+#line 2645 "main.c"
     hero_str_decref(t150);
 #line 70 "examples/maze/grid.hero"
     t151 = h22_own22;
-#line 2647 "main.c"
+#line 2649 "main.c"
     h_0opt_7f9f63e_release(&t151);
 #line 70 "examples/maze/grid.hero"
     t152 = h23_own23;
-#line 2651 "main.c"
+#line 2653 "main.c"
     h_0opt_e201354_release(&t152);
 #line 70 "examples/maze/grid.hero"
     t153 = h24_own24;
-#line 2655 "main.c"
+#line 2657 "main.c"
     h_0opt_7f9f63e_release(&t153);
 #line 70 "examples/maze/grid.hero"
     t154 = h25_own25;
-#line 2659 "main.c"
+#line 2661 "main.c"
     h_0opt_7f9f63e_release(&t154);
 #line 70 "examples/maze/grid.hero"
     t155 = h26_own26;
-#line 2663 "main.c"
+#line 2665 "main.c"
     h_0opt_7f9f63e_release(&t155);
     return t52;
 bb17:
@@ -2676,15 +2678,15 @@ bb18:
     t105 = h23_own23;
 #line 73 "examples/maze/grid.hero"
     h23_own23 = t75;
-#line 2680 "main.c"
+#line 2682 "main.c"
     h_0opt_e201354_release(&t105);
 #line 73 "examples/maze/grid.hero"
     t106 = h11_f1;
-#line 2684 "main.c"
+#line 2686 "main.c"
     h_0opt_e201354_retain(&t75);
 #line 73 "examples/maze/grid.hero"
     h11_f1 = t75;
-#line 2688 "main.c"
+#line 2690 "main.c"
     h_0opt_e201354_release(&t106);
 #line 73 "examples/maze/grid.hero"
     t76 = h11_f1;
@@ -2702,7 +2704,7 @@ bb19:
     t68 = h10_f0;
 #line 72 "examples/maze/grid.hero"
     t69 = t68.as.err;
-#line 2706 "main.c"
+#line 2708 "main.c"
     hero_failure_retain(&t69);
 #line 72 "examples/maze/grid.hero"
     t70 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = t69};
@@ -2710,109 +2712,109 @@ bb19:
     t107 = h24_own24;
 #line 72 "examples/maze/grid.hero"
     h24_own24 = t70;
-#line 2714 "main.c"
+#line 2716 "main.c"
     h_0opt_7f9f63e_release(&t107);
 #line 72 "examples/maze/grid.hero"
-#line 2717 "main.c"
+#line 2719 "main.c"
     h_0opt_7f9f63e_retain(&t70);
 #line 72 "examples/maze/grid.hero"
     t156 = h1_rows;
-#line 2721 "main.c"
+#line 2723 "main.c"
     hero_array_decref(t156);
 #line 72 "examples/maze/grid.hero"
     t157 = h2_xs0;
-#line 2725 "main.c"
+#line 2727 "main.c"
     hero_array_decref(t157);
 #line 72 "examples/maze/grid.hero"
     t158 = h4_line;
-#line 2729 "main.c"
+#line 2731 "main.c"
     hero_str_decref(t158);
 #line 72 "examples/maze/grid.hero"
     t159 = h6_xs1;
-#line 2733 "main.c"
+#line 2735 "main.c"
     hero_array_decref(t159);
 #line 72 "examples/maze/grid.hero"
     t160 = h8_line;
-#line 2737 "main.c"
+#line 2739 "main.c"
     hero_str_decref(t160);
 #line 72 "examples/maze/grid.hero"
     t161 = h9_g;
-#line 2741 "main.c"
+#line 2743 "main.c"
     h_grid_Grid_release(&t161);
 #line 72 "examples/maze/grid.hero"
     t162 = h10_f0;
-#line 2745 "main.c"
+#line 2747 "main.c"
     h_0opt_e201354_release(&t162);
 #line 72 "examples/maze/grid.hero"
     t163 = h11_f1;
-#line 2749 "main.c"
+#line 2751 "main.c"
     h_0opt_e201354_release(&t163);
 #line 72 "examples/maze/grid.hero"
     t164 = h12_own12;
-#line 2753 "main.c"
+#line 2755 "main.c"
     hero_array_decref(t164);
 #line 72 "examples/maze/grid.hero"
     t165 = h13_own13;
-#line 2757 "main.c"
+#line 2759 "main.c"
     hero_array_decref(t165);
 #line 72 "examples/maze/grid.hero"
     t166 = h14_own14;
-#line 2761 "main.c"
+#line 2763 "main.c"
     hero_str_decref(t166);
 #line 72 "examples/maze/grid.hero"
     t167 = h15_own15;
-#line 2765 "main.c"
+#line 2767 "main.c"
     h_0opt_7f9f63e_release(&t167);
 #line 72 "examples/maze/grid.hero"
     t168 = h16_own16;
-#line 2769 "main.c"
+#line 2771 "main.c"
     h_grid_Grid_release(&t168);
 #line 72 "examples/maze/grid.hero"
     t169 = h17_own17;
-#line 2773 "main.c"
+#line 2775 "main.c"
     h_0opt_e201354_release(&t169);
 #line 72 "examples/maze/grid.hero"
     t170 = h18_own18;
-#line 2777 "main.c"
+#line 2779 "main.c"
     hero_str_decref(t170);
 #line 72 "examples/maze/grid.hero"
     t171 = h19_own19;
-#line 2781 "main.c"
+#line 2783 "main.c"
     hero_str_decref(t171);
 #line 72 "examples/maze/grid.hero"
     t172 = h20_own20;
-#line 2785 "main.c"
+#line 2787 "main.c"
     hero_str_decref(t172);
 #line 72 "examples/maze/grid.hero"
     t173 = h21_own21;
-#line 2789 "main.c"
+#line 2791 "main.c"
     hero_str_decref(t173);
 #line 72 "examples/maze/grid.hero"
     t174 = h22_own22;
-#line 2793 "main.c"
+#line 2795 "main.c"
     h_0opt_7f9f63e_release(&t174);
 #line 72 "examples/maze/grid.hero"
     t175 = h23_own23;
-#line 2797 "main.c"
+#line 2799 "main.c"
     h_0opt_e201354_release(&t175);
 #line 72 "examples/maze/grid.hero"
     t176 = h24_own24;
-#line 2801 "main.c"
+#line 2803 "main.c"
     h_0opt_7f9f63e_release(&t176);
 #line 72 "examples/maze/grid.hero"
     t177 = h25_own25;
-#line 2805 "main.c"
+#line 2807 "main.c"
     h_0opt_7f9f63e_release(&t177);
 #line 72 "examples/maze/grid.hero"
     t178 = h26_own26;
-#line 2809 "main.c"
+#line 2811 "main.c"
     h_0opt_7f9f63e_release(&t178);
     return t70;
 bb20:
 #line 73 "examples/maze/grid.hero"
 #line 74 "examples/maze/grid.hero"
     t85 = h9_g;
-#line 2816 "main.c"
+#line 2818 "main.c"
     h_grid_Grid_retain(&t85);
 #line 74 "examples/maze/grid.hero"
     t86 = (h_0opt_7f9f63e){.tag = INT64_C(0), .as.ok = t85};
@@ -2820,102 +2822,102 @@ bb20:
     t108 = h25_own25;
 #line 74 "examples/maze/grid.hero"
     h25_own25 = t86;
-#line 2824 "main.c"
+#line 2826 "main.c"
     h_0opt_7f9f63e_release(&t108);
 #line 74 "examples/maze/grid.hero"
-#line 2827 "main.c"
+#line 2829 "main.c"
     h_0opt_7f9f63e_retain(&t86);
 #line 74 "examples/maze/grid.hero"
     t179 = h1_rows;
-#line 2831 "main.c"
+#line 2833 "main.c"
     hero_array_decref(t179);
 #line 74 "examples/maze/grid.hero"
     t180 = h2_xs0;
-#line 2835 "main.c"
+#line 2837 "main.c"
     hero_array_decref(t180);
 #line 74 "examples/maze/grid.hero"
     t181 = h4_line;
-#line 2839 "main.c"
+#line 2841 "main.c"
     hero_str_decref(t181);
 #line 74 "examples/maze/grid.hero"
     t182 = h6_xs1;
-#line 2843 "main.c"
+#line 2845 "main.c"
     hero_array_decref(t182);
 #line 74 "examples/maze/grid.hero"
     t183 = h8_line;
-#line 2847 "main.c"
+#line 2849 "main.c"
     hero_str_decref(t183);
 #line 74 "examples/maze/grid.hero"
     t184 = h9_g;
-#line 2851 "main.c"
+#line 2853 "main.c"
     h_grid_Grid_release(&t184);
 #line 74 "examples/maze/grid.hero"
     t185 = h10_f0;
-#line 2855 "main.c"
+#line 2857 "main.c"
     h_0opt_e201354_release(&t185);
 #line 74 "examples/maze/grid.hero"
     t186 = h11_f1;
-#line 2859 "main.c"
+#line 2861 "main.c"
     h_0opt_e201354_release(&t186);
 #line 74 "examples/maze/grid.hero"
     t187 = h12_own12;
-#line 2863 "main.c"
+#line 2865 "main.c"
     hero_array_decref(t187);
 #line 74 "examples/maze/grid.hero"
     t188 = h13_own13;
-#line 2867 "main.c"
+#line 2869 "main.c"
     hero_array_decref(t188);
 #line 74 "examples/maze/grid.hero"
     t189 = h14_own14;
-#line 2871 "main.c"
+#line 2873 "main.c"
     hero_str_decref(t189);
 #line 74 "examples/maze/grid.hero"
     t190 = h15_own15;
-#line 2875 "main.c"
+#line 2877 "main.c"
     h_0opt_7f9f63e_release(&t190);
 #line 74 "examples/maze/grid.hero"
     t191 = h16_own16;
-#line 2879 "main.c"
+#line 2881 "main.c"
     h_grid_Grid_release(&t191);
 #line 74 "examples/maze/grid.hero"
     t192 = h17_own17;
-#line 2883 "main.c"
+#line 2885 "main.c"
     h_0opt_e201354_release(&t192);
 #line 74 "examples/maze/grid.hero"
     t193 = h18_own18;
-#line 2887 "main.c"
+#line 2889 "main.c"
     hero_str_decref(t193);
 #line 74 "examples/maze/grid.hero"
     t194 = h19_own19;
-#line 2891 "main.c"
+#line 2893 "main.c"
     hero_str_decref(t194);
 #line 74 "examples/maze/grid.hero"
     t195 = h20_own20;
-#line 2895 "main.c"
+#line 2897 "main.c"
     hero_str_decref(t195);
 #line 74 "examples/maze/grid.hero"
     t196 = h21_own21;
-#line 2899 "main.c"
+#line 2901 "main.c"
     hero_str_decref(t196);
 #line 74 "examples/maze/grid.hero"
     t197 = h22_own22;
-#line 2903 "main.c"
+#line 2905 "main.c"
     h_0opt_7f9f63e_release(&t197);
 #line 74 "examples/maze/grid.hero"
     t198 = h23_own23;
-#line 2907 "main.c"
+#line 2909 "main.c"
     h_0opt_e201354_release(&t198);
 #line 74 "examples/maze/grid.hero"
     t199 = h24_own24;
-#line 2911 "main.c"
+#line 2913 "main.c"
     h_0opt_7f9f63e_release(&t199);
 #line 74 "examples/maze/grid.hero"
     t200 = h25_own25;
-#line 2915 "main.c"
+#line 2917 "main.c"
     h_0opt_7f9f63e_release(&t200);
 #line 74 "examples/maze/grid.hero"
     t201 = h26_own26;
-#line 2919 "main.c"
+#line 2921 "main.c"
     h_0opt_7f9f63e_release(&t201);
     return t86;
 bb21:
@@ -2923,7 +2925,7 @@ bb21:
     t80 = h11_f1;
 #line 73 "examples/maze/grid.hero"
     t81 = t80.as.err;
-#line 2927 "main.c"
+#line 2929 "main.c"
     hero_failure_retain(&t81);
 #line 73 "examples/maze/grid.hero"
     t82 = (h_0opt_7f9f63e){.tag = INT64_C(1), .as.err = t81};
@@ -2931,109 +2933,109 @@ bb21:
     t109 = h26_own26;
 #line 73 "examples/maze/grid.hero"
     h26_own26 = t82;
-#line 2935 "main.c"
+#line 2937 "main.c"
     h_0opt_7f9f63e_release(&t109);
 #line 73 "examples/maze/grid.hero"
-#line 2938 "main.c"
+#line 2940 "main.c"
     h_0opt_7f9f63e_retain(&t82);
 #line 73 "examples/maze/grid.hero"
     t202 = h1_rows;
-#line 2942 "main.c"
+#line 2944 "main.c"
     hero_array_decref(t202);
 #line 73 "examples/maze/grid.hero"
     t203 = h2_xs0;
-#line 2946 "main.c"
+#line 2948 "main.c"
     hero_array_decref(t203);
 #line 73 "examples/maze/grid.hero"
     t204 = h4_line;
-#line 2950 "main.c"
+#line 2952 "main.c"
     hero_str_decref(t204);
 #line 73 "examples/maze/grid.hero"
     t205 = h6_xs1;
-#line 2954 "main.c"
+#line 2956 "main.c"
     hero_array_decref(t205);
 #line 73 "examples/maze/grid.hero"
     t206 = h8_line;
-#line 2958 "main.c"
+#line 2960 "main.c"
     hero_str_decref(t206);
 #line 73 "examples/maze/grid.hero"
     t207 = h9_g;
-#line 2962 "main.c"
+#line 2964 "main.c"
     h_grid_Grid_release(&t207);
 #line 73 "examples/maze/grid.hero"
     t208 = h10_f0;
-#line 2966 "main.c"
+#line 2968 "main.c"
     h_0opt_e201354_release(&t208);
 #line 73 "examples/maze/grid.hero"
     t209 = h11_f1;
-#line 2970 "main.c"
+#line 2972 "main.c"
     h_0opt_e201354_release(&t209);
 #line 73 "examples/maze/grid.hero"
     t210 = h12_own12;
-#line 2974 "main.c"
+#line 2976 "main.c"
     hero_array_decref(t210);
 #line 73 "examples/maze/grid.hero"
     t211 = h13_own13;
-#line 2978 "main.c"
+#line 2980 "main.c"
     hero_array_decref(t211);
 #line 73 "examples/maze/grid.hero"
     t212 = h14_own14;
-#line 2982 "main.c"
+#line 2984 "main.c"
     hero_str_decref(t212);
 #line 73 "examples/maze/grid.hero"
     t213 = h15_own15;
-#line 2986 "main.c"
+#line 2988 "main.c"
     h_0opt_7f9f63e_release(&t213);
 #line 73 "examples/maze/grid.hero"
     t214 = h16_own16;
-#line 2990 "main.c"
+#line 2992 "main.c"
     h_grid_Grid_release(&t214);
 #line 73 "examples/maze/grid.hero"
     t215 = h17_own17;
-#line 2994 "main.c"
+#line 2996 "main.c"
     h_0opt_e201354_release(&t215);
 #line 73 "examples/maze/grid.hero"
     t216 = h18_own18;
-#line 2998 "main.c"
+#line 3000 "main.c"
     hero_str_decref(t216);
 #line 73 "examples/maze/grid.hero"
     t217 = h19_own19;
-#line 3002 "main.c"
+#line 3004 "main.c"
     hero_str_decref(t217);
 #line 73 "examples/maze/grid.hero"
     t218 = h20_own20;
-#line 3006 "main.c"
+#line 3008 "main.c"
     hero_str_decref(t218);
 #line 73 "examples/maze/grid.hero"
     t219 = h21_own21;
-#line 3010 "main.c"
+#line 3012 "main.c"
     hero_str_decref(t219);
 #line 73 "examples/maze/grid.hero"
     t220 = h22_own22;
-#line 3014 "main.c"
+#line 3016 "main.c"
     h_0opt_7f9f63e_release(&t220);
 #line 73 "examples/maze/grid.hero"
     t221 = h23_own23;
-#line 3018 "main.c"
+#line 3020 "main.c"
     h_0opt_e201354_release(&t221);
 #line 73 "examples/maze/grid.hero"
     t222 = h24_own24;
-#line 3022 "main.c"
+#line 3024 "main.c"
     h_0opt_7f9f63e_release(&t222);
 #line 73 "examples/maze/grid.hero"
     t223 = h25_own25;
-#line 3026 "main.c"
+#line 3028 "main.c"
     h_0opt_7f9f63e_release(&t223);
 #line 73 "examples/maze/grid.hero"
     t224 = h26_own26;
-#line 3030 "main.c"
+#line 3032 "main.c"
     h_0opt_7f9f63e_release(&t224);
     return t82;
 }
 
 #line 78 "examples/maze/grid.hero"
 int64_t h_grid_index_of(h_grid_Grid h0_g, int64_t h1_row, int64_t h2_column) {
-#line 3037 "main.c"
+#line 3039 "main.c"
     int64_t t1;
     h_grid_Grid t2 = {0};
     int64_t t3;
@@ -3056,12 +3058,12 @@ bb0:
     if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 79 "examples/maze/grid.hero"
     return t6;
-#line 3060 "main.c"
+#line 3062 "main.c"
 }
 
 #line 81 "examples/maze/grid.hero"
 int64_t h_grid_row_of(h_grid_Grid h0_g, int64_t h1_index) {
-#line 3065 "main.c"
+#line 3067 "main.c"
     int64_t t1;
     h_grid_Grid t2 = {0};
     int64_t t3;
@@ -3082,12 +3084,12 @@ bb0:
     t4 = t1 / t3;
 #line 82 "examples/maze/grid.hero"
     return t4;
-#line 3086 "main.c"
+#line 3088 "main.c"
 }
 
 #line 84 "examples/maze/grid.hero"
 int64_t h_grid_column_of(h_grid_Grid h0_g, int64_t h1_index) {
-#line 3091 "main.c"
+#line 3093 "main.c"
     int64_t t1;
     h_grid_Grid t2 = {0};
     int64_t t3;
@@ -3108,12 +3110,12 @@ bb0:
     t4 = t1 % t3;
 #line 85 "examples/maze/grid.hero"
     return t4;
-#line 3112 "main.c"
+#line 3114 "main.c"
 }
 
 #line 87 "examples/maze/grid.hero"
 uint8_t h_grid_at(h_grid_Grid h0_g, int64_t h1_index) {
-#line 3117 "main.c"
+#line 3119 "main.c"
     h_grid_Grid t1 = {0};
     HeroArrayHeader * t2 = {0};
     h_grid_Grid t3 = {0};
@@ -3148,12 +3150,12 @@ bb0:
     t10 = hero_str_byte(t6, t9);
 #line 88 "examples/maze/grid.hero"
     return t10;
-#line 3152 "main.c"
+#line 3154 "main.c"
 }
 
 #line 90 "examples/maze/grid.hero"
 bool h_grid_inside(h_grid_Grid h0_g, int64_t h1_row, int64_t h2_column) {
-#line 3157 "main.c"
+#line 3159 "main.c"
     bool h3_b0;
     bool h4_b1;
     bool h5_b2;
@@ -3248,12 +3250,12 @@ bb6:
     t17 = h3_b0;
 #line 91 "examples/maze/grid.hero"
     return t17;
-#line 3252 "main.c"
+#line 3254 "main.c"
 }
 
 #line 93 "examples/maze/grid.hero"
 bool h_grid_is_open(h_grid_Grid h0_g, int64_t h1_index) {
-#line 3257 "main.c"
+#line 3259 "main.c"
     h_grid_Grid t1 = {0};
     int64_t t2;
     uint8_t t3;
@@ -3273,12 +3275,12 @@ bb0:
     t5 = t3 != t4;
 #line 94 "examples/maze/grid.hero"
     return t5;
-#line 3277 "main.c"
+#line 3279 "main.c"
 }
 
 #line 98 "examples/maze/grid.hero"
 h_0opt_e201354 h_grid_locate(h_grid_Grid h0_g, uint8_t h1_mark) {
-#line 3282 "main.c"
+#line 3284 "main.c"
     int64_t h2_found;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -3449,15 +3451,15 @@ bb0:
     t68 = h10_own10;
 #line 100 "examples/maze/grid.hero"
     h10_own10 = t7;
-#line 3453 "main.c"
+#line 3455 "main.c"
     hero_array_decref(t68);
 #line 100 "examples/maze/grid.hero"
     t69 = h3_xs0;
-#line 3457 "main.c"
+#line 3459 "main.c"
     hero_array_incref(t7);
 #line 100 "examples/maze/grid.hero"
     h3_xs0 = t7;
-#line 3461 "main.c"
+#line 3463 "main.c"
     hero_array_decref(t69);
 #line 100 "examples/maze/grid.hero"
     t8 = INT64_C(0);
@@ -3499,15 +3501,15 @@ bb2:
     t70 = h11_own11;
 #line 101 "examples/maze/grid.hero"
     h11_own11 = t19;
-#line 3503 "main.c"
+#line 3505 "main.c"
     hero_array_decref(t70);
 #line 101 "examples/maze/grid.hero"
     t71 = h6_xs1;
-#line 3507 "main.c"
+#line 3509 "main.c"
     hero_array_incref(t19);
 #line 101 "examples/maze/grid.hero"
     h6_xs1 = t19;
-#line 3511 "main.c"
+#line 3513 "main.c"
     hero_array_decref(t71);
 #line 101 "examples/maze/grid.hero"
     t20 = INT64_C(0);
@@ -3631,7 +3633,7 @@ bb13:
     t72 = h12_own12;
 #line 105 "examples/maze/grid.hero"
     h12_own12 = t40;
-#line 3635 "main.c"
+#line 3637 "main.c"
     hero_str_decref(t72);
 #line 105 "examples/maze/grid.hero"
     t41 = HERO_STR_LIT(hero_str_40c5abce);
@@ -3643,7 +3645,7 @@ bb13:
     t73 = h13_own13;
 #line 105 "examples/maze/grid.hero"
     h13_own13 = t43;
-#line 3647 "main.c"
+#line 3649 "main.c"
     hero_str_decref(t73);
 #line 105 "examples/maze/grid.hero"
     t44 = hero_str_concat(t41, t43);
@@ -3651,7 +3653,7 @@ bb13:
     t74 = h14_own14;
 #line 105 "examples/maze/grid.hero"
     h14_own14 = t44;
-#line 3655 "main.c"
+#line 3657 "main.c"
     hero_str_decref(t74);
 #line 105 "examples/maze/grid.hero"
     t45 = HERO_STR_LIT(hero_str_60);
@@ -3661,13 +3663,13 @@ bb13:
     t75 = h15_own15;
 #line 105 "examples/maze/grid.hero"
     h15_own15 = t46;
-#line 3665 "main.c"
+#line 3667 "main.c"
     hero_str_decref(t75);
 #line 105 "examples/maze/grid.hero"
-#line 3668 "main.c"
+#line 3670 "main.c"
     hero_str_incref(t40);
 #line 105 "examples/maze/grid.hero"
-#line 3671 "main.c"
+#line 3673 "main.c"
     hero_str_incref(t46);
 #line 105 "examples/maze/grid.hero"
     t47 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t40, .msg = t46}};
@@ -3675,70 +3677,70 @@ bb13:
     t76 = h16_own16;
 #line 105 "examples/maze/grid.hero"
     h16_own16 = t47;
-#line 3679 "main.c"
+#line 3681 "main.c"
     h_0opt_e201354_release(&t76);
 #line 105 "examples/maze/grid.hero"
-#line 3682 "main.c"
+#line 3684 "main.c"
     h_0opt_e201354_retain(&t47);
 #line 105 "examples/maze/grid.hero"
     t83 = h3_xs0;
-#line 3686 "main.c"
+#line 3688 "main.c"
     hero_array_decref(t83);
 #line 105 "examples/maze/grid.hero"
     t84 = h6_xs1;
-#line 3690 "main.c"
+#line 3692 "main.c"
     hero_array_decref(t84);
 #line 105 "examples/maze/grid.hero"
     t85 = h10_own10;
-#line 3694 "main.c"
+#line 3696 "main.c"
     hero_array_decref(t85);
 #line 105 "examples/maze/grid.hero"
     t86 = h11_own11;
-#line 3698 "main.c"
+#line 3700 "main.c"
     hero_array_decref(t86);
 #line 105 "examples/maze/grid.hero"
     t87 = h12_own12;
-#line 3702 "main.c"
+#line 3704 "main.c"
     hero_str_decref(t87);
 #line 105 "examples/maze/grid.hero"
     t88 = h13_own13;
-#line 3706 "main.c"
+#line 3708 "main.c"
     hero_str_decref(t88);
 #line 105 "examples/maze/grid.hero"
     t89 = h14_own14;
-#line 3710 "main.c"
+#line 3712 "main.c"
     hero_str_decref(t89);
 #line 105 "examples/maze/grid.hero"
     t90 = h15_own15;
-#line 3714 "main.c"
+#line 3716 "main.c"
     hero_str_decref(t90);
 #line 105 "examples/maze/grid.hero"
     t91 = h16_own16;
-#line 3718 "main.c"
+#line 3720 "main.c"
     h_0opt_e201354_release(&t91);
 #line 105 "examples/maze/grid.hero"
     t92 = h17_own17;
-#line 3722 "main.c"
+#line 3724 "main.c"
     h_0opt_e201354_release(&t92);
 #line 105 "examples/maze/grid.hero"
     t93 = h18_own18;
-#line 3726 "main.c"
+#line 3728 "main.c"
     hero_str_decref(t93);
 #line 105 "examples/maze/grid.hero"
     t94 = h19_own19;
-#line 3730 "main.c"
+#line 3732 "main.c"
     hero_str_decref(t94);
 #line 105 "examples/maze/grid.hero"
     t95 = h20_own20;
-#line 3734 "main.c"
+#line 3736 "main.c"
     hero_str_decref(t95);
 #line 105 "examples/maze/grid.hero"
     t96 = h21_own21;
-#line 3738 "main.c"
+#line 3740 "main.c"
     hero_str_decref(t96);
 #line 105 "examples/maze/grid.hero"
     t97 = h22_own22;
-#line 3742 "main.c"
+#line 3744 "main.c"
     h_0opt_e201354_release(&t97);
     return t47;
 bb14:
@@ -3752,70 +3754,70 @@ bb15:
     t77 = h17_own17;
 #line 109 "examples/maze/grid.hero"
     h17_own17 = t67;
-#line 3756 "main.c"
+#line 3758 "main.c"
     h_0opt_e201354_release(&t77);
 #line 109 "examples/maze/grid.hero"
-#line 3759 "main.c"
+#line 3761 "main.c"
     h_0opt_e201354_retain(&t67);
 #line 109 "examples/maze/grid.hero"
     t98 = h3_xs0;
-#line 3763 "main.c"
+#line 3765 "main.c"
     hero_array_decref(t98);
 #line 109 "examples/maze/grid.hero"
     t99 = h6_xs1;
-#line 3767 "main.c"
+#line 3769 "main.c"
     hero_array_decref(t99);
 #line 109 "examples/maze/grid.hero"
     t100 = h10_own10;
-#line 3771 "main.c"
+#line 3773 "main.c"
     hero_array_decref(t100);
 #line 109 "examples/maze/grid.hero"
     t101 = h11_own11;
-#line 3775 "main.c"
+#line 3777 "main.c"
     hero_array_decref(t101);
 #line 109 "examples/maze/grid.hero"
     t102 = h12_own12;
-#line 3779 "main.c"
+#line 3781 "main.c"
     hero_str_decref(t102);
 #line 109 "examples/maze/grid.hero"
     t103 = h13_own13;
-#line 3783 "main.c"
+#line 3785 "main.c"
     hero_str_decref(t103);
 #line 109 "examples/maze/grid.hero"
     t104 = h14_own14;
-#line 3787 "main.c"
+#line 3789 "main.c"
     hero_str_decref(t104);
 #line 109 "examples/maze/grid.hero"
     t105 = h15_own15;
-#line 3791 "main.c"
+#line 3793 "main.c"
     hero_str_decref(t105);
 #line 109 "examples/maze/grid.hero"
     t106 = h16_own16;
-#line 3795 "main.c"
+#line 3797 "main.c"
     h_0opt_e201354_release(&t106);
 #line 109 "examples/maze/grid.hero"
     t107 = h17_own17;
-#line 3799 "main.c"
+#line 3801 "main.c"
     h_0opt_e201354_release(&t107);
 #line 109 "examples/maze/grid.hero"
     t108 = h18_own18;
-#line 3803 "main.c"
+#line 3805 "main.c"
     hero_str_decref(t108);
 #line 109 "examples/maze/grid.hero"
     t109 = h19_own19;
-#line 3807 "main.c"
+#line 3809 "main.c"
     hero_str_decref(t109);
 #line 109 "examples/maze/grid.hero"
     t110 = h20_own20;
-#line 3811 "main.c"
+#line 3813 "main.c"
     hero_str_decref(t110);
 #line 109 "examples/maze/grid.hero"
     t111 = h21_own21;
-#line 3815 "main.c"
+#line 3817 "main.c"
     hero_str_decref(t111);
 #line 109 "examples/maze/grid.hero"
     t112 = h22_own22;
-#line 3819 "main.c"
+#line 3821 "main.c"
     h_0opt_e201354_release(&t112);
     return t67;
 bb16:
@@ -3825,7 +3827,7 @@ bb16:
     t78 = h18_own18;
 #line 108 "examples/maze/grid.hero"
     h18_own18 = t58;
-#line 3829 "main.c"
+#line 3831 "main.c"
     hero_str_decref(t78);
 #line 108 "examples/maze/grid.hero"
     t59 = HERO_STR_LIT(hero_str_3bf2cd6c);
@@ -3837,7 +3839,7 @@ bb16:
     t79 = h19_own19;
 #line 108 "examples/maze/grid.hero"
     h19_own19 = t61;
-#line 3841 "main.c"
+#line 3843 "main.c"
     hero_str_decref(t79);
 #line 108 "examples/maze/grid.hero"
     t62 = hero_str_concat(t59, t61);
@@ -3845,7 +3847,7 @@ bb16:
     t80 = h20_own20;
 #line 108 "examples/maze/grid.hero"
     h20_own20 = t62;
-#line 3849 "main.c"
+#line 3851 "main.c"
     hero_str_decref(t80);
 #line 108 "examples/maze/grid.hero"
     t63 = HERO_STR_LIT(hero_str_60);
@@ -3855,13 +3857,13 @@ bb16:
     t81 = h21_own21;
 #line 108 "examples/maze/grid.hero"
     h21_own21 = t64;
-#line 3859 "main.c"
+#line 3861 "main.c"
     hero_str_decref(t81);
 #line 108 "examples/maze/grid.hero"
-#line 3862 "main.c"
+#line 3864 "main.c"
     hero_str_incref(t58);
 #line 108 "examples/maze/grid.hero"
-#line 3865 "main.c"
+#line 3867 "main.c"
     hero_str_incref(t64);
 #line 108 "examples/maze/grid.hero"
     t65 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t58, .msg = t64}};
@@ -3869,70 +3871,70 @@ bb16:
     t82 = h22_own22;
 #line 108 "examples/maze/grid.hero"
     h22_own22 = t65;
-#line 3873 "main.c"
+#line 3875 "main.c"
     h_0opt_e201354_release(&t82);
 #line 108 "examples/maze/grid.hero"
-#line 3876 "main.c"
+#line 3878 "main.c"
     h_0opt_e201354_retain(&t65);
 #line 108 "examples/maze/grid.hero"
     t113 = h3_xs0;
-#line 3880 "main.c"
+#line 3882 "main.c"
     hero_array_decref(t113);
 #line 108 "examples/maze/grid.hero"
     t114 = h6_xs1;
-#line 3884 "main.c"
+#line 3886 "main.c"
     hero_array_decref(t114);
 #line 108 "examples/maze/grid.hero"
     t115 = h10_own10;
-#line 3888 "main.c"
+#line 3890 "main.c"
     hero_array_decref(t115);
 #line 108 "examples/maze/grid.hero"
     t116 = h11_own11;
-#line 3892 "main.c"
+#line 3894 "main.c"
     hero_array_decref(t116);
 #line 108 "examples/maze/grid.hero"
     t117 = h12_own12;
-#line 3896 "main.c"
+#line 3898 "main.c"
     hero_str_decref(t117);
 #line 108 "examples/maze/grid.hero"
     t118 = h13_own13;
-#line 3900 "main.c"
+#line 3902 "main.c"
     hero_str_decref(t118);
 #line 108 "examples/maze/grid.hero"
     t119 = h14_own14;
-#line 3904 "main.c"
+#line 3906 "main.c"
     hero_str_decref(t119);
 #line 108 "examples/maze/grid.hero"
     t120 = h15_own15;
-#line 3908 "main.c"
+#line 3910 "main.c"
     hero_str_decref(t120);
 #line 108 "examples/maze/grid.hero"
     t121 = h16_own16;
-#line 3912 "main.c"
+#line 3914 "main.c"
     h_0opt_e201354_release(&t121);
 #line 108 "examples/maze/grid.hero"
     t122 = h17_own17;
-#line 3916 "main.c"
+#line 3918 "main.c"
     h_0opt_e201354_release(&t122);
 #line 108 "examples/maze/grid.hero"
     t123 = h18_own18;
-#line 3920 "main.c"
+#line 3922 "main.c"
     hero_str_decref(t123);
 #line 108 "examples/maze/grid.hero"
     t124 = h19_own19;
-#line 3924 "main.c"
+#line 3926 "main.c"
     hero_str_decref(t124);
 #line 108 "examples/maze/grid.hero"
     t125 = h20_own20;
-#line 3928 "main.c"
+#line 3930 "main.c"
     hero_str_decref(t125);
 #line 108 "examples/maze/grid.hero"
     t126 = h21_own21;
-#line 3932 "main.c"
+#line 3934 "main.c"
     hero_str_decref(t126);
 #line 108 "examples/maze/grid.hero"
     t127 = h22_own22;
-#line 3936 "main.c"
+#line 3938 "main.c"
     h_0opt_e201354_release(&t127);
     return t65;
 bb17:
@@ -3941,7 +3943,7 @@ bb17:
 
 #line 113 "examples/maze/grid.hero"
 HeroStr h_grid_one_char(uint8_t h0_mark) {
-#line 3945 "main.c"
+#line 3947 "main.c"
     uint8_t t1;
     uint8_t t2;
     bool t3;
@@ -3975,7 +3977,7 @@ bb1:
 bb2:
 #line 115 "examples/maze/grid.hero"
     t4 = HERO_STR_LIT(hero_str_53);
-#line 3979 "main.c"
+#line 3981 "main.c"
     hero_str_incref(t4);
     return t4;
 bb3:
@@ -3983,13 +3985,13 @@ bb3:
 bb4:
 #line 118 "examples/maze/grid.hero"
     t9 = HERO_STR_LIT(hero_str_23);
-#line 3987 "main.c"
+#line 3989 "main.c"
     hero_str_incref(t9);
     return t9;
 bb5:
 #line 117 "examples/maze/grid.hero"
     t8 = HERO_STR_LIT(hero_str_45);
-#line 3993 "main.c"
+#line 3995 "main.c"
     hero_str_incref(t8);
     return t8;
 bb6:
@@ -3998,7 +4000,7 @@ bb6:
 
 #line 121 "examples/maze/grid.hero"
 HeroArrayHeader * h_grid_neighbours(h_grid_Grid h0_g, int64_t h1_index) {
-#line 4002 "main.c"
+#line 4004 "main.c"
     int64_t h2_row;
     int64_t h3_column;
     HeroArrayHeader * h4_out = {0};
@@ -4083,15 +4085,15 @@ bb0:
     t37 = h5_own5;
 #line 124 "examples/maze/grid.hero"
     h5_own5 = t7;
-#line 4087 "main.c"
+#line 4089 "main.c"
     hero_array_decref(t37);
 #line 124 "examples/maze/grid.hero"
     t38 = h4_out;
-#line 4091 "main.c"
+#line 4093 "main.c"
     hero_array_incref(t7);
 #line 124 "examples/maze/grid.hero"
     h4_out = t7;
-#line 4095 "main.c"
+#line 4097 "main.c"
     hero_array_decref(t38);
 #line 125 "examples/maze/grid.hero"
     t8 = h0_g;
@@ -4111,15 +4113,15 @@ bb0:
     t39 = h6_own6;
 #line 125 "examples/maze/grid.hero"
     h6_own6 = t14;
-#line 4115 "main.c"
+#line 4117 "main.c"
     hero_array_decref(t39);
 #line 125 "examples/maze/grid.hero"
     t40 = h4_out;
-#line 4119 "main.c"
+#line 4121 "main.c"
     hero_array_incref(t14);
 #line 125 "examples/maze/grid.hero"
     h4_out = t14;
-#line 4123 "main.c"
+#line 4125 "main.c"
     hero_array_decref(t40);
 #line 126 "examples/maze/grid.hero"
     t15 = h0_g;
@@ -4139,15 +4141,15 @@ bb0:
     t41 = h7_own7;
 #line 126 "examples/maze/grid.hero"
     h7_own7 = t21;
-#line 4143 "main.c"
+#line 4145 "main.c"
     hero_array_decref(t41);
 #line 126 "examples/maze/grid.hero"
     t42 = h4_out;
-#line 4147 "main.c"
+#line 4149 "main.c"
     hero_array_incref(t21);
 #line 126 "examples/maze/grid.hero"
     h4_out = t21;
-#line 4151 "main.c"
+#line 4153 "main.c"
     hero_array_decref(t42);
 #line 127 "examples/maze/grid.hero"
     t22 = h0_g;
@@ -4167,15 +4169,15 @@ bb0:
     t43 = h8_own8;
 #line 127 "examples/maze/grid.hero"
     h8_own8 = t28;
-#line 4171 "main.c"
+#line 4173 "main.c"
     hero_array_decref(t43);
 #line 127 "examples/maze/grid.hero"
     t44 = h4_out;
-#line 4175 "main.c"
+#line 4177 "main.c"
     hero_array_incref(t28);
 #line 127 "examples/maze/grid.hero"
     h4_out = t28;
-#line 4179 "main.c"
+#line 4181 "main.c"
     hero_array_decref(t44);
 #line 128 "examples/maze/grid.hero"
     t29 = h0_g;
@@ -4195,50 +4197,50 @@ bb0:
     t45 = h9_own9;
 #line 128 "examples/maze/grid.hero"
     h9_own9 = t35;
-#line 4199 "main.c"
+#line 4201 "main.c"
     hero_array_decref(t45);
 #line 128 "examples/maze/grid.hero"
     t46 = h4_out;
-#line 4203 "main.c"
+#line 4205 "main.c"
     hero_array_incref(t35);
 #line 128 "examples/maze/grid.hero"
     h4_out = t35;
-#line 4207 "main.c"
+#line 4209 "main.c"
     hero_array_decref(t46);
 #line 129 "examples/maze/grid.hero"
     t36 = h4_out;
-#line 4211 "main.c"
+#line 4213 "main.c"
     hero_array_incref(t36);
 #line 129 "examples/maze/grid.hero"
     t47 = h4_out;
-#line 4215 "main.c"
+#line 4217 "main.c"
     hero_array_decref(t47);
 #line 129 "examples/maze/grid.hero"
     t48 = h5_own5;
-#line 4219 "main.c"
+#line 4221 "main.c"
     hero_array_decref(t48);
 #line 129 "examples/maze/grid.hero"
     t49 = h6_own6;
-#line 4223 "main.c"
+#line 4225 "main.c"
     hero_array_decref(t49);
 #line 129 "examples/maze/grid.hero"
     t50 = h7_own7;
-#line 4227 "main.c"
+#line 4229 "main.c"
     hero_array_decref(t50);
 #line 129 "examples/maze/grid.hero"
     t51 = h8_own8;
-#line 4231 "main.c"
+#line 4233 "main.c"
     hero_array_decref(t51);
 #line 129 "examples/maze/grid.hero"
     t52 = h9_own9;
-#line 4235 "main.c"
+#line 4237 "main.c"
     hero_array_decref(t52);
     return t36;
 }
 
 #line 131 "examples/maze/grid.hero"
 HeroArrayHeader * h_grid_step(h_grid_Grid h0_g, HeroArrayHeader * h1_out, int64_t h2_row, int64_t h3_column) {
-#line 4242 "main.c"
+#line 4244 "main.c"
     int64_t h4_index;
     HeroArrayHeader * h5_own5 = {0};
     h_grid_Grid t1 = {0};
@@ -4303,11 +4305,11 @@ bb1:
 bb2:
 #line 133 "examples/maze/grid.hero"
     t6 = h1_out;
-#line 4307 "main.c"
+#line 4309 "main.c"
     hero_array_incref(t6);
 #line 133 "examples/maze/grid.hero"
     t20 = h5_own5;
-#line 4311 "main.c"
+#line 4313 "main.c"
     hero_array_decref(t20);
     return t6;
 bb3:
@@ -4323,24 +4325,24 @@ bb4:
     t19 = h5_own5;
 #line 137 "examples/maze/grid.hero"
     h5_own5 = t18;
-#line 4327 "main.c"
+#line 4329 "main.c"
     hero_array_decref(t19);
 #line 137 "examples/maze/grid.hero"
-#line 4330 "main.c"
+#line 4332 "main.c"
     hero_array_incref(t18);
 #line 137 "examples/maze/grid.hero"
     t21 = h5_own5;
-#line 4334 "main.c"
+#line 4336 "main.c"
     hero_array_decref(t21);
     return t18;
 bb5:
 #line 136 "examples/maze/grid.hero"
     t15 = h1_out;
-#line 4340 "main.c"
+#line 4342 "main.c"
     hero_array_incref(t15);
 #line 136 "examples/maze/grid.hero"
     t22 = h5_own5;
-#line 4344 "main.c"
+#line 4346 "main.c"
     hero_array_decref(t22);
     return t15;
 bb6:
@@ -4349,20 +4351,20 @@ bb6:
 
 #line 21 "examples/maze/solve.hero"
 HeroStr h_solve_ERR_NO_PATH(void) {
-#line 4353 "main.c"
+#line 4355 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 22 "examples/maze/solve.hero"
     t1 = HERO_STR_LIT(hero_str_45d1e739);
-#line 4359 "main.c"
+#line 4361 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 24 "examples/maze/solve.hero"
 h_0opt_2270cbe7 h_solve_solve(h_grid_Grid h0_g) {
-#line 4366 "main.c"
+#line 4368 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_start;
     h_0opt_e201354 h3_f1 = {0};
@@ -4564,15 +4566,15 @@ bb0:
     t78 = h13_own13;
 #line 25 "examples/maze/solve.hero"
     h13_own13 = t3;
-#line 4568 "main.c"
+#line 4570 "main.c"
     h_0opt_e201354_release(&t78);
 #line 25 "examples/maze/solve.hero"
     t79 = h1_f0;
-#line 4572 "main.c"
+#line 4574 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 25 "examples/maze/solve.hero"
     h1_f0 = t3;
-#line 4576 "main.c"
+#line 4578 "main.c"
     h_0opt_e201354_release(&t79);
 #line 25 "examples/maze/solve.hero"
     t4 = h1_f0;
@@ -4602,15 +4604,15 @@ bb1:
     t80 = h14_own14;
 #line 26 "examples/maze/solve.hero"
     h14_own14 = t15;
-#line 4606 "main.c"
+#line 4608 "main.c"
     h_0opt_e201354_release(&t80);
 #line 26 "examples/maze/solve.hero"
     t81 = h3_f1;
-#line 4610 "main.c"
+#line 4612 "main.c"
     h_0opt_e201354_retain(&t15);
 #line 26 "examples/maze/solve.hero"
     h3_f1 = t15;
-#line 4614 "main.c"
+#line 4616 "main.c"
     h_0opt_e201354_release(&t81);
 #line 26 "examples/maze/solve.hero"
     t16 = h3_f1;
@@ -4628,7 +4630,7 @@ bb2:
     t8 = h1_f0;
 #line 25 "examples/maze/solve.hero"
     t9 = t8.as.err;
-#line 4632 "main.c"
+#line 4634 "main.c"
     hero_failure_retain(&t9);
 #line 25 "examples/maze/solve.hero"
     t10 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t9};
@@ -4636,82 +4638,82 @@ bb2:
     t82 = h15_own15;
 #line 25 "examples/maze/solve.hero"
     h15_own15 = t10;
-#line 4640 "main.c"
+#line 4642 "main.c"
     h_0opt_2270cbe7_release(&t82);
 #line 25 "examples/maze/solve.hero"
-#line 4643 "main.c"
+#line 4645 "main.c"
     h_0opt_2270cbe7_retain(&t10);
 #line 25 "examples/maze/solve.hero"
     t96 = h1_f0;
-#line 4647 "main.c"
+#line 4649 "main.c"
     h_0opt_e201354_release(&t96);
 #line 25 "examples/maze/solve.hero"
     t97 = h3_f1;
-#line 4651 "main.c"
+#line 4653 "main.c"
     h_0opt_e201354_release(&t97);
 #line 25 "examples/maze/solve.hero"
     t98 = h5_came;
-#line 4655 "main.c"
+#line 4657 "main.c"
     hero_map_decref(t98);
 #line 25 "examples/maze/solve.hero"
     t99 = h6_queue;
-#line 4659 "main.c"
+#line 4661 "main.c"
     hero_array_decref(t99);
 #line 25 "examples/maze/solve.hero"
     t100 = h9_xs0;
-#line 4663 "main.c"
+#line 4665 "main.c"
     hero_array_decref(t100);
 #line 25 "examples/maze/solve.hero"
     t101 = h12_f2;
-#line 4667 "main.c"
+#line 4669 "main.c"
     h_0opt_e201354_release(&t101);
 #line 25 "examples/maze/solve.hero"
     t102 = h13_own13;
-#line 4671 "main.c"
+#line 4673 "main.c"
     h_0opt_e201354_release(&t102);
 #line 25 "examples/maze/solve.hero"
     t103 = h14_own14;
-#line 4675 "main.c"
+#line 4677 "main.c"
     h_0opt_e201354_release(&t103);
 #line 25 "examples/maze/solve.hero"
     t104 = h15_own15;
-#line 4679 "main.c"
+#line 4681 "main.c"
     h_0opt_2270cbe7_release(&t104);
 #line 25 "examples/maze/solve.hero"
     t105 = h16_own16;
-#line 4683 "main.c"
+#line 4685 "main.c"
     hero_map_decref(t105);
 #line 25 "examples/maze/solve.hero"
     t106 = h17_own17;
-#line 4687 "main.c"
+#line 4689 "main.c"
     hero_array_decref(t106);
 #line 25 "examples/maze/solve.hero"
     t107 = h18_own18;
-#line 4691 "main.c"
+#line 4693 "main.c"
     h_0opt_2270cbe7_release(&t107);
 #line 25 "examples/maze/solve.hero"
     t108 = h19_own19;
-#line 4695 "main.c"
+#line 4697 "main.c"
     hero_str_decref(t108);
 #line 25 "examples/maze/solve.hero"
     t109 = h20_own20;
-#line 4699 "main.c"
+#line 4701 "main.c"
     h_0opt_2270cbe7_release(&t109);
 #line 25 "examples/maze/solve.hero"
     t110 = h21_own21;
-#line 4703 "main.c"
+#line 4705 "main.c"
     hero_array_decref(t110);
 #line 25 "examples/maze/solve.hero"
     t111 = h22_own22;
-#line 4707 "main.c"
+#line 4709 "main.c"
     hero_array_decref(t111);
 #line 25 "examples/maze/solve.hero"
     t112 = h23_own23;
-#line 4711 "main.c"
+#line 4713 "main.c"
     h_0opt_2270cbe7_release(&t112);
 #line 25 "examples/maze/solve.hero"
     t113 = h24_own24;
-#line 4715 "main.c"
+#line 4717 "main.c"
     h_0opt_e201354_release(&t113);
     return t10;
 bb3:
@@ -4727,15 +4729,15 @@ bb3:
     t83 = h16_own16;
 #line 27 "examples/maze/solve.hero"
     h16_own16 = t25;
-#line 4731 "main.c"
+#line 4733 "main.c"
     hero_map_decref(t83);
 #line 27 "examples/maze/solve.hero"
     t84 = h5_came;
-#line 4735 "main.c"
+#line 4737 "main.c"
     hero_map_incref(t25);
 #line 27 "examples/maze/solve.hero"
     h5_came = t25;
-#line 4739 "main.c"
+#line 4741 "main.c"
     hero_map_decref(t84);
 #line 28 "examples/maze/solve.hero"
     t26 = h2_start;
@@ -4755,15 +4757,15 @@ bb3:
     t85 = h17_own17;
 #line 29 "examples/maze/solve.hero"
     h17_own17 = t29;
-#line 4759 "main.c"
+#line 4761 "main.c"
     hero_array_decref(t85);
 #line 29 "examples/maze/solve.hero"
     t86 = h6_queue;
-#line 4763 "main.c"
+#line 4765 "main.c"
     hero_array_incref(t29);
 #line 29 "examples/maze/solve.hero"
     h6_queue = t29;
-#line 4767 "main.c"
+#line 4769 "main.c"
     hero_array_decref(t86);
 #line 30 "examples/maze/solve.hero"
     t30 = INT64_C(0);
@@ -4777,7 +4779,7 @@ bb4:
     t20 = h3_f1;
 #line 26 "examples/maze/solve.hero"
     t21 = t20.as.err;
-#line 4781 "main.c"
+#line 4783 "main.c"
     hero_failure_retain(&t21);
 #line 26 "examples/maze/solve.hero"
     t22 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t21};
@@ -4785,82 +4787,82 @@ bb4:
     t87 = h18_own18;
 #line 26 "examples/maze/solve.hero"
     h18_own18 = t22;
-#line 4789 "main.c"
+#line 4791 "main.c"
     h_0opt_2270cbe7_release(&t87);
 #line 26 "examples/maze/solve.hero"
-#line 4792 "main.c"
+#line 4794 "main.c"
     h_0opt_2270cbe7_retain(&t22);
 #line 26 "examples/maze/solve.hero"
     t114 = h1_f0;
-#line 4796 "main.c"
+#line 4798 "main.c"
     h_0opt_e201354_release(&t114);
 #line 26 "examples/maze/solve.hero"
     t115 = h3_f1;
-#line 4800 "main.c"
+#line 4802 "main.c"
     h_0opt_e201354_release(&t115);
 #line 26 "examples/maze/solve.hero"
     t116 = h5_came;
-#line 4804 "main.c"
+#line 4806 "main.c"
     hero_map_decref(t116);
 #line 26 "examples/maze/solve.hero"
     t117 = h6_queue;
-#line 4808 "main.c"
+#line 4810 "main.c"
     hero_array_decref(t117);
 #line 26 "examples/maze/solve.hero"
     t118 = h9_xs0;
-#line 4812 "main.c"
+#line 4814 "main.c"
     hero_array_decref(t118);
 #line 26 "examples/maze/solve.hero"
     t119 = h12_f2;
-#line 4816 "main.c"
+#line 4818 "main.c"
     h_0opt_e201354_release(&t119);
 #line 26 "examples/maze/solve.hero"
     t120 = h13_own13;
-#line 4820 "main.c"
+#line 4822 "main.c"
     h_0opt_e201354_release(&t120);
 #line 26 "examples/maze/solve.hero"
     t121 = h14_own14;
-#line 4824 "main.c"
+#line 4826 "main.c"
     h_0opt_e201354_release(&t121);
 #line 26 "examples/maze/solve.hero"
     t122 = h15_own15;
-#line 4828 "main.c"
+#line 4830 "main.c"
     h_0opt_2270cbe7_release(&t122);
 #line 26 "examples/maze/solve.hero"
     t123 = h16_own16;
-#line 4832 "main.c"
+#line 4834 "main.c"
     hero_map_decref(t123);
 #line 26 "examples/maze/solve.hero"
     t124 = h17_own17;
-#line 4836 "main.c"
+#line 4838 "main.c"
     hero_array_decref(t124);
 #line 26 "examples/maze/solve.hero"
     t125 = h18_own18;
-#line 4840 "main.c"
+#line 4842 "main.c"
     h_0opt_2270cbe7_release(&t125);
 #line 26 "examples/maze/solve.hero"
     t126 = h19_own19;
-#line 4844 "main.c"
+#line 4846 "main.c"
     hero_str_decref(t126);
 #line 26 "examples/maze/solve.hero"
     t127 = h20_own20;
-#line 4848 "main.c"
+#line 4850 "main.c"
     h_0opt_2270cbe7_release(&t127);
 #line 26 "examples/maze/solve.hero"
     t128 = h21_own21;
-#line 4852 "main.c"
+#line 4854 "main.c"
     hero_array_decref(t128);
 #line 26 "examples/maze/solve.hero"
     t129 = h22_own22;
-#line 4856 "main.c"
+#line 4858 "main.c"
     hero_array_decref(t129);
 #line 26 "examples/maze/solve.hero"
     t130 = h23_own23;
-#line 4860 "main.c"
+#line 4862 "main.c"
     h_0opt_2270cbe7_release(&t130);
 #line 26 "examples/maze/solve.hero"
     t131 = h24_own24;
-#line 4864 "main.c"
+#line 4866 "main.c"
     h_0opt_e201354_release(&t131);
     return t22;
 bb5:
@@ -4908,14 +4910,14 @@ bb7:
     t88 = h19_own19;
 #line 40 "examples/maze/solve.hero"
     h19_own19 = t75;
-#line 4912 "main.c"
+#line 4914 "main.c"
     hero_str_decref(t88);
 #line 40 "examples/maze/solve.hero"
     t76 = HERO_STR_LIT(hero_str_403ef59e);
-#line 4916 "main.c"
+#line 4918 "main.c"
     hero_str_incref(t75);
 #line 40 "examples/maze/solve.hero"
-#line 4919 "main.c"
+#line 4921 "main.c"
     hero_str_incref(t76);
 #line 40 "examples/maze/solve.hero"
     t77 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = {.code = t75, .msg = t76}};
@@ -4923,82 +4925,82 @@ bb7:
     t89 = h20_own20;
 #line 40 "examples/maze/solve.hero"
     h20_own20 = t77;
-#line 4927 "main.c"
+#line 4929 "main.c"
     h_0opt_2270cbe7_release(&t89);
 #line 40 "examples/maze/solve.hero"
-#line 4930 "main.c"
+#line 4932 "main.c"
     h_0opt_2270cbe7_retain(&t77);
 #line 40 "examples/maze/solve.hero"
     t132 = h1_f0;
-#line 4934 "main.c"
+#line 4936 "main.c"
     h_0opt_e201354_release(&t132);
 #line 40 "examples/maze/solve.hero"
     t133 = h3_f1;
-#line 4938 "main.c"
+#line 4940 "main.c"
     h_0opt_e201354_release(&t133);
 #line 40 "examples/maze/solve.hero"
     t134 = h5_came;
-#line 4942 "main.c"
+#line 4944 "main.c"
     hero_map_decref(t134);
 #line 40 "examples/maze/solve.hero"
     t135 = h6_queue;
-#line 4946 "main.c"
+#line 4948 "main.c"
     hero_array_decref(t135);
 #line 40 "examples/maze/solve.hero"
     t136 = h9_xs0;
-#line 4950 "main.c"
+#line 4952 "main.c"
     hero_array_decref(t136);
 #line 40 "examples/maze/solve.hero"
     t137 = h12_f2;
-#line 4954 "main.c"
+#line 4956 "main.c"
     h_0opt_e201354_release(&t137);
 #line 40 "examples/maze/solve.hero"
     t138 = h13_own13;
-#line 4958 "main.c"
+#line 4960 "main.c"
     h_0opt_e201354_release(&t138);
 #line 40 "examples/maze/solve.hero"
     t139 = h14_own14;
-#line 4962 "main.c"
+#line 4964 "main.c"
     h_0opt_e201354_release(&t139);
 #line 40 "examples/maze/solve.hero"
     t140 = h15_own15;
-#line 4966 "main.c"
+#line 4968 "main.c"
     h_0opt_2270cbe7_release(&t140);
 #line 40 "examples/maze/solve.hero"
     t141 = h16_own16;
-#line 4970 "main.c"
+#line 4972 "main.c"
     hero_map_decref(t141);
 #line 40 "examples/maze/solve.hero"
     t142 = h17_own17;
-#line 4974 "main.c"
+#line 4976 "main.c"
     hero_array_decref(t142);
 #line 40 "examples/maze/solve.hero"
     t143 = h18_own18;
-#line 4978 "main.c"
+#line 4980 "main.c"
     h_0opt_2270cbe7_release(&t143);
 #line 40 "examples/maze/solve.hero"
     t144 = h19_own19;
-#line 4982 "main.c"
+#line 4984 "main.c"
     hero_str_decref(t144);
 #line 40 "examples/maze/solve.hero"
     t145 = h20_own20;
-#line 4986 "main.c"
+#line 4988 "main.c"
     h_0opt_2270cbe7_release(&t145);
 #line 40 "examples/maze/solve.hero"
     t146 = h21_own21;
-#line 4990 "main.c"
+#line 4992 "main.c"
     hero_array_decref(t146);
 #line 40 "examples/maze/solve.hero"
     t147 = h22_own22;
-#line 4994 "main.c"
+#line 4996 "main.c"
     hero_array_decref(t147);
 #line 40 "examples/maze/solve.hero"
     t148 = h23_own23;
-#line 4998 "main.c"
+#line 5000 "main.c"
     h_0opt_2270cbe7_release(&t148);
 #line 40 "examples/maze/solve.hero"
     t149 = h24_own24;
-#line 5002 "main.c"
+#line 5004 "main.c"
     h_0opt_e201354_release(&t149);
     return t77;
 bb8:
@@ -5012,15 +5014,15 @@ bb8:
     t90 = h21_own21;
 #line 36 "examples/maze/solve.hero"
     h21_own21 = t51;
-#line 5016 "main.c"
+#line 5018 "main.c"
     hero_array_decref(t90);
 #line 36 "examples/maze/solve.hero"
     t91 = h9_xs0;
-#line 5020 "main.c"
+#line 5022 "main.c"
     hero_array_incref(t51);
 #line 36 "examples/maze/solve.hero"
     h9_xs0 = t51;
-#line 5024 "main.c"
+#line 5026 "main.c"
     hero_array_decref(t91);
 #line 36 "examples/maze/solve.hero"
     t52 = INT64_C(0);
@@ -5042,10 +5044,10 @@ bb9:
     t92 = h22_own22;
 #line 35 "examples/maze/solve.hero"
     h22_own22 = t47;
-#line 5046 "main.c"
+#line 5048 "main.c"
     hero_array_decref(t92);
 #line 35 "examples/maze/solve.hero"
-#line 5049 "main.c"
+#line 5051 "main.c"
     hero_array_incref(t47);
 #line 35 "examples/maze/solve.hero"
     t48 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t47};
@@ -5053,82 +5055,82 @@ bb9:
     t93 = h23_own23;
 #line 35 "examples/maze/solve.hero"
     h23_own23 = t48;
-#line 5057 "main.c"
+#line 5059 "main.c"
     h_0opt_2270cbe7_release(&t93);
 #line 35 "examples/maze/solve.hero"
-#line 5060 "main.c"
+#line 5062 "main.c"
     h_0opt_2270cbe7_retain(&t48);
 #line 35 "examples/maze/solve.hero"
     t150 = h1_f0;
-#line 5064 "main.c"
+#line 5066 "main.c"
     h_0opt_e201354_release(&t150);
 #line 35 "examples/maze/solve.hero"
     t151 = h3_f1;
-#line 5068 "main.c"
+#line 5070 "main.c"
     h_0opt_e201354_release(&t151);
 #line 35 "examples/maze/solve.hero"
     t152 = h5_came;
-#line 5072 "main.c"
+#line 5074 "main.c"
     hero_map_decref(t152);
 #line 35 "examples/maze/solve.hero"
     t153 = h6_queue;
-#line 5076 "main.c"
+#line 5078 "main.c"
     hero_array_decref(t153);
 #line 35 "examples/maze/solve.hero"
     t154 = h9_xs0;
-#line 5080 "main.c"
+#line 5082 "main.c"
     hero_array_decref(t154);
 #line 35 "examples/maze/solve.hero"
     t155 = h12_f2;
-#line 5084 "main.c"
+#line 5086 "main.c"
     h_0opt_e201354_release(&t155);
 #line 35 "examples/maze/solve.hero"
     t156 = h13_own13;
-#line 5088 "main.c"
+#line 5090 "main.c"
     h_0opt_e201354_release(&t156);
 #line 35 "examples/maze/solve.hero"
     t157 = h14_own14;
-#line 5092 "main.c"
+#line 5094 "main.c"
     h_0opt_e201354_release(&t157);
 #line 35 "examples/maze/solve.hero"
     t158 = h15_own15;
-#line 5096 "main.c"
+#line 5098 "main.c"
     h_0opt_2270cbe7_release(&t158);
 #line 35 "examples/maze/solve.hero"
     t159 = h16_own16;
-#line 5100 "main.c"
+#line 5102 "main.c"
     hero_map_decref(t159);
 #line 35 "examples/maze/solve.hero"
     t160 = h17_own17;
-#line 5104 "main.c"
+#line 5106 "main.c"
     hero_array_decref(t160);
 #line 35 "examples/maze/solve.hero"
     t161 = h18_own18;
-#line 5108 "main.c"
+#line 5110 "main.c"
     h_0opt_2270cbe7_release(&t161);
 #line 35 "examples/maze/solve.hero"
     t162 = h19_own19;
-#line 5112 "main.c"
+#line 5114 "main.c"
     hero_str_decref(t162);
 #line 35 "examples/maze/solve.hero"
     t163 = h20_own20;
-#line 5116 "main.c"
+#line 5118 "main.c"
     h_0opt_2270cbe7_release(&t163);
 #line 35 "examples/maze/solve.hero"
     t164 = h21_own21;
-#line 5120 "main.c"
+#line 5122 "main.c"
     hero_array_decref(t164);
 #line 35 "examples/maze/solve.hero"
     t165 = h22_own22;
-#line 5124 "main.c"
+#line 5126 "main.c"
     hero_array_decref(t165);
 #line 35 "examples/maze/solve.hero"
     t166 = h23_own23;
-#line 5128 "main.c"
+#line 5130 "main.c"
     h_0opt_2270cbe7_release(&t166);
 #line 35 "examples/maze/solve.hero"
     t167 = h24_own24;
-#line 5132 "main.c"
+#line 5134 "main.c"
     h_0opt_e201354_release(&t167);
     return t48;
 bb10:
@@ -5180,15 +5182,15 @@ bb12:
     t94 = h24_own24;
 #line 37 "examples/maze/solve.hero"
     h24_own24 = t62;
-#line 5184 "main.c"
+#line 5186 "main.c"
     h_0opt_e201354_release(&t94);
 #line 37 "examples/maze/solve.hero"
     t95 = h12_f2;
-#line 5188 "main.c"
+#line 5190 "main.c"
     h_0opt_e201354_retain(&t62);
 #line 37 "examples/maze/solve.hero"
     h12_f2 = t62;
-#line 5192 "main.c"
+#line 5194 "main.c"
     h_0opt_e201354_release(&t95);
 #line 37 "examples/maze/solve.hero"
     t63 = h12_f2;
@@ -5238,12 +5240,12 @@ bb16:
 bb17:
 #line 39 "examples/maze/solve.hero"
     goto bb15;
-#line 5242 "main.c"
+#line 5244 "main.c"
 }
 
 #line 44 "examples/maze/solve.hero"
 HeroArrayHeader * h_solve_walk_back(HeroMapHeader * h0_came, int64_t h1_start, int64_t h2_goal) {
-#line 5247 "main.c"
+#line 5249 "main.c"
     HeroArrayHeader * h3_backwards = {0};
     int64_t h4_at;
     h_0opt_e201354 h5_f0 = {0};
@@ -5294,15 +5296,15 @@ bb0:
     t23 = h6_own6;
 #line 45 "examples/maze/solve.hero"
     h6_own6 = t2;
-#line 5298 "main.c"
+#line 5300 "main.c"
     hero_array_decref(t23);
 #line 45 "examples/maze/solve.hero"
     t24 = h3_backwards;
-#line 5302 "main.c"
+#line 5304 "main.c"
     hero_array_incref(t2);
 #line 45 "examples/maze/solve.hero"
     h3_backwards = t2;
-#line 5306 "main.c"
+#line 5308 "main.c"
     hero_array_decref(t24);
 #line 46 "examples/maze/solve.hero"
     t3 = h2_goal;
@@ -5348,15 +5350,15 @@ bb2:
     t25 = h7_own7;
 #line 48 "examples/maze/solve.hero"
     h7_own7 = t9;
-#line 5352 "main.c"
+#line 5354 "main.c"
     h_0opt_e201354_release(&t25);
 #line 48 "examples/maze/solve.hero"
     t26 = h5_f0;
-#line 5356 "main.c"
+#line 5358 "main.c"
     h_0opt_e201354_retain(&t9);
 #line 48 "examples/maze/solve.hero"
     h5_f0 = t9;
-#line 5360 "main.c"
+#line 5362 "main.c"
     h_0opt_e201354_release(&t26);
 #line 48 "examples/maze/solve.hero"
     t10 = h5_f0;
@@ -5378,30 +5380,30 @@ bb3:
     t27 = h8_own8;
 #line 50 "examples/maze/solve.hero"
     h8_own8 = t22;
-#line 5382 "main.c"
+#line 5384 "main.c"
     hero_array_decref(t27);
 #line 50 "examples/maze/solve.hero"
-#line 5385 "main.c"
+#line 5387 "main.c"
     hero_array_incref(t22);
 #line 50 "examples/maze/solve.hero"
     t28 = h3_backwards;
-#line 5389 "main.c"
+#line 5391 "main.c"
     hero_array_decref(t28);
 #line 50 "examples/maze/solve.hero"
     t29 = h5_f0;
-#line 5393 "main.c"
+#line 5395 "main.c"
     h_0opt_e201354_release(&t29);
 #line 50 "examples/maze/solve.hero"
     t30 = h6_own6;
-#line 5397 "main.c"
+#line 5399 "main.c"
     hero_array_decref(t30);
 #line 50 "examples/maze/solve.hero"
     t31 = h7_own7;
-#line 5401 "main.c"
+#line 5403 "main.c"
     h_0opt_e201354_release(&t31);
 #line 50 "examples/maze/solve.hero"
     t32 = h8_own8;
-#line 5405 "main.c"
+#line 5407 "main.c"
     hero_array_decref(t32);
     return t22;
 bb4:
@@ -5423,14 +5425,14 @@ bb5:
     t14 = h5_f0;
 #line 48 "examples/maze/solve.hero"
     t15 = t14.as.err;
-#line 5427 "main.c"
+#line 5429 "main.c"
     hero_panic_must(t15);
     hero_unreachable();
 }
 
 #line 52 "examples/maze/solve.hero"
 HeroArrayHeader * h_solve_reversed(HeroArrayHeader * h0_xs) {
-#line 5434 "main.c"
+#line 5436 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -5478,15 +5480,15 @@ bb0:
     t28 = h5_own5;
 #line 53 "examples/maze/solve.hero"
     h5_own5 = t1;
-#line 5482 "main.c"
+#line 5484 "main.c"
     hero_array_decref(t28);
 #line 53 "examples/maze/solve.hero"
     t29 = h1_out;
-#line 5486 "main.c"
+#line 5488 "main.c"
     hero_array_incref(t1);
 #line 53 "examples/maze/solve.hero"
     h1_out = t1;
-#line 5490 "main.c"
+#line 5492 "main.c"
     hero_array_decref(t29);
 #line 54 "examples/maze/solve.hero"
     t2 = INT64_C(0);
@@ -5500,15 +5502,15 @@ bb0:
     t30 = h6_own6;
 #line 54 "examples/maze/solve.hero"
     h6_own6 = t5;
-#line 5504 "main.c"
+#line 5506 "main.c"
     hero_array_decref(t30);
 #line 54 "examples/maze/solve.hero"
     t31 = h2_xs0;
-#line 5508 "main.c"
+#line 5510 "main.c"
     hero_array_incref(t5);
 #line 54 "examples/maze/solve.hero"
     h2_xs0 = t5;
-#line 5512 "main.c"
+#line 5514 "main.c"
     hero_array_decref(t31);
 #line 54 "examples/maze/solve.hero"
     t6 = INT64_C(0);
@@ -5574,30 +5576,30 @@ bb3:
 bb4:
 #line 56 "examples/maze/solve.hero"
     t27 = h1_out;
-#line 5578 "main.c"
+#line 5580 "main.c"
     hero_array_incref(t27);
 #line 56 "examples/maze/solve.hero"
     t32 = h1_out;
-#line 5582 "main.c"
+#line 5584 "main.c"
     hero_array_decref(t32);
 #line 56 "examples/maze/solve.hero"
     t33 = h2_xs0;
-#line 5586 "main.c"
+#line 5588 "main.c"
     hero_array_decref(t33);
 #line 56 "examples/maze/solve.hero"
     t34 = h5_own5;
-#line 5590 "main.c"
+#line 5592 "main.c"
     hero_array_decref(t34);
 #line 56 "examples/maze/solve.hero"
     t35 = h6_own6;
-#line 5594 "main.c"
+#line 5596 "main.c"
     hero_array_decref(t35);
     return t27;
 }
 
 #line 59 "examples/maze/solve.hero"
 int64_t h_solve_steps(HeroArrayHeader * h0_path) {
-#line 5601 "main.c"
+#line 5603 "main.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -5614,12 +5616,12 @@ bb0:
     if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow();
 #line 60 "examples/maze/solve.hero"
     return t4;
-#line 5618 "main.c"
+#line 5620 "main.c"
 }
 
 #line 64 "examples/maze/solve.hero"
 bool h_solve_is_walkable(h_grid_Grid h0_g, HeroArrayHeader * h1_path) {
-#line 5623 "main.c"
+#line 5625 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_i;
@@ -5697,15 +5699,15 @@ bb1:
     t35 = h5_own5;
 #line 67 "examples/maze/solve.hero"
     h5_own5 = t9;
-#line 5701 "main.c"
+#line 5703 "main.c"
     hero_array_decref(t35);
 #line 67 "examples/maze/solve.hero"
     t36 = h2_xs0;
-#line 5705 "main.c"
+#line 5707 "main.c"
     hero_array_incref(t9);
 #line 67 "examples/maze/solve.hero"
     h2_xs0 = t9;
-#line 5709 "main.c"
+#line 5711 "main.c"
     hero_array_decref(t36);
 #line 67 "examples/maze/solve.hero"
     t10 = INT64_C(0);
@@ -5719,15 +5721,15 @@ bb2:
     t5 = false;
 #line 66 "examples/maze/solve.hero"
     t38 = h2_xs0;
-#line 5723 "main.c"
+#line 5725 "main.c"
     hero_array_decref(t38);
 #line 66 "examples/maze/solve.hero"
     t39 = h5_own5;
-#line 5727 "main.c"
+#line 5729 "main.c"
     hero_array_decref(t39);
 #line 66 "examples/maze/solve.hero"
     t40 = h6_own6;
-#line 5731 "main.c"
+#line 5733 "main.c"
     hero_array_decref(t40);
     return t5;
 bb3:
@@ -5771,7 +5773,7 @@ bb5:
     t37 = h6_own6;
 #line 68 "examples/maze/solve.hero"
     h6_own6 = t24;
-#line 5775 "main.c"
+#line 5777 "main.c"
     hero_array_decref(t37);
 #line 68 "examples/maze/solve.hero"
     t25 = h1_path;
@@ -5803,15 +5805,15 @@ bb7:
     t34 = true;
 #line 70 "examples/maze/solve.hero"
     t41 = h2_xs0;
-#line 5807 "main.c"
+#line 5809 "main.c"
     hero_array_decref(t41);
 #line 70 "examples/maze/solve.hero"
     t42 = h5_own5;
-#line 5811 "main.c"
+#line 5813 "main.c"
     hero_array_decref(t42);
 #line 70 "examples/maze/solve.hero"
     t43 = h6_own6;
-#line 5815 "main.c"
+#line 5817 "main.c"
     hero_array_decref(t43);
     return t34;
 bb8:
@@ -5821,15 +5823,15 @@ bb9:
     t30 = false;
 #line 69 "examples/maze/solve.hero"
     t44 = h2_xs0;
-#line 5825 "main.c"
+#line 5827 "main.c"
     hero_array_decref(t44);
 #line 69 "examples/maze/solve.hero"
     t45 = h5_own5;
-#line 5829 "main.c"
+#line 5831 "main.c"
     hero_array_decref(t45);
 #line 69 "examples/maze/solve.hero"
     t46 = h6_own6;
-#line 5833 "main.c"
+#line 5835 "main.c"
     hero_array_decref(t46);
     return t30;
 bb10:
@@ -5838,7 +5840,7 @@ bb10:
 
 #line 72 "examples/maze/solve.hero"
 bool h_solve_contains(HeroArrayHeader * h0_known, int64_t h1_one) {
-#line 5842 "main.c"
+#line 5844 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_each;
@@ -5868,11 +5870,11 @@ bb0:
     t1 = h0_known;
 #line 73 "examples/maze/solve.hero"
     t18 = h2_xs0;
-#line 5872 "main.c"
+#line 5874 "main.c"
     hero_array_incref(t1);
 #line 73 "examples/maze/solve.hero"
     h2_xs0 = t1;
-#line 5876 "main.c"
+#line 5878 "main.c"
     hero_array_decref(t18);
 #line 73 "examples/maze/solve.hero"
     t2 = INT64_C(0);
@@ -5928,7 +5930,7 @@ bb4:
     t17 = false;
 #line 76 "examples/maze/solve.hero"
     t19 = h2_xs0;
-#line 5932 "main.c"
+#line 5934 "main.c"
     hero_array_decref(t19);
     return t17;
 bb5:
@@ -5938,7 +5940,7 @@ bb6:
     t13 = true;
 #line 75 "examples/maze/solve.hero"
     t20 = h2_xs0;
-#line 5942 "main.c"
+#line 5944 "main.c"
     hero_array_decref(t20);
     return t13;
 bb7:
@@ -5947,7 +5949,7 @@ bb7:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 5951 "main.c"
+#line 5953 "main.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -5973,15 +5975,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 5977 "main.c"
+#line 5979 "main.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 5981 "main.c"
+#line 5983 "main.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 5985 "main.c"
+#line 5987 "main.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -6019,34 +6021,34 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 6023 "main.c"
+#line 6025 "main.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
     t15 = h2_out;
-#line 6027 "main.c"
+#line 6029 "main.c"
     hero_array_decref(t15);
 #line 32 "<heroes library>"
     t16 = h4_own4;
-#line 6031 "main.c"
+#line 6033 "main.c"
     hero_array_decref(t16);
     return t12;
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 6038 "main.c"
+#line 6040 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 6044 "main.c"
+#line 6046 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 163 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 6050 "main.c"
+#line 6052 "main.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -6121,15 +6123,15 @@ bb0:
     t23 = h3_own3;
 #line 165 "<heroes library>"
     h3_own3 = t4;
-#line 6125 "main.c"
+#line 6127 "main.c"
     hero_str_decref(t23);
 #line 165 "<heroes library>"
     t24 = h2_text;
-#line 6129 "main.c"
+#line 6131 "main.c"
     hero_str_incref(t4);
 #line 165 "<heroes library>"
     h2_text = t4;
-#line 6133 "main.c"
+#line 6135 "main.c"
     hero_str_decref(t24);
 #line 166 "<heroes library>"
     t5 = h1_status;
@@ -6153,7 +6155,7 @@ bb1:
 bb2:
 #line 167 "<heroes library>"
     t8 = h2_text;
-#line 6157 "main.c"
+#line 6159 "main.c"
     hero_str_incref(t8);
 #line 167 "<heroes library>"
     t9 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t8};
@@ -6161,38 +6163,38 @@ bb2:
     t25 = h4_own4;
 #line 167 "<heroes library>"
     h4_own4 = t9;
-#line 6165 "main.c"
+#line 6167 "main.c"
     h_0opt_f87774a_release(&t25);
 #line 167 "<heroes library>"
-#line 6168 "main.c"
+#line 6170 "main.c"
     h_0opt_f87774a_retain(&t9);
 #line 167 "<heroes library>"
     t30 = h2_text;
-#line 6172 "main.c"
+#line 6174 "main.c"
     hero_str_decref(t30);
 #line 167 "<heroes library>"
     t31 = h3_own3;
-#line 6176 "main.c"
+#line 6178 "main.c"
     hero_str_decref(t31);
 #line 167 "<heroes library>"
     t32 = h4_own4;
-#line 6180 "main.c"
+#line 6182 "main.c"
     h_0opt_f87774a_release(&t32);
 #line 167 "<heroes library>"
     t33 = h5_own5;
-#line 6184 "main.c"
+#line 6186 "main.c"
     hero_str_decref(t33);
 #line 167 "<heroes library>"
     t34 = h6_own6;
-#line 6188 "main.c"
+#line 6190 "main.c"
     h_0opt_f87774a_release(&t34);
 #line 167 "<heroes library>"
     t35 = h7_own7;
-#line 6192 "main.c"
+#line 6194 "main.c"
     hero_str_decref(t35);
 #line 167 "<heroes library>"
     t36 = h8_own8;
-#line 6196 "main.c"
+#line 6198 "main.c"
     h_0opt_f87774a_release(&t36);
     return t9;
 bb3:
@@ -6210,13 +6212,13 @@ bb4:
     t26 = h5_own5;
 #line 170 "<heroes library>"
     h5_own5 = t21;
-#line 6214 "main.c"
+#line 6216 "main.c"
     hero_str_decref(t26);
 #line 170 "<heroes library>"
-#line 6217 "main.c"
+#line 6219 "main.c"
     hero_str_incref(t18);
 #line 170 "<heroes library>"
-#line 6220 "main.c"
+#line 6222 "main.c"
     hero_str_incref(t21);
 #line 170 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -6224,38 +6226,38 @@ bb4:
     t27 = h6_own6;
 #line 170 "<heroes library>"
     h6_own6 = t22;
-#line 6228 "main.c"
+#line 6230 "main.c"
     h_0opt_f87774a_release(&t27);
 #line 170 "<heroes library>"
-#line 6231 "main.c"
+#line 6233 "main.c"
     h_0opt_f87774a_retain(&t22);
 #line 170 "<heroes library>"
     t37 = h2_text;
-#line 6235 "main.c"
+#line 6237 "main.c"
     hero_str_decref(t37);
 #line 170 "<heroes library>"
     t38 = h3_own3;
-#line 6239 "main.c"
+#line 6241 "main.c"
     hero_str_decref(t38);
 #line 170 "<heroes library>"
     t39 = h4_own4;
-#line 6243 "main.c"
+#line 6245 "main.c"
     h_0opt_f87774a_release(&t39);
 #line 170 "<heroes library>"
     t40 = h5_own5;
-#line 6247 "main.c"
+#line 6249 "main.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t41 = h6_own6;
-#line 6251 "main.c"
+#line 6253 "main.c"
     h_0opt_f87774a_release(&t41);
 #line 170 "<heroes library>"
     t42 = h7_own7;
-#line 6255 "main.c"
+#line 6257 "main.c"
     hero_str_decref(t42);
 #line 170 "<heroes library>"
     t43 = h8_own8;
-#line 6259 "main.c"
+#line 6261 "main.c"
     h_0opt_f87774a_release(&t43);
     return t22;
 bb5:
@@ -6271,13 +6273,13 @@ bb5:
     t28 = h7_own7;
 #line 169 "<heroes library>"
     h7_own7 = t16;
-#line 6275 "main.c"
+#line 6277 "main.c"
     hero_str_decref(t28);
 #line 169 "<heroes library>"
-#line 6278 "main.c"
+#line 6280 "main.c"
     hero_str_incref(t13);
 #line 169 "<heroes library>"
-#line 6281 "main.c"
+#line 6283 "main.c"
     hero_str_incref(t16);
 #line 169 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
@@ -6285,38 +6287,38 @@ bb5:
     t29 = h8_own8;
 #line 169 "<heroes library>"
     h8_own8 = t17;
-#line 6289 "main.c"
+#line 6291 "main.c"
     h_0opt_f87774a_release(&t29);
 #line 169 "<heroes library>"
-#line 6292 "main.c"
+#line 6294 "main.c"
     h_0opt_f87774a_retain(&t17);
 #line 169 "<heroes library>"
     t44 = h2_text;
-#line 6296 "main.c"
+#line 6298 "main.c"
     hero_str_decref(t44);
 #line 169 "<heroes library>"
     t45 = h3_own3;
-#line 6300 "main.c"
+#line 6302 "main.c"
     hero_str_decref(t45);
 #line 169 "<heroes library>"
     t46 = h4_own4;
-#line 6304 "main.c"
+#line 6306 "main.c"
     h_0opt_f87774a_release(&t46);
 #line 169 "<heroes library>"
     t47 = h5_own5;
-#line 6308 "main.c"
+#line 6310 "main.c"
     hero_str_decref(t47);
 #line 169 "<heroes library>"
     t48 = h6_own6;
-#line 6312 "main.c"
+#line 6314 "main.c"
     h_0opt_f87774a_release(&t48);
 #line 169 "<heroes library>"
     t49 = h7_own7;
-#line 6316 "main.c"
+#line 6318 "main.c"
     hero_str_decref(t49);
 #line 169 "<heroes library>"
     t50 = h8_own8;
-#line 6320 "main.c"
+#line 6322 "main.c"
     h_0opt_f87774a_release(&t50);
     return t17;
 bb6:
@@ -6325,7 +6327,7 @@ bb6:
 
 #line 180 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 6329 "main.c"
+#line 6331 "main.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -6355,15 +6357,15 @@ bb0:
     t14 = h2_own2;
 #line 181 "<heroes library>"
     h2_own2 = t1;
-#line 6359 "main.c"
+#line 6361 "main.c"
     hero_array_decref(t14);
 #line 181 "<heroes library>"
     t15 = h0_out;
-#line 6363 "main.c"
+#line 6365 "main.c"
     hero_array_incref(t1);
 #line 181 "<heroes library>"
     h0_out = t1;
-#line 6367 "main.c"
+#line 6369 "main.c"
     hero_array_decref(t15);
 #line 182 "<heroes library>"
     t2 = INT64_C(0);
@@ -6391,7 +6393,7 @@ bb2:
     t16 = h3_own3;
 #line 184 "<heroes library>"
     h3_own3 = t8;
-#line 6395 "main.c"
+#line 6397 "main.c"
     hero_str_decref(t16);
 #line 184 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -6409,26 +6411,26 @@ bb2:
 bb3:
 #line 186 "<heroes library>"
     t13 = h0_out;
-#line 6413 "main.c"
+#line 6415 "main.c"
     hero_array_incref(t13);
 #line 186 "<heroes library>"
     t17 = h0_out;
-#line 6417 "main.c"
+#line 6419 "main.c"
     hero_array_decref(t17);
 #line 186 "<heroes library>"
     t18 = h2_own2;
-#line 6421 "main.c"
+#line 6423 "main.c"
     hero_array_decref(t18);
 #line 186 "<heroes library>"
     t19 = h3_own3;
-#line 6425 "main.c"
+#line 6427 "main.c"
     hero_str_decref(t19);
     return t13;
 }
 
 #line 211 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 6432 "main.c"
+#line 6434 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -6438,24 +6440,24 @@ bb0:
     (void)hero_exit(t1);
 #line 212 "<heroes library>"
     return;
-#line 6442 "main.c"
+#line 6444 "main.c"
 }
-void h_grid_Grid_retain(const h_grid_Grid *v) {
+HERO_TU_LOCAL void h_grid_Grid_retain(const h_grid_Grid *v) {
     hero_array_incref(v->f_rows);
 }
 
-void h_grid_Grid_release(h_grid_Grid *v) {
+HERO_TU_LOCAL void h_grid_Grid_release(h_grid_Grid *v) {
     hero_array_decref(v->f_rows);
 }
 
-bool h_grid_Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b) {
+HERO_TU_LOCAL bool h_grid_Grid_eq(const h_grid_Grid *a, const h_grid_Grid *b) {
     if (!(hero_array_eq(a->f_rows, b->f_rows))) return false;
     if (!(a->f_width == b->f_width)) return false;
     if (!(a->f_height == b->f_height)) return false;
     return true;
 }
 
-uint64_t h_grid_Grid_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_grid_Grid_hash(const void *elem) {
     const h_grid_Grid *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_array)->hash(&v->f_rows)) * UINT64_C(0x100000001b3);
@@ -6464,7 +6466,7 @@ uint64_t h_grid_Grid_hash(const void *elem) {
     return h;
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -6472,7 +6474,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -6480,13 +6482,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -6496,7 +6498,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_7f9f63e_retain(const h_0opt_7f9f63e *v) {
+HERO_TU_LOCAL void h_0opt_7f9f63e_retain(const h_0opt_7f9f63e *v) {
     if (v->tag == INT64_C(0)) {
         h_grid_Grid_retain(&v->as.ok);
     } else {
@@ -6504,7 +6506,7 @@ void h_0opt_7f9f63e_retain(const h_0opt_7f9f63e *v) {
     }
 }
 
-void h_0opt_7f9f63e_release(h_0opt_7f9f63e *v) {
+HERO_TU_LOCAL void h_0opt_7f9f63e_release(h_0opt_7f9f63e *v) {
     if (v->tag == INT64_C(0)) {
         h_grid_Grid_release(&v->as.ok);
     } else {
@@ -6512,13 +6514,13 @@ void h_0opt_7f9f63e_release(h_0opt_7f9f63e *v) {
     }
 }
 
-bool h_0opt_7f9f63e_eq(const h_0opt_7f9f63e *a, const h_0opt_7f9f63e *b) {
+HERO_TU_LOCAL bool h_0opt_7f9f63e_eq(const h_0opt_7f9f63e *a, const h_0opt_7f9f63e *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&h_grid_Grid_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_7f9f63e_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_7f9f63e_hash(const void *elem) {
     const h_0opt_7f9f63e *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -6528,7 +6530,7 @@ uint64_t h_0opt_7f9f63e_hash(const void *elem) {
     return (h ^ (&h_grid_Grid_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v) {
+HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v) {
     if (v->tag == INT64_C(0)) {
         hero_array_incref(v->as.ok);
     } else {
@@ -6536,7 +6538,7 @@ void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v) {
     }
 }
 
-void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v) {
+HERO_TU_LOCAL void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v) {
     if (v->tag == INT64_C(0)) {
         hero_array_decref(v->as.ok);
     } else {
@@ -6544,13 +6546,13 @@ void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v) {
     }
 }
 
-bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *a, const h_0opt_2270cbe7 *b) {
+HERO_TU_LOCAL bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *a, const h_0opt_2270cbe7 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_array)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_2270cbe7_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_2270cbe7_hash(const void *elem) {
     const h_0opt_2270cbe7 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -6560,7 +6562,7 @@ uint64_t h_0opt_2270cbe7_hash(const void *elem) {
     return (h ^ (&hero_desc_array)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *v) {
+HERO_TU_LOCAL void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6568,7 +6570,7 @@ void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *v) {
     }
 }
 
-void h_0opt_473cb9ae_release(h_0opt_473cb9ae *v) {
+HERO_TU_LOCAL void h_0opt_473cb9ae_release(h_0opt_473cb9ae *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6576,13 +6578,13 @@ void h_0opt_473cb9ae_release(h_0opt_473cb9ae *v) {
     }
 }
 
-bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *a, const h_0opt_473cb9ae *b) {
+HERO_TU_LOCAL bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *a, const h_0opt_473cb9ae *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_bool)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_473cb9ae_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_473cb9ae_hash(const void *elem) {
     const h_0opt_473cb9ae *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -6592,7 +6594,7 @@ uint64_t h_0opt_473cb9ae_hash(const void *elem) {
     return (h ^ (&hero_desc_bool)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6600,7 +6602,7 @@ void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     }
 }
 
-void h_0opt_e201354_release(h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6608,13 +6610,13 @@ void h_0opt_e201354_release(h_0opt_e201354 *v) {
     }
 }
 
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_e201354_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
     const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -6624,7 +6626,7 @@ uint64_t h_0opt_e201354_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6632,7 +6634,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6640,13 +6642,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "recordsownstrings.c"
+#line 43 "recordsownstrings.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "recordsownstrings.c"
+#line 61 "recordsownstrings.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1a23a6da, "hello, ");
@@ -88,29 +90,29 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_recordsownstrings_Person_retain(const h_recordsownstrings_Person *v);
-void h_recordsownstrings_Person_release(h_recordsownstrings_Person *v);
-bool h_recordsownstrings_Person_eq(const h_recordsownstrings_Person *a, const h_recordsownstrings_Person *b);
-uint64_t h_recordsownstrings_Person_hash(const void *elem);
-void h_recordsownstrings_Pair_retain(const h_recordsownstrings_Pair *v);
-void h_recordsownstrings_Pair_release(h_recordsownstrings_Pair *v);
-bool h_recordsownstrings_Pair_eq(const h_recordsownstrings_Pair *a, const h_recordsownstrings_Pair *b);
-uint64_t h_recordsownstrings_Pair_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_recordsownstrings_Person_retain(const h_recordsownstrings_Person *v);
+HERO_TU_LOCAL void h_recordsownstrings_Person_release(h_recordsownstrings_Person *v);
+HERO_TU_LOCAL bool h_recordsownstrings_Person_eq(const h_recordsownstrings_Person *a, const h_recordsownstrings_Person *b);
+HERO_TU_LOCAL uint64_t h_recordsownstrings_Person_hash(const void *elem);
+HERO_TU_LOCAL void h_recordsownstrings_Pair_retain(const h_recordsownstrings_Pair *v);
+HERO_TU_LOCAL void h_recordsownstrings_Pair_release(h_recordsownstrings_Pair *v);
+HERO_TU_LOCAL bool h_recordsownstrings_Pair_eq(const h_recordsownstrings_Pair *a, const h_recordsownstrings_Pair *b);
+HERO_TU_LOCAL uint64_t h_recordsownstrings_Pair_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 HeroStr h_recordsownstrings_greet(h_recordsownstrings_Person h0_p);
 void h_recordsownstrings_main(void);
 
 #line 24 "tests/golden/run/records-own-strings.hero"
 HeroStr h_recordsownstrings_greet(h_recordsownstrings_Person h0_p) {
-#line 114 "recordsownstrings.c"
+#line 116 "recordsownstrings.c"
     HeroStr h1_own1 = {0};
     HeroStr t1 = {0};
     h_recordsownstrings_Person t2 = {0};
@@ -132,21 +134,21 @@ bb0:
     t5 = h1_own1;
 #line 25 "tests/golden/run/records-own-strings.hero"
     h1_own1 = t4;
-#line 136 "recordsownstrings.c"
+#line 138 "recordsownstrings.c"
     hero_str_decref(t5);
 #line 25 "tests/golden/run/records-own-strings.hero"
-#line 139 "recordsownstrings.c"
+#line 141 "recordsownstrings.c"
     hero_str_incref(t4);
 #line 25 "tests/golden/run/records-own-strings.hero"
     t6 = h1_own1;
-#line 143 "recordsownstrings.c"
+#line 145 "recordsownstrings.c"
     hero_str_decref(t6);
     return t4;
 }
 
 #line 27 "tests/golden/run/records-own-strings.hero"
 void h_recordsownstrings_main(void) {
-#line 150 "recordsownstrings.c"
+#line 152 "recordsownstrings.c"
     h_recordsownstrings_Person h0_p = {0};
     h_recordsownstrings_Person h1_q = {0};
     h_recordsownstrings_Pair h2_both = {0};
@@ -227,11 +229,11 @@ bb0:
     t40 = h3_own3;
 #line 30 "tests/golden/run/records-own-strings.hero"
     h3_own3 = t3;
-#line 231 "recordsownstrings.c"
+#line 233 "recordsownstrings.c"
     hero_str_decref(t40);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t4 = INT64_C(36);
-#line 235 "recordsownstrings.c"
+#line 237 "recordsownstrings.c"
     hero_str_incref(t3);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t5 = (h_recordsownstrings_Person){.f_name = t3, .f_age = t4};
@@ -239,15 +241,15 @@ bb0:
     t41 = h4_own4;
 #line 30 "tests/golden/run/records-own-strings.hero"
     h4_own4 = t5;
-#line 243 "recordsownstrings.c"
+#line 245 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t41);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t42 = h0_p;
-#line 247 "recordsownstrings.c"
+#line 249 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t5);
 #line 30 "tests/golden/run/records-own-strings.hero"
     h0_p = t5;
-#line 251 "recordsownstrings.c"
+#line 253 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t42);
 #line 31 "tests/golden/run/records-own-strings.hero"
     t6 = h0_p;
@@ -257,7 +259,7 @@ bb0:
     t43 = h5_own5;
 #line 31 "tests/golden/run/records-own-strings.hero"
     h5_own5 = t7;
-#line 261 "recordsownstrings.c"
+#line 263 "recordsownstrings.c"
     hero_str_decref(t43);
 #line 31 "tests/golden/run/records-own-strings.hero"
     hero_print_str(t7);
@@ -267,11 +269,11 @@ bb0:
     t8 = h0_p;
 #line 32 "tests/golden/run/records-own-strings.hero"
     t44 = h1_q;
-#line 271 "recordsownstrings.c"
+#line 273 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t8);
 #line 32 "tests/golden/run/records-own-strings.hero"
     h1_q = t8;
-#line 275 "recordsownstrings.c"
+#line 277 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t44);
 #line 33 "tests/golden/run/records-own-strings.hero"
     t9 = h1_q;
@@ -285,7 +287,7 @@ bb0:
     t11 = HERO_STR_LIT(hero_str_1f648322);
 #line 34 "tests/golden/run/records-own-strings.hero"
     t12 = INT64_C(45);
-#line 289 "recordsownstrings.c"
+#line 291 "recordsownstrings.c"
     hero_str_incref(t11);
 #line 34 "tests/golden/run/records-own-strings.hero"
     t13 = (h_recordsownstrings_Person){.f_name = t11, .f_age = t12};
@@ -293,15 +295,15 @@ bb0:
     t45 = h6_own6;
 #line 34 "tests/golden/run/records-own-strings.hero"
     h6_own6 = t13;
-#line 297 "recordsownstrings.c"
+#line 299 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t45);
 #line 34 "tests/golden/run/records-own-strings.hero"
     t46 = h1_q;
-#line 301 "recordsownstrings.c"
+#line 303 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t13);
 #line 34 "tests/golden/run/records-own-strings.hero"
     h1_q = t13;
-#line 305 "recordsownstrings.c"
+#line 307 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t46);
 #line 35 "tests/golden/run/records-own-strings.hero"
     t14 = h1_q;
@@ -321,10 +323,10 @@ bb0:
     t18 = h0_p;
 #line 36 "tests/golden/run/records-own-strings.hero"
     t19 = h1_q;
-#line 325 "recordsownstrings.c"
+#line 327 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t18);
 #line 36 "tests/golden/run/records-own-strings.hero"
-#line 328 "recordsownstrings.c"
+#line 330 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t19);
 #line 36 "tests/golden/run/records-own-strings.hero"
     t20 = (h_recordsownstrings_Pair){.f_one = t18, .f_two = t19};
@@ -332,15 +334,15 @@ bb0:
     t47 = h7_own7;
 #line 36 "tests/golden/run/records-own-strings.hero"
     h7_own7 = t20;
-#line 336 "recordsownstrings.c"
+#line 338 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t47);
 #line 36 "tests/golden/run/records-own-strings.hero"
     t48 = h2_both;
-#line 340 "recordsownstrings.c"
+#line 342 "recordsownstrings.c"
     h_recordsownstrings_Pair_retain(&t20);
 #line 36 "tests/golden/run/records-own-strings.hero"
     h2_both = t20;
-#line 344 "recordsownstrings.c"
+#line 346 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t48);
 #line 37 "tests/golden/run/records-own-strings.hero"
     t21 = h2_both;
@@ -366,10 +368,10 @@ bb0:
     t28 = h0_p;
 #line 38 "tests/golden/run/records-own-strings.hero"
     t29 = h1_q;
-#line 370 "recordsownstrings.c"
+#line 372 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t28);
 #line 38 "tests/golden/run/records-own-strings.hero"
-#line 373 "recordsownstrings.c"
+#line 375 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t29);
 #line 38 "tests/golden/run/records-own-strings.hero"
     t30 = (h_recordsownstrings_Pair){.f_one = t28, .f_two = t29};
@@ -377,7 +379,7 @@ bb0:
     t49 = h8_own8;
 #line 38 "tests/golden/run/records-own-strings.hero"
     h8_own8 = t30;
-#line 381 "recordsownstrings.c"
+#line 383 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t49);
 #line 38 "tests/golden/run/records-own-strings.hero"
     t31 = h_recordsownstrings_Pair_eq(&t27, &t30);
@@ -403,11 +405,11 @@ bb0:
     t37 = h1_q;
 #line 42 "tests/golden/run/records-own-strings.hero"
     t50 = h1_q;
-#line 407 "recordsownstrings.c"
+#line 409 "recordsownstrings.c"
     h_recordsownstrings_Person_retain(&t37);
 #line 42 "tests/golden/run/records-own-strings.hero"
     h1_q = t37;
-#line 411 "recordsownstrings.c"
+#line 413 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t50);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t38 = h1_q;
@@ -419,57 +421,57 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/run/records-own-strings.hero"
     t51 = h0_p;
-#line 423 "recordsownstrings.c"
+#line 425 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t51);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t52 = h1_q;
-#line 427 "recordsownstrings.c"
+#line 429 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t52);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t53 = h2_both;
-#line 431 "recordsownstrings.c"
+#line 433 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t53);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t54 = h3_own3;
-#line 435 "recordsownstrings.c"
+#line 437 "recordsownstrings.c"
     hero_str_decref(t54);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t55 = h4_own4;
-#line 439 "recordsownstrings.c"
+#line 441 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t55);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t56 = h5_own5;
-#line 443 "recordsownstrings.c"
+#line 445 "recordsownstrings.c"
     hero_str_decref(t56);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t57 = h6_own6;
-#line 447 "recordsownstrings.c"
+#line 449 "recordsownstrings.c"
     h_recordsownstrings_Person_release(&t57);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t58 = h7_own7;
-#line 451 "recordsownstrings.c"
+#line 453 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t58);
 #line 43 "tests/golden/run/records-own-strings.hero"
     t59 = h8_own8;
-#line 455 "recordsownstrings.c"
+#line 457 "recordsownstrings.c"
     h_recordsownstrings_Pair_release(&t59);
     return;
 }
-void h_recordsownstrings_Person_retain(const h_recordsownstrings_Person *v) {
+HERO_TU_LOCAL void h_recordsownstrings_Person_retain(const h_recordsownstrings_Person *v) {
     hero_str_incref(v->f_name);
 }
 
-void h_recordsownstrings_Person_release(h_recordsownstrings_Person *v) {
+HERO_TU_LOCAL void h_recordsownstrings_Person_release(h_recordsownstrings_Person *v) {
     hero_str_decref(v->f_name);
 }
 
-bool h_recordsownstrings_Person_eq(const h_recordsownstrings_Person *a, const h_recordsownstrings_Person *b) {
+HERO_TU_LOCAL bool h_recordsownstrings_Person_eq(const h_recordsownstrings_Person *a, const h_recordsownstrings_Person *b) {
     if (!(hero_str_eq(a->f_name, b->f_name))) return false;
     if (!(a->f_age == b->f_age)) return false;
     return true;
 }
 
-uint64_t h_recordsownstrings_Person_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_recordsownstrings_Person_hash(const void *elem) {
     const h_recordsownstrings_Person *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);
@@ -477,23 +479,23 @@ uint64_t h_recordsownstrings_Person_hash(const void *elem) {
     return h;
 }
 
-void h_recordsownstrings_Pair_retain(const h_recordsownstrings_Pair *v) {
+HERO_TU_LOCAL void h_recordsownstrings_Pair_retain(const h_recordsownstrings_Pair *v) {
     h_recordsownstrings_Person_retain(&v->f_one);
     h_recordsownstrings_Person_retain(&v->f_two);
 }
 
-void h_recordsownstrings_Pair_release(h_recordsownstrings_Pair *v) {
+HERO_TU_LOCAL void h_recordsownstrings_Pair_release(h_recordsownstrings_Pair *v) {
     h_recordsownstrings_Person_release(&v->f_one);
     h_recordsownstrings_Person_release(&v->f_two);
 }
 
-bool h_recordsownstrings_Pair_eq(const h_recordsownstrings_Pair *a, const h_recordsownstrings_Pair *b) {
+HERO_TU_LOCAL bool h_recordsownstrings_Pair_eq(const h_recordsownstrings_Pair *a, const h_recordsownstrings_Pair *b) {
     if (!(h_recordsownstrings_Person_eq(&a->f_one, &b->f_one))) return false;
     if (!(h_recordsownstrings_Person_eq(&a->f_two, &b->f_two))) return false;
     return true;
 }
 
-uint64_t h_recordsownstrings_Pair_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_recordsownstrings_Pair_hash(const void *elem) {
     const h_recordsownstrings_Pair *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ h_recordsownstrings_Person_hash(&v->f_one)) * UINT64_C(0x100000001b3);
@@ -501,7 +503,7 @@ uint64_t h_recordsownstrings_Pair_hash(const void *elem) {
     return h;
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -509,7 +511,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -517,13 +519,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -533,7 +535,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -541,7 +543,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -549,13 +551,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "fixedbugsalibraryfunctionasavalue.c"
+#line 43 "fixedbugsalibraryfunctionasavalue.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "fixedbugsalibraryfunctionasavalue.c"
+#line 61 "fixedbugsalibraryfunctionasavalue.c"
 #pragma clang diagnostic pop
 
 typedef HeroArrayHeader * (*h_0fn_102fd4e2)(int64_t, int64_t);
@@ -75,14 +77,14 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_fixedbugsalibraryfunctionasavalue_call_it(h_0fn_102fd4e2 h0_f);
 int64_t h_fixedbugsalibraryfunctionasavalue_pick(h_0fn_48ac9712 h0_f, int64_t h1_n);
@@ -92,7 +94,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 16 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 int64_t h_fixedbugsalibraryfunctionasavalue_call_it(h_0fn_102fd4e2 h0_f) {
-#line 96 "fixedbugsalibraryfunctionasavalue.c"
+#line 98 "fixedbugsalibraryfunctionasavalue.c"
     HeroArrayHeader * h1_own1 = {0};
     h_0fn_102fd4e2 t1;
     int64_t t2;
@@ -115,20 +117,20 @@ bb0:
     t6 = h1_own1;
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     h1_own1 = t4;
-#line 119 "fixedbugsalibraryfunctionasavalue.c"
+#line 121 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t6);
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     t5 = hero_array_len(t4);
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     t7 = h1_own1;
-#line 125 "fixedbugsalibraryfunctionasavalue.c"
+#line 127 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t7);
     return t5;
 }
 
 #line 19 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 int64_t h_fixedbugsalibraryfunctionasavalue_pick(h_0fn_48ac9712 h0_f, int64_t h1_n) {
-#line 132 "fixedbugsalibraryfunctionasavalue.c"
+#line 134 "fixedbugsalibraryfunctionasavalue.c"
     h_0fn_48ac9712 t1;
     int64_t t2;
     int64_t t3;
@@ -142,12 +144,12 @@ bb0:
     t3 = t1(t2);
 #line 20 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     return t3;
-#line 146 "fixedbugsalibraryfunctionasavalue.c"
+#line 148 "fixedbugsalibraryfunctionasavalue.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 void h_fixedbugsalibraryfunctionasavalue_main(void) {
-#line 151 "fixedbugsalibraryfunctionasavalue.c"
+#line 153 "fixedbugsalibraryfunctionasavalue.c"
     h_0fn_102fd4e2 t1;
     int64_t t2;
     h_0fn_48ac9712 t3;
@@ -175,12 +177,12 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     return;
-#line 179 "fixedbugsalibraryfunctionasavalue.c"
+#line 181 "fixedbugsalibraryfunctionasavalue.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 int64_t h_fixedbugsalibraryfunctionasavalue_twice(int64_t h0_n) {
-#line 184 "fixedbugsalibraryfunctionasavalue.c"
+#line 186 "fixedbugsalibraryfunctionasavalue.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -194,12 +196,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 27 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     return t3;
-#line 198 "fixedbugsalibraryfunctionasavalue.c"
+#line 200 "fixedbugsalibraryfunctionasavalue.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 203 "fixedbugsalibraryfunctionasavalue.c"
+#line 205 "fixedbugsalibraryfunctionasavalue.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -225,15 +227,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 229 "fixedbugsalibraryfunctionasavalue.c"
+#line 231 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 233 "fixedbugsalibraryfunctionasavalue.c"
+#line 235 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 237 "fixedbugsalibraryfunctionasavalue.c"
+#line 239 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -271,19 +273,19 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 275 "fixedbugsalibraryfunctionasavalue.c"
+#line 277 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
     t15 = h2_out;
-#line 279 "fixedbugsalibraryfunctionasavalue.c"
+#line 281 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t15);
 #line 32 "<heroes library>"
     t16 = h4_own4;
-#line 283 "fixedbugsalibraryfunctionasavalue.c"
+#line 285 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t16);
     return t12;
 }
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -291,7 +293,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -299,13 +301,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -315,7 +317,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -323,7 +325,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -331,13 +333,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

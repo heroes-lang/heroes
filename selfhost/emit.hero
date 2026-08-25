@@ -19,6 +19,7 @@ use check_table
 use check_state
 use ir_state
 use emit_ctype
+use emit_synth
 use emit_writer
 use emit_decls
 use emit_gate
@@ -189,13 +190,13 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
     # different from the bootstrap, which is what settled which side had
     # the bug.
     w: emit_writer.Writer @ emit_writer.new_writer(module)
-    emit_decls.prelude(@w, p, target: target, c: c, names: names, s: s, decls: decls, version: version)
+    emit_decls.prelude(@w, p, target: target, c: c, names: names, s: s, decls: decls, version: version, tu_local: "")
     # Types before anything that can mention one: every typedef in one
     # containment order, then every per-type prototype, then the
     # descriptors — an array literal names its element's descriptor,
     # so the object must exist before a function body mentions it.
-    emit_typeorder.definitions(@w, c, names, s, decls)
-    emit_perfn.prototypes(@w, c, names, decls)
+    emit_typeorder.definitions(@w, c, names, s, decls, want: emit_synth.everything())
+    emit_perfn.prototypes(@w, c, names, decls, want: emit_synth.everything())
     emit_descriptors.definitions(@w, c, names, decls, reachable: reached, constructed: constructed)
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
@@ -203,7 +204,7 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             emit_body.definition(@w, p, c, names, s, decls, f: p.functions[at])
-    emit_perfn.bodies(@w, c, names, s, decls)
+    emit_perfn.bodies(@w, c, names, s, decls, want: emit_synth.everything())
     match target
         .program_build =>
             entry = entry_point(p)

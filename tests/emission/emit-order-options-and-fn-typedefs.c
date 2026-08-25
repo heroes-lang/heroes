@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "orderoptionsandfntypedefs.c"
+#line 43 "orderoptionsandfntypedefs.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "orderoptionsandfntypedefs.c"
+#line 61 "orderoptionsandfntypedefs.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1d4477, "odd");
@@ -106,24 +108,24 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_orderoptionsandfntypedefs_Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b);
-uint64_t h_orderoptionsandfntypedefs_Point_hash(const void *elem);
-void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-void h_0opt_e201354_release(h_0opt_e201354 *v);
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-uint64_t h_0opt_e201354_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_de89a9a_retain(const h_0opt_de89a9a *v);
-void h_0opt_de89a9a_release(h_0opt_de89a9a *v);
-bool h_0opt_de89a9a_eq(const h_0opt_de89a9a *a, const h_0opt_de89a9a *b);
-uint64_t h_0opt_de89a9a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_orderoptionsandfntypedefs_Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b);
+HERO_TU_LOCAL uint64_t h_orderoptionsandfntypedefs_Point_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_de89a9a_retain(const h_0opt_de89a9a *v);
+HERO_TU_LOCAL void h_0opt_de89a9a_release(h_0opt_de89a9a *v);
+HERO_TU_LOCAL bool h_0opt_de89a9a_eq(const h_0opt_de89a9a *a, const h_0opt_de89a9a *b);
+HERO_TU_LOCAL uint64_t h_0opt_de89a9a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_orderoptionsandfntypedefs_Point_desc_copy(void *dst, const void *src) {
     *(h_orderoptionsandfntypedefs_Point *)dst = *(const h_orderoptionsandfntypedefs_Point *)src;
@@ -134,7 +136,7 @@ static void h_orderoptionsandfntypedefs_Point_desc_drop(void *elem) {
 static bool h_orderoptionsandfntypedefs_Point_desc_eq(const void *a, const void *b) {
     return h_orderoptionsandfntypedefs_Point_eq((const h_orderoptionsandfntypedefs_Point *)a, (const h_orderoptionsandfntypedefs_Point *)b);
 }
-static const HeroDesc h_orderoptionsandfntypedefs_Point_desc = {
+HERO_TU_QUIET static const HeroDesc h_orderoptionsandfntypedefs_Point_desc = {
     sizeof(h_orderoptionsandfntypedefs_Point),
     h_orderoptionsandfntypedefs_Point_desc_copy,
     h_orderoptionsandfntypedefs_Point_desc_drop,
@@ -153,7 +155,7 @@ void h_orderoptionsandfntypedefs_main(void);
 
 #line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_e201354 h_orderoptionsandfntypedefs_half(int64_t h0_n) {
-#line 157 "orderoptionsandfntypedefs.c"
+#line 159 "orderoptionsandfntypedefs.c"
     h_0opt_e201354 h1_own1 = {0};
     h_0opt_e201354 h2_own2 = {0};
     int64_t t1;
@@ -198,10 +200,10 @@ bb1:
     t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t11 = HERO_STR_LIT(hero_str_7fc615fd);
-#line 202 "orderoptionsandfntypedefs.c"
+#line 204 "orderoptionsandfntypedefs.c"
     hero_str_incref(t10);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 205 "orderoptionsandfntypedefs.c"
+#line 207 "orderoptionsandfntypedefs.c"
     hero_str_incref(t11);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}};
@@ -209,18 +211,18 @@ bb1:
     t13 = h1_own1;
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_own1 = t12;
-#line 213 "orderoptionsandfntypedefs.c"
+#line 215 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t13);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 216 "orderoptionsandfntypedefs.c"
+#line 218 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_retain(&t12);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t15 = h1_own1;
-#line 220 "orderoptionsandfntypedefs.c"
+#line 222 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t15);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t16 = h2_own2;
-#line 224 "orderoptionsandfntypedefs.c"
+#line 226 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t16);
     return t12;
 bb2:
@@ -240,18 +242,18 @@ bb2:
     t14 = h2_own2;
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h2_own2 = t9;
-#line 244 "orderoptionsandfntypedefs.c"
+#line 246 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t14);
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 247 "orderoptionsandfntypedefs.c"
+#line 249 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_retain(&t9);
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t17 = h1_own1;
-#line 251 "orderoptionsandfntypedefs.c"
+#line 253 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t17);
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t18 = h2_own2;
-#line 255 "orderoptionsandfntypedefs.c"
+#line 257 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t18);
     return t9;
 bb3:
@@ -260,7 +262,7 @@ bb3:
 
 #line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_f87774a h_orderoptionsandfntypedefs_name_of(int64_t h0_n) {
-#line 264 "orderoptionsandfntypedefs.c"
+#line 266 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a h1_own1 = {0};
     h_0opt_f87774a h2_own2 = {0};
     int64_t t1;
@@ -293,10 +295,10 @@ bb1:
     t6 = HERO_STR_LIT(hero_str_d93bba2);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t7 = HERO_STR_LIT(hero_str_73ad6a73);
-#line 297 "orderoptionsandfntypedefs.c"
+#line 299 "orderoptionsandfntypedefs.c"
     hero_str_incref(t6);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 300 "orderoptionsandfntypedefs.c"
+#line 302 "orderoptionsandfntypedefs.c"
     hero_str_incref(t7);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t8 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -304,24 +306,24 @@ bb1:
     t9 = h1_own1;
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_own1 = t8;
-#line 308 "orderoptionsandfntypedefs.c"
+#line 310 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t9);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 311 "orderoptionsandfntypedefs.c"
+#line 313 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_retain(&t8);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t11 = h1_own1;
-#line 315 "orderoptionsandfntypedefs.c"
+#line 317 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t11);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t12 = h2_own2;
-#line 319 "orderoptionsandfntypedefs.c"
+#line 321 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t12);
     return t8;
 bb2:
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t4 = HERO_STR_LIT(hero_str_1073a930);
-#line 325 "orderoptionsandfntypedefs.c"
+#line 327 "orderoptionsandfntypedefs.c"
     hero_str_incref(t4);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t5 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t4};
@@ -329,18 +331,18 @@ bb2:
     t10 = h2_own2;
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h2_own2 = t5;
-#line 333 "orderoptionsandfntypedefs.c"
+#line 335 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t10);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 336 "orderoptionsandfntypedefs.c"
+#line 338 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_retain(&t5);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t13 = h1_own1;
-#line 340 "orderoptionsandfntypedefs.c"
+#line 342 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t13);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t14 = h2_own2;
-#line 344 "orderoptionsandfntypedefs.c"
+#line 346 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t14);
     return t5;
 bb3:
@@ -349,7 +351,7 @@ bb3:
 
 #line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_de89a9a h_orderoptionsandfntypedefs_origin(bool h0_flag) {
-#line 353 "orderoptionsandfntypedefs.c"
+#line 355 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a h1_own1 = {0};
     h_0opt_de89a9a h2_own2 = {0};
     bool t1;
@@ -378,10 +380,10 @@ bb1:
     t6 = HERO_STR_LIT(hero_str_edaa230);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t7 = HERO_STR_LIT(hero_str_56b81d56);
-#line 382 "orderoptionsandfntypedefs.c"
+#line 384 "orderoptionsandfntypedefs.c"
     hero_str_incref(t6);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 385 "orderoptionsandfntypedefs.c"
+#line 387 "orderoptionsandfntypedefs.c"
     hero_str_incref(t7);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t8 = (h_0opt_de89a9a){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -389,18 +391,18 @@ bb1:
     t9 = h1_own1;
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_own1 = t8;
-#line 393 "orderoptionsandfntypedefs.c"
+#line 395 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t9);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 396 "orderoptionsandfntypedefs.c"
+#line 398 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_retain(&t8);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t11 = h1_own1;
-#line 400 "orderoptionsandfntypedefs.c"
+#line 402 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t11);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t12 = h2_own2;
-#line 404 "orderoptionsandfntypedefs.c"
+#line 406 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t12);
     return t8;
 bb2:
@@ -416,18 +418,18 @@ bb2:
     t10 = h2_own2;
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h2_own2 = t5;
-#line 420 "orderoptionsandfntypedefs.c"
+#line 422 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t10);
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-#line 423 "orderoptionsandfntypedefs.c"
+#line 425 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_retain(&t5);
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t13 = h1_own1;
-#line 427 "orderoptionsandfntypedefs.c"
+#line 429 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t13);
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t14 = h2_own2;
-#line 431 "orderoptionsandfntypedefs.c"
+#line 433 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t14);
     return t5;
 bb3:
@@ -436,7 +438,7 @@ bb3:
 
 #line 29 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 int64_t h_orderoptionsandfntypedefs_apply(h_0fn_7b615d8f h0_f, int64_t h1_x, int64_t h2_y) {
-#line 440 "orderoptionsandfntypedefs.c"
+#line 442 "orderoptionsandfntypedefs.c"
     h_0fn_7b615d8f t1;
     int64_t t2;
     int64_t t3;
@@ -453,12 +455,12 @@ bb0:
     t4 = t1(t2, t3);
 #line 30 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return t4;
-#line 457 "orderoptionsandfntypedefs.c"
+#line 459 "orderoptionsandfntypedefs.c"
 }
 
 #line 32 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 int64_t h_orderoptionsandfntypedefs_add(int64_t h0_a, int64_t h1_b) {
-#line 462 "orderoptionsandfntypedefs.c"
+#line 464 "orderoptionsandfntypedefs.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -472,12 +474,12 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 33 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return t3;
-#line 476 "orderoptionsandfntypedefs.c"
+#line 478 "orderoptionsandfntypedefs.c"
 }
 
 #line 35 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_twice(h_0fn_294870dd h0_f) {
-#line 481 "orderoptionsandfntypedefs.c"
+#line 483 "orderoptionsandfntypedefs.c"
     h_0fn_294870dd t1;
     h_0fn_294870dd t2;
     goto bb0;
@@ -492,12 +494,12 @@ bb0:
     t2();
 #line 37 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return;
-#line 496 "orderoptionsandfntypedefs.c"
+#line 498 "orderoptionsandfntypedefs.c"
 }
 
 #line 39 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_tick(void) {
-#line 501 "orderoptionsandfntypedefs.c"
+#line 503 "orderoptionsandfntypedefs.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
@@ -509,12 +511,12 @@ bb0:
     hero_print_end();
 #line 40 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     return;
-#line 513 "orderoptionsandfntypedefs.c"
+#line 515 "orderoptionsandfntypedefs.c"
 }
 
 #line 42 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_main(void) {
-#line 518 "orderoptionsandfntypedefs.c"
+#line 520 "orderoptionsandfntypedefs.c"
     HeroArrayHeader * h0_points = {0};
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_r0;
@@ -614,15 +616,15 @@ bb0:
     t43 = h6_own6;
 #line 43 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h6_own6 = t7;
-#line 618 "orderoptionsandfntypedefs.c"
+#line 620 "orderoptionsandfntypedefs.c"
     hero_array_decref(t43);
 #line 43 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t44 = h0_points;
-#line 622 "orderoptionsandfntypedefs.c"
+#line 624 "orderoptionsandfntypedefs.c"
     hero_array_incref(t7);
 #line 43 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h0_points = t7;
-#line 626 "orderoptionsandfntypedefs.c"
+#line 628 "orderoptionsandfntypedefs.c"
     hero_array_decref(t44);
 #line 44 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t8 = h0_points;
@@ -644,15 +646,15 @@ bb0:
     t45 = h7_own7;
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h7_own7 = t13;
-#line 648 "orderoptionsandfntypedefs.c"
+#line 650 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t45);
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t46 = h1_f0;
-#line 652 "orderoptionsandfntypedefs.c"
+#line 654 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_retain(&t13);
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h1_f0 = t13;
-#line 656 "orderoptionsandfntypedefs.c"
+#line 658 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t46);
 #line 45 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t14 = h1_f0;
@@ -698,15 +700,15 @@ bb3:
     t47 = h8_own8;
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h8_own8 = t23;
-#line 702 "orderoptionsandfntypedefs.c"
+#line 704 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t47);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t48 = h3_f1;
-#line 706 "orderoptionsandfntypedefs.c"
+#line 708 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_retain(&t23);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h3_f1 = t23;
-#line 710 "orderoptionsandfntypedefs.c"
+#line 712 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t48);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t24 = h3_f1;
@@ -726,11 +728,11 @@ bb4:
     t29 = t28.as.ok;
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t49 = h4_r1;
-#line 730 "orderoptionsandfntypedefs.c"
+#line 732 "orderoptionsandfntypedefs.c"
     hero_str_incref(t29);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h4_r1 = t29;
-#line 734 "orderoptionsandfntypedefs.c"
+#line 736 "orderoptionsandfntypedefs.c"
     hero_str_decref(t49);
     goto bb6;
 bb5:
@@ -738,11 +740,11 @@ bb5:
     t30 = HERO_STR_LIT(hero_str_3f);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t50 = h4_r1;
-#line 742 "orderoptionsandfntypedefs.c"
+#line 744 "orderoptionsandfntypedefs.c"
     hero_str_incref(t30);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h4_r1 = t30;
-#line 746 "orderoptionsandfntypedefs.c"
+#line 748 "orderoptionsandfntypedefs.c"
     hero_str_decref(t50);
     goto bb6;
 bb6:
@@ -760,15 +762,15 @@ bb6:
     t51 = h9_own9;
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h9_own9 = t33;
-#line 764 "orderoptionsandfntypedefs.c"
+#line 766 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t51);
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t52 = h5_f2;
-#line 768 "orderoptionsandfntypedefs.c"
+#line 770 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_retain(&t33);
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h5_f2 = t33;
-#line 772 "orderoptionsandfntypedefs.c"
+#line 774 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t52);
 #line 47 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t34 = h5_f2;
@@ -800,49 +802,49 @@ bb6:
     h_orderoptionsandfntypedefs_twice(t42);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t53 = h0_points;
-#line 804 "orderoptionsandfntypedefs.c"
+#line 806 "orderoptionsandfntypedefs.c"
     hero_array_decref(t53);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t54 = h1_f0;
-#line 808 "orderoptionsandfntypedefs.c"
+#line 810 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t54);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t55 = h3_f1;
-#line 812 "orderoptionsandfntypedefs.c"
+#line 814 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t55);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t56 = h4_r1;
-#line 816 "orderoptionsandfntypedefs.c"
+#line 818 "orderoptionsandfntypedefs.c"
     hero_str_decref(t56);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t57 = h5_f2;
-#line 820 "orderoptionsandfntypedefs.c"
+#line 822 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t57);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t58 = h6_own6;
-#line 824 "orderoptionsandfntypedefs.c"
+#line 826 "orderoptionsandfntypedefs.c"
     hero_array_decref(t58);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t59 = h7_own7;
-#line 828 "orderoptionsandfntypedefs.c"
+#line 830 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&t59);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t60 = h8_own8;
-#line 832 "orderoptionsandfntypedefs.c"
+#line 834 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&t60);
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t61 = h9_own9;
-#line 836 "orderoptionsandfntypedefs.c"
+#line 838 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&t61);
     return;
 }
-bool h_orderoptionsandfntypedefs_Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b) {
+HERO_TU_LOCAL bool h_orderoptionsandfntypedefs_Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b) {
     if (!(a->f_x == b->f_x)) return false;
     if (!(a->f_y == b->f_y)) return false;
     return true;
 }
 
-uint64_t h_orderoptionsandfntypedefs_Point_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_orderoptionsandfntypedefs_Point_hash(const void *elem) {
     const h_orderoptionsandfntypedefs_Point *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
@@ -850,7 +852,7 @@ uint64_t h_orderoptionsandfntypedefs_Point_hash(const void *elem) {
     return h;
 }
 
-void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -858,7 +860,7 @@ void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     }
 }
 
-void h_0opt_e201354_release(h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -866,13 +868,13 @@ void h_0opt_e201354_release(h_0opt_e201354 *v) {
     }
 }
 
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_e201354_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
     const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -882,7 +884,7 @@ uint64_t h_0opt_e201354_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -890,7 +892,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -898,13 +900,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -914,7 +916,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_de89a9a_retain(const h_0opt_de89a9a *v) {
+HERO_TU_LOCAL void h_0opt_de89a9a_retain(const h_0opt_de89a9a *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -922,7 +924,7 @@ void h_0opt_de89a9a_retain(const h_0opt_de89a9a *v) {
     }
 }
 
-void h_0opt_de89a9a_release(h_0opt_de89a9a *v) {
+HERO_TU_LOCAL void h_0opt_de89a9a_release(h_0opt_de89a9a *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -930,13 +932,13 @@ void h_0opt_de89a9a_release(h_0opt_de89a9a *v) {
     }
 }
 
-bool h_0opt_de89a9a_eq(const h_0opt_de89a9a *a, const h_0opt_de89a9a *b) {
+HERO_TU_LOCAL bool h_0opt_de89a9a_eq(const h_0opt_de89a9a *a, const h_0opt_de89a9a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&h_orderoptionsandfntypedefs_Point_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_de89a9a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_de89a9a_hash(const void *elem) {
     const h_0opt_de89a9a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -946,7 +948,7 @@ uint64_t h_0opt_de89a9a_hash(const void *elem) {
     return (h ^ (&h_orderoptionsandfntypedefs_Point_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -954,7 +956,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -962,13 +964,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

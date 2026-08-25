@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "premiseslicenevershares.c"
+#line 43 "premiseslicenevershares.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "premiseslicenevershares.c"
+#line 61 "premiseslicenevershares.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_20, " ");
@@ -77,20 +79,20 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_premiseslicenevershares_main(void);
 
 #line 21 "tests/golden/run/premise-slice-never-shares.hero"
 void h_premiseslicenevershares_main(void) {
-#line 94 "premiseslicenevershares.c"
+#line 96 "premiseslicenevershares.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_part = {0};
     HeroStr h2_s = {0};
@@ -187,15 +189,15 @@ bb0:
     t40 = h5_own5;
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     h5_own5 = t5;
-#line 191 "premiseslicenevershares.c"
+#line 193 "premiseslicenevershares.c"
     hero_array_decref(t40);
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     t41 = h0_xs;
-#line 195 "premiseslicenevershares.c"
+#line 197 "premiseslicenevershares.c"
     hero_array_incref(t5);
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     h0_xs = t5;
-#line 199 "premiseslicenevershares.c"
+#line 201 "premiseslicenevershares.c"
     hero_array_decref(t41);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     t6 = h0_xs;
@@ -209,15 +211,15 @@ bb0:
     t42 = h6_own6;
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     h6_own6 = t9;
-#line 213 "premiseslicenevershares.c"
+#line 215 "premiseslicenevershares.c"
     hero_array_decref(t42);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     t43 = h1_part;
-#line 217 "premiseslicenevershares.c"
+#line 219 "premiseslicenevershares.c"
     hero_array_incref(t9);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     h1_part = t9;
-#line 221 "premiseslicenevershares.c"
+#line 223 "premiseslicenevershares.c"
     hero_array_decref(t43);
 #line 25 "tests/golden/run/premise-slice-never-shares.hero"
     t10 = INT64_C(1);
@@ -279,11 +281,11 @@ bb0:
     t29 = HERO_STR_LIT(hero_str_12becefb);
 #line 35 "tests/golden/run/premise-slice-never-shares.hero"
     t44 = h2_s;
-#line 283 "premiseslicenevershares.c"
+#line 285 "premiseslicenevershares.c"
     hero_str_incref(t29);
 #line 35 "tests/golden/run/premise-slice-never-shares.hero"
     h2_s = t29;
-#line 287 "premiseslicenevershares.c"
+#line 289 "premiseslicenevershares.c"
     hero_str_decref(t44);
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     t30 = h2_s;
@@ -297,15 +299,15 @@ bb0:
     t45 = h7_own7;
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     h7_own7 = t33;
-#line 301 "premiseslicenevershares.c"
+#line 303 "premiseslicenevershares.c"
     hero_str_decref(t45);
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     t46 = h3_mid;
-#line 305 "premiseslicenevershares.c"
+#line 307 "premiseslicenevershares.c"
     hero_str_incref(t33);
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     h3_mid = t33;
-#line 309 "premiseslicenevershares.c"
+#line 311 "premiseslicenevershares.c"
     hero_str_decref(t46);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t34 = h2_s;
@@ -317,15 +319,15 @@ bb0:
     t47 = h8_own8;
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     h8_own8 = t36;
-#line 321 "premiseslicenevershares.c"
+#line 323 "premiseslicenevershares.c"
     hero_str_decref(t47);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t48 = h4_joined;
-#line 325 "premiseslicenevershares.c"
+#line 327 "premiseslicenevershares.c"
     hero_str_incref(t36);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     h4_joined = t36;
-#line 329 "premiseslicenevershares.c"
+#line 331 "premiseslicenevershares.c"
     hero_str_decref(t48);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t37 = h3_mid;
@@ -343,43 +345,43 @@ bb0:
     hero_print_end();
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t49 = h0_xs;
-#line 347 "premiseslicenevershares.c"
+#line 349 "premiseslicenevershares.c"
     hero_array_decref(t49);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t50 = h1_part;
-#line 351 "premiseslicenevershares.c"
+#line 353 "premiseslicenevershares.c"
     hero_array_decref(t50);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t51 = h2_s;
-#line 355 "premiseslicenevershares.c"
+#line 357 "premiseslicenevershares.c"
     hero_str_decref(t51);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t52 = h3_mid;
-#line 359 "premiseslicenevershares.c"
+#line 361 "premiseslicenevershares.c"
     hero_str_decref(t52);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t53 = h4_joined;
-#line 363 "premiseslicenevershares.c"
+#line 365 "premiseslicenevershares.c"
     hero_str_decref(t53);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t54 = h5_own5;
-#line 367 "premiseslicenevershares.c"
+#line 369 "premiseslicenevershares.c"
     hero_array_decref(t54);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t55 = h6_own6;
-#line 371 "premiseslicenevershares.c"
+#line 373 "premiseslicenevershares.c"
     hero_array_decref(t55);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t56 = h7_own7;
-#line 375 "premiseslicenevershares.c"
+#line 377 "premiseslicenevershares.c"
     hero_str_decref(t56);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t57 = h8_own8;
-#line 379 "premiseslicenevershares.c"
+#line 381 "premiseslicenevershares.c"
     hero_str_decref(t57);
     return;
 }
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -387,7 +389,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -395,13 +397,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -411,7 +413,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -419,7 +421,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -427,13 +429,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

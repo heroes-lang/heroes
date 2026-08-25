@@ -102,9 +102,9 @@ function reference_line(c: check_state.Checked, names: emit_ctype.Names, ty: i64
 function reference_body(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, at: emit_ctype.Aggregate, fields: [ast.Field], keep: bool)
     emit_writer.at_generated(@w)
     if keep
-        emit_writer.line(@w, text: "void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
+        emit_writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
     else
-        emit_writer.line(@w, text: "void " + at.prefix + "_release(" + at.c_type + " *v) {")
+        emit_writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *v) {")
     for field in fields
         ty: i64 @ check_table.error_ty(c.types)
         written = check_state.written_type(c, field.ty)
@@ -134,9 +134,9 @@ function variant_reference_body(@w: emit_writer.Writer, c: check_state.Checked, 
         verb @ "retain"
     emit_writer.at_generated(@w)
     if keep
-        emit_writer.line(@w, text: "void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
+        emit_writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
     else
-        emit_writer.line(@w, text: "void " + at.prefix + "_release(" + at.c_type + " *v) {")
+        emit_writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *v) {")
     emit_writer.line(@w, text: "    switch (v->tag) {")
     case_at: i64 @ 0
     for one_case in emit_types.cases_of(decls, decl: decl)
@@ -174,7 +174,7 @@ test "ownership is the declaration's fact, and the walk is one line per counted 
     at = emit_ctype.aggregate(got.names, decl: 0)
     reference_body(@w, got.c, got.names, got.s, at: at, fields: emit_types.fields_of(got.decls, decl: 0), keep: false)
     text = emit_writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nvoid h_t_Person_release(h_t_Person *v) {\n    hero_str_decref(v->f_name);\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_Person_release(h_t_Person *v) {\n    hero_str_decref(v->f_name);\n}\n\n"
 
 test "a variant switches on the tag and touches only the counted case"
     got = ready("variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    _ = t\n")
@@ -185,7 +185,7 @@ test "a variant switches on the tag and touches only the counted case"
     at = emit_ctype.aggregate(got.names, decl: 0)
     variant_reference_body(@w, got.c, got.names, got.s, got.decls, decl: 0, at: at, keep: true)
     text = emit_writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nvoid h_t_Tok_retain(const h_t_Tok *v) {\n    switch (v->tag) {\n        case h_t_Tok_tag_word: h_t_Tok_c_word_retain(&v->as.c_word); break;\n        default: break;\n    }\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_Tok_retain(const h_t_Tok *v) {\n    switch (v->tag) {\n        case h_t_Tok_tag_word: h_t_Tok_c_word_retain(&v->as.c_word); break;\n        default: break;\n    }\n}\n\n"
 
 test "the D3 repair: a payload nobody destructures still answers from its fields"
     # .word is BUILT but never matched, so Ty.case may be uninterned —

@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "fixedbugsunaryminusisnotaliteral.c"
+#line 43 "fixedbugsunaryminusisnotaliteral.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "fixedbugsunaryminusisnotaliteral.c"
+#line 61 "fixedbugsunaryminusisnotaliteral.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_726a17c3, "literal ");
@@ -87,18 +89,18 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-void h_0opt_e201354_release(h_0opt_e201354 *v);
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-uint64_t h_0opt_e201354_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 h_0opt_e201354 h_fixedbugsunaryminusisnotaliteral_negated(int64_t h0_n);
 double h_fixedbugsunaryminusisnotaliteral_scaled(double h0_v);
@@ -106,7 +108,7 @@ void h_fixedbugsunaryminusisnotaliteral_main(void);
 
 #line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 h_0opt_e201354 h_fixedbugsunaryminusisnotaliteral_negated(int64_t h0_n) {
-#line 110 "fixedbugsunaryminusisnotaliteral.c"
+#line 112 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354 h1_own1 = {0};
     int64_t t1;
     int64_t t2;
@@ -125,21 +127,21 @@ bb0:
     t4 = h1_own1;
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h1_own1 = t3;
-#line 129 "fixedbugsunaryminusisnotaliteral.c"
+#line 131 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(&t4);
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-#line 132 "fixedbugsunaryminusisnotaliteral.c"
+#line 134 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_retain(&t3);
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t5 = h1_own1;
-#line 136 "fixedbugsunaryminusisnotaliteral.c"
+#line 138 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(&t5);
     return t3;
 }
 
 #line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 double h_fixedbugsunaryminusisnotaliteral_scaled(double h0_v) {
-#line 143 "fixedbugsunaryminusisnotaliteral.c"
+#line 145 "fixedbugsunaryminusisnotaliteral.c"
     double t1;
     double t2;
     goto bb0;
@@ -150,12 +152,12 @@ bb0:
     t2 = -t1;
 #line 36 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     return t2;
-#line 154 "fixedbugsunaryminusisnotaliteral.c"
+#line 156 "fixedbugsunaryminusisnotaliteral.c"
 }
 
 #line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 void h_fixedbugsunaryminusisnotaliteral_main(void) {
-#line 159 "fixedbugsunaryminusisnotaliteral.c"
+#line 161 "fixedbugsunaryminusisnotaliteral.c"
     int8_t h0_small;
     int64_t h1_n;
     double h2_x;
@@ -265,15 +267,15 @@ bb0:
     t37 = h4_own4;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h4_own4 = t16;
-#line 269 "fixedbugsunaryminusisnotaliteral.c"
+#line 271 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(&t37);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t38 = h3_f0;
-#line 273 "fixedbugsunaryminusisnotaliteral.c"
+#line 275 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_retain(&t16);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h3_f0 = t16;
-#line 277 "fixedbugsunaryminusisnotaliteral.c"
+#line 279 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(&t38);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t17 = h3_f0;
@@ -337,11 +339,11 @@ bb1:
     hero_print_end();
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t39 = h3_f0;
-#line 341 "fixedbugsunaryminusisnotaliteral.c"
+#line 343 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(&t39);
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t40 = h4_own4;
-#line 345 "fixedbugsunaryminusisnotaliteral.c"
+#line 347 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(&t40);
     return;
 bb2:
@@ -349,11 +351,11 @@ bb2:
     t21 = h3_f0;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t22 = t21.as.err;
-#line 353 "fixedbugsunaryminusisnotaliteral.c"
+#line 355 "fixedbugsunaryminusisnotaliteral.c"
     hero_panic_must(t22);
     hero_unreachable();
 }
-void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -361,7 +363,7 @@ void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     }
 }
 
-void h_0opt_e201354_release(h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -369,13 +371,13 @@ void h_0opt_e201354_release(h_0opt_e201354 *v) {
     }
 }
 
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_e201354_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
     const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -385,7 +387,7 @@ uint64_t h_0opt_e201354_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -393,7 +395,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -401,13 +403,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -417,7 +419,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -425,7 +427,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -433,13 +435,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

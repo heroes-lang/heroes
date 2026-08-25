@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "sugartry.c"
+#line 43 "sugartry.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "sugartry.c"
+#line 61 "sugartry.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_7ba188c6, "empty");
@@ -88,27 +90,27 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_sugartry_Reader_eq(const h_sugartry_Reader *a, const h_sugartry_Reader *b);
-uint64_t h_sugartry_Reader_hash(const void *elem);
-void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-void h_0opt_e201354_release(h_0opt_e201354 *v);
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-uint64_t h_0opt_e201354_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_sugartry_Reader_eq(const h_sugartry_Reader *a, const h_sugartry_Reader *b);
+HERO_TU_LOCAL uint64_t h_sugartry_Reader_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 h_0opt_e201354 h_sugartry_first_of(HeroArrayHeader * h0_xs);
 h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs);
 
 #line 7 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_first_of(HeroArrayHeader * h0_xs) {
-#line 112 "sugartry.c"
+#line 114 "sugartry.c"
     h_0opt_e201354 h1_own1 = {0};
     h_0opt_e201354 h2_own2 = {0};
     HeroArrayHeader * t1 = {0};
@@ -154,18 +156,18 @@ bb1:
     t12 = h1_own1;
 #line 10 "tests/golden/ir/sugar-try.hero"
     h1_own1 = t11;
-#line 158 "sugartry.c"
+#line 160 "sugartry.c"
     h_0opt_e201354_release(&t12);
 #line 10 "tests/golden/ir/sugar-try.hero"
-#line 161 "sugartry.c"
+#line 163 "sugartry.c"
     h_0opt_e201354_retain(&t11);
 #line 10 "tests/golden/ir/sugar-try.hero"
     t14 = h1_own1;
-#line 165 "sugartry.c"
+#line 167 "sugartry.c"
     h_0opt_e201354_release(&t14);
 #line 10 "tests/golden/ir/sugar-try.hero"
     t15 = h2_own2;
-#line 169 "sugartry.c"
+#line 171 "sugartry.c"
     h_0opt_e201354_release(&t15);
     return t11;
 bb2:
@@ -173,10 +175,10 @@ bb2:
     t5 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 9 "tests/golden/ir/sugar-try.hero"
     t6 = HERO_STR_LIT(hero_str_6105f16d);
-#line 177 "sugartry.c"
+#line 179 "sugartry.c"
     hero_str_incref(t5);
 #line 9 "tests/golden/ir/sugar-try.hero"
-#line 180 "sugartry.c"
+#line 182 "sugartry.c"
     hero_str_incref(t6);
 #line 9 "tests/golden/ir/sugar-try.hero"
     t7 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
@@ -184,18 +186,18 @@ bb2:
     t13 = h2_own2;
 #line 9 "tests/golden/ir/sugar-try.hero"
     h2_own2 = t7;
-#line 188 "sugartry.c"
+#line 190 "sugartry.c"
     h_0opt_e201354_release(&t13);
 #line 9 "tests/golden/ir/sugar-try.hero"
-#line 191 "sugartry.c"
+#line 193 "sugartry.c"
     h_0opt_e201354_retain(&t7);
 #line 9 "tests/golden/ir/sugar-try.hero"
     t16 = h1_own1;
-#line 195 "sugartry.c"
+#line 197 "sugartry.c"
     h_0opt_e201354_release(&t16);
 #line 9 "tests/golden/ir/sugar-try.hero"
     t17 = h2_own2;
-#line 199 "sugartry.c"
+#line 201 "sugartry.c"
     h_0opt_e201354_release(&t17);
     return t7;
 bb3:
@@ -204,7 +206,7 @@ bb3:
 
 #line 12 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs) {
-#line 208 "sugartry.c"
+#line 210 "sugartry.c"
     h_sugartry_Reader h0_r;
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_v;
@@ -251,15 +253,15 @@ bb0:
     t18 = h4_own4;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h4_own4 = t2;
-#line 255 "sugartry.c"
+#line 257 "sugartry.c"
     h_0opt_e201354_release(&t18);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t19 = h2_f0;
-#line 259 "sugartry.c"
+#line 261 "sugartry.c"
     h_0opt_e201354_retain(&t2);
 #line 13 "tests/golden/ir/sugar-try.hero"
     h2_f0 = t2;
-#line 263 "sugartry.c"
+#line 265 "sugartry.c"
     h_0opt_e201354_release(&t19);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t3 = h2_f0;
@@ -297,27 +299,27 @@ bb1:
     t20 = h5_own5;
 #line 15 "tests/golden/ir/sugar-try.hero"
     h5_own5 = t17;
-#line 301 "sugartry.c"
+#line 303 "sugartry.c"
     h_0opt_e201354_release(&t20);
     *ph0_r = h0_r;
 #line 12 "tests/golden/ir/sugar-try.hero"
-#line 305 "sugartry.c"
+#line 307 "sugartry.c"
     h_0opt_e201354_retain(&t17);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t22 = h2_f0;
-#line 309 "sugartry.c"
+#line 311 "sugartry.c"
     h_0opt_e201354_release(&t22);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t23 = h4_own4;
-#line 313 "sugartry.c"
+#line 315 "sugartry.c"
     h_0opt_e201354_release(&t23);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t24 = h5_own5;
-#line 317 "sugartry.c"
+#line 319 "sugartry.c"
     h_0opt_e201354_release(&t24);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t25 = h6_own6;
-#line 321 "sugartry.c"
+#line 323 "sugartry.c"
     h_0opt_e201354_release(&t25);
     return t17;
 bb2:
@@ -325,7 +327,7 @@ bb2:
     t7 = h2_f0;
 #line 13 "tests/golden/ir/sugar-try.hero"
     t8 = t7.as.err;
-#line 329 "sugartry.c"
+#line 331 "sugartry.c"
     hero_failure_retain(&t8);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
@@ -333,43 +335,43 @@ bb2:
     t21 = h6_own6;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h6_own6 = t9;
-#line 337 "sugartry.c"
+#line 339 "sugartry.c"
     h_0opt_e201354_release(&t21);
     *ph0_r = h0_r;
 #line 12 "tests/golden/ir/sugar-try.hero"
-#line 341 "sugartry.c"
+#line 343 "sugartry.c"
     h_0opt_e201354_retain(&t9);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t26 = h2_f0;
-#line 345 "sugartry.c"
+#line 347 "sugartry.c"
     h_0opt_e201354_release(&t26);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t27 = h4_own4;
-#line 349 "sugartry.c"
+#line 351 "sugartry.c"
     h_0opt_e201354_release(&t27);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t28 = h5_own5;
-#line 353 "sugartry.c"
+#line 355 "sugartry.c"
     h_0opt_e201354_release(&t28);
 #line 12 "tests/golden/ir/sugar-try.hero"
     t29 = h6_own6;
-#line 357 "sugartry.c"
+#line 359 "sugartry.c"
     h_0opt_e201354_release(&t29);
     return t9;
 }
-bool h_sugartry_Reader_eq(const h_sugartry_Reader *a, const h_sugartry_Reader *b) {
+HERO_TU_LOCAL bool h_sugartry_Reader_eq(const h_sugartry_Reader *a, const h_sugartry_Reader *b) {
     if (!(a->f_pos == b->f_pos)) return false;
     return true;
 }
 
-uint64_t h_sugartry_Reader_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_sugartry_Reader_hash(const void *elem) {
     const h_sugartry_Reader *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_pos)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -377,7 +379,7 @@ void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     }
 }
 
-void h_0opt_e201354_release(h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -385,13 +387,13 @@ void h_0opt_e201354_release(h_0opt_e201354 *v) {
     }
 }
 
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_e201354_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
     const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -401,7 +403,7 @@ uint64_t h_0opt_e201354_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -409,7 +411,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -417,13 +419,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -433,7 +435,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -441,7 +443,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -449,13 +451,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
