@@ -164,8 +164,8 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    That C file is not a hand-written bootstrap. It is what the compiler prints
-    when it compiles itself, so the thing you just built is the language
+    That C file is what the compiler prints when it compiles itself, not a
+    bootstrap somebody typed, so the thing you just built is the language
     building the language, with no other toolchain in the room.
     <code>./heroes doctor</code> checks the rest of what a build needs: clang,
     the linker, the architecture, the runtime and the build cache.

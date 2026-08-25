@@ -86,7 +86,7 @@ error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header
   note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`
   fix (guess): the header declares `floor`</code></pre>
   <p>
-    That last line is worth a second look. The compiler did not guess from a
+    The compiler did not guess that last line from a
     list it keeps: it asked clang, which had the real header open, and clang
     knew what you meant.
   </p>
@@ -218,8 +218,7 @@ the 16:9 diagonal of a 1920-wide screen: 2202.9071700822983</code></pre>
   <p>
     Twelve chapters, and you have seen all of it: four words that can start a
     top-level line, one way to take a value apart, one way to fail, one way to
-    change something, and one door to everything else. What is left to learn is
-    not more language, it is what you can build with it.
+    change something, and one door to everything else.
   </p>
 
   <p class="next">

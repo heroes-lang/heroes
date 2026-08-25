@@ -8,8 +8,8 @@
 > byte (the fixpoint holds, three generations deep, one SHA-256).
 
 The entire language specification is deliberately small, measured at 3548
-tokens against a hard ceiling of 4096, because the spec is not documentation,
-it is the prompt. If you are a language model asked to write Heroes, read the
+tokens against a hard ceiling of 4096, because the spec is the prompt, not
+documentation. If you are a language model asked to write Heroes, read the
 spec first; it is the whole language:
 
 - [The specification](https://raw.githubusercontent.com/giuseppearici/heroes-lang/main/spec/heroes-spec.md): the whole language in ~3548 tokens, written to be your prompt
