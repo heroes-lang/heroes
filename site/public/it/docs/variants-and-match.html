@@ -132,8 +132,8 @@ error[wildcard_on_variant]: `_` is not allowed as an arm over `Token` — name e
   25 |         _         => "something else"
      |         ^</code></pre>
   <p>
-    <code>_</code> va benissimo dove essere esaustivi è impossibile &mdash; un
-    <code>match</code> su un <code>i64</code> o su uno <code>str</code> &mdash;
+    <code>_</code> va benissimo dove essere esaustivi è impossibile
+    (un <code>match</code> su un <code>i64</code> o su uno <code>str</code>),
     perché lì l&rsquo;alternativa non è un controllo, è un elenco infinito.
   </p>
 
@@ -163,7 +163,7 @@ error[non_exhaustive]: this `match` does not cover `.minus`
   <p>
     Tre errori, uno per ogni punto del file che legge un token, ognuno che punta
     al <code>match</code> che adesso ha un buco. Niente gira finché una persona
-    &mdash; o un modello &mdash; non ha deciso come si chiama un segno meno,
+    o un modello, non ha deciso come si chiama un segno meno,
     quanto lega, e se è un operatore. <b>Un cambiamento nella forma dei dati
     rompe il codice che li legge, ad alta voce, quando compili.</b> Con un ramo
     jolly, a tutte e tre quelle domande sarebbe stata data una risposta
@@ -185,7 +185,7 @@ error[non_exhaustive]: this `match` does not cover `.minus`
   <p>
     Attenzione a cosa non è: non è un ramo jolly travestito. Ogni caso resta
     scritto, quindi quel nuovo <code>minus</code> romperebbe anche questa
-    funzione &mdash; ed è giusto così, perché se un meno sia un operatore è una
+    funzione, ed è giusto così, perché se un meno sia un operatore è una
     domanda vera.
   </p>
 

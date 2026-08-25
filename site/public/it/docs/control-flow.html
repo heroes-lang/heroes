@@ -134,7 +134,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   <p>
     Tutti e due i salti valgono per il ciclo in cui sono scritti. Non ci sono
     etichette per uscire da un ciclo più esterno: quando ti serve, il ciclo
-    interno diventa una funzione e il lavoro lo fa <code>return</code> &mdash;
+    interno diventa una funzione e il lavoro lo fa <code>return</code>,
     che tra l&rsquo;altro dà un nome alla cosa che stavi facendo.
   </p>
 
@@ -175,14 +175,14 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     due argomenti sono nominati per il motivo che ha dato il
     <a href="records-and-functions.html">capitolo 2</a>: sono tutti e due
     <code>i64</code>, quindi il compilatore non riesce a distinguerli e ti fa
-    dire qual è quale. Il classico errore di uno &mdash; incluso o escluso? &mdash;
+    dire qual è quale. Il classico errore di uno (incluso o escluso?)
     qui non si tiene a mente: sta scritto sulla riga.
   </p>
   <p>
     <code>_</code> è la variabile del ciclo quando non c&rsquo;è niente a cui
     dare un nome. È lo stesso <code>_</code> che butta via un carico dentro un
     <code>match</code>: non lega niente, quindi non può mai essere un nome
-    inutilizzato &mdash; e un nome inutilizzato qui <i>è</i> un errore, che è poi
+    inutilizzato, e un nome inutilizzato qui <i>è</i> un errore, che è poi
     il motivo per cui <code>_</code> serve.
   </p>
 

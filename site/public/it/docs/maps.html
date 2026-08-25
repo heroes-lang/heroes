@@ -86,7 +86,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, righe 7&ndash;9</figcaption>
   </figure>
   <p>
-    <b><code>.default(v)</code></b> &mdash; il valore, oppure questo qui se la
+    <b><code>.default(v)</code></b>: il valore, oppure questo qui se la
     chiave manca. Il risultato è un <code>i64</code> normale, perché alla domanda
     è stata data una risposta.
   </p>
@@ -96,7 +96,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, righe 11&ndash;12</figcaption>
   </figure>
   <p>
-    <b><code>.is_err()</code></b> &mdash; chiedere se la chiave c&rsquo;è, senza
+    <b><code>.is_err()</code></b>: chiedere se la chiave c&rsquo;è, senza
     tirare fuori il valore. È il test &ldquo;lo contiene?&rdquo;, ed è la stessa
     chiamata che useresti su qualunque valore fallibile.
   </p>
@@ -110,7 +110,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, righe 14&ndash;19</figcaption>
   </figure>
   <p>
-    <b><code>.must()</code></b> &mdash; prendi il valore, e ferma il programma se
+    <b><code>.must()</code></b>: prendi il valore, e ferma il programma se
     non c&rsquo;è. Qui è sicuro perché la riga sopra ha appena controllato, ed è
     questa la forma in cui va usato: <code>.must()</code> dopo una prova, mai come
     scorciatoia per aggirare il tipo.
@@ -124,7 +124,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, righe 21&ndash;25</figcaption>
   </figure>
   <p>
-    <b><code>match</code></b> &mdash; quella generale, e l&rsquo;unica che ti
+    <b><code>match</code></b>: quella generale, e l&rsquo;unica che ti
     mette in mano l&rsquo;errore stesso. Tutti e due i rami sono obbligatori, come
     sempre, quindi nessuno dei due casi può restare senza risposta.
   </p>
@@ -165,8 +165,8 @@ error[type_mismatch]: expected `i64`, found `i64?`
     liste che uscivano nell&rsquo;ordine della mappa rendevano diverse due
     compilazioni dello stesso programma, e la soluzione erano tre chiamate a
     <code>sort</code> di cui qualcuno aveva lasciato scritta la nota molto tempo
-    prima &mdash;
-    <a href="../selfhost.html">la storia sta nella pagina sul self-hosting</a>.
+    prima.
+    <a href="../selfhost.html">La storia sta nella pagina sul self-hosting</a>.
     Il confronto, invece, dell&rsquo;ordine non si cura per niente: due mappe con
     le stesse coppie sono <code>==</code> comunque siano state costruite.
   </p>

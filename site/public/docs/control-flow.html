@@ -72,7 +72,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
     <code>if</code>, <code>else if</code> and <code>else</code> are the whole
     set, the condition takes no brackets, and the body is what is indented under
     it. <code>if</code> is also an <i>expression</i>, so a value can be chosen
-    with one instead of by assigning in two branches &mdash; which is why the
+    with one instead of by assigning in two branches, which is why the
     language has no ternary and does not miss it.
   </p>
 
@@ -129,7 +129,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   <p>
     Both jumps apply to the loop they are written in. There are no labels to
     break out of an outer loop, so when you need that, the inner loop becomes a
-    function and <code>return</code> does the work &mdash; which also gives the
+    function and <code>return</code> does the work, which also gives the
     thing you were doing a name.
   </p>
 
@@ -176,7 +176,7 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
   <p>
     <code>_</code> is the loop variable when there is nothing to call it. It is
     the same <code>_</code> that discards a payload in a <code>match</code>: it
-    binds nothing, so it can never be an unused name &mdash; and an unused name
+    binds nothing, so it can never be an unused name, and an unused name
     <i>is</i> an error here, which is what makes <code>_</code> worth having.
   </p>
 

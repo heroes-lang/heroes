@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The C boundary, Heroes documentation</title>
-<meta name="description" content="There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header — so a wrong type is a compile error, not a crash.">
+<meta name="description" content="There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header, so a wrong type is a compile error, not a crash.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/docs/the-c-boundary.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/the-c-boundary.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="The C boundary, Heroes documentation">
-<meta property="og:description" content="There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header — so a wrong type is a compile error, not a crash.">
+<meta property="og:description" content="There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header, so a wrong type is a compile error, not a crash.">
 <meta property="og:url" content="https://heroes-lang.org/docs/the-c-boundary.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="The C boundary, Heroes documentation">
-<meta name="twitter:description" content="There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header — so a wrong type is a compile error, not a crash.">
+<meta name="twitter:description" content="There is no standard library, permanently. Everything else comes from C through extern, and clang checks every declaration against the library's own header, so a wrong type is a compile error, not a crash.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -50,7 +50,7 @@
 
   <p>
     Heroes has no standard library, and it never will. Everything you have seen
-    in these chapters &mdash; numbers, strings, arrays, maps, printing &mdash; is
+    in these chapters (numbers, strings, arrays, maps, printing) is
     the whole inventory. Files, sockets, JSON, databases, graphics, maths beyond
     arithmetic: none of that is missing, and none of it is coming. It arrives
     from C, through one mechanism, and this chapter is that mechanism.
@@ -120,7 +120,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     <code>cstr</code> is a C string and <code>ptr</code> is an opaque pointer.
     Neither is a <code>str</code>, and no conversion happens behind your back:
     <code>s.cstr()</code> lends a Heroes string to C to read, and
-    <code>c.validated()</code> copies one back as a <code>str?</code> &mdash; a
+    <code>c.validated()</code> copies one back as a <code>str?</code>: a
     value or an error, because text arriving from C is a claim, not a fact: the
     pointer may be null, and the bytes may not be UTF-8. Handle it like any
     other fallible value. The other direction is guarded too: a null
@@ -173,7 +173,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
   <h3>Where the library lives is the machine&rsquo;s problem</h3>
   <p>
     <code>link "m"</code> names a library to link against. When that is not
-    enough &mdash; and for anything with system dependencies it is not &mdash;
+    enough (and for anything with system dependencies it is not),
     a group can name a <b>package</b> instead:
   </p>
   <pre><code>extern "raylib.h" package "raylib"</code></pre>

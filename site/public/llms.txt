@@ -32,7 +32,7 @@ legal expression that reports what belongs in the gap instead of failing.
 - [Build log](https://heroes-lang.org/log.html): one postcard per milestone, newest first
 - [Thanks](https://heroes-lang.org/thanks.html): the designers of every language Heroes borrowed from, named one by one, with what each borrowing was; links go to English Wikipedia only where an article about that person was verified to exist
 - [Documentation](https://heroes-lang.org/docs/index.html): the language page by page; every code block is a slice of a repository file that compiles and runs
-- [Errors](https://heroes-lang.org/errors.html): part of the documentation and linked from its landing page — diagnostics as a deliverable, real output with machine-applicable fixes tagged `certain`, and the per-mistake catch rates against a control build (a dropped argument label 91% vs 0%, a shadowed name 100% vs 0%, a lazy catch-all 100% vs 39%)
+- [Errors](https://heroes-lang.org/errors.html): part of the documentation and linked from its landing page: diagnostics as a deliverable, real output with machine-applicable fixes tagged `certain`, and the per-mistake catch rates against a control build (a dropped argument label 91% vs 0%, a shadowed name 100% vs 0%, a lazy catch-all 100% vs 39%)
 
 Every page above also exists in Italian under `/it/`, same filenames
 (https://heroes-lang.org/it/index.html and so on), linked from each page's

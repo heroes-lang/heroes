@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Generics and function values, Heroes documentation</title>
-<meta name="description" content="Generics live on functions only, take no constraints and are never written at the call site. A top-level function is a value, and there are no lambdas — the thing you pass has a name.">
+<meta name="description" content="Generics live on functions only, take no constraints and are never written at the call site. A top-level function is a value, and there are no lambdas: the thing you pass has a name.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/docs/generics-and-function-values.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/generics-and-function-values.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Generics and function values, Heroes documentation">
-<meta property="og:description" content="Generics live on functions only, take no constraints and are never written at the call site. A top-level function is a value, and there are no lambdas — the thing you pass has a name.">
+<meta property="og:description" content="Generics live on functions only, take no constraints and are never written at the call site. A top-level function is a value, and there are no lambdas: the thing you pass has a name.">
 <meta property="og:url" content="https://heroes-lang.org/docs/generics-and-function-values.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Generics and function values, Heroes documentation">
-<meta name="twitter:description" content="Generics live on functions only, take no constraints and are never written at the call site. A top-level function is a value, and there are no lambdas — the thing you pass has a name.">
+<meta name="twitter:description" content="Generics live on functions only, take no constraints and are never written at the call site. A top-level function is a value, and there are no lambdas: the thing you pass has a name.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -71,8 +71,8 @@
     <code>&lt;A, B&gt;</code> after the name introduces two types the function does
     not know yet. Inside, they are used exactly like real types: <code>[A]</code>
     is an array of them, <code>out: [B] @ []</code> is a cell holding an array of
-    the other. The empty literal needs its annotation for the usual reason
-    &mdash; there is nothing in <code>[]</code> to infer from.
+    the other. The empty literal needs its annotation for the usual reason:
+    there is nothing in <code>[]</code> to infer from.
   </p>
 
   <h3>Three rules, and they are all absences</h3>
@@ -113,7 +113,7 @@
     A top-level function used without brackets is a value you can pass. There
     are <b>no lambdas</b>: nothing anonymous, nothing that captures the
     variables around it. So the thing being passed always has a name, a
-    signature and, usually, a comment &mdash; and it can be read, tested and
+    signature and, usually, a comment, and it can be read, tested and
     reused on its own. What you give up is the one-liner written inline at the
     call site; what you get back is that every piece of behaviour in the program
     is somewhere you can point at.

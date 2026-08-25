@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tests and holes, Heroes documentation</title>
-<meta name="description" content="Tests are part of the language and live beside the code. ??? is a legal expression that makes the compiler tell you what belongs there — so an unfinished program is still one the compiler will talk about.">
+<meta name="description" content="Tests are part of the language and live beside the code. ??? is a legal expression that makes the compiler tell you what belongs there, so an unfinished program is still one the compiler will talk about.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/docs/tests-and-holes.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/tests-and-holes.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Tests and holes, Heroes documentation">
-<meta property="og:description" content="Tests are part of the language and live beside the code. ??? is a legal expression that makes the compiler tell you what belongs there — so an unfinished program is still one the compiler will talk about.">
+<meta property="og:description" content="Tests are part of the language and live beside the code. ??? is a legal expression that makes the compiler tell you what belongs there, so an unfinished program is still one the compiler will talk about.">
 <meta property="og:url" content="https://heroes-lang.org/docs/tests-and-holes.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Tests and holes, Heroes documentation">
-<meta name="twitter:description" content="Tests are part of the language and live beside the code. ??? is a legal expression that makes the compiler tell you what belongs there — so an unfinished program is still one the compiler will talk about.">
+<meta name="twitter:description" content="Tests are part of the language and live beside the code. ??? is a legal expression that makes the compiler tell you what belongs there, so an unfinished program is still one the compiler will talk about.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -88,7 +88,7 @@ ok   "a rectangle keeps its size when it moves"
   <h3><code>???</code> is a legal expression</h3>
   <p>
     Now the other half. Write <code>???</code> anywhere a value belongs and the
-    program still type-checks &mdash; everything around the hole is verified as
+    program still type-checks: everything around the hole is verified as
     usual, and the compiler tells you what belongs in it.
   </p>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-17">
@@ -133,7 +133,7 @@ hole at holes.hero:26:74
   <p>
     Read the second one. The compiler worked out that the missing piece has to
     be a <code>str</code>, listed what is in scope where the hole is, and then
-    listed the functions that <i>return</i> a <code>str</code> &mdash; with the
+    listed the functions that <i>return</i> a <code>str</code>, with the
     first line of each one&rsquo;s comment, because that is the documentation.
     This is not an error message dressed up as help. It is the answer to
     &ldquo;what could go here?&rdquo;, which is the question you actually have.
@@ -174,7 +174,7 @@ hole at holes.hero:26:74
     writing code has exactly this problem: it needs to know what is available at
     a point in a file it has not finished. Written as a hole, that question is
     asked with three characters and answered by the compiler in a form both a
-    person and a model can read &mdash; without an editor, an extension, or a
+    person and a model can read, without an editor, an extension, or a
     running language server. The same three characters mark the place in the
     file, so nobody forgets there was a question.
   </p>

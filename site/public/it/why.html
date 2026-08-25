@@ -184,7 +184,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     L&rsquo;ordine delle dichiarazioni non conta mai e la ricorsione mutua non
     ha bisogno di dichiarazioni anticipate, quindi niente dipende da dove sta nel
     file. Sotto, il linguaggio è ancora più piccolo: quello che il compilatore
-    implementa davvero sono <b>sette costrutti</b> &mdash; legare un nome,
+    implementa davvero sono <b>sette costrutti</b>: legare un nome,
     definire e chiamare una funzione, costruire e leggere un <code>record</code>,
     costruire e scomporre un <code>variant</code>, eseguire un ciclo,
     <code>return</code>, le operazioni primitive. Tutto il resto è zucchero
@@ -258,7 +258,7 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     (<code>i64?</code>), il fallimento è un valore
     (<code>fail(code, msg)</code>), e la propagazione si vede sulla riga
     (<code>?</code>). Il controllo di flusso invisibile è vietato in blocco
-    &mdash; eccezioni, ereditarietà, macro, overloading degli operatori &mdash;
+    (eccezioni, ereditarietà, macro, overloading degli operatori),
     perché un modello legge in locale e non può saltare a una definizione che sta
     tre file più in là.
     <a href="docs/failure-is-a-value.html">Il capitolo su questo →</a></dd>
@@ -295,18 +295,18 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     copy-on-write è una gestione della memoria completa, senza garbage collector.
     La località diventa totale: quello che significa una riga è deciso da quella
     riga. Il prezzo è reale, e la specifica lo dice invece di nasconderlo:
-    &ldquo;<code>+</code> su <code>str</code> copia entrambi i lati &mdash;
-    un ciclo di concatenazioni è quadratico; <code>join</code> e
-    <code>repeat</code> costruiscono in una passata sola.
+    <code>+</code> su <code>str</code> copia entrambi i lati, quindi un ciclo
+    di concatenazioni è quadratico, e <code>join</code> e <code>repeat</code>
+    esistono per costruire in una passata sola;
     <code>xs @ xs.push(4)</code> cresce sul posto finché nessun altro tiene
-    <code>xs</code>.&rdquo;</dd>
+    <code>xs</code>.</dd>
 
     <dt>Cosa manca, e in cosa questo linguaggio è scarso?</dt>
     <dd>Quattro cose, nominate invece di lasciarle scoprire. <b>Nella v1 non
     c&rsquo;è concorrenza</b>: il documento di progetto la chiama &ldquo;la lacuna
     più grande, ed è deliberata&rdquo;. <b>Non ci sono lambda</b>: un valore di
     tipo funzione è una normale dichiarazione al primo livello, passata per nome.
-    <b>Accumulare stringhe dentro un ciclo è quadratico</b> (sopra &mdash;
+    <b>Accumulare stringhe dentro un ciclo è quadratico</b> (sopra;
     far crescere un array con <code>xs @ xs.push(4)</code> non lo è: cresce sul
     posto). E i
     generici stanno solo sulle funzioni, senza vincoli, sempre dedotti.

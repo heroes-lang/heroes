@@ -72,7 +72,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <a href="failure-is-a-value.html">chapter 4</a>: a number, or an error
     saying why there isn&rsquo;t one. For a missing key that error always has
     the code <code>missing_key</code>. So the question <i>what if it is not
-    there</i> is not a thing you might forget to ask &mdash; it is in the type of
+    there</i> is not a thing you might forget to ask: it is in the type of
     the thing you are holding, and you cannot use the number until you have
     answered it.
   </p>
@@ -85,7 +85,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 7&ndash;9</figcaption>
   </figure>
   <p>
-    <b><code>.default(v)</code></b> &mdash; the value, or this one if the key is
+    <b><code>.default(v)</code></b>: the value, or this one if the key is
     missing. The result is a plain <code>i64</code>, because the question has
     been answered.
   </p>
@@ -95,7 +95,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 11&ndash;12</figcaption>
   </figure>
   <p>
-    <b><code>.is_err()</code></b> &mdash; asking whether the key is there,
+    <b><code>.is_err()</code></b>: asking whether the key is there,
     without taking the value out. This is the &ldquo;does it contain&rdquo; test, and it is
     the same call you would use on any fallible value.
   </p>
@@ -109,7 +109,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 14&ndash;19</figcaption>
   </figure>
   <p>
-    <b><code>.must()</code></b> &mdash; take the value, and stop the program if
+    <b><code>.must()</code></b>: take the value, and stop the program if
     there isn&rsquo;t one. It is safe here because the line above has just
     checked, and that is the shape to use it in: <code>.must()</code> after a
     proof, never as a way to get past the type.
@@ -123,7 +123,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 21&ndash;25</figcaption>
   </figure>
   <p>
-    <b><code>match</code></b> &mdash; the general one, and the only one that puts
+    <b><code>match</code></b>: the general one, and the only one that puts
     the error itself in your hands. Both arms are required, as always, so
     neither case can go unanswered.
   </p>
@@ -146,7 +146,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
   <h3>A map has no order, and the language means it</h3>
   <p>
     <code>keys(m)</code> gives you the keys in <b>no particular order</b>, and
-    that is not a hedge in the documentation &mdash; two runs may differ. When
+    that is not a hedge in the documentation: two runs may differ. When
     the order matters, ask for it:
   </p>
   <figure class="example" data-src="examples/adventure/world.hero" data-lines="76-80">
@@ -162,8 +162,9 @@ error[type_mismatch]: expected `i64`, found `i64?`
     in a fixed order so the test says the same thing every time it runs. The
     same rule bit this project&rsquo;s own compiler: three lists that came out
     in map order made two builds of the same program differ, and the fix was
-    three <code>sort</code> calls somebody had written a note about long before
-    &mdash; <a href="../selfhost.html">the story is on the self-hosting page</a>. Comparison, on the other hand, ignores order entirely: two maps
+    three <code>sort</code> calls somebody had written a note about long
+    before. <a href="../selfhost.html">The story is on the self-hosting
+    page</a>. Comparison, on the other hand, ignores order entirely: two maps
     with the same pairs are <code>==</code> however they were built.
   </p>
 
