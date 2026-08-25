@@ -175,3 +175,11 @@ seats' evidence prices as the more fragile architecture.
 | compiler-engineer (in advance) | panel 030 prediction 8 scores **false** — placement near-zero, cost in key/interface machinery | M-separate-compilation close |
 | ffi-pragmatist | `examples/sqlite` split as db-module + main needs no shim; a wrong extern is exit 1 on the db line regardless of TU order | step 6 acceptance |
 | ffi-pragmatist (falsifier) | if a module's object is keyed on emitted C instead of source text, editing only the `link` name hits the cache and links the old library at exit 0 or fires `ffi_missing_library` against the wrong name | step 6 acceptance |
+
+## Author's verdict
+
+Pending — ratification queued in `docs/debrief/DECIDE.md` (the panel 093
+item). Step 6 builds on R1–R6 as the provisional default; a yes settles the
+six resolutions and nothing else, and an overturn of R2 toward define-site
+placement compels the reverse-edge cache key both seats priced as the more
+fragile architecture.
