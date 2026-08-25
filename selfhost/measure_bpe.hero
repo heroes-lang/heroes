@@ -40,6 +40,8 @@ function empty() -> Ranks
     none: {str: i64} = {}
     return Ranks(of: none, alphabet: ALPHABET.chars())
 
+# ORDER: none — the keys are counted and dropped, so no order survives the
+# call (design.md §4.9's mark, discharged by there being nothing to observe).
 function size(r: Ranks) -> i64
     return keys(r.of).len()
 

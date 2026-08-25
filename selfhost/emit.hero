@@ -150,6 +150,10 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
     # one left the inner int? unnamed under a rule that asserts every
     # T? is named before anything mentions one. Found by the mutant
     # corpus, which is where CLAUDE.md §9 says an invariant belongs.
+    # ORDER: none — this is a worklist, and what leaves it is a SET. Every
+    # id drained is added to `reached`, which two sorted walks read later
+    # (emit_ctype, emit_descriptor_set), so the drain order changes how
+    # long the loop runs and nothing a reader or clang can see.
     frontier: [i64] @ keys(reached)
     while frontier.len() > 0
         id = frontier[frontier.len() - 1]

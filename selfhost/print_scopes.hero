@@ -25,9 +25,11 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     out @ out + "module " + here + "\n"
     # What this file may write qualified, and what each module offers
     # it — the half of the question the symbol table cannot show,
-    # because those names are not in it. ORDER: the used modules
-    # ascending, then names_in's own sort (design.md §4.9's sentence,
-    # paid here with one sort).
+    # because those names are not in it.
+    #
+    # ORDER: ascending module name, then `names_in`'s own sort — the
+    # `uses` block of --dump-scopes prints in exactly this order, so a
+    # golden reads it (design.md §4.9, paid here with one sort).
     named = r.module_uses[here]
     if !named.is_err() && named.must().len() > 0
         out @ out + "uses\n"
@@ -73,6 +75,8 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
     # Named rather than counted: the suppression is file-wide (§4.16),
     # so "holes present" without saying where would describe a rule
     # the compiler no longer has.
+    # ORDER: ascending module name — one trailer line per module, read
+    # by a golden, so the sort is the golden's stability (§4.9).
     for module in sort(r.holes_in)
         out @ out + "holes in `" + module + "`: unused bindings are not reported there\n"
     return out

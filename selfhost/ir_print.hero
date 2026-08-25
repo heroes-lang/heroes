@@ -70,7 +70,7 @@ function dump(p: ir_state.Program, c: check_state.Checked, s: source.Source, dec
             any_live @ true
     if any_live
         out @ out + "strings\n"
-        # Ascending string index, and the dense walk IS the sort.
+        # ORDER: ascending string index — the dense walk IS the sort.
         at: i64 @ 0
         while at < live.len()
             if live[at]

@@ -44,6 +44,7 @@
 #   surface       what a user types: exit codes, streams, flags, rendering
 #   special       the surface tests no table row can express
 #   layout        §11's per-file ceiling over selfhost/, tests excluded
+#   order         §4.9's `# ORDER:` mark on every map walk in selfhost/
 #   emission      every program's emitted C against the bytes two
 #                 compilers agreed on (M-bootstrap-archive step 1)
 #   descriptors   every descriptor the blessed C names is defined in it,
@@ -65,6 +66,7 @@ use suite_fixes
 use suite_golden
 use suite_layout
 use suite_lines
+use suite_order
 use suite_records
 use suite_spec
 use suite_special
@@ -261,6 +263,17 @@ function main()
             print("harness: the layout check could not run")
             exit(2)
         print("  layout: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # §4.9's mark over the compiler's own map walks. Reads files and runs
+    # no compiler, like `layout` beside it.
+    if only == "" || only == "order"
+        got = suite_order.run_all(SCRATCH)
+        if got.is_err()
+            print("harness: the order check could not run")
+            exit(2)
+        print("  order: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

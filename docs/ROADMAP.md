@@ -28,15 +28,15 @@ not merged away.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs landed, **no step yet** |
+| **State** | four repairs landed · **step 1** — the `ORDER:` mark becomes an instrument |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 22 of 36 · 25 tags |
-| The compiler | **38,017 lines** of Heroes in 155 files |
-| The seed | **765,082** lines of generated C — the whole way in |
+| The compiler | **38,021 lines** of Heroes in 155 files |
+| The seed | **765,508** lines of generated C — the whole way in |
 | The spec | **3548** tokens of a hard 4096 · headroom 548 |
 | Runtime ABI | 15 |
 | Panels held | **90**, every one ratified · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **nothing** — `DECIDE.md` is empty for the first time · 8 assigned in `SCHEDULED.md` · 258 in `LEARN.md` (never a gate) |
+| Waiting on the author | **1** in `DECIDE.md` — the harness's own tests are run by nothing, and two are red · 7 assigned in `SCHEDULED.md` · 260 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
@@ -52,7 +52,7 @@ repository root was nine hours stale and did not know a built-in that had landed
 the evening before; a panel seat nearly filed that as a language defect. The
 first line above is 3.5 seconds and removes the whole class.
 
-### What landed in M-separate-compilation so far, and none of it is a step
+### What landed in M-separate-compilation so far — four repairs, then step 1
 
 - **`docs/defects/002`** — a legal program that handled both arms of a fallible
   was killed before either. Five lines of runtime C, +0 spec tokens (panel 087).
@@ -89,12 +89,22 @@ builds itself in **188.51 s against 944.76 s the day before — 5.01×** — the
 6.2× faster, the spec 6 tokens lighter, and one masked use-after-free found and
 repaired on the way.
 
-**Two `SCHEDULED.md` items are due in this milestone**: panel 087's unpruned
-`extern` asserts (13 lines of C in a program that prints `1`, multiplied by 153
-translation units) and panel 086 R4's four unmarked `ORDER:` walks. The first has
-now been paid for twice in one day — every library function added costs one
-`_Static_assert` in every program in the language — which is two measured
-arguments for doing it here rather than one theoretical one.
+**Step 1 — the `ORDER:` mark stops being a grep** (2026-08-25). A map walk whose
+order somebody can see owes an explicit `sort` and a mark saying by what and who
+watches; the inventory was a grep, and a grep cannot tell a mark from a sentence
+quoting one — it returned **10 hits in 8 files, four of them prose**. Measured
+against the item's own premise: all four walks it called unmarked were **already
+sorted**, so the fixpoint was green because the sorts were paid, not by luck. Now
+`tests/harness/suite_order.hero` fails the net when a walk in `selfhost/` carries
+no mark, and it was made to fire before it was believed. Inventory **12 files /
+16 marks**, three previously unjudged walks ruled `ORDER: none`.
+
+**One `SCHEDULED.md` item is still due here**: panel 087's unpruned `extern`
+asserts — 13 lines of C in a program that prints `1`, multiplied by 153
+translation units. It has now been paid for twice in one day — every library
+function added costs one `_Static_assert` in every program in the language —
+which is two measured arguments for doing it here rather than one theoretical
+one.
 
 ---
 
