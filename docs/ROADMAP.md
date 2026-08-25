@@ -35,8 +35,8 @@ not merged away.
 | The seed | **765,569** lines of generated C — the whole way in |
 | The spec | **3560** tokens of a hard 4096 · headroom 536 |
 | Runtime ABI | 15 |
-| Panels held | **92** · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **3** in `DECIDE.md` — panel 092's ratification, a dead citation in CLAUDE.md §7, and one more · 12 assigned in `SCHEDULED.md` · 264 in `LEARN.md` (never a gate) |
+| Panels held | **92**, every one ratified · journals 25 · measurements 13 · examples 15 |
+| Waiting on the author | **nothing** — three answered the day they were asked · 12 assigned in `SCHEDULED.md` · 264 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
@@ -128,7 +128,7 @@ one TU. Option B would have cost +40 compiler lines and 146 re-blessed emissions
 to buy what the close gives away.
 
 **Step 3 — the check was there all along, and a macro was hiding it from half of
-libc** (panel 092, five judges, provisional). Convened on the claim that an
+libc** (panel 092, five judges, ratified). Convened on the claim that an
 `extern`'s parameter width and sign are unchecked. **They are checked** —
 `-Werror=shorten-64-to-32` and `-Werror=sign-conversion` have shipped all along —
 and the silent set was never clang's builtins: `strncmp`, `malloc`, `calloc`,

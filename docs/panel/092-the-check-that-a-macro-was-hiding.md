@@ -305,4 +305,38 @@ that cannot run code beside two that can.
 
 ## Author's verdict
 
-*Pending.* Queued in `docs/debrief/DECIDE.md`.
+**Ratified 2026-08-25**, the day it closed (author instruction, *"ok ratifichiamo
+e chiudiamo tutto"*). The resolution stands: the probe's callee is parenthesised,
+the discarded-result cast becomes `(void)`, and the spec gains one row at **+12**.
+
+**What the yes settles.**
+
+- **The mechanism is not replaced, it is unblocked.** Nothing new was built: the
+  check, the diagnostic and its fix all existed, and three production lines let
+  clang reach them. That is the shape the author's *"most robust"* instruction
+  bought — the robust answer turned out to be the small one, and it was small
+  because four seats refused the large ones.
+- **`spec:204` keeps its promise and is no longer only derivable.** `size_t` had
+  no spelling anywhere in the document; it has one now. The two rows that were
+  refused stay refused: a rule is written in exactly one place.
+- **Reachability, `-Werror` on pointer families, and whole-type identity are all
+  closed** — the first by panel 091, the second and third here, each with a
+  compiled counter-example rather than an argument. A future sitting that wants
+  any of the three must overturn a measurement, not a preference.
+
+**What the yes does not settle**, and both are queued rather than implied:
+
+- **The float half.** `-Wdouble-promotion` under a `#pragma clang diagnostic
+  error` is approved by the compiler-engineer **today**, given three named
+  measurements it did not run. Until then `pow(x: f32, y: f64)` still builds and
+  prints a fifth-digit-wrong answer.
+- **The sentence naming what is unchecked** waits for that, deliberately. It is
+  bought once, at its final size — a **wider** by-value integer and a **pointer's
+  target** — rather than twice at two sizes.
+
+**And the sitting's process finding is ratified with its result**: four of five
+seats overturned a premise of the convener's brief, and the answer got smaller
+and truer at every correction. The brief's two errors are recorded in this file
+under their own heading rather than smoothed away, because the shape they share —
+generalising from a sample to a class, then relaying it before checking — is
+CLAUDE.md §1's, committed by the seat whose job is to police it.

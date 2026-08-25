@@ -179,11 +179,22 @@ finding), a label **only where an edge targets it**, all locals hoisted to the
 prologue, and a unit-typed temporary never declared at all (`void t0;` is a
 hard error). An `@` parameter is a pointer parameter (§4.8's copy-out is
 `*p_l = l;`). `hero_unreachable()` at every type-system-proven-unreachable
-point. Compile flags: **the array in `commands/flags.rs::FLAGS`, and this sentence names
+point. Compile flags: **the list in `selfhost/cli_flags.hero::flags()`, and this sentence names
 one of them** — `-std=gnu11`, **named and not inherited**, `gnu11` rather than `c11`
 because the two differ by one predefined macro, `__STRICT_ANSI__`, whose only effect
 on glibc is to hide `M_PI`, `strdup`, `fileno` and nine more of what §1.11 says a
-program binds (panel 047, **ratified 2026-08-14**). The rest are in that file with
+program binds (panel 047, **ratified 2026-08-14**; and *only* that — `__typeof__` and
+`__builtin_types_compatible_p` are clang extensions that work under `-std=c11` too,
+measured at panel 092, so nothing else in this file rests on the `gnu`).
+**The path was the bootstrap's until 2026-08-25**, when the live list had been
+`selfhost/` for six days and the sentence still pointed at
+`archive/bootstrap-rs/heroes-cli/src/commands/flags.rs`, which nothing builds — and it was found by a panel judge with no
+`grep`, reading this contract as a stranger would. **That is the third time this one
+sentence has been wrong**, and the paragraph below it says *"the copy that used to stand
+here is deleted rather than corrected a third time"*: the copy was deleted and its
+**replacement citation** then rotted, which is the same failure one level up. A pointer is
+a fact about the world and expires like any other (§11); the only reason this one is
+cheap to fix is that somebody read it. The rest are in that file with
 their measured reasons, and **the copy that used to stand here is deleted rather
 than corrected a third time**: this file's own preamble says each rule is written in
 exactly one place and everything else cites it. The copy died **3h16m** after it was
