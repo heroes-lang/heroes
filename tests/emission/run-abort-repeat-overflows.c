@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "abortrepeatoverflows.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "before");
-HERO_STR_STATIC(hero_str_1, "abcd");
-HERO_STR_STATIC(hero_str_2, "unreachable");
+HERO_STR_STATIC(hero_str_43560e4d, "before");
+HERO_STR_STATIC(hero_str_d19443a, "abcd");
+HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -105,7 +105,7 @@ void h_abortrepeatoverflows_main(void) {
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/abort-repeat-overflows.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 22 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_str(t1);
 #line 22 "tests/golden/run/abort-repeat-overflows.hero"
@@ -115,7 +115,7 @@ bb0:
 #line 24 "tests/golden/run/abort-repeat-overflows.hero"
     h0_n = t2;
 #line 25 "tests/golden/run/abort-repeat-overflows.hero"
-    t3 = HERO_STR_LIT(hero_str_1);
+    t3 = HERO_STR_LIT(hero_str_d19443a);
 #line 25 "tests/golden/run/abort-repeat-overflows.hero"
     t4 = h0_n;
 #line 25 "tests/golden/run/abort-repeat-overflows.hero"
@@ -133,7 +133,7 @@ bb0:
 #line 25 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_end();
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    t7 = HERO_STR_LIT(hero_str_2);
+    t7 = HERO_STR_LIT(hero_str_187ae0ee);
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_str(t7);
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"

@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "adversarialnestedshortcircuit.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "a");
-HERO_STR_STATIC(hero_str_1, "b");
-HERO_STR_STATIC(hero_str_2, "c");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
+HERO_STR_STATIC(hero_str_63, "c");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -128,7 +128,7 @@ bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c) {
     goto bb0;
 bb0:
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_61);
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     t2 = h0_a;
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
@@ -140,7 +140,7 @@ bb0:
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bb1:
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
-    t4 = HERO_STR_LIT(hero_str_1);
+    t4 = HERO_STR_LIT(hero_str_62);
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     t5 = h1_b;
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
@@ -160,7 +160,7 @@ bb2:
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bb3:
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
-    t8 = HERO_STR_LIT(hero_str_2);
+    t8 = HERO_STR_LIT(hero_str_63);
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     t9 = h2_c;
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"

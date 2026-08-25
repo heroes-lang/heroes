@@ -68,27 +68,27 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 69 "fixedbugsreadfileonbytesthatarenottext.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "build/heroes-golden-not-text.bin");
-HERO_STR_STATIC(hero_str_1, "build/heroes-golden-is-text.txt");
-HERO_STR_STATIC(hero_str_2, "wb");
-HERO_STR_STATIC(hero_str_3, "cannot build the fixture");
-HERO_STR_STATIC(hero_str_4, "unexpected: ");
-HERO_STR_STATIC(hero_str_5, " bytes");
-HERO_STR_STATIC(hero_str_6, "not text: ");
-HERO_STR_STATIC(hero_str_7, "caff\303\250\n");
-HERO_STR_STATIC(hero_str_8, "wrote the text one");
-HERO_STR_STATIC(hero_str_9, "write failed: ");
-HERO_STR_STATIC(hero_str_10, "text: ");
-HERO_STR_STATIC(hero_str_11, "text failed: ");
-HERO_STR_STATIC(hero_str_12, "build/heroes-golden-no-such-file");
-HERO_STR_STATIC(hero_str_13, "unexpected");
-HERO_STR_STATIC(hero_str_14, "missing: ");
-HERO_STR_STATIC(hero_str_21, "file_not_found");
-HERO_STR_STATIC(hero_str_22, "no file at ");
-HERO_STR_STATIC(hero_str_23, "read_failed");
-HERO_STR_STATIC(hero_str_24, "could not read ");
-HERO_STR_STATIC(hero_str_25, "write_failed");
-HERO_STR_STATIC(hero_str_26, "could not write ");
+HERO_STR_STATIC(hero_str_22f1d61, "build/heroes-golden-not-text.bin");
+HERO_STR_STATIC(hero_str_788341e7, "build/heroes-golden-is-text.txt");
+HERO_STR_STATIC(hero_str_3d47, "wb");
+HERO_STR_STATIC(hero_str_2fccf3e5, "cannot build the fixture");
+HERO_STR_STATIC(hero_str_186b4612, "unexpected: ");
+HERO_STR_STATIC(hero_str_391e7e27, " bytes");
+HERO_STR_STATIC(hero_str_17f715ea, "not text: ");
+HERO_STR_STATIC(hero_str_3a8b665b, "caff\303\250\n");
+HERO_STR_STATIC(hero_str_5ee00df1, "wrote the text one");
+HERO_STR_STATIC(hero_str_6d2630b3, "write failed: ");
+HERO_STR_STATIC(hero_str_750e04cc, "text: ");
+HERO_STR_STATIC(hero_str_7e87d305, "text failed: ");
+HERO_STR_STATIC(hero_str_4e0bb37c, "build/heroes-golden-no-such-file");
+HERO_STR_STATIC(hero_str_1418694e, "unexpected");
+HERO_STR_STATIC(hero_str_180e72b2, "missing: ");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
+HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
+HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -130,7 +130,7 @@ HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void) {
     goto bb0;
 bb0:
 #line 37 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_22f1d61);
 #line 135 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t1);
     return t1;
@@ -143,7 +143,7 @@ HeroStr h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(void) {
     goto bb0;
 bb0:
 #line 40 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_788341e7);
 #line 148 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t1);
     return t1;
@@ -175,7 +175,7 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t2 = hero_str_cstr(t1);
 #line 45 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t3 = HERO_STR_LIT(hero_str_2);
+    t3 = HERO_STR_LIT(hero_str_3d47);
 #line 45 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t4 = hero_str_cstr(t3);
 #line 45 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -414,7 +414,7 @@ bb1:
 #line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t4 = HERO_STR_LIT(hero_str_3);
+    t4 = HERO_STR_LIT(hero_str_2fccf3e5);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t4);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -504,7 +504,7 @@ bb4:
 #line 505 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t60);
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t21 = HERO_STR_LIT(hero_str_7);
+    t21 = HERO_STR_LIT(hero_str_3a8b665b);
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t22 = h_library_write_file(t20, t21);
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -550,13 +550,13 @@ bb5:
 #line 551 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t63);
 #line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t11 = HERO_STR_LIT(hero_str_4);
+    t11 = HERO_STR_LIT(hero_str_186b4612);
 #line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t12 = h1_text;
 #line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t13 = hero_str_len(t12);
 #line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t14 = HERO_STR_LIT(hero_str_5);
+    t14 = HERO_STR_LIT(hero_str_391e7e27);
 #line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t11);
 #line 62 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -582,7 +582,7 @@ bb6:
 #line 583 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t64);
 #line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t17 = HERO_STR_LIT(hero_str_6);
+    t17 = HERO_STR_LIT(hero_str_17f715ea);
 #line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t18 = h2_e;
 #line 63 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -638,7 +638,7 @@ bb7:
 #line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb8:
 #line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t25 = HERO_STR_LIT(hero_str_8);
+    t25 = HERO_STR_LIT(hero_str_5ee00df1);
 #line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t25);
 #line 67 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -660,7 +660,7 @@ bb9:
 #line 661 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t68);
 #line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t28 = HERO_STR_LIT(hero_str_9);
+    t28 = HERO_STR_LIT(hero_str_6d2630b3);
 #line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t29 = h4_e;
 #line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -676,7 +676,7 @@ bb9:
 #line 68 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb10:
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t46 = HERO_STR_LIT(hero_str_12);
+    t46 = HERO_STR_LIT(hero_str_4e0bb37c);
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t47 = h_library_read_file(t46);
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -722,13 +722,13 @@ bb11:
 #line 723 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_decref(t71);
 #line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t37 = HERO_STR_LIT(hero_str_10);
+    t37 = HERO_STR_LIT(hero_str_750e04cc);
 #line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t38 = h6_text;
 #line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t39 = hero_str_len(t38);
 #line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t40 = HERO_STR_LIT(hero_str_5);
+    t40 = HERO_STR_LIT(hero_str_391e7e27);
 #line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t37);
 #line 70 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -754,7 +754,7 @@ bb12:
 #line 755 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t72);
 #line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t43 = HERO_STR_LIT(hero_str_11);
+    t43 = HERO_STR_LIT(hero_str_7e87d305);
 #line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t44 = h7_e;
 #line 71 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -844,7 +844,7 @@ bb13:
     return;
 bb14:
 #line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t50 = HERO_STR_LIT(hero_str_13);
+    t50 = HERO_STR_LIT(hero_str_1418694e);
 #line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     hero_print_str(t50);
 #line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -866,7 +866,7 @@ bb15:
 #line 867 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_failure_release(&t73);
 #line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    t53 = HERO_STR_LIT(hero_str_14);
+    t53 = HERO_STR_LIT(hero_str_180e72b2);
 #line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t54 = h9_e;
 #line 75 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -1049,9 +1049,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_23);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_24);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -1110,9 +1110,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_21);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_22);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"
@@ -1219,9 +1219,9 @@ bb0:
 #line 174 "<heroes library>"
 bb1:
 #line 176 "<heroes library>"
-    t8 = HERO_STR_LIT(hero_str_25);
+    t8 = HERO_STR_LIT(hero_str_7e662f9e);
 #line 176 "<heroes library>"
-    t9 = HERO_STR_LIT(hero_str_26);
+    t9 = HERO_STR_LIT(hero_str_39d7c22a);
 #line 176 "<heroes library>"
     t10 = h0_path;
 #line 176 "<heroes library>"

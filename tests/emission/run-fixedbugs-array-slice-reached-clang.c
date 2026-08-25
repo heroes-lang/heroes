@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsarrayslicereachedclang.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "abcde");
+HERO_STR_STATIC(hero_str_33edea20, "abcde");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -209,7 +209,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t17 = HERO_STR_LIT(hero_str_0);
+    t17 = HERO_STR_LIT(hero_str_33edea20);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t18 = INT64_C(1);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"

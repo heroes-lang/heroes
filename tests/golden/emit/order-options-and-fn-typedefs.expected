@@ -58,15 +58,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "orderoptionsandfntypedefs.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "odd");
-HERO_STR_STATIC(hero_str_1, "not divisible by two");
-HERO_STR_STATIC(hero_str_2, "zero");
-HERO_STR_STATIC(hero_str_3, "unknown");
-HERO_STR_STATIC(hero_str_4, "no name");
-HERO_STR_STATIC(hero_str_5, "none");
-HERO_STR_STATIC(hero_str_6, "no point");
-HERO_STR_STATIC(hero_str_7, "tick");
-HERO_STR_STATIC(hero_str_8, "?");
+HERO_STR_STATIC(hero_str_1d4477, "odd");
+HERO_STR_STATIC(hero_str_7fc615fd, "not divisible by two");
+HERO_STR_STATIC(hero_str_1073a930, "zero");
+HERO_STR_STATIC(hero_str_d93bba2, "unknown");
+HERO_STR_STATIC(hero_str_73ad6a73, "no name");
+HERO_STR_STATIC(hero_str_edaa230, "none");
+HERO_STR_STATIC(hero_str_56b81d56, "no point");
+HERO_STR_STATIC(hero_str_fa6dc01, "tick");
+HERO_STR_STATIC(hero_str_3f, "?");
 
 typedef struct h_orderoptionsandfntypedefs_Point {
     int64_t f_x;
@@ -195,9 +195,9 @@ bb0:
 #line 15 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb1:
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t10 = HERO_STR_LIT(hero_str_0);
+    t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t11 = HERO_STR_LIT(hero_str_1);
+    t11 = HERO_STR_LIT(hero_str_7fc615fd);
 #line 202 "orderoptionsandfntypedefs.c"
     hero_str_incref(t10);
 #line 17 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -290,9 +290,9 @@ bb0:
 #line 20 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb1:
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t6 = HERO_STR_LIT(hero_str_3);
+    t6 = HERO_STR_LIT(hero_str_d93bba2);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t7 = HERO_STR_LIT(hero_str_4);
+    t7 = HERO_STR_LIT(hero_str_73ad6a73);
 #line 297 "orderoptionsandfntypedefs.c"
     hero_str_incref(t6);
 #line 22 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -320,7 +320,7 @@ bb1:
     return t8;
 bb2:
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t4 = HERO_STR_LIT(hero_str_2);
+    t4 = HERO_STR_LIT(hero_str_1073a930);
 #line 325 "orderoptionsandfntypedefs.c"
     hero_str_incref(t4);
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -375,9 +375,9 @@ bb0:
 #line 25 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb1:
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t6 = HERO_STR_LIT(hero_str_5);
+    t6 = HERO_STR_LIT(hero_str_edaa230);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t7 = HERO_STR_LIT(hero_str_6);
+    t7 = HERO_STR_LIT(hero_str_56b81d56);
 #line 382 "orderoptionsandfntypedefs.c"
     hero_str_incref(t6);
 #line 27 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -502,7 +502,7 @@ void h_orderoptionsandfntypedefs_tick(void) {
     goto bb0;
 bb0:
 #line 40 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t1 = HERO_STR_LIT(hero_str_7);
+    t1 = HERO_STR_LIT(hero_str_fa6dc01);
 #line 40 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     hero_print_str(t1);
 #line 40 "tests/golden/emit/order-options-and-fn-typedefs.hero"
@@ -735,7 +735,7 @@ bb4:
     goto bb6;
 bb5:
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t30 = HERO_STR_LIT(hero_str_8);
+    t30 = HERO_STR_LIT(hero_str_3f);
 #line 46 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t50 = h4_r1;
 #line 742 "orderoptionsandfntypedefs.c"

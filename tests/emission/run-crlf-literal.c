@@ -58,12 +58,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "crlfliteral.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "\015\n");
-HERO_STR_STATIC(hero_str_1, "GET ");
-HERO_STR_STATIC(hero_str_2, " HTTP/1.1");
-HERO_STR_STATIC(hero_str_3, "Host: ");
-HERO_STR_STATIC(hero_str_4, "example.com");
-HERO_STR_STATIC(hero_str_5, "/");
+HERO_STR_STATIC(hero_str_6b1, "\015\n");
+HERO_STR_STATIC(hero_str_995c286, "GET ");
+HERO_STR_STATIC(hero_str_59caaa51, " HTTP/1.1");
+HERO_STR_STATIC(hero_str_692ea516, "Host: ");
+HERO_STR_STATIC(hero_str_71c6be1f, "example.com");
+HERO_STR_STATIC(hero_str_2f, "/");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -100,7 +100,7 @@ HeroStr h_crlfliteral_crlf(void) {
     goto bb0;
 bb0:
 #line 9 "tests/golden/run/crlf-literal.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_6b1);
 #line 105 "crlfliteral.c"
     hero_str_incref(t1);
     return t1;
@@ -161,7 +161,7 @@ HeroStr h_crlfliteral_request(HeroStr h0_host, HeroStr h1_path) {
     goto bb0;
 bb0:
 #line 12 "tests/golden/run/crlf-literal.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_995c286);
 #line 12 "tests/golden/run/crlf-literal.hero"
     t2 = h1_path;
 #line 12 "tests/golden/run/crlf-literal.hero"
@@ -173,7 +173,7 @@ bb0:
 #line 174 "crlfliteral.c"
     hero_str_decref(t17);
 #line 12 "tests/golden/run/crlf-literal.hero"
-    t4 = HERO_STR_LIT(hero_str_2);
+    t4 = HERO_STR_LIT(hero_str_59caaa51);
 #line 12 "tests/golden/run/crlf-literal.hero"
     t5 = hero_str_concat(t3, t4);
 #line 12 "tests/golden/run/crlf-literal.hero"
@@ -209,7 +209,7 @@ bb0:
 #line 13 "tests/golden/run/crlf-literal.hero"
     t8 = h2_line;
 #line 13 "tests/golden/run/crlf-literal.hero"
-    t9 = HERO_STR_LIT(hero_str_3);
+    t9 = HERO_STR_LIT(hero_str_692ea516);
 #line 13 "tests/golden/run/crlf-literal.hero"
     t10 = hero_str_concat(t8, t9);
 #line 13 "tests/golden/run/crlf-literal.hero"
@@ -417,9 +417,9 @@ bb0:
 #line 22 "tests/golden/run/crlf-literal.hero"
     hero_print_end();
 #line 24 "tests/golden/run/crlf-literal.hero"
-    t11 = HERO_STR_LIT(hero_str_4);
+    t11 = HERO_STR_LIT(hero_str_71c6be1f);
 #line 24 "tests/golden/run/crlf-literal.hero"
-    t12 = HERO_STR_LIT(hero_str_5);
+    t12 = HERO_STR_LIT(hero_str_2f);
 #line 24 "tests/golden/run/crlf-literal.hero"
     t13 = h_crlfliteral_request(t11, t12);
 #line 24 "tests/golden/run/crlf-literal.hero"

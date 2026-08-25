@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "sugartry.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "empty");
-HERO_STR_STATIC(hero_str_1, "no first element");
+HERO_STR_STATIC(hero_str_7ba188c6, "empty");
+HERO_STR_STATIC(hero_str_6105f16d, "no first element");
 
 typedef struct h_sugartry_Reader {
     int64_t f_pos;
@@ -170,9 +170,9 @@ bb1:
     return t11;
 bb2:
 #line 9 "tests/golden/ir/sugar-try.hero"
-    t5 = HERO_STR_LIT(hero_str_0);
+    t5 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 9 "tests/golden/ir/sugar-try.hero"
-    t6 = HERO_STR_LIT(hero_str_1);
+    t6 = HERO_STR_LIT(hero_str_6105f16d);
 #line 177 "sugartry.c"
     hero_str_incref(t5);
 #line 9 "tests/golden/ir/sugar-try.hero"

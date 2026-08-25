@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "premiseslicenevershares.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, " ");
-HERO_STR_STATIC(hero_str_1, "abcdef");
-HERO_STR_STATIC(hero_str_2, "!");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_12becefb, "abcdef");
+HERO_STR_STATIC(hero_str_21, "!");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -238,7 +238,7 @@ bb0:
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
     t16 = *(int64_t const *)hero_array_at(t14, t15);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
-    t17 = HERO_STR_LIT(hero_str_0);
+    t17 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
     t18 = h1_part;
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
@@ -262,7 +262,7 @@ bb0:
 #line 30 "tests/golden/run/premise-slice-never-shares.hero"
     t25 = hero_array_len(t24);
 #line 30 "tests/golden/run/premise-slice-never-shares.hero"
-    t26 = HERO_STR_LIT(hero_str_0);
+    t26 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/premise-slice-never-shares.hero"
     t27 = h0_xs;
 #line 30 "tests/golden/run/premise-slice-never-shares.hero"
@@ -276,7 +276,7 @@ bb0:
 #line 30 "tests/golden/run/premise-slice-never-shares.hero"
     hero_print_end();
 #line 35 "tests/golden/run/premise-slice-never-shares.hero"
-    t29 = HERO_STR_LIT(hero_str_1);
+    t29 = HERO_STR_LIT(hero_str_12becefb);
 #line 35 "tests/golden/run/premise-slice-never-shares.hero"
     t44 = h2_s;
 #line 283 "premiseslicenevershares.c"
@@ -310,7 +310,7 @@ bb0:
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t34 = h2_s;
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
-    t35 = HERO_STR_LIT(hero_str_2);
+    t35 = HERO_STR_LIT(hero_str_21);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t36 = hero_str_concat(t34, t35);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
@@ -330,7 +330,7 @@ bb0:
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t37 = h3_mid;
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
-    t38 = HERO_STR_LIT(hero_str_0);
+    t38 = HERO_STR_LIT(hero_str_20);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t39 = h4_joined;
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"

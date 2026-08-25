@@ -58,11 +58,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsconcatleaked.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "hi ");
-HERO_STR_STATIC(hero_str_1, "Ziggy");
-HERO_STR_STATIC(hero_str_2, "ab");
-HERO_STR_STATIC(hero_str_3, "");
-HERO_STR_STATIC(hero_str_4, "x");
+HERO_STR_STATIC(hero_str_1b7183, "hi ");
+HERO_STR_STATIC(hero_str_39ff1ae6, "Ziggy");
+HERO_STR_STATIC(hero_str_3205, "ab");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_78, "x");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -103,7 +103,7 @@ HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name) {
     goto bb0;
 bb0:
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_1b7183);
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t2 = h0_name;
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
@@ -166,7 +166,7 @@ void h_fixedbugsconcatleaked_main(void) {
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_39ff1ae6);
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t2 = h_fixedbugsconcatleaked_greet(t1);
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
@@ -180,7 +180,7 @@ bb0:
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
-    t3 = HERO_STR_LIT(hero_str_2);
+    t3 = HERO_STR_LIT(hero_str_3205);
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t21 = h0_s;
 #line 187 "fixedbugsconcatleaked.c"
@@ -206,7 +206,7 @@ bb0:
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_end();
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
-    t7 = HERO_STR_LIT(hero_str_3);
+    t7 = HERO_STR_LIT(hero_str_0);
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t23 = h1_out;
 #line 213 "fixedbugsconcatleaked.c"
@@ -236,7 +236,7 @@ bb2:
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t12 = h1_out;
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
-    t13 = HERO_STR_LIT(hero_str_4);
+    t13 = HERO_STR_LIT(hero_str_78);
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t14 = hero_str_concat(t12, t13);
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"

@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugssynthesisednamesareunspellable.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "odd");
-HERO_STR_STATIC(hero_str_1, "not even");
+HERO_STR_STATIC(hero_str_1d4477, "odd");
+HERO_STR_STATIC(hero_str_60844662, "not even");
 
 typedef struct h_fixedbugssynthesisednamesareunspellable_opt0 {
     int64_t f_x;
@@ -197,9 +197,9 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 bb1:
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    t10 = HERO_STR_LIT(hero_str_0);
+    t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    t11 = HERO_STR_LIT(hero_str_1);
+    t11 = HERO_STR_LIT(hero_str_60844662);
 #line 204 "fixedbugssynthesisednamesareunspellable.c"
     hero_str_incref(t10);
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"

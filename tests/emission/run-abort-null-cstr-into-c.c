@@ -62,11 +62,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 63 "abortnullcstrintoc.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "before");
-HERO_STR_STATIC(hero_str_1, "abc");
-HERO_STR_STATIC(hero_str_2, "zzz");
-HERO_STR_STATIC(hero_str_3, "y");
-HERO_STR_STATIC(hero_str_4, "unreachable");
+HERO_STR_STATIC(hero_str_43560e4d, "before");
+HERO_STR_STATIC(hero_str_1998f2, "abc");
+HERO_STR_STATIC(hero_str_203132, "zzz");
+HERO_STR_STATIC(hero_str_79, "y");
+HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -114,17 +114,17 @@ void h_abortnullcstrintoc_main(void) {
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_str(t1);
 #line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_end();
 #line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t2 = HERO_STR_LIT(hero_str_1);
+    t2 = HERO_STR_LIT(hero_str_1998f2);
 #line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
     t3 = hero_str_cstr(t2);
 #line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t4 = HERO_STR_LIT(hero_str_2);
+    t4 = HERO_STR_LIT(hero_str_203132);
 #line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
     t5 = hero_str_cstr(t4);
 #line 26 "tests/golden/run/abort-null-cstr-into-c.hero"
@@ -134,7 +134,7 @@ bb0:
 #line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
     t7 = h0_absent;
 #line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t8 = HERO_STR_LIT(hero_str_3);
+    t8 = HERO_STR_LIT(hero_str_79);
 #line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
     t9 = hero_str_cstr(t8);
 #line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
@@ -152,7 +152,7 @@ bb1:
 #line 31 "tests/golden/run/abort-null-cstr-into-c.hero"
 bb2:
 #line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t13 = HERO_STR_LIT(hero_str_4);
+    t13 = HERO_STR_LIT(hero_str_187ae0ee);
 #line 32 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_str(t13);
 #line 32 "tests/golden/run/abort-null-cstr-into-c.hero"

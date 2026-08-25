@@ -58,72 +58,72 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "usage: json <file> [key]");
-HERO_STR_STATIC(hero_str_1, "cannot read ");
-HERO_STR_STATIC(hero_str_2, ": ");
-HERO_STR_STATIC(hero_str_3, "values: ");
-HERO_STR_STATIC(hero_str_4, "depth: ");
-HERO_STR_STATIC(hero_str_5, "field ");
-HERO_STR_STATIC(hero_str_14, "bad_escape");
-HERO_STR_STATIC(hero_str_15, "bad_number");
-HERO_STR_STATIC(hero_str_16, "expected_colon");
-HERO_STR_STATIC(hero_str_17, "expected_key");
-HERO_STR_STATIC(hero_str_18, "expected_separator");
-HERO_STR_STATIC(hero_str_19, "exponent_out_of_range");
-HERO_STR_STATIC(hero_str_20, "trailing_input");
-HERO_STR_STATIC(hero_str_21, "unclosed_array");
-HERO_STR_STATIC(hero_str_22, "unclosed_object");
-HERO_STR_STATIC(hero_str_23, "unexpected_character");
-HERO_STR_STATIC(hero_str_24, "unexpected_end");
-HERO_STR_STATIC(hero_str_25, "unsupported_escape");
-HERO_STR_STATIC(hero_str_26, "unterminated_string");
-HERO_STR_STATIC(hero_str_27, "the document ends where a value was expected");
-HERO_STR_STATIC(hero_str_28, "true");
-HERO_STR_STATIC(hero_str_29, "false");
-HERO_STR_STATIC(hero_str_30, "null");
-HERO_STR_STATIC(hero_str_31, "no value starts at ");
-HERO_STR_STATIC(hero_str_32, "the document ends inside an escape");
-HERO_STR_STATIC(hero_str_33, "the document ends inside a string");
-HERO_STR_STATIC(hero_str_34, "");
-HERO_STR_STATIC(hero_str_35, "\"");
-HERO_STR_STATIC(hero_str_36, "\\");
-HERO_STR_STATIC(hero_str_37, "/");
-HERO_STR_STATIC(hero_str_38, "\n");
-HERO_STR_STATIC(hero_str_39, "\t");
-HERO_STR_STATIC(hero_str_40, "this reader does not decode `\\");
-HERO_STR_STATIC(hero_str_41, "`, at ");
-HERO_STR_STATIC(hero_str_42, "no escape `\\");
-HERO_STR_STATIC(hero_str_43, "` at ");
-HERO_STR_STATIC(hero_str_44, "a number needs a digit at ");
-HERO_STR_STATIC(hero_str_45, "a `.` needs a digit after it, at ");
-HERO_STR_STATIC(hero_str_46, "an exponent beyond an f64's range at ");
-HERO_STR_STATIC(hero_str_47, "an exponent needs a digit at ");
-HERO_STR_STATIC(hero_str_48, "the document ends inside an array");
-HERO_STR_STATIC(hero_str_49, "expected `,` or `]` at ");
-HERO_STR_STATIC(hero_str_50, "the document ends inside an object");
-HERO_STR_STATIC(hero_str_51, "an object's key is a string, at ");
-HERO_STR_STATIC(hero_str_52, "expected `:` after a key, at ");
-HERO_STR_STATIC(hero_str_53, "expected `,` or `}` at ");
-HERO_STR_STATIC(hero_str_54, "the document ends at ");
-HERO_STR_STATIC(hero_str_55, " and the text does not");
-HERO_STR_STATIC(hero_str_56, "no_error");
-HERO_STR_STATIC(hero_str_131, "not_an_object");
-HERO_STR_STATIC(hero_str_132, "[");
-HERO_STR_STATIC(hero_str_133, ",");
-HERO_STR_STATIC(hero_str_134, "]");
-HERO_STR_STATIC(hero_str_135, "{");
-HERO_STR_STATIC(hero_str_136, "}");
-HERO_STR_STATIC(hero_str_137, ":");
-HERO_STR_STATIC(hero_str_138, "\\\"");
-HERO_STR_STATIC(hero_str_139, "\\\\");
-HERO_STR_STATIC(hero_str_140, "\\n");
-HERO_STR_STATIC(hero_str_141, "\\t");
-HERO_STR_STATIC(hero_str_142, "asked for `");
-HERO_STR_STATIC(hero_str_143, "` of a value that is not an object");
-HERO_STR_STATIC(hero_str_170, "file_not_found");
-HERO_STR_STATIC(hero_str_171, "no file at ");
-HERO_STR_STATIC(hero_str_172, "read_failed");
-HERO_STR_STATIC(hero_str_173, "could not read ");
+HERO_STR_STATIC(hero_str_5b00a8bf, "usage: json <file> [key]");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_31fd2fcf, "values: ");
+HERO_STR_STATIC(hero_str_ea08ab8, "depth: ");
+HERO_STR_STATIC(hero_str_777af780, "field ");
+HERO_STR_STATIC(hero_str_188aaf9b, "bad_escape");
+HERO_STR_STATIC(hero_str_14a4096d, "bad_number");
+HERO_STR_STATIC(hero_str_5cd4d44d, "expected_colon");
+HERO_STR_STATIC(hero_str_93f5a93, "expected_key");
+HERO_STR_STATIC(hero_str_38bd265d, "expected_separator");
+HERO_STR_STATIC(hero_str_677e95a4, "exponent_out_of_range");
+HERO_STR_STATIC(hero_str_1ab4f50e, "trailing_input");
+HERO_STR_STATIC(hero_str_7604c7c8, "unclosed_array");
+HERO_STR_STATIC(hero_str_bc18c82, "unclosed_object");
+HERO_STR_STATIC(hero_str_70ef3fbe, "unexpected_character");
+HERO_STR_STATIC(hero_str_7423baed, "unexpected_end");
+HERO_STR_STATIC(hero_str_1f8e9994, "unsupported_escape");
+HERO_STR_STATIC(hero_str_1aa1c6e8, "unterminated_string");
+HERO_STR_STATIC(hero_str_1a47762d, "the document ends where a value was expected");
+HERO_STR_STATIC(hero_str_fa94082, "true");
+HERO_STR_STATIC(hero_str_b928f19, "false");
+HERO_STR_STATIC(hero_str_edc3367, "null");
+HERO_STR_STATIC(hero_str_2611b207, "no value starts at ");
+HERO_STR_STATIC(hero_str_2aa2e18a, "the document ends inside an escape");
+HERO_STR_STATIC(hero_str_8df0b75, "the document ends inside a string");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_22, "\"");
+HERO_STR_STATIC(hero_str_5c, "\\");
+HERO_STR_STATIC(hero_str_2f, "/");
+HERO_STR_STATIC(hero_str_a, "\n");
+HERO_STR_STATIC(hero_str_9, "\t");
+HERO_STR_STATIC(hero_str_a321ba5, "this reader does not decode `\\");
+HERO_STR_STATIC(hero_str_5a5afd13, "`, at ");
+HERO_STR_STATIC(hero_str_34428acc, "no escape `\\");
+HERO_STR_STATIC(hero_str_1987b3b2, "` at ");
+HERO_STR_STATIC(hero_str_4a5078b7, "a number needs a digit at ");
+HERO_STR_STATIC(hero_str_3d25fcc5, "a `.` needs a digit after it, at ");
+HERO_STR_STATIC(hero_str_43601c15, "an exponent beyond an f64's range at ");
+HERO_STR_STATIC(hero_str_5fb3be5f, "an exponent needs a digit at ");
+HERO_STR_STATIC(hero_str_3de6a53b, "the document ends inside an array");
+HERO_STR_STATIC(hero_str_1d323186, "expected `,` or `]` at ");
+HERO_STR_STATIC(hero_str_5455de21, "the document ends inside an object");
+HERO_STR_STATIC(hero_str_2b2dc5d0, "an object's key is a string, at ");
+HERO_STR_STATIC(hero_str_20903125, "expected `:` after a key, at ");
+HERO_STR_STATIC(hero_str_dbba225, "expected `,` or `}` at ");
+HERO_STR_STATIC(hero_str_2446553f, "the document ends at ");
+HERO_STR_STATIC(hero_str_4ccd62cd, " and the text does not");
+HERO_STR_STATIC(hero_str_7b992235, "no_error");
+HERO_STR_STATIC(hero_str_5bfaae18, "not_an_object");
+HERO_STR_STATIC(hero_str_5b, "[");
+HERO_STR_STATIC(hero_str_2c, ",");
+HERO_STR_STATIC(hero_str_5d, "]");
+HERO_STR_STATIC(hero_str_7b, "{");
+HERO_STR_STATIC(hero_str_7d, "}");
+HERO_STR_STATIC(hero_str_3a, ":");
+HERO_STR_STATIC(hero_str_2f36, "\\\"");
+HERO_STR_STATIC(hero_str_2f70, "\\\\");
+HERO_STR_STATIC(hero_str_2f82, "\\n");
+HERO_STR_STATIC(hero_str_2f88, "\\t");
+HERO_STR_STATIC(hero_str_5d8588bf, "asked for `");
+HERO_STR_STATIC(hero_str_67cf29cc, "` of a value that is not an object");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
 typedef struct h_parse_Reader {
     HeroStr f_text;
@@ -456,7 +456,7 @@ bb1:
 #line 28 "examples/json/main.hero"
 bb2:
 #line 26 "examples/json/main.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_5b00a8bf);
 #line 26 "examples/json/main.hero"
     hero_print_str(t6);
 #line 26 "examples/json/main.hero"
@@ -524,7 +524,7 @@ bb5:
 #line 525 "main.c"
     hero_failure_release(&t34);
 #line 29 "examples/json/main.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_2d78c599);
 #line 29 "examples/json/main.hero"
     t17 = h0_given;
 #line 29 "examples/json/main.hero"
@@ -540,7 +540,7 @@ bb5:
 #line 541 "main.c"
     hero_str_decref(t35);
 #line 29 "examples/json/main.hero"
-    t21 = HERO_STR_LIT(hero_str_2);
+    t21 = HERO_STR_LIT(hero_str_1dce);
 #line 29 "examples/json/main.hero"
     t22 = hero_str_concat(t20, t21);
 #line 29 "examples/json/main.hero"
@@ -729,7 +729,7 @@ bb2:
 #line 39 "examples/json/main.hero"
     t8 = t7.code;
 #line 39 "examples/json/main.hero"
-    t9 = HERO_STR_LIT(hero_str_2);
+    t9 = HERO_STR_LIT(hero_str_1dce);
 #line 39 "examples/json/main.hero"
     t10 = hero_str_concat(t8, t9);
 #line 39 "examples/json/main.hero"
@@ -840,7 +840,7 @@ void h_main_describe(h_value_Json h0_doc, HeroArrayHeader * h1_given) {
     goto bb0;
 bb0:
 #line 43 "examples/json/main.hero"
-    t1 = HERO_STR_LIT(hero_str_3);
+    t1 = HERO_STR_LIT(hero_str_31fd2fcf);
 #line 43 "examples/json/main.hero"
     t2 = h0_doc;
 #line 43 "examples/json/main.hero"
@@ -852,7 +852,7 @@ bb0:
 #line 43 "examples/json/main.hero"
     hero_print_end();
 #line 44 "examples/json/main.hero"
-    t4 = HERO_STR_LIT(hero_str_4);
+    t4 = HERO_STR_LIT(hero_str_ea08ab8);
 #line 44 "examples/json/main.hero"
     t5 = h0_doc;
 #line 44 "examples/json/main.hero"
@@ -976,7 +976,7 @@ bb5:
 #line 977 "main.c"
     hero_failure_release(&t41);
 #line 48 "examples/json/main.hero"
-    t22 = HERO_STR_LIT(hero_str_5);
+    t22 = HERO_STR_LIT(hero_str_777af780);
 #line 48 "examples/json/main.hero"
     t23 = h1_given;
 #line 48 "examples/json/main.hero"
@@ -984,7 +984,7 @@ bb5:
 #line 48 "examples/json/main.hero"
     t25 = *(HeroStr const *)hero_array_at(t23, t24);
 #line 48 "examples/json/main.hero"
-    t26 = HERO_STR_LIT(hero_str_2);
+    t26 = HERO_STR_LIT(hero_str_1dce);
 #line 48 "examples/json/main.hero"
     t27 = h3_e;
 #line 48 "examples/json/main.hero"
@@ -1016,7 +1016,7 @@ bb6:
 #line 1017 "main.c"
     h_value_Json_release(&t42);
 #line 49 "examples/json/main.hero"
-    t31 = HERO_STR_LIT(hero_str_5);
+    t31 = HERO_STR_LIT(hero_str_777af780);
 #line 49 "examples/json/main.hero"
     t32 = h1_given;
 #line 49 "examples/json/main.hero"
@@ -1024,7 +1024,7 @@ bb6:
 #line 49 "examples/json/main.hero"
     t34 = *(HeroStr const *)hero_array_at(t32, t33);
 #line 49 "examples/json/main.hero"
-    t35 = HERO_STR_LIT(hero_str_2);
+    t35 = HERO_STR_LIT(hero_str_1dce);
 #line 49 "examples/json/main.hero"
     t36 = h4_got;
 #line 49 "examples/json/main.hero"
@@ -1057,7 +1057,7 @@ HeroStr h_parse_ERR_BAD_ESCAPE(void) {
     goto bb0;
 bb0:
 #line 20 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_14);
+    t1 = HERO_STR_LIT(hero_str_188aaf9b);
 #line 1062 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1070,7 +1070,7 @@ HeroStr h_parse_ERR_BAD_NUMBER(void) {
     goto bb0;
 bb0:
 #line 23 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_15);
+    t1 = HERO_STR_LIT(hero_str_14a4096d);
 #line 1075 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1083,7 +1083,7 @@ HeroStr h_parse_ERR_EXPECTED_COLON(void) {
     goto bb0;
 bb0:
 #line 26 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_16);
+    t1 = HERO_STR_LIT(hero_str_5cd4d44d);
 #line 1088 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1096,7 +1096,7 @@ HeroStr h_parse_ERR_EXPECTED_KEY(void) {
     goto bb0;
 bb0:
 #line 29 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_17);
+    t1 = HERO_STR_LIT(hero_str_93f5a93);
 #line 1101 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1109,7 +1109,7 @@ HeroStr h_parse_ERR_EXPECTED_SEPARATOR(void) {
     goto bb0;
 bb0:
 #line 32 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_18);
+    t1 = HERO_STR_LIT(hero_str_38bd265d);
 #line 1114 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1122,7 +1122,7 @@ HeroStr h_parse_ERR_EXPONENT_OUT_OF_RANGE(void) {
     goto bb0;
 bb0:
 #line 35 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_19);
+    t1 = HERO_STR_LIT(hero_str_677e95a4);
 #line 1127 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1135,7 +1135,7 @@ HeroStr h_parse_ERR_TRAILING_INPUT(void) {
     goto bb0;
 bb0:
 #line 38 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_20);
+    t1 = HERO_STR_LIT(hero_str_1ab4f50e);
 #line 1140 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1148,7 +1148,7 @@ HeroStr h_parse_ERR_UNCLOSED_ARRAY(void) {
     goto bb0;
 bb0:
 #line 41 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_21);
+    t1 = HERO_STR_LIT(hero_str_7604c7c8);
 #line 1153 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1161,7 +1161,7 @@ HeroStr h_parse_ERR_UNCLOSED_OBJECT(void) {
     goto bb0;
 bb0:
 #line 44 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_22);
+    t1 = HERO_STR_LIT(hero_str_bc18c82);
 #line 1166 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1174,7 +1174,7 @@ HeroStr h_parse_ERR_UNEXPECTED_CHARACTER(void) {
     goto bb0;
 bb0:
 #line 47 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_23);
+    t1 = HERO_STR_LIT(hero_str_70ef3fbe);
 #line 1179 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1187,7 +1187,7 @@ HeroStr h_parse_ERR_UNEXPECTED_END(void) {
     goto bb0;
 bb0:
 #line 50 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_24);
+    t1 = HERO_STR_LIT(hero_str_7423baed);
 #line 1192 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1200,7 +1200,7 @@ HeroStr h_parse_ERR_UNSUPPORTED_ESCAPE(void) {
     goto bb0;
 bb0:
 #line 53 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_25);
+    t1 = HERO_STR_LIT(hero_str_1f8e9994);
 #line 1205 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1213,7 +1213,7 @@ HeroStr h_parse_ERR_UNTERMINATED_STRING(void) {
     goto bb0;
 bb0:
 #line 56 "examples/json/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_26);
+    t1 = HERO_STR_LIT(hero_str_1aa1c6e8);
 #line 1218 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -2125,7 +2125,7 @@ bb2:
 #line 2126 "main.c"
     hero_str_decref(t76);
 #line 103 "examples/json/parse.hero"
-    t4 = HERO_STR_LIT(hero_str_27);
+    t4 = HERO_STR_LIT(hero_str_1a47762d);
 #line 2130 "main.c"
     hero_str_incref(t3);
 #line 103 "examples/json/parse.hero"
@@ -2252,7 +2252,7 @@ bb4:
 #line 2253 "main.c"
     hero_str_decref(t78);
 #line 122 "examples/json/parse.hero"
-    t70 = HERO_STR_LIT(hero_str_31);
+    t70 = HERO_STR_LIT(hero_str_2611b207);
 #line 122 "examples/json/parse.hero"
     t71 = h0_r;
 #line 122 "examples/json/parse.hero"
@@ -2959,7 +2959,7 @@ bb16:
 #line 113 "examples/json/parse.hero"
     t49 = h0_r;
 #line 113 "examples/json/parse.hero"
-    t50 = HERO_STR_LIT(hero_str_28);
+    t50 = HERO_STR_LIT(hero_str_fa94082);
 #line 113 "examples/json/parse.hero"
     t51 = h_parse_has_word(t49, t50);
 #line 113 "examples/json/parse.hero"
@@ -3337,7 +3337,7 @@ bb20:
 #line 116 "examples/json/parse.hero"
     t56 = h0_r;
 #line 116 "examples/json/parse.hero"
-    t57 = HERO_STR_LIT(hero_str_29);
+    t57 = HERO_STR_LIT(hero_str_b928f19);
 #line 116 "examples/json/parse.hero"
     t58 = h_parse_has_word(t56, t57);
 #line 116 "examples/json/parse.hero"
@@ -3474,7 +3474,7 @@ bb22:
 #line 119 "examples/json/parse.hero"
     t63 = h0_r;
 #line 119 "examples/json/parse.hero"
-    t64 = HERO_STR_LIT(hero_str_30);
+    t64 = HERO_STR_LIT(hero_str_edc3367);
 #line 119 "examples/json/parse.hero"
     t65 = h_parse_has_word(t63, t64);
 #line 119 "examples/json/parse.hero"
@@ -3904,7 +3904,7 @@ bb10:
 #line 3905 "main.c"
     hero_str_decref(t57);
 #line 136 "examples/json/parse.hero"
-    t17 = HERO_STR_LIT(hero_str_32);
+    t17 = HERO_STR_LIT(hero_str_2aa2e18a);
 #line 3909 "main.c"
     hero_str_incref(t16);
 #line 136 "examples/json/parse.hero"
@@ -4081,7 +4081,7 @@ bb14:
 #line 145 "examples/json/parse.hero"
     t48 = h1_parts;
 #line 145 "examples/json/parse.hero"
-    t49 = HERO_STR_LIT(hero_str_34);
+    t49 = HERO_STR_LIT(hero_str_0);
 #line 145 "examples/json/parse.hero"
     t50 = hero_str_join(t48, t49);
 #line 145 "examples/json/parse.hero"
@@ -4168,7 +4168,7 @@ bb15:
 #line 4169 "main.c"
     hero_str_decref(t64);
 #line 143 "examples/json/parse.hero"
-    t46 = HERO_STR_LIT(hero_str_33);
+    t46 = HERO_STR_LIT(hero_str_8df0b75);
 #line 4173 "main.c"
     hero_str_incref(t45);
 #line 143 "examples/json/parse.hero"
@@ -4528,7 +4528,7 @@ bb1:
 #line 4529 "main.c"
     hero_str_decref(t81);
 #line 170 "examples/json/parse.hero"
-    t63 = HERO_STR_LIT(hero_str_42);
+    t63 = HERO_STR_LIT(hero_str_34428acc);
 #line 170 "examples/json/parse.hero"
     t64 = h0_r;
 #line 170 "examples/json/parse.hero"
@@ -4562,7 +4562,7 @@ bb1:
 #line 4563 "main.c"
     hero_str_decref(t83);
 #line 170 "examples/json/parse.hero"
-    t74 = HERO_STR_LIT(hero_str_43);
+    t74 = HERO_STR_LIT(hero_str_1987b3b2);
 #line 170 "examples/json/parse.hero"
     t75 = hero_str_concat(t73, t74);
 #line 170 "examples/json/parse.hero"
@@ -4687,7 +4687,7 @@ bb1:
     return t80;
 bb2:
 #line 159 "examples/json/parse.hero"
-    t6 = HERO_STR_LIT(hero_str_35);
+    t6 = HERO_STR_LIT(hero_str_22);
 #line 4692 "main.c"
     hero_str_incref(t6);
 #line 159 "examples/json/parse.hero"
@@ -4790,7 +4790,7 @@ bb3:
 #line 160 "examples/json/parse.hero"
 bb4:
 #line 161 "examples/json/parse.hero"
-    t11 = HERO_STR_LIT(hero_str_36);
+    t11 = HERO_STR_LIT(hero_str_5c);
 #line 4795 "main.c"
     hero_str_incref(t11);
 #line 161 "examples/json/parse.hero"
@@ -4893,7 +4893,7 @@ bb5:
 #line 162 "examples/json/parse.hero"
 bb6:
 #line 163 "examples/json/parse.hero"
-    t16 = HERO_STR_LIT(hero_str_37);
+    t16 = HERO_STR_LIT(hero_str_2f);
 #line 4898 "main.c"
     hero_str_incref(t16);
 #line 163 "examples/json/parse.hero"
@@ -4996,7 +4996,7 @@ bb7:
 #line 164 "examples/json/parse.hero"
 bb8:
 #line 165 "examples/json/parse.hero"
-    t21 = HERO_STR_LIT(hero_str_38);
+    t21 = HERO_STR_LIT(hero_str_a);
 #line 5001 "main.c"
     hero_str_incref(t21);
 #line 165 "examples/json/parse.hero"
@@ -5099,7 +5099,7 @@ bb9:
 #line 166 "examples/json/parse.hero"
 bb10:
 #line 167 "examples/json/parse.hero"
-    t26 = HERO_STR_LIT(hero_str_39);
+    t26 = HERO_STR_LIT(hero_str_9);
 #line 5104 "main.c"
     hero_str_incref(t26);
 #line 167 "examples/json/parse.hero"
@@ -5270,7 +5270,7 @@ bb18:
 #line 5271 "main.c"
     hero_str_decref(t93);
 #line 169 "examples/json/parse.hero"
-    t44 = HERO_STR_LIT(hero_str_40);
+    t44 = HERO_STR_LIT(hero_str_a321ba5);
 #line 169 "examples/json/parse.hero"
     t45 = h0_r;
 #line 169 "examples/json/parse.hero"
@@ -5304,7 +5304,7 @@ bb18:
 #line 5305 "main.c"
     hero_str_decref(t95);
 #line 169 "examples/json/parse.hero"
-    t55 = HERO_STR_LIT(hero_str_41);
+    t55 = HERO_STR_LIT(hero_str_5a5afd13);
 #line 169 "examples/json/parse.hero"
     t56 = hero_str_concat(t54, t55);
 #line 169 "examples/json/parse.hero"
@@ -5763,7 +5763,7 @@ bb10:
 #line 5764 "main.c"
     hero_str_decref(t109);
 #line 187 "examples/json/parse.hero"
-    t31 = HERO_STR_LIT(hero_str_44);
+    t31 = HERO_STR_LIT(hero_str_4a5078b7);
 #line 187 "examples/json/parse.hero"
     t32 = h0_r;
 #line 187 "examples/json/parse.hero"
@@ -5997,7 +5997,7 @@ bb23:
 #line 5998 "main.c"
     hero_str_decref(t113);
 #line 198 "examples/json/parse.hero"
-    t72 = HERO_STR_LIT(hero_str_45);
+    t72 = HERO_STR_LIT(hero_str_3d25fcc5);
 #line 198 "examples/json/parse.hero"
     t73 = h0_r;
 #line 198 "examples/json/parse.hero"
@@ -6648,7 +6648,7 @@ bb14:
 #line 6649 "main.c"
     hero_str_decref(t64);
 #line 220 "examples/json/parse.hero"
-    t42 = HERO_STR_LIT(hero_str_46);
+    t42 = HERO_STR_LIT(hero_str_43601c15);
 #line 220 "examples/json/parse.hero"
     t43 = h0_r;
 #line 220 "examples/json/parse.hero"
@@ -6746,7 +6746,7 @@ bb17:
 #line 6747 "main.c"
     hero_str_decref(t68);
 #line 223 "examples/json/parse.hero"
-    t52 = HERO_STR_LIT(hero_str_47);
+    t52 = HERO_STR_LIT(hero_str_5fb3be5f);
 #line 223 "examples/json/parse.hero"
     t53 = h0_r;
 #line 223 "examples/json/parse.hero"
@@ -7444,7 +7444,7 @@ bb2:
 #line 7445 "main.c"
     hero_str_decref(t54);
 #line 247 "examples/json/parse.hero"
-    t5 = HERO_STR_LIT(hero_str_48);
+    t5 = HERO_STR_LIT(hero_str_3de6a53b);
 #line 7449 "main.c"
     hero_str_incref(t4);
 #line 247 "examples/json/parse.hero"
@@ -7931,7 +7931,7 @@ bb13:
 #line 7932 "main.c"
     hero_str_decref(t65);
 #line 256 "examples/json/parse.hero"
-    t31 = HERO_STR_LIT(hero_str_48);
+    t31 = HERO_STR_LIT(hero_str_3de6a53b);
 #line 7936 "main.c"
     hero_str_incref(t30);
 #line 256 "examples/json/parse.hero"
@@ -8064,7 +8064,7 @@ bb19:
 #line 8065 "main.c"
     hero_str_decref(t67);
 #line 263 "examples/json/parse.hero"
-    t43 = HERO_STR_LIT(hero_str_49);
+    t43 = HERO_STR_LIT(hero_str_1d323186);
 #line 263 "examples/json/parse.hero"
     t44 = h0_r;
 #line 263 "examples/json/parse.hero"
@@ -8644,7 +8644,7 @@ bb2:
 #line 8645 "main.c"
     hero_str_decref(t91);
 #line 273 "examples/json/parse.hero"
-    t5 = HERO_STR_LIT(hero_str_50);
+    t5 = HERO_STR_LIT(hero_str_5455de21);
 #line 8649 "main.c"
     hero_str_incref(t4);
 #line 273 "examples/json/parse.hero"
@@ -9159,7 +9159,7 @@ bb13:
 #line 9160 "main.c"
     hero_str_decref(t99);
 #line 281 "examples/json/parse.hero"
-    t24 = HERO_STR_LIT(hero_str_51);
+    t24 = HERO_STR_LIT(hero_str_2b2dc5d0);
 #line 281 "examples/json/parse.hero"
     t25 = h0_r;
 #line 281 "examples/json/parse.hero"
@@ -9539,7 +9539,7 @@ bb20:
 #line 9540 "main.c"
     hero_str_decref(t107);
 #line 285 "examples/json/parse.hero"
-    t48 = HERO_STR_LIT(hero_str_52);
+    t48 = HERO_STR_LIT(hero_str_20903125);
 #line 285 "examples/json/parse.hero"
     t49 = h0_r;
 #line 285 "examples/json/parse.hero"
@@ -9873,7 +9873,7 @@ bb25:
 #line 9874 "main.c"
     hero_str_decref(t112);
 #line 290 "examples/json/parse.hero"
-    t68 = HERO_STR_LIT(hero_str_50);
+    t68 = HERO_STR_LIT(hero_str_5455de21);
 #line 9878 "main.c"
     hero_str_incref(t67);
 #line 290 "examples/json/parse.hero"
@@ -10050,7 +10050,7 @@ bb31:
 #line 10051 "main.c"
     hero_str_decref(t114);
 #line 297 "examples/json/parse.hero"
-    t80 = HERO_STR_LIT(hero_str_53);
+    t80 = HERO_STR_LIT(hero_str_dbba225);
 #line 297 "examples/json/parse.hero"
     t81 = h0_r;
 #line 297 "examples/json/parse.hero"
@@ -10515,7 +10515,7 @@ bb4:
 #line 10516 "main.c"
     hero_str_decref(t35);
 #line 309 "examples/json/parse.hero"
-    t18 = HERO_STR_LIT(hero_str_54);
+    t18 = HERO_STR_LIT(hero_str_2446553f);
 #line 309 "examples/json/parse.hero"
     t19 = h1_r;
 #line 309 "examples/json/parse.hero"
@@ -10537,7 +10537,7 @@ bb4:
 #line 10538 "main.c"
     hero_str_decref(t37);
 #line 309 "examples/json/parse.hero"
-    t23 = HERO_STR_LIT(hero_str_55);
+    t23 = HERO_STR_LIT(hero_str_4ccd62cd);
 #line 309 "examples/json/parse.hero"
     t24 = hero_str_concat(t22, t23);
 #line 309 "examples/json/parse.hero"
@@ -10701,7 +10701,7 @@ bb1:
     return t10;
 bb2:
 #line 317 "examples/json/parse.hero"
-    t5 = HERO_STR_LIT(hero_str_56);
+    t5 = HERO_STR_LIT(hero_str_7b992235);
 #line 316 "examples/json/parse.hero"
     t13 = h2_r0;
 #line 10708 "main.c"
@@ -10839,7 +10839,7 @@ HeroStr h_value_ERR_NOT_AN_OBJECT(void) {
     goto bb0;
 bb0:
 #line 19 "examples/json/value.hero"
-    t1 = HERO_STR_LIT(hero_str_131);
+    t1 = HERO_STR_LIT(hero_str_5bfaae18);
 #line 10844 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -11052,7 +11052,7 @@ bb1:
     return t42;
 bb2:
 #line 49 "examples/json/value.hero"
-    t4 = HERO_STR_LIT(hero_str_30);
+    t4 = HERO_STR_LIT(hero_str_edc3367);
 #line 48 "examples/json/value.hero"
     t44 = h2_r0;
 #line 11059 "main.c"
@@ -11166,7 +11166,7 @@ bb6:
 #line 11167 "main.c"
     h_value_Json_c_array_release(&t52);
 #line 53 "examples/json/value.hero"
-    t22 = HERO_STR_LIT(hero_str_132);
+    t22 = HERO_STR_LIT(hero_str_5b);
 #line 53 "examples/json/value.hero"
     t23 = h6_a;
 #line 53 "examples/json/value.hero"
@@ -11180,7 +11180,7 @@ bb6:
 #line 11181 "main.c"
     hero_array_decref(t53);
 #line 53 "examples/json/value.hero"
-    t26 = HERO_STR_LIT(hero_str_133);
+    t26 = HERO_STR_LIT(hero_str_2c);
 #line 53 "examples/json/value.hero"
     t27 = hero_str_join(t25, t26);
 #line 53 "examples/json/value.hero"
@@ -11198,7 +11198,7 @@ bb6:
 #line 11199 "main.c"
     hero_str_decref(t55);
 #line 53 "examples/json/value.hero"
-    t29 = HERO_STR_LIT(hero_str_134);
+    t29 = HERO_STR_LIT(hero_str_5d);
 #line 53 "examples/json/value.hero"
     t30 = hero_str_concat(t28, t29);
 #line 53 "examples/json/value.hero"
@@ -11230,7 +11230,7 @@ bb7:
 #line 11231 "main.c"
     h_value_Json_c_object_release(&t58);
 #line 54 "examples/json/value.hero"
-    t33 = HERO_STR_LIT(hero_str_135);
+    t33 = HERO_STR_LIT(hero_str_7b);
 #line 54 "examples/json/value.hero"
     t34 = h7_o;
 #line 54 "examples/json/value.hero"
@@ -11244,7 +11244,7 @@ bb7:
 #line 11245 "main.c"
     hero_array_decref(t59);
 #line 54 "examples/json/value.hero"
-    t37 = HERO_STR_LIT(hero_str_133);
+    t37 = HERO_STR_LIT(hero_str_2c);
 #line 54 "examples/json/value.hero"
     t38 = hero_str_join(t36, t37);
 #line 54 "examples/json/value.hero"
@@ -11262,7 +11262,7 @@ bb7:
 #line 11263 "main.c"
     hero_str_decref(t61);
 #line 54 "examples/json/value.hero"
-    t40 = HERO_STR_LIT(hero_str_136);
+    t40 = HERO_STR_LIT(hero_str_7d);
 #line 54 "examples/json/value.hero"
     t41 = hero_str_concat(t39, t40);
 #line 54 "examples/json/value.hero"
@@ -11604,7 +11604,7 @@ bb2:
 #line 11605 "main.c"
     hero_str_decref(t42);
 #line 67 "examples/json/value.hero"
-    t16 = HERO_STR_LIT(hero_str_137);
+    t16 = HERO_STR_LIT(hero_str_3a);
 #line 67 "examples/json/value.hero"
     t17 = hero_str_concat(t15, t16);
 #line 67 "examples/json/value.hero"
@@ -11839,7 +11839,7 @@ HeroStr h_value_quote(HeroStr h0_s) {
     goto bb0;
 bb0:
 #line 76 "examples/json/value.hero"
-    t1 = HERO_STR_LIT(hero_str_35);
+    t1 = HERO_STR_LIT(hero_str_22);
 #line 76 "examples/json/value.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
 #line 76 "examples/json/value.hero"
@@ -11915,7 +11915,7 @@ bb2:
 #line 78 "examples/json/value.hero"
     t13 = h4_c;
 #line 78 "examples/json/value.hero"
-    t14 = HERO_STR_LIT(hero_str_35);
+    t14 = HERO_STR_LIT(hero_str_22);
 #line 78 "examples/json/value.hero"
     t15 = hero_str_eq(t13, t14);
 #line 78 "examples/json/value.hero"
@@ -11935,13 +11935,13 @@ bb3:
 #line 77 "examples/json/value.hero"
 bb4:
 #line 88 "examples/json/value.hero"
-    t44 = HERO_STR_LIT(hero_str_35);
+    t44 = HERO_STR_LIT(hero_str_22);
 #line 88 "examples/json/value.hero"
     hero_array_push_owned(&h1_out, &t44);
 #line 89 "examples/json/value.hero"
     t46 = h1_out;
 #line 89 "examples/json/value.hero"
-    t47 = HERO_STR_LIT(hero_str_34);
+    t47 = HERO_STR_LIT(hero_str_0);
 #line 89 "examples/json/value.hero"
     t48 = hero_str_join(t46, t47);
 #line 89 "examples/json/value.hero"
@@ -11982,7 +11982,7 @@ bb5:
     goto bb3;
 bb6:
 #line 79 "examples/json/value.hero"
-    t17 = HERO_STR_LIT(hero_str_138);
+    t17 = HERO_STR_LIT(hero_str_2f36);
 #line 79 "examples/json/value.hero"
     hero_array_push_owned(&h1_out, &t17);
 #line 79 "examples/json/value.hero"
@@ -11992,7 +11992,7 @@ bb7:
 #line 80 "examples/json/value.hero"
     t19 = h4_c;
 #line 80 "examples/json/value.hero"
-    t20 = HERO_STR_LIT(hero_str_36);
+    t20 = HERO_STR_LIT(hero_str_5c);
 #line 80 "examples/json/value.hero"
     t21 = hero_str_eq(t19, t20);
 #line 80 "examples/json/value.hero"
@@ -12000,7 +12000,7 @@ bb7:
 #line 80 "examples/json/value.hero"
 bb8:
 #line 81 "examples/json/value.hero"
-    t23 = HERO_STR_LIT(hero_str_139);
+    t23 = HERO_STR_LIT(hero_str_2f70);
 #line 81 "examples/json/value.hero"
     hero_array_push_owned(&h1_out, &t23);
 #line 81 "examples/json/value.hero"
@@ -12010,7 +12010,7 @@ bb9:
 #line 82 "examples/json/value.hero"
     t25 = h4_c;
 #line 82 "examples/json/value.hero"
-    t26 = HERO_STR_LIT(hero_str_38);
+    t26 = HERO_STR_LIT(hero_str_a);
 #line 82 "examples/json/value.hero"
     t27 = hero_str_eq(t25, t26);
 #line 82 "examples/json/value.hero"
@@ -12018,7 +12018,7 @@ bb9:
 #line 82 "examples/json/value.hero"
 bb10:
 #line 83 "examples/json/value.hero"
-    t29 = HERO_STR_LIT(hero_str_140);
+    t29 = HERO_STR_LIT(hero_str_2f82);
 #line 83 "examples/json/value.hero"
     hero_array_push_owned(&h1_out, &t29);
 #line 83 "examples/json/value.hero"
@@ -12028,7 +12028,7 @@ bb11:
 #line 84 "examples/json/value.hero"
     t31 = h4_c;
 #line 84 "examples/json/value.hero"
-    t32 = HERO_STR_LIT(hero_str_39);
+    t32 = HERO_STR_LIT(hero_str_9);
 #line 84 "examples/json/value.hero"
     t33 = hero_str_eq(t31, t32);
 #line 84 "examples/json/value.hero"
@@ -12036,7 +12036,7 @@ bb11:
 #line 84 "examples/json/value.hero"
 bb12:
 #line 85 "examples/json/value.hero"
-    t35 = HERO_STR_LIT(hero_str_141);
+    t35 = HERO_STR_LIT(hero_str_2f88);
 #line 85 "examples/json/value.hero"
     hero_array_push_owned(&h1_out, &t35);
 #line 85 "examples/json/value.hero"
@@ -13345,7 +13345,7 @@ bb3:
 #line 13346 "main.c"
     hero_str_decref(t22);
 #line 151 "examples/json/value.hero"
-    t11 = HERO_STR_LIT(hero_str_142);
+    t11 = HERO_STR_LIT(hero_str_5d8588bf);
 #line 151 "examples/json/value.hero"
     t12 = h1_key;
 #line 151 "examples/json/value.hero"
@@ -13357,7 +13357,7 @@ bb3:
 #line 13358 "main.c"
     hero_str_decref(t23);
 #line 151 "examples/json/value.hero"
-    t14 = HERO_STR_LIT(hero_str_143);
+    t14 = HERO_STR_LIT(hero_str_67cf29cc);
 #line 151 "examples/json/value.hero"
     t15 = hero_str_concat(t13, t14);
 #line 151 "examples/json/value.hero"
@@ -13645,9 +13645,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_172);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_173);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -13706,9 +13706,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_170);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_171);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"

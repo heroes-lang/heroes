@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "adversarialstrselfassign.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "ab");
-HERO_STR_STATIC(hero_str_1, "");
+HERO_STR_STATIC(hero_str_3205, "ab");
+HERO_STR_STATIC(hero_str_0, "");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -142,7 +142,7 @@ void h_adversarialstrselfassign_main(void) {
     goto bb0;
 bb0:
 #line 13 "tests/golden/run/adversarial-str-self-assign.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_3205);
 #line 13 "tests/golden/run/adversarial-str-self-assign.hero"
     t28 = h0_s;
 #line 149 "adversarialstrselfassign.c"
@@ -194,7 +194,7 @@ bb0:
 #line 17 "tests/golden/run/adversarial-str-self-assign.hero"
     hero_print_end();
 #line 18 "tests/golden/run/adversarial-str-self-assign.hero"
-    t8 = HERO_STR_LIT(hero_str_1);
+    t8 = HERO_STR_LIT(hero_str_0);
 #line 18 "tests/golden/run/adversarial-str-self-assign.hero"
     t32 = h1_out;
 #line 201 "adversarialstrselfassign.c"

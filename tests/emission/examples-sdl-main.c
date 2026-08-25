@@ -61,13 +61,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 62 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "sdl3 named its build: ");
-HERO_STR_STATIC(hero_str_1, "");
-HERO_STR_STATIC(hero_str_2, "sdl3 knows a way to draw: ");
-HERO_STR_STATIC(hero_str_7, "null_cstr");
-HERO_STR_STATIC(hero_str_8, "a null `cstr` holds no text");
-HERO_STR_STATIC(hero_str_9, "not_text");
-HERO_STR_STATIC(hero_str_10, "the bytes behind this `cstr` are not UTF-8");
+HERO_STR_STATIC(hero_str_32e30c02, "sdl3 named its build: ");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_43f12da5, "sdl3 knows a way to draw: ");
+HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
+HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
+HERO_STR_STATIC(hero_str_34624695, "not_text");
+HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -131,7 +131,7 @@ void h_main_main(void) {
     goto bb0;
 bb0:
 #line 56 "examples/sdl/main.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_32e30c02);
 #line 56 "examples/sdl/main.hero"
     t2 = (const char *)SDL_GetRevision();
 #line 56 "examples/sdl/main.hero"
@@ -177,7 +177,7 @@ bb1:
     goto bb3;
 bb2:
 #line 56 "examples/sdl/main.hero"
-    t10 = HERO_STR_LIT(hero_str_1);
+    t10 = HERO_STR_LIT(hero_str_0);
 #line 56 "examples/sdl/main.hero"
     t22 = h1_r0;
 #line 184 "main.c"
@@ -203,7 +203,7 @@ bb3:
 #line 56 "examples/sdl/main.hero"
     hero_print_end();
 #line 60 "examples/sdl/main.hero"
-    t15 = HERO_STR_LIT(hero_str_2);
+    t15 = HERO_STR_LIT(hero_str_43f12da5);
 #line 60 "examples/sdl/main.hero"
     t16 = SDL_GetNumVideoDrivers();
 #line 60 "examples/sdl/main.hero"
@@ -328,9 +328,9 @@ bb1:
 #line 156 "<heroes library>"
 bb2:
 #line 153 "<heroes library>"
-    t4 = HERO_STR_LIT(hero_str_7);
+    t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 153 "<heroes library>"
-    t5 = HERO_STR_LIT(hero_str_8);
+    t5 = HERO_STR_LIT(hero_str_5263489);
 #line 335 "main.c"
     hero_str_incref(t4);
 #line 153 "<heroes library>"
@@ -372,9 +372,9 @@ bb3:
     goto bb1;
 bb4:
 #line 158 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_9);
+    t15 = HERO_STR_LIT(hero_str_34624695);
 #line 158 "<heroes library>"
-    t16 = HERO_STR_LIT(hero_str_10);
+    t16 = HERO_STR_LIT(hero_str_4bb64adb);
 #line 379 "main.c"
     hero_str_incref(t15);
 #line 158 "<heroes library>"

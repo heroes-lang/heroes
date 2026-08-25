@@ -58,23 +58,23 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "edgesfileargsexit.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "build/heroes-golden-edges.txt");
-HERO_STR_STATIC(hero_str_1, "one\ntwo\nthree\n");
-HERO_STR_STATIC(hero_str_2, "wrote it");
-HERO_STR_STATIC(hero_str_3, "write failed: ");
-HERO_STR_STATIC(hero_str_4, "read ");
-HERO_STR_STATIC(hero_str_5, " bytes");
-HERO_STR_STATIC(hero_str_6, "read failed: ");
-HERO_STR_STATIC(hero_str_7, "build/heroes-no-such-file-at-all");
-HERO_STR_STATIC(hero_str_8, "unexpected");
-HERO_STR_STATIC(hero_str_9, "missing: ");
-HERO_STR_STATIC(hero_str_10, "arguments: ");
-HERO_STR_STATIC(hero_str_17, "file_not_found");
-HERO_STR_STATIC(hero_str_18, "no file at ");
-HERO_STR_STATIC(hero_str_19, "read_failed");
-HERO_STR_STATIC(hero_str_20, "could not read ");
-HERO_STR_STATIC(hero_str_21, "write_failed");
-HERO_STR_STATIC(hero_str_22, "could not write ");
+HERO_STR_STATIC(hero_str_25da3332, "build/heroes-golden-edges.txt");
+HERO_STR_STATIC(hero_str_40de1188, "one\ntwo\nthree\n");
+HERO_STR_STATIC(hero_str_a2e2288, "wrote it");
+HERO_STR_STATIC(hero_str_6d2630b3, "write failed: ");
+HERO_STR_STATIC(hero_str_5ebd67fd, "read ");
+HERO_STR_STATIC(hero_str_391e7e27, " bytes");
+HERO_STR_STATIC(hero_str_26ecbba5, "read failed: ");
+HERO_STR_STATIC(hero_str_69f0a52f, "build/heroes-no-such-file-at-all");
+HERO_STR_STATIC(hero_str_1418694e, "unexpected");
+HERO_STR_STATIC(hero_str_180e72b2, "missing: ");
+HERO_STR_STATIC(hero_str_9205298, "arguments: ");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
+HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
+HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
@@ -115,7 +115,7 @@ HeroStr h_edgesfileargsexit_PATH(void) {
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/edges-file-args-exit.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_25da3332);
 #line 120 "edgesfileargsexit.c"
     hero_str_incref(t1);
     return t1;
@@ -213,7 +213,7 @@ bb0:
 #line 214 "edgesfileargsexit.c"
     hero_str_decref(t40);
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
-    t2 = HERO_STR_LIT(hero_str_1);
+    t2 = HERO_STR_LIT(hero_str_40de1188);
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
     t3 = h_library_write_file(t1, t2);
 #line 24 "tests/golden/run/edges-file-args-exit.hero"
@@ -287,7 +287,7 @@ bb1:
 #line 27 "tests/golden/run/edges-file-args-exit.hero"
 bb2:
 #line 25 "tests/golden/run/edges-file-args-exit.hero"
-    t6 = HERO_STR_LIT(hero_str_2);
+    t6 = HERO_STR_LIT(hero_str_a2e2288);
 #line 25 "tests/golden/run/edges-file-args-exit.hero"
     hero_print_str(t6);
 #line 25 "tests/golden/run/edges-file-args-exit.hero"
@@ -309,7 +309,7 @@ bb3:
 #line 310 "edgesfileargsexit.c"
     hero_failure_release(&t46);
 #line 26 "tests/golden/run/edges-file-args-exit.hero"
-    t9 = HERO_STR_LIT(hero_str_3);
+    t9 = HERO_STR_LIT(hero_str_6d2630b3);
 #line 26 "tests/golden/run/edges-file-args-exit.hero"
     t10 = h1_e;
 #line 26 "tests/golden/run/edges-file-args-exit.hero"
@@ -325,7 +325,7 @@ bb3:
 #line 26 "tests/golden/run/edges-file-args-exit.hero"
 bb4:
 #line 32 "tests/golden/run/edges-file-args-exit.hero"
-    t27 = HERO_STR_LIT(hero_str_7);
+    t27 = HERO_STR_LIT(hero_str_69f0a52f);
 #line 32 "tests/golden/run/edges-file-args-exit.hero"
     t28 = h_library_read_file(t27);
 #line 32 "tests/golden/run/edges-file-args-exit.hero"
@@ -371,13 +371,13 @@ bb5:
 #line 372 "edgesfileargsexit.c"
     hero_str_decref(t49);
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
-    t18 = HERO_STR_LIT(hero_str_4);
+    t18 = HERO_STR_LIT(hero_str_5ebd67fd);
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
     t19 = h3_text;
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
     t20 = hero_str_len(t19);
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
-    t21 = HERO_STR_LIT(hero_str_5);
+    t21 = HERO_STR_LIT(hero_str_391e7e27);
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
     hero_print_str(t18);
 #line 28 "tests/golden/run/edges-file-args-exit.hero"
@@ -403,7 +403,7 @@ bb6:
 #line 404 "edgesfileargsexit.c"
     hero_failure_release(&t50);
 #line 29 "tests/golden/run/edges-file-args-exit.hero"
-    t24 = HERO_STR_LIT(hero_str_6);
+    t24 = HERO_STR_LIT(hero_str_26ecbba5);
 #line 29 "tests/golden/run/edges-file-args-exit.hero"
     t25 = h4_e;
 #line 29 "tests/golden/run/edges-file-args-exit.hero"
@@ -419,7 +419,7 @@ bb6:
 #line 29 "tests/golden/run/edges-file-args-exit.hero"
 bb7:
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
-    t37 = HERO_STR_LIT(hero_str_10);
+    t37 = HERO_STR_LIT(hero_str_9205298);
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
     t38 = h_library_args();
 #line 37 "tests/golden/run/edges-file-args-exit.hero"
@@ -491,7 +491,7 @@ bb7:
     return;
 bb8:
 #line 33 "tests/golden/run/edges-file-args-exit.hero"
-    t31 = HERO_STR_LIT(hero_str_8);
+    t31 = HERO_STR_LIT(hero_str_1418694e);
 #line 33 "tests/golden/run/edges-file-args-exit.hero"
     hero_print_str(t31);
 #line 33 "tests/golden/run/edges-file-args-exit.hero"
@@ -513,7 +513,7 @@ bb9:
 #line 514 "edgesfileargsexit.c"
     hero_failure_release(&t52);
 #line 34 "tests/golden/run/edges-file-args-exit.hero"
-    t34 = HERO_STR_LIT(hero_str_9);
+    t34 = HERO_STR_LIT(hero_str_180e72b2);
 #line 34 "tests/golden/run/edges-file-args-exit.hero"
     t35 = h6_e;
 #line 34 "tests/golden/run/edges-file-args-exit.hero"
@@ -696,9 +696,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_19);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_20);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -757,9 +757,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_17);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_18);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"
@@ -866,9 +866,9 @@ bb0:
 #line 174 "<heroes library>"
 bb1:
 #line 176 "<heroes library>"
-    t8 = HERO_STR_LIT(hero_str_21);
+    t8 = HERO_STR_LIT(hero_str_7e662f9e);
 #line 176 "<heroes library>"
-    t9 = HERO_STR_LIT(hero_str_22);
+    t9 = HERO_STR_LIT(hero_str_39d7c22a);
 #line 176 "<heroes library>"
     t10 = h0_path;
 #line 176 "<heroes library>"

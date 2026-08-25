@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsdescriptorforwhattheemitternames.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "no");
-HERO_STR_STATIC(hero_str_1, "none");
+HERO_STR_STATIC(hero_str_38b9, "no");
+HERO_STR_STATIC(hero_str_edaa230, "none");
 
 typedef struct h_fixedbugsdescriptorforwhattheemitternames_P {
     int64_t f_x;
@@ -233,9 +233,9 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 bb1:
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t5 = HERO_STR_LIT(hero_str_0);
+    t5 = HERO_STR_LIT(hero_str_38b9);
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t6 = HERO_STR_LIT(hero_str_1);
+    t6 = HERO_STR_LIT(hero_str_edaa230);
 #line 240 "fixedbugsdescriptorforwhattheemitternames.c"
     hero_str_incref(t5);
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -317,9 +317,9 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 bb1:
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t5 = HERO_STR_LIT(hero_str_0);
+    t5 = HERO_STR_LIT(hero_str_38b9);
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t6 = HERO_STR_LIT(hero_str_1);
+    t6 = HERO_STR_LIT(hero_str_edaa230);
 #line 324 "fixedbugsdescriptorforwhattheemitternames.c"
     hero_str_incref(t5);
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"

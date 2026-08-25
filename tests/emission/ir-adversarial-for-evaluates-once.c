@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "adversarialforevaluatesonce.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "built");
+HERO_STR_STATIC(hero_str_4808f94f, "built");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -101,7 +101,7 @@ HeroArrayHeader * h_adversarialforevaluatesonce_numbers(void) {
     goto bb0;
 bb0:
 #line 8 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_4808f94f);
 #line 8 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     hero_print_str(t1);
 #line 8 "tests/golden/ir/adversarial-for-evaluates-once.hero"

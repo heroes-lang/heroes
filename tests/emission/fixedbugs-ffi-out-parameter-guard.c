@@ -67,9 +67,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 68 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, ":memory:");
-HERO_STR_STATIC(hero_str_1, "no database");
-HERO_STR_STATIC(hero_str_2, "select 1");
+HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
+HERO_STR_STATIC(hero_str_353a8d65, "no database");
+HERO_STR_STATIC(hero_str_5689c81, "select 1");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -135,7 +135,7 @@ bb0:
 #line 39 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h0_db = t1;
 #line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_41b4cad0);
 #line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t3 = hero_str_cstr(t2);
 #line 40 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
@@ -159,7 +159,7 @@ bb1:
 #line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t10 = h0_db;
 #line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t11 = HERO_STR_LIT(hero_str_2);
+    t11 = HERO_STR_LIT(hero_str_5689c81);
 #line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t12 = hero_str_cstr(t11);
 #line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
@@ -183,7 +183,7 @@ bb1:
 #line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb2:
 #line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t7 = HERO_STR_LIT(hero_str_1);
+    t7 = HERO_STR_LIT(hero_str_353a8d65);
 #line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     hero_print_str(t7);
 #line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"

@@ -58,10 +58,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "arrays.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "a");
-HERO_STR_STATIC(hero_str_1, "b");
-HERO_STR_STATIC(hero_str_2, "c");
-HERO_STR_STATIC(hero_str_3, "d");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
+HERO_STR_STATIC(hero_str_63, "c");
+HERO_STR_STATIC(hero_str_64, "d");
 
 typedef struct h_arrays_Point {
     int64_t f_x;
@@ -414,9 +414,9 @@ bb0:
 #line 33 "tests/golden/run/arrays.hero"
     hero_print_end();
 #line 35 "tests/golden/run/arrays.hero"
-    t8 = HERO_STR_LIT(hero_str_0);
+    t8 = HERO_STR_LIT(hero_str_61);
 #line 35 "tests/golden/run/arrays.hero"
-    t9 = HERO_STR_LIT(hero_str_1);
+    t9 = HERO_STR_LIT(hero_str_62);
 #line 35 "tests/golden/run/arrays.hero"
     t10 = hero_str_concat(t8, t9);
 #line 35 "tests/golden/run/arrays.hero"
@@ -426,9 +426,9 @@ bb0:
 #line 427 "arrays.c"
     hero_str_decref(t86);
 #line 35 "tests/golden/run/arrays.hero"
-    t11 = HERO_STR_LIT(hero_str_2);
+    t11 = HERO_STR_LIT(hero_str_63);
 #line 35 "tests/golden/run/arrays.hero"
-    t12 = HERO_STR_LIT(hero_str_3);
+    t12 = HERO_STR_LIT(hero_str_64);
 #line 35 "tests/golden/run/arrays.hero"
     t13 = hero_str_concat(t11, t12);
 #line 35 "tests/golden/run/arrays.hero"

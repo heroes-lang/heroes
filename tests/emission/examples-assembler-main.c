@@ -58,53 +58,53 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "usage: assembler <file.asm> [listing]");
-HERO_STR_STATIC(hero_str_1, "cannot read ");
-HERO_STR_STATIC(hero_str_2, ": ");
-HERO_STR_STATIC(hero_str_3, "listing");
-HERO_STR_STATIC(hero_str_4, " instructions, ");
-HERO_STR_STATIC(hero_str_5, " lines out");
-HERO_STR_STATIC(hero_str_6, " ");
-HERO_STR_STATIC(hero_str_7, "load");
-HERO_STR_STATIC(hero_str_8, "copy");
-HERO_STR_STATIC(hero_str_9, "add");
-HERO_STR_STATIC(hero_str_10, "sub");
-HERO_STR_STATIC(hero_str_11, "print");
-HERO_STR_STATIC(hero_str_12, "jmpz");
-HERO_STR_STATIC(hero_str_13, "jmp");
-HERO_STR_STATIC(hero_str_14, "halt");
-HERO_STR_STATIC(hero_str_15, "?");
-HERO_STR_STATIC(hero_str_32, "bad_operand_count");
-HERO_STR_STATIC(hero_str_33, "duplicate_label");
-HERO_STR_STATIC(hero_str_34, "unknown_instruction");
-HERO_STR_STATIC(hero_str_35, "unknown_label");
-HERO_STR_STATIC(hero_str_36, "");
-HERO_STR_STATIC(hero_str_37, "line ");
-HERO_STR_STATIC(hero_str_38, ": `");
-HERO_STR_STATIC(hero_str_39, "` is defined twice");
-HERO_STR_STATIC(hero_str_40, ": there is no `");
-HERO_STR_STATIC(hero_str_41, "` instruction");
-HERO_STR_STATIC(hero_str_42, "` takes ");
-HERO_STR_STATIC(hero_str_43, ", not ");
-HERO_STR_STATIC(hero_str_44, ": there is no label `");
-HERO_STR_STATIC(hero_str_45, "`");
-HERO_STR_STATIC(hero_str_73, "no_error");
-HERO_STR_STATIC(hero_str_74, "bad_opcode");
-HERO_STR_STATIC(hero_str_75, "out_of_fuel");
-HERO_STR_STATIC(hero_str_76, "ran_off_the_end");
-HERO_STR_STATIC(hero_str_77, "the machine stepped past the last instruction");
-HERO_STR_STATIC(hero_str_78, "the program ran for ");
-HERO_STR_STATIC(hero_str_79, " steps without halting");
-HERO_STR_STATIC(hero_str_80, "the code holds ");
-HERO_STR_STATIC(hero_str_81, ", which is not an instruction");
-HERO_STR_STATIC(hero_str_96, "bad_number");
-HERO_STR_STATIC(hero_str_97, "bad_register");
-HERO_STR_STATIC(hero_str_98, "` is not a register \342\200\224 r0 to r3");
-HERO_STR_STATIC(hero_str_99, "` is not a number");
-HERO_STR_STATIC(hero_str_145, "file_not_found");
-HERO_STR_STATIC(hero_str_146, "no file at ");
-HERO_STR_STATIC(hero_str_147, "read_failed");
-HERO_STR_STATIC(hero_str_148, "could not read ");
+HERO_STR_STATIC(hero_str_9b908bc, "usage: assembler <file.asm> [listing]");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_56f061fe, "listing");
+HERO_STR_STATIC(hero_str_4b6913e7, " instructions, ");
+HERO_STR_STATIC(hero_str_3ef510a7, " lines out");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_e960052, "load");
+HERO_STR_STATIC(hero_str_d614da1, "copy");
+HERO_STR_STATIC(hero_str_1999f9, "add");
+HERO_STR_STATIC(hero_str_1e594c, "sub");
+HERO_STR_STATIC(hero_str_3d6209f4, "print");
+HERO_STR_STATIC(hero_str_e50e6cd, "jmpz");
+HERO_STR_STATIC(hero_str_1bf9f1, "jmp");
+HERO_STR_STATIC(hero_str_e092519, "halt");
+HERO_STR_STATIC(hero_str_3f, "?");
+HERO_STR_STATIC(hero_str_6ddca0c8, "bad_operand_count");
+HERO_STR_STATIC(hero_str_4348b026, "duplicate_label");
+HERO_STR_STATIC(hero_str_4261e33, "unknown_instruction");
+HERO_STR_STATIC(hero_str_6ee9eb5a, "unknown_label");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_75f7c07a, "line ");
+HERO_STR_STATIC(hero_str_f40ca, ": `");
+HERO_STR_STATIC(hero_str_62fe34fa, "` is defined twice");
+HERO_STR_STATIC(hero_str_3e09749b, ": there is no `");
+HERO_STR_STATIC(hero_str_19325099, "` instruction");
+HERO_STR_STATIC(hero_str_b55ab14, "` takes ");
+HERO_STR_STATIC(hero_str_7b4e69fb, ", not ");
+HERO_STR_STATIC(hero_str_393bfd31, ": there is no label `");
+HERO_STR_STATIC(hero_str_60, "`");
+HERO_STR_STATIC(hero_str_7b992235, "no_error");
+HERO_STR_STATIC(hero_str_37102433, "bad_opcode");
+HERO_STR_STATIC(hero_str_2ba30e4, "out_of_fuel");
+HERO_STR_STATIC(hero_str_5eb0412c, "ran_off_the_end");
+HERO_STR_STATIC(hero_str_3adccc43, "the machine stepped past the last instruction");
+HERO_STR_STATIC(hero_str_1970e8d9, "the program ran for ");
+HERO_STR_STATIC(hero_str_7f9a023c, " steps without halting");
+HERO_STR_STATIC(hero_str_3cb7f28c, "the code holds ");
+HERO_STR_STATIC(hero_str_601da456, ", which is not an instruction");
+HERO_STR_STATIC(hero_str_14a4096d, "bad_number");
+HERO_STR_STATIC(hero_str_52629714, "bad_register");
+HERO_STR_STATIC(hero_str_7494754c, "` is not a register \342\200\224 r0 to r3");
+HERO_STR_STATIC(hero_str_7597be40, "` is not a number");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
 typedef struct h_assemble_Assembled {
     HeroArrayHeader * f_code;
@@ -450,7 +450,7 @@ bb1:
 #line 29 "examples/assembler/main.hero"
 bb2:
 #line 27 "examples/assembler/main.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_9b908bc);
 #line 27 "examples/assembler/main.hero"
     hero_print_str(t6);
 #line 27 "examples/assembler/main.hero"
@@ -518,7 +518,7 @@ bb5:
 #line 519 "main.c"
     hero_failure_release(&t34);
 #line 30 "examples/assembler/main.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_2d78c599);
 #line 30 "examples/assembler/main.hero"
     t17 = h0_given;
 #line 30 "examples/assembler/main.hero"
@@ -534,7 +534,7 @@ bb5:
 #line 535 "main.c"
     hero_str_decref(t35);
 #line 30 "examples/assembler/main.hero"
-    t21 = HERO_STR_LIT(hero_str_2);
+    t21 = HERO_STR_LIT(hero_str_1dce);
 #line 30 "examples/assembler/main.hero"
     t22 = hero_str_concat(t20, t21);
 #line 30 "examples/assembler/main.hero"
@@ -739,7 +739,7 @@ bb2:
 #line 39 "examples/assembler/main.hero"
     t9 = t8.code;
 #line 39 "examples/assembler/main.hero"
-    t10 = HERO_STR_LIT(hero_str_2);
+    t10 = HERO_STR_LIT(hero_str_1dce);
 #line 39 "examples/assembler/main.hero"
     t11 = hero_str_concat(t9, t10);
 #line 39 "examples/assembler/main.hero"
@@ -964,7 +964,7 @@ bb2:
 #line 43 "examples/assembler/main.hero"
     t7 = *(HeroStr const *)hero_array_at(t5, t6);
 #line 43 "examples/assembler/main.hero"
-    t8 = HERO_STR_LIT(hero_str_3);
+    t8 = HERO_STR_LIT(hero_str_56f061fe);
 #line 43 "examples/assembler/main.hero"
     t9 = hero_str_eq(t7, t8);
 #line 43 "examples/assembler/main.hero"
@@ -1168,7 +1168,7 @@ bb11:
 #line 48 "examples/assembler/main.hero"
     t35 = t34.code;
 #line 48 "examples/assembler/main.hero"
-    t36 = HERO_STR_LIT(hero_str_2);
+    t36 = HERO_STR_LIT(hero_str_1dce);
 #line 48 "examples/assembler/main.hero"
     t37 = hero_str_concat(t35, t36);
 #line 48 "examples/assembler/main.hero"
@@ -1288,13 +1288,13 @@ bb16:
 #line 52 "examples/assembler/main.hero"
     t60 = t58 / t59;
 #line 52 "examples/assembler/main.hero"
-    t61 = HERO_STR_LIT(hero_str_4);
+    t61 = HERO_STR_LIT(hero_str_4b6913e7);
 #line 52 "examples/assembler/main.hero"
     t62 = h8_output;
 #line 52 "examples/assembler/main.hero"
     t63 = hero_array_len(t62);
 #line 52 "examples/assembler/main.hero"
-    t64 = HERO_STR_LIT(hero_str_5);
+    t64 = HERO_STR_LIT(hero_str_3ef510a7);
 #line 52 "examples/assembler/main.hero"
     hero_print_int(t60);
 #line 52 "examples/assembler/main.hero"
@@ -1522,7 +1522,7 @@ bb2:
 #line 61 "examples/assembler/main.hero"
     t31 = h3_row;
 #line 61 "examples/assembler/main.hero"
-    t32 = HERO_STR_LIT(hero_str_6);
+    t32 = HERO_STR_LIT(hero_str_20);
 #line 61 "examples/assembler/main.hero"
     t33 = hero_str_join(t31, t32);
 #line 61 "examples/assembler/main.hero"
@@ -1647,7 +1647,7 @@ bb1:
 #line 68 "examples/assembler/main.hero"
 bb2:
 #line 67 "examples/assembler/main.hero"
-    t4 = HERO_STR_LIT(hero_str_7);
+    t4 = HERO_STR_LIT(hero_str_e960052);
 #line 1652 "main.c"
     hero_str_incref(t4);
     return t4;
@@ -1665,7 +1665,7 @@ bb4:
 #line 70 "examples/assembler/main.hero"
 bb5:
 #line 69 "examples/assembler/main.hero"
-    t8 = HERO_STR_LIT(hero_str_8);
+    t8 = HERO_STR_LIT(hero_str_d614da1);
 #line 1670 "main.c"
     hero_str_incref(t8);
     return t8;
@@ -1683,7 +1683,7 @@ bb7:
 #line 72 "examples/assembler/main.hero"
 bb8:
 #line 71 "examples/assembler/main.hero"
-    t12 = HERO_STR_LIT(hero_str_9);
+    t12 = HERO_STR_LIT(hero_str_1999f9);
 #line 1688 "main.c"
     hero_str_incref(t12);
     return t12;
@@ -1701,7 +1701,7 @@ bb10:
 #line 74 "examples/assembler/main.hero"
 bb11:
 #line 73 "examples/assembler/main.hero"
-    t16 = HERO_STR_LIT(hero_str_10);
+    t16 = HERO_STR_LIT(hero_str_1e594c);
 #line 1706 "main.c"
     hero_str_incref(t16);
     return t16;
@@ -1719,7 +1719,7 @@ bb13:
 #line 76 "examples/assembler/main.hero"
 bb14:
 #line 75 "examples/assembler/main.hero"
-    t20 = HERO_STR_LIT(hero_str_11);
+    t20 = HERO_STR_LIT(hero_str_3d6209f4);
 #line 1724 "main.c"
     hero_str_incref(t20);
     return t20;
@@ -1737,7 +1737,7 @@ bb16:
 #line 78 "examples/assembler/main.hero"
 bb17:
 #line 77 "examples/assembler/main.hero"
-    t24 = HERO_STR_LIT(hero_str_12);
+    t24 = HERO_STR_LIT(hero_str_e50e6cd);
 #line 1742 "main.c"
     hero_str_incref(t24);
     return t24;
@@ -1755,7 +1755,7 @@ bb19:
 #line 80 "examples/assembler/main.hero"
 bb20:
 #line 79 "examples/assembler/main.hero"
-    t28 = HERO_STR_LIT(hero_str_13);
+    t28 = HERO_STR_LIT(hero_str_1bf9f1);
 #line 1760 "main.c"
     hero_str_incref(t28);
     return t28;
@@ -1763,13 +1763,13 @@ bb21:
     goto bb19;
 bb22:
 #line 82 "examples/assembler/main.hero"
-    t33 = HERO_STR_LIT(hero_str_15);
+    t33 = HERO_STR_LIT(hero_str_3f);
 #line 1768 "main.c"
     hero_str_incref(t33);
     return t33;
 bb23:
 #line 81 "examples/assembler/main.hero"
-    t32 = HERO_STR_LIT(hero_str_14);
+    t32 = HERO_STR_LIT(hero_str_e092519);
 #line 1774 "main.c"
     hero_str_incref(t32);
     return t32;
@@ -1784,7 +1784,7 @@ HeroStr h_assemble_ERR_BAD_OPERAND_COUNT(void) {
     goto bb0;
 bb0:
 #line 20 "examples/assembler/assemble.hero"
-    t1 = HERO_STR_LIT(hero_str_32);
+    t1 = HERO_STR_LIT(hero_str_6ddca0c8);
 #line 1789 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1797,7 +1797,7 @@ HeroStr h_assemble_ERR_DUPLICATE_LABEL(void) {
     goto bb0;
 bb0:
 #line 23 "examples/assembler/assemble.hero"
-    t1 = HERO_STR_LIT(hero_str_33);
+    t1 = HERO_STR_LIT(hero_str_4348b026);
 #line 1802 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1810,7 +1810,7 @@ HeroStr h_assemble_ERR_UNKNOWN_INSTRUCTION(void) {
     goto bb0;
 bb0:
 #line 26 "examples/assembler/assemble.hero"
-    t1 = HERO_STR_LIT(hero_str_34);
+    t1 = HERO_STR_LIT(hero_str_4261e33);
 #line 1815 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1823,7 +1823,7 @@ HeroStr h_assemble_ERR_UNKNOWN_LABEL(void) {
     goto bb0;
 bb0:
 #line 29 "examples/assembler/assemble.hero"
-    t1 = HERO_STR_LIT(hero_str_35);
+    t1 = HERO_STR_LIT(hero_str_6ee9eb5a);
 #line 1828 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -2014,7 +2014,7 @@ bb2:
 #line 41 "examples/assembler/assemble.hero"
     t13 = t12.f_label;
 #line 41 "examples/assembler/assemble.hero"
-    t14 = HERO_STR_LIT(hero_str_36);
+    t14 = HERO_STR_LIT(hero_str_0);
 #line 41 "examples/assembler/assemble.hero"
     t15 = !hero_str_eq(t13, t14);
 #line 41 "examples/assembler/assemble.hero"
@@ -2111,7 +2111,7 @@ bb5:
 #line 45 "examples/assembler/assemble.hero"
     t43 = t42.f_mnemonic;
 #line 45 "examples/assembler/assemble.hero"
-    t44 = HERO_STR_LIT(hero_str_36);
+    t44 = HERO_STR_LIT(hero_str_0);
 #line 45 "examples/assembler/assemble.hero"
     t45 = !hero_str_eq(t43, t44);
 #line 45 "examples/assembler/assemble.hero"
@@ -2195,7 +2195,7 @@ bb9:
 #line 2196 "main.c"
     hero_str_decref(t61);
 #line 43 "examples/assembler/assemble.hero"
-    t26 = HERO_STR_LIT(hero_str_37);
+    t26 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 43 "examples/assembler/assemble.hero"
     t27 = h5_line;
 #line 43 "examples/assembler/assemble.hero"
@@ -2217,7 +2217,7 @@ bb9:
 #line 2218 "main.c"
     hero_str_decref(t63);
 #line 43 "examples/assembler/assemble.hero"
-    t31 = HERO_STR_LIT(hero_str_38);
+    t31 = HERO_STR_LIT(hero_str_f40ca);
 #line 43 "examples/assembler/assemble.hero"
     t32 = hero_str_concat(t30, t31);
 #line 43 "examples/assembler/assemble.hero"
@@ -2239,7 +2239,7 @@ bb9:
 #line 2240 "main.c"
     hero_str_decref(t65);
 #line 43 "examples/assembler/assemble.hero"
-    t36 = HERO_STR_LIT(hero_str_39);
+    t36 = HERO_STR_LIT(hero_str_62fe34fa);
 #line 43 "examples/assembler/assemble.hero"
     t37 = hero_str_concat(t35, t36);
 #line 43 "examples/assembler/assemble.hero"
@@ -2660,7 +2660,7 @@ bb4:
 #line 55 "examples/assembler/assemble.hero"
     t23 = t22.f_mnemonic;
 #line 55 "examples/assembler/assemble.hero"
-    t24 = HERO_STR_LIT(hero_str_36);
+    t24 = HERO_STR_LIT(hero_str_0);
 #line 55 "examples/assembler/assemble.hero"
     t25 = hero_str_eq(t23, t24);
 #line 55 "examples/assembler/assemble.hero"
@@ -4650,7 +4650,7 @@ bb0:
 #line 66 "examples/assembler/assemble.hero"
     t3 = h2_m;
 #line 66 "examples/assembler/assemble.hero"
-    t4 = HERO_STR_LIT(hero_str_7);
+    t4 = HERO_STR_LIT(hero_str_e960052);
 #line 66 "examples/assembler/assemble.hero"
     t5 = hero_str_eq(t3, t4);
 #line 66 "examples/assembler/assemble.hero"
@@ -4660,7 +4660,7 @@ bb1:
 #line 69 "examples/assembler/assemble.hero"
     t53 = h2_m;
 #line 69 "examples/assembler/assemble.hero"
-    t54 = HERO_STR_LIT(hero_str_8);
+    t54 = HERO_STR_LIT(hero_str_d614da1);
 #line 69 "examples/assembler/assemble.hero"
     t55 = hero_str_eq(t53, t54);
 #line 69 "examples/assembler/assemble.hero"
@@ -5883,7 +5883,7 @@ bb10:
 #line 72 "examples/assembler/assemble.hero"
     t112 = h2_m;
 #line 72 "examples/assembler/assemble.hero"
-    t113 = HERO_STR_LIT(hero_str_11);
+    t113 = HERO_STR_LIT(hero_str_3d6209f4);
 #line 72 "examples/assembler/assemble.hero"
     t114 = hero_str_eq(t112, t113);
 #line 72 "examples/assembler/assemble.hero"
@@ -5893,7 +5893,7 @@ bb11:
 #line 69 "examples/assembler/assemble.hero"
     t56 = h2_m;
 #line 69 "examples/assembler/assemble.hero"
-    t57 = HERO_STR_LIT(hero_str_9);
+    t57 = HERO_STR_LIT(hero_str_1999f9);
 #line 69 "examples/assembler/assemble.hero"
     t58 = hero_str_eq(t56, t57);
 #line 69 "examples/assembler/assemble.hero"
@@ -5913,7 +5913,7 @@ bb13:
 #line 69 "examples/assembler/assemble.hero"
     t60 = h2_m;
 #line 69 "examples/assembler/assemble.hero"
-    t61 = HERO_STR_LIT(hero_str_10);
+    t61 = HERO_STR_LIT(hero_str_1e594c);
 #line 69 "examples/assembler/assemble.hero"
     t62 = hero_str_eq(t60, t61);
 #line 69 "examples/assembler/assemble.hero"
@@ -7144,7 +7144,7 @@ bb23:
 #line 75 "examples/assembler/assemble.hero"
     t147 = h2_m;
 #line 75 "examples/assembler/assemble.hero"
-    t148 = HERO_STR_LIT(hero_str_12);
+    t148 = HERO_STR_LIT(hero_str_e50e6cd);
 #line 75 "examples/assembler/assemble.hero"
     t149 = hero_str_eq(t147, t148);
 #line 75 "examples/assembler/assemble.hero"
@@ -8056,7 +8056,7 @@ bb30:
 #line 78 "examples/assembler/assemble.hero"
     t198 = h2_m;
 #line 78 "examples/assembler/assemble.hero"
-    t199 = HERO_STR_LIT(hero_str_13);
+    t199 = HERO_STR_LIT(hero_str_1bf9f1);
 #line 78 "examples/assembler/assemble.hero"
     t200 = hero_str_eq(t198, t199);
 #line 78 "examples/assembler/assemble.hero"
@@ -9279,7 +9279,7 @@ bb39:
 #line 81 "examples/assembler/assemble.hero"
     t234 = h2_m;
 #line 81 "examples/assembler/assemble.hero"
-    t235 = HERO_STR_LIT(hero_str_14);
+    t235 = HERO_STR_LIT(hero_str_e092519);
 #line 81 "examples/assembler/assemble.hero"
     t236 = hero_str_eq(t234, t235);
 #line 81 "examples/assembler/assemble.hero"
@@ -10199,7 +10199,7 @@ bb46:
 #line 10200 "main.c"
     hero_str_decref(t317);
 #line 84 "examples/assembler/assemble.hero"
-    t255 = HERO_STR_LIT(hero_str_37);
+    t255 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 84 "examples/assembler/assemble.hero"
     t256 = h0_line;
 #line 84 "examples/assembler/assemble.hero"
@@ -10221,7 +10221,7 @@ bb46:
 #line 10222 "main.c"
     hero_str_decref(t319);
 #line 84 "examples/assembler/assemble.hero"
-    t260 = HERO_STR_LIT(hero_str_40);
+    t260 = HERO_STR_LIT(hero_str_3e09749b);
 #line 84 "examples/assembler/assemble.hero"
     t261 = hero_str_concat(t259, t260);
 #line 84 "examples/assembler/assemble.hero"
@@ -10241,7 +10241,7 @@ bb46:
 #line 10242 "main.c"
     hero_str_decref(t321);
 #line 84 "examples/assembler/assemble.hero"
-    t264 = HERO_STR_LIT(hero_str_41);
+    t264 = HERO_STR_LIT(hero_str_19325099);
 #line 84 "examples/assembler/assemble.hero"
     t265 = hero_str_concat(t263, t264);
 #line 84 "examples/assembler/assemble.hero"
@@ -11128,7 +11128,7 @@ bb0:
 #line 87 "examples/assembler/assemble.hero"
     t1 = h0_m;
 #line 87 "examples/assembler/assemble.hero"
-    t2 = HERO_STR_LIT(hero_str_8);
+    t2 = HERO_STR_LIT(hero_str_d614da1);
 #line 87 "examples/assembler/assemble.hero"
     t3 = hero_str_eq(t1, t2);
 #line 87 "examples/assembler/assemble.hero"
@@ -11138,7 +11138,7 @@ bb1:
 #line 89 "examples/assembler/assemble.hero"
     t5 = h0_m;
 #line 89 "examples/assembler/assemble.hero"
-    t6 = HERO_STR_LIT(hero_str_9);
+    t6 = HERO_STR_LIT(hero_str_1999f9);
 #line 89 "examples/assembler/assemble.hero"
     t7 = hero_str_eq(t5, t6);
 #line 89 "examples/assembler/assemble.hero"
@@ -11350,7 +11350,7 @@ bb2:
 #line 11351 "main.c"
     hero_str_decref(t33);
 #line 95 "examples/assembler/assemble.hero"
-    t7 = HERO_STR_LIT(hero_str_37);
+    t7 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 95 "examples/assembler/assemble.hero"
     t8 = h0_line;
 #line 95 "examples/assembler/assemble.hero"
@@ -11372,7 +11372,7 @@ bb2:
 #line 11373 "main.c"
     hero_str_decref(t35);
 #line 95 "examples/assembler/assemble.hero"
-    t12 = HERO_STR_LIT(hero_str_38);
+    t12 = HERO_STR_LIT(hero_str_f40ca);
 #line 95 "examples/assembler/assemble.hero"
     t13 = hero_str_concat(t11, t12);
 #line 95 "examples/assembler/assemble.hero"
@@ -11394,7 +11394,7 @@ bb2:
 #line 11395 "main.c"
     hero_str_decref(t37);
 #line 95 "examples/assembler/assemble.hero"
-    t17 = HERO_STR_LIT(hero_str_42);
+    t17 = HERO_STR_LIT(hero_str_b55ab14);
 #line 95 "examples/assembler/assemble.hero"
     t18 = hero_str_concat(t16, t17);
 #line 95 "examples/assembler/assemble.hero"
@@ -11422,7 +11422,7 @@ bb2:
 #line 11423 "main.c"
     hero_str_decref(t40);
 #line 95 "examples/assembler/assemble.hero"
-    t22 = HERO_STR_LIT(hero_str_43);
+    t22 = HERO_STR_LIT(hero_str_7b4e69fb);
 #line 95 "examples/assembler/assemble.hero"
     t23 = hero_str_concat(t21, t22);
 #line 95 "examples/assembler/assemble.hero"
@@ -11722,7 +11722,7 @@ bb3:
 #line 11723 "main.c"
     hero_str_decref(t27);
 #line 103 "examples/assembler/assemble.hero"
-    t13 = HERO_STR_LIT(hero_str_37);
+    t13 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 103 "examples/assembler/assemble.hero"
     t14 = h2_number;
 #line 103 "examples/assembler/assemble.hero"
@@ -11742,7 +11742,7 @@ bb3:
 #line 11743 "main.c"
     hero_str_decref(t29);
 #line 103 "examples/assembler/assemble.hero"
-    t17 = HERO_STR_LIT(hero_str_44);
+    t17 = HERO_STR_LIT(hero_str_393bfd31);
 #line 103 "examples/assembler/assemble.hero"
     t18 = hero_str_concat(t16, t17);
 #line 103 "examples/assembler/assemble.hero"
@@ -11762,7 +11762,7 @@ bb3:
 #line 11763 "main.c"
     hero_str_decref(t31);
 #line 103 "examples/assembler/assemble.hero"
-    t21 = HERO_STR_LIT(hero_str_45);
+    t21 = HERO_STR_LIT(hero_str_60);
 #line 103 "examples/assembler/assemble.hero"
     t22 = hero_str_concat(t20, t21);
 #line 103 "examples/assembler/assemble.hero"
@@ -11932,7 +11932,7 @@ bb1:
     return t11;
 bb2:
 #line 136 "examples/assembler/assemble.hero"
-    t6 = HERO_STR_LIT(hero_str_73);
+    t6 = HERO_STR_LIT(hero_str_7b992235);
 #line 135 "examples/assembler/assemble.hero"
     t15 = h2_r0;
 #line 11939 "main.c"
@@ -11977,7 +11977,7 @@ HeroStr h_machine_ERR_BAD_OPCODE(void) {
     goto bb0;
 bb0:
 #line 21 "examples/assembler/machine.hero"
-    t1 = HERO_STR_LIT(hero_str_74);
+    t1 = HERO_STR_LIT(hero_str_37102433);
 #line 11982 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -11990,7 +11990,7 @@ HeroStr h_machine_ERR_OUT_OF_FUEL(void) {
     goto bb0;
 bb0:
 #line 24 "examples/assembler/machine.hero"
-    t1 = HERO_STR_LIT(hero_str_75);
+    t1 = HERO_STR_LIT(hero_str_2ba30e4);
 #line 11995 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -12003,7 +12003,7 @@ HeroStr h_machine_ERR_RAN_OFF_THE_END(void) {
     goto bb0;
 bb0:
 #line 27 "examples/assembler/machine.hero"
-    t1 = HERO_STR_LIT(hero_str_76);
+    t1 = HERO_STR_LIT(hero_str_5eb0412c);
 #line 12008 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -12293,7 +12293,7 @@ bb3:
 #line 12294 "main.c"
     hero_str_decref(t78);
 #line 47 "examples/assembler/machine.hero"
-    t67 = HERO_STR_LIT(hero_str_78);
+    t67 = HERO_STR_LIT(hero_str_1970e8d9);
 #line 47 "examples/assembler/machine.hero"
     t68 = h1_fuel;
 #line 47 "examples/assembler/machine.hero"
@@ -12313,7 +12313,7 @@ bb3:
 #line 12314 "main.c"
     hero_str_decref(t80);
 #line 47 "examples/assembler/machine.hero"
-    t71 = HERO_STR_LIT(hero_str_79);
+    t71 = HERO_STR_LIT(hero_str_7f9a023c);
 #line 47 "examples/assembler/machine.hero"
     t72 = hero_str_concat(t70, t71);
 #line 47 "examples/assembler/machine.hero"
@@ -12484,7 +12484,7 @@ bb7:
 #line 12485 "main.c"
     hero_str_decref(t83);
 #line 40 "examples/assembler/machine.hero"
-    t29 = HERO_STR_LIT(hero_str_77);
+    t29 = HERO_STR_LIT(hero_str_3adccc43);
 #line 12489 "main.c"
     hero_str_incref(t28);
 #line 40 "examples/assembler/machine.hero"
@@ -13251,7 +13251,7 @@ bb15:
 #line 13252 "main.c"
     hero_str_decref(t88);
 #line 70 "examples/assembler/machine.hero"
-    t70 = HERO_STR_LIT(hero_str_80);
+    t70 = HERO_STR_LIT(hero_str_3cb7f28c);
 #line 70 "examples/assembler/machine.hero"
     t71 = h1_opcode;
 #line 70 "examples/assembler/machine.hero"
@@ -13271,7 +13271,7 @@ bb15:
 #line 13272 "main.c"
     hero_str_decref(t90);
 #line 70 "examples/assembler/machine.hero"
-    t74 = HERO_STR_LIT(hero_str_81);
+    t74 = HERO_STR_LIT(hero_str_601da456);
 #line 70 "examples/assembler/machine.hero"
     t75 = hero_str_concat(t73, t74);
 #line 70 "examples/assembler/machine.hero"
@@ -13675,7 +13675,7 @@ bb1:
     return t11;
 bb2:
 #line 103 "examples/assembler/machine.hero"
-    t6 = HERO_STR_LIT(hero_str_73);
+    t6 = HERO_STR_LIT(hero_str_7b992235);
 #line 102 "examples/assembler/machine.hero"
     t14 = h3_r0;
 #line 13682 "main.c"
@@ -13720,7 +13720,7 @@ HeroStr h_program_ERR_BAD_NUMBER(void) {
     goto bb0;
 bb0:
 #line 30 "examples/assembler/program.hero"
-    t1 = HERO_STR_LIT(hero_str_96);
+    t1 = HERO_STR_LIT(hero_str_14a4096d);
 #line 13725 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -13733,7 +13733,7 @@ HeroStr h_program_ERR_BAD_REGISTER(void) {
     goto bb0;
 bb0:
 #line 33 "examples/assembler/program.hero"
-    t1 = HERO_STR_LIT(hero_str_97);
+    t1 = HERO_STR_LIT(hero_str_52629714);
 #line 13738 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -14621,7 +14621,7 @@ bb7:
 #line 115 "examples/assembler/program.hero"
     t23 = h6_piece;
 #line 115 "examples/assembler/program.hero"
-    t24 = HERO_STR_LIT(hero_str_36);
+    t24 = HERO_STR_LIT(hero_str_0);
 #line 115 "examples/assembler/program.hero"
     t25 = !hero_str_eq(t23, t24);
 #line 115 "examples/assembler/program.hero"
@@ -14876,7 +14876,7 @@ bb1:
 #line 14877 "main.c"
     hero_str_decref(t73);
 #line 132 "examples/assembler/program.hero"
-    t14 = HERO_STR_LIT(hero_str_36);
+    t14 = HERO_STR_LIT(hero_str_0);
 #line 132 "examples/assembler/program.hero"
     t74 = h4_label;
 #line 14883 "main.c"
@@ -14932,7 +14932,7 @@ bb4:
 #line 137 "examples/assembler/program.hero"
     t34 = h2_body;
 #line 137 "examples/assembler/program.hero"
-    t35 = HERO_STR_LIT(hero_str_36);
+    t35 = HERO_STR_LIT(hero_str_0);
 #line 137 "examples/assembler/program.hero"
     t36 = hero_str_eq(t34, t35);
 #line 137 "examples/assembler/program.hero"
@@ -15030,7 +15030,7 @@ bb8:
 #line 138 "examples/assembler/program.hero"
     t37 = h4_label;
 #line 138 "examples/assembler/program.hero"
-    t38 = HERO_STR_LIT(hero_str_36);
+    t38 = HERO_STR_LIT(hero_str_0);
 #line 138 "examples/assembler/program.hero"
     t39 = hero_array_new(&hero_desc_str, 1);
 #line 138 "examples/assembler/program.hero"
@@ -15828,7 +15828,7 @@ bb4:
 #line 15829 "main.c"
     hero_str_decref(t60);
 #line 160 "examples/assembler/program.hero"
-    t12 = HERO_STR_LIT(hero_str_37);
+    t12 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 160 "examples/assembler/program.hero"
     t13 = h1_number;
 #line 160 "examples/assembler/program.hero"
@@ -15848,7 +15848,7 @@ bb4:
 #line 15849 "main.c"
     hero_str_decref(t62);
 #line 160 "examples/assembler/program.hero"
-    t16 = HERO_STR_LIT(hero_str_38);
+    t16 = HERO_STR_LIT(hero_str_f40ca);
 #line 160 "examples/assembler/program.hero"
     t17 = hero_str_concat(t15, t16);
 #line 160 "examples/assembler/program.hero"
@@ -15868,7 +15868,7 @@ bb4:
 #line 15869 "main.c"
     hero_str_decref(t64);
 #line 160 "examples/assembler/program.hero"
-    t20 = HERO_STR_LIT(hero_str_98);
+    t20 = HERO_STR_LIT(hero_str_7494754c);
 #line 160 "examples/assembler/program.hero"
     t21 = hero_str_concat(t19, t20);
 #line 160 "examples/assembler/program.hero"
@@ -16102,7 +16102,7 @@ bb11:
 #line 16103 "main.c"
     hero_str_decref(t68);
 #line 163 "examples/assembler/program.hero"
-    t45 = HERO_STR_LIT(hero_str_37);
+    t45 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 163 "examples/assembler/program.hero"
     t46 = h1_number;
 #line 163 "examples/assembler/program.hero"
@@ -16122,7 +16122,7 @@ bb11:
 #line 16123 "main.c"
     hero_str_decref(t70);
 #line 163 "examples/assembler/program.hero"
-    t49 = HERO_STR_LIT(hero_str_38);
+    t49 = HERO_STR_LIT(hero_str_f40ca);
 #line 163 "examples/assembler/program.hero"
     t50 = hero_str_concat(t48, t49);
 #line 163 "examples/assembler/program.hero"
@@ -16142,7 +16142,7 @@ bb11:
 #line 16143 "main.c"
     hero_str_decref(t72);
 #line 163 "examples/assembler/program.hero"
-    t53 = HERO_STR_LIT(hero_str_98);
+    t53 = HERO_STR_LIT(hero_str_7494754c);
 #line 163 "examples/assembler/program.hero"
     t54 = hero_str_concat(t52, t53);
 #line 163 "examples/assembler/program.hero"
@@ -16619,7 +16619,7 @@ bb7:
 #line 16620 "main.c"
     hero_str_decref(t103);
 #line 173 "examples/assembler/program.hero"
-    t24 = HERO_STR_LIT(hero_str_37);
+    t24 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 173 "examples/assembler/program.hero"
     t25 = h1_number;
 #line 173 "examples/assembler/program.hero"
@@ -16639,7 +16639,7 @@ bb7:
 #line 16640 "main.c"
     hero_str_decref(t105);
 #line 173 "examples/assembler/program.hero"
-    t28 = HERO_STR_LIT(hero_str_38);
+    t28 = HERO_STR_LIT(hero_str_f40ca);
 #line 173 "examples/assembler/program.hero"
     t29 = hero_str_concat(t27, t28);
 #line 173 "examples/assembler/program.hero"
@@ -16659,7 +16659,7 @@ bb7:
 #line 16660 "main.c"
     hero_str_decref(t107);
 #line 173 "examples/assembler/program.hero"
-    t32 = HERO_STR_LIT(hero_str_99);
+    t32 = HERO_STR_LIT(hero_str_7597be40);
 #line 173 "examples/assembler/program.hero"
     t33 = hero_str_concat(t31, t32);
 #line 173 "examples/assembler/program.hero"
@@ -16906,7 +16906,7 @@ bb16:
 #line 16907 "main.c"
     hero_str_decref(t112);
 #line 177 "examples/assembler/program.hero"
-    t60 = HERO_STR_LIT(hero_str_37);
+    t60 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 177 "examples/assembler/program.hero"
     t61 = h1_number;
 #line 177 "examples/assembler/program.hero"
@@ -16926,7 +16926,7 @@ bb16:
 #line 16927 "main.c"
     hero_str_decref(t114);
 #line 177 "examples/assembler/program.hero"
-    t64 = HERO_STR_LIT(hero_str_38);
+    t64 = HERO_STR_LIT(hero_str_f40ca);
 #line 177 "examples/assembler/program.hero"
     t65 = hero_str_concat(t63, t64);
 #line 177 "examples/assembler/program.hero"
@@ -16946,7 +16946,7 @@ bb16:
 #line 16947 "main.c"
     hero_str_decref(t116);
 #line 177 "examples/assembler/program.hero"
-    t68 = HERO_STR_LIT(hero_str_99);
+    t68 = HERO_STR_LIT(hero_str_7597be40);
 #line 177 "examples/assembler/program.hero"
     t69 = hero_str_concat(t67, t68);
 #line 177 "examples/assembler/program.hero"
@@ -17549,9 +17549,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_147);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_148);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -17610,9 +17610,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_145);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_146);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"

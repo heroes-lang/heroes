@@ -77,11 +77,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 78 "fficonstpointer.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, " ");
-HERO_STR_STATIC(hero_str_3, "null_cstr");
-HERO_STR_STATIC(hero_str_4, "a null `cstr` holds no text");
-HERO_STR_STATIC(hero_str_5, "not_text");
-HERO_STR_STATIC(hero_str_6, "the bytes behind this `cstr` are not UTF-8");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
+HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
+HERO_STR_STATIC(hero_str_34624695, "not_text");
+HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -210,7 +210,7 @@ bb0:
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t6 = t4 == t5;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t7 = HERO_STR_LIT(hero_str_0);
+    t7 = HERO_STR_LIT(hero_str_20);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t8 = h0_h;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
@@ -493,9 +493,9 @@ bb1:
 #line 156 "<heroes library>"
 bb2:
 #line 153 "<heroes library>"
-    t4 = HERO_STR_LIT(hero_str_3);
+    t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 153 "<heroes library>"
-    t5 = HERO_STR_LIT(hero_str_4);
+    t5 = HERO_STR_LIT(hero_str_5263489);
 #line 500 "fficonstpointer.c"
     hero_str_incref(t4);
 #line 153 "<heroes library>"
@@ -537,9 +537,9 @@ bb3:
     goto bb1;
 bb4:
 #line 158 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_5);
+    t15 = HERO_STR_LIT(hero_str_34624695);
 #line 158 "<heroes library>"
-    t16 = HERO_STR_LIT(hero_str_6);
+    t16 = HERO_STR_LIT(hero_str_4bb64adb);
 #line 544 "fficonstpointer.c"
     hero_str_incref(t15);
 #line 158 "<heroes library>"

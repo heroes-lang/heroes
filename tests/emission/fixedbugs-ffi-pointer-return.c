@@ -62,7 +62,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 63 "ffipointerreturn.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "PATH");
+HERO_STR_STATIC(hero_str_ac970fd, "PATH");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -99,7 +99,7 @@ void h_ffipointerreturn_main(void) {
     goto bb0;
 bb0:
 #line 33 "tests/golden/fixedbugs/ffi-pointer-return.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_ac970fd);
 #line 33 "tests/golden/fixedbugs/ffi-pointer-return.hero"
     t2 = hero_str_cstr(t1);
 #line 33 "tests/golden/fixedbugs/ffi-pointer-return.hero"

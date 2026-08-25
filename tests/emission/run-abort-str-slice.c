@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "abortstrslice.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "abcde");
+HERO_STR_STATIC(hero_str_33edea20, "abcde");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -110,7 +110,7 @@ void h_abortstrslice_main(void) {
     goto bb0;
 bb0:
 #line 7 "tests/golden/run/abort-str-slice.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_33edea20);
 #line 7 "tests/golden/run/abort-str-slice.hero"
     t10 = h0_s;
 #line 117 "abortstrslice.c"

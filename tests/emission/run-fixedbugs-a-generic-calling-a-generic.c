@@ -58,10 +58,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsagenericcallingageneric.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "ziggy");
-HERO_STR_STATIC(hero_str_1, "stardust");
-HERO_STR_STATIC(hero_str_2, " ");
-HERO_STR_STATIC(hero_str_3, "only");
+HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
+HERO_STR_STATIC(hero_str_318606e5, "stardust");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_efcabd0, "only");
 
 typedef struct h_fixedbugsagenericcallingageneric_P {
     int64_t f_x;
@@ -201,9 +201,9 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_print_end();
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t5 = HERO_STR_LIT(hero_str_0);
+    t5 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t6 = HERO_STR_LIT(hero_str_1);
+    t6 = HERO_STR_LIT(hero_str_318606e5);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t7 = hero_array_new(&hero_desc_str, 2);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -297,9 +297,9 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t21 = h_fixedbugsagenericcallingageneric_both_1b9a87(t20);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t22 = HERO_STR_LIT(hero_str_2);
+    t22 = HERO_STR_LIT(hero_str_20);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t23 = HERO_STR_LIT(hero_str_3);
+    t23 = HERO_STR_LIT(hero_str_efcabd0);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t24 = hero_array_new(&hero_desc_str, 1);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"

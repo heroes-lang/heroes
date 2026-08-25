@@ -58,13 +58,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "closurelist.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "odd");
-HERO_STR_STATIC(hero_str_1, "not even");
-HERO_STR_STATIC(hero_str_2, "a");
-HERO_STR_STATIC(hero_str_3, " ");
-HERO_STR_STATIC(hero_str_4, ",");
-HERO_STR_STATIC(hero_str_5, "ab");
-HERO_STR_STATIC(hero_str_6, "abc");
+HERO_STR_STATIC(hero_str_1d4477, "odd");
+HERO_STR_STATIC(hero_str_60844662, "not even");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_2c, ",");
+HERO_STR_STATIC(hero_str_3205, "ab");
+HERO_STR_STATIC(hero_str_1998f2, "abc");
 
 typedef struct h_closurelist_Point {
     int64_t f_x;
@@ -319,9 +319,9 @@ bb1:
     return t12;
 bb2:
 #line 36 "tests/golden/run/closure-list.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_1d4477);
 #line 36 "tests/golden/run/closure-list.hero"
-    t7 = HERO_STR_LIT(hero_str_1);
+    t7 = HERO_STR_LIT(hero_str_60844662);
 #line 326 "closurelist.c"
     hero_str_incref(t6);
 #line 36 "tests/golden/run/closure-list.hero"
@@ -746,7 +746,7 @@ bb0:
 #line 747 "closurelist.c"
     hero_map_decref(t110);
 #line 49 "tests/golden/run/closure-list.hero"
-    t6 = HERO_STR_LIT(hero_str_2);
+    t6 = HERO_STR_LIT(hero_str_61);
 #line 49 "tests/golden/run/closure-list.hero"
     t7 = INT64_C(1);
 #line 49 "tests/golden/run/closure-list.hero"
@@ -946,7 +946,7 @@ bb9:
 #line 62 "tests/golden/run/closure-list.hero"
     t61 = h3_total;
 #line 62 "tests/golden/run/closure-list.hero"
-    t62 = HERO_STR_LIT(hero_str_3);
+    t62 = HERO_STR_LIT(hero_str_20);
 #line 62 "tests/golden/run/closure-list.hero"
     t63 = h2_p;
 #line 62 "tests/golden/run/closure-list.hero"
@@ -954,7 +954,7 @@ bb9:
 #line 62 "tests/golden/run/closure-list.hero"
     t65 = h_closurelist_area(t64);
 #line 62 "tests/golden/run/closure-list.hero"
-    t66 = HERO_STR_LIT(hero_str_3);
+    t66 = HERO_STR_LIT(hero_str_20);
 #line 62 "tests/golden/run/closure-list.hero"
     t67 = INT64_C(4);
 #line 62 "tests/golden/run/closure-list.hero"
@@ -1066,7 +1066,7 @@ bb15:
 #line 63 "tests/golden/run/closure-list.hero"
     t80 = hero_array_len(t79);
 #line 63 "tests/golden/run/closure-list.hero"
-    t81 = HERO_STR_LIT(hero_str_3);
+    t81 = HERO_STR_LIT(hero_str_20);
 #line 63 "tests/golden/run/closure-list.hero"
     t82 = h0_xs;
 #line 63 "tests/golden/run/closure-list.hero"
@@ -1080,7 +1080,7 @@ bb15:
 #line 1081 "closurelist.c"
     hero_array_decref(t119);
 #line 63 "tests/golden/run/closure-list.hero"
-    t85 = HERO_STR_LIT(hero_str_4);
+    t85 = HERO_STR_LIT(hero_str_2c);
 #line 63 "tests/golden/run/closure-list.hero"
     t86 = hero_str_join(t84, t85);
 #line 63 "tests/golden/run/closure-list.hero"
@@ -1098,7 +1098,7 @@ bb15:
 #line 63 "tests/golden/run/closure-list.hero"
     hero_print_end();
 #line 64 "tests/golden/run/closure-list.hero"
-    t87 = HERO_STR_LIT(hero_str_5);
+    t87 = HERO_STR_LIT(hero_str_3205);
 #line 64 "tests/golden/run/closure-list.hero"
     t88 = hero_str_chars(t87);
 #line 64 "tests/golden/run/closure-list.hero"
@@ -1112,7 +1112,7 @@ bb15:
 #line 64 "tests/golden/run/closure-list.hero"
     t90 = *(HeroStr const *)hero_array_at(t88, t89);
 #line 64 "tests/golden/run/closure-list.hero"
-    t91 = HERO_STR_LIT(hero_str_6);
+    t91 = HERO_STR_LIT(hero_str_1998f2);
 #line 64 "tests/golden/run/closure-list.hero"
     t92 = INT64_C(0);
 #line 64 "tests/golden/run/closure-list.hero"

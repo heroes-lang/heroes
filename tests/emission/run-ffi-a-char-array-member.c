@@ -82,7 +82,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 82 "ffiachararraymember.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, " ");
+HERO_STR_STATIC(hero_str_20, " ");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -290,7 +290,7 @@ bb3:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t31 = t30.as.ok;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t32 = HERO_STR_LIT(hero_str_0);
+    t32 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t33 = h0_t;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"

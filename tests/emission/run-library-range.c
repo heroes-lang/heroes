@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "libraryrange.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, ",");
+HERO_STR_STATIC(hero_str_2c, ",");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -379,7 +379,7 @@ bb4:
 #line 380 "libraryrange.c"
     hero_array_decref(t67);
 #line 31 "tests/golden/run/library-range.hero"
-    t45 = HERO_STR_LIT(hero_str_0);
+    t45 = HERO_STR_LIT(hero_str_2c);
 #line 31 "tests/golden/run/library-range.hero"
     t46 = hero_str_join(t44, t45);
 #line 31 "tests/golden/run/library-range.hero"

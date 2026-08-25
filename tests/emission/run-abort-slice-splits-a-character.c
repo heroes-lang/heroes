@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "abortslicesplitsacharacter.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "caff\303\250");
+HERO_STR_STATIC(hero_str_78a14ef2, "caff\303\250");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -110,7 +110,7 @@ void h_abortslicesplitsacharacter_main(void) {
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_78a14ef2);
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     t10 = h0_word;
 #line 117 "abortslicesplitsacharacter.c"

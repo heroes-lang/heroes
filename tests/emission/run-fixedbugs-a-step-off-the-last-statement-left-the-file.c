@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsastepoffthelaststatementleftthefile.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "!");
-HERO_STR_STATIC(hero_str_1, " ");
-HERO_STR_STATIC(hero_str_2, "we can be heroes");
+HERO_STR_STATIC(hero_str_21, "!");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_351cd275, "we can be heroes");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -133,7 +133,7 @@ bb0:
 #line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t1 = h0_s;
 #line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_21);
 #line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t3 = hero_str_concat(t1, t2);
 #line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
@@ -229,7 +229,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t11 = hero_array_len(t10);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t12 = HERO_STR_LIT(hero_str_1);
+    t12 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t13 = h0_xs;
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
@@ -237,7 +237,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t15 = *(int64_t const *)hero_array_at(t13, t14);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t17 = h0_xs;
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
@@ -257,7 +257,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     hero_print_end();
 #line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t20 = HERO_STR_LIT(hero_str_2);
+    t20 = HERO_STR_LIT(hero_str_351cd275);
 #line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t21 = h_fixedbugsastepoffthelaststatementleftthefile_shout(t20);
 #line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"

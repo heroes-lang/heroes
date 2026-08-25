@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugseqhadnorowforamap.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "x");
+HERO_STR_STATIC(hero_str_78, "x");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -279,7 +279,7 @@ void h_fixedbugseqhadnorowforamap_main(void) {
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_78);
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t2 = INT64_C(1);
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -326,7 +326,7 @@ bb0:
 #line 327 "fixedbugseqhadnorowforamap.c"
     h_fixedbugseqhadnorowforamap_Box_release(&t56);
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-    t8 = HERO_STR_LIT(hero_str_0);
+    t8 = HERO_STR_LIT(hero_str_78);
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t9 = INT64_C(1);
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -373,7 +373,7 @@ bb0:
 #line 374 "fixedbugseqhadnorowforamap.c"
     h_fixedbugseqhadnorowforamap_Box_release(&t60);
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-    t15 = HERO_STR_LIT(hero_str_0);
+    t15 = HERO_STR_LIT(hero_str_78);
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t16 = INT64_C(9);
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"

@@ -58,28 +58,28 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_2, "x");
-HERO_STR_STATIC(hero_str_3, "y");
-HERO_STR_STATIC(hero_str_4, "2 + 3 * 4");
-HERO_STR_STATIC(hero_str_5, "(2 + 3) * 4");
-HERO_STR_STATIC(hero_str_6, "x * y + 2");
-HERO_STR_STATIC(hero_str_7, "z + 1");
-HERO_STR_STATIC(hero_str_8, "2 +");
-HERO_STR_STATIC(hero_str_9, " = ");
-HERO_STR_STATIC(hero_str_10, " -> ");
-HERO_STR_STATIC(hero_str_11, ": ");
-HERO_STR_STATIC(hero_str_12, "trailing_tokens");
-HERO_STR_STATIC(hero_str_13, "unknown_name");
-HERO_STR_STATIC(hero_str_14, "undefined variable: ");
-HERO_STR_STATIC(hero_str_15, "leftover input at the end");
-HERO_STR_STATIC(hero_str_28, "unknown_char");
-HERO_STR_STATIC(hero_str_29, "at position ");
-HERO_STR_STATIC(hero_str_38, "expected_factor");
-HERO_STR_STATIC(hero_str_39, "unclosed_paren");
-HERO_STR_STATIC(hero_str_40, "unexpected_end");
-HERO_STR_STATIC(hero_str_41, "the expression ends too soon");
-HERO_STR_STATIC(hero_str_42, "found an operator");
-HERO_STR_STATIC(hero_str_43, "missing closing paren");
+HERO_STR_STATIC(hero_str_78, "x");
+HERO_STR_STATIC(hero_str_79, "y");
+HERO_STR_STATIC(hero_str_192624f5, "2 + 3 * 4");
+HERO_STR_STATIC(hero_str_5ad3cbdc, "(2 + 3) * 4");
+HERO_STR_STATIC(hero_str_346e83a2, "x * y + 2");
+HERO_STR_STATIC(hero_str_61dde91e, "z + 1");
+HERO_STR_STATIC(hero_str_d284d, "2 +");
+HERO_STR_STATIC(hero_str_88077, " = ");
+HERO_STR_STATIC(hero_str_4559bcf, " -> ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_a26a417, "trailing_tokens");
+HERO_STR_STATIC(hero_str_7d34d37c, "unknown_name");
+HERO_STR_STATIC(hero_str_35795a65, "undefined variable: ");
+HERO_STR_STATIC(hero_str_331fd7f5, "leftover input at the end");
+HERO_STR_STATIC(hero_str_7bbd4cfb, "unknown_char");
+HERO_STR_STATIC(hero_str_5cc0e0ec, "at position ");
+HERO_STR_STATIC(hero_str_7c822393, "expected_factor");
+HERO_STR_STATIC(hero_str_7b0b513f, "unclosed_paren");
+HERO_STR_STATIC(hero_str_7423baed, "unexpected_end");
+HERO_STR_STATIC(hero_str_285737f8, "the expression ends too soon");
+HERO_STR_STATIC(hero_str_a9c11e6, "found an operator");
+HERO_STR_STATIC(hero_str_6ebbfefc, "missing closing paren");
 
 typedef enum h_lex_Token_tag {
     h_lex_Token_tag_num = 0,
@@ -437,11 +437,11 @@ void h_main_main(void) {
     goto bb0;
 bb0:
 #line 65 "examples/calculator/main.hero"
-    t1 = HERO_STR_LIT(hero_str_2);
+    t1 = HERO_STR_LIT(hero_str_78);
 #line 65 "examples/calculator/main.hero"
     t2 = INT64_C(10);
 #line 65 "examples/calculator/main.hero"
-    t3 = HERO_STR_LIT(hero_str_3);
+    t3 = HERO_STR_LIT(hero_str_79);
 #line 65 "examples/calculator/main.hero"
     t4 = INT64_C(4);
 #line 65 "examples/calculator/main.hero"
@@ -465,15 +465,15 @@ bb0:
 #line 466 "main.c"
     hero_map_decref(t44);
 #line 68 "examples/calculator/main.hero"
-    t6 = HERO_STR_LIT(hero_str_4);
+    t6 = HERO_STR_LIT(hero_str_192624f5);
 #line 69 "examples/calculator/main.hero"
-    t7 = HERO_STR_LIT(hero_str_5);
+    t7 = HERO_STR_LIT(hero_str_5ad3cbdc);
 #line 70 "examples/calculator/main.hero"
-    t8 = HERO_STR_LIT(hero_str_6);
+    t8 = HERO_STR_LIT(hero_str_346e83a2);
 #line 71 "examples/calculator/main.hero"
-    t9 = HERO_STR_LIT(hero_str_7);
+    t9 = HERO_STR_LIT(hero_str_61dde91e);
 #line 72 "examples/calculator/main.hero"
-    t10 = HERO_STR_LIT(hero_str_8);
+    t10 = HERO_STR_LIT(hero_str_d284d);
 #line 67 "examples/calculator/main.hero"
     t11 = hero_array_new(&hero_desc_str, 5);
 #line 67 "examples/calculator/main.hero"
@@ -651,7 +651,7 @@ bb6:
 #line 77 "examples/calculator/main.hero"
     t28 = h4_c;
 #line 77 "examples/calculator/main.hero"
-    t29 = HERO_STR_LIT(hero_str_9);
+    t29 = HERO_STR_LIT(hero_str_88077);
 #line 77 "examples/calculator/main.hero"
     t30 = h6_v;
 #line 77 "examples/calculator/main.hero"
@@ -681,13 +681,13 @@ bb7:
 #line 78 "examples/calculator/main.hero"
     t33 = h4_c;
 #line 78 "examples/calculator/main.hero"
-    t34 = HERO_STR_LIT(hero_str_10);
+    t34 = HERO_STR_LIT(hero_str_4559bcf);
 #line 78 "examples/calculator/main.hero"
     t35 = h7_e;
 #line 78 "examples/calculator/main.hero"
     t36 = t35.code;
 #line 78 "examples/calculator/main.hero"
-    t37 = HERO_STR_LIT(hero_str_11);
+    t37 = HERO_STR_LIT(hero_str_1dce);
 #line 78 "examples/calculator/main.hero"
     t38 = h7_e;
 #line 78 "examples/calculator/main.hero"
@@ -716,7 +716,7 @@ HeroStr h_eval_ERR_TRAILING_TOKENS(void) {
     goto bb0;
 bb0:
 #line 15 "examples/calculator/eval.hero"
-    t1 = HERO_STR_LIT(hero_str_12);
+    t1 = HERO_STR_LIT(hero_str_a26a417);
 #line 721 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -729,7 +729,7 @@ HeroStr h_eval_ERR_UNKNOWN_NAME(void) {
     goto bb0;
 bb0:
 #line 18 "examples/calculator/eval.hero"
-    t1 = HERO_STR_LIT(hero_str_13);
+    t1 = HERO_STR_LIT(hero_str_7d34d37c);
 #line 734 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -901,7 +901,7 @@ bb2:
 #line 902 "main.c"
     hero_str_decref(t29);
 #line 25 "examples/calculator/eval.hero"
-    t9 = HERO_STR_LIT(hero_str_14);
+    t9 = HERO_STR_LIT(hero_str_35795a65);
 #line 25 "examples/calculator/eval.hero"
     t10 = h1_name;
 #line 25 "examples/calculator/eval.hero"
@@ -2734,7 +2734,7 @@ bb6:
 #line 2735 "main.c"
     hero_str_decref(t45);
 #line 71 "examples/calculator/eval.hero"
-    t29 = HERO_STR_LIT(hero_str_15);
+    t29 = HERO_STR_LIT(hero_str_331fd7f5);
 #line 2739 "main.c"
     hero_str_incref(t28);
 #line 71 "examples/calculator/eval.hero"
@@ -3793,7 +3793,7 @@ HeroStr h_lex_ERR_UNKNOWN_CHAR(void) {
     goto bb0;
 bb0:
 #line 13 "examples/calculator/lex.hero"
-    t1 = HERO_STR_LIT(hero_str_28);
+    t1 = HERO_STR_LIT(hero_str_7bbd4cfb);
 #line 3798 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -4666,7 +4666,7 @@ bb18:
 #line 4667 "main.c"
     hero_str_decref(t70);
 #line 87 "examples/calculator/lex.hero"
-    t50 = HERO_STR_LIT(hero_str_29);
+    t50 = HERO_STR_LIT(hero_str_5cc0e0ec);
 #line 87 "examples/calculator/lex.hero"
     t51 = h1_l;
 #line 87 "examples/calculator/lex.hero"
@@ -4778,7 +4778,7 @@ HeroStr h_parse_ERR_EXPECTED_FACTOR(void) {
     goto bb0;
 bb0:
 #line 14 "examples/calculator/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_38);
+    t1 = HERO_STR_LIT(hero_str_7c822393);
 #line 4783 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -4791,7 +4791,7 @@ HeroStr h_parse_ERR_UNCLOSED_PAREN(void) {
     goto bb0;
 bb0:
 #line 17 "examples/calculator/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_39);
+    t1 = HERO_STR_LIT(hero_str_7b0b513f);
 #line 4796 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -4804,7 +4804,7 @@ HeroStr h_parse_ERR_UNEXPECTED_END(void) {
     goto bb0;
 bb0:
 #line 20 "examples/calculator/parse.hero"
-    t1 = HERO_STR_LIT(hero_str_40);
+    t1 = HERO_STR_LIT(hero_str_7423baed);
 #line 4809 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -5058,7 +5058,7 @@ bb2:
 #line 5059 "main.c"
     hero_str_decref(t31);
 #line 60 "examples/calculator/parse.hero"
-    t4 = HERO_STR_LIT(hero_str_41);
+    t4 = HERO_STR_LIT(hero_str_285737f8);
 #line 5063 "main.c"
     hero_str_incref(t3);
 #line 60 "examples/calculator/parse.hero"
@@ -5329,7 +5329,7 @@ bb8:
 #line 5330 "main.c"
     hero_str_decref(t43);
 #line 69 "examples/calculator/parse.hero"
-    t25 = HERO_STR_LIT(hero_str_42);
+    t25 = HERO_STR_LIT(hero_str_a9c11e6);
 #line 5334 "main.c"
     hero_str_incref(t24);
 #line 69 "examples/calculator/parse.hero"
@@ -5596,7 +5596,7 @@ bb4:
 #line 5597 "main.c"
     hero_str_decref(t31);
 #line 75 "examples/calculator/parse.hero"
-    t14 = HERO_STR_LIT(hero_str_43);
+    t14 = HERO_STR_LIT(hero_str_6ebbfefc);
 #line 5601 "main.c"
     hero_str_incref(t13);
 #line 75 "examples/calculator/parse.hero"
@@ -5735,7 +5735,7 @@ bb7:
 #line 5736 "main.c"
     hero_str_decref(t34);
 #line 77 "examples/calculator/parse.hero"
-    t21 = HERO_STR_LIT(hero_str_43);
+    t21 = HERO_STR_LIT(hero_str_6ebbfefc);
 #line 5740 "main.c"
     hero_str_incref(t20);
 #line 77 "examples/calculator/parse.hero"

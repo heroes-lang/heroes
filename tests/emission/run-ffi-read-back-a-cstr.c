@@ -66,12 +66,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 67 "ffireadbackacstr.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "HEROES_NO_SUCH_VARIABLE_059");
-HERO_STR_STATIC(hero_str_1, "absent: ");
-HERO_STR_STATIC(hero_str_4, "null_cstr");
-HERO_STR_STATIC(hero_str_5, "a null `cstr` holds no text");
-HERO_STR_STATIC(hero_str_6, "not_text");
-HERO_STR_STATIC(hero_str_7, "the bytes behind this `cstr` are not UTF-8");
+HERO_STR_STATIC(hero_str_733f7b5b, "HEROES_NO_SUCH_VARIABLE_059");
+HERO_STR_STATIC(hero_str_63ebf303, "absent: ");
+HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
+HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
+HERO_STR_STATIC(hero_str_34624695, "not_text");
+HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -300,7 +300,7 @@ bb3:
 #line 48 "tests/golden/run/ffi-read-back-a-cstr.hero"
     hero_print_end();
 #line 55 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t30 = HERO_STR_LIT(hero_str_0);
+    t30 = HERO_STR_LIT(hero_str_733f7b5b);
 #line 55 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t31 = hero_str_cstr(t30);
 #line 55 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -426,7 +426,7 @@ bb7:
 #line 427 "ffireadbackacstr.c"
     hero_failure_release(&t54);
 #line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
-    t42 = HERO_STR_LIT(hero_str_1);
+    t42 = HERO_STR_LIT(hero_str_63ebf303);
 #line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t43 = h7_e;
 #line 58 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -539,9 +539,9 @@ bb1:
 #line 156 "<heroes library>"
 bb2:
 #line 153 "<heroes library>"
-    t4 = HERO_STR_LIT(hero_str_4);
+    t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 153 "<heroes library>"
-    t5 = HERO_STR_LIT(hero_str_5);
+    t5 = HERO_STR_LIT(hero_str_5263489);
 #line 546 "ffireadbackacstr.c"
     hero_str_incref(t4);
 #line 153 "<heroes library>"
@@ -583,9 +583,9 @@ bb3:
     goto bb1;
 bb4:
 #line 158 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_6);
+    t15 = HERO_STR_LIT(hero_str_34624695);
 #line 158 "<heroes library>"
-    t16 = HERO_STR_LIT(hero_str_7);
+    t16 = HERO_STR_LIT(hero_str_4bb64adb);
 #line 590 "ffireadbackacstr.c"
     hero_str_incref(t15);
 #line 158 "<heroes library>"

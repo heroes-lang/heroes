@@ -76,16 +76,16 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 77 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "libcurl: ");
-HERO_STR_STATIC(hero_str_1, "<unnamed>");
-HERO_STR_STATIC(hero_str_2, "https://example.invalid/");
-HERO_STR_STATIC(hero_str_3, "the url was accepted");
-HERO_STR_STATIC(hero_str_4, "setopt refused it: ");
-HERO_STR_STATIC(hero_str_5, "code 1 means: ");
-HERO_STR_STATIC(hero_str_8, "null_cstr");
-HERO_STR_STATIC(hero_str_9, "a null `cstr` holds no text");
-HERO_STR_STATIC(hero_str_10, "not_text");
-HERO_STR_STATIC(hero_str_11, "the bytes behind this `cstr` are not UTF-8");
+HERO_STR_STATIC(hero_str_17a24f25, "libcurl: ");
+HERO_STR_STATIC(hero_str_7125eeac, "<unnamed>");
+HERO_STR_STATIC(hero_str_594067c8, "https://example.invalid/");
+HERO_STR_STATIC(hero_str_58166374, "the url was accepted");
+HERO_STR_STATIC(hero_str_52331108, "setopt refused it: ");
+HERO_STR_STATIC(hero_str_3b34fb4b, "code 1 means: ");
+HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
+HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
+HERO_STR_STATIC(hero_str_34624695, "not_text");
+HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -277,7 +277,7 @@ void h_main_main(void) {
     goto bb0;
 bb0:
 #line 49 "examples/curl/main.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_17a24f25);
 #line 49 "examples/curl/main.hero"
     t2 = (const char *)curl_version();
 #line 49 "examples/curl/main.hero"
@@ -323,7 +323,7 @@ bb1:
     goto bb3;
 bb2:
 #line 49 "examples/curl/main.hero"
-    t10 = HERO_STR_LIT(hero_str_1);
+    t10 = HERO_STR_LIT(hero_str_7125eeac);
 #line 49 "examples/curl/main.hero"
     t77 = h1_r0;
 #line 330 "main.c"
@@ -391,7 +391,7 @@ bb4:
 #line 61 "examples/curl/main.hero"
     t23 = t22.as.ok;
 #line 61 "examples/curl/main.hero"
-    t24 = HERO_STR_LIT(hero_str_2);
+    t24 = HERO_STR_LIT(hero_str_594067c8);
 #line 61 "examples/curl/main.hero"
     t25 = hero_str_cstr(t24);
 #line 61 "examples/curl/main.hero"
@@ -417,7 +417,7 @@ bb5:
     hero_unreachable();
 bb6:
 #line 68 "examples/curl/main.hero"
-    t52 = HERO_STR_LIT(hero_str_5);
+    t52 = HERO_STR_LIT(hero_str_3b34fb4b);
 #line 68 "examples/curl/main.hero"
     t53 = h_main_CURLE_UNSUPPORTED_PROTOCOL();
 #line 68 "examples/curl/main.hero"
@@ -457,7 +457,7 @@ bb6:
 #line 68 "examples/curl/main.hero"
 bb7:
 #line 63 "examples/curl/main.hero"
-    t30 = HERO_STR_LIT(hero_str_3);
+    t30 = HERO_STR_LIT(hero_str_58166374);
 #line 63 "examples/curl/main.hero"
     hero_print_str(t30);
 #line 63 "examples/curl/main.hero"
@@ -467,7 +467,7 @@ bb7:
 #line 63 "examples/curl/main.hero"
 bb8:
 #line 65 "examples/curl/main.hero"
-    t31 = HERO_STR_LIT(hero_str_4);
+    t31 = HERO_STR_LIT(hero_str_52331108);
 #line 65 "examples/curl/main.hero"
     t32 = h4_rc;
 #line 65 "examples/curl/main.hero"
@@ -563,7 +563,7 @@ bb11:
     goto bb13;
 bb12:
 #line 65 "examples/curl/main.hero"
-    t50 = HERO_STR_LIT(hero_str_1);
+    t50 = HERO_STR_LIT(hero_str_7125eeac);
 #line 65 "examples/curl/main.hero"
     t87 = h7_r1;
 #line 570 "main.c"
@@ -643,7 +643,7 @@ bb16:
     goto bb18;
 bb17:
 #line 68 "examples/curl/main.hero"
-    t71 = HERO_STR_LIT(hero_str_1);
+    t71 = HERO_STR_LIT(hero_str_7125eeac);
 #line 68 "examples/curl/main.hero"
     t91 = h10_r2;
 #line 650 "main.c"
@@ -826,9 +826,9 @@ bb1:
 #line 156 "<heroes library>"
 bb2:
 #line 153 "<heroes library>"
-    t4 = HERO_STR_LIT(hero_str_8);
+    t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 153 "<heroes library>"
-    t5 = HERO_STR_LIT(hero_str_9);
+    t5 = HERO_STR_LIT(hero_str_5263489);
 #line 833 "main.c"
     hero_str_incref(t4);
 #line 153 "<heroes library>"
@@ -870,9 +870,9 @@ bb3:
     goto bb1;
 bb4:
 #line 158 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_10);
+    t15 = HERO_STR_LIT(hero_str_34624695);
 #line 158 "<heroes library>"
-    t16 = HERO_STR_LIT(hero_str_11);
+    t16 = HERO_STR_LIT(hero_str_4bb64adb);
 #line 877 "main.c"
     hero_str_incref(t15);
 #line 158 "<heroes library>"

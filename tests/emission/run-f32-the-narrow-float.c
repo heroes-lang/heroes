@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "f32thenarrowfloat.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "half");
+HERO_STR_STATIC(hero_str_e09250b, "half");
 
 typedef struct h_0opt_db86062 {
     int64_t tag;
@@ -339,7 +339,7 @@ bb0:
 #line 340 "f32thenarrowfloat.c"
     hero_map_decref(t54);
 #line 44 "tests/golden/run/f32-the-narrow-float.hero"
-    t31 = HERO_STR_LIT(hero_str_0);
+    t31 = HERO_STR_LIT(hero_str_e09250b);
 #line 44 "tests/golden/run/f32-the-narrow-float.hero"
     t32 = 0x1p-1;
 #line 44 "tests/golden/run/f32-the-narrow-float.hero"
@@ -347,7 +347,7 @@ bb0:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t33 = h7_m;
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
-    t34 = HERO_STR_LIT(hero_str_0);
+    t34 = HERO_STR_LIT(hero_str_e09250b);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     {
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"

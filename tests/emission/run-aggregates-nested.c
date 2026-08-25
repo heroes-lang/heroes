@@ -58,11 +58,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "aggregatesnested.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "/");
-HERO_STR_STATIC(hero_str_1, "x");
-HERO_STR_STATIC(hero_str_2, "1");
-HERO_STR_STATIC(hero_str_3, "y");
-HERO_STR_STATIC(hero_str_4, "2");
+HERO_STR_STATIC(hero_str_2f, "/");
+HERO_STR_STATIC(hero_str_78, "x");
+HERO_STR_STATIC(hero_str_31, "1");
+HERO_STR_STATIC(hero_str_79, "y");
+HERO_STR_STATIC(hero_str_32, "2");
 
 typedef struct h_aggregatesnested_Name {
     HeroStr f_text;
@@ -290,7 +290,7 @@ bb3:
 #line 33 "tests/golden/run/aggregates-nested.hero"
     t13 = t12.f_text;
 #line 33 "tests/golden/run/aggregates-nested.hero"
-    t14 = HERO_STR_LIT(hero_str_0);
+    t14 = HERO_STR_LIT(hero_str_2f);
 #line 33 "tests/golden/run/aggregates-nested.hero"
     t15 = hero_str_concat(t13, t14);
 #line 33 "tests/golden/run/aggregates-nested.hero"
@@ -443,9 +443,9 @@ void h_aggregatesnested_main(void) {
     goto bb0;
 bb0:
 #line 39 "tests/golden/run/aggregates-nested.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_78);
 #line 39 "tests/golden/run/aggregates-nested.hero"
-    t2 = HERO_STR_LIT(hero_str_2);
+    t2 = HERO_STR_LIT(hero_str_31);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     t3 = hero_str_concat(t1, t2);
 #line 39 "tests/golden/run/aggregates-nested.hero"
@@ -466,9 +466,9 @@ bb0:
 #line 467 "aggregatesnested.c"
     h_aggregatesnested_Name_release(&t26);
 #line 39 "tests/golden/run/aggregates-nested.hero"
-    t5 = HERO_STR_LIT(hero_str_3);
+    t5 = HERO_STR_LIT(hero_str_79);
 #line 39 "tests/golden/run/aggregates-nested.hero"
-    t6 = HERO_STR_LIT(hero_str_4);
+    t6 = HERO_STR_LIT(hero_str_32);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     t7 = hero_str_concat(t5, t6);
 #line 39 "tests/golden/run/aggregates-nested.hero"

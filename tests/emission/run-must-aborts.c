@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "mustaborts.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "odd");
-HERO_STR_STATIC(hero_str_1, "not divisible by two");
+HERO_STR_STATIC(hero_str_1d4477, "odd");
+HERO_STR_STATIC(hero_str_7fc615fd, "not divisible by two");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -175,9 +175,9 @@ bb1:
     return t12;
 bb2:
 #line 20 "tests/golden/run/must-aborts.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_1d4477);
 #line 20 "tests/golden/run/must-aborts.hero"
-    t7 = HERO_STR_LIT(hero_str_1);
+    t7 = HERO_STR_LIT(hero_str_7fc615fd);
 #line 182 "mustaborts.c"
     hero_str_incref(t6);
 #line 20 "tests/golden/run/must-aborts.hero"

@@ -58,21 +58,21 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "bitwise.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "O_RDWR|O_ACCMODE = ");
-HERO_STR_STATIC(hero_str_1, "S_IRWXU|S_IRUSR  = ");
-HERO_STR_STATIC(hero_str_2, "and = ");
-HERO_STR_STATIC(hero_str_3, "xor = ");
-HERO_STR_STATIC(hero_str_4, "not = ");
-HERO_STR_STATIC(hero_str_5, "notmin = ");
-HERO_STR_STATIC(hero_str_6, "shl = ");
-HERO_STR_STATIC(hero_str_7, "signbit = ");
-HERO_STR_STATIC(hero_str_8, "shr = ");
-HERO_STR_STATIC(hero_str_9, "asr = ");
-HERO_STR_STATIC(hero_str_10, "mask = ");
-HERO_STR_STATIC(hero_str_11, "chain = ");
-HERO_STR_STATIC(hero_str_12, "every = ");
-HERO_STR_STATIC(hero_str_13, "has write = ");
-HERO_STR_STATIC(hero_str_14, "cleared = ");
+HERO_STR_STATIC(hero_str_79aa128c, "O_RDWR|O_ACCMODE = ");
+HERO_STR_STATIC(hero_str_54856257, "S_IRWXU|S_IRUSR  = ");
+HERO_STR_STATIC(hero_str_6573c541, "and = ");
+HERO_STR_STATIC(hero_str_11c482ff, "xor = ");
+HERO_STR_STATIC(hero_str_3ede2b03, "not = ");
+HERO_STR_STATIC(hero_str_4f8cfd93, "notmin = ");
+HERO_STR_STATIC(hero_str_2c813b8c, "shl = ");
+HERO_STR_STATIC(hero_str_535eeb7d, "signbit = ");
+HERO_STR_STATIC(hero_str_2d4f0d2e, "shr = ");
+HERO_STR_STATIC(hero_str_3f189351, "asr = ");
+HERO_STR_STATIC(hero_str_2e38b983, "mask = ");
+HERO_STR_STATIC(hero_str_25c4466a, "chain = ");
+HERO_STR_STATIC(hero_str_3e4223b, "every = ");
+HERO_STR_STATIC(hero_str_5671f1f7, "has write = ");
+HERO_STR_STATIC(hero_str_6cc5431, "cleared = ");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -197,7 +197,7 @@ void h_bitwise_main(void) {
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/bitwise.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_79aa128c);
 #line 24 "tests/golden/run/bitwise.hero"
     t2 = INT64_C(2);
 #line 24 "tests/golden/run/bitwise.hero"
@@ -211,7 +211,7 @@ bb0:
 #line 24 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 25 "tests/golden/run/bitwise.hero"
-    t5 = HERO_STR_LIT(hero_str_1);
+    t5 = HERO_STR_LIT(hero_str_54856257);
 #line 25 "tests/golden/run/bitwise.hero"
     t6 = INT64_C(448);
 #line 25 "tests/golden/run/bitwise.hero"
@@ -225,7 +225,7 @@ bb0:
 #line 25 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 27 "tests/golden/run/bitwise.hero"
-    t9 = HERO_STR_LIT(hero_str_2);
+    t9 = HERO_STR_LIT(hero_str_6573c541);
 #line 27 "tests/golden/run/bitwise.hero"
     t10 = INT64_C(6);
 #line 27 "tests/golden/run/bitwise.hero"
@@ -239,7 +239,7 @@ bb0:
 #line 27 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 28 "tests/golden/run/bitwise.hero"
-    t13 = HERO_STR_LIT(hero_str_3);
+    t13 = HERO_STR_LIT(hero_str_11c482ff);
 #line 28 "tests/golden/run/bitwise.hero"
     t14 = INT64_C(6);
 #line 28 "tests/golden/run/bitwise.hero"
@@ -253,7 +253,7 @@ bb0:
 #line 28 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 29 "tests/golden/run/bitwise.hero"
-    t17 = HERO_STR_LIT(hero_str_4);
+    t17 = HERO_STR_LIT(hero_str_3ede2b03);
 #line 29 "tests/golden/run/bitwise.hero"
     t18 = INT64_C(0);
 #line 29 "tests/golden/run/bitwise.hero"
@@ -265,7 +265,7 @@ bb0:
 #line 29 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 30 "tests/golden/run/bitwise.hero"
-    t20 = HERO_STR_LIT(hero_str_5);
+    t20 = HERO_STR_LIT(hero_str_4f8cfd93);
 #line 30 "tests/golden/run/bitwise.hero"
     t21 = INT64_C(0);
 #line 30 "tests/golden/run/bitwise.hero"
@@ -285,7 +285,7 @@ bb0:
 #line 30 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 32 "tests/golden/run/bitwise.hero"
-    t27 = HERO_STR_LIT(hero_str_6);
+    t27 = HERO_STR_LIT(hero_str_2c813b8c);
 #line 32 "tests/golden/run/bitwise.hero"
     t28 = INT64_C(1);
 #line 32 "tests/golden/run/bitwise.hero"
@@ -301,7 +301,7 @@ bb0:
 #line 32 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 33 "tests/golden/run/bitwise.hero"
-    t31 = HERO_STR_LIT(hero_str_7);
+    t31 = HERO_STR_LIT(hero_str_535eeb7d);
 #line 33 "tests/golden/run/bitwise.hero"
     t32 = INT64_C(1);
 #line 33 "tests/golden/run/bitwise.hero"
@@ -317,7 +317,7 @@ bb0:
 #line 33 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 34 "tests/golden/run/bitwise.hero"
-    t35 = HERO_STR_LIT(hero_str_8);
+    t35 = HERO_STR_LIT(hero_str_2d4f0d2e);
 #line 34 "tests/golden/run/bitwise.hero"
     t36 = INT64_C(1024);
 #line 34 "tests/golden/run/bitwise.hero"
@@ -333,7 +333,7 @@ bb0:
 #line 34 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 35 "tests/golden/run/bitwise.hero"
-    t39 = HERO_STR_LIT(hero_str_9);
+    t39 = HERO_STR_LIT(hero_str_3f189351);
 #line 35 "tests/golden/run/bitwise.hero"
     t40 = INT64_C(0);
 #line 35 "tests/golden/run/bitwise.hero"
@@ -353,7 +353,7 @@ bb0:
 #line 35 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 38 "tests/golden/run/bitwise.hero"
-    t45 = HERO_STR_LIT(hero_str_10);
+    t45 = HERO_STR_LIT(hero_str_2e38b983);
 #line 38 "tests/golden/run/bitwise.hero"
     t46 = INT64_C(6);
 #line 38 "tests/golden/run/bitwise.hero"
@@ -371,7 +371,7 @@ bb0:
 #line 38 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 39 "tests/golden/run/bitwise.hero"
-    t51 = HERO_STR_LIT(hero_str_11);
+    t51 = HERO_STR_LIT(hero_str_25c4466a);
 #line 39 "tests/golden/run/bitwise.hero"
     t52 = INT64_C(1);
 #line 39 "tests/golden/run/bitwise.hero"
@@ -441,7 +441,7 @@ bb0:
 #line 45 "tests/golden/run/bitwise.hero"
     h3_every = t74;
 #line 46 "tests/golden/run/bitwise.hero"
-    t75 = HERO_STR_LIT(hero_str_12);
+    t75 = HERO_STR_LIT(hero_str_3e4223b);
 #line 46 "tests/golden/run/bitwise.hero"
     t76 = h3_every;
 #line 46 "tests/golden/run/bitwise.hero"
@@ -451,7 +451,7 @@ bb0:
 #line 46 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 47 "tests/golden/run/bitwise.hero"
-    t77 = HERO_STR_LIT(hero_str_13);
+    t77 = HERO_STR_LIT(hero_str_5671f1f7);
 #line 47 "tests/golden/run/bitwise.hero"
     t78 = h3_every;
 #line 47 "tests/golden/run/bitwise.hero"
@@ -469,7 +469,7 @@ bb0:
 #line 47 "tests/golden/run/bitwise.hero"
     hero_print_end();
 #line 48 "tests/golden/run/bitwise.hero"
-    t83 = HERO_STR_LIT(hero_str_14);
+    t83 = HERO_STR_LIT(hero_str_6cc5431);
 #line 48 "tests/golden/run/bitwise.hero"
     t84 = h3_every;
 #line 48 "tests/golden/run/bitwise.hero"

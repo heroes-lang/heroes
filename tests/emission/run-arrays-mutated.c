@@ -58,19 +58,19 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "arraysmutated.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "a");
-HERO_STR_STATIC(hero_str_1, "1");
-HERO_STR_STATIC(hero_str_2, "b");
-HERO_STR_STATIC(hero_str_3, "2");
-HERO_STR_STATIC(hero_str_4, "z");
-HERO_STR_STATIC(hero_str_5, "9");
-HERO_STR_STATIC(hero_str_6, "y");
-HERO_STR_STATIC(hero_str_7, "8");
-HERO_STR_STATIC(hero_str_8, "one");
-HERO_STR_STATIC(hero_str_9, "!");
-HERO_STR_STATIC(hero_str_10, "two");
-HERO_STR_STATIC(hero_str_11, "new");
-HERO_STR_STATIC(hero_str_12, "newer");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_31, "1");
+HERO_STR_STATIC(hero_str_62, "b");
+HERO_STR_STATIC(hero_str_32, "2");
+HERO_STR_STATIC(hero_str_7a, "z");
+HERO_STR_STATIC(hero_str_39, "9");
+HERO_STR_STATIC(hero_str_79, "y");
+HERO_STR_STATIC(hero_str_38, "8");
+HERO_STR_STATIC(hero_str_1d4996, "one");
+HERO_STR_STATIC(hero_str_21, "!");
+HERO_STR_STATIC(hero_str_1e9d68, "two");
+HERO_STR_STATIC(hero_str_1d0204, "new");
+HERO_STR_STATIC(hero_str_188c5254, "newer");
 
 typedef struct h_arraysmutated_Point {
     int64_t f_x;
@@ -441,9 +441,9 @@ bb0:
 #line 28 "tests/golden/run/arrays-mutated.hero"
     hero_print_end();
 #line 30 "tests/golden/run/arrays-mutated.hero"
-    t20 = HERO_STR_LIT(hero_str_0);
+    t20 = HERO_STR_LIT(hero_str_61);
 #line 30 "tests/golden/run/arrays-mutated.hero"
-    t21 = HERO_STR_LIT(hero_str_1);
+    t21 = HERO_STR_LIT(hero_str_31);
 #line 30 "tests/golden/run/arrays-mutated.hero"
     t22 = hero_str_concat(t20, t21);
 #line 30 "tests/golden/run/arrays-mutated.hero"
@@ -453,9 +453,9 @@ bb0:
 #line 454 "arraysmutated.c"
     hero_str_decref(t134);
 #line 30 "tests/golden/run/arrays-mutated.hero"
-    t23 = HERO_STR_LIT(hero_str_2);
+    t23 = HERO_STR_LIT(hero_str_62);
 #line 30 "tests/golden/run/arrays-mutated.hero"
-    t24 = HERO_STR_LIT(hero_str_3);
+    t24 = HERO_STR_LIT(hero_str_32);
 #line 30 "tests/golden/run/arrays-mutated.hero"
     t25 = hero_str_concat(t23, t24);
 #line 30 "tests/golden/run/arrays-mutated.hero"
@@ -491,9 +491,9 @@ bb0:
 #line 31 "tests/golden/run/arrays-mutated.hero"
     t27 = INT64_C(0);
 #line 31 "tests/golden/run/arrays-mutated.hero"
-    t28 = HERO_STR_LIT(hero_str_4);
+    t28 = HERO_STR_LIT(hero_str_7a);
 #line 31 "tests/golden/run/arrays-mutated.hero"
-    t29 = HERO_STR_LIT(hero_str_5);
+    t29 = HERO_STR_LIT(hero_str_39);
 #line 31 "tests/golden/run/arrays-mutated.hero"
     t30 = hero_str_concat(t28, t29);
 #line 31 "tests/golden/run/arrays-mutated.hero"
@@ -510,9 +510,9 @@ bb0:
 #line 32 "tests/golden/run/arrays-mutated.hero"
     t31 = INT64_C(0);
 #line 32 "tests/golden/run/arrays-mutated.hero"
-    t32 = HERO_STR_LIT(hero_str_6);
+    t32 = HERO_STR_LIT(hero_str_79);
 #line 32 "tests/golden/run/arrays-mutated.hero"
-    t33 = HERO_STR_LIT(hero_str_7);
+    t33 = HERO_STR_LIT(hero_str_38);
 #line 32 "tests/golden/run/arrays-mutated.hero"
     t34 = hero_str_concat(t32, t33);
 #line 32 "tests/golden/run/arrays-mutated.hero"
@@ -633,9 +633,9 @@ bb0:
 #line 38 "tests/golden/run/arrays-mutated.hero"
     hero_print_end();
 #line 40 "tests/golden/run/arrays-mutated.hero"
-    t68 = HERO_STR_LIT(hero_str_8);
+    t68 = HERO_STR_LIT(hero_str_1d4996);
 #line 40 "tests/golden/run/arrays-mutated.hero"
-    t69 = HERO_STR_LIT(hero_str_9);
+    t69 = HERO_STR_LIT(hero_str_21);
 #line 40 "tests/golden/run/arrays-mutated.hero"
     t70 = hero_str_concat(t68, t69);
 #line 40 "tests/golden/run/arrays-mutated.hero"
@@ -656,9 +656,9 @@ bb0:
 #line 657 "arraysmutated.c"
     h_arraysmutated_Holder_release(&t143);
 #line 40 "tests/golden/run/arrays-mutated.hero"
-    t72 = HERO_STR_LIT(hero_str_10);
+    t72 = HERO_STR_LIT(hero_str_1e9d68);
 #line 40 "tests/golden/run/arrays-mutated.hero"
-    t73 = HERO_STR_LIT(hero_str_9);
+    t73 = HERO_STR_LIT(hero_str_21);
 #line 40 "tests/golden/run/arrays-mutated.hero"
     t74 = hero_str_concat(t72, t73);
 #line 40 "tests/golden/run/arrays-mutated.hero"
@@ -705,9 +705,9 @@ bb0:
 #line 41 "tests/golden/run/arrays-mutated.hero"
     t77 = INT64_C(0);
 #line 41 "tests/golden/run/arrays-mutated.hero"
-    t78 = HERO_STR_LIT(hero_str_11);
+    t78 = HERO_STR_LIT(hero_str_1d0204);
 #line 41 "tests/golden/run/arrays-mutated.hero"
-    t79 = HERO_STR_LIT(hero_str_9);
+    t79 = HERO_STR_LIT(hero_str_21);
 #line 41 "tests/golden/run/arrays-mutated.hero"
     t80 = hero_str_concat(t78, t79);
 #line 41 "tests/golden/run/arrays-mutated.hero"
@@ -735,9 +735,9 @@ bb0:
 #line 42 "tests/golden/run/arrays-mutated.hero"
     t82 = INT64_C(0);
 #line 42 "tests/golden/run/arrays-mutated.hero"
-    t83 = HERO_STR_LIT(hero_str_12);
+    t83 = HERO_STR_LIT(hero_str_188c5254);
 #line 42 "tests/golden/run/arrays-mutated.hero"
-    t84 = HERO_STR_LIT(hero_str_9);
+    t84 = HERO_STR_LIT(hero_str_21);
 #line 42 "tests/golden/run/arrays-mutated.hero"
     t85 = hero_str_concat(t83, t84);
 #line 42 "tests/golden/run/arrays-mutated.hero"

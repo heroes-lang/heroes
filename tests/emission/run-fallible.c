@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fallible.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "odd");
-HERO_STR_STATIC(hero_str_1, "not divisible by two");
+HERO_STR_STATIC(hero_str_1d4477, "odd");
+HERO_STR_STATIC(hero_str_7fc615fd, "not divisible by two");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -144,9 +144,9 @@ bb0:
 #line 19 "tests/golden/run/fallible.hero"
 bb1:
 #line 21 "tests/golden/run/fallible.hero"
-    t10 = HERO_STR_LIT(hero_str_0);
+    t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 21 "tests/golden/run/fallible.hero"
-    t11 = HERO_STR_LIT(hero_str_1);
+    t11 = HERO_STR_LIT(hero_str_7fc615fd);
 #line 151 "fallible.c"
     hero_str_incref(t10);
 #line 21 "tests/golden/run/fallible.hero"

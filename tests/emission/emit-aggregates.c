@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "aggregates.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "a");
-HERO_STR_STATIC(hero_str_1, "b");
-HERO_STR_STATIC(hero_str_2, "ab");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
+HERO_STR_STATIC(hero_str_3205, "ab");
 
 typedef struct h_aggregates_Inner {
     HeroStr f_name;
@@ -273,9 +273,9 @@ void h_aggregates_main(void) {
     goto bb0;
 bb0:
 #line 43 "tests/golden/emit/aggregates.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_61);
 #line 43 "tests/golden/emit/aggregates.hero"
-    t2 = HERO_STR_LIT(hero_str_1);
+    t2 = HERO_STR_LIT(hero_str_62);
 #line 43 "tests/golden/emit/aggregates.hero"
     t3 = hero_str_concat(t1, t2);
 #line 43 "tests/golden/emit/aggregates.hero"
@@ -328,7 +328,7 @@ bb0:
 #line 45 "tests/golden/emit/aggregates.hero"
     t10 = h0_o;
 #line 45 "tests/golden/emit/aggregates.hero"
-    t11 = HERO_STR_LIT(hero_str_2);
+    t11 = HERO_STR_LIT(hero_str_3205);
 #line 333 "aggregates.c"
     hero_str_incref(t11);
 #line 45 "tests/golden/emit/aggregates.hero"

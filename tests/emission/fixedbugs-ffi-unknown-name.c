@@ -62,7 +62,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 63 "ffiunknownname.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, ":memory:");
+HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -105,7 +105,7 @@ bb0:
 #line 34 "tests/golden/fixedbugs/ffi-unknown-name.hero"
     h0_db = t1;
 #line 35 "tests/golden/fixedbugs/ffi-unknown-name.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_41b4cad0);
 #line 35 "tests/golden/fixedbugs/ffi-unknown-name.hero"
     t3 = hero_str_cstr(t2);
 #line 35 "tests/golden/fixedbugs/ffi-unknown-name.hero"

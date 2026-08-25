@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "functionvalues.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "tick");
-HERO_STR_STATIC(hero_str_1, " ");
+HERO_STR_STATIC(hero_str_fa6dc01, "tick");
+HERO_STR_STATIC(hero_str_20, " ");
 
 typedef int64_t (*h_0fn_7b615d8f)(int64_t, int64_t);
 typedef void (*h_0fn_294870dd)(void);
@@ -161,7 +161,7 @@ void h_functionvalues_tick(void) {
     goto bb0;
 bb0:
 #line 37 "tests/golden/run/function-values.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_fa6dc01);
 #line 37 "tests/golden/run/function-values.hero"
     hero_print_str(t1);
 #line 37 "tests/golden/run/function-values.hero"
@@ -260,7 +260,7 @@ bb0:
 #line 45 "tests/golden/run/function-values.hero"
     t5 = t2(t3, t4);
 #line 45 "tests/golden/run/function-values.hero"
-    t6 = HERO_STR_LIT(hero_str_1);
+    t6 = HERO_STR_LIT(hero_str_20);
 #line 45 "tests/golden/run/function-values.hero"
     t7 = h_functionvalues_add;
 #line 45 "tests/golden/run/function-values.hero"
@@ -270,7 +270,7 @@ bb0:
 #line 45 "tests/golden/run/function-values.hero"
     t10 = h_functionvalues_apply(t7, t8, t9);
 #line 45 "tests/golden/run/function-values.hero"
-    t11 = HERO_STR_LIT(hero_str_1);
+    t11 = HERO_STR_LIT(hero_str_20);
 #line 45 "tests/golden/run/function-values.hero"
     t12 = h_functionvalues_mul;
 #line 45 "tests/golden/run/function-values.hero"
@@ -336,7 +336,7 @@ bb0:
 #line 52 "tests/golden/run/function-values.hero"
     t25 = t22(t23, t24);
 #line 52 "tests/golden/run/function-values.hero"
-    t26 = HERO_STR_LIT(hero_str_1);
+    t26 = HERO_STR_LIT(hero_str_20);
 #line 52 "tests/golden/run/function-values.hero"
     t27 = h1_ops;
 #line 52 "tests/golden/run/function-values.hero"
@@ -350,7 +350,7 @@ bb0:
 #line 52 "tests/golden/run/function-values.hero"
     t32 = t29(t30, t31);
 #line 52 "tests/golden/run/function-values.hero"
-    t33 = HERO_STR_LIT(hero_str_1);
+    t33 = HERO_STR_LIT(hero_str_20);
 #line 52 "tests/golden/run/function-values.hero"
     t34 = h1_ops;
 #line 52 "tests/golden/run/function-values.hero"
@@ -378,7 +378,7 @@ bb0:
 #line 56 "tests/golden/run/function-values.hero"
     t39 = t37 == t38;
 #line 56 "tests/golden/run/function-values.hero"
-    t40 = HERO_STR_LIT(hero_str_1);
+    t40 = HERO_STR_LIT(hero_str_20);
 #line 56 "tests/golden/run/function-values.hero"
     t41 = h0_g;
 #line 56 "tests/golden/run/function-values.hero"

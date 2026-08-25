@@ -58,14 +58,14 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "generics.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "#");
-HERO_STR_STATIC(hero_str_1, "ziggy");
-HERO_STR_STATIC(hero_str_2, "starman");
-HERO_STR_STATIC(hero_str_3, " ");
-HERO_STR_STATIC(hero_str_4, "-");
-HERO_STR_STATIC(hero_str_5, "a");
-HERO_STR_STATIC(hero_str_6, "b");
-HERO_STR_STATIC(hero_str_7, "c");
+HERO_STR_STATIC(hero_str_23, "#");
+HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
+HERO_STR_STATIC(hero_str_5a47bc97, "starman");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_2d, "-");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
+HERO_STR_STATIC(hero_str_63, "c");
 
 typedef HeroStr (*h_0fn_4a13fb08)(int64_t);
 typedef struct h_0opt_f87774a {
@@ -117,7 +117,7 @@ HeroStr h_generics_label(int64_t h0_n) {
     goto bb0;
 bb0:
 #line 30 "tests/golden/run/generics.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_23);
 #line 30 "tests/golden/run/generics.hero"
     t2 = h0_n;
 #line 30 "tests/golden/run/generics.hero"
@@ -259,9 +259,9 @@ void h_generics_main(void) {
     goto bb0;
 bb0:
 #line 34 "tests/golden/run/generics.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 34 "tests/golden/run/generics.hero"
-    t2 = HERO_STR_LIT(hero_str_2);
+    t2 = HERO_STR_LIT(hero_str_5a47bc97);
 #line 34 "tests/golden/run/generics.hero"
     t3 = hero_array_new(&hero_desc_str, 2);
 #line 34 "tests/golden/run/generics.hero"
@@ -287,7 +287,7 @@ bb0:
 #line 288 "generics.c"
     hero_str_decref(t51);
 #line 34 "tests/golden/run/generics.hero"
-    t5 = HERO_STR_LIT(hero_str_3);
+    t5 = HERO_STR_LIT(hero_str_20);
 #line 34 "tests/golden/run/generics.hero"
     t6 = INT64_C(1);
 #line 34 "tests/golden/run/generics.hero"
@@ -325,9 +325,9 @@ bb0:
 #line 34 "tests/golden/run/generics.hero"
     hero_print_end();
 #line 35 "tests/golden/run/generics.hero"
-    t11 = HERO_STR_LIT(hero_str_1);
+    t11 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 35 "tests/golden/run/generics.hero"
-    t12 = HERO_STR_LIT(hero_str_2);
+    t12 = HERO_STR_LIT(hero_str_5a47bc97);
 #line 35 "tests/golden/run/generics.hero"
     t13 = hero_array_new(&hero_desc_str, 2);
 #line 35 "tests/golden/run/generics.hero"
@@ -353,7 +353,7 @@ bb0:
 #line 354 "generics.c"
     hero_str_decref(t54);
 #line 35 "tests/golden/run/generics.hero"
-    t15 = HERO_STR_LIT(hero_str_3);
+    t15 = HERO_STR_LIT(hero_str_20);
 #line 35 "tests/golden/run/generics.hero"
     t16 = INT64_C(1);
 #line 35 "tests/golden/run/generics.hero"
@@ -427,7 +427,7 @@ bb0:
 #line 428 "generics.c"
     hero_array_decref(t57);
 #line 38 "tests/golden/run/generics.hero"
-    t27 = HERO_STR_LIT(hero_str_4);
+    t27 = HERO_STR_LIT(hero_str_2d);
 #line 38 "tests/golden/run/generics.hero"
     t28 = hero_str_join(t26, t27);
 #line 38 "tests/golden/run/generics.hero"
@@ -491,9 +491,9 @@ bb0:
 #line 41 "tests/golden/run/generics.hero"
     hero_print_end();
 #line 45 "tests/golden/run/generics.hero"
-    t37 = HERO_STR_LIT(hero_str_5);
+    t37 = HERO_STR_LIT(hero_str_61);
 #line 45 "tests/golden/run/generics.hero"
-    t38 = HERO_STR_LIT(hero_str_6);
+    t38 = HERO_STR_LIT(hero_str_62);
 #line 45 "tests/golden/run/generics.hero"
     t39 = hero_array_new(&hero_desc_str, 2);
 #line 45 "tests/golden/run/generics.hero"
@@ -511,7 +511,7 @@ bb0:
 #line 512 "generics.c"
     hero_array_decref(t61);
 #line 45 "tests/golden/run/generics.hero"
-    t40 = HERO_STR_LIT(hero_str_7);
+    t40 = HERO_STR_LIT(hero_str_63);
 #line 45 "tests/golden/run/generics.hero"
     t41 = hero_array_new(&hero_desc_str, 1);
 #line 45 "tests/golden/run/generics.hero"
@@ -561,7 +561,7 @@ bb0:
 #line 46 "tests/golden/run/generics.hero"
     t45 = hero_array_len(t44);
 #line 46 "tests/golden/run/generics.hero"
-    t46 = HERO_STR_LIT(hero_str_3);
+    t46 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/generics.hero"
     t47 = h0_rows;
 #line 46 "tests/golden/run/generics.hero"

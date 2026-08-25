@@ -58,12 +58,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "variantarms.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "nonzero");
-HERO_STR_STATIC(hero_str_1, "zero");
-HERO_STR_STATIC(hero_str_2, "is zero");
-HERO_STR_STATIC(hero_str_3, "is nonzero");
-HERO_STR_STATIC(hero_str_4, "neg");
-HERO_STR_STATIC(hero_str_5, "pos");
+HERO_STR_STATIC(hero_str_4e77a92d, "nonzero");
+HERO_STR_STATIC(hero_str_1073a930, "zero");
+HERO_STR_STATIC(hero_str_5bde1154, "is zero");
+HERO_STR_STATIC(hero_str_4e13c0f6, "is nonzero");
+HERO_STR_STATIC(hero_str_1d01f4, "neg");
+HERO_STR_STATIC(hero_str_1d8d30, "pos");
 
 typedef struct h_variantarms_P {
     int64_t f_n;
@@ -219,7 +219,7 @@ bb1:
     return t6;
 bb2:
 #line 38 "tests/golden/run/variant-arms.hero"
-    t4 = HERO_STR_LIT(hero_str_0);
+    t4 = HERO_STR_LIT(hero_str_4e77a92d);
 #line 37 "tests/golden/run/variant-arms.hero"
     t7 = h2_r0;
 #line 226 "variantarms.c"
@@ -231,7 +231,7 @@ bb2:
     goto bb1;
 bb3:
 #line 39 "tests/golden/run/variant-arms.hero"
-    t5 = HERO_STR_LIT(hero_str_1);
+    t5 = HERO_STR_LIT(hero_str_1073a930);
 #line 37 "tests/golden/run/variant-arms.hero"
     t8 = h2_r0;
 #line 238 "variantarms.c"
@@ -310,7 +310,7 @@ bb1:
     return t7;
 bb2:
 #line 43 "tests/golden/run/variant-arms.hero"
-    t4 = HERO_STR_LIT(hero_str_2);
+    t4 = HERO_STR_LIT(hero_str_5bde1154);
 #line 42 "tests/golden/run/variant-arms.hero"
     t9 = h2_r0;
 #line 317 "variantarms.c"
@@ -322,7 +322,7 @@ bb2:
     goto bb1;
 bb3:
 #line 44 "tests/golden/run/variant-arms.hero"
-    t5 = HERO_STR_LIT(hero_str_3);
+    t5 = HERO_STR_LIT(hero_str_4e13c0f6);
 #line 42 "tests/golden/run/variant-arms.hero"
     t10 = h2_r0;
 #line 329 "variantarms.c"
@@ -544,7 +544,7 @@ bb1:
     return;
 bb2:
 #line 53 "tests/golden/run/variant-arms.hero"
-    t12 = HERO_STR_LIT(hero_str_4);
+    t12 = HERO_STR_LIT(hero_str_1d01f4);
 #line 53 "tests/golden/run/variant-arms.hero"
     hero_print_str(t12);
 #line 53 "tests/golden/run/variant-arms.hero"
@@ -554,7 +554,7 @@ bb2:
 #line 53 "tests/golden/run/variant-arms.hero"
 bb3:
 #line 54 "tests/golden/run/variant-arms.hero"
-    t13 = HERO_STR_LIT(hero_str_1);
+    t13 = HERO_STR_LIT(hero_str_1073a930);
 #line 54 "tests/golden/run/variant-arms.hero"
     hero_print_str(t13);
 #line 54 "tests/golden/run/variant-arms.hero"
@@ -564,7 +564,7 @@ bb3:
 #line 54 "tests/golden/run/variant-arms.hero"
 bb4:
 #line 55 "tests/golden/run/variant-arms.hero"
-    t14 = HERO_STR_LIT(hero_str_5);
+    t14 = HERO_STR_LIT(hero_str_1d8d30);
 #line 55 "tests/golden/run/variant-arms.hero"
     hero_print_str(t14);
 #line 55 "tests/golden/run/variant-arms.hero"
