@@ -13,6 +13,7 @@
 use cli_table
 use cli_io
 use cli_toolchain
+use cli_shell
 
 record Check
     name: str
@@ -25,7 +26,7 @@ record Check
 function capture(command: str, build_dir: str) -> str?
     out_path = build_dir + "/doctor-out.txt"
     _ = cli_toolchain.mkdir_all(build_dir)
-    status = cli_toolchain.system(command: (command + " > " + cli_toolchain.sq(out_path) + " 2>/dev/null").cstr())
+    status = cli_shell.shell(command: command + " > " + cli_shell.sq(out_path) + " 2>/dev/null")
     if status != 0
         return fail("none", "the command could not run")
     said = read_file(out_path)
@@ -85,7 +86,7 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
         probe = build_dir + "/.doctor-probe"
         if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
             cache_ok @ true
-            _ = cli_toolchain.system(command: ("rm -f " + cli_toolchain.sq(probe)).cstr())
+            _ = cli_shell.shell(command: "rm -f " + cli_shell.sq(probe))
     detail: str @ "cannot write to " + build_dir + "/"
     if cache_ok
         detail @ build_dir + "/ writable"

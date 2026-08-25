@@ -19,6 +19,7 @@
 # line only through sq() — one quoted word, never a second command.
 
 use cli_toolchain
+use cli_shell
 
 # Whether this platform's C runtime already contains a library, so
 # naming it is correct and passing it on would be an error (Zig's
@@ -123,7 +124,7 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
         _ = cli_toolchain.mkdir_all(build_dir)
         answer_path = build_dir + "/pkg-config-out.txt"
         err_path = build_dir + "/pkg-config-err.txt"
-        status = cli_toolchain.system(command: ("pkg-config --cflags --libs " + cli_toolchain.sq(package) + " > " + cli_toolchain.sq(answer_path) + " 2> " + cli_toolchain.sq(err_path)).cstr())
+        status = cli_shell.shell(command: "pkg-config --cflags --libs " + cli_shell.sq(package) + " > " + cli_shell.sq(answer_path) + " 2> " + cli_shell.sq(err_path))
         if status != 0
             said: str @ ""
             captured = read_file(err_path)

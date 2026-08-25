@@ -21,6 +21,7 @@ use cli_argv
 use cli_io
 use cli_compile
 use cli_toolchain
+use cli_shell
 use cli_libraries
 use cli_input
 use library_source
@@ -153,10 +154,10 @@ function run_run(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_t
         return .ok_exit
     # No line of our own before the program's output: stdout is the
     # program's from here.
-    line: str @ cli_toolchain.sq(made.must().binary)
+    line: str @ cli_shell.sq(made.must().binary)
     for arg in inv.program_args
-        line @ line + " " + cli_toolchain.sq(arg)
-    raw = cli_toolchain.system(command: line.cstr()).to_i64().must()
+        line @ line + " " + cli_shell.sq(arg)
+    raw = cli_shell.shell(command: line).to_i64().must()
     if raw < 0
         cli_io.eprint(text: "error: cannot execute " + made.must().binary)
         return .failed_exit
@@ -188,7 +189,7 @@ function run_test(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_
     failed: i64 @ 0
     index: i64 @ 0
     for title in titles
-        raw = cli_toolchain.system(command: (cli_toolchain.sq(made.must().binary) + " " + index.to_str()).cstr()).to_i64().must()
+        raw = cli_shell.shell(command: cli_shell.sq(made.must().binary) + " " + index.to_str()).to_i64().must()
         if raw == 0
             print("ok   " + title)
         else

@@ -270,6 +270,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "every module names itself in the emitted C", argv: "build examples/calculator/main.hero --emit-c", code: 0).out_has("examples/calculator/main.hero\"").out_has("examples/calculator/lex.hero\"").out_has("examples/calculator/parse.hero\"").out_has("examples/calculator/eval.hero\"")
         row(name: "a file with no main is the author's error under build", argv: "build tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
         row(name: "a file with no main is the author's error under run", argv: "run tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
+        row(name: "an extern is never callable across a module boundary", argv: "check tests/golden/surface-fixtures/externroute/wrong.hero", code: 1).err_has("error[extern_across_modules]").err_has("`system` is an `extern` of module `bind`").err_has("only `bind` carries the header").err_has("write a Heroes function beside the `extern` in `bind`").err_lacks("internal error")
+        row(name: "the route is a Heroes function in the declaring module", argv: "run tests/golden/surface-fixtures/externroute/right.hero", code: 0).out_is("0\n")
         row(name: "text names the file a diagnostic is in", argv: "check tests/golden/surface-fixtures/cross/main.hero --brief", code: 1).err_has("geom.hero:5:")
         row(name: "json names it too", argv: "check tests/golden/surface-fixtures/cross/main.hero --json", code: 1).err_has("\"line\": 5,")
         row(name: "the hole count names the file the holes are in", argv: "build tests/golden/surface-fixtures/holes/main.hero", code: 1).err_has("no binary: 1 hole in ").err_has("geom.hero")
@@ -302,7 +304,7 @@ test "the tables are what this module is, so they are counted"
     assert help_probes().len() == 4
     assert render_probes().len() == 9
     assert ffi_probes().len() == 17
-    assert verb_probes().len() == 27
+    assert verb_probes().len() == 29
 
 test "a probe holds when everything it asks for is true"
     scratch = "build/harness-selftest"

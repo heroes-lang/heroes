@@ -1,0 +1,7 @@
+# The route: the declaring module's own Heroes function. Compiles, links
+# and runs — row 1's positive direction.
+
+use bind
+
+function main()
+    print(bind.shell(command: "true"))

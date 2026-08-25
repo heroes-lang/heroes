@@ -29,6 +29,7 @@ use cli_table
 use cli_argv
 use cli_io
 use cli_toolchain
+use cli_shell
 use cli_input
 use library_source
 use cli_lex
@@ -125,7 +126,7 @@ function compiling(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli
 # environment variable, and under the port that route did nothing
 # (panel 085 R8, measured both ways).
 function runtime_hint() -> str
-    return cli_toolchain.env(name: "HEROES_RUNTIME")
+    return cli_shell.env(name: "HEROES_RUNTIME")
 
 function message_of(failed: cli_argv.Invocation?) -> str
     match failed

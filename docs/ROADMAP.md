@@ -28,11 +28,11 @@ not merged away.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs · **step 1** done · **step 2** ratified · **step 3** lands panel 092's repair · **step 4** closes its queued half |
+| **State** | four repairs · steps 1–4 done · **step 5** lands acceptance row 1 |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 22 of 36 · 25 tags |
-| The compiler | **38,055 lines** of Heroes in 155 files |
-| The seed | **765,569** lines of generated C — the whole way in |
+| The compiler | **38,364 lines** of Heroes in 157 files |
+| The seed | **769,830** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 15 |
 | Panels held | **92**, every one ratified · journals 25 · measurements 13 · examples 15 |
@@ -155,6 +155,22 @@ fire on **19 of 146** blessed emissions of correct programs, so none can ever
 enter `flags()`. All four wrong directions are `error[ffi_parameter_type]` at
 exit 1 on the author's line with the right fix; the spec names what stays silent,
 once, at **+32** (3592): what C converts exactly, and what a pointer points at.
+
+**Step 5 — acceptance row 1: an `extern` never crosses a module boundary**
+(2026-08-25, executing panel 033 R5 at panel 091's measured price). The seven
+qualified `cli_toolchain.system` call sites route through `cli_shell.shell`,
+a Heroes function beside the extern; the rule lands as
+`error[extern_across_modules]` on the qualified **reference** — the call and the
+extern taken as a value alike — and closed two shapes the ruling had not named,
+both measured open: the library's externs were reachable unqualified
+(`hero_args_count()` was check-clean from any program, zero users in the
+repository), and UFCS reached them through the dot. Group constants and records
+stay reachable, deliberately: their C is compiler-written on both sides. Both
+directions pinned: `externroute/wrong.hero` exit 1, `right.hero` runs exit 0.
+The layout check fired on the landing — `resolve_walk.hero` was frozen at its
+366-line pin — and the answer was a seam, not a squeeze: the name lookup left
+as `resolve_names.hero`, and the walk is under the default ceiling for the
+first time since the port.
 
 ---
 

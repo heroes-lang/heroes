@@ -1,0 +1,12 @@
+# The declaring module: the extern, and the Heroes function that is the
+# route (panel 033 R5). `main` exists so this module is also a whole
+# program a surface row can run.
+
+extern "stdlib.h"
+    function system(command: cstr) -> i32
+
+function shell(command: str) -> i32
+    return system(command: command.cstr())
+
+function main()
+    print(shell(command: "true"))
