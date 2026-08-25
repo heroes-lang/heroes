@@ -269,7 +269,7 @@ function path_tokens(text: str, roots: {str: bool}) -> [str]
     for ch in text.chars()
         if ch == "`"
             if inside
-                token = piece.join("")
+                token = without_member(piece.join(""))
                 if anchored(token: token, roots: roots)
                     found @ found.push(token)
                 piece @ piece.slice(from: 0, to: 0)
@@ -277,6 +277,22 @@ function path_tokens(text: str, roots: {str: bool}) -> [str]
         else if inside
             piece @ piece.push(ch)
     return found
+
+# A citation may name what is IN the file — `selfhost/cli_flags.hero::flags()` —
+# and the path claim is the half before the `::`. Cutting it is not cosmetic:
+# **it is what would have caught the citation that provoked this** (panel 092).
+# `CLAUDE.md` cited `commands/flags.rs::FLAGS` for months and this check never
+# looked at it, because `anchored` asks whether the first component is a
+# directory this repository has (`commands` is not) OR whether the token ends in
+# a file extension (`::FLAGS` is not one). Cut the member and the same token ends
+# in `.rs`, is anchored by its extension, and is reported dead. Found by a panel
+# judge with no `grep`, reading the contract as a stranger would — which is the
+# argument for the cut rather than for a wider net.
+function without_member(token: str) -> str
+    at = strings.index_of(text: token, needle: "::")
+    if at.is_err()
+        return token
+    return token.slice(from: 0, to: at.must())
 
 # Whether this backticked token is a path claim: one word, no glob or brace, and
 # then EITHER its first component is a directory this repository has, OR it ends in
@@ -714,8 +730,31 @@ test "a sitting's queue item is found by the digits the record actually writes"
     assert sitting_digits("docs/panel/091-a-name.md").must() != sitting_number("docs/panel/091-a-name.md").must().to_str()
 
 test "the pending rule fires only when nothing is asking"
-    # This is the pair the check exists for, exercised in both directions
-    # against the live queue: 091 is pending AND queued, so it passes; a
-    # sitting number nobody has ever held is queued by nothing.
-    assert queued(path: "docs/panel/091-the-saving-the-architecture-already-makes.md")
+    # ONE DIRECTION ONLY, AND THE MISSING ONE IS THE LESSON. This case asserted
+    # `queued("091-…")` when it was written on 2026-08-25, because panel 091 was
+    # pending and its item was open. Both sittings were ratified four hours
+    # later, `DECIDE.md` went to zero, and the assertion went red — a premise
+    # about the WORLD (what the queue happens to hold) inside a test, which is
+    # CLAUDE.md §11's exact shape, written by the person whose job is to police
+    # it. What survives is the half that rests on the value in hand: a sitting
+    # number nobody has ever held is queued by nothing, whatever the queue says
+    # today. The positive direction is exercised on every run by the check
+    # itself — it is what refused `docs/panel/091` and `092` until each had an
+    # item, which is how the `panel 91` vs `panel 091` defect above was found.
     assert !queued(path: "docs/panel/999-a-sitting-nobody-held.md")
+
+test "a citation that names a member is checked at its file, and that is the hole it closes"
+    # The token that provoked panel 092: `CLAUDE.md` carried it for months and
+    # this check never looked, because neither half of `anchored` fired — the
+    # first component is not a repo directory and `::FLAGS` is not an extension.
+    assert without_member("commands/flags.rs::FLAGS") == "commands/flags.rs"
+    assert without_member("selfhost/cli_flags.hero::flags()") == "selfhost/cli_flags.hero"
+    assert without_member("selfhost/cli_flags.hero") == "selfhost/cli_flags.hero"
+    assert without_member("no colons here") == "no colons here"
+    # And with the member cut, the dead one anchors on its extension — which is
+    # the whole repair: it becomes visible to the check rather than skipped.
+    roots: {str: bool} @ {}
+    roots["selfhost"] @ true
+    assert anchored(token: without_member("commands/flags.rs::FLAGS"), roots: roots)
+    assert !anchored(token: "commands/flags.rs::FLAGS", roots: roots)
+    assert anchored(token: without_member("selfhost/cli_flags.hero::flags()"), roots: roots)
