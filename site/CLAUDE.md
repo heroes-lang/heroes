@@ -26,6 +26,10 @@ curiosity. Write for them.
   industry says in English (`token`, `prompt`, `runtime`, `header`, `linker`,
   `commit`, `build`, `parser`, `garbage collector`). Explaining them is the
   job; replacing them teaches the reader a word nobody else uses.
+- **Italian spelling follows current usage, not archaic variants.** `dai`,
+  never `dài`; `perché`, `finché`, `trentatré` with the acute accent; `po'`
+  with an apostrophe. An accent a reader has to stop and look at is a mistake
+  even when a dictionary admits it (author instruction 2026-08-26).
 - **Never explain a term by using three more.** If the gloss needs its own
   gloss, the sentence is wrong.
 - **Prefer the thing over the category.** *"Un file che il compilatore legge
