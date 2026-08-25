@@ -81,7 +81,13 @@ constant QUOTES_THE_OLD_SPELLING: [str]
         # `emit/tests/gate.rs`, `tests/milestones.rs` and `cli/help.rs`. They are
         # inside `archive/` now, which RECORD skips whole, so an exemption for them
         # would be a line that cannot fire.
-        "docs/debrief/QUEUE.md"
+        #
+        # **The record was `docs/debrief/QUEUE.md` until 2026-08-26.** The entry is a
+        # SUFFIX match (`quoting` below), so the rename would have silently stopped
+        # matching and every `M0` and `M5b` in a 486 KB append-only record would have
+        # been reported as a §14 breach — the check firing loudly about the wrong
+        # thing, which is worse than not firing.
+        "docs/work/DONE.md"
         "docs/ROADMAP.md"
         "CLAUDE.md"
         "tests/harness/suite_records.hero"
@@ -435,7 +441,7 @@ function verdicts(@r: report.Report, present: [str])
             offenders @ offenders.push("    " + path + ": " + (pieces.len() - 1).to_str() + " verdict sections, want exactly 1")
             continue
         if opens_pending(text: pieces[1]) && !queued(path: path)
-            offenders @ offenders.push("    " + path + ": the verdict reads `Pending` and no open item in " + QUEUE + " names it")
+            offenders @ offenders.push("    " + path + ": the verdict reads `Pending` and no open item in " + DECISIONS + " names it")
     if offenders.len() > 0
         report.keep_failure(@r, label: "records/verdicts", detail: "  a sitting has no answer from the author:\n" + offenders.join("\n") + "\n  CLAUDE.md §4: a panel never blocks, it queues the author's ratification — so\n  something has to ask. Give the file one `" + VERDICT_HEADING.slice(from: 1, to: VERDICT_HEADING.len()) + "` section saying what the yes\n  settles and what it does not. A sitting settled BEFORE it ran is a retro-record\n  and says so under the same heading; there is no exception to teach this check.")
     else
@@ -479,10 +485,18 @@ function sitting_number(path: str) -> i64?
 # What actually went wrong with panels 085-087, and with 069-079 for eight days,
 # was never that they were pending. It was that **no list carried the item**, so
 # nothing asked. So that is what this asks: a sitting may say `Pending` for as
-# long as it likes, provided an OPEN item in `docs/debrief/DECIDE.md` names it.
+# long as it likes, provided an OPEN item in `docs/work/DECIDE.md` names it.
 # The pair is the invariant; neither half alone is.
-constant QUEUE: str
-    "docs/debrief/DECIDE.md"
+#
+# **The constant was called `QUEUE` and held `docs/debrief/QUEUE.md`'s neighbour
+# until 2026-08-26**, which is the confusion the rename fixed one level up: it
+# reads the DECISIONS list, and calling it the queue is what let `/panel`'s own
+# skill file tell a sitting to append its ratification item to the record instead
+# — to the one file this function never opens. A miss here is silent in the worst
+# direction: `read_file` fails, `queued` returns false for every sitting, and
+# every pending panel is reported as unqueued.
+constant DECISIONS: str
+    "docs/work/DECIDE.md"
 
 # Does an OPEN item in the queue name this sitting? The number is the key, because
 # a panel file's name changes and its number does not (CLAUDE.md §14: an id is
@@ -507,7 +521,7 @@ function queued(path: str) -> bool
     digits = sitting_digits(path)
     if digits.is_err()
         return false
-    text = read_file(QUEUE)
+    text = read_file(DECISIONS)
     if text.is_err()
         return false
     padded = "panel " + digits.must()

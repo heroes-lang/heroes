@@ -96,9 +96,20 @@ is a full panel.
    - **the decision is the author's, asynchronously.** The synthesis adopts
      the most conservative resolution, marked `provisional — author
      ratification pending`, records what a veto would compel, and appends an
-     item to `docs/debrief/QUEUE.md`. Work proceeds on the provisional
+     **open** item to `docs/work/DECIDE.md` naming the sitting as `panel NNN`.
+     Work proceeds on the provisional
      default; the author's verdict is appended to this file when given (in
      `/decide` or whenever), with follow-up work if they overturn it.
+
+     **The file and the spelling are both load-bearing, and this line named the
+     wrong file until 2026-08-26.** `tests/harness/suite_records.hero`'s
+     `verdicts` check reads `docs/work/DECIDE.md` and scans its `- [ ]` lines
+     for `panel NNN`: a `Pending` verdict is allowed to stand for as long as the
+     author likes *provided an open item names it*, and that pair is the whole
+     invariant. This line said `QUEUE.md` — the record — so a sitting that
+     obeyed the skill was invisible to the check built to catch it, which is how
+     panels 069-079 sat unratified for eight days. Write `panel 091`, not
+     `panel 91`; both parse, but the padded form is what the repository uses.
    - every judge's `prediction` is copied into a "Predictions to score"
      section with the milestone at which each becomes checkable. When the
      harness next runs, score them and append the results — judges accrue

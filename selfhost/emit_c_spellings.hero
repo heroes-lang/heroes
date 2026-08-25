@@ -10,7 +10,7 @@
 # Fix asks here.
 #
 # Port note — the one divergence in this department, queued in
-# docs/debrief/DECIDE.md. The bootstrap derives the word width from
+# docs/work/DECIDE.md. The bootstrap derives the word width from
 # size_of::<c_ulong>() and names the host OS from env::consts::OS;
 # Heroes has neither, and an extern constant cannot carry a
 # platform-varying width by construction (declaring ULONG_MAX at

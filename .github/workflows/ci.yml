@@ -340,7 +340,7 @@ jobs:
       # quantity the port derives, reaches diagnostics only and never the C.
       # If this ever goes red with a diff that is only spellings, THAT is the
       # finding: the seed would be platform-specific, which nobody has decided,
-      # and it goes to `docs/debrief/DECIDE.md` rather than being papered over.
+      # and it goes to `docs/work/DECIDE.md` rather than being papered over.
       - name: The seed is what today's source emits
         if: runner.os == 'Linux' && (github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
         run: |

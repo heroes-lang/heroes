@@ -16,7 +16,7 @@ for it before a step; no other ceremony attaches to it.)
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
 
-**Opening a milestone also means reading `docs/debrief/SCHEDULED.md` for the
+**Opening a milestone also means reading `docs/work/SCHEDULED.md` for the
 items that name it.** That list is work with a home — a measurement to run, a
 paragraph owed, a row to price — put aside precisely because doing it earlier
 would do it against a smaller corpus or a compiler that had not grown into the
@@ -50,7 +50,7 @@ before reading the fix.
 ## 4. Queue comprehension — per new concept, not per step
 When a step introduces a new concept (first tokens, first tree, first types,
 first blocks, first C…), append 2–4 closed-form items (a count, a choice
-among structures, an output value) to `docs/debrief/LEARN.md`:
+among structures, an output value) to `docs/learn/LEARN.md`:
 `- [ ] <origin> | <question / task> | <where to look> | <why it matters>`
 Plumbing steps — CLI, harness, refactors, bulk cases — add nothing.
 
@@ -66,7 +66,7 @@ Milestone close — the checklist (this is its only copy):
 - one story beat line in `docs/book/beats.md`;
 - a DESIGN-LOG line per decision made;
 - **score every prediction whose milestone this is**, and lapse the ones you
-  cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/debrief/SCHEDULED.md
+  cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/work/SCHEDULED.md
   docs/measurements/010-spec-budget-ledger.md docs/panel/*.md`. (It named
   `crates/heroes/src/measure/gate.rs` until 2026-08-23 — doubly dead: the tree is
   archived, and panel 086 moved the ledger's 38 rows out of that doc comment into

@@ -87,15 +87,41 @@ The assistant implements autonomously and never stops mid-step to ask.
 Everything that once gated progress (predictions, spot-checks, golden
 ratification, failure diagnosis, drills) becomes an entry in
 **three lists, split by what an item asks** (author instruction 2026-08-12):
-`docs/debrief/DECIDE.md` (what should be true), `LEARN.md` (what is true),
-`SCHEDULED.md` (work with a milestone that will do it). `QUEUE.md` keeps the
-record and the index, because every commit subject cites that path.
+`docs/work/DECIDE.md` (what should be true), `docs/learn/LEARN.md` (what is
+true), `docs/work/SCHEDULED.md` (work with a milestone that will do it).
+**A list holds only OPEN items; the moment one is ticked it moves to
+`docs/work/DONE.md`, which is the record** — append-only, never rewritten (§14),
+and read by grep rather than by eye.
+
+**The layout and the names changed on 2026-08-26, by author instruction, and
+what forced it was a rule with no executor.** The move-to-the-record rule was
+already written here, in `DESIGN-LOG:240` and in the record's own preamble, and
+**no skill performed it**: `/decide` ticked an item and left it in place. So the
+record went untouched for eight days while `DECIDE.md` grew into 391 KB holding
+**138 ticked items and zero open ones**, under eighteen headings still titled
+`## Open`. Measured across the four lists that day: **71.8% of 671 KB was closed
+work and 2.9% was live.** Three things follow and each is now a rule rather than
+a habit. The record is called `DONE.md` because it holds finished work — its old
+name claimed the opposite, and the reason given for keeping it (*"every commit
+subject cites that path"*) was **measured false: 24 subjects of 792, 3.0%, the
+last 463 commits before the rename**. `LEARN.md` left `docs/work/` entirely,
+because comprehension is not work owed: it blocks nothing and is opened only
+when the author asks. And the directory is `docs/work/` rather than the debrief
+directory it replaces, which was named after a skill deleted on 2026-08-12.
+(That old path is deliberately not spelled here as a citation: the dead-citation
+check in `tests/harness/suite_records.hero` reads every backticked path in this
+file, and a path that no longer exists is exactly what it exists to catch.)
+
+**One notation, and only one: `- [ ]` and `- [x]`.** A finding written as a bare
+bullet is invisible to every count in this project — which is how nine live FFI
+findings sat in a second, uncounted notation under `DECIDE.md`'s panel 051/052
+headings, two of them measurably stale, while the file reported itself empty.
+
 `/decide` takes the decisions the compiler is waiting on: fast, no teaching, every answer applied in the same session, and every item
 verified against the repository before it is put to the author. `/learn` takes
 the comprehension, **only when the author asks for it** — never convened by the
 assistant, never at a milestone close — and each question arrives with the code
-on screen and a preamble long enough to make it answerable. The queue's path
-keeps its name because every commit subject cites it. Learn-first (questions before implementing) only when the author
+on screen and a preamble long enough to make it answerable. Learn-first (questions before implementing) only when the author
 explicitly asks before a step. The executable protocol lives in `/step` —
 its only home. Lessons stay impersonal: shapes and rules, never scores.
 

@@ -13,6 +13,8 @@ variant case, empty-container inference).
 Status: 0 tasks. The 5 unreviewed assistant drafts were pruned 2026-08-03
 (process simplification — they can be redrafted in minutes when the suite
 becomes runnable). Of the 20: up to 5 may be assistant-drafted and ratified
-in `/debrief`; **15 must be author-written** (the held-out set — the
+in `/decide`; **15 must be author-written** (the held-out set — the
 assistant must NOT write them all, or the suite measures the assistant's
-priors). Queued in `docs/debrief/QUEUE.md`.
+priors). The live item is in `docs/work/SCHEDULED.md`, keyed to **M-guide-book**
+(author decision 2026-08-24, `/decide` answer `8b`) — it said `QUEUE.md` and
+`/debrief` until 2026-08-26, naming the record and a skill deleted 2026-08-12.
