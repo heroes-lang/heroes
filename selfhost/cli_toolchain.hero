@@ -30,10 +30,7 @@
 
 use cli_io
 use cli_flags
-
-extern "stdlib.h"
-    function system(command: cstr) -> i32
-    function getenv(name: cstr) -> cstr
+use cli_shell
 
 record Toolchain
     runtime: str
@@ -54,19 +51,6 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
             return ok(Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint))
     return fail("failed", "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is")
 
-# One argv word, quoted for the POSIX shell: wrapped in single quotes,
-# with every embedded quote spelled '\''. The names a .hero file can
-# carry reach the line only through this, so no source text can hand
-# the shell an unquoted word.
-function sq(text: str) -> str
-    out: str @ "'"
-    for ch in text.chars()
-        if ch == "'"
-            out @ out + "'\\''"
-        else
-            out @ out + ch
-    return out + "'"
-
 # Run one clang line, stderr captured to a file and read back. clang's
 # own words are kept verbatim: a failure here says THE COMPILER is
 # wrong — the generated C is not the author's text — so the caller
@@ -74,7 +58,7 @@ function sq(text: str) -> str
 # the whole point of the flag set: a warning nobody sees cannot
 # falsify anything.
 function run_clang(line: str, what: str, err_path: str) -> ()?
-    status = system(command: (line + " 2> " + sq(err_path)).cstr())
+    status = cli_shell.shell(command: line + " 2> " + cli_shell.sq(err_path))
     noise: str @ ""
     captured = read_file(err_path)
     if !captured.is_err()
@@ -84,18 +68,6 @@ function run_clang(line: str, what: str, err_path: str) -> ()?
             cli_io.eprint_raw(text: noise)
         return ok()
     return fail("clang", what + " failed:\n" + noise)
-
-# One environment variable, or "" where it is unset OR unreadable.
-#
-# **This killed the compiler until 2026-08-24, and the null test
-# everybody looked at was not the reason**: `getenv` also answers a
-# pointer to whatever bytes the environment holds, and `to_str` aborts
-# on bytes that are not UTF-8. `HEROES_RUNTIME=$'\xff\xfe' heroes
-# doctor` was exit 134 (panel 089). `validated` subsumes both cases,
-# and "" is right for both because every call site asks only whether
-# the string is empty.
-function env(name: str) -> str
-    return validated(c: getenv(name: name.cstr())).default("")
 
 function trimmed(text: str) -> str
     cs = text.chars()
@@ -111,13 +83,13 @@ function trimmed(text: str) -> str
 # refuses a directory and chokes on a binary's bytes; `test -e` is the
 # one honest probe the port has.
 function exists(path: str) -> bool
-    return system(command: ("test -e " + sq(path)).cstr()) == 0
+    return cli_shell.shell(command: "test -e " + cli_shell.sq(path)) == 0
 
 function is_directory(path: str) -> bool
-    return system(command: ("test -d " + sq(path)).cstr()) == 0
+    return cli_shell.shell(command: "test -d " + cli_shell.sq(path)) == 0
 
 function mkdir_all(path: str) -> ()?
-    if system(command: ("mkdir -p " + sq(path)).cstr()) != 0
+    if cli_shell.shell(command: "mkdir -p " + cli_shell.sq(path)) != 0
         return fail("failed", "cannot create " + path)
     return ok()
 
@@ -156,7 +128,7 @@ function hex8(number: i64) -> str
 function runtime_text(t: Toolchain) -> str
     gathered = t.build + "/runtime-sources.txt"
     _ = mkdir_all(t.build)
-    _ = system(command: ("cat " + sq(t.runtime) + "/*.c " + sq(t.runtime) + "/*.h " + sq(t.runtime) + "/parts/*.c " + sq(t.runtime) + "/parts/*.h > " + sq(gathered) + " 2>/dev/null").cstr())
+    _ = cli_shell.shell(command: "cat " + cli_shell.sq(t.runtime) + "/*.c " + cli_shell.sq(t.runtime) + "/*.h " + cli_shell.sq(t.runtime) + "/parts/*.c " + cli_shell.sq(t.runtime) + "/parts/*.h > " + cli_shell.sq(gathered) + " 2>/dev/null")
     found = read_file(gathered)
     if found.is_err()
         return ""
@@ -193,11 +165,11 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     if exists(object)
         return ok(object)
     staged = object + ".tmp"
-    line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c " + sq(t.runtime + "/runtime.c") + " -I " + sq(t.runtime) + " -o " + sq(staged)
+    line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c " + cli_shell.sq(t.runtime + "/runtime.c") + " -I " + cli_shell.sq(t.runtime) + " -o " + cli_shell.sq(staged)
     ran = run_clang(line: line, what: "compiling the runtime", err_path: t.build + "/clang-stderr.txt")
     if ran.is_err()
         ran?
-    if system(command: ("mv -f " + sq(staged) + " " + sq(object)).cstr()) != 0
+    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(object)) != 0
         return fail("failed", "cannot publish " + object)
     return ok(object)
 
@@ -209,7 +181,7 @@ function bool_text(value: bool) -> str
 function words(list: [str]) -> str
     quoted: [str] @ []
     for one in list
-        quoted @ quoted.push(sq(one))
+        quoted @ quoted.push(cli_shell.sq(one))
     return quoted.join(" ")
 
 # Compile one generated unit and link it with the runtime. The unit is
@@ -229,35 +201,35 @@ function link(t: Toolchain, c_file: str, object: str, binary: str, level: str, s
     staged_object = unit_object + ".tmp"
     compile_line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c"
     for dir in search_include
-        compile_line @ compile_line + " -I " + sq(dir)
+        compile_line @ compile_line + " -I " + cli_shell.sq(dir)
     for flag in package_flags
         if starts_with(text: flag, prefix: "-I")
-            compile_line @ compile_line + " " + sq(flag)
-    compile_line @ compile_line + " " + sq(c_file) + " -I " + sq(t.runtime)
+            compile_line @ compile_line + " " + cli_shell.sq(flag)
+    compile_line @ compile_line + " " + cli_shell.sq(c_file) + " -I " + cli_shell.sq(t.runtime)
     if source_dir.len() > 0
-        compile_line @ compile_line + " -I " + sq(source_dir)
-    compile_line @ compile_line + " -o " + sq(staged_object)
+        compile_line @ compile_line + " -I " + cli_shell.sq(source_dir)
+    compile_line @ compile_line + " -o " + cli_shell.sq(staged_object)
     compiled = run_clang(line: compile_line, what: "compiling the generated C", err_path: err_path)
     if compiled.is_err()
         compiled?
-    if system(command: ("mv -f " + sq(staged_object) + " " + sq(unit_object)).cstr()) != 0
+    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged_object) + " " + cli_shell.sq(unit_object)) != 0
         return fail("failed", "cannot publish " + unit_object)
     link_line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize))
     for dir in search_include
-        link_line @ link_line + " -I " + sq(dir)
+        link_line @ link_line + " -I " + cli_shell.sq(dir)
     for dir in search_library
-        link_line @ link_line + " -L " + sq(dir)
-    link_line @ link_line + " " + sq(unit_object) + " " + sq(object)
+        link_line @ link_line + " -L " + cli_shell.sq(dir)
+    link_line @ link_line + " " + cli_shell.sq(unit_object) + " " + cli_shell.sq(object)
     for flag in package_flags
-        link_line @ link_line + " " + sq(flag)
+        link_line @ link_line + " " + cli_shell.sq(flag)
     for name in link_names
-        link_line @ link_line + " " + sq("-l" + name)
+        link_line @ link_line + " " + cli_shell.sq("-l" + name)
     staged = binary + ".tmp"
-    link_line @ link_line + " -o " + sq(staged)
+    link_line @ link_line + " -o " + cli_shell.sq(staged)
     linked = run_clang(line: link_line, what: "linking", err_path: err_path)
     if linked.is_err()
         linked?
-    if system(command: ("mv -f " + sq(staged) + " " + sq(binary)).cstr()) != 0
+    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(binary)) != 0
         return fail("failed", "cannot publish " + binary)
     return ok()
 
@@ -275,9 +247,7 @@ function starts_with(text: str, prefix: str) -> bool
 
 ## Tests
 
-test "quoting, digesting, probing — the shell spoken safely"
-    assert sq(text: "plain.c") == "'plain.c'"
-    assert sq(text: "it's") == "'it'\\''s'"
+test "digesting and probing — the shell spoken safely"
     assert digest(text: "abc") == digest(text: "abc")
     assert digest(text: "abc") != digest(text: "abd")
     assert digest(text: "").len() == 16

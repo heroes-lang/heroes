@@ -65,6 +65,27 @@ function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnosti
     d.fixes @ d.fixes.push(diag.Fix(title: "write `" + module + "." + name + "` (and add `use " + module + "`)", replacement: module + "." + name, span: span, certainty: .guess))
     return d
 
+# An `extern` reached from another module (panel 033 R5, carried by
+# M-separate-compilation acceptance row 1). clang verifies an extern
+# against its header only in the translation unit that declares it, so a
+# cross-module mention would be compiled where the header's checks are
+# not — the shape row 1 exists to prevent, measured: a caller built on a
+# compiler-written prototype took a double-returning C function declared
+# `-> i64` at exit 0 and printed 3 where the truth is 3.5 (panel 091).
+# One diagnostic for both spellings (qualified, and the library's
+# unqualified reach) and for both uses — a call, and taking the function
+# as a value, because the address needs the header exactly as the call
+# does. The library arm names the route a reader can actually take: its
+# externs are all wrapped, and the wrapper is the Heroes function.
+function extern_across_modules(name: str, module: str, is_library: bool, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "extern_across_modules", message: "`" + name + "` is an `extern` of module `" + module + "` — an extern is never callable across a module boundary, because only `" + module + "` carries the header that checks it", span: span)
+    if is_library
+        d.message @ "`" + name + "` is the library's own `extern` — an extern is never callable across a module boundary, and the library is a module"
+        d.notes @ d.notes.push("§4.19: every extern the library declares is wrapped by a library function, and the wrapper is the route — it adds the checks the raw extern does not have")
+    else
+        d.notes @ d.notes.push("§4.19: write a Heroes function beside the `extern` in `" + module + "` and call that — the wrapper is compiled in the module whose header clang checks")
+    return d
+
 # A module name standing on its own. It is not a value in any position —
 # only a dot may follow it — and "unknown name" would be a lie about a name
 # the file's own `use` line put there.

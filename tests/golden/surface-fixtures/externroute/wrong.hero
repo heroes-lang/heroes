@@ -1,0 +1,10 @@
+# Every spelling row 1 refuses, in one file: the qualified call, and the
+# extern taken as a value — the address needs the header exactly as the
+# call does, so both are error[extern_across_modules].
+
+use bind
+
+function main()
+    status = bind.system(command: "true".cstr())    #~ extern_across_modules
+    print(to_i64(status).must())
+    _ = bind.system                                 #~ extern_across_modules

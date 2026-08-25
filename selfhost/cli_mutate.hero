@@ -27,6 +27,7 @@ use cli_argv
 use cli_io
 use cli_table
 use cli_toolchain
+use cli_shell
 use library_source
 use mutate_ops
 use mutate_score
@@ -68,8 +69,8 @@ function run(inv: cli_argv.Invocation) -> cli_table.Exit
 # Every `.hero` file under `dir`, sorted, with its text.
 function corpus(dir: str) -> [mutate_score.Program]?
     _ = cli_toolchain.mkdir_all("build")
-    line = "find " + cli_toolchain.sq(dir) + " -type f -name '*.hero' -print0 > " + cli_toolchain.sq(LISTING)
-    if cli_toolchain.system(command: line.cstr()) != 0
+    line = "find " + cli_shell.sq(dir) + " -type f -name '*.hero' -print0 > " + cli_shell.sq(LISTING)
+    if cli_shell.shell(command: line) != 0
         return fail("no_corpus", "cannot read " + dir)
     listing = read_file(LISTING)
     if listing.is_err()
@@ -137,8 +138,8 @@ test "the NUL split keeps a name that holds a newline whole"
 function one_nul() -> str
     _ = cli_toolchain.mkdir_all("build")
     path = "build/mutate-nul-selftest"
-    line = "printf 'x\\000y' > " + cli_toolchain.sq(path)
-    _ = cli_toolchain.system(command: line.cstr())
+    line = "printf 'x\\000y' > " + cli_shell.sq(path)
+    _ = cli_shell.shell(command: line)
     got = read_file(path)
     if got.is_err()
         return ""

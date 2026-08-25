@@ -55,7 +55,6 @@ constant DECIDED: [str]
         "selfhost/ast.hero 495"
         "selfhost/ir_print.hero 485"
         "selfhost/emit_ctype.hero 377"
-        "selfhost/resolve_walk.hero 366"
         "selfhost/ir_mono.hero 363"
         "selfhost/check_builtins.hero 344"
         "selfhost/resolve_cycles.hero 341"
@@ -151,4 +150,4 @@ test "the ceiling is per file, and a decided file keeps its own"
     assert ceiling_for("selfhost/ir_lower.hero") == 1389
     assert ceiling_for("selfhost/source.hero") == 304
     assert ceiling_for("selfhost/anything-else.hero") == CEILING
-    assert DECIDED.len() == 17
+    assert DECIDED.len() == 16

@@ -1,0 +1,53 @@
+# The process boundary: the compiler's one extern group, the Heroes
+# functions that are its route, and the quoting that keeps a filename
+# from ever reaching the shell unquoted. Split out of cli_toolchain at
+# M-separate-compilation step 5 — the routing wrapper took that file
+# past §11's ceiling, and this seam is the one step 6's cache work will
+# not touch: the toolchain owns WHAT to run, this module owns HOW a
+# command line leaves the process.
+#
+# Panel 033 R5 (acceptance row 1) is why the wrappers exist: an extern
+# is never callable across a module boundary, so `shell` and `env` are
+# the route every other module takes — compiled here, in the one
+# translation unit that carries stdlib.h's checks.
+
+extern "stdlib.h"
+    function system(command: cstr) -> i32
+    function getenv(name: cstr) -> cstr
+
+function shell(command: str) -> i32
+    return system(command: command.cstr())
+
+# One environment variable, or "" where it is unset OR unreadable.
+#
+# **This killed the compiler until 2026-08-24, and the null test
+# everybody looked at was not the reason**: `getenv` also answers a
+# pointer to whatever bytes the environment holds, and `to_str` aborts
+# on bytes that are not UTF-8. `HEROES_RUNTIME=$'\xff\xfe' heroes
+# doctor` was exit 134 (panel 089). `validated` subsumes both cases,
+# and "" is right for both because every call site asks only whether
+# the string is empty.
+function env(name: str) -> str
+    return validated(c: getenv(name: name.cstr())).default("")
+
+# One argv word, quoted for the POSIX shell: wrapped in single quotes,
+# with every embedded quote spelled '\''. The names a .hero file can
+# carry reach the line only through this, so no source text can hand
+# the shell an unquoted word.
+function sq(text: str) -> str
+    out: str @ "'"
+    for ch in text.chars()
+        if ch == "'"
+            out @ out + "'\\''"
+        else
+            out @ out + ch
+    return out + "'"
+
+## Tests
+
+test "quoting survives the quote itself, and the wrappers answer"
+    assert sq("plain") == "'plain'"
+    assert sq("we'ird") == "'we'\\''ird'"
+    # A command that exists answers 0; an unset variable answers "".
+    assert shell(command: "true") == 0
+    assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS") == ""

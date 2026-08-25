@@ -44,7 +44,20 @@ function qualified(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
         decl = found.must()
         match decls[decl].kind
             .variant_decl => resolve_state.push_diagnostic(@r, resolve_errors.variant_in_value_position(text, span: called))
-            .record_decl | .function_decl | .constant_decl | .test_decl => resolve_state.record_use(@r, at: at, to: .top(at: decl))
+            .function_decl fd =>
+                # Panel 033 R5, M-separate-compilation row 1: an extern is
+                # never callable across a module boundary. The gate sits on
+                # the REFERENCE, not the call, because this one point sees
+                # every qualified mention — a call, and the function taken
+                # as a value, whose address needs the header all the same.
+                # A group's records and constants stay reachable: their C
+                # is compiler-written on both sides, so the header is only
+                # needed where they are declared.
+                if fd.value.is_extern
+                    resolve_state.push_diagnostic(@r, module_errors.extern_across_modules(name: text, module: module, is_library: false, span: called))
+                else
+                    resolve_state.record_use(@r, at: at, to: .top(at: decl))
+            .record_decl | .constant_decl | .test_decl => resolve_state.record_use(@r, at: at, to: .top(at: decl))
         return true
     names = resolved.names_in(r.out, module)
     near = resolve_state.near_names(@r, text, names)
@@ -113,6 +126,14 @@ function a_function_decl(name_start: i64, name_end: i64) -> ast.Decl
     span = token.Span(start: name_start, end: name_end)
     return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
 
+function an_extern_decl(name_start: i64, name_end: i64) -> ast.Decl
+    doc: [token.Span] = []
+    ps: [ast.Param] = []
+    gs: [token.Span] = []
+    f = ast.FunctionDecl(generics: gs, params: ps, result: 0, body: fail("absent", "unused"), is_extern: true, header: ok(token.Span(start: 0, end: 4)), library: fail("absent", "none"))
+    span = token.Span(start: name_start, end: name_end)
+    return ast.Decl(name: span, doc: doc, span: span, kind: .function_decl(value: f))
+
 test "a module in receiver position is decided before values are"
     s = fixture()
     a: ast.Ast @ ast.new_ast()
@@ -128,6 +149,21 @@ test "a module in receiver position is decided before values are"
     assert r.out.diagnostics.len() == 0
     assert r.out.uses[receiver] == .module
     assert r.out.uses[call_node] == .top(at: 0)
+
+test "a qualified extern is refused — the reference, so call and value alike"
+    s = fixture()
+    a: ast.Ast @ ast.new_ast()
+    receiver = name_expr(@a, start: 0, end: 4)
+    call_node = name_expr(@a, start: 5, end: 10)
+    decls: [ast.Decl] @ [an_extern_decl(name_start: 5, name_end: 10)]
+    r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: 2, type_count: 0)
+    r.module @ "t"
+    resolved.declare_use(@r.out, from: "t", module: "geom")
+    resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
+    handled = qualified(@r, a, s, decls, at: call_node, receiver: receiver, called: token.Span(start: 5, end: 10))
+    assert handled
+    assert r.out.diagnostics.len() == 1
+    assert r.out.diagnostics[0].code == "extern_across_modules"
 
 test "a local wearing the module's name turns the dot back into UFCS"
     s = fixture()
