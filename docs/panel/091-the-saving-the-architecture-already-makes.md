@@ -272,4 +272,38 @@ Recorded for the next sitting that tries one.
 
 ## Author's verdict
 
-*Pending.* Queued in `docs/debrief/DECIDE.md`.
+**Ratified 2026-08-25**, the day it closed (author instruction, *"ok ratifica"*).
+The resolution stands: **nothing is pruned**, +0 spec tokens, +0 compiler lines,
+and the 138-of-155 multiplier dies with the milestone's own architecture rather
+than with code.
+
+**What the yes settles.** Panel 087's queued half is closed: a new `extern
+constant` costs **+2 lines in exactly one translation unit**, not in every
+program in the language — so the objection that an FFI addition taxes the whole
+language is answered by where the block lands, not by whether it is written.
+Reachability pruning is refused for the emitter's extern half **on §1.12
+grounds**, with the measurement rather than the argument doing the work: the
+probe is the only instrument that sees a `size_t` out-parameter declared `i32`,
+and executing that conversion destroyed four bytes of an adjacent object with
+ASan and UBSan silent at exit 0.
+
+**What the yes does not settle**, written down so nobody reads the silence as a
+ruling:
+
+- **The refusal is scoped to reachability, not to placement.** If a future
+  milestone finds a group that genuinely lands in more than one TU, declare-site
+  emission is already the adopted shape and needs no new sitting — it is
+  acceptance row 1's consequence, and the ffi-pragmatist's *F-restricted* names
+  the boundary: the `#include` and the `-l` stay in every unit that needs them,
+  unconditional.
+- **The compiler-engineer's prediction is the thing that would overturn this.**
+  If, at the milestone's close, a `print(1)` program's own `main.c` still carries
+  the library's 13 assertions, then the duplication survived the architecture and
+  option B was needed after all. That is scored, not assumed.
+- **The ergonomist's third wording stays unspent.** Under A the sentence at
+  `spec:203` is already true, so nothing is bought by saying *"declared, not just
+  called"*. It is the first wording to price if pruning is ever reopened.
+- **Four findings left this sitting as work rather than as ruling** and are in
+  `SCHEDULED.md` and `DECIDE.md` with their homes. The heaviest is not this
+  sitting's subject at all: `spec:204` commands a parameter's width and sign and
+  the compiler checks only its **kind**.
