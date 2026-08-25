@@ -96,9 +96,24 @@ function call(@w: emit_writer.Writer, p: ir_state.Program, f: ir_state.Function,
             # "read a result". A cstr receives a character pointer
             # whose sign C distinguishes — const char * covers all six
             # spellings because they are all strings.
+            #
+            # ONLY WHERE THERE IS AN ASSIGNMENT (panel 092). The cast is
+            # what makes `t3 = f(...)` legal; with the result discarded
+            # there is nothing to assign and the line becomes a cast
+            # expression whose value is unused — `warning: expression
+            # result unused; should this cast be to 'void'?` on the
+            # AUTHOR's own `.hero` line, for a correct program, at exit
+            # 0. Two shapes carried it, `(void *)memset(...)` and
+            # `(const char *)getenv(...)`; an integer result emitted a
+            # bare call and was exempt, which is why no golden covers it.
+            # §7 says the generated C compiles without a single warning,
+            # and the compiler's own warning must never be routed to the
+            # author, under any option this sitting weighed.
             cast: str @ ""
+            if assign.len() == 0
+                cast @ "(void)"
             for candidate in p.functions
-                if candidate.decl == e.decl
+                if candidate.decl == e.decl && assign.len() > 0
                     match check_table.get(c.types, candidate.result)
                         .ptr => cast @ "(void *)"
                         .cstr => cast @ "(const char *)"

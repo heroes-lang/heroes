@@ -78,8 +78,27 @@ function extern_probes(@w: emit_writer.Writer, p: ir_state.Program, c: check_sta
 # argument clang's column points at. Rebuilding is exact because the
 # line is a pure function of the declaration; reading clang's echoed
 # source line instead is the trap panel 038 paid for.
+#
+# THE CALLEE IS PARENTHESISED, AND THAT IS THE WHOLE CHECK FOR HALF OF
+# libc (panel 092). `(void)memset(a0, a1, a2)` does not reach `memset`:
+# on a fortified SDK the name is a MACRO, and `clang -E` shows what the
+# probe really compiles —
+#     (void)__builtin___memset_chk (a0, a1, a2, __builtin_object_size (a0, 0))
+# — a rewrite that discards the conversion diagnostics this probe exists
+# to provoke. `memset(n: i32)` against `size_t` was exit 0 for it, while
+# `strncmp`, `malloc`, `calloc`, `abs` and `fwrite` — all clang builtins,
+# none of them fortified — were caught all along. So the cause was never
+# builtins and `-fno-builtin` never helped: a MACRO was doing the
+# redirect, and `(memset)(…)` is not a function-like macro invocation.
+# Two lines, and `memset(n: i32)` goes exit 0 -> exit 1.
+#
+# What it costs is §4.19's macro promise for a MACRO-ONLY name:
+# `(htonl)(a0)` is `use of undeclared identifier`, and so is `(&htonl)`.
+# Measured: 44 distinct C functions are probed by the corpus and none is
+# macro-only, so nothing fires today — but the promise is in the document
+# and the golden case is owed (docs/panel/092 § Where the seats disagreed).
 function probe_line(probe: str, name: str, parameters: [str], arguments: [str]) -> str
-    return "__attribute__((unused)) static void " + probe + "(" + parameters.join(", ") + ") { (void)" + name + "(" + arguments.join(", ") + "); }"
+    return "__attribute__((unused)) static void " + probe + "(" + parameters.join(", ") + ") { (void)(" + name + ")(" + arguments.join(", ") + "); }"
 
 # Where each argument begins in probe_line's output, in the 1-based
 # column numbering clang reports. The caret of a conversion diagnostic
@@ -87,7 +106,7 @@ function probe_line(probe: str, name: str, parameters: [str], arguments: [str]) 
 # a parameter index.
 function argument_columns(probe: str, name: str, parameters: [str], arguments: [str]) -> [i64]
     line = probe_line(probe: probe, name: name, parameters: parameters, arguments: arguments)
-    opens = "(void)" + name + "("
+    opens = "(void)(" + name + ")("
     found = find_text(line: line, needle: opens)
     if found.is_err()
         none: [i64] = []
@@ -203,9 +222,9 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
     extern_probes(@w, low.program, c, names, s, parsed.decls)
     got = emit_writer.finish(w)
     # The probe's name goes through the mangler; the C name does not.
-    assert has(text: got, needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)narrow(a0); }")
+    assert has(text: got, needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)(narrow)(a0); }")
     # An @ parameter is declared the way the call site passes it.
-    assert has(text: got, needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)fill(a0, a1); }")
+    assert has(text: got, needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)(fill)(a0, a1); }")
     # A zero-parameter extern gets no probe at all.
     assert !has(text: got, needle: "hero_ffi_probe_h_t_version")
     # #line at the declaration's own line.
