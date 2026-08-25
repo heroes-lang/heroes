@@ -1,12 +1,12 @@
 ---
 name: decide
-description: Settle the open DECISIONS the compiler is waiting on, from the decision list (docs/debrief/DECIDE.md) — fast, no teaching. Verify each item against the repository before asking; a settled question put to the author is the one cost this skill cannot pay. Apply every answer in the same session.
+description: Settle the open DECISIONS the compiler is waiting on, from the decision list (docs/work/DECIDE.md) — fast, no teaching. Verify each item against the repository before asking; a settled question put to the author is the one cost this skill cannot pay. Apply every answer in the same session.
 ---
 
 # /decide [n] — the decisions, and nothing else
 
 Split from `/learn` by author instruction (2026-08-12), and named after the list
-it reads — `docs/debrief/DECIDE.md` — because a skill whose name does not match
+it reads — `docs/work/DECIDE.md` — because a skill whose name does not match
 its list is one more thing to remember. The queue held two kinds of item with
 **opposite clocks**: a decision left open goes on shaping
 the code by default, an explanation left unread costs nothing until it is wanted.
@@ -19,7 +19,7 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
 
 ## Procedure
 
-1. **Read `docs/debrief/DECIDE.md`.** The triage is already done — the queue was
+1. **Read `docs/work/DECIDE.md`.** The triage is already done — the queue was
    split into three lists on 2026-08-12 — so this step is only checking that
    nothing arrived in the wrong one. An item that asks *what is true* belongs in
    `LEARN.md` however interesting, and one that names the milestone which will do

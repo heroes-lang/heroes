@@ -79,7 +79,7 @@ function collect(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl]) -> [Edge]
             # that also declares a function reported `Thing contains
             # itself`, because the shifted `from` collided with the
             # resolver's correct `to`. The self-mutation is the no-op
-            # this language has (docs/debrief/DECIDE.md's item).
+            # this language has (docs/work/DECIDE.md's item).
             .constant_decl | .function_decl | .test_decl => index @ index
         index @ index + 1
     return edges

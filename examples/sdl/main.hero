@@ -31,7 +31,7 @@
 # is a **hang**: two processes at 0% CPU for ninety minutes.
 #
 # SDL3 has neither. There is no `SDL3main` — the library was dropped — and no
-# shim underneath. `docs/debrief/DECIDE.md` carries what the episode found, which
+# shim underneath. `docs/work/DECIDE.md` carries what the episode found, which
 # is that this allow-list's property test asks what a flag does at **build** time
 # and both of those things happen at **run** time.
 #

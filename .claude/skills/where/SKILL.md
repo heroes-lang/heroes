@@ -22,7 +22,12 @@ git log --oneline -15
 git tag --list --sort=creatordate
 tail -8 DESIGN-LOG.md
 head -40 docs/ROADMAP.md          # § Status + § The order: where we are, what is next
-cat docs/debrief/QUEUE.md         # open items = everything owed to the author
+cat docs/work/DECIDE.md           # open decisions = what the compiler is waiting on
+cat docs/work/SCHEDULED.md        # open work, each item naming the milestone that does it
+                                  # (this said `QUEUE.md` until 2026-08-26 — the RECORD,
+                                  #  which holds only closed items and had held zero open
+                                  #  ones since the 2026-08-12 split. The skill reported a
+                                  #  finished archive as the author's outstanding work.)
 ./heroes run tests/harness/main.hero -- ./heroes 2>&1 | tail -2   # green or red, one line
                                   # (`cargo test` until M-bootstrap-archive; the
                                   #  Rust it ran is archive/bootstrap-rs/ now)
@@ -69,10 +74,16 @@ has never heard the word "compilatore". Rules:
   mental model accumulates instead of resetting.
 
 ### 4. «Tocca a te» — the author's pending items (never blocking)
-Summarize the open `docs/debrief/QUEUE.md` items (ratifications, drills,
-baseline run, exercises), each with the file path and why it is worth their
-time — e.g. *la diagnosi ha più valore se provi a indovinare la causa prima
-di leggere il fix*. Make clear nothing is waiting on them to proceed.
+Summarize the **open** items of `docs/work/DECIDE.md` (what the compiler is
+waiting on) and `docs/work/SCHEDULED.md` (work with a milestone), each with the
+file path and why it is worth their time — e.g. *la diagnosi ha più valore se
+provi a indovinare la causa prima di leggere il fix*. Make clear nothing is
+waiting on them to proceed.
+
+**Two files this step must not read.** `docs/work/DONE.md` is the record: it is
+all closed, so summarising it reports finished work as owed. `docs/learn/LEARN.md`
+is comprehension and is **never** offered here — it exists when the author asks
+for it (`/learn`'s own rule), and listing it turns an offer into a debt.
 
 ### 5. «La pillola di oggi» — one micro-lesson
 ONE concept (3–5 sentences max), tied to the current stage, with its analogy.

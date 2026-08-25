@@ -41,12 +41,14 @@ One person, learning. Not a compiler expert. On macOS (Apple Silicon). The imple
 written largely with your help, which means the author's learning comes from *retrieval, testing,
 and debugging* rather than from typing — and it runs **on the author's clock, never as a gate on
 the work** (protocol inverted 2026-08-03, author instruction; the executable form lives in the
-`/step` and `/debrief` skills). Three consequences that should shape how you work:
+`/step`, `/decide` and `/learn` skills — **`/debrief` was split into the last two on 2026-08-12 and
+deleted, and this sentence went on naming it for a fortnight**). Three consequences that should
+shape how you work:
 
 1. **Implement first; queue the understanding.** The assistant never stops mid-step to ask.
    Everything worth understanding — a new concept, a surprising output, a design default — becomes
-   an entry in `docs/debrief/QUEUE.md`, processed in `/debrief` sessions when the author chooses.
-   Inside a debrief, retrieval still comes first: the question before the explanation, because the
+   an entry in `docs/learn/LEARN.md`, read in `/learn` sessions **when the author asks and never
+   otherwise**. Retrieval still comes first: the question before the explanation, because the
    gap between the author's guess and reality is the lesson.
 2. **The assistant writes the tests; the author ratifies them.** Golden tests (a directory of
    `.hero` files each paired with expected output) remain the single most important artifact of
@@ -300,7 +302,7 @@ a clock with a free reset is the one mechanism the record shows failing: IETF In
 at six months and are re-posted unchanged (the draft to abolish expiry expired), sunset clauses are
 renewed by the inertia they were meant to overcome, and FDAAA 801's 12-month deadline ran fourteen
 years to its first notice, has never produced a fine, and sits at 41% compliance. This project has
-already run the clock version and lost: `docs/debrief/SCHEDULED.md`'s panel-036 item says *"Score at
+already run the clock version and lost: `docs/work/SCHEDULED.md`'s panel-036 item says *"Score at
 M-ffi-ladder close"* and was still open after that milestone closed.
 
 **What the raise is not backed by, recorded rather than argued away** (panel 024). The mortgage above

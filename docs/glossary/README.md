@@ -9,7 +9,9 @@ note. An entry is born one of two ways:
   needs a genuinely new explanation, the one that worked is distilled here
   so it never has to be reinvented.
 - **Prerequisite** — the two planned notes are queued as author exercises in
-  `docs/debrief/QUEUE.md` and will be born from those sessions:
+  `docs/learn/LEARN.md` (the comprehension list; it was `docs/debrief/QUEUE.md`
+  when this was written, and both milestones named below have since closed) and
+  will be born from those sessions:
   bidirectional-type-checking (before M-checker-core) and core-vs-sugar (before M-ir-lowering).
   basic-block (M-day-zero) already **landed** — see index.
 
