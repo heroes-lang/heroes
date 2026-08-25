@@ -227,7 +227,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         result @ parse_type.parse_type(@c, @a, text)
     else
         here = cursor.current_span(c)
-        result @ ast.push_type(@a, ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start)))
+        result @ ast.push_type(@a.types, ast.TypeNode(kind: .unit, span: token.Span(start: here.start, end: here.start)))
     body: ast.Block? @ fail("absent", "an extern function's code comes from C")
     if is_extern
         body_check(@c, "function")

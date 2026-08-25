@@ -116,7 +116,7 @@ function fixture() -> source.Source
     return source.new_source(name: "t.hero", text: "geom dist2 x\n")
 
 function name_expr(@a: ast.Ast, start: i64, end: i64) -> i64
-    return ast.push_expr(@a, ast.Expr(kind: .name, span: token.Span(start: start, end: end)))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .name, span: token.Span(start: start, end: end)))
 
 function a_function_decl(name_start: i64, name_end: i64) -> ast.Decl
     doc: [token.Span] = []

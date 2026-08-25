@@ -38,14 +38,14 @@ function parse_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     while cursor.at(c, .lbracket)
         open = cursor.bump(@c).span
         length = fixed_length(@c, text, open)
-        inner @ ast.push_type(@a, ast.TypeNode(kind: .fixed(element: inner, length: length), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end)))
+        inner @ ast.push_type(@a.types, ast.TypeNode(kind: .fixed(element: inner, length: length), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end)))
     if !cursor.at(c, .question)
         return inner
     question = cursor.bump(@c).span
     while cursor.at(c, .question)
         extra = cursor.bump(@c).span
         cursor.error(@c, code: "nested_fallible", message: "a fallible type cannot be fallible twice — `T?` already carries the error case (§4.6)", span: extra)
-    return ast.push_type(@a, ast.TypeNode(kind: .fallible(inner: inner), span: token.Span(start: start.start, end: question.end)))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .fallible(inner: inner), span: token.Span(start: start.start, end: question.end)))
 
 ## The six shapes, each decided by its first token
 
@@ -62,7 +62,7 @@ function prefix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     if !cursor.at_reported_error(c)
         cursor.error(@c, code: "expected_type", message: "expected a type, found " + cursor.found(c, text) + " — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`", span: cursor.current_span(c))
     # Not consumed: the caller's recovery decides where the line ends.
-    return ast.push_type(@a, ast.TypeNode(kind: .error, span: cursor.current_span(c)))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .error, span: cursor.current_span(c)))
 
 # A name, and `geom.Point` — a type from another module. The node keeps one span
 # covering both halves and the resolver splits it: a module name and a type name
@@ -74,9 +74,9 @@ function named(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         _ = cursor.bump(@c)
         if cursor.at(c, .ident)
             name = cursor.bump(@c).span
-            return ast.push_type(@a, ast.TypeNode(kind: .named, span: token.Span(start: s.start, end: name.end)))
+            return ast.push_type(@a.types, ast.TypeNode(kind: .named, span: token.Span(start: s.start, end: name.end)))
         cursor.error(@c, code: "expected_qualified_type", message: "expected a type after `" + cursor.slice_of(text, s) + ".`, — a qualified type is `module.Type`, as in `geom.Point`", span: cursor.current_span(c))
-    return ast.push_type(@a, ast.TypeNode(kind: .named, span: s))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .named, span: s))
 
 # `[T]` — the dynamic array, and Heroes' only indirection (§4.10).
 function array_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
@@ -84,7 +84,7 @@ function array_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     element = parse_type(@c, @a, text)
     close = cursor.current_span(c)
     _ = cursor.expect(@c, text: text, kind: .rbracket, code: "expected_array_close", what: "`]` to close the array type")
-    return ast.push_type(@a, ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: open.start, end: close.end)))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: open.start, end: close.end)))
 
 # `{K: V}` — the map. Access returns `V?`, always (§4.9).
 function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
@@ -94,7 +94,7 @@ function map_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     value = parse_type(@c, @a, text)
     close = cursor.current_span(c)
     _ = cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map type")
-    return ast.push_type(@a, ast.TypeNode(kind: .map_of(key: key, value: value), span: token.Span(start: open.start, end: close.end)))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .map_of(key: key, value: value), span: token.Span(start: open.start, end: close.end)))
 
 # `()` or `(function(A, B) -> C)`.
 #
@@ -105,19 +105,19 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     open = cursor.bump(@c).span
     if cursor.at(c, .rparen)
         close = cursor.bump(@c).span
-        return ast.push_type(@a, ast.TypeNode(kind: .unit, span: token.Span(start: open.start, end: close.end)))
+        return ast.push_type(@a.types, ast.TypeNode(kind: .unit, span: token.Span(start: open.start, end: close.end)))
     if !cursor.expect(@c, text: text, kind: .kw_function, code: "expected_function_type", what: "`function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`")
         # This `(` was consumed here, so its `)` is this function's to find:
         # leaving it for the caller made a signature containing one bad type
         # report the mistake three times.
         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
-        return ast.push_type(@a, ast.TypeNode(kind: .error, span: open))
+        return ast.push_type(@a.types, ast.TypeNode(kind: .error, span: open))
     params = function_params(@c, @a, text)
     _ = cursor.expect(@c, text: text, kind: .arrow, code: "expected_function_type_arrow", what: "`->` and the result type — a function type always states what it returns, `()` when nothing")
     result = parse_type(@c, @a, text)
     close = cursor.current_span(c)
     _ = cursor.expect(@c, text: text, kind: .rparen, code: "expected_function_type_close", what: "`)` to close the function type")
-    return ast.push_type(@a, ast.TypeNode(kind: .function_type(params: params, result: result), span: token.Span(start: open.start, end: close.end)))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .function_type(params: params, result: result), span: token.Span(start: open.start, end: close.end)))
 
 # The parameter TYPES of a function type: `(i64, i64)`, or `()` for a function
 # of no arguments. Names belong to a signature, not to a type — writing one is a

@@ -222,7 +222,13 @@ test "payloads come before their variant, and every option gets four functions"
     payload_at: i64 @ 0 - 1
     outer_at: i64 @ 0 - 1
     scan: i64 @ 0
-    stop = body_text.len() - 30
+    # Room for the LONGEST needle below, not for the shortest: the two
+    # were 30 and 21 bytes until `HERO_TU_LOCAL ` was prefixed to every
+    # per-type function, which made them 44 and 35 and left this bound
+    # 14 bytes short — so the last slice ran past the end of the string
+    # and the test aborted, exactly as spec:151 promises. The needle and
+    # the bound have to move together.
+    stop = body_text.len() - 44
     while scan <= stop
         if body_text.slice(from: scan, to: scan + 44) == "HERO_TU_LOCAL bool h_t_Tok_c_word_eq(const h"
             if payload_at < 0

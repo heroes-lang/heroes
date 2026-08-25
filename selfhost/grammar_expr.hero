@@ -146,7 +146,7 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
                 _ = cursor.bump(@c)
                 right = binary(@c, @a, text, operator.power + 1)
                 span = token.Span(start: a.exprs[left].span.start, end: a.exprs[right].span.end)
-                left @ ast.push_expr(@a, ast.Expr(kind: .binary(op: operator.op, left: left, right: right), span: span))
+                left @ ast.push_expr(@a.exprs, ast.Expr(kind: .binary(op: operator.op, left: left, right: right), span: span))
     return left
 
 ## Entry point 2 — a pattern's operand
@@ -183,7 +183,7 @@ function unary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.bump(@c).span
     operand = unary(@c, @a, text)
     span = token.Span(start: start.start, end: a.exprs[operand].span.end)
-    return ast.push_expr(@a, ast.Expr(kind: .unary(op: op, operand: operand), span: span))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: op, operand: operand), span: span))
 
 ## The tightest level — the suffixes
 
@@ -211,18 +211,18 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             start = a.exprs[base].span
             arguments = call_args(@c, @a, text)
             span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
-            base @ ast.push_expr(@a, ast.Expr(kind: .call(callee: base, args: arguments), span: span))
+            base @ ast.push_expr(@a.exprs, ast.Expr(kind: .call(callee: base, args: arguments), span: span))
         else if k == .lbracket
             _ = cursor.bump(@c)
             index = parse_expr(@c, @a, text)
             close = cursor.current_span(c)
             _ = cursor.expect(@c, text: text, kind: .rbracket, code: "expected_index_close", what: "`]` to close the index")
             span = token.Span(start: a.exprs[base].span.start, end: close.end)
-            base @ ast.push_expr(@a, ast.Expr(kind: .index(base: base, index: index), span: span))
+            base @ ast.push_expr(@a.exprs, ast.Expr(kind: .index(base: base, index: index), span: span))
         else if k == .question
             question = cursor.bump(@c).span
             span = token.Span(start: a.exprs[base].span.start, end: question.end)
-            base @ ast.push_expr(@a, ast.Expr(kind: .try_expr(value: base), span: span))
+            base @ ast.push_expr(@a.exprs, ast.Expr(kind: .try_expr(value: base), span: span))
         else
             chaining @ false
     return base
@@ -239,8 +239,8 @@ function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
     if cursor.at(c, .lparen)
         arguments = call_args(@c, @a, text)
         span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
-        return ast.push_expr(@a, ast.Expr(kind: .method(receiver: base, name: name, args: arguments), span: span))
-    return ast.push_expr(@a, ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end)))
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .method(receiver: base, name: name, args: arguments), span: span))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end)))
 
 ## The atoms
 
@@ -264,9 +264,9 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         if !cursor.at_reported_error(c)
             cursor.error(@c, code: "expected_expression", message: "expected an expression, found " + cursor.found(c, text) + " — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`", span: s)
         # Not consumed: the statement parser decides where the line ends.
-        return ast.push_expr(@a, ast.Expr(kind: .error, span: s))
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: s))
     _ = cursor.bump(@c)
-    return ast.push_expr(@a, ast.Expr(kind: simple.must(), span: s))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: simple.must(), span: s))
 
 # The one-token atoms. `fail` is a name like any other here: `fail(code, msg)`
 # is a call, and the compiler knows the callee (§4.6). Keeping it out of the
@@ -319,7 +319,7 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     close = cursor.current_span(c)
     if !cursor.expect(@c, text: text, kind: .rbracket, code: "expected_array_close", what: "`]` to close the list")
         cursor.recover_past_closer(@c, opener: .lbracket, closer: .rbracket)
-    return ast.push_expr(@a, ast.Expr(kind: .array(elements: items), span: token.Span(start: open.start, end: close.end)))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .array(elements: items), span: token.Span(start: open.start, end: close.end)))
 
 # `{ "mario": 30 }`, `{}`, or one entry per line.
 function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
@@ -340,7 +340,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     close = cursor.current_span(c)
     if !cursor.expect(@c, text: text, kind: .rbrace, code: "expected_map_close", what: "`}` to close the map")
         cursor.recover_past_closer(@c, opener: .lbrace, closer: .rbrace)
-    return ast.push_expr(@a, ast.Expr(kind: .map(entries: entries), span: token.Span(start: open.start, end: close.end)))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .map(entries: entries), span: token.Span(start: open.start, end: close.end)))
 
 # The separator between elements of a bracketed literal: a comma on one line, a
 # newline across several (§4.9). Returns false when the list is over — either
@@ -369,12 +369,12 @@ function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     if !cursor.at(c, .ident)
         if !cursor.at_reported_error(c)
             cursor.error(@c, code: "expected_case_name", message: "expected a variant case name after `.`, found " + cursor.found(c, text) + " — `.plus`, or `.num(v: 12)` with its fields", span: cursor.current_span(c))
-        return ast.push_expr(@a, ast.Expr(kind: .error, span: dot))
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: dot))
     name = cursor.bump(@c).span
     arguments: [ast.Arg] @ []
     if cursor.at(c, .lparen)
         arguments @ call_args(@c, @a, text)
-    return ast.push_expr(@a, ast.Expr(kind: .variant_case(name: name, args: arguments), span: token.Span(start: dot.start, end: cursor.previous_significant_span(c).end)))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .variant_case(name: name, args: arguments), span: token.Span(start: dot.start, end: cursor.previous_significant_span(c).end)))
 
 ## Entry point 3 — the argument list
 
@@ -532,7 +532,7 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, ki
         cursor.skip_line(@c)
         if cursor.at(c, .indent)
             _ = cursor.balanced_block(@c)
-        return ast.push_stmt(@a, ast.Stmt(kind: kind, span: span))
+        return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
     # A statement that ended with a block — a loop, an `if`, a `match` —
     # consumed its own dedent, and a dedent IS the end of a line.
     ended_with_block = cursor.previous_kind(c) == .dedent
@@ -540,7 +540,7 @@ function finish(@c: cursor.Cursor, @a: ast.Ast, text: str, start: token.Span, ki
         if !cursor.at_reported_error(c)
             cursor.error(@c, code: "expected_end_of_line", message: "expected the end of the line, found " + cursor.found(c, text) + " — one statement per line, no semicolons", span: cursor.current_span(c))
         cursor.skip_line(@c)
-    return ast.push_stmt(@a, ast.Stmt(kind: kind, span: span))
+    return ast.push_stmt(@a.stmts, ast.Stmt(kind: kind, span: span))
 
 # `return e`, or bare `return` where the function returns nothing.
 function return_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
@@ -647,7 +647,7 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     cond = parse_expr(@c, @a, text)
     first = block(@c, @a, text: text, owner: "an `if`")
     if first.is_err()
-        return ast.push_expr(@a, ast.Expr(kind: .error, span: start))
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     branches @ branches.push(ast.Branch(cond: cond, block: first.must()))
     otherwise: ast.Block? @ fail("no_else", "the `if` has no `else`")
     # `else` closes the `if`'s block, so the cursor is back at this level.
@@ -669,7 +669,7 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     end: token.Span @ branches[branches.len() - 1].block.span
     if !otherwise.is_err()
         end @ otherwise.must().span
-    return ast.push_expr(@a, ast.Expr(kind: .if_expr(branches: branches, otherwise: otherwise), span: token.Span(start: start.start, end: end.end)))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .if_expr(branches: branches, otherwise: otherwise), span: token.Span(start: start.start, end: end.end)))
 
 # `match e` + one arm per line, indented.
 function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
@@ -680,7 +680,7 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     if !cursor.at(c, .indent)
         if !cursor.at_reported_error(c)
             cursor.error(@c, code: "missing_match_arms", message: "a `match` needs its arms indented one level below it, found " + cursor.found(c, text), span: cursor.current_span(c))
-        return ast.push_expr(@a, ast.Expr(kind: .error, span: start))
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     _ = cursor.bump(@c)
     arms: [ast.Arm] @ []
     reading: bool @ true
@@ -711,7 +711,7 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
                 # skip again — that ate the arm below it.
                 arms @ arms.push(one.must())
     span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
-    return ast.push_expr(@a, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: .match_expr(scrutinee: scrutinee, arms: arms), span: span))
 
 # One arm: patterns joined by `|`, `=>`, then one statement on the same line or
 # a block below it (§4.7, panel 014).

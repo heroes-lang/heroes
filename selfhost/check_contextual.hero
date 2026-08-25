@@ -158,7 +158,7 @@ function literal_value(a: ast.Ast, s: source.Source, id: i64) -> LitValue?
 ## Tests
 
 function lit(@a: ast.Ast, kind: ast.ExprKind, start: i64, end: i64) -> i64
-    return ast.push_expr(@a, ast.Expr(kind: kind, span: token.Span(start: start, end: end)))
+    return ast.push_expr(@a.exprs, ast.Expr(kind: kind, span: token.Span(start: start, end: end)))
 
 test "the sign travels with the digits, and the pair holds every width"
     #        0123456789012345678901234567890
@@ -166,7 +166,7 @@ test "the sign travels with the digits, and the pair holds every width"
     s = source.new_source(name: "t.hero", text: "128 18446744073709551615 'a'\n")
     a: ast.Ast @ ast.new_ast()
     small = lit(@a, kind: .int_lit, start: 0, end: 3)
-    negated = ast.push_expr(@a, ast.Expr(kind: .unary(op: .neg, operand: small), span: token.Span(start: 0, end: 3)))
+    negated = ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: .neg, operand: small), span: token.Span(start: 0, end: 3)))
     top = lit(@a, kind: .int_lit, start: 4, end: 24)
     ch = lit(@a, kind: .char_lit, start: 25, end: 28)
     plain = literal_value(a, s, small).must()
@@ -209,16 +209,16 @@ test "nullptr is contextual between ptr and cstr, and nothing else"
 test "the empty literals are contextual and the filled ones are not"
     a: ast.Ast @ ast.new_ast()
     none: [i64] = []
-    empty = ast.push_expr(@a, ast.Expr(kind: .array(elements: none), span: token.Span(start: 0, end: 2)))
+    empty = ast.push_expr(@a.exprs, ast.Expr(kind: .array(elements: none), span: token.Span(start: 0, end: 2)))
     one = lit(@a, kind: .int_lit, start: 0, end: 1)
     filled: [i64] = [one]
-    full = ast.push_expr(@a, ast.Expr(kind: .array(elements: filled), span: token.Span(start: 0, end: 3)))
+    full = ast.push_expr(@a.exprs, ast.Expr(kind: .array(elements: filled), span: token.Span(start: 0, end: 3)))
     assert contextual(a, empty)
     assert !contextual(a, full)
-    hole = ast.push_expr(@a, ast.Expr(kind: .hole, span: token.Span(start: 0, end: 3)))
+    hole = ast.push_expr(@a.exprs, ast.Expr(kind: .hole, span: token.Span(start: 0, end: 3)))
     assert contextual(a, hole)
     # -x is NOT a literal: nothing under the minus is one.
-    named = ast.push_expr(@a, ast.Expr(kind: .name, span: token.Span(start: 0, end: 1)))
-    neg_name = ast.push_expr(@a, ast.Expr(kind: .unary(op: .neg, operand: named), span: token.Span(start: 0, end: 2)))
+    named = ast.push_expr(@a.exprs, ast.Expr(kind: .name, span: token.Span(start: 0, end: 1)))
+    neg_name = ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: .neg, operand: named), span: token.Span(start: 0, end: 2)))
     assert !number_literal(a, neg_name)
     assert !contextual(a, neg_name)

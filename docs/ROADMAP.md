@@ -28,15 +28,15 @@ not merged away.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs · steps 1–4 done · **step 5** lands acceptance row 1 |
+| **State** | four repairs · steps 1–5 done · **step 6** lands one `.c` per module, and the compiler builds itself as 157 TUs |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 25 of 36 · 25 tags |
-| The compiler | **38,454 lines** of Heroes in 158 files |
-| The seed | **769,830** lines of generated C — the whole way in |
+| The compiler | **39,195 lines** of Heroes in 161 files |
+| The seed | **788,406** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 15 |
 | Panels held | **92**, every one ratified · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **nothing** — the decision queue is at zero, two more answered the day they were asked (2026-08-25) · 10 assigned in `SCHEDULED.md` · 269 in `LEARN.md` (never a gate) |
+| Waiting on the author | **nothing** — the decision queue is at zero, two more answered the day they were asked (2026-08-25) · 13 assigned in `SCHEDULED.md` · 269 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
@@ -171,6 +171,42 @@ The layout check fired on the landing — `resolve_walk.hero` was frozen at its
 366-line pin — and the answer was a seam, not a squeeze: the name lookup left
 as `resolve_names.hero`, and the walk is under the default ceiling for the
 first time since the port.
+
+**Step 6 — the compiler builds itself as 157 translation units** (2026-08-26,
+executing panel 093 R1–R6). It links, it runs, it checks its own source at exit
+0, and it re-emits all **297** blessed emissions byte for byte. **The first
+per-module self-build failed with 20 clang errors, and that is the finding**:
+every section of a TU was answering *what do I need* for itself, and four
+answers cannot share one file. Descriptors came from the whole program's
+aggregates against typedefs from the module (`h_token_Span`); prototypes for all
+1,318 functions against types from the module (`h_source_InputFile`); a record's
+`_hash` calling its field's, which `check_table.contained` never reaches because
+it stops at a declared type (`h_diag_Kind_hash`); a `T?` taking its payload's
+descriptor where the descriptor set was narrower
+(`h_clitoolchain_Toolchain_desc`). **One set now feeds all four**, closed the way
+C reads a declaration — fields, cases' fields, and a FIXED array's element, which
+the FFI corpus found (`h_ffiacarraymember_Matrix_hash`). Two deletions came with
+it: a TU prototypes **what it defines and what it calls**, not the program (R3's
+guarantee is untouched — the declaring TU still compiles its own prototype beside
+its definition); and the fused unit is no longer emitted on the per-module path,
+where it was printed and dropped, **785,323 lines per build**.
+
+**And the place store finally reached the compiler's own arena — the frontend
+halved** (author instruction, *"la forma giusta è il place store"*). `push_owned`
+fires on a BARE place, and `ast.push_expr(@a: Ast, …)` wrote `a.exprs @
+a.exprs.push(node)`, a **field** place — so the hottest push in the compiler
+copied the whole expression arena, every time. The three arena entry points now
+take the array itself and their 56 call sites pass `@a.exprs`. Measured: `heroes
+check` on the compiler's own source **191 s → 88 s**, its own tests **3m39s →
+2m15s**, the seed's emission **224 s → 120 s**. No language change, three lines.
+
+**What the step does NOT deliver, measured and queued rather than glossed**: the
+per-module build is **slower** than the fused one on every invocation today —
+cold 261 s, fully warm 250 s, against ≈123 s fused — because the frontend is 83%
+of a build and the cache can only ever save the **4.3 s** clang spends on 788,406
+lines. The cache itself works (162 directories after two identical builds, not
+314). The decision that follows is the author's and it is in `SCHEDULED.md` with
+the numbers.
 
 ---
 

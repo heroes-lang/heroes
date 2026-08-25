@@ -186,7 +186,17 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
             unit @ "hole"
         cli_io.eprint(text: "no binary: " + c.holes.len().to_str() + " " + unit + " in " + files.join(", "))
         return fail("diagnostics", "holes produce no binary")
-    emitted = emit.emit_for(target: options.target, p: p, c: c, s: s, decls: parsed.decls, version: version)
+    # The fused text is the ARTIFACT, and only three invocations want
+    # it: `--emit-c`, which prints it; `heroes test`, whose binary is
+    # one unit by design; and through those two, the seed and the 297
+    # blessed emissions. `heroes build` of a program emits one .c per
+    # module instead, so asking for the fused text there is 785,323
+    # lines printed and dropped (measured on the compiler's own source).
+    wants_text: bool @ options.emit_c
+    match options.target
+        .tests_build => wants_text @ true
+        .program_build => wants_text @ wants_text
+    emitted = emit.emit_maybe(target: options.target, p: p, c: c, s: s, decls: parsed.decls, version: version, text: wants_text)
     stop_e = stage(emitted.diagnostics, s)
     if !stop_e.is_err()
         return leave(stop_e.must())
