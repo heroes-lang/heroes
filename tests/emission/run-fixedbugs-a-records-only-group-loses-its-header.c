@@ -62,6 +62,11 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -74,7 +79,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 78 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 83 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#pragma clang diagnostic pop
 
 typedef struct h_fixedbugsarecordsonlygrouplosesitsheader_0opt0 {
     int64_t tag;
@@ -106,7 +112,7 @@ void h_fixedbugsarecordsonlygrouplosesitsheader_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) {
-#line 110 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 116 "fixedbugsarecordsonlygrouplosesitsheader.c"
     Color h0_red;
     uint8_t t1;
     uint8_t t2;
@@ -149,7 +155,7 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     return;
-#line 153 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 159 "fixedbugsarecordsonlygrouplosesitsheader.c"
 }
 bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

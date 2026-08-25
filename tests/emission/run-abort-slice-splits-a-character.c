@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "abortslicesplitsacharacter.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "abortslicesplitsacharacter.c"
+#line 59 "abortslicesplitsacharacter.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "caff\303\250");
 
@@ -81,7 +88,7 @@ void h_abortslicesplitsacharacter_main(void);
 
 #line 21 "tests/golden/run/abort-slice-splits-a-character.hero"
 void h_abortslicesplitsacharacter_main(void) {
-#line 85 "abortslicesplitsacharacter.c"
+#line 92 "abortslicesplitsacharacter.c"
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -106,11 +113,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_0);
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     t10 = h0_word;
-#line 110 "abortslicesplitsacharacter.c"
+#line 117 "abortslicesplitsacharacter.c"
     hero_str_incref(t1);
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     h0_word = t1;
-#line 114 "abortslicesplitsacharacter.c"
+#line 121 "abortslicesplitsacharacter.c"
     hero_str_decref(t10);
 #line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
     t2 = h0_word;
@@ -124,7 +131,7 @@ bb0:
     t11 = h1_own1;
 #line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
     h1_own1 = t5;
-#line 128 "abortslicesplitsacharacter.c"
+#line 135 "abortslicesplitsacharacter.c"
     hero_str_decref(t11);
 #line 24 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_str(t5);
@@ -142,7 +149,7 @@ bb0:
     t12 = h2_own2;
 #line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
     h2_own2 = t9;
-#line 146 "abortslicesplitsacharacter.c"
+#line 153 "abortslicesplitsacharacter.c"
     hero_str_decref(t12);
 #line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_str(t9);
@@ -150,15 +157,15 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
     t13 = h0_word;
-#line 154 "abortslicesplitsacharacter.c"
+#line 161 "abortslicesplitsacharacter.c"
     hero_str_decref(t13);
 #line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
     t14 = h1_own1;
-#line 158 "abortslicesplitsacharacter.c"
+#line 165 "abortslicesplitsacharacter.c"
     hero_str_decref(t14);
 #line 26 "tests/golden/run/abort-slice-splits-a-character.hero"
     t15 = h2_own2;
-#line 162 "abortslicesplitsacharacter.c"
+#line 169 "abortslicesplitsacharacter.c"
     hero_str_decref(t15);
     return;
 }

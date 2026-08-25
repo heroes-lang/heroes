@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "mutableparameter.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "mutableparameter.c"
+#line 59 "mutableparameter.c"
+#pragma clang diagnostic pop
 
 typedef struct h_mutableparameter_0opt0 {
     int64_t tag;
@@ -80,7 +87,7 @@ void h_mutableparameter_main(void);
 
 #line 10 "tests/golden/run/mutable-parameter.hero"
 void h_mutableparameter_count_down(int64_t *ph0_n, int64_t *ph1_seen) {
-#line 84 "mutableparameter.c"
+#line 91 "mutableparameter.c"
     int64_t h0_n;
     int64_t h1_seen;
     int64_t t1;
@@ -137,7 +144,7 @@ bb2:
     if (t12) goto bb5; else goto bb6;
 #line 14 "tests/golden/run/mutable-parameter.hero"
 bb3:
-#line 141 "mutableparameter.c"
+#line 148 "mutableparameter.c"
     *ph0_n = h0_n;
     *ph1_seen = h1_seen;
     return;
@@ -153,7 +160,7 @@ bb6:
 
 #line 17 "tests/golden/run/mutable-parameter.hero"
 void h_mutableparameter_main(void) {
-#line 157 "mutableparameter.c"
+#line 164 "mutableparameter.c"
     int64_t h0_n;
     int64_t h1_seen;
     int64_t t1;
@@ -186,7 +193,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/mutable-parameter.hero"
     return;
-#line 190 "mutableparameter.c"
+#line 197 "mutableparameter.c"
 }
 void h_mutableparameter_0opt0_retain(const h_mutableparameter_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

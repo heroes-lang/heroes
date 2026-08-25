@@ -39,6 +39,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 43 "ffipointerreturn.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 30 "tests/golden/fixedbugs/ffi-pointer-return.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffipointerreturn_getenv(const char * a0) { (void)(getenv)(a0); }
 #line 111 "<heroes library>"
@@ -53,7 +59,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 57 "ffipointerreturn.c"
+#line 63 "ffipointerreturn.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "PATH");
 
@@ -85,7 +92,7 @@ void h_ffipointerreturn_main(void);
 
 #line 32 "tests/golden/fixedbugs/ffi-pointer-return.hero"
 void h_ffipointerreturn_main(void) {
-#line 89 "ffipointerreturn.c"
+#line 96 "ffipointerreturn.c"
     HeroStr t1 = {0};
     const char * t2;
     int64_t t3;
@@ -103,7 +110,7 @@ bb0:
     hero_print_end();
 #line 33 "tests/golden/fixedbugs/ffi-pointer-return.hero"
     return;
-#line 107 "ffipointerreturn.c"
+#line 114 "ffipointerreturn.c"
 }
 void h_ffipointerreturn_0opt0_retain(const h_ffipointerreturn_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

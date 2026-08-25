@@ -42,6 +42,11 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -54,7 +59,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 58 "ffiafieldtheheaderhasasanarray.c"
+#line 63 "ffiafieldtheheaderhasasanarray.c"
+#pragma clang diagnostic pop
 
 typedef struct h_ffiafieldtheheaderhasasanarray_0opt0 {
     int64_t tag;
@@ -86,7 +92,7 @@ void h_ffiafieldtheheaderhasasanarray_main(void);
 
 #line 42 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
 void h_ffiafieldtheheaderhasasanarray_main(void) {
-#line 90 "ffiafieldtheheaderhasasanarray.c"
+#line 96 "ffiafieldtheheaderhasasanarray.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -98,7 +104,7 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/fixedbugs/ffi-a-field-the-header-has-as-an-array.hero"
     return;
-#line 102 "ffiafieldtheheaderhasasanarray.c"
+#line 108 "ffiafieldtheheaderhasasanarray.c"
 }
 bool h_ffiafieldtheheaderhasasanarray_Dirent_eq(const struct dirent *a, const struct dirent *b) {
     hero_panic("h_ffiafieldtheheaderhasasanarray_Dirent_eq: a partial record has no structural equality");

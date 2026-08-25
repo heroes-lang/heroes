@@ -1,0 +1,31 @@
+# fixedbugs, M-separate-compilation, 2026-08-25 (panel 092's queued half,
+# the adjacent shape the sitting did not name).
+#
+# SYMPTOM: `-Werror=shorten-64-to-32` reads exactly what its name says, so
+# `i64` against a header's `short` — and `i32` against `short`, and `i16`
+# against `char` — converted in silence at exit 0, below the window the
+# global flag watches. Measured the day panel 092's float repair landed:
+# the same pragma mechanism was one flag short of the integer family too.
+#
+# CAUSE: clang files the sub-32 narrowings under -Wimplicit-int-conversion,
+# which no global flag enabled — and enabling it globally would judge
+# generated code, whose narrowings are deliberate casts.
+#
+# FIX: `-Wimplicit-int-conversion` is the fourth error inside the probe
+# block's pragma. Its message text is the one NARROWED already matches
+# ("implicit conversion loses integer precision"), so the mapper needed no
+# new needle — only the pragma that makes it fire.
+#
+# `init_pair` is ncurses' own (short, short, short): a real header whose
+# parameter is narrower than `int`, which is rare in C for the same reason
+# this hole existed — default promotions make `short` parameters unusual.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `an integer narrowing below the 64-to-32 window is the author's error`
+# (suite_surface).
+
+extern "curses.h" link "ncurses"
+    function init_pair(pair: i64, f: i16, b: i16) -> i32    #~ ffi_parameter_type
+
+function main()
+    _ = init_pair(pair: 1, f: to_i16(2).must(), b: to_i16(3).must())

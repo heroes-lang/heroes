@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "abortarrayindex.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "abortarrayindex.c"
+#line 59 "abortarrayindex.c"
+#pragma clang diagnostic pop
 
 typedef struct h_abortarrayindex_0opt0 {
     int64_t tag;
@@ -79,7 +86,7 @@ void h_abortarrayindex_main(void);
 
 #line 4 "tests/golden/run/abort-array-index.hero"
 void h_abortarrayindex_main(void) {
-#line 83 "abortarrayindex.c"
+#line 90 "abortarrayindex.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     int64_t t1;
@@ -122,15 +129,15 @@ bb0:
     t11 = h1_own1;
 #line 5 "tests/golden/run/abort-array-index.hero"
     h1_own1 = t4;
-#line 126 "abortarrayindex.c"
+#line 133 "abortarrayindex.c"
     hero_array_decref(t11);
 #line 5 "tests/golden/run/abort-array-index.hero"
     t12 = h0_xs;
-#line 130 "abortarrayindex.c"
+#line 137 "abortarrayindex.c"
     hero_array_incref(t4);
 #line 5 "tests/golden/run/abort-array-index.hero"
     h0_xs = t4;
-#line 134 "abortarrayindex.c"
+#line 141 "abortarrayindex.c"
     hero_array_decref(t12);
 #line 6 "tests/golden/run/abort-array-index.hero"
     t5 = h0_xs;
@@ -154,11 +161,11 @@ bb0:
     hero_print_end();
 #line 7 "tests/golden/run/abort-array-index.hero"
     t13 = h0_xs;
-#line 158 "abortarrayindex.c"
+#line 165 "abortarrayindex.c"
     hero_array_decref(t13);
 #line 7 "tests/golden/run/abort-array-index.hero"
     t14 = h1_own1;
-#line 162 "abortarrayindex.c"
+#line 169 "abortarrayindex.c"
     hero_array_decref(t14);
     return;
 }

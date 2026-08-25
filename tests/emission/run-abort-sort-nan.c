@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "abortsortnan.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "abortsortnan.c"
+#line 59 "abortsortnan.c"
+#pragma clang diagnostic pop
 
 typedef struct h_abortsortnan_0opt0 {
     int64_t tag;
@@ -79,7 +86,7 @@ void h_abortsortnan_main(void);
 
 #line 14 "tests/golden/run/abort-sort-nan.hero"
 void h_abortsortnan_main(void) {
-#line 83 "abortsortnan.c"
+#line 90 "abortsortnan.c"
     double h0_zero;
     double h1_n;
     HeroArrayHeader * h2_own2 = {0};
@@ -143,7 +150,7 @@ bb0:
     t18 = h2_own2;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h2_own2 = t7;
-#line 147 "abortsortnan.c"
+#line 154 "abortsortnan.c"
     hero_array_decref(t18);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t8 = hero_array_sort(t7);
@@ -151,7 +158,7 @@ bb0:
     t19 = h3_own3;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h3_own3 = t8;
-#line 155 "abortsortnan.c"
+#line 162 "abortsortnan.c"
     hero_array_decref(t19);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t9 = INT64_C(0);
@@ -185,7 +192,7 @@ bb0:
     t20 = h4_own4;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h4_own4 = t14;
-#line 189 "abortsortnan.c"
+#line 196 "abortsortnan.c"
     hero_array_decref(t20);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t15 = hero_array_sort(t14);
@@ -193,7 +200,7 @@ bb0:
     t21 = h5_own5;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h5_own5 = t15;
-#line 197 "abortsortnan.c"
+#line 204 "abortsortnan.c"
     hero_array_decref(t21);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t16 = INT64_C(0);
@@ -205,19 +212,19 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t22 = h2_own2;
-#line 209 "abortsortnan.c"
+#line 216 "abortsortnan.c"
     hero_array_decref(t22);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t23 = h3_own3;
-#line 213 "abortsortnan.c"
+#line 220 "abortsortnan.c"
     hero_array_decref(t23);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t24 = h4_own4;
-#line 217 "abortsortnan.c"
+#line 224 "abortsortnan.c"
     hero_array_decref(t24);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t25 = h5_own5;
-#line 221 "abortsortnan.c"
+#line 228 "abortsortnan.c"
     hero_array_decref(t25);
     return;
 }

@@ -202,7 +202,9 @@ Anything beyond this document — sockets, maths, JSON, databases — comes from
 libraries. A group names its header, and `link` a library when the symbols need one. clang
 checks every result type, constant and record field against that header, and a result may be
 wider than C's. A **parameter** and a **field** are declared at the header's own
-width and sign — `i32` where C says int, `u64` where it says `size_t`:
+width and sign — `i32` where C says int, `u64` where it says `size_t` — and one that
+disagrees is refused, except a parameter C converts exactly (`i16` against int)
+and what a pointer points at:
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64

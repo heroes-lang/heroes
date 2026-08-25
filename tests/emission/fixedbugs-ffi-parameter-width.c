@@ -39,6 +39,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 43 "ffiparameterwidth.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 27 "tests/golden/fixedbugs/ffi-parameter-width.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiparameterwidth_putchar(int64_t a0) { (void)(putchar)(a0); }
 #line 111 "<heroes library>"
@@ -53,7 +59,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 57 "ffiparameterwidth.c"
+#line 63 "ffiparameterwidth.c"
+#pragma clang diagnostic pop
 
 typedef struct h_ffiparameterwidth_0opt0 {
     int64_t tag;
@@ -83,7 +90,7 @@ void h_ffiparameterwidth_main(void);
 
 #line 29 "tests/golden/fixedbugs/ffi-parameter-width.hero"
 void h_ffiparameterwidth_main(void) {
-#line 87 "ffiparameterwidth.c"
+#line 94 "ffiparameterwidth.c"
     int64_t t1;
     int64_t t2;
     goto bb0;
@@ -98,7 +105,7 @@ bb0:
     hero_print_end();
 #line 30 "tests/golden/fixedbugs/ffi-parameter-width.hero"
     return;
-#line 102 "ffiparameterwidth.c"
+#line 109 "ffiparameterwidth.c"
 }
 void h_ffiparameterwidth_0opt0_retain(const h_ffiparameterwidth_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "sugarnamedargs.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "sugarnamedargs.c"
+#line 59 "sugarnamedargs.c"
+#pragma clang diagnostic pop
 
 typedef struct h_sugarnamedargs_Point {
     int64_t f_x;
@@ -88,7 +95,7 @@ void h_sugarnamedargs_main(void);
 
 #line 9 "tests/golden/ir/sugar-named-args.hero"
 h_sugarnamedargs_Point h_sugarnamedargs_moved(h_sugarnamedargs_Point h0_p, int64_t h1_by) {
-#line 92 "sugarnamedargs.c"
+#line 99 "sugarnamedargs.c"
     h_sugarnamedargs_Point t1;
     int64_t t2;
     int64_t t3;
@@ -114,12 +121,12 @@ bb0:
     t7 = (h_sugarnamedargs_Point){.f_x = t4, .f_y = t6};
 #line 10 "tests/golden/ir/sugar-named-args.hero"
     return t7;
-#line 118 "sugarnamedargs.c"
+#line 125 "sugarnamedargs.c"
 }
 
 #line 12 "tests/golden/ir/sugar-named-args.hero"
 int64_t h_sugarnamedargs_copy_between(int64_t h0_from, int64_t h1_to) {
-#line 123 "sugarnamedargs.c"
+#line 130 "sugarnamedargs.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -133,12 +140,12 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 13 "tests/golden/ir/sugar-named-args.hero"
     return t3;
-#line 137 "sugarnamedargs.c"
+#line 144 "sugarnamedargs.c"
 }
 
 #line 15 "tests/golden/ir/sugar-named-args.hero"
 void h_sugarnamedargs_main(void) {
-#line 142 "sugarnamedargs.c"
+#line 149 "sugarnamedargs.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -156,7 +163,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/ir/sugar-named-args.hero"
     return;
-#line 160 "sugarnamedargs.c"
+#line 167 "sugarnamedargs.c"
 }
 bool h_sugarnamedargs_Point_eq(const h_sugarnamedargs_Point *a, const h_sugarnamedargs_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

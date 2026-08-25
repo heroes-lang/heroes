@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "bitwise.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "bitwise.c"
+#line 59 "bitwise.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "O_RDWR|O_ACCMODE = ");
 HERO_STR_STATIC(hero_str_1, "S_IRWXU|S_IRUSR  = ");
@@ -95,7 +102,7 @@ void h_bitwise_main(void);
 
 #line 22 "tests/golden/run/bitwise.hero"
 void h_bitwise_main(void) {
-#line 99 "bitwise.c"
+#line 106 "bitwise.c"
     int64_t h0_read;
     int64_t h1_write;
     int64_t h2_exec;
@@ -479,7 +486,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/bitwise.hero"
     return;
-#line 483 "bitwise.c"
+#line 490 "bitwise.c"
 }
 void h_bitwise_0opt0_retain(const h_bitwise_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "coreblocks.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "coreblocks.c"
+#line 59 "coreblocks.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "zero");
 HERO_STR_STATIC(hero_str_1, "one");
@@ -84,7 +91,7 @@ HeroStr h_coreblocks_named(int64_t h0_n);
 
 #line 5 "tests/golden/ir/core-blocks.hero"
 int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor) {
-#line 88 "coreblocks.c"
+#line 95 "coreblocks.c"
     int64_t h2_i;
     int64_t h3_v;
     int64_t t1;
@@ -206,12 +213,12 @@ bb8:
 bb9:
 #line 13 "tests/golden/ir/core-blocks.hero"
     goto bb7;
-#line 210 "coreblocks.c"
+#line 217 "coreblocks.c"
 }
 
 #line 17 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
-#line 215 "coreblocks.c"
+#line 222 "coreblocks.c"
     int64_t h1_s0;
     HeroStr h2_r0 = {0};
     int64_t t1;
@@ -247,11 +254,11 @@ bb0:
 bb1:
 #line 18 "tests/golden/ir/core-blocks.hero"
     t11 = h2_r0;
-#line 251 "coreblocks.c"
+#line 258 "coreblocks.c"
     hero_str_incref(t11);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t15 = h2_r0;
-#line 255 "coreblocks.c"
+#line 262 "coreblocks.c"
     hero_str_decref(t15);
     return t11;
 bb2:
@@ -259,11 +266,11 @@ bb2:
     t8 = HERO_STR_LIT(hero_str_0);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
-#line 263 "coreblocks.c"
+#line 270 "coreblocks.c"
     hero_str_incref(t8);
 #line 18 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t8;
-#line 267 "coreblocks.c"
+#line 274 "coreblocks.c"
     hero_str_decref(t12);
     goto bb1;
 bb3:
@@ -281,11 +288,11 @@ bb4:
     t9 = HERO_STR_LIT(hero_str_1);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
-#line 285 "coreblocks.c"
+#line 292 "coreblocks.c"
     hero_str_incref(t9);
 #line 18 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t9;
-#line 289 "coreblocks.c"
+#line 296 "coreblocks.c"
     hero_str_decref(t13);
     goto bb1;
 bb5:
@@ -295,11 +302,11 @@ bb6:
     t10 = HERO_STR_LIT(hero_str_2);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
-#line 299 "coreblocks.c"
+#line 306 "coreblocks.c"
     hero_str_incref(t10);
 #line 18 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t10;
-#line 303 "coreblocks.c"
+#line 310 "coreblocks.c"
     hero_str_decref(t14);
     goto bb1;
 }

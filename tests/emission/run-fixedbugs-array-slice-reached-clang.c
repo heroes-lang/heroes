@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "fixedbugsarrayslicereachedclang.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "fixedbugsarrayslicereachedclang.c"
+#line 59 "fixedbugsarrayslicereachedclang.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "abcde");
 
@@ -81,7 +88,7 @@ void h_fixedbugsarrayslicereachedclang_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
 void h_fixedbugsarrayslicereachedclang_main(void) {
-#line 85 "fixedbugsarrayslicereachedclang.c"
+#line 92 "fixedbugsarrayslicereachedclang.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_ys = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -143,15 +150,15 @@ bb0:
     t21 = h2_own2;
 #line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h2_own2 = t4;
-#line 147 "fixedbugsarrayslicereachedclang.c"
+#line 154 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t21);
 #line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t22 = h0_xs;
-#line 151 "fixedbugsarrayslicereachedclang.c"
+#line 158 "fixedbugsarrayslicereachedclang.c"
     hero_array_incref(t4);
 #line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h0_xs = t4;
-#line 155 "fixedbugsarrayslicereachedclang.c"
+#line 162 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t22);
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t5 = h0_xs;
@@ -165,15 +172,15 @@ bb0:
     t23 = h3_own3;
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h3_own3 = t8;
-#line 169 "fixedbugsarrayslicereachedclang.c"
+#line 176 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t23);
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t24 = h1_ys;
-#line 173 "fixedbugsarrayslicereachedclang.c"
+#line 180 "fixedbugsarrayslicereachedclang.c"
     hero_array_incref(t8);
 #line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h1_ys = t8;
-#line 177 "fixedbugsarrayslicereachedclang.c"
+#line 184 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t24);
 #line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t9 = h1_ys;
@@ -213,7 +220,7 @@ bb0:
     t25 = h4_own4;
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     h4_own4 = t20;
-#line 217 "fixedbugsarrayslicereachedclang.c"
+#line 224 "fixedbugsarrayslicereachedclang.c"
     hero_str_decref(t25);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     hero_print_str(t20);
@@ -221,23 +228,23 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t26 = h0_xs;
-#line 225 "fixedbugsarrayslicereachedclang.c"
+#line 232 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t26);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t27 = h1_ys;
-#line 229 "fixedbugsarrayslicereachedclang.c"
+#line 236 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t27);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t28 = h2_own2;
-#line 233 "fixedbugsarrayslicereachedclang.c"
+#line 240 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t28);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t29 = h3_own3;
-#line 237 "fixedbugsarrayslicereachedclang.c"
+#line 244 "fixedbugsarrayslicereachedclang.c"
     hero_array_decref(t29);
 #line 39 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t30 = h4_own4;
-#line 241 "fixedbugsarrayslicereachedclang.c"
+#line 248 "fixedbugsarrayslicereachedclang.c"
     hero_str_decref(t30);
     return;
 }

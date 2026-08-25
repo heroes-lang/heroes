@@ -41,6 +41,51 @@ use ir_lower
 constant PREFIX: str
     "hero_ffi_probe_"
 
+# What is an ERROR inside the probe block and nowhere else (panel 092's
+# queued float half, landed with its adjacent shapes). A probe's
+# arguments are exactly the declared types, so any implicit conversion
+# at its call IS a declaration that disagrees with the header — there
+# is no benign fire to scope around. The pragma is the scope: ordinary
+# generated code converts deliberately (casts, which no implicit-
+# conversion warning reads) and stays outside it.
+#
+# Four names, each with a measured witness, because no one flag covers
+# the family:
+# - double-promotion: f32 where the header says double or long double.
+#   The value converts EXACTLY, which is why -Wconversion cannot see
+#   it (measured silent) — the defect is upstream, every digit past
+#   f32's precision already rounded away before the call.
+# - implicit-float-conversion: f64 where the header says float — and
+#   its subgroup implicit-int-float-conversion, an integer declared
+#   where the header holds a float (i64 against double rounds large
+#   values).
+# - float-conversion: a float declared where the header takes an
+#   integer. C drops the fraction; measured NOT covered by either flag
+#   above, and the one direction that changes 0.75 into 0.
+# - implicit-int-conversion: integer narrowing below the global
+#   -Werror=shorten-64-to-32 window — i64 against short, i32 against
+#   short, i16 against char, all measured silent without it.
+#
+# What stays silent after these four is exactly what C converts
+# without changing any value (i32 where the header says double, i16
+# where it says int) plus what a pointer points at — the two holes the
+# spec names, at their final size (panel 092's verdict).
+constant PROBE_ERRORS: [str]
+    [
+        "-Wdouble-promotion"
+        "-Wimplicit-float-conversion"
+        "-Wfloat-conversion"
+        "-Wimplicit-int-conversion"
+    ]
+
+# A probe, computed before anything is written: the pragma block that
+# wraps the probes may only exist when at least one probe does, and
+# the writer cannot take a line back.
+record Probe
+    file: str
+    line: i64
+    text: str
+
 function probe_name(module: str, name: str) -> str
     return PREFIX + emit_mangle.function_name(module: module, name: name)
 
@@ -50,7 +95,7 @@ function probe_name(module: str, name: str) -> str
 # call. Nothing asks what KIND of extern it is; that premise is the one
 # M-header-constants falsified for the sibling walks.
 function extern_probes(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
-    wrote: bool @ false
+    probes: [Probe] @ []
     for f in p.functions
         if emit_externs.extern_spans(decls, f).header.is_err()
             continue
@@ -65,13 +110,20 @@ function extern_probes(@w: emit_writer.Writer, p: ir_state.Program, c: check_sta
         # where the author can act on it — and a probe for a library's
         # extern claims the library.
         found = source.locate(s, decls[f.decl].name.start)
-        emit_writer.at_file(@w, file: found.file, at: found.line)
         module = source.component_at(s, decls[f.decl].span.start)
-        emit_writer.line(@w, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments))
-        wrote @ true
-    if wrote
-        emit_writer.at_generated(@w)
-        emit_writer.blank(@w)
+        probes @ probes.push(Probe(file: found.file, line: found.line, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments)))
+    if probes.len() == 0
+        return
+    emit_writer.at_generated(@w)
+    emit_writer.line(@w, text: "#pragma clang diagnostic push")
+    for flag in PROBE_ERRORS
+        emit_writer.line(@w, text: "#pragma clang diagnostic error \"" + flag + "\"")
+    for probe in probes
+        emit_writer.at_file(@w, file: probe.file, at: probe.line)
+        emit_writer.line(@w, text: probe.text)
+    emit_writer.at_generated(@w)
+    emit_writer.line(@w, text: "#pragma clang diagnostic pop")
+    emit_writer.blank(@w)
 
 # The probe, as one line of C. ONE FORMATTER, TWO READERS — the error
 # mapper rebuilds this string from the declaration to find WHICH
@@ -229,6 +281,31 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
     assert !has(text: got, needle: "hero_ffi_probe_h_t_version")
     # #line at the declaration's own line.
     assert has(text: got, needle: "#line 2 \"t.hero\"")
+    # The pragma block: every PROBE_ERRORS flag is an error inside it,
+    # the push precedes the first probe and the pop follows the last —
+    # an error pragma leaking past the block would judge generated
+    # code, whose conversions are deliberate casts.
+    assert has(text: got, needle: "#pragma clang diagnostic push")
+    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wdouble-promotion\"")
+    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wimplicit-float-conversion\"")
+    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wfloat-conversion\"")
+    assert has(text: got, needle: "#pragma clang diagnostic error \"-Wimplicit-int-conversion\"")
+    assert has(text: got, needle: "#pragma clang diagnostic pop")
+    assert find_text(line: got, needle: "diagnostic push").must() < find_text(line: got, needle: "hero_ffi_probe_h_t_narrow").must()
+    assert find_text(line: got, needle: "diagnostic pop").must() > find_text(line: got, needle: "hero_ffi_probe_h_t_fill").must()
+
+test "no probes, no pragma: the block may only exist when a probe does"
+    text = "extern \"m.h\"\n    function version() -> i64\n\nfunction main()\n    print(version())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = emit_ctype.new_names(s, parsed.decls)
+    w: emit_writer.Writer @ emit_writer.new_writer("t")
+    extern_probes(@w, low.program, c, names, s, parsed.decls)
+    assert emit_writer.finish(w) == ""
 
 test "argument columns point at each argument's own token"
     parameters: [str] = ["int64_t a0", "double a1"]

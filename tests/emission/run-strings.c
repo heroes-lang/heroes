@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "strings.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "strings.c"
+#line 59 "strings.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "hello");
 HERO_STR_STATIC(hero_str_1, " ");
@@ -85,7 +92,7 @@ void h_strings_main(void);
 
 #line 5 "tests/golden/run/strings.hero"
 void h_strings_main(void) {
-#line 89 "strings.c"
+#line 96 "strings.c"
     HeroStr h0_greeting = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -136,11 +143,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_0);
 #line 6 "tests/golden/run/strings.hero"
     t27 = h0_greeting;
-#line 140 "strings.c"
+#line 147 "strings.c"
     hero_str_incref(t1);
 #line 6 "tests/golden/run/strings.hero"
     h0_greeting = t1;
-#line 144 "strings.c"
+#line 151 "strings.c"
     hero_str_decref(t27);
 #line 7 "tests/golden/run/strings.hero"
     t2 = h0_greeting;
@@ -158,7 +165,7 @@ bb0:
     t28 = h1_own1;
 #line 8 "tests/golden/run/strings.hero"
     h1_own1 = t5;
-#line 162 "strings.c"
+#line 169 "strings.c"
     hero_str_decref(t28);
 #line 8 "tests/golden/run/strings.hero"
     t6 = HERO_STR_LIT(hero_str_2);
@@ -168,7 +175,7 @@ bb0:
     t29 = h2_own2;
 #line 8 "tests/golden/run/strings.hero"
     h2_own2 = t7;
-#line 172 "strings.c"
+#line 179 "strings.c"
     hero_str_decref(t29);
 #line 8 "tests/golden/run/strings.hero"
     hero_print_str(t7);
@@ -204,7 +211,7 @@ bb0:
     t30 = h3_own3;
 #line 11 "tests/golden/run/strings.hero"
     h3_own3 = t16;
-#line 208 "strings.c"
+#line 215 "strings.c"
     hero_str_decref(t30);
 #line 11 "tests/golden/run/strings.hero"
     hero_print_str(t16);
@@ -236,7 +243,7 @@ bb0:
     t31 = h4_own4;
 #line 13 "tests/golden/run/strings.hero"
     h4_own4 = t24;
-#line 240 "strings.c"
+#line 247 "strings.c"
     hero_str_decref(t31);
 #line 13 "tests/golden/run/strings.hero"
     t25 = true;
@@ -246,7 +253,7 @@ bb0:
     t32 = h5_own5;
 #line 13 "tests/golden/run/strings.hero"
     h5_own5 = t26;
-#line 250 "strings.c"
+#line 257 "strings.c"
     hero_str_decref(t32);
 #line 13 "tests/golden/run/strings.hero"
     hero_print_str(t24);
@@ -256,27 +263,27 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/run/strings.hero"
     t33 = h0_greeting;
-#line 260 "strings.c"
+#line 267 "strings.c"
     hero_str_decref(t33);
 #line 13 "tests/golden/run/strings.hero"
     t34 = h1_own1;
-#line 264 "strings.c"
+#line 271 "strings.c"
     hero_str_decref(t34);
 #line 13 "tests/golden/run/strings.hero"
     t35 = h2_own2;
-#line 268 "strings.c"
+#line 275 "strings.c"
     hero_str_decref(t35);
 #line 13 "tests/golden/run/strings.hero"
     t36 = h3_own3;
-#line 272 "strings.c"
+#line 279 "strings.c"
     hero_str_decref(t36);
 #line 13 "tests/golden/run/strings.hero"
     t37 = h4_own4;
-#line 276 "strings.c"
+#line 283 "strings.c"
     hero_str_decref(t37);
 #line 13 "tests/golden/run/strings.hero"
     t38 = h5_own5;
-#line 280 "strings.c"
+#line 287 "strings.c"
     hero_str_decref(t38);
     return;
 }

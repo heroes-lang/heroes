@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 59 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#pragma clang diagnostic pop
 
 typedef int64_t (*h_fixedbugsafieldwinsthedotoverafreefunction_0fn0)(int64_t);
 typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_Holder {
@@ -109,7 +116,7 @@ void h_fixedbugsafieldwinsthedotoverafreefunction_main(void);
 
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_double_it(int64_t h0_n) {
-#line 113 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 120 "fixedbugsafieldwinsthedotoverafreefunction.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -123,12 +130,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     return t3;
-#line 127 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 134 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n) {
-#line 132 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 139 "fixedbugsafieldwinsthedotoverafreefunction.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -151,12 +158,12 @@ bb0:
     if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     return t6;
-#line 155 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 162 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 void h_fixedbugsafieldwinsthedotoverafreefunction_main(void) {
-#line 160 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 167 "fixedbugsafieldwinsthedotoverafreefunction.c"
     h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s;
     h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v;
     h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0;
@@ -275,7 +282,7 @@ bb3:
     hero_print_end();
 #line 58 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     goto bb1;
-#line 279 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 286 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 bool h_fixedbugsafieldwinsthedotoverafreefunction_Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b) {
     if (!(a->f_tag == b->f_tag)) return false;

@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "fixedbugsunaryminusisnotaliteral.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "fixedbugsunaryminusisnotaliteral.c"
+#line 59 "fixedbugsunaryminusisnotaliteral.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "literal ");
 HERO_STR_STATIC(hero_str_1, "names ");
@@ -99,7 +106,7 @@ void h_fixedbugsunaryminusisnotaliteral_main(void);
 
 #line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 h_fixedbugsunaryminusisnotaliteral_0opt0 h_fixedbugsunaryminusisnotaliteral_negated(int64_t h0_n) {
-#line 103 "fixedbugsunaryminusisnotaliteral.c"
+#line 110 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0 h1_own1 = {0};
     int64_t t1;
     int64_t t2;
@@ -118,21 +125,21 @@ bb0:
     t4 = h1_own1;
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h1_own1 = t3;
-#line 122 "fixedbugsunaryminusisnotaliteral.c"
+#line 129 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_release(&t4);
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-#line 125 "fixedbugsunaryminusisnotaliteral.c"
+#line 132 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_retain(&t3);
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t5 = h1_own1;
-#line 129 "fixedbugsunaryminusisnotaliteral.c"
+#line 136 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_release(&t5);
     return t3;
 }
 
 #line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 double h_fixedbugsunaryminusisnotaliteral_scaled(double h0_v) {
-#line 136 "fixedbugsunaryminusisnotaliteral.c"
+#line 143 "fixedbugsunaryminusisnotaliteral.c"
     double t1;
     double t2;
     goto bb0;
@@ -143,12 +150,12 @@ bb0:
     t2 = -t1;
 #line 36 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     return t2;
-#line 147 "fixedbugsunaryminusisnotaliteral.c"
+#line 154 "fixedbugsunaryminusisnotaliteral.c"
 }
 
 #line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 void h_fixedbugsunaryminusisnotaliteral_main(void) {
-#line 152 "fixedbugsunaryminusisnotaliteral.c"
+#line 159 "fixedbugsunaryminusisnotaliteral.c"
     int8_t h0_small;
     int64_t h1_n;
     double h2_x;
@@ -258,15 +265,15 @@ bb0:
     t37 = h4_own4;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h4_own4 = t16;
-#line 262 "fixedbugsunaryminusisnotaliteral.c"
+#line 269 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_release(&t37);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t38 = h3_f0;
-#line 266 "fixedbugsunaryminusisnotaliteral.c"
+#line 273 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_retain(&t16);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h3_f0 = t16;
-#line 270 "fixedbugsunaryminusisnotaliteral.c"
+#line 277 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_release(&t38);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t17 = h3_f0;
@@ -330,11 +337,11 @@ bb1:
     hero_print_end();
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t39 = h3_f0;
-#line 334 "fixedbugsunaryminusisnotaliteral.c"
+#line 341 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_release(&t39);
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t40 = h4_own4;
-#line 338 "fixedbugsunaryminusisnotaliteral.c"
+#line 345 "fixedbugsunaryminusisnotaliteral.c"
     h_fixedbugsunaryminusisnotaliteral_0opt0_release(&t40);
     return;
 bb2:
@@ -342,7 +349,7 @@ bb2:
     t21 = h3_f0;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t22 = t21.as.err;
-#line 346 "fixedbugsunaryminusisnotaliteral.c"
+#line 353 "fixedbugsunaryminusisnotaliteral.c"
     hero_panic_must(t22);
     hero_unreachable();
 }

@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "sugarfor.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "sugarfor.c"
+#line 59 "sugarfor.c"
+#pragma clang diagnostic pop
 
 typedef struct h_sugarfor_0opt0 {
     int64_t tag;
@@ -79,7 +86,7 @@ int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs);
 
 #line 4 "tests/golden/ir/sugar-for.hero"
 int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs) {
-#line 83 "sugarfor.c"
+#line 90 "sugarfor.c"
     int64_t h1_sum;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -113,11 +120,11 @@ bb0:
     t2 = h0_xs;
 #line 6 "tests/golden/ir/sugar-for.hero"
     t18 = h2_xs0;
-#line 117 "sugarfor.c"
+#line 124 "sugarfor.c"
     hero_array_incref(t2);
 #line 6 "tests/golden/ir/sugar-for.hero"
     h2_xs0 = t2;
-#line 121 "sugarfor.c"
+#line 128 "sugarfor.c"
     hero_array_decref(t18);
 #line 6 "tests/golden/ir/sugar-for.hero"
     t3 = INT64_C(0);
@@ -175,7 +182,7 @@ bb4:
     t17 = h1_sum;
 #line 8 "tests/golden/ir/sugar-for.hero"
     t19 = h2_xs0;
-#line 179 "sugarfor.c"
+#line 186 "sugarfor.c"
     hero_array_decref(t19);
     return t17;
 }

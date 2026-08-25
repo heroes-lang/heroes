@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "fixedbugsoptionpayloaddescriptor.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "fixedbugsoptionpayloaddescriptor.c"
+#line 59 "fixedbugsoptionpayloaddescriptor.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "none");
 HERO_STR_STATIC(hero_str_1, "n");
@@ -167,7 +174,7 @@ void h_fixedbugsoptionpayloaddescriptor_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
 void h_fixedbugsoptionpayloaddescriptor_main(void) {
-#line 171 "fixedbugsoptionpayloaddescriptor.c"
+#line 178 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node h0_a = {0};
     h_fixedbugsoptionpayloaddescriptor_Node h1_b = {0};
     h_fixedbugsoptionpayloaddescriptor_Held h2_h = {0};
@@ -254,15 +261,15 @@ bb0:
     t31 = h6_own6;
 #line 30 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h6_own6 = t1;
-#line 258 "fixedbugsoptionpayloaddescriptor.c"
+#line 265 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t31);
 #line 30 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t32 = h0_a;
-#line 262 "fixedbugsoptionpayloaddescriptor.c"
+#line 269 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_retain(&t1);
 #line 30 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h0_a = t1;
-#line 266 "fixedbugsoptionpayloaddescriptor.c"
+#line 273 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t32);
 #line 31 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t2 = (h_fixedbugsoptionpayloaddescriptor_Node){.tag = h_fixedbugsoptionpayloaddescriptor_Node_tag_leaf};
@@ -270,15 +277,15 @@ bb0:
     t33 = h7_own7;
 #line 31 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h7_own7 = t2;
-#line 274 "fixedbugsoptionpayloaddescriptor.c"
+#line 281 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t33);
 #line 31 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t34 = h1_b;
-#line 278 "fixedbugsoptionpayloaddescriptor.c"
+#line 285 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_retain(&t2);
 #line 31 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h1_b = t2;
-#line 282 "fixedbugsoptionpayloaddescriptor.c"
+#line 289 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t34);
 #line 32 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t3 = h0_a;
@@ -294,10 +301,10 @@ bb0:
     t6 = HERO_STR_LIT(hero_str_0);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t7 = HERO_STR_LIT(hero_str_1);
-#line 298 "fixedbugsoptionpayloaddescriptor.c"
+#line 305 "fixedbugsoptionpayloaddescriptor.c"
     hero_str_incref(t6);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-#line 301 "fixedbugsoptionpayloaddescriptor.c"
+#line 308 "fixedbugsoptionpayloaddescriptor.c"
     hero_str_incref(t7);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t8 = (h_fixedbugsoptionpayloaddescriptor_0opt0){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
@@ -305,10 +312,10 @@ bb0:
     t35 = h8_own8;
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h8_own8 = t8;
-#line 309 "fixedbugsoptionpayloaddescriptor.c"
+#line 316 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t35);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-#line 312 "fixedbugsoptionpayloaddescriptor.c"
+#line 319 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_retain(&t8);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t9 = (h_fixedbugsoptionpayloaddescriptor_Held){.f_inner = t8};
@@ -316,24 +323,24 @@ bb0:
     t36 = h9_own9;
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h9_own9 = t9;
-#line 320 "fixedbugsoptionpayloaddescriptor.c"
+#line 327 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t36);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t37 = h2_h;
-#line 324 "fixedbugsoptionpayloaddescriptor.c"
+#line 331 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_retain(&t9);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h2_h = t9;
-#line 328 "fixedbugsoptionpayloaddescriptor.c"
+#line 335 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t37);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t10 = HERO_STR_LIT(hero_str_0);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t11 = HERO_STR_LIT(hero_str_1);
-#line 334 "fixedbugsoptionpayloaddescriptor.c"
+#line 341 "fixedbugsoptionpayloaddescriptor.c"
     hero_str_incref(t10);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-#line 337 "fixedbugsoptionpayloaddescriptor.c"
+#line 344 "fixedbugsoptionpayloaddescriptor.c"
     hero_str_incref(t11);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t12 = (h_fixedbugsoptionpayloaddescriptor_0opt0){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}};
@@ -341,10 +348,10 @@ bb0:
     t38 = h10_own10;
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h10_own10 = t12;
-#line 345 "fixedbugsoptionpayloaddescriptor.c"
+#line 352 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t38);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-#line 348 "fixedbugsoptionpayloaddescriptor.c"
+#line 355 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_retain(&t12);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t13 = (h_fixedbugsoptionpayloaddescriptor_Held){.f_inner = t12};
@@ -352,15 +359,15 @@ bb0:
     t39 = h11_own11;
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h11_own11 = t13;
-#line 356 "fixedbugsoptionpayloaddescriptor.c"
+#line 363 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t39);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t40 = h3_g;
-#line 360 "fixedbugsoptionpayloaddescriptor.c"
+#line 367 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_retain(&t13);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h3_g = t13;
-#line 364 "fixedbugsoptionpayloaddescriptor.c"
+#line 371 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t40);
 #line 36 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t14 = h2_h;
@@ -382,10 +389,10 @@ bb0:
     t41 = h12_own12;
 #line 38 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h12_own12 = t19;
-#line 386 "fixedbugsoptionpayloaddescriptor.c"
+#line 393 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t41);
 #line 38 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-#line 389 "fixedbugsoptionpayloaddescriptor.c"
+#line 396 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_retain(&t19);
 #line 38 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t20 = (h_fixedbugsoptionpayloaddescriptor_Node){.tag = h_fixedbugsoptionpayloaddescriptor_Node_tag_branch, .as.c_branch = {.f_otherwise = t19}};
@@ -393,15 +400,15 @@ bb0:
     t42 = h13_own13;
 #line 38 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h13_own13 = t20;
-#line 397 "fixedbugsoptionpayloaddescriptor.c"
+#line 404 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t42);
 #line 38 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t43 = h4_c;
-#line 401 "fixedbugsoptionpayloaddescriptor.c"
+#line 408 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_retain(&t20);
 #line 38 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h4_c = t20;
-#line 405 "fixedbugsoptionpayloaddescriptor.c"
+#line 412 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t43);
 #line 39 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t21 = INT64_C(1);
@@ -413,10 +420,10 @@ bb0:
     t44 = h14_own14;
 #line 39 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h14_own14 = t23;
-#line 417 "fixedbugsoptionpayloaddescriptor.c"
+#line 424 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t44);
 #line 39 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-#line 420 "fixedbugsoptionpayloaddescriptor.c"
+#line 427 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_retain(&t23);
 #line 39 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t24 = (h_fixedbugsoptionpayloaddescriptor_Node){.tag = h_fixedbugsoptionpayloaddescriptor_Node_tag_branch, .as.c_branch = {.f_otherwise = t23}};
@@ -424,15 +431,15 @@ bb0:
     t45 = h15_own15;
 #line 39 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h15_own15 = t24;
-#line 428 "fixedbugsoptionpayloaddescriptor.c"
+#line 435 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t45);
 #line 39 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t46 = h5_d;
-#line 432 "fixedbugsoptionpayloaddescriptor.c"
+#line 439 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_retain(&t24);
 #line 39 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     h5_d = t24;
-#line 436 "fixedbugsoptionpayloaddescriptor.c"
+#line 443 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t46);
 #line 40 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t25 = h4_c;
@@ -456,67 +463,67 @@ bb0:
     hero_print_end();
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t47 = h0_a;
-#line 460 "fixedbugsoptionpayloaddescriptor.c"
+#line 467 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t47);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t48 = h1_b;
-#line 464 "fixedbugsoptionpayloaddescriptor.c"
+#line 471 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t48);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t49 = h2_h;
-#line 468 "fixedbugsoptionpayloaddescriptor.c"
+#line 475 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t49);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t50 = h3_g;
-#line 472 "fixedbugsoptionpayloaddescriptor.c"
+#line 479 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t50);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t51 = h4_c;
-#line 476 "fixedbugsoptionpayloaddescriptor.c"
+#line 483 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t51);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t52 = h5_d;
-#line 480 "fixedbugsoptionpayloaddescriptor.c"
+#line 487 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t52);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t53 = h6_own6;
-#line 484 "fixedbugsoptionpayloaddescriptor.c"
+#line 491 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t53);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t54 = h7_own7;
-#line 488 "fixedbugsoptionpayloaddescriptor.c"
+#line 495 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t54);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t55 = h8_own8;
-#line 492 "fixedbugsoptionpayloaddescriptor.c"
+#line 499 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t55);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t56 = h9_own9;
-#line 496 "fixedbugsoptionpayloaddescriptor.c"
+#line 503 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t56);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t57 = h10_own10;
-#line 500 "fixedbugsoptionpayloaddescriptor.c"
+#line 507 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t57);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t58 = h11_own11;
-#line 504 "fixedbugsoptionpayloaddescriptor.c"
+#line 511 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t58);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t59 = h12_own12;
-#line 508 "fixedbugsoptionpayloaddescriptor.c"
+#line 515 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t59);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t60 = h13_own13;
-#line 512 "fixedbugsoptionpayloaddescriptor.c"
+#line 519 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t60);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t61 = h14_own14;
-#line 516 "fixedbugsoptionpayloaddescriptor.c"
+#line 523 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_0opt0_release(&t61);
 #line 41 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t62 = h15_own15;
-#line 520 "fixedbugsoptionpayloaddescriptor.c"
+#line 527 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(&t62);
     return;
 }

@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "abortnaninanordering.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "abortnaninanordering.c"
+#line 59 "abortnaninanordering.c"
+#pragma clang diagnostic pop
 
 typedef struct h_abortnaninanordering_0opt0 {
     int64_t tag;
@@ -79,7 +86,7 @@ void h_abortnaninanordering_main(void);
 
 #line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
 void h_abortnaninanordering_main(void) {
-#line 83 "abortnaninanordering.c"
+#line 90 "abortnaninanordering.c"
     double h0_zero;
     double h1_n;
     double t1;
@@ -158,7 +165,7 @@ bb0:
     hero_print_end();
 #line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
     return;
-#line 162 "abortnaninanordering.c"
+#line 169 "abortnaninanordering.c"
 }
 void h_abortnaninanordering_0opt0_retain(const h_abortnaninanordering_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

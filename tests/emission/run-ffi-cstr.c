@@ -39,6 +39,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 43 "fficstr.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 13 "tests/golden/run/ffi-cstr.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fficstr_puts(const char * a0) { (void)(puts)(a0); }
 #line 111 "<heroes library>"
@@ -53,7 +59,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 57 "fficstr.c"
+#line 63 "fficstr.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "!");
 HERO_STR_STATIC(hero_str_1, "hello from C");
@@ -89,7 +96,7 @@ void h_fficstr_main(void);
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 93 "fficstr.c"
+#line 100 "fficstr.c"
     HeroStr h1_own1 = {0};
     HeroStr t1 = {0};
     HeroStr t2 = {0};
@@ -108,21 +115,21 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 112 "fficstr.c"
+#line 119 "fficstr.c"
     hero_str_decref(t4);
 #line 16 "tests/golden/run/ffi-cstr.hero"
-#line 115 "fficstr.c"
+#line 122 "fficstr.c"
     hero_str_incref(t3);
 #line 16 "tests/golden/run/ffi-cstr.hero"
     t5 = h1_own1;
-#line 119 "fficstr.c"
+#line 126 "fficstr.c"
     hero_str_decref(t5);
     return t3;
 }
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 126 "fficstr.c"
+#line 133 "fficstr.c"
     HeroStr h0_own0 = {0};
     HeroStr t1 = {0};
     const char * t2;
@@ -148,7 +155,7 @@ bb0:
     t9 = h0_own0;
 #line 23 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 152 "fficstr.c"
+#line 159 "fficstr.c"
     hero_str_decref(t9);
 #line 23 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_cstr(t5);
@@ -162,7 +169,7 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t10 = h0_own0;
-#line 166 "fficstr.c"
+#line 173 "fficstr.c"
     hero_str_decref(t10);
     return;
 }
