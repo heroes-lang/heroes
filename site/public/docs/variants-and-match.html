@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Variants and match, Heroes documentation</title>
-<meta name="description" content="A variant is a value that is one of several shapes. match takes it apart, every case must be named, and a catch-all arm is forbidden — so adding a case breaks every place that reads it.">
+<meta name="description" content="A variant is a value that is one of several shapes. match takes it apart, every case must be named, and a catch-all arm is forbidden, so adding a case breaks every place that reads it.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/docs/variants-and-match.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/variants-and-match.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Variants and match, Heroes documentation">
-<meta property="og:description" content="A variant is a value that is one of several shapes. match takes it apart, every case must be named, and a catch-all arm is forbidden — so adding a case breaks every place that reads it.">
+<meta property="og:description" content="A variant is a value that is one of several shapes. match takes it apart, every case must be named, and a catch-all arm is forbidden, so adding a case breaks every place that reads it.">
 <meta property="og:url" content="https://heroes-lang.org/docs/variants-and-match.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Variants and match, Heroes documentation">
-<meta name="twitter:description" content="A variant is a value that is one of several shapes. match takes it apart, every case must be named, and a catch-all arm is forbidden — so adding a case breaks every place that reads it.">
+<meta name="twitter:description" content="A variant is a value that is one of several shapes. match takes it apart, every case must be named, and a catch-all arm is forbidden, so adding a case breaks every place that reads it.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -96,7 +96,7 @@
   <p>
     An arm names its case with a leading dot, then <code>=&gt;</code>, then the
     answer. A case that carries a payload binds it to a name after the dotted
-    name &mdash; <code>.number n</code> would give you <code>n</code>, and
+    name: <code>.number n</code> would give you <code>n</code>, and
     <code>n.value</code> is the number inside. Here nothing needs the payload,
     so it is <code>_</code>, which binds nothing and can be repeated.
   </p>
@@ -130,8 +130,8 @@ error[wildcard_on_variant]: `_` is not allowed as an arm over `Token` — name e
   25 |         _         => "something else"
      |         ^</code></pre>
   <p>
-    <code>_</code> is still fine where being exhaustive is impossible &mdash;
-    matching on an <code>i64</code> or a <code>str</code> &mdash; because there
+    <code>_</code> is still fine where being exhaustive is impossible
+    (matching on an <code>i64</code> or a <code>str</code>), because there
     the alternative is not a check, it is an infinite list.
   </p>
 
@@ -161,7 +161,7 @@ error[non_exhaustive]: this `match` does not cover `.minus`
   <p>
     Three errors, one per place in the file that reads a token, each pointing at
     the <code>match</code> that now has a hole in it. Nothing runs until a human
-    &mdash; or a model &mdash; has decided what a minus sign is called, what its
+    or a model, has decided what a minus sign is called, what its
     binding power is, and whether it is an operator. <b>A change to the shape of
     the data breaks the code that reads it, loudly, at build time.</b> With a
     catch-all arm, all three of those questions would have been answered
@@ -183,7 +183,7 @@ error[non_exhaustive]: this `match` does not cover `.minus`
   <p>
     Note what this is not: it is not a catch-all wearing a disguise. Every case
     is still written down, so the new <code>minus</code> would still break this
-    function &mdash; which is right, because whether a minus is an operator is a
+    function, which is right, because whether a minus is an operator is a
     real question.
   </p>
 

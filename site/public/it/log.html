@@ -48,7 +48,7 @@
     <span class="nod">· changes ·</span>
   </div>
   <p class="lede">Dalla più recente, una voce per milestone. Il diario completo
-  &mdash; decisioni, revisioni ostili, previsioni e cose che si sono rotte &mdash;
+  (decisioni, revisioni ostili, previsioni e cose che si sono rotte)
   vive nel
   <a href="https://github.com/giuseppearici/heroes-lang">repository</a>; questa è
   la versione cartolina.</p>
@@ -65,7 +65,7 @@
       dimostrare di valere quello che sostituiva: il contatore nuovo dà lo
       stesso numero del vecchio, al token; il rapporto delle mutazioni è
       tornato identico lettera per lettera; e il confronto fra i due
-      compilatori è stato congelato in 142 file di C generato &mdash;
+      compilatori è stato congelato in 142 file di C generato:
       l&rsquo;ultima cosa su cui due implementazioni indipendenti sono state
       d&rsquo;accordo, messa per iscritto quando erano vive tutte e due.
       L&rsquo;ultimo controllo scritto quel giorno, quello che urla quando un
@@ -77,12 +77,12 @@
     <li>
       <span class="when">2026-08-18 · M-harness-port: la rete, in Heroes</span>
       <b>Tutto quello che controlla il compilatore era scritto nel linguaggio che stava per andare in pensione, così la rete è stata riscritta nel linguaggio stesso.</b>
-      Un programma che usa il compilatore come lo userebbe una persona &mdash;
-      scrive un comando, legge quello che torna, lo confronta con quello che
-      era stato promesso &mdash; 688 controlli. Puntato sul compilatore nuovo
+      Un programma che usa il compilatore come lo userebbe una persona,
+      in 688 controlli: scrive un comando, legge quello che torna, lo
+      confronta con quello che era stato promesso. Puntato sul compilatore nuovo
       che prova se stesso, è andato in rosso su due cose che nessuno poteva
-      vedere prima. Una era un messaggio di errore vuoto &mdash; senza codice,
-      senza riga, senza il pezzo di programma sotto &mdash; stampato proprio
+      vedere prima. Una era un messaggio di errore vuoto (senza codice,
+      senza riga, senza il pezzo di programma sotto), stampato proprio
       nell&rsquo;unico caso in cui il compilatore può dire &ldquo;lo sbaglio è
       tuo&rdquo;. L&rsquo;altra era una sottolineatura troppo lunga, che il
       file d&rsquo;oro del compilatore vecchio registrava come giusta dal
@@ -98,7 +98,7 @@
       linguaggio lo costruisce con un compilatore C e basta. Preparando la
       cancellazione del bootstrap sono saltate fuori due cose. Il compilatore
       nuovo leggeva la sua libreria di base da un percorso che puntava dentro
-      la cartella che stava per sparire &mdash; e se il file mancava non
+      la cartella che stava per sparire. E se il file mancava non
       protestava: andava avanti con una libreria vuota e dava la colpa al
       programma dell&rsquo;autore. E il controllo che i due compilatori siano
       d&rsquo;accordo non aveva mai guardato la cosa di cui parla: confrontava
@@ -153,8 +153,8 @@
       <span class="when">2026-08-15 · M-struct-passing: la stessa dimensione non è la stessa cosa</span>
       <b>Un terzo di tutto quello che offre una libreria C vera era fuori portata.</b>
       I gruppi di valori che viaggiano come una cosa sola non riuscivano ad
-      attraversare il confine. La soluzione ovvia &mdash; descrivi il gruppo da
-      entrambi i lati, poi controlla che dimensioni e posizioni combacino &mdash; è
+      attraversare il confine. La soluzione ovvia (descrivi il gruppo da
+      entrambi i lati, poi controlla che dimensioni e posizioni combacino) è
       sbagliata, e il modo in cui è sbagliata è il motivo per cui questo progetto
       esiste: su questa macchina due gruppi possono avere dimensioni identiche,
       posizioni identiche, passare qualunque controllo si possa scrivere, e
@@ -324,8 +324,8 @@
       giudice è stato messo in mano quel messaggio e gli è stato chiesto che cosa
       avrebbe fatto dopo: ha controllato la versione del compilatore, ha eseguito
       il comando di diagnosi, ha cercato in tutto il repository un identificatore
-      interno, e poi ha detto al proprio utente che la toolchain sembrava rotta
-      &mdash; una frase che lui stesso ha poi giudicato falsa. Un altro ha trovato
+      interno, e poi ha detto al proprio utente che la toolchain sembrava rotta:
+      una frase che lui stesso ha poi giudicato falsa. Un altro ha trovato
       che il compilatore C che usano tutti ha una diagnostica esattamente per
       questo caso dal 1994, e stampa la parola &ldquo;sorry&rdquo;, e poi ha letto
       una riga più in basso: esce con il normale codice di errore. La prova che
@@ -372,8 +372,8 @@
     <li>
       <span class="when">2026-08-04 · M-syntax-tree: il parser, l&rsquo;albero, il formatter</span>
       <b>Il primo atto del parser è stato scoprire che il linguaggio non riusciva a scrivere il tipo di una funzione.</b>
-      <code>fn</code> stava nel registro delle parole straniere &mdash; un errore
-      con la riparazione già scritta &mdash; e stava anche nella sintassi che la
+      <code>fn</code> stava nel registro delle parole straniere (un errore
+      con la riparazione già scritta) e stava anche nella sintassi che la
       specifica stessa usava per un tipo funzione: quindi un parametro di tipo
       funzione non passava nemmeno il lexer, e ogni parametro di quel genere era
       impossibile da scrivere. La domanda è stata mandata a cinque giudici con una
@@ -390,7 +390,7 @@
       Il testo sorgente adesso diventa token: indentazione rigida dove un tab è un
       errore e non un&rsquo;interpretazione, fine delle istruzioni dedotta così che
       al linguaggio non servano i punti e virgola, e parole chiave prese in prestito
-      da altri linguaggi &mdash; <i>struct</i>, <i>let</i>, <i>while</i> &mdash;
+      da altri linguaggi (<i>struct</i>, <i>let</i>, <i>while</i>)
       che falliscono con la correzione già scritta dentro il messaggio. Scriverlo
       alla lettera seguendo il progetto ha scoperto tre buchi nel progetto stesso:
       la regola per chiudere una riga citava Go ma aveva perso tre delle parole di
@@ -419,7 +419,7 @@
       dei compilatori, semplicità, ergonomia per gli LLM, didattica. Tre hanno detto
       <i>obietto</i>. La metrica della tesi si è guadagnata un braccio di controllo,
       sono stati scoperti due passaggi mancanti nel compilatore, e il backend è
-      passato da QBE all&rsquo;emissione di C &mdash; per la FFI, non per la
+      passato da QBE all&rsquo;emissione di C, per la FFI e non per la
       velocità. Il piano che è sopravvissuto è la revisione 2.
     </li>
     <li>
@@ -427,14 +427,14 @@
       <b>Un documento di progetto da 2000 righe e una domanda.</b>
       Il linguaggio è arrivato come una lunga conversazione di progetto: un
       linguaggio compilato senza libreria standard, costruito per il lettore che non
-      è umano. La prima decisione ingegneristica &mdash; quale linguaggio scrive il
-      linguaggio &mdash; è stata rovesciata nell&rsquo;arco di un&rsquo;ora da una
+      è umano. La prima decisione ingegneristica (quale linguaggio scrive il
+      linguaggio) è stata rovesciata nell&rsquo;arco di un&rsquo;ora da una
       domanda di una riga sul backend. Da allora tutto viene discusso per iscritto.
     </li>
   </ol>
 
-  <p class="next">Queste sono le cartoline. Le lettere &mdash; i panel, le misure,
-  i diari, ogni dietrofront &mdash; stanno nel
+  <p class="next">Queste sono le cartoline. Le lettere (i panel, le misure,
+  i diari, ogni dietrofront) stanno nel
   <a href="https://github.com/giuseppearici/heroes-lang">repository</a>.</p>
 
   <footer>

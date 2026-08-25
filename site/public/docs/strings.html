@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Strings, Heroes documentation</title>
-<meta name="description" content="A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters — two different jobs the type system keeps apart. Six escapes exist and no others.">
+<meta name="description" content="A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters: two different jobs the type system keeps apart. Six escapes exist and no others.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/docs/strings.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/docs/strings.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Strings, Heroes documentation">
-<meta property="og:description" content="A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters — two different jobs the type system keeps apart. Six escapes exist and no others.">
+<meta property="og:description" content="A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters: two different jobs the type system keeps apart. Six escapes exist and no others.">
 <meta property="og:url" content="https://heroes-lang.org/docs/strings.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Strings, Heroes documentation">
-<meta name="twitter:description" content="A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters — two different jobs the type system keeps apart. Six escapes exist and no others.">
+<meta name="twitter:description" content="A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters: two different jobs the type system keeps apart. Six escapes exist and no others.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -127,7 +127,7 @@ error[type_mismatch]: expected `u8`, found `str`
   </figure>
   <p>
     There is no <code>split</code> built in, because there is no standard
-    library at all &mdash; that is the founding constraint, not an oversight.
+    library at all: that is the founding constraint, not an oversight.
     Twelve lines is what splitting on a space actually costs, and the
     <code>if i &gt; start</code> is the part a library would have decided for
     you: two spaces in a row produce no empty word here, and that is a choice
@@ -135,7 +135,7 @@ error[type_mismatch]: expected `u8`, found `str`
   </p>
   <p>
     <code>slice(from:, to:)</code> takes bytes, <code>to</code> excluded, and
-    names both because they are the same type &mdash; the same rule that makes
+    names both because they are the same type, the same rule that makes
     <code>range</code> name its ends.
   </p>
 
@@ -160,7 +160,7 @@ error[type_mismatch]: expected `u8`, found `str`
     These two do the same kind of work at very different prices. <code>join</code>
     walks the list once and builds the answer in one pass. The loop underneath
     it builds a new string on every round, because a <code>str</code> never
-    changes and <code>+</code> can only make a third one out of two &mdash; so a
+    changes and <code>+</code> can only make a third one out of two, so a
     long list costs the sum of every intermediate result. <code>join</code> and
     <code>repeat</code> exist for exactly that reason, and a handful of initials
     will never notice the difference.

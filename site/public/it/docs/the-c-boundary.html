@@ -50,8 +50,8 @@
 
   <p>
     Heroes non ha una libreria standard, e non l&rsquo;avrà mai. Tutto quello che
-    hai visto in questi capitoli &mdash; numeri, stringhe, array, mappe, la
-    stampa &mdash; è l&rsquo;inventario completo. File, socket, JSON, database,
+    hai visto in questi capitoli (numeri, stringhe, array, mappe, la
+    stampa) è l&rsquo;inventario completo. File, socket, JSON, database,
     grafica, matematica oltre l&rsquo;aritmetica: niente di tutto questo manca, e
     niente di tutto questo arriverà. Arriva dal C, attraverso un meccanismo solo,
     e questo capitolo è quel meccanismo.
@@ -125,7 +125,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
     Nessuno dei due è uno <code>str</code>, e nessuna conversione avviene alle
     tue spalle: <code>s.cstr()</code> presta al C una stringa di Heroes perché la
     legga, e <code>c.validated()</code> ne ricopia una indietro come
-    <code>str?</code> &mdash; un valore oppure un errore, perché il testo che
+    <code>str?</code>: un valore oppure un errore, perché il testo che
     arriva dal C è una promessa, non un fatto: il puntatore può essere nullo, e
     i byte possono non essere UTF-8. Lo gestisci come qualunque altro valore
     fallibile. Anche la direzione opposta è protetta: un <code>cstr</code> nullo
@@ -178,7 +178,7 @@ error[ffi_return_type]: `puts` does not return `cstr` — that is what `stdio.h`
   <h3>Dove sta la libreria è un problema della macchina</h3>
   <p>
     <code>link "m"</code> nomina una libreria da collegare. Quando non basta
-    &mdash; e per qualunque cosa abbia dipendenze di sistema non basta &mdash; un
+    (e per qualunque cosa abbia dipendenze di sistema non basta) un
     gruppo può nominare un <b>package</b> al suo posto:
   </p>
   <pre><code>extern "raylib.h" package "raylib"</code></pre>

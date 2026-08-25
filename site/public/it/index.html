@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Heroes: un linguaggio di programmazione fatto per gli LLM</title>
-<meta name="description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C — e ogni errore plausibile di un LLM è un errore di compilazione.">
+<meta name="description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C. E ogni errore plausibile di un LLM è un errore di compilazione.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/it/index.html">
 <link rel="alternate" hreflang="it" href="https://heroes-lang.org/it/index.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Heroes: un linguaggio di programmazione fatto per gli LLM">
-<meta property="og:description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C — e ogni errore plausibile di un LLM è un errore di compilazione.">
+<meta property="og:description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C. E ogni errore plausibile di un LLM è un errore di compilazione.">
 <meta property="og:url" content="https://heroes-lang.org/it/index.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Heroes: un linguaggio di programmazione fatto per gli LLM">
-<meta name="twitter:description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C — e ogni errore plausibile di un LLM è un errore di compilazione.">
+<meta name="twitter:description" content="Heroes è un piccolo linguaggio compilato che sta in un prompt e si compila da solo. Binari nativi, nessun GC, nessuna libreria standard, tutto passa dalla FFI verso il C. E ogni errore plausibile di un LLM è un errore di compilazione.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -55,7 +55,7 @@
       <p class="promise">Così piccolo da stare in un prompt, così vero da <em>compilare se stesso</em>.</p>
       <p class="tagline">Fatto per le macchine che oggi scrivono codice, e comunque
       chiaro per un occhio umano. Nessuna libreria standard, nessun garbage
-      collector, binari nativi &mdash; e ogni errore plausibile di un LLM è un
+      collector, binari nativi. E ogni errore plausibile di un LLM è un
       errore di compilazione.</p>
       <div class="cta">
         <a class="primary" href="errors.html">Guarda un errore vero</a>
@@ -271,8 +271,8 @@ we can be heroes</code></pre>
   <p>
     È una tesi, non uno slogan, quindi si misura. <code>heroes mutate</code>
     prende programmi che funzionano, ci pianta dentro uno sbaglio realistico
-    alla volta &mdash; due argomenti dello stesso tipo scambiati, un caso
-    dimenticato in un <code>match</code>, un nome riusato &mdash; e conta
+    alla volta (due argomenti dello stesso tipo scambiati, un caso
+    dimenticato in un <code>match</code>, un nome riusato) e conta
     quanti il compilatore ferma. Poi rifà lo stesso giro con le regole della
     tesi spente, e la distanza fra le due prove è il risultato, tenuto sbaglio
     per sbaglio: alcuni sbagli li ferma solo la tesi, altri li fermerebbe

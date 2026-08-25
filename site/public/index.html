@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Heroes: a programming language made for LLMs</title>
-<meta name="description" content="Heroes is a small compiled language that fits in a prompt and compiles itself. Native binaries, no GC, no standard library, everything through the C FFI — and every plausible LLM mistake is a compile error.">
+<meta name="description" content="Heroes is a small compiled language that fits in a prompt and compiles itself. Native binaries, no GC, no standard library, everything through the C FFI. And every plausible LLM mistake is a compile error.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23e5393e' d='M 14 0 L2 18 h8 L7 32 L22 12 h-9 z'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://heroes-lang.org/index.html">
 <link rel="alternate" hreflang="en" href="https://heroes-lang.org/index.html">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Heroes">
 <meta property="og:title" content="Heroes: a programming language made for LLMs">
-<meta property="og:description" content="Heroes is a small compiled language that fits in a prompt and compiles itself. Native binaries, no GC, no standard library, everything through the C FFI — and every plausible LLM mistake is a compile error.">
+<meta property="og:description" content="Heroes is a small compiled language that fits in a prompt and compiles itself. Native binaries, no GC, no standard library, everything through the C FFI. And every plausible LLM mistake is a compile error.">
 <meta property="og:url" content="https://heroes-lang.org/index.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Heroes: a programming language made for LLMs">
-<meta name="twitter:description" content="Heroes is a small compiled language that fits in a prompt and compiles itself. Native binaries, no GC, no standard library, everything through the C FFI — and every plausible LLM mistake is a compile error.">
+<meta name="twitter:description" content="Heroes is a small compiled language that fits in a prompt and compiles itself. Native binaries, no GC, no standard library, everything through the C FFI. And every plausible LLM mistake is a compile error.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -55,7 +55,7 @@
       <p class="promise">Small enough to fit in a prompt, real enough to <em>compile itself</em>.</p>
       <p class="tagline">Made for the machines that write code now, yet plain
       to human eyes. No standard library, no garbage collector, native
-      binaries &mdash; and every plausible LLM mistake is a compile error.</p>
+      binaries. And every plausible LLM mistake is a compile error.</p>
       <div class="cta">
         <a class="primary" href="errors.html">See a real error</a>
         <a class="ghost" href="docs/failure-is-a-value.html">Read a chapter</a>
@@ -93,7 +93,7 @@
   <ul class="figures">
     <li>
       <span class="n">231</span>
-      <span class="what">lines &mdash; the whole language</span>
+      <span class="what">lines: the whole language</span>
       <span class="how">The complete specification is a few pages: it fits in a
       prompt with room left for your program, and the compiler counts its own
       budget so the number cannot drift.
@@ -254,9 +254,9 @@ we can be heroes</code></pre>
   </blockquote>
   <p>
     It is a claim, not a slogan, so it is measured. <code>heroes mutate</code>
-    takes programs that work, plants one realistic mistake at a time &mdash;
-    two same-typed arguments swapped, a case left out of a <code>match</code>,
-    a name reused &mdash; and counts how many the compiler stops. Then it does
+    takes programs that work, plants one realistic mistake at a time
+    (two same-typed arguments swapped, a case left out of a <code>match</code>,
+    a name reused) and counts how many the compiler stops. Then it does
     the same run with the thesis rules switched off, and the distance between
     the two runs is the result, kept mistake by mistake: some mistakes only the
     thesis catches, some any language would catch, and one nothing catches yet.

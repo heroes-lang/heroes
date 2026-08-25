@@ -62,7 +62,7 @@
       built first, and each one had to prove itself against the thing it
       replaced: the new counter agrees with the old one to the token, the
       mutation report came back identical letter for letter, and the
-      two-compiler comparison was frozen into 142 files of generated C &mdash;
+      two-compiler comparison was frozen into 142 files of generated C:
       the last thing two independent implementations ever agreed on, written
       down while both were still alive. The final check written that day, the
       one that shouts when a document cites a file that is not there, promptly
@@ -73,11 +73,10 @@
     <li>
       <span class="when">2026-08-18 · M-harness-port: the net, in Heroes</span>
       <b>Everything that checks the compiler was written in the language being retired, so the net was rewritten in the language itself.</b>
-      A program that uses the compiler the way a person does &mdash; type a
-      command, read what comes back, compare it to what was promised &mdash;
-      688 checks. Pointed at the new compiler testing itself, it went red on
+      A program that uses the compiler the way a person does, in 688 checks:
+      type a command, read what comes back, compare it to what was promised. Pointed at the new compiler testing itself, it went red on
       two things nobody could have seen before. One was an error message with
-      nothing in it &mdash; no code, no line, no piece of the program &mdash;
+      nothing in it (no code, no line, no piece of the program),
       printed in the one situation where the compiler is allowed to say the
       mistake is yours. The other was an underline drawn too long, which the
       old compiler&rsquo;s own golden file had been recording as correct since
@@ -91,7 +90,7 @@
       machine that has never heard of this language builds it with nothing but
       a C compiler. Preparing to delete the bootstrap turned up two things. The
       new compiler had been reading its own base library from a path pointing
-      into the very folder that was about to go &mdash; and when the file was
+      into the very folder that was about to go. When the file was
       missing it did not complain: it carried on with an empty library and
       blamed the author&rsquo;s program. And the check that the two compilers
       agree had never looked at the thing it is about: it compared what they

@@ -62,7 +62,7 @@ v @ v + 1          <span class="c"># changing it</span></code></pre>
   <p>
     <code>=</code> gives a value a name and that is the end of it. <code>@</code>
     does three jobs with one symbol: it declares a cell, it marks every line
-    that writes to one, and &mdash; later on this page &mdash; it marks a
+    that writes to one, and, later on this page, it marks a
     function that changes what it is given. There is no separate assignment
     operator, so a line that changes something can never be mistaken for a line
     that introduces something.
@@ -82,7 +82,7 @@ error[not_mutable]: `start` was bound with `=`, which binds once, forever — a 
   fix (guess): declare `start` as a cell: `start: &lt;type&gt; @ &lt;value&gt;`</code></pre>
   <p>
     That fix is tagged <code>guess</code> rather than <code>certain</code>,
-    because the compiler cannot know which of the two you meant &mdash; you may
+    because the compiler cannot know which of the two you meant: you may
     have wanted a cell, or you may have written to the wrong name. Only
     <code>certain</code> fixes can be applied for you.
   </p>
@@ -120,7 +120,7 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
     <code>a</code> alone. This holds for arrays, maps, strings and records alike,
     at any depth: nothing in this language aliases anything, so no change made
     over here can appear over there. Under the surface the compiler shares the
-    memory until somebody writes, and copies only then &mdash; but that is an
+    memory until somebody writes, and copies only then. But that is an
     implementation detail you are never asked to think about.
   </p>
   <p>
