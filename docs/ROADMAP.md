@@ -28,15 +28,15 @@ not merged away.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs landed · **step 1** done · **step 2** ruled by panel 091: nothing is pruned |
+| **State** | four repairs landed · **step 1** done · **step 2** ruled and ratified: nothing is pruned |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 22 of 36 · 25 tags |
 | The compiler | **38,021 lines** of Heroes in 155 files |
 | The seed | **765,508** lines of generated C — the whole way in |
 | The spec | **3548** tokens of a hard 4096 · headroom 548 |
 | Runtime ABI | 15 |
-| Panels held | **91** · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **2** in `DECIDE.md` — panel 091's ratification, and a measured memory-safety hole at the C boundary · 10 assigned in `SCHEDULED.md` · 262 in `LEARN.md` (never a gate) |
+| Panels held | **91**, every one ratified · journals 25 · measurements 13 · examples 15 |
+| Waiting on the author | **nothing** — 091 ratified the day it closed · 10 assigned in `SCHEDULED.md` · 262 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
@@ -112,7 +112,7 @@ naming it. It is a CI leg now, on every push: **13.5 s**, because it compiles th
 5,606-line harness rather than the 38,021-line compiler.
 
 **Step 2 — the block stays, because the architecture already deletes the
-duplication** (panel 091, five judges, provisional). The last `SCHEDULED.md` item
+duplication** (panel 091, five judges, ratified). The last `SCHEDULED.md` item
 this milestone owed was panel 087's unpruned `extern` asserts: **27 of a
 `print(1)` program's 166 lines of C** exist for a library group it never touches,
 and **138 of 155 modules** would carry that under one `.c` per module. Every
