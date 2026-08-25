@@ -43,9 +43,24 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
    whose evidence is hidden is a guess.
 
 5. **Apply immediately, in the same session.** Spec, design.md or CLAUDE.md
-   amendment; DESIGN-LOG line; the queue item ticked **with the verdict written
-   into it**; one commit. A decision recorded and not applied is the same open
-   question with more paperwork.
+   amendment; DESIGN-LOG line; the item ticked **with the verdict written
+   into it** and **cut from `docs/work/DECIDE.md`, pasted at the end of
+   `docs/work/DONE.md`**; one commit. A decision recorded and not applied is the
+   same open question with more paperwork.
+
+   **The move is not tidying, it is this step.** The rule was written in three
+   places — CLAUDE.md §3, `DESIGN-LOG:240`, the record's own preamble — and this
+   line did not say to do it, so nobody did: by 2026-08-26 `DECIDE.md` held **138
+   ticked items and zero open ones**, 391 KB, under eighteen headings still
+   titled `## Open`, while the record had gone untouched for eight days. A list
+   that keeps its own dead is not a list of what is owed.
+
+6. **One notation, and the file is only items.** `- [ ]` in the live lists,
+   `- [x]` in the record. No `## ` sections, no prose paragraphs, no
+   `~~strikethrough~~`. Nine live FFI findings sat under two panel headings in
+   `DECIDE.md` as bare bullets no count could see, and when they were finally
+   read **five were already closed** and two were measurably false. If an item
+   will not fit the one-line format, it is two items.
 
 Anything the author defers stays open **with its blocker named**, so the next
 session ranks it without re-deriving why.
