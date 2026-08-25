@@ -30,13 +30,13 @@ not merged away.
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
 | **State** | four repairs · steps 1–4 done · **step 5** lands acceptance row 1 |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
-| Milestones closed | 22 of 36 · 25 tags |
-| The compiler | **38,364 lines** of Heroes in 157 files |
+| Milestones closed | 25 of 36 · 25 tags |
+| The compiler | **38,454 lines** of Heroes in 158 files |
 | The seed | **769,830** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 15 |
 | Panels held | **92**, every one ratified · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **nothing** — three answered the day they were asked · 12 assigned in `SCHEDULED.md` · 264 in `LEARN.md` (never a gate) |
+| Waiting on the author | **nothing** — the decision queue is at zero, two more answered the day they were asked (2026-08-25) · 10 assigned in `SCHEDULED.md` · 269 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
@@ -208,15 +208,16 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 24 | **M-harness-port** | done 2026-08-18 | `m-harness-port` | [023](journal/023-harness-port.md) | the net in Heroes · closure list |
 | 25 | **M-bootstrap-archive** | done 2026-08-19 | `m-bootstrap-archive` | [024](journal/024-bootstrap-archive.md) | the third language dies · v1's last clause (design.md:82) |
 | 26 | **M-separate-compilation** | **OPEN** | — | — | one `.c` per module, prototypes across TUs, the cache · closure list |
-| 27 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
-| 28 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 29 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
-| 30 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
-| 31 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 32 | **M-documentation-site** | scheduled | — | — | the site, anchored to programs that run |
-| 33 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 34 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 35 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 27 | **M-package-layout** | scheduled | — | — | `use` paths, the qualifier, where a program's files live · **scheduled by author decision 2026-08-25** |
+| 28 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
+| 29 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 30 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
+| 31 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
+| 32 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 33 | **M-documentation-site** | scheduled | — | — | the site, anchored to programs that run |
+| 34 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 35 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 36 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
@@ -254,6 +255,78 @@ and because — measured — it is where §4.19's guarantee can quietly die.
 4. one two-module FFI-shaped golden with a wrong `extern` signature: **exit 1 in
    both TUs**, `#~` annotated.
 
+### M-package-layout — `use` paths, the qualifier, and where a program's files live
+
+**Scheduled by author decision 2026-08-25** (`/decide`), taken mid-M-separate-compilation
+and recorded because the expectation came first: the author expected this
+milestone's work to arrive with separate compilation, and separate compilation
+delivers the build architecture instead — one `.c` per module, the per-module
+cache. Organising `.hero` files into directories is a **different deliverable**,
+so under CLAUDE.md §14 it is a different milestone rather than an area annexed by
+one that already exists.
+
+**What it delivers.** Today a module name is one word and nesting is refused by
+name: `selfhost/parse_use.hero:47`, `error[module_path_has_no_parts]` — *"there
+is no nesting: every `.hero` a program reads sits beside the file that names
+it"*. This milestone decides what replaces that refusal — the spelling of a
+`use` that names a path, **the qualifier it binds** (from `use shapes/geom`, is
+the module `geom`, `shapes.geom`, or `shapes/geom`?), and how a program's files
+are laid out on disk.
+
+**The flat layout is a RULING, not an oversight — `docs/panel/032`, ratified
+2026-08-12**, and this milestone reopens it rather than filling a silence. That
+sitting took the same question with five seats: `C` (a directory is a module) was
+**vetoed three times on three independent grounds**; `A` (Nim's quoted form) was
+struck as dominated; `S` (stay flat) was adopted. So the sitting this milestone
+convenes is bound by what 032 already fixed, and inherits four things rather than
+re-deriving them:
+
+- **the landing form is decided in advance.** 032 R4: if the author overrules,
+  what lands is the sentence the warden and the ergonomist beat into shape
+  together — **+26 spec tokens measured**, never the +38 that was tabled:
+
+  ```
+  - A `use` may be a path: `use syntax/decl` binds `decl`. Last parts are unique.
+  ```
+
+  So the qualifier's headline answer is already on the record: the module is
+  `decl`, not `syntax.decl` and not `syntax/decl`.
+- **what R4 leaves genuinely open** is root-relative against file-relative, with
+  the ergonomist's prediction attached (≥50% of `use` lines from a subdirectory
+  to a peer take the root-relative spelling; a file-relative compiler
+  first-try-compiles a 6-file 3-directory program ~0% of the time). That, and
+  not the separator, is the sitting's real subject.
+- **R5 and R6 hold whether or not paths ever land**: the C name component is the
+  **whole path**, not the last part (measured — last parts collided 22-way on
+  `mod` over 169 paths, whole paths zero times), and `use` is scoped to *the
+  program*, which must not inherit a global scope by silence when packages
+  arrive.
+- **panel 031's ergonomist declined to use a subdirectory at all**, from the
+  spec alone, because it could not predict the qualifier — the measured cost of
+  the silence, and the reason the question is worth a milestone rather than a
+  footnote.
+
+**Two of 032's own numbers have moved, measured 2026-08-25, and the sitting
+should open with them rather than with the 2026-08-12 ones.** The spec-warden's
+killer argument was renames — *"D renames ≥40 of 119 files to satisfy last-part
+uniqueness"* — and on today's tree **zero of `selfhost/`'s 158 module names
+collide**, so last-part uniqueness costs nothing there (repo-wide, over 451
+`.hero` files, 9 stems collide). And the compiler-engineer predicted
+`find selfhost -name '*.hero'` **≤ 45** at M-selfhost-port's close: measured at
+the `m-selfhost-port` tag it was **143**, and it is **158** today — the
+prediction is falsified by more than 3×, and the *"a flat tree stays small"*
+premise under `S` went with it. Neither fact decides the question; both change
+which side owes the argument.
+
+**And what ordering it before M-package-manager costs is written down rather than
+discovered later.** The deferral this replaces (ratified 2026-08-12) rested on
+packages creating the pressure that decides the qualifier — naming a module of
+another library. Sitting first means the panel decides from precedent, from the
+compiler's own source, and from the corpus, **without** a distributed package in
+hand. That is the trade the author took; if the sitting finds it cannot rule
+without that case, the honest outcome is a conservative default and a return
+condition, not an invented one.
+
 ### M-package-manager — packages, and what stands in for a standard library
 
 **Scheduled, no warrant.** Not a decision to take later: design.md:637 already
@@ -261,7 +334,10 @@ fixes the shape — *"No package manager exists before modules do; when it arriv
 it will be `heroes add`/`heroes fetch` — inside the same binary"* (never a second
 binary, CLAUDE.md §6 and §10). Its real prerequisite is
 **M-separate-compilation**, not M-module-namespace: without separate compilation,
-installing a package means recompiling the world on every build.
+installing a package means recompiling the world on every build. **Since
+2026-08-25 there is a second one in front of it** — M-package-layout, which rules
+on how a fetched package's modules are named and reached; `heroes add` cannot
+place files it has no spelling for.
 
 **And this is where "a standard library that wraps C" goes.** §1.11 refuses a
 standard library permanently, and that refusal is the founding constraint rather
@@ -602,6 +678,7 @@ So a number met in the record resolves here, and only here.
 | `M-harness-port` | — | `m-harness-port` | the net in Heroes: the golden harness, the corpus, the record checks. **A new id and not part of M8c** (§14): panel 085 B4 split the archive off the fixpoint, and the archive's precondition is a milestone of its own — 4,279 lines of Rust harness, and the instrument that dies with the bootstrap is the one whose expectation *is* the bootstrap |
 | `M-bootstrap-archive` | M8c, in part | `m-bootstrap-archive` | `crates/` → `archive/bootstrap-rs/`. **The clause M8c was carrying and could not pay**: the port read its standard library from the directory being archived, so the compiler failed outside this repository, and `heroes measure` was still not in the port |
 | `M-separate-compilation` | M9 | — | one `.c` per module, prototypes across TUs, the cache |
+| `M-package-layout` | — | — | `use` paths, the qualifier, where a program's files live. **A new id rather than an area annexed** (§14, author decision 2026-08-25): M-separate-compilation delivers the build architecture and M-package-manager delivers `heroes add`, so the directories question — which had been scheduled inside the latter since 2026-08-12 — is a third deliverable and takes a name of its own |
 | `M-package-manager` | M10 | — | `heroes add`/`heroes fetch`, bindings in place of a standard library |
 | `M-isolated-threads` | M11 | — | Part 7.13: per-thread heaps, copying at the boundaries, no scheduler |
 | `M-qbe-backend` | M12 | — | Part 7.14: the proof that the IR is not C in disguise |

@@ -8,7 +8,7 @@ whole-program monomorphisation could still see every instance; the descriptor
 model under separate TUs; and the shape of the per-module cache key (panel 030
 R2 rows 2–3). Row 1 landed as step 5 (`error[extern_across_modules]`).
 
-**Status: provisional — author ratification pending.**
+**Status:** `RATIFIED 2026-08-25` (was `provisional — author ratification pending`).
 
 ## The proposal, verbatim
 
@@ -178,8 +178,50 @@ seats' evidence prices as the more fragile architecture.
 
 ## Author's verdict
 
-Pending — ratification queued in `docs/debrief/DECIDE.md` (the panel 093
-item). Step 6 builds on R1–R6 as the provisional default; a yes settles the
-six resolutions and nothing else, and an overturn of R2 toward define-site
-placement compels the reverse-edge cache key both seats priced as the more
-fragile architecture.
+**Ratified 2026-08-25**, the day it opened (author decision, `/decide` answer
+`1a`). All six resolutions stand as adopted; nothing was deferred and nothing was
+overturned.
+
+**What the yes settles.**
+
+- **R1–R6 as written**, and the ratification is worth its date: step 6 was
+  already building on them as the provisional default, so this is the cheapest
+  moment an overturn could have cost anything. One of the six is **already
+  delivered** rather than promised — R6's name stability landed as steps 6a
+  (`809d64a`, content-named option and function-type typedefs) and 6b
+  (`995c4de`, content-named string statics), so every synthetic name in the
+  emitted C is now a function of content alone.
+- **The cache key never reads emitted C.** Both seats reached this
+  independently, and the pragmatist's falsifier is what makes it a measurement
+  rather than a preference: `link "sqlite3"` → `link "NOTALIB"` leaves
+  `--emit-c` output byte-identical, so a key derived from the emitted unit is
+  blind to a link edit by construction. Source text in, plus everything else
+  that reaches the object by another road.
+- **A prototype the compiler writes is verified by clang, or it is not written.**
+  The exit-0 garbage the pragmatist produced (`4317207840` where a `HeroStr`
+  belonged) was the first compiler-emitted C nothing checked, and R3's repair —
+  the declaring TU includes the interface text it exports — turns that class into
+  `error: conflicting types` at the one place an author can act.
+- **The per-TU reachability trim is mandatory, not an optimisation** (11+13
+  `-Wunused-function` warnings without it, measured), so §7's zero-warning bar
+  is what schedules it on day one.
+
+**What the yes does not settle**, written down so nobody reads the silence as a
+ruling:
+
+- **The four instruments are owed with the landing, not with the ratification**:
+  per-TU double-emit determinism, the warm-cache staleness golden (the
+  tag-reorder witness), the prototype-agreement mechanism, and the pin that
+  runtime descriptors are referenced and never copied. A yes on the architecture
+  is not a yes on an untested one.
+- **The predictions stay open and are scored, not assumed** — the ≤1000-line
+  diff and the zero-warning two-module case at the milestone's close, panel 030
+  prediction 8 scored **false** in advance, and the pragmatist's two at step 6
+  acceptance. The falsifier is the sharpest of them: if a module's object is ever
+  keyed on emitted C, editing only the `link` name hits the cache and links the
+  old library at exit 0.
+- **R2's alternatives are refused on the cache arrow and on nothing else.** The
+  convener's original reason — that define-site placement cannot name the caller's
+  types — is **false**, built and run by the engineer, and it stays on this page
+  under its own heading rather than being smoothed away. If a later sitting wants
+  (b), it must overturn the arrow argument, not that one.
