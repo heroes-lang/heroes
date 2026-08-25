@@ -67,77 +67,77 @@ HERO_STR_STATIC(hero_str_5, "signed ");
 HERO_STR_STATIC(hero_str_6, "A9");
 HERO_STR_STATIC(hero_str_7, "bytes ");
 
-typedef struct h_sizedintegers_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_sizedintegers_0opt0;
+} h_0opt_e201354;
 
-typedef struct h_sizedintegers_0opt1 {
+typedef struct h_0opt_1ec004 {
     int64_t tag;
     union {
         uint8_t ok;
         HeroFailure err;
     } as;
-} h_sizedintegers_0opt1;
+} h_0opt_1ec004;
 
-typedef struct h_sizedintegers_0opt2 {
+typedef struct h_0opt_1b9b98 {
     int64_t tag;
     union {
         int8_t ok;
         HeroFailure err;
     } as;
-} h_sizedintegers_0opt2;
+} h_0opt_1b9b98;
 
-typedef struct h_sizedintegers_0opt3 {
+typedef struct h_0opt_fbaec77 {
     int64_t tag;
     union {
         uint32_t ok;
         HeroFailure err;
     } as;
-} h_sizedintegers_0opt3;
+} h_0opt_fbaec77;
 
-typedef struct h_sizedintegers_0opt4 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_sizedintegers_0opt4;
+} h_0opt_f87774a;
 
-typedef struct h_sizedintegers_0opt5 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_sizedintegers_0opt5;
+} h_0opt_a8ea2;
 
-void h_sizedintegers_0opt0_retain(const h_sizedintegers_0opt0 *v);
-void h_sizedintegers_0opt0_release(h_sizedintegers_0opt0 *v);
-bool h_sizedintegers_0opt0_eq(const h_sizedintegers_0opt0 *a, const h_sizedintegers_0opt0 *b);
-uint64_t h_sizedintegers_0opt0_hash(const void *elem);
-void h_sizedintegers_0opt1_retain(const h_sizedintegers_0opt1 *v);
-void h_sizedintegers_0opt1_release(h_sizedintegers_0opt1 *v);
-bool h_sizedintegers_0opt1_eq(const h_sizedintegers_0opt1 *a, const h_sizedintegers_0opt1 *b);
-uint64_t h_sizedintegers_0opt1_hash(const void *elem);
-void h_sizedintegers_0opt2_retain(const h_sizedintegers_0opt2 *v);
-void h_sizedintegers_0opt2_release(h_sizedintegers_0opt2 *v);
-bool h_sizedintegers_0opt2_eq(const h_sizedintegers_0opt2 *a, const h_sizedintegers_0opt2 *b);
-uint64_t h_sizedintegers_0opt2_hash(const void *elem);
-void h_sizedintegers_0opt3_retain(const h_sizedintegers_0opt3 *v);
-void h_sizedintegers_0opt3_release(h_sizedintegers_0opt3 *v);
-bool h_sizedintegers_0opt3_eq(const h_sizedintegers_0opt3 *a, const h_sizedintegers_0opt3 *b);
-uint64_t h_sizedintegers_0opt3_hash(const void *elem);
-void h_sizedintegers_0opt4_retain(const h_sizedintegers_0opt4 *v);
-void h_sizedintegers_0opt4_release(h_sizedintegers_0opt4 *v);
-bool h_sizedintegers_0opt4_eq(const h_sizedintegers_0opt4 *a, const h_sizedintegers_0opt4 *b);
-uint64_t h_sizedintegers_0opt4_hash(const void *elem);
-void h_sizedintegers_0opt5_retain(const h_sizedintegers_0opt5 *v);
-void h_sizedintegers_0opt5_release(h_sizedintegers_0opt5 *v);
-bool h_sizedintegers_0opt5_eq(const h_sizedintegers_0opt5 *a, const h_sizedintegers_0opt5 *b);
-uint64_t h_sizedintegers_0opt5_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
+void h_0opt_1ec004_release(h_0opt_1ec004 *v);
+bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b);
+uint64_t h_0opt_1ec004_hash(const void *elem);
+void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v);
+void h_0opt_1b9b98_release(h_0opt_1b9b98 *v);
+bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *a, const h_0opt_1b9b98 *b);
+uint64_t h_0opt_1b9b98_hash(const void *elem);
+void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *v);
+void h_0opt_fbaec77_release(h_0opt_fbaec77 *v);
+bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *a, const h_0opt_fbaec77 *b);
+uint64_t h_0opt_fbaec77_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_sizedintegers_main(void);
 
@@ -151,15 +151,15 @@ void h_sizedintegers_main(void) {
     uint64_t h4_top;
     uint64_t h5_hex;
     uint8_t h6_byte;
-    h_sizedintegers_0opt0 h7_f0 = {0};
-    h_sizedintegers_0opt1 h8_f1 = {0};
-    h_sizedintegers_0opt1 h9_f2 = {0};
-    h_sizedintegers_0opt1 h10_f3 = {0};
+    h_0opt_e201354 h7_f0 = {0};
+    h_0opt_1ec004 h8_f1 = {0};
+    h_0opt_1ec004 h9_f2 = {0};
+    h_0opt_1ec004 h10_f3 = {0};
     HeroStr h11_text = {0};
-    h_sizedintegers_0opt0 h12_own12 = {0};
-    h_sizedintegers_0opt1 h13_own13 = {0};
-    h_sizedintegers_0opt1 h14_own14 = {0};
-    h_sizedintegers_0opt1 h15_own15 = {0};
+    h_0opt_e201354 h12_own12 = {0};
+    h_0opt_1ec004 h13_own13 = {0};
+    h_0opt_1ec004 h14_own14 = {0};
+    h_0opt_1ec004 h15_own15 = {0};
     uint8_t t1;
     int8_t t2;
     int32_t t3;
@@ -185,39 +185,39 @@ void h_sizedintegers_main(void) {
     uint8_t t23;
     HeroStr t24 = {0};
     uint8_t t25;
-    h_sizedintegers_0opt0 t26 = {0};
-    h_sizedintegers_0opt0 t27 = {0};
+    h_0opt_e201354 t26 = {0};
+    h_0opt_e201354 t27 = {0};
     int64_t t28;
     int64_t t29;
     bool t30;
-    h_sizedintegers_0opt0 t31 = {0};
+    h_0opt_e201354 t31 = {0};
     HeroFailure t32 = {0};
-    h_sizedintegers_0opt0 t33 = {0};
+    h_0opt_e201354 t33 = {0};
     int64_t t34;
     int64_t t35;
     int64_t t36;
     HeroStr t37 = {0};
     int64_t t38;
-    h_sizedintegers_0opt1 t39 = {0};
-    h_sizedintegers_0opt1 t40 = {0};
+    h_0opt_1ec004 t39 = {0};
+    h_0opt_1ec004 t40 = {0};
     int64_t t41;
     int64_t t42;
     bool t43;
     HeroStr t44 = {0};
     int64_t t45;
-    h_sizedintegers_0opt1 t46 = {0};
-    h_sizedintegers_0opt1 t47 = {0};
+    h_0opt_1ec004 t46 = {0};
+    h_0opt_1ec004 t47 = {0};
     int64_t t48;
     int64_t t49;
     bool t50;
-    h_sizedintegers_0opt1 t51 = {0};
+    h_0opt_1ec004 t51 = {0};
     HeroFailure t52 = {0};
-    h_sizedintegers_0opt1 t53 = {0};
+    h_0opt_1ec004 t53 = {0};
     uint8_t t54;
     HeroStr t55 = {0};
     int64_t t56;
-    h_sizedintegers_0opt1 t57 = {0};
-    h_sizedintegers_0opt1 t58 = {0};
+    h_0opt_1ec004 t57 = {0};
+    h_0opt_1ec004 t58 = {0};
     int64_t t59;
     int64_t t60;
     bool t61;
@@ -236,24 +236,24 @@ void h_sizedintegers_main(void) {
     uint8_t t74;
     uint8_t t75;
     bool t76;
-    h_sizedintegers_0opt0 t77 = {0};
-    h_sizedintegers_0opt0 t78 = {0};
-    h_sizedintegers_0opt1 t79 = {0};
-    h_sizedintegers_0opt1 t80 = {0};
-    h_sizedintegers_0opt1 t81 = {0};
-    h_sizedintegers_0opt1 t82 = {0};
-    h_sizedintegers_0opt1 t83 = {0};
-    h_sizedintegers_0opt1 t84 = {0};
+    h_0opt_e201354 t77 = {0};
+    h_0opt_e201354 t78 = {0};
+    h_0opt_1ec004 t79 = {0};
+    h_0opt_1ec004 t80 = {0};
+    h_0opt_1ec004 t81 = {0};
+    h_0opt_1ec004 t82 = {0};
+    h_0opt_1ec004 t83 = {0};
+    h_0opt_1ec004 t84 = {0};
     HeroStr t85 = {0};
-    h_sizedintegers_0opt0 t86 = {0};
-    h_sizedintegers_0opt1 t87 = {0};
-    h_sizedintegers_0opt1 t88 = {0};
-    h_sizedintegers_0opt1 t89 = {0};
+    h_0opt_e201354 t86 = {0};
+    h_0opt_1ec004 t87 = {0};
+    h_0opt_1ec004 t88 = {0};
+    h_0opt_1ec004 t89 = {0};
     HeroStr t90 = {0};
-    h_sizedintegers_0opt0 t91 = {0};
-    h_sizedintegers_0opt1 t92 = {0};
-    h_sizedintegers_0opt1 t93 = {0};
-    h_sizedintegers_0opt1 t94 = {0};
+    h_0opt_e201354 t91 = {0};
+    h_0opt_1ec004 t92 = {0};
+    h_0opt_1ec004 t93 = {0};
+    h_0opt_1ec004 t94 = {0};
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/sized-integers.hero"
@@ -353,21 +353,21 @@ bb0:
 #line 39 "tests/golden/run/sized-integers.hero"
     t25 = h6_byte;
 #line 39 "tests/golden/run/sized-integers.hero"
-    t26 = (h_sizedintegers_0opt0){.tag = INT64_C(0), .as.ok = (int64_t)t25};
+    t26 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t25};
 #line 39 "tests/golden/run/sized-integers.hero"
     t77 = h12_own12;
 #line 39 "tests/golden/run/sized-integers.hero"
     h12_own12 = t26;
 #line 362 "sizedintegers.c"
-    h_sizedintegers_0opt0_release(&t77);
+    h_0opt_e201354_release(&t77);
 #line 39 "tests/golden/run/sized-integers.hero"
     t78 = h7_f0;
 #line 366 "sizedintegers.c"
-    h_sizedintegers_0opt0_retain(&t26);
+    h_0opt_e201354_retain(&t26);
 #line 39 "tests/golden/run/sized-integers.hero"
     h7_f0 = t26;
 #line 370 "sizedintegers.c"
-    h_sizedintegers_0opt0_release(&t78);
+    h_0opt_e201354_release(&t78);
 #line 39 "tests/golden/run/sized-integers.hero"
     t27 = h7_f0;
 #line 39 "tests/golden/run/sized-integers.hero"
@@ -401,11 +401,11 @@ bb1:
 #line 40 "tests/golden/run/sized-integers.hero"
     if (t38 >= 0LL && t38 <= 255LL) {
 #line 40 "tests/golden/run/sized-integers.hero"
-        t39 = (h_sizedintegers_0opt1){.tag = INT64_C(0), .as.ok = (uint8_t)t38};
+        t39 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t38};
 #line 40 "tests/golden/run/sized-integers.hero"
     } else {
 #line 40 "tests/golden/run/sized-integers.hero"
-        t39 = (h_sizedintegers_0opt1){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t39 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 40 "tests/golden/run/sized-integers.hero"
     }
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -413,15 +413,15 @@ bb1:
 #line 40 "tests/golden/run/sized-integers.hero"
     h13_own13 = t39;
 #line 416 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t79);
+    h_0opt_1ec004_release(&t79);
 #line 40 "tests/golden/run/sized-integers.hero"
     t80 = h8_f1;
 #line 420 "sizedintegers.c"
-    h_sizedintegers_0opt1_retain(&t39);
+    h_0opt_1ec004_retain(&t39);
 #line 40 "tests/golden/run/sized-integers.hero"
     h8_f1 = t39;
 #line 424 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t80);
+    h_0opt_1ec004_release(&t80);
 #line 40 "tests/golden/run/sized-integers.hero"
     t40 = h8_f1;
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -437,11 +437,11 @@ bb1:
 #line 40 "tests/golden/run/sized-integers.hero"
     if (t45 >= 0LL && t45 <= 255LL) {
 #line 40 "tests/golden/run/sized-integers.hero"
-        t46 = (h_sizedintegers_0opt1){.tag = INT64_C(0), .as.ok = (uint8_t)t45};
+        t46 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t45};
 #line 40 "tests/golden/run/sized-integers.hero"
     } else {
 #line 40 "tests/golden/run/sized-integers.hero"
-        t46 = (h_sizedintegers_0opt1){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t46 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 40 "tests/golden/run/sized-integers.hero"
     }
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -449,15 +449,15 @@ bb1:
 #line 40 "tests/golden/run/sized-integers.hero"
     h14_own14 = t46;
 #line 452 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t81);
+    h_0opt_1ec004_release(&t81);
 #line 40 "tests/golden/run/sized-integers.hero"
     t82 = h9_f2;
 #line 456 "sizedintegers.c"
-    h_sizedintegers_0opt1_retain(&t46);
+    h_0opt_1ec004_retain(&t46);
 #line 40 "tests/golden/run/sized-integers.hero"
     h9_f2 = t46;
 #line 460 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t82);
+    h_0opt_1ec004_release(&t82);
 #line 40 "tests/golden/run/sized-integers.hero"
     t47 = h9_f2;
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -499,11 +499,11 @@ bb3:
 #line 41 "tests/golden/run/sized-integers.hero"
     if (t56 >= 0LL && t56 <= 255LL) {
 #line 41 "tests/golden/run/sized-integers.hero"
-        t57 = (h_sizedintegers_0opt1){.tag = INT64_C(0), .as.ok = (uint8_t)t56};
+        t57 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t56};
 #line 41 "tests/golden/run/sized-integers.hero"
     } else {
 #line 41 "tests/golden/run/sized-integers.hero"
-        t57 = (h_sizedintegers_0opt1){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t57 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 41 "tests/golden/run/sized-integers.hero"
     }
 #line 41 "tests/golden/run/sized-integers.hero"
@@ -511,15 +511,15 @@ bb3:
 #line 41 "tests/golden/run/sized-integers.hero"
     h15_own15 = t57;
 #line 514 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t83);
+    h_0opt_1ec004_release(&t83);
 #line 41 "tests/golden/run/sized-integers.hero"
     t84 = h10_f3;
 #line 518 "sizedintegers.c"
-    h_sizedintegers_0opt1_retain(&t57);
+    h_0opt_1ec004_retain(&t57);
 #line 41 "tests/golden/run/sized-integers.hero"
     h10_f3 = t57;
 #line 522 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t84);
+    h_0opt_1ec004_release(&t84);
 #line 41 "tests/golden/run/sized-integers.hero"
     t58 = h10_f3;
 #line 41 "tests/golden/run/sized-integers.hero"
@@ -589,19 +589,19 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     t86 = h7_f0;
 #line 592 "sizedintegers.c"
-    h_sizedintegers_0opt0_release(&t86);
+    h_0opt_e201354_release(&t86);
 #line 44 "tests/golden/run/sized-integers.hero"
     t87 = h8_f1;
 #line 596 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t87);
+    h_0opt_1ec004_release(&t87);
 #line 44 "tests/golden/run/sized-integers.hero"
     t88 = h9_f2;
 #line 600 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t88);
+    h_0opt_1ec004_release(&t88);
 #line 44 "tests/golden/run/sized-integers.hero"
     t89 = h10_f3;
 #line 604 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t89);
+    h_0opt_1ec004_release(&t89);
 #line 44 "tests/golden/run/sized-integers.hero"
     t90 = h11_text;
 #line 608 "sizedintegers.c"
@@ -609,19 +609,19 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     t91 = h12_own12;
 #line 612 "sizedintegers.c"
-    h_sizedintegers_0opt0_release(&t91);
+    h_0opt_e201354_release(&t91);
 #line 44 "tests/golden/run/sized-integers.hero"
     t92 = h13_own13;
 #line 616 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t92);
+    h_0opt_1ec004_release(&t92);
 #line 44 "tests/golden/run/sized-integers.hero"
     t93 = h14_own14;
 #line 620 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t93);
+    h_0opt_1ec004_release(&t93);
 #line 44 "tests/golden/run/sized-integers.hero"
     t94 = h15_own15;
 #line 624 "sizedintegers.c"
-    h_sizedintegers_0opt1_release(&t94);
+    h_0opt_1ec004_release(&t94);
     return;
 bb4:
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -632,7 +632,7 @@ bb4:
     hero_panic_must(t52);
     hero_unreachable();
 }
-void h_sizedintegers_0opt0_retain(const h_sizedintegers_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -640,7 +640,7 @@ void h_sizedintegers_0opt0_retain(const h_sizedintegers_0opt0 *v) {
     }
 }
 
-void h_sizedintegers_0opt0_release(h_sizedintegers_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -648,14 +648,14 @@ void h_sizedintegers_0opt0_release(h_sizedintegers_0opt0 *v) {
     }
 }
 
-bool h_sizedintegers_0opt0_eq(const h_sizedintegers_0opt0 *a, const h_sizedintegers_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sizedintegers_0opt0_hash(const void *elem) {
-    const h_sizedintegers_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -664,7 +664,7 @@ uint64_t h_sizedintegers_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sizedintegers_0opt1_retain(const h_sizedintegers_0opt1 *v) {
+void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -672,7 +672,7 @@ void h_sizedintegers_0opt1_retain(const h_sizedintegers_0opt1 *v) {
     }
 }
 
-void h_sizedintegers_0opt1_release(h_sizedintegers_0opt1 *v) {
+void h_0opt_1ec004_release(h_0opt_1ec004 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -680,14 +680,14 @@ void h_sizedintegers_0opt1_release(h_sizedintegers_0opt1 *v) {
     }
 }
 
-bool h_sizedintegers_0opt1_eq(const h_sizedintegers_0opt1 *a, const h_sizedintegers_0opt1 *b) {
+bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_u8)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sizedintegers_0opt1_hash(const void *elem) {
-    const h_sizedintegers_0opt1 *v = elem;
+uint64_t h_0opt_1ec004_hash(const void *elem) {
+    const h_0opt_1ec004 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -696,7 +696,7 @@ uint64_t h_sizedintegers_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_u8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sizedintegers_0opt2_retain(const h_sizedintegers_0opt2 *v) {
+void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -704,7 +704,7 @@ void h_sizedintegers_0opt2_retain(const h_sizedintegers_0opt2 *v) {
     }
 }
 
-void h_sizedintegers_0opt2_release(h_sizedintegers_0opt2 *v) {
+void h_0opt_1b9b98_release(h_0opt_1b9b98 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -712,14 +712,14 @@ void h_sizedintegers_0opt2_release(h_sizedintegers_0opt2 *v) {
     }
 }
 
-bool h_sizedintegers_0opt2_eq(const h_sizedintegers_0opt2 *a, const h_sizedintegers_0opt2 *b) {
+bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *a, const h_0opt_1b9b98 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_i8)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sizedintegers_0opt2_hash(const void *elem) {
-    const h_sizedintegers_0opt2 *v = elem;
+uint64_t h_0opt_1b9b98_hash(const void *elem) {
+    const h_0opt_1b9b98 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -728,7 +728,7 @@ uint64_t h_sizedintegers_0opt2_hash(const void *elem) {
     return (h ^ (&hero_desc_i8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sizedintegers_0opt3_retain(const h_sizedintegers_0opt3 *v) {
+void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -736,7 +736,7 @@ void h_sizedintegers_0opt3_retain(const h_sizedintegers_0opt3 *v) {
     }
 }
 
-void h_sizedintegers_0opt3_release(h_sizedintegers_0opt3 *v) {
+void h_0opt_fbaec77_release(h_0opt_fbaec77 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -744,14 +744,14 @@ void h_sizedintegers_0opt3_release(h_sizedintegers_0opt3 *v) {
     }
 }
 
-bool h_sizedintegers_0opt3_eq(const h_sizedintegers_0opt3 *a, const h_sizedintegers_0opt3 *b) {
+bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *a, const h_0opt_fbaec77 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_u32)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sizedintegers_0opt3_hash(const void *elem) {
-    const h_sizedintegers_0opt3 *v = elem;
+uint64_t h_0opt_fbaec77_hash(const void *elem) {
+    const h_0opt_fbaec77 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -760,7 +760,7 @@ uint64_t h_sizedintegers_0opt3_hash(const void *elem) {
     return (h ^ (&hero_desc_u32)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sizedintegers_0opt4_retain(const h_sizedintegers_0opt4 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -768,7 +768,7 @@ void h_sizedintegers_0opt4_retain(const h_sizedintegers_0opt4 *v) {
     }
 }
 
-void h_sizedintegers_0opt4_release(h_sizedintegers_0opt4 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -776,14 +776,14 @@ void h_sizedintegers_0opt4_release(h_sizedintegers_0opt4 *v) {
     }
 }
 
-bool h_sizedintegers_0opt4_eq(const h_sizedintegers_0opt4 *a, const h_sizedintegers_0opt4 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sizedintegers_0opt4_hash(const void *elem) {
-    const h_sizedintegers_0opt4 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -792,7 +792,7 @@ uint64_t h_sizedintegers_0opt4_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sizedintegers_0opt5_retain(const h_sizedintegers_0opt5 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -800,7 +800,7 @@ void h_sizedintegers_0opt5_retain(const h_sizedintegers_0opt5 *v) {
     }
 }
 
-void h_sizedintegers_0opt5_release(h_sizedintegers_0opt5 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -808,14 +808,14 @@ void h_sizedintegers_0opt5_release(h_sizedintegers_0opt5 *v) {
     }
 }
 
-bool h_sizedintegers_0opt5_eq(const h_sizedintegers_0opt5 *a, const h_sizedintegers_0opt5 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_sizedintegers_0opt5_hash(const void *elem) {
-    const h_sizedintegers_0opt5 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

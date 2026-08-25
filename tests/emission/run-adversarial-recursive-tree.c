@@ -85,20 +85,20 @@ typedef struct h_adversarialrecursivetree_Expr {
     } as;
 } h_adversarialrecursivetree_Expr;
 
-typedef struct h_adversarialrecursivetree_0opt0 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_adversarialrecursivetree_0opt0;
+} h_0opt_f87774a;
 
-typedef struct h_adversarialrecursivetree_0opt1 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_adversarialrecursivetree_0opt1;
+} h_0opt_a8ea2;
 
 bool h_adversarialrecursivetree_Expr_c_number_eq(const h_adversarialrecursivetree_Expr_c_number *a, const h_adversarialrecursivetree_Expr_c_number *b);
 uint64_t h_adversarialrecursivetree_Expr_c_number_hash(const void *elem);
@@ -114,14 +114,14 @@ void h_adversarialrecursivetree_Expr_retain(const h_adversarialrecursivetree_Exp
 void h_adversarialrecursivetree_Expr_release(h_adversarialrecursivetree_Expr *v);
 bool h_adversarialrecursivetree_Expr_eq(const h_adversarialrecursivetree_Expr *a, const h_adversarialrecursivetree_Expr *b);
 uint64_t h_adversarialrecursivetree_Expr_hash(const void *elem);
-void h_adversarialrecursivetree_0opt0_retain(const h_adversarialrecursivetree_0opt0 *v);
-void h_adversarialrecursivetree_0opt0_release(h_adversarialrecursivetree_0opt0 *v);
-bool h_adversarialrecursivetree_0opt0_eq(const h_adversarialrecursivetree_0opt0 *a, const h_adversarialrecursivetree_0opt0 *b);
-uint64_t h_adversarialrecursivetree_0opt0_hash(const void *elem);
-void h_adversarialrecursivetree_0opt1_retain(const h_adversarialrecursivetree_0opt1 *v);
-void h_adversarialrecursivetree_0opt1_release(h_adversarialrecursivetree_0opt1 *v);
-bool h_adversarialrecursivetree_0opt1_eq(const h_adversarialrecursivetree_0opt1 *a, const h_adversarialrecursivetree_0opt1 *b);
-uint64_t h_adversarialrecursivetree_0opt1_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_adversarialrecursivetree_Expr_desc_copy(void *dst, const void *src) {
     *(h_adversarialrecursivetree_Expr *)dst = *(const h_adversarialrecursivetree_Expr *)src;
@@ -1399,7 +1399,7 @@ uint64_t h_adversarialrecursivetree_Expr_hash(const void *elem) {
     hero_unreachable();
 }
 
-void h_adversarialrecursivetree_0opt0_retain(const h_adversarialrecursivetree_0opt0 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -1407,7 +1407,7 @@ void h_adversarialrecursivetree_0opt0_retain(const h_adversarialrecursivetree_0o
     }
 }
 
-void h_adversarialrecursivetree_0opt0_release(h_adversarialrecursivetree_0opt0 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -1415,14 +1415,14 @@ void h_adversarialrecursivetree_0opt0_release(h_adversarialrecursivetree_0opt0 *
     }
 }
 
-bool h_adversarialrecursivetree_0opt0_eq(const h_adversarialrecursivetree_0opt0 *a, const h_adversarialrecursivetree_0opt0 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_adversarialrecursivetree_0opt0_hash(const void *elem) {
-    const h_adversarialrecursivetree_0opt0 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -1431,7 +1431,7 @@ uint64_t h_adversarialrecursivetree_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_adversarialrecursivetree_0opt1_retain(const h_adversarialrecursivetree_0opt1 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1439,7 +1439,7 @@ void h_adversarialrecursivetree_0opt1_retain(const h_adversarialrecursivetree_0o
     }
 }
 
-void h_adversarialrecursivetree_0opt1_release(h_adversarialrecursivetree_0opt1 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1447,14 +1447,14 @@ void h_adversarialrecursivetree_0opt1_release(h_adversarialrecursivetree_0opt1 *
     }
 }
 
-bool h_adversarialrecursivetree_0opt1_eq(const h_adversarialrecursivetree_0opt1 *a, const h_adversarialrecursivetree_0opt1 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_adversarialrecursivetree_0opt1_hash(const void *elem) {
-    const h_adversarialrecursivetree_0opt1 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

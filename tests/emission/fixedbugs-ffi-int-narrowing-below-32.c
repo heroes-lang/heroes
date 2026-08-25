@@ -62,80 +62,80 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 63 "ffiintnarrowingbelow32.c"
 #pragma clang diagnostic pop
 
-typedef struct h_ffiintnarrowingbelow32_0opt0 {
+typedef struct h_0opt_e1ec52d {
     int64_t tag;
     union {
         int16_t ok;
         HeroFailure err;
     } as;
-} h_ffiintnarrowingbelow32_0opt0;
+} h_0opt_e1ec52d;
 
-typedef struct h_ffiintnarrowingbelow32_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_ffiintnarrowingbelow32_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_ffiintnarrowingbelow32_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_ffiintnarrowingbelow32_0opt2;
+} h_0opt_a8ea2;
 
-void h_ffiintnarrowingbelow32_0opt0_retain(const h_ffiintnarrowingbelow32_0opt0 *v);
-void h_ffiintnarrowingbelow32_0opt0_release(h_ffiintnarrowingbelow32_0opt0 *v);
-bool h_ffiintnarrowingbelow32_0opt0_eq(const h_ffiintnarrowingbelow32_0opt0 *a, const h_ffiintnarrowingbelow32_0opt0 *b);
-uint64_t h_ffiintnarrowingbelow32_0opt0_hash(const void *elem);
-void h_ffiintnarrowingbelow32_0opt1_retain(const h_ffiintnarrowingbelow32_0opt1 *v);
-void h_ffiintnarrowingbelow32_0opt1_release(h_ffiintnarrowingbelow32_0opt1 *v);
-bool h_ffiintnarrowingbelow32_0opt1_eq(const h_ffiintnarrowingbelow32_0opt1 *a, const h_ffiintnarrowingbelow32_0opt1 *b);
-uint64_t h_ffiintnarrowingbelow32_0opt1_hash(const void *elem);
-void h_ffiintnarrowingbelow32_0opt2_retain(const h_ffiintnarrowingbelow32_0opt2 *v);
-void h_ffiintnarrowingbelow32_0opt2_release(h_ffiintnarrowingbelow32_0opt2 *v);
-bool h_ffiintnarrowingbelow32_0opt2_eq(const h_ffiintnarrowingbelow32_0opt2 *a, const h_ffiintnarrowingbelow32_0opt2 *b);
-uint64_t h_ffiintnarrowingbelow32_0opt2_hash(const void *elem);
+void h_0opt_e1ec52d_retain(const h_0opt_e1ec52d *v);
+void h_0opt_e1ec52d_release(h_0opt_e1ec52d *v);
+bool h_0opt_e1ec52d_eq(const h_0opt_e1ec52d *a, const h_0opt_e1ec52d *b);
+uint64_t h_0opt_e1ec52d_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiintnarrowingbelow32_main(void);
 
 #line 30 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
 void h_ffiintnarrowingbelow32_main(void) {
 #line 106 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0 h0_f0 = {0};
-    h_ffiintnarrowingbelow32_0opt0 h1_f1 = {0};
-    h_ffiintnarrowingbelow32_0opt0 h2_own2 = {0};
-    h_ffiintnarrowingbelow32_0opt0 h3_own3 = {0};
+    h_0opt_e1ec52d h0_f0 = {0};
+    h_0opt_e1ec52d h1_f1 = {0};
+    h_0opt_e1ec52d h2_own2 = {0};
+    h_0opt_e1ec52d h3_own3 = {0};
     int64_t t1;
     int64_t t2;
-    h_ffiintnarrowingbelow32_0opt0 t3 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t4 = {0};
+    h_0opt_e1ec52d t3 = {0};
+    h_0opt_e1ec52d t4 = {0};
     int64_t t5;
     int64_t t6;
     bool t7;
-    h_ffiintnarrowingbelow32_0opt0 t8 = {0};
+    h_0opt_e1ec52d t8 = {0};
     HeroFailure t9 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t10 = {0};
+    h_0opt_e1ec52d t10 = {0};
     int16_t t11;
     int64_t t12;
-    h_ffiintnarrowingbelow32_0opt0 t13 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t14 = {0};
+    h_0opt_e1ec52d t13 = {0};
+    h_0opt_e1ec52d t14 = {0};
     int64_t t15;
     int64_t t16;
     bool t17;
-    h_ffiintnarrowingbelow32_0opt0 t18 = {0};
+    h_0opt_e1ec52d t18 = {0};
     HeroFailure t19 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t20 = {0};
+    h_0opt_e1ec52d t20 = {0};
     int16_t t21;
-    h_ffiintnarrowingbelow32_0opt0 t23 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t24 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t25 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t26 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t27 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t28 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t29 = {0};
-    h_ffiintnarrowingbelow32_0opt0 t30 = {0};
+    h_0opt_e1ec52d t23 = {0};
+    h_0opt_e1ec52d t24 = {0};
+    h_0opt_e1ec52d t25 = {0};
+    h_0opt_e1ec52d t26 = {0};
+    h_0opt_e1ec52d t27 = {0};
+    h_0opt_e1ec52d t28 = {0};
+    h_0opt_e1ec52d t29 = {0};
+    h_0opt_e1ec52d t30 = {0};
     goto bb0;
 bb0:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
@@ -145,11 +145,11 @@ bb0:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     if (t2 >= -32768LL && t2 <= 32767LL) {
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-        t3 = (h_ffiintnarrowingbelow32_0opt0){.tag = INT64_C(0), .as.ok = (int16_t)t2};
+        t3 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t2};
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     } else {
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-        t3 = (h_ffiintnarrowingbelow32_0opt0){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t3 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     }
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
@@ -157,15 +157,15 @@ bb0:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h2_own2 = t3;
 #line 160 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t23);
+    h_0opt_e1ec52d_release(&t23);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t24 = h0_f0;
 #line 164 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_retain(&t3);
+    h_0opt_e1ec52d_retain(&t3);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h0_f0 = t3;
 #line 168 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t24);
+    h_0opt_e1ec52d_release(&t24);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t4 = h0_f0;
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
@@ -187,11 +187,11 @@ bb1:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     if (t12 >= -32768LL && t12 <= 32767LL) {
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-        t13 = (h_ffiintnarrowingbelow32_0opt0){.tag = INT64_C(0), .as.ok = (int16_t)t12};
+        t13 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t12};
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     } else {
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
-        t13 = (h_ffiintnarrowingbelow32_0opt0){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t13 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     }
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
@@ -199,15 +199,15 @@ bb1:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h3_own3 = t13;
 #line 202 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t25);
+    h_0opt_e1ec52d_release(&t25);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t26 = h1_f1;
 #line 206 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_retain(&t13);
+    h_0opt_e1ec52d_retain(&t13);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     h1_f1 = t13;
 #line 210 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t26);
+    h_0opt_e1ec52d_release(&t26);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t14 = h1_f1;
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
@@ -237,19 +237,19 @@ bb3:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t27 = h0_f0;
 #line 240 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t27);
+    h_0opt_e1ec52d_release(&t27);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t28 = h1_f1;
 #line 244 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t28);
+    h_0opt_e1ec52d_release(&t28);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t29 = h2_own2;
 #line 248 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t29);
+    h_0opt_e1ec52d_release(&t29);
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
     t30 = h3_own3;
 #line 252 "ffiintnarrowingbelow32.c"
-    h_ffiintnarrowingbelow32_0opt0_release(&t30);
+    h_0opt_e1ec52d_release(&t30);
     return;
 bb4:
 #line 31 "tests/golden/fixedbugs/ffi-int-narrowing-below-32.hero"
@@ -260,7 +260,7 @@ bb4:
     hero_panic_must(t19);
     hero_unreachable();
 }
-void h_ffiintnarrowingbelow32_0opt0_retain(const h_ffiintnarrowingbelow32_0opt0 *v) {
+void h_0opt_e1ec52d_retain(const h_0opt_e1ec52d *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -268,7 +268,7 @@ void h_ffiintnarrowingbelow32_0opt0_retain(const h_ffiintnarrowingbelow32_0opt0 
     }
 }
 
-void h_ffiintnarrowingbelow32_0opt0_release(h_ffiintnarrowingbelow32_0opt0 *v) {
+void h_0opt_e1ec52d_release(h_0opt_e1ec52d *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -276,14 +276,14 @@ void h_ffiintnarrowingbelow32_0opt0_release(h_ffiintnarrowingbelow32_0opt0 *v) {
     }
 }
 
-bool h_ffiintnarrowingbelow32_0opt0_eq(const h_ffiintnarrowingbelow32_0opt0 *a, const h_ffiintnarrowingbelow32_0opt0 *b) {
+bool h_0opt_e1ec52d_eq(const h_0opt_e1ec52d *a, const h_0opt_e1ec52d *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_i16)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_ffiintnarrowingbelow32_0opt0_hash(const void *elem) {
-    const h_ffiintnarrowingbelow32_0opt0 *v = elem;
+uint64_t h_0opt_e1ec52d_hash(const void *elem) {
+    const h_0opt_e1ec52d *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -292,7 +292,7 @@ uint64_t h_ffiintnarrowingbelow32_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_i16)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_ffiintnarrowingbelow32_0opt1_retain(const h_ffiintnarrowingbelow32_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -300,7 +300,7 @@ void h_ffiintnarrowingbelow32_0opt1_retain(const h_ffiintnarrowingbelow32_0opt1 
     }
 }
 
-void h_ffiintnarrowingbelow32_0opt1_release(h_ffiintnarrowingbelow32_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -308,14 +308,14 @@ void h_ffiintnarrowingbelow32_0opt1_release(h_ffiintnarrowingbelow32_0opt1 *v) {
     }
 }
 
-bool h_ffiintnarrowingbelow32_0opt1_eq(const h_ffiintnarrowingbelow32_0opt1 *a, const h_ffiintnarrowingbelow32_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_ffiintnarrowingbelow32_0opt1_hash(const void *elem) {
-    const h_ffiintnarrowingbelow32_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -324,7 +324,7 @@ uint64_t h_ffiintnarrowingbelow32_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_ffiintnarrowingbelow32_0opt2_retain(const h_ffiintnarrowingbelow32_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -332,7 +332,7 @@ void h_ffiintnarrowingbelow32_0opt2_retain(const h_ffiintnarrowingbelow32_0opt2 
     }
 }
 
-void h_ffiintnarrowingbelow32_0opt2_release(h_ffiintnarrowingbelow32_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -340,14 +340,14 @@ void h_ffiintnarrowingbelow32_0opt2_release(h_ffiintnarrowingbelow32_0opt2 *v) {
     }
 }
 
-bool h_ffiintnarrowingbelow32_0opt2_eq(const h_ffiintnarrowingbelow32_0opt2 *a, const h_ffiintnarrowingbelow32_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_ffiintnarrowingbelow32_0opt2_hash(const void *elem) {
-    const h_ffiintnarrowingbelow32_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

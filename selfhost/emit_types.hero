@@ -261,9 +261,9 @@ test "an all-bare variant has no union, and a group's record no definition"
 test "an option carries ok and err, a unit option only err, and (void) guards arity"
     got = ready("function pick(ready_flag: bool) -> i64?\n    if ready_flag\n        return ok(1)\n    return fail(\"e\", \"m\")\n\nfunction main()\n    print(pick(true).default(0))\n")
     w: emit_writer.Writer @ emit_writer.new_writer("t")
-    option(@w, got.c, got.names, name: "h_t_0opt0", payload: check_table.int_ty_id(got.c.types))
+    option(@w, got.c, got.names, name: "h_0opt_e201354", payload: check_table.int_ty_id(got.c.types))
     with_ok = emit_writer.finish(w)
-    assert with_ok == "#line 2 \"t.c\"\ntypedef struct h_t_0opt0 {\n    int64_t tag;\n    union {\n        int64_t ok;\n        HeroFailure err;\n    } as;\n} h_t_0opt0;\n\n"
+    assert with_ok == "#line 2 \"t.c\"\ntypedef struct h_0opt_e201354 {\n    int64_t tag;\n    union {\n        int64_t ok;\n        HeroFailure err;\n    } as;\n} h_0opt_e201354;\n\n"
     bare: emit_writer.Writer @ emit_writer.new_writer("t")
     option(@bare, got.c, got.names, name: "h_t_0opt1", payload: check_table.unit_ty(got.c.types))
     unit_text = emit_writer.finish(bare)

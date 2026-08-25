@@ -200,12 +200,12 @@ test "payloads come before their variant, and every option gets four functions"
     c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
     names0 = emit_ctype.new_names(s, p.decls)
-    names = emit_ctype.with_options(names0, module: "t", c: c)
+    names = emit_ctype.with_options(names0, c: c, s: s, decls: p.decls)
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     prototypes(@w, c, names, p.decls)
     protos = emit_writer.finish(w)
     assert has(text: protos, needle: "bool h_t_Tok_c_word_eq(const h_t_Tok_c_word *a, const h_t_Tok_c_word *b);")
-    assert has(text: protos, needle: "void h_t_0opt0_retain(const h_t_0opt0 *v);")
+    assert has(text: protos, needle: "void h_0opt_e201354_retain(const h_0opt_e201354 *v);")
     bw: emit_writer.Writer @ emit_writer.new_writer("t")
     bodies(@bw, c, names, s, p.decls)
     body_text = emit_writer.finish(bw)
@@ -226,6 +226,6 @@ test "payloads come before their variant, and every option gets four functions"
     assert outer_at > payload_at
     # The i64? four: retain returns on ok (i64 is not counted), eq
     # reaches the payload through its descriptor.
-    assert has(text: body_text, needle: "void h_t_0opt0_retain(const h_t_0opt0 *v) {")
+    assert has(text: body_text, needle: "void h_0opt_e201354_retain(const h_0opt_e201354 *v) {")
     assert has(text: body_text, needle: "    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);")
     assert has(text: body_text, needle: "        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);")

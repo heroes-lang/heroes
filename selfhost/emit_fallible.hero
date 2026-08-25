@@ -63,17 +63,17 @@ test "the tag is written even where C would zero it, and err is one assignment"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: check_state.Checked @ checker.check(p.tree, out, s, p.decls)
     names0 = emit_ctype.new_names(s, p.decls)
-    names = emit_ctype.with_options(names0, module: "t", c: c)
+    names = emit_ctype.with_options(names0, c: c, s: s, decls: p.decls)
     opt: i64 @ 0 - 1
     for id in keys(names.options)
         opt @ id
     assert opt >= 0
     built = construct_option(names, result: opt, shape: .ok_shape, arguments: ["t3"])
-    assert built.must() == "(h_t_0opt0){.tag = INT64_C(0), .as.ok = t3}"
+    assert built.must() == "(h_0opt_e201354){.tag = INT64_C(0), .as.ok = t3}"
     failed = construct_option(names, result: opt, shape: .fail_shape, arguments: ["t1", "t2"])
-    assert failed.must() == "(h_t_0opt0){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}"
+    assert failed.must() == "(h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}"
     wrapped = construct_option(names, result: opt, shape: .err_shape, arguments: ["t9"])
-    assert wrapped.must() == "(h_t_0opt0){.tag = INT64_C(1), .as.err = t9}"
+    assert wrapped.must() == "(h_0opt_e201354){.tag = INT64_C(1), .as.err = t9}"
     assert option_tag(base: 15) == "t15.tag"
     assert option_payload(base: 15, at: 0) == "t15.as.ok"
     assert option_payload(base: 15, at: 1) == "t15.as.err"

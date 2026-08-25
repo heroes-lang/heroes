@@ -85,55 +85,55 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 86 "fixedbugsagrouprecordineverycontainer.c"
 #pragma clang diagnostic pop
 
-typedef struct h_fixedbugsagrouprecordineverycontainer_0opt0 {
+typedef struct h_0opt_31fbd75 {
     int64_t tag;
     union {
         Color ok;
         HeroFailure err;
     } as;
-} h_fixedbugsagrouprecordineverycontainer_0opt0;
+} h_0opt_31fbd75;
 
-typedef struct h_fixedbugsagrouprecordineverycontainer_0opt1 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_fixedbugsagrouprecordineverycontainer_0opt1;
+} h_0opt_e201354;
 
-typedef struct h_fixedbugsagrouprecordineverycontainer_0opt2 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugsagrouprecordineverycontainer_0opt2;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugsagrouprecordineverycontainer_0opt3 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugsagrouprecordineverycontainer_0opt3;
+} h_0opt_a8ea2;
 
 bool h_fixedbugsagrouprecordineverycontainer_Color_eq(const Color *a, const Color *b);
 uint64_t h_fixedbugsagrouprecordineverycontainer_Color_hash(const void *elem);
-void h_fixedbugsagrouprecordineverycontainer_0opt0_retain(const h_fixedbugsagrouprecordineverycontainer_0opt0 *v);
-void h_fixedbugsagrouprecordineverycontainer_0opt0_release(h_fixedbugsagrouprecordineverycontainer_0opt0 *v);
-bool h_fixedbugsagrouprecordineverycontainer_0opt0_eq(const h_fixedbugsagrouprecordineverycontainer_0opt0 *a, const h_fixedbugsagrouprecordineverycontainer_0opt0 *b);
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt0_hash(const void *elem);
-void h_fixedbugsagrouprecordineverycontainer_0opt1_retain(const h_fixedbugsagrouprecordineverycontainer_0opt1 *v);
-void h_fixedbugsagrouprecordineverycontainer_0opt1_release(h_fixedbugsagrouprecordineverycontainer_0opt1 *v);
-bool h_fixedbugsagrouprecordineverycontainer_0opt1_eq(const h_fixedbugsagrouprecordineverycontainer_0opt1 *a, const h_fixedbugsagrouprecordineverycontainer_0opt1 *b);
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt1_hash(const void *elem);
-void h_fixedbugsagrouprecordineverycontainer_0opt2_retain(const h_fixedbugsagrouprecordineverycontainer_0opt2 *v);
-void h_fixedbugsagrouprecordineverycontainer_0opt2_release(h_fixedbugsagrouprecordineverycontainer_0opt2 *v);
-bool h_fixedbugsagrouprecordineverycontainer_0opt2_eq(const h_fixedbugsagrouprecordineverycontainer_0opt2 *a, const h_fixedbugsagrouprecordineverycontainer_0opt2 *b);
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt2_hash(const void *elem);
-void h_fixedbugsagrouprecordineverycontainer_0opt3_retain(const h_fixedbugsagrouprecordineverycontainer_0opt3 *v);
-void h_fixedbugsagrouprecordineverycontainer_0opt3_release(h_fixedbugsagrouprecordineverycontainer_0opt3 *v);
-bool h_fixedbugsagrouprecordineverycontainer_0opt3_eq(const h_fixedbugsagrouprecordineverycontainer_0opt3 *a, const h_fixedbugsagrouprecordineverycontainer_0opt3 *b);
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt3_hash(const void *elem);
+void h_0opt_31fbd75_retain(const h_0opt_31fbd75 *v);
+void h_0opt_31fbd75_release(h_0opt_31fbd75 *v);
+bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *a, const h_0opt_31fbd75 *b);
+uint64_t h_0opt_31fbd75_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugsagrouprecordineverycontainer_Color_desc_copy(void *dst, const void *src) {
     *(Color *)dst = *(const Color *)src;
@@ -162,17 +162,17 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) {
     Color h2_c;
     HeroArrayHeader * h3_xs = {0};
     HeroMapHeader * h4_m = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 h5_f0 = {0};
+    h_0opt_31fbd75 h5_f0 = {0};
     HeroMapHeader * h6_keyed = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 h7_f1 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 h8_maybe = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 h9_f2 = {0};
+    h_0opt_e201354 h7_f1 = {0};
+    h_0opt_31fbd75 h8_maybe = {0};
+    h_0opt_31fbd75 h9_f2 = {0};
     HeroArrayHeader * h10_own10 = {0};
     HeroMapHeader * h11_own11 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 h12_own12 = {0};
+    h_0opt_31fbd75 h12_own12 = {0};
     HeroMapHeader * h13_own13 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 h14_own14 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 h15_own15 = {0};
+    h_0opt_e201354 h14_own14 = {0};
+    h_0opt_31fbd75 h15_own15 = {0};
     uint8_t t1;
     uint8_t t2;
     uint8_t t3;
@@ -209,14 +209,14 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) {
     Color t34;
     HeroMapHeader * t35 = {0};
     int64_t t36;
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t37 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t38 = {0};
+    h_0opt_31fbd75 t37 = {0};
+    h_0opt_31fbd75 t38 = {0};
     int64_t t39;
     int64_t t40;
     bool t41;
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t42 = {0};
+    h_0opt_31fbd75 t42 = {0};
     HeroFailure t43 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t44 = {0};
+    h_0opt_31fbd75 t44 = {0};
     Color t45;
     Color t46;
     bool t47;
@@ -225,19 +225,19 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) {
     int64_t t50;
     HeroMapHeader * t51 = {0};
     Color t52;
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t53 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t54 = {0};
+    h_0opt_e201354 t53 = {0};
+    h_0opt_e201354 t54 = {0};
     int64_t t55;
     int64_t t56;
     bool t57;
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t58 = {0};
+    h_0opt_e201354 t58 = {0};
     HeroFailure t59 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t60 = {0};
+    h_0opt_e201354 t60 = {0};
     int64_t t61;
     Color t62;
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t63 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t64 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t65 = {0};
+    h_0opt_31fbd75 t63 = {0};
+    h_0opt_31fbd75 t64 = {0};
+    h_0opt_31fbd75 t65 = {0};
     int64_t t66;
     int64_t t67;
     bool t68;
@@ -247,28 +247,28 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) {
     HeroArrayHeader * t72 = {0};
     HeroMapHeader * t73 = {0};
     HeroMapHeader * t74 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t75 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t76 = {0};
+    h_0opt_31fbd75 t75 = {0};
+    h_0opt_31fbd75 t76 = {0};
     HeroMapHeader * t77 = {0};
     HeroMapHeader * t78 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t79 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t80 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t81 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t82 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t83 = {0};
+    h_0opt_e201354 t79 = {0};
+    h_0opt_e201354 t80 = {0};
+    h_0opt_31fbd75 t81 = {0};
+    h_0opt_31fbd75 t82 = {0};
+    h_0opt_31fbd75 t83 = {0};
     HeroArrayHeader * t84 = {0};
     HeroMapHeader * t85 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t86 = {0};
+    h_0opt_31fbd75 t86 = {0};
     HeroMapHeader * t87 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t88 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t89 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t90 = {0};
+    h_0opt_e201354 t88 = {0};
+    h_0opt_31fbd75 t89 = {0};
+    h_0opt_31fbd75 t90 = {0};
     HeroArrayHeader * t91 = {0};
     HeroMapHeader * t92 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t93 = {0};
+    h_0opt_31fbd75 t93 = {0};
     HeroMapHeader * t94 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt1 t95 = {0};
-    h_fixedbugsagrouprecordineverycontainer_0opt0 t96 = {0};
+    h_0opt_e201354 t95 = {0};
+    h_0opt_31fbd75 t96 = {0};
     goto bb0;
 bb0:
 #line 42 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -410,7 +410,7 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
       if (found == NULL) {
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-        t37 = (h_fixedbugsagrouprecordineverycontainer_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t37 = (h_0opt_31fbd75){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
       } else {
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -426,15 +426,15 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h12_own12 = t37;
 #line 429 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t75);
+    h_0opt_31fbd75_release(&t75);
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t76 = h5_f0;
 #line 433 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_retain(&t37);
+    h_0opt_31fbd75_retain(&t37);
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h5_f0 = t37;
 #line 437 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t76);
+    h_0opt_31fbd75_release(&t76);
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t38 = h5_f0;
 #line 55 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -492,7 +492,7 @@ bb1:
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
       if (found == NULL) {
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-        t53 = (h_fixedbugsagrouprecordineverycontainer_0opt1){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
       } else {
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -508,15 +508,15 @@ bb1:
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h14_own14 = t53;
 #line 511 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t79);
+    h_0opt_e201354_release(&t79);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t80 = h7_f1;
 #line 515 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt1_retain(&t53);
+    h_0opt_e201354_retain(&t53);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h7_f1 = t53;
 #line 519 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t80);
+    h_0opt_e201354_release(&t80);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t54 = h7_f1;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -548,31 +548,31 @@ bb3:
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t62 = h2_c;
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-    t63 = (h_fixedbugsagrouprecordineverycontainer_0opt0){.tag = INT64_C(0), .as.ok = t62};
+    t63 = (h_0opt_31fbd75){.tag = INT64_C(0), .as.ok = t62};
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t81 = h15_own15;
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h15_own15 = t63;
 #line 557 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t81);
+    h_0opt_31fbd75_release(&t81);
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t82 = h8_maybe;
 #line 561 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_retain(&t63);
+    h_0opt_31fbd75_retain(&t63);
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h8_maybe = t63;
 #line 565 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t82);
+    h_0opt_31fbd75_release(&t82);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t64 = h8_maybe;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t83 = h9_f2;
 #line 571 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_retain(&t64);
+    h_0opt_31fbd75_retain(&t64);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h9_f2 = t64;
 #line 575 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t83);
+    h_0opt_31fbd75_release(&t83);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t65 = h9_f2;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -604,7 +604,7 @@ bb3:
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t86 = h5_f0;
 #line 607 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t86);
+    h_0opt_31fbd75_release(&t86);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t87 = h6_keyed;
 #line 611 "fixedbugsagrouprecordineverycontainer.c"
@@ -612,15 +612,15 @@ bb3:
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t88 = h7_f1;
 #line 615 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t88);
+    h_0opt_e201354_release(&t88);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t89 = h8_maybe;
 #line 619 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t89);
+    h_0opt_31fbd75_release(&t89);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t90 = h9_f2;
 #line 623 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t90);
+    h_0opt_31fbd75_release(&t90);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t91 = h10_own10;
 #line 627 "fixedbugsagrouprecordineverycontainer.c"
@@ -632,7 +632,7 @@ bb3:
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t93 = h12_own12;
 #line 635 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t93);
+    h_0opt_31fbd75_release(&t93);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t94 = h13_own13;
 #line 639 "fixedbugsagrouprecordineverycontainer.c"
@@ -640,11 +640,11 @@ bb3:
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t95 = h14_own14;
 #line 643 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt1_release(&t95);
+    h_0opt_e201354_release(&t95);
 #line 63 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t96 = h15_own15;
 #line 647 "fixedbugsagrouprecordineverycontainer.c"
-    h_fixedbugsagrouprecordineverycontainer_0opt0_release(&t96);
+    h_0opt_31fbd75_release(&t96);
     return;
 bb4:
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -673,7 +673,7 @@ uint64_t h_fixedbugsagrouprecordineverycontainer_Color_hash(const void *elem) {
     return h;
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt0_retain(const h_fixedbugsagrouprecordineverycontainer_0opt0 *v) {
+void h_0opt_31fbd75_retain(const h_0opt_31fbd75 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -681,7 +681,7 @@ void h_fixedbugsagrouprecordineverycontainer_0opt0_retain(const h_fixedbugsagrou
     }
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt0_release(h_fixedbugsagrouprecordineverycontainer_0opt0 *v) {
+void h_0opt_31fbd75_release(h_0opt_31fbd75 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -689,14 +689,14 @@ void h_fixedbugsagrouprecordineverycontainer_0opt0_release(h_fixedbugsagroupreco
     }
 }
 
-bool h_fixedbugsagrouprecordineverycontainer_0opt0_eq(const h_fixedbugsagrouprecordineverycontainer_0opt0 *a, const h_fixedbugsagrouprecordineverycontainer_0opt0 *b) {
+bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *a, const h_0opt_31fbd75 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&h_fixedbugsagrouprecordineverycontainer_Color_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt0_hash(const void *elem) {
-    const h_fixedbugsagrouprecordineverycontainer_0opt0 *v = elem;
+uint64_t h_0opt_31fbd75_hash(const void *elem) {
+    const h_0opt_31fbd75 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -705,7 +705,7 @@ uint64_t h_fixedbugsagrouprecordineverycontainer_0opt0_hash(const void *elem) {
     return (h ^ (&h_fixedbugsagrouprecordineverycontainer_Color_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt1_retain(const h_fixedbugsagrouprecordineverycontainer_0opt1 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -713,7 +713,7 @@ void h_fixedbugsagrouprecordineverycontainer_0opt1_retain(const h_fixedbugsagrou
     }
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt1_release(h_fixedbugsagrouprecordineverycontainer_0opt1 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -721,14 +721,14 @@ void h_fixedbugsagrouprecordineverycontainer_0opt1_release(h_fixedbugsagroupreco
     }
 }
 
-bool h_fixedbugsagrouprecordineverycontainer_0opt1_eq(const h_fixedbugsagrouprecordineverycontainer_0opt1 *a, const h_fixedbugsagrouprecordineverycontainer_0opt1 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt1_hash(const void *elem) {
-    const h_fixedbugsagrouprecordineverycontainer_0opt1 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -737,7 +737,7 @@ uint64_t h_fixedbugsagrouprecordineverycontainer_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt2_retain(const h_fixedbugsagrouprecordineverycontainer_0opt2 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -745,7 +745,7 @@ void h_fixedbugsagrouprecordineverycontainer_0opt2_retain(const h_fixedbugsagrou
     }
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt2_release(h_fixedbugsagrouprecordineverycontainer_0opt2 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -753,14 +753,14 @@ void h_fixedbugsagrouprecordineverycontainer_0opt2_release(h_fixedbugsagroupreco
     }
 }
 
-bool h_fixedbugsagrouprecordineverycontainer_0opt2_eq(const h_fixedbugsagrouprecordineverycontainer_0opt2 *a, const h_fixedbugsagrouprecordineverycontainer_0opt2 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt2_hash(const void *elem) {
-    const h_fixedbugsagrouprecordineverycontainer_0opt2 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -769,7 +769,7 @@ uint64_t h_fixedbugsagrouprecordineverycontainer_0opt2_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt3_retain(const h_fixedbugsagrouprecordineverycontainer_0opt3 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -777,7 +777,7 @@ void h_fixedbugsagrouprecordineverycontainer_0opt3_retain(const h_fixedbugsagrou
     }
 }
 
-void h_fixedbugsagrouprecordineverycontainer_0opt3_release(h_fixedbugsagrouprecordineverycontainer_0opt3 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -785,14 +785,14 @@ void h_fixedbugsagrouprecordineverycontainer_0opt3_release(h_fixedbugsagroupreco
     }
 }
 
-bool h_fixedbugsagrouprecordineverycontainer_0opt3_eq(const h_fixedbugsagrouprecordineverycontainer_0opt3 *a, const h_fixedbugsagrouprecordineverycontainer_0opt3 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugsagrouprecordineverycontainer_0opt3_hash(const void *elem) {
-    const h_fixedbugsagrouprecordineverycontainer_0opt3 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

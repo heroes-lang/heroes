@@ -181,8 +181,8 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     assert c.diagnostics.len() == 0
     low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
     names0 = emit_ctype.new_names(s, parsed.decls)
-    names1 = emit_ctype.with_options(names0, module: "t", c: c)
-    names = emit_ctype.with_functions(names1, module: "t", c: c, p: low.program)
+    names1 = emit_ctype.with_options(names0, c: c, s: s, decls: parsed.decls)
+    names = emit_ctype.with_functions(names1, c: c, s: s, decls: parsed.decls, p: low.program)
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0])
     got = emit_writer.finish(w)
@@ -207,7 +207,7 @@ test "an unreachable join is omitted entirely, label and all"
     assert c.diagnostics.len() == 0
     low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
     names0 = emit_ctype.new_names(s, parsed.decls)
-    names = emit_ctype.with_functions(emit_ctype.with_options(names0, module: "t", c: c), module: "t", c: c, p: low.program)
+    names = emit_ctype.with_functions(emit_ctype.with_options(names0, c: c, s: s, decls: parsed.decls), c: c, s: s, decls: parsed.decls, p: low.program)
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0])
     got = emit_writer.finish(w)

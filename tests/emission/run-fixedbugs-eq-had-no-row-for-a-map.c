@@ -60,69 +60,69 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 
 HERO_STR_STATIC(hero_str_0, "x");
 
-typedef struct h_fixedbugseqhadnorowforamap_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_fixedbugseqhadnorowforamap_0opt0;
+} h_0opt_e201354;
 
-typedef int64_t (*h_fixedbugseqhadnorowforamap_0fn0)(int64_t);
+typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugseqhadnorowforamap_Box {
     HeroMapHeader * f_m;
-    h_fixedbugseqhadnorowforamap_0opt0 f_o;
-    h_fixedbugseqhadnorowforamap_0fn0 f_f;
+    h_0opt_e201354 f_o;
+    h_0fn_48ac9712 f_f;
 } h_fixedbugseqhadnorowforamap_Box;
 
-typedef struct h_fixedbugseqhadnorowforamap_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugseqhadnorowforamap_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugseqhadnorowforamap_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugseqhadnorowforamap_0opt2;
+} h_0opt_a8ea2;
 
 void h_fixedbugseqhadnorowforamap_Box_retain(const h_fixedbugseqhadnorowforamap_Box *v);
 void h_fixedbugseqhadnorowforamap_Box_release(h_fixedbugseqhadnorowforamap_Box *v);
 bool h_fixedbugseqhadnorowforamap_Box_eq(const h_fixedbugseqhadnorowforamap_Box *a, const h_fixedbugseqhadnorowforamap_Box *b);
 uint64_t h_fixedbugseqhadnorowforamap_Box_hash(const void *elem);
-void h_fixedbugseqhadnorowforamap_0opt0_retain(const h_fixedbugseqhadnorowforamap_0opt0 *v);
-void h_fixedbugseqhadnorowforamap_0opt0_release(h_fixedbugseqhadnorowforamap_0opt0 *v);
-bool h_fixedbugseqhadnorowforamap_0opt0_eq(const h_fixedbugseqhadnorowforamap_0opt0 *a, const h_fixedbugseqhadnorowforamap_0opt0 *b);
-uint64_t h_fixedbugseqhadnorowforamap_0opt0_hash(const void *elem);
-void h_fixedbugseqhadnorowforamap_0opt1_retain(const h_fixedbugseqhadnorowforamap_0opt1 *v);
-void h_fixedbugseqhadnorowforamap_0opt1_release(h_fixedbugseqhadnorowforamap_0opt1 *v);
-bool h_fixedbugseqhadnorowforamap_0opt1_eq(const h_fixedbugseqhadnorowforamap_0opt1 *a, const h_fixedbugseqhadnorowforamap_0opt1 *b);
-uint64_t h_fixedbugseqhadnorowforamap_0opt1_hash(const void *elem);
-void h_fixedbugseqhadnorowforamap_0opt2_retain(const h_fixedbugseqhadnorowforamap_0opt2 *v);
-void h_fixedbugseqhadnorowforamap_0opt2_release(h_fixedbugseqhadnorowforamap_0opt2 *v);
-bool h_fixedbugseqhadnorowforamap_0opt2_eq(const h_fixedbugseqhadnorowforamap_0opt2 *a, const h_fixedbugseqhadnorowforamap_0opt2 *b);
-uint64_t h_fixedbugseqhadnorowforamap_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-static void h_fixedbugseqhadnorowforamap_0opt0_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugseqhadnorowforamap_0opt0 *)dst = *(const h_fixedbugseqhadnorowforamap_0opt0 *)src;
-    h_fixedbugseqhadnorowforamap_0opt0_retain((const h_fixedbugseqhadnorowforamap_0opt0 *)dst);
+static void h_0opt_e201354_desc_copy(void *dst, const void *src) {
+    *(h_0opt_e201354 *)dst = *(const h_0opt_e201354 *)src;
+    h_0opt_e201354_retain((const h_0opt_e201354 *)dst);
 }
-static void h_fixedbugseqhadnorowforamap_0opt0_desc_drop(void *elem) {
-    h_fixedbugseqhadnorowforamap_0opt0_release((h_fixedbugseqhadnorowforamap_0opt0 *)elem);
+static void h_0opt_e201354_desc_drop(void *elem) {
+    h_0opt_e201354_release((h_0opt_e201354 *)elem);
 }
-static bool h_fixedbugseqhadnorowforamap_0opt0_desc_eq(const void *a, const void *b) {
-    return h_fixedbugseqhadnorowforamap_0opt0_eq((const h_fixedbugseqhadnorowforamap_0opt0 *)a, (const h_fixedbugseqhadnorowforamap_0opt0 *)b);
+static bool h_0opt_e201354_desc_eq(const void *a, const void *b) {
+    return h_0opt_e201354_eq((const h_0opt_e201354 *)a, (const h_0opt_e201354 *)b);
 }
-static const HeroDesc h_fixedbugseqhadnorowforamap_0opt0_desc = {
-    sizeof(h_fixedbugseqhadnorowforamap_0opt0),
-    h_fixedbugseqhadnorowforamap_0opt0_desc_copy,
-    h_fixedbugseqhadnorowforamap_0opt0_desc_drop,
-    h_fixedbugseqhadnorowforamap_0opt0_desc_eq,
-    h_fixedbugseqhadnorowforamap_0opt0_hash,
+static const HeroDesc h_0opt_e201354_desc = {
+    sizeof(h_0opt_e201354),
+    h_0opt_e201354_desc_copy,
+    h_0opt_e201354_desc_drop,
+    h_0opt_e201354_desc_eq,
+    h_0opt_e201354_hash,
 };
 
 static void h_fixedbugseqhadnorowforamap_Box_desc_copy(void *dst, const void *src) {
@@ -172,42 +172,42 @@ void h_fixedbugseqhadnorowforamap_main(void) {
     h_fixedbugseqhadnorowforamap_Box h1_b = {0};
     h_fixedbugseqhadnorowforamap_Box h2_c = {0};
     HeroMapHeader * h3_seen = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 h4_f0 = {0};
+    h_0opt_e201354 h4_f0 = {0};
     int64_t h5_r0;
-    h_fixedbugseqhadnorowforamap_0opt0 h6_f1 = {0};
+    h_0opt_e201354 h6_f1 = {0};
     int64_t h7_r1;
     HeroMapHeader * h8_own8 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 h9_own9 = {0};
+    h_0opt_e201354 h9_own9 = {0};
     h_fixedbugseqhadnorowforamap_Box h10_own10 = {0};
     HeroMapHeader * h11_own11 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 h12_own12 = {0};
+    h_0opt_e201354 h12_own12 = {0};
     h_fixedbugseqhadnorowforamap_Box h13_own13 = {0};
     HeroMapHeader * h14_own14 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 h15_own15 = {0};
+    h_0opt_e201354 h15_own15 = {0};
     h_fixedbugseqhadnorowforamap_Box h16_own16 = {0};
     HeroMapHeader * h17_own17 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 h18_own18 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 h19_own19 = {0};
+    h_0opt_e201354 h18_own18 = {0};
+    h_0opt_e201354 h19_own19 = {0};
     HeroStr t1 = {0};
     int64_t t2;
     HeroMapHeader * t3 = {0};
     int64_t t4;
-    h_fixedbugseqhadnorowforamap_0opt0 t5 = {0};
-    h_fixedbugseqhadnorowforamap_0fn0 t6;
+    h_0opt_e201354 t5 = {0};
+    h_0fn_48ac9712 t6;
     h_fixedbugseqhadnorowforamap_Box t7 = {0};
     HeroStr t8 = {0};
     int64_t t9;
     HeroMapHeader * t10 = {0};
     int64_t t11;
-    h_fixedbugseqhadnorowforamap_0opt0 t12 = {0};
-    h_fixedbugseqhadnorowforamap_0fn0 t13;
+    h_0opt_e201354 t12 = {0};
+    h_0fn_48ac9712 t13;
     h_fixedbugseqhadnorowforamap_Box t14 = {0};
     HeroStr t15 = {0};
     int64_t t16;
     HeroMapHeader * t17 = {0};
     int64_t t18;
-    h_fixedbugseqhadnorowforamap_0opt0 t19 = {0};
-    h_fixedbugseqhadnorowforamap_0fn0 t20;
+    h_0opt_e201354 t19 = {0};
+    h_0fn_48ac9712 t20;
     h_fixedbugseqhadnorowforamap_Box t21 = {0};
     h_fixedbugseqhadnorowforamap_Box t22 = {0};
     h_fixedbugseqhadnorowforamap_Box t23 = {0};
@@ -220,62 +220,62 @@ void h_fixedbugseqhadnorowforamap_main(void) {
     int64_t t30;
     HeroMapHeader * t31 = {0};
     h_fixedbugseqhadnorowforamap_Box t32 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t33 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t34 = {0};
+    h_0opt_e201354 t33 = {0};
+    h_0opt_e201354 t34 = {0};
     int64_t t35;
     int64_t t36;
     bool t37;
-    h_fixedbugseqhadnorowforamap_0opt0 t38 = {0};
+    h_0opt_e201354 t38 = {0};
     int64_t t39;
     int64_t t40;
     int64_t t41;
     HeroMapHeader * t42 = {0};
     h_fixedbugseqhadnorowforamap_Box t43 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t44 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t45 = {0};
+    h_0opt_e201354 t44 = {0};
+    h_0opt_e201354 t45 = {0};
     int64_t t46;
     int64_t t47;
     bool t48;
-    h_fixedbugseqhadnorowforamap_0opt0 t49 = {0};
+    h_0opt_e201354 t49 = {0};
     int64_t t50;
     int64_t t51;
     int64_t t52;
     HeroMapHeader * t53 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t54 = {0};
+    h_0opt_e201354 t54 = {0};
     h_fixedbugseqhadnorowforamap_Box t55 = {0};
     h_fixedbugseqhadnorowforamap_Box t56 = {0};
     HeroMapHeader * t57 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t58 = {0};
+    h_0opt_e201354 t58 = {0};
     h_fixedbugseqhadnorowforamap_Box t59 = {0};
     h_fixedbugseqhadnorowforamap_Box t60 = {0};
     HeroMapHeader * t61 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t62 = {0};
+    h_0opt_e201354 t62 = {0};
     h_fixedbugseqhadnorowforamap_Box t63 = {0};
     h_fixedbugseqhadnorowforamap_Box t64 = {0};
     HeroMapHeader * t65 = {0};
     HeroMapHeader * t66 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t67 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t68 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t69 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t70 = {0};
+    h_0opt_e201354 t67 = {0};
+    h_0opt_e201354 t68 = {0};
+    h_0opt_e201354 t69 = {0};
+    h_0opt_e201354 t70 = {0};
     h_fixedbugseqhadnorowforamap_Box t71 = {0};
     h_fixedbugseqhadnorowforamap_Box t72 = {0};
     h_fixedbugseqhadnorowforamap_Box t73 = {0};
     HeroMapHeader * t74 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t75 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t76 = {0};
+    h_0opt_e201354 t75 = {0};
+    h_0opt_e201354 t76 = {0};
     HeroMapHeader * t77 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t78 = {0};
+    h_0opt_e201354 t78 = {0};
     h_fixedbugseqhadnorowforamap_Box t79 = {0};
     HeroMapHeader * t80 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t81 = {0};
+    h_0opt_e201354 t81 = {0};
     h_fixedbugseqhadnorowforamap_Box t82 = {0};
     HeroMapHeader * t83 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t84 = {0};
+    h_0opt_e201354 t84 = {0};
     h_fixedbugseqhadnorowforamap_Box t85 = {0};
     HeroMapHeader * t86 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t87 = {0};
-    h_fixedbugseqhadnorowforamap_0opt0 t88 = {0};
+    h_0opt_e201354 t87 = {0};
+    h_0opt_e201354 t88 = {0};
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -295,20 +295,20 @@ bb0:
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t4 = INT64_C(2);
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-    t5 = (h_fixedbugseqhadnorowforamap_0opt0){.tag = INT64_C(0), .as.ok = t4};
+    t5 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t4};
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t54 = h9_own9;
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     h9_own9 = t5;
 #line 304 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t54);
+    h_0opt_e201354_release(&t54);
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t6 = h_fixedbugseqhadnorowforamap_bump;
 #line 308 "fixedbugseqhadnorowforamap.c"
     hero_map_incref(t3);
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 #line 311 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_retain(&t5);
+    h_0opt_e201354_retain(&t5);
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t7 = (h_fixedbugseqhadnorowforamap_Box){.f_m = t3, .f_o = t5, .f_f = t6};
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -342,20 +342,20 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t11 = INT64_C(2);
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-    t12 = (h_fixedbugseqhadnorowforamap_0opt0){.tag = INT64_C(0), .as.ok = t11};
+    t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11};
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t58 = h12_own12;
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     h12_own12 = t12;
 #line 351 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t58);
+    h_0opt_e201354_release(&t58);
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t13 = h_fixedbugseqhadnorowforamap_bump;
 #line 355 "fixedbugseqhadnorowforamap.c"
     hero_map_incref(t10);
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 #line 358 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_retain(&t12);
+    h_0opt_e201354_retain(&t12);
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t14 = (h_fixedbugseqhadnorowforamap_Box){.f_m = t10, .f_o = t12, .f_f = t13};
 #line 28 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -389,20 +389,20 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t18 = INT64_C(2);
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-    t19 = (h_fixedbugseqhadnorowforamap_0opt0){.tag = INT64_C(0), .as.ok = t18};
+    t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t18};
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t62 = h15_own15;
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     h15_own15 = t19;
 #line 398 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t62);
+    h_0opt_e201354_release(&t62);
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t20 = h_fixedbugseqhadnorowforamap_bump;
 #line 402 "fixedbugseqhadnorowforamap.c"
     hero_map_incref(t17);
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 #line 405 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_retain(&t19);
+    h_0opt_e201354_retain(&t19);
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t21 = (h_fixedbugseqhadnorowforamap_Box){.f_m = t17, .f_o = t19, .f_f = t20};
 #line 29 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -472,7 +472,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
       if (found == NULL) {
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-        t33 = (h_fixedbugseqhadnorowforamap_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t33 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
       } else {
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -488,15 +488,15 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     h18_own18 = t33;
 #line 491 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t67);
+    h_0opt_e201354_release(&t67);
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t68 = h4_f0;
 #line 495 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_retain(&t33);
+    h_0opt_e201354_retain(&t33);
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     h4_f0 = t33;
 #line 499 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t68);
+    h_0opt_e201354_release(&t68);
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t34 = h4_f0;
 #line 37 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -544,7 +544,7 @@ bb3:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
       if (found == NULL) {
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
-        t44 = (h_fixedbugseqhadnorowforamap_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t44 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
       } else {
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -560,15 +560,15 @@ bb3:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     h19_own19 = t44;
 #line 563 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t69);
+    h_0opt_e201354_release(&t69);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t70 = h6_f1;
 #line 567 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_retain(&t44);
+    h_0opt_e201354_retain(&t44);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     h6_f1 = t44;
 #line 571 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t70);
+    h_0opt_e201354_release(&t70);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t45 = h6_f1;
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
@@ -624,11 +624,11 @@ bb6:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t75 = h4_f0;
 #line 627 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t75);
+    h_0opt_e201354_release(&t75);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t76 = h6_f1;
 #line 631 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t76);
+    h_0opt_e201354_release(&t76);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t77 = h8_own8;
 #line 635 "fixedbugseqhadnorowforamap.c"
@@ -636,7 +636,7 @@ bb6:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t78 = h9_own9;
 #line 639 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t78);
+    h_0opt_e201354_release(&t78);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t79 = h10_own10;
 #line 643 "fixedbugseqhadnorowforamap.c"
@@ -648,7 +648,7 @@ bb6:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t81 = h12_own12;
 #line 651 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t81);
+    h_0opt_e201354_release(&t81);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t82 = h13_own13;
 #line 655 "fixedbugseqhadnorowforamap.c"
@@ -660,7 +660,7 @@ bb6:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t84 = h15_own15;
 #line 663 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t84);
+    h_0opt_e201354_release(&t84);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t85 = h16_own16;
 #line 667 "fixedbugseqhadnorowforamap.c"
@@ -672,26 +672,26 @@ bb6:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t87 = h18_own18;
 #line 675 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t87);
+    h_0opt_e201354_release(&t87);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t88 = h19_own19;
 #line 679 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_0opt0_release(&t88);
+    h_0opt_e201354_release(&t88);
     return;
 }
 void h_fixedbugseqhadnorowforamap_Box_retain(const h_fixedbugseqhadnorowforamap_Box *v) {
     hero_map_incref(v->f_m);
-    h_fixedbugseqhadnorowforamap_0opt0_retain(&v->f_o);
+    h_0opt_e201354_retain(&v->f_o);
 }
 
 void h_fixedbugseqhadnorowforamap_Box_release(h_fixedbugseqhadnorowforamap_Box *v) {
     hero_map_decref(v->f_m);
-    h_fixedbugseqhadnorowforamap_0opt0_release(&v->f_o);
+    h_0opt_e201354_release(&v->f_o);
 }
 
 bool h_fixedbugseqhadnorowforamap_Box_eq(const h_fixedbugseqhadnorowforamap_Box *a, const h_fixedbugseqhadnorowforamap_Box *b) {
     if (!(hero_map_eq(a->f_m, b->f_m))) return false;
-    if (!(h_fixedbugseqhadnorowforamap_0opt0_eq(&a->f_o, &b->f_o))) return false;
+    if (!(h_0opt_e201354_eq(&a->f_o, &b->f_o))) return false;
     if (!(a->f_f == b->f_f)) return false;
     return true;
 }
@@ -700,12 +700,12 @@ uint64_t h_fixedbugseqhadnorowforamap_Box_hash(const void *elem) {
     const h_fixedbugseqhadnorowforamap_Box *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_map)->hash(&v->f_m)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&h_fixedbugseqhadnorowforamap_0opt0_desc)->hash(&v->f_o)) * UINT64_C(0x100000001b3);
+    h = (h ^ (&h_0opt_e201354_desc)->hash(&v->f_o)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_func)->hash(&v->f_f)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_fixedbugseqhadnorowforamap_0opt0_retain(const h_fixedbugseqhadnorowforamap_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -713,7 +713,7 @@ void h_fixedbugseqhadnorowforamap_0opt0_retain(const h_fixedbugseqhadnorowforama
     }
 }
 
-void h_fixedbugseqhadnorowforamap_0opt0_release(h_fixedbugseqhadnorowforamap_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -721,14 +721,14 @@ void h_fixedbugseqhadnorowforamap_0opt0_release(h_fixedbugseqhadnorowforamap_0op
     }
 }
 
-bool h_fixedbugseqhadnorowforamap_0opt0_eq(const h_fixedbugseqhadnorowforamap_0opt0 *a, const h_fixedbugseqhadnorowforamap_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugseqhadnorowforamap_0opt0_hash(const void *elem) {
-    const h_fixedbugseqhadnorowforamap_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -737,7 +737,7 @@ uint64_t h_fixedbugseqhadnorowforamap_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugseqhadnorowforamap_0opt1_retain(const h_fixedbugseqhadnorowforamap_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -745,7 +745,7 @@ void h_fixedbugseqhadnorowforamap_0opt1_retain(const h_fixedbugseqhadnorowforama
     }
 }
 
-void h_fixedbugseqhadnorowforamap_0opt1_release(h_fixedbugseqhadnorowforamap_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -753,14 +753,14 @@ void h_fixedbugseqhadnorowforamap_0opt1_release(h_fixedbugseqhadnorowforamap_0op
     }
 }
 
-bool h_fixedbugseqhadnorowforamap_0opt1_eq(const h_fixedbugseqhadnorowforamap_0opt1 *a, const h_fixedbugseqhadnorowforamap_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugseqhadnorowforamap_0opt1_hash(const void *elem) {
-    const h_fixedbugseqhadnorowforamap_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -769,7 +769,7 @@ uint64_t h_fixedbugseqhadnorowforamap_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugseqhadnorowforamap_0opt2_retain(const h_fixedbugseqhadnorowforamap_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -777,7 +777,7 @@ void h_fixedbugseqhadnorowforamap_0opt2_retain(const h_fixedbugseqhadnorowforama
     }
 }
 
-void h_fixedbugseqhadnorowforamap_0opt2_release(h_fixedbugseqhadnorowforamap_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -785,14 +785,14 @@ void h_fixedbugseqhadnorowforamap_0opt2_release(h_fixedbugseqhadnorowforamap_0op
     }
 }
 
-bool h_fixedbugseqhadnorowforamap_0opt2_eq(const h_fixedbugseqhadnorowforamap_0opt2 *a, const h_fixedbugseqhadnorowforamap_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugseqhadnorowforamap_0opt2_hash(const void *elem) {
-    const h_fixedbugseqhadnorowforamap_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

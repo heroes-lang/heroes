@@ -81,44 +81,44 @@ typedef struct h_fixedbugsdescriptorforwhattheemitternames_Shape {
     } as;
 } h_fixedbugsdescriptorforwhattheemitternames_Shape;
 
-typedef struct h_fixedbugsdescriptorforwhattheemitternames_0opt0 {
+typedef struct h_0opt_786b106a {
     int64_t tag;
     union {
         h_fixedbugsdescriptorforwhattheemitternames_P ok;
         HeroFailure err;
     } as;
-} h_fixedbugsdescriptorforwhattheemitternames_0opt0;
+} h_0opt_786b106a;
 
-typedef struct h_fixedbugsdescriptorforwhattheemitternames_0opt1 {
+typedef struct h_0opt_538f2d82 {
     int64_t tag;
     union {
         h_fixedbugsdescriptorforwhattheemitternames_Shape ok;
         HeroFailure err;
     } as;
-} h_fixedbugsdescriptorforwhattheemitternames_0opt1;
+} h_0opt_538f2d82;
 
-typedef struct h_fixedbugsdescriptorforwhattheemitternames_0opt2 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_fixedbugsdescriptorforwhattheemitternames_0opt2;
+} h_0opt_e201354;
 
-typedef struct h_fixedbugsdescriptorforwhattheemitternames_0opt3 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugsdescriptorforwhattheemitternames_0opt3;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugsdescriptorforwhattheemitternames_0opt4 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugsdescriptorforwhattheemitternames_0opt4;
+} h_0opt_a8ea2;
 
 bool h_fixedbugsdescriptorforwhattheemitternames_P_eq(const h_fixedbugsdescriptorforwhattheemitternames_P *a, const h_fixedbugsdescriptorforwhattheemitternames_P *b);
 uint64_t h_fixedbugsdescriptorforwhattheemitternames_P_hash(const void *elem);
@@ -126,26 +126,26 @@ bool h_fixedbugsdescriptorforwhattheemitternames_Shape_c_box_eq(const h_fixedbug
 uint64_t h_fixedbugsdescriptorforwhattheemitternames_Shape_c_box_hash(const void *elem);
 bool h_fixedbugsdescriptorforwhattheemitternames_Shape_eq(const h_fixedbugsdescriptorforwhattheemitternames_Shape *a, const h_fixedbugsdescriptorforwhattheemitternames_Shape *b);
 uint64_t h_fixedbugsdescriptorforwhattheemitternames_Shape_hash(const void *elem);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt0_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt0 *v);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(h_fixedbugsdescriptorforwhattheemitternames_0opt0 *v);
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt0_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt0 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt0 *b);
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt0_hash(const void *elem);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt1_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt1 *v);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(h_fixedbugsdescriptorforwhattheemitternames_0opt1 *v);
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt1_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt1 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt1 *b);
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt1_hash(const void *elem);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt2_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *v);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt2_release(h_fixedbugsdescriptorforwhattheemitternames_0opt2 *v);
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt2_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *b);
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt2_hash(const void *elem);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt3_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt3 *v);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt3_release(h_fixedbugsdescriptorforwhattheemitternames_0opt3 *v);
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt3_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt3 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt3 *b);
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt3_hash(const void *elem);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt4_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt4 *v);
-void h_fixedbugsdescriptorforwhattheemitternames_0opt4_release(h_fixedbugsdescriptorforwhattheemitternames_0opt4 *v);
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt4_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt4 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt4 *b);
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt4_hash(const void *elem);
+void h_0opt_786b106a_retain(const h_0opt_786b106a *v);
+void h_0opt_786b106a_release(h_0opt_786b106a *v);
+bool h_0opt_786b106a_eq(const h_0opt_786b106a *a, const h_0opt_786b106a *b);
+uint64_t h_0opt_786b106a_hash(const void *elem);
+void h_0opt_538f2d82_retain(const h_0opt_538f2d82 *v);
+void h_0opt_538f2d82_release(h_0opt_538f2d82 *v);
+bool h_0opt_538f2d82_eq(const h_0opt_538f2d82 *a, const h_0opt_538f2d82 *b);
+uint64_t h_0opt_538f2d82_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugsdescriptorforwhattheemitternames_P_desc_copy(void *dst, const void *src) {
     *(h_fixedbugsdescriptorforwhattheemitternames_P *)dst = *(const h_fixedbugsdescriptorforwhattheemitternames_P *)src;
@@ -181,49 +181,49 @@ static const HeroDesc h_fixedbugsdescriptorforwhattheemitternames_Shape_desc = {
     h_fixedbugsdescriptorforwhattheemitternames_Shape_hash,
 };
 
-static void h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugsdescriptorforwhattheemitternames_0opt2 *)dst = *(const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *)src;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt2_retain((const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *)dst);
+static void h_0opt_e201354_desc_copy(void *dst, const void *src) {
+    *(h_0opt_e201354 *)dst = *(const h_0opt_e201354 *)src;
+    h_0opt_e201354_retain((const h_0opt_e201354 *)dst);
 }
-static void h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc_drop(void *elem) {
-    h_fixedbugsdescriptorforwhattheemitternames_0opt2_release((h_fixedbugsdescriptorforwhattheemitternames_0opt2 *)elem);
+static void h_0opt_e201354_desc_drop(void *elem) {
+    h_0opt_e201354_release((h_0opt_e201354 *)elem);
 }
-static bool h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc_eq(const void *a, const void *b) {
-    return h_fixedbugsdescriptorforwhattheemitternames_0opt2_eq((const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *)a, (const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *)b);
+static bool h_0opt_e201354_desc_eq(const void *a, const void *b) {
+    return h_0opt_e201354_eq((const h_0opt_e201354 *)a, (const h_0opt_e201354 *)b);
 }
-static const HeroDesc h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc = {
-    sizeof(h_fixedbugsdescriptorforwhattheemitternames_0opt2),
-    h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc_copy,
-    h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc_drop,
-    h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc_eq,
-    h_fixedbugsdescriptorforwhattheemitternames_0opt2_hash,
+static const HeroDesc h_0opt_e201354_desc = {
+    sizeof(h_0opt_e201354),
+    h_0opt_e201354_desc_copy,
+    h_0opt_e201354_desc_drop,
+    h_0opt_e201354_desc_eq,
+    h_0opt_e201354_hash,
 };
 
-h_fixedbugsdescriptorforwhattheemitternames_0opt0 h_fixedbugsdescriptorforwhattheemitternames_grab(bool h0_f);
-h_fixedbugsdescriptorforwhattheemitternames_0opt1 h_fixedbugsdescriptorforwhattheemitternames_shape_of(bool h0_f);
+h_0opt_786b106a h_fixedbugsdescriptorforwhattheemitternames_grab(bool h0_f);
+h_0opt_538f2d82 h_fixedbugsdescriptorforwhattheemitternames_shape_of(bool h0_f);
 int64_t h_fixedbugsdescriptorforwhattheemitternames_width_of(h_fixedbugsdescriptorforwhattheemitternames_Shape h0_s);
 int64_t h_fixedbugsdescriptorforwhattheemitternames_width(bool h0_f);
 void h_fixedbugsdescriptorforwhattheemitternames_main(void);
 int64_t h_fixedbugsdescriptorforwhattheemitternames_count_1b9a87(HeroArrayHeader * h0_xs);
 
 #line 27 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-h_fixedbugsdescriptorforwhattheemitternames_0opt0 h_fixedbugsdescriptorforwhattheemitternames_grab(bool h0_f) {
+h_0opt_786b106a h_fixedbugsdescriptorforwhattheemitternames_grab(bool h0_f) {
 #line 212 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 h1_own1 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 h2_own2 = {0};
+    h_0opt_786b106a h1_own1 = {0};
+    h_0opt_786b106a h2_own2 = {0};
     bool t1;
     int64_t t2;
     h_fixedbugsdescriptorforwhattheemitternames_P t3;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t4 = {0};
+    h_0opt_786b106a t4 = {0};
     HeroStr t5 = {0};
     HeroStr t6 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t7 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t8 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t9 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t10 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t11 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t12 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t13 = {0};
+    h_0opt_786b106a t7 = {0};
+    h_0opt_786b106a t8 = {0};
+    h_0opt_786b106a t9 = {0};
+    h_0opt_786b106a t10 = {0};
+    h_0opt_786b106a t11 = {0};
+    h_0opt_786b106a t12 = {0};
+    h_0opt_786b106a t13 = {0};
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -242,24 +242,24 @@ bb1:
 #line 243 "fixedbugsdescriptorforwhattheemitternames.c"
     hero_str_incref(t6);
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t7 = (h_fixedbugsdescriptorforwhattheemitternames_0opt0){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
+    t7 = (h_0opt_786b106a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t8 = h1_own1;
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h1_own1 = t7;
 #line 251 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t8);
+    h_0opt_786b106a_release(&t8);
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 254 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_retain(&t7);
+    h_0opt_786b106a_retain(&t7);
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t10 = h1_own1;
 #line 258 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t10);
+    h_0opt_786b106a_release(&t10);
 #line 30 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t11 = h2_own2;
 #line 262 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t11);
+    h_0opt_786b106a_release(&t11);
     return t7;
 bb2:
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -267,47 +267,47 @@ bb2:
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t3 = (h_fixedbugsdescriptorforwhattheemitternames_P){.f_x = t2};
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t4 = (h_fixedbugsdescriptorforwhattheemitternames_0opt0){.tag = INT64_C(0), .as.ok = t3};
+    t4 = (h_0opt_786b106a){.tag = INT64_C(0), .as.ok = t3};
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t9 = h2_own2;
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h2_own2 = t4;
 #line 276 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t9);
+    h_0opt_786b106a_release(&t9);
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 279 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_retain(&t4);
+    h_0opt_786b106a_retain(&t4);
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t12 = h1_own1;
 #line 283 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t12);
+    h_0opt_786b106a_release(&t12);
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t13 = h2_own2;
 #line 287 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t13);
+    h_0opt_786b106a_release(&t13);
     return t4;
 bb3:
     goto bb1;
 }
 
 #line 32 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-h_fixedbugsdescriptorforwhattheemitternames_0opt1 h_fixedbugsdescriptorforwhattheemitternames_shape_of(bool h0_f) {
+h_0opt_538f2d82 h_fixedbugsdescriptorforwhattheemitternames_shape_of(bool h0_f) {
 #line 296 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 h1_own1 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 h2_own2 = {0};
+    h_0opt_538f2d82 h1_own1 = {0};
+    h_0opt_538f2d82 h2_own2 = {0};
     bool t1;
     int64_t t2;
     h_fixedbugsdescriptorforwhattheemitternames_Shape t3;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t4 = {0};
+    h_0opt_538f2d82 t4 = {0};
     HeroStr t5 = {0};
     HeroStr t6 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t7 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t8 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t9 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t10 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t11 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t12 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t13 = {0};
+    h_0opt_538f2d82 t7 = {0};
+    h_0opt_538f2d82 t8 = {0};
+    h_0opt_538f2d82 t9 = {0};
+    h_0opt_538f2d82 t10 = {0};
+    h_0opt_538f2d82 t11 = {0};
+    h_0opt_538f2d82 t12 = {0};
+    h_0opt_538f2d82 t13 = {0};
     goto bb0;
 bb0:
 #line 33 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -326,24 +326,24 @@ bb1:
 #line 327 "fixedbugsdescriptorforwhattheemitternames.c"
     hero_str_incref(t6);
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t7 = (h_fixedbugsdescriptorforwhattheemitternames_0opt1){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
+    t7 = (h_0opt_538f2d82){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t8 = h1_own1;
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h1_own1 = t7;
 #line 335 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t8);
+    h_0opt_538f2d82_release(&t8);
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 338 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_retain(&t7);
+    h_0opt_538f2d82_retain(&t7);
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t10 = h1_own1;
 #line 342 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t10);
+    h_0opt_538f2d82_release(&t10);
 #line 35 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t11 = h2_own2;
 #line 346 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t11);
+    h_0opt_538f2d82_release(&t11);
     return t7;
 bb2:
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -351,24 +351,24 @@ bb2:
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t3 = (h_fixedbugsdescriptorforwhattheemitternames_Shape){.tag = h_fixedbugsdescriptorforwhattheemitternames_Shape_tag_box, .as.c_box = {.f_w = t2}};
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t4 = (h_fixedbugsdescriptorforwhattheemitternames_0opt1){.tag = INT64_C(0), .as.ok = t3};
+    t4 = (h_0opt_538f2d82){.tag = INT64_C(0), .as.ok = t3};
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t9 = h2_own2;
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h2_own2 = t4;
 #line 360 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t9);
+    h_0opt_538f2d82_release(&t9);
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 363 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_retain(&t4);
+    h_0opt_538f2d82_retain(&t4);
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t12 = h1_own1;
 #line 367 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t12);
+    h_0opt_538f2d82_release(&t12);
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t13 = h2_own2;
 #line 371 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t13);
+    h_0opt_538f2d82_release(&t13);
     return t4;
 bb3:
     goto bb1;
@@ -445,15 +445,15 @@ bb3:
 #line 47 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 int64_t h_fixedbugsdescriptorforwhattheemitternames_width(bool h0_f) {
 #line 448 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 h1_s0 = {0};
+    h_0opt_538f2d82 h1_s0 = {0};
     int64_t h2_r0;
     h_fixedbugsdescriptorforwhattheemitternames_Shape h3_s;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 h4_own4 = {0};
+    h_0opt_538f2d82 h4_own4 = {0};
     bool t1;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t2 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t3 = {0};
+    h_0opt_538f2d82 t2 = {0};
+    h_0opt_538f2d82 t3 = {0};
     int64_t t4;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t5 = {0};
+    h_0opt_538f2d82 t5 = {0};
     h_fixedbugsdescriptorforwhattheemitternames_Shape t6;
     h_fixedbugsdescriptorforwhattheemitternames_Shape t7;
     int64_t t8;
@@ -461,10 +461,10 @@ int64_t h_fixedbugsdescriptorforwhattheemitternames_width(bool h0_f) {
     int64_t t10;
     int64_t t11;
     int64_t t12;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t13 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t14 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t15 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1 t16 = {0};
+    h_0opt_538f2d82 t13 = {0};
+    h_0opt_538f2d82 t14 = {0};
+    h_0opt_538f2d82 t15 = {0};
+    h_0opt_538f2d82 t16 = {0};
     goto bb0;
 bb0:
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -476,15 +476,15 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h4_own4 = t2;
 #line 479 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t13);
+    h_0opt_538f2d82_release(&t13);
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t14 = h1_s0;
 #line 483 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_retain(&t2);
+    h_0opt_538f2d82_retain(&t2);
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h1_s0 = t2;
 #line 487 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t14);
+    h_0opt_538f2d82_release(&t14);
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t3 = h1_s0;
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -506,11 +506,11 @@ bb1:
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t15 = h1_s0;
 #line 509 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t15);
+    h_0opt_538f2d82_release(&t15);
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t16 = h4_own4;
 #line 513 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(&t16);
+    h_0opt_538f2d82_release(&t16);
     return t12;
 bb2:
 #line 49 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -545,26 +545,26 @@ bb3:
 #line 52 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 void h_fixedbugsdescriptorforwhattheemitternames_main(void) {
 #line 548 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 h0_f0 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 h1_f1 = {0};
+    h_0opt_786b106a h0_f0 = {0};
+    h_0opt_786b106a h1_f1 = {0};
     HeroArrayHeader * h2_ys = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 h3_own3 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 h4_own4 = {0};
+    h_0opt_786b106a h3_own3 = {0};
+    h_0opt_786b106a h4_own4 = {0};
     HeroArrayHeader * h5_own5 = {0};
     bool t1;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t2 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t3 = {0};
+    h_0opt_786b106a t2 = {0};
+    h_0opt_786b106a t3 = {0};
     int64_t t4;
     int64_t t5;
     bool t6;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t7 = {0};
+    h_0opt_786b106a t7 = {0};
     HeroFailure t8 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t9 = {0};
+    h_0opt_786b106a t9 = {0};
     h_fixedbugsdescriptorforwhattheemitternames_P t10;
     int64_t t11;
     bool t12;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t13 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t14 = {0};
+    h_0opt_786b106a t13 = {0};
+    h_0opt_786b106a t14 = {0};
     int64_t t15;
     int64_t t16;
     bool t17;
@@ -573,17 +573,17 @@ void h_fixedbugsdescriptorforwhattheemitternames_main(void) {
     HeroArrayHeader * t20 = {0};
     HeroArrayHeader * t21 = {0};
     int64_t t22;
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t23 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t24 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t25 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t26 = {0};
+    h_0opt_786b106a t23 = {0};
+    h_0opt_786b106a t24 = {0};
+    h_0opt_786b106a t25 = {0};
+    h_0opt_786b106a t26 = {0};
     HeroArrayHeader * t27 = {0};
     HeroArrayHeader * t28 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t29 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t30 = {0};
+    h_0opt_786b106a t29 = {0};
+    h_0opt_786b106a t30 = {0};
     HeroArrayHeader * t31 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t32 = {0};
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0 t33 = {0};
+    h_0opt_786b106a t32 = {0};
+    h_0opt_786b106a t33 = {0};
     HeroArrayHeader * t34 = {0};
     goto bb0;
 bb0:
@@ -596,15 +596,15 @@ bb0:
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h3_own3 = t2;
 #line 599 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t23);
+    h_0opt_786b106a_release(&t23);
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t24 = h0_f0;
 #line 603 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_retain(&t2);
+    h_0opt_786b106a_retain(&t2);
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h0_f0 = t2;
 #line 607 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t24);
+    h_0opt_786b106a_release(&t24);
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t3 = h0_f0;
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -636,15 +636,15 @@ bb1:
 #line 54 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h4_own4 = t13;
 #line 639 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t25);
+    h_0opt_786b106a_release(&t25);
 #line 54 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t26 = h1_f1;
 #line 643 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_retain(&t13);
+    h_0opt_786b106a_retain(&t13);
 #line 54 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     h1_f1 = t13;
 #line 647 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t26);
+    h_0opt_786b106a_release(&t26);
 #line 54 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t14 = h1_f1;
 #line 54 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -666,7 +666,7 @@ bb1:
 #line 55 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     hero_print_end();
 #line 56 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t20 = hero_array_new(&h_fixedbugsdescriptorforwhattheemitternames_0opt2_desc, 1);
+    t20 = hero_array_new(&h_0opt_e201354_desc, 1);
 #line 56 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t27 = h5_own5;
 #line 56 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -692,11 +692,11 @@ bb1:
 #line 57 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t29 = h0_f0;
 #line 695 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t29);
+    h_0opt_786b106a_release(&t29);
 #line 57 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t30 = h1_f1;
 #line 699 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t30);
+    h_0opt_786b106a_release(&t30);
 #line 57 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t31 = h2_ys;
 #line 703 "fixedbugsdescriptorforwhattheemitternames.c"
@@ -704,11 +704,11 @@ bb1:
 #line 57 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t32 = h3_own3;
 #line 707 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t32);
+    h_0opt_786b106a_release(&t32);
 #line 57 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t33 = h4_own4;
 #line 711 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(&t33);
+    h_0opt_786b106a_release(&t33);
 #line 57 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t34 = h5_own5;
 #line 715 "fixedbugsdescriptorforwhattheemitternames.c"
@@ -785,7 +785,7 @@ uint64_t h_fixedbugsdescriptorforwhattheemitternames_Shape_hash(const void *elem
     hero_unreachable();
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt0_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt0 *v) {
+void h_0opt_786b106a_retain(const h_0opt_786b106a *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -793,7 +793,7 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt0_retain(const h_fixedbugsd
     }
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(h_fixedbugsdescriptorforwhattheemitternames_0opt0 *v) {
+void h_0opt_786b106a_release(h_0opt_786b106a *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -801,14 +801,14 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt0_release(h_fixedbugsdescri
     }
 }
 
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt0_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt0 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt0 *b) {
+bool h_0opt_786b106a_eq(const h_0opt_786b106a *a, const h_0opt_786b106a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&h_fixedbugsdescriptorforwhattheemitternames_P_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt0_hash(const void *elem) {
-    const h_fixedbugsdescriptorforwhattheemitternames_0opt0 *v = elem;
+uint64_t h_0opt_786b106a_hash(const void *elem) {
+    const h_0opt_786b106a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -817,7 +817,7 @@ uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt0_hash(const void *elem
     return (h ^ (&h_fixedbugsdescriptorforwhattheemitternames_P_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt1_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt1 *v) {
+void h_0opt_538f2d82_retain(const h_0opt_538f2d82 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -825,7 +825,7 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt1_retain(const h_fixedbugsd
     }
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(h_fixedbugsdescriptorforwhattheemitternames_0opt1 *v) {
+void h_0opt_538f2d82_release(h_0opt_538f2d82 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -833,14 +833,14 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt1_release(h_fixedbugsdescri
     }
 }
 
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt1_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt1 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt1 *b) {
+bool h_0opt_538f2d82_eq(const h_0opt_538f2d82 *a, const h_0opt_538f2d82 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&h_fixedbugsdescriptorforwhattheemitternames_Shape_desc)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt1_hash(const void *elem) {
-    const h_fixedbugsdescriptorforwhattheemitternames_0opt1 *v = elem;
+uint64_t h_0opt_538f2d82_hash(const void *elem) {
+    const h_0opt_538f2d82 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -849,7 +849,7 @@ uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt1_hash(const void *elem
     return (h ^ (&h_fixedbugsdescriptorforwhattheemitternames_Shape_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt2_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -857,7 +857,7 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt2_retain(const h_fixedbugsd
     }
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt2_release(h_fixedbugsdescriptorforwhattheemitternames_0opt2 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -865,14 +865,14 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt2_release(h_fixedbugsdescri
     }
 }
 
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt2_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt2_hash(const void *elem) {
-    const h_fixedbugsdescriptorforwhattheemitternames_0opt2 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -881,7 +881,7 @@ uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt2_hash(const void *elem
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt3_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt3 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -889,7 +889,7 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt3_retain(const h_fixedbugsd
     }
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt3_release(h_fixedbugsdescriptorforwhattheemitternames_0opt3 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -897,14 +897,14 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt3_release(h_fixedbugsdescri
     }
 }
 
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt3_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt3 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt3 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt3_hash(const void *elem) {
-    const h_fixedbugsdescriptorforwhattheemitternames_0opt3 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -913,7 +913,7 @@ uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt3_hash(const void *elem
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt4_retain(const h_fixedbugsdescriptorforwhattheemitternames_0opt4 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -921,7 +921,7 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt4_retain(const h_fixedbugsd
     }
 }
 
-void h_fixedbugsdescriptorforwhattheemitternames_0opt4_release(h_fixedbugsdescriptorforwhattheemitternames_0opt4 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -929,14 +929,14 @@ void h_fixedbugsdescriptorforwhattheemitternames_0opt4_release(h_fixedbugsdescri
     }
 }
 
-bool h_fixedbugsdescriptorforwhattheemitternames_0opt4_eq(const h_fixedbugsdescriptorforwhattheemitternames_0opt4 *a, const h_fixedbugsdescriptorforwhattheemitternames_0opt4 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugsdescriptorforwhattheemitternames_0opt4_hash(const void *elem) {
-    const h_fixedbugsdescriptorforwhattheemitternames_0opt4 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

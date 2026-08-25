@@ -15,12 +15,13 @@
 # list at its use site).
 #
 # THE LEADING DIGIT. The option and function typedefs belong to no
-# declaration, so they are named h_<module>_<N>opt<N> — and until
-# 2026-08-12 they were h_<module>_opt<N>, which a `record opt0` in the
-# same module spells exactly: redefinition, exit 2, on a legal program.
-# A leading digit closes the collision by construction: 0foo is
-# expected_name in the lexer, so there is nothing to collide with and
-# no diagnostic to write.
+# declaration, so they are named h_0opt_<hash> / h_0fn_<hash> — content
+# first (panel 093 R6), and the digit for the same reason as ever:
+# until 2026-08-12 they were h_<module>_opt<N>, which a `record opt0`
+# in the same module spells exactly — redefinition, exit 2, on a legal
+# program. A leading digit closes the collision by construction: 0foo
+# is expected_name in the lexer, so there is nothing to collide with
+# and no diagnostic to write.
 #
 # TWO NAMES PER AGGREGATE, and the jobs part inside single format
 # strings: `bool {name}_eq(const {name} *a, ...)` needs the first to be
@@ -35,6 +36,7 @@ use check_state
 use widths
 use ir_state
 use ir_phases
+use emit_synth
 use emit_mangle
 use parse
 use resolve
@@ -68,9 +70,11 @@ record Names
     foreign_decls: {i64: bool}
     partial_decls: {i64: bool}
     # The C type of each distinct T?, by the id of the whole T?. Named
-    # by INDEX: `i64?` and `[i64]?` sanitise to the same identifier.
-    # The index is assigned in id order, a function of the program, so
-    # the double-emit determinism test covers it.
+    # by CONTENT since panel 093 R6 — `h_0opt_<hash of the rendering>` —
+    # so the name is a function of the type alone: the same in every
+    # translation unit, every build, and every program, which is what a
+    # dependency's interface text needs to spell it and what a cached
+    # TU must match byte for byte on a clean re-emit.
     options: {i64: str}
     # The C type of one case's payload, keyed "decl:case".
     cases: {str: str}
@@ -145,7 +149,7 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
 # case somebody wrote. A type that still mentions a parameter has no C
 # declaration: the arena keeps the templates' A? after monomorphisation
 # deletes the functions that used them.
-function with_options(names: Names, module: str, c: check_state.Checked) -> Names
+function with_options(names: Names, c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> Names
     out: Names @ names
     count = check_table.len_of(c.types)
     id: i64 @ 0
@@ -158,8 +162,17 @@ function with_options(names: Names, module: str, c: check_state.Checked) -> Name
                 .array | .fixed | .map | .function_ty | .named => is_fallible @ is_fallible
                 .case_ty | .failure | .generic | .error => is_fallible @ is_fallible
             if is_fallible
-                at = len(out.options)
-                out.options[id] @ "h_" + module + "_" + SYNTHETIC + "opt" + at.to_str()
+                # CONTENT-NAMED, not walk-numbered (panel 093 R6): the
+                # name is a hash of the type's public rendering, so it is
+                # the same in every TU and every build — which is what
+                # lets a dependency's interface text name it, and what an
+                # index cannot survive (an unrelated edit renumbered
+                # `h_toy_0opt1` to `0opt2` on a signature nothing about
+                # had changed, measured by the 093 engineer). The module
+                # component is dropped for the same reason: `i64?` is the
+                # same type whoever mentions it. A hash collision is two
+                # C definitions of one name in one TU — loud.
+                out.options[id] @ "h_" + SYNTHETIC + "opt_" + emit_mangle.instance(emit_synth.content_key(c, s, decls, ty: id))
         id @ id + 1
     return out
 
@@ -168,47 +181,24 @@ function with_options(names: Names, module: str, c: check_state.Checked) -> Name
 # arena: the checker interns a function type for every top-level
 # declaration, so an arena walk would emit a typedef per function in
 # the file, almost all named by nothing and none able to fall out of
-# --emit-c. The fn<at> suffix is the walk position over ascending ids —
-# the map's key walk IS that order.
-function with_functions(names: Names, module: str, c: check_state.Checked, p: ir_state.Program) -> Names
+# --emit-c. CONTENT-NAMED like the options above (panel 093 R6): the
+# hash of the type's public rendering, identical in every TU and every
+# build, so a dependency's interface can spell it and a clean re-emit
+# matches a cached one byte for byte.
+function with_functions(names: Names, c: check_state.Checked, s: source.Source, decls: [ast.Decl], p: ir_state.Program) -> Names
     out: Names @ names
     used: {i64: bool} @ {}
     for f in p.functions
         for slot in f.slots
-            collect(c, ty: slot.ty, into: @used)
+            emit_synth.collect(c, ty: slot.ty, into: @used)
         for value in f.values
-            collect(c, ty: value, into: @used)
-    # ORDER: ascending TyId — this walk ASSIGNS the names, `fn0`, `fn1`, …
-    # by walk position, so the order is what every mention of the type in
-    # the emitted C spells; unsorted, it gave a different type the same
-    # number the bootstrap gave another.
-    # sort(keys(…)), NOT keys(…): `keys` gives the keys in NO ORDER and
-    # measurably does not — 50, 3, 97, 12 put in answers `97 50 3 12`. The
-    # bootstrap got it free from BTreeMap; the port pays here (§4.9).
-    for id in sort(keys(used))
-        at = len(out.funcs)
-        out.funcs[id] @ "h_" + module + "_" + SYNTHETIC + "fn" + at.to_str()
+            emit_synth.collect(c, ty: value, into: @used)
+    # ORDER: none — the name is a function of the TYPE's rendering, not
+    # of the walk position, since panel 093 R6; the map insertion order
+    # no longer reaches the emitted C.
+    for id in keys(used)
+        out.funcs[id] @ "h_" + SYNTHETIC + "fn_" + emit_mangle.instance(emit_synth.content_key(c, s, decls, ty: id))
     return out
-
-# Every function type reachable from ty, including ty itself. Closed
-# under nesting, because [(function(A) -> B)] names the function type
-# without being one, and so does (function(A) -> B)?.
-function collect(c: check_state.Checked, ty: i64, @into: {i64: bool})
-    match check_table.get(c.types, ty)
-        .function_ty fn_ty =>
-            if !into[ty].is_err()
-                return
-            into[ty] @ true
-            for p in check_table.params_of(c.types, fn_ty.params)
-                collect(c, ty: p, into: @into)
-            collect(c, ty: fn_ty.result, into: @into)
-        .array arr => collect(c, ty: arr.element, into: @into)
-        .fallible o => collect(c, ty: o.payload, into: @into)
-        .map m =>
-            collect(c, ty: m.key, into: @into)
-            collect(c, ty: m.value, into: @into)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .fixed | .named | .case_ty | .failure | .generic | .error => return
 
 ## Reading the table
 
@@ -372,8 +362,8 @@ function named_up(text: str) -> Names
     assert c.diagnostics.len() == 0
     low = ir_lower.lower(p.tree, out, c, s, p.decls)
     names = new_names(s, p.decls)
-    names2 = with_options(names, module: "t", c: c)
-    return with_functions(names2, module: "t", c: c, p: low.program)
+    names2 = with_options(names, c: c, s: s, decls: p.decls)
+    return with_functions(names2, c: c, s: s, decls: p.decls, p: low.program)
 
 test "a group's record keeps the header's spelling, satellites stay ours"
     text = "extern \"m.h\"\n    record Color\n        r: i64\n\nrecord Point\n    x: i64\n\nfunction f(p: Point, c: Color) -> i64\n    return p.x + c.r\n"
@@ -390,12 +380,12 @@ test "options and function typedefs carry the leading digit"
     names = named_up(text)
     found_opt: bool @ false
     for id in keys(names.options)
-        if names.options[id].must() == "h_t_0opt0"
+        if names.options[id].must() == "h_0opt_e201354"
             found_opt @ true
     assert found_opt
     found_fn: bool @ false
     for id in keys(names.funcs)
-        if names.funcs[id].must() == "h_t_0fn0"
+        if names.funcs[id].must() == "h_0fn_48ac9712"
             found_fn @ true
     assert found_fn
 
