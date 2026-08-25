@@ -28,15 +28,15 @@ not merged away.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs landed · **step 1** — the `ORDER:` mark becomes an instrument |
+| **State** | four repairs landed · **step 1** done · **step 2** ruled by panel 091: nothing is pruned |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 22 of 36 · 25 tags |
 | The compiler | **38,021 lines** of Heroes in 155 files |
 | The seed | **765,508** lines of generated C — the whole way in |
 | The spec | **3548** tokens of a hard 4096 · headroom 548 |
 | Runtime ABI | 15 |
-| Panels held | **90**, every one ratified · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **nothing** — `DECIDE.md` is empty again, answered the day it was asked · 7 assigned in `SCHEDULED.md` · 260 in `LEARN.md` (never a gate) |
+| Panels held | **91** · journals 25 · measurements 13 · examples 15 |
+| Waiting on the author | **2** in `DECIDE.md` — panel 091's ratification, and a measured memory-safety hole at the C boundary · 10 assigned in `SCHEDULED.md` · 262 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
@@ -53,7 +53,7 @@ repository root was nine hours stale and did not know a built-in that had landed
 the evening before; a panel seat nearly filed that as a language defect. The
 first line above is 3.5 seconds and removes the whole class.
 
-### What landed in M-separate-compilation so far — four repairs, then step 1
+### What landed in M-separate-compilation so far — four repairs, then two steps
 
 - **`docs/defects/002`** — a legal program that handled both arms of a fallible
   was killed before either. Five lines of runtime C, +0 spec tokens (panel 087).
@@ -111,12 +111,21 @@ must not name is the bootstrap's"* since the archive, with the list underneath
 naming it. It is a CI leg now, on every push: **13.5 s**, because it compiles the
 5,606-line harness rather than the 38,021-line compiler.
 
-**One `SCHEDULED.md` item is still due here**: panel 087's unpruned `extern`
-asserts — 13 lines of C in a program that prints `1`, multiplied by 153
-translation units. It has now been paid for twice in one day — every library
-function added costs one `_Static_assert` in every program in the language —
-which is two measured arguments for doing it here rather than one theoretical
-one.
+**Step 2 — the block stays, because the architecture already deletes the
+duplication** (panel 091, five judges, provisional). The last `SCHEDULED.md` item
+this milestone owed was panel 087's unpruned `extern` asserts: **27 of a
+`print(1)` program's 166 lines of C** exist for a library group it never touches,
+and **138 of 155 modules** would carry that under one `.c` per module. Every
+option that prunes was **vetoed with compiled evidence** — pruning the `#include`
+deletes a group record's C type; an *uncalled* group holds up a used one
+(`<stdio.h>` before `<jpeglib.h>`); the prune takes the `-l` with the declaration
+and a constructor library stops running at exit 0; and the probe is a
+**memory-safety instrument**, the only thing that sees a `size_t` out-parameter
+declared `i32`, which when executed wrote four bytes into an adjacent object with
+ASan and UBSan silent. What replaces them costs **nothing**: the library is one
+module, so one `.c` per module plus acceptance row 1 puts every group in exactly
+one TU. Option B would have cost +40 compiler lines and 146 re-blessed emissions
+to buy what the close gives away.
 
 ---
 
