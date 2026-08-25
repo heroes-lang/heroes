@@ -131,9 +131,10 @@
     <a href="records-and-functions.html">The rule, and why &rarr;</a>
   </p>
   <p>
-    <code>text.len()</code> is the same call as <code>len(text)</code>: method
-    syntax is sugar, so a chain reads left to right without anything being
-    defined on a type.
+    <code>text.len()</code> and <code>len(text)</code> are the exact same
+    call, written two ways. Writing it with a dot only helps you read left to
+    right when you chain several operations: no function is attached to the
+    type.
   </p>
   <p>
     Notice also what <i>isn't</i> there: no <code>try</code>, no

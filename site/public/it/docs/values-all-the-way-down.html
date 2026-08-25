@@ -161,8 +161,8 @@ error[no_size]: `variant Expr` contains itself, so it has no size
   <p>
     La riga del <code>return</code> non ha bisogno di annotazione, perché la
     firma della funzione dice già <code>Expr</code>. Quella sopra invece sì, e a
-    toglierla si prende un errore che nomina da dove il tipo sarebbe potuto
-    arrivare:
+    toglierla il compilatore protesta, e ti dice da dove quel tipo sarebbe
+    potuto arrivare:
   </p>
   <pre><code>$ heroes check trees.hero
 error[cannot_infer]: `.multiply` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)

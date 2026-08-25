@@ -54,8 +54,10 @@
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
       <p class="promise">Small enough to fit in a prompt, real enough to <em>compile itself</em>.</p>
       <p class="tagline">Made for the machines that write code now, yet plain
-      to human eyes. No standard library, no garbage collector, native
-      binaries. And every plausible LLM mistake is a compile error.</p>
+      to human eyes. The whole language fits in the few pages you hand a model
+      before asking it for a program, and what comes out is a real executable
+      with nothing to install around it. And every mistake a model makes easily
+      is a compile error here.</p>
       <div class="cta">
         <a class="primary" href="errors.html">See a real error</a>
         <a class="ghost" href="docs/failure-is-a-value.html">Read a chapter</a>
@@ -94,25 +96,26 @@
     <li>
       <span class="n">231</span>
       <span class="what">lines: the whole language</span>
-      <span class="how">The complete specification is a few pages: it fits in a
-      prompt with room left for your program, and the compiler counts its own
-      budget so the number cannot drift.
+      <span class="how">The specification, the document that defines the
+      language in full, is a few pages. Hand it to a model and there is room to
+      spare for your program.
       <a href="why.html">why that is the design &rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
       <span class="what">null, exceptions, garbage collector</span>
-      <span class="how">A missing value and a failure are types you can see on
-      the line, not surprises while the program runs. And memory is managed by
-      counting copies, with no collector and no pause.
+      <span class="how">The three things that usually bring a program down
+      while it runs do not exist here. A missing value and an operation that
+      went wrong are declared in the code, and you see them on the line.
       <a href="docs/failure-is-a-value.html">how failure works &rarr;</a></span>
     </li>
     <li>
       <span class="n">1</span>
-      <span class="what">hash, three compilers</span>
-      <span class="how">The compiler is written in Heroes and compiles itself.
-      Ask three generations of it to write out the same C and you get one file,
-      to the byte. <a href="selfhost.html">the whole story &rarr;</a></span>
+      <span class="what">fingerprint, three compilers</span>
+      <span class="how">The Heroes compiler is written in Heroes, so it
+      compiles itself. Ask three generations of it to write out the same
+      program and the three files come back identical, byte for byte.
+      <a href="selfhost.html">the whole story &rarr;</a></span>
     </li>
   </ul>
 
@@ -139,22 +142,23 @@
     <figcaption>examples/gallery/11-trees.hero, lines 8&ndash;25</figcaption>
   </figure>
   <p>
-    That is a tree that contains itself, in a language whose data model has
-    <b>no pointer and no reference type</b>: the array is the only indirection
-    there is, so the
-    whole thing still copies like a value. It is compiled through C to a native
-    binary, and reference-counted rather than garbage-collected.
+    That is a tree that contains itself, and it does it in a language with
+    <b>no pointers</b>, which are the values that hold no data of their own and
+    only say where the real data sits in memory. Here the only way one thing can
+    refer to another is an array, which is why the branches of that tree live in
+    one. The result is that the whole structure copies the way a number copies:
+    pass it to a function and that function gets its own.
   </p>
   <p>
-    Every code block on this site is a slice of a file in the repository that
-    compiles and runs, including that one.
+    Every code block on this site is cut from a real file that lives in the
+    public repository and that compiles and runs, including that one.
   </p>
 
   <h2 id="run">Run it</h2>
   <p>
-    There is no installer, and there is nothing to install. The repository
-    carries the compiler as one generated C file, so a C compiler is the only
-    thing your machine needs:
+    There is no installer and nothing to install. The repository carries the
+    compiler already translated into a single C file, so all your machine needs
+    is a C compiler, which on a Mac or on Linux is usually there already:
   </p>
   <pre><code>$ git clone https://github.com/giuseppearici/heroes-lang
 $ cd heroes-lang
@@ -164,28 +168,32 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    That C file is what the compiler prints when it compiles itself, not a
-    bootstrap somebody typed, so the thing you just built is the language
-    building the language, with no other toolchain in the room.
-    <code>./heroes doctor</code> checks the rest of what a build needs: clang,
-    the linker, the architecture, the runtime and the build cache.
+    Nobody typed that C file by hand: it is Heroes translating itself into C
+    as it compiles itself. So the command above builds Heroes out of Heroes
+    alone: nothing else to install, and no toolchain to assemble first. If
+    something goes wrong, <code>./heroes doctor</code> tells you which piece
+    your machine is missing.
   </p>
   <p>
-    The middle line of that output is a failure being handled, not the build
-    breaking. <a href="docs/failure-is-a-value.html">The chapter on it</a> walks
-    through that program line by line.
+    That middle line saying <code>failed</code> is not the build breaking: it
+    is the example program meeting a character it cannot read and saying so, the
+    way it was asked to. <a href="docs/failure-is-a-value.html">The chapter on
+    it</a> walks through that program line by line.
   </p>
   <p>
-    Then write your own. The file needs nothing else: no imports, no header, no
-    project file, just a <code>main</code>.
+    Then write your own. The file needs nothing around it: no import lines at
+    the top, no project file listing the other files. It only needs a
+    <code>main</code> inside it, which is the function the program starts
+    from.
   </p>
   <pre><code>$ printf 'function main()\n    print("we can be heroes")\n' &gt; hello.hero
 $ ./heroes run hello.hero
 we can be heroes</code></pre>
   <p>
-    <code>heroes run</code> compiles that to a native binary and executes it,
-    from any directory, leaving its intermediate files in a <code>build/</code>
-    folder beside you. Every capability is a subcommand of that one binary:
+    <code>heroes run</code> turns that file into an executable and launches
+    it, from any directory, leaving its working files in a <code>build/</code>
+    folder beside you. Everything the language can do goes through that one
+    command:
     <code>lex</code>, <code>parse</code>, <code>check</code>, <code>build</code>,
     <code>run</code>, <code>test</code>, <code>fmt</code>, <code>doctor</code>,
     <code>mutate</code>, <code>measure</code>, <code>this</code>. Every example
@@ -197,29 +205,32 @@ we can be heroes</code></pre>
     <li>
       <h3>Mistakes are compile errors</h3>
       <p>
-        Swapped arguments of the same type, a forgotten variant case, a mutated
-        name nobody declared, a keyword borrowed from another language: each one
-        is a diagnostic that arrives with its own repair, not a program that
-        runs and is quietly wrong.
+        Two arguments of the same type passed in the wrong order, a case left
+        out when you list the forms a value can take, a changed name nobody
+        declared, a keyword borrowed from another language. Each one is a
+        compile error that arrives with the repair already written in, instead
+        of a program that runs and does the wrong thing quietly.
       </p>
       <a class="more" href="errors.html">See a real error</a>
     </li>
     <li>
       <h3>No standard library, on purpose</h3>
       <p>
-        A minimal runtime and nothing else. Maths, files, sockets, JSON, HTTP,
-        SQL and graphics all arrive from C libraries through one FFI, where
-        clang checks every declaration against the library's own header.
+        Heroes carries no warehouse of ready-made functions. Maths, files,
+        networking, JSON, databases and graphics all come from the C libraries
+        the world has been using for fifty years, and a few lines connect them
+        to your program. The C compiler checks those lines against the library
+        itself and stops you when they disagree.
       </p>
       <a class="more" href="why.html">The founding constraint</a>
     </li>
     <li>
       <h3>It compiles itself</h3>
       <p>
-        The compiler is written in Heroes: 155 modules, 38,004 lines. Ask three
-        generations of it to write the same program out in C, and the three
-        files match to the byte. The language it was first built in has left the
-        repository.
+        The Heroes compiler is written in Heroes: 155 files, 38,004 lines. Ask
+        three generations of it to write the same program out and the three
+        results match to the byte. The language it was first built in is no use
+        to anyone now and has left the repository.
       </p>
       <a class="more" href="selfhost.html">How it compiles itself</a>
     </li>
@@ -227,23 +238,31 @@ we can be heroes</code></pre>
 
   <h2>A small surface, no collector, and no crash</h2>
   <p>
-    Four words can begin a top-level line: <code>constant</code>,
-    <code>function</code>, <code>record</code>, <code>variant</code>. That is
-    the whole inventory. No classes, no interfaces, no module blocks inside a
-    file, no mutable globals, and declaration order never matters. Underneath
-    it, the language the compiler implements is seven constructs; everything
-    else you can write is sugar that disappears before the compiler's internal
-    form, which is how one person finishes a compiler.
+    In a Heroes file, a line starting at the left margin can begin with four
+    words and no others: <code>constant</code>, <code>function</code>,
+    <code>record</code>, <code>variant</code>. Those are a fixed value, a
+    function, a group of data with named fields, and a value that can take
+    several forms. The list ends there: no classes, no interfaces, no global
+    variables anybody can change. And the order you write declarations in never
+    matters, so two functions can call each other with nothing announced in
+    advance. Further down, what the compiler really handles is seven
+    constructs: everything else reduces to those before the compiler is done
+    with it, which is how one person finishes the job.
   </p>
   <p>
-    Memory is managed without a collector: every value behaves as a copy, with
-    reference counting and copy-on-write underneath. Because a reference cannot
-    be stored anywhere, cycles cannot be built, so the counting cannot leak. No
-    garbage collector, no <code>weak</code> annotations, no pause. And a
-    program must not segfault or corrupt memory, which is a goal of the
-    language rather than a quality of its implementation: overflow, an index
-    past the end, a division by zero, each is a deterministic abort rather than
-    undefined behaviour. <a href="why.html">All three, in full →</a>
+    Memory frees itself, and without a garbage collector, meaning without the
+    service that in other languages runs alongside your program and pauses it
+    now and then to tidy up. It works like this: every value behaves as an
+    independent copy, and underneath the compiler keeps count of how many
+    holders a piece of data has and frees it when the last one is gone. Since a
+    value cannot hold on to another, you cannot build circles where two pieces
+    of data refer back to each other, and that is exactly the case where
+    counting would fail. And a program must not crash or quietly wreck memory, which is a
+    stated goal of the language rather than something its implementation happens
+    to get right: a number that overflows, an index past the end of a list, a
+    division by zero, each stops the program on the spot, always at the same
+    place, instead of carrying on with an invented value.
+    <a href="why.html">All three, in full →</a>
   </p>
 
   <h2>The claim <span class="nod">· quicksand, avoided ·</span></h2>
@@ -253,13 +272,16 @@ we can be heroes</code></pre>
     language, even if each program costs more tokens to write.
   </blockquote>
   <p>
-    It is a claim, not a slogan, so it is measured. <code>heroes mutate</code>
-    takes programs that work, plants one realistic mistake at a time
-    (two same-typed arguments swapped, a case left out of a <code>match</code>,
-    a name reused) and counts how many the compiler stops. Then it does
-    the same run with the thesis rules switched off, and the distance between
-    the two runs is the result, kept mistake by mistake: some mistakes only the
-    thesis catches, some any language would catch, and one nothing catches yet.
+    A token is the scrap of text that measures what it costs to put a model to
+    work, roughly a word. The claim is that Heroes spends fewer of them overall,
+    even though a single program is longer to write, because you are not
+    spending your time correcting it. It is a claim, not a slogan, so it is
+    measured. The <code>heroes mutate</code> command takes programs that work,
+    plants one realistic mistake at a time (two same-typed arguments swapped, a
+    case left out, a name reused) and counts how many the compiler stops. Then
+    it does the same run with the thesis rules switched off, and the distance
+    between the two runs is the result, kept mistake by mistake: some only
+    Heroes catches, some any language would catch, and one nothing catches yet.
     An average would hide exactly that, so there is none.
   </p>
   <p>

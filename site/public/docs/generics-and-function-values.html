@@ -49,11 +49,12 @@
   <p class="tagline">One shape for many types, and no anonymous functions anywhere.</p>
 
   <p>
-    Writing the same loop once per element type is how a language wastes your
-    afternoon. Writing a type system that can express every possible constraint
-    on that loop is how a language wastes the next ten years. Heroes takes the
-    smallest thing that works: a function may have type parameters, and that is
-    the whole feature.
+    Writing the same loop once for lists of numbers, once for lists of words
+    and once for everything else is the best way to throw away an afternoon.
+    Building a type system that can express every imaginable condition on that
+    loop is the best way to throw away the next ten years. Heroes takes the smallest
+    thing that works: a function may leave the type it works on open, and that
+    is the whole feature.
   </p>
 
   <h3>A function with a hole in its types</h3>
@@ -68,24 +69,27 @@
     <figcaption>examples/gallery/06-generics.hero, lines 8&ndash;14</figcaption>
   </figure>
   <p>
-    <code>&lt;A, B&gt;</code> after the name introduces two types the function does
-    not know yet. Inside, they are used exactly like real types: <code>[A]</code>
-    is an array of them, <code>out: [B] @ []</code> is a cell holding an array of
-    the other. The empty literal needs its annotation for the usual reason:
-    there is nothing in <code>[]</code> to infer from.
+    <code>&lt;A, B&gt;</code> after the name puts two types in play that the
+    function does not know yet: whoever calls it supplies them. Inside they
+    behave like real types, so <code>[A]</code> is a list of the first kind and
+    <code>out: [B] @ []</code> is a list of the second, still empty. The empty
+    list has to be told its type for the usual reason: there is nothing inside
+    <code>[]</code> to work it out from.
   </p>
 
   <h3>Three rules, and they are all absences</h3>
   <ul>
-    <li><b>Only functions are generic.</b> A <code>record</code> or a
-    <code>variant</code> is always a concrete type. When you need a generic
-    container, an array or a map is already one.</li>
-    <li><b>No constraints.</b> There is no way to say &ldquo;any <code>A</code>
-    that can be compared&rdquo;. If a function needs an operation on <code>A</code>, it
-    takes that operation as an argument, like <code>f</code> above.</li>
-    <li><b>Never written at the call site.</b> The types are inferred from the
-    arguments, or it is an error. <code>each&lt;i64, str&gt;(…)</code> is not a
-    form the language has.</li>
+    <li><b>Only functions can leave a type open.</b> A <code>record</code> or a
+    <code>variant</code> always has its types settled. When you need a container
+    that works for any type, a list or a map already is one.</li>
+    <li><b>No conditions on the types.</b> There is no way to say &ldquo;any
+    <code>A</code>, as long as it can be compared&rdquo;. If a function needs an
+    operation on <code>A</code>, you pass that operation in as an argument, like
+    <code>f</code> above.</li>
+    <li><b>Never written when you call.</b> The compiler works the types out
+    from the arguments you give it, or it is an error.
+    <code>each&lt;i64, str&gt;(…)</code> is not a spelling the language
+    has.</li>
   </ul>
   <p>
     The third one is the surprising one and it follows from the second: with no
@@ -131,7 +135,7 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
   16 | function keep_if&lt;A&gt;(xs: [A], ok_for: function(A) -&gt; bool) -&gt; [A]
      |                                      ^^^^^^^^</code></pre>
 
-  <h3>A predicate, and a fold</h3>
+  <h3>Filtering, and putting things together</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="16-21">
 <pre><code><span class="k">function</span> keep_if&lt;A&gt;(xs: [A], ok_for: (<span class="k">function</span>(A) -&gt; <span class="t">bool</span>)) -&gt; [A]
     out: [A] @ []

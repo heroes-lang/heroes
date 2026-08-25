@@ -89,9 +89,9 @@ error[ffi_unknown_name]: `math.h` declares no `flooor` — clang read the header
   note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `flooor`
   fix (guess): the header declares `floor`</code></pre>
   <p>
-    Il compilatore non ha tirato a indovinare quell&rsquo;ultima riga da una
-    lista che si tiene in tasca: ha chiesto a clang,
-    che aveva l&rsquo;header vero aperto davanti, e clang ha capito cosa volevi.
+    Quell&rsquo;ultima riga il compilatore non l&rsquo;ha tirata a indovinare da
+    un elenco suo: l&rsquo;ha chiesta a clang, che aveva davanti l&rsquo;header
+    vero, e clang ha capito che cosa volevi scrivere.
   </p>
   <p>
     Sbaglia un tipo e la risposta arriva dallo stesso posto:

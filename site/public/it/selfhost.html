@@ -47,21 +47,24 @@
     <h1 class="page">Scritto in se stesso</h1>
     <span class="nod">· a new career in a new town ·</span>
   </div>
-  <p class="lede">Il compilatore adesso esiste due volte: una nel linguaggio con
-  cui è stato costruito, una nel linguaggio che costruisce.</p>
+  <p class="lede">Il compilatore di Heroes è scritto in Heroes. Quindi per
+  costruirlo serve un compilatore di Heroes, e quello che ne esce deve essere
+  identico a quello da cui sei partito.</p>
 
   <p>
-    Un linguaggio è un giocattolo finché non riesce a scrivere da sé il
-    proprio compilatore. Per farlo servono un albero con nodi di forme diverse,
-    tabelle dei simboli, liste, ricorsione, gestione degli errori e più
-    file: se un linguaggio riesce a scrivere quella roba, la discussione se sia
-    un linguaggio vero è chiusa. Era il traguardo dal primo giorno.
+    Un linguaggio resta un giocattolo finché non riesce a scrivere il proprio
+    compilatore. Per riuscirci gli servono dati con forme diverse annidati uno
+    dentro l&rsquo;altro, tabelle in cui tenere i nomi, liste, funzioni che
+    chiamano se stesse, una gestione seria degli errori e programmi divisi su più
+    file. Se un linguaggio regge quella roba, la discussione se sia un linguaggio
+    vero è chiusa. Era il traguardo dal primo giorno.
   </p>
   <p>
-    La prova non è una suite di test: è chiedere a entrambi i compilatori di scrivere lo
-    stesso programma in C, e confrontare i risultati lettera per lettera. Poi
-    compilare le lettere che ha scritto il compilatore nuovo, e chiedere a
-    <i>quel</i> compilatore di scrivere il programma una terza volta.
+    La prova non è una batteria di test: è chiedere a tutti e due i compilatori
+    di tradurre in C lo stesso programma, e poi confrontare i due risultati
+    lettera per lettera. Poi si compila quello che ha scritto il compilatore
+    nuovo, e si chiede a <i>quel</i> compilatore di tradurre il programma una
+    terza volta.
   </p>
   <pre class="fixpoint"><code>sha256  <span class="hash">373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63</span>
 
@@ -83,20 +86,22 @@
     <li><span class="n">2.570</span><span class="what">output di programmi confrontati, mai una differenza</span></li>
   </ul>
   <p>
-    E quello è il compilatore intero, non un pezzo: lexer, parser,
-    resolver, type checker, la rappresentazione intermedia con il suo
-    verificatore, la monomorfizzazione, la fase che decide chi possiede i
-    valori, il backend C, i controlli sulla FFI, le diagnostiche, il printer, il
-    formatter e la riga di comando.
+    E quello è il compilatore intero, non un pezzo. C&rsquo;è la parte che
+    spezza il testo in parole, quella che ne ricava la struttura, quella che
+    collega ogni nome alla sua dichiarazione, quella che controlla i tipi, la
+    forma intermedia in cui il programma viene riscritto insieme al suo
+    controllore, la fase che decide chi possiede ogni valore e quando liberarlo,
+    la traduzione in C, i controlli sulle librerie esterne, i messaggi di errore,
+    il comando che rimette in ordine il codice e la riga di comando.
   </p>
 
   <h2>La parte più bella è quello che è andato storto</h2>
   <p>
     Puntato sul proprio codice sorgente, il compilatore nuovo <b>l&rsquo;ha
     rifiutato</b>, sostenendo che un pezzo della sua struttura contenesse se
-    stesso: cosa falsa. Quella singola lamentela sbagliata era il filo da tirare,
-    e tirandolo sono usciti cinque difetti veri nel compilatore nuovo e, cosa
-    più sorprendente, <b>quattro nel vecchio</b>. Compreso questo: la
+    stesso, il che era falso. Da quella singola protesta sbagliata, tirando il
+    filo, sono venuti fuori cinque difetti veri nel compilatore nuovo e, cosa più
+    sorprendente, <b>quattro nel vecchio</b>. Compreso questo: la
     sottolineatura che mostra al lettore dove sta l&rsquo;errore copriva la
     piccola annotazione scritta su quella stessa riga con l&rsquo;unico scopo di
     controllare quella sottolineatura. Il figlio ha corretto il padre.
@@ -105,10 +110,10 @@
     Un compilatore puntato sul proprio sorgente è un corpus che nessuna
     suite di test riproduce: 38.004 righe che contengono ogni forma del
     linguaggio, nelle proporzioni in cui il codice vero le usa. È con quel
-    corpus che sono stati trovati cinque dei difetti del porting, ed erano una
-    trappola sola vestita in cinque modi: un salto di ciclo dentro un ramo di
-    <code>match</code> saltava la riga che teneva aggiornato un indice mantenuto
-    a mano. L&rsquo;originale in Rust percorre la stessa lista con un iterator:
+    materiale che sono venuti fuori cinque difetti della traduzione, ed erano
+    poi lo stesso inganno ripetuto cinque volte: un salto di ciclo dentro un ramo
+    di <code>match</code> scavalcava la riga che teneva aggiornato un indice
+    gestito a mano. L&rsquo;originale in Rust percorre la stessa lista con un iterator:
     non c&rsquo;è nessun indice da dimenticare, quindi non avrebbe mai potuto fare
     quell&rsquo;errore.
   </p>

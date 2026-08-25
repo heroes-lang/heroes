@@ -137,9 +137,10 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 27&ndash;30</figcaption>
   </figure>
   <p>
-    A literal is one way in. The other is writing to a key on a map declared
-    with <code>@</code>: <code>m[k] @ v</code> puts a value in, replacing
-    whatever was there. An empty one needs its type, like every empty literal:
+    Writing it out all at once is one way in. The other is to declare a
+    modifiable map with <code>@</code> and write into it one key at a time:
+    <code>m[k] @ v</code> puts the value in place of whatever was there. A map
+    that starts empty has to be told its type, like every empty container:
     <code>m: {str: i64} @ {}</code>.
   </p>
 
@@ -160,8 +161,8 @@ error[type_mismatch]: expected `i64`, found `i64?`
   <p>
     That is a real test from a bigger example, walking every room and every exit
     in a fixed order so the test says the same thing every time it runs. The
-    same rule bit this project&rsquo;s own compiler: three lists that came out
-    in map order made two builds of the same program differ, and the fix was
+    same rule caught out this project&rsquo;s own compiler: three lists that came
+    out in map order made two builds of the same program differ, and the fix was
     three <code>sort</code> calls somebody had written a note about long
     before. <a href="../selfhost.html">The story is on the self-hosting
     page</a>. Comparison, on the other hand, ignores order entirely: two maps

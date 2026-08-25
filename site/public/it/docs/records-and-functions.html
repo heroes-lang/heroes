@@ -119,11 +119,13 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
     <figcaption>examples/gallery/01-points.hero, righe 21&ndash;24</figcaption>
   </figure>
   <p>
-    Una firma si scrive sempre per intero: ogni parametro ha il suo tipo, e il
-    risultato si annuncia con <code>-&gt;</code>. Dentro, <code>dx = …</code>
-    lega un nome a un valore una volta sola; il tipo non c&rsquo;è perché il
-    compilatore lo vede da sé, e quell&rsquo;inferenza non esce mai dai confini
-    della funzione.
+    La prima riga di una funzione si scrive sempre per intero: ogni valore che
+    prende ha il suo tipo, e quello che restituisce si annuncia dopo la freccia
+    <code>-&gt;</code>. Dentro, <code>dx = …</code> dà un nome a un valore una
+    volta sola, e il tipo non serve scriverlo perché il compilatore lo capisce
+    dalla riga. Quel lavoro di deduzione, però, non esce mai dalla funzione: la
+    prima riga resta esplicita, così per sapere che cosa prende e che cosa
+    restituisce non devi leggere il corpo.
   </p>
   <p>
     La regola per cui questo capitolo esiste: <b>quando due parametri
@@ -149,9 +151,10 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
 
   <h3>Una chiamata si può scrivere da tutte e due le parti</h3>
   <p>
-    <code>x.f(y)</code> vuol dire <code>f(x, y)</code>. È tutta qui la regola,
-    ed è zucchero sintattico: non ci sono metodi, niente è attaccato a un tipo, e
-    niente viene cercato mentre il programma gira.
+    <code>x.f(y)</code> vuol dire <code>f(x, y)</code>, e la regola finisce
+    qui. È solo un altro modo di scrivere la stessa chiamata: non esistono
+    metodi, cioè funzioni attaccate a un tipo di dato, e niente viene cercato
+    mentre il programma gira.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="33-36">
 <pre><code><span class="c"># Reads as a sentence, and it is one function call: `translate(r, by)`.</span>
@@ -181,8 +184,8 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
     <code>test</code> è una dichiarazione di primo livello come le altre, e una
     compilazione normale la ignora. Il secondo test è quello interessante: dice
     che spostare un rettangolo non lo ridimensiona, che è una proprietà e non un
-    numero, e si legge come una frase sola grazie alla sintassi di chiamata di
-    prima.
+    numero, e grazie alla scrittura col punto vista qui sopra si legge tutto
+    d&rsquo;un fiato.
   </p>
   <pre><code>$ heroes test examples/gallery/01-points.hero
 ok   "the 3-4-5 triangle"

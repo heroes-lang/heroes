@@ -48,17 +48,18 @@
     <h1 class="page">Errors</h1>
     <span class="nod">· always crashing in the same car ·</span>
   </div>
-  <p class="lede">A diagnostic is a deliverable here, not plumbing, and the
-  claim behind it is measured per mistake, not averaged. Every error below is
-  real output, copied from the repository.</p>
+  <p class="lede">An error message here is a finished product, made with the
+  same care as the rest, and the claim behind it is measured mistake by mistake,
+  never averaged. Every error below really came out of the compiler, copied and
+  pasted.</p>
 
   <p>
-    A model does not have the project open. It receives one message and must
-    fix the program from that message alone, or spend a whole round-trip
-    re-reading files, which the cost formula says is the most expensive thing
-    that can happen. So every diagnostic carries three things: the exact place
-    that is wrong, the other end of the story (where the thing it clashes with
-    was declared), and the repair.
+    A model does not have the project open in front of it. It gets one message
+    and has to fix the program with that and nothing else, or spend a whole
+    round re-reading files, which is the most expensive thing that can happen.
+    So every error message carries three things: the exact place that is wrong,
+    the other end of the story, meaning where the thing it clashes with was
+    declared, and the repair.
   </p>
 
   <h2>The classic inversion</h2>
@@ -89,17 +90,17 @@
 
   <h2>Two kinds of fix, and only one is machine-applicable</h2>
   <p>
-    A fix tagged <code>certain</code> is one the compiler computed rather than
-    guessed: the missing annotation the checker just inferred, the single
-    in-scope candidate for a typo'd name. <code>heroes check --apply</code>
-    applies those and the result compiles; continuous integration asserts
-    exactly that. A fix tagged <code>guess</code> is prose for the reader, and
-    no tool may ever apply it. Guessing a repair that a model would apply
-    blindly is worse than explaining.
+    A fix tagged <code>certain</code> is one the compiler worked out rather
+    than guessed: the type it just inferred itself, the one similar name that
+    exists at that point in the program. The <code>heroes check --apply</code>
+    command applies those, and what comes out compiles. A fix tagged
+    <code>guess</code> is a suggestion for the reader, and no tool ever applies
+    it for you: guessing a repair a model would apply blindly is worse than
+    explaining.
   </p>
   <p>
-    The same diagnostics come out as JSON, stable machine-readable codes,
-    spans, notes and fixes: when the thing doing the reading is a program.
+    The same messages also come out as JSON, the format programs read easily,
+    for when the reader is not a person but another program.
   </p>
   <p>The loop, as commands:</p>
   <pre><code>$ heroes check program.hero           <span class="c"># diagnostics, on stderr</span>
