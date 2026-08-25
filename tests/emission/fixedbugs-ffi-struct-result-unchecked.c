@@ -60,6 +60,11 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 56 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffistructresultunchecked_div(int32_t a0, int32_t a1) { (void)(div)(a0, a1); }
 #line 111 "<heroes library>"
@@ -74,7 +79,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 78 "ffistructresultunchecked.c"
+#line 83 "ffistructresultunchecked.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "nothing calls div, and that used to be enough to ship a binary");
 
@@ -110,7 +116,7 @@ void h_ffistructresultunchecked_main(void);
 
 #line 58 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 void h_ffistructresultunchecked_main(void) {
-#line 114 "ffistructresultunchecked.c"
+#line 120 "ffistructresultunchecked.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
@@ -122,7 +128,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     return;
-#line 126 "ffistructresultunchecked.c"
+#line 132 "ffistructresultunchecked.c"
 }
 bool h_ffistructresultunchecked_div_t_eq(const div_t *a, const div_t *b) {
     if (!(a->quot == b->quot)) return false;

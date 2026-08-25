@@ -137,6 +137,11 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 78 "tests/golden/run/ffi-a-c-array-member.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_LoadVrStereoConfig(VrDeviceInfo a0) { (void)(LoadVrStereoConfig)(a0); }
 #line 79 "tests/golden/run/ffi-a-c-array-member.hero"
@@ -153,7 +158,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 147 "ffiacarraymember.c"
+#line 152 "ffiacarraymember.c"
+#pragma clang diagnostic pop
 
 typedef struct h_ffiacarraymember_0opt0 {
     int64_t tag;
@@ -189,7 +195,7 @@ void h_ffiacarraymember_main(void);
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
-#line 183 "ffiacarraymember.c"
+#line 189 "ffiacarraymember.c"
     VrDeviceInfo h0_device;
     VrStereoConfig h1_config;
     int32_t t1;
@@ -317,7 +323,7 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 311 "ffiacarraymember.c"
+#line 317 "ffiacarraymember.c"
 }
 bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;

@@ -1,0 +1,39 @@
+# fixedbugs, M-separate-compilation, 2026-08-25 (panel 092's queued half).
+#
+# SYMPTOM: `extern function pow(x: f32, y: f64) -> f64` compiled clean, ran,
+# and printed 13780.642208527162 where C's own answer is 13780.612339822381 —
+# wrong at the fifth digit, exit 0. The sitting measured it and queued the
+# repair; measuring the repair found three MORE silent directions beside it:
+# `f64` where the header says `float` (rounded), a float where the header
+# takes an integer (the fraction dropped), and an integer where the header
+# holds a float (large values rounded). All four at exit 0, under the
+# project's exact flags, on the day the sitting closed.
+#
+# CAUSE: every one of these conversions is legal C, and none of the flags the
+# compiler passes globally reads it. The probe — the never-called function
+# whose call makes clang judge each parameter — was compiled under the same
+# silence.
+#
+# FIX: the probe block is wrapped in `#pragma clang diagnostic error` for
+# four names — double-promotion, implicit-float-conversion, float-conversion,
+# implicit-int-conversion — each with a measured witness, and only inside the
+# block: a probe's arguments are exactly the declared types, so an implicit
+# conversion THERE is a declaration disagreeing with the header, while the
+# generated code outside converts through deliberate casts no implicit-
+# conversion warning reads. What stays silent is what C converts without
+# changing any value, plus what a pointer points at — the spec names both.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a float parameter never converts in silence` (suite_surface).
+
+extern "math.h"
+    function pow(x: f32, y: f64) -> f64      #~ ffi_parameter_type
+    function powf(x: f64, y: f32) -> f32     #~ ffi_parameter_type
+    function ldexp(v: f64, n: f32) -> f64    #~ ffi_parameter_type
+    function sqrt(x: i64) -> f64             #~ ffi_parameter_type
+
+function main()
+    print(pow(x: to_f32(1.234), y: 45.3))
+    print(to_f64(powf(x: 2.0, y: to_f32(10.0))))
+    print(ldexp(v: 1.5, n: to_f32(3.0)))
+    print(sqrt(x: 2))

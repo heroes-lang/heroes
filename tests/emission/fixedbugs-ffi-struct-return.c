@@ -39,6 +39,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 43 "ffistructreturn.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 26 "tests/golden/fixedbugs/ffi-struct-return.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffistructreturn_div(int32_t a0, int32_t a1) { (void)(div)(a0, a1); }
 #line 111 "<heroes library>"
@@ -53,7 +59,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 57 "ffistructreturn.c"
+#line 63 "ffistructreturn.c"
+#pragma clang diagnostic pop
 
 typedef struct h_ffistructreturn_0opt0 {
     int64_t tag;
@@ -83,7 +90,7 @@ void h_ffistructreturn_main(void);
 
 #line 28 "tests/golden/fixedbugs/ffi-struct-return.hero"
 void h_ffistructreturn_main(void) {
-#line 87 "ffistructreturn.c"
+#line 94 "ffistructreturn.c"
     int32_t t1;
     int32_t t2;
     void * t3;
@@ -107,7 +114,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/fixedbugs/ffi-struct-return.hero"
     return;
-#line 111 "ffistructreturn.c"
+#line 118 "ffistructreturn.c"
 }
 void h_ffistructreturn_0opt0_retain(const h_ffistructreturn_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

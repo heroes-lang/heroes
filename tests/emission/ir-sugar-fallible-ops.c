@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "sugarfallibleops.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "sugarfallibleops.c"
+#line 59 "sugarfallibleops.c"
+#pragma clang diagnostic pop
 
 typedef struct h_sugarfallibleops_0opt0 {
     int64_t tag;
@@ -91,7 +98,7 @@ int64_t h_sugarfallibleops_widen(h_sugarfallibleops_0opt0 h0_v);
 
 #line 4 "tests/golden/ir/sugar-fallible-ops.hero"
 int64_t h_sugarfallibleops_widen(h_sugarfallibleops_0opt0 h0_v) {
-#line 95 "sugarfallibleops.c"
+#line 102 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0 h1_f0 = {0};
     h_sugarfallibleops_0opt0 h2_f1 = {0};
     int64_t h3_r0;
@@ -134,11 +141,11 @@ bb0:
     t1 = h0_v;
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t24 = h1_f0;
-#line 138 "sugarfallibleops.c"
+#line 145 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_retain(&t1);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     h1_f0 = t1;
-#line 142 "sugarfallibleops.c"
+#line 149 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t24);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t2 = h1_f0;
@@ -156,11 +163,11 @@ bb1:
     t15 = h0_v;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t25 = h4_f2;
-#line 160 "sugarfallibleops.c"
+#line 167 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_retain(&t15);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     h4_f2 = t15;
-#line 164 "sugarfallibleops.c"
+#line 171 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t25);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t16 = h4_f2;
@@ -178,11 +185,11 @@ bb2:
     t6 = h0_v;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t26 = h2_f1;
-#line 182 "sugarfallibleops.c"
+#line 189 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_retain(&t6);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     h2_f1 = t6;
-#line 186 "sugarfallibleops.c"
+#line 193 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t26);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t7 = h2_f1;
@@ -222,15 +229,15 @@ bb6:
     t14 = h3_r0;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t27 = h1_f0;
-#line 226 "sugarfallibleops.c"
+#line 233 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t27);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t28 = h2_f1;
-#line 230 "sugarfallibleops.c"
+#line 237 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t28);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t29 = h4_f2;
-#line 234 "sugarfallibleops.c"
+#line 241 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t29);
     return t14;
 bb7:
@@ -240,15 +247,15 @@ bb7:
     t23 = t22.as.ok;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t30 = h1_f0;
-#line 244 "sugarfallibleops.c"
+#line 251 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t30);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t31 = h2_f1;
-#line 248 "sugarfallibleops.c"
+#line 255 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t31);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t32 = h4_f2;
-#line 252 "sugarfallibleops.c"
+#line 259 "sugarfallibleops.c"
     h_sugarfallibleops_0opt0_release(&t32);
     return t23;
 bb8:
@@ -256,7 +263,7 @@ bb8:
     t20 = h4_f2;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t21 = t20.as.err;
-#line 260 "sugarfallibleops.c"
+#line 267 "sugarfallibleops.c"
     hero_panic_must(t21);
     hero_unreachable();
 }

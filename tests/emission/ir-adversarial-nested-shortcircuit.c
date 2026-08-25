@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "adversarialnestedshortcircuit.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "adversarialnestedshortcircuit.c"
+#line 59 "adversarialnestedshortcircuit.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "a");
 HERO_STR_STATIC(hero_str_1, "b");
@@ -84,7 +91,7 @@ bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c);
 
 #line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_loud(HeroStr h0_tag, bool h1_answer) {
-#line 88 "adversarialnestedshortcircuit.c"
+#line 95 "adversarialnestedshortcircuit.c"
     HeroStr t1 = {0};
     bool t2;
     goto bb0;
@@ -99,12 +106,12 @@ bb0:
     t2 = h1_answer;
 #line 9 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t2;
-#line 103 "adversarialnestedshortcircuit.c"
+#line 110 "adversarialnestedshortcircuit.c"
 }
 
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c) {
-#line 108 "adversarialnestedshortcircuit.c"
+#line 115 "adversarialnestedshortcircuit.c"
     bool h3_b0;
     bool h4_b1;
     HeroStr t1 = {0};
@@ -168,7 +175,7 @@ bb4:
     t11 = h3_b0;
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t11;
-#line 172 "adversarialnestedshortcircuit.c"
+#line 179 "adversarialnestedshortcircuit.c"
 }
 void h_adversarialnestedshortcircuit_0opt0_retain(const h_adversarialnestedshortcircuit_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "main.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "main.c"
+#line 59 "main.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_2, "x");
 HERO_STR_STATIC(hero_str_3, "y");
@@ -317,7 +324,7 @@ int64_t h_main_reduce_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_initial, h_ma
 
 #line 52 "examples/calculator/main.hero"
 int64_t h_main_plus(int64_t h0_a, int64_t h1_b) {
-#line 321 "main.c"
+#line 328 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -331,12 +338,12 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 53 "examples/calculator/main.hero"
     return t3;
-#line 335 "main.c"
+#line 342 "main.c"
 }
 
 #line 59 "examples/calculator/main.hero"
 int64_t h_main_double(int64_t h0_n) {
-#line 340 "main.c"
+#line 347 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -350,12 +357,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 60 "examples/calculator/main.hero"
     return t3;
-#line 354 "main.c"
+#line 361 "main.c"
 }
 
 #line 64 "examples/calculator/main.hero"
 void h_main_main(void) {
-#line 359 "main.c"
+#line 366 "main.c"
     HeroMapHeader * h0_env = {0};
     HeroArrayHeader * h1_cases = {0};
     HeroArrayHeader * h2_xs0 = {0};
@@ -447,15 +454,15 @@ bb0:
     t43 = h8_own8;
 #line 65 "examples/calculator/main.hero"
     h8_own8 = t5;
-#line 451 "main.c"
+#line 458 "main.c"
     hero_map_decref(t43);
 #line 65 "examples/calculator/main.hero"
     t44 = h0_env;
-#line 455 "main.c"
+#line 462 "main.c"
     hero_map_incref(t5);
 #line 65 "examples/calculator/main.hero"
     h0_env = t5;
-#line 459 "main.c"
+#line 466 "main.c"
     hero_map_decref(t44);
 #line 68 "examples/calculator/main.hero"
     t6 = HERO_STR_LIT(hero_str_4);
@@ -493,25 +500,25 @@ bb0:
     t45 = h9_own9;
 #line 67 "examples/calculator/main.hero"
     h9_own9 = t11;
-#line 497 "main.c"
+#line 504 "main.c"
     hero_array_decref(t45);
 #line 67 "examples/calculator/main.hero"
     t46 = h1_cases;
-#line 501 "main.c"
+#line 508 "main.c"
     hero_array_incref(t11);
 #line 67 "examples/calculator/main.hero"
     h1_cases = t11;
-#line 505 "main.c"
+#line 512 "main.c"
     hero_array_decref(t46);
 #line 75 "examples/calculator/main.hero"
     t12 = h1_cases;
 #line 75 "examples/calculator/main.hero"
     t47 = h2_xs0;
-#line 511 "main.c"
+#line 518 "main.c"
     hero_array_incref(t12);
 #line 75 "examples/calculator/main.hero"
     h2_xs0 = t12;
-#line 515 "main.c"
+#line 522 "main.c"
     hero_array_decref(t47);
 #line 75 "examples/calculator/main.hero"
     t13 = INT64_C(0);
@@ -541,11 +548,11 @@ bb2:
     t20 = *(HeroStr const *)hero_array_at(t18, t19);
 #line 75 "examples/calculator/main.hero"
     t48 = h4_c;
-#line 545 "main.c"
+#line 552 "main.c"
     hero_str_incref(t20);
 #line 75 "examples/calculator/main.hero"
     h4_c = t20;
-#line 549 "main.c"
+#line 556 "main.c"
     hero_str_decref(t48);
 #line 76 "examples/calculator/main.hero"
     t21 = h4_c;
@@ -557,15 +564,15 @@ bb2:
     t49 = h10_own10;
 #line 76 "examples/calculator/main.hero"
     h10_own10 = t23;
-#line 561 "main.c"
+#line 568 "main.c"
     h_main_0opt0_release(&t49);
 #line 76 "examples/calculator/main.hero"
     t50 = h5_s0;
-#line 565 "main.c"
+#line 572 "main.c"
     h_main_0opt0_retain(&t23);
 #line 76 "examples/calculator/main.hero"
     h5_s0 = t23;
-#line 569 "main.c"
+#line 576 "main.c"
     h_main_0opt0_release(&t50);
 #line 76 "examples/calculator/main.hero"
     t24 = h5_s0;
@@ -597,39 +604,39 @@ bb3:
 bb4:
 #line 64 "examples/calculator/main.hero"
     t52 = h0_env;
-#line 601 "main.c"
+#line 608 "main.c"
     hero_map_decref(t52);
 #line 64 "examples/calculator/main.hero"
     t53 = h1_cases;
-#line 605 "main.c"
+#line 612 "main.c"
     hero_array_decref(t53);
 #line 64 "examples/calculator/main.hero"
     t54 = h2_xs0;
-#line 609 "main.c"
+#line 616 "main.c"
     hero_array_decref(t54);
 #line 64 "examples/calculator/main.hero"
     t55 = h4_c;
-#line 613 "main.c"
+#line 620 "main.c"
     hero_str_decref(t55);
 #line 64 "examples/calculator/main.hero"
     t56 = h5_s0;
-#line 617 "main.c"
+#line 624 "main.c"
     h_main_0opt0_release(&t56);
 #line 64 "examples/calculator/main.hero"
     t57 = h7_e;
-#line 621 "main.c"
+#line 628 "main.c"
     hero_failure_release(&t57);
 #line 64 "examples/calculator/main.hero"
     t58 = h8_own8;
-#line 625 "main.c"
+#line 632 "main.c"
     hero_map_decref(t58);
 #line 64 "examples/calculator/main.hero"
     t59 = h9_own9;
-#line 629 "main.c"
+#line 636 "main.c"
     hero_array_decref(t59);
 #line 64 "examples/calculator/main.hero"
     t60 = h10_own10;
-#line 633 "main.c"
+#line 640 "main.c"
     h_main_0opt0_release(&t60);
     return;
 bb5:
@@ -665,11 +672,11 @@ bb7:
     t32 = t31.as.err;
 #line 78 "examples/calculator/main.hero"
     t51 = h7_e;
-#line 669 "main.c"
+#line 676 "main.c"
     hero_failure_retain(&t32);
 #line 78 "examples/calculator/main.hero"
     h7_e = t32;
-#line 673 "main.c"
+#line 680 "main.c"
     hero_failure_release(&t51);
 #line 78 "examples/calculator/main.hero"
     t33 = h4_c;
@@ -699,38 +706,38 @@ bb7:
     hero_print_end();
 #line 78 "examples/calculator/main.hero"
     goto bb5;
-#line 703 "main.c"
+#line 710 "main.c"
 }
 
 #line 14 "examples/calculator/eval.hero"
 HeroStr h_eval_ERR_TRAILING_TOKENS(void) {
-#line 708 "main.c"
+#line 715 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 15 "examples/calculator/eval.hero"
     t1 = HERO_STR_LIT(hero_str_12);
-#line 714 "main.c"
+#line 721 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 17 "examples/calculator/eval.hero"
 HeroStr h_eval_ERR_UNKNOWN_NAME(void) {
-#line 721 "main.c"
+#line 728 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 18 "examples/calculator/eval.hero"
     t1 = HERO_STR_LIT(hero_str_13);
-#line 727 "main.c"
+#line 734 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 23 "examples/calculator/eval.hero"
 h_main_0opt0 h_eval_lookup(HeroMapHeader * h0_env, HeroStr h1_name) {
-#line 734 "main.c"
+#line 741 "main.c"
     h_main_0opt0 h2_f0 = {0};
     h_main_0opt0 h3_f1 = {0};
     h_main_0opt0 h4_own4 = {0};
@@ -815,15 +822,15 @@ bb0:
     t25 = h4_own4;
 #line 24 "examples/calculator/eval.hero"
     h4_own4 = t3;
-#line 819 "main.c"
+#line 826 "main.c"
     h_main_0opt0_release(&t25);
 #line 24 "examples/calculator/eval.hero"
     t26 = h2_f0;
-#line 823 "main.c"
+#line 830 "main.c"
     h_main_0opt0_retain(&t3);
 #line 24 "examples/calculator/eval.hero"
     h2_f0 = t3;
-#line 827 "main.c"
+#line 834 "main.c"
     h_main_0opt0_release(&t26);
 #line 24 "examples/calculator/eval.hero"
     t4 = h2_f0;
@@ -863,15 +870,15 @@ bb1:
     t27 = h5_own5;
 #line 26 "examples/calculator/eval.hero"
     h5_own5 = t15;
-#line 867 "main.c"
+#line 874 "main.c"
     h_main_0opt0_release(&t27);
 #line 26 "examples/calculator/eval.hero"
     t28 = h3_f1;
-#line 871 "main.c"
+#line 878 "main.c"
     h_main_0opt0_retain(&t15);
 #line 26 "examples/calculator/eval.hero"
     h3_f1 = t15;
-#line 875 "main.c"
+#line 882 "main.c"
     h_main_0opt0_release(&t28);
 #line 26 "examples/calculator/eval.hero"
     t16 = h3_f1;
@@ -891,7 +898,7 @@ bb2:
     t29 = h6_own6;
 #line 25 "examples/calculator/eval.hero"
     h6_own6 = t8;
-#line 895 "main.c"
+#line 902 "main.c"
     hero_str_decref(t29);
 #line 25 "examples/calculator/eval.hero"
     t9 = HERO_STR_LIT(hero_str_14);
@@ -903,13 +910,13 @@ bb2:
     t30 = h7_own7;
 #line 25 "examples/calculator/eval.hero"
     h7_own7 = t11;
-#line 907 "main.c"
+#line 914 "main.c"
     hero_str_decref(t30);
 #line 25 "examples/calculator/eval.hero"
-#line 910 "main.c"
+#line 917 "main.c"
     hero_str_incref(t8);
 #line 25 "examples/calculator/eval.hero"
-#line 913 "main.c"
+#line 920 "main.c"
     hero_str_incref(t11);
 #line 25 "examples/calculator/eval.hero"
     t12 = (h_main_0opt0){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t11}};
@@ -917,42 +924,42 @@ bb2:
     t31 = h8_own8;
 #line 25 "examples/calculator/eval.hero"
     h8_own8 = t12;
-#line 921 "main.c"
+#line 928 "main.c"
     h_main_0opt0_release(&t31);
 #line 25 "examples/calculator/eval.hero"
-#line 924 "main.c"
+#line 931 "main.c"
     h_main_0opt0_retain(&t12);
 #line 25 "examples/calculator/eval.hero"
     t33 = h2_f0;
-#line 928 "main.c"
+#line 935 "main.c"
     h_main_0opt0_release(&t33);
 #line 25 "examples/calculator/eval.hero"
     t34 = h3_f1;
-#line 932 "main.c"
+#line 939 "main.c"
     h_main_0opt0_release(&t34);
 #line 25 "examples/calculator/eval.hero"
     t35 = h4_own4;
-#line 936 "main.c"
+#line 943 "main.c"
     h_main_0opt0_release(&t35);
 #line 25 "examples/calculator/eval.hero"
     t36 = h5_own5;
-#line 940 "main.c"
+#line 947 "main.c"
     h_main_0opt0_release(&t36);
 #line 25 "examples/calculator/eval.hero"
     t37 = h6_own6;
-#line 944 "main.c"
+#line 951 "main.c"
     hero_str_decref(t37);
 #line 25 "examples/calculator/eval.hero"
     t38 = h7_own7;
-#line 948 "main.c"
+#line 955 "main.c"
     hero_str_decref(t38);
 #line 25 "examples/calculator/eval.hero"
     t39 = h8_own8;
-#line 952 "main.c"
+#line 959 "main.c"
     h_main_0opt0_release(&t39);
 #line 25 "examples/calculator/eval.hero"
     t40 = h9_own9;
-#line 956 "main.c"
+#line 963 "main.c"
     h_main_0opt0_release(&t40);
     return t12;
 bb3:
@@ -968,42 +975,42 @@ bb4:
     t32 = h9_own9;
 #line 26 "examples/calculator/eval.hero"
     h9_own9 = t24;
-#line 972 "main.c"
+#line 979 "main.c"
     h_main_0opt0_release(&t32);
 #line 26 "examples/calculator/eval.hero"
-#line 975 "main.c"
+#line 982 "main.c"
     h_main_0opt0_retain(&t24);
 #line 26 "examples/calculator/eval.hero"
     t41 = h2_f0;
-#line 979 "main.c"
+#line 986 "main.c"
     h_main_0opt0_release(&t41);
 #line 26 "examples/calculator/eval.hero"
     t42 = h3_f1;
-#line 983 "main.c"
+#line 990 "main.c"
     h_main_0opt0_release(&t42);
 #line 26 "examples/calculator/eval.hero"
     t43 = h4_own4;
-#line 987 "main.c"
+#line 994 "main.c"
     h_main_0opt0_release(&t43);
 #line 26 "examples/calculator/eval.hero"
     t44 = h5_own5;
-#line 991 "main.c"
+#line 998 "main.c"
     h_main_0opt0_release(&t44);
 #line 26 "examples/calculator/eval.hero"
     t45 = h6_own6;
-#line 995 "main.c"
+#line 1002 "main.c"
     hero_str_decref(t45);
 #line 26 "examples/calculator/eval.hero"
     t46 = h7_own7;
-#line 999 "main.c"
+#line 1006 "main.c"
     hero_str_decref(t46);
 #line 26 "examples/calculator/eval.hero"
     t47 = h8_own8;
-#line 1003 "main.c"
+#line 1010 "main.c"
     h_main_0opt0_release(&t47);
 #line 26 "examples/calculator/eval.hero"
     t48 = h9_own9;
-#line 1007 "main.c"
+#line 1014 "main.c"
     h_main_0opt0_release(&t48);
     return t24;
 bb5:
@@ -1011,14 +1018,14 @@ bb5:
     t20 = h3_f1;
 #line 26 "examples/calculator/eval.hero"
     t21 = t20.as.err;
-#line 1015 "main.c"
+#line 1022 "main.c"
     hero_panic_must(t21);
     hero_unreachable();
 }
 
 #line 28 "examples/calculator/eval.hero"
 h_main_0opt0 h_eval_sum_of(HeroArrayHeader * h0_children, HeroMapHeader * h1_env) {
-#line 1022 "main.c"
+#line 1029 "main.c"
     int64_t h2_tot;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -1084,11 +1091,11 @@ bb0:
     t2 = h0_children;
 #line 30 "examples/calculator/eval.hero"
     t30 = h3_xs0;
-#line 1088 "main.c"
+#line 1095 "main.c"
     hero_array_incref(t2);
 #line 30 "examples/calculator/eval.hero"
     h3_xs0 = t2;
-#line 1092 "main.c"
+#line 1099 "main.c"
     hero_array_decref(t30);
 #line 30 "examples/calculator/eval.hero"
     t3 = INT64_C(0);
@@ -1118,11 +1125,11 @@ bb2:
     t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
 #line 30 "examples/calculator/eval.hero"
     t31 = h5_c;
-#line 1122 "main.c"
+#line 1129 "main.c"
     h_parse_Expr_retain(&t10);
 #line 30 "examples/calculator/eval.hero"
     h5_c = t10;
-#line 1126 "main.c"
+#line 1133 "main.c"
     h_parse_Expr_release(&t31);
 #line 31 "examples/calculator/eval.hero"
     t11 = h2_tot;
@@ -1136,15 +1143,15 @@ bb2:
     t32 = h7_own7;
 #line 31 "examples/calculator/eval.hero"
     h7_own7 = t14;
-#line 1140 "main.c"
+#line 1147 "main.c"
     h_main_0opt0_release(&t32);
 #line 31 "examples/calculator/eval.hero"
     t33 = h6_f0;
-#line 1144 "main.c"
+#line 1151 "main.c"
     h_main_0opt0_retain(&t14);
 #line 31 "examples/calculator/eval.hero"
     h6_f0 = t14;
-#line 1148 "main.c"
+#line 1155 "main.c"
     h_main_0opt0_release(&t33);
 #line 31 "examples/calculator/eval.hero"
     t15 = h6_f0;
@@ -1178,34 +1185,34 @@ bb4:
     t34 = h8_own8;
 #line 32 "examples/calculator/eval.hero"
     h8_own8 = t29;
-#line 1182 "main.c"
+#line 1189 "main.c"
     h_main_0opt0_release(&t34);
 #line 32 "examples/calculator/eval.hero"
-#line 1185 "main.c"
+#line 1192 "main.c"
     h_main_0opt0_retain(&t29);
 #line 32 "examples/calculator/eval.hero"
     t36 = h3_xs0;
-#line 1189 "main.c"
+#line 1196 "main.c"
     hero_array_decref(t36);
 #line 32 "examples/calculator/eval.hero"
     t37 = h5_c;
-#line 1193 "main.c"
+#line 1200 "main.c"
     h_parse_Expr_release(&t37);
 #line 32 "examples/calculator/eval.hero"
     t38 = h6_f0;
-#line 1197 "main.c"
+#line 1204 "main.c"
     h_main_0opt0_release(&t38);
 #line 32 "examples/calculator/eval.hero"
     t39 = h7_own7;
-#line 1201 "main.c"
+#line 1208 "main.c"
     h_main_0opt0_release(&t39);
 #line 32 "examples/calculator/eval.hero"
     t40 = h8_own8;
-#line 1205 "main.c"
+#line 1212 "main.c"
     h_main_0opt0_release(&t40);
 #line 32 "examples/calculator/eval.hero"
     t41 = h9_own9;
-#line 1209 "main.c"
+#line 1216 "main.c"
     h_main_0opt0_release(&t41);
     return t29;
 bb5:
@@ -1225,7 +1232,7 @@ bb6:
     t19 = h6_f0;
 #line 31 "examples/calculator/eval.hero"
     t20 = t19.as.err;
-#line 1229 "main.c"
+#line 1236 "main.c"
     hero_failure_retain(&t20);
 #line 31 "examples/calculator/eval.hero"
     t21 = (h_main_0opt0){.tag = INT64_C(1), .as.err = t20};
@@ -1233,41 +1240,41 @@ bb6:
     t35 = h9_own9;
 #line 31 "examples/calculator/eval.hero"
     h9_own9 = t21;
-#line 1237 "main.c"
+#line 1244 "main.c"
     h_main_0opt0_release(&t35);
 #line 31 "examples/calculator/eval.hero"
-#line 1240 "main.c"
+#line 1247 "main.c"
     h_main_0opt0_retain(&t21);
 #line 31 "examples/calculator/eval.hero"
     t42 = h3_xs0;
-#line 1244 "main.c"
+#line 1251 "main.c"
     hero_array_decref(t42);
 #line 31 "examples/calculator/eval.hero"
     t43 = h5_c;
-#line 1248 "main.c"
+#line 1255 "main.c"
     h_parse_Expr_release(&t43);
 #line 31 "examples/calculator/eval.hero"
     t44 = h6_f0;
-#line 1252 "main.c"
+#line 1259 "main.c"
     h_main_0opt0_release(&t44);
 #line 31 "examples/calculator/eval.hero"
     t45 = h7_own7;
-#line 1256 "main.c"
+#line 1263 "main.c"
     h_main_0opt0_release(&t45);
 #line 31 "examples/calculator/eval.hero"
     t46 = h8_own8;
-#line 1260 "main.c"
+#line 1267 "main.c"
     h_main_0opt0_release(&t46);
 #line 31 "examples/calculator/eval.hero"
     t47 = h9_own9;
-#line 1264 "main.c"
+#line 1271 "main.c"
     h_main_0opt0_release(&t47);
     return t21;
 }
 
 #line 34 "examples/calculator/eval.hero"
 h_main_0opt0 h_eval_product_of(HeroArrayHeader * h0_children, HeroMapHeader * h1_env) {
-#line 1271 "main.c"
+#line 1278 "main.c"
     int64_t h2_tot;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -1333,11 +1340,11 @@ bb0:
     t2 = h0_children;
 #line 36 "examples/calculator/eval.hero"
     t30 = h3_xs0;
-#line 1337 "main.c"
+#line 1344 "main.c"
     hero_array_incref(t2);
 #line 36 "examples/calculator/eval.hero"
     h3_xs0 = t2;
-#line 1341 "main.c"
+#line 1348 "main.c"
     hero_array_decref(t30);
 #line 36 "examples/calculator/eval.hero"
     t3 = INT64_C(0);
@@ -1367,11 +1374,11 @@ bb2:
     t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
 #line 36 "examples/calculator/eval.hero"
     t31 = h5_c;
-#line 1371 "main.c"
+#line 1378 "main.c"
     h_parse_Expr_retain(&t10);
 #line 36 "examples/calculator/eval.hero"
     h5_c = t10;
-#line 1375 "main.c"
+#line 1382 "main.c"
     h_parse_Expr_release(&t31);
 #line 37 "examples/calculator/eval.hero"
     t11 = h2_tot;
@@ -1385,15 +1392,15 @@ bb2:
     t32 = h7_own7;
 #line 37 "examples/calculator/eval.hero"
     h7_own7 = t14;
-#line 1389 "main.c"
+#line 1396 "main.c"
     h_main_0opt0_release(&t32);
 #line 37 "examples/calculator/eval.hero"
     t33 = h6_f0;
-#line 1393 "main.c"
+#line 1400 "main.c"
     h_main_0opt0_retain(&t14);
 #line 37 "examples/calculator/eval.hero"
     h6_f0 = t14;
-#line 1397 "main.c"
+#line 1404 "main.c"
     h_main_0opt0_release(&t33);
 #line 37 "examples/calculator/eval.hero"
     t15 = h6_f0;
@@ -1427,34 +1434,34 @@ bb4:
     t34 = h8_own8;
 #line 38 "examples/calculator/eval.hero"
     h8_own8 = t29;
-#line 1431 "main.c"
+#line 1438 "main.c"
     h_main_0opt0_release(&t34);
 #line 38 "examples/calculator/eval.hero"
-#line 1434 "main.c"
+#line 1441 "main.c"
     h_main_0opt0_retain(&t29);
 #line 38 "examples/calculator/eval.hero"
     t36 = h3_xs0;
-#line 1438 "main.c"
+#line 1445 "main.c"
     hero_array_decref(t36);
 #line 38 "examples/calculator/eval.hero"
     t37 = h5_c;
-#line 1442 "main.c"
+#line 1449 "main.c"
     h_parse_Expr_release(&t37);
 #line 38 "examples/calculator/eval.hero"
     t38 = h6_f0;
-#line 1446 "main.c"
+#line 1453 "main.c"
     h_main_0opt0_release(&t38);
 #line 38 "examples/calculator/eval.hero"
     t39 = h7_own7;
-#line 1450 "main.c"
+#line 1457 "main.c"
     h_main_0opt0_release(&t39);
 #line 38 "examples/calculator/eval.hero"
     t40 = h8_own8;
-#line 1454 "main.c"
+#line 1461 "main.c"
     h_main_0opt0_release(&t40);
 #line 38 "examples/calculator/eval.hero"
     t41 = h9_own9;
-#line 1458 "main.c"
+#line 1465 "main.c"
     h_main_0opt0_release(&t41);
     return t29;
 bb5:
@@ -1474,7 +1481,7 @@ bb6:
     t19 = h6_f0;
 #line 37 "examples/calculator/eval.hero"
     t20 = t19.as.err;
-#line 1478 "main.c"
+#line 1485 "main.c"
     hero_failure_retain(&t20);
 #line 37 "examples/calculator/eval.hero"
     t21 = (h_main_0opt0){.tag = INT64_C(1), .as.err = t20};
@@ -1482,41 +1489,41 @@ bb6:
     t35 = h9_own9;
 #line 37 "examples/calculator/eval.hero"
     h9_own9 = t21;
-#line 1486 "main.c"
+#line 1493 "main.c"
     h_main_0opt0_release(&t35);
 #line 37 "examples/calculator/eval.hero"
-#line 1489 "main.c"
+#line 1496 "main.c"
     h_main_0opt0_retain(&t21);
 #line 37 "examples/calculator/eval.hero"
     t42 = h3_xs0;
-#line 1493 "main.c"
+#line 1500 "main.c"
     hero_array_decref(t42);
 #line 37 "examples/calculator/eval.hero"
     t43 = h5_c;
-#line 1497 "main.c"
+#line 1504 "main.c"
     h_parse_Expr_release(&t43);
 #line 37 "examples/calculator/eval.hero"
     t44 = h6_f0;
-#line 1501 "main.c"
+#line 1508 "main.c"
     h_main_0opt0_release(&t44);
 #line 37 "examples/calculator/eval.hero"
     t45 = h7_own7;
-#line 1505 "main.c"
+#line 1512 "main.c"
     h_main_0opt0_release(&t45);
 #line 37 "examples/calculator/eval.hero"
     t46 = h8_own8;
-#line 1509 "main.c"
+#line 1516 "main.c"
     h_main_0opt0_release(&t46);
 #line 37 "examples/calculator/eval.hero"
     t47 = h9_own9;
-#line 1513 "main.c"
+#line 1520 "main.c"
     h_main_0opt0_release(&t47);
     return t21;
 }
 
 #line 41 "examples/calculator/eval.hero"
 h_main_0opt0 h_eval_evaluate(h_parse_Expr h0_e, HeroMapHeader * h1_env) {
-#line 1520 "main.c"
+#line 1527 "main.c"
     h_parse_Expr h2_s0 = {0};
     h_main_0opt0 h3_r0 = {0};
     h_parse_Expr_c_num h4_n;
@@ -1581,11 +1588,11 @@ bb0:
     t1 = h0_e;
 #line 42 "examples/calculator/eval.hero"
     t28 = h2_s0;
-#line 1585 "main.c"
+#line 1592 "main.c"
     h_parse_Expr_retain(&t1);
 #line 42 "examples/calculator/eval.hero"
     h2_s0 = t1;
-#line 1589 "main.c"
+#line 1596 "main.c"
     h_parse_Expr_release(&t28);
 #line 42 "examples/calculator/eval.hero"
     t2 = h2_s0;
@@ -1609,43 +1616,43 @@ bb0:
 bb1:
 #line 42 "examples/calculator/eval.hero"
     t27 = h3_r0;
-#line 1613 "main.c"
+#line 1620 "main.c"
     h_main_0opt0_retain(&t27);
 #line 42 "examples/calculator/eval.hero"
     t40 = h2_s0;
-#line 1617 "main.c"
+#line 1624 "main.c"
     h_parse_Expr_release(&t40);
 #line 42 "examples/calculator/eval.hero"
     t41 = h3_r0;
-#line 1621 "main.c"
+#line 1628 "main.c"
     h_main_0opt0_release(&t41);
 #line 42 "examples/calculator/eval.hero"
     t42 = h5_x;
-#line 1625 "main.c"
+#line 1632 "main.c"
     h_parse_Expr_c_variable_release(&t42);
 #line 42 "examples/calculator/eval.hero"
     t43 = h6_s;
-#line 1629 "main.c"
+#line 1636 "main.c"
     h_parse_Expr_c_sum_release(&t43);
 #line 42 "examples/calculator/eval.hero"
     t44 = h7_q;
-#line 1633 "main.c"
+#line 1640 "main.c"
     h_parse_Expr_c_product_release(&t44);
 #line 42 "examples/calculator/eval.hero"
     t45 = h8_own8;
-#line 1637 "main.c"
+#line 1644 "main.c"
     h_main_0opt0_release(&t45);
 #line 42 "examples/calculator/eval.hero"
     t46 = h9_own9;
-#line 1641 "main.c"
+#line 1648 "main.c"
     h_main_0opt0_release(&t46);
 #line 42 "examples/calculator/eval.hero"
     t47 = h10_own10;
-#line 1645 "main.c"
+#line 1652 "main.c"
     h_main_0opt0_release(&t47);
 #line 42 "examples/calculator/eval.hero"
     t48 = h11_own11;
-#line 1649 "main.c"
+#line 1656 "main.c"
     h_main_0opt0_release(&t48);
     return t27;
 bb2:
@@ -1665,15 +1672,15 @@ bb2:
     t29 = h8_own8;
 #line 43 "examples/calculator/eval.hero"
     h8_own8 = t8;
-#line 1669 "main.c"
+#line 1676 "main.c"
     h_main_0opt0_release(&t29);
 #line 42 "examples/calculator/eval.hero"
     t30 = h3_r0;
-#line 1673 "main.c"
+#line 1680 "main.c"
     h_main_0opt0_retain(&t8);
 #line 42 "examples/calculator/eval.hero"
     h3_r0 = t8;
-#line 1677 "main.c"
+#line 1684 "main.c"
     h_main_0opt0_release(&t30);
     goto bb1;
 bb3:
@@ -1683,11 +1690,11 @@ bb3:
     t10 = t9.as.c_variable;
 #line 44 "examples/calculator/eval.hero"
     t31 = h5_x;
-#line 1687 "main.c"
+#line 1694 "main.c"
     h_parse_Expr_c_variable_retain(&t10);
 #line 44 "examples/calculator/eval.hero"
     h5_x = t10;
-#line 1691 "main.c"
+#line 1698 "main.c"
     h_parse_Expr_c_variable_release(&t31);
 #line 44 "examples/calculator/eval.hero"
     t11 = h1_env;
@@ -1701,15 +1708,15 @@ bb3:
     t32 = h9_own9;
 #line 44 "examples/calculator/eval.hero"
     h9_own9 = t14;
-#line 1705 "main.c"
+#line 1712 "main.c"
     h_main_0opt0_release(&t32);
 #line 42 "examples/calculator/eval.hero"
     t33 = h3_r0;
-#line 1709 "main.c"
+#line 1716 "main.c"
     h_main_0opt0_retain(&t14);
 #line 42 "examples/calculator/eval.hero"
     h3_r0 = t14;
-#line 1713 "main.c"
+#line 1720 "main.c"
     h_main_0opt0_release(&t33);
     goto bb1;
 bb4:
@@ -1719,11 +1726,11 @@ bb4:
     t16 = t15.as.c_sum;
 #line 45 "examples/calculator/eval.hero"
     t34 = h6_s;
-#line 1723 "main.c"
+#line 1730 "main.c"
     h_parse_Expr_c_sum_retain(&t16);
 #line 45 "examples/calculator/eval.hero"
     h6_s = t16;
-#line 1727 "main.c"
+#line 1734 "main.c"
     h_parse_Expr_c_sum_release(&t34);
 #line 45 "examples/calculator/eval.hero"
     t17 = h6_s;
@@ -1737,15 +1744,15 @@ bb4:
     t35 = h10_own10;
 #line 45 "examples/calculator/eval.hero"
     h10_own10 = t20;
-#line 1741 "main.c"
+#line 1748 "main.c"
     h_main_0opt0_release(&t35);
 #line 42 "examples/calculator/eval.hero"
     t36 = h3_r0;
-#line 1745 "main.c"
+#line 1752 "main.c"
     h_main_0opt0_retain(&t20);
 #line 42 "examples/calculator/eval.hero"
     h3_r0 = t20;
-#line 1749 "main.c"
+#line 1756 "main.c"
     h_main_0opt0_release(&t36);
     goto bb1;
 bb5:
@@ -1755,11 +1762,11 @@ bb5:
     t22 = t21.as.c_product;
 #line 46 "examples/calculator/eval.hero"
     t37 = h7_q;
-#line 1759 "main.c"
+#line 1766 "main.c"
     h_parse_Expr_c_product_retain(&t22);
 #line 46 "examples/calculator/eval.hero"
     h7_q = t22;
-#line 1763 "main.c"
+#line 1770 "main.c"
     h_parse_Expr_c_product_release(&t37);
 #line 46 "examples/calculator/eval.hero"
     t23 = h7_q;
@@ -1773,22 +1780,22 @@ bb5:
     t38 = h11_own11;
 #line 46 "examples/calculator/eval.hero"
     h11_own11 = t26;
-#line 1777 "main.c"
+#line 1784 "main.c"
     h_main_0opt0_release(&t38);
 #line 42 "examples/calculator/eval.hero"
     t39 = h3_r0;
-#line 1781 "main.c"
+#line 1788 "main.c"
     h_main_0opt0_retain(&t26);
 #line 42 "examples/calculator/eval.hero"
     h3_r0 = t26;
-#line 1785 "main.c"
+#line 1792 "main.c"
     h_main_0opt0_release(&t39);
     goto bb1;
 }
 
 #line 49 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_names_used(h_parse_Expr h0_e) {
-#line 1792 "main.c"
+#line 1799 "main.c"
     h_parse_Expr h1_s0 = {0};
     HeroArrayHeader * h2_r0 = {0};
     h_parse_Expr_c_variable h3_x = {0};
@@ -1845,11 +1852,11 @@ bb0:
     t1 = h0_e;
 #line 50 "examples/calculator/eval.hero"
     t21 = h1_s0;
-#line 1849 "main.c"
+#line 1856 "main.c"
     h_parse_Expr_retain(&t1);
 #line 50 "examples/calculator/eval.hero"
     h1_s0 = t1;
-#line 1853 "main.c"
+#line 1860 "main.c"
     h_parse_Expr_release(&t21);
 #line 50 "examples/calculator/eval.hero"
     t2 = h1_s0;
@@ -1873,43 +1880,43 @@ bb0:
 bb1:
 #line 50 "examples/calculator/eval.hero"
     t20 = h2_r0;
-#line 1877 "main.c"
+#line 1884 "main.c"
     hero_array_incref(t20);
 #line 50 "examples/calculator/eval.hero"
     t33 = h1_s0;
-#line 1881 "main.c"
+#line 1888 "main.c"
     h_parse_Expr_release(&t33);
 #line 50 "examples/calculator/eval.hero"
     t34 = h2_r0;
-#line 1885 "main.c"
+#line 1892 "main.c"
     hero_array_decref(t34);
 #line 50 "examples/calculator/eval.hero"
     t35 = h3_x;
-#line 1889 "main.c"
+#line 1896 "main.c"
     h_parse_Expr_c_variable_release(&t35);
 #line 50 "examples/calculator/eval.hero"
     t36 = h4_s;
-#line 1893 "main.c"
+#line 1900 "main.c"
     h_parse_Expr_c_sum_release(&t36);
 #line 50 "examples/calculator/eval.hero"
     t37 = h5_q;
-#line 1897 "main.c"
+#line 1904 "main.c"
     h_parse_Expr_c_product_release(&t37);
 #line 50 "examples/calculator/eval.hero"
     t38 = h6_own6;
-#line 1901 "main.c"
+#line 1908 "main.c"
     hero_array_decref(t38);
 #line 50 "examples/calculator/eval.hero"
     t39 = h7_own7;
-#line 1905 "main.c"
+#line 1912 "main.c"
     hero_array_decref(t39);
 #line 50 "examples/calculator/eval.hero"
     t40 = h8_own8;
-#line 1909 "main.c"
+#line 1916 "main.c"
     hero_array_decref(t40);
 #line 50 "examples/calculator/eval.hero"
     t41 = h9_own9;
-#line 1913 "main.c"
+#line 1920 "main.c"
     hero_array_decref(t41);
     return t20;
 bb2:
@@ -1919,15 +1926,15 @@ bb2:
     t22 = h6_own6;
 #line 51 "examples/calculator/eval.hero"
     h6_own6 = t4;
-#line 1923 "main.c"
+#line 1930 "main.c"
     hero_array_decref(t22);
 #line 50 "examples/calculator/eval.hero"
     t23 = h2_r0;
-#line 1927 "main.c"
+#line 1934 "main.c"
     hero_array_incref(t4);
 #line 50 "examples/calculator/eval.hero"
     h2_r0 = t4;
-#line 1931 "main.c"
+#line 1938 "main.c"
     hero_array_decref(t23);
     goto bb1;
 bb3:
@@ -1937,11 +1944,11 @@ bb3:
     t6 = t5.as.c_variable;
 #line 52 "examples/calculator/eval.hero"
     t24 = h3_x;
-#line 1941 "main.c"
+#line 1948 "main.c"
     h_parse_Expr_c_variable_retain(&t6);
 #line 52 "examples/calculator/eval.hero"
     h3_x = t6;
-#line 1945 "main.c"
+#line 1952 "main.c"
     h_parse_Expr_c_variable_release(&t24);
 #line 52 "examples/calculator/eval.hero"
     t7 = h3_x;
@@ -1957,15 +1964,15 @@ bb3:
     t25 = h7_own7;
 #line 52 "examples/calculator/eval.hero"
     h7_own7 = t9;
-#line 1961 "main.c"
+#line 1968 "main.c"
     hero_array_decref(t25);
 #line 50 "examples/calculator/eval.hero"
     t26 = h2_r0;
-#line 1965 "main.c"
+#line 1972 "main.c"
     hero_array_incref(t9);
 #line 50 "examples/calculator/eval.hero"
     h2_r0 = t9;
-#line 1969 "main.c"
+#line 1976 "main.c"
     hero_array_decref(t26);
     goto bb1;
 bb4:
@@ -1975,11 +1982,11 @@ bb4:
     t11 = t10.as.c_sum;
 #line 53 "examples/calculator/eval.hero"
     t27 = h4_s;
-#line 1979 "main.c"
+#line 1986 "main.c"
     h_parse_Expr_c_sum_retain(&t11);
 #line 53 "examples/calculator/eval.hero"
     h4_s = t11;
-#line 1983 "main.c"
+#line 1990 "main.c"
     h_parse_Expr_c_sum_release(&t27);
 #line 53 "examples/calculator/eval.hero"
     t12 = h4_s;
@@ -1991,15 +1998,15 @@ bb4:
     t28 = h8_own8;
 #line 53 "examples/calculator/eval.hero"
     h8_own8 = t14;
-#line 1995 "main.c"
+#line 2002 "main.c"
     hero_array_decref(t28);
 #line 50 "examples/calculator/eval.hero"
     t29 = h2_r0;
-#line 1999 "main.c"
+#line 2006 "main.c"
     hero_array_incref(t14);
 #line 50 "examples/calculator/eval.hero"
     h2_r0 = t14;
-#line 2003 "main.c"
+#line 2010 "main.c"
     hero_array_decref(t29);
     goto bb1;
 bb5:
@@ -2009,11 +2016,11 @@ bb5:
     t16 = t15.as.c_product;
 #line 54 "examples/calculator/eval.hero"
     t30 = h5_q;
-#line 2013 "main.c"
+#line 2020 "main.c"
     h_parse_Expr_c_product_retain(&t16);
 #line 54 "examples/calculator/eval.hero"
     h5_q = t16;
-#line 2017 "main.c"
+#line 2024 "main.c"
     h_parse_Expr_c_product_release(&t30);
 #line 54 "examples/calculator/eval.hero"
     t17 = h5_q;
@@ -2025,22 +2032,22 @@ bb5:
     t31 = h9_own9;
 #line 54 "examples/calculator/eval.hero"
     h9_own9 = t19;
-#line 2029 "main.c"
+#line 2036 "main.c"
     hero_array_decref(t31);
 #line 50 "examples/calculator/eval.hero"
     t32 = h2_r0;
-#line 2033 "main.c"
+#line 2040 "main.c"
     hero_array_incref(t19);
 #line 50 "examples/calculator/eval.hero"
     h2_r0 = t19;
-#line 2037 "main.c"
+#line 2044 "main.c"
     hero_array_decref(t32);
     goto bb1;
 }
 
 #line 56 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_names_of(HeroArrayHeader * h0_children) {
-#line 2044 "main.c"
+#line 2051 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -2100,25 +2107,25 @@ bb0:
     t31 = h8_own8;
 #line 57 "examples/calculator/eval.hero"
     h8_own8 = t1;
-#line 2104 "main.c"
+#line 2111 "main.c"
     hero_array_decref(t31);
 #line 57 "examples/calculator/eval.hero"
     t32 = h1_out;
-#line 2108 "main.c"
+#line 2115 "main.c"
     hero_array_incref(t1);
 #line 57 "examples/calculator/eval.hero"
     h1_out = t1;
-#line 2112 "main.c"
+#line 2119 "main.c"
     hero_array_decref(t32);
 #line 58 "examples/calculator/eval.hero"
     t2 = h0_children;
 #line 58 "examples/calculator/eval.hero"
     t33 = h2_xs0;
-#line 2118 "main.c"
+#line 2125 "main.c"
     hero_array_incref(t2);
 #line 58 "examples/calculator/eval.hero"
     h2_xs0 = t2;
-#line 2122 "main.c"
+#line 2129 "main.c"
     hero_array_decref(t33);
 #line 58 "examples/calculator/eval.hero"
     t3 = INT64_C(0);
@@ -2148,11 +2155,11 @@ bb2:
     t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
 #line 58 "examples/calculator/eval.hero"
     t34 = h4_c;
-#line 2152 "main.c"
+#line 2159 "main.c"
     h_parse_Expr_retain(&t10);
 #line 58 "examples/calculator/eval.hero"
     h4_c = t10;
-#line 2156 "main.c"
+#line 2163 "main.c"
     h_parse_Expr_release(&t34);
 #line 59 "examples/calculator/eval.hero"
     t11 = h4_c;
@@ -2162,15 +2169,15 @@ bb2:
     t35 = h9_own9;
 #line 59 "examples/calculator/eval.hero"
     h9_own9 = t12;
-#line 2166 "main.c"
+#line 2173 "main.c"
     hero_array_decref(t35);
 #line 59 "examples/calculator/eval.hero"
     t36 = h5_xs1;
-#line 2170 "main.c"
+#line 2177 "main.c"
     hero_array_incref(t12);
 #line 59 "examples/calculator/eval.hero"
     h5_xs1 = t12;
-#line 2174 "main.c"
+#line 2181 "main.c"
     hero_array_decref(t36);
 #line 59 "examples/calculator/eval.hero"
     t13 = INT64_C(0);
@@ -2194,35 +2201,35 @@ bb3:
 bb4:
 #line 61 "examples/calculator/eval.hero"
     t30 = h1_out;
-#line 2198 "main.c"
+#line 2205 "main.c"
     hero_array_incref(t30);
 #line 61 "examples/calculator/eval.hero"
     t38 = h1_out;
-#line 2202 "main.c"
+#line 2209 "main.c"
     hero_array_decref(t38);
 #line 61 "examples/calculator/eval.hero"
     t39 = h2_xs0;
-#line 2206 "main.c"
+#line 2213 "main.c"
     hero_array_decref(t39);
 #line 61 "examples/calculator/eval.hero"
     t40 = h4_c;
-#line 2210 "main.c"
+#line 2217 "main.c"
     h_parse_Expr_release(&t40);
 #line 61 "examples/calculator/eval.hero"
     t41 = h5_xs1;
-#line 2214 "main.c"
+#line 2221 "main.c"
     hero_array_decref(t41);
 #line 61 "examples/calculator/eval.hero"
     t42 = h7_n;
-#line 2218 "main.c"
+#line 2225 "main.c"
     hero_str_decref(t42);
 #line 61 "examples/calculator/eval.hero"
     t43 = h8_own8;
-#line 2222 "main.c"
+#line 2229 "main.c"
     hero_array_decref(t43);
 #line 61 "examples/calculator/eval.hero"
     t44 = h9_own9;
-#line 2226 "main.c"
+#line 2233 "main.c"
     hero_array_decref(t44);
     return t30;
 bb5:
@@ -2246,11 +2253,11 @@ bb6:
     t20 = *(HeroStr const *)hero_array_at(t18, t19);
 #line 59 "examples/calculator/eval.hero"
     t37 = h7_n;
-#line 2250 "main.c"
+#line 2257 "main.c"
     hero_str_incref(t20);
 #line 59 "examples/calculator/eval.hero"
     h7_n = t20;
-#line 2254 "main.c"
+#line 2261 "main.c"
     hero_str_decref(t37);
 #line 60 "examples/calculator/eval.hero"
     t22 = h7_n;
@@ -2274,12 +2281,12 @@ bb7:
 bb8:
 #line 59 "examples/calculator/eval.hero"
     goto bb3;
-#line 2278 "main.c"
+#line 2285 "main.c"
 }
 
 #line 66 "examples/calculator/eval.hero"
 h_main_0opt0 h_eval_calculate(HeroStr h0_text, HeroMapHeader * h1_env) {
-#line 2283 "main.c"
+#line 2290 "main.c"
     h_main_0opt1 h2_f0 = {0};
     HeroArrayHeader * h3_ts = {0};
     h_parse_Parse h4_p = {0};
@@ -2401,15 +2408,15 @@ bb0:
     t34 = h7_own7;
 #line 67 "examples/calculator/eval.hero"
     h7_own7 = t2;
-#line 2405 "main.c"
+#line 2412 "main.c"
     h_main_0opt1_release(&t34);
 #line 67 "examples/calculator/eval.hero"
     t35 = h2_f0;
-#line 2409 "main.c"
+#line 2416 "main.c"
     h_main_0opt1_retain(&t2);
 #line 67 "examples/calculator/eval.hero"
     h2_f0 = t2;
-#line 2413 "main.c"
+#line 2420 "main.c"
     h_main_0opt1_release(&t35);
 #line 67 "examples/calculator/eval.hero"
     t3 = h2_f0;
@@ -2429,17 +2436,17 @@ bb1:
     t11 = t10.as.ok;
 #line 67 "examples/calculator/eval.hero"
     t36 = h3_ts;
-#line 2433 "main.c"
+#line 2440 "main.c"
     hero_array_incref(t11);
 #line 67 "examples/calculator/eval.hero"
     h3_ts = t11;
-#line 2437 "main.c"
+#line 2444 "main.c"
     hero_array_decref(t36);
 #line 68 "examples/calculator/eval.hero"
     t12 = h3_ts;
 #line 68 "examples/calculator/eval.hero"
     t13 = INT64_C(0);
-#line 2443 "main.c"
+#line 2450 "main.c"
     hero_array_incref(t12);
 #line 68 "examples/calculator/eval.hero"
     t14 = (h_parse_Parse){.f_ts = t12, .f_pos = t13};
@@ -2447,15 +2454,15 @@ bb1:
     t37 = h8_own8;
 #line 68 "examples/calculator/eval.hero"
     h8_own8 = t14;
-#line 2451 "main.c"
+#line 2458 "main.c"
     h_parse_Parse_release(&t37);
 #line 68 "examples/calculator/eval.hero"
     t38 = h4_p;
-#line 2455 "main.c"
+#line 2462 "main.c"
     h_parse_Parse_retain(&t14);
 #line 68 "examples/calculator/eval.hero"
     h4_p = t14;
-#line 2459 "main.c"
+#line 2466 "main.c"
     h_parse_Parse_release(&t38);
 #line 69 "examples/calculator/eval.hero"
     t15 = h_parse_expression(&h4_p);
@@ -2463,15 +2470,15 @@ bb1:
     t39 = h9_own9;
 #line 69 "examples/calculator/eval.hero"
     h9_own9 = t15;
-#line 2467 "main.c"
+#line 2474 "main.c"
     h_main_0opt2_release(&t39);
 #line 69 "examples/calculator/eval.hero"
     t40 = h5_f1;
-#line 2471 "main.c"
+#line 2478 "main.c"
     h_main_0opt2_retain(&t15);
 #line 69 "examples/calculator/eval.hero"
     h5_f1 = t15;
-#line 2475 "main.c"
+#line 2482 "main.c"
     h_main_0opt2_release(&t40);
 #line 69 "examples/calculator/eval.hero"
     t16 = h5_f1;
@@ -2489,7 +2496,7 @@ bb2:
     t7 = h2_f0;
 #line 67 "examples/calculator/eval.hero"
     t8 = t7.as.err;
-#line 2493 "main.c"
+#line 2500 "main.c"
     hero_failure_retain(&t8);
 #line 67 "examples/calculator/eval.hero"
     t9 = (h_main_0opt0){.tag = INT64_C(1), .as.err = t8};
@@ -2497,62 +2504,62 @@ bb2:
     t41 = h10_own10;
 #line 67 "examples/calculator/eval.hero"
     h10_own10 = t9;
-#line 2501 "main.c"
+#line 2508 "main.c"
     h_main_0opt0_release(&t41);
 #line 67 "examples/calculator/eval.hero"
-#line 2504 "main.c"
+#line 2511 "main.c"
     h_main_0opt0_retain(&t9);
 #line 67 "examples/calculator/eval.hero"
     t47 = h2_f0;
-#line 2508 "main.c"
+#line 2515 "main.c"
     h_main_0opt1_release(&t47);
 #line 67 "examples/calculator/eval.hero"
     t48 = h3_ts;
-#line 2512 "main.c"
+#line 2519 "main.c"
     hero_array_decref(t48);
 #line 67 "examples/calculator/eval.hero"
     t49 = h4_p;
-#line 2516 "main.c"
+#line 2523 "main.c"
     h_parse_Parse_release(&t49);
 #line 67 "examples/calculator/eval.hero"
     t50 = h5_f1;
-#line 2520 "main.c"
+#line 2527 "main.c"
     h_main_0opt2_release(&t50);
 #line 67 "examples/calculator/eval.hero"
     t51 = h6_tree;
-#line 2524 "main.c"
+#line 2531 "main.c"
     h_parse_Expr_release(&t51);
 #line 67 "examples/calculator/eval.hero"
     t52 = h7_own7;
-#line 2528 "main.c"
+#line 2535 "main.c"
     h_main_0opt1_release(&t52);
 #line 67 "examples/calculator/eval.hero"
     t53 = h8_own8;
-#line 2532 "main.c"
+#line 2539 "main.c"
     h_parse_Parse_release(&t53);
 #line 67 "examples/calculator/eval.hero"
     t54 = h9_own9;
-#line 2536 "main.c"
+#line 2543 "main.c"
     h_main_0opt2_release(&t54);
 #line 67 "examples/calculator/eval.hero"
     t55 = h10_own10;
-#line 2540 "main.c"
+#line 2547 "main.c"
     h_main_0opt0_release(&t55);
 #line 67 "examples/calculator/eval.hero"
     t56 = h11_own11;
-#line 2544 "main.c"
+#line 2551 "main.c"
     h_main_0opt0_release(&t56);
 #line 67 "examples/calculator/eval.hero"
     t57 = h12_own12;
-#line 2548 "main.c"
+#line 2555 "main.c"
     h_main_0opt0_release(&t57);
 #line 67 "examples/calculator/eval.hero"
     t58 = h13_own13;
-#line 2552 "main.c"
+#line 2559 "main.c"
     hero_str_decref(t58);
 #line 67 "examples/calculator/eval.hero"
     t59 = h14_own14;
-#line 2556 "main.c"
+#line 2563 "main.c"
     h_main_0opt0_release(&t59);
     return t9;
 bb3:
@@ -2562,11 +2569,11 @@ bb3:
     t24 = t23.as.ok;
 #line 69 "examples/calculator/eval.hero"
     t42 = h6_tree;
-#line 2566 "main.c"
+#line 2573 "main.c"
     h_parse_Expr_retain(&t24);
 #line 69 "examples/calculator/eval.hero"
     h6_tree = t24;
-#line 2570 "main.c"
+#line 2577 "main.c"
     h_parse_Expr_release(&t42);
 #line 70 "examples/calculator/eval.hero"
     t25 = h4_p;
@@ -2582,7 +2589,7 @@ bb4:
     t20 = h5_f1;
 #line 69 "examples/calculator/eval.hero"
     t21 = t20.as.err;
-#line 2586 "main.c"
+#line 2593 "main.c"
     hero_failure_retain(&t21);
 #line 69 "examples/calculator/eval.hero"
     t22 = (h_main_0opt0){.tag = INT64_C(1), .as.err = t21};
@@ -2590,62 +2597,62 @@ bb4:
     t43 = h11_own11;
 #line 69 "examples/calculator/eval.hero"
     h11_own11 = t22;
-#line 2594 "main.c"
+#line 2601 "main.c"
     h_main_0opt0_release(&t43);
 #line 69 "examples/calculator/eval.hero"
-#line 2597 "main.c"
+#line 2604 "main.c"
     h_main_0opt0_retain(&t22);
 #line 69 "examples/calculator/eval.hero"
     t60 = h2_f0;
-#line 2601 "main.c"
+#line 2608 "main.c"
     h_main_0opt1_release(&t60);
 #line 69 "examples/calculator/eval.hero"
     t61 = h3_ts;
-#line 2605 "main.c"
+#line 2612 "main.c"
     hero_array_decref(t61);
 #line 69 "examples/calculator/eval.hero"
     t62 = h4_p;
-#line 2609 "main.c"
+#line 2616 "main.c"
     h_parse_Parse_release(&t62);
 #line 69 "examples/calculator/eval.hero"
     t63 = h5_f1;
-#line 2613 "main.c"
+#line 2620 "main.c"
     h_main_0opt2_release(&t63);
 #line 69 "examples/calculator/eval.hero"
     t64 = h6_tree;
-#line 2617 "main.c"
+#line 2624 "main.c"
     h_parse_Expr_release(&t64);
 #line 69 "examples/calculator/eval.hero"
     t65 = h7_own7;
-#line 2621 "main.c"
+#line 2628 "main.c"
     h_main_0opt1_release(&t65);
 #line 69 "examples/calculator/eval.hero"
     t66 = h8_own8;
-#line 2625 "main.c"
+#line 2632 "main.c"
     h_parse_Parse_release(&t66);
 #line 69 "examples/calculator/eval.hero"
     t67 = h9_own9;
-#line 2629 "main.c"
+#line 2636 "main.c"
     h_main_0opt2_release(&t67);
 #line 69 "examples/calculator/eval.hero"
     t68 = h10_own10;
-#line 2633 "main.c"
+#line 2640 "main.c"
     h_main_0opt0_release(&t68);
 #line 69 "examples/calculator/eval.hero"
     t69 = h11_own11;
-#line 2637 "main.c"
+#line 2644 "main.c"
     h_main_0opt0_release(&t69);
 #line 69 "examples/calculator/eval.hero"
     t70 = h12_own12;
-#line 2641 "main.c"
+#line 2648 "main.c"
     h_main_0opt0_release(&t70);
 #line 69 "examples/calculator/eval.hero"
     t71 = h13_own13;
-#line 2645 "main.c"
+#line 2652 "main.c"
     hero_str_decref(t71);
 #line 69 "examples/calculator/eval.hero"
     t72 = h14_own14;
-#line 2649 "main.c"
+#line 2656 "main.c"
     h_main_0opt0_release(&t72);
     return t22;
 bb5:
@@ -2659,62 +2666,62 @@ bb5:
     t44 = h12_own12;
 #line 72 "examples/calculator/eval.hero"
     h12_own12 = t33;
-#line 2663 "main.c"
+#line 2670 "main.c"
     h_main_0opt0_release(&t44);
 #line 72 "examples/calculator/eval.hero"
-#line 2666 "main.c"
+#line 2673 "main.c"
     h_main_0opt0_retain(&t33);
 #line 72 "examples/calculator/eval.hero"
     t73 = h2_f0;
-#line 2670 "main.c"
+#line 2677 "main.c"
     h_main_0opt1_release(&t73);
 #line 72 "examples/calculator/eval.hero"
     t74 = h3_ts;
-#line 2674 "main.c"
+#line 2681 "main.c"
     hero_array_decref(t74);
 #line 72 "examples/calculator/eval.hero"
     t75 = h4_p;
-#line 2678 "main.c"
+#line 2685 "main.c"
     h_parse_Parse_release(&t75);
 #line 72 "examples/calculator/eval.hero"
     t76 = h5_f1;
-#line 2682 "main.c"
+#line 2689 "main.c"
     h_main_0opt2_release(&t76);
 #line 72 "examples/calculator/eval.hero"
     t77 = h6_tree;
-#line 2686 "main.c"
+#line 2693 "main.c"
     h_parse_Expr_release(&t77);
 #line 72 "examples/calculator/eval.hero"
     t78 = h7_own7;
-#line 2690 "main.c"
+#line 2697 "main.c"
     h_main_0opt1_release(&t78);
 #line 72 "examples/calculator/eval.hero"
     t79 = h8_own8;
-#line 2694 "main.c"
+#line 2701 "main.c"
     h_parse_Parse_release(&t79);
 #line 72 "examples/calculator/eval.hero"
     t80 = h9_own9;
-#line 2698 "main.c"
+#line 2705 "main.c"
     h_main_0opt2_release(&t80);
 #line 72 "examples/calculator/eval.hero"
     t81 = h10_own10;
-#line 2702 "main.c"
+#line 2709 "main.c"
     h_main_0opt0_release(&t81);
 #line 72 "examples/calculator/eval.hero"
     t82 = h11_own11;
-#line 2706 "main.c"
+#line 2713 "main.c"
     h_main_0opt0_release(&t82);
 #line 72 "examples/calculator/eval.hero"
     t83 = h12_own12;
-#line 2710 "main.c"
+#line 2717 "main.c"
     h_main_0opt0_release(&t83);
 #line 72 "examples/calculator/eval.hero"
     t84 = h13_own13;
-#line 2714 "main.c"
+#line 2721 "main.c"
     hero_str_decref(t84);
 #line 72 "examples/calculator/eval.hero"
     t85 = h14_own14;
-#line 2718 "main.c"
+#line 2725 "main.c"
     h_main_0opt0_release(&t85);
     return t33;
 bb6:
@@ -2724,14 +2731,14 @@ bb6:
     t45 = h13_own13;
 #line 71 "examples/calculator/eval.hero"
     h13_own13 = t28;
-#line 2728 "main.c"
+#line 2735 "main.c"
     hero_str_decref(t45);
 #line 71 "examples/calculator/eval.hero"
     t29 = HERO_STR_LIT(hero_str_15);
-#line 2732 "main.c"
+#line 2739 "main.c"
     hero_str_incref(t28);
 #line 71 "examples/calculator/eval.hero"
-#line 2735 "main.c"
+#line 2742 "main.c"
     hero_str_incref(t29);
 #line 71 "examples/calculator/eval.hero"
     t30 = (h_main_0opt0){.tag = INT64_C(1), .as.err = {.code = t28, .msg = t29}};
@@ -2739,62 +2746,62 @@ bb6:
     t46 = h14_own14;
 #line 71 "examples/calculator/eval.hero"
     h14_own14 = t30;
-#line 2743 "main.c"
+#line 2750 "main.c"
     h_main_0opt0_release(&t46);
 #line 71 "examples/calculator/eval.hero"
-#line 2746 "main.c"
+#line 2753 "main.c"
     h_main_0opt0_retain(&t30);
 #line 71 "examples/calculator/eval.hero"
     t86 = h2_f0;
-#line 2750 "main.c"
+#line 2757 "main.c"
     h_main_0opt1_release(&t86);
 #line 71 "examples/calculator/eval.hero"
     t87 = h3_ts;
-#line 2754 "main.c"
+#line 2761 "main.c"
     hero_array_decref(t87);
 #line 71 "examples/calculator/eval.hero"
     t88 = h4_p;
-#line 2758 "main.c"
+#line 2765 "main.c"
     h_parse_Parse_release(&t88);
 #line 71 "examples/calculator/eval.hero"
     t89 = h5_f1;
-#line 2762 "main.c"
+#line 2769 "main.c"
     h_main_0opt2_release(&t89);
 #line 71 "examples/calculator/eval.hero"
     t90 = h6_tree;
-#line 2766 "main.c"
+#line 2773 "main.c"
     h_parse_Expr_release(&t90);
 #line 71 "examples/calculator/eval.hero"
     t91 = h7_own7;
-#line 2770 "main.c"
+#line 2777 "main.c"
     h_main_0opt1_release(&t91);
 #line 71 "examples/calculator/eval.hero"
     t92 = h8_own8;
-#line 2774 "main.c"
+#line 2781 "main.c"
     h_parse_Parse_release(&t92);
 #line 71 "examples/calculator/eval.hero"
     t93 = h9_own9;
-#line 2778 "main.c"
+#line 2785 "main.c"
     h_main_0opt2_release(&t93);
 #line 71 "examples/calculator/eval.hero"
     t94 = h10_own10;
-#line 2782 "main.c"
+#line 2789 "main.c"
     h_main_0opt0_release(&t94);
 #line 71 "examples/calculator/eval.hero"
     t95 = h11_own11;
-#line 2786 "main.c"
+#line 2793 "main.c"
     h_main_0opt0_release(&t95);
 #line 71 "examples/calculator/eval.hero"
     t96 = h12_own12;
-#line 2790 "main.c"
+#line 2797 "main.c"
     h_main_0opt0_release(&t96);
 #line 71 "examples/calculator/eval.hero"
     t97 = h13_own13;
-#line 2794 "main.c"
+#line 2801 "main.c"
     hero_str_decref(t97);
 #line 71 "examples/calculator/eval.hero"
     t98 = h14_own14;
-#line 2798 "main.c"
+#line 2805 "main.c"
     h_main_0opt0_release(&t98);
     return t30;
 bb7:
@@ -2803,7 +2810,7 @@ bb7:
 
 #line 112 "examples/calculator/eval.hero"
 h_parse_Expr h_eval_simplify(h_parse_Expr h0_e) {
-#line 2807 "main.c"
+#line 2814 "main.c"
     h_parse_Expr h1_s0 = {0};
     h_parse_Expr h2_r0 = {0};
     h_parse_Expr_c_sum h3_s = {0};
@@ -2857,11 +2864,11 @@ bb0:
     t1 = h0_e;
 #line 113 "examples/calculator/eval.hero"
     t21 = h1_s0;
-#line 2861 "main.c"
+#line 2868 "main.c"
     h_parse_Expr_retain(&t1);
 #line 113 "examples/calculator/eval.hero"
     h1_s0 = t1;
-#line 2865 "main.c"
+#line 2872 "main.c"
     h_parse_Expr_release(&t21);
 #line 113 "examples/calculator/eval.hero"
     t2 = h1_s0;
@@ -2885,39 +2892,39 @@ bb0:
 bb1:
 #line 113 "examples/calculator/eval.hero"
     t20 = h2_r0;
-#line 2889 "main.c"
+#line 2896 "main.c"
     h_parse_Expr_retain(&t20);
 #line 113 "examples/calculator/eval.hero"
     t32 = h1_s0;
-#line 2893 "main.c"
+#line 2900 "main.c"
     h_parse_Expr_release(&t32);
 #line 113 "examples/calculator/eval.hero"
     t33 = h2_r0;
-#line 2897 "main.c"
+#line 2904 "main.c"
     h_parse_Expr_release(&t33);
 #line 113 "examples/calculator/eval.hero"
     t34 = h3_s;
-#line 2901 "main.c"
+#line 2908 "main.c"
     h_parse_Expr_c_sum_release(&t34);
 #line 113 "examples/calculator/eval.hero"
     t35 = h4_q;
-#line 2905 "main.c"
+#line 2912 "main.c"
     h_parse_Expr_c_product_release(&t35);
 #line 113 "examples/calculator/eval.hero"
     t36 = h5_own5;
-#line 2909 "main.c"
+#line 2916 "main.c"
     hero_array_decref(t36);
 #line 113 "examples/calculator/eval.hero"
     t37 = h6_own6;
-#line 2913 "main.c"
+#line 2920 "main.c"
     h_parse_Expr_release(&t37);
 #line 113 "examples/calculator/eval.hero"
     t38 = h7_own7;
-#line 2917 "main.c"
+#line 2924 "main.c"
     hero_array_decref(t38);
 #line 113 "examples/calculator/eval.hero"
     t39 = h8_own8;
-#line 2921 "main.c"
+#line 2928 "main.c"
     h_parse_Expr_release(&t39);
     return t20;
 bb2:
@@ -2925,11 +2932,11 @@ bb2:
     t4 = h0_e;
 #line 113 "examples/calculator/eval.hero"
     t22 = h2_r0;
-#line 2929 "main.c"
+#line 2936 "main.c"
     h_parse_Expr_retain(&t4);
 #line 113 "examples/calculator/eval.hero"
     h2_r0 = t4;
-#line 2933 "main.c"
+#line 2940 "main.c"
     h_parse_Expr_release(&t22);
     goto bb1;
 bb3:
@@ -2937,11 +2944,11 @@ bb3:
     t5 = h0_e;
 #line 113 "examples/calculator/eval.hero"
     t23 = h2_r0;
-#line 2941 "main.c"
+#line 2948 "main.c"
     h_parse_Expr_retain(&t5);
 #line 113 "examples/calculator/eval.hero"
     h2_r0 = t5;
-#line 2945 "main.c"
+#line 2952 "main.c"
     h_parse_Expr_release(&t23);
     goto bb1;
 bb4:
@@ -2951,11 +2958,11 @@ bb4:
     t7 = t6.as.c_sum;
 #line 116 "examples/calculator/eval.hero"
     t24 = h3_s;
-#line 2955 "main.c"
+#line 2962 "main.c"
     h_parse_Expr_c_sum_retain(&t7);
 #line 116 "examples/calculator/eval.hero"
     h3_s = t7;
-#line 2959 "main.c"
+#line 2966 "main.c"
     h_parse_Expr_c_sum_release(&t24);
 #line 116 "examples/calculator/eval.hero"
     t8 = h3_s;
@@ -2967,7 +2974,7 @@ bb4:
     t25 = h5_own5;
 #line 116 "examples/calculator/eval.hero"
     h5_own5 = t10;
-#line 2971 "main.c"
+#line 2978 "main.c"
     hero_array_decref(t25);
 #line 116 "examples/calculator/eval.hero"
     t11 = true;
@@ -2977,15 +2984,15 @@ bb4:
     t26 = h6_own6;
 #line 116 "examples/calculator/eval.hero"
     h6_own6 = t12;
-#line 2981 "main.c"
+#line 2988 "main.c"
     h_parse_Expr_release(&t26);
 #line 113 "examples/calculator/eval.hero"
     t27 = h2_r0;
-#line 2985 "main.c"
+#line 2992 "main.c"
     h_parse_Expr_retain(&t12);
 #line 113 "examples/calculator/eval.hero"
     h2_r0 = t12;
-#line 2989 "main.c"
+#line 2996 "main.c"
     h_parse_Expr_release(&t27);
     goto bb1;
 bb5:
@@ -2995,11 +3002,11 @@ bb5:
     t14 = t13.as.c_product;
 #line 117 "examples/calculator/eval.hero"
     t28 = h4_q;
-#line 2999 "main.c"
+#line 3006 "main.c"
     h_parse_Expr_c_product_retain(&t14);
 #line 117 "examples/calculator/eval.hero"
     h4_q = t14;
-#line 3003 "main.c"
+#line 3010 "main.c"
     h_parse_Expr_c_product_release(&t28);
 #line 117 "examples/calculator/eval.hero"
     t15 = h4_q;
@@ -3011,7 +3018,7 @@ bb5:
     t29 = h7_own7;
 #line 117 "examples/calculator/eval.hero"
     h7_own7 = t17;
-#line 3015 "main.c"
+#line 3022 "main.c"
     hero_array_decref(t29);
 #line 117 "examples/calculator/eval.hero"
     t18 = false;
@@ -3021,22 +3028,22 @@ bb5:
     t30 = h8_own8;
 #line 117 "examples/calculator/eval.hero"
     h8_own8 = t19;
-#line 3025 "main.c"
+#line 3032 "main.c"
     h_parse_Expr_release(&t30);
 #line 113 "examples/calculator/eval.hero"
     t31 = h2_r0;
-#line 3029 "main.c"
+#line 3036 "main.c"
     h_parse_Expr_retain(&t19);
 #line 113 "examples/calculator/eval.hero"
     h2_r0 = t19;
-#line 3033 "main.c"
+#line 3040 "main.c"
     h_parse_Expr_release(&t31);
     goto bb1;
 }
 
 #line 121 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_keep_sum(HeroArrayHeader * h0_children) {
-#line 3040 "main.c"
+#line 3047 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -3085,25 +3092,25 @@ bb0:
     t24 = h6_own6;
 #line 122 "examples/calculator/eval.hero"
     h6_own6 = t1;
-#line 3089 "main.c"
+#line 3096 "main.c"
     hero_array_decref(t24);
 #line 122 "examples/calculator/eval.hero"
     t25 = h1_out;
-#line 3093 "main.c"
+#line 3100 "main.c"
     hero_array_incref(t1);
 #line 122 "examples/calculator/eval.hero"
     h1_out = t1;
-#line 3097 "main.c"
+#line 3104 "main.c"
     hero_array_decref(t25);
 #line 123 "examples/calculator/eval.hero"
     t2 = h0_children;
 #line 123 "examples/calculator/eval.hero"
     t26 = h2_xs0;
-#line 3103 "main.c"
+#line 3110 "main.c"
     hero_array_incref(t2);
 #line 123 "examples/calculator/eval.hero"
     h2_xs0 = t2;
-#line 3107 "main.c"
+#line 3114 "main.c"
     hero_array_decref(t26);
 #line 123 "examples/calculator/eval.hero"
     t3 = INT64_C(0);
@@ -3133,11 +3140,11 @@ bb2:
     t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
 #line 123 "examples/calculator/eval.hero"
     t27 = h4_child;
-#line 3137 "main.c"
+#line 3144 "main.c"
     h_parse_Expr_retain(&t10);
 #line 123 "examples/calculator/eval.hero"
     h4_child = t10;
-#line 3141 "main.c"
+#line 3148 "main.c"
     h_parse_Expr_release(&t27);
 #line 124 "examples/calculator/eval.hero"
     t11 = h4_child;
@@ -3147,15 +3154,15 @@ bb2:
     t28 = h7_own7;
 #line 124 "examples/calculator/eval.hero"
     h7_own7 = t12;
-#line 3151 "main.c"
+#line 3158 "main.c"
     h_parse_Expr_release(&t28);
 #line 124 "examples/calculator/eval.hero"
     t29 = h5_one;
-#line 3155 "main.c"
+#line 3162 "main.c"
     h_parse_Expr_retain(&t12);
 #line 124 "examples/calculator/eval.hero"
     h5_one = t12;
-#line 3159 "main.c"
+#line 3166 "main.c"
     h_parse_Expr_release(&t29);
 #line 125 "examples/calculator/eval.hero"
     t13 = h5_one;
@@ -3183,31 +3190,31 @@ bb3:
 bb4:
 #line 127 "examples/calculator/eval.hero"
     t23 = h1_out;
-#line 3187 "main.c"
+#line 3194 "main.c"
     hero_array_incref(t23);
 #line 127 "examples/calculator/eval.hero"
     t30 = h1_out;
-#line 3191 "main.c"
+#line 3198 "main.c"
     hero_array_decref(t30);
 #line 127 "examples/calculator/eval.hero"
     t31 = h2_xs0;
-#line 3195 "main.c"
+#line 3202 "main.c"
     hero_array_decref(t31);
 #line 127 "examples/calculator/eval.hero"
     t32 = h4_child;
-#line 3199 "main.c"
+#line 3206 "main.c"
     h_parse_Expr_release(&t32);
 #line 127 "examples/calculator/eval.hero"
     t33 = h5_one;
-#line 3203 "main.c"
+#line 3210 "main.c"
     h_parse_Expr_release(&t33);
 #line 127 "examples/calculator/eval.hero"
     t34 = h6_own6;
-#line 3207 "main.c"
+#line 3214 "main.c"
     hero_array_decref(t34);
 #line 127 "examples/calculator/eval.hero"
     t35 = h7_own7;
-#line 3211 "main.c"
+#line 3218 "main.c"
     h_parse_Expr_release(&t35);
     return t23;
 bb5:
@@ -3223,12 +3230,12 @@ bb6:
 bb7:
 #line 126 "examples/calculator/eval.hero"
     goto bb5;
-#line 3227 "main.c"
+#line 3234 "main.c"
 }
 
 #line 130 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_keep_product(HeroArrayHeader * h0_children) {
-#line 3232 "main.c"
+#line 3239 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -3277,25 +3284,25 @@ bb0:
     t24 = h6_own6;
 #line 131 "examples/calculator/eval.hero"
     h6_own6 = t1;
-#line 3281 "main.c"
+#line 3288 "main.c"
     hero_array_decref(t24);
 #line 131 "examples/calculator/eval.hero"
     t25 = h1_out;
-#line 3285 "main.c"
+#line 3292 "main.c"
     hero_array_incref(t1);
 #line 131 "examples/calculator/eval.hero"
     h1_out = t1;
-#line 3289 "main.c"
+#line 3296 "main.c"
     hero_array_decref(t25);
 #line 132 "examples/calculator/eval.hero"
     t2 = h0_children;
 #line 132 "examples/calculator/eval.hero"
     t26 = h2_xs0;
-#line 3295 "main.c"
+#line 3302 "main.c"
     hero_array_incref(t2);
 #line 132 "examples/calculator/eval.hero"
     h2_xs0 = t2;
-#line 3299 "main.c"
+#line 3306 "main.c"
     hero_array_decref(t26);
 #line 132 "examples/calculator/eval.hero"
     t3 = INT64_C(0);
@@ -3325,11 +3332,11 @@ bb2:
     t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
 #line 132 "examples/calculator/eval.hero"
     t27 = h4_child;
-#line 3329 "main.c"
+#line 3336 "main.c"
     h_parse_Expr_retain(&t10);
 #line 132 "examples/calculator/eval.hero"
     h4_child = t10;
-#line 3333 "main.c"
+#line 3340 "main.c"
     h_parse_Expr_release(&t27);
 #line 133 "examples/calculator/eval.hero"
     t11 = h4_child;
@@ -3339,15 +3346,15 @@ bb2:
     t28 = h7_own7;
 #line 133 "examples/calculator/eval.hero"
     h7_own7 = t12;
-#line 3343 "main.c"
+#line 3350 "main.c"
     h_parse_Expr_release(&t28);
 #line 133 "examples/calculator/eval.hero"
     t29 = h5_one;
-#line 3347 "main.c"
+#line 3354 "main.c"
     h_parse_Expr_retain(&t12);
 #line 133 "examples/calculator/eval.hero"
     h5_one = t12;
-#line 3351 "main.c"
+#line 3358 "main.c"
     h_parse_Expr_release(&t29);
 #line 134 "examples/calculator/eval.hero"
     t13 = h5_one;
@@ -3375,31 +3382,31 @@ bb3:
 bb4:
 #line 136 "examples/calculator/eval.hero"
     t23 = h1_out;
-#line 3379 "main.c"
+#line 3386 "main.c"
     hero_array_incref(t23);
 #line 136 "examples/calculator/eval.hero"
     t30 = h1_out;
-#line 3383 "main.c"
+#line 3390 "main.c"
     hero_array_decref(t30);
 #line 136 "examples/calculator/eval.hero"
     t31 = h2_xs0;
-#line 3387 "main.c"
+#line 3394 "main.c"
     hero_array_decref(t31);
 #line 136 "examples/calculator/eval.hero"
     t32 = h4_child;
-#line 3391 "main.c"
+#line 3398 "main.c"
     h_parse_Expr_release(&t32);
 #line 136 "examples/calculator/eval.hero"
     t33 = h5_one;
-#line 3395 "main.c"
+#line 3402 "main.c"
     h_parse_Expr_release(&t33);
 #line 136 "examples/calculator/eval.hero"
     t34 = h6_own6;
-#line 3399 "main.c"
+#line 3406 "main.c"
     hero_array_decref(t34);
 #line 136 "examples/calculator/eval.hero"
     t35 = h7_own7;
-#line 3403 "main.c"
+#line 3410 "main.c"
     h_parse_Expr_release(&t35);
     return t23;
 bb5:
@@ -3415,12 +3422,12 @@ bb6:
 bb7:
 #line 135 "examples/calculator/eval.hero"
     goto bb5;
-#line 3419 "main.c"
+#line 3426 "main.c"
 }
 
 #line 139 "examples/calculator/eval.hero"
 bool h_eval_is_literal(h_parse_Expr h0_e, int64_t h1_v) {
-#line 3424 "main.c"
+#line 3431 "main.c"
     h_parse_Expr h2_s0 = {0};
     bool h3_r0;
     h_parse_Expr_c_num h4_n;
@@ -3445,11 +3452,11 @@ bb0:
     t1 = h0_e;
 #line 140 "examples/calculator/eval.hero"
     t14 = h2_s0;
-#line 3449 "main.c"
+#line 3456 "main.c"
     h_parse_Expr_retain(&t1);
 #line 140 "examples/calculator/eval.hero"
     h2_s0 = t1;
-#line 3453 "main.c"
+#line 3460 "main.c"
     h_parse_Expr_release(&t14);
 #line 140 "examples/calculator/eval.hero"
     t2 = h2_s0;
@@ -3475,7 +3482,7 @@ bb1:
     t13 = h3_r0;
 #line 140 "examples/calculator/eval.hero"
     t15 = h2_s0;
-#line 3479 "main.c"
+#line 3486 "main.c"
     h_parse_Expr_release(&t15);
     return t13;
 bb2:
@@ -3521,12 +3528,12 @@ bb5:
     h3_r0 = t12;
 #line 140 "examples/calculator/eval.hero"
     goto bb1;
-#line 3525 "main.c"
+#line 3532 "main.c"
 }
 
 #line 147 "examples/calculator/eval.hero"
 h_parse_Expr h_eval_rebuild(HeroArrayHeader * h0_kept, bool h1_zero) {
-#line 3530 "main.c"
+#line 3537 "main.c"
     h_parse_Expr h2_own2 = {0};
     h_parse_Expr h3_own3 = {0};
     h_parse_Expr h4_own4 = {0};
@@ -3608,23 +3615,23 @@ bb2:
     t6 = INT64_C(0);
 #line 149 "examples/calculator/eval.hero"
     t7 = *(h_parse_Expr const *)hero_array_at(t5, t6);
-#line 3612 "main.c"
+#line 3619 "main.c"
     h_parse_Expr_retain(&t7);
 #line 149 "examples/calculator/eval.hero"
     t26 = h2_own2;
-#line 3616 "main.c"
+#line 3623 "main.c"
     h_parse_Expr_release(&t26);
 #line 149 "examples/calculator/eval.hero"
     t27 = h3_own3;
-#line 3620 "main.c"
+#line 3627 "main.c"
     h_parse_Expr_release(&t27);
 #line 149 "examples/calculator/eval.hero"
     t28 = h4_own4;
-#line 3624 "main.c"
+#line 3631 "main.c"
     h_parse_Expr_release(&t28);
 #line 149 "examples/calculator/eval.hero"
     t29 = h5_own5;
-#line 3628 "main.c"
+#line 3635 "main.c"
     h_parse_Expr_release(&t29);
     return t7;
 bb3:
@@ -3654,26 +3661,26 @@ bb7:
     t22 = h2_own2;
 #line 153 "examples/calculator/eval.hero"
     h2_own2 = t16;
-#line 3658 "main.c"
+#line 3665 "main.c"
     h_parse_Expr_release(&t22);
 #line 153 "examples/calculator/eval.hero"
-#line 3661 "main.c"
+#line 3668 "main.c"
     h_parse_Expr_retain(&t16);
 #line 153 "examples/calculator/eval.hero"
     t30 = h2_own2;
-#line 3665 "main.c"
+#line 3672 "main.c"
     h_parse_Expr_release(&t30);
 #line 153 "examples/calculator/eval.hero"
     t31 = h3_own3;
-#line 3669 "main.c"
+#line 3676 "main.c"
     h_parse_Expr_release(&t31);
 #line 153 "examples/calculator/eval.hero"
     t32 = h4_own4;
-#line 3673 "main.c"
+#line 3680 "main.c"
     h_parse_Expr_release(&t32);
 #line 153 "examples/calculator/eval.hero"
     t33 = h5_own5;
-#line 3677 "main.c"
+#line 3684 "main.c"
     h_parse_Expr_release(&t33);
     return t16;
 bb8:
@@ -3685,26 +3692,26 @@ bb8:
     t23 = h3_own3;
 #line 152 "examples/calculator/eval.hero"
     h3_own3 = t14;
-#line 3689 "main.c"
+#line 3696 "main.c"
     h_parse_Expr_release(&t23);
 #line 152 "examples/calculator/eval.hero"
-#line 3692 "main.c"
+#line 3699 "main.c"
     h_parse_Expr_retain(&t14);
 #line 152 "examples/calculator/eval.hero"
     t34 = h2_own2;
-#line 3696 "main.c"
+#line 3703 "main.c"
     h_parse_Expr_release(&t34);
 #line 152 "examples/calculator/eval.hero"
     t35 = h3_own3;
-#line 3700 "main.c"
+#line 3707 "main.c"
     h_parse_Expr_release(&t35);
 #line 152 "examples/calculator/eval.hero"
     t36 = h4_own4;
-#line 3704 "main.c"
+#line 3711 "main.c"
     h_parse_Expr_release(&t36);
 #line 152 "examples/calculator/eval.hero"
     t37 = h5_own5;
-#line 3708 "main.c"
+#line 3715 "main.c"
     h_parse_Expr_release(&t37);
     return t14;
 bb9:
@@ -3712,7 +3719,7 @@ bb9:
 bb10:
 #line 156 "examples/calculator/eval.hero"
     t20 = h0_kept;
-#line 3716 "main.c"
+#line 3723 "main.c"
     hero_array_incref(t20);
 #line 156 "examples/calculator/eval.hero"
     t21 = (h_parse_Expr){.tag = h_parse_Expr_tag_product, .as.c_product = {.f_children = t20}};
@@ -3720,32 +3727,32 @@ bb10:
     t24 = h4_own4;
 #line 156 "examples/calculator/eval.hero"
     h4_own4 = t21;
-#line 3724 "main.c"
+#line 3731 "main.c"
     h_parse_Expr_release(&t24);
 #line 156 "examples/calculator/eval.hero"
-#line 3727 "main.c"
+#line 3734 "main.c"
     h_parse_Expr_retain(&t21);
 #line 156 "examples/calculator/eval.hero"
     t38 = h2_own2;
-#line 3731 "main.c"
+#line 3738 "main.c"
     h_parse_Expr_release(&t38);
 #line 156 "examples/calculator/eval.hero"
     t39 = h3_own3;
-#line 3735 "main.c"
+#line 3742 "main.c"
     h_parse_Expr_release(&t39);
 #line 156 "examples/calculator/eval.hero"
     t40 = h4_own4;
-#line 3739 "main.c"
+#line 3746 "main.c"
     h_parse_Expr_release(&t40);
 #line 156 "examples/calculator/eval.hero"
     t41 = h5_own5;
-#line 3743 "main.c"
+#line 3750 "main.c"
     h_parse_Expr_release(&t41);
     return t21;
 bb11:
 #line 155 "examples/calculator/eval.hero"
     t18 = h0_kept;
-#line 3749 "main.c"
+#line 3756 "main.c"
     hero_array_incref(t18);
 #line 155 "examples/calculator/eval.hero"
     t19 = (h_parse_Expr){.tag = h_parse_Expr_tag_sum, .as.c_sum = {.f_children = t18}};
@@ -3753,26 +3760,26 @@ bb11:
     t25 = h5_own5;
 #line 155 "examples/calculator/eval.hero"
     h5_own5 = t19;
-#line 3757 "main.c"
+#line 3764 "main.c"
     h_parse_Expr_release(&t25);
 #line 155 "examples/calculator/eval.hero"
-#line 3760 "main.c"
+#line 3767 "main.c"
     h_parse_Expr_retain(&t19);
 #line 155 "examples/calculator/eval.hero"
     t42 = h2_own2;
-#line 3764 "main.c"
+#line 3771 "main.c"
     h_parse_Expr_release(&t42);
 #line 155 "examples/calculator/eval.hero"
     t43 = h3_own3;
-#line 3768 "main.c"
+#line 3775 "main.c"
     h_parse_Expr_release(&t43);
 #line 155 "examples/calculator/eval.hero"
     t44 = h4_own4;
-#line 3772 "main.c"
+#line 3779 "main.c"
     h_parse_Expr_release(&t44);
 #line 155 "examples/calculator/eval.hero"
     t45 = h5_own5;
-#line 3776 "main.c"
+#line 3783 "main.c"
     h_parse_Expr_release(&t45);
     return t19;
 bb12:
@@ -3781,20 +3788,20 @@ bb12:
 
 #line 12 "examples/calculator/lex.hero"
 HeroStr h_lex_ERR_UNKNOWN_CHAR(void) {
-#line 3785 "main.c"
+#line 3792 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 13 "examples/calculator/lex.hero"
     t1 = HERO_STR_LIT(hero_str_28);
-#line 3791 "main.c"
+#line 3798 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 30 "examples/calculator/lex.hero"
 bool h_lex_at_end(h_lex_Lex h0_l) {
-#line 3798 "main.c"
+#line 3805 "main.c"
     h_lex_Lex t1 = {0};
     int64_t t2;
     h_lex_Lex t3 = {0};
@@ -3817,12 +3824,12 @@ bb0:
     t6 = t2 >= t5;
 #line 31 "examples/calculator/lex.hero"
     return t6;
-#line 3821 "main.c"
+#line 3828 "main.c"
 }
 
 #line 33 "examples/calculator/lex.hero"
 uint8_t h_lex_here(h_lex_Lex h0_l) {
-#line 3826 "main.c"
+#line 3833 "main.c"
     h_lex_Lex t1 = {0};
     HeroStr t2 = {0};
     h_lex_Lex t3 = {0};
@@ -3842,12 +3849,12 @@ bb0:
     t5 = hero_str_byte(t2, t4);
 #line 34 "examples/calculator/lex.hero"
     return t5;
-#line 3846 "main.c"
+#line 3853 "main.c"
 }
 
 #line 36 "examples/calculator/lex.hero"
 void h_lex_advance(h_lex_Lex *ph0_l) {
-#line 3851 "main.c"
+#line 3858 "main.c"
     h_lex_Lex h0_l = {0};
     h_lex_Lex t1 = {0};
     int64_t t2;
@@ -3866,14 +3873,14 @@ bb0:
     if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow();
 #line 37 "examples/calculator/lex.hero"
     h0_l.f_pos = t4;
-#line 3870 "main.c"
+#line 3877 "main.c"
     *ph0_l = h0_l;
     return;
 }
 
 #line 39 "examples/calculator/lex.hero"
 bool h_lex_is_digit(uint8_t h0_c) {
-#line 3877 "main.c"
+#line 3884 "main.c"
     bool h1_b0;
     uint8_t t1;
     uint8_t t2;
@@ -3912,12 +3919,12 @@ bb2:
     t7 = h1_b0;
 #line 40 "examples/calculator/lex.hero"
     return t7;
-#line 3916 "main.c"
+#line 3923 "main.c"
 }
 
 #line 42 "examples/calculator/lex.hero"
 bool h_lex_is_letter(uint8_t h0_c) {
-#line 3921 "main.c"
+#line 3928 "main.c"
     bool h1_b0;
     uint8_t t1;
     uint8_t t2;
@@ -3956,12 +3963,12 @@ bb2:
     t7 = h1_b0;
 #line 43 "examples/calculator/lex.hero"
     return t7;
-#line 3960 "main.c"
+#line 3967 "main.c"
 }
 
 #line 46 "examples/calculator/lex.hero"
 int64_t h_lex_read_number(h_lex_Lex *ph0_l) {
-#line 3965 "main.c"
+#line 3972 "main.c"
     h_lex_Lex h0_l = {0};
     int64_t h1_v;
     bool h2_b0;
@@ -4040,15 +4047,15 @@ bb2:
     t27 = h4_own4;
 #line 49 "examples/calculator/lex.hero"
     h4_own4 = t16;
-#line 4044 "main.c"
+#line 4051 "main.c"
     h_main_0opt0_release(&t27);
 #line 49 "examples/calculator/lex.hero"
     t28 = h3_f0;
-#line 4048 "main.c"
+#line 4055 "main.c"
     h_main_0opt0_retain(&t16);
 #line 49 "examples/calculator/lex.hero"
     h3_f0 = t16;
-#line 4052 "main.c"
+#line 4059 "main.c"
     h_main_0opt0_release(&t28);
 #line 49 "examples/calculator/lex.hero"
     t17 = h3_f0;
@@ -4064,15 +4071,15 @@ bb2:
 bb3:
 #line 51 "examples/calculator/lex.hero"
     t26 = h1_v;
-#line 4068 "main.c"
+#line 4075 "main.c"
     *ph0_l = h0_l;
 #line 46 "examples/calculator/lex.hero"
     t29 = h3_f0;
-#line 4072 "main.c"
+#line 4079 "main.c"
     h_main_0opt0_release(&t29);
 #line 46 "examples/calculator/lex.hero"
     t30 = h4_own4;
-#line 4076 "main.c"
+#line 4083 "main.c"
     h_main_0opt0_release(&t30);
     return t26;
 bb4:
@@ -4112,14 +4119,14 @@ bb7:
     t21 = h3_f0;
 #line 49 "examples/calculator/lex.hero"
     t22 = t21.as.err;
-#line 4116 "main.c"
+#line 4123 "main.c"
     hero_panic_must(t22);
     hero_unreachable();
 }
 
 #line 54 "examples/calculator/lex.hero"
 HeroStr h_lex_read_name(h_lex_Lex *ph0_l) {
-#line 4123 "main.c"
+#line 4130 "main.c"
     h_lex_Lex h0_l = {0};
     int64_t h1_start;
     bool h2_b0;
@@ -4188,15 +4195,15 @@ bb3:
     t16 = h3_own3;
 #line 58 "examples/calculator/lex.hero"
     h3_own3 = t15;
-#line 4192 "main.c"
+#line 4199 "main.c"
     hero_str_decref(t16);
     *ph0_l = h0_l;
 #line 54 "examples/calculator/lex.hero"
-#line 4196 "main.c"
+#line 4203 "main.c"
     hero_str_incref(t15);
 #line 54 "examples/calculator/lex.hero"
     t17 = h3_own3;
-#line 4200 "main.c"
+#line 4207 "main.c"
     hero_str_decref(t17);
     return t15;
 bb4:
@@ -4216,12 +4223,12 @@ bb5:
     t9 = h2_b0;
 #line 56 "examples/calculator/lex.hero"
     if (t9) goto bb2; else goto bb3;
-#line 4220 "main.c"
+#line 4227 "main.c"
 }
 
 #line 61 "examples/calculator/lex.hero"
 h_main_0opt1 h_lex_tokenize(HeroStr h0_text) {
-#line 4225 "main.c"
+#line 4232 "main.c"
     h_lex_Lex h1_l = {0};
     HeroArrayHeader * h2_out = {0};
     uint8_t h3_c;
@@ -4338,7 +4345,7 @@ bb0:
     t1 = h0_text;
 #line 62 "examples/calculator/lex.hero"
     t2 = INT64_C(0);
-#line 4342 "main.c"
+#line 4349 "main.c"
     hero_str_incref(t1);
 #line 62 "examples/calculator/lex.hero"
     t3 = (h_lex_Lex){.f_text = t1, .f_pos = t2};
@@ -4346,15 +4353,15 @@ bb0:
     t58 = h4_own4;
 #line 62 "examples/calculator/lex.hero"
     h4_own4 = t3;
-#line 4350 "main.c"
+#line 4357 "main.c"
     h_lex_Lex_release(&t58);
 #line 62 "examples/calculator/lex.hero"
     t59 = h1_l;
-#line 4354 "main.c"
+#line 4361 "main.c"
     h_lex_Lex_retain(&t3);
 #line 62 "examples/calculator/lex.hero"
     h1_l = t3;
-#line 4358 "main.c"
+#line 4365 "main.c"
     h_lex_Lex_release(&t59);
 #line 63 "examples/calculator/lex.hero"
     t4 = hero_array_new(&h_lex_Token_desc, 1);
@@ -4362,15 +4369,15 @@ bb0:
     t60 = h5_own5;
 #line 63 "examples/calculator/lex.hero"
     h5_own5 = t4;
-#line 4366 "main.c"
+#line 4373 "main.c"
     hero_array_decref(t60);
 #line 63 "examples/calculator/lex.hero"
     t61 = h2_out;
-#line 4370 "main.c"
+#line 4377 "main.c"
     hero_array_incref(t4);
 #line 63 "examples/calculator/lex.hero"
     h2_out = t4;
-#line 4374 "main.c"
+#line 4381 "main.c"
     hero_array_decref(t61);
     goto bb1;
 bb1:
@@ -4402,7 +4409,7 @@ bb2:
 bb3:
 #line 89 "examples/calculator/lex.hero"
     t56 = h2_out;
-#line 4406 "main.c"
+#line 4413 "main.c"
     hero_array_incref(t56);
 #line 89 "examples/calculator/lex.hero"
     t57 = (h_main_0opt1){.tag = INT64_C(0), .as.ok = t56};
@@ -4410,74 +4417,74 @@ bb3:
     t62 = h6_own6;
 #line 89 "examples/calculator/lex.hero"
     h6_own6 = t57;
-#line 4414 "main.c"
+#line 4421 "main.c"
     h_main_0opt1_release(&t62);
 #line 89 "examples/calculator/lex.hero"
-#line 4417 "main.c"
+#line 4424 "main.c"
     h_main_0opt1_retain(&t57);
 #line 89 "examples/calculator/lex.hero"
     t74 = h1_l;
-#line 4421 "main.c"
+#line 4428 "main.c"
     h_lex_Lex_release(&t74);
 #line 89 "examples/calculator/lex.hero"
     t75 = h2_out;
-#line 4425 "main.c"
+#line 4432 "main.c"
     hero_array_decref(t75);
 #line 89 "examples/calculator/lex.hero"
     t76 = h4_own4;
-#line 4429 "main.c"
+#line 4436 "main.c"
     h_lex_Lex_release(&t76);
 #line 89 "examples/calculator/lex.hero"
     t77 = h5_own5;
-#line 4433 "main.c"
+#line 4440 "main.c"
     hero_array_decref(t77);
 #line 89 "examples/calculator/lex.hero"
     t78 = h6_own6;
-#line 4437 "main.c"
+#line 4444 "main.c"
     h_main_0opt1_release(&t78);
 #line 89 "examples/calculator/lex.hero"
     t79 = h7_own7;
-#line 4441 "main.c"
+#line 4448 "main.c"
     h_lex_Token_release(&t79);
 #line 89 "examples/calculator/lex.hero"
     t80 = h8_own8;
-#line 4445 "main.c"
+#line 4452 "main.c"
     hero_str_decref(t80);
 #line 89 "examples/calculator/lex.hero"
     t81 = h9_own9;
-#line 4449 "main.c"
+#line 4456 "main.c"
     h_lex_Token_release(&t81);
 #line 89 "examples/calculator/lex.hero"
     t82 = h10_own10;
-#line 4453 "main.c"
+#line 4460 "main.c"
     h_lex_Token_release(&t82);
 #line 89 "examples/calculator/lex.hero"
     t83 = h11_own11;
-#line 4457 "main.c"
+#line 4464 "main.c"
     h_lex_Token_release(&t83);
 #line 89 "examples/calculator/lex.hero"
     t84 = h12_own12;
-#line 4461 "main.c"
+#line 4468 "main.c"
     h_lex_Token_release(&t84);
 #line 89 "examples/calculator/lex.hero"
     t85 = h13_own13;
-#line 4465 "main.c"
+#line 4472 "main.c"
     h_lex_Token_release(&t85);
 #line 89 "examples/calculator/lex.hero"
     t86 = h14_own14;
-#line 4469 "main.c"
+#line 4476 "main.c"
     hero_str_decref(t86);
 #line 89 "examples/calculator/lex.hero"
     t87 = h15_own15;
-#line 4473 "main.c"
+#line 4480 "main.c"
     hero_str_decref(t87);
 #line 89 "examples/calculator/lex.hero"
     t88 = h16_own16;
-#line 4477 "main.c"
+#line 4484 "main.c"
     hero_str_decref(t88);
 #line 89 "examples/calculator/lex.hero"
     t89 = h17_own17;
-#line 4481 "main.c"
+#line 4488 "main.c"
     h_main_0opt1_release(&t89);
     return t57;
 bb4:
@@ -4505,7 +4512,7 @@ bb7:
     t63 = h7_own7;
 #line 71 "examples/calculator/lex.hero"
     h7_own7 = t17;
-#line 4509 "main.c"
+#line 4516 "main.c"
     h_lex_Token_release(&t63);
 #line 71 "examples/calculator/lex.hero"
     hero_array_push_owned(&h2_out, &t17);
@@ -4527,10 +4534,10 @@ bb9:
     t64 = h8_own8;
 #line 73 "examples/calculator/lex.hero"
     h8_own8 = t22;
-#line 4531 "main.c"
+#line 4538 "main.c"
     hero_str_decref(t64);
 #line 73 "examples/calculator/lex.hero"
-#line 4534 "main.c"
+#line 4541 "main.c"
     hero_str_incref(t22);
 #line 73 "examples/calculator/lex.hero"
     t23 = (h_lex_Token){.tag = h_lex_Token_tag_name, .as.c_name = {.f_s = t22}};
@@ -4538,7 +4545,7 @@ bb9:
     t65 = h9_own9;
 #line 73 "examples/calculator/lex.hero"
     h9_own9 = t23;
-#line 4542 "main.c"
+#line 4549 "main.c"
     h_lex_Token_release(&t65);
 #line 73 "examples/calculator/lex.hero"
     hero_array_push_owned(&h2_out, &t23);
@@ -4562,7 +4569,7 @@ bb11:
     t66 = h10_own10;
 #line 75 "examples/calculator/lex.hero"
     h10_own10 = t29;
-#line 4566 "main.c"
+#line 4573 "main.c"
     h_lex_Token_release(&t66);
 #line 75 "examples/calculator/lex.hero"
     hero_array_push_owned(&h2_out, &t29);
@@ -4588,7 +4595,7 @@ bb13:
     t67 = h11_own11;
 #line 78 "examples/calculator/lex.hero"
     h11_own11 = t35;
-#line 4592 "main.c"
+#line 4599 "main.c"
     h_lex_Token_release(&t67);
 #line 78 "examples/calculator/lex.hero"
     hero_array_push_owned(&h2_out, &t35);
@@ -4614,7 +4621,7 @@ bb15:
     t68 = h12_own12;
 #line 81 "examples/calculator/lex.hero"
     h12_own12 = t41;
-#line 4618 "main.c"
+#line 4625 "main.c"
     h_lex_Token_release(&t68);
 #line 81 "examples/calculator/lex.hero"
     hero_array_push_owned(&h2_out, &t41);
@@ -4640,7 +4647,7 @@ bb17:
     t69 = h13_own13;
 #line 84 "examples/calculator/lex.hero"
     h13_own13 = t47;
-#line 4644 "main.c"
+#line 4651 "main.c"
     h_lex_Token_release(&t69);
 #line 84 "examples/calculator/lex.hero"
     hero_array_push_owned(&h2_out, &t47);
@@ -4656,7 +4663,7 @@ bb18:
     t70 = h14_own14;
 #line 87 "examples/calculator/lex.hero"
     h14_own14 = t49;
-#line 4660 "main.c"
+#line 4667 "main.c"
     hero_str_decref(t70);
 #line 87 "examples/calculator/lex.hero"
     t50 = HERO_STR_LIT(hero_str_29);
@@ -4670,7 +4677,7 @@ bb18:
     t71 = h15_own15;
 #line 87 "examples/calculator/lex.hero"
     h15_own15 = t53;
-#line 4674 "main.c"
+#line 4681 "main.c"
     hero_str_decref(t71);
 #line 87 "examples/calculator/lex.hero"
     t54 = hero_str_concat(t50, t53);
@@ -4678,13 +4685,13 @@ bb18:
     t72 = h16_own16;
 #line 87 "examples/calculator/lex.hero"
     h16_own16 = t54;
-#line 4682 "main.c"
+#line 4689 "main.c"
     hero_str_decref(t72);
 #line 87 "examples/calculator/lex.hero"
-#line 4685 "main.c"
+#line 4692 "main.c"
     hero_str_incref(t49);
 #line 87 "examples/calculator/lex.hero"
-#line 4688 "main.c"
+#line 4695 "main.c"
     hero_str_incref(t54);
 #line 87 "examples/calculator/lex.hero"
     t55 = (h_main_0opt1){.tag = INT64_C(1), .as.err = {.code = t49, .msg = t54}};
@@ -4692,120 +4699,120 @@ bb18:
     t73 = h17_own17;
 #line 87 "examples/calculator/lex.hero"
     h17_own17 = t55;
-#line 4696 "main.c"
+#line 4703 "main.c"
     h_main_0opt1_release(&t73);
 #line 87 "examples/calculator/lex.hero"
-#line 4699 "main.c"
+#line 4706 "main.c"
     h_main_0opt1_retain(&t55);
 #line 87 "examples/calculator/lex.hero"
     t90 = h1_l;
-#line 4703 "main.c"
+#line 4710 "main.c"
     h_lex_Lex_release(&t90);
 #line 87 "examples/calculator/lex.hero"
     t91 = h2_out;
-#line 4707 "main.c"
+#line 4714 "main.c"
     hero_array_decref(t91);
 #line 87 "examples/calculator/lex.hero"
     t92 = h4_own4;
-#line 4711 "main.c"
+#line 4718 "main.c"
     h_lex_Lex_release(&t92);
 #line 87 "examples/calculator/lex.hero"
     t93 = h5_own5;
-#line 4715 "main.c"
+#line 4722 "main.c"
     hero_array_decref(t93);
 #line 87 "examples/calculator/lex.hero"
     t94 = h6_own6;
-#line 4719 "main.c"
+#line 4726 "main.c"
     h_main_0opt1_release(&t94);
 #line 87 "examples/calculator/lex.hero"
     t95 = h7_own7;
-#line 4723 "main.c"
+#line 4730 "main.c"
     h_lex_Token_release(&t95);
 #line 87 "examples/calculator/lex.hero"
     t96 = h8_own8;
-#line 4727 "main.c"
+#line 4734 "main.c"
     hero_str_decref(t96);
 #line 87 "examples/calculator/lex.hero"
     t97 = h9_own9;
-#line 4731 "main.c"
+#line 4738 "main.c"
     h_lex_Token_release(&t97);
 #line 87 "examples/calculator/lex.hero"
     t98 = h10_own10;
-#line 4735 "main.c"
+#line 4742 "main.c"
     h_lex_Token_release(&t98);
 #line 87 "examples/calculator/lex.hero"
     t99 = h11_own11;
-#line 4739 "main.c"
+#line 4746 "main.c"
     h_lex_Token_release(&t99);
 #line 87 "examples/calculator/lex.hero"
     t100 = h12_own12;
-#line 4743 "main.c"
+#line 4750 "main.c"
     h_lex_Token_release(&t100);
 #line 87 "examples/calculator/lex.hero"
     t101 = h13_own13;
-#line 4747 "main.c"
+#line 4754 "main.c"
     h_lex_Token_release(&t101);
 #line 87 "examples/calculator/lex.hero"
     t102 = h14_own14;
-#line 4751 "main.c"
+#line 4758 "main.c"
     hero_str_decref(t102);
 #line 87 "examples/calculator/lex.hero"
     t103 = h15_own15;
-#line 4755 "main.c"
+#line 4762 "main.c"
     hero_str_decref(t103);
 #line 87 "examples/calculator/lex.hero"
     t104 = h16_own16;
-#line 4759 "main.c"
+#line 4766 "main.c"
     hero_str_decref(t104);
 #line 87 "examples/calculator/lex.hero"
     t105 = h17_own17;
-#line 4763 "main.c"
+#line 4770 "main.c"
     h_main_0opt1_release(&t105);
     return t55;
 }
 
 #line 13 "examples/calculator/parse.hero"
 HeroStr h_parse_ERR_EXPECTED_FACTOR(void) {
-#line 4770 "main.c"
+#line 4777 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 14 "examples/calculator/parse.hero"
     t1 = HERO_STR_LIT(hero_str_38);
-#line 4776 "main.c"
+#line 4783 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 16 "examples/calculator/parse.hero"
 HeroStr h_parse_ERR_UNCLOSED_PAREN(void) {
-#line 4783 "main.c"
+#line 4790 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 17 "examples/calculator/parse.hero"
     t1 = HERO_STR_LIT(hero_str_39);
-#line 4789 "main.c"
+#line 4796 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 19 "examples/calculator/parse.hero"
 HeroStr h_parse_ERR_UNEXPECTED_END(void) {
-#line 4796 "main.c"
+#line 4803 "main.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
 #line 20 "examples/calculator/parse.hero"
     t1 = HERO_STR_LIT(hero_str_40);
-#line 4802 "main.c"
+#line 4809 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 41 "examples/calculator/parse.hero"
 bool h_parse_parse_at_end(h_parse_Parse h0_p) {
-#line 4809 "main.c"
+#line 4816 "main.c"
     h_parse_Parse t1 = {0};
     int64_t t2;
     h_parse_Parse t3 = {0};
@@ -4828,12 +4835,12 @@ bb0:
     t6 = t2 >= t5;
 #line 42 "examples/calculator/parse.hero"
     return t6;
-#line 4832 "main.c"
+#line 4839 "main.c"
 }
 
 #line 44 "examples/calculator/parse.hero"
 h_lex_Token h_parse_parse_here(h_parse_Parse h0_p) {
-#line 4837 "main.c"
+#line 4844 "main.c"
     h_parse_Parse t1 = {0};
     HeroArrayHeader * t2 = {0};
     h_parse_Parse t3 = {0};
@@ -4851,14 +4858,14 @@ bb0:
     t4 = t3.f_pos;
 #line 45 "examples/calculator/parse.hero"
     t5 = *(h_lex_Token const *)hero_array_at(t2, t4);
-#line 4855 "main.c"
+#line 4862 "main.c"
     h_lex_Token_retain(&t5);
     return t5;
 }
 
 #line 47 "examples/calculator/parse.hero"
 void h_parse_parse_advance(h_parse_Parse *ph0_p) {
-#line 4862 "main.c"
+#line 4869 "main.c"
     h_parse_Parse h0_p = {0};
     h_parse_Parse t1 = {0};
     int64_t t2;
@@ -4877,14 +4884,14 @@ bb0:
     if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow();
 #line 48 "examples/calculator/parse.hero"
     h0_p.f_pos = t4;
-#line 4881 "main.c"
+#line 4888 "main.c"
     *ph0_p = h0_p;
     return;
 }
 
 #line 58 "examples/calculator/parse.hero"
 h_main_0opt2 h_parse_factor(h_parse_Parse *ph0_p) {
-#line 4888 "main.c"
+#line 4895 "main.c"
     h_parse_Parse h0_p = {0};
     h_lex_Token h1_t = {0};
     h_lex_Token h2_s0 = {0};
@@ -4996,15 +5003,15 @@ bb1:
     t28 = h6_own6;
 #line 62 "examples/calculator/parse.hero"
     h6_own6 = t7;
-#line 5000 "main.c"
+#line 5007 "main.c"
     h_lex_Token_release(&t28);
 #line 62 "examples/calculator/parse.hero"
     t29 = h1_t;
-#line 5004 "main.c"
+#line 5011 "main.c"
     h_lex_Token_retain(&t7);
 #line 62 "examples/calculator/parse.hero"
     h1_t = t7;
-#line 5008 "main.c"
+#line 5015 "main.c"
     h_lex_Token_release(&t29);
 #line 63 "examples/calculator/parse.hero"
     h_parse_parse_advance(&h0_p);
@@ -5012,11 +5019,11 @@ bb1:
     t8 = h1_t;
 #line 65 "examples/calculator/parse.hero"
     t30 = h2_s0;
-#line 5016 "main.c"
+#line 5023 "main.c"
     h_lex_Token_retain(&t8);
 #line 65 "examples/calculator/parse.hero"
     h2_s0 = t8;
-#line 5020 "main.c"
+#line 5027 "main.c"
     h_lex_Token_release(&t30);
 #line 65 "examples/calculator/parse.hero"
     t9 = h2_s0;
@@ -5048,14 +5055,14 @@ bb2:
     t31 = h7_own7;
 #line 60 "examples/calculator/parse.hero"
     h7_own7 = t3;
-#line 5052 "main.c"
+#line 5059 "main.c"
     hero_str_decref(t31);
 #line 60 "examples/calculator/parse.hero"
     t4 = HERO_STR_LIT(hero_str_41);
-#line 5056 "main.c"
+#line 5063 "main.c"
     hero_str_incref(t3);
 #line 60 "examples/calculator/parse.hero"
-#line 5059 "main.c"
+#line 5066 "main.c"
     hero_str_incref(t4);
 #line 60 "examples/calculator/parse.hero"
     t5 = (h_main_0opt2){.tag = INT64_C(1), .as.err = {.code = t3, .msg = t4}};
@@ -5063,71 +5070,71 @@ bb2:
     t32 = h8_own8;
 #line 60 "examples/calculator/parse.hero"
     h8_own8 = t5;
-#line 5067 "main.c"
+#line 5074 "main.c"
     h_main_0opt2_release(&t32);
     *ph0_p = h0_p;
 #line 58 "examples/calculator/parse.hero"
-#line 5071 "main.c"
+#line 5078 "main.c"
     h_main_0opt2_retain(&t5);
 #line 58 "examples/calculator/parse.hero"
     t46 = h1_t;
-#line 5075 "main.c"
+#line 5082 "main.c"
     h_lex_Token_release(&t46);
 #line 58 "examples/calculator/parse.hero"
     t47 = h2_s0;
-#line 5079 "main.c"
+#line 5086 "main.c"
     h_lex_Token_release(&t47);
 #line 58 "examples/calculator/parse.hero"
     t48 = h3_r0;
-#line 5083 "main.c"
+#line 5090 "main.c"
     h_main_0opt2_release(&t48);
 #line 58 "examples/calculator/parse.hero"
     t49 = h5_x;
-#line 5087 "main.c"
+#line 5094 "main.c"
     h_lex_Token_c_name_release(&t49);
 #line 58 "examples/calculator/parse.hero"
     t50 = h6_own6;
-#line 5091 "main.c"
+#line 5098 "main.c"
     h_lex_Token_release(&t50);
 #line 58 "examples/calculator/parse.hero"
     t51 = h7_own7;
-#line 5095 "main.c"
+#line 5102 "main.c"
     hero_str_decref(t51);
 #line 58 "examples/calculator/parse.hero"
     t52 = h8_own8;
-#line 5099 "main.c"
+#line 5106 "main.c"
     h_main_0opt2_release(&t52);
 #line 58 "examples/calculator/parse.hero"
     t53 = h9_own9;
-#line 5103 "main.c"
+#line 5110 "main.c"
     h_main_0opt2_release(&t53);
 #line 58 "examples/calculator/parse.hero"
     t54 = h10_own10;
-#line 5107 "main.c"
+#line 5114 "main.c"
     h_parse_Expr_release(&t54);
 #line 58 "examples/calculator/parse.hero"
     t55 = h11_own11;
-#line 5111 "main.c"
+#line 5118 "main.c"
     h_main_0opt2_release(&t55);
 #line 58 "examples/calculator/parse.hero"
     t56 = h12_own12;
-#line 5115 "main.c"
+#line 5122 "main.c"
     h_parse_Expr_release(&t56);
 #line 58 "examples/calculator/parse.hero"
     t57 = h13_own13;
-#line 5119 "main.c"
+#line 5126 "main.c"
     h_main_0opt2_release(&t57);
 #line 58 "examples/calculator/parse.hero"
     t58 = h14_own14;
-#line 5123 "main.c"
+#line 5130 "main.c"
     h_main_0opt2_release(&t58);
 #line 58 "examples/calculator/parse.hero"
     t59 = h15_own15;
-#line 5127 "main.c"
+#line 5134 "main.c"
     hero_str_decref(t59);
 #line 58 "examples/calculator/parse.hero"
     t60 = h16_own16;
-#line 5131 "main.c"
+#line 5138 "main.c"
     h_main_0opt2_release(&t60);
     return t5;
 bb3:
@@ -5135,77 +5142,77 @@ bb3:
 bb4:
 #line 65 "examples/calculator/parse.hero"
     t27 = h3_r0;
-#line 5139 "main.c"
+#line 5146 "main.c"
     h_main_0opt2_retain(&t27);
 #line 65 "examples/calculator/parse.hero"
     t33 = h9_own9;
 #line 65 "examples/calculator/parse.hero"
     h9_own9 = t27;
-#line 5145 "main.c"
+#line 5152 "main.c"
     h_main_0opt2_release(&t33);
     *ph0_p = h0_p;
 #line 58 "examples/calculator/parse.hero"
-#line 5149 "main.c"
+#line 5156 "main.c"
     h_main_0opt2_retain(&t27);
 #line 58 "examples/calculator/parse.hero"
     t61 = h1_t;
-#line 5153 "main.c"
+#line 5160 "main.c"
     h_lex_Token_release(&t61);
 #line 58 "examples/calculator/parse.hero"
     t62 = h2_s0;
-#line 5157 "main.c"
+#line 5164 "main.c"
     h_lex_Token_release(&t62);
 #line 58 "examples/calculator/parse.hero"
     t63 = h3_r0;
-#line 5161 "main.c"
+#line 5168 "main.c"
     h_main_0opt2_release(&t63);
 #line 58 "examples/calculator/parse.hero"
     t64 = h5_x;
-#line 5165 "main.c"
+#line 5172 "main.c"
     h_lex_Token_c_name_release(&t64);
 #line 58 "examples/calculator/parse.hero"
     t65 = h6_own6;
-#line 5169 "main.c"
+#line 5176 "main.c"
     h_lex_Token_release(&t65);
 #line 58 "examples/calculator/parse.hero"
     t66 = h7_own7;
-#line 5173 "main.c"
+#line 5180 "main.c"
     hero_str_decref(t66);
 #line 58 "examples/calculator/parse.hero"
     t67 = h8_own8;
-#line 5177 "main.c"
+#line 5184 "main.c"
     h_main_0opt2_release(&t67);
 #line 58 "examples/calculator/parse.hero"
     t68 = h9_own9;
-#line 5181 "main.c"
+#line 5188 "main.c"
     h_main_0opt2_release(&t68);
 #line 58 "examples/calculator/parse.hero"
     t69 = h10_own10;
-#line 5185 "main.c"
+#line 5192 "main.c"
     h_parse_Expr_release(&t69);
 #line 58 "examples/calculator/parse.hero"
     t70 = h11_own11;
-#line 5189 "main.c"
+#line 5196 "main.c"
     h_main_0opt2_release(&t70);
 #line 58 "examples/calculator/parse.hero"
     t71 = h12_own12;
-#line 5193 "main.c"
+#line 5200 "main.c"
     h_parse_Expr_release(&t71);
 #line 58 "examples/calculator/parse.hero"
     t72 = h13_own13;
-#line 5197 "main.c"
+#line 5204 "main.c"
     h_main_0opt2_release(&t72);
 #line 58 "examples/calculator/parse.hero"
     t73 = h14_own14;
-#line 5201 "main.c"
+#line 5208 "main.c"
     h_main_0opt2_release(&t73);
 #line 58 "examples/calculator/parse.hero"
     t74 = h15_own15;
-#line 5205 "main.c"
+#line 5212 "main.c"
     hero_str_decref(t74);
 #line 58 "examples/calculator/parse.hero"
     t75 = h16_own16;
-#line 5209 "main.c"
+#line 5216 "main.c"
     h_main_0opt2_release(&t75);
     return t27;
 bb5:
@@ -5225,10 +5232,10 @@ bb5:
     t34 = h10_own10;
 #line 66 "examples/calculator/parse.hero"
     h10_own10 = t15;
-#line 5229 "main.c"
+#line 5236 "main.c"
     h_parse_Expr_release(&t34);
 #line 66 "examples/calculator/parse.hero"
-#line 5232 "main.c"
+#line 5239 "main.c"
     h_parse_Expr_retain(&t15);
 #line 66 "examples/calculator/parse.hero"
     t16 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t15};
@@ -5236,15 +5243,15 @@ bb5:
     t35 = h11_own11;
 #line 66 "examples/calculator/parse.hero"
     h11_own11 = t16;
-#line 5240 "main.c"
+#line 5247 "main.c"
     h_main_0opt2_release(&t35);
 #line 65 "examples/calculator/parse.hero"
     t36 = h3_r0;
-#line 5244 "main.c"
+#line 5251 "main.c"
     h_main_0opt2_retain(&t16);
 #line 65 "examples/calculator/parse.hero"
     h3_r0 = t16;
-#line 5248 "main.c"
+#line 5255 "main.c"
     h_main_0opt2_release(&t36);
     goto bb4;
 bb6:
@@ -5254,17 +5261,17 @@ bb6:
     t18 = t17.as.c_name;
 #line 67 "examples/calculator/parse.hero"
     t37 = h5_x;
-#line 5258 "main.c"
+#line 5265 "main.c"
     h_lex_Token_c_name_retain(&t18);
 #line 67 "examples/calculator/parse.hero"
     h5_x = t18;
-#line 5262 "main.c"
+#line 5269 "main.c"
     h_lex_Token_c_name_release(&t37);
 #line 67 "examples/calculator/parse.hero"
     t19 = h5_x;
 #line 67 "examples/calculator/parse.hero"
     t20 = t19.f_s;
-#line 5268 "main.c"
+#line 5275 "main.c"
     hero_str_incref(t20);
 #line 67 "examples/calculator/parse.hero"
     t21 = (h_parse_Expr){.tag = h_parse_Expr_tag_variable, .as.c_variable = {.f_name = t20}};
@@ -5272,10 +5279,10 @@ bb6:
     t38 = h12_own12;
 #line 67 "examples/calculator/parse.hero"
     h12_own12 = t21;
-#line 5276 "main.c"
+#line 5283 "main.c"
     h_parse_Expr_release(&t38);
 #line 67 "examples/calculator/parse.hero"
-#line 5279 "main.c"
+#line 5286 "main.c"
     h_parse_Expr_retain(&t21);
 #line 67 "examples/calculator/parse.hero"
     t22 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t21};
@@ -5283,15 +5290,15 @@ bb6:
     t39 = h13_own13;
 #line 67 "examples/calculator/parse.hero"
     h13_own13 = t22;
-#line 5287 "main.c"
+#line 5294 "main.c"
     h_main_0opt2_release(&t39);
 #line 65 "examples/calculator/parse.hero"
     t40 = h3_r0;
-#line 5291 "main.c"
+#line 5298 "main.c"
     h_main_0opt2_retain(&t22);
 #line 65 "examples/calculator/parse.hero"
     h3_r0 = t22;
-#line 5295 "main.c"
+#line 5302 "main.c"
     h_main_0opt2_release(&t40);
     goto bb4;
 bb7:
@@ -5301,15 +5308,15 @@ bb7:
     t41 = h14_own14;
 #line 68 "examples/calculator/parse.hero"
     h14_own14 = t23;
-#line 5305 "main.c"
+#line 5312 "main.c"
     h_main_0opt2_release(&t41);
 #line 65 "examples/calculator/parse.hero"
     t42 = h3_r0;
-#line 5309 "main.c"
+#line 5316 "main.c"
     h_main_0opt2_retain(&t23);
 #line 65 "examples/calculator/parse.hero"
     h3_r0 = t23;
-#line 5313 "main.c"
+#line 5320 "main.c"
     h_main_0opt2_release(&t42);
     goto bb4;
 bb8:
@@ -5319,14 +5326,14 @@ bb8:
     t43 = h15_own15;
 #line 69 "examples/calculator/parse.hero"
     h15_own15 = t24;
-#line 5323 "main.c"
+#line 5330 "main.c"
     hero_str_decref(t43);
 #line 69 "examples/calculator/parse.hero"
     t25 = HERO_STR_LIT(hero_str_42);
-#line 5327 "main.c"
+#line 5334 "main.c"
     hero_str_incref(t24);
 #line 69 "examples/calculator/parse.hero"
-#line 5330 "main.c"
+#line 5337 "main.c"
     hero_str_incref(t25);
 #line 69 "examples/calculator/parse.hero"
     t26 = (h_main_0opt2){.tag = INT64_C(1), .as.err = {.code = t24, .msg = t25}};
@@ -5334,22 +5341,22 @@ bb8:
     t44 = h16_own16;
 #line 69 "examples/calculator/parse.hero"
     h16_own16 = t26;
-#line 5338 "main.c"
+#line 5345 "main.c"
     h_main_0opt2_release(&t44);
 #line 65 "examples/calculator/parse.hero"
     t45 = h3_r0;
-#line 5342 "main.c"
+#line 5349 "main.c"
     h_main_0opt2_retain(&t26);
 #line 65 "examples/calculator/parse.hero"
     h3_r0 = t26;
-#line 5346 "main.c"
+#line 5353 "main.c"
     h_main_0opt2_release(&t45);
     goto bb4;
 }
 
 #line 72 "examples/calculator/parse.hero"
 h_main_0opt2 h_parse_group(h_parse_Parse *ph0_p) {
-#line 5353 "main.c"
+#line 5360 "main.c"
     h_parse_Parse h0_p = {0};
     h_main_0opt2 h1_f0 = {0};
     h_parse_Expr h2_inner = {0};
@@ -5450,15 +5457,15 @@ bb0:
     t25 = h3_own3;
 #line 73 "examples/calculator/parse.hero"
     h3_own3 = t1;
-#line 5454 "main.c"
+#line 5461 "main.c"
     h_main_0opt2_release(&t25);
 #line 73 "examples/calculator/parse.hero"
     t26 = h1_f0;
-#line 5458 "main.c"
+#line 5465 "main.c"
     h_main_0opt2_retain(&t1);
 #line 73 "examples/calculator/parse.hero"
     h1_f0 = t1;
-#line 5462 "main.c"
+#line 5469 "main.c"
     h_main_0opt2_release(&t26);
 #line 73 "examples/calculator/parse.hero"
     t2 = h1_f0;
@@ -5478,11 +5485,11 @@ bb1:
     t10 = t9.as.ok;
 #line 73 "examples/calculator/parse.hero"
     t27 = h2_inner;
-#line 5482 "main.c"
+#line 5489 "main.c"
     h_parse_Expr_retain(&t10);
 #line 73 "examples/calculator/parse.hero"
     h2_inner = t10;
-#line 5486 "main.c"
+#line 5493 "main.c"
     h_parse_Expr_release(&t27);
 #line 74 "examples/calculator/parse.hero"
     t11 = h0_p;
@@ -5496,7 +5503,7 @@ bb2:
     t6 = h1_f0;
 #line 73 "examples/calculator/parse.hero"
     t7 = t6.as.err;
-#line 5500 "main.c"
+#line 5507 "main.c"
     hero_failure_retain(&t7);
 #line 73 "examples/calculator/parse.hero"
     t8 = (h_main_0opt2){.tag = INT64_C(1), .as.err = t7};
@@ -5504,55 +5511,55 @@ bb2:
     t28 = h4_own4;
 #line 73 "examples/calculator/parse.hero"
     h4_own4 = t8;
-#line 5508 "main.c"
+#line 5515 "main.c"
     h_main_0opt2_release(&t28);
     *ph0_p = h0_p;
 #line 72 "examples/calculator/parse.hero"
-#line 5512 "main.c"
+#line 5519 "main.c"
     h_main_0opt2_retain(&t8);
 #line 72 "examples/calculator/parse.hero"
     t36 = h1_f0;
-#line 5516 "main.c"
+#line 5523 "main.c"
     h_main_0opt2_release(&t36);
 #line 72 "examples/calculator/parse.hero"
     t37 = h2_inner;
-#line 5520 "main.c"
+#line 5527 "main.c"
     h_parse_Expr_release(&t37);
 #line 72 "examples/calculator/parse.hero"
     t38 = h3_own3;
-#line 5524 "main.c"
+#line 5531 "main.c"
     h_main_0opt2_release(&t38);
 #line 72 "examples/calculator/parse.hero"
     t39 = h4_own4;
-#line 5528 "main.c"
+#line 5535 "main.c"
     h_main_0opt2_release(&t39);
 #line 72 "examples/calculator/parse.hero"
     t40 = h5_own5;
-#line 5532 "main.c"
+#line 5539 "main.c"
     h_lex_Token_release(&t40);
 #line 72 "examples/calculator/parse.hero"
     t41 = h6_own6;
-#line 5536 "main.c"
+#line 5543 "main.c"
     h_lex_Token_release(&t41);
 #line 72 "examples/calculator/parse.hero"
     t42 = h7_own7;
-#line 5540 "main.c"
+#line 5547 "main.c"
     hero_str_decref(t42);
 #line 72 "examples/calculator/parse.hero"
     t43 = h8_own8;
-#line 5544 "main.c"
+#line 5551 "main.c"
     h_main_0opt2_release(&t43);
 #line 72 "examples/calculator/parse.hero"
     t44 = h9_own9;
-#line 5548 "main.c"
+#line 5555 "main.c"
     h_main_0opt2_release(&t44);
 #line 72 "examples/calculator/parse.hero"
     t45 = h10_own10;
-#line 5552 "main.c"
+#line 5559 "main.c"
     hero_str_decref(t45);
 #line 72 "examples/calculator/parse.hero"
     t46 = h11_own11;
-#line 5556 "main.c"
+#line 5563 "main.c"
     h_main_0opt2_release(&t46);
     return t8;
 bb3:
@@ -5564,7 +5571,7 @@ bb3:
     t29 = h5_own5;
 #line 76 "examples/calculator/parse.hero"
     h5_own5 = t17;
-#line 5568 "main.c"
+#line 5575 "main.c"
     h_lex_Token_release(&t29);
 #line 76 "examples/calculator/parse.hero"
     t18 = (h_lex_Token){.tag = h_lex_Token_tag_rparen};
@@ -5572,7 +5579,7 @@ bb3:
     t30 = h6_own6;
 #line 76 "examples/calculator/parse.hero"
     h6_own6 = t18;
-#line 5576 "main.c"
+#line 5583 "main.c"
     h_lex_Token_release(&t30);
 #line 76 "examples/calculator/parse.hero"
     t19 = !h_lex_Token_eq(&t17, &t18);
@@ -5586,14 +5593,14 @@ bb4:
     t31 = h7_own7;
 #line 75 "examples/calculator/parse.hero"
     h7_own7 = t13;
-#line 5590 "main.c"
+#line 5597 "main.c"
     hero_str_decref(t31);
 #line 75 "examples/calculator/parse.hero"
     t14 = HERO_STR_LIT(hero_str_43);
-#line 5594 "main.c"
+#line 5601 "main.c"
     hero_str_incref(t13);
 #line 75 "examples/calculator/parse.hero"
-#line 5597 "main.c"
+#line 5604 "main.c"
     hero_str_incref(t14);
 #line 75 "examples/calculator/parse.hero"
     t15 = (h_main_0opt2){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t14}};
@@ -5601,55 +5608,55 @@ bb4:
     t32 = h8_own8;
 #line 75 "examples/calculator/parse.hero"
     h8_own8 = t15;
-#line 5605 "main.c"
+#line 5612 "main.c"
     h_main_0opt2_release(&t32);
     *ph0_p = h0_p;
 #line 72 "examples/calculator/parse.hero"
-#line 5609 "main.c"
+#line 5616 "main.c"
     h_main_0opt2_retain(&t15);
 #line 72 "examples/calculator/parse.hero"
     t47 = h1_f0;
-#line 5613 "main.c"
+#line 5620 "main.c"
     h_main_0opt2_release(&t47);
 #line 72 "examples/calculator/parse.hero"
     t48 = h2_inner;
-#line 5617 "main.c"
+#line 5624 "main.c"
     h_parse_Expr_release(&t48);
 #line 72 "examples/calculator/parse.hero"
     t49 = h3_own3;
-#line 5621 "main.c"
+#line 5628 "main.c"
     h_main_0opt2_release(&t49);
 #line 72 "examples/calculator/parse.hero"
     t50 = h4_own4;
-#line 5625 "main.c"
+#line 5632 "main.c"
     h_main_0opt2_release(&t50);
 #line 72 "examples/calculator/parse.hero"
     t51 = h5_own5;
-#line 5629 "main.c"
+#line 5636 "main.c"
     h_lex_Token_release(&t51);
 #line 72 "examples/calculator/parse.hero"
     t52 = h6_own6;
-#line 5633 "main.c"
+#line 5640 "main.c"
     h_lex_Token_release(&t52);
 #line 72 "examples/calculator/parse.hero"
     t53 = h7_own7;
-#line 5637 "main.c"
+#line 5644 "main.c"
     hero_str_decref(t53);
 #line 72 "examples/calculator/parse.hero"
     t54 = h8_own8;
-#line 5641 "main.c"
+#line 5648 "main.c"
     h_main_0opt2_release(&t54);
 #line 72 "examples/calculator/parse.hero"
     t55 = h9_own9;
-#line 5645 "main.c"
+#line 5652 "main.c"
     h_main_0opt2_release(&t55);
 #line 72 "examples/calculator/parse.hero"
     t56 = h10_own10;
-#line 5649 "main.c"
+#line 5656 "main.c"
     hero_str_decref(t56);
 #line 72 "examples/calculator/parse.hero"
     t57 = h11_own11;
-#line 5653 "main.c"
+#line 5660 "main.c"
     h_main_0opt2_release(&t57);
     return t15;
 bb5:
@@ -5659,7 +5666,7 @@ bb6:
     h_parse_parse_advance(&h0_p);
 #line 79 "examples/calculator/parse.hero"
     t23 = h2_inner;
-#line 5663 "main.c"
+#line 5670 "main.c"
     h_parse_Expr_retain(&t23);
 #line 79 "examples/calculator/parse.hero"
     t24 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t23};
@@ -5667,55 +5674,55 @@ bb6:
     t33 = h9_own9;
 #line 79 "examples/calculator/parse.hero"
     h9_own9 = t24;
-#line 5671 "main.c"
+#line 5678 "main.c"
     h_main_0opt2_release(&t33);
     *ph0_p = h0_p;
 #line 72 "examples/calculator/parse.hero"
-#line 5675 "main.c"
+#line 5682 "main.c"
     h_main_0opt2_retain(&t24);
 #line 72 "examples/calculator/parse.hero"
     t58 = h1_f0;
-#line 5679 "main.c"
+#line 5686 "main.c"
     h_main_0opt2_release(&t58);
 #line 72 "examples/calculator/parse.hero"
     t59 = h2_inner;
-#line 5683 "main.c"
+#line 5690 "main.c"
     h_parse_Expr_release(&t59);
 #line 72 "examples/calculator/parse.hero"
     t60 = h3_own3;
-#line 5687 "main.c"
+#line 5694 "main.c"
     h_main_0opt2_release(&t60);
 #line 72 "examples/calculator/parse.hero"
     t61 = h4_own4;
-#line 5691 "main.c"
+#line 5698 "main.c"
     h_main_0opt2_release(&t61);
 #line 72 "examples/calculator/parse.hero"
     t62 = h5_own5;
-#line 5695 "main.c"
+#line 5702 "main.c"
     h_lex_Token_release(&t62);
 #line 72 "examples/calculator/parse.hero"
     t63 = h6_own6;
-#line 5699 "main.c"
+#line 5706 "main.c"
     h_lex_Token_release(&t63);
 #line 72 "examples/calculator/parse.hero"
     t64 = h7_own7;
-#line 5703 "main.c"
+#line 5710 "main.c"
     hero_str_decref(t64);
 #line 72 "examples/calculator/parse.hero"
     t65 = h8_own8;
-#line 5707 "main.c"
+#line 5714 "main.c"
     h_main_0opt2_release(&t65);
 #line 72 "examples/calculator/parse.hero"
     t66 = h9_own9;
-#line 5711 "main.c"
+#line 5718 "main.c"
     h_main_0opt2_release(&t66);
 #line 72 "examples/calculator/parse.hero"
     t67 = h10_own10;
-#line 5715 "main.c"
+#line 5722 "main.c"
     hero_str_decref(t67);
 #line 72 "examples/calculator/parse.hero"
     t68 = h11_own11;
-#line 5719 "main.c"
+#line 5726 "main.c"
     h_main_0opt2_release(&t68);
     return t24;
 bb7:
@@ -5725,14 +5732,14 @@ bb7:
     t34 = h10_own10;
 #line 77 "examples/calculator/parse.hero"
     h10_own10 = t20;
-#line 5729 "main.c"
+#line 5736 "main.c"
     hero_str_decref(t34);
 #line 77 "examples/calculator/parse.hero"
     t21 = HERO_STR_LIT(hero_str_43);
-#line 5733 "main.c"
+#line 5740 "main.c"
     hero_str_incref(t20);
 #line 77 "examples/calculator/parse.hero"
-#line 5736 "main.c"
+#line 5743 "main.c"
     hero_str_incref(t21);
 #line 77 "examples/calculator/parse.hero"
     t22 = (h_main_0opt2){.tag = INT64_C(1), .as.err = {.code = t20, .msg = t21}};
@@ -5740,55 +5747,55 @@ bb7:
     t35 = h11_own11;
 #line 77 "examples/calculator/parse.hero"
     h11_own11 = t22;
-#line 5744 "main.c"
+#line 5751 "main.c"
     h_main_0opt2_release(&t35);
     *ph0_p = h0_p;
 #line 72 "examples/calculator/parse.hero"
-#line 5748 "main.c"
+#line 5755 "main.c"
     h_main_0opt2_retain(&t22);
 #line 72 "examples/calculator/parse.hero"
     t69 = h1_f0;
-#line 5752 "main.c"
+#line 5759 "main.c"
     h_main_0opt2_release(&t69);
 #line 72 "examples/calculator/parse.hero"
     t70 = h2_inner;
-#line 5756 "main.c"
+#line 5763 "main.c"
     h_parse_Expr_release(&t70);
 #line 72 "examples/calculator/parse.hero"
     t71 = h3_own3;
-#line 5760 "main.c"
+#line 5767 "main.c"
     h_main_0opt2_release(&t71);
 #line 72 "examples/calculator/parse.hero"
     t72 = h4_own4;
-#line 5764 "main.c"
+#line 5771 "main.c"
     h_main_0opt2_release(&t72);
 #line 72 "examples/calculator/parse.hero"
     t73 = h5_own5;
-#line 5768 "main.c"
+#line 5775 "main.c"
     h_lex_Token_release(&t73);
 #line 72 "examples/calculator/parse.hero"
     t74 = h6_own6;
-#line 5772 "main.c"
+#line 5779 "main.c"
     h_lex_Token_release(&t74);
 #line 72 "examples/calculator/parse.hero"
     t75 = h7_own7;
-#line 5776 "main.c"
+#line 5783 "main.c"
     hero_str_decref(t75);
 #line 72 "examples/calculator/parse.hero"
     t76 = h8_own8;
-#line 5780 "main.c"
+#line 5787 "main.c"
     h_main_0opt2_release(&t76);
 #line 72 "examples/calculator/parse.hero"
     t77 = h9_own9;
-#line 5784 "main.c"
+#line 5791 "main.c"
     h_main_0opt2_release(&t77);
 #line 72 "examples/calculator/parse.hero"
     t78 = h10_own10;
-#line 5788 "main.c"
+#line 5795 "main.c"
     hero_str_decref(t78);
 #line 72 "examples/calculator/parse.hero"
     t79 = h11_own11;
-#line 5792 "main.c"
+#line 5799 "main.c"
     h_main_0opt2_release(&t79);
     return t22;
 bb8:
@@ -5797,7 +5804,7 @@ bb8:
 
 #line 82 "examples/calculator/parse.hero"
 h_main_0opt2 h_parse_term(h_parse_Parse *ph0_p) {
-#line 5801 "main.c"
+#line 5808 "main.c"
     h_parse_Parse h0_p = {0};
     h_main_0opt2 h1_f0 = {0};
     h_parse_Expr h2_first = {0};
@@ -5941,15 +5948,15 @@ bb0:
     t42 = h6_own6;
 #line 83 "examples/calculator/parse.hero"
     h6_own6 = t1;
-#line 5945 "main.c"
+#line 5952 "main.c"
     h_main_0opt2_release(&t42);
 #line 83 "examples/calculator/parse.hero"
     t43 = h1_f0;
-#line 5949 "main.c"
+#line 5956 "main.c"
     h_main_0opt2_retain(&t1);
 #line 83 "examples/calculator/parse.hero"
     h1_f0 = t1;
-#line 5953 "main.c"
+#line 5960 "main.c"
     h_main_0opt2_release(&t43);
 #line 83 "examples/calculator/parse.hero"
     t2 = h1_f0;
@@ -5969,11 +5976,11 @@ bb1:
     t10 = t9.as.ok;
 #line 83 "examples/calculator/parse.hero"
     t44 = h2_first;
-#line 5973 "main.c"
+#line 5980 "main.c"
     h_parse_Expr_retain(&t10);
 #line 83 "examples/calculator/parse.hero"
     h2_first = t10;
-#line 5977 "main.c"
+#line 5984 "main.c"
     h_parse_Expr_release(&t44);
 #line 84 "examples/calculator/parse.hero"
     t11 = h2_first;
@@ -5987,15 +5994,15 @@ bb1:
     t45 = h7_own7;
 #line 84 "examples/calculator/parse.hero"
     h7_own7 = t12;
-#line 5991 "main.c"
+#line 5998 "main.c"
     hero_array_decref(t45);
 #line 84 "examples/calculator/parse.hero"
     t46 = h3_children;
-#line 5995 "main.c"
+#line 6002 "main.c"
     hero_array_incref(t12);
 #line 84 "examples/calculator/parse.hero"
     h3_children = t12;
-#line 5999 "main.c"
+#line 6006 "main.c"
     hero_array_decref(t46);
     goto bb3;
 bb2:
@@ -6003,7 +6010,7 @@ bb2:
     t6 = h1_f0;
 #line 83 "examples/calculator/parse.hero"
     t7 = t6.as.err;
-#line 6007 "main.c"
+#line 6014 "main.c"
     hero_failure_retain(&t7);
 #line 83 "examples/calculator/parse.hero"
     t8 = (h_main_0opt2){.tag = INT64_C(1), .as.err = t7};
@@ -6011,71 +6018,71 @@ bb2:
     t47 = h8_own8;
 #line 83 "examples/calculator/parse.hero"
     h8_own8 = t8;
-#line 6015 "main.c"
+#line 6022 "main.c"
     h_main_0opt2_release(&t47);
     *ph0_p = h0_p;
 #line 82 "examples/calculator/parse.hero"
-#line 6019 "main.c"
+#line 6026 "main.c"
     h_main_0opt2_retain(&t8);
 #line 82 "examples/calculator/parse.hero"
     t58 = h1_f0;
-#line 6023 "main.c"
+#line 6030 "main.c"
     h_main_0opt2_release(&t58);
 #line 82 "examples/calculator/parse.hero"
     t59 = h2_first;
-#line 6027 "main.c"
+#line 6034 "main.c"
     h_parse_Expr_release(&t59);
 #line 82 "examples/calculator/parse.hero"
     t60 = h3_children;
-#line 6031 "main.c"
+#line 6038 "main.c"
     hero_array_decref(t60);
 #line 82 "examples/calculator/parse.hero"
     t61 = h5_f1;
-#line 6035 "main.c"
+#line 6042 "main.c"
     h_main_0opt2_release(&t61);
 #line 82 "examples/calculator/parse.hero"
     t62 = h6_own6;
-#line 6039 "main.c"
+#line 6046 "main.c"
     h_main_0opt2_release(&t62);
 #line 82 "examples/calculator/parse.hero"
     t63 = h7_own7;
-#line 6043 "main.c"
+#line 6050 "main.c"
     hero_array_decref(t63);
 #line 82 "examples/calculator/parse.hero"
     t64 = h8_own8;
-#line 6047 "main.c"
+#line 6054 "main.c"
     h_main_0opt2_release(&t64);
 #line 82 "examples/calculator/parse.hero"
     t65 = h9_own9;
-#line 6051 "main.c"
+#line 6058 "main.c"
     h_main_0opt2_release(&t65);
 #line 82 "examples/calculator/parse.hero"
     t66 = h10_own10;
-#line 6055 "main.c"
+#line 6062 "main.c"
     h_lex_Token_release(&t66);
 #line 82 "examples/calculator/parse.hero"
     t67 = h11_own11;
-#line 6059 "main.c"
+#line 6066 "main.c"
     h_lex_Token_release(&t67);
 #line 82 "examples/calculator/parse.hero"
     t68 = h12_own12;
-#line 6063 "main.c"
+#line 6070 "main.c"
     hero_array_decref(t68);
 #line 82 "examples/calculator/parse.hero"
     t69 = h13_own13;
-#line 6067 "main.c"
+#line 6074 "main.c"
     h_main_0opt2_release(&t69);
 #line 82 "examples/calculator/parse.hero"
     t70 = h14_own14;
-#line 6071 "main.c"
+#line 6078 "main.c"
     h_parse_Expr_release(&t70);
 #line 82 "examples/calculator/parse.hero"
     t71 = h15_own15;
-#line 6075 "main.c"
+#line 6082 "main.c"
     h_main_0opt2_release(&t71);
 #line 82 "examples/calculator/parse.hero"
     t72 = h16_own16;
-#line 6079 "main.c"
+#line 6086 "main.c"
     h_main_0opt2_release(&t72);
     return t8;
 bb3:
@@ -6101,15 +6108,15 @@ bb4:
     t48 = h9_own9;
 #line 88 "examples/calculator/parse.hero"
     h9_own9 = t22;
-#line 6105 "main.c"
+#line 6112 "main.c"
     h_main_0opt2_release(&t48);
 #line 88 "examples/calculator/parse.hero"
     t49 = h5_f1;
-#line 6109 "main.c"
+#line 6116 "main.c"
     h_main_0opt2_retain(&t22);
 #line 88 "examples/calculator/parse.hero"
     h5_f1 = t22;
-#line 6113 "main.c"
+#line 6120 "main.c"
     h_main_0opt2_release(&t49);
 #line 88 "examples/calculator/parse.hero"
     t23 = h5_f1;
@@ -6143,7 +6150,7 @@ bb6:
     t50 = h10_own10;
 #line 86 "examples/calculator/parse.hero"
     h10_own10 = t17;
-#line 6147 "main.c"
+#line 6154 "main.c"
     h_lex_Token_release(&t50);
 #line 86 "examples/calculator/parse.hero"
     t18 = (h_lex_Token){.tag = h_lex_Token_tag_times};
@@ -6151,7 +6158,7 @@ bb6:
     t51 = h11_own11;
 #line 86 "examples/calculator/parse.hero"
     h11_own11 = t18;
-#line 6155 "main.c"
+#line 6162 "main.c"
     h_lex_Token_release(&t51);
 #line 86 "examples/calculator/parse.hero"
     t19 = h_lex_Token_eq(&t17, &t18);
@@ -6177,15 +6184,15 @@ bb8:
     t52 = h12_own12;
 #line 88 "examples/calculator/parse.hero"
     h12_own12 = t32;
-#line 6181 "main.c"
+#line 6188 "main.c"
     hero_array_decref(t52);
 #line 88 "examples/calculator/parse.hero"
     t53 = h3_children;
-#line 6185 "main.c"
+#line 6192 "main.c"
     hero_array_incref(t32);
 #line 88 "examples/calculator/parse.hero"
     h3_children = t32;
-#line 6189 "main.c"
+#line 6196 "main.c"
     hero_array_decref(t53);
     goto bb3;
 bb9:
@@ -6193,7 +6200,7 @@ bb9:
     t27 = h5_f1;
 #line 88 "examples/calculator/parse.hero"
     t28 = t27.as.err;
-#line 6197 "main.c"
+#line 6204 "main.c"
     hero_failure_retain(&t28);
 #line 88 "examples/calculator/parse.hero"
     t29 = (h_main_0opt2){.tag = INT64_C(1), .as.err = t28};
@@ -6201,77 +6208,77 @@ bb9:
     t54 = h13_own13;
 #line 88 "examples/calculator/parse.hero"
     h13_own13 = t29;
-#line 6205 "main.c"
+#line 6212 "main.c"
     h_main_0opt2_release(&t54);
     *ph0_p = h0_p;
 #line 82 "examples/calculator/parse.hero"
-#line 6209 "main.c"
+#line 6216 "main.c"
     h_main_0opt2_retain(&t29);
 #line 82 "examples/calculator/parse.hero"
     t73 = h1_f0;
-#line 6213 "main.c"
+#line 6220 "main.c"
     h_main_0opt2_release(&t73);
 #line 82 "examples/calculator/parse.hero"
     t74 = h2_first;
-#line 6217 "main.c"
+#line 6224 "main.c"
     h_parse_Expr_release(&t74);
 #line 82 "examples/calculator/parse.hero"
     t75 = h3_children;
-#line 6221 "main.c"
+#line 6228 "main.c"
     hero_array_decref(t75);
 #line 82 "examples/calculator/parse.hero"
     t76 = h5_f1;
-#line 6225 "main.c"
+#line 6232 "main.c"
     h_main_0opt2_release(&t76);
 #line 82 "examples/calculator/parse.hero"
     t77 = h6_own6;
-#line 6229 "main.c"
+#line 6236 "main.c"
     h_main_0opt2_release(&t77);
 #line 82 "examples/calculator/parse.hero"
     t78 = h7_own7;
-#line 6233 "main.c"
+#line 6240 "main.c"
     hero_array_decref(t78);
 #line 82 "examples/calculator/parse.hero"
     t79 = h8_own8;
-#line 6237 "main.c"
+#line 6244 "main.c"
     h_main_0opt2_release(&t79);
 #line 82 "examples/calculator/parse.hero"
     t80 = h9_own9;
-#line 6241 "main.c"
+#line 6248 "main.c"
     h_main_0opt2_release(&t80);
 #line 82 "examples/calculator/parse.hero"
     t81 = h10_own10;
-#line 6245 "main.c"
+#line 6252 "main.c"
     h_lex_Token_release(&t81);
 #line 82 "examples/calculator/parse.hero"
     t82 = h11_own11;
-#line 6249 "main.c"
+#line 6256 "main.c"
     h_lex_Token_release(&t82);
 #line 82 "examples/calculator/parse.hero"
     t83 = h12_own12;
-#line 6253 "main.c"
+#line 6260 "main.c"
     hero_array_decref(t83);
 #line 82 "examples/calculator/parse.hero"
     t84 = h13_own13;
-#line 6257 "main.c"
+#line 6264 "main.c"
     h_main_0opt2_release(&t84);
 #line 82 "examples/calculator/parse.hero"
     t85 = h14_own14;
-#line 6261 "main.c"
+#line 6268 "main.c"
     h_parse_Expr_release(&t85);
 #line 82 "examples/calculator/parse.hero"
     t86 = h15_own15;
-#line 6265 "main.c"
+#line 6272 "main.c"
     h_main_0opt2_release(&t86);
 #line 82 "examples/calculator/parse.hero"
     t87 = h16_own16;
-#line 6269 "main.c"
+#line 6276 "main.c"
     h_main_0opt2_release(&t87);
     return t29;
 bb10:
 #line 92 "examples/calculator/parse.hero"
     t39 = h3_children;
-#line 6275 "main.c"
+#line 6282 "main.c"
     hero_array_incref(t39);
 #line 92 "examples/calculator/parse.hero"
     t40 = (h_parse_Expr){.tag = h_parse_Expr_tag_product, .as.c_product = {.f_children = t39}};
@@ -6279,10 +6286,10 @@ bb10:
     t55 = h14_own14;
 #line 92 "examples/calculator/parse.hero"
     h14_own14 = t40;
-#line 6283 "main.c"
+#line 6290 "main.c"
     h_parse_Expr_release(&t55);
 #line 92 "examples/calculator/parse.hero"
-#line 6286 "main.c"
+#line 6293 "main.c"
     h_parse_Expr_retain(&t40);
 #line 92 "examples/calculator/parse.hero"
     t41 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t40};
@@ -6290,77 +6297,77 @@ bb10:
     t56 = h15_own15;
 #line 92 "examples/calculator/parse.hero"
     h15_own15 = t41;
-#line 6294 "main.c"
+#line 6301 "main.c"
     h_main_0opt2_release(&t56);
     *ph0_p = h0_p;
 #line 82 "examples/calculator/parse.hero"
-#line 6298 "main.c"
+#line 6305 "main.c"
     h_main_0opt2_retain(&t41);
 #line 82 "examples/calculator/parse.hero"
     t88 = h1_f0;
-#line 6302 "main.c"
+#line 6309 "main.c"
     h_main_0opt2_release(&t88);
 #line 82 "examples/calculator/parse.hero"
     t89 = h2_first;
-#line 6306 "main.c"
+#line 6313 "main.c"
     h_parse_Expr_release(&t89);
 #line 82 "examples/calculator/parse.hero"
     t90 = h3_children;
-#line 6310 "main.c"
+#line 6317 "main.c"
     hero_array_decref(t90);
 #line 82 "examples/calculator/parse.hero"
     t91 = h5_f1;
-#line 6314 "main.c"
+#line 6321 "main.c"
     h_main_0opt2_release(&t91);
 #line 82 "examples/calculator/parse.hero"
     t92 = h6_own6;
-#line 6318 "main.c"
+#line 6325 "main.c"
     h_main_0opt2_release(&t92);
 #line 82 "examples/calculator/parse.hero"
     t93 = h7_own7;
-#line 6322 "main.c"
+#line 6329 "main.c"
     hero_array_decref(t93);
 #line 82 "examples/calculator/parse.hero"
     t94 = h8_own8;
-#line 6326 "main.c"
+#line 6333 "main.c"
     h_main_0opt2_release(&t94);
 #line 82 "examples/calculator/parse.hero"
     t95 = h9_own9;
-#line 6330 "main.c"
+#line 6337 "main.c"
     h_main_0opt2_release(&t95);
 #line 82 "examples/calculator/parse.hero"
     t96 = h10_own10;
-#line 6334 "main.c"
+#line 6341 "main.c"
     h_lex_Token_release(&t96);
 #line 82 "examples/calculator/parse.hero"
     t97 = h11_own11;
-#line 6338 "main.c"
+#line 6345 "main.c"
     h_lex_Token_release(&t97);
 #line 82 "examples/calculator/parse.hero"
     t98 = h12_own12;
-#line 6342 "main.c"
+#line 6349 "main.c"
     hero_array_decref(t98);
 #line 82 "examples/calculator/parse.hero"
     t99 = h13_own13;
-#line 6346 "main.c"
+#line 6353 "main.c"
     h_main_0opt2_release(&t99);
 #line 82 "examples/calculator/parse.hero"
     t100 = h14_own14;
-#line 6350 "main.c"
+#line 6357 "main.c"
     h_parse_Expr_release(&t100);
 #line 82 "examples/calculator/parse.hero"
     t101 = h15_own15;
-#line 6354 "main.c"
+#line 6361 "main.c"
     h_main_0opt2_release(&t101);
 #line 82 "examples/calculator/parse.hero"
     t102 = h16_own16;
-#line 6358 "main.c"
+#line 6365 "main.c"
     h_main_0opt2_release(&t102);
     return t41;
 bb11:
 #line 91 "examples/calculator/parse.hero"
     t37 = h2_first;
-#line 6364 "main.c"
+#line 6371 "main.c"
     h_parse_Expr_retain(&t37);
 #line 91 "examples/calculator/parse.hero"
     t38 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t37};
@@ -6368,71 +6375,71 @@ bb11:
     t57 = h16_own16;
 #line 91 "examples/calculator/parse.hero"
     h16_own16 = t38;
-#line 6372 "main.c"
+#line 6379 "main.c"
     h_main_0opt2_release(&t57);
     *ph0_p = h0_p;
 #line 82 "examples/calculator/parse.hero"
-#line 6376 "main.c"
+#line 6383 "main.c"
     h_main_0opt2_retain(&t38);
 #line 82 "examples/calculator/parse.hero"
     t103 = h1_f0;
-#line 6380 "main.c"
+#line 6387 "main.c"
     h_main_0opt2_release(&t103);
 #line 82 "examples/calculator/parse.hero"
     t104 = h2_first;
-#line 6384 "main.c"
+#line 6391 "main.c"
     h_parse_Expr_release(&t104);
 #line 82 "examples/calculator/parse.hero"
     t105 = h3_children;
-#line 6388 "main.c"
+#line 6395 "main.c"
     hero_array_decref(t105);
 #line 82 "examples/calculator/parse.hero"
     t106 = h5_f1;
-#line 6392 "main.c"
+#line 6399 "main.c"
     h_main_0opt2_release(&t106);
 #line 82 "examples/calculator/parse.hero"
     t107 = h6_own6;
-#line 6396 "main.c"
+#line 6403 "main.c"
     h_main_0opt2_release(&t107);
 #line 82 "examples/calculator/parse.hero"
     t108 = h7_own7;
-#line 6400 "main.c"
+#line 6407 "main.c"
     hero_array_decref(t108);
 #line 82 "examples/calculator/parse.hero"
     t109 = h8_own8;
-#line 6404 "main.c"
+#line 6411 "main.c"
     h_main_0opt2_release(&t109);
 #line 82 "examples/calculator/parse.hero"
     t110 = h9_own9;
-#line 6408 "main.c"
+#line 6415 "main.c"
     h_main_0opt2_release(&t110);
 #line 82 "examples/calculator/parse.hero"
     t111 = h10_own10;
-#line 6412 "main.c"
+#line 6419 "main.c"
     h_lex_Token_release(&t111);
 #line 82 "examples/calculator/parse.hero"
     t112 = h11_own11;
-#line 6416 "main.c"
+#line 6423 "main.c"
     h_lex_Token_release(&t112);
 #line 82 "examples/calculator/parse.hero"
     t113 = h12_own12;
-#line 6420 "main.c"
+#line 6427 "main.c"
     hero_array_decref(t113);
 #line 82 "examples/calculator/parse.hero"
     t114 = h13_own13;
-#line 6424 "main.c"
+#line 6431 "main.c"
     h_main_0opt2_release(&t114);
 #line 82 "examples/calculator/parse.hero"
     t115 = h14_own14;
-#line 6428 "main.c"
+#line 6435 "main.c"
     h_parse_Expr_release(&t115);
 #line 82 "examples/calculator/parse.hero"
     t116 = h15_own15;
-#line 6432 "main.c"
+#line 6439 "main.c"
     h_main_0opt2_release(&t116);
 #line 82 "examples/calculator/parse.hero"
     t117 = h16_own16;
-#line 6436 "main.c"
+#line 6443 "main.c"
     h_main_0opt2_release(&t117);
     return t38;
 bb12:
@@ -6441,7 +6448,7 @@ bb12:
 
 #line 95 "examples/calculator/parse.hero"
 h_main_0opt2 h_parse_expression(h_parse_Parse *ph0_p) {
-#line 6445 "main.c"
+#line 6452 "main.c"
     h_parse_Parse h0_p = {0};
     h_main_0opt2 h1_f0 = {0};
     h_parse_Expr h2_first = {0};
@@ -6585,15 +6592,15 @@ bb0:
     t42 = h6_own6;
 #line 96 "examples/calculator/parse.hero"
     h6_own6 = t1;
-#line 6589 "main.c"
+#line 6596 "main.c"
     h_main_0opt2_release(&t42);
 #line 96 "examples/calculator/parse.hero"
     t43 = h1_f0;
-#line 6593 "main.c"
+#line 6600 "main.c"
     h_main_0opt2_retain(&t1);
 #line 96 "examples/calculator/parse.hero"
     h1_f0 = t1;
-#line 6597 "main.c"
+#line 6604 "main.c"
     h_main_0opt2_release(&t43);
 #line 96 "examples/calculator/parse.hero"
     t2 = h1_f0;
@@ -6613,11 +6620,11 @@ bb1:
     t10 = t9.as.ok;
 #line 96 "examples/calculator/parse.hero"
     t44 = h2_first;
-#line 6617 "main.c"
+#line 6624 "main.c"
     h_parse_Expr_retain(&t10);
 #line 96 "examples/calculator/parse.hero"
     h2_first = t10;
-#line 6621 "main.c"
+#line 6628 "main.c"
     h_parse_Expr_release(&t44);
 #line 97 "examples/calculator/parse.hero"
     t11 = h2_first;
@@ -6631,15 +6638,15 @@ bb1:
     t45 = h7_own7;
 #line 97 "examples/calculator/parse.hero"
     h7_own7 = t12;
-#line 6635 "main.c"
+#line 6642 "main.c"
     hero_array_decref(t45);
 #line 97 "examples/calculator/parse.hero"
     t46 = h3_children;
-#line 6639 "main.c"
+#line 6646 "main.c"
     hero_array_incref(t12);
 #line 97 "examples/calculator/parse.hero"
     h3_children = t12;
-#line 6643 "main.c"
+#line 6650 "main.c"
     hero_array_decref(t46);
     goto bb3;
 bb2:
@@ -6647,7 +6654,7 @@ bb2:
     t6 = h1_f0;
 #line 96 "examples/calculator/parse.hero"
     t7 = t6.as.err;
-#line 6651 "main.c"
+#line 6658 "main.c"
     hero_failure_retain(&t7);
 #line 96 "examples/calculator/parse.hero"
     t8 = (h_main_0opt2){.tag = INT64_C(1), .as.err = t7};
@@ -6655,71 +6662,71 @@ bb2:
     t47 = h8_own8;
 #line 96 "examples/calculator/parse.hero"
     h8_own8 = t8;
-#line 6659 "main.c"
+#line 6666 "main.c"
     h_main_0opt2_release(&t47);
     *ph0_p = h0_p;
 #line 95 "examples/calculator/parse.hero"
-#line 6663 "main.c"
+#line 6670 "main.c"
     h_main_0opt2_retain(&t8);
 #line 95 "examples/calculator/parse.hero"
     t58 = h1_f0;
-#line 6667 "main.c"
+#line 6674 "main.c"
     h_main_0opt2_release(&t58);
 #line 95 "examples/calculator/parse.hero"
     t59 = h2_first;
-#line 6671 "main.c"
+#line 6678 "main.c"
     h_parse_Expr_release(&t59);
 #line 95 "examples/calculator/parse.hero"
     t60 = h3_children;
-#line 6675 "main.c"
+#line 6682 "main.c"
     hero_array_decref(t60);
 #line 95 "examples/calculator/parse.hero"
     t61 = h5_f1;
-#line 6679 "main.c"
+#line 6686 "main.c"
     h_main_0opt2_release(&t61);
 #line 95 "examples/calculator/parse.hero"
     t62 = h6_own6;
-#line 6683 "main.c"
+#line 6690 "main.c"
     h_main_0opt2_release(&t62);
 #line 95 "examples/calculator/parse.hero"
     t63 = h7_own7;
-#line 6687 "main.c"
+#line 6694 "main.c"
     hero_array_decref(t63);
 #line 95 "examples/calculator/parse.hero"
     t64 = h8_own8;
-#line 6691 "main.c"
+#line 6698 "main.c"
     h_main_0opt2_release(&t64);
 #line 95 "examples/calculator/parse.hero"
     t65 = h9_own9;
-#line 6695 "main.c"
+#line 6702 "main.c"
     h_main_0opt2_release(&t65);
 #line 95 "examples/calculator/parse.hero"
     t66 = h10_own10;
-#line 6699 "main.c"
+#line 6706 "main.c"
     h_lex_Token_release(&t66);
 #line 95 "examples/calculator/parse.hero"
     t67 = h11_own11;
-#line 6703 "main.c"
+#line 6710 "main.c"
     h_lex_Token_release(&t67);
 #line 95 "examples/calculator/parse.hero"
     t68 = h12_own12;
-#line 6707 "main.c"
+#line 6714 "main.c"
     hero_array_decref(t68);
 #line 95 "examples/calculator/parse.hero"
     t69 = h13_own13;
-#line 6711 "main.c"
+#line 6718 "main.c"
     h_main_0opt2_release(&t69);
 #line 95 "examples/calculator/parse.hero"
     t70 = h14_own14;
-#line 6715 "main.c"
+#line 6722 "main.c"
     h_parse_Expr_release(&t70);
 #line 95 "examples/calculator/parse.hero"
     t71 = h15_own15;
-#line 6719 "main.c"
+#line 6726 "main.c"
     h_main_0opt2_release(&t71);
 #line 95 "examples/calculator/parse.hero"
     t72 = h16_own16;
-#line 6723 "main.c"
+#line 6730 "main.c"
     h_main_0opt2_release(&t72);
     return t8;
 bb3:
@@ -6745,15 +6752,15 @@ bb4:
     t48 = h9_own9;
 #line 101 "examples/calculator/parse.hero"
     h9_own9 = t22;
-#line 6749 "main.c"
+#line 6756 "main.c"
     h_main_0opt2_release(&t48);
 #line 101 "examples/calculator/parse.hero"
     t49 = h5_f1;
-#line 6753 "main.c"
+#line 6760 "main.c"
     h_main_0opt2_retain(&t22);
 #line 101 "examples/calculator/parse.hero"
     h5_f1 = t22;
-#line 6757 "main.c"
+#line 6764 "main.c"
     h_main_0opt2_release(&t49);
 #line 101 "examples/calculator/parse.hero"
     t23 = h5_f1;
@@ -6787,7 +6794,7 @@ bb6:
     t50 = h10_own10;
 #line 99 "examples/calculator/parse.hero"
     h10_own10 = t17;
-#line 6791 "main.c"
+#line 6798 "main.c"
     h_lex_Token_release(&t50);
 #line 99 "examples/calculator/parse.hero"
     t18 = (h_lex_Token){.tag = h_lex_Token_tag_plus};
@@ -6795,7 +6802,7 @@ bb6:
     t51 = h11_own11;
 #line 99 "examples/calculator/parse.hero"
     h11_own11 = t18;
-#line 6799 "main.c"
+#line 6806 "main.c"
     h_lex_Token_release(&t51);
 #line 99 "examples/calculator/parse.hero"
     t19 = h_lex_Token_eq(&t17, &t18);
@@ -6821,15 +6828,15 @@ bb8:
     t52 = h12_own12;
 #line 101 "examples/calculator/parse.hero"
     h12_own12 = t32;
-#line 6825 "main.c"
+#line 6832 "main.c"
     hero_array_decref(t52);
 #line 101 "examples/calculator/parse.hero"
     t53 = h3_children;
-#line 6829 "main.c"
+#line 6836 "main.c"
     hero_array_incref(t32);
 #line 101 "examples/calculator/parse.hero"
     h3_children = t32;
-#line 6833 "main.c"
+#line 6840 "main.c"
     hero_array_decref(t53);
     goto bb3;
 bb9:
@@ -6837,7 +6844,7 @@ bb9:
     t27 = h5_f1;
 #line 101 "examples/calculator/parse.hero"
     t28 = t27.as.err;
-#line 6841 "main.c"
+#line 6848 "main.c"
     hero_failure_retain(&t28);
 #line 101 "examples/calculator/parse.hero"
     t29 = (h_main_0opt2){.tag = INT64_C(1), .as.err = t28};
@@ -6845,77 +6852,77 @@ bb9:
     t54 = h13_own13;
 #line 101 "examples/calculator/parse.hero"
     h13_own13 = t29;
-#line 6849 "main.c"
+#line 6856 "main.c"
     h_main_0opt2_release(&t54);
     *ph0_p = h0_p;
 #line 95 "examples/calculator/parse.hero"
-#line 6853 "main.c"
+#line 6860 "main.c"
     h_main_0opt2_retain(&t29);
 #line 95 "examples/calculator/parse.hero"
     t73 = h1_f0;
-#line 6857 "main.c"
+#line 6864 "main.c"
     h_main_0opt2_release(&t73);
 #line 95 "examples/calculator/parse.hero"
     t74 = h2_first;
-#line 6861 "main.c"
+#line 6868 "main.c"
     h_parse_Expr_release(&t74);
 #line 95 "examples/calculator/parse.hero"
     t75 = h3_children;
-#line 6865 "main.c"
+#line 6872 "main.c"
     hero_array_decref(t75);
 #line 95 "examples/calculator/parse.hero"
     t76 = h5_f1;
-#line 6869 "main.c"
+#line 6876 "main.c"
     h_main_0opt2_release(&t76);
 #line 95 "examples/calculator/parse.hero"
     t77 = h6_own6;
-#line 6873 "main.c"
+#line 6880 "main.c"
     h_main_0opt2_release(&t77);
 #line 95 "examples/calculator/parse.hero"
     t78 = h7_own7;
-#line 6877 "main.c"
+#line 6884 "main.c"
     hero_array_decref(t78);
 #line 95 "examples/calculator/parse.hero"
     t79 = h8_own8;
-#line 6881 "main.c"
+#line 6888 "main.c"
     h_main_0opt2_release(&t79);
 #line 95 "examples/calculator/parse.hero"
     t80 = h9_own9;
-#line 6885 "main.c"
+#line 6892 "main.c"
     h_main_0opt2_release(&t80);
 #line 95 "examples/calculator/parse.hero"
     t81 = h10_own10;
-#line 6889 "main.c"
+#line 6896 "main.c"
     h_lex_Token_release(&t81);
 #line 95 "examples/calculator/parse.hero"
     t82 = h11_own11;
-#line 6893 "main.c"
+#line 6900 "main.c"
     h_lex_Token_release(&t82);
 #line 95 "examples/calculator/parse.hero"
     t83 = h12_own12;
-#line 6897 "main.c"
+#line 6904 "main.c"
     hero_array_decref(t83);
 #line 95 "examples/calculator/parse.hero"
     t84 = h13_own13;
-#line 6901 "main.c"
+#line 6908 "main.c"
     h_main_0opt2_release(&t84);
 #line 95 "examples/calculator/parse.hero"
     t85 = h14_own14;
-#line 6905 "main.c"
+#line 6912 "main.c"
     h_parse_Expr_release(&t85);
 #line 95 "examples/calculator/parse.hero"
     t86 = h15_own15;
-#line 6909 "main.c"
+#line 6916 "main.c"
     h_main_0opt2_release(&t86);
 #line 95 "examples/calculator/parse.hero"
     t87 = h16_own16;
-#line 6913 "main.c"
+#line 6920 "main.c"
     h_main_0opt2_release(&t87);
     return t29;
 bb10:
 #line 105 "examples/calculator/parse.hero"
     t39 = h3_children;
-#line 6919 "main.c"
+#line 6926 "main.c"
     hero_array_incref(t39);
 #line 105 "examples/calculator/parse.hero"
     t40 = (h_parse_Expr){.tag = h_parse_Expr_tag_sum, .as.c_sum = {.f_children = t39}};
@@ -6923,10 +6930,10 @@ bb10:
     t55 = h14_own14;
 #line 105 "examples/calculator/parse.hero"
     h14_own14 = t40;
-#line 6927 "main.c"
+#line 6934 "main.c"
     h_parse_Expr_release(&t55);
 #line 105 "examples/calculator/parse.hero"
-#line 6930 "main.c"
+#line 6937 "main.c"
     h_parse_Expr_retain(&t40);
 #line 105 "examples/calculator/parse.hero"
     t41 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t40};
@@ -6934,77 +6941,77 @@ bb10:
     t56 = h15_own15;
 #line 105 "examples/calculator/parse.hero"
     h15_own15 = t41;
-#line 6938 "main.c"
+#line 6945 "main.c"
     h_main_0opt2_release(&t56);
     *ph0_p = h0_p;
 #line 95 "examples/calculator/parse.hero"
-#line 6942 "main.c"
+#line 6949 "main.c"
     h_main_0opt2_retain(&t41);
 #line 95 "examples/calculator/parse.hero"
     t88 = h1_f0;
-#line 6946 "main.c"
+#line 6953 "main.c"
     h_main_0opt2_release(&t88);
 #line 95 "examples/calculator/parse.hero"
     t89 = h2_first;
-#line 6950 "main.c"
+#line 6957 "main.c"
     h_parse_Expr_release(&t89);
 #line 95 "examples/calculator/parse.hero"
     t90 = h3_children;
-#line 6954 "main.c"
+#line 6961 "main.c"
     hero_array_decref(t90);
 #line 95 "examples/calculator/parse.hero"
     t91 = h5_f1;
-#line 6958 "main.c"
+#line 6965 "main.c"
     h_main_0opt2_release(&t91);
 #line 95 "examples/calculator/parse.hero"
     t92 = h6_own6;
-#line 6962 "main.c"
+#line 6969 "main.c"
     h_main_0opt2_release(&t92);
 #line 95 "examples/calculator/parse.hero"
     t93 = h7_own7;
-#line 6966 "main.c"
+#line 6973 "main.c"
     hero_array_decref(t93);
 #line 95 "examples/calculator/parse.hero"
     t94 = h8_own8;
-#line 6970 "main.c"
+#line 6977 "main.c"
     h_main_0opt2_release(&t94);
 #line 95 "examples/calculator/parse.hero"
     t95 = h9_own9;
-#line 6974 "main.c"
+#line 6981 "main.c"
     h_main_0opt2_release(&t95);
 #line 95 "examples/calculator/parse.hero"
     t96 = h10_own10;
-#line 6978 "main.c"
+#line 6985 "main.c"
     h_lex_Token_release(&t96);
 #line 95 "examples/calculator/parse.hero"
     t97 = h11_own11;
-#line 6982 "main.c"
+#line 6989 "main.c"
     h_lex_Token_release(&t97);
 #line 95 "examples/calculator/parse.hero"
     t98 = h12_own12;
-#line 6986 "main.c"
+#line 6993 "main.c"
     hero_array_decref(t98);
 #line 95 "examples/calculator/parse.hero"
     t99 = h13_own13;
-#line 6990 "main.c"
+#line 6997 "main.c"
     h_main_0opt2_release(&t99);
 #line 95 "examples/calculator/parse.hero"
     t100 = h14_own14;
-#line 6994 "main.c"
+#line 7001 "main.c"
     h_parse_Expr_release(&t100);
 #line 95 "examples/calculator/parse.hero"
     t101 = h15_own15;
-#line 6998 "main.c"
+#line 7005 "main.c"
     h_main_0opt2_release(&t101);
 #line 95 "examples/calculator/parse.hero"
     t102 = h16_own16;
-#line 7002 "main.c"
+#line 7009 "main.c"
     h_main_0opt2_release(&t102);
     return t41;
 bb11:
 #line 104 "examples/calculator/parse.hero"
     t37 = h2_first;
-#line 7008 "main.c"
+#line 7015 "main.c"
     h_parse_Expr_retain(&t37);
 #line 104 "examples/calculator/parse.hero"
     t38 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t37};
@@ -7012,71 +7019,71 @@ bb11:
     t57 = h16_own16;
 #line 104 "examples/calculator/parse.hero"
     h16_own16 = t38;
-#line 7016 "main.c"
+#line 7023 "main.c"
     h_main_0opt2_release(&t57);
     *ph0_p = h0_p;
 #line 95 "examples/calculator/parse.hero"
-#line 7020 "main.c"
+#line 7027 "main.c"
     h_main_0opt2_retain(&t38);
 #line 95 "examples/calculator/parse.hero"
     t103 = h1_f0;
-#line 7024 "main.c"
+#line 7031 "main.c"
     h_main_0opt2_release(&t103);
 #line 95 "examples/calculator/parse.hero"
     t104 = h2_first;
-#line 7028 "main.c"
+#line 7035 "main.c"
     h_parse_Expr_release(&t104);
 #line 95 "examples/calculator/parse.hero"
     t105 = h3_children;
-#line 7032 "main.c"
+#line 7039 "main.c"
     hero_array_decref(t105);
 #line 95 "examples/calculator/parse.hero"
     t106 = h5_f1;
-#line 7036 "main.c"
+#line 7043 "main.c"
     h_main_0opt2_release(&t106);
 #line 95 "examples/calculator/parse.hero"
     t107 = h6_own6;
-#line 7040 "main.c"
+#line 7047 "main.c"
     h_main_0opt2_release(&t107);
 #line 95 "examples/calculator/parse.hero"
     t108 = h7_own7;
-#line 7044 "main.c"
+#line 7051 "main.c"
     hero_array_decref(t108);
 #line 95 "examples/calculator/parse.hero"
     t109 = h8_own8;
-#line 7048 "main.c"
+#line 7055 "main.c"
     h_main_0opt2_release(&t109);
 #line 95 "examples/calculator/parse.hero"
     t110 = h9_own9;
-#line 7052 "main.c"
+#line 7059 "main.c"
     h_main_0opt2_release(&t110);
 #line 95 "examples/calculator/parse.hero"
     t111 = h10_own10;
-#line 7056 "main.c"
+#line 7063 "main.c"
     h_lex_Token_release(&t111);
 #line 95 "examples/calculator/parse.hero"
     t112 = h11_own11;
-#line 7060 "main.c"
+#line 7067 "main.c"
     h_lex_Token_release(&t112);
 #line 95 "examples/calculator/parse.hero"
     t113 = h12_own12;
-#line 7064 "main.c"
+#line 7071 "main.c"
     hero_array_decref(t113);
 #line 95 "examples/calculator/parse.hero"
     t114 = h13_own13;
-#line 7068 "main.c"
+#line 7075 "main.c"
     h_main_0opt2_release(&t114);
 #line 95 "examples/calculator/parse.hero"
     t115 = h14_own14;
-#line 7072 "main.c"
+#line 7079 "main.c"
     h_parse_Expr_release(&t115);
 #line 95 "examples/calculator/parse.hero"
     t116 = h15_own15;
-#line 7076 "main.c"
+#line 7083 "main.c"
     h_main_0opt2_release(&t116);
 #line 95 "examples/calculator/parse.hero"
     t117 = h16_own16;
-#line 7080 "main.c"
+#line 7087 "main.c"
     h_main_0opt2_release(&t117);
     return t38;
 bb12:
@@ -7087,7 +7094,7 @@ bb12:
 /* apply<i64, i64> */
 #line 38 "examples/calculator/main.hero"
 HeroArrayHeader * h_main_apply_37f8817a(HeroArrayHeader * h0_xs, h_main_0fn0 h1_f) {
-#line 7091 "main.c"
+#line 7098 "main.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -7124,25 +7131,25 @@ bb0:
     t20 = h6_own6;
 #line 39 "examples/calculator/main.hero"
     h6_own6 = t1;
-#line 7128 "main.c"
+#line 7135 "main.c"
     hero_array_decref(t20);
 #line 39 "examples/calculator/main.hero"
     t21 = h2_out;
-#line 7132 "main.c"
+#line 7139 "main.c"
     hero_array_incref(t1);
 #line 39 "examples/calculator/main.hero"
     h2_out = t1;
-#line 7136 "main.c"
+#line 7143 "main.c"
     hero_array_decref(t21);
 #line 40 "examples/calculator/main.hero"
     t2 = h0_xs;
 #line 40 "examples/calculator/main.hero"
     t22 = h3_xs0;
-#line 7142 "main.c"
+#line 7149 "main.c"
     hero_array_incref(t2);
 #line 40 "examples/calculator/main.hero"
     h3_xs0 = t2;
-#line 7146 "main.c"
+#line 7153 "main.c"
     hero_array_decref(t22);
 #line 40 "examples/calculator/main.hero"
     t3 = INT64_C(0);
@@ -7198,19 +7205,19 @@ bb3:
 bb4:
 #line 42 "examples/calculator/main.hero"
     t19 = h2_out;
-#line 7202 "main.c"
+#line 7209 "main.c"
     hero_array_incref(t19);
 #line 42 "examples/calculator/main.hero"
     t23 = h2_out;
-#line 7206 "main.c"
+#line 7213 "main.c"
     hero_array_decref(t23);
 #line 42 "examples/calculator/main.hero"
     t24 = h3_xs0;
-#line 7210 "main.c"
+#line 7217 "main.c"
     hero_array_decref(t24);
 #line 42 "examples/calculator/main.hero"
     t25 = h6_own6;
-#line 7214 "main.c"
+#line 7221 "main.c"
     hero_array_decref(t25);
     return t19;
 }
@@ -7219,7 +7226,7 @@ bb4:
 /* reduce<i64, i64> */
 #line 46 "examples/calculator/main.hero"
 int64_t h_main_reduce_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_initial, h_main_0fn1 h2_f) {
-#line 7223 "main.c"
+#line 7230 "main.c"
     int64_t h3_acc;
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -7254,11 +7261,11 @@ bb0:
     t2 = h0_xs;
 #line 48 "examples/calculator/main.hero"
     t19 = h4_xs0;
-#line 7258 "main.c"
+#line 7265 "main.c"
     hero_array_incref(t2);
 #line 48 "examples/calculator/main.hero"
     h4_xs0 = t2;
-#line 7262 "main.c"
+#line 7269 "main.c"
     hero_array_decref(t19);
 #line 48 "examples/calculator/main.hero"
     t3 = INT64_C(0);
@@ -7318,7 +7325,7 @@ bb4:
     t18 = h3_acc;
 #line 50 "examples/calculator/main.hero"
     t20 = h4_xs0;
-#line 7322 "main.c"
+#line 7329 "main.c"
     hero_array_decref(t20);
     return t18;
 }

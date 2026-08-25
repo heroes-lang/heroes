@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "exitstatus.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "exitstatus.c"
+#line 59 "exitstatus.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "before");
 HERO_STR_STATIC(hero_str_1, "after");
@@ -83,7 +90,7 @@ void h_library_exit(int64_t h0_code);
 
 #line 18 "tests/golden/run/exit-status.hero"
 void h_exitstatus_main(void) {
-#line 87 "exitstatus.c"
+#line 94 "exitstatus.c"
     HeroStr t1 = {0};
     int64_t t2;
     HeroStr t3 = {0};
@@ -107,12 +114,12 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/exit-status.hero"
     return;
-#line 111 "exitstatus.c"
+#line 118 "exitstatus.c"
 }
 
 #line 211 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 116 "exitstatus.c"
+#line 123 "exitstatus.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -122,7 +129,7 @@ bb0:
     (void)hero_exit(t1);
 #line 212 "<heroes library>"
     return;
-#line 126 "exitstatus.c"
+#line 133 "exitstatus.c"
 }
 void h_exitstatus_0opt0_retain(const h_exitstatus_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

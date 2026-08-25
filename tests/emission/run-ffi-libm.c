@@ -41,6 +41,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 45 "ffilibm.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 20 "tests/golden/run/ffi-libm.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffilibm_sqrt(double a0) { (void)(sqrt)(a0); }
 #line 21 "tests/golden/run/ffi-libm.hero"
@@ -59,7 +65,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 63 "ffilibm.c"
+#line 69 "ffilibm.c"
+#pragma clang diagnostic pop
 
 typedef struct h_ffilibm_0opt0 {
     int64_t tag;
@@ -89,7 +96,7 @@ void h_ffilibm_main(void);
 
 #line 32 "tests/golden/run/ffi-libm.hero"
 void h_ffilibm_main(void) {
-#line 93 "ffilibm.c"
+#line 100 "ffilibm.c"
     double t1;
     double t2;
     double t3;
@@ -149,7 +156,7 @@ bb0:
     hero_print_end();
 #line 38 "tests/golden/run/ffi-libm.hero"
     return;
-#line 153 "ffilibm.c"
+#line 160 "ffilibm.c"
 }
 void h_ffilibm_0opt0_retain(const h_ffilibm_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

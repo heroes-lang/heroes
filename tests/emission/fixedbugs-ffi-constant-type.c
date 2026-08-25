@@ -39,6 +39,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 43 "fficonstanttype.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -51,7 +57,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 55 "fficonstanttype.c"
+#line 61 "fficonstanttype.c"
+#pragma clang diagnostic pop
 
 typedef struct h_fficonstanttype_0opt0 {
     int64_t tag;
@@ -82,13 +89,13 @@ void h_fficonstanttype_main(void);
 
 #line 30 "tests/golden/fixedbugs/ffi-constant-type.hero"
 int64_t h_fficonstanttype_M_PI(void) {
-#line 86 "fficonstanttype.c"
+#line 93 "fficonstanttype.c"
     return M_PI;
 }
 
 #line 32 "tests/golden/fixedbugs/ffi-constant-type.hero"
 void h_fficonstanttype_main(void) {
-#line 92 "fficonstanttype.c"
+#line 99 "fficonstanttype.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -100,7 +107,7 @@ bb0:
     hero_print_end();
 #line 33 "tests/golden/fixedbugs/ffi-constant-type.hero"
     return;
-#line 104 "fficonstanttype.c"
+#line 111 "fficonstanttype.c"
 }
 void h_fficonstanttype_0opt0_retain(const h_fficonstanttype_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

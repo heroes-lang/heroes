@@ -39,6 +39,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 43 "ffimissinglink.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -51,7 +57,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 55 "ffimissinglink.c"
+#line 61 "ffimissinglink.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "sqlite ");
 
@@ -83,7 +90,7 @@ void h_ffimissinglink_main(void);
 
 #line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
 void h_ffimissinglink_main(void) {
-#line 87 "ffimissinglink.c"
+#line 94 "ffimissinglink.c"
     HeroStr t1 = {0};
     int64_t t2;
     goto bb0;
@@ -100,7 +107,7 @@ bb0:
     hero_print_end();
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     return;
-#line 104 "ffimissinglink.c"
+#line 111 "ffimissinglink.c"
 }
 void h_ffimissinglink_0opt0_retain(const h_ffimissinglink_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

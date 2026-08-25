@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "adversarialstrcopyout.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "adversarialstrcopyout.c"
+#line 59 "adversarialstrcopyout.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "!");
 HERO_STR_STATIC(hero_str_1, "hey");
@@ -84,7 +91,7 @@ void h_adversarialstrcopyout_main(void);
 
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
 void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) {
-#line 88 "adversarialstrcopyout.c"
+#line 95 "adversarialstrcopyout.c"
     HeroStr h0_s = {0};
     int64_t h2_i;
     HeroStr h3_own3 = {0};
@@ -136,15 +143,15 @@ bb2:
     t14 = h3_own3;
 #line 16 "tests/golden/run/adversarial-str-copy-out.hero"
     h3_own3 = t7;
-#line 140 "adversarialstrcopyout.c"
+#line 147 "adversarialstrcopyout.c"
     hero_str_decref(t14);
 #line 16 "tests/golden/run/adversarial-str-copy-out.hero"
     t15 = h0_s;
-#line 144 "adversarialstrcopyout.c"
+#line 151 "adversarialstrcopyout.c"
     hero_str_incref(t7);
 #line 16 "tests/golden/run/adversarial-str-copy-out.hero"
     h0_s = t7;
-#line 148 "adversarialstrcopyout.c"
+#line 155 "adversarialstrcopyout.c"
     hero_str_decref(t15);
 #line 17 "tests/golden/run/adversarial-str-copy-out.hero"
     t8 = h2_i;
@@ -164,11 +171,11 @@ bb2:
     if (t13) goto bb5; else goto bb6;
 #line 18 "tests/golden/run/adversarial-str-copy-out.hero"
 bb3:
-#line 168 "adversarialstrcopyout.c"
+#line 175 "adversarialstrcopyout.c"
     *ph0_s = h0_s;
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
     t16 = h3_own3;
-#line 172 "adversarialstrcopyout.c"
+#line 179 "adversarialstrcopyout.c"
     hero_str_decref(t16);
     return;
 bb4:
@@ -177,7 +184,7 @@ bb5:
     *ph0_s = h0_s;
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
     t17 = h3_own3;
-#line 181 "adversarialstrcopyout.c"
+#line 188 "adversarialstrcopyout.c"
     hero_str_decref(t17);
     return;
 bb6:
@@ -186,7 +193,7 @@ bb6:
 
 #line 21 "tests/golden/run/adversarial-str-copy-out.hero"
 void h_adversarialstrcopyout_main(void) {
-#line 190 "adversarialstrcopyout.c"
+#line 197 "adversarialstrcopyout.c"
     HeroStr h0_a = {0};
     HeroStr h1_b = {0};
     HeroStr t1 = {0};
@@ -209,11 +216,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_1);
 #line 22 "tests/golden/run/adversarial-str-copy-out.hero"
     t11 = h0_a;
-#line 213 "adversarialstrcopyout.c"
+#line 220 "adversarialstrcopyout.c"
     hero_str_incref(t1);
 #line 22 "tests/golden/run/adversarial-str-copy-out.hero"
     h0_a = t1;
-#line 217 "adversarialstrcopyout.c"
+#line 224 "adversarialstrcopyout.c"
     hero_str_decref(t11);
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
     t2 = INT64_C(5);
@@ -237,11 +244,11 @@ bb0:
     t6 = HERO_STR_LIT(hero_str_2);
 #line 26 "tests/golden/run/adversarial-str-copy-out.hero"
     t12 = h1_b;
-#line 241 "adversarialstrcopyout.c"
+#line 248 "adversarialstrcopyout.c"
     hero_str_incref(t6);
 #line 26 "tests/golden/run/adversarial-str-copy-out.hero"
     h1_b = t6;
-#line 245 "adversarialstrcopyout.c"
+#line 252 "adversarialstrcopyout.c"
     hero_str_decref(t12);
 #line 27 "tests/golden/run/adversarial-str-copy-out.hero"
     t7 = INT64_C(0);
@@ -263,11 +270,11 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/adversarial-str-copy-out.hero"
     t13 = h0_a;
-#line 267 "adversarialstrcopyout.c"
+#line 274 "adversarialstrcopyout.c"
     hero_str_decref(t13);
 #line 29 "tests/golden/run/adversarial-str-copy-out.hero"
     t14 = h1_b;
-#line 271 "adversarialstrcopyout.c"
+#line 278 "adversarialstrcopyout.c"
     hero_str_decref(t14);
     return;
 }

@@ -28,12 +28,12 @@ not merged away.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs · **step 1** done · **step 2** ratified · **step 3** lands panel 092's repair |
+| **State** | four repairs · **step 1** done · **step 2** ratified · **step 3** lands panel 092's repair · **step 4** closes its queued half |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 22 of 36 · 25 tags |
 | The compiler | **38,055 lines** of Heroes in 155 files |
 | The seed | **765,569** lines of generated C — the whole way in |
-| The spec | **3560** tokens of a hard 4096 · headroom 536 |
+| The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 15 |
 | Panels held | **92**, every one ratified · journals 25 · measurements 13 · examples 15 |
 | Waiting on the author | **nothing** — three answered the day they were asked · 12 assigned in `SCHEDULED.md` · 264 in `LEARN.md` (never a gate) |
@@ -143,6 +143,18 @@ emitter routing **its own** warning to the author's line. Cost: 922 re-blessed
 lines across 146 emissions, 36 hand-edited in the six `emit/` goldens where
 `UPDATE_GOLDEN` is forbidden, and **+12 spec tokens** for the one mapping row a
 reader cannot derive — `u64` where C says `size_t`.
+
+**Step 4 — the float half closes with four flags where the sitting expected one**
+(2026-08-25, landing panel 092's queued half). `-Wdouble-promotion` was measured a
+QUARTER of the answer: `f64` against a header's `float` still demoted in silence
+under it, a float against a header's integer dropped its fraction in silence, and
+the integer family had the same gap below the 64→32 window (`i64` against `short`).
+The probe block's pragma now carries **four** errors, each with a witness that
+fired first — and the scope is measured load-bearing: enabled globally the four
+fire on **19 of 146** blessed emissions of correct programs, so none can ever
+enter `flags()`. All four wrong directions are `error[ffi_parameter_type]` at
+exit 1 on the author's line with the right fix; the spec names what stays silent,
+once, at **+32** (3592): what C converts exactly, and what a pointer points at.
 
 ---
 

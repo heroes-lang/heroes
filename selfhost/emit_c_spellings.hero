@@ -70,9 +70,17 @@ function spelling(c_type: str, word_bits: i64) -> Spelling?
         return ok(word_width(sign: "i", word_bits: word_bits))
     if c_type == "unsigned long" || c_type == "unsigned long int"
         return ok(word_width(sign: "u", word_bits: word_bits))
+    # The two float rows arrived with the probe block's float family
+    # (panel 092's queued half): until a conversion against them could
+    # fire, no fix ever asked. Fixed widths on every ABI that has
+    # shipped, so no caveat.
+    if c_type == "double"
+        return ok(Spelling(heroes: "f64", caveat: no_caveat))
+    if c_type == "float"
+        return ok(Spelling(heroes: "f32", caveat: no_caveat))
     # A C type absent from this table means the class DECLINES — clang's
     # own verdict is still printed, and the compiler does not pretend
-    # to know the repair. `float` is the live example.
+    # to know the repair. `long double` is the live example.
     return fail("none", "no Heroes spelling for this C type")
 
 # The spelling for a C type whose width is the machine's word, with
@@ -102,5 +110,10 @@ test "the table: pointers, fixed widths, the derived word, the decline"
     assert !l64.must().caveat.is_err()
     u32w = spelling(c_type: "unsigned long", word_bits: 32)
     assert u32w.must().heroes == "u32"
-    # float has no row on purpose: the class declines, clang speaks.
-    assert spelling(c_type: "float", word_bits: 64).is_err()
+    # The float rows are fixed-width everywhere: no caveat.
+    assert spelling(c_type: "double", word_bits: 64).must().heroes == "f64"
+    f = spelling(c_type: "float", word_bits: 64)
+    assert f.must().heroes == "f32"
+    assert f.must().caveat.is_err()
+    # long double has no row on purpose: the class declines, clang speaks.
+    assert spelling(c_type: "long double", word_bits: 64).is_err()

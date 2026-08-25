@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "fixedbugsanarrowfloatconvertedtookzero.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 59 "fixedbugsanarrowfloatconvertedtookzero.c"
+#pragma clang diagnostic pop
 
 typedef struct h_fixedbugsanarrowfloatconvertedtookzero_0opt0 {
     int64_t tag;
@@ -91,7 +98,7 @@ void h_fixedbugsanarrowfloatconvertedtookzero_main(void);
 
 #line 23 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
 void h_fixedbugsanarrowfloatconvertedtookzero_main(void) {
-#line 95 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 102 "fixedbugsanarrowfloatconvertedtookzero.c"
     float h0_small;
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h1_f0 = {0};
     float h2_negative;
@@ -183,15 +190,15 @@ bb0:
     t42 = h8_own8;
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h8_own8 = t3;
-#line 187 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 194 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t42);
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t43 = h1_f0;
-#line 191 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 198 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t3);
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h1_f0 = t3;
-#line 195 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 202 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t43);
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t4 = h1_f0;
@@ -235,15 +242,15 @@ bb1:
     t44 = h9_own9;
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h9_own9 = t15;
-#line 239 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 246 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t44);
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t45 = h3_f1;
-#line 243 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 250 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t15);
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h3_f1 = t15;
-#line 247 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 254 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t45);
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t16 = h3_f1;
@@ -261,7 +268,7 @@ bb2:
     t8 = h1_f0;
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t9 = t8.as.err;
-#line 265 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 272 "fixedbugsanarrowfloatconvertedtookzero.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -293,15 +300,15 @@ bb3:
     t46 = h10_own10;
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h10_own10 = t26;
-#line 297 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 304 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t46);
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t47 = h5_f2;
-#line 301 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 308 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t26);
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h5_f2 = t26;
-#line 305 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 312 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t47);
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t27 = h5_f2;
@@ -335,15 +342,15 @@ bb3:
     t48 = h11_own11;
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h11_own11 = t33;
-#line 339 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 346 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t48);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t49 = h7_f3;
-#line 343 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 350 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t33);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h7_f3 = t33;
-#line 347 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 354 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t49);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t34 = h7_f3;
@@ -361,7 +368,7 @@ bb4:
     t20 = h3_f1;
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t21 = t20.as.err;
-#line 365 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 372 "fixedbugsanarrowfloatconvertedtookzero.c"
     hero_panic_must(t21);
     hero_unreachable();
 bb5:
@@ -375,35 +382,35 @@ bb5:
     hero_print_end();
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t50 = h1_f0;
-#line 379 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 386 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t50);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t51 = h3_f1;
-#line 383 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 390 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t51);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t52 = h5_f2;
-#line 387 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 394 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t52);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t53 = h7_f3;
-#line 391 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 398 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t53);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t54 = h8_own8;
-#line 395 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 402 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t54);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t55 = h9_own9;
-#line 399 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 406 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t55);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t56 = h10_own10;
-#line 403 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 410 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t56);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t57 = h11_own11;
-#line 407 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 414 "fixedbugsanarrowfloatconvertedtookzero.c"
     h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t57);
     return;
 bb6:
@@ -411,7 +418,7 @@ bb6:
     t38 = h7_f3;
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t39 = t38.as.err;
-#line 415 "fixedbugsanarrowfloatconvertedtookzero.c"
+#line 422 "fixedbugsanarrowfloatconvertedtookzero.c"
     hero_panic_must(t39);
     hero_unreachable();
 }

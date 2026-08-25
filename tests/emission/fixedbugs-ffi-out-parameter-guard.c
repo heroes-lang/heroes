@@ -42,6 +42,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 46 "ffioutparameterguard.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 35 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffioutparameterguard_sqlite3_open(const char * a0, void * * a1) { (void)(sqlite3_open)(a0, a1); }
 #line 36 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
@@ -58,7 +64,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 62 "ffioutparameterguard.c"
+#line 68 "ffioutparameterguard.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, ":memory:");
 HERO_STR_STATIC(hero_str_1, "no database");
@@ -93,13 +100,13 @@ void h_ffioutparameterguard_main(void);
 
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
-#line 97 "ffioutparameterguard.c"
+#line 104 "ffioutparameterguard.c"
     return SQLITE_OK;
 }
 
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 void h_ffioutparameterguard_main(void) {
-#line 103 "ffioutparameterguard.c"
+#line 110 "ffioutparameterguard.c"
     void * h0_db;
     __attribute__((unused)) void * h1_stmt;
     __attribute__((unused)) const char * h2_tail;
@@ -187,7 +194,7 @@ bb2:
 bb3:
 #line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     goto bb1;
-#line 191 "ffioutparameterguard.c"
+#line 198 "ffioutparameterguard.c"
 }
 void h_ffioutparameterguard_0opt0_retain(const h_ffioutparameterguard_0opt0 *v) {
     if (v->tag == INT64_C(0)) {

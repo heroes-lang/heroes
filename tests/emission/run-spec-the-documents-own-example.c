@@ -37,6 +37,12 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#line 41 "specthedocumentsownexample.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 111 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
@@ -49,7 +55,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 53 "specthedocumentsownexample.c"
+#line 59 "specthedocumentsownexample.c"
+#pragma clang diagnostic pop
 
 typedef struct h_specthedocumentsownexample_Point {
     int64_t f_x;
@@ -87,7 +94,7 @@ void h_specthedocumentsownexample_main(void);
 
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
 int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0_a, h_specthedocumentsownexample_Point h1_b) {
-#line 91 "specthedocumentsownexample.c"
+#line 98 "specthedocumentsownexample.c"
     int64_t h2_dx;
     int64_t h3_dy;
     h_specthedocumentsownexample_Point t1;
@@ -149,12 +156,12 @@ bb0:
     if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
     return t17;
-#line 153 "specthedocumentsownexample.c"
+#line 160 "specthedocumentsownexample.c"
 }
 
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
 void h_specthedocumentsownexample_main(void) {
-#line 158 "specthedocumentsownexample.c"
+#line 165 "specthedocumentsownexample.c"
     int64_t t1;
     int64_t t2;
     h_specthedocumentsownexample_Point t3;
@@ -184,7 +191,7 @@ bb0:
     hero_print_end();
 #line 41 "tests/golden/run/spec-the-documents-own-example.hero"
     return;
-#line 188 "specthedocumentsownexample.c"
+#line 195 "specthedocumentsownexample.c"
 }
 bool h_specthedocumentsownexample_Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

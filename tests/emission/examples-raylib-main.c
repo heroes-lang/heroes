@@ -100,6 +100,11 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wdouble-promotion"
+#pragma clang diagnostic error "-Wimplicit-float-conversion"
+#pragma clang diagnostic error "-Wfloat-conversion"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 75 "examples/raylib/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_SetRandomSeed(uint32_t a0) { (void)(SetRandomSeed)(a0); }
 #line 76 "examples/raylib/main.hero"
@@ -124,7 +129,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 127 "main.c"
+#line 132 "main.c"
+#pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_0, "raylib answered ");
 HERO_STR_STATIC(hero_str_1, " ");
@@ -165,7 +171,7 @@ void h_main_main(void);
 
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
-#line 168 "main.c"
+#line 174 "main.c"
     Color h0_red;
     Vector2 h1_mid;
     AutomationEvent h2_event;
@@ -380,7 +386,7 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 383 "main.c"
+#line 389 "main.c"
 }
 bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

@@ -30,12 +30,34 @@ use ir_lower
 # something the header does not say — and one class, because the
 # repair is one sentence: declare it at the header's own width AND
 # signedness. Measured on curl, where the two arrived a day apart
-# from the same cause.
+# from the same cause. NARROWED also carries the sub-32 narrowings
+# (i64 against short, i16 against char): the probe block's
+# -Wimplicit-int-conversion error uses the same message text as the
+# global -Werror=shorten-64-to-32, so the family needed no new needle,
+# only the pragma that makes it fire (panel 092's queued half).
 constant NARROWED: str
     "implicit conversion loses integer precision"
 
 constant RESIGNED: str
     "implicit conversion changes signedness"
+
+# The float family, silent until the probe block's pragma made each an
+# error (panel 092's queued half, landed with its adjacent shapes).
+# Four directions, three needles — the fourth, an integer where the
+# header holds a float, is MAY_LOSE because clang writes "implicit
+# conversion from 'X' to 'Y' may lose precision" with no family word
+# to anchor on.
+constant PROMOTED: str
+    "implicit conversion increases floating-point precision"
+
+constant DEMOTED: str
+    "implicit conversion loses floating-point precision"
+
+constant TRUNCATES: str
+    "implicit conversion turns floating-point number into integer"
+
+constant MAY_LOSE: str
+    " may lose precision"
 
 # The CLASS mismatch — a wider family that was falling through to
 # exit 2 until panel 071. Seven shapes measured; clang phrases them
@@ -43,6 +65,27 @@ constant RESIGNED: str
 # do not, so the families never overlap.
 constant MISMATCHED: str
     " to parameter of "
+
+# Which family a clang line belongs to, by its own words. The specific
+# needles are measured pairwise disjoint; the two that anchor on less
+# than a family word — MAY_LOSE and the broad MISMATCHED — go last, so
+# neither gets first refusal on a line a sibling names outright.
+function family(line: str) -> str?
+    if emit_ffi_lookup.has(text: line, needle: NARROWED)
+        return ok(NARROWED)
+    if emit_ffi_lookup.has(text: line, needle: DEMOTED)
+        return ok(DEMOTED)
+    if emit_ffi_lookup.has(text: line, needle: PROMOTED)
+        return ok(PROMOTED)
+    if emit_ffi_lookup.has(text: line, needle: TRUNCATES)
+        return ok(TRUNCATES)
+    if emit_ffi_lookup.has(text: line, needle: RESIGNED)
+        return ok(RESIGNED)
+    if emit_ffi_lookup.has(text: line, needle: MAY_LOSE)
+        return ok(MAY_LOSE)
+    if emit_ffi_lookup.has(text: line, needle: MISMATCHED)
+        return ok(MISMATCHED)
+    return fail("none", "not a conversion line")
 
 # Where clang's caret sits and what follows it, with the file kept
 # only if it is one of this compilation's own NON-LIBRARY files. The
@@ -136,17 +179,10 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: ir_state.Progra
     # types convert, that one whether C may WRITE through the pointer.
     if emit_ffi_lookup.has(text: line, needle: emit_ffi_lookup.DISCARDS)
         return fail("none", "the mutable class owns this line")
-    kind: str @ ""
-    if emit_ffi_lookup.has(text: line, needle: NARROWED)
-        kind @ NARROWED
-    else
-        if emit_ffi_lookup.has(text: line, needle: RESIGNED)
-            kind @ RESIGNED
-        else
-            if emit_ffi_lookup.has(text: line, needle: MISMATCHED)
-                kind @ MISMATCHED
-            else
-                return fail("none", "not a conversion line")
+    sorted = family(line)
+    if sorted.is_err()
+        return fail("none", "not a conversion line")
+    kind = sorted.must()
     at = location(s, line: line)
     if at.is_err()
         return fail("none", "no usable location")
@@ -161,10 +197,14 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: ir_state.Progra
     # of 1159 entry points by panel 052's count.
     spelled = emit_c_spellings.spelling(c_type: c_type.must(), word_bits: word_bits)
     what: str @ "a different kind of thing from"
-    if kind == NARROWED
+    if kind == NARROWED || kind == DEMOTED
         what @ "wider than"
     if kind == RESIGNED
         what @ "a different sign from"
+    if kind == PROMOTED
+        what @ "narrower than"
+    if kind == TRUNCATES || kind == MAY_LOSE
+        what @ "a different kind of number from"
     found = extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
     if found.is_err()
         return fail("none", "no extern is declared at that line")
@@ -186,10 +226,20 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: ir_state.Progra
     span = decls[f.decl].span
     # A width is converted IN SILENCE; a class mismatch is not — clang
     # refuses it outright — so the sentence after the type has to
-    # differ or one of the two is false.
+    # differ or one of the two is false. The float family differs
+    # again, per direction: a promotion converts EXACTLY (the loss is
+    # upstream, in arithmetic the author ran at f32), a truncation
+    # drops the fraction, an integer into a float rounds only the
+    # values a mantissa cannot hold.
     consequence: str @ "and C would convert the value in silence"
     if kind == MISMATCHED
         consequence @ "and the two do not convert"
+    if kind == PROMOTED
+        consequence @ "and the precision the header expects is lost before the call"
+    if kind == TRUNCATES
+        consequence @ "and C would drop the fraction in silence"
+    if kind == MAY_LOSE
+        consequence @ "and C would round large values in silence"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_parameter_type", message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence, span: span)
     if spelled.is_err()
         # No Heroes spelling, and the diagnostic still lands: the note
@@ -254,3 +304,43 @@ test "the width, the sign and the class, gated by the probe's own line"
     assert parameter_width(s, parsed.decls, low.program, c, names, line: quals, word_bits: 64).is_err()
     stray = "t.hero:5:9: error: implicit conversion loses integer precision: 'int64_t' to 'int'"
     assert parameter_width(s, parsed.decls, low.program, c, names, line: stray, word_bits: 64).is_err()
+
+test "the float family: four directions, each with its own sentence"
+    text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n\nfunction main()\n    print(narrow(x: 1))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: check_state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = emit_ctype.new_names(s, parsed.decls)
+    fs = low.program.functions
+    f0: ir_state.Function @ fs[0]
+    picked: bool @ false
+    for f in fs
+        if f.name == "narrow" && !picked
+            f0 @ f
+            picked @ true
+    parameters = emit_extern_probe.parameter_list(names, c, f0).must()
+    arguments = emit_extern_probe.argument_names(count: 1)
+    probe = emit_extern_probe.probe_name(module: "t", name: "narrow")
+    columns = emit_extern_probe.argument_columns(probe: probe, name: "narrow", parameters: parameters, arguments: arguments)
+    head = "t.hero:2:" + columns[0].to_str() + ": error: "
+    # f32 where the header says double: the promotion is exact, the
+    # loss already happened in the author's own f32 arithmetic.
+    prom = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion increases floating-point precision: 'float' to 'double'", word_bits: 64)
+    assert prom.must().message == "`x` of `narrow` is declared narrower than the header's `double` — clang read the header, and the precision the header expects is lost before the call"
+    assert prom.must().fixes[0].replacement == "f64"
+    # f64 where the header says float: the same silent-narrowing shape
+    # as the integers, so the same sentence.
+    demo = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion loses floating-point precision: 'double' to 'float'", word_bits: 64)
+    assert demo.must().message == "`x` of `narrow` is declared wider than the header's `float` — clang read the header, and C would convert the value in silence"
+    assert demo.must().fixes[0].replacement == "f32"
+    # A float where the header takes an integer: 0.75 becomes 0.
+    trun = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion turns floating-point number into integer: 'double' to 'int'", word_bits: 64)
+    assert trun.must().message == "`x` of `narrow` is declared a different kind of number from the header's `int` — clang read the header, and C would drop the fraction in silence"
+    assert trun.must().fixes[0].replacement == "i32"
+    # An integer where the header holds a float: exact until the value
+    # outgrows the mantissa, then rounded without a word.
+    lose = parameter_width(s, parsed.decls, low.program, c, names, line: head + "implicit conversion from 'int64_t' (aka 'long long') to 'double' may lose precision", word_bits: 64)
+    assert lose.must().message == "`x` of `narrow` is declared a different kind of number from the header's `double` — clang read the header, and C would round large values in silence"
+    assert lose.must().fixes[0].replacement == "f64"
