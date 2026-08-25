@@ -68,10 +68,11 @@
     <figcaption>examples/gallery/07-strings.hero, righe 7&ndash;13</figcaption>
   </figure>
   <p>
-    <code>s[i]</code> è un <code>u8</code>, un numero da 0 a 255. Viene
-    confrontato con <code>' '</code> fra apici singoli, che è un
-    <i>letterale di carattere</i> e quindi è anche lui un numero. Le virgolette
-    doppie sarebbero uno <code>str</code>, e i due non si mescolano:
+    <code>s[i]</code> ti dà un <code>u8</code>, cioè un numero da 0 a 255,
+    perché un byte è quello. Viene confrontato con <code>' '</code> fra apici
+    singoli, che è il modo di scrivere un carattere singolo e vale anche lui come
+    numero. Con le virgolette doppie avresti una stringa, e le due cose non si
+    mescolano:
   </p>
   <pre><code>$ heroes check strings.hero
 error[type_mismatch]: expected `u8`, found `str`

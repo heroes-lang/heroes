@@ -53,10 +53,12 @@
       <p class="kicker">Un linguaggio di programmazione compilato</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
       <p class="promise">Così piccolo da stare in un prompt, così vero da <em>compilare se stesso</em>.</p>
-      <p class="tagline">Fatto per le macchine che oggi scrivono codice, e comunque
-      chiaro per un occhio umano. Nessuna libreria standard, nessun garbage
-      collector, binari nativi. E ogni errore plausibile di un LLM è un
-      errore di compilazione.</p>
+      <p class="tagline">Fatto per le macchine che oggi scrivono codice, e
+      comunque chiaro per un occhio umano. Il linguaggio intero sta nelle poche
+      pagine che si danno da leggere a un modello prima di chiedergli un
+      programma. Diventa un eseguibile vero, di quelli che parti e vanno, senza
+      niente da installare intorno. E ogni errore che un modello fa facilmente
+      qui non compila.</p>
       <div class="cta">
         <a class="primary" href="errors.html">Guarda un errore vero</a>
         <a class="ghost" href="docs/failure-is-a-value.html">Leggi un capitolo</a>
@@ -95,25 +97,25 @@
     <li>
       <span class="n">231</span>
       <span class="what">righe: tutto il linguaggio</span>
-      <span class="how">La specifica completa è una manciata di pagine: entra in
-      un prompt e lascia posto al tuo programma. A contarla è il compilatore
-      stesso, quindi il numero non può scappare di mano.
+      <span class="how">La specifica, cioè il documento che definisce il
+      linguaggio per intero, sta in una manciata di pagine. Le dài da leggere a
+      un modello e gli resta spazio in abbondanza per il tuo programma.
       <a href="why.html">perché è questa la scelta &rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
       <span class="what">null, eccezioni, garbage collector</span>
-      <span class="how">Un valore che manca e un fallimento sono tipi che si
-      vedono sulla riga, non sorprese mentre il programma gira. E la memoria si
-      gestisce contando le copie, senza collector e senza pause.
+      <span class="how">Le tre cose che di solito fanno cadere un programma
+      mentre gira qui non esistono. Un valore che manca e un&rsquo;operazione
+      andata male si dichiarano nel codice, e li vedi sulla riga.
       <a href="docs/failure-is-a-value.html">come funziona il fallimento &rarr;</a></span>
     </li>
     <li>
       <span class="n">1</span>
-      <span class="what">hash, tre compilatori</span>
-      <span class="how">Il compilatore è scritto in Heroes e compila se stesso.
-      Chiedi a tre sue generazioni di riscrivere lo stesso programma in C e
-      ottieni un unico file, byte per byte.
+      <span class="what">impronta, tre compilatori</span>
+      <span class="how">Il compilatore di Heroes è scritto in Heroes, quindi
+      compila se stesso. Chiedi a tre sue generazioni di riscrivere lo stesso
+      programma e i tre file vengono identici, byte per byte.
       <a href="selfhost.html">tutta la storia &rarr;</a></span>
     </li>
   </ul>
@@ -141,24 +143,25 @@
     <figcaption>examples/gallery/11-trees.hero, righe 8&ndash;25</figcaption>
   </figure>
   <p>
-    Quello è un albero che contiene se stesso, scritto in un linguaggio il
-    cui modello dei dati <b>non ha né puntatori né un tipo
-    riferimento</b>: l&rsquo;unica indirezione che esiste è
-    l&rsquo;array, quindi la struttura intera continua a copiarsi come un
-    valore. Viene compilata passando dal C fino a un binario nativo, e la
-    memoria è gestita contando i riferimenti, non con un garbage
-    collector.
+    Quello è un albero che contiene se stesso, e lo fa in un linguaggio dove
+    <b>non esistono i puntatori</b>, cioè quei valori che invece di contenere
+    un dato dicono soltanto dove sta a memoria. Qui l&rsquo;unico modo che ha
+    una cosa di rimandare a un&rsquo;altra è l&rsquo;array, e infatti i rami di
+    quell&rsquo;albero stanno dentro un array. Il risultato è che la struttura
+    intera si copia come si copia un numero: se la passi a una funzione, quella
+    ne riceve una copia sua.
   </p>
   <p>
-    Ogni blocco di codice su questo sito è una fetta di un file che sta
-    nel repository, che compila e gira. Anche quello qui sopra.
+    Ogni blocco di codice di questo sito è ritagliato da un file vero, che sta
+    nel repository pubblico e che compila e gira. Anche quello qui sopra.
   </p>
 
   <h2 id="run">Provalo</h2>
   <p>
-    Non c&rsquo;è un installer, e non c&rsquo;è niente da installare. Il
-    repository si porta dietro il compilatore come un unico file C generato,
-    quindi sulla tua macchina serve solo un compilatore C:
+    Non c&rsquo;è un installer e non c&rsquo;è niente da installare. Il
+    repository si porta dietro il compilatore già tradotto in un unico file in
+    linguaggio C, quindi sulla tua macchina basta avere un compilatore C, che su
+    Mac e su Linux di solito c&rsquo;è già:
   </p>
   <pre><code>$ git clone https://github.com/giuseppearici/heroes-lang
 $ cd heroes-lang
@@ -168,36 +171,38 @@ read 42
 failed: not_a_digit (expected 0-9)
 20</code></pre>
   <p>
-    Quel file C è quello che stampa il compilatore quando compila se stesso,
-    non un bootstrap scritto a mano. Quindi la cosa che hai appena
-    costruito è il linguaggio che costruisce il linguaggio, senza nessun altro
-    strumento nella stanza. <code>./heroes doctor</code> controlla il resto di
-    quello che serve per compilare: clang, il linker, l&rsquo;architettura, il
-    runtime e la cache di build.
+    Quel file C non l&rsquo;ha scritto nessuno a mano: è Heroes che, compilando
+    se stesso, si è tradotto in C. Quindi quel comando qui sopra costruisce
+    Heroes usando soltanto Heroes: non serve installare altro, e non c&rsquo;è
+    nessuna catena di strumenti da mettere in piedi prima. Se qualcosa non va,
+    <code>./heroes doctor</code> ti dice quale pezzo manca sulla tua
+    macchina.
   </p>
   <p>
-    La riga in mezzo, in quell&rsquo;output, è un fallimento gestito: non
-    è la compilazione che si rompe.
+    Quella riga in mezzo che dice <code>failed</code> non è la compilazione che
+    si rompe: è il programma di esempio che incontra un carattere sbagliato e lo
+    racconta, come gli è stato chiesto di fare.
     <a href="docs/failure-is-a-value.html">Il capitolo dedicato</a> segue quel
     programma riga per riga.
   </p>
   <p>
-    Poi scrivine uno tuo. Al file non serve nulla intorno: niente import,
-    niente header, niente file di progetto, solo un <code>main</code>.
+    Poi scrivine uno tuo. Al file non serve niente intorno: nessuna riga di
+    import in cima, nessun file di progetto che elenchi gli altri file. Basta
+    che dentro ci sia <code>main</code>, che è la funzione da cui parte il
+    programma.
   </p>
   <pre><code>$ printf 'function main()\n    print("we can be heroes")\n' &gt; hello.hero
 $ ./heroes run hello.hero
 we can be heroes</code></pre>
   <p>
-    <code>heroes run</code> compila quel file in un binario nativo e lo esegue,
-    da qualunque cartella, lasciandosi accanto i file intermedi in una cartella
-    <code>build/</code>. Ogni capacità è un sottocomando di
-    quell&rsquo;unico binario: <code>lex</code>, <code>parse</code>,
+    <code>heroes run</code> trasforma quel file in un eseguibile e lo lancia,
+    da qualunque cartella, lasciando i file di lavorazione in una cartella
+    <code>build/</code> lì accanto. Tutto quello che il linguaggio sa fare passa
+    da quell&rsquo;unico comando: <code>lex</code>, <code>parse</code>,
     <code>check</code>, <code>build</code>, <code>run</code>, <code>test</code>,
     <code>fmt</code>, <code>doctor</code>, <code>mutate</code>,
-    <code>measure</code>, <code>this</code>. E ogni esempio di questo sito
-    è un file dentro <code>examples/</code>, che aspetta solo di essere
-    modificato.
+    <code>measure</code>, <code>this</code>. E ogni esempio di questo sito è un
+    file dentro <code>examples/</code>, che aspetta solo che tu lo cambi.
   </p>
 
   <h2>Tre cose che lo rendono diverso</h2>
@@ -205,32 +210,34 @@ we can be heroes</code></pre>
     <li>
       <h3>Uno sbaglio non compila</h3>
       <p>
-        Due argomenti dello stesso tipo scambiati, un caso di
-        <code>variant</code> dimenticato, un nome modificato che nessuno ha
-        dichiarato, una parola chiave presa in prestito da un altro linguaggio:
-        ognuno di questi diventa una diagnostica che arriva con la sua riparazione
-        pronta, invece di un programma che gira ed è silenziosamente
-        sbagliato.
+        Due argomenti dello stesso tipo passati nell&rsquo;ordine sbagliato,
+        un caso dimenticato quando si elencano tutte le forme che un dato può
+        avere, un nome cambiato che nessuno aveva dichiarato, una parola chiave
+        presa in prestito da un altro linguaggio. Ognuno di questi diventa un
+        errore di compilazione che arriva con la correzione già scritta dentro,
+        invece di un programma che parte e fa la cosa sbagliata in silenzio.
       </p>
       <a class="more" href="errors.html">Guarda un errore vero</a>
     </li>
     <li>
       <h3>Nessuna libreria standard, di proposito</h3>
       <p>
-        Un runtime minimo e nient&rsquo;altro. Matematica, file, socket, JSON,
-        HTTP, SQL e grafica arrivano tutti da librerie C attraverso
-        un&rsquo;unica FFI, dove clang controlla ogni dichiarazione contro
-        l&rsquo;header della libreria stessa.
+        Heroes non si porta dietro un magazzino di funzioni pronte. Matematica,
+        file, rete, JSON, database e grafica arrivano dalle librerie scritte in
+        C, quelle che il mondo usa da cinquant&rsquo;anni, e le colleghi al tuo
+        programma con poche righe. A controllare che quelle righe dicano il vero
+        è il compilatore C, che legge la libreria e ti ferma se non
+        corrispondono.
       </p>
       <a class="more" href="why.html">Il vincolo di partenza</a>
     </li>
     <li>
       <h3>Si compila da solo</h3>
       <p>
-        Il compilatore è scritto in Heroes: 155 moduli, 38.004 righe. Chiedi a
-        tre sue generazioni di riscrivere lo stesso programma in C e i tre file
-        coincidono byte per byte. Il linguaggio con cui era nato ha lasciato il
-        repository.
+        Il compilatore di Heroes è scritto in Heroes: 155 file, 38.004 righe.
+        Chiedi a tre sue generazioni di riscrivere lo stesso programma e i tre
+        risultati coincidono byte per byte. Il linguaggio con cui era nato non
+        serve più a nessuno e ha lasciato il repository.
       </p>
       <a class="more" href="selfhost.html">Come fa a compilarsi da solo</a>
     </li>
@@ -238,27 +245,33 @@ we can be heroes</code></pre>
 
   <h2>Una superficie piccola, nessun collector, e nessun crash</h2>
   <p>
-    Quattro parole possono aprire una riga al primo livello del file:
-    <code>constant</code>, <code>function</code>, <code>record</code>,
-    <code>variant</code>. L&rsquo;inventario è tutto qui. Niente classi,
-    niente interfacce, niente blocchi di modulo dentro un file, niente variabili
-    globali modificabili, e l&rsquo;ordine delle dichiarazioni non conta mai.
-    Sotto, il linguaggio che il compilatore implementa davvero è fatto di
-    sette costrutti: tutto il resto che puoi scrivere è zucchero
-    sintattico che sparisce prima della forma interna del compilatore, ed
-    è per questo che una persona sola riesce a finirlo.
+    In un file di Heroes, una riga che comincia da bordo pagina può iniziare
+    con quattro parole soltanto: <code>constant</code>, <code>function</code>,
+    <code>record</code>, <code>variant</code>. Sono un valore fisso, una
+    funzione, un gruppo di dati con dei campi e un dato che può avere più forme.
+    L&rsquo;elenco finisce qui: niente classi, niente interfacce, niente
+    variabili globali che chiunque può cambiare. E l&rsquo;ordine in cui scrivi
+    le dichiarazioni non conta mai, quindi due funzioni possono chiamarsi a
+    vicenda senza doverle annunciare prima. Più sotto, quello che il compilatore
+    tratta davvero sono sette costrutti: tutto il resto si riduce a quelli prima
+    ancora di arrivare in fondo, ed è per questo che una persona sola riesce a
+    finire il lavoro.
   </p>
   <p>
-    La memoria viene gestita senza collector: ogni valore si comporta come una
-    copia, con reference counting e copy-on-write sotto il cofano. Siccome un
-    riferimento non può essere conservato in nessun posto, non si possono
-    costruire cicli, quindi il conteggio non può perdere memoria. Nessun
-    garbage collector, nessuna annotazione <code>weak</code>, nessuna pausa. E un
-    programma non deve andare in segfault né corrompere la memoria: questo
-    è un obiettivo del linguaggio, non una qualità della sua
-    implementazione. Un overflow, un indice oltre la fine, una divisione per
-    zero: ognuno di questi è un arresto deterministico, non un
-    comportamento indefinito. <a href="why.html">Tutti e tre, per esteso →</a>
+    La memoria si libera da sola, e senza garbage collector, cioè senza quel
+    servizio che negli altri linguaggi gira insieme al programma e ogni tanto lo
+    mette in pausa per fare pulizia. Qui funziona così: ogni valore si comporta
+    come una copia indipendente, e dietro le quinte il compilatore tiene il
+    conto di quanti stanno usando lo stesso dato e lo libera quando non serve più
+    a nessuno. Siccome un valore non può tenersi il rimando a un altro, non si
+    possono costruire giri chiusi in cui due cose si tengono in vita a vicenda,
+    che è il caso in cui quel conteggio fallirebbe. E un
+    programma non deve schiantarsi né rovinare la memoria di nascosto: questo
+    è un obiettivo dichiarato del linguaggio, non una qualità che
+    l&rsquo;implementazione ha per caso. Un numero che sfora, un indice oltre la
+    fine di una lista, una divisione per zero: in ognuno di questi casi il
+    programma si ferma di netto, sempre nello stesso punto, invece di andare
+    avanti con un valore inventato. <a href="why.html">Tutti e tre, per esteso →</a>
   </p>
 
   <h2>La tesi <span class="nod">· quicksand, avoided ·</span></h2>
@@ -269,13 +282,16 @@ we can be heroes</code></pre>
     programma costa più token da scrivere.
   </blockquote>
   <p>
-    È una tesi, non uno slogan, quindi si misura. <code>heroes mutate</code>
-    prende programmi che funzionano, ci pianta dentro uno sbaglio realistico
-    alla volta (due argomenti dello stesso tipo scambiati, un caso
-    dimenticato in un <code>match</code>, un nome riusato) e conta
-    quanti il compilatore ferma. Poi rifà lo stesso giro con le regole della
-    tesi spente, e la distanza fra le due prove è il risultato, tenuto sbaglio
-    per sbaglio: alcuni sbagli li ferma solo la tesi, altri li fermerebbe
+    Un token è il pezzetto di testo con cui si misura quanto costa far lavorare
+    un modello, più o meno una parola. La tesi dice che con Heroes ne spendi
+    meno in tutto, anche se il singolo programma è più lungo da scrivere, perché
+    non passi il tempo a correggerlo. È una tesi, non uno slogan, quindi si
+    misura. Il comando <code>heroes mutate</code> prende programmi che
+    funzionano, ci pianta dentro uno sbaglio realistico alla volta (due
+    argomenti dello stesso tipo scambiati, un caso dimenticato, un nome riusato)
+    e conta quanti ne ferma il compilatore. Poi rifà lo stesso giro con le
+    regole della tesi spente, e la distanza fra le due prove è il risultato,
+    tenuto sbaglio per sbaglio: alcuni li ferma solo Heroes, altri li fermerebbe
     qualunque linguaggio, e uno non lo ferma ancora nessuno. Una media
     nasconderebbe proprio questo, e infatti non c&rsquo;è.
   </p>
@@ -285,10 +301,10 @@ we can be heroes</code></pre>
   </p>
 
   <footer>
-    <p>Heroes viene costruito alla luce del sole e non è ancora impacchettato:
-    niente installer e niente release, quindi la strada per entrare è un
-    compilatore C e un comando. Il registro di ogni decisione, panel e misure
-    compresi, è pubblico nel
+    <p>Heroes si costruisce alla luce del sole e non è ancora impacchettato:
+    niente installer e niente versioni ufficiali, quindi la strada per entrare
+    resta un compilatore C e un comando. Il registro di ogni decisione, con le
+    revisioni e le misure, è pubblico nel
     <a href="https://github.com/giuseppearici/heroes-lang">repository</a>.</p>
     <p>Il nome è un omaggio a <i>&ldquo;Heroes&rdquo;</i> di David Bowie
     (1977), e le virgolette sono le sue. Il fulmine è preso in prestito

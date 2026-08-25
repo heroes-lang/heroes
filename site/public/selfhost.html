@@ -47,20 +47,23 @@
     <h1 class="page">Written in itself</h1>
     <span class="nod">· a new career in a new town ·</span>
   </div>
-  <p class="lede">The compiler now exists twice: once in the language it was
-  built with, once in the language it builds.</p>
+  <p class="lede">The Heroes compiler is written in Heroes. So building it
+  takes a Heroes compiler, and what comes out has to be identical to what you
+  started from.</p>
 
   <p>
-    A language is a toy until it can express its own compiler. That needs a tree
-    with heterogeneous nodes, symbol tables, lists, recursion, error handling and
-    multiple files, so if a language can write that, the argument about whether
-    it is real is over. It was the finish line from the first day.
+    A language stays a toy until it can write its own compiler. Doing that
+    takes data of different shapes nested inside each other, tables to keep
+    names in, lists, functions that call themselves, serious error handling and
+    programs split across several files. If a language can carry that, the
+    argument about whether it is real is over. It was the finish line from the
+    first day.
   </p>
   <p>
-    The test is not a suite: ask both compilers to write out the same program in C, and
-    compare the results letter by letter. Then compile the letters the new
-    compiler wrote, and ask <i>that</i> compiler to write the program a third
-    time.
+    The test is not a suite of tests: ask both compilers to translate the same
+    program into C, then compare the two results letter by letter. Then compile
+    what the new compiler wrote, and ask <i>that</i> compiler to translate the
+    program a third time.
   </p>
   <pre class="fixpoint"><code>sha256  <span class="hash">373f454482831a9fc23942b8675cfc68e450a61cb49f34f45b7dbeac81173e63</span>
 
@@ -82,10 +85,14 @@
     <li><span class="n">2,570</span><span class="what">program outputs compared, never a difference</span></li>
   </ul>
   <p>
-    That is the whole compiler, not a subset: lexer, parser, resolver, type
-    checker, the intermediate representation and its verifier,
-    monomorphisation, the ownership pass, the C backend, the FFI checks,
-    diagnostics, the printer, the formatter, and the command line.
+    That is the whole compiler, not a subset. There is the part that breaks
+    the text into words, the part that works out the structure, the part that
+    ties every name to its declaration, the part that checks the types, the
+    in-between form the program is rewritten into along with its checker, the
+    pass that decides who owns each value and when to release it, the
+    translation into C, the checks against foreign libraries, the error
+    messages, the command that puts code back in order, and the command
+    line.
   </p>
 
   <h2>The best part is what went wrong</h2>

@@ -49,12 +49,13 @@
   <p class="tagline">Una forma sola per tanti tipi, e nessuna funzione anonima da nessuna parte.</p>
 
   <p>
-    Riscrivere lo stesso ciclo una volta per ogni tipo di elemento è il modo in
-    cui un linguaggio ti brucia il pomeriggio. Progettare un sistema di tipi che
-    sappia esprimere ogni vincolo possibile su quel ciclo è il modo in cui un
-    linguaggio si brucia i prossimi dieci anni. Heroes prende la cosa più piccola
-    che funziona: una funzione può avere dei parametri di tipo, e la
-    funzionalità finisce lì.
+    Riscrivere lo stesso ciclo una volta per le liste di numeri, una per le
+    liste di parole e una per tutte le altre è il modo migliore per buttare via
+    un pomeriggio. Costruire un sistema di tipi capace di esprimere ogni
+    condizione immaginabile su quel ciclo è il modo migliore per buttare via i
+    dieci anni successivi. Heroes prende la cosa più piccola che
+    funziona: una funzione può lasciare in sospeso il tipo su cui lavora, e la
+    faccenda finisce lì.
   </p>
 
   <h3>Una funzione con un buco nei tipi</h3>
@@ -69,26 +70,27 @@
     <figcaption>examples/gallery/06-generics.hero, righe 8&ndash;14</figcaption>
   </figure>
   <p>
-    <code>&lt;A, B&gt;</code> dopo il nome introduce due tipi che la funzione
-    ancora non conosce. Dentro si usano esattamente come tipi veri:
-    <code>[A]</code> è un array di quelli, <code>out: [B] @ []</code> è una cella
-    che contiene un array degli altri. Il letterale vuoto vuole
-    l&rsquo;annotazione per il solito motivo: dentro <code>[]</code> non
-    c&rsquo;è niente da cui dedurre.
+    <code>&lt;A, B&gt;</code> dopo il nome mette in campo due tipi che la
+    funzione ancora non conosce: glieli dirà chi la chiama. Dentro si usano come
+    tipi veri, quindi <code>[A]</code> è una lista dei primi e
+    <code>out: [B] @ []</code> è una lista dei secondi, ancora vuota. La lista
+    vuota vuole che le si dica il tipo per il solito motivo: dentro
+    <code>[]</code> non c&rsquo;è niente da cui capirlo.
   </p>
 
   <h3>Tre regole, e sono tutte delle assenze</h3>
   <ul>
-    <li><b>Sono generiche solo le funzioni.</b> Un <code>record</code> o un
-    <code>variant</code> è sempre un tipo concreto. Quando ti serve un
-    contenitore generico, un array o una mappa lo sono già.</li>
-    <li><b>Nessun vincolo.</b> Non c&rsquo;è modo di dire &ldquo;un
-    <code>A</code> qualsiasi che si possa confrontare&rdquo;. Se a una funzione
-    serve un&rsquo;operazione su <code>A</code>, si fa dare
-    quell&rsquo;operazione come argomento, come <code>f</code> qui sopra.</li>
-    <li><b>Non si scrivono mai al punto di chiamata.</b> I tipi si deducono
-    dagli argomenti, oppure è un errore. <code>each&lt;i64, str&gt;(…)</code>
-    non è una forma che il linguaggio abbia.</li>
+    <li><b>Il tipo si può lasciare in sospeso solo nelle funzioni.</b> Un
+    <code>record</code> o un <code>variant</code> ha sempre tipi decisi. Se ti
+    serve un contenitore che vada bene per qualunque tipo, le liste e le mappe
+    lo sono già.</li>
+    <li><b>Nessuna condizione sui tipi.</b> Non puoi dire &ldquo;un
+    <code>A</code> qualsiasi, purché si possa confrontare&rdquo;. Se alla
+    funzione serve un&rsquo;operazione su <code>A</code>, quell&rsquo;operazione
+    gliela passi come argomento, esattamente come <code>f</code> qui sopra.</li>
+    <li><b>Non si scrivono mai quando chiami.</b> I tipi il compilatore li
+    capisce dagli argomenti che gli dài, oppure è un errore.
+    <code>each&lt;i64, str&gt;(…)</code> non è una scrittura che esiste.</li>
   </ul>
   <p>
     La terza è quella che sorprende, e viene dalla seconda: senza vincoli non
@@ -135,7 +137,7 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
   16 | function keep_if&lt;A&gt;(xs: [A], ok_for: function(A) -&gt; bool) -&gt; [A]
      |                                      ^^^^^^^^</code></pre>
 
-  <h3>Un predicato, e un accumulo</h3>
+  <h3>Filtrare, e mettere insieme</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="16-21">
 <pre><code><span class="k">function</span> keep_if&lt;A&gt;(xs: [A], ok_for: (<span class="k">function</span>(A) -&gt; <span class="t">bool</span>)) -&gt; [A]
     out: [A] @ []
@@ -182,9 +184,9 @@ error[type_mismatch]: expected `bool`, found `i64`
     <figcaption>examples/gallery/06-generics.hero, righe 43&ndash;47</figcaption>
   </figure>
   <p>
-    La seconda riga è tutto il punto: lo stesso <code>each</code>, se gli dai una
-    funzione che restituisce <code>str</code>, restituisce un
-    <code>[str]</code>. Nessuno dei due punti di chiamata lo dice, e tutti e due
+    La seconda riga è quella che conta: allo stesso <code>each</code>, se gli
+    passi una funzione che restituisce una stringa, torna indietro una lista di
+    stringhe. Nessuno dei due punti di chiamata lo dice, e tutti e due
     sono controllati per intero.
   </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="49-50">

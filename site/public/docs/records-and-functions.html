@@ -117,10 +117,13 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
     <figcaption>examples/gallery/01-points.hero, lines 21&ndash;24</figcaption>
   </figure>
   <p>
-    A signature is always written out in full: every parameter has a type, and a
-    result is announced with <code>-&gt;</code>. Inside, <code>dx = …</code>
-    binds a name to a value once; there is no type on it because the compiler
-    can see what it is, and that inference never crosses the function boundary.
+    A function's first line is always written out in full: every value it takes
+    has its type, and what it gives back is announced after the arrow
+    <code>-&gt;</code>. Inside, <code>dx = …</code> gives a name to a value once,
+    and there is no type on it because the compiler can see it from the line.
+    That working-out never leaves the function, though: the first line stays
+    explicit, so you never have to read the body to learn what goes in and what
+    comes out.
   </p>
   <p>
     The rule that makes this chapter worth its own page: <b>when two
@@ -144,9 +147,10 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
 
   <h3>A call can be written from either end</h3>
   <p>
-    <code>x.f(y)</code> means <code>f(x, y)</code>. That is the whole rule, and
-    it is sugar: there are no methods, nothing is attached to a type, and
-    nothing is looked up at run time.
+    <code>x.f(y)</code> means <code>f(x, y)</code>, and the rule ends there. It
+    is just another way of writing the same call: there are no methods, meaning
+    no functions attached to a type, and nothing is looked up while the program
+    runs.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="33-36">
 <pre><code><span class="c"># Reads as a sentence, and it is one function call: `translate(r, by)`.</span>

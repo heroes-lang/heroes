@@ -47,17 +47,18 @@
     <h1 class="page">Perché Heroes</h1>
     <span class="nod">· rebel rebel ·</span>
   </div>
-  <p class="lede">Due vincoli, entrambi più vecchi della grammatica: chi legge è
-  una macchina, e non esiste una libreria standard.</p>
+  <p class="lede">Due vincoli, decisi prima ancora della grammatica: chi legge
+  è una macchina, e il linguaggio non si porta dietro nessuna libreria
+  standard.</p>
 
   <h2>Chi legge è una macchina <span class="nod">· sound and vision ·</span></h2>
   <p>
-    Il codice lo scrivono sempre di più i modelli linguistici, e i modelli
-    sbagliano in modi precisi, catalogati, riproducibili: scambiano due argomenti
-    dello stesso tipo, dimenticano un caso, modificano un nome che non hanno mai
-    dichiarato, inventano una parola chiave presa da un altro linguaggio. Un
-    linguaggio può trattare tutto questo come una serie di incidenti, oppure
-    prenderlo come specifica di progetto.
+    Il codice lo scrivono sempre di più i modelli linguistici, gli LLM, e i
+    modelli sbagliano in modi precisi, catalogati, che si ripetono: scambiano due
+    argomenti dello stesso tipo, dimenticano un caso, cambiano un nome che non
+    hanno mai dichiarato, si inventano una parola chiave presa da un altro
+    linguaggio. Un linguaggio può trattare tutto questo come una sfilza di
+    incidenti, oppure prenderlo come il progetto da cui partire.
   </p>
   <blockquote>
     Un linguaggio progettato perché ogni errore plausibile di un LLM sia un
@@ -66,48 +67,54 @@
     più token da scrivere.
   </blockquote>
   <p>
-    Questa è una tesi, ed è empirica invece che estetica, quindi si misura: si
-    prendono programmi che funzionano, si inietta un errore plausibile in
-    ciascuno, e si conta quanti producono un <i>errore di compilazione</i>
-    invece di un programma che gira ed è silenziosamente diverso. Poi si passa lo
-    stesso corpus a una build di controllo dello stesso compilatore, con le regole
-    della tesi disattivate. La distanza fra le due colonne è tutta la misura.
+    Un token è il pezzetto di testo con cui si misura quanto costa far
+    lavorare un modello, più o meno una parola. Questa è una tesi, e si giudica
+    con i numeri e non a naso: si prendono programmi che funzionano, si mette in
+    ognuno un errore plausibile, e si conta quanti diventano un <i>errore di
+    compilazione</i> invece di un programma che parte e fa una cosa diversa
+    senza dirlo. Poi si ripassa lo stesso mucchio di programmi a una versione
+    del compilatore con le regole della tesi spente, che fa da metro di
+    paragone. La distanza fra le due colonne è tutta la misura.
   </p>
 
   <h2>Una formula decide i compromessi</h2>
   <pre><code>costo reale = token del programma × (1 + tasso di riscrittura)</code></pre>
   <p>
-    I due fattori non sono nemmeno dello stesso ordine di grandezza. Un costrutto
-    compatto e intelligente può far risparmiare il cinque per cento dei token di
-    un file. Un singolo giro di correzione ne costa da cinquecento a duemila: il
-    modello riceve l&rsquo;errore, rilegge un file, riscrive una funzione,
-    ricompila. Su un programma da tremila token, <b>un solo giro di correzione si
-    mangia dieci ottimizzazioni sintattiche.</b>
+    I due fattori di quella moltiplicazione non sono paragonabili. Una forma
+    più compatta fa risparmiare sì e no il cinque per cento dei token di un
+    file. Un solo giro di correzione ne costa da cinquecento a duemila, perché
+    il modello riceve l&rsquo;errore, si rilegge il file, riscrive una funzione e
+    ricompila. Su un programma da tremila token, <b>un giro di correzione si
+    mangia dieci accorgimenti di sintassi.</b>
   </p>
   <p>
     L&rsquo;istinto dice <i>accorcia tutto e stai attento</i>. La formula dice
-    <i>elimina gli errori, e accorcia solo quando è gratis</i>. Per questo Heroes
-    è verboso dove dichiari e asciutto dove usi, e non spende un token in un
-    posto dove non abita nessun errore.
+    <i>togli gli errori, e accorcia solo quando non costa niente</i>. Per questo
+    Heroes è prolisso nel punto in cui dichiari le cose e asciutto nel punto in
+    cui le usi: spende parole dove abita un errore, e da nessun&rsquo;altra
+    parte.
   </p>
 
   <h2>Il vincolo di partenza</h2>
   <p>
     Il progetto non è partito da una grammatica. È partito da un rifiuto:
-    <b>non esiste una libreria standard, e non esisterà mai.</b> Una libreria
-    standard moderna è più lavoro di un compilatore, ed è la cosa che ammazza i
-    linguaggi fatti da una persona sola. Quindi Heroes porta con sé un runtime
-    minimo e prende tutto il resto dall&rsquo;enorme quantità di C che esiste
-    già:
+    <b>non esiste una libreria standard, e non esisterà mai.</b> La libreria
+    standard è il magazzino di funzioni pronte che un linguaggio si porta
+    dietro, dalla matematica alla rete. Scriverne una moderna è più lavoro che
+    scrivere il compilatore, ed è la cosa che ammazza i linguaggi fatti da una
+    persona sola. Quindi Heroes tiene il minimo indispensabile e prende tutto il
+    resto dall&rsquo;enorme quantità di codice C che esiste già:
   </p>
   <pre><code>matematica oltre l’aritmetica <span class="c">→</span> libm      file, socket  <span class="c">→</span> libc
 espressioni regolari          <span class="c">→</span> PCRE2     HTTP          <span class="c">→</span> libcurl
 JSON                          <span class="c">→</span> cJSON     SQL           <span class="c">→</span> SQLite
 grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</code></pre>
   <p>
-    Un prestito si scrive così, e l&rsquo;header nominato sulla prima riga è
-    tutto il punto della questione, perché è contro quell&rsquo;header che clang
-    controlla le dichiarazioni:
+    Prendere in prestito una funzione dal C si scrive così. Tutto gira intorno
+    al nome sulla prima riga, <code>math.h</code>: è l&rsquo;header, cioè il
+    file in cui la libreria dichiara come sono fatte le sue funzioni. È lì che
+    clang, il compilatore C, va a controllare se quello che hai scritto
+    corrisponde:
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
 <pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
@@ -117,42 +124,45 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <figcaption>examples/gallery/08-ffi.hero, righe 12&ndash;15</figcaption>
   </figure>
   <p>
-    Senza un header, una dichiarazione non sarebbe verificata da niente. Nota
-    <code>pow(base:, exponent:)</code>: due parametri dello stesso tipo, quindi i
-    nomi sono obbligatori a ogni chiamata. La regola vale anche al confine con il
-    C, che è il posto dove sbagliare l&rsquo;ordine degli argomenti perdona
-    meno.
+    Senza quel file, quello che dichiari non lo verificherebbe nessuno. E
+    guarda <code>pow(base:, exponent:)</code>: i due valori che prende sono
+    dello stesso tipo, quindi al momento della chiamata vanno chiamati per nome.
+    La regola vale anche qui, al confine con il C, ed è proprio lì che invertire
+    due argomenti si paga più caro.
   </p>
   <p>
-    &ldquo;Nient&rsquo;altro&rdquo; ha bisogno di una precisazione onesta: il
-    linguaggio porta con sé un inventario piccolo e <b>fisso</b> di una trentina
-    di nomi: <code>print</code>, <code>len</code>, <code>push</code>,
-    <code>slice</code>, <code>sort</code>, le conversioni,
-    <code>map</code>/<code>filter</code>/<code>fold</code>. È elencabile e in
-    forma chiusa, quindi non esiste mai un secondo posto da cui una funzione
-    potrebbe essere arrivata, e cambia solo per una decisione messa a verbale,
-    non per accumulo. Quello che non è, è una libreria che cresce.
+    Quel &ldquo;nient&rsquo;altro&rdquo; va precisato, per onestà: il
+    linguaggio si porta dietro una trentina di nomi e basta, sempre gli stessi.
+    Sono <code>print</code>, <code>len</code>, <code>push</code>,
+    <code>slice</code>, <code>sort</code>, le conversioni fra tipi e
+    <code>map</code>, <code>filter</code>, <code>fold</code>. Stanno tutti in un
+    elenco che si legge in un minuto, quindi quando incontri una funzione non ti
+    chiedi mai da dove salti fuori, e quell&rsquo;elenco cambia solo per una
+    decisione messa a verbale, mai per accumulo.
   </p>
   <p>
-    La pigrizia non c&rsquo;entra niente: quella leva è ciò che rende praticabile
-    un linguaggio fatto da una persona sola, e ha una conseguenza che tutto il resto del progetto rispetta:
-    <b>l&rsquo;ergonomia del confine con il C conta quanto la comprensibilità,
-    non meno.</b> Una libreria che Heroes non riesce a collegare è codice C che
-    il suo autore deve continuare a scrivere a mano: esattamente la cosa che
-    questo rifiuto esiste per evitare.
+    La pigrizia non c&rsquo;entra niente: appoggiarsi a tutto il C già scritto
+    è quello che rende fattibile un linguaggio fatto da una persona sola, e ha
+    una conseguenza che tutto il resto del progetto rispetta.
+    <b>Quanto è comodo il collegamento con il C conta quanto la chiarezza del
+    linguaggio, non meno.</b> Una libreria che Heroes non riesce a collegare è
+    codice C che il suo autore deve continuare a scriversi a mano, che è
+    esattamente la cosa che questo rifiuto vuole evitare.
   </p>
 
   <h2>Ed è per questo che il compilatore emette C</h2>
   <p>
-    Un programma che prende in prestito una funzione C dovrebbe essere
-    controllato contro <i>l&rsquo;header della libreria stessa</i>, non contro
-    una descrizione che il compilatore si inventa sperando che sia giusta.
-    Emettere C significa che quel controllo lo fa clang, a ogni build, gratis:
-    una firma sbagliata diventa un errore di compilazione invece di un valore
-    corrotto a runtime. Una versione precedente di questo progetto emetteva codice macchina passando
-    da un piccolo linguaggio intermedio, ed è stato abbandonato il giorno in cui
-    qualcuno si è accorto che il vincolo di partenza aveva già deciso la
-    questione.
+    Heroes non produce direttamente il linguaggio della macchina: traduce
+    prima il tuo programma in C, e poi lascia che sia un compilatore C a farne
+    un eseguibile. Il motivo è quello di prima. Se prendi in prestito una
+    funzione dal C, quella funzione va controllata sul file della libreria vera,
+    non su una descrizione che il compilatore di Heroes si inventa sperando di
+    azzeccarla. Passando dal C, il controllo lo fa clang, a ogni compilazione,
+    gratis: se hai dichiarato male una funzione te lo dice subito, invece di
+    lasciarti scoprire il guaio quando il programma è già in funzione. Una
+    versione precedente del progetto puntava dritta al linguaggio macchina, ed è
+    stata abbandonata il giorno in cui qualcuno si è accorto che il vincolo di
+    partenza aveva già deciso la questione.
   </p>
   <p>
     Non è una decisione sulla velocità, che in questo progetto non è né un
@@ -161,12 +171,14 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
 
   <h2>Quattro parole possono aprire una riga al primo livello</h2>
   <p>
-    Un file è una lista piatta di dichiarazioni, e ognuna comincia con la parola
-    che dice che cosa è: <code>constant</code>, <code>function</code>,
-    <code>record</code>, <code>variant</code>. L&rsquo;inventario è tutto qui.
-    Non esistono classi, interfacce, blocchi di modulo annidati dentro il file,
-    attributi che cambiano il senso della riga successiva, e non esiste nessuna
-    variabile globale modificabile in tutto il linguaggio.
+    Un file è un elenco di dichiarazioni, una dopo l&rsquo;altra, e ognuna
+    comincia con la parola che dice che cosa stai dichiarando: un valore fisso
+    con <code>constant</code>, una funzione con <code>function</code>, un gruppo
+    di dati con dei campi con <code>record</code>, un dato che può presentarsi
+    in più forme con <code>variant</code>. L&rsquo;elenco finisce qui. Non
+    esistono classi, non esistono interfacce, non esiste niente che cambi di
+    nascosto il senso della riga dopo, e in tutto il linguaggio non esiste una
+    variabile globale che chiunque possa modificare.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-14">
 <pre><code><span class="c"># A position on the integer grid.</span>
@@ -181,106 +193,112 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <figcaption>examples/gallery/01-points.hero, righe 6&ndash;14</figcaption>
   </figure>
   <p>
-    L&rsquo;ordine delle dichiarazioni non conta mai e la ricorsione mutua non
-    ha bisogno di dichiarazioni anticipate, quindi niente dipende da dove sta nel
-    file. Sotto, il linguaggio è ancora più piccolo: quello che il compilatore
-    implementa davvero sono <b>sette costrutti</b>: legare un nome,
-    definire e chiamare una funzione, costruire e leggere un <code>record</code>,
-    costruire e scomporre un <code>variant</code>, eseguire un ciclo,
-    <code>return</code>, le operazioni primitive. Tutto il resto è zucchero
-    sintattico, cancellato prima della forma interna del compilatore, quindi non
-    costa niente al type checker, alla traduzione verso la forma interna e al
-    backend. Un nucleo
-    piccolo sotto una superficie senza sinonimi è quello che rende un compilatore
-    finibile da una persona sola.
+    L&rsquo;ordine in cui scrivi le dichiarazioni non conta mai, e due funzioni
+    che si chiamano a vicenda non vanno annunciate prima: niente dipende da dove
+    sta nel file. Più sotto, il linguaggio è ancora più piccolo. Quello che il
+    compilatore tratta davvero sono <b>sette costrutti</b>: dare un nome a un
+    valore, definire e chiamare una funzione, costruire e leggere un
+    <code>record</code>, costruire e smontare un <code>variant</code>, ripetere
+    con un ciclo, restituire un risultato, e le operazioni di base come le somme
+    e i confronti. Tutto quello che puoi scrivere in più si riduce a questi
+    sette prima ancora di arrivare in fondo al compilatore, quindi non costa
+    niente ai controlli sui tipi né alla traduzione. Un nucleo piccolo, sotto una
+    superficie in cui non esistono due modi di dire la stessa cosa, è quello che
+    rende il compilatore finibile da una persona sola.
   </p>
 
   <h2>La memoria, e perché nessuno la raccoglie</h2>
   <p>
-    Ogni valore si comporta come una copia: <code>b = a</code> significa che
-    <code>b</code> è indipendente da <code>a</code>, e lo significa allo stesso
-    modo per i <code>record</code>, per gli array e per le mappe. Quello è il
-    significato; l&rsquo;implementazione sotto è copy-on-write sopra il reference
-    counting: prima di una modifica il runtime si chiede se qualcun altro sta
-    tenendo gli stessi dati, e copia solo in quel caso, altrimenti scrive sul
-    posto.
+    Ogni valore si comporta come una copia: <code>b = a</code> vuol dire che
+    <code>b</code> è una cosa sua, indipendente da <code>a</code>, e vale allo
+    stesso modo per un <code>record</code>, per una lista e per una mappa.
+    Quello è il significato. Sotto il cofano, però, non viene copiato niente
+    finché non serve: il programma tiene il conto di quanti stanno usando lo
+    stesso dato, e la copia vera la fa solo nel momento in cui qualcuno prova a
+    modificarlo mentre lo usa anche un altro. Se sei l&rsquo;unico a tenerlo, lo
+    modifica sul posto.
   </p>
   <p>
-    Un riferimento
-    non può essere conservato in una variabile né in un campo, perché il
-    linguaggio non ha un tipo riferimento da conservare, quindi ogni valore è un
-    albero la cui radice è un nome nel programma. Un ciclo non si può costruire.
-    Il reference counting, di conseguenza, non può perdere memoria, e al
-    linguaggio non serve <b>nessun garbage collector</b>, nessun raccoglitore di
-    cicli, nessuna annotazione <code>weak</code> o <code>unowned</code> che il
-    programmatore deve azzeccare, e nessuna pausa di raccolta. Swift usa lo
-    stesso meccanismo e quelle annotazioni gli servono, perché Swift ha anche
-    <code>class</code>, con riferimenti condivisi. Heroes prende la metà che
-    funziona e rinuncia alla metà che genera la complessità.
+    Nel linguaggio non esiste un valore che dice soltanto <i>dove</i> sta un
+    altro dato, quindi non puoi tenerne uno in una variabile né dentro un campo.
+    La conseguenza è che ogni dato è un albero: c&rsquo;è un nome del programma
+    alla radice, e sotto tutto quello che quel dato contiene. Non si possono
+    costruire dei circoli, cioè due dati che si rimandano l&rsquo;uno
+    all&rsquo;altro, ed è proprio in quel caso che il conteggio delle copie non
+    funzionerebbe. Quindi al linguaggio non serve <b>nessun garbage
+    collector</b>, nessuna annotazione da azzeccare per spezzare i giri, e
+    nessuna pausa per fare pulizia. Swift usa lo stesso meccanismo e quelle
+    annotazioni gli servono, perché in Swift esistono anche i dati condivisi.
+    Heroes tiene la metà che funziona e rinuncia a quella che porta la
+    complicazione.
   </p>
   <p>
-    E la liberazione della memoria non è affidata al caso: il compilatore
-    inserisce il conteggio come istruzioni vere e costruisce un solo percorso di
-    pulizia per funzione, così ogni uscita da uno scope rilascia quello che quello
-    scope teneva. Tutto il runtime che sta sotto conta 3.388 righe di C, misurate
-    il 2026-08-25.
+    E la memoria non si libera per caso: il conteggio lo scrive il compilatore
+    dentro il programma come istruzioni vere, e ogni funzione ha una sola via di
+    uscita per la pulizia, così qualunque strada prenda il codice, quello che
+    aveva preso viene restituito. Tutto quello che sta sotto sono 3.388 righe di
+    C, misurate il 2026-08-25.
   </p>
   <p>
-    Sopra a tutto sta la promessa che il linguaggio tratta come un obiettivo e non
-    come una qualità della sua implementazione: <b>un programma non deve andare in
-    segfault e non deve corrompere la memoria</b>. Le operazioni che in C vanno
-    male in silenzio, qui vanno male ad alta voce. L&rsquo;overflow è controllato
-    su ogni larghezza usando i builtin di clang invece di finire in un
-    comportamento indefinito, il resto della divisione è protetto come la
-    divisione, un indice oltre la fine ferma il programma: arresti
-    deterministici, sempre nello stesso punto, a ogni esecuzione. E si misura
-    invece di dichiararlo, con i sanitizer sotto <code>--sanitize</code>, con un
-    runtime che segnala tutto quello che è ancora trattenuto all&rsquo;uscita, e
-    con il corpus delle mutazioni. Un buco è nominato invece di essere nascosto:
-    <code>ptr</code> e <code>cstr</code> sono il confine con il C, e quello che
-    una funzione C fa con quello che le hai passato è ancora C.
+    Sopra tutto questo sta una promessa che il linguaggio si è dato come
+    obiettivo, non come fortuna: <b>un programma non deve schiantarsi e non deve
+    rovinare la memoria</b>. Le operazioni che in C vanno male in silenzio, qui
+    vanno male ad alta voce. Un numero che sfora il suo spazio viene sempre
+    controllato, il resto della divisione è protetto come la divisione, un
+    indice oltre la fine di una lista ferma il programma: sempre nello stesso
+    punto, a ogni esecuzione, invece di tirare avanti con un valore inventato. E
+    non lo diciamo e basta, lo misuriamo: con gli strumenti che sorvegliano la
+    memoria mentre il programma gira, con un controllo che a fine esecuzione
+    segnala tutto quello che non è stato restituito, e con i programmi guastati
+    apposta. Un buco resta, ed è dichiarato: quando passi un dato a una funzione
+    C, quello che quella funzione ci fa è ancora affare del C.
   </p>
 
   <h2>Le regole con cui vive <span class="nod">· fashion ·</span></h2>
   <ul class="pillars">
-    <li><b>La località è la moneta.</b> Il senso di una riga è deciso da quella riga più la firma che la contiene, mai da qualcosa definito tre file più in là. Nessuna ereditarietà, nessuna macro, nessuna eccezione, nessuna conversione implicita, nessun null.</li>
-    <li><b>Esattamente un modo di scrivere ogni cosa.</b> Un formatter canonico, una sola parola chiave per i cicli, nessuna conversione implicita di nessun tipo, nomi degli argomenti obbligatori dove i tipi potrebbero confondersi. Gli errori che i modelli fanno davvero diventano errori che il compilatore solleva davvero.</li>
-    <li><b>Errori scritti per essere letti da una macchina.</b> Ogni diagnostica porta tutto quello che serve per sistemare il programma in un solo giro: il tipo aspettato, il punto della definizione, riparazioni concrete etichettate <code>certain</code> o <code>guess</code>. I buchi tipati (<code>???</code>) permettono di costruire un programma partendo dallo scheletro.</li>
-    <li><b>Un programma non deve andare in segfault.</b> Dove due soluzioni ammissibili sono in disaccordo e una delle due si può far schiantare, vince l&rsquo;altra, qualunque cosa costi in eleganza o in token. La sezione qui sopra ha l&rsquo;argomento per esteso, e l&rsquo;unico buco che lascia aperto.</li>
-    <li><b>Abbastanza piccolo per compilare se stesso.</b> Tutta la specifica è misurata in 3548 token contro un tetto fisso di 4096: cinque pagine, ed è il prompt più che una documentazione.</li>
+    <li><b>Quello che conta è capire una riga guardando quella riga.</b> Il senso di una riga lo decidono la riga stessa e la funzione che la contiene, mai qualcosa scritto tre file più in là. Niente ereditarietà, niente macro, niente eccezioni, nessuna conversione automatica fra tipi, nessun null.</li>
+    <li><b>Un modo solo di scrivere ogni cosa.</b> C&rsquo;è un comando che rimette il codice nella sua forma unica, una parola sola per i cicli, nessuna conversione automatica fra tipi, e i nomi degli argomenti obbligatori dove i tipi non bastano a distinguerli. Gli errori che i modelli fanno davvero diventano errori che il compilatore segnala davvero.</li>
+    <li><b>Errori scritti per essere letti da una macchina.</b> Ogni messaggio di errore porta tutto quello che serve per sistemare il programma in un colpo solo: che cosa il compilatore si aspettava, dove era stata dichiarata la cosa con cui va in conflitto, e la correzione, marchiata <code>certain</code> quando è sicura e <code>guess</code> quando è un suggerimento. E scrivendo <code>???</code> puoi lasciare un buco dichiarato e farti dire dal compilatore che cosa ci va.</li>
+    <li><b>Un programma non deve schiantarsi.</b> Quando due soluzioni sono entrambe accettabili e una delle due si può far crollare, vince l&rsquo;altra, qualunque cosa costi in eleganza o in parole. La sezione qui sopra ha il ragionamento per esteso, e l&rsquo;unico buco che resta aperto.</li>
+    <li><b>Abbastanza piccolo da compilare se stesso.</b> La specifica intera misura 3548 token contro un tetto invalicabile di 4096: cinque pagine, fatte per essere date da leggere a un modello più che per stare in uno scaffale.</li>
   </ul>
 
   <h2>Le obiezioni ovvie <span class="nod">· quicksand, avoided ·</span></h2>
   <dl class="why">
     <dt>Perché niente null e niente eccezioni?</dt>
-    <dd>Producono entrambi l&rsquo;unica classe di bug che non solleva nessun
-    errore di compilazione: il percorso non gestito. L&rsquo;assenza è un tipo
-    (<code>i64?</code>), il fallimento è un valore
-    (<code>fail(code, msg)</code>), e la propagazione si vede sulla riga
-    (<code>?</code>). Il controllo di flusso invisibile è vietato in blocco
-    (eccezioni, ereditarietà, macro, overloading degli operatori),
-    perché un modello legge in locale e non può saltare a una definizione che sta
-    tre file più in là.
+    <dd>Producono tutti e due l&rsquo;unico tipo di guaio che nessun
+    compilatore riesce a segnalare: il caso che ti sei dimenticato di gestire.
+    Qui un valore che potrebbe mancare lo dichiari nel tipo
+    (<code>i64?</code>), un&rsquo;operazione andata male restituisce un valore
+    che lo dice (<code>fail(code, msg)</code>), e quando quel fallimento passa
+    alla funzione che ti ha chiamato lo vedi sulla riga, marcato con
+    <code>?</code>. Tutto quello che fa saltare il programma da un punto
+    all&rsquo;altro senza che si veda è vietato in blocco (eccezioni,
+    ereditarietà, macro, operatori che cambiano significato), perché chi legge,
+    modello o persona, ha davanti quella riga e non può andare a cercare una
+    definizione tre file più in là.
     <a href="docs/failure-is-a-value.html">Il capitolo su questo →</a></dd>
 
     <dt>Perché gli argomenti hanno bisogno dei nomi quando due parametri hanno lo stesso tipo?</dt>
-    <dd>Scambiare due argomenti dello stesso tipo è un errore classico dei
-    modelli, e i tipi combaciano, quindi non lo prende nessuno.
-    <code>copy(from: a, to: b)</code> spende token esattamente e solo dove
-    quell&rsquo;errore abita. Dove i tipi già proteggono
-    (<code>save(42, "mario")</code>), i nomi restano facoltativi.</dd>
+    <dd>Invertire due argomenti dello stesso tipo è un classico dei modelli, e
+    siccome i tipi combaciano non se ne accorge nessuno: il programma compila e
+    copia al contrario. Scrivere <code>copy(from: a, to: b)</code> costa quattro
+    caratteri e li spende esattamente dove abita quell&rsquo;errore. Dove i tipi
+    bastano già a distinguere gli argomenti, come in
+    <code>save(42, "mario")</code>, i nomi restano facoltativi.</dd>
 
     <dt>Perché rifiutare un unico tipo intero, e poi tirarne fuori otto larghezze?</dt>
-    <dd>Le regole di conversione sono la voce più costosa che una specifica possa
-    portarsi dietro, e la prima fonte di errori in C, quindi per molto tempo la
-    risposta è stata un solo <code>int</code>. Poi le larghezze sono state chieste
-    comunque, e si è scoperto che la metà costosa era già stata pagata: quello che
-    rende pericolose più dimensioni di numero altrove è la conversione
-    <i>implicita</i>, e le conversioni implicite erano vietate dal primo giorno per
-    un motivo che non c&rsquo;entrava niente. Così <code>i8</code> fino a
-    <code>u64</code> più <code>f32</code> e <code>f64</code> sono arrivati al
-    prezzo di circa un paragrafo, ogni conversione ancora scritta a mano, e la
-    parola <code>int</code> è diventata un errore che elenca le larghezze.</dd>
+    <dd>In C, le regole su come un numero diventa un altro tipo di numero sono
+    la prima fonte di guai, e sono anche la parte più ingombrante da mettere per
+    iscritto: per molto tempo la risposta qui è stata un tipo di numero intero e
+    basta. Poi le misure diverse sono state chieste lo stesso, e si è scoperto
+    che la parte cara era già stata pagata. Quello che rende pericolosi otto tipi
+    di numero altrove è la conversione che avviene <i>da sola</i>, e quelle qui
+    erano vietate dal primo giorno per un motivo che non c&rsquo;entrava niente.
+    Così da <code>i8</code> a <code>u64</code>, più i due tipi con la virgola,
+    sono costati sì e no un paragrafo di specifica: ogni conversione la scrivi
+    ancora a mano, e la parola <code>int</code> è diventata un errore che ti
+    elenca le misure fra cui scegliere.</dd>
 
     <dt>Perché la formattazione è rigida, esattamente 4 spazi, e i tab sono errori?</dt>
     <dd>Perché &ldquo;quasi giusto&rdquo; diventi un errore di compilazione invece
@@ -288,13 +306,15 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     scrive ogni decisione di stile: qualunque differenza testuale fra due
     programmi è una differenza di significato.</dd>
 
-    <dt>Perché la semantica a valori, con ogni assegnamento che è una copia?</dt>
-    <dd>Nessun aliasing significa che nessuna funzione può modificare i tuoi dati
-    dietro le tue spalle, nessun data race per costruzione, e i
-    cicli di riferimenti non possono esistere: quindi il reference counting con
-    copy-on-write è una gestione della memoria completa, senza garbage collector.
-    La località diventa totale: quello che significa una riga è deciso da quella
-    riga. Il prezzo è reale, e la specifica lo dice invece di nasconderlo:
+    <dt>Perché ogni assegnamento è una copia?</dt>
+    <dd>Perché così un dato non ha mai due nomi. Se nessuno può tenere in mano
+    lo stesso dato che hai in mano tu, nessuna funzione te lo cambia alle
+    spalle, e due parti del programma che vanno avanti insieme non se lo pestano
+    a vicenda. E non si possono neanche costruire quei circoli in cui due dati
+    si tengono in vita a vicenda, il che è poi ciò che permette di liberare la
+    memoria contando le copie, senza garbage collector. In più capire una
+    riga richiede solo quella riga. Il prezzo però c&rsquo;è, e la specifica lo
+    scrive invece di nasconderlo:
     <code>+</code> su <code>str</code> copia entrambi i lati, quindi un ciclo
     di concatenazioni è quadratico, e <code>join</code> e <code>repeat</code>
     esistono per costruire in una passata sola;
@@ -302,73 +322,79 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     <code>xs</code>.</dd>
 
     <dt>Cosa manca, e in cosa questo linguaggio è scarso?</dt>
-    <dd>Quattro cose, nominate invece di lasciarle scoprire. <b>Nella v1 non
-    c&rsquo;è concorrenza</b>: il documento di progetto la chiama &ldquo;la lacuna
-    più grande, ed è deliberata&rdquo;. <b>Non ci sono lambda</b>: un valore di
-    tipo funzione è una normale dichiarazione al primo livello, passata per nome.
-    <b>Accumulare stringhe dentro un ciclo è quadratico</b> (sopra;
-    far crescere un array con <code>xs @ xs.push(4)</code> non lo è: cresce sul
-    posto). E i
-    generici stanno solo sulle funzioni, senza vincoli, sempre dedotti.
-    L&rsquo;altra metà dell&rsquo;onestà è il modello dei fallimenti a runtime:
-    l&rsquo;overflow si arresta su ogni larghezza, e così fanno un indice fuori
-    dai limiti e una divisione per zero: arresti deterministici, mai un
-    comportamento indefinito.</dd>
+    <dd>Quattro cose, dette qui invece di lasciartele scoprire per strada.
+    <b>Non si possono fare due cose in parallelo</b>: il documento di progetto la
+    chiama la lacuna più grande, ed è voluta. <b>Non esistono le funzioni
+    anonime</b>, quelle scritte al volo dentro una chiamata: una funzione che
+    passi a un&rsquo;altra funzione è una normale funzione dichiarata, con il suo
+    nome. <b>Attaccare pezzi a una stringa dentro un ciclo costa sempre di
+    più</b> man mano che la stringa cresce, perché ogni volta viene ricopiata
+    tutta (far crescere una lista, invece, non ha questo problema). E le
+    funzioni che lavorano su più tipi di dato sono possibili, ma senza
+    condizioni da mettere sui tipi e senza scriverli mai al momento della
+    chiamata. L&rsquo;altra metà dell&rsquo;onestà riguarda quello che succede
+    mentre il programma gira: un numero che sfora, un indice oltre la fine di
+    una lista e una divisione per zero fermano il programma, sempre allo stesso
+    modo, invece di lasciarlo proseguire con un valore senza senso.</dd>
 
     <dt>Come finisce una riga, se non ci sono i punti e virgola?</dt>
     <dd>
-      La chiusura la mette il compilatore, ma solo quando la riga <i>può</i>
-      essere finita: quando termina con un nome, un valore, una parentesi chiusa,
-      o una di una breve lista di parole. Una riga che finisce con
-      <code>+</code> è visibilmente incompiuta, quindi continua. Le espressioni
-      lunghe si spezzano dentro le parentesi, dove l&rsquo;indentazione smette di
-      significare qualcosa; fuori dalle parentesi, l&rsquo;indentazione di ogni
-      riga è strutturale. Questa è la regola di Go, e la prima versione qui era
-      sbagliata: la lista delle parole era stata copiata in modo incompleto,
-      quindi un <code>break</code> da solo su una riga non chiudeva mai la sua
-      istruzione.
+      Il punto e virgola lo mette il compilatore per te, ma solo quando la riga
+      <i>può</i> essere finita, cioè quando termina con un nome, un valore, una
+      parentesi chiusa o una di poche parole in elenco. Una riga che finisce con
+      <code>+</code> si vede che è a metà, quindi il discorso continua sotto. Le
+      espressioni lunghe si spezzano dentro le parentesi, dove i rientri non
+      contano più; fuori dalle parentesi ogni rientro invece conta, perché è lui
+      a dire dove comincia e dove finisce un blocco. La regola è presa da Go, e
+      la prima versione scritta qui era sbagliata: l&rsquo;elenco delle parole
+      era stato copiato incompleto, e un <code>break</code> da solo su una riga
+      non chiudeva mai la sua istruzione.
     </dd>
 
     <dt>Cosa può contenere una stringa?</dt>
     <dd>
-      Sei sequenze di escape, e nient&rsquo;altro: <code>\n</code>,
-      <code>\t</code>, <code>\r</code>, <code>\\</code>, più <code>\"</code>
-      dentro una stringa e <code>\'</code> dentro un letterale di carattere, così
-      ogni carattere ha esattamente una scrittura. Qualunque altra lettera dopo
-      una barra rovesciata è un errore di compilazione che porta con sé la propria
-      correzione. È questa seconda metà il punto: finché non esisteva,
-      <code>"a\nb"</code> compilava contento e stampava una barra rovesciata, che
-      è il tipo di errore silenzioso che questo linguaggio esiste per rendere
-      impossibile. Sopravvive un limite onesto: <code>"C:\temp"</code> significa
-      ancora un tab, perché <code>\t</code> è legale e nessun compilatore può
-      leggere le intenzioni.
+      Dentro una stringa, certi caratteri si scrivono con una barra rovesciata
+      davanti: <code>\n</code> per andare a capo, <code>\t</code> per un tab,
+      <code>\r</code>, <code>\\</code> per la barra stessa e <code>\"</code> per
+      le virgolette. Sono sei in tutto e non ce ne sono altre, così ogni
+      carattere ha una scrittura sola. Qualunque altra lettera dopo la barra è un
+      errore di compilazione, con la correzione allegata. Ed è questa seconda
+      metà il punto: prima che esistesse, <code>"a\nb"</code> compilava
+      tranquillo e stampava una barra rovesciata, che è esattamente il tipo di
+      guaio silenzioso che questo linguaggio vuole rendere impossibile. Un limite
+      resta, e lo diciamo: <code>"C:\temp"</code> contiene ancora un tab, perché
+      <code>\t</code> è una scrittura legittima e nessun compilatore può leggerti
+      nel pensiero.
     </dd>
 
     <dt>La stessa variabile può essere passata due volte alla stessa chiamata?</dt>
     <dd>
-      No, non quando entrambi i parametri possono scriverci. Gli argomenti
-      modificabili sono marcati con <code>@</code> nel punto della chiamata e
-      vengono copiati dentro e fuori, quindi due di loro puntati sulla stessa
-      variabile renderebbero il risultato dipendente dall&rsquo;ordine in cui le
-      copie vengono riscritte: un ordine che nessuno specifica. Ada ci ha
-      convissuto per trentatré anni e poi l&rsquo;ha reso illegale nel 2012, per
-      lo stesso motivo intorno a cui è costruito questo linguaggio: una risposta
-      che dipende dall&rsquo;ordine di valutazione è quasi sempre un bug.
-      Rifiutarlo è quello che rende vera davvero la promessa &ldquo;non esiste
-      aliasing in nessun posto&rdquo;.
+      No, non quando tutti e due i parametri possono scriverci dentro. Un
+      argomento che la funzione può modificare si marca con <code>@</code> anche
+      al momento della chiamata, e viene copiato dentro all&rsquo;inizio e
+      ricopiato fuori alla fine. Se ne punti due sulla stessa variabile, il
+      risultato dipende da quale delle due copie viene riscritta per ultima, e
+      quell&rsquo;ordine non lo stabilisce nessuno. Ada ci ha convissuto per
+      trentatré anni e poi nel 2012 l&rsquo;ha reso illegale, per il motivo
+      intorno a cui è costruito questo linguaggio: una risposta che cambia a
+      seconda dell&rsquo;ordine in cui il computer fa le cose è quasi sempre un
+      guaio. Rifiutarlo è quello che rende vera davvero la promessa che un dato
+      non ha mai due nomi.
     </dd>
 
     <dt>E la specifica ha un tetto di 4096 token. Perché metterci un tetto?</dt>
-    <dd>Perché la specifica <i>è</i> il prompt. Ogni funzionalità paga
-    l&rsquo;affitto lì dentro, e un linguaggio la cui definizione completa sta in
-    poche pagine è anche un linguaggio che una persona sola può implementare: i
-    due vincoli sono lo stesso vincolo travestito. Al momento misura 3548, e ne
-    restano 548 da spendere. Il numero è misurato, non stimato, e quella
-    distinzione è costata due giorni al progetto: il budget veniva difeso a
-    spanne, tenendo d&rsquo;occhio il numero di parole, finché qualcuno non ha
-    contato davvero e ha trovato la specifica un terzo più grande di quanto si
-    credesse. Adesso si conta con due tokenizzatori pubblicati, offline; dove non
-    sono d&rsquo;accordo, vale il più grande.</dd>
+    <dd>Perché la specifica è il testo che dài da leggere al modello prima di
+    chiedergli un programma, e in un prompt lo spazio è finito. Ogni cosa che il
+    linguaggio aggiunge deve pagarsi l&rsquo;affitto lì dentro, e un linguaggio
+    che si spiega per intero in poche pagine è anche un linguaggio che una
+    persona sola riesce a implementare: i due vincoli sono lo stesso vincolo
+    travestito. Al momento misura 3548 token, e ne restano 548 da spendere. Il
+    numero è contato, non stimato a occhio, e la differenza è costata due giorni
+    al progetto: per un po&rsquo; il tetto è stato difeso guardando il numero di
+    parole, finché qualcuno non ha contato per davvero e ha scoperto la specifica
+    un terzo più grande di quanto tutti credessero. Adesso a contarla sono due
+    programmi diversi, e dove non vanno d&rsquo;accordo vale il numero più
+    grande.</dd>
   </dl>
 
   <p class="next">

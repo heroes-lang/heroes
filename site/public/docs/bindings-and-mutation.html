@@ -89,8 +89,8 @@ error[not_mutable]: `start` was bound with `=`, which binds once, forever — a 
 
   <h3>A name means one thing while you can see it</h3>
   <p>
-    Reusing a name that is already in scope is not allowed, even when the new
-    one would be a different thing:
+    A name already in use nearby cannot be reused, even when the new thing has
+    nothing to do with the old one:
   </p>
   <pre><code>$ heroes check mutation.hero
 error[shadowed_binding]: `start` is already in scope, bound at line 30 — shadowing is an error here: a name means one thing for as long as it is visible

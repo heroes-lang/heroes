@@ -8,6 +8,34 @@ all**. Verbatim compiler output and code blocks are the one exception — they
 are evidence, and evidence is never edited. `site/README.md` keeps the site's
 structural rules; this file is about the writing.
 
+## The reader is never assumed to be an expert
+
+Author instruction 2026-08-26: *"metti come regola che chi capita sul sito non
+sia un esperto di linguaggi di programmazione. Non è assolutamente detto."*
+Somebody landing here may have never written a compiler, may not know what a
+type checker or a garbage collector is, and may be reading about this out of
+curiosity. Write for them.
+
+- **A technical term that stays in English gets a plain-words gloss the first
+  time it appears on a page**, in a few words, inline: *token* (i pezzi in cui
+  il compilatore spezza il testo del programma), *runtime* (il pezzo di
+  programma che sta sotto e fa funzionare le cose mentre gira). One gloss per
+  page, not per paragraph: repeating it in every section is its own kind of
+  noise.
+- **Keep the English term.** Do not invent Italian translations for words the
+  industry says in English (`token`, `prompt`, `runtime`, `header`, `linker`,
+  `commit`, `build`, `parser`, `garbage collector`). Explaining them is the
+  job; replacing them teaches the reader a word nobody else uses.
+- **Never explain a term by using three more.** If the gloss needs its own
+  gloss, the sentence is wrong.
+- **Prefer the thing over the category.** *"Un file che il compilatore legge
+  per sapere com'è fatta una libreria C"* beats *"un artefatto di
+  interfaccia"*.
+- The Italian edition is the one the author reads, so where the two editions
+  diverge the Italian is fixed to be clearer and the English is then brought up
+  to match (CLAUDE.md §11). The glosses added for the Italian belong in the
+  English too.
+
 # No AI slop
 
 You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.

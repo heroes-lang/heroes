@@ -67,10 +67,11 @@
     <figcaption>examples/gallery/07-strings.hero, lines 7&ndash;13</figcaption>
   </figure>
   <p>
-    <code>s[i]</code> is a <code>u8</code>, a number from 0 to 255. It is
-    compared against <code>' '</code> in single quotes, which is a character
-    <i>literal</i> and therefore also a number. Double quotes would be a
-    <code>str</code>, and the two do not mix:
+    <code>s[i]</code> gives you a <code>u8</code>, a number from 0 to 255,
+    because that is what a byte is. It is compared against <code>' '</code> in
+    single quotes, which is how you write a single character and counts as a
+    number too. With double quotes you would have a string, and the two do not
+    mix:
   </p>
   <pre><code>$ heroes check strings.hero
 error[type_mismatch]: expected `u8`, found `str`
