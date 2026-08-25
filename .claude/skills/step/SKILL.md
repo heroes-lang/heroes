@@ -27,6 +27,18 @@ the list needs is not a caller of its own, it is *this line* — without it the
 file is write-only, which is the failure mode of every list nobody is obliged to
 open.
 
+**Every item that gets done in the step is ticked with what closed it and MOVED
+to `docs/work/DONE.md` before the commit.** A live list holds open items only;
+the record holds everything else. That rule existed in three documents and in no
+skill until 2026-08-26, and by then `docs/work/DECIDE.md` held 138 ticked items
+and zero open ones while the record had not been written to in eight days. The
+same applies to an item this step *finds* rather than finishes: it is filed as
+`- [ ]` in the list that matches what it asks — `SCHEDULED.md` if it names a
+milestone, `DECIDE.md` if it names a default the compiler is running on,
+`docs/learn/LEARN.md` if it only asks what is true — and **never as a bare
+bullet or a `## ` section**, which is a notation no count in this project can
+see.
+
 ## 2. Implement
 - If the step touches a panel path (CLAUDE.md § Panel), run `/panel` first —
   asynchronous: adopt the conservative default, queue the ratification.
@@ -73,7 +85,7 @@ Milestone close — the checklist (this is its only copy):
   the record above, where `tests/harness/suite_spec.hero` locks them to
   `SPEC_TOKENS`.) A prediction is scored, or
   it is marked `lapsed` in the ledger row that spent it and the clause it bought
-  goes back to `DECIDE.md` to be re-argued under the removal branch — **never
+  goes back to `docs/work/DECIDE.md` to be re-argued under the removal branch — **never
   renewed with a new milestone name** (panel 046 R2). This bullet exists because
   the mechanism failed without it: panel 036's *"Score at M-ffi-ladder close"*
   survived that milestone's close untouched;
