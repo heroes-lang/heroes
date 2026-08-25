@@ -138,21 +138,21 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 78 "tests/golden/run/ffi-a-c-array-member.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_LoadVrStereoConfig(VrDeviceInfo a0) { (void)LoadVrStereoConfig(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_LoadVrStereoConfig(VrDeviceInfo a0) { (void)(LoadVrStereoConfig)(a0); }
 #line 79 "tests/golden/run/ffi-a-c-array-member.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_UnloadVrStereoConfig(VrStereoConfig a0) { (void)UnloadVrStereoConfig(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_UnloadVrStereoConfig(VrStereoConfig a0) { (void)(UnloadVrStereoConfig)(a0); }
 #line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)hero_file_write(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
 #line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
 #line 147 "ffiacarraymember.c"
 
 typedef struct h_ffiacarraymember_0opt0 {
@@ -314,7 +314,7 @@ bb0:
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     t38 = h1_config;
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
-    UnloadVrStereoConfig(t38);
+    (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
 #line 311 "ffiacarraymember.c"

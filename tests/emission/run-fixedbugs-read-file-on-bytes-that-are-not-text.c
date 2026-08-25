@@ -42,23 +42,23 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 #line 32 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fopen(const char * a0, const char * a1) { (void)fopen(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fopen(const char * a0, const char * a1) { (void)(fopen)(a0, a1); }
 #line 33 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fputc(int32_t a0, void * a1) { (void)fputc(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fputc(int32_t a0, void * a1) { (void)(fputc)(a0, a1); }
 #line 34 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fclose(void * a0) { (void)fclose(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsreadfileonbytesthatarenottext_fclose(void * a0) { (void)(fclose)(a0); }
 #line 111 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)hero_file_read(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, a1); }
 #line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)hero_file_write(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
 #line 114 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)hero_args_at(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)hero_args_raw(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)hero_exit(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)hero_str_try_from_cstr(a0, a1); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
 #line 63 "fixedbugsreadfileonbytesthatarenottext.c"
 
 HERO_STR_STATIC(hero_str_0, "build/heroes-golden-not-text.bin");
@@ -190,17 +190,17 @@ bb1:
 #line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t11 = h1_handle;
 #line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    fputc(t10, t11);
+    (void)fputc(t10, t11);
 #line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t13 = INT64_C(254);
 #line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t14 = h1_handle;
 #line 49 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    fputc(t13, t14);
+    (void)fputc(t13, t14);
 #line 50 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t16 = h1_handle;
 #line 50 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
-    fclose(t16);
+    (void)fclose(t16);
 #line 51 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t18 = true;
 #line 51 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"

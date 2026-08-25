@@ -28,15 +28,15 @@ not merged away.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs landed · **step 1** done · **step 2** ruled and ratified: nothing is pruned |
+| **State** | four repairs · **step 1** done · **step 2** ratified · **step 3** lands panel 092's repair |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 22 of 36 · 25 tags |
-| The compiler | **38,021 lines** of Heroes in 155 files |
-| The seed | **765,508** lines of generated C — the whole way in |
-| The spec | **3548** tokens of a hard 4096 · headroom 548 |
+| The compiler | **38,055 lines** of Heroes in 155 files |
+| The seed | **765,569** lines of generated C — the whole way in |
+| The spec | **3560** tokens of a hard 4096 · headroom 536 |
 | Runtime ABI | 15 |
-| Panels held | **91**, every one ratified · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **nothing** — 091 ratified the day it closed · 10 assigned in `SCHEDULED.md` · 262 in `LEARN.md` (never a gate) |
+| Panels held | **92** · journals 25 · measurements 13 · examples 15 |
+| Waiting on the author | **3** in `DECIDE.md` — panel 092's ratification, a dead citation in CLAUDE.md §7, and one more · 12 assigned in `SCHEDULED.md` · 264 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
@@ -53,7 +53,7 @@ repository root was nine hours stale and did not know a built-in that had landed
 the evening before; a panel seat nearly filed that as a language defect. The
 first line above is 3.5 seconds and removes the whole class.
 
-### What landed in M-separate-compilation so far — four repairs, then two steps
+### What landed in M-separate-compilation so far — four repairs, then three steps
 
 - **`docs/defects/002`** — a legal program that handled both arms of a fallible
   was killed before either. Five lines of runtime C, +0 spec tokens (panel 087).
@@ -126,6 +126,23 @@ ASan and UBSan silent. What replaces them costs **nothing**: the library is one
 module, so one `.c` per module plus acceptance row 1 puts every group in exactly
 one TU. Option B would have cost +40 compiler lines and 146 re-blessed emissions
 to buy what the close gives away.
+
+**Step 3 — the check was there all along, and a macro was hiding it from half of
+libc** (panel 092, five judges, provisional). Convened on the claim that an
+`extern`'s parameter width and sign are unchecked. **They are checked** —
+`-Werror=shorten-64-to-32` and `-Werror=sign-conversion` have shipped all along —
+and the silent set was never clang's builtins: `strncmp`, `malloc`, `calloc`,
+`abs` and `fwrite` are builtins and are all caught. What hid the rest is
+**`_FORTIFY_SOURCE`**, which rewrites `memset` into `__builtin___memset_chk(…)`
+and discards the diagnostic; `-fno-builtin` cannot touch it, because a **macro**
+does the redirect. **Two production lines fix it** — `(void)(f)(…)` is not a
+function-like macro invocation — and the repair immediately found a **live defect
+in this repository**: `examples/curl` declared `option: i32` where `CURLoption`
+is unsigned, invisible since the example was written. A third line stops the
+emitter routing **its own** warning to the author's line. Cost: 922 re-blessed
+lines across 146 emissions, 36 hand-edited in the six `emit/` goldens where
+`UPDATE_GOLDEN` is forbidden, and **+12 spec tokens** for the one mapping row a
+reader cannot derive — `u64` where C says `size_t`.
 
 ---
 

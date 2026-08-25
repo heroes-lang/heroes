@@ -41,7 +41,7 @@ extern "curl/curl.h" link "curl"
     constant CURLE_UNSUPPORTED_PROTOCOL: i64
     function curl_version() -> cstr
     function curl_easy_init() -> ptr
-    function curl_easy_setopt(handle: ptr, option: i32, value: cstr) -> i64
+    function curl_easy_setopt(handle: ptr, option: u32, value: cstr) -> i64
     function curl_easy_strerror(code: u32) -> cstr
     function curl_easy_cleanup(handle: ptr)
 
@@ -51,7 +51,14 @@ function main()
     # The variadic call. `CURLOPT_URL` takes a string, and that is a fact about
     # this option rather than about the function — which is exactly what a
     # variadic means and why the boundary cannot check it for you.
-    rc = curl_easy_setopt(handle, CURLOPT_URL, "https://example.invalid/".cstr())
+    #
+    # `.to_u32()` is not noise: in C an enumeration CONSTANT has type `int`
+    # while the enumeration TYPE may be unsigned, so `CURLOPT_URL` is `i32`
+    # and the `CURLoption` parameter is `u32` — two different declarations of
+    # one enum, and both are what the header says. This line said `option:
+    # i32` and passed the constant straight through until 2026-08-25, when
+    # panel 092's repair to the probe made clang able to see it at last.
+    rc = curl_easy_setopt(handle, CURLOPT_URL.to_u32().must(), "https://example.invalid/".cstr())
     if rc == CURLE_OK
         print("the url was accepted")
     else
