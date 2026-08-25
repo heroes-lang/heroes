@@ -36,13 +36,14 @@ not merged away.
 | The spec | **3548** tokens of a hard 4096 · headroom 548 |
 | Runtime ABI | 15 |
 | Panels held | **90**, every one ratified · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **1** in `DECIDE.md` — the harness's own tests are run by nothing, and two are red · 7 assigned in `SCHEDULED.md` · 260 in `LEARN.md` (never a gate) |
+| Waiting on the author | **nothing** — `DECIDE.md` is empty again, answered the day it was asked · 7 assigned in `SCHEDULED.md` · 260 in `LEARN.md` (never a gate) |
 
 ### Verify it yourself, right now
 
 ```sh
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (~3.5 s)
 ./heroes run tests/harness/main.hero -- ./heroes             # the net
+./heroes test tests/harness/main.hero                        # the net's own tests (13.5 s)
 ./heroes test selfhost/main.hero                             # the compiler's own tests
 ./heroes doctor                                              # the toolchain
 ```
@@ -98,6 +99,17 @@ sorted**, so the fixpoint was green because the sorts were paid, not by luck. No
 `tests/harness/suite_order.hero` fails the net when a walk in `selfhost/` carries
 no mark, and it was made to fire before it was believed. Inventory **12 files /
 16 marks**, three previously unjudged walks ruled `ORDER: none`.
+
+**And the net got a net** (author decision the same day, `/decide` answer `a`).
+Running step 1's own new cases meant running `heroes test tests/harness/main.hero`
+— which **nothing ran**, and **two of its 81 blocks had been red** long enough to
+predate the step that found them. Both were the test being wrong: a count that a
+later commit made stale, and a self-test that reached a six-day-old binary
+because `./heroes` was missing from the candidate list while the **archived
+bootstrap's path was on it** — the file's own comment has said *"the path they
+must not name is the bootstrap's"* since the archive, with the list underneath
+naming it. It is a CI leg now, on every push: **13.5 s**, because it compiles the
+5,606-line harness rather than the 38,021-line compiler.
 
 **One `SCHEDULED.md` item is still due here**: panel 087's unpruned `extern`
 asserts — 13 lines of C in a program that prints `1`, multiplied by 153

@@ -245,13 +245,32 @@ function machine_lacks_the_library(text: str) -> bool
     return strings.contains(text: text, needle: "error[ffi_package]") || strings.contains(text: text, needle: "error[ffi_missing_header]")
 
 # The compilers this harness's own test blocks may use, in the order they are
-# tried. Read as: whatever the caller named, then what CI builds from the seed
-# with clang alone, then a local seed build, then the bootstrap.
+# tried. Read as: whatever the caller named, then the binary in the repository
+# root — the one every command in CLAUDE.md § Commands and the ROADMAP's *Verify
+# it yourself* block names — then what CI builds from the seed with clang alone,
+# then a local seed build.
+#
+# **`./heroes` was missing from this list and `./target/debug/heroes` was on it**
+# until 2026-08-25 (author decision, `/decide` answer `a`). The second is the
+# bootstrap, archived at M-bootstrap-archive, so the list reached for a dead path
+# before the live one — and the comment below has said *"the path they must not
+# name is the bootstrap's"* since the day of the archive, with the list under it
+# naming it. What that cost is measured: `suite_run`'s self-test reached a
+# `build/heroes-seed` dated 2026-08-19 and every program it built died on
+# `_Static_assert` against `HERO_RUNTIME_ABI 15` — the stamp doing exactly its
+# job (CLAUDE.md §7, version skew) against a test that trusted whatever binary
+# was lying around.
+#
+# A stale `./heroes` is no safer than a stale seed build, and that is the point:
+# the ABI stamp turns skew into a loud clang error rather than a wrong answer,
+# and the ROADMAP's first line rebuilds it in 3.5 s. In CI nothing here is
+# reached at all — the leg names `HEROES_COMPILER`, so the answer is decided
+# rather than searched for.
 constant CANDIDATES: [str]
     [
+        "./heroes"
         "./heroes-from-seed"
         "./build/heroes-seed"
-        "./target/debug/heroes"
     ]
 
 # A compiler these self-tests can run, asked of the MACHINE rather than
@@ -262,7 +281,8 @@ constant CANDIDATES: [str]
 # most — which is exactly why `suite_golden.hero`'s stubs exist. Nine self-tests
 # named it as a literal, so nine of them would have started failing on the move
 # commit, in the net that was built to survive it (found 2026-08-19, while
-# adding the seed leg to CI).
+# adding the seed leg to CI). It stayed in the list above for six more days,
+# which is the whole argument for the CI leg that now runs this file.
 #
 # An empty answer is a loud failure rather than a skip: the harness is being run
 # BY a compiler, so one exists, and if none of these paths holds it the test

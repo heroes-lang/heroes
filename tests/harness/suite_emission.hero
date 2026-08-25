@@ -267,7 +267,16 @@ test "an emission that matches its blessed bytes passes, and a changed one fails
     assert !same.is_err()
     green = sweep(scratch: scratch, compiler: same.must(), store: scratch + "/emission-match", programs: programs, update: false, least: 1)
     assert !green.is_err()
-    assert green.must().passed == 2
+    # THREE, and the number is named so it explains itself when it moves:
+    # `judge` (the bytes), `suite_descriptors.judge` (the descriptor
+    # invariant over the same fresh emission) and `orphans` (no blessed
+    # file without a program). It said 2 from the day
+    # `suite_descriptors.judge` was added inside `sweep` at
+    # M-bootstrap-archive until 2026-08-25, red the whole time, because
+    # nothing ran this file — a self-test that counts every `keep_pass` in
+    # a function breaks whenever a check is added to that function, and
+    # this comment is the cheapest thing that turns that into one edit.
+    assert green.must().passed == 3
     assert green.must().failed == 0
 
     # One byte of the second line different: the report must name the line
