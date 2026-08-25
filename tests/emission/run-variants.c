@@ -58,15 +58,15 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "variants.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "num");
-HERO_STR_STATIC(hero_str_1, "word:");
-HERO_STR_STATIC(hero_str_2, "end");
-HERO_STR_STATIC(hero_str_3, "abcd");
-HERO_STR_STATIC(hero_str_4, "hi");
-HERO_STR_STATIC(hero_str_5, "!");
-HERO_STR_STATIC(hero_str_6, "ab");
-HERO_STR_STATIC(hero_str_7, "a");
-HERO_STR_STATIC(hero_str_8, "b");
+HERO_STR_STATIC(hero_str_1d0a2a, "num");
+HERO_STR_STATIC(hero_str_37dd7354, "word:");
+HERO_STR_STATIC(hero_str_1aab3b, "end");
+HERO_STR_STATIC(hero_str_d19443a, "abcd");
+HERO_STR_STATIC(hero_str_35a1, "hi");
+HERO_STR_STATIC(hero_str_21, "!");
+HERO_STR_STATIC(hero_str_3205, "ab");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
 
 typedef enum h_variants_Token_tag {
     h_variants_Token_tag_num = 0,
@@ -326,7 +326,7 @@ bb1:
     return t12;
 bb2:
 #line 27 "tests/golden/run/variants.hero"
-    t4 = HERO_STR_LIT(hero_str_0);
+    t4 = HERO_STR_LIT(hero_str_1d0a2a);
 #line 26 "tests/golden/run/variants.hero"
     t14 = h2_r0;
 #line 333 "variants.c"
@@ -350,7 +350,7 @@ bb3:
 #line 351 "variants.c"
     h_variants_Token_c_word_release(&t15);
 #line 28 "tests/golden/run/variants.hero"
-    t7 = HERO_STR_LIT(hero_str_1);
+    t7 = HERO_STR_LIT(hero_str_37dd7354);
 #line 28 "tests/golden/run/variants.hero"
     t8 = h3_w;
 #line 28 "tests/golden/run/variants.hero"
@@ -374,7 +374,7 @@ bb3:
     goto bb1;
 bb4:
 #line 29 "tests/golden/run/variants.hero"
-    t11 = HERO_STR_LIT(hero_str_2);
+    t11 = HERO_STR_LIT(hero_str_1aab3b);
 #line 26 "tests/golden/run/variants.hero"
     t18 = h2_r0;
 #line 381 "variants.c"
@@ -514,7 +514,7 @@ bb0:
 #line 32 "tests/golden/run/variants.hero"
     hero_print_end();
 #line 33 "tests/golden/run/variants.hero"
-    t4 = HERO_STR_LIT(hero_str_3);
+    t4 = HERO_STR_LIT(hero_str_d19443a);
 #line 519 "variants.c"
     hero_str_incref(t4);
 #line 33 "tests/golden/run/variants.hero"
@@ -546,9 +546,9 @@ bb0:
 #line 34 "tests/golden/run/variants.hero"
     hero_print_end();
 #line 35 "tests/golden/run/variants.hero"
-    t9 = HERO_STR_LIT(hero_str_4);
+    t9 = HERO_STR_LIT(hero_str_35a1);
 #line 35 "tests/golden/run/variants.hero"
-    t10 = HERO_STR_LIT(hero_str_5);
+    t10 = HERO_STR_LIT(hero_str_21);
 #line 35 "tests/golden/run/variants.hero"
     t11 = hero_str_concat(t9, t10);
 #line 35 "tests/golden/run/variants.hero"
@@ -711,7 +711,7 @@ bb0:
 #line 45 "tests/golden/run/variants.hero"
     hero_print_end();
 #line 48 "tests/golden/run/variants.hero"
-    t35 = HERO_STR_LIT(hero_str_6);
+    t35 = HERO_STR_LIT(hero_str_3205);
 #line 716 "variants.c"
     hero_str_incref(t35);
 #line 48 "tests/golden/run/variants.hero"
@@ -731,9 +731,9 @@ bb0:
 #line 732 "variants.c"
     h_variants_Token_release(&t61);
 #line 49 "tests/golden/run/variants.hero"
-    t37 = HERO_STR_LIT(hero_str_7);
+    t37 = HERO_STR_LIT(hero_str_61);
 #line 49 "tests/golden/run/variants.hero"
-    t38 = HERO_STR_LIT(hero_str_8);
+    t38 = HERO_STR_LIT(hero_str_62);
 #line 49 "tests/golden/run/variants.hero"
     t39 = hero_str_concat(t37, t38);
 #line 49 "tests/golden/run/variants.hero"

@@ -58,14 +58,14 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "sizedintegers.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "small ");
-HERO_STR_STATIC(hero_str_1, " ");
-HERO_STR_STATIC(hero_str_2, "top ");
-HERO_STR_STATIC(hero_str_3, "widen ");
-HERO_STR_STATIC(hero_str_4, "narrow ");
-HERO_STR_STATIC(hero_str_5, "signed ");
-HERO_STR_STATIC(hero_str_6, "A9");
-HERO_STR_STATIC(hero_str_7, "bytes ");
+HERO_STR_STATIC(hero_str_2e07432, "small ");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_fa87493, "top ");
+HERO_STR_STATIC(hero_str_2b1fdd99, "widen ");
+HERO_STR_STATIC(hero_str_526294ee, "narrow ");
+HERO_STR_STATIC(hero_str_745f764e, "signed ");
+HERO_STR_STATIC(hero_str_217c, "A9");
+HERO_STR_STATIC(hero_str_2445ed02, "bytes ");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -273,19 +273,19 @@ bb0:
 #line 31 "tests/golden/run/sized-integers.hero"
     h3_d = t4;
 #line 32 "tests/golden/run/sized-integers.hero"
-    t5 = HERO_STR_LIT(hero_str_0);
+    t5 = HERO_STR_LIT(hero_str_2e07432);
 #line 32 "tests/golden/run/sized-integers.hero"
     t6 = h0_a;
 #line 32 "tests/golden/run/sized-integers.hero"
-    t7 = HERO_STR_LIT(hero_str_1);
+    t7 = HERO_STR_LIT(hero_str_20);
 #line 32 "tests/golden/run/sized-integers.hero"
     t8 = h1_b;
 #line 32 "tests/golden/run/sized-integers.hero"
-    t9 = HERO_STR_LIT(hero_str_1);
+    t9 = HERO_STR_LIT(hero_str_20);
 #line 32 "tests/golden/run/sized-integers.hero"
     t10 = h2_c;
 #line 32 "tests/golden/run/sized-integers.hero"
-    t11 = HERO_STR_LIT(hero_str_1);
+    t11 = HERO_STR_LIT(hero_str_20);
 #line 32 "tests/golden/run/sized-integers.hero"
     t12 = h3_d;
 #line 32 "tests/golden/run/sized-integers.hero"
@@ -315,15 +315,15 @@ bb0:
 #line 35 "tests/golden/run/sized-integers.hero"
     h5_hex = t14;
 #line 36 "tests/golden/run/sized-integers.hero"
-    t15 = HERO_STR_LIT(hero_str_2);
+    t15 = HERO_STR_LIT(hero_str_fa87493);
 #line 36 "tests/golden/run/sized-integers.hero"
     t16 = h4_top;
 #line 36 "tests/golden/run/sized-integers.hero"
-    t17 = HERO_STR_LIT(hero_str_1);
+    t17 = HERO_STR_LIT(hero_str_20);
 #line 36 "tests/golden/run/sized-integers.hero"
     t18 = h5_hex;
 #line 36 "tests/golden/run/sized-integers.hero"
-    t19 = HERO_STR_LIT(hero_str_1);
+    t19 = HERO_STR_LIT(hero_str_20);
 #line 36 "tests/golden/run/sized-integers.hero"
     t20 = h4_top;
 #line 36 "tests/golden/run/sized-integers.hero"
@@ -349,7 +349,7 @@ bb0:
 #line 38 "tests/golden/run/sized-integers.hero"
     h6_byte = t23;
 #line 39 "tests/golden/run/sized-integers.hero"
-    t24 = HERO_STR_LIT(hero_str_3);
+    t24 = HERO_STR_LIT(hero_str_2b1fdd99);
 #line 39 "tests/golden/run/sized-integers.hero"
     t25 = h6_byte;
 #line 39 "tests/golden/run/sized-integers.hero"
@@ -395,7 +395,7 @@ bb1:
 #line 39 "tests/golden/run/sized-integers.hero"
     hero_print_end();
 #line 40 "tests/golden/run/sized-integers.hero"
-    t37 = HERO_STR_LIT(hero_str_4);
+    t37 = HERO_STR_LIT(hero_str_526294ee);
 #line 40 "tests/golden/run/sized-integers.hero"
     t38 = INT64_C(300);
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -431,7 +431,7 @@ bb1:
 #line 40 "tests/golden/run/sized-integers.hero"
     t43 = t41 == t42;
 #line 40 "tests/golden/run/sized-integers.hero"
-    t44 = HERO_STR_LIT(hero_str_1);
+    t44 = HERO_STR_LIT(hero_str_20);
 #line 40 "tests/golden/run/sized-integers.hero"
     t45 = INT64_C(42);
 #line 40 "tests/golden/run/sized-integers.hero"
@@ -493,7 +493,7 @@ bb3:
 #line 40 "tests/golden/run/sized-integers.hero"
     hero_print_end();
 #line 41 "tests/golden/run/sized-integers.hero"
-    t55 = HERO_STR_LIT(hero_str_5);
+    t55 = HERO_STR_LIT(hero_str_745f764e);
 #line 41 "tests/golden/run/sized-integers.hero"
     t56 = INT64_C(-1);
 #line 41 "tests/golden/run/sized-integers.hero"
@@ -535,7 +535,7 @@ bb3:
 #line 41 "tests/golden/run/sized-integers.hero"
     hero_print_end();
 #line 43 "tests/golden/run/sized-integers.hero"
-    t62 = HERO_STR_LIT(hero_str_6);
+    t62 = HERO_STR_LIT(hero_str_217c);
 #line 43 "tests/golden/run/sized-integers.hero"
     t85 = h11_text;
 #line 542 "sizedintegers.c"
@@ -545,7 +545,7 @@ bb3:
 #line 546 "sizedintegers.c"
     hero_str_decref(t85);
 #line 44 "tests/golden/run/sized-integers.hero"
-    t63 = HERO_STR_LIT(hero_str_7);
+    t63 = HERO_STR_LIT(hero_str_2445ed02);
 #line 44 "tests/golden/run/sized-integers.hero"
     t64 = h11_text;
 #line 44 "tests/golden/run/sized-integers.hero"
@@ -553,7 +553,7 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     t66 = hero_str_byte(t64, t65);
 #line 44 "tests/golden/run/sized-integers.hero"
-    t67 = HERO_STR_LIT(hero_str_1);
+    t67 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/sized-integers.hero"
     t68 = h11_text;
 #line 44 "tests/golden/run/sized-integers.hero"
@@ -561,7 +561,7 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     t70 = hero_str_byte(t68, t69);
 #line 44 "tests/golden/run/sized-integers.hero"
-    t71 = HERO_STR_LIT(hero_str_1);
+    t71 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/sized-integers.hero"
     t72 = h11_text;
 #line 44 "tests/golden/run/sized-integers.hero"

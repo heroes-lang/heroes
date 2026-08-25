@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "strings.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "hi ");
-HERO_STR_STATIC(hero_str_1, "good day ");
-HERO_STR_STATIC(hero_str_2, "Ziggy");
+HERO_STR_STATIC(hero_str_1b7183, "hi ");
+HERO_STR_STATIC(hero_str_2d678ad8, "good day ");
+HERO_STR_STATIC(hero_str_39ff1ae6, "Ziggy");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -108,7 +108,7 @@ HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
     goto bb0;
 bb0:
 #line 8 "tests/golden/emit/strings.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_1b7183);
 #line 8 "tests/golden/emit/strings.hero"
     t7 = h2_prefix;
 #line 115 "strings.c"
@@ -149,7 +149,7 @@ bb1:
     return t6;
 bb2:
 #line 10 "tests/golden/emit/strings.hero"
-    t3 = HERO_STR_LIT(hero_str_1);
+    t3 = HERO_STR_LIT(hero_str_2d678ad8);
 #line 10 "tests/golden/emit/strings.hero"
     t9 = h2_prefix;
 #line 156 "strings.c"
@@ -175,7 +175,7 @@ void h_strings_main(void) {
     goto bb0;
 bb0:
 #line 14 "tests/golden/emit/strings.hero"
-    t1 = HERO_STR_LIT(hero_str_2);
+    t1 = HERO_STR_LIT(hero_str_39ff1ae6);
 #line 14 "tests/golden/emit/strings.hero"
     t2 = true;
 #line 14 "tests/golden/emit/strings.hero"

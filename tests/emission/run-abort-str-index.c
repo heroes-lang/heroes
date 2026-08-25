@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "abortstrindex.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "abc");
+HERO_STR_STATIC(hero_str_1998f2, "abc");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -102,7 +102,7 @@ void h_abortstrindex_main(void) {
     goto bb0;
 bb0:
 #line 8 "tests/golden/run/abort-str-index.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_1998f2);
 #line 8 "tests/golden/run/abort-str-index.hero"
     t8 = h0_s;
 #line 109 "abortstrindex.c"

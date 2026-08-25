@@ -82,7 +82,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 83 "ffistructresultunchecked.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "nothing calls div, and that used to be enough to ship a binary");
+HERO_STR_STATIC(hero_str_32446647, "nothing calls div, and that used to be enough to ship a binary");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -121,7 +121,7 @@ void h_ffistructresultunchecked_main(void) {
     goto bb0;
 bb0:
 #line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_32446647);
 #line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     hero_print_str(t1);
 #line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"

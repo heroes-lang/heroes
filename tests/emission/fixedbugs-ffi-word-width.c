@@ -69,7 +69,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 70 "ffiwordwidth.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "unreachable");
+HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -118,7 +118,7 @@ bb0:
 #line 52 "tests/golden/fixedbugs/ffi-word-width.hero"
     (void)free(t3);
 #line 53 "tests/golden/fixedbugs/ffi-word-width.hero"
-    t4 = HERO_STR_LIT(hero_str_0);
+    t4 = HERO_STR_LIT(hero_str_187ae0ee);
 #line 53 "tests/golden/fixedbugs/ffi-word-width.hero"
     hero_print_str(t4);
 #line 53 "tests/golden/fixedbugs/ffi-word-width.hero"

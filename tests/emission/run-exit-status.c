@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "exitstatus.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "before");
-HERO_STR_STATIC(hero_str_1, "after");
+HERO_STR_STATIC(hero_str_43560e4d, "before");
+HERO_STR_STATIC(hero_str_347b94b5, "after");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -97,7 +97,7 @@ void h_exitstatus_main(void) {
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/exit-status.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 19 "tests/golden/run/exit-status.hero"
     hero_print_str(t1);
 #line 19 "tests/golden/run/exit-status.hero"
@@ -107,7 +107,7 @@ bb0:
 #line 20 "tests/golden/run/exit-status.hero"
     h_library_exit(t2);
 #line 21 "tests/golden/run/exit-status.hero"
-    t3 = HERO_STR_LIT(hero_str_1);
+    t3 = HERO_STR_LIT(hero_str_347b94b5);
 #line 21 "tests/golden/run/exit-status.hero"
     hero_print_str(t3);
 #line 21 "tests/golden/run/exit-status.hero"

@@ -58,10 +58,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "nestedmatch.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "red dot");
-HERO_STR_STATIC(hero_str_1, "blue dot");
-HERO_STR_STATIC(hero_str_2, "red line");
-HERO_STR_STATIC(hero_str_3, "blue line");
+HERO_STR_STATIC(hero_str_127e9def, "red dot");
+HERO_STR_STATIC(hero_str_56e1b672, "blue dot");
+HERO_STR_STATIC(hero_str_77dba954, "red line");
+HERO_STR_STATIC(hero_str_769134a3, "blue line");
 
 typedef enum h_nestedmatch_Shape_tag {
     h_nestedmatch_Shape_tag_dot = 0,
@@ -247,7 +247,7 @@ bb4:
     goto bb1;
 bb5:
 #line 25 "tests/golden/ir/nested-match.hero"
-    t7 = HERO_STR_LIT(hero_str_0);
+    t7 = HERO_STR_LIT(hero_str_127e9def);
 #line 24 "tests/golden/ir/nested-match.hero"
     t18 = h5_r1;
 #line 254 "nestedmatch.c"
@@ -259,7 +259,7 @@ bb5:
     goto bb4;
 bb6:
 #line 26 "tests/golden/ir/nested-match.hero"
-    t8 = HERO_STR_LIT(hero_str_1);
+    t8 = HERO_STR_LIT(hero_str_56e1b672);
 #line 24 "tests/golden/ir/nested-match.hero"
     t19 = h5_r1;
 #line 266 "nestedmatch.c"
@@ -283,7 +283,7 @@ bb7:
     goto bb1;
 bb8:
 #line 29 "tests/golden/ir/nested-match.hero"
-    t13 = HERO_STR_LIT(hero_str_2);
+    t13 = HERO_STR_LIT(hero_str_77dba954);
 #line 28 "tests/golden/ir/nested-match.hero"
     t21 = h7_r2;
 #line 290 "nestedmatch.c"
@@ -295,7 +295,7 @@ bb8:
     goto bb7;
 bb9:
 #line 30 "tests/golden/ir/nested-match.hero"
-    t14 = HERO_STR_LIT(hero_str_3);
+    t14 = HERO_STR_LIT(hero_str_769134a3);
 #line 28 "tests/golden/ir/nested-match.hero"
     t22 = h7_r2;
 #line 302 "nestedmatch.c"

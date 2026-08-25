@@ -58,45 +58,45 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "usage: logs <file.log> [LEVEL,LEVEL\342\200\246]");
-HERO_STR_STATIC(hero_str_1, "cannot read ");
-HERO_STR_STATIC(hero_str_2, ": ");
-HERO_STR_STATIC(hero_str_3, "lines: ");
-HERO_STR_STATIC(hero_str_4, " read, ");
-HERO_STR_STATIC(hero_str_5, " skipped");
-HERO_STR_STATIC(hero_str_6, "levels:");
-HERO_STR_STATIC(hero_str_7, "sources:");
-HERO_STR_STATIC(hero_str_8, "busiest hour: ");
-HERO_STR_STATIC(hero_str_9, "ERROR");
-HERO_STR_STATIC(hero_str_10, "first error: ");
-HERO_STR_STATIC(hero_str_11, "first error: none");
-HERO_STR_STATIC(hero_str_12, " ");
-HERO_STR_STATIC(hero_str_13, "+");
-HERO_STR_STATIC(hero_str_14, " lines");
-HERO_STR_STATIC(hero_str_30, "INFO");
-HERO_STR_STATIC(hero_str_31, "no_source");
-HERO_STR_STATIC(hero_str_32, "no_stamp");
-HERO_STR_STATIC(hero_str_33, "short_line");
-HERO_STR_STATIC(hero_str_34, "");
-HERO_STR_STATIC(hero_str_35, "a line is `stamp LEVEL source: message`");
-HERO_STR_STATIC(hero_str_36, "the third word must end in `:`");
-HERO_STR_STATIC(hero_str_37, "the first word must be a timestamp, `DATEThh:mm:ss`");
-HERO_STR_STATIC(hero_str_38, "??");
-HERO_STR_STATIC(hero_str_61, "no_error");
-HERO_STR_STATIC(hero_str_62, "no_such_level");
-HERO_STR_STATIC(hero_str_63, "TRACE");
-HERO_STR_STATIC(hero_str_64, "DEBUG");
-HERO_STR_STATIC(hero_str_65, "WARN");
-HERO_STR_STATIC(hero_str_66, "`");
-HERO_STR_STATIC(hero_str_67, "` is not a level \342\200\224 try ");
-HERO_STR_STATIC(hero_str_68, ", ");
-HERO_STR_STATIC(hero_str_100, "none_at_level");
-HERO_STR_STATIC(hero_str_101, "  ");
-HERO_STR_STATIC(hero_str_102, "no line is ");
-HERO_STR_STATIC(hero_str_131, "file_not_found");
-HERO_STR_STATIC(hero_str_132, "no file at ");
-HERO_STR_STATIC(hero_str_133, "read_failed");
-HERO_STR_STATIC(hero_str_134, "could not read ");
+HERO_STR_STATIC(hero_str_14a8e908, "usage: logs <file.log> [LEVEL,LEVEL\342\200\246]");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_7d2bc9ca, "lines: ");
+HERO_STR_STATIC(hero_str_1140de69, " read, ");
+HERO_STR_STATIC(hero_str_7c1981d8, " skipped");
+HERO_STR_STATIC(hero_str_1b869646, "levels:");
+HERO_STR_STATIC(hero_str_503835af, "sources:");
+HERO_STR_STATIC(hero_str_1e620d47, "busiest hour: ");
+HERO_STR_STATIC(hero_str_4644a125, "ERROR");
+HERO_STR_STATIC(hero_str_35927d00, "first error: ");
+HERO_STR_STATIC(hero_str_76af376, "first error: none");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_2b, "+");
+HERO_STR_STATIC(hero_str_6681316c, " lines");
+HERO_STR_STATIC(hero_str_9dcb212, "INFO");
+HERO_STR_STATIC(hero_str_4c572a93, "no_source");
+HERO_STR_STATIC(hero_str_7199413a, "no_stamp");
+HERO_STR_STATIC(hero_str_44c89592, "short_line");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_65d9fac2, "a line is `stamp LEVEL source: message`");
+HERO_STR_STATIC(hero_str_1330c2e, "the third word must end in `:`");
+HERO_STR_STATIC(hero_str_388e57fd, "the first word must be a timestamp, `DATEThh:mm:ss`");
+HERO_STR_STATIC(hero_str_207c, "??");
+HERO_STR_STATIC(hero_str_7b992235, "no_error");
+HERO_STR_STATIC(hero_str_2b2122dc, "no_such_level");
+HERO_STR_STATIC(hero_str_4d8dd61c, "TRACE");
+HERO_STR_STATIC(hero_str_32f4cc6c, "DEBUG");
+HERO_STR_STATIC(hero_str_bb98f3a, "WARN");
+HERO_STR_STATIC(hero_str_60, "`");
+HERO_STR_STATIC(hero_str_23ad5593, "` is not a level \342\200\224 try ");
+HERO_STR_STATIC(hero_str_16a4, ", ");
+HERO_STR_STATIC(hero_str_17788c5d, "none_at_level");
+HERO_STR_STATIC(hero_str_1080, "  ");
+HERO_STR_STATIC(hero_str_6e6a828b, "no line is ");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
 typedef struct h_entry_Entry {
     HeroStr f_stamp;
@@ -366,7 +366,7 @@ bb1:
 #line 27 "examples/logs/main.hero"
 bb2:
 #line 25 "examples/logs/main.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_14a8e908);
 #line 25 "examples/logs/main.hero"
     hero_print_str(t6);
 #line 25 "examples/logs/main.hero"
@@ -438,7 +438,7 @@ bb5:
 #line 439 "main.c"
     hero_failure_release(&t35);
 #line 28 "examples/logs/main.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_2d78c599);
 #line 28 "examples/logs/main.hero"
     t17 = h0_given;
 #line 28 "examples/logs/main.hero"
@@ -454,7 +454,7 @@ bb5:
 #line 455 "main.c"
     hero_str_decref(t36);
 #line 28 "examples/logs/main.hero"
-    t21 = HERO_STR_LIT(hero_str_2);
+    t21 = HERO_STR_LIT(hero_str_1dce);
 #line 28 "examples/logs/main.hero"
     t22 = hero_str_concat(t20, t21);
 #line 28 "examples/logs/main.hero"
@@ -746,7 +746,7 @@ bb0:
 #line 36 "examples/logs/main.hero"
 bb1:
 #line 41 "examples/logs/main.hero"
-    t24 = HERO_STR_LIT(hero_str_3);
+    t24 = HERO_STR_LIT(hero_str_7d2bc9ca);
 #line 41 "examples/logs/main.hero"
     t25 = h0_r;
 #line 41 "examples/logs/main.hero"
@@ -754,7 +754,7 @@ bb1:
 #line 41 "examples/logs/main.hero"
     t27 = hero_array_len(t26);
 #line 41 "examples/logs/main.hero"
-    t28 = HERO_STR_LIT(hero_str_4);
+    t28 = HERO_STR_LIT(hero_str_1140de69);
 #line 41 "examples/logs/main.hero"
     t29 = h0_r;
 #line 41 "examples/logs/main.hero"
@@ -762,7 +762,7 @@ bb1:
 #line 41 "examples/logs/main.hero"
     t31 = hero_array_len(t30);
 #line 41 "examples/logs/main.hero"
-    t32 = HERO_STR_LIT(hero_str_5);
+    t32 = HERO_STR_LIT(hero_str_7c1981d8);
 #line 41 "examples/logs/main.hero"
     hero_print_str(t24);
 #line 41 "examples/logs/main.hero"
@@ -776,7 +776,7 @@ bb1:
 #line 41 "examples/logs/main.hero"
     hero_print_end();
 #line 42 "examples/logs/main.hero"
-    t33 = HERO_STR_LIT(hero_str_6);
+    t33 = HERO_STR_LIT(hero_str_1b869646);
 #line 42 "examples/logs/main.hero"
     hero_print_str(t33);
 #line 42 "examples/logs/main.hero"
@@ -974,7 +974,7 @@ bb5:
 #line 38 "examples/logs/main.hero"
     t14 = t13.code;
 #line 38 "examples/logs/main.hero"
-    t15 = HERO_STR_LIT(hero_str_2);
+    t15 = HERO_STR_LIT(hero_str_1dce);
 #line 38 "examples/logs/main.hero"
     t16 = hero_str_concat(t14, t15);
 #line 38 "examples/logs/main.hero"
@@ -1066,7 +1066,7 @@ bb9:
 #line 43 "examples/logs/main.hero"
 bb10:
 #line 45 "examples/logs/main.hero"
-    t51 = HERO_STR_LIT(hero_str_7);
+    t51 = HERO_STR_LIT(hero_str_503835af);
 #line 45 "examples/logs/main.hero"
     hero_print_str(t51);
 #line 45 "examples/logs/main.hero"
@@ -1216,7 +1216,7 @@ bb15:
 #line 51 "examples/logs/main.hero"
     t83 = t82.f_entries;
 #line 51 "examples/logs/main.hero"
-    t84 = HERO_STR_LIT(hero_str_9);
+    t84 = HERO_STR_LIT(hero_str_4644a125);
 #line 51 "examples/logs/main.hero"
     t85 = h_summary_first_at(t83, t84);
 #line 51 "examples/logs/main.hero"
@@ -1250,7 +1250,7 @@ bb15:
 #line 51 "examples/logs/main.hero"
 bb16:
 #line 50 "examples/logs/main.hero"
-    t78 = HERO_STR_LIT(hero_str_8);
+    t78 = HERO_STR_LIT(hero_str_1e620d47);
 #line 50 "examples/logs/main.hero"
     t79 = h11_busiest;
 #line 50 "examples/logs/main.hero"
@@ -1276,7 +1276,7 @@ bb18:
 #line 54 "examples/logs/main.hero"
     t98 = t97.f_entries;
 #line 54 "examples/logs/main.hero"
-    t99 = HERO_STR_LIT(hero_str_9);
+    t99 = HERO_STR_LIT(hero_str_4644a125);
 #line 54 "examples/logs/main.hero"
     t100 = h_summary_how_many_at(t98, t99);
 #line 54 "examples/logs/main.hero"
@@ -1300,13 +1300,13 @@ bb19:
 #line 1301 "main.c"
     h_entry_Entry_release(&t125);
 #line 52 "examples/logs/main.hero"
-    t90 = HERO_STR_LIT(hero_str_10);
+    t90 = HERO_STR_LIT(hero_str_35927d00);
 #line 52 "examples/logs/main.hero"
     t91 = h13_first;
 #line 52 "examples/logs/main.hero"
     t92 = t91.f_source;
 #line 52 "examples/logs/main.hero"
-    t93 = HERO_STR_LIT(hero_str_2);
+    t93 = HERO_STR_LIT(hero_str_1dce);
 #line 52 "examples/logs/main.hero"
     t94 = h13_first;
 #line 52 "examples/logs/main.hero"
@@ -1326,7 +1326,7 @@ bb19:
 #line 52 "examples/logs/main.hero"
 bb20:
 #line 53 "examples/logs/main.hero"
-    t96 = HERO_STR_LIT(hero_str_11);
+    t96 = HERO_STR_LIT(hero_str_76af376);
 #line 53 "examples/logs/main.hero"
     hero_print_str(t96);
 #line 53 "examples/logs/main.hero"
@@ -1570,7 +1570,7 @@ bb4:
 #line 69 "examples/logs/main.hero"
     t30 = h2_shown;
 #line 69 "examples/logs/main.hero"
-    t31 = HERO_STR_LIT(hero_str_12);
+    t31 = HERO_STR_LIT(hero_str_20);
 #line 69 "examples/logs/main.hero"
     t32 = h1_wanted;
 #line 69 "examples/logs/main.hero"
@@ -1582,7 +1582,7 @@ bb4:
 #line 1583 "main.c"
     hero_array_decref(t39);
 #line 69 "examples/logs/main.hero"
-    t34 = HERO_STR_LIT(hero_str_13);
+    t34 = HERO_STR_LIT(hero_str_2b);
 #line 69 "examples/logs/main.hero"
     t35 = hero_str_join(t33, t34);
 #line 69 "examples/logs/main.hero"
@@ -1592,7 +1592,7 @@ bb4:
 #line 1593 "main.c"
     hero_str_decref(t40);
 #line 69 "examples/logs/main.hero"
-    t36 = HERO_STR_LIT(hero_str_14);
+    t36 = HERO_STR_LIT(hero_str_6681316c);
 #line 69 "examples/logs/main.hero"
     hero_print_int(t30);
 #line 69 "examples/logs/main.hero"
@@ -1636,13 +1636,13 @@ bb6:
 #line 68 "examples/logs/main.hero"
     t20 = t19.f_stamp;
 #line 68 "examples/logs/main.hero"
-    t21 = HERO_STR_LIT(hero_str_12);
+    t21 = HERO_STR_LIT(hero_str_20);
 #line 68 "examples/logs/main.hero"
     t22 = h5_one;
 #line 68 "examples/logs/main.hero"
     t23 = t22.f_source;
 #line 68 "examples/logs/main.hero"
-    t24 = HERO_STR_LIT(hero_str_2);
+    t24 = HERO_STR_LIT(hero_str_1dce);
 #line 68 "examples/logs/main.hero"
     t25 = h5_one;
 #line 68 "examples/logs/main.hero"
@@ -1675,7 +1675,7 @@ HeroStr h_entry_ERR_NO_SOURCE(void) {
     goto bb0;
 bb0:
 #line 18 "examples/logs/entry.hero"
-    t1 = HERO_STR_LIT(hero_str_31);
+    t1 = HERO_STR_LIT(hero_str_4c572a93);
 #line 1680 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1688,7 +1688,7 @@ HeroStr h_entry_ERR_NO_STAMP(void) {
     goto bb0;
 bb0:
 #line 21 "examples/logs/entry.hero"
-    t1 = HERO_STR_LIT(hero_str_32);
+    t1 = HERO_STR_LIT(hero_str_7199413a);
 #line 1693 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1701,7 +1701,7 @@ HeroStr h_entry_ERR_SHORT_LINE(void) {
     goto bb0;
 bb0:
 #line 24 "examples/logs/entry.hero"
-    t1 = HERO_STR_LIT(hero_str_33);
+    t1 = HERO_STR_LIT(hero_str_44c89592);
 #line 1706 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -2485,7 +2485,7 @@ bb6:
 #line 77 "examples/logs/entry.hero"
     hero_array_push_owned(&h2_out, &t19);
 #line 78 "examples/logs/entry.hero"
-    t21 = HERO_STR_LIT(hero_str_34);
+    t21 = HERO_STR_LIT(hero_str_0);
 #line 78 "examples/logs/entry.hero"
     t49 = h3_rest;
 #line 2492 "main.c"
@@ -2728,7 +2728,7 @@ bb0:
 #line 90 "examples/logs/entry.hero"
     t6 = *(HeroStr const *)hero_array_at(t4, t5);
 #line 90 "examples/logs/entry.hero"
-    t7 = HERO_STR_LIT(hero_str_34);
+    t7 = HERO_STR_LIT(hero_str_0);
 #line 90 "examples/logs/entry.hero"
     t8 = hero_str_eq(t6, t7);
 #line 90 "examples/logs/entry.hero"
@@ -2772,7 +2772,7 @@ bb2:
 #line 90 "examples/logs/entry.hero"
     t11 = *(HeroStr const *)hero_array_at(t9, t10);
 #line 90 "examples/logs/entry.hero"
-    t12 = HERO_STR_LIT(hero_str_34);
+    t12 = HERO_STR_LIT(hero_str_0);
 #line 90 "examples/logs/entry.hero"
     t13 = hero_str_eq(t11, t12);
 #line 90 "examples/logs/entry.hero"
@@ -2796,7 +2796,7 @@ bb4:
 #line 90 "examples/logs/entry.hero"
     t17 = *(HeroStr const *)hero_array_at(t15, t16);
 #line 90 "examples/logs/entry.hero"
-    t18 = HERO_STR_LIT(hero_str_34);
+    t18 = HERO_STR_LIT(hero_str_0);
 #line 90 "examples/logs/entry.hero"
     t19 = hero_str_eq(t17, t18);
 #line 90 "examples/logs/entry.hero"
@@ -2820,7 +2820,7 @@ bb6:
 #line 2821 "main.c"
     hero_str_decref(t74);
 #line 91 "examples/logs/entry.hero"
-    t22 = HERO_STR_LIT(hero_str_35);
+    t22 = HERO_STR_LIT(hero_str_65d9fac2);
 #line 2825 "main.c"
     hero_str_incref(t21);
 #line 91 "examples/logs/entry.hero"
@@ -2916,7 +2916,7 @@ bb9:
 #line 2917 "main.c"
     hero_str_decref(t76);
 #line 93 "examples/logs/entry.hero"
-    t37 = HERO_STR_LIT(hero_str_36);
+    t37 = HERO_STR_LIT(hero_str_1330c2e);
 #line 2921 "main.c"
     hero_str_incref(t36);
 #line 93 "examples/logs/entry.hero"
@@ -3133,7 +3133,7 @@ bb12:
 #line 3134 "main.c"
     hero_str_decref(t82);
 #line 95 "examples/logs/entry.hero"
-    t47 = HERO_STR_LIT(hero_str_37);
+    t47 = HERO_STR_LIT(hero_str_388e57fd);
 #line 3138 "main.c"
     hero_str_incref(t46);
 #line 95 "examples/logs/entry.hero"
@@ -3387,7 +3387,7 @@ bb2:
 #line 3388 "main.c"
     hero_str_decref(t46);
 #line 106 "examples/logs/entry.hero"
-    t19 = HERO_STR_LIT(hero_str_34);
+    t19 = HERO_STR_LIT(hero_str_0);
 #line 106 "examples/logs/entry.hero"
     t20 = hero_str_eq(t18, t19);
 #line 106 "examples/logs/entry.hero"
@@ -3669,7 +3669,7 @@ bb3:
 #line 117 "examples/logs/entry.hero"
 bb4:
 #line 118 "examples/logs/entry.hero"
-    t16 = HERO_STR_LIT(hero_str_38);
+    t16 = HERO_STR_LIT(hero_str_207c);
 #line 3674 "main.c"
     hero_str_incref(t16);
 #line 118 "examples/logs/entry.hero"
@@ -3766,7 +3766,7 @@ bb1:
     return t10;
 bb2:
 #line 145 "examples/logs/entry.hero"
-    t5 = HERO_STR_LIT(hero_str_61);
+    t5 = HERO_STR_LIT(hero_str_7b992235);
 #line 144 "examples/logs/entry.hero"
     t13 = h2_r0;
 #line 3773 "main.c"
@@ -3964,7 +3964,7 @@ HeroStr h_mask_ERR_NO_SUCH_LEVEL(void) {
     goto bb0;
 bb0:
 #line 44 "examples/logs/mask.hero"
-    t1 = HERO_STR_LIT(hero_str_62);
+    t1 = HERO_STR_LIT(hero_str_2b2122dc);
 #line 3969 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -3999,7 +3999,7 @@ bb0:
 #line 50 "examples/logs/mask.hero"
     t1 = h0_level;
 #line 50 "examples/logs/mask.hero"
-    t2 = HERO_STR_LIT(hero_str_63);
+    t2 = HERO_STR_LIT(hero_str_4d8dd61c);
 #line 50 "examples/logs/mask.hero"
     t3 = hero_str_eq(t1, t2);
 #line 50 "examples/logs/mask.hero"
@@ -4009,7 +4009,7 @@ bb1:
 #line 52 "examples/logs/mask.hero"
     t5 = h0_level;
 #line 52 "examples/logs/mask.hero"
-    t6 = HERO_STR_LIT(hero_str_64);
+    t6 = HERO_STR_LIT(hero_str_32f4cc6c);
 #line 52 "examples/logs/mask.hero"
     t7 = hero_str_eq(t5, t6);
 #line 52 "examples/logs/mask.hero"
@@ -4029,7 +4029,7 @@ bb4:
 #line 54 "examples/logs/mask.hero"
     t9 = h0_level;
 #line 54 "examples/logs/mask.hero"
-    t10 = HERO_STR_LIT(hero_str_30);
+    t10 = HERO_STR_LIT(hero_str_9dcb212);
 #line 54 "examples/logs/mask.hero"
     t11 = hero_str_eq(t9, t10);
 #line 54 "examples/logs/mask.hero"
@@ -4049,7 +4049,7 @@ bb7:
 #line 56 "examples/logs/mask.hero"
     t13 = h0_level;
 #line 56 "examples/logs/mask.hero"
-    t14 = HERO_STR_LIT(hero_str_65);
+    t14 = HERO_STR_LIT(hero_str_bb98f3a);
 #line 56 "examples/logs/mask.hero"
     t15 = hero_str_eq(t13, t14);
 #line 56 "examples/logs/mask.hero"
@@ -4069,7 +4069,7 @@ bb10:
 #line 58 "examples/logs/mask.hero"
     t17 = h0_level;
 #line 58 "examples/logs/mask.hero"
-    t18 = HERO_STR_LIT(hero_str_9);
+    t18 = HERO_STR_LIT(hero_str_4644a125);
 #line 58 "examples/logs/mask.hero"
     t19 = hero_str_eq(t17, t18);
 #line 58 "examples/logs/mask.hero"
@@ -4337,15 +4337,15 @@ bb0:
 #line 4338 "main.c"
     hero_array_decref(t27);
 #line 101 "examples/logs/mask.hero"
-    t2 = HERO_STR_LIT(hero_str_63);
+    t2 = HERO_STR_LIT(hero_str_4d8dd61c);
 #line 101 "examples/logs/mask.hero"
-    t3 = HERO_STR_LIT(hero_str_64);
+    t3 = HERO_STR_LIT(hero_str_32f4cc6c);
 #line 101 "examples/logs/mask.hero"
-    t4 = HERO_STR_LIT(hero_str_30);
+    t4 = HERO_STR_LIT(hero_str_9dcb212);
 #line 101 "examples/logs/mask.hero"
-    t5 = HERO_STR_LIT(hero_str_65);
+    t5 = HERO_STR_LIT(hero_str_bb98f3a);
 #line 101 "examples/logs/mask.hero"
-    t6 = HERO_STR_LIT(hero_str_9);
+    t6 = HERO_STR_LIT(hero_str_4644a125);
 #line 101 "examples/logs/mask.hero"
     t7 = hero_array_new(&hero_desc_str, 5);
 #line 101 "examples/logs/mask.hero"
@@ -4728,7 +4728,7 @@ bb6:
 #line 4729 "main.c"
     hero_str_decref(t41);
 #line 111 "examples/logs/mask.hero"
-    t18 = HERO_STR_LIT(hero_str_66);
+    t18 = HERO_STR_LIT(hero_str_60);
 #line 111 "examples/logs/mask.hero"
     t19 = h4_name;
 #line 111 "examples/logs/mask.hero"
@@ -4740,7 +4740,7 @@ bb6:
 #line 4741 "main.c"
     hero_str_decref(t42);
 #line 111 "examples/logs/mask.hero"
-    t21 = HERO_STR_LIT(hero_str_67);
+    t21 = HERO_STR_LIT(hero_str_23ad5593);
 #line 111 "examples/logs/mask.hero"
     t22 = hero_str_concat(t20, t21);
 #line 111 "examples/logs/mask.hero"
@@ -4760,7 +4760,7 @@ bb6:
 #line 4761 "main.c"
     hero_array_decref(t44);
 #line 111 "examples/logs/mask.hero"
-    t25 = HERO_STR_LIT(hero_str_68);
+    t25 = HERO_STR_LIT(hero_str_16a4);
 #line 111 "examples/logs/mask.hero"
     t26 = hero_str_join(t24, t25);
 #line 111 "examples/logs/mask.hero"
@@ -5030,7 +5030,7 @@ bb7:
 #line 122 "examples/logs/mask.hero"
     t22 = h6_piece;
 #line 122 "examples/logs/mask.hero"
-    t23 = HERO_STR_LIT(hero_str_34);
+    t23 = HERO_STR_LIT(hero_str_0);
 #line 122 "examples/logs/mask.hero"
     t24 = !hero_str_eq(t22, t23);
 #line 122 "examples/logs/mask.hero"
@@ -5073,7 +5073,7 @@ HeroStr h_summary_ERR_NONE_AT_LEVEL(void) {
     goto bb0;
 bb0:
 #line 21 "examples/logs/summary.hero"
-    t1 = HERO_STR_LIT(hero_str_100);
+    t1 = HERO_STR_LIT(hero_str_17788c5d);
 #line 5078 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -6543,7 +6543,7 @@ bb2:
 #line 72 "examples/logs/summary.hero"
     t12 = h1_out;
 #line 72 "examples/logs/summary.hero"
-    t13 = HERO_STR_LIT(hero_str_101);
+    t13 = HERO_STR_LIT(hero_str_1080);
 #line 72 "examples/logs/summary.hero"
     t14 = h4_name;
 #line 72 "examples/logs/summary.hero"
@@ -6555,7 +6555,7 @@ bb2:
 #line 6556 "main.c"
     hero_str_decref(t41);
 #line 72 "examples/logs/summary.hero"
-    t16 = HERO_STR_LIT(hero_str_12);
+    t16 = HERO_STR_LIT(hero_str_20);
 #line 72 "examples/logs/summary.hero"
     t17 = hero_str_concat(t15, t16);
 #line 72 "examples/logs/summary.hero"
@@ -6863,7 +6863,7 @@ bb4:
 #line 6864 "main.c"
     hero_str_decref(t26);
 #line 80 "examples/logs/summary.hero"
-    t20 = HERO_STR_LIT(hero_str_102);
+    t20 = HERO_STR_LIT(hero_str_6e6a828b);
 #line 80 "examples/logs/summary.hero"
     t21 = h1_level;
 #line 80 "examples/logs/summary.hero"
@@ -7351,9 +7351,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_133);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_134);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -7412,9 +7412,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_131);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_132);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"

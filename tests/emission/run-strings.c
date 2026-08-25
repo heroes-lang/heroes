@@ -58,11 +58,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "strings.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "hello");
-HERO_STR_STATIC(hero_str_1, " ");
-HERO_STR_STATIC(hero_str_2, "world");
-HERO_STR_STATIC(hero_str_3, "a");
-HERO_STR_STATIC(hero_str_4, "b");
+HERO_STR_STATIC(hero_str_2f372e9c, "hello");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_37dd7796, "world");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -140,7 +140,7 @@ void h_strings_main(void) {
     goto bb0;
 bb0:
 #line 6 "tests/golden/run/strings.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_2f372e9c);
 #line 6 "tests/golden/run/strings.hero"
     t27 = h0_greeting;
 #line 147 "strings.c"
@@ -158,7 +158,7 @@ bb0:
 #line 8 "tests/golden/run/strings.hero"
     t3 = h0_greeting;
 #line 8 "tests/golden/run/strings.hero"
-    t4 = HERO_STR_LIT(hero_str_1);
+    t4 = HERO_STR_LIT(hero_str_20);
 #line 8 "tests/golden/run/strings.hero"
     t5 = hero_str_concat(t3, t4);
 #line 8 "tests/golden/run/strings.hero"
@@ -168,7 +168,7 @@ bb0:
 #line 169 "strings.c"
     hero_str_decref(t28);
 #line 8 "tests/golden/run/strings.hero"
-    t6 = HERO_STR_LIT(hero_str_2);
+    t6 = HERO_STR_LIT(hero_str_37dd7796);
 #line 8 "tests/golden/run/strings.hero"
     t7 = hero_str_concat(t5, t6);
 #line 8 "tests/golden/run/strings.hero"
@@ -218,15 +218,15 @@ bb0:
 #line 11 "tests/golden/run/strings.hero"
     hero_print_end();
 #line 12 "tests/golden/run/strings.hero"
-    t17 = HERO_STR_LIT(hero_str_3);
+    t17 = HERO_STR_LIT(hero_str_61);
 #line 12 "tests/golden/run/strings.hero"
-    t18 = HERO_STR_LIT(hero_str_3);
+    t18 = HERO_STR_LIT(hero_str_61);
 #line 12 "tests/golden/run/strings.hero"
     t19 = hero_str_eq(t17, t18);
 #line 12 "tests/golden/run/strings.hero"
-    t20 = HERO_STR_LIT(hero_str_3);
+    t20 = HERO_STR_LIT(hero_str_61);
 #line 12 "tests/golden/run/strings.hero"
-    t21 = HERO_STR_LIT(hero_str_4);
+    t21 = HERO_STR_LIT(hero_str_62);
 #line 12 "tests/golden/run/strings.hero"
     t22 = hero_str_eq(t20, t21);
 #line 12 "tests/golden/run/strings.hero"

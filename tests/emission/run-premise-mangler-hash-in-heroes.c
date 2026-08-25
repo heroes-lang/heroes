@@ -58,10 +58,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "premisemanglerhashinheroes.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "map<i64, str>");
-HERO_STR_STATIC(hero_str_1, "fold<i64, i64>");
-HERO_STR_STATIC(hero_str_2, "pair<i64, str_x>");
-HERO_STR_STATIC(hero_str_3, "pair<i64_str, x>");
+HERO_STR_STATIC(hero_str_1afbd0d1, "map<i64, str>");
+HERO_STR_STATIC(hero_str_38777701, "fold<i64, i64>");
+HERO_STR_STATIC(hero_str_642c20d9, "pair<i64, str_x>");
+HERO_STR_STATIC(hero_str_1343f73c, "pair<i64_str, x>");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -327,7 +327,7 @@ void h_premisemanglerhashinheroes_main(void) {
     goto bb0;
 bb0:
 #line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_1afbd0d1);
 #line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t2 = h_premisemanglerhashinheroes_typehash(t1);
 #line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
@@ -335,7 +335,7 @@ bb0:
 #line 31 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_end();
 #line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
-    t3 = HERO_STR_LIT(hero_str_1);
+    t3 = HERO_STR_LIT(hero_str_38777701);
 #line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t4 = h_premisemanglerhashinheroes_typehash(t3);
 #line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
@@ -343,7 +343,7 @@ bb0:
 #line 32 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_end();
 #line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
-    t5 = HERO_STR_LIT(hero_str_2);
+    t5 = HERO_STR_LIT(hero_str_642c20d9);
 #line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t6 = h_premisemanglerhashinheroes_typehash(t5);
 #line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
@@ -351,7 +351,7 @@ bb0:
 #line 35 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_print_end();
 #line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
-    t7 = HERO_STR_LIT(hero_str_3);
+    t7 = HERO_STR_LIT(hero_str_1343f73c);
 #line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t8 = h_premisemanglerhashinheroes_typehash(t7);
 #line 36 "tests/golden/run/premise-mangler-hash-in-heroes.hero"

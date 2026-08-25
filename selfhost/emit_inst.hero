@@ -90,7 +90,7 @@ function emit(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checke
                     .float_ty | .bool | .str | .ptr | .cstr | .unit => kind @ kind
                     .array | .fixed | .map | .fallible | .function_ty | .named => kind @ kind
                     .case_ty | .failure | .generic | .error => kind @ kind
-                emit_writer.line(@w, text: "    " + target.must() + " = " + emit_literal.constant_text(lt.value, kind: kind) + ";")
+                emit_writer.line(@w, text: "    " + target.must() + " = " + emit_literal.constant_text(lt.value, kind: kind, strings: p.strings) + ";")
         .load ld =>
             if !target.is_err()
                 emit_writer.line(@w, text: "    " + target.must() + " = " + emit_aggregate.place(c, s, decls, f, at: ld.place) + ";")

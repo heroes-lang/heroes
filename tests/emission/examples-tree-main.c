@@ -58,12 +58,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "(");
-HERO_STR_STATIC(hero_str_1, " + ");
-HERO_STR_STATIC(hero_str_2, ")");
-HERO_STR_STATIC(hero_str_3, " * ");
-HERO_STR_STATIC(hero_str_4, "-");
-HERO_STR_STATIC(hero_str_5, "???");
+HERO_STR_STATIC(hero_str_28, "(");
+HERO_STR_STATIC(hero_str_87741, " + ");
+HERO_STR_STATIC(hero_str_29, ")");
+HERO_STR_STATIC(hero_str_876be, " * ");
+HERO_STR_STATIC(hero_str_2d, "-");
+HERO_STR_STATIC(hero_str_109fb3, "???");
 
 typedef struct h_node_Note {
     HeroStr f_text;
@@ -1716,7 +1716,7 @@ bb3:
 #line 98 "examples/tree/node.hero"
     h5_a = t13;
 #line 98 "examples/tree/node.hero"
-    t14 = HERO_STR_LIT(hero_str_0);
+    t14 = HERO_STR_LIT(hero_str_28);
 #line 98 "examples/tree/node.hero"
     t15 = h0_t;
 #line 98 "examples/tree/node.hero"
@@ -1740,7 +1740,7 @@ bb3:
 #line 1741 "main.c"
     hero_str_decref(t66);
 #line 98 "examples/tree/node.hero"
-    t20 = HERO_STR_LIT(hero_str_1);
+    t20 = HERO_STR_LIT(hero_str_87741);
 #line 98 "examples/tree/node.hero"
     t21 = hero_str_concat(t19, t20);
 #line 98 "examples/tree/node.hero"
@@ -1772,7 +1772,7 @@ bb3:
 #line 1773 "main.c"
     hero_str_decref(t69);
 #line 98 "examples/tree/node.hero"
-    t27 = HERO_STR_LIT(hero_str_2);
+    t27 = HERO_STR_LIT(hero_str_29);
 #line 98 "examples/tree/node.hero"
     t28 = hero_str_concat(t26, t27);
 #line 98 "examples/tree/node.hero"
@@ -1798,7 +1798,7 @@ bb4:
 #line 99 "examples/tree/node.hero"
     h6_m = t30;
 #line 99 "examples/tree/node.hero"
-    t31 = HERO_STR_LIT(hero_str_0);
+    t31 = HERO_STR_LIT(hero_str_28);
 #line 99 "examples/tree/node.hero"
     t32 = h0_t;
 #line 99 "examples/tree/node.hero"
@@ -1822,7 +1822,7 @@ bb4:
 #line 1823 "main.c"
     hero_str_decref(t73);
 #line 99 "examples/tree/node.hero"
-    t37 = HERO_STR_LIT(hero_str_3);
+    t37 = HERO_STR_LIT(hero_str_876be);
 #line 99 "examples/tree/node.hero"
     t38 = hero_str_concat(t36, t37);
 #line 99 "examples/tree/node.hero"
@@ -1854,7 +1854,7 @@ bb4:
 #line 1855 "main.c"
     hero_str_decref(t76);
 #line 99 "examples/tree/node.hero"
-    t44 = HERO_STR_LIT(hero_str_2);
+    t44 = HERO_STR_LIT(hero_str_29);
 #line 99 "examples/tree/node.hero"
     t45 = hero_str_concat(t43, t44);
 #line 99 "examples/tree/node.hero"
@@ -1880,7 +1880,7 @@ bb5:
 #line 100 "examples/tree/node.hero"
     h7_n = t47;
 #line 100 "examples/tree/node.hero"
-    t48 = HERO_STR_LIT(hero_str_4);
+    t48 = HERO_STR_LIT(hero_str_2d);
 #line 100 "examples/tree/node.hero"
     t49 = h0_t;
 #line 100 "examples/tree/node.hero"
@@ -1950,7 +1950,7 @@ bb6:
     goto bb1;
 bb7:
 #line 102 "examples/tree/node.hero"
-    t60 = HERO_STR_LIT(hero_str_5);
+    t60 = HERO_STR_LIT(hero_str_109fb3);
 #line 96 "examples/tree/node.hero"
     t85 = h3_r0;
 #line 1957 "main.c"

@@ -58,32 +58,32 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "usage: maze <file.maze>");
-HERO_STR_STATIC(hero_str_1, "cannot read ");
-HERO_STR_STATIC(hero_str_2, ": ");
-HERO_STR_STATIC(hero_str_3, "steps: ");
-HERO_STR_STATIC(hero_str_4, "*");
-HERO_STR_STATIC(hero_str_5, ".");
-HERO_STR_STATIC(hero_str_6, "");
-HERO_STR_STATIC(hero_str_18, "empty_maze");
-HERO_STR_STATIC(hero_str_19, "missing_mark");
-HERO_STR_STATIC(hero_str_20, "ragged_maze");
-HERO_STR_STATIC(hero_str_21, "repeated_mark");
-HERO_STR_STATIC(hero_str_22, "the file has no rows");
-HERO_STR_STATIC(hero_str_23, "every row must be ");
-HERO_STR_STATIC(hero_str_24, " wide");
-HERO_STR_STATIC(hero_str_25, "the maze has more than one `");
-HERO_STR_STATIC(hero_str_26, "`");
-HERO_STR_STATIC(hero_str_27, "the maze has no `");
-HERO_STR_STATIC(hero_str_28, "S");
-HERO_STR_STATIC(hero_str_29, "E");
-HERO_STR_STATIC(hero_str_30, "#");
-HERO_STR_STATIC(hero_str_51, "no_path");
-HERO_STR_STATIC(hero_str_52, "no way from the start to the goal");
-HERO_STR_STATIC(hero_str_74, "file_not_found");
-HERO_STR_STATIC(hero_str_75, "no file at ");
-HERO_STR_STATIC(hero_str_76, "read_failed");
-HERO_STR_STATIC(hero_str_77, "could not read ");
+HERO_STR_STATIC(hero_str_55806e41, "usage: maze <file.maze>");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_203b7899, "steps: ");
+HERO_STR_STATIC(hero_str_2a, "*");
+HERO_STR_STATIC(hero_str_2e, ".");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_440ce163, "empty_maze");
+HERO_STR_STATIC(hero_str_38cfc0b5, "missing_mark");
+HERO_STR_STATIC(hero_str_74ceed9d, "ragged_maze");
+HERO_STR_STATIC(hero_str_51bdfc8e, "repeated_mark");
+HERO_STR_STATIC(hero_str_6503602c, "the file has no rows");
+HERO_STR_STATIC(hero_str_79da4a2b, "every row must be ");
+HERO_STR_STATIC(hero_str_41c48f73, " wide");
+HERO_STR_STATIC(hero_str_40c5abce, "the maze has more than one `");
+HERO_STR_STATIC(hero_str_60, "`");
+HERO_STR_STATIC(hero_str_3bf2cd6c, "the maze has no `");
+HERO_STR_STATIC(hero_str_53, "S");
+HERO_STR_STATIC(hero_str_45, "E");
+HERO_STR_STATIC(hero_str_23, "#");
+HERO_STR_STATIC(hero_str_45d1e739, "no_path");
+HERO_STR_STATIC(hero_str_403ef59e, "no way from the start to the goal");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
 typedef struct h_grid_Grid {
     HeroArrayHeader * f_rows;
@@ -351,7 +351,7 @@ bb1:
 #line 22 "examples/maze/main.hero"
 bb2:
 #line 20 "examples/maze/main.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_55806e41);
 #line 20 "examples/maze/main.hero"
     hero_print_str(t6);
 #line 20 "examples/maze/main.hero"
@@ -419,7 +419,7 @@ bb5:
 #line 420 "main.c"
     hero_failure_release(&t33);
 #line 23 "examples/maze/main.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_2d78c599);
 #line 23 "examples/maze/main.hero"
     t17 = h0_given;
 #line 23 "examples/maze/main.hero"
@@ -435,7 +435,7 @@ bb5:
 #line 436 "main.c"
     hero_str_decref(t34);
 #line 23 "examples/maze/main.hero"
-    t21 = HERO_STR_LIT(hero_str_2);
+    t21 = HERO_STR_LIT(hero_str_1dce);
 #line 23 "examples/maze/main.hero"
     t22 = hero_str_concat(t20, t21);
 #line 23 "examples/maze/main.hero"
@@ -621,7 +621,7 @@ bb2:
 #line 32 "examples/maze/main.hero"
     t8 = t7.code;
 #line 32 "examples/maze/main.hero"
-    t9 = HERO_STR_LIT(hero_str_2);
+    t9 = HERO_STR_LIT(hero_str_1dce);
 #line 32 "examples/maze/main.hero"
     t10 = hero_str_concat(t8, t9);
 #line 32 "examples/maze/main.hero"
@@ -786,7 +786,7 @@ bb2:
 #line 37 "examples/maze/main.hero"
     t8 = t7.code;
 #line 37 "examples/maze/main.hero"
-    t9 = HERO_STR_LIT(hero_str_2);
+    t9 = HERO_STR_LIT(hero_str_1dce);
 #line 37 "examples/maze/main.hero"
     t10 = hero_str_concat(t8, t9);
 #line 37 "examples/maze/main.hero"
@@ -946,7 +946,7 @@ bb3:
 #line 41 "examples/maze/main.hero"
 bb4:
 #line 43 "examples/maze/main.hero"
-    t16 = HERO_STR_LIT(hero_str_3);
+    t16 = HERO_STR_LIT(hero_str_203b7899);
 #line 43 "examples/maze/main.hero"
     t17 = h1_path;
 #line 43 "examples/maze/main.hero"
@@ -1444,7 +1444,7 @@ bb12:
 #line 63 "examples/maze/main.hero"
     t82 = h10_pieces;
 #line 63 "examples/maze/main.hero"
-    t83 = HERO_STR_LIT(hero_str_6);
+    t83 = HERO_STR_LIT(hero_str_0);
 #line 63 "examples/maze/main.hero"
     t84 = hero_str_join(t82, t83);
 #line 63 "examples/maze/main.hero"
@@ -1568,7 +1568,7 @@ bb19:
 #line 59 "examples/maze/main.hero"
 bb20:
 #line 60 "examples/maze/main.hero"
-    t73 = HERO_STR_LIT(hero_str_4);
+    t73 = HERO_STR_LIT(hero_str_2a);
 #line 60 "examples/maze/main.hero"
     hero_array_push_owned(&h10_pieces, &t73);
 #line 60 "examples/maze/main.hero"
@@ -1576,7 +1576,7 @@ bb20:
 #line 60 "examples/maze/main.hero"
 bb21:
 #line 62 "examples/maze/main.hero"
-    t76 = HERO_STR_LIT(hero_str_5);
+    t76 = HERO_STR_LIT(hero_str_2e);
 #line 62 "examples/maze/main.hero"
     hero_array_push_owned(&h10_pieces, &t76);
 #line 62 "examples/maze/main.hero"
@@ -1591,7 +1591,7 @@ HeroStr h_grid_ERR_EMPTY_MAZE(void) {
     goto bb0;
 bb0:
 #line 22 "examples/maze/grid.hero"
-    t1 = HERO_STR_LIT(hero_str_18);
+    t1 = HERO_STR_LIT(hero_str_440ce163);
 #line 1596 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1604,7 +1604,7 @@ HeroStr h_grid_ERR_MISSING_MARK(void) {
     goto bb0;
 bb0:
 #line 25 "examples/maze/grid.hero"
-    t1 = HERO_STR_LIT(hero_str_19);
+    t1 = HERO_STR_LIT(hero_str_38cfc0b5);
 #line 1609 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1617,7 +1617,7 @@ HeroStr h_grid_ERR_RAGGED_MAZE(void) {
     goto bb0;
 bb0:
 #line 28 "examples/maze/grid.hero"
-    t1 = HERO_STR_LIT(hero_str_20);
+    t1 = HERO_STR_LIT(hero_str_74ceed9d);
 #line 1622 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1630,7 +1630,7 @@ HeroStr h_grid_ERR_REPEATED_MARK(void) {
     goto bb0;
 bb0:
 #line 31 "examples/maze/grid.hero"
-    t1 = HERO_STR_LIT(hero_str_21);
+    t1 = HERO_STR_LIT(hero_str_51bdfc8e);
 #line 1635 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -2205,7 +2205,7 @@ bb2:
 #line 63 "examples/maze/grid.hero"
     t12 = h4_line;
 #line 63 "examples/maze/grid.hero"
-    t13 = HERO_STR_LIT(hero_str_6);
+    t13 = HERO_STR_LIT(hero_str_0);
 #line 63 "examples/maze/grid.hero"
     t14 = !hero_str_eq(t12, t13);
 #line 63 "examples/maze/grid.hero"
@@ -2289,7 +2289,7 @@ bb9:
 #line 2290 "main.c"
     hero_str_decref(t93);
 #line 66 "examples/maze/grid.hero"
-    t26 = HERO_STR_LIT(hero_str_22);
+    t26 = HERO_STR_LIT(hero_str_6503602c);
 #line 2294 "main.c"
     hero_str_incref(t25);
 #line 66 "examples/maze/grid.hero"
@@ -2523,7 +2523,7 @@ bb16:
 #line 2524 "main.c"
     hero_str_decref(t100);
 #line 70 "examples/maze/grid.hero"
-    t46 = HERO_STR_LIT(hero_str_23);
+    t46 = HERO_STR_LIT(hero_str_79da4a2b);
 #line 70 "examples/maze/grid.hero"
     t47 = h5_width;
 #line 70 "examples/maze/grid.hero"
@@ -2543,7 +2543,7 @@ bb16:
 #line 2544 "main.c"
     hero_str_decref(t102);
 #line 70 "examples/maze/grid.hero"
-    t50 = HERO_STR_LIT(hero_str_24);
+    t50 = HERO_STR_LIT(hero_str_41c48f73);
 #line 70 "examples/maze/grid.hero"
     t51 = hero_str_concat(t49, t50);
 #line 70 "examples/maze/grid.hero"
@@ -3634,7 +3634,7 @@ bb13:
 #line 3635 "main.c"
     hero_str_decref(t72);
 #line 105 "examples/maze/grid.hero"
-    t41 = HERO_STR_LIT(hero_str_25);
+    t41 = HERO_STR_LIT(hero_str_40c5abce);
 #line 105 "examples/maze/grid.hero"
     t42 = h1_mark;
 #line 105 "examples/maze/grid.hero"
@@ -3654,7 +3654,7 @@ bb13:
 #line 3655 "main.c"
     hero_str_decref(t74);
 #line 105 "examples/maze/grid.hero"
-    t45 = HERO_STR_LIT(hero_str_26);
+    t45 = HERO_STR_LIT(hero_str_60);
 #line 105 "examples/maze/grid.hero"
     t46 = hero_str_concat(t44, t45);
 #line 105 "examples/maze/grid.hero"
@@ -3828,7 +3828,7 @@ bb16:
 #line 3829 "main.c"
     hero_str_decref(t78);
 #line 108 "examples/maze/grid.hero"
-    t59 = HERO_STR_LIT(hero_str_27);
+    t59 = HERO_STR_LIT(hero_str_3bf2cd6c);
 #line 108 "examples/maze/grid.hero"
     t60 = h1_mark;
 #line 108 "examples/maze/grid.hero"
@@ -3848,7 +3848,7 @@ bb16:
 #line 3849 "main.c"
     hero_str_decref(t80);
 #line 108 "examples/maze/grid.hero"
-    t63 = HERO_STR_LIT(hero_str_26);
+    t63 = HERO_STR_LIT(hero_str_60);
 #line 108 "examples/maze/grid.hero"
     t64 = hero_str_concat(t62, t63);
 #line 108 "examples/maze/grid.hero"
@@ -3974,7 +3974,7 @@ bb1:
 #line 116 "examples/maze/grid.hero"
 bb2:
 #line 115 "examples/maze/grid.hero"
-    t4 = HERO_STR_LIT(hero_str_28);
+    t4 = HERO_STR_LIT(hero_str_53);
 #line 3979 "main.c"
     hero_str_incref(t4);
     return t4;
@@ -3982,13 +3982,13 @@ bb3:
     goto bb1;
 bb4:
 #line 118 "examples/maze/grid.hero"
-    t9 = HERO_STR_LIT(hero_str_30);
+    t9 = HERO_STR_LIT(hero_str_23);
 #line 3987 "main.c"
     hero_str_incref(t9);
     return t9;
 bb5:
 #line 117 "examples/maze/grid.hero"
-    t8 = HERO_STR_LIT(hero_str_29);
+    t8 = HERO_STR_LIT(hero_str_45);
 #line 3993 "main.c"
     hero_str_incref(t8);
     return t8;
@@ -4354,7 +4354,7 @@ HeroStr h_solve_ERR_NO_PATH(void) {
     goto bb0;
 bb0:
 #line 22 "examples/maze/solve.hero"
-    t1 = HERO_STR_LIT(hero_str_51);
+    t1 = HERO_STR_LIT(hero_str_45d1e739);
 #line 4359 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -4911,7 +4911,7 @@ bb7:
 #line 4912 "main.c"
     hero_str_decref(t88);
 #line 40 "examples/maze/solve.hero"
-    t76 = HERO_STR_LIT(hero_str_52);
+    t76 = HERO_STR_LIT(hero_str_403ef59e);
 #line 4916 "main.c"
     hero_str_incref(t75);
 #line 40 "examples/maze/solve.hero"
@@ -6199,9 +6199,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_76);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_77);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -6260,9 +6260,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_74);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_75);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"

@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsadiscardedbindingwarnsinc.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "ziggy");
+HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -128,7 +128,7 @@ bb0:
     h0_v = t1;
 #line 35 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 #line 37 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-    t3 = HERO_STR_LIT(hero_str_0);
+    t3 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 37 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t10 = h1_s;
 #line 135 "fixedbugsadiscardedbindingwarnsinc.c"

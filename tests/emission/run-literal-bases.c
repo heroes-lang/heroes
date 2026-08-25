@@ -58,18 +58,18 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "literalbases.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "hex ");
-HERO_STR_STATIC(hero_str_1, "HEX ");
-HERO_STR_STATIC(hero_str_2, "oct ");
-HERO_STR_STATIC(hero_str_3, "bin ");
-HERO_STR_STATIC(hero_str_4, "sep ");
-HERO_STR_STATIC(hero_str_5, "mix ");
-HERO_STR_STATIC(hero_str_6, "same ");
-HERO_STR_STATIC(hero_str_7, " ");
-HERO_STR_STATIC(hero_str_8, "ufcs ");
-HERO_STR_STATIC(hero_str_9, "mask ");
-HERO_STR_STATIC(hero_str_10, "max ");
-HERO_STR_STATIC(hero_str_11, "all ");
+HERO_STR_STATIC(hero_str_e0a370d, "hex ");
+HERO_STR_STATIC(hero_str_9b8122d, "HEX ");
+HERO_STR_STATIC(hero_str_ef9ce2c, "oct ");
+HERO_STR_STATIC(hero_str_d3d6c71, "bin ");
+HERO_STR_STATIC(hero_str_f83889e, "sep ");
+HERO_STR_STATIC(hero_str_eb6c738, "mix ");
+HERO_STR_STATIC(hero_str_6fc50cd1, "same ");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_1389664b, "ufcs ");
+HERO_STR_STATIC(hero_str_6745c33, "mask ");
+HERO_STR_STATIC(hero_str_eb4aef0, "max ");
+HERO_STR_STATIC(hero_str_d1be6eb, "all ");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -146,7 +146,7 @@ void h_literalbases_main(void) {
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/literal-bases.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_e0a370d);
 #line 28 "tests/golden/run/literal-bases.hero"
     t2 = INT64_C(255);
 #line 28 "tests/golden/run/literal-bases.hero"
@@ -156,7 +156,7 @@ bb0:
 #line 28 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 29 "tests/golden/run/literal-bases.hero"
-    t3 = HERO_STR_LIT(hero_str_1);
+    t3 = HERO_STR_LIT(hero_str_9b8122d);
 #line 29 "tests/golden/run/literal-bases.hero"
     t4 = INT64_C(255);
 #line 29 "tests/golden/run/literal-bases.hero"
@@ -166,7 +166,7 @@ bb0:
 #line 29 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 30 "tests/golden/run/literal-bases.hero"
-    t5 = HERO_STR_LIT(hero_str_2);
+    t5 = HERO_STR_LIT(hero_str_ef9ce2c);
 #line 30 "tests/golden/run/literal-bases.hero"
     t6 = INT64_C(448);
 #line 30 "tests/golden/run/literal-bases.hero"
@@ -176,7 +176,7 @@ bb0:
 #line 30 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 31 "tests/golden/run/literal-bases.hero"
-    t7 = HERO_STR_LIT(hero_str_3);
+    t7 = HERO_STR_LIT(hero_str_d3d6c71);
 #line 31 "tests/golden/run/literal-bases.hero"
     t8 = INT64_C(10);
 #line 31 "tests/golden/run/literal-bases.hero"
@@ -186,7 +186,7 @@ bb0:
 #line 31 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 32 "tests/golden/run/literal-bases.hero"
-    t9 = HERO_STR_LIT(hero_str_4);
+    t9 = HERO_STR_LIT(hero_str_f83889e);
 #line 32 "tests/golden/run/literal-bases.hero"
     t10 = INT64_C(1000000);
 #line 32 "tests/golden/run/literal-bases.hero"
@@ -196,7 +196,7 @@ bb0:
 #line 32 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 33 "tests/golden/run/literal-bases.hero"
-    t11 = HERO_STR_LIT(hero_str_5);
+    t11 = HERO_STR_LIT(hero_str_eb6c738);
 #line 33 "tests/golden/run/literal-bases.hero"
     t12 = INT64_C(3735928559);
 #line 33 "tests/golden/run/literal-bases.hero"
@@ -206,7 +206,7 @@ bb0:
 #line 33 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 34 "tests/golden/run/literal-bases.hero"
-    t13 = HERO_STR_LIT(hero_str_6);
+    t13 = HERO_STR_LIT(hero_str_6fc50cd1);
 #line 34 "tests/golden/run/literal-bases.hero"
     t14 = INT64_C(255);
 #line 34 "tests/golden/run/literal-bases.hero"
@@ -214,7 +214,7 @@ bb0:
 #line 34 "tests/golden/run/literal-bases.hero"
     t16 = t14 == t15;
 #line 34 "tests/golden/run/literal-bases.hero"
-    t17 = HERO_STR_LIT(hero_str_7);
+    t17 = HERO_STR_LIT(hero_str_20);
 #line 34 "tests/golden/run/literal-bases.hero"
     t18 = INT64_C(511);
 #line 34 "tests/golden/run/literal-bases.hero"
@@ -232,7 +232,7 @@ bb0:
 #line 34 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 35 "tests/golden/run/literal-bases.hero"
-    t21 = HERO_STR_LIT(hero_str_8);
+    t21 = HERO_STR_LIT(hero_str_1389664b);
 #line 35 "tests/golden/run/literal-bases.hero"
     t22 = INT64_C(255);
 #line 35 "tests/golden/run/literal-bases.hero"
@@ -250,7 +250,7 @@ bb0:
 #line 35 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 36 "tests/golden/run/literal-bases.hero"
-    t24 = HERO_STR_LIT(hero_str_9);
+    t24 = HERO_STR_LIT(hero_str_6745c33);
 #line 36 "tests/golden/run/literal-bases.hero"
     t25 = INT64_C(240);
 #line 36 "tests/golden/run/literal-bases.hero"
@@ -258,7 +258,7 @@ bb0:
 #line 36 "tests/golden/run/literal-bases.hero"
     t27 = t25 & t26;
 #line 36 "tests/golden/run/literal-bases.hero"
-    t28 = HERO_STR_LIT(hero_str_7);
+    t28 = HERO_STR_LIT(hero_str_20);
 #line 36 "tests/golden/run/literal-bases.hero"
     t29 = INT64_C(10);
 #line 36 "tests/golden/run/literal-bases.hero"
@@ -266,7 +266,7 @@ bb0:
 #line 36 "tests/golden/run/literal-bases.hero"
     t31 = t29 | t30;
 #line 36 "tests/golden/run/literal-bases.hero"
-    t32 = HERO_STR_LIT(hero_str_7);
+    t32 = HERO_STR_LIT(hero_str_20);
 #line 36 "tests/golden/run/literal-bases.hero"
     t33 = INT64_C(255);
 #line 36 "tests/golden/run/literal-bases.hero"
@@ -288,7 +288,7 @@ bb0:
 #line 36 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 37 "tests/golden/run/literal-bases.hero"
-    t36 = HERO_STR_LIT(hero_str_10);
+    t36 = HERO_STR_LIT(hero_str_eb4aef0);
 #line 37 "tests/golden/run/literal-bases.hero"
     t37 = INT64_C(9223372036854775807);
 #line 37 "tests/golden/run/literal-bases.hero"
@@ -298,7 +298,7 @@ bb0:
 #line 37 "tests/golden/run/literal-bases.hero"
     hero_print_end();
 #line 38 "tests/golden/run/literal-bases.hero"
-    t38 = HERO_STR_LIT(hero_str_11);
+    t38 = HERO_STR_LIT(hero_str_d1be6eb);
 #line 38 "tests/golden/run/literal-bases.hero"
     t39 = INT64_C(0);
 #line 38 "tests/golden/run/literal-bases.hero"

@@ -58,19 +58,19 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "builtins.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "pearl");
-HERO_STR_STATIC(hero_str_1, "aladdin");
-HERO_STR_STATIC(hero_str_2, "sane");
-HERO_STR_STATIC(hero_str_3, "|");
-HERO_STR_STATIC(hero_str_4, " ");
-HERO_STR_STATIC(hero_str_5, "-");
-HERO_STR_STATIC(hero_str_6, "[");
-HERO_STR_STATIC(hero_str_7, ",");
-HERO_STR_STATIC(hero_str_8, "]");
-HERO_STR_STATIC(hero_str_9, "only");
-HERO_STR_STATIC(hero_str_10, "caff\303\250");
-HERO_STR_STATIC(hero_str_11, ".");
-HERO_STR_STATIC(hero_str_12, "");
+HERO_STR_STATIC(hero_str_3ba202d1, "pearl");
+HERO_STR_STATIC(hero_str_47b33001, "aladdin");
+HERO_STR_STATIC(hero_str_f827bb9, "sane");
+HERO_STR_STATIC(hero_str_7c, "|");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_2d, "-");
+HERO_STR_STATIC(hero_str_5b, "[");
+HERO_STR_STATIC(hero_str_2c, ",");
+HERO_STR_STATIC(hero_str_5d, "]");
+HERO_STR_STATIC(hero_str_efcabd0, "only");
+HERO_STR_STATIC(hero_str_78a14ef2, "caff\303\250");
+HERO_STR_STATIC(hero_str_2e, ".");
+HERO_STR_STATIC(hero_str_0, "");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -499,13 +499,13 @@ bb0:
 #line 24 "tests/golden/run/builtins.hero"
     hero_print_end();
 #line 26 "tests/golden/run/builtins.hero"
-    t25 = HERO_STR_LIT(hero_str_0);
+    t25 = HERO_STR_LIT(hero_str_3ba202d1);
 #line 26 "tests/golden/run/builtins.hero"
-    t26 = HERO_STR_LIT(hero_str_1);
+    t26 = HERO_STR_LIT(hero_str_47b33001);
 #line 26 "tests/golden/run/builtins.hero"
-    t27 = HERO_STR_LIT(hero_str_2);
+    t27 = HERO_STR_LIT(hero_str_f827bb9);
 #line 26 "tests/golden/run/builtins.hero"
-    t28 = HERO_STR_LIT(hero_str_1);
+    t28 = HERO_STR_LIT(hero_str_47b33001);
 #line 26 "tests/golden/run/builtins.hero"
     t29 = hero_array_new(&hero_desc_str, 4);
 #line 26 "tests/golden/run/builtins.hero"
@@ -549,7 +549,7 @@ bb0:
 #line 550 "builtins.c"
     hero_array_decref(t166);
 #line 27 "tests/golden/run/builtins.hero"
-    t32 = HERO_STR_LIT(hero_str_3);
+    t32 = HERO_STR_LIT(hero_str_7c);
 #line 27 "tests/golden/run/builtins.hero"
     t33 = hero_str_join(t31, t32);
 #line 27 "tests/golden/run/builtins.hero"
@@ -611,7 +611,7 @@ bb0:
 #line 30 "tests/golden/run/builtins.hero"
     t41 = *(double const *)hero_array_at(t39, t40);
 #line 30 "tests/golden/run/builtins.hero"
-    t42 = HERO_STR_LIT(hero_str_4);
+    t42 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/builtins.hero"
     t43 = h3_fs;
 #line 30 "tests/golden/run/builtins.hero"
@@ -769,7 +769,7 @@ bb0:
 #line 40 "tests/golden/run/builtins.hero"
     t76 = h6_tail;
 #line 40 "tests/golden/run/builtins.hero"
-    t77 = HERO_STR_LIT(hero_str_5);
+    t77 = HERO_STR_LIT(hero_str_2d);
 #line 40 "tests/golden/run/builtins.hero"
     t78 = hero_str_join(t76, t77);
 #line 40 "tests/golden/run/builtins.hero"
@@ -839,11 +839,11 @@ bb0:
 #line 840 "builtins.c"
     hero_array_decref(t182);
 #line 45 "tests/golden/run/builtins.hero"
-    t90 = HERO_STR_LIT(hero_str_6);
+    t90 = HERO_STR_LIT(hero_str_5b);
 #line 45 "tests/golden/run/builtins.hero"
     t91 = h7_empty;
 #line 45 "tests/golden/run/builtins.hero"
-    t92 = HERO_STR_LIT(hero_str_7);
+    t92 = HERO_STR_LIT(hero_str_2c);
 #line 45 "tests/golden/run/builtins.hero"
     t93 = hero_str_join(t91, t92);
 #line 45 "tests/golden/run/builtins.hero"
@@ -853,7 +853,7 @@ bb0:
 #line 854 "builtins.c"
     hero_str_decref(t183);
 #line 45 "tests/golden/run/builtins.hero"
-    t94 = HERO_STR_LIT(hero_str_8);
+    t94 = HERO_STR_LIT(hero_str_5d);
 #line 45 "tests/golden/run/builtins.hero"
     hero_print_str(t90);
 #line 45 "tests/golden/run/builtins.hero"
@@ -863,9 +863,9 @@ bb0:
 #line 45 "tests/golden/run/builtins.hero"
     hero_print_end();
 #line 46 "tests/golden/run/builtins.hero"
-    t95 = HERO_STR_LIT(hero_str_6);
+    t95 = HERO_STR_LIT(hero_str_5b);
 #line 46 "tests/golden/run/builtins.hero"
-    t96 = HERO_STR_LIT(hero_str_9);
+    t96 = HERO_STR_LIT(hero_str_efcabd0);
 #line 46 "tests/golden/run/builtins.hero"
     t97 = hero_array_new(&hero_desc_str, 1);
 #line 46 "tests/golden/run/builtins.hero"
@@ -879,7 +879,7 @@ bb0:
 #line 880 "builtins.c"
     hero_array_decref(t184);
 #line 46 "tests/golden/run/builtins.hero"
-    t98 = HERO_STR_LIT(hero_str_7);
+    t98 = HERO_STR_LIT(hero_str_2c);
 #line 46 "tests/golden/run/builtins.hero"
     t99 = hero_str_join(t97, t98);
 #line 46 "tests/golden/run/builtins.hero"
@@ -889,7 +889,7 @@ bb0:
 #line 890 "builtins.c"
     hero_str_decref(t185);
 #line 46 "tests/golden/run/builtins.hero"
-    t100 = HERO_STR_LIT(hero_str_8);
+    t100 = HERO_STR_LIT(hero_str_5d);
 #line 46 "tests/golden/run/builtins.hero"
     hero_print_str(t95);
 #line 46 "tests/golden/run/builtins.hero"
@@ -899,7 +899,7 @@ bb0:
 #line 46 "tests/golden/run/builtins.hero"
     hero_print_end();
 #line 49 "tests/golden/run/builtins.hero"
-    t101 = HERO_STR_LIT(hero_str_10);
+    t101 = HERO_STR_LIT(hero_str_78a14ef2);
 #line 49 "tests/golden/run/builtins.hero"
     t186 = h8_word;
 #line 906 "builtins.c"
@@ -913,7 +913,7 @@ bb0:
 #line 50 "tests/golden/run/builtins.hero"
     t103 = hero_str_len(t102);
 #line 50 "tests/golden/run/builtins.hero"
-    t104 = HERO_STR_LIT(hero_str_4);
+    t104 = HERO_STR_LIT(hero_str_20);
 #line 50 "tests/golden/run/builtins.hero"
     t105 = h8_word;
 #line 50 "tests/golden/run/builtins.hero"
@@ -945,7 +945,7 @@ bb0:
 #line 946 "builtins.c"
     hero_array_decref(t188);
 #line 51 "tests/golden/run/builtins.hero"
-    t110 = HERO_STR_LIT(hero_str_11);
+    t110 = HERO_STR_LIT(hero_str_2e);
 #line 51 "tests/golden/run/builtins.hero"
     t111 = hero_str_join(t109, t110);
 #line 51 "tests/golden/run/builtins.hero"
@@ -969,7 +969,7 @@ bb0:
 #line 970 "builtins.c"
     hero_array_decref(t190);
 #line 53 "tests/golden/run/builtins.hero"
-    t114 = HERO_STR_LIT(hero_str_12);
+    t114 = HERO_STR_LIT(hero_str_0);
 #line 53 "tests/golden/run/builtins.hero"
     t115 = hero_str_join(t113, t114);
 #line 53 "tests/golden/run/builtins.hero"
@@ -987,7 +987,7 @@ bb0:
 #line 53 "tests/golden/run/builtins.hero"
     hero_print_end();
 #line 54 "tests/golden/run/builtins.hero"
-    t118 = HERO_STR_LIT(hero_str_12);
+    t118 = HERO_STR_LIT(hero_str_0);
 #line 54 "tests/golden/run/builtins.hero"
     t119 = hero_str_chars(t118);
 #line 54 "tests/golden/run/builtins.hero"
@@ -997,7 +997,7 @@ bb0:
 #line 998 "builtins.c"
     hero_array_decref(t192);
 #line 54 "tests/golden/run/builtins.hero"
-    t120 = HERO_STR_LIT(hero_str_12);
+    t120 = HERO_STR_LIT(hero_str_0);
 #line 54 "tests/golden/run/builtins.hero"
     t121 = hero_str_join(t119, t120);
 #line 54 "tests/golden/run/builtins.hero"
@@ -1007,7 +1007,7 @@ bb0:
 #line 1008 "builtins.c"
     hero_str_decref(t193);
 #line 54 "tests/golden/run/builtins.hero"
-    t122 = HERO_STR_LIT(hero_str_12);
+    t122 = HERO_STR_LIT(hero_str_0);
 #line 54 "tests/golden/run/builtins.hero"
     t123 = hero_str_eq(t121, t122);
 #line 54 "tests/golden/run/builtins.hero"
@@ -1171,7 +1171,7 @@ bb5:
 #line 57 "tests/golden/run/builtins.hero"
     t156 = hero_int_to_f64(t155);
 #line 57 "tests/golden/run/builtins.hero"
-    t157 = HERO_STR_LIT(hero_str_4);
+    t157 = HERO_STR_LIT(hero_str_20);
 #line 57 "tests/golden/run/builtins.hero"
     t158 = INT64_C(-1);
 #line 57 "tests/golden/run/builtins.hero"

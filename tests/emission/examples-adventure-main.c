@@ -58,56 +58,56 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "usage: adventure <walkthrough.txt>");
-HERO_STR_STATIC(hero_str_1, "cannot read ");
-HERO_STR_STATIC(hero_str_2, ": ");
-HERO_STR_STATIC(hero_str_3, "");
-HERO_STR_STATIC(hero_str_4, " moves, ");
-HERO_STR_STATIC(hero_str_5, "and the stair is open.");
-HERO_STR_STATIC(hero_str_6, "and the stair is still shut.");
-HERO_STR_STATIC(hero_str_13, "take");
-HERO_STR_STATIC(hero_str_15, "look");
-HERO_STR_STATIC(hero_str_16, "go");
-HERO_STR_STATIC(hero_str_17, "bag");
-HERO_STR_STATIC(hero_str_18, "open");
-HERO_STR_STATIC(hero_str_19, "I do not know how to ");
-HERO_STR_STATIC(hero_str_20, ".");
-HERO_STR_STATIC(hero_str_21, "You are nowhere, which should not be possible.");
-HERO_STR_STATIC(hero_str_22, "There is a ");
-HERO_STR_STATIC(hero_str_23, " here.");
-HERO_STR_STATIC(hero_str_24, "Go where?");
-HERO_STR_STATIC(hero_str_25, "There is nothing here.");
-HERO_STR_STATIC(hero_str_26, "There is nothing to take.");
-HERO_STR_STATIC(hero_str_27, "You take the ");
-HERO_STR_STATIC(hero_str_28, "You are carrying nothing.");
-HERO_STR_STATIC(hero_str_29, "You are carrying: ");
-HERO_STR_STATIC(hero_str_30, ", ");
-HERO_STR_STATIC(hero_str_31, "vault");
-HERO_STR_STATIC(hero_str_32, "There is nothing here to open.");
-HERO_STR_STATIC(hero_str_33, "key");
-HERO_STR_STATIC(hero_str_34, "The door is locked, and you have no key.");
-HERO_STR_STATIC(hero_str_35, "The key turns. The door swings up on a stair going down.");
-HERO_STR_STATIC(hero_str_41, "yard");
-HERO_STR_STATIC(hero_str_45, "gate");
-HERO_STR_STATIC(hero_str_50, "lantern");
-HERO_STR_STATIC(hero_str_64, "no_way");
-HERO_STR_STATIC(hero_str_65, "A gate of black iron, standing open. A path leads north.");
-HERO_STR_STATIC(hero_str_66, "north");
-HERO_STR_STATIC(hero_str_67, "A walled yard, gone to grass. Doors east and west, the gate south.");
-HERO_STR_STATIC(hero_str_68, "south");
-HERO_STR_STATIC(hero_str_69, "east");
-HERO_STR_STATIC(hero_str_70, "kitchen");
-HERO_STR_STATIC(hero_str_71, "west");
-HERO_STR_STATIC(hero_str_72, "library");
-HERO_STR_STATIC(hero_str_73, "Cold ovens and a long table. Something glints under it.");
-HERO_STR_STATIC(hero_str_74, "Shelves to the ceiling, all of them empty. A small door north.");
-HERO_STR_STATIC(hero_str_75, "A round room with one locked door in the floor.");
-HERO_STR_STATIC(hero_str_76, "there is no way ");
-HERO_STR_STATIC(hero_str_77, " \342\200\224 try ");
-HERO_STR_STATIC(hero_str_92, "file_not_found");
-HERO_STR_STATIC(hero_str_93, "no file at ");
-HERO_STR_STATIC(hero_str_94, "read_failed");
-HERO_STR_STATIC(hero_str_95, "could not read ");
+HERO_STR_STATIC(hero_str_244a49c7, "usage: adventure <walkthrough.txt>");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_10b469d0, " moves, ");
+HERO_STR_STATIC(hero_str_3e72a07c, "and the stair is open.");
+HERO_STR_STATIC(hero_str_288ba3e0, "and the stair is still shut.");
+HERO_STR_STATIC(hero_str_fa4c7cb, "take");
+HERO_STR_STATIC(hero_str_e960783, "look");
+HERO_STR_STATIC(hero_str_3524, "go");
+HERO_STR_STATIC(hero_str_19db7c, "bag");
+HERO_STR_STATIC(hero_str_efd2e42, "open");
+HERO_STR_STATIC(hero_str_66f37f5, "I do not know how to ");
+HERO_STR_STATIC(hero_str_2e, ".");
+HERO_STR_STATIC(hero_str_7f800d8a, "You are nowhere, which should not be possible.");
+HERO_STR_STATIC(hero_str_32321b5, "There is a ");
+HERO_STR_STATIC(hero_str_1fc22d9b, " here.");
+HERO_STR_STATIC(hero_str_15e95702, "Go where?");
+HERO_STR_STATIC(hero_str_60b7b9c7, "There is nothing here.");
+HERO_STR_STATIC(hero_str_247d54f0, "There is nothing to take.");
+HERO_STR_STATIC(hero_str_45eeb27, "You take the ");
+HERO_STR_STATIC(hero_str_47c407bd, "You are carrying nothing.");
+HERO_STR_STATIC(hero_str_4e1f4eec, "You are carrying: ");
+HERO_STR_STATIC(hero_str_16a4, ", ");
+HERO_STR_STATIC(hero_str_24704bf6, "vault");
+HERO_STR_STATIC(hero_str_6b9a179b, "There is nothing here to open.");
+HERO_STR_STATIC(hero_str_1c38eb, "key");
+HERO_STR_STATIC(hero_str_2c86d9cb, "The door is locked, and you have no key.");
+HERO_STR_STATIC(hero_str_403631d2, "The key turns. The door swings up on a stair going down.");
+HERO_STR_STATIC(hero_str_10504f66, "yard");
+HERO_STR_STATIC(hero_str_de6db87, "gate");
+HERO_STR_STATIC(hero_str_23086c30, "lantern");
+HERO_STR_STATIC(hero_str_3c24a820, "no_way");
+HERO_STR_STATIC(hero_str_441765f2, "A gate of black iron, standing open. A path leads north.");
+HERO_STR_STATIC(hero_str_19e212d8, "north");
+HERO_STR_STATIC(hero_str_3b130ef7, "A walled yard, gone to grass. Doors east and west, the gate south.");
+HERO_STR_STATIC(hero_str_71a76b88, "south");
+HERO_STR_STATIC(hero_str_da23fdd, "east");
+HERO_STR_STATIC(hero_str_3184045d, "kitchen");
+HERO_STR_STATIC(hero_str_100cc0e7, "west");
+HERO_STR_STATIC(hero_str_2c40953b, "library");
+HERO_STR_STATIC(hero_str_55bcc48b, "Cold ovens and a long table. Something glints under it.");
+HERO_STR_STATIC(hero_str_35400eac, "Shelves to the ceiling, all of them empty. A small door north.");
+HERO_STR_STATIC(hero_str_6349b7f7, "A round room with one locked door in the floor.");
+HERO_STR_STATIC(hero_str_6a96d55b, "there is no way ");
+HERO_STR_STATIC(hero_str_5e59cb00, " \342\200\224 try ");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
 typedef struct h_game_Game {
     HeroStr f_here;
@@ -368,7 +368,7 @@ bb1:
 #line 30 "examples/adventure/main.hero"
 bb2:
 #line 28 "examples/adventure/main.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_244a49c7);
 #line 28 "examples/adventure/main.hero"
     hero_print_str(t6);
 #line 28 "examples/adventure/main.hero"
@@ -440,7 +440,7 @@ bb5:
 #line 441 "main.c"
     hero_failure_release(&t29);
 #line 31 "examples/adventure/main.hero"
-    t15 = HERO_STR_LIT(hero_str_1);
+    t15 = HERO_STR_LIT(hero_str_2d78c599);
 #line 31 "examples/adventure/main.hero"
     t16 = h0_given;
 #line 31 "examples/adventure/main.hero"
@@ -448,7 +448,7 @@ bb5:
 #line 31 "examples/adventure/main.hero"
     t18 = *(HeroStr const *)hero_array_at(t16, t17);
 #line 31 "examples/adventure/main.hero"
-    t19 = HERO_STR_LIT(hero_str_2);
+    t19 = HERO_STR_LIT(hero_str_1dce);
 #line 31 "examples/adventure/main.hero"
     t20 = h2_e;
 #line 31 "examples/adventure/main.hero"
@@ -672,7 +672,7 @@ bb3:
 #line 38 "examples/adventure/main.hero"
 bb4:
 #line 40 "examples/adventure/main.hero"
-    t21 = HERO_STR_LIT(hero_str_3);
+    t21 = HERO_STR_LIT(hero_str_0);
 #line 40 "examples/adventure/main.hero"
     hero_print_str(t21);
 #line 40 "examples/adventure/main.hero"
@@ -684,7 +684,7 @@ bb4:
 #line 41 "examples/adventure/main.hero"
     t24 = t23.f_moves;
 #line 41 "examples/adventure/main.hero"
-    t25 = HERO_STR_LIT(hero_str_4);
+    t25 = HERO_STR_LIT(hero_str_10b469d0);
 #line 41 "examples/adventure/main.hero"
     t26 = h3_turn;
 #line 41 "examples/adventure/main.hero"
@@ -762,13 +762,13 @@ bb0:
 #line 44 "examples/adventure/main.hero"
 bb1:
 #line 46 "examples/adventure/main.hero"
-    t4 = HERO_STR_LIT(hero_str_6);
+    t4 = HERO_STR_LIT(hero_str_288ba3e0);
 #line 767 "main.c"
     hero_str_incref(t4);
     return t4;
 bb2:
 #line 45 "examples/adventure/main.hero"
-    t3 = HERO_STR_LIT(hero_str_5);
+    t3 = HERO_STR_LIT(hero_str_3e72a07c);
 #line 773 "main.c"
     hero_str_incref(t3);
     return t3;
@@ -920,7 +920,7 @@ bb2:
 #line 55 "examples/adventure/main.hero"
     t14 = h5_head;
 #line 55 "examples/adventure/main.hero"
-    t15 = HERO_STR_LIT(hero_str_3);
+    t15 = HERO_STR_LIT(hero_str_0);
 #line 55 "examples/adventure/main.hero"
     t16 = hero_str_eq(t14, t15);
 #line 55 "examples/adventure/main.hero"
@@ -1989,7 +1989,7 @@ bb1:
     return t13;
 bb2:
 #line 46 "examples/adventure/game.hero"
-    t6 = HERO_STR_LIT(hero_str_3);
+    t6 = HERO_STR_LIT(hero_str_0);
 #line 1994 "main.c"
     hero_str_incref(t6);
 #line 46 "examples/adventure/game.hero"
@@ -2403,7 +2403,7 @@ bb0:
 #line 60 "examples/adventure/game.hero"
     t5 = h4_verb;
 #line 60 "examples/adventure/game.hero"
-    t6 = HERO_STR_LIT(hero_str_15);
+    t6 = HERO_STR_LIT(hero_str_e960783);
 #line 60 "examples/adventure/game.hero"
     t7 = hero_str_eq(t5, t6);
 #line 60 "examples/adventure/game.hero"
@@ -2413,7 +2413,7 @@ bb1:
 #line 62 "examples/adventure/game.hero"
     t13 = h4_verb;
 #line 62 "examples/adventure/game.hero"
-    t14 = HERO_STR_LIT(hero_str_16);
+    t14 = HERO_STR_LIT(hero_str_3524);
 #line 62 "examples/adventure/game.hero"
     t15 = hero_str_eq(t13, t14);
 #line 62 "examples/adventure/game.hero"
@@ -2528,7 +2528,7 @@ bb4:
 #line 64 "examples/adventure/game.hero"
     t22 = h4_verb;
 #line 64 "examples/adventure/game.hero"
-    t23 = HERO_STR_LIT(hero_str_13);
+    t23 = HERO_STR_LIT(hero_str_fa4c7cb);
 #line 64 "examples/adventure/game.hero"
     t24 = hero_str_eq(t22, t23);
 #line 64 "examples/adventure/game.hero"
@@ -2542,7 +2542,7 @@ bb5:
 #line 63 "examples/adventure/game.hero"
     t18 = h3_command;
 #line 63 "examples/adventure/game.hero"
-    t19 = HERO_STR_LIT(hero_str_16);
+    t19 = HERO_STR_LIT(hero_str_3524);
 #line 63 "examples/adventure/game.hero"
     t20 = h_game_rest_after(t18, t19);
 #line 63 "examples/adventure/game.hero"
@@ -2645,7 +2645,7 @@ bb7:
 #line 66 "examples/adventure/game.hero"
     t28 = h4_verb;
 #line 66 "examples/adventure/game.hero"
-    t29 = HERO_STR_LIT(hero_str_17);
+    t29 = HERO_STR_LIT(hero_str_19db7c);
 #line 66 "examples/adventure/game.hero"
     t30 = hero_str_eq(t28, t29);
 #line 66 "examples/adventure/game.hero"
@@ -2750,7 +2750,7 @@ bb10:
 #line 68 "examples/adventure/game.hero"
     t36 = h4_verb;
 #line 68 "examples/adventure/game.hero"
-    t37 = HERO_STR_LIT(hero_str_18);
+    t37 = HERO_STR_LIT(hero_str_efd2e42);
 #line 68 "examples/adventure/game.hero"
     t38 = hero_str_eq(t36, t37);
 #line 68 "examples/adventure/game.hero"
@@ -2875,7 +2875,7 @@ bb13:
 #line 70 "examples/adventure/game.hero"
     t41 = h4_verb;
 #line 70 "examples/adventure/game.hero"
-    t42 = HERO_STR_LIT(hero_str_3);
+    t42 = HERO_STR_LIT(hero_str_0);
 #line 70 "examples/adventure/game.hero"
     t43 = hero_str_eq(t41, t42);
 #line 70 "examples/adventure/game.hero"
@@ -2978,7 +2978,7 @@ bb16:
 #line 72 "examples/adventure/game.hero"
     t47 = h1_g;
 #line 72 "examples/adventure/game.hero"
-    t48 = HERO_STR_LIT(hero_str_19);
+    t48 = HERO_STR_LIT(hero_str_66f37f5);
 #line 72 "examples/adventure/game.hero"
     t49 = h4_verb;
 #line 72 "examples/adventure/game.hero"
@@ -2990,7 +2990,7 @@ bb16:
 #line 2991 "main.c"
     hero_str_decref(t68);
 #line 72 "examples/adventure/game.hero"
-    t51 = HERO_STR_LIT(hero_str_20);
+    t51 = HERO_STR_LIT(hero_str_2e);
 #line 72 "examples/adventure/game.hero"
     t52 = hero_str_concat(t50, t51);
 #line 72 "examples/adventure/game.hero"
@@ -3359,7 +3359,7 @@ bb0:
 #line 78 "examples/adventure/game.hero"
 bb2:
 #line 79 "examples/adventure/game.hero"
-    t7 = HERO_STR_LIT(hero_str_21);
+    t7 = HERO_STR_LIT(hero_str_7f800d8a);
 #line 79 "examples/adventure/game.hero"
     t8 = hero_array_new(&hero_desc_str, 1);
 #line 79 "examples/adventure/game.hero"
@@ -3458,7 +3458,7 @@ bb3:
 #line 82 "examples/adventure/game.hero"
     t15 = t14.f_item;
 #line 82 "examples/adventure/game.hero"
-    t16 = HERO_STR_LIT(hero_str_3);
+    t16 = HERO_STR_LIT(hero_str_0);
 #line 82 "examples/adventure/game.hero"
     t17 = !hero_str_eq(t15, t16);
 #line 82 "examples/adventure/game.hero"
@@ -3574,7 +3574,7 @@ bb6:
 #line 82 "examples/adventure/game.hero"
 bb7:
 #line 83 "examples/adventure/game.hero"
-    t29 = HERO_STR_LIT(hero_str_22);
+    t29 = HERO_STR_LIT(hero_str_32321b5);
 #line 83 "examples/adventure/game.hero"
     t30 = h3_room;
 #line 83 "examples/adventure/game.hero"
@@ -3588,7 +3588,7 @@ bb7:
 #line 3589 "main.c"
     hero_str_decref(t45);
 #line 83 "examples/adventure/game.hero"
-    t33 = HERO_STR_LIT(hero_str_23);
+    t33 = HERO_STR_LIT(hero_str_1fc22d9b);
 #line 83 "examples/adventure/game.hero"
     t34 = hero_str_concat(t32, t33);
 #line 83 "examples/adventure/game.hero"
@@ -3716,7 +3716,7 @@ bb0:
 #line 87 "examples/adventure/game.hero"
     t1 = h2_direction;
 #line 87 "examples/adventure/game.hero"
-    t2 = HERO_STR_LIT(hero_str_3);
+    t2 = HERO_STR_LIT(hero_str_0);
 #line 87 "examples/adventure/game.hero"
     t3 = hero_str_eq(t1, t2);
 #line 87 "examples/adventure/game.hero"
@@ -3766,7 +3766,7 @@ bb2:
 #line 88 "examples/adventure/game.hero"
     t4 = h1_g;
 #line 88 "examples/adventure/game.hero"
-    t5 = HERO_STR_LIT(hero_str_24);
+    t5 = HERO_STR_LIT(hero_str_15e95702);
 #line 88 "examples/adventure/game.hero"
     t6 = hero_array_new(&hero_desc_str, 1);
 #line 88 "examples/adventure/game.hero"
@@ -4264,7 +4264,7 @@ bb2:
 #line 103 "examples/adventure/game.hero"
     t7 = h1_g;
 #line 103 "examples/adventure/game.hero"
-    t8 = HERO_STR_LIT(hero_str_25);
+    t8 = HERO_STR_LIT(hero_str_60b7b9c7);
 #line 103 "examples/adventure/game.hero"
     t9 = hero_array_new(&hero_desc_str, 1);
 #line 103 "examples/adventure/game.hero"
@@ -4375,7 +4375,7 @@ bb3:
 #line 105 "examples/adventure/game.hero"
     t14 = t13.f_item;
 #line 105 "examples/adventure/game.hero"
-    t15 = HERO_STR_LIT(hero_str_3);
+    t15 = HERO_STR_LIT(hero_str_0);
 #line 105 "examples/adventure/game.hero"
     t16 = hero_str_eq(t14, t15);
 #line 105 "examples/adventure/game.hero"
@@ -4458,7 +4458,7 @@ bb4:
 #line 4459 "main.c"
     h_game_Game_release(&t68);
 #line 114 "examples/adventure/game.hero"
-    t51 = HERO_STR_LIT(hero_str_27);
+    t51 = HERO_STR_LIT(hero_str_45eeb27);
 #line 114 "examples/adventure/game.hero"
     t52 = h3_room;
 #line 114 "examples/adventure/game.hero"
@@ -4472,7 +4472,7 @@ bb4:
 #line 4473 "main.c"
     hero_str_decref(t69);
 #line 114 "examples/adventure/game.hero"
-    t55 = HERO_STR_LIT(hero_str_20);
+    t55 = HERO_STR_LIT(hero_str_2e);
 #line 114 "examples/adventure/game.hero"
     t56 = hero_str_concat(t54, t55);
 #line 114 "examples/adventure/game.hero"
@@ -4646,7 +4646,7 @@ bb7:
 #line 106 "examples/adventure/game.hero"
     t28 = h1_g;
 #line 106 "examples/adventure/game.hero"
-    t29 = HERO_STR_LIT(hero_str_26);
+    t29 = HERO_STR_LIT(hero_str_247d54f0);
 #line 106 "examples/adventure/game.hero"
     t30 = hero_array_new(&hero_desc_str, 1);
 #line 106 "examples/adventure/game.hero"
@@ -4833,7 +4833,7 @@ bb0:
 #line 122 "examples/adventure/game.hero"
 bb1:
 #line 124 "examples/adventure/game.hero"
-    t7 = HERO_STR_LIT(hero_str_29);
+    t7 = HERO_STR_LIT(hero_str_4e1f4eec);
 #line 124 "examples/adventure/game.hero"
     t8 = h0_g;
 #line 124 "examples/adventure/game.hero"
@@ -4847,7 +4847,7 @@ bb1:
 #line 4848 "main.c"
     hero_array_decref(t16);
 #line 124 "examples/adventure/game.hero"
-    t11 = HERO_STR_LIT(hero_str_30);
+    t11 = HERO_STR_LIT(hero_str_16a4);
 #line 124 "examples/adventure/game.hero"
     t12 = hero_str_join(t10, t11);
 #line 124 "examples/adventure/game.hero"
@@ -4865,7 +4865,7 @@ bb1:
 #line 4866 "main.c"
     hero_str_decref(t18);
 #line 124 "examples/adventure/game.hero"
-    t14 = HERO_STR_LIT(hero_str_20);
+    t14 = HERO_STR_LIT(hero_str_2e);
 #line 124 "examples/adventure/game.hero"
     t15 = hero_str_concat(t13, t14);
 #line 124 "examples/adventure/game.hero"
@@ -4896,7 +4896,7 @@ bb1:
     return t15;
 bb2:
 #line 123 "examples/adventure/game.hero"
-    t6 = HERO_STR_LIT(hero_str_28);
+    t6 = HERO_STR_LIT(hero_str_47c407bd);
 #line 4901 "main.c"
     hero_str_incref(t6);
 #line 123 "examples/adventure/game.hero"
@@ -5002,7 +5002,7 @@ bb0:
 #line 129 "examples/adventure/game.hero"
     t2 = t1.f_here;
 #line 129 "examples/adventure/game.hero"
-    t3 = HERO_STR_LIT(hero_str_31);
+    t3 = HERO_STR_LIT(hero_str_24704bf6);
 #line 129 "examples/adventure/game.hero"
     t4 = !hero_str_eq(t2, t3);
 #line 129 "examples/adventure/game.hero"
@@ -5012,7 +5012,7 @@ bb1:
 #line 131 "examples/adventure/game.hero"
     t9 = h0_g;
 #line 131 "examples/adventure/game.hero"
-    t10 = HERO_STR_LIT(hero_str_33);
+    t10 = HERO_STR_LIT(hero_str_1c38eb);
 #line 131 "examples/adventure/game.hero"
     t11 = h_game_carrying(t9, t10);
 #line 131 "examples/adventure/game.hero"
@@ -5024,7 +5024,7 @@ bb2:
 #line 130 "examples/adventure/game.hero"
     t5 = h0_g;
 #line 130 "examples/adventure/game.hero"
-    t6 = HERO_STR_LIT(hero_str_32);
+    t6 = HERO_STR_LIT(hero_str_6b9a179b);
 #line 130 "examples/adventure/game.hero"
     t7 = hero_array_new(&hero_desc_str, 1);
 #line 130 "examples/adventure/game.hero"
@@ -5132,7 +5132,7 @@ bb4:
 #line 5133 "main.c"
     h_game_Game_release(&t36);
 #line 140 "examples/adventure/game.hero"
-    t29 = HERO_STR_LIT(hero_str_35);
+    t29 = HERO_STR_LIT(hero_str_403631d2);
 #line 140 "examples/adventure/game.hero"
     t30 = hero_array_new(&hero_desc_str, 1);
 #line 140 "examples/adventure/game.hero"
@@ -5200,7 +5200,7 @@ bb5:
 #line 132 "examples/adventure/game.hero"
     t13 = h0_g;
 #line 132 "examples/adventure/game.hero"
-    t14 = HERO_STR_LIT(hero_str_34);
+    t14 = HERO_STR_LIT(hero_str_2c86d9cb);
 #line 132 "examples/adventure/game.hero"
     t15 = hero_array_new(&hero_desc_str, 1);
 #line 132 "examples/adventure/game.hero"
@@ -5606,7 +5606,7 @@ HeroStr h_world_ERR_NO_WAY(void) {
     goto bb0;
 bb0:
 #line 18 "examples/adventure/world.hero"
-    t1 = HERO_STR_LIT(hero_str_64);
+    t1 = HERO_STR_LIT(hero_str_3c24a820);
 #line 5611 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -5723,15 +5723,15 @@ bb0:
 #line 5724 "main.c"
     hero_map_decref(t52);
 #line 32 "examples/adventure/world.hero"
-    t2 = HERO_STR_LIT(hero_str_45);
+    t2 = HERO_STR_LIT(hero_str_de6db87);
 #line 33 "examples/adventure/world.hero"
-    t3 = HERO_STR_LIT(hero_str_45);
+    t3 = HERO_STR_LIT(hero_str_de6db87);
 #line 34 "examples/adventure/world.hero"
-    t4 = HERO_STR_LIT(hero_str_65);
+    t4 = HERO_STR_LIT(hero_str_441765f2);
 #line 35 "examples/adventure/world.hero"
-    t5 = HERO_STR_LIT(hero_str_66);
+    t5 = HERO_STR_LIT(hero_str_19e212d8);
 #line 35 "examples/adventure/world.hero"
-    t6 = HERO_STR_LIT(hero_str_41);
+    t6 = HERO_STR_LIT(hero_str_10504f66);
 #line 35 "examples/adventure/world.hero"
     t7 = hero_map_new(&hero_desc_str, &hero_desc_str, 1);
 #line 35 "examples/adventure/world.hero"
@@ -5743,7 +5743,7 @@ bb0:
 #line 5744 "main.c"
     hero_map_decref(t53);
 #line 36 "examples/adventure/world.hero"
-    t8 = HERO_STR_LIT(hero_str_3);
+    t8 = HERO_STR_LIT(hero_str_0);
 #line 32 "examples/adventure/world.hero"
 #line 5749 "main.c"
     hero_str_incref(t3);
@@ -5770,23 +5770,23 @@ bb0:
 #line 32 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t2, &t9);
 #line 38 "examples/adventure/world.hero"
-    t10 = HERO_STR_LIT(hero_str_41);
+    t10 = HERO_STR_LIT(hero_str_10504f66);
 #line 39 "examples/adventure/world.hero"
-    t11 = HERO_STR_LIT(hero_str_41);
+    t11 = HERO_STR_LIT(hero_str_10504f66);
 #line 40 "examples/adventure/world.hero"
-    t12 = HERO_STR_LIT(hero_str_67);
+    t12 = HERO_STR_LIT(hero_str_3b130ef7);
 #line 41 "examples/adventure/world.hero"
-    t13 = HERO_STR_LIT(hero_str_68);
+    t13 = HERO_STR_LIT(hero_str_71a76b88);
 #line 41 "examples/adventure/world.hero"
-    t14 = HERO_STR_LIT(hero_str_45);
+    t14 = HERO_STR_LIT(hero_str_de6db87);
 #line 41 "examples/adventure/world.hero"
-    t15 = HERO_STR_LIT(hero_str_69);
+    t15 = HERO_STR_LIT(hero_str_da23fdd);
 #line 41 "examples/adventure/world.hero"
-    t16 = HERO_STR_LIT(hero_str_70);
+    t16 = HERO_STR_LIT(hero_str_3184045d);
 #line 41 "examples/adventure/world.hero"
-    t17 = HERO_STR_LIT(hero_str_71);
+    t17 = HERO_STR_LIT(hero_str_100cc0e7);
 #line 41 "examples/adventure/world.hero"
-    t18 = HERO_STR_LIT(hero_str_72);
+    t18 = HERO_STR_LIT(hero_str_2c40953b);
 #line 41 "examples/adventure/world.hero"
     t19 = hero_map_new(&hero_desc_str, &hero_desc_str, 3);
 #line 41 "examples/adventure/world.hero"
@@ -5802,7 +5802,7 @@ bb0:
 #line 5803 "main.c"
     hero_map_decref(t55);
 #line 42 "examples/adventure/world.hero"
-    t20 = HERO_STR_LIT(hero_str_50);
+    t20 = HERO_STR_LIT(hero_str_23086c30);
 #line 38 "examples/adventure/world.hero"
 #line 5808 "main.c"
     hero_str_incref(t11);
@@ -5829,15 +5829,15 @@ bb0:
 #line 38 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t10, &t21);
 #line 44 "examples/adventure/world.hero"
-    t22 = HERO_STR_LIT(hero_str_70);
+    t22 = HERO_STR_LIT(hero_str_3184045d);
 #line 45 "examples/adventure/world.hero"
-    t23 = HERO_STR_LIT(hero_str_70);
+    t23 = HERO_STR_LIT(hero_str_3184045d);
 #line 46 "examples/adventure/world.hero"
-    t24 = HERO_STR_LIT(hero_str_73);
+    t24 = HERO_STR_LIT(hero_str_55bcc48b);
 #line 47 "examples/adventure/world.hero"
-    t25 = HERO_STR_LIT(hero_str_71);
+    t25 = HERO_STR_LIT(hero_str_100cc0e7);
 #line 47 "examples/adventure/world.hero"
-    t26 = HERO_STR_LIT(hero_str_41);
+    t26 = HERO_STR_LIT(hero_str_10504f66);
 #line 47 "examples/adventure/world.hero"
     t27 = hero_map_new(&hero_desc_str, &hero_desc_str, 1);
 #line 47 "examples/adventure/world.hero"
@@ -5849,7 +5849,7 @@ bb0:
 #line 5850 "main.c"
     hero_map_decref(t57);
 #line 48 "examples/adventure/world.hero"
-    t28 = HERO_STR_LIT(hero_str_33);
+    t28 = HERO_STR_LIT(hero_str_1c38eb);
 #line 44 "examples/adventure/world.hero"
 #line 5855 "main.c"
     hero_str_incref(t23);
@@ -5876,19 +5876,19 @@ bb0:
 #line 44 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t22, &t29);
 #line 50 "examples/adventure/world.hero"
-    t30 = HERO_STR_LIT(hero_str_72);
+    t30 = HERO_STR_LIT(hero_str_2c40953b);
 #line 51 "examples/adventure/world.hero"
-    t31 = HERO_STR_LIT(hero_str_72);
+    t31 = HERO_STR_LIT(hero_str_2c40953b);
 #line 52 "examples/adventure/world.hero"
-    t32 = HERO_STR_LIT(hero_str_74);
+    t32 = HERO_STR_LIT(hero_str_35400eac);
 #line 53 "examples/adventure/world.hero"
-    t33 = HERO_STR_LIT(hero_str_69);
+    t33 = HERO_STR_LIT(hero_str_da23fdd);
 #line 53 "examples/adventure/world.hero"
-    t34 = HERO_STR_LIT(hero_str_41);
+    t34 = HERO_STR_LIT(hero_str_10504f66);
 #line 53 "examples/adventure/world.hero"
-    t35 = HERO_STR_LIT(hero_str_66);
+    t35 = HERO_STR_LIT(hero_str_19e212d8);
 #line 53 "examples/adventure/world.hero"
-    t36 = HERO_STR_LIT(hero_str_31);
+    t36 = HERO_STR_LIT(hero_str_24704bf6);
 #line 53 "examples/adventure/world.hero"
     t37 = hero_map_new(&hero_desc_str, &hero_desc_str, 2);
 #line 53 "examples/adventure/world.hero"
@@ -5902,7 +5902,7 @@ bb0:
 #line 5903 "main.c"
     hero_map_decref(t59);
 #line 54 "examples/adventure/world.hero"
-    t38 = HERO_STR_LIT(hero_str_3);
+    t38 = HERO_STR_LIT(hero_str_0);
 #line 50 "examples/adventure/world.hero"
 #line 5908 "main.c"
     hero_str_incref(t31);
@@ -5929,15 +5929,15 @@ bb0:
 #line 50 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t30, &t39);
 #line 56 "examples/adventure/world.hero"
-    t40 = HERO_STR_LIT(hero_str_31);
+    t40 = HERO_STR_LIT(hero_str_24704bf6);
 #line 57 "examples/adventure/world.hero"
-    t41 = HERO_STR_LIT(hero_str_31);
+    t41 = HERO_STR_LIT(hero_str_24704bf6);
 #line 58 "examples/adventure/world.hero"
-    t42 = HERO_STR_LIT(hero_str_75);
+    t42 = HERO_STR_LIT(hero_str_6349b7f7);
 #line 59 "examples/adventure/world.hero"
-    t43 = HERO_STR_LIT(hero_str_68);
+    t43 = HERO_STR_LIT(hero_str_71a76b88);
 #line 59 "examples/adventure/world.hero"
-    t44 = HERO_STR_LIT(hero_str_72);
+    t44 = HERO_STR_LIT(hero_str_2c40953b);
 #line 59 "examples/adventure/world.hero"
     t45 = hero_map_new(&hero_desc_str, &hero_desc_str, 1);
 #line 59 "examples/adventure/world.hero"
@@ -5949,7 +5949,7 @@ bb0:
 #line 5950 "main.c"
     hero_map_decref(t61);
 #line 60 "examples/adventure/world.hero"
-    t46 = HERO_STR_LIT(hero_str_3);
+    t46 = HERO_STR_LIT(hero_str_0);
 #line 56 "examples/adventure/world.hero"
 #line 5955 "main.c"
     hero_str_incref(t41);
@@ -5978,7 +5978,7 @@ bb0:
 #line 62 "examples/adventure/world.hero"
     t48 = h0_rooms;
 #line 62 "examples/adventure/world.hero"
-    t49 = HERO_STR_LIT(hero_str_45);
+    t49 = HERO_STR_LIT(hero_str_de6db87);
 #line 5983 "main.c"
     hero_map_incref(t48);
 #line 62 "examples/adventure/world.hero"
@@ -6506,7 +6506,7 @@ bb5:
 #line 6507 "main.c"
     hero_str_decref(t45);
 #line 73 "examples/adventure/world.hero"
-    t24 = HERO_STR_LIT(hero_str_76);
+    t24 = HERO_STR_LIT(hero_str_6a96d55b);
 #line 73 "examples/adventure/world.hero"
     t25 = h2_direction;
 #line 73 "examples/adventure/world.hero"
@@ -6518,7 +6518,7 @@ bb5:
 #line 6519 "main.c"
     hero_str_decref(t46);
 #line 73 "examples/adventure/world.hero"
-    t27 = HERO_STR_LIT(hero_str_77);
+    t27 = HERO_STR_LIT(hero_str_5e59cb00);
 #line 73 "examples/adventure/world.hero"
     t28 = hero_str_concat(t26, t27);
 #line 73 "examples/adventure/world.hero"
@@ -6548,7 +6548,7 @@ bb5:
 #line 6549 "main.c"
     hero_array_decref(t49);
 #line 73 "examples/adventure/world.hero"
-    t33 = HERO_STR_LIT(hero_str_30);
+    t33 = HERO_STR_LIT(hero_str_16a4);
 #line 73 "examples/adventure/world.hero"
     t34 = hero_str_join(t32, t33);
 #line 73 "examples/adventure/world.hero"
@@ -7403,9 +7403,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_94);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_95);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -7464,9 +7464,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_92);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_93);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"

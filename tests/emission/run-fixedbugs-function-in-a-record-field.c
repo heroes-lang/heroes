@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsfunctioninarecordfield.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "double");
+HERO_STR_STATIC(hero_str_6be6e610, "double");
 
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugsfunctioninarecordfield_Holder {
@@ -206,7 +206,7 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t1 = h_fixedbugsfunctioninarecordfield_double;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_6be6e610);
 #line 211 "fixedbugsfunctioninarecordfield.c"
     hero_str_incref(t2);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"

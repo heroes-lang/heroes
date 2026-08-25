@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "placestorec5.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, " ");
-HERO_STR_STATIC(hero_str_1, "a");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_61, "a");
 
 typedef struct h_placestorec5_Node {
     HeroArrayHeader * f_kids;
@@ -339,7 +339,7 @@ bb0:
 #line 37 "tests/golden/run/place-store-c5.hero"
     t13 = hero_array_len(t12);
 #line 37 "tests/golden/run/place-store-c5.hero"
-    t14 = HERO_STR_LIT(hero_str_0);
+    t14 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/place-store-c5.hero"
     t15 = h1_ys;
 #line 37 "tests/golden/run/place-store-c5.hero"
@@ -377,7 +377,7 @@ bb0:
 #line 40 "tests/golden/run/place-store-c5.hero"
     t21 = hero_array_len(t20);
 #line 40 "tests/golden/run/place-store-c5.hero"
-    t22 = HERO_STR_LIT(hero_str_0);
+    t22 = HERO_STR_LIT(hero_str_20);
 #line 40 "tests/golden/run/place-store-c5.hero"
     t23 = h2_zs;
 #line 40 "tests/golden/run/place-store-c5.hero"
@@ -456,7 +456,7 @@ bb0:
 #line 46 "tests/golden/run/place-store-c5.hero"
     t36 = hero_array_len(t35);
 #line 46 "tests/golden/run/place-store-c5.hero"
-    t37 = HERO_STR_LIT(hero_str_0);
+    t37 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/place-store-c5.hero"
     t38 = h4_root;
 #line 46 "tests/golden/run/place-store-c5.hero"
@@ -464,7 +464,7 @@ bb0:
 #line 46 "tests/golden/run/place-store-c5.hero"
     t40 = hero_array_len(t39);
 #line 46 "tests/golden/run/place-store-c5.hero"
-    t41 = HERO_STR_LIT(hero_str_0);
+    t41 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/place-store-c5.hero"
     t42 = h3_hs;
 #line 46 "tests/golden/run/place-store-c5.hero"
@@ -582,7 +582,7 @@ bb0:
 #line 52 "tests/golden/run/place-store-c5.hero"
     t60 = hero_array_len(t59);
 #line 52 "tests/golden/run/place-store-c5.hero"
-    t61 = HERO_STR_LIT(hero_str_0);
+    t61 = HERO_STR_LIT(hero_str_20);
 #line 52 "tests/golden/run/place-store-c5.hero"
     t62 = h5_holder;
 #line 52 "tests/golden/run/place-store-c5.hero"
@@ -620,7 +620,7 @@ bb0:
 #line 621 "placestorec5.c"
     hero_array_decref(t117);
 #line 55 "tests/golden/run/place-store-c5.hero"
-    t70 = HERO_STR_LIT(hero_str_1);
+    t70 = HERO_STR_LIT(hero_str_61);
 #line 55 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h6_ws, &t70);
 #line 56 "tests/golden/run/place-store-c5.hero"
@@ -636,7 +636,7 @@ bb0:
 #line 57 "tests/golden/run/place-store-c5.hero"
     t78 = hero_array_len(t77);
 #line 57 "tests/golden/run/place-store-c5.hero"
-    t79 = HERO_STR_LIT(hero_str_0);
+    t79 = HERO_STR_LIT(hero_str_20);
 #line 57 "tests/golden/run/place-store-c5.hero"
     t80 = h6_ws;
 #line 57 "tests/golden/run/place-store-c5.hero"
@@ -704,7 +704,7 @@ bb0:
 #line 62 "tests/golden/run/place-store-c5.hero"
     t91 = hero_array_len(t90);
 #line 62 "tests/golden/run/place-store-c5.hero"
-    t92 = HERO_STR_LIT(hero_str_0);
+    t92 = HERO_STR_LIT(hero_str_20);
 #line 62 "tests/golden/run/place-store-c5.hero"
     t93 = h7_qs;
 #line 62 "tests/golden/run/place-store-c5.hero"

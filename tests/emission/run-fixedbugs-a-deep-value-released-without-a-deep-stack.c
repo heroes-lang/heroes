@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, " ");
+HERO_STR_STATIC(hero_str_20, " ");
 
 typedef struct h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node {
     int64_t f_label;
@@ -621,7 +621,7 @@ bb0:
 #line 79 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t13 = t12.f_label;
 #line 79 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-    t14 = HERO_STR_LIT(hero_str_0);
+    t14 = HERO_STR_LIT(hero_str_20);
 #line 79 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t15 = h2_c;
 #line 79 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"

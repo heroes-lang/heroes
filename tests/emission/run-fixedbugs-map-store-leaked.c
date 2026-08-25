@@ -58,12 +58,12 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsmapstoreleaked.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "a");
-HERO_STR_STATIC(hero_str_1, "x");
-HERO_STR_STATIC(hero_str_2, "y");
-HERO_STR_STATIC(hero_str_3, "z");
-HERO_STR_STATIC(hero_str_4, "w");
-HERO_STR_STATIC(hero_str_5, "?");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_78, "x");
+HERO_STR_STATIC(hero_str_79, "y");
+HERO_STR_STATIC(hero_str_7a, "z");
+HERO_STR_STATIC(hero_str_77, "w");
+HERO_STR_STATIC(hero_str_3f, "?");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -157,11 +157,11 @@ bb0:
 #line 158 "fixedbugsmapstoreleaked.c"
     hero_map_decref(t24);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_61);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t3 = HERO_STR_LIT(hero_str_1);
+    t3 = HERO_STR_LIT(hero_str_78);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t4 = HERO_STR_LIT(hero_str_2);
+    t4 = HERO_STR_LIT(hero_str_79);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t5 = hero_str_concat(t3, t4);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
@@ -176,11 +176,11 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_set(&(h0_m), &t2, &t5);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_61);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t7 = HERO_STR_LIT(hero_str_3);
+    t7 = HERO_STR_LIT(hero_str_7a);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t8 = HERO_STR_LIT(hero_str_4);
+    t8 = HERO_STR_LIT(hero_str_77);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t9 = hero_str_concat(t7, t8);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
@@ -197,7 +197,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t10 = h0_m;
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t11 = HERO_STR_LIT(hero_str_0);
+    t11 = HERO_STR_LIT(hero_str_61);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     {
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
@@ -257,7 +257,7 @@ bb1:
     goto bb3;
 bb2:
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
-    t19 = HERO_STR_LIT(hero_str_5);
+    t19 = HERO_STR_LIT(hero_str_3f);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t30 = h2_r0;
 #line 264 "fixedbugsmapstoreleaked.c"

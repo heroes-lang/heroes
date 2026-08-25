@@ -60,7 +60,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 61 "ffimissinglink.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "sqlite ");
+HERO_STR_STATIC(hero_str_279ecc0f, "sqlite ");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -96,7 +96,7 @@ void h_ffimissinglink_main(void) {
     goto bb0;
 bb0:
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_279ecc0f);
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     t2 = sqlite3_libversion_number();
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"

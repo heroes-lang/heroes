@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsequalitywasdecidedbyanaddress.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, " ");
-HERO_STR_STATIC(hero_str_1, "k");
-HERO_STR_STATIC(hero_str_2, "a");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_6b, "k");
+HERO_STR_STATIC(hero_str_61, "a");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -294,7 +294,7 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t11 = hero_array_eq(t9, t10);
 #line 50 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t12 = HERO_STR_LIT(hero_str_0);
+    t12 = HERO_STR_LIT(hero_str_20);
 #line 50 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t13 = h1_a;
 #line 50 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
@@ -310,7 +310,7 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     hero_print_end();
 #line 52 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_6b);
 #line 52 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t17 = h0_n;
 #line 52 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
@@ -342,7 +342,7 @@ bb0:
 #line 343 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t73);
 #line 54 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t20 = HERO_STR_LIT(hero_str_1);
+    t20 = HERO_STR_LIT(hero_str_6b);
 #line 54 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t21 = h0_n;
 #line 54 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
@@ -370,7 +370,7 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t25 = hero_map_eq(t23, t24);
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t26 = HERO_STR_LIT(hero_str_0);
+    t26 = HERO_STR_LIT(hero_str_20);
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t27 = h4_ma;
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
@@ -470,7 +470,7 @@ bb0:
 #line 64 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t41 = hero_array_eq(t39, t40);
 #line 64 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t42 = HERO_STR_LIT(hero_str_0);
+    t42 = HERO_STR_LIT(hero_str_20);
 #line 64 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t43 = h7_xs;
 #line 64 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
@@ -486,7 +486,7 @@ bb0:
 #line 64 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     hero_print_end();
 #line 66 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t46 = HERO_STR_LIT(hero_str_2);
+    t46 = HERO_STR_LIT(hero_str_61);
 #line 66 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t47 = INT64_C(1);
 #line 66 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
@@ -518,7 +518,7 @@ bb0:
 #line 519 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t83);
 #line 68 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t50 = HERO_STR_LIT(hero_str_2);
+    t50 = HERO_STR_LIT(hero_str_61);
 #line 68 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t51 = INT64_C(1);
 #line 68 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
@@ -546,7 +546,7 @@ bb0:
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t55 = hero_map_eq(t53, t54);
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    t56 = HERO_STR_LIT(hero_str_0);
+    t56 = HERO_STR_LIT(hero_str_20);
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t57 = h10_ns;
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"

@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "adversarialtrycopiesout.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "empty");
-HERO_STR_STATIC(hero_str_1, "nothing to parse");
+HERO_STR_STATIC(hero_str_7ba188c6, "empty");
+HERO_STR_STATIC(hero_str_3f4c217a, "nothing to parse");
 
 typedef struct h_adversarialtrycopiesout_Reader {
     int64_t f_pos;
@@ -167,9 +167,9 @@ bb1:
     return t10;
 bb2:
 #line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t5 = HERO_STR_LIT(hero_str_0);
+    t5 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t6 = HERO_STR_LIT(hero_str_1);
+    t6 = HERO_STR_LIT(hero_str_3f4c217a);
 #line 174 "adversarialtrycopiesout.c"
     hero_str_incref(t5);
 #line 12 "tests/golden/ir/adversarial-try-copies-out.hero"

@@ -58,43 +58,43 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "no_number");
-HERO_STR_STATIC(hero_str_1, "usage: todo <file> [add TEXT\342\200\246 | done N]");
-HERO_STR_STATIC(hero_str_2, "cannot read ");
-HERO_STR_STATIC(hero_str_3, ": ");
-HERO_STR_STATIC(hero_str_4, "add");
-HERO_STR_STATIC(hero_str_5, "done");
-HERO_STR_STATIC(hero_str_6, "no command `");
-HERO_STR_STATIC(hero_str_7, "` \342\200\224 say `add TEXT\342\200\246` or `done N`");
-HERO_STR_STATIC(hero_str_8, "cannot write ");
-HERO_STR_STATIC(hero_str_9, " of ");
-HERO_STR_STATIC(hero_str_10, " left");
-HERO_STR_STATIC(hero_str_11, " ");
-HERO_STR_STATIC(hero_str_12, "`done` needs the number of a task");
-HERO_STR_STATIC(hero_str_13, "`");
-HERO_STR_STATIC(hero_str_14, "` is not a number");
-HERO_STR_STATIC(hero_str_37, "");
-HERO_STR_STATIC(hero_str_43, "bad_line");
-HERO_STR_STATIC(hero_str_44, "bad_marker");
-HERO_STR_STATIC(hero_str_45, "empty_task");
-HERO_STR_STATIC(hero_str_46, "no_such_task");
-HERO_STR_STATIC(hero_str_47, "line ");
-HERO_STR_STATIC(hero_str_48, ": a task is `[ ] text` or `[x] text`");
-HERO_STR_STATIC(hero_str_49, ": the marker is a space or an `x`");
-HERO_STR_STATIC(hero_str_50, "\n");
-HERO_STR_STATIC(hero_str_51, "[x]");
-HERO_STR_STATIC(hero_str_52, "[ ]");
-HERO_STR_STATIC(hero_str_53, "a task needs some text");
-HERO_STR_STATIC(hero_str_54, "there is no task ");
-HERO_STR_STATIC(hero_str_55, " \342\200\224 the list has ");
-HERO_STR_STATIC(hero_str_56, ". ");
-HERO_STR_STATIC(hero_str_91, "no_error");
-HERO_STR_STATIC(hero_str_98, "file_not_found");
-HERO_STR_STATIC(hero_str_99, "no file at ");
-HERO_STR_STATIC(hero_str_100, "read_failed");
-HERO_STR_STATIC(hero_str_101, "could not read ");
-HERO_STR_STATIC(hero_str_102, "write_failed");
-HERO_STR_STATIC(hero_str_103, "could not write ");
+HERO_STR_STATIC(hero_str_4afd5a8c, "no_number");
+HERO_STR_STATIC(hero_str_16f68369, "usage: todo <file> [add TEXT\342\200\246 | done N]");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_1999f9, "add");
+HERO_STR_STATIC(hero_str_d839a22, "done");
+HERO_STR_STATIC(hero_str_72cc6193, "no command `");
+HERO_STR_STATIC(hero_str_1f1d4ad8, "` \342\200\224 say `add TEXT\342\200\246` or `done N`");
+HERO_STR_STATIC(hero_str_13ab9a08, "cannot write ");
+HERO_STR_STATIC(hero_str_466f899, " of ");
+HERO_STR_STATIC(hero_str_404a2ebb, " left");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_6f936483, "`done` needs the number of a task");
+HERO_STR_STATIC(hero_str_60, "`");
+HERO_STR_STATIC(hero_str_7597be40, "` is not a number");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_49ade4, "bad_line");
+HERO_STR_STATIC(hero_str_3abb5ee9, "bad_marker");
+HERO_STR_STATIC(hero_str_44fcfd11, "empty_task");
+HERO_STR_STATIC(hero_str_18d8f3f9, "no_such_task");
+HERO_STR_STATIC(hero_str_75f7c07a, "line ");
+HERO_STR_STATIC(hero_str_7f99a264, ": a task is `[ ] text` or `[x] text`");
+HERO_STR_STATIC(hero_str_40e65880, ": the marker is a space or an `x`");
+HERO_STR_STATIC(hero_str_a, "\n");
+HERO_STR_STATIC(hero_str_1811f8, "[x]");
+HERO_STR_STATIC(hero_str_17e4f0, "[ ]");
+HERO_STR_STATIC(hero_str_32a3b299, "a task needs some text");
+HERO_STR_STATIC(hero_str_56849f55, "there is no task ");
+HERO_STR_STATIC(hero_str_ca71b43, " \342\200\224 the list has ");
+HERO_STR_STATIC(hero_str_17aa, ". ");
+HERO_STR_STATIC(hero_str_7b992235, "no_error");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
+HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
+HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
 typedef struct h_list_Task {
     bool f_done;
@@ -211,7 +211,7 @@ HeroStr h_main_ERR_NO_NUMBER(void) {
     goto bb0;
 bb0:
 #line 28 "examples/todo/main.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_4afd5a8c);
 #line 216 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -329,7 +329,7 @@ bb1:
 #line 35 "examples/todo/main.hero"
 bb2:
 #line 33 "examples/todo/main.hero"
-    t6 = HERO_STR_LIT(hero_str_1);
+    t6 = HERO_STR_LIT(hero_str_16f68369);
 #line 33 "examples/todo/main.hero"
     hero_print_str(t6);
 #line 33 "examples/todo/main.hero"
@@ -373,7 +373,7 @@ bb4:
     return;
 bb5:
 #line 36 "examples/todo/main.hero"
-    t14 = HERO_STR_LIT(hero_str_2);
+    t14 = HERO_STR_LIT(hero_str_2d78c599);
 #line 36 "examples/todo/main.hero"
     t15 = h0_given;
 #line 36 "examples/todo/main.hero"
@@ -556,7 +556,7 @@ bb2:
 #line 45 "examples/todo/main.hero"
     t8 = t7.code;
 #line 45 "examples/todo/main.hero"
-    t9 = HERO_STR_LIT(hero_str_3);
+    t9 = HERO_STR_LIT(hero_str_1dce);
 #line 45 "examples/todo/main.hero"
     t10 = hero_str_concat(t8, t9);
 #line 45 "examples/todo/main.hero"
@@ -768,7 +768,7 @@ bb1:
 #line 53 "examples/todo/main.hero"
     t9 = h2_command;
 #line 53 "examples/todo/main.hero"
-    t10 = HERO_STR_LIT(hero_str_4);
+    t10 = HERO_STR_LIT(hero_str_1999f9);
 #line 53 "examples/todo/main.hero"
     t11 = hero_str_eq(t9, t10);
 #line 53 "examples/todo/main.hero"
@@ -962,7 +962,7 @@ bb6:
 #line 57 "examples/todo/main.hero"
     t34 = h2_command;
 #line 57 "examples/todo/main.hero"
-    t35 = HERO_STR_LIT(hero_str_5);
+    t35 = HERO_STR_LIT(hero_str_d839a22);
 #line 57 "examples/todo/main.hero"
     t36 = hero_str_eq(t34, t35);
 #line 57 "examples/todo/main.hero"
@@ -990,7 +990,7 @@ bb8:
 #line 55 "examples/todo/main.hero"
     t22 = t21.code;
 #line 55 "examples/todo/main.hero"
-    t23 = HERO_STR_LIT(hero_str_3);
+    t23 = HERO_STR_LIT(hero_str_1dce);
 #line 55 "examples/todo/main.hero"
     t24 = hero_str_concat(t22, t23);
 #line 55 "examples/todo/main.hero"
@@ -1088,7 +1088,7 @@ bb10:
 #line 58 "examples/todo/main.hero"
 bb11:
 #line 62 "examples/todo/main.hero"
-    t59 = HERO_STR_LIT(hero_str_6);
+    t59 = HERO_STR_LIT(hero_str_72cc6193);
 #line 62 "examples/todo/main.hero"
     t60 = h2_command;
 #line 62 "examples/todo/main.hero"
@@ -1100,7 +1100,7 @@ bb11:
 #line 1101 "main.c"
     hero_str_decref(t75);
 #line 62 "examples/todo/main.hero"
-    t62 = HERO_STR_LIT(hero_str_7);
+    t62 = HERO_STR_LIT(hero_str_1f1d4ad8);
 #line 62 "examples/todo/main.hero"
     t63 = hero_str_concat(t61, t62);
 #line 62 "examples/todo/main.hero"
@@ -1136,7 +1136,7 @@ bb13:
 #line 59 "examples/todo/main.hero"
     t46 = t45.code;
 #line 59 "examples/todo/main.hero"
-    t47 = HERO_STR_LIT(hero_str_3);
+    t47 = HERO_STR_LIT(hero_str_1dce);
 #line 59 "examples/todo/main.hero"
     t48 = hero_str_concat(t46, t47);
 #line 59 "examples/todo/main.hero"
@@ -1306,7 +1306,7 @@ bb2:
 #line 66 "examples/todo/main.hero"
     t9 = t8.code;
 #line 66 "examples/todo/main.hero"
-    t10 = HERO_STR_LIT(hero_str_3);
+    t10 = HERO_STR_LIT(hero_str_1dce);
 #line 66 "examples/todo/main.hero"
     t11 = hero_str_concat(t9, t10);
 #line 66 "examples/todo/main.hero"
@@ -1446,7 +1446,7 @@ bb1:
     return;
 bb2:
 #line 72 "examples/todo/main.hero"
-    t7 = HERO_STR_LIT(hero_str_8);
+    t7 = HERO_STR_LIT(hero_str_13ab9a08);
 #line 72 "examples/todo/main.hero"
     t8 = h1_path;
 #line 72 "examples/todo/main.hero"
@@ -1586,13 +1586,13 @@ bb4:
 #line 78 "examples/todo/main.hero"
     t16 = h_list_left_to_do(t15);
 #line 78 "examples/todo/main.hero"
-    t17 = HERO_STR_LIT(hero_str_9);
+    t17 = HERO_STR_LIT(hero_str_466f899);
 #line 78 "examples/todo/main.hero"
     t18 = h0_tasks;
 #line 78 "examples/todo/main.hero"
     t19 = hero_array_len(t18);
 #line 78 "examples/todo/main.hero"
-    t20 = HERO_STR_LIT(hero_str_10);
+    t20 = HERO_STR_LIT(hero_str_404a2ebb);
 #line 78 "examples/todo/main.hero"
     hero_print_int(t16);
 #line 78 "examples/todo/main.hero"
@@ -1755,7 +1755,7 @@ bb4:
 #line 86 "examples/todo/main.hero"
     t22 = h2_words;
 #line 86 "examples/todo/main.hero"
-    t23 = HERO_STR_LIT(hero_str_11);
+    t23 = HERO_STR_LIT(hero_str_20);
 #line 86 "examples/todo/main.hero"
     t24 = hero_str_join(t22, t23);
 #line 86 "examples/todo/main.hero"
@@ -1970,7 +1970,7 @@ bb2:
 #line 1971 "main.c"
     hero_str_decref(t64);
 #line 90 "examples/todo/main.hero"
-    t6 = HERO_STR_LIT(hero_str_12);
+    t6 = HERO_STR_LIT(hero_str_6f936483);
 #line 1975 "main.c"
     hero_str_incref(t5);
 #line 90 "examples/todo/main.hero"
@@ -2217,7 +2217,7 @@ bb11:
 #line 2218 "main.c"
     hero_str_decref(t69);
 #line 94 "examples/todo/main.hero"
-    t33 = HERO_STR_LIT(hero_str_13);
+    t33 = HERO_STR_LIT(hero_str_60);
 #line 94 "examples/todo/main.hero"
     t34 = h0_word;
 #line 94 "examples/todo/main.hero"
@@ -2229,7 +2229,7 @@ bb11:
 #line 2230 "main.c"
     hero_str_decref(t70);
 #line 94 "examples/todo/main.hero"
-    t36 = HERO_STR_LIT(hero_str_14);
+    t36 = HERO_STR_LIT(hero_str_7597be40);
 #line 94 "examples/todo/main.hero"
     t37 = hero_str_concat(t35, t36);
 #line 94 "examples/todo/main.hero"
@@ -2331,7 +2331,7 @@ HeroStr h_list_ERR_BAD_LINE(void) {
     goto bb0;
 bb0:
 #line 23 "examples/todo/list.hero"
-    t1 = HERO_STR_LIT(hero_str_43);
+    t1 = HERO_STR_LIT(hero_str_49ade4);
 #line 2336 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -2344,7 +2344,7 @@ HeroStr h_list_ERR_BAD_MARKER(void) {
     goto bb0;
 bb0:
 #line 26 "examples/todo/list.hero"
-    t1 = HERO_STR_LIT(hero_str_44);
+    t1 = HERO_STR_LIT(hero_str_3abb5ee9);
 #line 2349 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -2357,7 +2357,7 @@ HeroStr h_list_ERR_EMPTY_TASK(void) {
     goto bb0;
 bb0:
 #line 29 "examples/todo/list.hero"
-    t1 = HERO_STR_LIT(hero_str_45);
+    t1 = HERO_STR_LIT(hero_str_44fcfd11);
 #line 2362 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -2370,7 +2370,7 @@ HeroStr h_list_ERR_NO_SUCH_TASK(void) {
     goto bb0;
 bb0:
 #line 32 "examples/todo/list.hero"
-    t1 = HERO_STR_LIT(hero_str_46);
+    t1 = HERO_STR_LIT(hero_str_18d8f3f9);
 #line 2375 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -3136,7 +3136,7 @@ bb2:
 #line 71 "examples/todo/list.hero"
     t18 = h6_head;
 #line 71 "examples/todo/list.hero"
-    t19 = HERO_STR_LIT(hero_str_37);
+    t19 = HERO_STR_LIT(hero_str_0);
 #line 71 "examples/todo/list.hero"
     t20 = hero_str_eq(t18, t19);
 #line 71 "examples/todo/list.hero"
@@ -3377,7 +3377,7 @@ bb15:
 #line 3378 "main.c"
     hero_str_decref(t94);
 #line 74 "examples/todo/list.hero"
-    t44 = HERO_STR_LIT(hero_str_47);
+    t44 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 74 "examples/todo/list.hero"
     t45 = h2_number;
 #line 74 "examples/todo/list.hero"
@@ -3397,7 +3397,7 @@ bb15:
 #line 3398 "main.c"
     hero_str_decref(t96);
 #line 74 "examples/todo/list.hero"
-    t48 = HERO_STR_LIT(hero_str_48);
+    t48 = HERO_STR_LIT(hero_str_7f99a264);
 #line 74 "examples/todo/list.hero"
     t49 = hero_str_concat(t47, t48);
 #line 74 "examples/todo/list.hero"
@@ -3585,7 +3585,7 @@ bb20:
 #line 3586 "main.c"
     hero_str_decref(t102);
 #line 77 "examples/todo/list.hero"
-    t62 = HERO_STR_LIT(hero_str_47);
+    t62 = HERO_STR_LIT(hero_str_75f7c07a);
 #line 77 "examples/todo/list.hero"
     t63 = h2_number;
 #line 77 "examples/todo/list.hero"
@@ -3605,7 +3605,7 @@ bb20:
 #line 3606 "main.c"
     hero_str_decref(t104);
 #line 77 "examples/todo/list.hero"
-    t66 = HERO_STR_LIT(hero_str_49);
+    t66 = HERO_STR_LIT(hero_str_40e65880);
 #line 77 "examples/todo/list.hero"
     t67 = hero_str_concat(t65, t66);
 #line 77 "examples/todo/list.hero"
@@ -3839,7 +3839,7 @@ bb1:
 #line 85 "examples/todo/list.hero"
 bb2:
 #line 83 "examples/todo/list.hero"
-    t5 = HERO_STR_LIT(hero_str_37);
+    t5 = HERO_STR_LIT(hero_str_0);
 #line 3844 "main.c"
     hero_str_incref(t5);
 #line 83 "examples/todo/list.hero"
@@ -3919,7 +3919,7 @@ bb5:
 #line 3920 "main.c"
     hero_str_decref(t37);
 #line 86 "examples/todo/list.hero"
-    t19 = HERO_STR_LIT(hero_str_11);
+    t19 = HERO_STR_LIT(hero_str_20);
 #line 86 "examples/todo/list.hero"
     t20 = hero_str_concat(t18, t19);
 #line 86 "examples/todo/list.hero"
@@ -3961,7 +3961,7 @@ bb7:
 #line 87 "examples/todo/list.hero"
     t28 = h1_lines;
 #line 87 "examples/todo/list.hero"
-    t29 = HERO_STR_LIT(hero_str_50);
+    t29 = HERO_STR_LIT(hero_str_a);
 #line 87 "examples/todo/list.hero"
     t30 = hero_str_join(t28, t29);
 #line 87 "examples/todo/list.hero"
@@ -3971,7 +3971,7 @@ bb7:
 #line 3972 "main.c"
     hero_str_decref(t40);
 #line 87 "examples/todo/list.hero"
-    t31 = HERO_STR_LIT(hero_str_50);
+    t31 = HERO_STR_LIT(hero_str_a);
 #line 87 "examples/todo/list.hero"
     t32 = hero_str_concat(t30, t31);
 #line 87 "examples/todo/list.hero"
@@ -4040,13 +4040,13 @@ bb0:
 #line 90 "examples/todo/list.hero"
 bb1:
 #line 92 "examples/todo/list.hero"
-    t4 = HERO_STR_LIT(hero_str_52);
+    t4 = HERO_STR_LIT(hero_str_17e4f0);
 #line 4045 "main.c"
     hero_str_incref(t4);
     return t4;
 bb2:
 #line 91 "examples/todo/list.hero"
-    t3 = HERO_STR_LIT(hero_str_51);
+    t3 = HERO_STR_LIT(hero_str_1811f8);
 #line 4051 "main.c"
     hero_str_incref(t3);
     return t3;
@@ -4112,7 +4112,7 @@ bb0:
 #line 4113 "main.c"
     hero_str_decref(t15);
 #line 97 "examples/todo/list.hero"
-    t3 = HERO_STR_LIT(hero_str_37);
+    t3 = HERO_STR_LIT(hero_str_0);
 #line 97 "examples/todo/list.hero"
     t4 = hero_str_eq(t2, t3);
 #line 97 "examples/todo/list.hero"
@@ -4205,7 +4205,7 @@ bb2:
 #line 4206 "main.c"
     hero_str_decref(t20);
 #line 98 "examples/todo/list.hero"
-    t6 = HERO_STR_LIT(hero_str_53);
+    t6 = HERO_STR_LIT(hero_str_32a3b299);
 #line 4210 "main.c"
     hero_str_incref(t5);
 #line 98 "examples/todo/list.hero"
@@ -4454,7 +4454,7 @@ bb4:
 #line 4455 "main.c"
     hero_str_decref(t61);
 #line 106 "examples/todo/list.hero"
-    t10 = HERO_STR_LIT(hero_str_54);
+    t10 = HERO_STR_LIT(hero_str_56849f55);
 #line 106 "examples/todo/list.hero"
     t11 = h1_n;
 #line 106 "examples/todo/list.hero"
@@ -4474,7 +4474,7 @@ bb4:
 #line 4475 "main.c"
     hero_str_decref(t63);
 #line 106 "examples/todo/list.hero"
-    t14 = HERO_STR_LIT(hero_str_55);
+    t14 = HERO_STR_LIT(hero_str_ca71b43);
 #line 106 "examples/todo/list.hero"
     t15 = hero_str_concat(t13, t14);
 #line 106 "examples/todo/list.hero"
@@ -5019,7 +5019,7 @@ bb2:
 #line 5020 "main.c"
     hero_str_decref(t42);
 #line 126 "examples/todo/list.hero"
-    t19 = HERO_STR_LIT(hero_str_56);
+    t19 = HERO_STR_LIT(hero_str_17aa);
 #line 126 "examples/todo/list.hero"
     t20 = hero_str_concat(t18, t19);
 #line 126 "examples/todo/list.hero"
@@ -5051,7 +5051,7 @@ bb2:
 #line 5052 "main.c"
     hero_str_decref(t45);
 #line 126 "examples/todo/list.hero"
-    t26 = HERO_STR_LIT(hero_str_11);
+    t26 = HERO_STR_LIT(hero_str_20);
 #line 126 "examples/todo/list.hero"
     t27 = hero_str_concat(t25, t26);
 #line 126 "examples/todo/list.hero"
@@ -5226,7 +5226,7 @@ bb1:
     return t10;
 bb2:
 #line 173 "examples/todo/list.hero"
-    t5 = HERO_STR_LIT(hero_str_91);
+    t5 = HERO_STR_LIT(hero_str_7b992235);
 #line 172 "examples/todo/list.hero"
     t13 = h2_r0;
 #line 5233 "main.c"
@@ -5518,9 +5518,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_100);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_101);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -5579,9 +5579,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_98);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_99);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"
@@ -5688,9 +5688,9 @@ bb0:
 #line 174 "<heroes library>"
 bb1:
 #line 176 "<heroes library>"
-    t8 = HERO_STR_LIT(hero_str_102);
+    t8 = HERO_STR_LIT(hero_str_7e662f9e);
 #line 176 "<heroes library>"
-    t9 = HERO_STR_LIT(hero_str_103);
+    t9 = HERO_STR_LIT(hero_str_39d7c22a);
 #line 176 "<heroes library>"
     t10 = h0_path;
 #line 176 "<heroes library>"

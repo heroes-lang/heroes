@@ -132,8 +132,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 132 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "raylib answered ");
-HERO_STR_STATIC(hero_str_1, " ");
+HERO_STR_STATIC(hero_str_106b1639, "raylib answered ");
+HERO_STR_STATIC(hero_str_20, " ");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -237,7 +237,7 @@ bb0:
 #line 104 "examples/raylib/main.hero"
     (void)SetRandomSeed(t1);
 #line 105 "examples/raylib/main.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_106b1639);
 #line 105 "examples/raylib/main.hero"
     t3 = INT64_C(1);
 #line 105 "examples/raylib/main.hero"
@@ -305,7 +305,7 @@ bb0:
 #line 116 "examples/raylib/main.hero"
     t26 = t25.x;
 #line 116 "examples/raylib/main.hero"
-    t27 = HERO_STR_LIT(hero_str_1);
+    t27 = HERO_STR_LIT(hero_str_20);
 #line 116 "examples/raylib/main.hero"
     t28 = h1_mid;
 #line 116 "examples/raylib/main.hero"

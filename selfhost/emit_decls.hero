@@ -89,16 +89,25 @@ function prelude(@w: emit_writer.Writer, p: ir_state.Program, target: BuildTarge
     # reachability, not the whole table: program.strings holds every
     # literal in the file, including ones only a test block mentions,
     # and emitting those is -Wunused-const-variable noise on every
-    # build. The INDEX is kept: hero_str_7 stays hero_str_7 whether or
-    # not 0..6 are emitted, so the name is a function of the literal —
-    # which keeps --emit-c stable when a test block is added.
+    # build. The NAME is a function of the literal alone — its content
+    # hash — so --emit-c stays stable when a test block is added, and a
+    # TU's text stays stable when another module's literals move.
+
     live = live_strings(p, target: target, s: s)
     any_live: bool @ false
+    defined: {str: bool} @ {}
     index: i64 @ 0
     for text in p.strings
         if !live[index].is_err()
-            emit_writer.line(@w, text: "HERO_STR_STATIC(hero_str_" + index.to_str() + ", \"" + escape_c(text) + "\");")
-            any_live @ true
+            # CONTENT-NAMED (panel 093 R6), and deduplicated by that
+            # name: two mentions of one text are one static, where the
+            # old program-wide index shifted whenever an earlier module
+            # gained a literal.
+            name = "hero_str_" + emit_mangle.instance(text)
+            if defined[name].is_err()
+                defined[name] @ true
+                emit_writer.line(@w, text: "HERO_STR_STATIC(" + name + ", \"" + escape_c(text) + "\");")
+                any_live @ true
         index @ index + 1
     if any_live
         emit_writer.line(@w, text: "")

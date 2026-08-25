@@ -62,10 +62,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 63 "fficstr.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "!");
-HERO_STR_STATIC(hero_str_1, "hello from C");
-HERO_STR_STATIC(hero_str_2, "computed");
-HERO_STR_STATIC(hero_str_3, "back in Heroes");
+HERO_STR_STATIC(hero_str_21, "!");
+HERO_STR_STATIC(hero_str_79c9889a, "hello from C");
+HERO_STR_STATIC(hero_str_5cc08313, "computed");
+HERO_STR_STATIC(hero_str_6251eb62, "back in Heroes");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -108,7 +108,7 @@ bb0:
 #line 16 "tests/golden/run/ffi-cstr.hero"
     t1 = h0_text;
 #line 16 "tests/golden/run/ffi-cstr.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_21);
 #line 16 "tests/golden/run/ffi-cstr.hero"
     t3 = hero_str_concat(t1, t2);
 #line 16 "tests/golden/run/ffi-cstr.hero"
@@ -142,13 +142,13 @@ void h_fficstr_main(void) {
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/ffi-cstr.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_79c9889a);
 #line 19 "tests/golden/run/ffi-cstr.hero"
     t2 = hero_str_cstr(t1);
 #line 19 "tests/golden/run/ffi-cstr.hero"
     (void)puts(hero_cstr_nonnull(t2));
 #line 23 "tests/golden/run/ffi-cstr.hero"
-    t4 = HERO_STR_LIT(hero_str_2);
+    t4 = HERO_STR_LIT(hero_str_5cc08313);
 #line 23 "tests/golden/run/ffi-cstr.hero"
     t5 = h_fficstr_shout(t4);
 #line 23 "tests/golden/run/ffi-cstr.hero"
@@ -162,7 +162,7 @@ bb0:
 #line 23 "tests/golden/run/ffi-cstr.hero"
     (void)puts(hero_cstr_nonnull(t6));
 #line 24 "tests/golden/run/ffi-cstr.hero"
-    t8 = HERO_STR_LIT(hero_str_3);
+    t8 = HERO_STR_LIT(hero_str_6251eb62);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     hero_print_str(t8);
 #line 24 "tests/golden/run/ffi-cstr.hero"

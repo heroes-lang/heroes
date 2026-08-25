@@ -58,7 +58,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "mapaccess.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "ada");
+HERO_STR_STATIC(hero_str_1999f6, "ada");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -235,7 +235,7 @@ bb0:
 #line 12 "tests/golden/ir/map-access.hero"
     t1 = h0_scores;
 #line 12 "tests/golden/ir/map-access.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_1999f6);
 #line 12 "tests/golden/ir/map-access.hero"
     t3 = h_mapaccess_score_of(t1, t2);
 #line 12 "tests/golden/ir/map-access.hero"

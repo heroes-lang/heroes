@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugscasepayloadleaked.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "alphabet");
-HERO_STR_STATIC(hero_str_1, "betamax");
-HERO_STR_STATIC(hero_str_2, "alphabetical");
+HERO_STR_STATIC(hero_str_334014a4, "alphabet");
+HERO_STR_STATIC(hero_str_68e7bae0, "betamax");
+HERO_STR_STATIC(hero_str_1d7a5355, "alphabetical");
 
 typedef enum h_fixedbugscasepayloadleaked_Token_tag {
     h_fixedbugscasepayloadleaked_Token_tag_num = 0,
@@ -269,7 +269,7 @@ bb0:
 #line 270 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t38);
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    t3 = HERO_STR_LIT(hero_str_0);
+    t3 = HERO_STR_LIT(hero_str_334014a4);
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t4 = INT64_C(0);
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
@@ -307,7 +307,7 @@ bb0:
 #line 308 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t41);
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    t14 = HERO_STR_LIT(hero_str_1);
+    t14 = HERO_STR_LIT(hero_str_68e7bae0);
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t15 = INT64_C(0);
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
@@ -345,7 +345,7 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t25 = *(h_fixedbugscasepayloadleaked_Token const *)hero_array_at(t23, t24);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    t26 = HERO_STR_LIT(hero_str_2);
+    t26 = HERO_STR_LIT(hero_str_1d7a5355);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t27 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"

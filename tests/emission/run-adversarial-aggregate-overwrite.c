@@ -58,11 +58,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "adversarialaggregateoverwrite.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "seed");
-HERO_STR_STATIC(hero_str_1, "n");
-HERO_STR_STATIC(hero_str_2, "x");
-HERO_STR_STATIC(hero_str_3, "y");
-HERO_STR_STATIC(hero_str_4, "empty");
+HERO_STR_STATIC(hero_str_f838341, "seed");
+HERO_STR_STATIC(hero_str_6e, "n");
+HERO_STR_STATIC(hero_str_78, "x");
+HERO_STR_STATIC(hero_str_79, "y");
+HERO_STR_STATIC(hero_str_7ba188c6, "empty");
 
 typedef struct h_adversarialaggregateoverwrite_Cell {
     HeroStr f_tag;
@@ -293,7 +293,7 @@ void h_adversarialaggregateoverwrite_main(void) {
     goto bb0;
 bb0:
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_f838341);
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t2 = INT64_C(0);
 #line 300 "adversarialaggregateoverwrite.c"
@@ -333,7 +333,7 @@ bb1:
 #line 34 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb2:
 #line 35 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t8 = HERO_STR_LIT(hero_str_1);
+    t8 = HERO_STR_LIT(hero_str_6e);
 #line 35 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t9 = h1_i;
 #line 35 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -427,7 +427,7 @@ bb4:
 #line 41 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb5:
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t24 = HERO_STR_LIT(hero_str_2);
+    t24 = HERO_STR_LIT(hero_str_78);
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t25 = h3_j;
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -494,7 +494,7 @@ bb5:
 #line 495 "adversarialaggregateoverwrite.c"
     h_adversarialaggregateoverwrite_Slot_release(&t90);
 #line 44 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t32 = HERO_STR_LIT(hero_str_3);
+    t32 = HERO_STR_LIT(hero_str_79);
 #line 44 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t33 = h3_j;
 #line 44 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -635,7 +635,7 @@ bb7:
 #line 52 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb8:
 #line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t45 = HERO_STR_LIT(hero_str_4);
+    t45 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t100 = h5_r0;
 #line 642 "adversarialaggregateoverwrite.c"
@@ -717,7 +717,7 @@ bb10:
 #line 57 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb11:
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t57 = HERO_STR_LIT(hero_str_4);
+    t57 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 52 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t105 = h9_r1;
 #line 724 "adversarialaggregateoverwrite.c"

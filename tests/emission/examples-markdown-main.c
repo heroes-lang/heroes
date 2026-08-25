@@ -58,34 +58,34 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "usage: markdown <file.md> [outline]");
-HERO_STR_STATIC(hero_str_1, "cannot read ");
-HERO_STR_STATIC(hero_str_2, ": ");
-HERO_STR_STATIC(hero_str_3, "outline");
-HERO_STR_STATIC(hero_str_4, "  ");
-HERO_STR_STATIC(hero_str_5, "");
-HERO_STR_STATIC(hero_str_6, "(nothing but markup)");
-HERO_STR_STATIC(hero_str_15, "```");
-HERO_STR_STATIC(hero_str_16, "#");
-HERO_STR_STATIC(hero_str_17, "> ");
-HERO_STR_STATIC(hero_str_18, "- ");
-HERO_STR_STATIC(hero_str_19, "* ");
+HERO_STR_STATIC(hero_str_4ee2d73a, "usage: markdown <file.md> [outline]");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_4fb724d0, "outline");
+HERO_STR_STATIC(hero_str_1080, "  ");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_27e85b1, "(nothing but markup)");
+HERO_STR_STATIC(hero_str_1954e0, "```");
+HERO_STR_STATIC(hero_str_23, "#");
+HERO_STR_STATIC(hero_str_1fda, "> ");
+HERO_STR_STATIC(hero_str_1727, "- ");
+HERO_STR_STATIC(hero_str_159e, "* ");
 HERO_STR_STATIC(hero_str_20, " ");
-HERO_STR_STATIC(hero_str_59, "=");
-HERO_STR_STATIC(hero_str_60, "-");
-HERO_STR_STATIC(hero_str_61, "  * ");
-HERO_STR_STATIC(hero_str_62, ". ");
-HERO_STR_STATIC(hero_str_63, "  | ");
-HERO_STR_STATIC(hero_str_64, "    ");
-HERO_STR_STATIC(hero_str_65, "\n");
-HERO_STR_STATIC(hero_str_109, "**");
-HERO_STR_STATIC(hero_str_110, " (");
-HERO_STR_STATIC(hero_str_111, ")");
-HERO_STR_STATIC(hero_str_112, "[");
-HERO_STR_STATIC(hero_str_143, "file_not_found");
-HERO_STR_STATIC(hero_str_144, "no file at ");
-HERO_STR_STATIC(hero_str_145, "read_failed");
-HERO_STR_STATIC(hero_str_146, "could not read ");
+HERO_STR_STATIC(hero_str_3d, "=");
+HERO_STR_STATIC(hero_str_2d, "-");
+HERO_STR_STATIC(hero_str_4522a1e, "  * ");
+HERO_STR_STATIC(hero_str_17aa, ". ");
+HERO_STR_STATIC(hero_str_4525414, "  | ");
+HERO_STR_STATIC(hero_str_4522500, "    ");
+HERO_STR_STATIC(hero_str_a, "\n");
+HERO_STR_STATIC(hero_str_15a8, "**");
+HERO_STR_STATIC(hero_str_1088, " (");
+HERO_STR_STATIC(hero_str_29, ")");
+HERO_STR_STATIC(hero_str_5b, "[");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
 typedef enum h_blocks_Block_tag {
     h_blocks_Block_tag_heading = 0,
@@ -406,7 +406,7 @@ bb1:
 #line 25 "examples/markdown/main.hero"
 bb2:
 #line 23 "examples/markdown/main.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_4ee2d73a);
 #line 23 "examples/markdown/main.hero"
     hero_print_str(t6);
 #line 23 "examples/markdown/main.hero"
@@ -474,7 +474,7 @@ bb5:
 #line 475 "main.c"
     hero_failure_release(&t34);
 #line 26 "examples/markdown/main.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_2d78c599);
 #line 26 "examples/markdown/main.hero"
     t17 = h0_given;
 #line 26 "examples/markdown/main.hero"
@@ -490,7 +490,7 @@ bb5:
 #line 491 "main.c"
     hero_str_decref(t35);
 #line 26 "examples/markdown/main.hero"
-    t21 = HERO_STR_LIT(hero_str_2);
+    t21 = HERO_STR_LIT(hero_str_1dce);
 #line 26 "examples/markdown/main.hero"
     t22 = hero_str_concat(t20, t21);
 #line 26 "examples/markdown/main.hero"
@@ -680,7 +680,7 @@ bb2:
 #line 35 "examples/markdown/main.hero"
     t9 = *(HeroStr const *)hero_array_at(t7, t8);
 #line 35 "examples/markdown/main.hero"
-    t10 = HERO_STR_LIT(hero_str_3);
+    t10 = HERO_STR_LIT(hero_str_4fb724d0);
 #line 35 "examples/markdown/main.hero"
     t11 = hero_str_eq(t9, t10);
 #line 35 "examples/markdown/main.hero"
@@ -1044,7 +1044,7 @@ bb6:
 #line 51 "examples/markdown/main.hero"
     t16 = h1_out;
 #line 51 "examples/markdown/main.hero"
-    t17 = HERO_STR_LIT(hero_str_4);
+    t17 = HERO_STR_LIT(hero_str_1080);
 #line 51 "examples/markdown/main.hero"
     t18 = h6_h;
 #line 51 "examples/markdown/main.hero"
@@ -1166,7 +1166,7 @@ bb0:
 #line 61 "examples/markdown/main.hero"
     t1 = h0_text;
 #line 61 "examples/markdown/main.hero"
-    t2 = HERO_STR_LIT(hero_str_5);
+    t2 = HERO_STR_LIT(hero_str_0);
 #line 61 "examples/markdown/main.hero"
     t3 = hero_str_eq(t1, t2);
 #line 61 "examples/markdown/main.hero"
@@ -1180,7 +1180,7 @@ bb1:
     return;
 bb2:
 #line 62 "examples/markdown/main.hero"
-    t4 = HERO_STR_LIT(hero_str_6);
+    t4 = HERO_STR_LIT(hero_str_27e85b1);
 #line 62 "examples/markdown/main.hero"
     hero_print_str(t4);
 #line 62 "examples/markdown/main.hero"
@@ -2541,7 +2541,7 @@ bb0:
 #line 108 "examples/markdown/blocks.hero"
     t1 = h0_head;
 #line 108 "examples/markdown/blocks.hero"
-    t2 = HERO_STR_LIT(hero_str_5);
+    t2 = HERO_STR_LIT(hero_str_0);
 #line 108 "examples/markdown/blocks.hero"
     t3 = hero_str_eq(t1, t2);
 #line 108 "examples/markdown/blocks.hero"
@@ -2553,7 +2553,7 @@ bb1:
 #line 110 "examples/markdown/blocks.hero"
     t12 = h0_head;
 #line 110 "examples/markdown/blocks.hero"
-    t13 = HERO_STR_LIT(hero_str_16);
+    t13 = HERO_STR_LIT(hero_str_23);
 #line 110 "examples/markdown/blocks.hero"
     t14 = h_blocks_starts(t12, t13);
 #line 110 "examples/markdown/blocks.hero"
@@ -2565,7 +2565,7 @@ bb2:
 #line 108 "examples/markdown/blocks.hero"
     t4 = h0_head;
 #line 108 "examples/markdown/blocks.hero"
-    t5 = HERO_STR_LIT(hero_str_15);
+    t5 = HERO_STR_LIT(hero_str_1954e0);
 #line 108 "examples/markdown/blocks.hero"
     t6 = h_blocks_starts(t4, t5);
 #line 108 "examples/markdown/blocks.hero"
@@ -2623,7 +2623,7 @@ bb9:
 #line 110 "examples/markdown/blocks.hero"
     t15 = h0_head;
 #line 110 "examples/markdown/blocks.hero"
-    t16 = HERO_STR_LIT(hero_str_17);
+    t16 = HERO_STR_LIT(hero_str_1fda);
 #line 110 "examples/markdown/blocks.hero"
     t17 = h_blocks_starts(t15, t16);
 #line 110 "examples/markdown/blocks.hero"
@@ -2643,7 +2643,7 @@ bb11:
 #line 110 "examples/markdown/blocks.hero"
     t19 = h0_head;
 #line 110 "examples/markdown/blocks.hero"
-    t20 = HERO_STR_LIT(hero_str_18);
+    t20 = HERO_STR_LIT(hero_str_1727);
 #line 110 "examples/markdown/blocks.hero"
     t21 = h_blocks_starts(t19, t20);
 #line 110 "examples/markdown/blocks.hero"
@@ -2663,7 +2663,7 @@ bb13:
 #line 110 "examples/markdown/blocks.hero"
     t23 = h0_head;
 #line 110 "examples/markdown/blocks.hero"
-    t24 = HERO_STR_LIT(hero_str_19);
+    t24 = HERO_STR_LIT(hero_str_159e);
 #line 110 "examples/markdown/blocks.hero"
     t25 = h_blocks_starts(t23, t24);
 #line 110 "examples/markdown/blocks.hero"
@@ -3020,7 +3020,7 @@ bb2:
 #line 122 "examples/markdown/blocks.hero"
     t13 = h4_head;
 #line 122 "examples/markdown/blocks.hero"
-    t14 = HERO_STR_LIT(hero_str_15);
+    t14 = HERO_STR_LIT(hero_str_1954e0);
 #line 122 "examples/markdown/blocks.hero"
     t15 = h_blocks_starts(t13, t14);
 #line 122 "examples/markdown/blocks.hero"
@@ -3256,7 +3256,7 @@ bb10:
 #line 3257 "main.c"
     hero_str_decref(t175);
 #line 125 "examples/markdown/blocks.hero"
-    t28 = HERO_STR_LIT(hero_str_15);
+    t28 = HERO_STR_LIT(hero_str_1954e0);
 #line 125 "examples/markdown/blocks.hero"
     t29 = h_blocks_starts(t27, t28);
 #line 125 "examples/markdown/blocks.hero"
@@ -3332,7 +3332,7 @@ bb16:
 #line 134 "examples/markdown/blocks.hero"
     t59 = h4_head;
 #line 134 "examples/markdown/blocks.hero"
-    t60 = HERO_STR_LIT(hero_str_5);
+    t60 = HERO_STR_LIT(hero_str_0);
 #line 134 "examples/markdown/blocks.hero"
     t61 = hero_str_eq(t59, t60);
 #line 134 "examples/markdown/blocks.hero"
@@ -3354,7 +3354,7 @@ bb18:
 #line 136 "examples/markdown/blocks.hero"
     t65 = h4_head;
 #line 136 "examples/markdown/blocks.hero"
-    t66 = HERO_STR_LIT(hero_str_16);
+    t66 = HERO_STR_LIT(hero_str_23);
 #line 136 "examples/markdown/blocks.hero"
     t67 = h_blocks_starts(t65, t66);
 #line 136 "examples/markdown/blocks.hero"
@@ -3419,7 +3419,7 @@ bb20:
 #line 140 "examples/markdown/blocks.hero"
     t82 = h4_head;
 #line 140 "examples/markdown/blocks.hero"
-    t83 = HERO_STR_LIT(hero_str_17);
+    t83 = HERO_STR_LIT(hero_str_1fda);
 #line 140 "examples/markdown/blocks.hero"
     t84 = h_blocks_starts(t82, t83);
 #line 140 "examples/markdown/blocks.hero"
@@ -3474,7 +3474,7 @@ bb22:
 #line 143 "examples/markdown/blocks.hero"
     t95 = h4_head;
 #line 143 "examples/markdown/blocks.hero"
-    t96 = HERO_STR_LIT(hero_str_18);
+    t96 = HERO_STR_LIT(hero_str_1727);
 #line 143 "examples/markdown/blocks.hero"
     t97 = h_blocks_starts(t95, t96);
 #line 143 "examples/markdown/blocks.hero"
@@ -3486,7 +3486,7 @@ bb23:
 #line 143 "examples/markdown/blocks.hero"
     t98 = h4_head;
 #line 143 "examples/markdown/blocks.hero"
-    t99 = HERO_STR_LIT(hero_str_19);
+    t99 = HERO_STR_LIT(hero_str_159e);
 #line 143 "examples/markdown/blocks.hero"
     t100 = h_blocks_starts(t98, t99);
 #line 143 "examples/markdown/blocks.hero"
@@ -3840,7 +3840,7 @@ bb0:
 #line 16 "examples/markdown/render.hero"
 bb1:
 #line 18 "examples/markdown/render.hero"
-    t17 = HERO_STR_LIT(hero_str_60);
+    t17 = HERO_STR_LIT(hero_str_2d);
 #line 18 "examples/markdown/render.hero"
     t18 = h1_text;
 #line 18 "examples/markdown/render.hero"
@@ -3882,7 +3882,7 @@ bb1:
 #line 18 "examples/markdown/render.hero"
 bb2:
 #line 17 "examples/markdown/render.hero"
-    t4 = HERO_STR_LIT(hero_str_59);
+    t4 = HERO_STR_LIT(hero_str_3d);
 #line 17 "examples/markdown/render.hero"
     t5 = h1_text;
 #line 17 "examples/markdown/render.hero"
@@ -4560,7 +4560,7 @@ bb4:
 #line 4561 "main.c"
     h_blocks_Block_c_bullet_release(&t65);
 #line 31 "examples/markdown/render.hero"
-    t21 = HERO_STR_LIT(hero_str_61);
+    t21 = HERO_STR_LIT(hero_str_4522a1e);
 #line 31 "examples/markdown/render.hero"
     t22 = h5_x;
 #line 31 "examples/markdown/render.hero"
@@ -4608,7 +4608,7 @@ bb5:
 #line 4609 "main.c"
     h_blocks_Block_c_numbered_release(&t69);
 #line 32 "examples/markdown/render.hero"
-    t28 = HERO_STR_LIT(hero_str_4);
+    t28 = HERO_STR_LIT(hero_str_1080);
 #line 32 "examples/markdown/render.hero"
     t29 = h6_x;
 #line 32 "examples/markdown/render.hero"
@@ -4630,7 +4630,7 @@ bb5:
 #line 4631 "main.c"
     hero_str_decref(t71);
 #line 32 "examples/markdown/render.hero"
-    t33 = HERO_STR_LIT(hero_str_62);
+    t33 = HERO_STR_LIT(hero_str_17aa);
 #line 32 "examples/markdown/render.hero"
     t34 = hero_str_concat(t32, t33);
 #line 32 "examples/markdown/render.hero"
@@ -4686,7 +4686,7 @@ bb6:
 #line 4687 "main.c"
     h_blocks_Block_c_quote_release(&t76);
 #line 33 "examples/markdown/render.hero"
-    t41 = HERO_STR_LIT(hero_str_63);
+    t41 = HERO_STR_LIT(hero_str_4525414);
 #line 33 "examples/markdown/render.hero"
     t42 = h7_q;
 #line 33 "examples/markdown/render.hero"
@@ -4738,7 +4738,7 @@ bb7:
 #line 34 "examples/markdown/render.hero"
     t49 = t48.f_body;
 #line 34 "examples/markdown/render.hero"
-    t50 = HERO_STR_LIT(hero_str_64);
+    t50 = HERO_STR_LIT(hero_str_4522500);
 #line 34 "examples/markdown/render.hero"
     t51 = h_render_indent(t49, t50);
 #line 34 "examples/markdown/render.hero"
@@ -4758,7 +4758,7 @@ bb7:
     goto bb1;
 bb8:
 #line 35 "examples/markdown/render.hero"
-    t52 = HERO_STR_LIT(hero_str_60);
+    t52 = HERO_STR_LIT(hero_str_2d);
 #line 35 "examples/markdown/render.hero"
     t53 = UINT64_C(60);
 #line 35 "examples/markdown/render.hero"
@@ -5151,7 +5151,7 @@ bb6:
 #line 62 "examples/markdown/render.hero"
 bb7:
 #line 63 "examples/markdown/render.hero"
-    t22 = HERO_STR_LIT(hero_str_5);
+    t22 = HERO_STR_LIT(hero_str_0);
 #line 63 "examples/markdown/render.hero"
     hero_array_push_owned(&h1_out, &t22);
 #line 63 "examples/markdown/render.hero"
@@ -5223,7 +5223,7 @@ bb13:
 #line 69 "examples/markdown/render.hero"
     t50 = h1_out;
 #line 69 "examples/markdown/render.hero"
-    t51 = HERO_STR_LIT(hero_str_65);
+    t51 = HERO_STR_LIT(hero_str_a);
 #line 69 "examples/markdown/render.hero"
     t52 = hero_str_join(t50, t51);
 #line 69 "examples/markdown/render.hero"
@@ -5233,7 +5233,7 @@ bb13:
 #line 5234 "main.c"
     hero_str_decref(t60);
 #line 69 "examples/markdown/render.hero"
-    t53 = HERO_STR_LIT(hero_str_65);
+    t53 = HERO_STR_LIT(hero_str_a);
 #line 69 "examples/markdown/render.hero"
     t54 = hero_str_concat(t52, t53);
 #line 69 "examples/markdown/render.hero"
@@ -5276,7 +5276,7 @@ bb13:
     return t54;
 bb14:
 #line 68 "examples/markdown/render.hero"
-    t49 = HERO_STR_LIT(hero_str_5);
+    t49 = HERO_STR_LIT(hero_str_0);
 #line 5281 "main.c"
     hero_str_incref(t49);
 #line 68 "examples/markdown/render.hero"
@@ -5718,7 +5718,7 @@ bb2:
 #line 47 "examples/markdown/inline.hero"
     t8 = h1_s;
 #line 47 "examples/markdown/inline.hero"
-    t9 = HERO_STR_LIT(hero_str_109);
+    t9 = HERO_STR_LIT(hero_str_15a8);
 #line 47 "examples/markdown/inline.hero"
     t10 = h_inline_opens_with(t8, t9);
 #line 47 "examples/markdown/inline.hero"
@@ -5728,7 +5728,7 @@ bb3:
 #line 56 "examples/markdown/inline.hero"
     t32 = h2_out;
 #line 56 "examples/markdown/inline.hero"
-    t33 = HERO_STR_LIT(hero_str_5);
+    t33 = HERO_STR_LIT(hero_str_0);
 #line 56 "examples/markdown/inline.hero"
     t34 = hero_str_join(t32, t33);
 #line 56 "examples/markdown/inline.hero"
@@ -6374,7 +6374,7 @@ bb19:
 #line 84 "examples/markdown/inline.hero"
     t46 = h2_label;
 #line 84 "examples/markdown/inline.hero"
-    t47 = HERO_STR_LIT(hero_str_5);
+    t47 = HERO_STR_LIT(hero_str_0);
 #line 84 "examples/markdown/inline.hero"
     t48 = hero_str_join(t46, t47);
 #line 84 "examples/markdown/inline.hero"
@@ -6392,7 +6392,7 @@ bb19:
 #line 6393 "main.c"
     hero_str_decref(t67);
 #line 84 "examples/markdown/inline.hero"
-    t50 = HERO_STR_LIT(hero_str_110);
+    t50 = HERO_STR_LIT(hero_str_1088);
 #line 84 "examples/markdown/inline.hero"
     t51 = hero_str_concat(t49, t50);
 #line 84 "examples/markdown/inline.hero"
@@ -6404,7 +6404,7 @@ bb19:
 #line 84 "examples/markdown/inline.hero"
     t52 = h5_target;
 #line 84 "examples/markdown/inline.hero"
-    t53 = HERO_STR_LIT(hero_str_5);
+    t53 = HERO_STR_LIT(hero_str_0);
 #line 84 "examples/markdown/inline.hero"
     t54 = hero_str_join(t52, t53);
 #line 84 "examples/markdown/inline.hero"
@@ -6422,7 +6422,7 @@ bb19:
 #line 6423 "main.c"
     hero_str_decref(t70);
 #line 84 "examples/markdown/inline.hero"
-    t56 = HERO_STR_LIT(hero_str_111);
+    t56 = HERO_STR_LIT(hero_str_29);
 #line 84 "examples/markdown/inline.hero"
     t57 = hero_str_concat(t55, t56);
 #line 84 "examples/markdown/inline.hero"
@@ -6596,7 +6596,7 @@ bb0:
 #line 87 "examples/markdown/inline.hero"
     h0_s.f_pos = t3;
 #line 88 "examples/markdown/inline.hero"
-    t4 = HERO_STR_LIT(hero_str_112);
+    t4 = HERO_STR_LIT(hero_str_5b);
 #line 6601 "main.c"
     *ph0_s = h0_s;
 #line 86 "examples/markdown/inline.hero"
@@ -6859,9 +6859,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_145);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_146);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -6920,9 +6920,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_143);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_144);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"

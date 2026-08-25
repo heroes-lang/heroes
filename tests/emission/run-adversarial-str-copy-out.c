@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "adversarialstrcopyout.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "!");
-HERO_STR_STATIC(hero_str_1, "hey");
-HERO_STR_STATIC(hero_str_2, "x");
+HERO_STR_STATIC(hero_str_21, "!");
+HERO_STR_STATIC(hero_str_1b6fd0, "hey");
+HERO_STR_STATIC(hero_str_78, "x");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -136,7 +136,7 @@ bb2:
 #line 16 "tests/golden/run/adversarial-str-copy-out.hero"
     t5 = h0_s;
 #line 16 "tests/golden/run/adversarial-str-copy-out.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_21);
 #line 16 "tests/golden/run/adversarial-str-copy-out.hero"
     t7 = hero_str_concat(t5, t6);
 #line 16 "tests/golden/run/adversarial-str-copy-out.hero"
@@ -213,7 +213,7 @@ void h_adversarialstrcopyout_main(void) {
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/adversarial-str-copy-out.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_1b6fd0);
 #line 22 "tests/golden/run/adversarial-str-copy-out.hero"
     t11 = h0_a;
 #line 220 "adversarialstrcopyout.c"
@@ -241,7 +241,7 @@ bb0:
 #line 25 "tests/golden/run/adversarial-str-copy-out.hero"
     hero_print_end();
 #line 26 "tests/golden/run/adversarial-str-copy-out.hero"
-    t6 = HERO_STR_LIT(hero_str_2);
+    t6 = HERO_STR_LIT(hero_str_78);
 #line 26 "tests/golden/run/adversarial-str-copy-out.hero"
     t12 = h1_b;
 #line 248 "adversarialstrcopyout.c"

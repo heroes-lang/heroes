@@ -58,13 +58,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "libraryhigherorder.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, ",");
-HERO_STR_STATIC(hero_str_1, "a");
-HERO_STR_STATIC(hero_str_2, "b");
-HERO_STR_STATIC(hero_str_3, "c");
-HERO_STR_STATIC(hero_str_4, "");
-HERO_STR_STATIC(hero_str_5, "not_found");
-HERO_STR_STATIC(hero_str_6, "no element satisfies the test");
+HERO_STR_STATIC(hero_str_2c, ",");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
+HERO_STR_STATIC(hero_str_63, "c");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_59e06249, "not_found");
+HERO_STR_STATIC(hero_str_7bc7477f, "no element satisfies the test");
 
 typedef HeroStr (*h_0fn_4a13fb08)(int64_t);
 typedef bool (*h_0fn_3d242f50)(int64_t);
@@ -495,7 +495,7 @@ bb0:
 #line 496 "libraryhigherorder.c"
     hero_array_decref(t92);
 #line 43 "tests/golden/run/library-higher-order.hero"
-    t9 = HERO_STR_LIT(hero_str_0);
+    t9 = HERO_STR_LIT(hero_str_2c);
 #line 43 "tests/golden/run/library-higher-order.hero"
     t10 = hero_str_join(t8, t9);
 #line 43 "tests/golden/run/library-higher-order.hero"
@@ -531,7 +531,7 @@ bb0:
 #line 532 "libraryhigherorder.c"
     hero_array_decref(t95);
 #line 44 "tests/golden/run/library-higher-order.hero"
-    t16 = HERO_STR_LIT(hero_str_0);
+    t16 = HERO_STR_LIT(hero_str_2c);
 #line 44 "tests/golden/run/library-higher-order.hero"
     t17 = hero_str_join(t15, t16);
 #line 44 "tests/golden/run/library-higher-order.hero"
@@ -569,11 +569,11 @@ bb0:
 #line 49 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
 #line 51 "tests/golden/run/library-higher-order.hero"
-    t26 = HERO_STR_LIT(hero_str_1);
+    t26 = HERO_STR_LIT(hero_str_61);
 #line 51 "tests/golden/run/library-higher-order.hero"
-    t27 = HERO_STR_LIT(hero_str_2);
+    t27 = HERO_STR_LIT(hero_str_62);
 #line 51 "tests/golden/run/library-higher-order.hero"
-    t28 = HERO_STR_LIT(hero_str_3);
+    t28 = HERO_STR_LIT(hero_str_63);
 #line 51 "tests/golden/run/library-higher-order.hero"
     t29 = hero_array_new(&hero_desc_str, 3);
 #line 51 "tests/golden/run/library-higher-order.hero"
@@ -595,7 +595,7 @@ bb0:
 #line 596 "libraryhigherorder.c"
     hero_array_decref(t97);
 #line 51 "tests/golden/run/library-higher-order.hero"
-    t30 = HERO_STR_LIT(hero_str_4);
+    t30 = HERO_STR_LIT(hero_str_0);
 #line 51 "tests/golden/run/library-higher-order.hero"
     t31 = h_libraryhigherorder_glue;
 #line 51 "tests/golden/run/library-higher-order.hero"
@@ -1573,9 +1573,9 @@ bb3:
 #line 67 "<heroes library>"
 bb4:
 #line 70 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_5);
+    t18 = HERO_STR_LIT(hero_str_59e06249);
 #line 70 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_6);
+    t19 = HERO_STR_LIT(hero_str_7bc7477f);
 #line 1580 "libraryhigherorder.c"
     hero_str_incref(t18);
 #line 70 "<heroes library>"

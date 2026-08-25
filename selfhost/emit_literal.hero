@@ -36,6 +36,7 @@
 use check_contextual
 use widths
 use ir
+use emit_mangle
 
 extern "stdlib.h"
     function atof(text: cstr) -> f64
@@ -43,7 +44,7 @@ extern "stdlib.h"
 # A constant, in the C spelling its own width asks for. The width comes
 # from the caller (the instruction's own type, which the checker
 # recorded) — the constant emitter cannot know it and must not guess.
-function constant_text(value: ir.IntConst, kind: widths.IntKind?) -> str
+function constant_text(value: ir.IntConst, kind: widths.IntKind?, strings: [str]) -> str
     match value
         .int_const ic =>
             # INT64_MIN by name: the macro route warns.
@@ -73,8 +74,13 @@ function constant_text(value: ir.IntConst, kind: widths.IntKind?) -> str
         .float_const fc => return hex_float(fc.text)
         # A static block, laid out by clang: refcount -1 means "never
         # freed", so a literal costs no allocation and decrefing one is
-        # a no-op.
-        .str_const sc => return "HERO_STR_LIT(hero_str_" + sc.at.to_str() + ")"
+        # a no-op. CONTENT-NAMED since panel 093 R6, like the synthetic
+        # typedefs: hero_str_<hash of the text>, so the name is a
+        # function of the literal alone — stable across TUs and builds,
+        # where the old program-wide index shifted whenever an earlier
+        # module gained a literal. Two different texts hashing alike
+        # are two static definitions of one name — loud.
+        .str_const sc => return "HERO_STR_LIT(hero_str_" + emit_mangle.instance(strings[sc.at]) + ")"
     return ""
 
 # 2^52, the scale that turns a normal's fraction into its mantissa field.
@@ -184,19 +190,21 @@ function hex_float(text: str) -> str
 
 test "the macro matches the width, and the minimum is spelled by name"
     none: widths.IntKind? = fail("none", "no width")
-    plain = constant_text(.int_const(value: check_contextual.LitValue(negative: false, magnitude: 42)), kind: none)
+    no_strings: [str] = []
+    ziggy_strings: [str] = ["a", "b", "c", "ziggy"]
+    plain = constant_text(.int_const(value: check_contextual.LitValue(negative: false, magnitude: 42)), kind: none, strings: no_strings)
     assert plain == "INT64_C(42)"
-    negative = constant_text(.int_const(value: check_contextual.LitValue(negative: true, magnitude: 5)), kind: none)
+    negative = constant_text(.int_const(value: check_contextual.LitValue(negative: true, magnitude: 5)), kind: none, strings: no_strings)
     assert negative == "INT64_C(-5)"
     min_mag: u64 = 9223372036854775808
-    lowest = constant_text(.int_const(value: check_contextual.LitValue(negative: true, magnitude: min_mag)), kind: none)
+    lowest = constant_text(.int_const(value: check_contextual.LitValue(negative: true, magnitude: min_mag)), kind: none, strings: no_strings)
     assert lowest == "INT64_MIN"
     big: u64 = 18446744073709551615
-    top = constant_text(.int_const(value: check_contextual.LitValue(negative: false, magnitude: big)), kind: ok(.u64))
+    top = constant_text(.int_const(value: check_contextual.LitValue(negative: false, magnitude: big)), kind: ok(.u64), strings: no_strings)
     assert top == "UINT64_C(18446744073709551615)"
-    assert constant_text(.bool_const(value: true), kind: none) == "true"
-    assert constant_text(.null_ptr, kind: none) == "((void *)0)"
-    assert constant_text(.str_const(at: 3), kind: none) == "HERO_STR_LIT(hero_str_3)"
+    assert constant_text(.bool_const(value: true), kind: none, strings: no_strings) == "true"
+    assert constant_text(.null_ptr, kind: none, strings: no_strings) == "((void *)0)"
+    assert constant_text(.str_const(at: 3), kind: none, strings: ziggy_strings) == "HERO_STR_LIT(hero_str_6bb5e50a)"
 
 test "a float literal is hex, and the bootstrap's own rows are reproduced"
     # Every expectation here was read off the bootstrap's emitted C for

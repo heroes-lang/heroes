@@ -58,10 +58,10 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "recordsownstrings.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "hello, ");
-HERO_STR_STATIC(hero_str_1, "ada");
-HERO_STR_STATIC(hero_str_2, "!");
-HERO_STR_STATIC(hero_str_3, "grace");
+HERO_STR_STATIC(hero_str_1a23a6da, "hello, ");
+HERO_STR_STATIC(hero_str_1999f6, "ada");
+HERO_STR_STATIC(hero_str_21, "!");
+HERO_STR_STATIC(hero_str_1f648322, "grace");
 
 typedef struct h_recordsownstrings_Person {
     HeroStr f_name;
@@ -121,7 +121,7 @@ HeroStr h_recordsownstrings_greet(h_recordsownstrings_Person h0_p) {
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/records-own-strings.hero"
-    t1 = HERO_STR_LIT(hero_str_0);
+    t1 = HERO_STR_LIT(hero_str_1a23a6da);
 #line 25 "tests/golden/run/records-own-strings.hero"
     t2 = h0_p;
 #line 25 "tests/golden/run/records-own-strings.hero"
@@ -218,9 +218,9 @@ void h_recordsownstrings_main(void) {
     goto bb0;
 bb0:
 #line 30 "tests/golden/run/records-own-strings.hero"
-    t1 = HERO_STR_LIT(hero_str_1);
+    t1 = HERO_STR_LIT(hero_str_1999f6);
 #line 30 "tests/golden/run/records-own-strings.hero"
-    t2 = HERO_STR_LIT(hero_str_2);
+    t2 = HERO_STR_LIT(hero_str_21);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t3 = hero_str_concat(t1, t2);
 #line 30 "tests/golden/run/records-own-strings.hero"
@@ -282,7 +282,7 @@ bb0:
 #line 33 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
 #line 34 "tests/golden/run/records-own-strings.hero"
-    t11 = HERO_STR_LIT(hero_str_3);
+    t11 = HERO_STR_LIT(hero_str_1f648322);
 #line 34 "tests/golden/run/records-own-strings.hero"
     t12 = INT64_C(45);
 #line 289 "recordsownstrings.c"

@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsoptionpayloaddescriptor.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "none");
-HERO_STR_STATIC(hero_str_1, "n");
+HERO_STR_STATIC(hero_str_edaa230, "none");
+HERO_STR_STATIC(hero_str_6e, "n");
 
 typedef struct h_fixedbugsoptionpayloaddescriptor_Block {
     int64_t f_n;
@@ -298,9 +298,9 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     hero_print_end();
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_edaa230);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-    t7 = HERO_STR_LIT(hero_str_1);
+    t7 = HERO_STR_LIT(hero_str_6e);
 #line 305 "fixedbugsoptionpayloaddescriptor.c"
     hero_str_incref(t6);
 #line 34 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
@@ -334,9 +334,9 @@ bb0:
 #line 335 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Held_release(&t37);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-    t10 = HERO_STR_LIT(hero_str_0);
+    t10 = HERO_STR_LIT(hero_str_edaa230);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-    t11 = HERO_STR_LIT(hero_str_1);
+    t11 = HERO_STR_LIT(hero_str_6e);
 #line 341 "fixedbugsoptionpayloaddescriptor.c"
     hero_str_incref(t10);
 #line 35 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"

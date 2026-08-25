@@ -58,49 +58,49 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "usage: spreadsheet <file.cells>");
-HERO_STR_STATIC(hero_str_1, "cannot read ");
-HERO_STR_STATIC(hero_str_2, ": ");
-HERO_STR_STATIC(hero_str_3, " = ");
-HERO_STR_STATIC(hero_str_4, " ! ");
-HERO_STR_STATIC(hero_str_5, " cells, ");
-HERO_STR_STATIC(hero_str_6, " broken");
-HERO_STR_STATIC(hero_str_7, " ");
-HERO_STR_STATIC(hero_str_21, "circular_reference");
-HERO_STR_STATIC(hero_str_22, "division_by_zero");
-HERO_STR_STATIC(hero_str_23, "expected_paren");
-HERO_STR_STATIC(hero_str_24, "trailing_input");
-HERO_STR_STATIC(hero_str_25, "unclosed_paren");
-HERO_STR_STATIC(hero_str_26, "unexpected_character");
-HERO_STR_STATIC(hero_str_27, "unexpected_end");
-HERO_STR_STATIC(hero_str_28, "unknown_name");
-HERO_STR_STATIC(hero_str_29, "cell ");
-HERO_STR_STATIC(hero_str_30, " is defined in terms of itself");
-HERO_STR_STATIC(hero_str_31, "");
-HERO_STR_STATIC(hero_str_32, ": the formula does not end at ");
-HERO_STR_STATIC(hero_str_33, "a formula divides by zero");
-HERO_STR_STATIC(hero_str_34, "the formula ends where a value was expected");
-HERO_STR_STATIC(hero_str_35, "expected `)` at ");
-HERO_STR_STATIC(hero_str_36, "no value starts at ");
-HERO_STR_STATIC(hero_str_37, "SUM");
-HERO_STR_STATIC(hero_str_38, "`");
-HERO_STR_STATIC(hero_str_39, "` is neither a cell nor `SUM`");
-HERO_STR_STATIC(hero_str_40, "`SUM` needs a range in parentheses");
-HERO_STR_STATIC(hero_str_41, "`SUM(` is never closed");
-HERO_STR_STATIC(hero_str_88, "no_error");
-HERO_STR_STATIC(hero_str_89, "bad_cell_name");
-HERO_STR_STATIC(hero_str_90, "bad_range");
-HERO_STR_STATIC(hero_str_91, "no_assignment");
-HERO_STR_STATIC(hero_str_92, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-HERO_STR_STATIC(hero_str_93, "` is not a cell: one letter then digits");
-HERO_STR_STATIC(hero_str_94, "` has no row: rows start at 1");
-HERO_STR_STATIC(hero_str_95, "` is not a range: two cells joined by `:`");
-HERO_STR_STATIC(hero_str_96, "` is not `NAME = formula`");
-HERO_STR_STATIC(hero_str_97, "` is not a cell name");
-HERO_STR_STATIC(hero_str_139, "file_not_found");
-HERO_STR_STATIC(hero_str_140, "no file at ");
-HERO_STR_STATIC(hero_str_141, "read_failed");
-HERO_STR_STATIC(hero_str_142, "could not read ");
+HERO_STR_STATIC(hero_str_733425e1, "usage: spreadsheet <file.cells>");
+HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
+HERO_STR_STATIC(hero_str_1dce, ": ");
+HERO_STR_STATIC(hero_str_88077, " = ");
+HERO_STR_STATIC(hero_str_87223, " ! ");
+HERO_STR_STATIC(hero_str_7ff60447, " cells, ");
+HERO_STR_STATIC(hero_str_3f10996a, " broken");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_3253dd13, "circular_reference");
+HERO_STR_STATIC(hero_str_3dbf07bc, "division_by_zero");
+HERO_STR_STATIC(hero_str_3f28650a, "expected_paren");
+HERO_STR_STATIC(hero_str_1ab4f50e, "trailing_input");
+HERO_STR_STATIC(hero_str_7b0b513f, "unclosed_paren");
+HERO_STR_STATIC(hero_str_70ef3fbe, "unexpected_character");
+HERO_STR_STATIC(hero_str_7423baed, "unexpected_end");
+HERO_STR_STATIC(hero_str_7d34d37c, "unknown_name");
+HERO_STR_STATIC(hero_str_57729eb7, "cell ");
+HERO_STR_STATIC(hero_str_63f4e19a, " is defined in terms of itself");
+HERO_STR_STATIC(hero_str_0, "");
+HERO_STR_STATIC(hero_str_733db619, ": the formula does not end at ");
+HERO_STR_STATIC(hero_str_6a75581a, "a formula divides by zero");
+HERO_STR_STATIC(hero_str_70d55d6e, "the formula ends where a value was expected");
+HERO_STR_STATIC(hero_str_5256ed94, "expected `)` at ");
+HERO_STR_STATIC(hero_str_2611b207, "no value starts at ");
+HERO_STR_STATIC(hero_str_15e7b7, "SUM");
+HERO_STR_STATIC(hero_str_60, "`");
+HERO_STR_STATIC(hero_str_f59f0be, "` is neither a cell nor `SUM`");
+HERO_STR_STATIC(hero_str_13b59efe, "`SUM` needs a range in parentheses");
+HERO_STR_STATIC(hero_str_4ac41a5, "`SUM(` is never closed");
+HERO_STR_STATIC(hero_str_7b992235, "no_error");
+HERO_STR_STATIC(hero_str_267d64cc, "bad_cell_name");
+HERO_STR_STATIC(hero_str_df3d626, "bad_range");
+HERO_STR_STATIC(hero_str_e72c1af, "no_assignment");
+HERO_STR_STATIC(hero_str_15cf97f9, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+HERO_STR_STATIC(hero_str_30d275f8, "` is not a cell: one letter then digits");
+HERO_STR_STATIC(hero_str_3a8f3948, "` has no row: rows start at 1");
+HERO_STR_STATIC(hero_str_3e1d2a75, "` is not a range: two cells joined by `:`");
+HERO_STR_STATIC(hero_str_4c698ffa, "` is not `NAME = formula`");
+HERO_STR_STATIC(hero_str_59af7519, "` is not a cell name");
+HERO_STR_STATIC(hero_str_5b56e076, "file_not_found");
+HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
+HERO_STR_STATIC(hero_str_3e46668, "read_failed");
+HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
 typedef struct h_formula_Parse {
     HeroStr f_text;
@@ -424,7 +424,7 @@ bb1:
 #line 27 "examples/spreadsheet/main.hero"
 bb2:
 #line 25 "examples/spreadsheet/main.hero"
-    t6 = HERO_STR_LIT(hero_str_0);
+    t6 = HERO_STR_LIT(hero_str_733425e1);
 #line 25 "examples/spreadsheet/main.hero"
     hero_print_str(t6);
 #line 25 "examples/spreadsheet/main.hero"
@@ -492,7 +492,7 @@ bb5:
 #line 493 "main.c"
     hero_failure_release(&t33);
 #line 28 "examples/spreadsheet/main.hero"
-    t16 = HERO_STR_LIT(hero_str_1);
+    t16 = HERO_STR_LIT(hero_str_2d78c599);
 #line 28 "examples/spreadsheet/main.hero"
     t17 = h0_given;
 #line 28 "examples/spreadsheet/main.hero"
@@ -508,7 +508,7 @@ bb5:
 #line 509 "main.c"
     hero_str_decref(t34);
 #line 28 "examples/spreadsheet/main.hero"
-    t21 = HERO_STR_LIT(hero_str_2);
+    t21 = HERO_STR_LIT(hero_str_1dce);
 #line 28 "examples/spreadsheet/main.hero"
     t22 = hero_str_concat(t20, t21);
 #line 28 "examples/spreadsheet/main.hero"
@@ -694,7 +694,7 @@ bb2:
 #line 37 "examples/spreadsheet/main.hero"
     t8 = t7.code;
 #line 37 "examples/spreadsheet/main.hero"
-    t9 = HERO_STR_LIT(hero_str_2);
+    t9 = HERO_STR_LIT(hero_str_1dce);
 #line 37 "examples/spreadsheet/main.hero"
     t10 = hero_str_concat(t8, t9);
 #line 37 "examples/spreadsheet/main.hero"
@@ -971,7 +971,7 @@ bb4:
 #line 972 "main.c"
     hero_str_decref(t57);
 #line 49 "examples/spreadsheet/main.hero"
-    t42 = HERO_STR_LIT(hero_str_5);
+    t42 = HERO_STR_LIT(hero_str_7ff60447);
 #line 49 "examples/spreadsheet/main.hero"
     t43 = h1_broken;
 #line 49 "examples/spreadsheet/main.hero"
@@ -983,7 +983,7 @@ bb4:
 #line 984 "main.c"
     hero_str_decref(t58);
 #line 49 "examples/spreadsheet/main.hero"
-    t45 = HERO_STR_LIT(hero_str_6);
+    t45 = HERO_STR_LIT(hero_str_3f10996a);
 #line 49 "examples/spreadsheet/main.hero"
     hero_print_str(t41);
 #line 49 "examples/spreadsheet/main.hero"
@@ -1025,7 +1025,7 @@ bb6:
 #line 1026 "main.c"
     hero_str_decref(t59);
 #line 45 "examples/spreadsheet/main.hero"
-    t22 = HERO_STR_LIT(hero_str_3);
+    t22 = HERO_STR_LIT(hero_str_88077);
 #line 45 "examples/spreadsheet/main.hero"
     t23 = h6_v;
 #line 45 "examples/spreadsheet/main.hero"
@@ -1079,7 +1079,7 @@ bb7:
 #line 1080 "main.c"
     hero_str_decref(t62);
 #line 48 "examples/spreadsheet/main.hero"
-    t32 = HERO_STR_LIT(hero_str_4);
+    t32 = HERO_STR_LIT(hero_str_87223);
 #line 48 "examples/spreadsheet/main.hero"
     t33 = h7_e;
 #line 48 "examples/spreadsheet/main.hero"
@@ -1211,7 +1211,7 @@ bb2:
 #line 59 "examples/spreadsheet/main.hero"
     t6 = h1_out;
 #line 59 "examples/spreadsheet/main.hero"
-    t7 = HERO_STR_LIT(hero_str_7);
+    t7 = HERO_STR_LIT(hero_str_20);
 #line 59 "examples/spreadsheet/main.hero"
     t8 = hero_str_concat(t6, t7);
 #line 59 "examples/spreadsheet/main.hero"
@@ -1252,7 +1252,7 @@ HeroStr h_formula_ERR_CIRCULAR_REFERENCE(void) {
     goto bb0;
 bb0:
 #line 23 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_21);
+    t1 = HERO_STR_LIT(hero_str_3253dd13);
 #line 1257 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1265,7 +1265,7 @@ HeroStr h_formula_ERR_DIVISION_BY_ZERO(void) {
     goto bb0;
 bb0:
 #line 26 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_22);
+    t1 = HERO_STR_LIT(hero_str_3dbf07bc);
 #line 1270 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1278,7 +1278,7 @@ HeroStr h_formula_ERR_EXPECTED_PAREN(void) {
     goto bb0;
 bb0:
 #line 29 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_23);
+    t1 = HERO_STR_LIT(hero_str_3f28650a);
 #line 1283 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1291,7 +1291,7 @@ HeroStr h_formula_ERR_TRAILING_INPUT(void) {
     goto bb0;
 bb0:
 #line 32 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_24);
+    t1 = HERO_STR_LIT(hero_str_1ab4f50e);
 #line 1296 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1304,7 +1304,7 @@ HeroStr h_formula_ERR_UNCLOSED_PAREN(void) {
     goto bb0;
 bb0:
 #line 35 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_25);
+    t1 = HERO_STR_LIT(hero_str_7b0b513f);
 #line 1309 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1317,7 +1317,7 @@ HeroStr h_formula_ERR_UNEXPECTED_CHARACTER(void) {
     goto bb0;
 bb0:
 #line 38 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_26);
+    t1 = HERO_STR_LIT(hero_str_70ef3fbe);
 #line 1322 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1330,7 +1330,7 @@ HeroStr h_formula_ERR_UNEXPECTED_END(void) {
     goto bb0;
 bb0:
 #line 41 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_27);
+    t1 = HERO_STR_LIT(hero_str_7423baed);
 #line 1335 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1343,7 +1343,7 @@ HeroStr h_formula_ERR_UNKNOWN_NAME(void) {
     goto bb0;
 bb0:
 #line 44 "examples/spreadsheet/formula.hero"
-    t1 = HERO_STR_LIT(hero_str_28);
+    t1 = HERO_STR_LIT(hero_str_7d34d37c);
 #line 1348 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1924,7 +1924,7 @@ bb2:
 #line 1925 "main.c"
     hero_str_decref(t61);
 #line 75 "examples/spreadsheet/formula.hero"
-    t5 = HERO_STR_LIT(hero_str_29);
+    t5 = HERO_STR_LIT(hero_str_57729eb7);
 #line 75 "examples/spreadsheet/formula.hero"
     t6 = h1_name;
 #line 75 "examples/spreadsheet/formula.hero"
@@ -1936,7 +1936,7 @@ bb2:
 #line 1937 "main.c"
     hero_str_decref(t62);
 #line 75 "examples/spreadsheet/formula.hero"
-    t8 = HERO_STR_LIT(hero_str_30);
+    t8 = HERO_STR_LIT(hero_str_63f4e19a);
 #line 75 "examples/spreadsheet/formula.hero"
     t9 = hero_str_concat(t7, t8);
 #line 75 "examples/spreadsheet/formula.hero"
@@ -2065,7 +2065,7 @@ bb4:
     goto bb6;
 bb5:
 #line 76 "examples/spreadsheet/formula.hero"
-    t21 = HERO_STR_LIT(hero_str_31);
+    t21 = HERO_STR_LIT(hero_str_0);
 #line 76 "examples/spreadsheet/formula.hero"
     t66 = h4_r0;
 #line 2072 "main.c"
@@ -2089,7 +2089,7 @@ bb6:
 #line 77 "examples/spreadsheet/formula.hero"
     t23 = h5_source;
 #line 77 "examples/spreadsheet/formula.hero"
-    t24 = HERO_STR_LIT(hero_str_31);
+    t24 = HERO_STR_LIT(hero_str_0);
 #line 77 "examples/spreadsheet/formula.hero"
     t25 = hero_str_eq(t23, t24);
 #line 77 "examples/spreadsheet/formula.hero"
@@ -2492,7 +2492,7 @@ bb13:
 #line 83 "examples/spreadsheet/formula.hero"
     t49 = h1_name;
 #line 83 "examples/spreadsheet/formula.hero"
-    t50 = HERO_STR_LIT(hero_str_32);
+    t50 = HERO_STR_LIT(hero_str_733db619);
 #line 83 "examples/spreadsheet/formula.hero"
     t51 = hero_str_concat(t49, t50);
 #line 83 "examples/spreadsheet/formula.hero"
@@ -3899,7 +3899,7 @@ bb20:
 #line 3900 "main.c"
     hero_str_decref(t79);
 #line 115 "examples/spreadsheet/formula.hero"
-    t61 = HERO_STR_LIT(hero_str_33);
+    t61 = HERO_STR_LIT(hero_str_6a75581a);
 #line 3904 "main.c"
     hero_str_incref(t60);
 #line 115 "examples/spreadsheet/formula.hero"
@@ -4306,7 +4306,7 @@ bb2:
 #line 4307 "main.c"
     hero_str_decref(t72);
 #line 124 "examples/spreadsheet/formula.hero"
-    t4 = HERO_STR_LIT(hero_str_34);
+    t4 = HERO_STR_LIT(hero_str_70d55d6e);
 #line 4311 "main.c"
     hero_str_incref(t3);
 #line 124 "examples/spreadsheet/formula.hero"
@@ -4701,7 +4701,7 @@ bb12:
 #line 4702 "main.c"
     hero_str_decref(t78);
 #line 131 "examples/spreadsheet/formula.hero"
-    t31 = HERO_STR_LIT(hero_str_35);
+    t31 = HERO_STR_LIT(hero_str_5256ed94);
 #line 131 "examples/spreadsheet/formula.hero"
     t32 = h0_p;
 #line 131 "examples/spreadsheet/formula.hero"
@@ -5185,7 +5185,7 @@ bb22:
 #line 5186 "main.c"
     hero_str_decref(t87);
 #line 141 "examples/spreadsheet/formula.hero"
-    t66 = HERO_STR_LIT(hero_str_36);
+    t66 = HERO_STR_LIT(hero_str_2611b207);
 #line 141 "examples/spreadsheet/formula.hero"
     t67 = h0_p;
 #line 141 "examples/spreadsheet/formula.hero"
@@ -5863,7 +5863,7 @@ bb0:
 #line 162 "examples/spreadsheet/formula.hero"
     t2 = h3_word;
 #line 162 "examples/spreadsheet/formula.hero"
-    t3 = HERO_STR_LIT(hero_str_37);
+    t3 = HERO_STR_LIT(hero_str_15e7b7);
 #line 162 "examples/spreadsheet/formula.hero"
     t4 = hero_str_eq(t2, t3);
 #line 162 "examples/spreadsheet/formula.hero"
@@ -5993,7 +5993,7 @@ bb5:
 #line 5994 "main.c"
     hero_str_decref(t26);
 #line 165 "examples/spreadsheet/formula.hero"
-    t12 = HERO_STR_LIT(hero_str_38);
+    t12 = HERO_STR_LIT(hero_str_60);
 #line 165 "examples/spreadsheet/formula.hero"
     t13 = h3_word;
 #line 165 "examples/spreadsheet/formula.hero"
@@ -6005,7 +6005,7 @@ bb5:
 #line 6006 "main.c"
     hero_str_decref(t27);
 #line 165 "examples/spreadsheet/formula.hero"
-    t15 = HERO_STR_LIT(hero_str_39);
+    t15 = HERO_STR_LIT(hero_str_f59f0be);
 #line 165 "examples/spreadsheet/formula.hero"
     t16 = hero_str_concat(t14, t15);
 #line 165 "examples/spreadsheet/formula.hero"
@@ -6437,7 +6437,7 @@ bb4:
 #line 6438 "main.c"
     hero_str_decref(t72);
 #line 179 "examples/spreadsheet/formula.hero"
-    t9 = HERO_STR_LIT(hero_str_40);
+    t9 = HERO_STR_LIT(hero_str_13b59efe);
 #line 6442 "main.c"
     hero_str_incref(t8);
 #line 179 "examples/spreadsheet/formula.hero"
@@ -6636,7 +6636,7 @@ bb12:
 #line 6637 "main.c"
     hero_str_decref(t78);
 #line 185 "examples/spreadsheet/formula.hero"
-    t24 = HERO_STR_LIT(hero_str_41);
+    t24 = HERO_STR_LIT(hero_str_4ac41a5);
 #line 6641 "main.c"
     hero_str_incref(t23);
 #line 185 "examples/spreadsheet/formula.hero"
@@ -7165,7 +7165,7 @@ bb1:
     return t12;
 bb2:
 #line 242 "examples/spreadsheet/formula.hero"
-    t7 = HERO_STR_LIT(hero_str_88);
+    t7 = HERO_STR_LIT(hero_str_7b992235);
 #line 241 "examples/spreadsheet/formula.hero"
     t16 = h3_r0;
 #line 7172 "main.c"
@@ -7210,7 +7210,7 @@ HeroStr h_sheet_ERR_BAD_CELL_NAME(void) {
     goto bb0;
 bb0:
 #line 18 "examples/spreadsheet/sheet.hero"
-    t1 = HERO_STR_LIT(hero_str_89);
+    t1 = HERO_STR_LIT(hero_str_267d64cc);
 #line 7215 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -7223,7 +7223,7 @@ HeroStr h_sheet_ERR_BAD_RANGE(void) {
     goto bb0;
 bb0:
 #line 21 "examples/spreadsheet/sheet.hero"
-    t1 = HERO_STR_LIT(hero_str_90);
+    t1 = HERO_STR_LIT(hero_str_df3d626);
 #line 7228 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -7236,7 +7236,7 @@ HeroStr h_sheet_ERR_NO_ASSIGNMENT(void) {
     goto bb0;
 bb0:
 #line 24 "examples/spreadsheet/sheet.hero"
-    t1 = HERO_STR_LIT(hero_str_91);
+    t1 = HERO_STR_LIT(hero_str_e72c1af);
 #line 7241 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -7249,7 +7249,7 @@ HeroStr h_sheet_LETTERS(void) {
     goto bb0;
 bb0:
 #line 27 "examples/spreadsheet/sheet.hero"
-    t1 = HERO_STR_LIT(hero_str_92);
+    t1 = HERO_STR_LIT(hero_str_15cf97f9);
 #line 7254 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -8052,7 +8052,7 @@ bb4:
 #line 8053 "main.c"
     hero_str_decref(t84);
 #line 72 "examples/spreadsheet/sheet.hero"
-    t12 = HERO_STR_LIT(hero_str_38);
+    t12 = HERO_STR_LIT(hero_str_60);
 #line 72 "examples/spreadsheet/sheet.hero"
     t13 = h0_name;
 #line 72 "examples/spreadsheet/sheet.hero"
@@ -8064,7 +8064,7 @@ bb4:
 #line 8065 "main.c"
     hero_str_decref(t85);
 #line 72 "examples/spreadsheet/sheet.hero"
-    t15 = HERO_STR_LIT(hero_str_93);
+    t15 = HERO_STR_LIT(hero_str_30d275f8);
 #line 72 "examples/spreadsheet/sheet.hero"
     t16 = hero_str_concat(t14, t15);
 #line 72 "examples/spreadsheet/sheet.hero"
@@ -8251,7 +8251,7 @@ bb10:
 #line 8252 "main.c"
     hero_str_decref(t90);
 #line 77 "examples/spreadsheet/sheet.hero"
-    t30 = HERO_STR_LIT(hero_str_38);
+    t30 = HERO_STR_LIT(hero_str_60);
 #line 77 "examples/spreadsheet/sheet.hero"
     t31 = h0_name;
 #line 77 "examples/spreadsheet/sheet.hero"
@@ -8263,7 +8263,7 @@ bb10:
 #line 8264 "main.c"
     hero_str_decref(t91);
 #line 77 "examples/spreadsheet/sheet.hero"
-    t33 = HERO_STR_LIT(hero_str_93);
+    t33 = HERO_STR_LIT(hero_str_30d275f8);
 #line 77 "examples/spreadsheet/sheet.hero"
     t34 = hero_str_concat(t32, t33);
 #line 77 "examples/spreadsheet/sheet.hero"
@@ -8436,7 +8436,7 @@ bb15:
 #line 8437 "main.c"
     hero_str_decref(t96);
 #line 81 "examples/spreadsheet/sheet.hero"
-    t61 = HERO_STR_LIT(hero_str_38);
+    t61 = HERO_STR_LIT(hero_str_60);
 #line 81 "examples/spreadsheet/sheet.hero"
     t62 = h0_name;
 #line 81 "examples/spreadsheet/sheet.hero"
@@ -8448,7 +8448,7 @@ bb15:
 #line 8449 "main.c"
     hero_str_decref(t97);
 #line 81 "examples/spreadsheet/sheet.hero"
-    t64 = HERO_STR_LIT(hero_str_94);
+    t64 = HERO_STR_LIT(hero_str_3a8f3948);
 #line 81 "examples/spreadsheet/sheet.hero"
     t65 = hero_str_concat(t63, t64);
 #line 81 "examples/spreadsheet/sheet.hero"
@@ -9110,7 +9110,7 @@ bb2:
 #line 9111 "main.c"
     hero_str_decref(t96);
 #line 100 "examples/spreadsheet/sheet.hero"
-    t8 = HERO_STR_LIT(hero_str_38);
+    t8 = HERO_STR_LIT(hero_str_60);
 #line 100 "examples/spreadsheet/sheet.hero"
     t9 = h0_text;
 #line 100 "examples/spreadsheet/sheet.hero"
@@ -9122,7 +9122,7 @@ bb2:
 #line 9123 "main.c"
     hero_str_decref(t97);
 #line 100 "examples/spreadsheet/sheet.hero"
-    t11 = HERO_STR_LIT(hero_str_95);
+    t11 = HERO_STR_LIT(hero_str_3e1d2a75);
 #line 100 "examples/spreadsheet/sheet.hero"
     t12 = hero_str_concat(t10, t11);
 #line 100 "examples/spreadsheet/sheet.hero"
@@ -10166,7 +10166,7 @@ bb2:
 #line 124 "examples/spreadsheet/sheet.hero"
     t14 = h5_head;
 #line 124 "examples/spreadsheet/sheet.hero"
-    t15 = HERO_STR_LIT(hero_str_31);
+    t15 = HERO_STR_LIT(hero_str_0);
 #line 124 "examples/spreadsheet/sheet.hero"
     t16 = hero_str_eq(t14, t15);
 #line 124 "examples/spreadsheet/sheet.hero"
@@ -10400,7 +10400,7 @@ bb11:
 #line 10401 "main.c"
     hero_str_decref(t78);
 #line 128 "examples/spreadsheet/sheet.hero"
-    t30 = HERO_STR_LIT(hero_str_38);
+    t30 = HERO_STR_LIT(hero_str_60);
 #line 128 "examples/spreadsheet/sheet.hero"
     t31 = h5_head;
 #line 128 "examples/spreadsheet/sheet.hero"
@@ -10412,7 +10412,7 @@ bb11:
 #line 10413 "main.c"
     hero_str_decref(t79);
 #line 128 "examples/spreadsheet/sheet.hero"
-    t33 = HERO_STR_LIT(hero_str_96);
+    t33 = HERO_STR_LIT(hero_str_4c698ffa);
 #line 128 "examples/spreadsheet/sheet.hero"
     t34 = hero_str_concat(t32, t33);
 #line 128 "examples/spreadsheet/sheet.hero"
@@ -10578,7 +10578,7 @@ bb14:
 #line 10579 "main.c"
     hero_str_decref(t84);
 #line 131 "examples/spreadsheet/sheet.hero"
-    t45 = HERO_STR_LIT(hero_str_38);
+    t45 = HERO_STR_LIT(hero_str_60);
 #line 131 "examples/spreadsheet/sheet.hero"
     t46 = h8_name;
 #line 131 "examples/spreadsheet/sheet.hero"
@@ -10590,7 +10590,7 @@ bb14:
 #line 10591 "main.c"
     hero_str_decref(t85);
 #line 131 "examples/spreadsheet/sheet.hero"
-    t48 = HERO_STR_LIT(hero_str_97);
+    t48 = HERO_STR_LIT(hero_str_59af7519);
 #line 131 "examples/spreadsheet/sheet.hero"
     t49 = hero_str_concat(t47, t48);
 #line 131 "examples/spreadsheet/sheet.hero"
@@ -11607,9 +11607,9 @@ bb3:
     goto bb1;
 bb4:
 #line 170 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_141);
+    t18 = HERO_STR_LIT(hero_str_3e46668);
 #line 170 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_142);
+    t19 = HERO_STR_LIT(hero_str_b908f30);
 #line 170 "<heroes library>"
     t20 = h0_path;
 #line 170 "<heroes library>"
@@ -11668,9 +11668,9 @@ bb4:
     return t22;
 bb5:
 #line 169 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_139);
+    t13 = HERO_STR_LIT(hero_str_5b56e076);
 #line 169 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_140);
+    t14 = HERO_STR_LIT(hero_str_2ae119c5);
 #line 169 "<heroes library>"
     t15 = h0_path;
 #line 169 "<heroes library>"

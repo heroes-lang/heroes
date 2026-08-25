@@ -58,8 +58,8 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsmapstorealiased.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "a");
-HERO_STR_STATIC(hero_str_1, "b");
+HERO_STR_STATIC(hero_str_61, "a");
+HERO_STR_STATIC(hero_str_62, "b");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -158,7 +158,7 @@ bb0:
 #line 159 "fixedbugsmapstorealiased.c"
     hero_map_decref(t23);
 #line 27 "tests/golden/run/fixedbugs-map-store-aliased.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_61);
 #line 27 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t3 = INT64_C(1);
 #line 27 "tests/golden/run/fixedbugs-map-store-aliased.hero"
@@ -174,7 +174,7 @@ bb0:
 #line 175 "fixedbugsmapstorealiased.c"
     hero_map_decref(t24);
 #line 29 "tests/golden/run/fixedbugs-map-store-aliased.hero"
-    t5 = HERO_STR_LIT(hero_str_1);
+    t5 = HERO_STR_LIT(hero_str_62);
 #line 29 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t6 = INT64_C(2);
 #line 29 "tests/golden/run/fixedbugs-map-store-aliased.hero"
@@ -198,7 +198,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t11 = h1_n;
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
-    t12 = HERO_STR_LIT(hero_str_1);
+    t12 = HERO_STR_LIT(hero_str_62);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     {
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"

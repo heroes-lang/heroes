@@ -84,14 +84,14 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 85 "main.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, ":memory:");
-HERO_STR_STATIC(hero_str_1, "cannot open the database");
-HERO_STR_STATIC(hero_str_2, "create table note(body text)");
-HERO_STR_STATIC(hero_str_3, "insert into note(body) values ('hello'), ('from'), ('sqlite')");
-HERO_STR_STATIC(hero_str_4, "rows: ");
-HERO_STR_STATIC(hero_str_5, "select count(*) from note");
-HERO_STR_STATIC(hero_str_6, "longest: ");
-HERO_STR_STATIC(hero_str_7, "select max(length(body)) from note");
+HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
+HERO_STR_STATIC(hero_str_4e2b1705, "cannot open the database");
+HERO_STR_STATIC(hero_str_58d8efb7, "create table note(body text)");
+HERO_STR_STATIC(hero_str_37763c95, "insert into note(body) values ('hello'), ('from'), ('sqlite')");
+HERO_STR_STATIC(hero_str_2d6bfc4a, "rows: ");
+HERO_STR_STATIC(hero_str_4a7e2e7, "select count(*) from note");
+HERO_STR_STATIC(hero_str_31daf47e, "longest: ");
+HERO_STR_STATIC(hero_str_4ea48131, "select max(length(body)) from note");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -325,7 +325,7 @@ bb0:
 #line 69 "examples/sqlite/main.hero"
     h0_db = t1;
 #line 70 "examples/sqlite/main.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_41b4cad0);
 #line 70 "examples/sqlite/main.hero"
     t3 = hero_str_cstr(t2);
 #line 70 "examples/sqlite/main.hero"
@@ -341,21 +341,21 @@ bb1:
 #line 73 "examples/sqlite/main.hero"
     t8 = h0_db;
 #line 73 "examples/sqlite/main.hero"
-    t9 = HERO_STR_LIT(hero_str_2);
+    t9 = HERO_STR_LIT(hero_str_58d8efb7);
 #line 73 "examples/sqlite/main.hero"
     h_main_run(t8, t9);
 #line 74 "examples/sqlite/main.hero"
     t11 = h0_db;
 #line 74 "examples/sqlite/main.hero"
-    t12 = HERO_STR_LIT(hero_str_3);
+    t12 = HERO_STR_LIT(hero_str_37763c95);
 #line 74 "examples/sqlite/main.hero"
     h_main_run(t11, t12);
 #line 75 "examples/sqlite/main.hero"
-    t14 = HERO_STR_LIT(hero_str_4);
+    t14 = HERO_STR_LIT(hero_str_2d6bfc4a);
 #line 75 "examples/sqlite/main.hero"
     t15 = h0_db;
 #line 75 "examples/sqlite/main.hero"
-    t16 = HERO_STR_LIT(hero_str_5);
+    t16 = HERO_STR_LIT(hero_str_4a7e2e7);
 #line 75 "examples/sqlite/main.hero"
     t17 = h_main_first_int(t15, t16);
 #line 75 "examples/sqlite/main.hero"
@@ -365,11 +365,11 @@ bb1:
 #line 75 "examples/sqlite/main.hero"
     hero_print_end();
 #line 76 "examples/sqlite/main.hero"
-    t18 = HERO_STR_LIT(hero_str_6);
+    t18 = HERO_STR_LIT(hero_str_31daf47e);
 #line 76 "examples/sqlite/main.hero"
     t19 = h0_db;
 #line 76 "examples/sqlite/main.hero"
-    t20 = HERO_STR_LIT(hero_str_7);
+    t20 = HERO_STR_LIT(hero_str_4ea48131);
 #line 76 "examples/sqlite/main.hero"
     t21 = h_main_first_int(t19, t20);
 #line 76 "examples/sqlite/main.hero"
@@ -387,7 +387,7 @@ bb1:
 #line 77 "examples/sqlite/main.hero"
 bb2:
 #line 71 "examples/sqlite/main.hero"
-    t7 = HERO_STR_LIT(hero_str_1);
+    t7 = HERO_STR_LIT(hero_str_4e2b1705);
 #line 71 "examples/sqlite/main.hero"
     hero_print_str(t7);
 #line 71 "examples/sqlite/main.hero"

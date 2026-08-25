@@ -58,11 +58,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsunaryminusisnotaliteral.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "literal ");
-HERO_STR_STATIC(hero_str_1, "names ");
-HERO_STR_STATIC(hero_str_2, " ");
-HERO_STR_STATIC(hero_str_3, "checked ");
-HERO_STR_STATIC(hero_str_4, "nested ");
+HERO_STR_STATIC(hero_str_726a17c3, "literal ");
+HERO_STR_STATIC(hero_str_48404065, "names ");
+HERO_STR_STATIC(hero_str_20, " ");
+HERO_STR_STATIC(hero_str_2a2e6b28, "checked ");
+HERO_STR_STATIC(hero_str_52436c76, "nested ");
 
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -208,7 +208,7 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h0_small = t1;
 #line 41 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
+    t2 = HERO_STR_LIT(hero_str_726a17c3);
 #line 41 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t3 = h0_small;
 #line 41 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
@@ -238,11 +238,11 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h2_x = t9;
 #line 48 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    t10 = HERO_STR_LIT(hero_str_1);
+    t10 = HERO_STR_LIT(hero_str_48404065);
 #line 48 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t11 = h1_n;
 #line 48 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    t12 = HERO_STR_LIT(hero_str_2);
+    t12 = HERO_STR_LIT(hero_str_20);
 #line 48 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t13 = h2_x;
 #line 48 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
@@ -256,7 +256,7 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     hero_print_end();
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    t14 = HERO_STR_LIT(hero_str_3);
+    t14 = HERO_STR_LIT(hero_str_2a2e6b28);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t15 = INT64_C(9);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
@@ -292,7 +292,7 @@ bb1:
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t24 = t23.as.ok;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    t25 = HERO_STR_LIT(hero_str_2);
+    t25 = HERO_STR_LIT(hero_str_20);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t26 = 0x1p-2;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
@@ -308,7 +308,7 @@ bb1:
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     hero_print_end();
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    t28 = HERO_STR_LIT(hero_str_4);
+    t28 = HERO_STR_LIT(hero_str_52436c76);
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t29 = h1_n;
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
@@ -318,7 +318,7 @@ bb1:
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     if (__builtin_sub_overflow(INT64_C(0), t31, &t32)) hero_panic_overflow();
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    t33 = HERO_STR_LIT(hero_str_2);
+    t33 = HERO_STR_LIT(hero_str_20);
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t34 = 0x1p+1;
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"

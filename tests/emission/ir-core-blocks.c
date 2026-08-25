@@ -58,9 +58,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "coreblocks.c"
 #pragma clang diagnostic pop
 
-HERO_STR_STATIC(hero_str_0, "zero");
-HERO_STR_STATIC(hero_str_1, "one");
-HERO_STR_STATIC(hero_str_2, "many");
+HERO_STR_STATIC(hero_str_1073a930, "zero");
+HERO_STR_STATIC(hero_str_1d4996, "one");
+HERO_STR_STATIC(hero_str_eb4aa2b, "many");
 
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -263,7 +263,7 @@ bb1:
     return t11;
 bb2:
 #line 19 "tests/golden/ir/core-blocks.hero"
-    t8 = HERO_STR_LIT(hero_str_0);
+    t8 = HERO_STR_LIT(hero_str_1073a930);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
 #line 270 "coreblocks.c"
@@ -285,7 +285,7 @@ bb3:
 #line 18 "tests/golden/ir/core-blocks.hero"
 bb4:
 #line 20 "tests/golden/ir/core-blocks.hero"
-    t9 = HERO_STR_LIT(hero_str_1);
+    t9 = HERO_STR_LIT(hero_str_1d4996);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
 #line 292 "coreblocks.c"
@@ -299,7 +299,7 @@ bb5:
     goto bb6;
 bb6:
 #line 21 "tests/golden/ir/core-blocks.hero"
-    t10 = HERO_STR_LIT(hero_str_2);
+    t10 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 18 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
 #line 306 "coreblocks.c"
