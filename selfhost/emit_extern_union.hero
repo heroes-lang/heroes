@@ -53,6 +53,11 @@ record Used
     operated: {i64: bool}
 
 # One assertion per extern record the program constructs or compares.
+#
+# ORDER: ascending declaration index, three times — the assertions land in
+# the emitted C in this order, so an unsorted walk is a different program's
+# bytes for the same source. The Rust BTreeMap gave it free; the port pays
+# with one `sort` per walk (design.md §4.9).
 function union_assertions(@w: emit_writer.Writer, p: ir_state.Program, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
     u = used(p, c, decls)
     wanted: {i64: bool} @ {}

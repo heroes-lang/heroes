@@ -226,10 +226,10 @@ function used_modules(r: Resolver) -> [str]
     return sort(named.must())
 
 # Is `text` a field name this file could legitimately be reaching? Its own
-# module's fields, plus the library's, plus those of every module it
-# `use`s — because this file may hold a `geom.Point` and write `p.x`, and
-# may not hold anything from a module it never named. (Keyed by module
-# since 2026-08-12: bare names let another module delete a certain fix.)
+# module's fields, the library's, and every module it `use`s — this file may
+# hold a `geom.Point` and write `p.x`. (Keyed by module since 2026-08-12:
+# bare names let another module delete a certain fix.)
+# ORDER: none — the walk answers a bool, so no order reaches anything.
 function field_in_reach(r: Resolver, text: str) -> bool
     for module in keys(r.fields)
         if keyed_has(r.fields, module: module, name: text)
