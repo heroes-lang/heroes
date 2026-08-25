@@ -81,29 +81,10 @@ function entry_point(p: ir_state.Program) -> i64?
         index @ index + 1
     return fail("none", "no main in this program")
 
-function emit(p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
-    return emit_for(target: .program_build, p: p, c: c, s: s, decls: decls, version: version)
-
-# Emit one lowered program. The gate runs first and TO COMPLETION:
-# every unsupported form is reported, sorted by span, because a
-# message that carries the list is one round trip and three
-# invocations is three.
-function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
-    refused = emit_gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
-    if refused.len() > 0
-        none_link: [str] = []
-        none_pkg: [str] = []
-        return Emitted(c: "", diagnostics: refused, link: none_link, packages: none_pkg)
-    # The ROOT module names exactly two things: the generated .c in a
-    # #line directive, and the program-wide types the emitter invents.
-    # Every name from a declaration takes that declaration's own
-    # module instead (M-module-namespace's whole change here).
-    module = source.module_of(s.name)
-    # The author's functions, plus exactly the library functions they
-    # reach — computed BEFORE the type walk, because the types a
-    # pruned function mentions are not reachable either: unfiltered,
-    # read_file -> str? put two option structs and eight per-type
-    # functions into every translation unit in the language.
+# The functions the fused unit shows: the author's, plus exactly the
+# library functions the program reaches. The per-TU path (panel 093 R1)
+# passes its own list to the same walk instead.
+function shown_fused(p: ir_state.Program, s: source.Source) -> [i64]
     used = emit_builtins.reachable(p, s)
     shown: [i64] @ []
     index: i64 @ 0
@@ -111,16 +92,26 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
         if !source.is_library(s, f.span.start) || !used[f.decl].is_err()
             shown @ shown.push(index)
         index @ index + 1
+    return shown
+
+# What one unit's type walk found: every type its functions mention —
+# transitively, because a type names the types it holds: [i64?] is one
+# slot type and two declarations, and naming only the outer one left
+# the inner i64? unnamed under a rule that asserts every T? is named
+# before anything mentions one (found by the mutant corpus) — and the
+# subset an instruction actually CONSTRUCTS. Reachability cannot answer
+# the second and over-answers: `[Probe]` is interned because a function
+# takes one, so `probe.hero` got a descriptor for `Probe` that nothing
+# pointed at — `-Wunused-const-variable` against §7's zero-warning bar.
+# A `construct` is the only instruction that reaches `build_array`/
+# `build_map`, which are the only callers that ask for an element's, a
+# key's or a value's descriptor.
+record Reach
+    reached: {i64: bool}
+    constructed: {i64: bool}
+
+function reach_of(p: ir_state.Program, c: check_state.Checked, target: emit_decls.BuildTarget, shown: [i64]) -> Reach
     reached: {i64: bool} @ {}
-    # Which container types this unit actually BUILDS, riding the same
-    # walk so it costs nothing. Reachability cannot answer it and
-    # over-answers: `[Probe]` is interned because a function takes one,
-    # so `probe.hero` got a descriptor for `Probe` that nothing pointed
-    # at — `-Wunused-const-variable` against §7's zero-warning bar, on
-    # the harness's own file (2026-08-18). A `construct` is the only
-    # instruction that reaches `build_array`/`build_map`
-    # (emit_construct:74,:85), which are the only callers that ask for an
-    # element's, a key's or a value's descriptor.
     constructed: {i64: bool} @ {}
     for at in shown
         f = p.functions[at]
@@ -145,11 +136,6 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
                     .func_ref | .store | .push_owned | .unary | .binary | .cast => reached[inst.ty] @ true
                     .index | .map_get | .copy_out | .abort_op => reached[inst.ty] @ true
                     .incref | .decref | .hole | .missing => reached[inst.ty] @ true
-    # TRANSITIVELY, because a type names the types it holds: [int?] is
-    # one slot type and two declarations, and naming only the outer
-    # one left the inner int? unnamed under a rule that asserts every
-    # T? is named before anything mentions one. Found by the mutant
-    # corpus, which is where CLAUDE.md §9 says an invariant belongs.
     # ORDER: none — this is a worklist, and what leaves it is a SET. Every
     # id drained is added to `reached`, which two sorted walks read later
     # (emit_ctype, emit_descriptor_set), so the drain order changes how
@@ -162,9 +148,38 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
             if reached[inner].is_err()
                 reached[inner] @ true
                 frontier @ frontier.push(inner)
+    return Reach(reached: reached, constructed: constructed)
+
+function emit(p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
+    return emit_for(target: .program_build, p: p, c: c, s: s, decls: decls, version: version)
+
+# Emit one lowered program. The gate runs first and TO COMPLETION:
+# every unsupported form is reported, sorted by span, because a
+# message that carries the list is one round trip and three
+# invocations is three.
+function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
+    refused = emit_gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
+    if refused.len() > 0
+        none_link: [str] = []
+        none_pkg: [str] = []
+        return Emitted(c: "", diagnostics: refused, link: none_link, packages: none_pkg)
+    # The ROOT module names exactly two things: the generated .c in a
+    # #line directive, and the program-wide types the emitter invents.
+    # Every name from a declaration takes that declaration's own
+    # module instead (M-module-namespace's whole change here).
+    module = source.module_of(s.name)
+    # The author's functions, plus exactly the library functions they
+    # reach — computed BEFORE the type walk, because the types a
+    # pruned function mentions are not reachable either: unfiltered,
+    # read_file -> str? put two option structs and eight per-type
+    # functions into every translation unit in the language.
+    shown = shown_fused(p, s)
+    walked = reach_of(p, c, target: target, shown: shown)
+    reached: {i64: bool} @ walked.reached
+    constructed: {i64: bool} @ walked.constructed
     names: emit_ctype.Names @ emit_ctype.new_names(s, decls)
-    names @ emit_ctype.with_options(names, module: module, c: c)
-    names @ emit_ctype.with_functions(names, module: module, c: c, p: p)
+    names @ emit_ctype.with_options(names, c: c, s: s, decls: decls)
+    names @ emit_ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     # `module`, not `stem_of` — the sanitised name, which is the one the
     # compiler actually WRITES on disk (`build/<key>/whileloop.c`). The
     # comment above already said the root module names the generated .c

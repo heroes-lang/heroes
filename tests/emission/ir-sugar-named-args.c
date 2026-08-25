@@ -63,31 +63,31 @@ typedef struct h_sugarnamedargs_Point {
     int64_t f_y;
 } h_sugarnamedargs_Point;
 
-typedef struct h_sugarnamedargs_0opt0 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_sugarnamedargs_0opt0;
+} h_0opt_f87774a;
 
-typedef struct h_sugarnamedargs_0opt1 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_sugarnamedargs_0opt1;
+} h_0opt_a8ea2;
 
 bool h_sugarnamedargs_Point_eq(const h_sugarnamedargs_Point *a, const h_sugarnamedargs_Point *b);
 uint64_t h_sugarnamedargs_Point_hash(const void *elem);
-void h_sugarnamedargs_0opt0_retain(const h_sugarnamedargs_0opt0 *v);
-void h_sugarnamedargs_0opt0_release(h_sugarnamedargs_0opt0 *v);
-bool h_sugarnamedargs_0opt0_eq(const h_sugarnamedargs_0opt0 *a, const h_sugarnamedargs_0opt0 *b);
-uint64_t h_sugarnamedargs_0opt0_hash(const void *elem);
-void h_sugarnamedargs_0opt1_retain(const h_sugarnamedargs_0opt1 *v);
-void h_sugarnamedargs_0opt1_release(h_sugarnamedargs_0opt1 *v);
-bool h_sugarnamedargs_0opt1_eq(const h_sugarnamedargs_0opt1 *a, const h_sugarnamedargs_0opt1 *b);
-uint64_t h_sugarnamedargs_0opt1_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 h_sugarnamedargs_Point h_sugarnamedargs_moved(h_sugarnamedargs_Point h0_p, int64_t h1_by);
 int64_t h_sugarnamedargs_copy_between(int64_t h0_from, int64_t h1_to);
@@ -179,7 +179,7 @@ uint64_t h_sugarnamedargs_Point_hash(const void *elem) {
     return h;
 }
 
-void h_sugarnamedargs_0opt0_retain(const h_sugarnamedargs_0opt0 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -187,7 +187,7 @@ void h_sugarnamedargs_0opt0_retain(const h_sugarnamedargs_0opt0 *v) {
     }
 }
 
-void h_sugarnamedargs_0opt0_release(h_sugarnamedargs_0opt0 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -195,14 +195,14 @@ void h_sugarnamedargs_0opt0_release(h_sugarnamedargs_0opt0 *v) {
     }
 }
 
-bool h_sugarnamedargs_0opt0_eq(const h_sugarnamedargs_0opt0 *a, const h_sugarnamedargs_0opt0 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sugarnamedargs_0opt0_hash(const void *elem) {
-    const h_sugarnamedargs_0opt0 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -211,7 +211,7 @@ uint64_t h_sugarnamedargs_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sugarnamedargs_0opt1_retain(const h_sugarnamedargs_0opt1 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -219,7 +219,7 @@ void h_sugarnamedargs_0opt1_retain(const h_sugarnamedargs_0opt1 *v) {
     }
 }
 
-void h_sugarnamedargs_0opt1_release(h_sugarnamedargs_0opt1 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -227,14 +227,14 @@ void h_sugarnamedargs_0opt1_release(h_sugarnamedargs_0opt1 *v) {
     }
 }
 
-bool h_sugarnamedargs_0opt1_eq(const h_sugarnamedargs_0opt1 *a, const h_sugarnamedargs_0opt1 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_sugarnamedargs_0opt1_hash(const void *elem) {
-    const h_sugarnamedargs_0opt1 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

@@ -73,69 +73,69 @@ HERO_STR_STATIC(hero_str_5, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_6, "not_text");
 HERO_STR_STATIC(hero_str_7, "the bytes behind this `cstr` are not UTF-8");
 
-typedef struct h_ffireadbackacstr_0opt0 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_ffireadbackacstr_0opt0;
+} h_0opt_f87774a;
 
-typedef struct h_ffireadbackacstr_0opt1 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_ffireadbackacstr_0opt1;
+} h_0opt_a8ea2;
 
-void h_ffireadbackacstr_0opt0_retain(const h_ffireadbackacstr_0opt0 *v);
-void h_ffireadbackacstr_0opt0_release(h_ffireadbackacstr_0opt0 *v);
-bool h_ffireadbackacstr_0opt0_eq(const h_ffireadbackacstr_0opt0 *a, const h_ffireadbackacstr_0opt0 *b);
-uint64_t h_ffireadbackacstr_0opt0_hash(const void *elem);
-void h_ffireadbackacstr_0opt1_retain(const h_ffireadbackacstr_0opt1 *v);
-void h_ffireadbackacstr_0opt1_release(h_ffireadbackacstr_0opt1 *v);
-bool h_ffireadbackacstr_0opt1_eq(const h_ffireadbackacstr_0opt1 *a, const h_ffireadbackacstr_0opt1 *b);
-uint64_t h_ffireadbackacstr_0opt1_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffireadbackacstr_main(void);
 int64_t h_library_HERO_STR_OK(void);
-h_ffireadbackacstr_0opt0 h_library_validated(const char * h0_c);
+h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
 void h_ffireadbackacstr_main(void) {
 #line 107 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0 h0_f0 = {0};
+    h_0opt_f87774a h0_f0 = {0};
     HeroStr h1_first = {0};
-    h_ffireadbackacstr_0opt0 h2_f1 = {0};
+    h_0opt_f87774a h2_f1 = {0};
     HeroStr h3_second = {0};
     const char * h4_absent;
-    h_ffireadbackacstr_0opt0 h5_s0 = {0};
+    h_0opt_f87774a h5_s0 = {0};
     HeroStr h6_text = {0};
     HeroFailure h7_e = {0};
-    h_ffireadbackacstr_0opt0 h8_own8 = {0};
-    h_ffireadbackacstr_0opt0 h9_own9 = {0};
-    h_ffireadbackacstr_0opt0 h10_own10 = {0};
+    h_0opt_f87774a h8_own8 = {0};
+    h_0opt_f87774a h9_own9 = {0};
+    h_0opt_f87774a h10_own10 = {0};
     int32_t t1;
     const char * t2;
-    h_ffireadbackacstr_0opt0 t3 = {0};
-    h_ffireadbackacstr_0opt0 t4 = {0};
+    h_0opt_f87774a t3 = {0};
+    h_0opt_f87774a t4 = {0};
     int64_t t5;
     int64_t t6;
     bool t7;
-    h_ffireadbackacstr_0opt0 t8 = {0};
+    h_0opt_f87774a t8 = {0};
     HeroFailure t9 = {0};
-    h_ffireadbackacstr_0opt0 t10 = {0};
+    h_0opt_f87774a t10 = {0};
     HeroStr t11 = {0};
     int32_t t12;
     const char * t13;
-    h_ffireadbackacstr_0opt0 t14 = {0};
-    h_ffireadbackacstr_0opt0 t15 = {0};
+    h_0opt_f87774a t14 = {0};
+    h_0opt_f87774a t15 = {0};
     int64_t t16;
     int64_t t17;
     bool t18;
-    h_ffireadbackacstr_0opt0 t19 = {0};
+    h_0opt_f87774a t19 = {0};
     HeroFailure t20 = {0};
-    h_ffireadbackacstr_0opt0 t21 = {0};
+    h_0opt_f87774a t21 = {0};
     HeroStr t22 = {0};
     HeroStr t23 = {0};
     HeroStr t24 = {0};
@@ -148,37 +148,37 @@ void h_ffireadbackacstr_main(void) {
     const char * t31;
     const char * t32;
     const char * t33;
-    h_ffireadbackacstr_0opt0 t34 = {0};
-    h_ffireadbackacstr_0opt0 t35 = {0};
+    h_0opt_f87774a t34 = {0};
+    h_0opt_f87774a t35 = {0};
     int64_t t36;
-    h_ffireadbackacstr_0opt0 t37 = {0};
+    h_0opt_f87774a t37 = {0};
     HeroStr t38 = {0};
     HeroStr t39 = {0};
-    h_ffireadbackacstr_0opt0 t40 = {0};
+    h_0opt_f87774a t40 = {0};
     HeroFailure t41 = {0};
     HeroStr t42 = {0};
     HeroFailure t43 = {0};
     HeroStr t44 = {0};
-    h_ffireadbackacstr_0opt0 t45 = {0};
-    h_ffireadbackacstr_0opt0 t46 = {0};
+    h_0opt_f87774a t45 = {0};
+    h_0opt_f87774a t46 = {0};
     HeroStr t47 = {0};
-    h_ffireadbackacstr_0opt0 t48 = {0};
-    h_ffireadbackacstr_0opt0 t49 = {0};
+    h_0opt_f87774a t48 = {0};
+    h_0opt_f87774a t49 = {0};
     HeroStr t50 = {0};
-    h_ffireadbackacstr_0opt0 t51 = {0};
-    h_ffireadbackacstr_0opt0 t52 = {0};
+    h_0opt_f87774a t51 = {0};
+    h_0opt_f87774a t52 = {0};
     HeroStr t53 = {0};
     HeroFailure t54 = {0};
-    h_ffireadbackacstr_0opt0 t55 = {0};
+    h_0opt_f87774a t55 = {0};
     HeroStr t56 = {0};
-    h_ffireadbackacstr_0opt0 t57 = {0};
+    h_0opt_f87774a t57 = {0};
     HeroStr t58 = {0};
-    h_ffireadbackacstr_0opt0 t59 = {0};
+    h_0opt_f87774a t59 = {0};
     HeroStr t60 = {0};
     HeroFailure t61 = {0};
-    h_ffireadbackacstr_0opt0 t62 = {0};
-    h_ffireadbackacstr_0opt0 t63 = {0};
-    h_ffireadbackacstr_0opt0 t64 = {0};
+    h_0opt_f87774a t62 = {0};
+    h_0opt_f87774a t63 = {0};
+    h_0opt_f87774a t64 = {0};
     goto bb0;
 bb0:
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -192,15 +192,15 @@ bb0:
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h8_own8 = t3;
 #line 195 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t45);
+    h_0opt_f87774a_release(&t45);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t46 = h0_f0;
 #line 199 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_retain(&t3);
+    h_0opt_f87774a_retain(&t3);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h0_f0 = t3;
 #line 203 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t46);
+    h_0opt_f87774a_release(&t46);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t4 = h0_f0;
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -236,15 +236,15 @@ bb1:
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h9_own9 = t14;
 #line 239 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t48);
+    h_0opt_f87774a_release(&t48);
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t49 = h2_f1;
 #line 243 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_retain(&t14);
+    h_0opt_f87774a_retain(&t14);
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h2_f1 = t14;
 #line 247 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t49);
+    h_0opt_f87774a_release(&t49);
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t15 = h2_f1;
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -316,15 +316,15 @@ bb3:
 #line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h10_own10 = t34;
 #line 319 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t51);
+    h_0opt_f87774a_release(&t51);
 #line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t52 = h5_s0;
 #line 323 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_retain(&t34);
+    h_0opt_f87774a_retain(&t34);
 #line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
     h5_s0 = t34;
 #line 327 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t52);
+    h_0opt_f87774a_release(&t52);
 #line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t35 = h5_s0;
 #line 56 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -352,7 +352,7 @@ bb5:
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t55 = h0_f0;
 #line 355 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t55);
+    h_0opt_f87774a_release(&t55);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t56 = h1_first;
 #line 359 "ffireadbackacstr.c"
@@ -360,7 +360,7 @@ bb5:
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t57 = h2_f1;
 #line 363 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t57);
+    h_0opt_f87774a_release(&t57);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t58 = h3_second;
 #line 367 "ffireadbackacstr.c"
@@ -368,7 +368,7 @@ bb5:
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t59 = h5_s0;
 #line 371 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t59);
+    h_0opt_f87774a_release(&t59);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t60 = h6_text;
 #line 375 "ffireadbackacstr.c"
@@ -380,15 +380,15 @@ bb5:
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t62 = h8_own8;
 #line 383 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t62);
+    h_0opt_f87774a_release(&t62);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t63 = h9_own9;
 #line 387 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t63);
+    h_0opt_f87774a_release(&t63);
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t64 = h10_own10;
 #line 391 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t64);
+    h_0opt_f87774a_release(&t64);
     return;
 bb6:
 #line 57 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -449,20 +449,20 @@ int64_t h_library_HERO_STR_OK(void) {
 }
 
 #line 151 "<heroes library>"
-h_ffireadbackacstr_0opt0 h_library_validated(const char * h0_c) {
+h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 454 "ffireadbackacstr.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
-    h_ffireadbackacstr_0opt0 h4_own4 = {0};
-    h_ffireadbackacstr_0opt0 h5_own5 = {0};
-    h_ffireadbackacstr_0opt0 h6_own6 = {0};
+    h_0opt_f87774a h4_own4 = {0};
+    h_0opt_f87774a h5_own5 = {0};
+    h_0opt_f87774a h6_own6 = {0};
     const char * t1;
     const char * t2;
     bool t3;
     HeroStr t4 = {0};
     HeroStr t5 = {0};
-    h_ffireadbackacstr_0opt0 t6 = {0};
+    h_0opt_f87774a t6 = {0};
     int64_t t7;
     const char * t8;
     HeroStr t9 = {0};
@@ -470,30 +470,30 @@ h_ffireadbackacstr_0opt0 h_library_validated(const char * h0_c) {
     int64_t t11;
     bool t12;
     HeroStr t13 = {0};
-    h_ffireadbackacstr_0opt0 t14 = {0};
+    h_0opt_f87774a t14 = {0};
     HeroStr t15 = {0};
     HeroStr t16 = {0};
-    h_ffireadbackacstr_0opt0 t17 = {0};
+    h_0opt_f87774a t17 = {0};
     HeroStr t18 = {0};
     HeroStr t19 = {0};
-    h_ffireadbackacstr_0opt0 t20 = {0};
-    h_ffireadbackacstr_0opt0 t21 = {0};
-    h_ffireadbackacstr_0opt0 t22 = {0};
+    h_0opt_f87774a t20 = {0};
+    h_0opt_f87774a t21 = {0};
+    h_0opt_f87774a t22 = {0};
     HeroStr t23 = {0};
     HeroStr t24 = {0};
-    h_ffireadbackacstr_0opt0 t25 = {0};
-    h_ffireadbackacstr_0opt0 t26 = {0};
-    h_ffireadbackacstr_0opt0 t27 = {0};
+    h_0opt_f87774a t25 = {0};
+    h_0opt_f87774a t26 = {0};
+    h_0opt_f87774a t27 = {0};
     HeroStr t28 = {0};
     HeroStr t29 = {0};
-    h_ffireadbackacstr_0opt0 t30 = {0};
-    h_ffireadbackacstr_0opt0 t31 = {0};
-    h_ffireadbackacstr_0opt0 t32 = {0};
+    h_0opt_f87774a t30 = {0};
+    h_0opt_f87774a t31 = {0};
+    h_0opt_f87774a t32 = {0};
     HeroStr t33 = {0};
     HeroStr t34 = {0};
-    h_ffireadbackacstr_0opt0 t35 = {0};
-    h_ffireadbackacstr_0opt0 t36 = {0};
-    h_ffireadbackacstr_0opt0 t37 = {0};
+    h_0opt_f87774a t35 = {0};
+    h_0opt_f87774a t36 = {0};
+    h_0opt_f87774a t37 = {0};
     goto bb0;
 bb0:
 #line 152 "<heroes library>"
@@ -548,16 +548,16 @@ bb2:
 #line 549 "ffireadbackacstr.c"
     hero_str_incref(t5);
 #line 153 "<heroes library>"
-    t6 = (h_ffireadbackacstr_0opt0){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
+    t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
 #line 153 "<heroes library>"
     t20 = h4_own4;
 #line 153 "<heroes library>"
     h4_own4 = t6;
 #line 557 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t20);
+    h_0opt_f87774a_release(&t20);
 #line 153 "<heroes library>"
 #line 560 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_retain(&t6);
+    h_0opt_f87774a_retain(&t6);
 #line 153 "<heroes library>"
     t23 = h2_text;
 #line 564 "ffireadbackacstr.c"
@@ -569,15 +569,15 @@ bb2:
 #line 153 "<heroes library>"
     t25 = h4_own4;
 #line 572 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t25);
+    h_0opt_f87774a_release(&t25);
 #line 153 "<heroes library>"
     t26 = h5_own5;
 #line 576 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t26);
+    h_0opt_f87774a_release(&t26);
 #line 153 "<heroes library>"
     t27 = h6_own6;
 #line 580 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t27);
+    h_0opt_f87774a_release(&t27);
     return t6;
 bb3:
     goto bb1;
@@ -592,16 +592,16 @@ bb4:
 #line 593 "ffireadbackacstr.c"
     hero_str_incref(t16);
 #line 158 "<heroes library>"
-    t17 = (h_ffireadbackacstr_0opt0){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
+    t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
 #line 158 "<heroes library>"
     t21 = h5_own5;
 #line 158 "<heroes library>"
     h5_own5 = t17;
 #line 601 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t21);
+    h_0opt_f87774a_release(&t21);
 #line 158 "<heroes library>"
 #line 604 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_retain(&t17);
+    h_0opt_f87774a_retain(&t17);
 #line 158 "<heroes library>"
     t28 = h2_text;
 #line 608 "ffireadbackacstr.c"
@@ -613,15 +613,15 @@ bb4:
 #line 158 "<heroes library>"
     t30 = h4_own4;
 #line 616 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t30);
+    h_0opt_f87774a_release(&t30);
 #line 158 "<heroes library>"
     t31 = h5_own5;
 #line 620 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t31);
+    h_0opt_f87774a_release(&t31);
 #line 158 "<heroes library>"
     t32 = h6_own6;
 #line 624 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t32);
+    h_0opt_f87774a_release(&t32);
     return t17;
 bb5:
 #line 157 "<heroes library>"
@@ -629,16 +629,16 @@ bb5:
 #line 630 "ffireadbackacstr.c"
     hero_str_incref(t13);
 #line 157 "<heroes library>"
-    t14 = (h_ffireadbackacstr_0opt0){.tag = INT64_C(0), .as.ok = t13};
+    t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
 #line 157 "<heroes library>"
     t22 = h6_own6;
 #line 157 "<heroes library>"
     h6_own6 = t14;
 #line 638 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t22);
+    h_0opt_f87774a_release(&t22);
 #line 157 "<heroes library>"
 #line 641 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_retain(&t14);
+    h_0opt_f87774a_retain(&t14);
 #line 157 "<heroes library>"
     t33 = h2_text;
 #line 645 "ffireadbackacstr.c"
@@ -650,20 +650,20 @@ bb5:
 #line 157 "<heroes library>"
     t35 = h4_own4;
 #line 653 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t35);
+    h_0opt_f87774a_release(&t35);
 #line 157 "<heroes library>"
     t36 = h5_own5;
 #line 657 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t36);
+    h_0opt_f87774a_release(&t36);
 #line 157 "<heroes library>"
     t37 = h6_own6;
 #line 661 "ffireadbackacstr.c"
-    h_ffireadbackacstr_0opt0_release(&t37);
+    h_0opt_f87774a_release(&t37);
     return t14;
 bb6:
     goto bb4;
 }
-void h_ffireadbackacstr_0opt0_retain(const h_ffireadbackacstr_0opt0 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -671,7 +671,7 @@ void h_ffireadbackacstr_0opt0_retain(const h_ffireadbackacstr_0opt0 *v) {
     }
 }
 
-void h_ffireadbackacstr_0opt0_release(h_ffireadbackacstr_0opt0 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -679,14 +679,14 @@ void h_ffireadbackacstr_0opt0_release(h_ffireadbackacstr_0opt0 *v) {
     }
 }
 
-bool h_ffireadbackacstr_0opt0_eq(const h_ffireadbackacstr_0opt0 *a, const h_ffireadbackacstr_0opt0 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_ffireadbackacstr_0opt0_hash(const void *elem) {
-    const h_ffireadbackacstr_0opt0 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -695,7 +695,7 @@ uint64_t h_ffireadbackacstr_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_ffireadbackacstr_0opt1_retain(const h_ffireadbackacstr_0opt1 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -703,7 +703,7 @@ void h_ffireadbackacstr_0opt1_retain(const h_ffireadbackacstr_0opt1 *v) {
     }
 }
 
-void h_ffireadbackacstr_0opt1_release(h_ffireadbackacstr_0opt1 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -711,14 +711,14 @@ void h_ffireadbackacstr_0opt1_release(h_ffireadbackacstr_0opt1 *v) {
     }
 }
 
-bool h_ffireadbackacstr_0opt1_eq(const h_ffireadbackacstr_0opt1 *a, const h_ffireadbackacstr_0opt1 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_ffireadbackacstr_0opt1_hash(const void *elem) {
-    const h_ffireadbackacstr_0opt1 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

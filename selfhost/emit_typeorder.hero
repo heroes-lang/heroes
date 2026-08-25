@@ -149,8 +149,8 @@ test "cross-kind containment lands each typedef after what it holds"
     assert c.diagnostics.len() == 0
     low = ir_lower.lower(parsed.tree, out, c, s, parsed.decls)
     names: emit_ctype.Names @ emit_ctype.new_names(s, parsed.decls)
-    names @ emit_ctype.with_options(names, module: "t", c: c)
-    names @ emit_ctype.with_functions(names, module: "t", c: c, p: low.program)
+    names @ emit_ctype.with_options(names, c: c, s: s, decls: parsed.decls)
+    names @ emit_ctype.with_functions(names, c: c, s: s, decls: parsed.decls, p: low.program)
     w: emit_writer.Writer @ emit_writer.new_writer("t")
     definitions(@w, c, names, s, parsed.decls)
     got = emit_writer.finish(w)

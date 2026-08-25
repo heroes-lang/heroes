@@ -67,30 +67,30 @@ HERO_STR_STATIC(hero_str_5, "a");
 HERO_STR_STATIC(hero_str_6, "b");
 HERO_STR_STATIC(hero_str_7, "c");
 
-typedef HeroStr (*h_generics_0fn0)(int64_t);
-typedef struct h_generics_0opt0 {
+typedef HeroStr (*h_0fn_4a13fb08)(int64_t);
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_generics_0opt0;
+} h_0opt_f87774a;
 
-typedef struct h_generics_0opt1 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_generics_0opt1;
+} h_0opt_a8ea2;
 
-void h_generics_0opt0_retain(const h_generics_0opt0 *v);
-void h_generics_0opt0_release(h_generics_0opt0 *v);
-bool h_generics_0opt0_eq(const h_generics_0opt0 *a, const h_generics_0opt0 *b);
-uint64_t h_generics_0opt0_hash(const void *elem);
-void h_generics_0opt1_retain(const h_generics_0opt1 *v);
-void h_generics_0opt1_release(h_generics_0opt1 *v);
-bool h_generics_0opt1_eq(const h_generics_0opt1 *a, const h_generics_0opt1 *b);
-uint64_t h_generics_0opt1_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 HeroStr h_generics_label(int64_t h0_n);
 void h_generics_main(void);
@@ -98,7 +98,7 @@ HeroStr h_generics_first_1e58d9(HeroArrayHeader * h0_xs);
 int64_t h_generics_first_1b9a87(HeroArrayHeader * h0_xs);
 HeroStr h_generics_last_1e58d9(HeroArrayHeader * h0_xs);
 int64_t h_generics_last_1b9a87(HeroArrayHeader * h0_xs);
-HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0_xs, h_generics_0fn0 h1_f);
+HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f);
 HeroArrayHeader * h_generics_first_4ce7463f(HeroArrayHeader * h0_xs);
 
 #line 29 "tests/golden/run/generics.hero"
@@ -195,7 +195,7 @@ void h_generics_main(void) {
     int64_t t22;
     int64_t t23;
     HeroArrayHeader * t24 = {0};
-    h_generics_0fn0 t25;
+    h_0fn_4a13fb08 t25;
     HeroArrayHeader * t26 = {0};
     HeroStr t27 = {0};
     HeroStr t28 = {0};
@@ -768,7 +768,7 @@ bb0:
 #line 23 "tests/golden/run/generics.hero"
 /* convert<i64, str> */
 #line 23 "tests/golden/run/generics.hero"
-HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0_xs, h_generics_0fn0 h1_f) {
+HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
 #line 773 "generics.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
@@ -786,7 +786,7 @@ HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0_xs, h_generic
     HeroArrayHeader * t8 = {0};
     int64_t t9;
     int64_t t10;
-    h_generics_0fn0 t12;
+    h_0fn_4a13fb08 t12;
     int64_t t13;
     HeroStr t14 = {0};
     int64_t t16;
@@ -930,7 +930,7 @@ bb0:
     hero_array_incref(t3);
     return t3;
 }
-void h_generics_0opt0_retain(const h_generics_0opt0 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -938,7 +938,7 @@ void h_generics_0opt0_retain(const h_generics_0opt0 *v) {
     }
 }
 
-void h_generics_0opt0_release(h_generics_0opt0 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -946,14 +946,14 @@ void h_generics_0opt0_release(h_generics_0opt0 *v) {
     }
 }
 
-bool h_generics_0opt0_eq(const h_generics_0opt0 *a, const h_generics_0opt0 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_generics_0opt0_hash(const void *elem) {
-    const h_generics_0opt0 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -962,7 +962,7 @@ uint64_t h_generics_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_generics_0opt1_retain(const h_generics_0opt1 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -970,7 +970,7 @@ void h_generics_0opt1_retain(const h_generics_0opt1 *v) {
     }
 }
 
-void h_generics_0opt1_release(h_generics_0opt1 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -978,14 +978,14 @@ void h_generics_0opt1_release(h_generics_0opt1 *v) {
     }
 }
 
-bool h_generics_0opt1_eq(const h_generics_0opt1 *a, const h_generics_0opt1 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_generics_0opt1_hash(const void *elem) {
-    const h_generics_0opt1 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

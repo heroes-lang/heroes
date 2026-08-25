@@ -58,41 +58,41 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsamapkeythatisnotitself.c"
 #pragma clang diagnostic pop
 
-typedef struct h_fixedbugsamapkeythatisnotitself_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_fixedbugsamapkeythatisnotitself_0opt0;
+} h_0opt_e201354;
 
-typedef struct h_fixedbugsamapkeythatisnotitself_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugsamapkeythatisnotitself_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugsamapkeythatisnotitself_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugsamapkeythatisnotitself_0opt2;
+} h_0opt_a8ea2;
 
-void h_fixedbugsamapkeythatisnotitself_0opt0_retain(const h_fixedbugsamapkeythatisnotitself_0opt0 *v);
-void h_fixedbugsamapkeythatisnotitself_0opt0_release(h_fixedbugsamapkeythatisnotitself_0opt0 *v);
-bool h_fixedbugsamapkeythatisnotitself_0opt0_eq(const h_fixedbugsamapkeythatisnotitself_0opt0 *a, const h_fixedbugsamapkeythatisnotitself_0opt0 *b);
-uint64_t h_fixedbugsamapkeythatisnotitself_0opt0_hash(const void *elem);
-void h_fixedbugsamapkeythatisnotitself_0opt1_retain(const h_fixedbugsamapkeythatisnotitself_0opt1 *v);
-void h_fixedbugsamapkeythatisnotitself_0opt1_release(h_fixedbugsamapkeythatisnotitself_0opt1 *v);
-bool h_fixedbugsamapkeythatisnotitself_0opt1_eq(const h_fixedbugsamapkeythatisnotitself_0opt1 *a, const h_fixedbugsamapkeythatisnotitself_0opt1 *b);
-uint64_t h_fixedbugsamapkeythatisnotitself_0opt1_hash(const void *elem);
-void h_fixedbugsamapkeythatisnotitself_0opt2_retain(const h_fixedbugsamapkeythatisnotitself_0opt2 *v);
-void h_fixedbugsamapkeythatisnotitself_0opt2_release(h_fixedbugsamapkeythatisnotitself_0opt2 *v);
-bool h_fixedbugsamapkeythatisnotitself_0opt2_eq(const h_fixedbugsamapkeythatisnotitself_0opt2 *a, const h_fixedbugsamapkeythatisnotitself_0opt2 *b);
-uint64_t h_fixedbugsamapkeythatisnotitself_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsamapkeythatisnotitself_main(void);
 int64_t h_fixedbugsamapkeythatisnotitself_keyed_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs);
@@ -413,10 +413,10 @@ int64_t h_fixedbugsamapkeythatisnotitself_found_1ad16c(HeroArrayHeader * h0_ks, 
 #line 414 "fixedbugsamapkeythatisnotitself.c"
     HeroMapHeader * h3_m = {0};
     int64_t h4_i;
-    h_fixedbugsamapkeythatisnotitself_0opt0 h5_f0 = {0};
+    h_0opt_e201354 h5_f0 = {0};
     int64_t h6_r0;
     HeroMapHeader * h7_own7 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 h8_own8 = {0};
+    h_0opt_e201354 h8_own8 = {0};
     HeroMapHeader * t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -434,23 +434,23 @@ int64_t h_fixedbugsamapkeythatisnotitself_found_1ad16c(HeroArrayHeader * h0_ks, 
     int64_t t15;
     HeroMapHeader * t16 = {0};
     double t17;
-    h_fixedbugsamapkeythatisnotitself_0opt0 t18 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t19 = {0};
+    h_0opt_e201354 t18 = {0};
+    h_0opt_e201354 t19 = {0};
     int64_t t20;
     int64_t t21;
     bool t22;
-    h_fixedbugsamapkeythatisnotitself_0opt0 t23 = {0};
+    h_0opt_e201354 t23 = {0};
     int64_t t24;
     int64_t t25;
     int64_t t26;
     HeroMapHeader * t27 = {0};
     HeroMapHeader * t28 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t29 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t30 = {0};
+    h_0opt_e201354 t29 = {0};
+    h_0opt_e201354 t30 = {0};
     HeroMapHeader * t31 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t32 = {0};
+    h_0opt_e201354 t32 = {0};
     HeroMapHeader * t33 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t34 = {0};
+    h_0opt_e201354 t34 = {0};
     goto bb0;
 bb0:
 #line 40 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -526,7 +526,7 @@ bb3:
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       if (found == NULL) {
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-        t18 = (h_fixedbugsamapkeythatisnotitself_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       } else {
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -542,15 +542,15 @@ bb3:
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h8_own8 = t18;
 #line 545 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t29);
+    h_0opt_e201354_release(&t29);
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t30 = h5_f0;
 #line 549 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_retain(&t18);
+    h_0opt_e201354_retain(&t18);
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h5_f0 = t18;
 #line 553 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t30);
+    h_0opt_e201354_release(&t30);
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t19 = h5_f0;
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -590,7 +590,7 @@ bb6:
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t32 = h5_f0;
 #line 593 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t32);
+    h_0opt_e201354_release(&t32);
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t33 = h7_own7;
 #line 597 "fixedbugsamapkeythatisnotitself.c"
@@ -598,7 +598,7 @@ bb6:
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t34 = h8_own8;
 #line 601 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t34);
+    h_0opt_e201354_release(&t34);
     return t26;
 }
 
@@ -609,9 +609,9 @@ bool h_fixedbugsamapkeythatisnotitself_missing_1ad16c(HeroArrayHeader * h0_ks, H
 #line 610 "fixedbugsamapkeythatisnotitself.c"
     HeroMapHeader * h3_m = {0};
     int64_t h4_i;
-    h_fixedbugsamapkeythatisnotitself_0opt0 h5_f0 = {0};
+    h_0opt_e201354 h5_f0 = {0};
     HeroMapHeader * h6_own6 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 h7_own7 = {0};
+    h_0opt_e201354 h7_own7 = {0};
     HeroMapHeader * t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -629,19 +629,19 @@ bool h_fixedbugsamapkeythatisnotitself_missing_1ad16c(HeroArrayHeader * h0_ks, H
     int64_t t15;
     HeroMapHeader * t16 = {0};
     double t17;
-    h_fixedbugsamapkeythatisnotitself_0opt0 t18 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t19 = {0};
+    h_0opt_e201354 t18 = {0};
+    h_0opt_e201354 t19 = {0};
     int64_t t20;
     int64_t t21;
     bool t22;
     HeroMapHeader * t23 = {0};
     HeroMapHeader * t24 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t25 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t26 = {0};
+    h_0opt_e201354 t25 = {0};
+    h_0opt_e201354 t26 = {0};
     HeroMapHeader * t27 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t28 = {0};
+    h_0opt_e201354 t28 = {0};
     HeroMapHeader * t29 = {0};
-    h_fixedbugsamapkeythatisnotitself_0opt0 t30 = {0};
+    h_0opt_e201354 t30 = {0};
     goto bb0;
 bb0:
 #line 48 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -717,7 +717,7 @@ bb3:
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       if (found == NULL) {
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-        t18 = (h_fixedbugsamapkeythatisnotitself_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
       } else {
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -733,15 +733,15 @@ bb3:
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h7_own7 = t18;
 #line 736 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t25);
+    h_0opt_e201354_release(&t25);
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t26 = h5_f0;
 #line 740 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_retain(&t18);
+    h_0opt_e201354_retain(&t18);
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     h5_f0 = t18;
 #line 744 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t26);
+    h_0opt_e201354_release(&t26);
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t19 = h5_f0;
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -757,7 +757,7 @@ bb3:
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t28 = h5_f0;
 #line 760 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t28);
+    h_0opt_e201354_release(&t28);
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t29 = h6_own6;
 #line 764 "fixedbugsamapkeythatisnotitself.c"
@@ -765,7 +765,7 @@ bb3:
 #line 53 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t30 = h7_own7;
 #line 768 "fixedbugsamapkeythatisnotitself.c"
-    h_fixedbugsamapkeythatisnotitself_0opt0_release(&t30);
+    h_0opt_e201354_release(&t30);
     return t22;
 }
 
@@ -930,7 +930,7 @@ bb3:
     hero_map_decref(t33);
     return t25;
 }
-void h_fixedbugsamapkeythatisnotitself_0opt0_retain(const h_fixedbugsamapkeythatisnotitself_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -938,7 +938,7 @@ void h_fixedbugsamapkeythatisnotitself_0opt0_retain(const h_fixedbugsamapkeythat
     }
 }
 
-void h_fixedbugsamapkeythatisnotitself_0opt0_release(h_fixedbugsamapkeythatisnotitself_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -946,14 +946,14 @@ void h_fixedbugsamapkeythatisnotitself_0opt0_release(h_fixedbugsamapkeythatisnot
     }
 }
 
-bool h_fixedbugsamapkeythatisnotitself_0opt0_eq(const h_fixedbugsamapkeythatisnotitself_0opt0 *a, const h_fixedbugsamapkeythatisnotitself_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsamapkeythatisnotitself_0opt0_hash(const void *elem) {
-    const h_fixedbugsamapkeythatisnotitself_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -962,7 +962,7 @@ uint64_t h_fixedbugsamapkeythatisnotitself_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsamapkeythatisnotitself_0opt1_retain(const h_fixedbugsamapkeythatisnotitself_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -970,7 +970,7 @@ void h_fixedbugsamapkeythatisnotitself_0opt1_retain(const h_fixedbugsamapkeythat
     }
 }
 
-void h_fixedbugsamapkeythatisnotitself_0opt1_release(h_fixedbugsamapkeythatisnotitself_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -978,14 +978,14 @@ void h_fixedbugsamapkeythatisnotitself_0opt1_release(h_fixedbugsamapkeythatisnot
     }
 }
 
-bool h_fixedbugsamapkeythatisnotitself_0opt1_eq(const h_fixedbugsamapkeythatisnotitself_0opt1 *a, const h_fixedbugsamapkeythatisnotitself_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsamapkeythatisnotitself_0opt1_hash(const void *elem) {
-    const h_fixedbugsamapkeythatisnotitself_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -994,7 +994,7 @@ uint64_t h_fixedbugsamapkeythatisnotitself_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsamapkeythatisnotitself_0opt2_retain(const h_fixedbugsamapkeythatisnotitself_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1002,7 +1002,7 @@ void h_fixedbugsamapkeythatisnotitself_0opt2_retain(const h_fixedbugsamapkeythat
     }
 }
 
-void h_fixedbugsamapkeythatisnotitself_0opt2_release(h_fixedbugsamapkeythatisnotitself_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1010,14 +1010,14 @@ void h_fixedbugsamapkeythatisnotitself_0opt2_release(h_fixedbugsamapkeythatisnot
     }
 }
 
-bool h_fixedbugsamapkeythatisnotitself_0opt2_eq(const h_fixedbugsamapkeythatisnotitself_0opt2 *a, const h_fixedbugsamapkeythatisnotitself_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugsamapkeythatisnotitself_0opt2_hash(const void *elem) {
-    const h_fixedbugsamapkeythatisnotitself_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

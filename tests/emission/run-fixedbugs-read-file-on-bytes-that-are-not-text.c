@@ -90,29 +90,29 @@ HERO_STR_STATIC(hero_str_24, "could not read ");
 HERO_STR_STATIC(hero_str_25, "write_failed");
 HERO_STR_STATIC(hero_str_26, "could not write ");
 
-typedef struct h_fixedbugsreadfileonbytesthatarenottext_0opt0 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugsreadfileonbytesthatarenottext_0opt0;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugsreadfileonbytesthatarenottext_0opt1 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugsreadfileonbytesthatarenottext_0opt1;
+} h_0opt_a8ea2;
 
-void h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(const h_fixedbugsreadfileonbytesthatarenottext_0opt0 *v);
-void h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(h_fixedbugsreadfileonbytesthatarenottext_0opt0 *v);
-bool h_fixedbugsreadfileonbytesthatarenottext_0opt0_eq(const h_fixedbugsreadfileonbytesthatarenottext_0opt0 *a, const h_fixedbugsreadfileonbytesthatarenottext_0opt0 *b);
-uint64_t h_fixedbugsreadfileonbytesthatarenottext_0opt0_hash(const void *elem);
-void h_fixedbugsreadfileonbytesthatarenottext_0opt1_retain(const h_fixedbugsreadfileonbytesthatarenottext_0opt1 *v);
-void h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(h_fixedbugsreadfileonbytesthatarenottext_0opt1 *v);
-bool h_fixedbugsreadfileonbytesthatarenottext_0opt1_eq(const h_fixedbugsreadfileonbytesthatarenottext_0opt1 *a, const h_fixedbugsreadfileonbytesthatarenottext_0opt1 *b);
-uint64_t h_fixedbugsreadfileonbytesthatarenottext_0opt1_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void);
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(void);
@@ -120,8 +120,8 @@ bool h_fixedbugsreadfileonbytesthatarenottext_put_two_bad_bytes(HeroStr h0_path)
 void h_fixedbugsreadfileonbytesthatarenottext_main(void);
 int64_t h_library_HERO_OS_OK(void);
 int64_t h_library_HERO_OS_NOT_FOUND(void);
-h_fixedbugsreadfileonbytesthatarenottext_0opt0 h_library_read_file(HeroStr h0_path);
-h_fixedbugsreadfileonbytesthatarenottext_0opt1 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
+h_0opt_f87774a h_library_read_file(HeroStr h0_path);
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 36 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void) {
@@ -228,133 +228,133 @@ bb3:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 void h_fixedbugsreadfileonbytesthatarenottext_main(void) {
 #line 231 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h0_s0 = {0};
+    h_0opt_f87774a h0_s0 = {0};
     HeroStr h1_text = {0};
     HeroFailure h2_e = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 h3_s1 = {0};
+    h_0opt_a8ea2 h3_s1 = {0};
     HeroFailure h4_e = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h5_s2 = {0};
+    h_0opt_f87774a h5_s2 = {0};
     HeroStr h6_text = {0};
     HeroFailure h7_e = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h8_s3 = {0};
+    h_0opt_f87774a h8_s3 = {0};
     HeroFailure h9_e = {0};
     HeroStr h10_own10 = {0};
     HeroStr h11_own11 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h12_own12 = {0};
+    h_0opt_f87774a h12_own12 = {0};
     HeroStr h13_own13 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 h14_own14 = {0};
+    h_0opt_a8ea2 h14_own14 = {0};
     HeroStr h15_own15 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h16_own16 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h17_own17 = {0};
+    h_0opt_f87774a h16_own16 = {0};
+    h_0opt_f87774a h17_own17 = {0};
     HeroStr t1 = {0};
     bool t2;
     bool t3;
     HeroStr t4 = {0};
     HeroStr t5 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t6 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t7 = {0};
+    h_0opt_f87774a t6 = {0};
+    h_0opt_f87774a t7 = {0};
     int64_t t8;
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t9 = {0};
+    h_0opt_f87774a t9 = {0};
     HeroStr t10 = {0};
     HeroStr t11 = {0};
     HeroStr t12 = {0};
     int64_t t13;
     HeroStr t14 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t15 = {0};
+    h_0opt_f87774a t15 = {0};
     HeroFailure t16 = {0};
     HeroStr t17 = {0};
     HeroFailure t18 = {0};
     HeroStr t19 = {0};
     HeroStr t20 = {0};
     HeroStr t21 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t22 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t23 = {0};
+    h_0opt_a8ea2 t22 = {0};
+    h_0opt_a8ea2 t23 = {0};
     int64_t t24;
     HeroStr t25 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t26 = {0};
+    h_0opt_a8ea2 t26 = {0};
     HeroFailure t27 = {0};
     HeroStr t28 = {0};
     HeroFailure t29 = {0};
     HeroStr t30 = {0};
     HeroStr t31 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t32 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t33 = {0};
+    h_0opt_f87774a t32 = {0};
+    h_0opt_f87774a t33 = {0};
     int64_t t34;
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t35 = {0};
+    h_0opt_f87774a t35 = {0};
     HeroStr t36 = {0};
     HeroStr t37 = {0};
     HeroStr t38 = {0};
     int64_t t39;
     HeroStr t40 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t41 = {0};
+    h_0opt_f87774a t41 = {0};
     HeroFailure t42 = {0};
     HeroStr t43 = {0};
     HeroFailure t44 = {0};
     HeroStr t45 = {0};
     HeroStr t46 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t47 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t48 = {0};
+    h_0opt_f87774a t47 = {0};
+    h_0opt_f87774a t48 = {0};
     int64_t t49;
     HeroStr t50 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t51 = {0};
+    h_0opt_f87774a t51 = {0};
     HeroFailure t52 = {0};
     HeroStr t53 = {0};
     HeroFailure t54 = {0};
     HeroStr t55 = {0};
     HeroStr t56 = {0};
     HeroStr t57 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t58 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t59 = {0};
+    h_0opt_f87774a t58 = {0};
+    h_0opt_f87774a t59 = {0};
     HeroStr t60 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t61 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t62 = {0};
+    h_0opt_a8ea2 t61 = {0};
+    h_0opt_a8ea2 t62 = {0};
     HeroStr t63 = {0};
     HeroFailure t64 = {0};
     HeroStr t65 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t66 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t67 = {0};
+    h_0opt_f87774a t66 = {0};
+    h_0opt_f87774a t67 = {0};
     HeroFailure t68 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t69 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t70 = {0};
+    h_0opt_f87774a t69 = {0};
+    h_0opt_f87774a t70 = {0};
     HeroStr t71 = {0};
     HeroFailure t72 = {0};
     HeroFailure t73 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t74 = {0};
+    h_0opt_f87774a t74 = {0};
     HeroStr t75 = {0};
     HeroFailure t76 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t77 = {0};
+    h_0opt_a8ea2 t77 = {0};
     HeroFailure t78 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t79 = {0};
+    h_0opt_f87774a t79 = {0};
     HeroStr t80 = {0};
     HeroFailure t81 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t82 = {0};
+    h_0opt_f87774a t82 = {0};
     HeroFailure t83 = {0};
     HeroStr t84 = {0};
     HeroStr t85 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t86 = {0};
+    h_0opt_f87774a t86 = {0};
     HeroStr t87 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t88 = {0};
+    h_0opt_a8ea2 t88 = {0};
     HeroStr t89 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t90 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t91 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t92 = {0};
+    h_0opt_f87774a t90 = {0};
+    h_0opt_f87774a t91 = {0};
+    h_0opt_f87774a t92 = {0};
     HeroStr t93 = {0};
     HeroFailure t94 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t95 = {0};
+    h_0opt_a8ea2 t95 = {0};
     HeroFailure t96 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t97 = {0};
+    h_0opt_f87774a t97 = {0};
     HeroStr t98 = {0};
     HeroFailure t99 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t100 = {0};
+    h_0opt_f87774a t100 = {0};
     HeroFailure t101 = {0};
     HeroStr t102 = {0};
     HeroStr t103 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t104 = {0};
+    h_0opt_f87774a t104 = {0};
     HeroStr t105 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t106 = {0};
+    h_0opt_a8ea2 t106 = {0};
     HeroStr t107 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t108 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t109 = {0};
+    h_0opt_f87774a t108 = {0};
+    h_0opt_f87774a t109 = {0};
     goto bb0;
 bb0:
 #line 54 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -388,15 +388,15 @@ bb1:
 #line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h12_own12 = t6;
 #line 391 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t58);
+    h_0opt_f87774a_release(&t58);
 #line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t59 = h0_s0;
 #line 395 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(&t6);
+    h_0opt_f87774a_retain(&t6);
 #line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h0_s0 = t6;
 #line 399 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t59);
+    h_0opt_f87774a_release(&t59);
 #line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t7 = h0_s0;
 #line 61 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -422,7 +422,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t74 = h0_s0;
 #line 425 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t74);
+    h_0opt_f87774a_release(&t74);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t75 = h1_text;
 #line 429 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -434,7 +434,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t77 = h3_s1;
 #line 437 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t77);
+    h_0opt_a8ea2_release(&t77);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t78 = h4_e;
 #line 441 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -442,7 +442,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t79 = h5_s2;
 #line 445 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t79);
+    h_0opt_f87774a_release(&t79);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t80 = h6_text;
 #line 449 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -454,7 +454,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t82 = h8_s3;
 #line 457 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t82);
+    h_0opt_f87774a_release(&t82);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t83 = h9_e;
 #line 461 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -470,7 +470,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t86 = h12_own12;
 #line 473 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t86);
+    h_0opt_f87774a_release(&t86);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t87 = h13_own13;
 #line 477 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -478,7 +478,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t88 = h14_own14;
 #line 481 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t88);
+    h_0opt_a8ea2_release(&t88);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t89 = h15_own15;
 #line 485 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -486,11 +486,11 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t90 = h16_own16;
 #line 489 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t90);
+    h_0opt_f87774a_release(&t90);
 #line 55 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t91 = h17_own17;
 #line 493 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t91);
+    h_0opt_f87774a_release(&t91);
     return;
 bb3:
     goto bb1;
@@ -512,15 +512,15 @@ bb4:
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h14_own14 = t22;
 #line 515 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t61);
+    h_0opt_a8ea2_release(&t61);
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t62 = h3_s1;
 #line 519 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_retain(&t22);
+    h_0opt_a8ea2_retain(&t22);
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h3_s1 = t22;
 #line 523 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t62);
+    h_0opt_a8ea2_release(&t62);
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t23 = h3_s1;
 #line 66 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -612,15 +612,15 @@ bb7:
 #line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h16_own16 = t32;
 #line 615 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t66);
+    h_0opt_f87774a_release(&t66);
 #line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t67 = h5_s2;
 #line 619 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(&t32);
+    h_0opt_f87774a_retain(&t32);
 #line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h5_s2 = t32;
 #line 623 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t67);
+    h_0opt_f87774a_release(&t67);
 #line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t33 = h5_s2;
 #line 69 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -684,15 +684,15 @@ bb10:
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h17_own17 = t47;
 #line 687 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t69);
+    h_0opt_f87774a_release(&t69);
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t70 = h8_s3;
 #line 691 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(&t47);
+    h_0opt_f87774a_retain(&t47);
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     h8_s3 = t47;
 #line 695 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t70);
+    h_0opt_f87774a_release(&t70);
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t48 = h8_s3;
 #line 73 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -772,7 +772,7 @@ bb13:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t92 = h0_s0;
 #line 775 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t92);
+    h_0opt_f87774a_release(&t92);
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t93 = h1_text;
 #line 779 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -784,7 +784,7 @@ bb13:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t95 = h3_s1;
 #line 787 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t95);
+    h_0opt_a8ea2_release(&t95);
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t96 = h4_e;
 #line 791 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -792,7 +792,7 @@ bb13:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t97 = h5_s2;
 #line 795 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t97);
+    h_0opt_f87774a_release(&t97);
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t98 = h6_text;
 #line 799 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -804,7 +804,7 @@ bb13:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t100 = h8_s3;
 #line 807 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t100);
+    h_0opt_f87774a_release(&t100);
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t101 = h9_e;
 #line 811 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -820,7 +820,7 @@ bb13:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t104 = h12_own12;
 #line 823 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t104);
+    h_0opt_f87774a_release(&t104);
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t105 = h13_own13;
 #line 827 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -828,7 +828,7 @@ bb13:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t106 = h14_own14;
 #line 831 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t106);
+    h_0opt_a8ea2_release(&t106);
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t107 = h15_own15;
 #line 835 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -836,11 +836,11 @@ bb13:
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t108 = h16_own16;
 #line 839 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t108);
+    h_0opt_f87774a_release(&t108);
 #line 53 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
     t109 = h17_own17;
 #line 843 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t109);
+    h_0opt_f87774a_release(&t109);
     return;
 bb14:
 #line 74 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
@@ -895,16 +895,16 @@ int64_t h_library_HERO_OS_NOT_FOUND(void) {
 }
 
 #line 163 "<heroes library>"
-h_fixedbugsreadfileonbytesthatarenottext_0opt0 h_library_read_file(HeroStr h0_path) {
+h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 900 "fixedbugsreadfileonbytesthatarenottext.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h4_own4 = {0};
+    h_0opt_f87774a h4_own4 = {0};
     HeroStr h5_own5 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h6_own6 = {0};
+    h_0opt_f87774a h6_own6 = {0};
     HeroStr h7_own7 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 h8_own8 = {0};
+    h_0opt_f87774a h8_own8 = {0};
     int64_t t1;
     HeroStr t2 = {0};
     const char * t3;
@@ -913,7 +913,7 @@ h_fixedbugsreadfileonbytesthatarenottext_0opt0 h_library_read_file(HeroStr h0_pa
     int64_t t6;
     bool t7;
     HeroStr t8 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t9 = {0};
+    h_0opt_f87774a t9 = {0};
     int64_t t10;
     int64_t t11;
     bool t12;
@@ -921,40 +921,40 @@ h_fixedbugsreadfileonbytesthatarenottext_0opt0 h_library_read_file(HeroStr h0_pa
     HeroStr t14 = {0};
     HeroStr t15 = {0};
     HeroStr t16 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t17 = {0};
+    h_0opt_f87774a t17 = {0};
     HeroStr t18 = {0};
     HeroStr t19 = {0};
     HeroStr t20 = {0};
     HeroStr t21 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t22 = {0};
+    h_0opt_f87774a t22 = {0};
     HeroStr t23 = {0};
     HeroStr t24 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t25 = {0};
+    h_0opt_f87774a t25 = {0};
     HeroStr t26 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t27 = {0};
+    h_0opt_f87774a t27 = {0};
     HeroStr t28 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t29 = {0};
+    h_0opt_f87774a t29 = {0};
     HeroStr t30 = {0};
     HeroStr t31 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t32 = {0};
+    h_0opt_f87774a t32 = {0};
     HeroStr t33 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t34 = {0};
+    h_0opt_f87774a t34 = {0};
     HeroStr t35 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t36 = {0};
+    h_0opt_f87774a t36 = {0};
     HeroStr t37 = {0};
     HeroStr t38 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t39 = {0};
+    h_0opt_f87774a t39 = {0};
     HeroStr t40 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t41 = {0};
+    h_0opt_f87774a t41 = {0};
     HeroStr t42 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t43 = {0};
+    h_0opt_f87774a t43 = {0};
     HeroStr t44 = {0};
     HeroStr t45 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t46 = {0};
+    h_0opt_f87774a t46 = {0};
     HeroStr t47 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t48 = {0};
+    h_0opt_f87774a t48 = {0};
     HeroStr t49 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0 t50 = {0};
+    h_0opt_f87774a t50 = {0};
     goto bb0;
 bb0:
 #line 164 "<heroes library>"
@@ -1006,16 +1006,16 @@ bb2:
 #line 1007 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t8);
 #line 167 "<heroes library>"
-    t9 = (h_fixedbugsreadfileonbytesthatarenottext_0opt0){.tag = INT64_C(0), .as.ok = t8};
+    t9 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t8};
 #line 167 "<heroes library>"
     t25 = h4_own4;
 #line 167 "<heroes library>"
     h4_own4 = t9;
 #line 1015 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t25);
+    h_0opt_f87774a_release(&t25);
 #line 167 "<heroes library>"
 #line 1018 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(&t9);
+    h_0opt_f87774a_retain(&t9);
 #line 167 "<heroes library>"
     t30 = h2_text;
 #line 1022 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1027,7 +1027,7 @@ bb2:
 #line 167 "<heroes library>"
     t32 = h4_own4;
 #line 1030 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t32);
+    h_0opt_f87774a_release(&t32);
 #line 167 "<heroes library>"
     t33 = h5_own5;
 #line 1034 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1035,7 +1035,7 @@ bb2:
 #line 167 "<heroes library>"
     t34 = h6_own6;
 #line 1038 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t34);
+    h_0opt_f87774a_release(&t34);
 #line 167 "<heroes library>"
     t35 = h7_own7;
 #line 1042 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1043,7 +1043,7 @@ bb2:
 #line 167 "<heroes library>"
     t36 = h8_own8;
 #line 1046 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t36);
+    h_0opt_f87774a_release(&t36);
     return t9;
 bb3:
     goto bb1;
@@ -1069,16 +1069,16 @@ bb4:
 #line 1070 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t21);
 #line 170 "<heroes library>"
-    t22 = (h_fixedbugsreadfileonbytesthatarenottext_0opt0){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
+    t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
 #line 170 "<heroes library>"
     t27 = h6_own6;
 #line 170 "<heroes library>"
     h6_own6 = t22;
 #line 1078 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t27);
+    h_0opt_f87774a_release(&t27);
 #line 170 "<heroes library>"
 #line 1081 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(&t22);
+    h_0opt_f87774a_retain(&t22);
 #line 170 "<heroes library>"
     t37 = h2_text;
 #line 1085 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1090,7 +1090,7 @@ bb4:
 #line 170 "<heroes library>"
     t39 = h4_own4;
 #line 1093 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t39);
+    h_0opt_f87774a_release(&t39);
 #line 170 "<heroes library>"
     t40 = h5_own5;
 #line 1097 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1098,7 +1098,7 @@ bb4:
 #line 170 "<heroes library>"
     t41 = h6_own6;
 #line 1101 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t41);
+    h_0opt_f87774a_release(&t41);
 #line 170 "<heroes library>"
     t42 = h7_own7;
 #line 1105 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1106,7 +1106,7 @@ bb4:
 #line 170 "<heroes library>"
     t43 = h8_own8;
 #line 1109 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t43);
+    h_0opt_f87774a_release(&t43);
     return t22;
 bb5:
 #line 169 "<heroes library>"
@@ -1130,16 +1130,16 @@ bb5:
 #line 1131 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t16);
 #line 169 "<heroes library>"
-    t17 = (h_fixedbugsreadfileonbytesthatarenottext_0opt0){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
+    t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
 #line 169 "<heroes library>"
     t29 = h8_own8;
 #line 169 "<heroes library>"
     h8_own8 = t17;
 #line 1139 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t29);
+    h_0opt_f87774a_release(&t29);
 #line 169 "<heroes library>"
 #line 1142 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(&t17);
+    h_0opt_f87774a_retain(&t17);
 #line 169 "<heroes library>"
     t44 = h2_text;
 #line 1146 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1151,7 +1151,7 @@ bb5:
 #line 169 "<heroes library>"
     t46 = h4_own4;
 #line 1154 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t46);
+    h_0opt_f87774a_release(&t46);
 #line 169 "<heroes library>"
     t47 = h5_own5;
 #line 1158 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1159,7 +1159,7 @@ bb5:
 #line 169 "<heroes library>"
     t48 = h6_own6;
 #line 1162 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t48);
+    h_0opt_f87774a_release(&t48);
 #line 169 "<heroes library>"
     t49 = h7_own7;
 #line 1166 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1167,39 +1167,39 @@ bb5:
 #line 169 "<heroes library>"
     t50 = h8_own8;
 #line 1170 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(&t50);
+    h_0opt_f87774a_release(&t50);
     return t17;
 bb6:
     goto bb4;
 }
 
 #line 173 "<heroes library>"
-h_fixedbugsreadfileonbytesthatarenottext_0opt1 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 1179 "fixedbugsreadfileonbytesthatarenottext.c"
     HeroStr h2_own2 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 h3_own3 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 h4_own4 = {0};
+    h_0opt_a8ea2 h3_own3 = {0};
+    h_0opt_a8ea2 h4_own4 = {0};
     HeroStr t1 = {0};
     const char * t2;
     HeroStr t3 = {0};
     int64_t t4;
     int64_t t5;
     bool t6;
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t7 = {0};
+    h_0opt_a8ea2 t7 = {0};
     HeroStr t8 = {0};
     HeroStr t9 = {0};
     HeroStr t10 = {0};
     HeroStr t11 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t12 = {0};
+    h_0opt_a8ea2 t12 = {0};
     HeroStr t13 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t14 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t15 = {0};
+    h_0opt_a8ea2 t14 = {0};
+    h_0opt_a8ea2 t15 = {0};
     HeroStr t16 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t17 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t18 = {0};
+    h_0opt_a8ea2 t17 = {0};
+    h_0opt_a8ea2 t18 = {0};
     HeroStr t19 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t20 = {0};
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1 t21 = {0};
+    h_0opt_a8ea2 t20 = {0};
+    h_0opt_a8ea2 t21 = {0};
     goto bb0;
 bb0:
 #line 174 "<heroes library>"
@@ -1239,16 +1239,16 @@ bb1:
 #line 1240 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t11);
 #line 176 "<heroes library>"
-    t12 = (h_fixedbugsreadfileonbytesthatarenottext_0opt1){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t11}};
+    t12 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t11}};
 #line 176 "<heroes library>"
     t14 = h3_own3;
 #line 176 "<heroes library>"
     h3_own3 = t12;
 #line 1248 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t14);
+    h_0opt_a8ea2_release(&t14);
 #line 176 "<heroes library>"
 #line 1251 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_retain(&t12);
+    h_0opt_a8ea2_retain(&t12);
 #line 176 "<heroes library>"
     t16 = h2_own2;
 #line 1255 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1256,24 +1256,24 @@ bb1:
 #line 176 "<heroes library>"
     t17 = h3_own3;
 #line 1259 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t17);
+    h_0opt_a8ea2_release(&t17);
 #line 176 "<heroes library>"
     t18 = h4_own4;
 #line 1263 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t18);
+    h_0opt_a8ea2_release(&t18);
     return t12;
 bb2:
 #line 175 "<heroes library>"
-    t7 = (h_fixedbugsreadfileonbytesthatarenottext_0opt1){.tag = INT64_C(0)};
+    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)};
 #line 175 "<heroes library>"
     t15 = h4_own4;
 #line 175 "<heroes library>"
     h4_own4 = t7;
 #line 1273 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t15);
+    h_0opt_a8ea2_release(&t15);
 #line 175 "<heroes library>"
 #line 1276 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_retain(&t7);
+    h_0opt_a8ea2_retain(&t7);
 #line 175 "<heroes library>"
     t19 = h2_own2;
 #line 1280 "fixedbugsreadfileonbytesthatarenottext.c"
@@ -1281,16 +1281,16 @@ bb2:
 #line 175 "<heroes library>"
     t20 = h3_own3;
 #line 1284 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t20);
+    h_0opt_a8ea2_release(&t20);
 #line 175 "<heroes library>"
     t21 = h4_own4;
 #line 1288 "fixedbugsreadfileonbytesthatarenottext.c"
-    h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(&t21);
+    h_0opt_a8ea2_release(&t21);
     return t7;
 bb3:
     goto bb1;
 }
-void h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(const h_fixedbugsreadfileonbytesthatarenottext_0opt0 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -1298,7 +1298,7 @@ void h_fixedbugsreadfileonbytesthatarenottext_0opt0_retain(const h_fixedbugsread
     }
 }
 
-void h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(h_fixedbugsreadfileonbytesthatarenottext_0opt0 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -1306,14 +1306,14 @@ void h_fixedbugsreadfileonbytesthatarenottext_0opt0_release(h_fixedbugsreadfileo
     }
 }
 
-bool h_fixedbugsreadfileonbytesthatarenottext_0opt0_eq(const h_fixedbugsreadfileonbytesthatarenottext_0opt0 *a, const h_fixedbugsreadfileonbytesthatarenottext_0opt0 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsreadfileonbytesthatarenottext_0opt0_hash(const void *elem) {
-    const h_fixedbugsreadfileonbytesthatarenottext_0opt0 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -1322,7 +1322,7 @@ uint64_t h_fixedbugsreadfileonbytesthatarenottext_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsreadfileonbytesthatarenottext_0opt1_retain(const h_fixedbugsreadfileonbytesthatarenottext_0opt1 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1330,7 +1330,7 @@ void h_fixedbugsreadfileonbytesthatarenottext_0opt1_retain(const h_fixedbugsread
     }
 }
 
-void h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(h_fixedbugsreadfileonbytesthatarenottext_0opt1 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1338,14 +1338,14 @@ void h_fixedbugsreadfileonbytesthatarenottext_0opt1_release(h_fixedbugsreadfileo
     }
 }
 
-bool h_fixedbugsreadfileonbytesthatarenottext_0opt1_eq(const h_fixedbugsreadfileonbytesthatarenottext_0opt1 *a, const h_fixedbugsreadfileonbytesthatarenottext_0opt1 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugsreadfileonbytesthatarenottext_0opt1_hash(const void *elem) {
-    const h_fixedbugsreadfileonbytesthatarenottext_0opt1 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

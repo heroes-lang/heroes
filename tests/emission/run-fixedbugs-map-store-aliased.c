@@ -61,41 +61,41 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 HERO_STR_STATIC(hero_str_0, "a");
 HERO_STR_STATIC(hero_str_1, "b");
 
-typedef struct h_fixedbugsmapstorealiased_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_fixedbugsmapstorealiased_0opt0;
+} h_0opt_e201354;
 
-typedef struct h_fixedbugsmapstorealiased_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugsmapstorealiased_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugsmapstorealiased_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugsmapstorealiased_0opt2;
+} h_0opt_a8ea2;
 
-void h_fixedbugsmapstorealiased_0opt0_retain(const h_fixedbugsmapstorealiased_0opt0 *v);
-void h_fixedbugsmapstorealiased_0opt0_release(h_fixedbugsmapstorealiased_0opt0 *v);
-bool h_fixedbugsmapstorealiased_0opt0_eq(const h_fixedbugsmapstorealiased_0opt0 *a, const h_fixedbugsmapstorealiased_0opt0 *b);
-uint64_t h_fixedbugsmapstorealiased_0opt0_hash(const void *elem);
-void h_fixedbugsmapstorealiased_0opt1_retain(const h_fixedbugsmapstorealiased_0opt1 *v);
-void h_fixedbugsmapstorealiased_0opt1_release(h_fixedbugsmapstorealiased_0opt1 *v);
-bool h_fixedbugsmapstorealiased_0opt1_eq(const h_fixedbugsmapstorealiased_0opt1 *a, const h_fixedbugsmapstorealiased_0opt1 *b);
-uint64_t h_fixedbugsmapstorealiased_0opt1_hash(const void *elem);
-void h_fixedbugsmapstorealiased_0opt2_retain(const h_fixedbugsmapstorealiased_0opt2 *v);
-void h_fixedbugsmapstorealiased_0opt2_release(h_fixedbugsmapstorealiased_0opt2 *v);
-bool h_fixedbugsmapstorealiased_0opt2_eq(const h_fixedbugsmapstorealiased_0opt2 *a, const h_fixedbugsmapstorealiased_0opt2 *b);
-uint64_t h_fixedbugsmapstorealiased_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsmapstorealiased_main(void);
 
@@ -104,10 +104,10 @@ void h_fixedbugsmapstorealiased_main(void) {
 #line 105 "fixedbugsmapstorealiased.c"
     HeroMapHeader * h0_m = {0};
     HeroMapHeader * h1_n = {0};
-    h_fixedbugsmapstorealiased_0opt0 h2_f0 = {0};
+    h_0opt_e201354 h2_f0 = {0};
     int64_t h3_r0;
     HeroMapHeader * h4_own4 = {0};
-    h_fixedbugsmapstorealiased_0opt0 h5_own5 = {0};
+    h_0opt_e201354 h5_own5 = {0};
     HeroMapHeader * t1 = {0};
     HeroStr t2 = {0};
     int64_t t3;
@@ -120,25 +120,25 @@ void h_fixedbugsmapstorealiased_main(void) {
     int64_t t10;
     HeroMapHeader * t11 = {0};
     HeroStr t12 = {0};
-    h_fixedbugsmapstorealiased_0opt0 t13 = {0};
-    h_fixedbugsmapstorealiased_0opt0 t14 = {0};
+    h_0opt_e201354 t13 = {0};
+    h_0opt_e201354 t14 = {0};
     int64_t t15;
     int64_t t16;
     bool t17;
-    h_fixedbugsmapstorealiased_0opt0 t18 = {0};
+    h_0opt_e201354 t18 = {0};
     int64_t t19;
     int64_t t20;
     int64_t t21;
     HeroMapHeader * t22 = {0};
     HeroMapHeader * t23 = {0};
     HeroMapHeader * t24 = {0};
-    h_fixedbugsmapstorealiased_0opt0 t25 = {0};
-    h_fixedbugsmapstorealiased_0opt0 t26 = {0};
+    h_0opt_e201354 t25 = {0};
+    h_0opt_e201354 t26 = {0};
     HeroMapHeader * t27 = {0};
     HeroMapHeader * t28 = {0};
-    h_fixedbugsmapstorealiased_0opt0 t29 = {0};
+    h_0opt_e201354 t29 = {0};
     HeroMapHeader * t30 = {0};
-    h_fixedbugsmapstorealiased_0opt0 t31 = {0};
+    h_0opt_e201354 t31 = {0};
     goto bb0;
 bb0:
 #line 26 "tests/golden/run/fixedbugs-map-store-aliased.hero"
@@ -206,7 +206,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
       if (found == NULL) {
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
-        t13 = (h_fixedbugsmapstorealiased_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
       } else {
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
@@ -222,15 +222,15 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h5_own5 = t13;
 #line 225 "fixedbugsmapstorealiased.c"
-    h_fixedbugsmapstorealiased_0opt0_release(&t25);
+    h_0opt_e201354_release(&t25);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t26 = h2_f0;
 #line 229 "fixedbugsmapstorealiased.c"
-    h_fixedbugsmapstorealiased_0opt0_retain(&t13);
+    h_0opt_e201354_retain(&t13);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h2_f0 = t13;
 #line 233 "fixedbugsmapstorealiased.c"
-    h_fixedbugsmapstorealiased_0opt0_release(&t26);
+    h_0opt_e201354_release(&t26);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t14 = h2_f0;
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
@@ -278,7 +278,7 @@ bb3:
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t29 = h2_f0;
 #line 281 "fixedbugsmapstorealiased.c"
-    h_fixedbugsmapstorealiased_0opt0_release(&t29);
+    h_0opt_e201354_release(&t29);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t30 = h4_own4;
 #line 285 "fixedbugsmapstorealiased.c"
@@ -286,10 +286,10 @@ bb3:
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t31 = h5_own5;
 #line 289 "fixedbugsmapstorealiased.c"
-    h_fixedbugsmapstorealiased_0opt0_release(&t31);
+    h_0opt_e201354_release(&t31);
     return;
 }
-void h_fixedbugsmapstorealiased_0opt0_retain(const h_fixedbugsmapstorealiased_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -297,7 +297,7 @@ void h_fixedbugsmapstorealiased_0opt0_retain(const h_fixedbugsmapstorealiased_0o
     }
 }
 
-void h_fixedbugsmapstorealiased_0opt0_release(h_fixedbugsmapstorealiased_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -305,14 +305,14 @@ void h_fixedbugsmapstorealiased_0opt0_release(h_fixedbugsmapstorealiased_0opt0 *
     }
 }
 
-bool h_fixedbugsmapstorealiased_0opt0_eq(const h_fixedbugsmapstorealiased_0opt0 *a, const h_fixedbugsmapstorealiased_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsmapstorealiased_0opt0_hash(const void *elem) {
-    const h_fixedbugsmapstorealiased_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -321,7 +321,7 @@ uint64_t h_fixedbugsmapstorealiased_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsmapstorealiased_0opt1_retain(const h_fixedbugsmapstorealiased_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -329,7 +329,7 @@ void h_fixedbugsmapstorealiased_0opt1_retain(const h_fixedbugsmapstorealiased_0o
     }
 }
 
-void h_fixedbugsmapstorealiased_0opt1_release(h_fixedbugsmapstorealiased_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -337,14 +337,14 @@ void h_fixedbugsmapstorealiased_0opt1_release(h_fixedbugsmapstorealiased_0opt1 *
     }
 }
 
-bool h_fixedbugsmapstorealiased_0opt1_eq(const h_fixedbugsmapstorealiased_0opt1 *a, const h_fixedbugsmapstorealiased_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsmapstorealiased_0opt1_hash(const void *elem) {
-    const h_fixedbugsmapstorealiased_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -353,7 +353,7 @@ uint64_t h_fixedbugsmapstorealiased_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsmapstorealiased_0opt2_retain(const h_fixedbugsmapstorealiased_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -361,7 +361,7 @@ void h_fixedbugsmapstorealiased_0opt2_retain(const h_fixedbugsmapstorealiased_0o
     }
 }
 
-void h_fixedbugsmapstorealiased_0opt2_release(h_fixedbugsmapstorealiased_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -369,14 +369,14 @@ void h_fixedbugsmapstorealiased_0opt2_release(h_fixedbugsmapstorealiased_0opt2 *
     }
 }
 
-bool h_fixedbugsmapstorealiased_0opt2_eq(const h_fixedbugsmapstorealiased_0opt2 *a, const h_fixedbugsmapstorealiased_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugsmapstorealiased_0opt2_hash(const void *elem) {
-    const h_fixedbugsmapstorealiased_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

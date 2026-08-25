@@ -60,41 +60,41 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 
 HERO_STR_STATIC(hero_str_0, "ada");
 
-typedef struct h_mapaccess_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_mapaccess_0opt0;
+} h_0opt_e201354;
 
-typedef struct h_mapaccess_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_mapaccess_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_mapaccess_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_mapaccess_0opt2;
+} h_0opt_a8ea2;
 
-void h_mapaccess_0opt0_retain(const h_mapaccess_0opt0 *v);
-void h_mapaccess_0opt0_release(h_mapaccess_0opt0 *v);
-bool h_mapaccess_0opt0_eq(const h_mapaccess_0opt0 *a, const h_mapaccess_0opt0 *b);
-uint64_t h_mapaccess_0opt0_hash(const void *elem);
-void h_mapaccess_0opt1_retain(const h_mapaccess_0opt1 *v);
-void h_mapaccess_0opt1_release(h_mapaccess_0opt1 *v);
-bool h_mapaccess_0opt1_eq(const h_mapaccess_0opt1 *a, const h_mapaccess_0opt1 *b);
-uint64_t h_mapaccess_0opt1_hash(const void *elem);
-void h_mapaccess_0opt2_retain(const h_mapaccess_0opt2 *v);
-void h_mapaccess_0opt2_release(h_mapaccess_0opt2 *v);
-bool h_mapaccess_0opt2_eq(const h_mapaccess_0opt2 *a, const h_mapaccess_0opt2 *b);
-uint64_t h_mapaccess_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name);
 int64_t h_mapaccess_first_of(HeroArrayHeader * h0_xs);
@@ -103,24 +103,24 @@ int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs);
 #line 5 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) {
 #line 106 "mapaccess.c"
-    h_mapaccess_0opt0 h2_f0 = {0};
+    h_0opt_e201354 h2_f0 = {0};
     int64_t h3_r0;
-    h_mapaccess_0opt0 h4_own4 = {0};
+    h_0opt_e201354 h4_own4 = {0};
     HeroMapHeader * t1 = {0};
     HeroStr t2 = {0};
-    h_mapaccess_0opt0 t3 = {0};
-    h_mapaccess_0opt0 t4 = {0};
+    h_0opt_e201354 t3 = {0};
+    h_0opt_e201354 t4 = {0};
     int64_t t5;
     int64_t t6;
     bool t7;
-    h_mapaccess_0opt0 t8 = {0};
+    h_0opt_e201354 t8 = {0};
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    h_mapaccess_0opt0 t12 = {0};
-    h_mapaccess_0opt0 t13 = {0};
-    h_mapaccess_0opt0 t14 = {0};
-    h_mapaccess_0opt0 t15 = {0};
+    h_0opt_e201354 t12 = {0};
+    h_0opt_e201354 t13 = {0};
+    h_0opt_e201354 t14 = {0};
+    h_0opt_e201354 t15 = {0};
     goto bb0;
 bb0:
 #line 6 "tests/golden/ir/map-access.hero"
@@ -134,7 +134,7 @@ bb0:
 #line 6 "tests/golden/ir/map-access.hero"
       if (found == NULL) {
 #line 6 "tests/golden/ir/map-access.hero"
-        t3 = (h_mapaccess_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 6 "tests/golden/ir/map-access.hero"
       } else {
 #line 6 "tests/golden/ir/map-access.hero"
@@ -150,15 +150,15 @@ bb0:
 #line 6 "tests/golden/ir/map-access.hero"
     h4_own4 = t3;
 #line 153 "mapaccess.c"
-    h_mapaccess_0opt0_release(&t12);
+    h_0opt_e201354_release(&t12);
 #line 6 "tests/golden/ir/map-access.hero"
     t13 = h2_f0;
 #line 157 "mapaccess.c"
-    h_mapaccess_0opt0_retain(&t3);
+    h_0opt_e201354_retain(&t3);
 #line 6 "tests/golden/ir/map-access.hero"
     h2_f0 = t3;
 #line 161 "mapaccess.c"
-    h_mapaccess_0opt0_release(&t13);
+    h_0opt_e201354_release(&t13);
 #line 6 "tests/golden/ir/map-access.hero"
     t4 = h2_f0;
 #line 6 "tests/golden/ir/map-access.hero"
@@ -194,11 +194,11 @@ bb3:
 #line 6 "tests/golden/ir/map-access.hero"
     t14 = h2_f0;
 #line 197 "mapaccess.c"
-    h_mapaccess_0opt0_release(&t14);
+    h_0opt_e201354_release(&t14);
 #line 6 "tests/golden/ir/map-access.hero"
     t15 = h4_own4;
 #line 201 "mapaccess.c"
-    h_mapaccess_0opt0_release(&t15);
+    h_0opt_e201354_release(&t15);
     return t11;
 }
 
@@ -248,7 +248,7 @@ bb0:
     return t6;
 #line 250 "mapaccess.c"
 }
-void h_mapaccess_0opt0_retain(const h_mapaccess_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -256,7 +256,7 @@ void h_mapaccess_0opt0_retain(const h_mapaccess_0opt0 *v) {
     }
 }
 
-void h_mapaccess_0opt0_release(h_mapaccess_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -264,14 +264,14 @@ void h_mapaccess_0opt0_release(h_mapaccess_0opt0 *v) {
     }
 }
 
-bool h_mapaccess_0opt0_eq(const h_mapaccess_0opt0 *a, const h_mapaccess_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_mapaccess_0opt0_hash(const void *elem) {
-    const h_mapaccess_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -280,7 +280,7 @@ uint64_t h_mapaccess_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_mapaccess_0opt1_retain(const h_mapaccess_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -288,7 +288,7 @@ void h_mapaccess_0opt1_retain(const h_mapaccess_0opt1 *v) {
     }
 }
 
-void h_mapaccess_0opt1_release(h_mapaccess_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -296,14 +296,14 @@ void h_mapaccess_0opt1_release(h_mapaccess_0opt1 *v) {
     }
 }
 
-bool h_mapaccess_0opt1_eq(const h_mapaccess_0opt1 *a, const h_mapaccess_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_mapaccess_0opt1_hash(const void *elem) {
-    const h_mapaccess_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -312,7 +312,7 @@ uint64_t h_mapaccess_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_mapaccess_0opt2_retain(const h_mapaccess_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -320,7 +320,7 @@ void h_mapaccess_0opt2_retain(const h_mapaccess_0opt2 *v) {
     }
 }
 
-void h_mapaccess_0opt2_release(h_mapaccess_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -328,14 +328,14 @@ void h_mapaccess_0opt2_release(h_mapaccess_0opt2 *v) {
     }
 }
 
-bool h_mapaccess_0opt2_eq(const h_mapaccess_0opt2 *a, const h_mapaccess_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_mapaccess_0opt2_hash(const void *elem) {
-    const h_mapaccess_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

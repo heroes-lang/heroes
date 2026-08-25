@@ -87,29 +87,29 @@ typedef struct h_closurelist_Shape {
     } as;
 } h_closurelist_Shape;
 
-typedef struct h_closurelist_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_closurelist_0opt0;
+} h_0opt_e201354;
 
-typedef HeroStr (*h_closurelist_0fn0)(int64_t);
-typedef struct h_closurelist_0opt1 {
+typedef HeroStr (*h_0fn_4a13fb08)(int64_t);
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_closurelist_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_closurelist_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_closurelist_0opt2;
+} h_0opt_a8ea2;
 
 bool h_closurelist_Point_eq(const h_closurelist_Point *a, const h_closurelist_Point *b);
 uint64_t h_closurelist_Point_hash(const void *elem);
@@ -117,26 +117,26 @@ bool h_closurelist_Shape_c_seg_eq(const h_closurelist_Shape_c_seg *a, const h_cl
 uint64_t h_closurelist_Shape_c_seg_hash(const void *elem);
 bool h_closurelist_Shape_eq(const h_closurelist_Shape *a, const h_closurelist_Shape *b);
 uint64_t h_closurelist_Shape_hash(const void *elem);
-void h_closurelist_0opt0_retain(const h_closurelist_0opt0 *v);
-void h_closurelist_0opt0_release(h_closurelist_0opt0 *v);
-bool h_closurelist_0opt0_eq(const h_closurelist_0opt0 *a, const h_closurelist_0opt0 *b);
-uint64_t h_closurelist_0opt0_hash(const void *elem);
-void h_closurelist_0opt1_retain(const h_closurelist_0opt1 *v);
-void h_closurelist_0opt1_release(h_closurelist_0opt1 *v);
-bool h_closurelist_0opt1_eq(const h_closurelist_0opt1 *a, const h_closurelist_0opt1 *b);
-uint64_t h_closurelist_0opt1_hash(const void *elem);
-void h_closurelist_0opt2_retain(const h_closurelist_0opt2 *v);
-void h_closurelist_0opt2_release(h_closurelist_0opt2 *v);
-bool h_closurelist_0opt2_eq(const h_closurelist_0opt2 *a, const h_closurelist_0opt2 *b);
-uint64_t h_closurelist_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_closurelist_area(h_closurelist_Shape h0_s);
 void h_closurelist_shift(h_closurelist_Point *ph0_p, int64_t h1_by);
-h_closurelist_0opt0 h_closurelist_halve(int64_t h0_n);
-h_closurelist_0opt0 h_closurelist_chain(int64_t h0_n);
+h_0opt_e201354 h_closurelist_halve(int64_t h0_n);
+h_0opt_e201354 h_closurelist_chain(int64_t h0_n);
 HeroStr h_closurelist_show(int64_t h0_n);
 void h_closurelist_main(void);
-HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_closurelist_0fn0 h1_f);
+HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f);
 
 #line 26 "tests/golden/run/closure-list.hero"
 int64_t h_closurelist_area(h_closurelist_Shape h0_s) {
@@ -245,10 +245,10 @@ bb0:
 }
 
 #line 34 "tests/golden/run/closure-list.hero"
-h_closurelist_0opt0 h_closurelist_halve(int64_t h0_n) {
+h_0opt_e201354 h_closurelist_halve(int64_t h0_n) {
 #line 250 "closurelist.c"
-    h_closurelist_0opt0 h1_own1 = {0};
-    h_closurelist_0opt0 h2_own2 = {0};
+    h_0opt_e201354 h1_own1 = {0};
+    h_0opt_e201354 h2_own2 = {0};
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -256,17 +256,17 @@ h_closurelist_0opt0 h_closurelist_halve(int64_t h0_n) {
     bool t5;
     HeroStr t6 = {0};
     HeroStr t7 = {0};
-    h_closurelist_0opt0 t8 = {0};
+    h_0opt_e201354 t8 = {0};
     int64_t t9;
     int64_t t10;
     int64_t t11;
-    h_closurelist_0opt0 t12 = {0};
-    h_closurelist_0opt0 t13 = {0};
-    h_closurelist_0opt0 t14 = {0};
-    h_closurelist_0opt0 t15 = {0};
-    h_closurelist_0opt0 t16 = {0};
-    h_closurelist_0opt0 t17 = {0};
-    h_closurelist_0opt0 t18 = {0};
+    h_0opt_e201354 t12 = {0};
+    h_0opt_e201354 t13 = {0};
+    h_0opt_e201354 t14 = {0};
+    h_0opt_e201354 t15 = {0};
+    h_0opt_e201354 t16 = {0};
+    h_0opt_e201354 t17 = {0};
+    h_0opt_e201354 t18 = {0};
     goto bb0;
 bb0:
 #line 35 "tests/golden/run/closure-list.hero"
@@ -298,24 +298,24 @@ bb1:
 #line 37 "tests/golden/run/closure-list.hero"
     t11 = t9 / t10;
 #line 37 "tests/golden/run/closure-list.hero"
-    t12 = (h_closurelist_0opt0){.tag = INT64_C(0), .as.ok = t11};
+    t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11};
 #line 37 "tests/golden/run/closure-list.hero"
     t13 = h1_own1;
 #line 37 "tests/golden/run/closure-list.hero"
     h1_own1 = t12;
 #line 307 "closurelist.c"
-    h_closurelist_0opt0_release(&t13);
+    h_0opt_e201354_release(&t13);
 #line 37 "tests/golden/run/closure-list.hero"
 #line 310 "closurelist.c"
-    h_closurelist_0opt0_retain(&t12);
+    h_0opt_e201354_retain(&t12);
 #line 37 "tests/golden/run/closure-list.hero"
     t15 = h1_own1;
 #line 314 "closurelist.c"
-    h_closurelist_0opt0_release(&t15);
+    h_0opt_e201354_release(&t15);
 #line 37 "tests/golden/run/closure-list.hero"
     t16 = h2_own2;
 #line 318 "closurelist.c"
-    h_closurelist_0opt0_release(&t16);
+    h_0opt_e201354_release(&t16);
     return t12;
 bb2:
 #line 36 "tests/golden/run/closure-list.hero"
@@ -328,64 +328,64 @@ bb2:
 #line 329 "closurelist.c"
     hero_str_incref(t7);
 #line 36 "tests/golden/run/closure-list.hero"
-    t8 = (h_closurelist_0opt0){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
+    t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
 #line 36 "tests/golden/run/closure-list.hero"
     t14 = h2_own2;
 #line 36 "tests/golden/run/closure-list.hero"
     h2_own2 = t8;
 #line 337 "closurelist.c"
-    h_closurelist_0opt0_release(&t14);
+    h_0opt_e201354_release(&t14);
 #line 36 "tests/golden/run/closure-list.hero"
 #line 340 "closurelist.c"
-    h_closurelist_0opt0_retain(&t8);
+    h_0opt_e201354_retain(&t8);
 #line 36 "tests/golden/run/closure-list.hero"
     t17 = h1_own1;
 #line 344 "closurelist.c"
-    h_closurelist_0opt0_release(&t17);
+    h_0opt_e201354_release(&t17);
 #line 36 "tests/golden/run/closure-list.hero"
     t18 = h2_own2;
 #line 348 "closurelist.c"
-    h_closurelist_0opt0_release(&t18);
+    h_0opt_e201354_release(&t18);
     return t8;
 bb3:
     goto bb1;
 }
 
 #line 39 "tests/golden/run/closure-list.hero"
-h_closurelist_0opt0 h_closurelist_chain(int64_t h0_n) {
+h_0opt_e201354 h_closurelist_chain(int64_t h0_n) {
 #line 357 "closurelist.c"
-    h_closurelist_0opt0 h1_f0 = {0};
+    h_0opt_e201354 h1_f0 = {0};
     int64_t h2_v;
-    h_closurelist_0opt0 h3_own3 = {0};
-    h_closurelist_0opt0 h4_own4 = {0};
-    h_closurelist_0opt0 h5_own5 = {0};
+    h_0opt_e201354 h3_own3 = {0};
+    h_0opt_e201354 h4_own4 = {0};
+    h_0opt_e201354 h5_own5 = {0};
     int64_t t1;
-    h_closurelist_0opt0 t2 = {0};
-    h_closurelist_0opt0 t3 = {0};
+    h_0opt_e201354 t2 = {0};
+    h_0opt_e201354 t3 = {0};
     int64_t t4;
     int64_t t5;
     bool t6;
-    h_closurelist_0opt0 t7 = {0};
+    h_0opt_e201354 t7 = {0};
     HeroFailure t8 = {0};
-    h_closurelist_0opt0 t9 = {0};
-    h_closurelist_0opt0 t10 = {0};
+    h_0opt_e201354 t9 = {0};
+    h_0opt_e201354 t10 = {0};
     int64_t t11;
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    h_closurelist_0opt0 t15 = {0};
-    h_closurelist_0opt0 t16 = {0};
-    h_closurelist_0opt0 t17 = {0};
-    h_closurelist_0opt0 t18 = {0};
-    h_closurelist_0opt0 t19 = {0};
-    h_closurelist_0opt0 t20 = {0};
-    h_closurelist_0opt0 t21 = {0};
-    h_closurelist_0opt0 t22 = {0};
-    h_closurelist_0opt0 t23 = {0};
-    h_closurelist_0opt0 t24 = {0};
-    h_closurelist_0opt0 t25 = {0};
-    h_closurelist_0opt0 t26 = {0};
-    h_closurelist_0opt0 t27 = {0};
+    h_0opt_e201354 t15 = {0};
+    h_0opt_e201354 t16 = {0};
+    h_0opt_e201354 t17 = {0};
+    h_0opt_e201354 t18 = {0};
+    h_0opt_e201354 t19 = {0};
+    h_0opt_e201354 t20 = {0};
+    h_0opt_e201354 t21 = {0};
+    h_0opt_e201354 t22 = {0};
+    h_0opt_e201354 t23 = {0};
+    h_0opt_e201354 t24 = {0};
+    h_0opt_e201354 t25 = {0};
+    h_0opt_e201354 t26 = {0};
+    h_0opt_e201354 t27 = {0};
     goto bb0;
 bb0:
 #line 40 "tests/golden/run/closure-list.hero"
@@ -397,15 +397,15 @@ bb0:
 #line 40 "tests/golden/run/closure-list.hero"
     h3_own3 = t2;
 #line 400 "closurelist.c"
-    h_closurelist_0opt0_release(&t16);
+    h_0opt_e201354_release(&t16);
 #line 40 "tests/golden/run/closure-list.hero"
     t17 = h1_f0;
 #line 404 "closurelist.c"
-    h_closurelist_0opt0_retain(&t2);
+    h_0opt_e201354_retain(&t2);
 #line 40 "tests/golden/run/closure-list.hero"
     h1_f0 = t2;
 #line 408 "closurelist.c"
-    h_closurelist_0opt0_release(&t17);
+    h_0opt_e201354_release(&t17);
 #line 40 "tests/golden/run/closure-list.hero"
     t3 = h1_f0;
 #line 40 "tests/golden/run/closure-list.hero"
@@ -431,32 +431,32 @@ bb1:
 #line 41 "tests/golden/run/closure-list.hero"
     if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
 #line 41 "tests/golden/run/closure-list.hero"
-    t15 = (h_closurelist_0opt0){.tag = INT64_C(0), .as.ok = t14};
+    t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t14};
 #line 41 "tests/golden/run/closure-list.hero"
     t18 = h4_own4;
 #line 41 "tests/golden/run/closure-list.hero"
     h4_own4 = t15;
 #line 440 "closurelist.c"
-    h_closurelist_0opt0_release(&t18);
+    h_0opt_e201354_release(&t18);
 #line 41 "tests/golden/run/closure-list.hero"
 #line 443 "closurelist.c"
-    h_closurelist_0opt0_retain(&t15);
+    h_0opt_e201354_retain(&t15);
 #line 41 "tests/golden/run/closure-list.hero"
     t20 = h1_f0;
 #line 447 "closurelist.c"
-    h_closurelist_0opt0_release(&t20);
+    h_0opt_e201354_release(&t20);
 #line 41 "tests/golden/run/closure-list.hero"
     t21 = h3_own3;
 #line 451 "closurelist.c"
-    h_closurelist_0opt0_release(&t21);
+    h_0opt_e201354_release(&t21);
 #line 41 "tests/golden/run/closure-list.hero"
     t22 = h4_own4;
 #line 455 "closurelist.c"
-    h_closurelist_0opt0_release(&t22);
+    h_0opt_e201354_release(&t22);
 #line 41 "tests/golden/run/closure-list.hero"
     t23 = h5_own5;
 #line 459 "closurelist.c"
-    h_closurelist_0opt0_release(&t23);
+    h_0opt_e201354_release(&t23);
     return t15;
 bb2:
 #line 40 "tests/golden/run/closure-list.hero"
@@ -466,32 +466,32 @@ bb2:
 #line 467 "closurelist.c"
     hero_failure_retain(&t8);
 #line 40 "tests/golden/run/closure-list.hero"
-    t9 = (h_closurelist_0opt0){.tag = INT64_C(1), .as.err = t8};
+    t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
 #line 40 "tests/golden/run/closure-list.hero"
     t19 = h5_own5;
 #line 40 "tests/golden/run/closure-list.hero"
     h5_own5 = t9;
 #line 475 "closurelist.c"
-    h_closurelist_0opt0_release(&t19);
+    h_0opt_e201354_release(&t19);
 #line 40 "tests/golden/run/closure-list.hero"
 #line 478 "closurelist.c"
-    h_closurelist_0opt0_retain(&t9);
+    h_0opt_e201354_retain(&t9);
 #line 40 "tests/golden/run/closure-list.hero"
     t24 = h1_f0;
 #line 482 "closurelist.c"
-    h_closurelist_0opt0_release(&t24);
+    h_0opt_e201354_release(&t24);
 #line 40 "tests/golden/run/closure-list.hero"
     t25 = h3_own3;
 #line 486 "closurelist.c"
-    h_closurelist_0opt0_release(&t25);
+    h_0opt_e201354_release(&t25);
 #line 40 "tests/golden/run/closure-list.hero"
     t26 = h4_own4;
 #line 490 "closurelist.c"
-    h_closurelist_0opt0_release(&t26);
+    h_0opt_e201354_release(&t26);
 #line 40 "tests/golden/run/closure-list.hero"
     t27 = h5_own5;
 #line 494 "closurelist.c"
-    h_closurelist_0opt0_release(&t27);
+    h_0opt_e201354_release(&t27);
     return t9;
 }
 
@@ -535,22 +535,22 @@ void h_closurelist_main(void) {
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
     HeroStr h6_k = {0};
-    h_closurelist_0opt0 h7_f0 = {0};
+    h_0opt_e201354 h7_f0 = {0};
     int64_t h8_i;
-    h_closurelist_0opt0 h9_f1 = {0};
+    h_0opt_e201354 h9_f1 = {0};
     int64_t h10_r0;
-    h_closurelist_0opt0 h11_f2 = {0};
+    h_0opt_e201354 h11_f2 = {0};
     HeroArrayHeader * h12_own12 = {0};
     HeroMapHeader * h13_own13 = {0};
     HeroArrayHeader * h14_own14 = {0};
     HeroArrayHeader * h15_own15 = {0};
-    h_closurelist_0opt0 h16_own16 = {0};
-    h_closurelist_0opt0 h17_own17 = {0};
+    h_0opt_e201354 h16_own16 = {0};
+    h_0opt_e201354 h17_own17 = {0};
     HeroArrayHeader * h18_own18 = {0};
     HeroStr h19_own19 = {0};
     HeroArrayHeader * h20_own20 = {0};
     HeroStr h21_own21 = {0};
-    h_closurelist_0opt0 h22_own22 = {0};
+    h_0opt_e201354 h22_own22 = {0};
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -577,14 +577,14 @@ void h_closurelist_main(void) {
     int64_t t24;
     HeroMapHeader * t25 = {0};
     HeroStr t26 = {0};
-    h_closurelist_0opt0 t27 = {0};
-    h_closurelist_0opt0 t28 = {0};
+    h_0opt_e201354 t27 = {0};
+    h_0opt_e201354 t28 = {0};
     int64_t t29;
     int64_t t30;
     bool t31;
-    h_closurelist_0opt0 t32 = {0};
+    h_0opt_e201354 t32 = {0};
     HeroFailure t33 = {0};
-    h_closurelist_0opt0 t34 = {0};
+    h_0opt_e201354 t34 = {0};
     int64_t t35;
     int64_t t36;
     int64_t t37;
@@ -618,12 +618,12 @@ void h_closurelist_main(void) {
     int64_t t65;
     HeroStr t66 = {0};
     int64_t t67;
-    h_closurelist_0opt0 t68 = {0};
-    h_closurelist_0opt0 t69 = {0};
+    h_0opt_e201354 t68 = {0};
+    h_0opt_e201354 t69 = {0};
     int64_t t70;
     int64_t t71;
     bool t72;
-    h_closurelist_0opt0 t73 = {0};
+    h_0opt_e201354 t73 = {0};
     int64_t t74;
     int64_t t75;
     int64_t t76;
@@ -633,7 +633,7 @@ void h_closurelist_main(void) {
     int64_t t80;
     HeroStr t81 = {0};
     HeroArrayHeader * t82 = {0};
-    h_closurelist_0fn0 t83;
+    h_0fn_4a13fb08 t83;
     HeroArrayHeader * t84 = {0};
     HeroStr t85 = {0};
     HeroStr t86 = {0};
@@ -646,14 +646,14 @@ void h_closurelist_main(void) {
     int64_t t93;
     HeroStr t94 = {0};
     double t95;
-    h_closurelist_0opt0 t96 = {0};
-    h_closurelist_0opt0 t97 = {0};
+    h_0opt_e201354 t96 = {0};
+    h_0opt_e201354 t97 = {0};
     int64_t t98;
     int64_t t99;
     bool t100;
-    h_closurelist_0opt0 t101 = {0};
+    h_0opt_e201354 t101 = {0};
     HeroFailure t102 = {0};
-    h_closurelist_0opt0 t103 = {0};
+    h_0opt_e201354 t103 = {0};
     int64_t t104;
     int64_t t105;
     double t106;
@@ -665,34 +665,34 @@ void h_closurelist_main(void) {
     HeroArrayHeader * t112 = {0};
     HeroArrayHeader * t113 = {0};
     HeroStr t114 = {0};
-    h_closurelist_0opt0 t115 = {0};
-    h_closurelist_0opt0 t116 = {0};
-    h_closurelist_0opt0 t117 = {0};
-    h_closurelist_0opt0 t118 = {0};
+    h_0opt_e201354 t115 = {0};
+    h_0opt_e201354 t116 = {0};
+    h_0opt_e201354 t117 = {0};
+    h_0opt_e201354 t118 = {0};
     HeroArrayHeader * t119 = {0};
     HeroStr t120 = {0};
     HeroArrayHeader * t121 = {0};
     HeroStr t122 = {0};
-    h_closurelist_0opt0 t123 = {0};
-    h_closurelist_0opt0 t124 = {0};
+    h_0opt_e201354 t123 = {0};
+    h_0opt_e201354 t124 = {0};
     HeroArrayHeader * t125 = {0};
     HeroMapHeader * t126 = {0};
     HeroArrayHeader * t127 = {0};
     HeroStr t128 = {0};
-    h_closurelist_0opt0 t129 = {0};
-    h_closurelist_0opt0 t130 = {0};
-    h_closurelist_0opt0 t131 = {0};
+    h_0opt_e201354 t129 = {0};
+    h_0opt_e201354 t130 = {0};
+    h_0opt_e201354 t131 = {0};
     HeroArrayHeader * t132 = {0};
     HeroMapHeader * t133 = {0};
     HeroArrayHeader * t134 = {0};
     HeroArrayHeader * t135 = {0};
-    h_closurelist_0opt0 t136 = {0};
-    h_closurelist_0opt0 t137 = {0};
+    h_0opt_e201354 t136 = {0};
+    h_0opt_e201354 t137 = {0};
     HeroArrayHeader * t138 = {0};
     HeroStr t139 = {0};
     HeroArrayHeader * t140 = {0};
     HeroStr t141 = {0};
-    h_closurelist_0opt0 t142 = {0};
+    h_0opt_e201354 t142 = {0};
     goto bb0;
 bb0:
 #line 47 "tests/golden/run/closure-list.hero"
@@ -840,7 +840,7 @@ bb2:
 #line 54 "tests/golden/run/closure-list.hero"
       if (found == NULL) {
 #line 54 "tests/golden/run/closure-list.hero"
-        t27 = (h_closurelist_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t27 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 54 "tests/golden/run/closure-list.hero"
       } else {
 #line 54 "tests/golden/run/closure-list.hero"
@@ -856,15 +856,15 @@ bb2:
 #line 54 "tests/golden/run/closure-list.hero"
     h16_own16 = t27;
 #line 859 "closurelist.c"
-    h_closurelist_0opt0_release(&t115);
+    h_0opt_e201354_release(&t115);
 #line 54 "tests/golden/run/closure-list.hero"
     t116 = h7_f0;
 #line 863 "closurelist.c"
-    h_closurelist_0opt0_retain(&t27);
+    h_0opt_e201354_retain(&t27);
 #line 54 "tests/golden/run/closure-list.hero"
     h7_f0 = t27;
 #line 867 "closurelist.c"
-    h_closurelist_0opt0_release(&t116);
+    h_0opt_e201354_release(&t116);
 #line 54 "tests/golden/run/closure-list.hero"
     t28 = h7_f0;
 #line 54 "tests/golden/run/closure-list.hero"
@@ -964,15 +964,15 @@ bb9:
 #line 62 "tests/golden/run/closure-list.hero"
     h17_own17 = t68;
 #line 967 "closurelist.c"
-    h_closurelist_0opt0_release(&t117);
+    h_0opt_e201354_release(&t117);
 #line 62 "tests/golden/run/closure-list.hero"
     t118 = h9_f1;
 #line 971 "closurelist.c"
-    h_closurelist_0opt0_retain(&t68);
+    h_0opt_e201354_retain(&t68);
 #line 62 "tests/golden/run/closure-list.hero"
     h9_f1 = t68;
 #line 975 "closurelist.c"
-    h_closurelist_0opt0_release(&t118);
+    h_0opt_e201354_release(&t118);
 #line 62 "tests/golden/run/closure-list.hero"
     t69 = h9_f1;
 #line 62 "tests/golden/run/closure-list.hero"
@@ -1130,11 +1130,11 @@ bb15:
 #line 64 "tests/golden/run/closure-list.hero"
     if (hero_f64_fits_int(t95)) {
 #line 64 "tests/golden/run/closure-list.hero"
-        t96 = (h_closurelist_0opt0){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t95)};
+        t96 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t95)};
 #line 64 "tests/golden/run/closure-list.hero"
     } else {
 #line 64 "tests/golden/run/closure-list.hero"
-        t96 = (h_closurelist_0opt0){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t96 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 64 "tests/golden/run/closure-list.hero"
     }
 #line 64 "tests/golden/run/closure-list.hero"
@@ -1142,15 +1142,15 @@ bb15:
 #line 64 "tests/golden/run/closure-list.hero"
     h22_own22 = t96;
 #line 1145 "closurelist.c"
-    h_closurelist_0opt0_release(&t123);
+    h_0opt_e201354_release(&t123);
 #line 64 "tests/golden/run/closure-list.hero"
     t124 = h11_f2;
 #line 1149 "closurelist.c"
-    h_closurelist_0opt0_retain(&t96);
+    h_0opt_e201354_retain(&t96);
 #line 64 "tests/golden/run/closure-list.hero"
     h11_f2 = t96;
 #line 1153 "closurelist.c"
-    h_closurelist_0opt0_release(&t124);
+    h_0opt_e201354_release(&t124);
 #line 64 "tests/golden/run/closure-list.hero"
     t97 = h11_f2;
 #line 64 "tests/golden/run/closure-list.hero"
@@ -1200,15 +1200,15 @@ bb16:
 #line 64 "tests/golden/run/closure-list.hero"
     t129 = h7_f0;
 #line 1203 "closurelist.c"
-    h_closurelist_0opt0_release(&t129);
+    h_0opt_e201354_release(&t129);
 #line 64 "tests/golden/run/closure-list.hero"
     t130 = h9_f1;
 #line 1207 "closurelist.c"
-    h_closurelist_0opt0_release(&t130);
+    h_0opt_e201354_release(&t130);
 #line 64 "tests/golden/run/closure-list.hero"
     t131 = h11_f2;
 #line 1211 "closurelist.c"
-    h_closurelist_0opt0_release(&t131);
+    h_0opt_e201354_release(&t131);
 #line 64 "tests/golden/run/closure-list.hero"
     t132 = h12_own12;
 #line 1215 "closurelist.c"
@@ -1228,11 +1228,11 @@ bb16:
 #line 64 "tests/golden/run/closure-list.hero"
     t136 = h16_own16;
 #line 1231 "closurelist.c"
-    h_closurelist_0opt0_release(&t136);
+    h_0opt_e201354_release(&t136);
 #line 64 "tests/golden/run/closure-list.hero"
     t137 = h17_own17;
 #line 1235 "closurelist.c"
-    h_closurelist_0opt0_release(&t137);
+    h_0opt_e201354_release(&t137);
 #line 64 "tests/golden/run/closure-list.hero"
     t138 = h18_own18;
 #line 1239 "closurelist.c"
@@ -1252,7 +1252,7 @@ bb16:
 #line 64 "tests/golden/run/closure-list.hero"
     t142 = h22_own22;
 #line 1255 "closurelist.c"
-    h_closurelist_0opt0_release(&t142);
+    h_0opt_e201354_release(&t142);
     return;
 bb17:
 #line 64 "tests/golden/run/closure-list.hero"
@@ -1267,7 +1267,7 @@ bb17:
 #line 36 "<heroes library>"
 /* map<i64, str> */
 #line 36 "<heroes library>"
-HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_closurelist_0fn0 h1_f) {
+HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
 #line 1272 "closurelist.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
@@ -1285,7 +1285,7 @@ HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_closurelist_
     HeroArrayHeader * t8 = {0};
     int64_t t9;
     int64_t t10;
-    h_closurelist_0fn0 t12;
+    h_0fn_4a13fb08 t12;
     int64_t t13;
     HeroStr t14 = {0};
     int64_t t16;
@@ -1454,7 +1454,7 @@ uint64_t h_closurelist_Shape_hash(const void *elem) {
     hero_unreachable();
 }
 
-void h_closurelist_0opt0_retain(const h_closurelist_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1462,7 +1462,7 @@ void h_closurelist_0opt0_retain(const h_closurelist_0opt0 *v) {
     }
 }
 
-void h_closurelist_0opt0_release(h_closurelist_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1470,14 +1470,14 @@ void h_closurelist_0opt0_release(h_closurelist_0opt0 *v) {
     }
 }
 
-bool h_closurelist_0opt0_eq(const h_closurelist_0opt0 *a, const h_closurelist_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_closurelist_0opt0_hash(const void *elem) {
-    const h_closurelist_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -1486,7 +1486,7 @@ uint64_t h_closurelist_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_closurelist_0opt1_retain(const h_closurelist_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -1494,7 +1494,7 @@ void h_closurelist_0opt1_retain(const h_closurelist_0opt1 *v) {
     }
 }
 
-void h_closurelist_0opt1_release(h_closurelist_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -1502,14 +1502,14 @@ void h_closurelist_0opt1_release(h_closurelist_0opt1 *v) {
     }
 }
 
-bool h_closurelist_0opt1_eq(const h_closurelist_0opt1 *a, const h_closurelist_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_closurelist_0opt1_hash(const void *elem) {
-    const h_closurelist_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -1518,7 +1518,7 @@ uint64_t h_closurelist_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_closurelist_0opt2_retain(const h_closurelist_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1526,7 +1526,7 @@ void h_closurelist_0opt2_retain(const h_closurelist_0opt2 *v) {
     }
 }
 
-void h_closurelist_0opt2_release(h_closurelist_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -1534,14 +1534,14 @@ void h_closurelist_0opt2_release(h_closurelist_0opt2 *v) {
     }
 }
 
-bool h_closurelist_0opt2_eq(const h_closurelist_0opt2 *a, const h_closurelist_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_closurelist_0opt2_hash(const void *elem) {
-    const h_closurelist_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

@@ -60,9 +60,9 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 
 HERO_STR_STATIC(hero_str_0, "double");
 
-typedef int64_t (*h_fixedbugsfunctioninarecordfield_0fn0)(int64_t);
+typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugsfunctioninarecordfield_Holder {
-    h_fixedbugsfunctioninarecordfield_0fn0 f_f;
+    h_0fn_48ac9712 f_f;
     HeroStr f_label;
 } h_fixedbugsfunctioninarecordfield_Holder;
 
@@ -72,7 +72,7 @@ typedef enum h_fixedbugsfunctioninarecordfield_Step_tag {
 } h_fixedbugsfunctioninarecordfield_Step_tag;
 
 typedef struct h_fixedbugsfunctioninarecordfield_Step_c_apply {
-    h_fixedbugsfunctioninarecordfield_0fn0 f_g;
+    h_0fn_48ac9712 f_g;
 } h_fixedbugsfunctioninarecordfield_Step_c_apply;
 
 typedef struct h_fixedbugsfunctioninarecordfield_Step {
@@ -82,20 +82,20 @@ typedef struct h_fixedbugsfunctioninarecordfield_Step {
     } as;
 } h_fixedbugsfunctioninarecordfield_Step;
 
-typedef struct h_fixedbugsfunctioninarecordfield_0opt0 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugsfunctioninarecordfield_0opt0;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugsfunctioninarecordfield_0opt1 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugsfunctioninarecordfield_0opt1;
+} h_0opt_a8ea2;
 
 void h_fixedbugsfunctioninarecordfield_Holder_retain(const h_fixedbugsfunctioninarecordfield_Holder *v);
 void h_fixedbugsfunctioninarecordfield_Holder_release(h_fixedbugsfunctioninarecordfield_Holder *v);
@@ -105,14 +105,14 @@ bool h_fixedbugsfunctioninarecordfield_Step_c_apply_eq(const h_fixedbugsfunction
 uint64_t h_fixedbugsfunctioninarecordfield_Step_c_apply_hash(const void *elem);
 bool h_fixedbugsfunctioninarecordfield_Step_eq(const h_fixedbugsfunctioninarecordfield_Step *a, const h_fixedbugsfunctioninarecordfield_Step *b);
 uint64_t h_fixedbugsfunctioninarecordfield_Step_hash(const void *elem);
-void h_fixedbugsfunctioninarecordfield_0opt0_retain(const h_fixedbugsfunctioninarecordfield_0opt0 *v);
-void h_fixedbugsfunctioninarecordfield_0opt0_release(h_fixedbugsfunctioninarecordfield_0opt0 *v);
-bool h_fixedbugsfunctioninarecordfield_0opt0_eq(const h_fixedbugsfunctioninarecordfield_0opt0 *a, const h_fixedbugsfunctioninarecordfield_0opt0 *b);
-uint64_t h_fixedbugsfunctioninarecordfield_0opt0_hash(const void *elem);
-void h_fixedbugsfunctioninarecordfield_0opt1_retain(const h_fixedbugsfunctioninarecordfield_0opt1 *v);
-void h_fixedbugsfunctioninarecordfield_0opt1_release(h_fixedbugsfunctioninarecordfield_0opt1 *v);
-bool h_fixedbugsfunctioninarecordfield_0opt1_eq(const h_fixedbugsfunctioninarecordfield_0opt1 *a, const h_fixedbugsfunctioninarecordfield_0opt1 *b);
-uint64_t h_fixedbugsfunctioninarecordfield_0opt1_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_fixedbugsfunctioninarecordfield_double(int64_t h0_n);
 int64_t h_fixedbugsfunctioninarecordfield_negate(int64_t h0_n);
@@ -161,28 +161,28 @@ void h_fixedbugsfunctioninarecordfield_main(void) {
     h_fixedbugsfunctioninarecordfield_Step h2_s;
     h_fixedbugsfunctioninarecordfield_Step h3_s0;
     h_fixedbugsfunctioninarecordfield_Step_c_apply h4_a;
-    h_fixedbugsfunctioninarecordfield_0fn0 h5_call;
+    h_0fn_48ac9712 h5_call;
     h_fixedbugsfunctioninarecordfield_Holder h6_own6 = {0};
-    h_fixedbugsfunctioninarecordfield_0fn0 t1;
+    h_0fn_48ac9712 t1;
     HeroStr t2 = {0};
     h_fixedbugsfunctioninarecordfield_Holder t3 = {0};
     h_fixedbugsfunctioninarecordfield_Holder t4 = {0};
-    h_fixedbugsfunctioninarecordfield_0fn0 t5;
+    h_0fn_48ac9712 t5;
     int64_t t6;
     int64_t t7;
     h_fixedbugsfunctioninarecordfield_Holder t8 = {0};
     HeroStr t9 = {0};
     h_fixedbugsfunctioninarecordfield_Holder t10 = {0};
-    h_fixedbugsfunctioninarecordfield_0fn0 t11;
+    h_0fn_48ac9712 t11;
     h_fixedbugsfunctioninarecordfield_Holder t12 = {0};
-    h_fixedbugsfunctioninarecordfield_0fn0 t13;
+    h_0fn_48ac9712 t13;
     int64_t t14;
     int64_t t15;
     h_fixedbugsfunctioninarecordfield_Holder t16 = {0};
-    h_fixedbugsfunctioninarecordfield_0fn0 t17;
+    h_0fn_48ac9712 t17;
     int64_t t18;
     int64_t t19;
-    h_fixedbugsfunctioninarecordfield_0fn0 t20;
+    h_0fn_48ac9712 t20;
     h_fixedbugsfunctioninarecordfield_Step t21;
     h_fixedbugsfunctioninarecordfield_Step t22;
     h_fixedbugsfunctioninarecordfield_Step t23;
@@ -190,8 +190,8 @@ void h_fixedbugsfunctioninarecordfield_main(void) {
     h_fixedbugsfunctioninarecordfield_Step t25;
     h_fixedbugsfunctioninarecordfield_Step_c_apply t26;
     h_fixedbugsfunctioninarecordfield_Step_c_apply t27;
-    h_fixedbugsfunctioninarecordfield_0fn0 t28;
-    h_fixedbugsfunctioninarecordfield_0fn0 t29;
+    h_0fn_48ac9712 t28;
+    h_0fn_48ac9712 t29;
     int64_t t30;
     int64_t t31;
     int64_t t32;
@@ -413,7 +413,7 @@ uint64_t h_fixedbugsfunctioninarecordfield_Step_hash(const void *elem) {
     hero_unreachable();
 }
 
-void h_fixedbugsfunctioninarecordfield_0opt0_retain(const h_fixedbugsfunctioninarecordfield_0opt0 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -421,7 +421,7 @@ void h_fixedbugsfunctioninarecordfield_0opt0_retain(const h_fixedbugsfunctionina
     }
 }
 
-void h_fixedbugsfunctioninarecordfield_0opt0_release(h_fixedbugsfunctioninarecordfield_0opt0 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -429,14 +429,14 @@ void h_fixedbugsfunctioninarecordfield_0opt0_release(h_fixedbugsfunctioninarecor
     }
 }
 
-bool h_fixedbugsfunctioninarecordfield_0opt0_eq(const h_fixedbugsfunctioninarecordfield_0opt0 *a, const h_fixedbugsfunctioninarecordfield_0opt0 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsfunctioninarecordfield_0opt0_hash(const void *elem) {
-    const h_fixedbugsfunctioninarecordfield_0opt0 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -445,7 +445,7 @@ uint64_t h_fixedbugsfunctioninarecordfield_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsfunctioninarecordfield_0opt1_retain(const h_fixedbugsfunctioninarecordfield_0opt1 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -453,7 +453,7 @@ void h_fixedbugsfunctioninarecordfield_0opt1_retain(const h_fixedbugsfunctionina
     }
 }
 
-void h_fixedbugsfunctioninarecordfield_0opt1_release(h_fixedbugsfunctioninarecordfield_0opt1 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -461,14 +461,14 @@ void h_fixedbugsfunctioninarecordfield_0opt1_release(h_fixedbugsfunctioninarecor
     }
 }
 
-bool h_fixedbugsfunctioninarecordfield_0opt1_eq(const h_fixedbugsfunctioninarecordfield_0opt1 *a, const h_fixedbugsfunctioninarecordfield_0opt1 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugsfunctioninarecordfield_0opt1_hash(const void *elem) {
-    const h_fixedbugsfunctioninarecordfield_0opt1 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

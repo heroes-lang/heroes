@@ -60,41 +60,41 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 
 HERO_STR_STATIC(hero_str_0, "half");
 
-typedef struct h_f32thenarrowfloat_0opt0 {
+typedef struct h_0opt_db86062 {
     int64_t tag;
     union {
         float ok;
         HeroFailure err;
     } as;
-} h_f32thenarrowfloat_0opt0;
+} h_0opt_db86062;
 
-typedef struct h_f32thenarrowfloat_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_f32thenarrowfloat_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_f32thenarrowfloat_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_f32thenarrowfloat_0opt2;
+} h_0opt_a8ea2;
 
-void h_f32thenarrowfloat_0opt0_retain(const h_f32thenarrowfloat_0opt0 *v);
-void h_f32thenarrowfloat_0opt0_release(h_f32thenarrowfloat_0opt0 *v);
-bool h_f32thenarrowfloat_0opt0_eq(const h_f32thenarrowfloat_0opt0 *a, const h_f32thenarrowfloat_0opt0 *b);
-uint64_t h_f32thenarrowfloat_0opt0_hash(const void *elem);
-void h_f32thenarrowfloat_0opt1_retain(const h_f32thenarrowfloat_0opt1 *v);
-void h_f32thenarrowfloat_0opt1_release(h_f32thenarrowfloat_0opt1 *v);
-bool h_f32thenarrowfloat_0opt1_eq(const h_f32thenarrowfloat_0opt1 *a, const h_f32thenarrowfloat_0opt1 *b);
-uint64_t h_f32thenarrowfloat_0opt1_hash(const void *elem);
-void h_f32thenarrowfloat_0opt2_retain(const h_f32thenarrowfloat_0opt2 *v);
-void h_f32thenarrowfloat_0opt2_release(h_f32thenarrowfloat_0opt2 *v);
-bool h_f32thenarrowfloat_0opt2_eq(const h_f32thenarrowfloat_0opt2 *a, const h_f32thenarrowfloat_0opt2 *b);
-uint64_t h_f32thenarrowfloat_0opt2_hash(const void *elem);
+void h_0opt_db86062_retain(const h_0opt_db86062 *v);
+void h_0opt_db86062_release(h_0opt_db86062 *v);
+bool h_0opt_db86062_eq(const h_0opt_db86062 *a, const h_0opt_db86062 *b);
+uint64_t h_0opt_db86062_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_f32thenarrowfloat_main(void);
 
@@ -109,11 +109,11 @@ void h_f32thenarrowfloat_main(void) {
     HeroArrayHeader * h5_xs = {0};
     HeroArrayHeader * h6_sorted = {0};
     HeroMapHeader * h7_m = {0};
-    h_f32thenarrowfloat_0opt0 h8_f0 = {0};
+    h_0opt_db86062 h8_f0 = {0};
     HeroArrayHeader * h9_own9 = {0};
     HeroArrayHeader * h10_own10 = {0};
     HeroMapHeader * h11_own11 = {0};
-    h_f32thenarrowfloat_0opt0 h12_own12 = {0};
+    h_0opt_db86062 h12_own12 = {0};
     float t1;
     float t2;
     float t3;
@@ -148,14 +148,14 @@ void h_f32thenarrowfloat_main(void) {
     float t32;
     HeroMapHeader * t33 = {0};
     HeroStr t34 = {0};
-    h_f32thenarrowfloat_0opt0 t35 = {0};
-    h_f32thenarrowfloat_0opt0 t36 = {0};
+    h_0opt_db86062 t35 = {0};
+    h_0opt_db86062 t36 = {0};
     int64_t t37;
     int64_t t38;
     bool t39;
-    h_f32thenarrowfloat_0opt0 t40 = {0};
+    h_0opt_db86062 t40 = {0};
     HeroFailure t41 = {0};
-    h_f32thenarrowfloat_0opt0 t42 = {0};
+    h_0opt_db86062 t42 = {0};
     float t43;
     HeroArrayHeader * t44 = {0};
     int64_t t45;
@@ -168,16 +168,16 @@ void h_f32thenarrowfloat_main(void) {
     HeroArrayHeader * t52 = {0};
     HeroMapHeader * t53 = {0};
     HeroMapHeader * t54 = {0};
-    h_f32thenarrowfloat_0opt0 t55 = {0};
-    h_f32thenarrowfloat_0opt0 t56 = {0};
+    h_0opt_db86062 t55 = {0};
+    h_0opt_db86062 t56 = {0};
     HeroArrayHeader * t57 = {0};
     HeroArrayHeader * t58 = {0};
     HeroMapHeader * t59 = {0};
-    h_f32thenarrowfloat_0opt0 t60 = {0};
+    h_0opt_db86062 t60 = {0};
     HeroArrayHeader * t61 = {0};
     HeroArrayHeader * t62 = {0};
     HeroMapHeader * t63 = {0};
-    h_f32thenarrowfloat_0opt0 t64 = {0};
+    h_0opt_db86062 t64 = {0};
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/f32-the-narrow-float.hero"
@@ -355,7 +355,7 @@ bb0:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
       if (found == NULL) {
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
-        t35 = (h_f32thenarrowfloat_0opt0){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t35 = (h_0opt_db86062){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
       } else {
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
@@ -371,15 +371,15 @@ bb0:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     h12_own12 = t35;
 #line 374 "f32thenarrowfloat.c"
-    h_f32thenarrowfloat_0opt0_release(&t55);
+    h_0opt_db86062_release(&t55);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t56 = h8_f0;
 #line 378 "f32thenarrowfloat.c"
-    h_f32thenarrowfloat_0opt0_retain(&t35);
+    h_0opt_db86062_retain(&t35);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     h8_f0 = t35;
 #line 382 "f32thenarrowfloat.c"
-    h_f32thenarrowfloat_0opt0_release(&t56);
+    h_0opt_db86062_release(&t56);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t36 = h8_f0;
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
@@ -429,7 +429,7 @@ bb1:
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     t60 = h8_f0;
 #line 432 "f32thenarrowfloat.c"
-    h_f32thenarrowfloat_0opt0_release(&t60);
+    h_0opt_db86062_release(&t60);
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     t61 = h9_own9;
 #line 436 "f32thenarrowfloat.c"
@@ -445,7 +445,7 @@ bb1:
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     t64 = h12_own12;
 #line 448 "f32thenarrowfloat.c"
-    h_f32thenarrowfloat_0opt0_release(&t64);
+    h_0opt_db86062_release(&t64);
     return;
 bb2:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
@@ -456,7 +456,7 @@ bb2:
     hero_panic_must(t41);
     hero_unreachable();
 }
-void h_f32thenarrowfloat_0opt0_retain(const h_f32thenarrowfloat_0opt0 *v) {
+void h_0opt_db86062_retain(const h_0opt_db86062 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -464,7 +464,7 @@ void h_f32thenarrowfloat_0opt0_retain(const h_f32thenarrowfloat_0opt0 *v) {
     }
 }
 
-void h_f32thenarrowfloat_0opt0_release(h_f32thenarrowfloat_0opt0 *v) {
+void h_0opt_db86062_release(h_0opt_db86062 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -472,14 +472,14 @@ void h_f32thenarrowfloat_0opt0_release(h_f32thenarrowfloat_0opt0 *v) {
     }
 }
 
-bool h_f32thenarrowfloat_0opt0_eq(const h_f32thenarrowfloat_0opt0 *a, const h_f32thenarrowfloat_0opt0 *b) {
+bool h_0opt_db86062_eq(const h_0opt_db86062 *a, const h_0opt_db86062 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_f32)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_f32thenarrowfloat_0opt0_hash(const void *elem) {
-    const h_f32thenarrowfloat_0opt0 *v = elem;
+uint64_t h_0opt_db86062_hash(const void *elem) {
+    const h_0opt_db86062 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -488,7 +488,7 @@ uint64_t h_f32thenarrowfloat_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_f32)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_f32thenarrowfloat_0opt1_retain(const h_f32thenarrowfloat_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -496,7 +496,7 @@ void h_f32thenarrowfloat_0opt1_retain(const h_f32thenarrowfloat_0opt1 *v) {
     }
 }
 
-void h_f32thenarrowfloat_0opt1_release(h_f32thenarrowfloat_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -504,14 +504,14 @@ void h_f32thenarrowfloat_0opt1_release(h_f32thenarrowfloat_0opt1 *v) {
     }
 }
 
-bool h_f32thenarrowfloat_0opt1_eq(const h_f32thenarrowfloat_0opt1 *a, const h_f32thenarrowfloat_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_f32thenarrowfloat_0opt1_hash(const void *elem) {
-    const h_f32thenarrowfloat_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -520,7 +520,7 @@ uint64_t h_f32thenarrowfloat_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_f32thenarrowfloat_0opt2_retain(const h_f32thenarrowfloat_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -528,7 +528,7 @@ void h_f32thenarrowfloat_0opt2_retain(const h_f32thenarrowfloat_0opt2 *v) {
     }
 }
 
-void h_f32thenarrowfloat_0opt2_release(h_f32thenarrowfloat_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -536,14 +536,14 @@ void h_f32thenarrowfloat_0opt2_release(h_f32thenarrowfloat_0opt2 *v) {
     }
 }
 
-bool h_f32thenarrowfloat_0opt2_eq(const h_f32thenarrowfloat_0opt2 *a, const h_f32thenarrowfloat_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_f32thenarrowfloat_0opt2_hash(const void *elem) {
-    const h_f32thenarrowfloat_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

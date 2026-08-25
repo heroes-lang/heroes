@@ -1,0 +1,68 @@
+# What a synthetic type name is hashed FROM (panel 093 R6). Split out
+# of emit_ctype at M-separate-compilation step 6, when the content keys
+# took that file past its frozen ceiling — this is the half that walks
+# TYPES and never touches the Names table, so the `use` edge points one
+# way: emit_ctype reads this, never the reverse.
+#
+# The content key is the public rendering PLUS every declared type the
+# type contains, module-qualified and sorted. The rendering alone is
+# not canonical — two modules may each declare `Declared`, and
+# `Declared?` then rendered identically for two different C structs:
+# `redefinition of 'h_0opt_1c40b693'`, loud exactly as the collision
+# comment promises, on the compiler's own tree the hour the content
+# names landed.
+
+use ast
+use source
+use check_table
+use check_state
+use check_render
+
+function content_key(c: check_state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
+    no_generics: [str] = []
+    rendered = check_render.render_ty(c.types, s, decls, ty, no_generics)
+    named: {str: bool} @ {}
+    seen: {i64: bool} @ {}
+    frontier: [i64] @ [ty]
+    while frontier.len() > 0
+        id = frontier[frontier.len() - 1]
+        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+        if !seen[id].is_err()
+            continue
+        seen[id] @ true
+        match check_table.get(c.types, id)
+            .named n => named[source.component_at(s, decls[n.decl].name.start) + "." + source.span_text(s, decls[n.decl].name)] @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => named @ named
+            .array | .fixed | .map | .fallible | .function_ty => named @ named
+            .case_ty | .failure | .generic | .error => named @ named
+        for inner in check_table.contained(c.types, id)
+            frontier @ frontier.push(inner)
+    # A type with no declared parts is already canonical, and keeping
+    # its key equal to its rendering keeps `i64?`'s hash what every
+    # pinned test spells.
+    if len(named) == 0
+        return rendered
+    # ORDER: ascending qualified name — the key must not depend on the
+    # walk, and sort(keys(…)) is what makes two mentions of one type
+    # spell one name.
+    return rendered + "|" + sort(keys(named)).join(",")
+
+# Every function type reachable from ty, including ty itself. Closed
+# under nesting, because [(function(A) -> B)] names the function type
+# without being one, and so does (function(A) -> B)?.
+function collect(c: check_state.Checked, ty: i64, @into: {i64: bool})
+    match check_table.get(c.types, ty)
+        .function_ty fn_ty =>
+            if !into[ty].is_err()
+                return
+            into[ty] @ true
+            for p in check_table.params_of(c.types, fn_ty.params)
+                collect(c, ty: p, into: @into)
+            collect(c, ty: fn_ty.result, into: @into)
+        .array arr => collect(c, ty: arr.element, into: @into)
+        .fallible o => collect(c, ty: o.payload, into: @into)
+        .map m =>
+            collect(c, ty: m.key, into: @into)
+            collect(c, ty: m.value, into: @into)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+        .fixed | .named | .case_ty | .failure | .generic | .error => return

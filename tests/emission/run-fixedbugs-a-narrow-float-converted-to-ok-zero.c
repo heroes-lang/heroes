@@ -58,41 +58,41 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "fixedbugsanarrowfloatconvertedtookzero.c"
 #pragma clang diagnostic pop
 
-typedef struct h_fixedbugsanarrowfloatconvertedtookzero_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_fixedbugsanarrowfloatconvertedtookzero_0opt0;
+} h_0opt_e201354;
 
-typedef struct h_fixedbugsanarrowfloatconvertedtookzero_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_fixedbugsanarrowfloatconvertedtookzero_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_fixedbugsanarrowfloatconvertedtookzero_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_fixedbugsanarrowfloatconvertedtookzero_0opt2;
+} h_0opt_a8ea2;
 
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(const h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *v);
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *v);
-bool h_fixedbugsanarrowfloatconvertedtookzero_0opt0_eq(const h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *a, const h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *b);
-uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt0_hash(const void *elem);
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt1_retain(const h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *v);
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt1_release(h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *v);
-bool h_fixedbugsanarrowfloatconvertedtookzero_0opt1_eq(const h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *a, const h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *b);
-uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt1_hash(const void *elem);
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt2_retain(const h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *v);
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt2_release(h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *v);
-bool h_fixedbugsanarrowfloatconvertedtookzero_0opt2_eq(const h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *a, const h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *b);
-uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsanarrowfloatconvertedtookzero_main(void);
 
@@ -100,74 +100,74 @@ void h_fixedbugsanarrowfloatconvertedtookzero_main(void);
 void h_fixedbugsanarrowfloatconvertedtookzero_main(void) {
 #line 102 "fixedbugsanarrowfloatconvertedtookzero.c"
     float h0_small;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h1_f0 = {0};
+    h_0opt_e201354 h1_f0 = {0};
     float h2_negative;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h3_f1 = {0};
+    h_0opt_e201354 h3_f1 = {0};
     float h4_huge;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h5_f2 = {0};
+    h_0opt_e201354 h5_f2 = {0};
     double h6_wide;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h7_f3 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h8_own8 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h9_own9 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h10_own10 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 h11_own11 = {0};
+    h_0opt_e201354 h7_f3 = {0};
+    h_0opt_e201354 h8_own8 = {0};
+    h_0opt_e201354 h9_own9 = {0};
+    h_0opt_e201354 h10_own10 = {0};
+    h_0opt_e201354 h11_own11 = {0};
     float t1;
     float t2;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t3 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t4 = {0};
+    h_0opt_e201354 t3 = {0};
+    h_0opt_e201354 t4 = {0};
     int64_t t5;
     int64_t t6;
     bool t7;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t8 = {0};
+    h_0opt_e201354 t8 = {0};
     HeroFailure t9 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t10 = {0};
+    h_0opt_e201354 t10 = {0};
     int64_t t11;
     float t12;
     float t13;
     float t14;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t15 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t16 = {0};
+    h_0opt_e201354 t15 = {0};
+    h_0opt_e201354 t16 = {0};
     int64_t t17;
     int64_t t18;
     bool t19;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t20 = {0};
+    h_0opt_e201354 t20 = {0};
     HeroFailure t21 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t22 = {0};
+    h_0opt_e201354 t22 = {0};
     int64_t t23;
     float t24;
     float t25;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t26 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t27 = {0};
+    h_0opt_e201354 t26 = {0};
+    h_0opt_e201354 t27 = {0};
     int64_t t28;
     int64_t t29;
     bool t30;
     double t31;
     double t32;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t33 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t34 = {0};
+    h_0opt_e201354 t33 = {0};
+    h_0opt_e201354 t34 = {0};
     int64_t t35;
     int64_t t36;
     bool t37;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t38 = {0};
+    h_0opt_e201354 t38 = {0};
     HeroFailure t39 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t40 = {0};
+    h_0opt_e201354 t40 = {0};
     int64_t t41;
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t42 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t43 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t44 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t45 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t46 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t47 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t48 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t49 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t50 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t51 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t52 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t53 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t54 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t55 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t56 = {0};
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0 t57 = {0};
+    h_0opt_e201354 t42 = {0};
+    h_0opt_e201354 t43 = {0};
+    h_0opt_e201354 t44 = {0};
+    h_0opt_e201354 t45 = {0};
+    h_0opt_e201354 t46 = {0};
+    h_0opt_e201354 t47 = {0};
+    h_0opt_e201354 t48 = {0};
+    h_0opt_e201354 t49 = {0};
+    h_0opt_e201354 t50 = {0};
+    h_0opt_e201354 t51 = {0};
+    h_0opt_e201354 t52 = {0};
+    h_0opt_e201354 t53 = {0};
+    h_0opt_e201354 t54 = {0};
+    h_0opt_e201354 t55 = {0};
+    h_0opt_e201354 t56 = {0};
+    h_0opt_e201354 t57 = {0};
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -179,11 +179,11 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     if (hero_f64_fits_int(hero_f32_to_f64(t2))) {
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t3 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(0), .as.ok = hero_f64_to_int(hero_f32_to_f64(t2))};
+        t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(hero_f32_to_f64(t2))};
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     } else {
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t3 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     }
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -191,15 +191,15 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h8_own8 = t3;
 #line 194 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t42);
+    h_0opt_e201354_release(&t42);
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t43 = h1_f0;
 #line 198 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t3);
+    h_0opt_e201354_retain(&t3);
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h1_f0 = t3;
 #line 202 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t43);
+    h_0opt_e201354_release(&t43);
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t4 = h1_f0;
 #line 25 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -231,11 +231,11 @@ bb1:
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     if (hero_f64_fits_int(hero_f32_to_f64(t14))) {
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t15 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(0), .as.ok = hero_f64_to_int(hero_f32_to_f64(t14))};
+        t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(hero_f32_to_f64(t14))};
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     } else {
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t15 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t15 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     }
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -243,15 +243,15 @@ bb1:
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h9_own9 = t15;
 #line 246 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t44);
+    h_0opt_e201354_release(&t44);
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t45 = h3_f1;
 #line 250 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t15);
+    h_0opt_e201354_retain(&t15);
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h3_f1 = t15;
 #line 254 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t45);
+    h_0opt_e201354_release(&t45);
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t16 = h3_f1;
 #line 27 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -289,11 +289,11 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     if (hero_f64_fits_int(hero_f32_to_f64(t25))) {
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t26 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(0), .as.ok = hero_f64_to_int(hero_f32_to_f64(t25))};
+        t26 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(hero_f32_to_f64(t25))};
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     } else {
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t26 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t26 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     }
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -301,15 +301,15 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h10_own10 = t26;
 #line 304 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t46);
+    h_0opt_e201354_release(&t46);
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t47 = h5_f2;
 #line 308 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t26);
+    h_0opt_e201354_retain(&t26);
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h5_f2 = t26;
 #line 312 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t47);
+    h_0opt_e201354_release(&t47);
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t27 = h5_f2;
 #line 29 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -331,11 +331,11 @@ bb3:
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     if (hero_f64_fits_int(t32)) {
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t33 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t32)};
+        t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t32)};
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     } else {
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
-        t33 = (h_fixedbugsanarrowfloatconvertedtookzero_0opt0){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t33 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     }
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -343,15 +343,15 @@ bb3:
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h11_own11 = t33;
 #line 346 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t48);
+    h_0opt_e201354_release(&t48);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t49 = h7_f3;
 #line 350 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(&t33);
+    h_0opt_e201354_retain(&t33);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     h7_f3 = t33;
 #line 354 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t49);
+    h_0opt_e201354_release(&t49);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t34 = h7_f3;
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -383,35 +383,35 @@ bb5:
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t50 = h1_f0;
 #line 386 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t50);
+    h_0opt_e201354_release(&t50);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t51 = h3_f1;
 #line 390 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t51);
+    h_0opt_e201354_release(&t51);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t52 = h5_f2;
 #line 394 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t52);
+    h_0opt_e201354_release(&t52);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t53 = h7_f3;
 #line 398 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t53);
+    h_0opt_e201354_release(&t53);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t54 = h8_own8;
 #line 402 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t54);
+    h_0opt_e201354_release(&t54);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t55 = h9_own9;
 #line 406 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t55);
+    h_0opt_e201354_release(&t55);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t56 = h10_own10;
 #line 410 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t56);
+    h_0opt_e201354_release(&t56);
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     t57 = h11_own11;
 #line 414 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(&t57);
+    h_0opt_e201354_release(&t57);
     return;
 bb6:
 #line 33 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
@@ -422,7 +422,7 @@ bb6:
     hero_panic_must(t39);
     hero_unreachable();
 }
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(const h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -430,7 +430,7 @@ void h_fixedbugsanarrowfloatconvertedtookzero_0opt0_retain(const h_fixedbugsanar
     }
 }
 
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -438,14 +438,14 @@ void h_fixedbugsanarrowfloatconvertedtookzero_0opt0_release(h_fixedbugsanarrowfl
     }
 }
 
-bool h_fixedbugsanarrowfloatconvertedtookzero_0opt0_eq(const h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *a, const h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt0_hash(const void *elem) {
-    const h_fixedbugsanarrowfloatconvertedtookzero_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -454,7 +454,7 @@ uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt1_retain(const h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -462,7 +462,7 @@ void h_fixedbugsanarrowfloatconvertedtookzero_0opt1_retain(const h_fixedbugsanar
     }
 }
 
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt1_release(h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -470,14 +470,14 @@ void h_fixedbugsanarrowfloatconvertedtookzero_0opt1_release(h_fixedbugsanarrowfl
     }
 }
 
-bool h_fixedbugsanarrowfloatconvertedtookzero_0opt1_eq(const h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *a, const h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt1_hash(const void *elem) {
-    const h_fixedbugsanarrowfloatconvertedtookzero_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -486,7 +486,7 @@ uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt2_retain(const h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -494,7 +494,7 @@ void h_fixedbugsanarrowfloatconvertedtookzero_0opt2_retain(const h_fixedbugsanar
     }
 }
 
-void h_fixedbugsanarrowfloatconvertedtookzero_0opt2_release(h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -502,14 +502,14 @@ void h_fixedbugsanarrowfloatconvertedtookzero_0opt2_release(h_fixedbugsanarrowfl
     }
 }
 
-bool h_fixedbugsanarrowfloatconvertedtookzero_0opt2_eq(const h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *a, const h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_fixedbugsanarrowfloatconvertedtookzero_0opt2_hash(const void *elem) {
-    const h_fixedbugsanarrowfloatconvertedtookzero_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

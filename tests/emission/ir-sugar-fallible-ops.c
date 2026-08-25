@@ -58,83 +58,83 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 #line 59 "sugarfallibleops.c"
 #pragma clang diagnostic pop
 
-typedef struct h_sugarfallibleops_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_sugarfallibleops_0opt0;
+} h_0opt_e201354;
 
-typedef struct h_sugarfallibleops_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_sugarfallibleops_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_sugarfallibleops_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_sugarfallibleops_0opt2;
+} h_0opt_a8ea2;
 
-void h_sugarfallibleops_0opt0_retain(const h_sugarfallibleops_0opt0 *v);
-void h_sugarfallibleops_0opt0_release(h_sugarfallibleops_0opt0 *v);
-bool h_sugarfallibleops_0opt0_eq(const h_sugarfallibleops_0opt0 *a, const h_sugarfallibleops_0opt0 *b);
-uint64_t h_sugarfallibleops_0opt0_hash(const void *elem);
-void h_sugarfallibleops_0opt1_retain(const h_sugarfallibleops_0opt1 *v);
-void h_sugarfallibleops_0opt1_release(h_sugarfallibleops_0opt1 *v);
-bool h_sugarfallibleops_0opt1_eq(const h_sugarfallibleops_0opt1 *a, const h_sugarfallibleops_0opt1 *b);
-uint64_t h_sugarfallibleops_0opt1_hash(const void *elem);
-void h_sugarfallibleops_0opt2_retain(const h_sugarfallibleops_0opt2 *v);
-void h_sugarfallibleops_0opt2_release(h_sugarfallibleops_0opt2 *v);
-bool h_sugarfallibleops_0opt2_eq(const h_sugarfallibleops_0opt2 *a, const h_sugarfallibleops_0opt2 *b);
-uint64_t h_sugarfallibleops_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
-int64_t h_sugarfallibleops_widen(h_sugarfallibleops_0opt0 h0_v);
+int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v);
 
 #line 4 "tests/golden/ir/sugar-fallible-ops.hero"
-int64_t h_sugarfallibleops_widen(h_sugarfallibleops_0opt0 h0_v) {
+int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v) {
 #line 102 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0 h1_f0 = {0};
-    h_sugarfallibleops_0opt0 h2_f1 = {0};
+    h_0opt_e201354 h1_f0 = {0};
+    h_0opt_e201354 h2_f1 = {0};
     int64_t h3_r0;
-    h_sugarfallibleops_0opt0 h4_f2 = {0};
-    h_sugarfallibleops_0opt0 t1 = {0};
-    h_sugarfallibleops_0opt0 t2 = {0};
+    h_0opt_e201354 h4_f2 = {0};
+    h_0opt_e201354 t1 = {0};
+    h_0opt_e201354 t2 = {0};
     int64_t t3;
     int64_t t4;
     bool t5;
-    h_sugarfallibleops_0opt0 t6 = {0};
-    h_sugarfallibleops_0opt0 t7 = {0};
+    h_0opt_e201354 t6 = {0};
+    h_0opt_e201354 t7 = {0};
     int64_t t8;
     int64_t t9;
     bool t10;
-    h_sugarfallibleops_0opt0 t11 = {0};
+    h_0opt_e201354 t11 = {0};
     int64_t t12;
     int64_t t13;
     int64_t t14;
-    h_sugarfallibleops_0opt0 t15 = {0};
-    h_sugarfallibleops_0opt0 t16 = {0};
+    h_0opt_e201354 t15 = {0};
+    h_0opt_e201354 t16 = {0};
     int64_t t17;
     int64_t t18;
     bool t19;
-    h_sugarfallibleops_0opt0 t20 = {0};
+    h_0opt_e201354 t20 = {0};
     HeroFailure t21 = {0};
-    h_sugarfallibleops_0opt0 t22 = {0};
+    h_0opt_e201354 t22 = {0};
     int64_t t23;
-    h_sugarfallibleops_0opt0 t24 = {0};
-    h_sugarfallibleops_0opt0 t25 = {0};
-    h_sugarfallibleops_0opt0 t26 = {0};
-    h_sugarfallibleops_0opt0 t27 = {0};
-    h_sugarfallibleops_0opt0 t28 = {0};
-    h_sugarfallibleops_0opt0 t29 = {0};
-    h_sugarfallibleops_0opt0 t30 = {0};
-    h_sugarfallibleops_0opt0 t31 = {0};
-    h_sugarfallibleops_0opt0 t32 = {0};
+    h_0opt_e201354 t24 = {0};
+    h_0opt_e201354 t25 = {0};
+    h_0opt_e201354 t26 = {0};
+    h_0opt_e201354 t27 = {0};
+    h_0opt_e201354 t28 = {0};
+    h_0opt_e201354 t29 = {0};
+    h_0opt_e201354 t30 = {0};
+    h_0opt_e201354 t31 = {0};
+    h_0opt_e201354 t32 = {0};
     goto bb0;
 bb0:
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -142,11 +142,11 @@ bb0:
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t24 = h1_f0;
 #line 145 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_retain(&t1);
+    h_0opt_e201354_retain(&t1);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     h1_f0 = t1;
 #line 149 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t24);
+    h_0opt_e201354_release(&t24);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t2 = h1_f0;
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -164,11 +164,11 @@ bb1:
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t25 = h4_f2;
 #line 167 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_retain(&t15);
+    h_0opt_e201354_retain(&t15);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     h4_f2 = t15;
 #line 171 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t25);
+    h_0opt_e201354_release(&t25);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t16 = h4_f2;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -186,11 +186,11 @@ bb2:
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t26 = h2_f1;
 #line 189 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_retain(&t6);
+    h_0opt_e201354_retain(&t6);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     h2_f1 = t6;
 #line 193 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t26);
+    h_0opt_e201354_release(&t26);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t7 = h2_f1;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -230,15 +230,15 @@ bb6:
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t27 = h1_f0;
 #line 233 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t27);
+    h_0opt_e201354_release(&t27);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t28 = h2_f1;
 #line 237 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t28);
+    h_0opt_e201354_release(&t28);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t29 = h4_f2;
 #line 241 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t29);
+    h_0opt_e201354_release(&t29);
     return t14;
 bb7:
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -248,15 +248,15 @@ bb7:
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t30 = h1_f0;
 #line 251 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t30);
+    h_0opt_e201354_release(&t30);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t31 = h2_f1;
 #line 255 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t31);
+    h_0opt_e201354_release(&t31);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t32 = h4_f2;
 #line 259 "sugarfallibleops.c"
-    h_sugarfallibleops_0opt0_release(&t32);
+    h_0opt_e201354_release(&t32);
     return t23;
 bb8:
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -267,7 +267,7 @@ bb8:
     hero_panic_must(t21);
     hero_unreachable();
 }
-void h_sugarfallibleops_0opt0_retain(const h_sugarfallibleops_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -275,7 +275,7 @@ void h_sugarfallibleops_0opt0_retain(const h_sugarfallibleops_0opt0 *v) {
     }
 }
 
-void h_sugarfallibleops_0opt0_release(h_sugarfallibleops_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -283,14 +283,14 @@ void h_sugarfallibleops_0opt0_release(h_sugarfallibleops_0opt0 *v) {
     }
 }
 
-bool h_sugarfallibleops_0opt0_eq(const h_sugarfallibleops_0opt0 *a, const h_sugarfallibleops_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sugarfallibleops_0opt0_hash(const void *elem) {
-    const h_sugarfallibleops_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -299,7 +299,7 @@ uint64_t h_sugarfallibleops_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sugarfallibleops_0opt1_retain(const h_sugarfallibleops_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -307,7 +307,7 @@ void h_sugarfallibleops_0opt1_retain(const h_sugarfallibleops_0opt1 *v) {
     }
 }
 
-void h_sugarfallibleops_0opt1_release(h_sugarfallibleops_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -315,14 +315,14 @@ void h_sugarfallibleops_0opt1_release(h_sugarfallibleops_0opt1 *v) {
     }
 }
 
-bool h_sugarfallibleops_0opt1_eq(const h_sugarfallibleops_0opt1 *a, const h_sugarfallibleops_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_sugarfallibleops_0opt1_hash(const void *elem) {
-    const h_sugarfallibleops_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -331,7 +331,7 @@ uint64_t h_sugarfallibleops_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_sugarfallibleops_0opt2_retain(const h_sugarfallibleops_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -339,7 +339,7 @@ void h_sugarfallibleops_0opt2_retain(const h_sugarfallibleops_0opt2 *v) {
     }
 }
 
-void h_sugarfallibleops_0opt2_release(h_sugarfallibleops_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -347,14 +347,14 @@ void h_sugarfallibleops_0opt2_release(h_sugarfallibleops_0opt2 *v) {
     }
 }
 
-bool h_sugarfallibleops_0opt2_eq(const h_sugarfallibleops_0opt2 *a, const h_sugarfallibleops_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_sugarfallibleops_0opt2_hash(const void *elem) {
-    const h_sugarfallibleops_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

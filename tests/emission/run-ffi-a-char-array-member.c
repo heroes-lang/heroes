@@ -84,43 +84,43 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_c
 
 HERO_STR_STATIC(hero_str_0, " ");
 
-typedef struct h_ffiachararraymember_0opt0 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_ffiachararraymember_0opt0;
+} h_0opt_e201354;
 
-typedef struct h_ffiachararraymember_0opt1 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_ffiachararraymember_0opt1;
+} h_0opt_f87774a;
 
-typedef struct h_ffiachararraymember_0opt2 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_ffiachararraymember_0opt2;
+} h_0opt_a8ea2;
 
 bool h_ffiachararraymember_Tag_eq(const Tag *a, const Tag *b);
 uint64_t h_ffiachararraymember_Tag_hash(const void *elem);
-void h_ffiachararraymember_0opt0_retain(const h_ffiachararraymember_0opt0 *v);
-void h_ffiachararraymember_0opt0_release(h_ffiachararraymember_0opt0 *v);
-bool h_ffiachararraymember_0opt0_eq(const h_ffiachararraymember_0opt0 *a, const h_ffiachararraymember_0opt0 *b);
-uint64_t h_ffiachararraymember_0opt0_hash(const void *elem);
-void h_ffiachararraymember_0opt1_retain(const h_ffiachararraymember_0opt1 *v);
-void h_ffiachararraymember_0opt1_release(h_ffiachararraymember_0opt1 *v);
-bool h_ffiachararraymember_0opt1_eq(const h_ffiachararraymember_0opt1 *a, const h_ffiachararraymember_0opt1 *b);
-uint64_t h_ffiachararraymember_0opt1_hash(const void *elem);
-void h_ffiachararraymember_0opt2_retain(const h_ffiachararraymember_0opt2 *v);
-void h_ffiachararraymember_0opt2_release(h_ffiachararraymember_0opt2 *v);
-bool h_ffiachararraymember_0opt2_eq(const h_ffiachararraymember_0opt2 *a, const h_ffiachararraymember_0opt2 *b);
-uint64_t h_ffiachararraymember_0opt2_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiachararraymember_main(void);
 
@@ -128,12 +128,12 @@ void h_ffiachararraymember_main(void);
 void h_ffiachararraymember_main(void) {
 #line 129 "ffiachararraymember.c"
     Tag h0_t;
-    h_ffiachararraymember_0opt0 h1_f0 = {0};
-    h_ffiachararraymember_0opt0 h2_f1 = {0};
-    h_ffiachararraymember_0opt0 h3_f2 = {0};
-    h_ffiachararraymember_0opt0 h4_own4 = {0};
-    h_ffiachararraymember_0opt0 h5_own5 = {0};
-    h_ffiachararraymember_0opt0 h6_own6 = {0};
+    h_0opt_e201354 h1_f0 = {0};
+    h_0opt_e201354 h2_f1 = {0};
+    h_0opt_e201354 h3_f2 = {0};
+    h_0opt_e201354 h4_own4 = {0};
+    h_0opt_e201354 h5_own5 = {0};
+    h_0opt_e201354 h6_own6 = {0};
     int8_t t1;
     int8_t t2;
     int8_t t3;
@@ -142,51 +142,51 @@ void h_ffiachararraymember_main(void) {
     Tag t7;
     Tag t8;
     int32_t t9;
-    h_ffiachararraymember_0opt0 t10 = {0};
-    h_ffiachararraymember_0opt0 t11 = {0};
+    h_0opt_e201354 t10 = {0};
+    h_0opt_e201354 t11 = {0};
     int64_t t12;
     int64_t t13;
     bool t14;
-    h_ffiachararraymember_0opt0 t15 = {0};
+    h_0opt_e201354 t15 = {0};
     HeroFailure t16 = {0};
-    h_ffiachararraymember_0opt0 t17 = {0};
+    h_0opt_e201354 t17 = {0};
     int64_t t18;
     Tag t19;
     int64_t t21;
     int8_t t22;
-    h_ffiachararraymember_0opt0 t23 = {0};
-    h_ffiachararraymember_0opt0 t24 = {0};
+    h_0opt_e201354 t23 = {0};
+    h_0opt_e201354 t24 = {0};
     int64_t t25;
     int64_t t26;
     bool t27;
-    h_ffiachararraymember_0opt0 t28 = {0};
+    h_0opt_e201354 t28 = {0};
     HeroFailure t29 = {0};
-    h_ffiachararraymember_0opt0 t30 = {0};
+    h_0opt_e201354 t30 = {0};
     int64_t t31;
     HeroStr t32 = {0};
     Tag t33;
     int32_t t34;
-    h_ffiachararraymember_0opt0 t35 = {0};
-    h_ffiachararraymember_0opt0 t36 = {0};
+    h_0opt_e201354 t35 = {0};
+    h_0opt_e201354 t36 = {0};
     int64_t t37;
     int64_t t38;
     bool t39;
-    h_ffiachararraymember_0opt0 t40 = {0};
+    h_0opt_e201354 t40 = {0};
     HeroFailure t41 = {0};
-    h_ffiachararraymember_0opt0 t42 = {0};
+    h_0opt_e201354 t42 = {0};
     int64_t t43;
-    h_ffiachararraymember_0opt0 t44 = {0};
-    h_ffiachararraymember_0opt0 t45 = {0};
-    h_ffiachararraymember_0opt0 t46 = {0};
-    h_ffiachararraymember_0opt0 t47 = {0};
-    h_ffiachararraymember_0opt0 t48 = {0};
-    h_ffiachararraymember_0opt0 t49 = {0};
-    h_ffiachararraymember_0opt0 t50 = {0};
-    h_ffiachararraymember_0opt0 t51 = {0};
-    h_ffiachararraymember_0opt0 t52 = {0};
-    h_ffiachararraymember_0opt0 t53 = {0};
-    h_ffiachararraymember_0opt0 t54 = {0};
-    h_ffiachararraymember_0opt0 t55 = {0};
+    h_0opt_e201354 t44 = {0};
+    h_0opt_e201354 t45 = {0};
+    h_0opt_e201354 t46 = {0};
+    h_0opt_e201354 t47 = {0};
+    h_0opt_e201354 t48 = {0};
+    h_0opt_e201354 t49 = {0};
+    h_0opt_e201354 t50 = {0};
+    h_0opt_e201354 t51 = {0};
+    h_0opt_e201354 t52 = {0};
+    h_0opt_e201354 t53 = {0};
+    h_0opt_e201354 t54 = {0};
+    h_0opt_e201354 t55 = {0};
     goto bb0;
 bb0:
 #line 42 "tests/golden/run/ffi-a-char-array-member.hero"
@@ -208,21 +208,21 @@ bb0:
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t9 = tag_first(t8);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t10 = (h_ffiachararraymember_0opt0){.tag = INT64_C(0), .as.ok = (int64_t)t9};
+    t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t9};
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t44 = h4_own4;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h4_own4 = t10;
 #line 216 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t44);
+    h_0opt_e201354_release(&t44);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t45 = h1_f0;
 #line 220 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_retain(&t10);
+    h_0opt_e201354_retain(&t10);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h1_f0 = t10;
 #line 224 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t45);
+    h_0opt_e201354_release(&t45);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t11 = h1_f0;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
@@ -250,21 +250,21 @@ bb1:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t22 = t19.name[((uint64_t)(t21) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t21))];
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t23 = (h_ffiachararraymember_0opt0){.tag = INT64_C(0), .as.ok = (int64_t)t22};
+    t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t22};
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t46 = h5_own5;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h5_own5 = t23;
 #line 258 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t46);
+    h_0opt_e201354_release(&t46);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t47 = h2_f1;
 #line 262 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_retain(&t23);
+    h_0opt_e201354_retain(&t23);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h2_f1 = t23;
 #line 266 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t47);
+    h_0opt_e201354_release(&t47);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t24 = h2_f1;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
@@ -296,21 +296,21 @@ bb3:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t34 = t33.id;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t35 = (h_ffiachararraymember_0opt0){.tag = INT64_C(0), .as.ok = (int64_t)t34};
+    t35 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t34};
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t48 = h6_own6;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h6_own6 = t35;
 #line 304 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t48);
+    h_0opt_e201354_release(&t48);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t49 = h3_f2;
 #line 308 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_retain(&t35);
+    h_0opt_e201354_retain(&t35);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h3_f2 = t35;
 #line 312 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t49);
+    h_0opt_e201354_release(&t49);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t36 = h3_f2;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
@@ -346,27 +346,27 @@ bb5:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t50 = h1_f0;
 #line 348 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t50);
+    h_0opt_e201354_release(&t50);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t51 = h2_f1;
 #line 352 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t51);
+    h_0opt_e201354_release(&t51);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t52 = h3_f2;
 #line 356 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t52);
+    h_0opt_e201354_release(&t52);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t53 = h4_own4;
 #line 360 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t53);
+    h_0opt_e201354_release(&t53);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t54 = h5_own5;
 #line 364 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t54);
+    h_0opt_e201354_release(&t54);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t55 = h6_own6;
 #line 368 "ffiachararraymember.c"
-    h_ffiachararraymember_0opt0_release(&t55);
+    h_0opt_e201354_release(&t55);
     return;
 bb6:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
@@ -394,7 +394,7 @@ uint64_t h_ffiachararraymember_Tag_hash(const void *elem) {
     return h;
 }
 
-void h_ffiachararraymember_0opt0_retain(const h_ffiachararraymember_0opt0 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -402,7 +402,7 @@ void h_ffiachararraymember_0opt0_retain(const h_ffiachararraymember_0opt0 *v) {
     }
 }
 
-void h_ffiachararraymember_0opt0_release(h_ffiachararraymember_0opt0 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -410,14 +410,14 @@ void h_ffiachararraymember_0opt0_release(h_ffiachararraymember_0opt0 *v) {
     }
 }
 
-bool h_ffiachararraymember_0opt0_eq(const h_ffiachararraymember_0opt0 *a, const h_ffiachararraymember_0opt0 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_ffiachararraymember_0opt0_hash(const void *elem) {
-    const h_ffiachararraymember_0opt0 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -426,7 +426,7 @@ uint64_t h_ffiachararraymember_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_ffiachararraymember_0opt1_retain(const h_ffiachararraymember_0opt1 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -434,7 +434,7 @@ void h_ffiachararraymember_0opt1_retain(const h_ffiachararraymember_0opt1 *v) {
     }
 }
 
-void h_ffiachararraymember_0opt1_release(h_ffiachararraymember_0opt1 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -442,14 +442,14 @@ void h_ffiachararraymember_0opt1_release(h_ffiachararraymember_0opt1 *v) {
     }
 }
 
-bool h_ffiachararraymember_0opt1_eq(const h_ffiachararraymember_0opt1 *a, const h_ffiachararraymember_0opt1 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_ffiachararraymember_0opt1_hash(const void *elem) {
-    const h_ffiachararraymember_0opt1 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -458,7 +458,7 @@ uint64_t h_ffiachararraymember_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_ffiachararraymember_0opt2_retain(const h_ffiachararraymember_0opt2 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -466,7 +466,7 @@ void h_ffiachararraymember_0opt2_retain(const h_ffiachararraymember_0opt2 *v) {
     }
 }
 
-void h_ffiachararraymember_0opt2_release(h_ffiachararraymember_0opt2 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -474,14 +474,14 @@ void h_ffiachararraymember_0opt2_release(h_ffiachararraymember_0opt2 *v) {
     }
 }
 
-bool h_ffiachararraymember_0opt2_eq(const h_ffiachararraymember_0opt2 *a, const h_ffiachararraymember_0opt2 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_ffiachararraymember_0opt2_hash(const void *elem) {
-    const h_ffiachararraymember_0opt2 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {

@@ -101,57 +101,57 @@ typedef struct h_list_Task {
     HeroStr f_text;
 } h_list_Task;
 
-typedef struct h_main_0opt0 {
+typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
         HeroStr ok;
         HeroFailure err;
     } as;
-} h_main_0opt0;
+} h_0opt_f87774a;
 
-typedef struct h_main_0opt1 {
+typedef struct h_0opt_4f4c4677 {
     int64_t tag;
     union {
         HeroArrayHeader * ok;
         HeroFailure err;
     } as;
-} h_main_0opt1;
+} h_0opt_4f4c4677;
 
-typedef struct h_main_0opt2 {
+typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
         int64_t ok;
         HeroFailure err;
     } as;
-} h_main_0opt2;
+} h_0opt_e201354;
 
-typedef struct h_main_0opt3 {
+typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
         HeroFailure err;
     } as;
-} h_main_0opt3;
+} h_0opt_a8ea2;
 
 void h_list_Task_retain(const h_list_Task *v);
 void h_list_Task_release(h_list_Task *v);
 bool h_list_Task_eq(const h_list_Task *a, const h_list_Task *b);
 uint64_t h_list_Task_hash(const void *elem);
-void h_main_0opt0_retain(const h_main_0opt0 *v);
-void h_main_0opt0_release(h_main_0opt0 *v);
-bool h_main_0opt0_eq(const h_main_0opt0 *a, const h_main_0opt0 *b);
-uint64_t h_main_0opt0_hash(const void *elem);
-void h_main_0opt1_retain(const h_main_0opt1 *v);
-void h_main_0opt1_release(h_main_0opt1 *v);
-bool h_main_0opt1_eq(const h_main_0opt1 *a, const h_main_0opt1 *b);
-uint64_t h_main_0opt1_hash(const void *elem);
-void h_main_0opt2_retain(const h_main_0opt2 *v);
-void h_main_0opt2_release(h_main_0opt2 *v);
-bool h_main_0opt2_eq(const h_main_0opt2 *a, const h_main_0opt2 *b);
-uint64_t h_main_0opt2_hash(const void *elem);
-void h_main_0opt3_retain(const h_main_0opt3 *v);
-void h_main_0opt3_release(h_main_0opt3 *v);
-bool h_main_0opt3_eq(const h_main_0opt3 *a, const h_main_0opt3 *b);
-uint64_t h_main_0opt3_hash(const void *elem);
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+void h_0opt_f87774a_release(h_0opt_f87774a *v);
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+uint64_t h_0opt_f87774a_hash(const void *elem);
+void h_0opt_4f4c4677_retain(const h_0opt_4f4c4677 *v);
+void h_0opt_4f4c4677_release(h_0opt_4f4c4677 *v);
+bool h_0opt_4f4c4677_eq(const h_0opt_4f4c4677 *a, const h_0opt_4f4c4677 *b);
+uint64_t h_0opt_4f4c4677_hash(const void *elem);
+void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+void h_0opt_e201354_release(h_0opt_e201354 *v);
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+uint64_t h_0opt_e201354_hash(const void *elem);
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_list_Task_desc_copy(void *dst, const void *src) {
     *(h_list_Task *)dst = *(const h_list_Task *)src;
@@ -180,7 +180,7 @@ void h_main_finish(HeroArrayHeader * h0_tasks, int64_t h1_n, HeroStr h2_path);
 void h_main_save(HeroArrayHeader * h0_tasks, HeroStr h1_path);
 void h_main_show(HeroArrayHeader * h0_tasks);
 HeroStr h_main_rest_of(HeroArrayHeader * h0_given, int64_t h1_at);
-h_main_0opt2 h_main_number_of(HeroStr h0_word);
+h_0opt_e201354 h_main_number_of(HeroStr h0_word);
 HeroStr h_list_ERR_BAD_LINE(void);
 HeroStr h_list_ERR_BAD_MARKER(void);
 HeroStr h_list_ERR_EMPTY_TASK(void);
@@ -188,19 +188,19 @@ HeroStr h_list_ERR_NO_SUCH_TASK(void);
 bool h_list_is_space(uint8_t h0_c);
 HeroStr h_list_trimmed(HeroStr h0_line);
 HeroArrayHeader * h_list_split_lines(HeroStr h0_text);
-h_main_0opt1 h_list_read(HeroStr h0_text);
+h_0opt_4f4c4677 h_list_read(HeroStr h0_text);
 HeroStr h_list_render(HeroArrayHeader * h0_tasks);
 HeroStr h_list_marker_of(h_list_Task h0_task);
-h_main_0opt1 h_list_add(HeroArrayHeader * h0_tasks, HeroStr h1_text);
-h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n);
+h_0opt_4f4c4677 h_list_add(HeroArrayHeader * h0_tasks, HeroStr h1_text);
+h_0opt_4f4c4677 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n);
 int64_t h_list_left_to_do(HeroArrayHeader * h0_tasks);
 HeroArrayHeader * h_list_numbered(HeroArrayHeader * h0_tasks);
 HeroStr h_list_code_of(HeroStr h0_text);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 int64_t h_library_HERO_OS_OK(void);
 int64_t h_library_HERO_OS_NOT_FOUND(void);
-h_main_0opt0 h_library_read_file(HeroStr h0_path);
-h_main_0opt3 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
+h_0opt_f87774a h_library_read_file(HeroStr h0_path);
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 HeroArrayHeader * h_library_args(void);
 void h_library_exit(int64_t h0_code);
 
@@ -221,10 +221,10 @@ bb0:
 void h_main_main(void) {
 #line 223 "main.c"
     HeroArrayHeader * h0_given = {0};
-    h_main_0opt0 h1_s0 = {0};
+    h_0opt_f87774a h1_s0 = {0};
     HeroStr h2_text = {0};
     HeroArrayHeader * h3_own3 = {0};
-    h_main_0opt0 h4_own4 = {0};
+    h_0opt_f87774a h4_own4 = {0};
     HeroStr h5_own5 = {0};
     HeroArrayHeader * t1 = {0};
     HeroArrayHeader * t2 = {0};
@@ -236,29 +236,29 @@ void h_main_main(void) {
     HeroArrayHeader * t8 = {0};
     int64_t t9;
     HeroStr t10 = {0};
-    h_main_0opt0 t11 = {0};
-    h_main_0opt0 t12 = {0};
+    h_0opt_f87774a t11 = {0};
+    h_0opt_f87774a t12 = {0};
     int64_t t13;
     HeroStr t14 = {0};
     HeroArrayHeader * t15 = {0};
     int64_t t16;
     HeroStr t17 = {0};
     HeroStr t18 = {0};
-    h_main_0opt0 t19 = {0};
+    h_0opt_f87774a t19 = {0};
     HeroStr t20 = {0};
     HeroStr t21 = {0};
     HeroArrayHeader * t22 = {0};
     HeroArrayHeader * t23 = {0};
     HeroArrayHeader * t24 = {0};
-    h_main_0opt0 t25 = {0};
-    h_main_0opt0 t26 = {0};
+    h_0opt_f87774a t25 = {0};
+    h_0opt_f87774a t26 = {0};
     HeroStr t27 = {0};
     HeroStr t28 = {0};
     HeroArrayHeader * t29 = {0};
-    h_main_0opt0 t30 = {0};
+    h_0opt_f87774a t30 = {0};
     HeroStr t31 = {0};
     HeroArrayHeader * t32 = {0};
-    h_main_0opt0 t33 = {0};
+    h_0opt_f87774a t33 = {0};
     HeroStr t34 = {0};
     goto bb0;
 bb0:
@@ -303,15 +303,15 @@ bb1:
 #line 35 "examples/todo/main.hero"
     h4_own4 = t11;
 #line 306 "main.c"
-    h_main_0opt0_release(&t25);
+    h_0opt_f87774a_release(&t25);
 #line 35 "examples/todo/main.hero"
     t26 = h1_s0;
 #line 310 "main.c"
-    h_main_0opt0_retain(&t11);
+    h_0opt_f87774a_retain(&t11);
 #line 35 "examples/todo/main.hero"
     h1_s0 = t11;
 #line 314 "main.c"
-    h_main_0opt0_release(&t26);
+    h_0opt_f87774a_release(&t26);
 #line 35 "examples/todo/main.hero"
     t12 = h1_s0;
 #line 35 "examples/todo/main.hero"
@@ -353,7 +353,7 @@ bb4:
 #line 30 "examples/todo/main.hero"
     t30 = h1_s0;
 #line 356 "main.c"
-    h_main_0opt0_release(&t30);
+    h_0opt_f87774a_release(&t30);
 #line 30 "examples/todo/main.hero"
     t31 = h2_text;
 #line 360 "main.c"
@@ -365,7 +365,7 @@ bb4:
 #line 30 "examples/todo/main.hero"
     t33 = h4_own4;
 #line 368 "main.c"
-    h_main_0opt0_release(&t33);
+    h_0opt_f87774a_release(&t33);
 #line 30 "examples/todo/main.hero"
     t34 = h5_own5;
 #line 372 "main.c"
@@ -442,17 +442,17 @@ bb0:
 #line 43 "examples/todo/main.hero"
 void h_main_run(HeroStr h0_text, HeroArrayHeader * h1_given) {
 #line 445 "main.c"
-    h_main_0opt1 h2_s0 = {0};
+    h_0opt_4f4c4677 h2_s0 = {0};
     HeroFailure h3_e = {0};
     HeroArrayHeader * h4_tasks = {0};
-    h_main_0opt1 h5_own5 = {0};
+    h_0opt_4f4c4677 h5_own5 = {0};
     HeroStr h6_own6 = {0};
     HeroStr h7_own7 = {0};
     HeroStr t1 = {0};
-    h_main_0opt1 t2 = {0};
-    h_main_0opt1 t3 = {0};
+    h_0opt_4f4c4677 t2 = {0};
+    h_0opt_4f4c4677 t3 = {0};
     int64_t t4;
-    h_main_0opt1 t5 = {0};
+    h_0opt_4f4c4677 t5 = {0};
     HeroFailure t6 = {0};
     HeroFailure t7 = {0};
     HeroStr t8 = {0};
@@ -461,20 +461,20 @@ void h_main_run(HeroStr h0_text, HeroArrayHeader * h1_given) {
     HeroFailure t11 = {0};
     HeroStr t12 = {0};
     HeroStr t13 = {0};
-    h_main_0opt1 t14 = {0};
+    h_0opt_4f4c4677 t14 = {0};
     HeroArrayHeader * t15 = {0};
     HeroArrayHeader * t16 = {0};
     HeroArrayHeader * t17 = {0};
-    h_main_0opt1 t18 = {0};
-    h_main_0opt1 t19 = {0};
+    h_0opt_4f4c4677 t18 = {0};
+    h_0opt_4f4c4677 t19 = {0};
     HeroFailure t20 = {0};
     HeroStr t21 = {0};
     HeroStr t22 = {0};
     HeroArrayHeader * t23 = {0};
-    h_main_0opt1 t24 = {0};
+    h_0opt_4f4c4677 t24 = {0};
     HeroFailure t25 = {0};
     HeroArrayHeader * t26 = {0};
-    h_main_0opt1 t27 = {0};
+    h_0opt_4f4c4677 t27 = {0};
     HeroStr t28 = {0};
     HeroStr t29 = {0};
     goto bb0;
@@ -488,15 +488,15 @@ bb0:
 #line 44 "examples/todo/main.hero"
     h5_own5 = t2;
 #line 491 "main.c"
-    h_main_0opt1_release(&t18);
+    h_0opt_4f4c4677_release(&t18);
 #line 44 "examples/todo/main.hero"
     t19 = h2_s0;
 #line 495 "main.c"
-    h_main_0opt1_retain(&t2);
+    h_0opt_4f4c4677_retain(&t2);
 #line 44 "examples/todo/main.hero"
     h2_s0 = t2;
 #line 499 "main.c"
-    h_main_0opt1_release(&t19);
+    h_0opt_4f4c4677_release(&t19);
 #line 44 "examples/todo/main.hero"
     t3 = h2_s0;
 #line 44 "examples/todo/main.hero"
@@ -516,7 +516,7 @@ bb1:
 #line 43 "examples/todo/main.hero"
     t24 = h2_s0;
 #line 519 "main.c"
-    h_main_0opt1_release(&t24);
+    h_0opt_4f4c4677_release(&t24);
 #line 43 "examples/todo/main.hero"
     t25 = h3_e;
 #line 523 "main.c"
@@ -528,7 +528,7 @@ bb1:
 #line 43 "examples/todo/main.hero"
     t27 = h5_own5;
 #line 531 "main.c"
-    h_main_0opt1_release(&t27);
+    h_0opt_4f4c4677_release(&t27);
 #line 43 "examples/todo/main.hero"
     t28 = h6_own6;
 #line 535 "main.c"
@@ -610,18 +610,18 @@ bb3:
 void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) {
 #line 612 "main.c"
     HeroStr h2_command = {0};
-    h_main_0opt1 h3_s0 = {0};
+    h_0opt_4f4c4677 h3_s0 = {0};
     HeroFailure h4_e = {0};
     HeroArrayHeader * h5_grown = {0};
-    h_main_0opt2 h6_s1 = {0};
+    h_0opt_e201354 h6_s1 = {0};
     HeroFailure h7_e = {0};
     int64_t h8_n;
     HeroStr h9_own9 = {0};
-    h_main_0opt1 h10_own10 = {0};
+    h_0opt_4f4c4677 h10_own10 = {0};
     HeroStr h11_own11 = {0};
     HeroStr h12_own12 = {0};
     HeroStr h13_own13 = {0};
-    h_main_0opt2 h14_own14 = {0};
+    h_0opt_e201354 h14_own14 = {0};
     HeroStr h15_own15 = {0};
     HeroStr h16_own16 = {0};
     HeroStr h17_own17 = {0};
@@ -641,10 +641,10 @@ void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) {
     HeroArrayHeader * t13 = {0};
     int64_t t14;
     HeroStr t15 = {0};
-    h_main_0opt1 t16 = {0};
-    h_main_0opt1 t17 = {0};
+    h_0opt_4f4c4677 t16 = {0};
+    h_0opt_4f4c4677 t17 = {0};
     int64_t t18;
-    h_main_0opt1 t19 = {0};
+    h_0opt_4f4c4677 t19 = {0};
     HeroFailure t20 = {0};
     HeroFailure t21 = {0};
     HeroStr t22 = {0};
@@ -653,7 +653,7 @@ void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) {
     HeroFailure t25 = {0};
     HeroStr t26 = {0};
     HeroStr t27 = {0};
-    h_main_0opt1 t28 = {0};
+    h_0opt_4f4c4677 t28 = {0};
     HeroArrayHeader * t29 = {0};
     HeroArrayHeader * t30 = {0};
     HeroArrayHeader * t31 = {0};
@@ -665,10 +665,10 @@ void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) {
     HeroArrayHeader * t37 = {0};
     int64_t t38;
     HeroStr t39 = {0};
-    h_main_0opt2 t40 = {0};
-    h_main_0opt2 t41 = {0};
+    h_0opt_e201354 t40 = {0};
+    h_0opt_e201354 t41 = {0};
     int64_t t42;
-    h_main_0opt2 t43 = {0};
+    h_0opt_e201354 t43 = {0};
     HeroFailure t44 = {0};
     HeroFailure t45 = {0};
     HeroStr t46 = {0};
@@ -677,7 +677,7 @@ void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) {
     HeroFailure t49 = {0};
     HeroStr t50 = {0};
     HeroStr t51 = {0};
-    h_main_0opt2 t52 = {0};
+    h_0opt_e201354 t52 = {0};
     int64_t t53;
     HeroArrayHeader * t54 = {0};
     int64_t t55;
@@ -691,48 +691,48 @@ void h_main_act(HeroArrayHeader * h0_tasks, HeroArrayHeader * h1_given) {
     HeroStr t63 = {0};
     HeroStr t64 = {0};
     HeroStr t65 = {0};
-    h_main_0opt1 t66 = {0};
-    h_main_0opt1 t67 = {0};
+    h_0opt_4f4c4677 t66 = {0};
+    h_0opt_4f4c4677 t67 = {0};
     HeroFailure t68 = {0};
     HeroStr t69 = {0};
     HeroStr t70 = {0};
     HeroArrayHeader * t71 = {0};
     HeroStr t72 = {0};
-    h_main_0opt2 t73 = {0};
-    h_main_0opt2 t74 = {0};
+    h_0opt_e201354 t73 = {0};
+    h_0opt_e201354 t74 = {0};
     HeroStr t75 = {0};
     HeroStr t76 = {0};
     HeroFailure t77 = {0};
     HeroStr t78 = {0};
     HeroStr t79 = {0};
     HeroStr t80 = {0};
-    h_main_0opt1 t81 = {0};
+    h_0opt_4f4c4677 t81 = {0};
     HeroFailure t82 = {0};
     HeroArrayHeader * t83 = {0};
-    h_main_0opt2 t84 = {0};
+    h_0opt_e201354 t84 = {0};
     HeroFailure t85 = {0};
     HeroStr t86 = {0};
-    h_main_0opt1 t87 = {0};
+    h_0opt_4f4c4677 t87 = {0};
     HeroStr t88 = {0};
     HeroStr t89 = {0};
     HeroStr t90 = {0};
-    h_main_0opt2 t91 = {0};
+    h_0opt_e201354 t91 = {0};
     HeroStr t92 = {0};
     HeroStr t93 = {0};
     HeroStr t94 = {0};
     HeroStr t95 = {0};
     HeroStr t96 = {0};
-    h_main_0opt1 t97 = {0};
+    h_0opt_4f4c4677 t97 = {0};
     HeroFailure t98 = {0};
     HeroArrayHeader * t99 = {0};
-    h_main_0opt2 t100 = {0};
+    h_0opt_e201354 t100 = {0};
     HeroFailure t101 = {0};
     HeroStr t102 = {0};
-    h_main_0opt1 t103 = {0};
+    h_0opt_4f4c4677 t103 = {0};
     HeroStr t104 = {0};
     HeroStr t105 = {0};
     HeroStr t106 = {0};
-    h_main_0opt2 t107 = {0};
+    h_0opt_e201354 t107 = {0};
     HeroStr t108 = {0};
     HeroStr t109 = {0};
     HeroStr t110 = {0};
@@ -786,7 +786,7 @@ bb2:
 #line 50 "examples/todo/main.hero"
     t81 = h3_s0;
 #line 789 "main.c"
-    h_main_0opt1_release(&t81);
+    h_0opt_4f4c4677_release(&t81);
 #line 50 "examples/todo/main.hero"
     t82 = h4_e;
 #line 793 "main.c"
@@ -798,7 +798,7 @@ bb2:
 #line 50 "examples/todo/main.hero"
     t84 = h6_s1;
 #line 801 "main.c"
-    h_main_0opt2_release(&t84);
+    h_0opt_e201354_release(&t84);
 #line 50 "examples/todo/main.hero"
     t85 = h7_e;
 #line 805 "main.c"
@@ -810,7 +810,7 @@ bb2:
 #line 50 "examples/todo/main.hero"
     t87 = h10_own10;
 #line 813 "main.c"
-    h_main_0opt1_release(&t87);
+    h_0opt_4f4c4677_release(&t87);
 #line 50 "examples/todo/main.hero"
     t88 = h11_own11;
 #line 817 "main.c"
@@ -826,7 +826,7 @@ bb2:
 #line 50 "examples/todo/main.hero"
     t91 = h14_own14;
 #line 829 "main.c"
-    h_main_0opt2_release(&t91);
+    h_0opt_e201354_release(&t91);
 #line 50 "examples/todo/main.hero"
     t92 = h15_own15;
 #line 833 "main.c"
@@ -854,7 +854,7 @@ bb4:
 #line 48 "examples/todo/main.hero"
     t97 = h3_s0;
 #line 857 "main.c"
-    h_main_0opt1_release(&t97);
+    h_0opt_4f4c4677_release(&t97);
 #line 48 "examples/todo/main.hero"
     t98 = h4_e;
 #line 861 "main.c"
@@ -866,7 +866,7 @@ bb4:
 #line 48 "examples/todo/main.hero"
     t100 = h6_s1;
 #line 869 "main.c"
-    h_main_0opt2_release(&t100);
+    h_0opt_e201354_release(&t100);
 #line 48 "examples/todo/main.hero"
     t101 = h7_e;
 #line 873 "main.c"
@@ -878,7 +878,7 @@ bb4:
 #line 48 "examples/todo/main.hero"
     t103 = h10_own10;
 #line 881 "main.c"
-    h_main_0opt1_release(&t103);
+    h_0opt_4f4c4677_release(&t103);
 #line 48 "examples/todo/main.hero"
     t104 = h11_own11;
 #line 885 "main.c"
@@ -894,7 +894,7 @@ bb4:
 #line 48 "examples/todo/main.hero"
     t107 = h14_own14;
 #line 897 "main.c"
-    h_main_0opt2_release(&t107);
+    h_0opt_e201354_release(&t107);
 #line 48 "examples/todo/main.hero"
     t108 = h15_own15;
 #line 901 "main.c"
@@ -934,15 +934,15 @@ bb5:
 #line 54 "examples/todo/main.hero"
     h10_own10 = t16;
 #line 937 "main.c"
-    h_main_0opt1_release(&t66);
+    h_0opt_4f4c4677_release(&t66);
 #line 54 "examples/todo/main.hero"
     t67 = h3_s0;
 #line 941 "main.c"
-    h_main_0opt1_retain(&t16);
+    h_0opt_4f4c4677_retain(&t16);
 #line 54 "examples/todo/main.hero"
     h3_s0 = t16;
 #line 945 "main.c"
-    h_main_0opt1_release(&t67);
+    h_0opt_4f4c4677_release(&t67);
 #line 54 "examples/todo/main.hero"
     t17 = h3_s0;
 #line 54 "examples/todo/main.hero"
@@ -1062,15 +1062,15 @@ bb10:
 #line 58 "examples/todo/main.hero"
     h14_own14 = t40;
 #line 1065 "main.c"
-    h_main_0opt2_release(&t73);
+    h_0opt_e201354_release(&t73);
 #line 58 "examples/todo/main.hero"
     t74 = h6_s1;
 #line 1069 "main.c"
-    h_main_0opt2_retain(&t40);
+    h_0opt_e201354_retain(&t40);
 #line 58 "examples/todo/main.hero"
     h6_s1 = t40;
 #line 1073 "main.c"
-    h_main_0opt2_release(&t74);
+    h_0opt_e201354_release(&t74);
 #line 58 "examples/todo/main.hero"
     t41 = h6_s1;
 #line 58 "examples/todo/main.hero"
@@ -1189,18 +1189,18 @@ bb14:
 #line 64 "examples/todo/main.hero"
 void h_main_finish(HeroArrayHeader * h0_tasks, int64_t h1_n, HeroStr h2_path) {
 #line 1192 "main.c"
-    h_main_0opt1 h3_s0 = {0};
+    h_0opt_4f4c4677 h3_s0 = {0};
     HeroFailure h4_e = {0};
     HeroArrayHeader * h5_after = {0};
-    h_main_0opt1 h6_own6 = {0};
+    h_0opt_4f4c4677 h6_own6 = {0};
     HeroStr h7_own7 = {0};
     HeroStr h8_own8 = {0};
     HeroArrayHeader * t1 = {0};
     int64_t t2;
-    h_main_0opt1 t3 = {0};
-    h_main_0opt1 t4 = {0};
+    h_0opt_4f4c4677 t3 = {0};
+    h_0opt_4f4c4677 t4 = {0};
     int64_t t5;
-    h_main_0opt1 t6 = {0};
+    h_0opt_4f4c4677 t6 = {0};
     HeroFailure t7 = {0};
     HeroFailure t8 = {0};
     HeroStr t9 = {0};
@@ -1209,20 +1209,20 @@ void h_main_finish(HeroArrayHeader * h0_tasks, int64_t h1_n, HeroStr h2_path) {
     HeroFailure t12 = {0};
     HeroStr t13 = {0};
     HeroStr t14 = {0};
-    h_main_0opt1 t15 = {0};
+    h_0opt_4f4c4677 t15 = {0};
     HeroArrayHeader * t16 = {0};
     HeroArrayHeader * t17 = {0};
     HeroStr t18 = {0};
-    h_main_0opt1 t19 = {0};
-    h_main_0opt1 t20 = {0};
+    h_0opt_4f4c4677 t19 = {0};
+    h_0opt_4f4c4677 t20 = {0};
     HeroFailure t21 = {0};
     HeroStr t22 = {0};
     HeroStr t23 = {0};
     HeroArrayHeader * t24 = {0};
-    h_main_0opt1 t25 = {0};
+    h_0opt_4f4c4677 t25 = {0};
     HeroFailure t26 = {0};
     HeroArrayHeader * t27 = {0};
-    h_main_0opt1 t28 = {0};
+    h_0opt_4f4c4677 t28 = {0};
     HeroStr t29 = {0};
     HeroStr t30 = {0};
     goto bb0;
@@ -1238,15 +1238,15 @@ bb0:
 #line 65 "examples/todo/main.hero"
     h6_own6 = t3;
 #line 1241 "main.c"
-    h_main_0opt1_release(&t19);
+    h_0opt_4f4c4677_release(&t19);
 #line 65 "examples/todo/main.hero"
     t20 = h3_s0;
 #line 1245 "main.c"
-    h_main_0opt1_retain(&t3);
+    h_0opt_4f4c4677_retain(&t3);
 #line 65 "examples/todo/main.hero"
     h3_s0 = t3;
 #line 1249 "main.c"
-    h_main_0opt1_release(&t20);
+    h_0opt_4f4c4677_release(&t20);
 #line 65 "examples/todo/main.hero"
     t4 = h3_s0;
 #line 65 "examples/todo/main.hero"
@@ -1266,7 +1266,7 @@ bb1:
 #line 64 "examples/todo/main.hero"
     t25 = h3_s0;
 #line 1269 "main.c"
-    h_main_0opt1_release(&t25);
+    h_0opt_4f4c4677_release(&t25);
 #line 64 "examples/todo/main.hero"
     t26 = h4_e;
 #line 1273 "main.c"
@@ -1278,7 +1278,7 @@ bb1:
 #line 64 "examples/todo/main.hero"
     t28 = h6_own6;
 #line 1281 "main.c"
-    h_main_0opt1_release(&t28);
+    h_0opt_4f4c4677_release(&t28);
 #line 64 "examples/todo/main.hero"
     t29 = h7_own7;
 #line 1285 "main.c"
@@ -1359,27 +1359,27 @@ bb3:
 #line 70 "examples/todo/main.hero"
 void h_main_save(HeroArrayHeader * h0_tasks, HeroStr h1_path) {
 #line 1362 "main.c"
-    h_main_0opt3 h2_s0 = {0};
+    h_0opt_a8ea2 h2_s0 = {0};
     HeroStr h3_own3 = {0};
-    h_main_0opt3 h4_own4 = {0};
+    h_0opt_a8ea2 h4_own4 = {0};
     HeroStr h5_own5 = {0};
     HeroStr t1 = {0};
     HeroArrayHeader * t2 = {0};
     HeroStr t3 = {0};
-    h_main_0opt3 t4 = {0};
-    h_main_0opt3 t5 = {0};
+    h_0opt_a8ea2 t4 = {0};
+    h_0opt_a8ea2 t5 = {0};
     int64_t t6;
     HeroStr t7 = {0};
     HeroStr t8 = {0};
     HeroStr t9 = {0};
     HeroArrayHeader * t10 = {0};
     HeroStr t11 = {0};
-    h_main_0opt3 t12 = {0};
-    h_main_0opt3 t13 = {0};
+    h_0opt_a8ea2 t12 = {0};
+    h_0opt_a8ea2 t13 = {0};
     HeroStr t14 = {0};
-    h_main_0opt3 t15 = {0};
+    h_0opt_a8ea2 t15 = {0};
     HeroStr t16 = {0};
-    h_main_0opt3 t17 = {0};
+    h_0opt_a8ea2 t17 = {0};
     HeroStr t18 = {0};
     goto bb0;
 bb0:
@@ -1402,15 +1402,15 @@ bb0:
 #line 71 "examples/todo/main.hero"
     h4_own4 = t4;
 #line 1405 "main.c"
-    h_main_0opt3_release(&t12);
+    h_0opt_a8ea2_release(&t12);
 #line 71 "examples/todo/main.hero"
     t13 = h2_s0;
 #line 1409 "main.c"
-    h_main_0opt3_retain(&t4);
+    h_0opt_a8ea2_retain(&t4);
 #line 71 "examples/todo/main.hero"
     h2_s0 = t4;
 #line 1413 "main.c"
-    h_main_0opt3_release(&t13);
+    h_0opt_a8ea2_release(&t13);
 #line 71 "examples/todo/main.hero"
     t5 = h2_s0;
 #line 71 "examples/todo/main.hero"
@@ -1430,7 +1430,7 @@ bb1:
 #line 70 "examples/todo/main.hero"
     t15 = h2_s0;
 #line 1433 "main.c"
-    h_main_0opt3_release(&t15);
+    h_0opt_a8ea2_release(&t15);
 #line 70 "examples/todo/main.hero"
     t16 = h3_own3;
 #line 1437 "main.c"
@@ -1438,7 +1438,7 @@ bb1:
 #line 70 "examples/todo/main.hero"
     t17 = h4_own4;
 #line 1441 "main.c"
-    h_main_0opt3_release(&t17);
+    h_0opt_a8ea2_release(&t17);
 #line 70 "examples/todo/main.hero"
     t18 = h5_own5;
 #line 1445 "main.c"
@@ -1791,30 +1791,30 @@ bb4:
 }
 
 #line 88 "examples/todo/main.hero"
-h_main_0opt2 h_main_number_of(HeroStr h0_word) {
+h_0opt_e201354 h_main_number_of(HeroStr h0_word) {
 #line 1796 "main.c"
     int64_t h1_v;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_i;
     bool h5_b0;
-    h_main_0opt2 h6_f0 = {0};
+    h_0opt_e201354 h6_f0 = {0};
     HeroArrayHeader * h7_own7 = {0};
     HeroStr h8_own8 = {0};
-    h_main_0opt2 h9_own9 = {0};
-    h_main_0opt2 h10_own10 = {0};
-    h_main_0opt2 h11_own11 = {0};
+    h_0opt_e201354 h9_own9 = {0};
+    h_0opt_e201354 h10_own10 = {0};
+    h_0opt_e201354 h11_own11 = {0};
     HeroStr h12_own12 = {0};
     HeroStr h13_own13 = {0};
     HeroStr h14_own14 = {0};
-    h_main_0opt2 h15_own15 = {0};
+    h_0opt_e201354 h15_own15 = {0};
     HeroStr t1 = {0};
     int64_t t2;
     int64_t t3;
     bool t4;
     HeroStr t5 = {0};
     HeroStr t6 = {0};
-    h_main_0opt2 t7 = {0};
+    h_0opt_e201354 t7 = {0};
     int64_t t8;
     int64_t t9;
     HeroStr t10 = {0};
@@ -1845,7 +1845,7 @@ h_main_0opt2 h_main_number_of(HeroStr h0_word) {
     HeroStr t35 = {0};
     HeroStr t36 = {0};
     HeroStr t37 = {0};
-    h_main_0opt2 t38 = {0};
+    h_0opt_e201354 t38 = {0};
     int64_t t39;
     int64_t t40;
     int64_t t41;
@@ -1854,65 +1854,65 @@ h_main_0opt2 h_main_number_of(HeroStr h0_word) {
     uint8_t t44;
     uint8_t t45;
     uint8_t t46;
-    h_main_0opt2 t47 = {0};
-    h_main_0opt2 t48 = {0};
+    h_0opt_e201354 t47 = {0};
+    h_0opt_e201354 t48 = {0};
     int64_t t49;
     int64_t t50;
     bool t51;
-    h_main_0opt2 t52 = {0};
+    h_0opt_e201354 t52 = {0};
     HeroFailure t53 = {0};
-    h_main_0opt2 t54 = {0};
+    h_0opt_e201354 t54 = {0};
     int64_t t55;
     int64_t t56;
     int64_t t57;
     int64_t t58;
     int64_t t59;
     int64_t t60;
-    h_main_0opt2 t61 = {0};
+    h_0opt_e201354 t61 = {0};
     HeroArrayHeader * t62 = {0};
     HeroArrayHeader * t63 = {0};
     HeroStr t64 = {0};
-    h_main_0opt2 t65 = {0};
-    h_main_0opt2 t66 = {0};
-    h_main_0opt2 t67 = {0};
-    h_main_0opt2 t68 = {0};
+    h_0opt_e201354 t65 = {0};
+    h_0opt_e201354 t66 = {0};
+    h_0opt_e201354 t67 = {0};
+    h_0opt_e201354 t68 = {0};
     HeroStr t69 = {0};
     HeroStr t70 = {0};
     HeroStr t71 = {0};
-    h_main_0opt2 t72 = {0};
+    h_0opt_e201354 t72 = {0};
     HeroArrayHeader * t73 = {0};
-    h_main_0opt2 t74 = {0};
+    h_0opt_e201354 t74 = {0};
     HeroArrayHeader * t75 = {0};
     HeroStr t76 = {0};
-    h_main_0opt2 t77 = {0};
-    h_main_0opt2 t78 = {0};
-    h_main_0opt2 t79 = {0};
+    h_0opt_e201354 t77 = {0};
+    h_0opt_e201354 t78 = {0};
+    h_0opt_e201354 t79 = {0};
     HeroStr t80 = {0};
     HeroStr t81 = {0};
     HeroStr t82 = {0};
-    h_main_0opt2 t83 = {0};
+    h_0opt_e201354 t83 = {0};
     HeroArrayHeader * t84 = {0};
-    h_main_0opt2 t85 = {0};
+    h_0opt_e201354 t85 = {0};
     HeroArrayHeader * t86 = {0};
     HeroStr t87 = {0};
-    h_main_0opt2 t88 = {0};
-    h_main_0opt2 t89 = {0};
-    h_main_0opt2 t90 = {0};
+    h_0opt_e201354 t88 = {0};
+    h_0opt_e201354 t89 = {0};
+    h_0opt_e201354 t90 = {0};
     HeroStr t91 = {0};
     HeroStr t92 = {0};
     HeroStr t93 = {0};
-    h_main_0opt2 t94 = {0};
+    h_0opt_e201354 t94 = {0};
     HeroArrayHeader * t95 = {0};
-    h_main_0opt2 t96 = {0};
+    h_0opt_e201354 t96 = {0};
     HeroArrayHeader * t97 = {0};
     HeroStr t98 = {0};
-    h_main_0opt2 t99 = {0};
-    h_main_0opt2 t100 = {0};
-    h_main_0opt2 t101 = {0};
+    h_0opt_e201354 t99 = {0};
+    h_0opt_e201354 t100 = {0};
+    h_0opt_e201354 t101 = {0};
     HeroStr t102 = {0};
     HeroStr t103 = {0};
     HeroStr t104 = {0};
-    h_main_0opt2 t105 = {0};
+    h_0opt_e201354 t105 = {0};
     goto bb0;
 bb0:
 #line 89 "examples/todo/main.hero"
@@ -1977,16 +1977,16 @@ bb2:
 #line 1978 "main.c"
     hero_str_incref(t6);
 #line 90 "examples/todo/main.hero"
-    t7 = (h_main_0opt2){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
+    t7 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
 #line 90 "examples/todo/main.hero"
     t65 = h9_own9;
 #line 90 "examples/todo/main.hero"
     h9_own9 = t7;
 #line 1986 "main.c"
-    h_main_0opt2_release(&t65);
+    h_0opt_e201354_release(&t65);
 #line 90 "examples/todo/main.hero"
 #line 1989 "main.c"
-    h_main_0opt2_retain(&t7);
+    h_0opt_e201354_retain(&t7);
 #line 90 "examples/todo/main.hero"
     t73 = h2_xs0;
 #line 1993 "main.c"
@@ -1994,7 +1994,7 @@ bb2:
 #line 90 "examples/todo/main.hero"
     t74 = h6_f0;
 #line 1997 "main.c"
-    h_main_0opt2_release(&t74);
+    h_0opt_e201354_release(&t74);
 #line 90 "examples/todo/main.hero"
     t75 = h7_own7;
 #line 2001 "main.c"
@@ -2006,15 +2006,15 @@ bb2:
 #line 90 "examples/todo/main.hero"
     t77 = h9_own9;
 #line 2009 "main.c"
-    h_main_0opt2_release(&t77);
+    h_0opt_e201354_release(&t77);
 #line 90 "examples/todo/main.hero"
     t78 = h10_own10;
 #line 2013 "main.c"
-    h_main_0opt2_release(&t78);
+    h_0opt_e201354_release(&t78);
 #line 90 "examples/todo/main.hero"
     t79 = h11_own11;
 #line 2017 "main.c"
-    h_main_0opt2_release(&t79);
+    h_0opt_e201354_release(&t79);
 #line 90 "examples/todo/main.hero"
     t80 = h12_own12;
 #line 2021 "main.c"
@@ -2030,7 +2030,7 @@ bb2:
 #line 90 "examples/todo/main.hero"
     t83 = h15_own15;
 #line 2033 "main.c"
-    h_main_0opt2_release(&t83);
+    h_0opt_e201354_release(&t83);
     return t7;
 bb3:
     goto bb1;
@@ -2086,16 +2086,16 @@ bb7:
 #line 96 "examples/todo/main.hero"
     t60 = h1_v;
 #line 96 "examples/todo/main.hero"
-    t61 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = t60};
+    t61 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t60};
 #line 96 "examples/todo/main.hero"
     t66 = h10_own10;
 #line 96 "examples/todo/main.hero"
     h10_own10 = t61;
 #line 2095 "main.c"
-    h_main_0opt2_release(&t66);
+    h_0opt_e201354_release(&t66);
 #line 96 "examples/todo/main.hero"
 #line 2098 "main.c"
-    h_main_0opt2_retain(&t61);
+    h_0opt_e201354_retain(&t61);
 #line 96 "examples/todo/main.hero"
     t84 = h2_xs0;
 #line 2102 "main.c"
@@ -2103,7 +2103,7 @@ bb7:
 #line 96 "examples/todo/main.hero"
     t85 = h6_f0;
 #line 2106 "main.c"
-    h_main_0opt2_release(&t85);
+    h_0opt_e201354_release(&t85);
 #line 96 "examples/todo/main.hero"
     t86 = h7_own7;
 #line 2110 "main.c"
@@ -2115,15 +2115,15 @@ bb7:
 #line 96 "examples/todo/main.hero"
     t88 = h9_own9;
 #line 2118 "main.c"
-    h_main_0opt2_release(&t88);
+    h_0opt_e201354_release(&t88);
 #line 96 "examples/todo/main.hero"
     t89 = h10_own10;
 #line 2122 "main.c"
-    h_main_0opt2_release(&t89);
+    h_0opt_e201354_release(&t89);
 #line 96 "examples/todo/main.hero"
     t90 = h11_own11;
 #line 2126 "main.c"
-    h_main_0opt2_release(&t90);
+    h_0opt_e201354_release(&t90);
 #line 96 "examples/todo/main.hero"
     t91 = h12_own12;
 #line 2130 "main.c"
@@ -2139,7 +2139,7 @@ bb7:
 #line 96 "examples/todo/main.hero"
     t94 = h15_own15;
 #line 2142 "main.c"
-    h_main_0opt2_release(&t94);
+    h_0opt_e201354_release(&t94);
     return t61;
 bb8:
 #line 95 "examples/todo/main.hero"
@@ -2159,21 +2159,21 @@ bb8:
 #line 95 "examples/todo/main.hero"
     if (__builtin_sub_overflow(t44, t45, &t46)) hero_panic_overflow();
 #line 95 "examples/todo/main.hero"
-    t47 = (h_main_0opt2){.tag = INT64_C(0), .as.ok = (int64_t)t46};
+    t47 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t46};
 #line 95 "examples/todo/main.hero"
     t67 = h11_own11;
 #line 95 "examples/todo/main.hero"
     h11_own11 = t47;
 #line 2168 "main.c"
-    h_main_0opt2_release(&t67);
+    h_0opt_e201354_release(&t67);
 #line 95 "examples/todo/main.hero"
     t68 = h6_f0;
 #line 2172 "main.c"
-    h_main_0opt2_retain(&t47);
+    h_0opt_e201354_retain(&t47);
 #line 95 "examples/todo/main.hero"
     h6_f0 = t47;
 #line 2176 "main.c"
-    h_main_0opt2_release(&t68);
+    h_0opt_e201354_release(&t68);
 #line 95 "examples/todo/main.hero"
     t48 = h6_f0;
 #line 95 "examples/todo/main.hero"
@@ -2245,16 +2245,16 @@ bb11:
 #line 2246 "main.c"
     hero_str_incref(t37);
 #line 94 "examples/todo/main.hero"
-    t38 = (h_main_0opt2){.tag = INT64_C(1), .as.err = {.code = t32, .msg = t37}};
+    t38 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t32, .msg = t37}};
 #line 94 "examples/todo/main.hero"
     t72 = h15_own15;
 #line 94 "examples/todo/main.hero"
     h15_own15 = t38;
 #line 2254 "main.c"
-    h_main_0opt2_release(&t72);
+    h_0opt_e201354_release(&t72);
 #line 94 "examples/todo/main.hero"
 #line 2257 "main.c"
-    h_main_0opt2_retain(&t38);
+    h_0opt_e201354_retain(&t38);
 #line 94 "examples/todo/main.hero"
     t95 = h2_xs0;
 #line 2261 "main.c"
@@ -2262,7 +2262,7 @@ bb11:
 #line 94 "examples/todo/main.hero"
     t96 = h6_f0;
 #line 2265 "main.c"
-    h_main_0opt2_release(&t96);
+    h_0opt_e201354_release(&t96);
 #line 94 "examples/todo/main.hero"
     t97 = h7_own7;
 #line 2269 "main.c"
@@ -2274,15 +2274,15 @@ bb11:
 #line 94 "examples/todo/main.hero"
     t99 = h9_own9;
 #line 2277 "main.c"
-    h_main_0opt2_release(&t99);
+    h_0opt_e201354_release(&t99);
 #line 94 "examples/todo/main.hero"
     t100 = h10_own10;
 #line 2281 "main.c"
-    h_main_0opt2_release(&t100);
+    h_0opt_e201354_release(&t100);
 #line 94 "examples/todo/main.hero"
     t101 = h11_own11;
 #line 2285 "main.c"
-    h_main_0opt2_release(&t101);
+    h_0opt_e201354_release(&t101);
 #line 94 "examples/todo/main.hero"
     t102 = h12_own12;
 #line 2289 "main.c"
@@ -2298,7 +2298,7 @@ bb11:
 #line 94 "examples/todo/main.hero"
     t105 = h15_own15;
 #line 2301 "main.c"
-    h_main_0opt2_release(&t105);
+    h_0opt_e201354_release(&t105);
     return t38;
 bb12:
     goto bb8;
@@ -2836,7 +2836,7 @@ bb9:
 }
 
 #line 65 "examples/todo/list.hero"
-h_main_0opt1 h_list_read(HeroStr h0_text) {
+h_0opt_4f4c4677 h_list_read(HeroStr h0_text) {
 #line 2841 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_number;
@@ -2852,12 +2852,12 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroArrayHeader * h12_own12 = {0};
     HeroArrayHeader * h13_own13 = {0};
     HeroStr h14_own14 = {0};
-    h_main_0opt1 h15_own15 = {0};
+    h_0opt_4f4c4677 h15_own15 = {0};
     HeroStr h16_own16 = {0};
     HeroStr h17_own17 = {0};
     HeroStr h18_own18 = {0};
     HeroStr h19_own19 = {0};
-    h_main_0opt1 h20_own20 = {0};
+    h_0opt_4f4c4677 h20_own20 = {0};
     HeroStr h21_own21 = {0};
     HeroStr h22_own22 = {0};
     h_list_Task h23_own23 = {0};
@@ -2865,7 +2865,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr h25_own25 = {0};
     HeroStr h26_own26 = {0};
     HeroStr h27_own27 = {0};
-    h_main_0opt1 h28_own28 = {0};
+    h_0opt_4f4c4677 h28_own28 = {0};
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     HeroStr t3 = {0};
@@ -2915,7 +2915,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr t47 = {0};
     HeroStr t48 = {0};
     HeroStr t49 = {0};
-    h_main_0opt1 t50 = {0};
+    h_0opt_4f4c4677 t50 = {0};
     HeroStr t51 = {0};
     int64_t t52;
     uint8_t t53;
@@ -2933,7 +2933,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr t65 = {0};
     HeroStr t66 = {0};
     HeroStr t67 = {0};
-    h_main_0opt1 t68 = {0};
+    h_0opt_4f4c4677 t68 = {0};
     uint8_t t70;
     uint8_t t71;
     bool t72;
@@ -2948,7 +2948,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     int64_t t82;
     int64_t t83;
     HeroArrayHeader * t84 = {0};
-    h_main_0opt1 t85 = {0};
+    h_0opt_4f4c4677 t85 = {0};
     HeroArrayHeader * t86 = {0};
     HeroArrayHeader * t87 = {0};
     HeroArrayHeader * t88 = {0};
@@ -2956,12 +2956,12 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr t90 = {0};
     HeroStr t91 = {0};
     HeroStr t92 = {0};
-    h_main_0opt1 t93 = {0};
+    h_0opt_4f4c4677 t93 = {0};
     HeroStr t94 = {0};
     HeroStr t95 = {0};
     HeroStr t96 = {0};
     HeroStr t97 = {0};
-    h_main_0opt1 t98 = {0};
+    h_0opt_4f4c4677 t98 = {0};
     HeroStr t99 = {0};
     HeroStr t100 = {0};
     h_list_Task t101 = {0};
@@ -2969,7 +2969,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr t103 = {0};
     HeroStr t104 = {0};
     HeroStr t105 = {0};
-    h_main_0opt1 t106 = {0};
+    h_0opt_4f4c4677 t106 = {0};
     HeroArrayHeader * t107 = {0};
     HeroArrayHeader * t108 = {0};
     HeroStr t109 = {0};
@@ -2977,12 +2977,12 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroArrayHeader * t111 = {0};
     HeroArrayHeader * t112 = {0};
     HeroStr t113 = {0};
-    h_main_0opt1 t114 = {0};
+    h_0opt_4f4c4677 t114 = {0};
     HeroStr t115 = {0};
     HeroStr t116 = {0};
     HeroStr t117 = {0};
     HeroStr t118 = {0};
-    h_main_0opt1 t119 = {0};
+    h_0opt_4f4c4677 t119 = {0};
     HeroStr t120 = {0};
     HeroStr t121 = {0};
     h_list_Task t122 = {0};
@@ -2990,7 +2990,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr t124 = {0};
     HeroStr t125 = {0};
     HeroStr t126 = {0};
-    h_main_0opt1 t127 = {0};
+    h_0opt_4f4c4677 t127 = {0};
     HeroArrayHeader * t128 = {0};
     HeroArrayHeader * t129 = {0};
     HeroStr t130 = {0};
@@ -2998,12 +2998,12 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroArrayHeader * t132 = {0};
     HeroArrayHeader * t133 = {0};
     HeroStr t134 = {0};
-    h_main_0opt1 t135 = {0};
+    h_0opt_4f4c4677 t135 = {0};
     HeroStr t136 = {0};
     HeroStr t137 = {0};
     HeroStr t138 = {0};
     HeroStr t139 = {0};
-    h_main_0opt1 t140 = {0};
+    h_0opt_4f4c4677 t140 = {0};
     HeroStr t141 = {0};
     HeroStr t142 = {0};
     h_list_Task t143 = {0};
@@ -3011,7 +3011,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr t145 = {0};
     HeroStr t146 = {0};
     HeroStr t147 = {0};
-    h_main_0opt1 t148 = {0};
+    h_0opt_4f4c4677 t148 = {0};
     HeroArrayHeader * t149 = {0};
     HeroArrayHeader * t150 = {0};
     HeroStr t151 = {0};
@@ -3019,12 +3019,12 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroArrayHeader * t153 = {0};
     HeroArrayHeader * t154 = {0};
     HeroStr t155 = {0};
-    h_main_0opt1 t156 = {0};
+    h_0opt_4f4c4677 t156 = {0};
     HeroStr t157 = {0};
     HeroStr t158 = {0};
     HeroStr t159 = {0};
     HeroStr t160 = {0};
-    h_main_0opt1 t161 = {0};
+    h_0opt_4f4c4677 t161 = {0};
     HeroStr t162 = {0};
     HeroStr t163 = {0};
     h_list_Task t164 = {0};
@@ -3032,7 +3032,7 @@ h_main_0opt1 h_list_read(HeroStr h0_text) {
     HeroStr t166 = {0};
     HeroStr t167 = {0};
     HeroStr t168 = {0};
-    h_main_0opt1 t169 = {0};
+    h_0opt_4f4c4677 t169 = {0};
     goto bb0;
 bb0:
 #line 66 "examples/todo/list.hero"
@@ -3160,16 +3160,16 @@ bb4:
 #line 3161 "main.c"
     hero_array_incref(t84);
 #line 79 "examples/todo/list.hero"
-    t85 = (h_main_0opt1){.tag = INT64_C(0), .as.ok = t84};
+    t85 = (h_0opt_4f4c4677){.tag = INT64_C(0), .as.ok = t84};
 #line 79 "examples/todo/list.hero"
     t93 = h15_own15;
 #line 79 "examples/todo/list.hero"
     h15_own15 = t85;
 #line 3169 "main.c"
-    h_main_0opt1_release(&t93);
+    h_0opt_4f4c4677_release(&t93);
 #line 79 "examples/todo/list.hero"
 #line 3172 "main.c"
-    h_main_0opt1_retain(&t85);
+    h_0opt_4f4c4677_retain(&t85);
 #line 79 "examples/todo/list.hero"
     t107 = h1_out;
 #line 3176 "main.c"
@@ -3201,7 +3201,7 @@ bb4:
 #line 79 "examples/todo/list.hero"
     t114 = h15_own15;
 #line 3204 "main.c"
-    h_main_0opt1_release(&t114);
+    h_0opt_4f4c4677_release(&t114);
 #line 79 "examples/todo/list.hero"
     t115 = h16_own16;
 #line 3208 "main.c"
@@ -3221,7 +3221,7 @@ bb4:
 #line 79 "examples/todo/list.hero"
     t119 = h20_own20;
 #line 3224 "main.c"
-    h_main_0opt1_release(&t119);
+    h_0opt_4f4c4677_release(&t119);
 #line 79 "examples/todo/list.hero"
     t120 = h21_own21;
 #line 3228 "main.c"
@@ -3253,7 +3253,7 @@ bb4:
 #line 79 "examples/todo/list.hero"
     t127 = h28_own28;
 #line 3256 "main.c"
-    h_main_0opt1_release(&t127);
+    h_0opt_4f4c4677_release(&t127);
     return t85;
 bb5:
 #line 73 "examples/todo/list.hero"
@@ -3413,16 +3413,16 @@ bb15:
 #line 3414 "main.c"
     hero_str_incref(t49);
 #line 74 "examples/todo/list.hero"
-    t50 = (h_main_0opt1){.tag = INT64_C(1), .as.err = {.code = t43, .msg = t49}};
+    t50 = (h_0opt_4f4c4677){.tag = INT64_C(1), .as.err = {.code = t43, .msg = t49}};
 #line 74 "examples/todo/list.hero"
     t98 = h20_own20;
 #line 74 "examples/todo/list.hero"
     h20_own20 = t50;
 #line 3422 "main.c"
-    h_main_0opt1_release(&t98);
+    h_0opt_4f4c4677_release(&t98);
 #line 74 "examples/todo/list.hero"
 #line 3425 "main.c"
-    h_main_0opt1_retain(&t50);
+    h_0opt_4f4c4677_retain(&t50);
 #line 74 "examples/todo/list.hero"
     t128 = h1_out;
 #line 3429 "main.c"
@@ -3454,7 +3454,7 @@ bb15:
 #line 74 "examples/todo/list.hero"
     t135 = h15_own15;
 #line 3457 "main.c"
-    h_main_0opt1_release(&t135);
+    h_0opt_4f4c4677_release(&t135);
 #line 74 "examples/todo/list.hero"
     t136 = h16_own16;
 #line 3461 "main.c"
@@ -3474,7 +3474,7 @@ bb15:
 #line 74 "examples/todo/list.hero"
     t140 = h20_own20;
 #line 3477 "main.c"
-    h_main_0opt1_release(&t140);
+    h_0opt_4f4c4677_release(&t140);
 #line 74 "examples/todo/list.hero"
     t141 = h21_own21;
 #line 3481 "main.c"
@@ -3506,7 +3506,7 @@ bb15:
 #line 74 "examples/todo/list.hero"
     t148 = h28_own28;
 #line 3509 "main.c"
-    h_main_0opt1_release(&t148);
+    h_0opt_4f4c4677_release(&t148);
     return t50;
 bb16:
     goto bb8;
@@ -3621,16 +3621,16 @@ bb20:
 #line 3622 "main.c"
     hero_str_incref(t67);
 #line 77 "examples/todo/list.hero"
-    t68 = (h_main_0opt1){.tag = INT64_C(1), .as.err = {.code = t61, .msg = t67}};
+    t68 = (h_0opt_4f4c4677){.tag = INT64_C(1), .as.err = {.code = t61, .msg = t67}};
 #line 77 "examples/todo/list.hero"
     t106 = h28_own28;
 #line 77 "examples/todo/list.hero"
     h28_own28 = t68;
 #line 3630 "main.c"
-    h_main_0opt1_release(&t106);
+    h_0opt_4f4c4677_release(&t106);
 #line 77 "examples/todo/list.hero"
 #line 3633 "main.c"
-    h_main_0opt1_retain(&t68);
+    h_0opt_4f4c4677_retain(&t68);
 #line 77 "examples/todo/list.hero"
     t149 = h1_out;
 #line 3637 "main.c"
@@ -3662,7 +3662,7 @@ bb20:
 #line 77 "examples/todo/list.hero"
     t156 = h15_own15;
 #line 3665 "main.c"
-    h_main_0opt1_release(&t156);
+    h_0opt_4f4c4677_release(&t156);
 #line 77 "examples/todo/list.hero"
     t157 = h16_own16;
 #line 3669 "main.c"
@@ -3682,7 +3682,7 @@ bb20:
 #line 77 "examples/todo/list.hero"
     t161 = h20_own20;
 #line 3685 "main.c"
-    h_main_0opt1_release(&t161);
+    h_0opt_4f4c4677_release(&t161);
 #line 77 "examples/todo/list.hero"
     t162 = h21_own21;
 #line 3689 "main.c"
@@ -3714,7 +3714,7 @@ bb20:
 #line 77 "examples/todo/list.hero"
     t169 = h28_own28;
 #line 3717 "main.c"
-    h_main_0opt1_release(&t169);
+    h_0opt_4f4c4677_release(&t169);
     return t68;
 bb21:
     goto bb17;
@@ -4055,50 +4055,50 @@ bb3:
 }
 
 #line 96 "examples/todo/list.hero"
-h_main_0opt1 h_list_add(HeroArrayHeader * h0_tasks, HeroStr h1_text) {
+h_0opt_4f4c4677 h_list_add(HeroArrayHeader * h0_tasks, HeroStr h1_text) {
 #line 4060 "main.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     h_list_Task h4_own4 = {0};
     HeroArrayHeader * h5_own5 = {0};
-    h_main_0opt1 h6_own6 = {0};
+    h_0opt_4f4c4677 h6_own6 = {0};
     HeroStr h7_own7 = {0};
-    h_main_0opt1 h8_own8 = {0};
+    h_0opt_4f4c4677 h8_own8 = {0};
     HeroStr t1 = {0};
     HeroStr t2 = {0};
     HeroStr t3 = {0};
     bool t4;
     HeroStr t5 = {0};
     HeroStr t6 = {0};
-    h_main_0opt1 t7 = {0};
+    h_0opt_4f4c4677 t7 = {0};
     HeroArrayHeader * t8 = {0};
     bool t9;
     HeroStr t10 = {0};
     HeroStr t11 = {0};
     h_list_Task t12 = {0};
     HeroArrayHeader * t13 = {0};
-    h_main_0opt1 t14 = {0};
+    h_0opt_4f4c4677 t14 = {0};
     HeroStr t15 = {0};
     HeroStr t16 = {0};
     h_list_Task t17 = {0};
     HeroArrayHeader * t18 = {0};
-    h_main_0opt1 t19 = {0};
+    h_0opt_4f4c4677 t19 = {0};
     HeroStr t20 = {0};
-    h_main_0opt1 t21 = {0};
+    h_0opt_4f4c4677 t21 = {0};
     HeroStr t22 = {0};
     HeroStr t23 = {0};
     h_list_Task t24 = {0};
     HeroArrayHeader * t25 = {0};
-    h_main_0opt1 t26 = {0};
+    h_0opt_4f4c4677 t26 = {0};
     HeroStr t27 = {0};
-    h_main_0opt1 t28 = {0};
+    h_0opt_4f4c4677 t28 = {0};
     HeroStr t29 = {0};
     HeroStr t30 = {0};
     h_list_Task t31 = {0};
     HeroArrayHeader * t32 = {0};
-    h_main_0opt1 t33 = {0};
+    h_0opt_4f4c4677 t33 = {0};
     HeroStr t34 = {0};
-    h_main_0opt1 t35 = {0};
+    h_0opt_4f4c4677 t35 = {0};
     goto bb0;
 bb0:
 #line 97 "examples/todo/list.hero"
@@ -4156,16 +4156,16 @@ bb1:
 #line 4157 "main.c"
     hero_array_incref(t13);
 #line 99 "examples/todo/list.hero"
-    t14 = (h_main_0opt1){.tag = INT64_C(0), .as.ok = t13};
+    t14 = (h_0opt_4f4c4677){.tag = INT64_C(0), .as.ok = t13};
 #line 99 "examples/todo/list.hero"
     t19 = h6_own6;
 #line 99 "examples/todo/list.hero"
     h6_own6 = t14;
 #line 4165 "main.c"
-    h_main_0opt1_release(&t19);
+    h_0opt_4f4c4677_release(&t19);
 #line 99 "examples/todo/list.hero"
 #line 4168 "main.c"
-    h_main_0opt1_retain(&t14);
+    h_0opt_4f4c4677_retain(&t14);
 #line 99 "examples/todo/list.hero"
     t22 = h2_own2;
 #line 4172 "main.c"
@@ -4185,7 +4185,7 @@ bb1:
 #line 99 "examples/todo/list.hero"
     t26 = h6_own6;
 #line 4188 "main.c"
-    h_main_0opt1_release(&t26);
+    h_0opt_4f4c4677_release(&t26);
 #line 99 "examples/todo/list.hero"
     t27 = h7_own7;
 #line 4192 "main.c"
@@ -4193,7 +4193,7 @@ bb1:
 #line 99 "examples/todo/list.hero"
     t28 = h8_own8;
 #line 4196 "main.c"
-    h_main_0opt1_release(&t28);
+    h_0opt_4f4c4677_release(&t28);
     return t14;
 bb2:
 #line 98 "examples/todo/list.hero"
@@ -4212,16 +4212,16 @@ bb2:
 #line 4213 "main.c"
     hero_str_incref(t6);
 #line 98 "examples/todo/list.hero"
-    t7 = (h_main_0opt1){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
+    t7 = (h_0opt_4f4c4677){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
 #line 98 "examples/todo/list.hero"
     t21 = h8_own8;
 #line 98 "examples/todo/list.hero"
     h8_own8 = t7;
 #line 4221 "main.c"
-    h_main_0opt1_release(&t21);
+    h_0opt_4f4c4677_release(&t21);
 #line 98 "examples/todo/list.hero"
 #line 4224 "main.c"
-    h_main_0opt1_retain(&t7);
+    h_0opt_4f4c4677_retain(&t7);
 #line 98 "examples/todo/list.hero"
     t29 = h2_own2;
 #line 4228 "main.c"
@@ -4241,7 +4241,7 @@ bb2:
 #line 98 "examples/todo/list.hero"
     t33 = h6_own6;
 #line 4244 "main.c"
-    h_main_0opt1_release(&t33);
+    h_0opt_4f4c4677_release(&t33);
 #line 98 "examples/todo/list.hero"
     t34 = h7_own7;
 #line 4248 "main.c"
@@ -4249,14 +4249,14 @@ bb2:
 #line 98 "examples/todo/list.hero"
     t35 = h8_own8;
 #line 4252 "main.c"
-    h_main_0opt1_release(&t35);
+    h_0opt_4f4c4677_release(&t35);
     return t7;
 bb3:
     goto bb1;
 }
 
 #line 104 "examples/todo/list.hero"
-h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
+h_0opt_4f4c4677 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
 #line 4261 "main.c"
     bool h2_b0;
     HeroArrayHeader * h3_out = {0};
@@ -4271,8 +4271,8 @@ h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
     HeroStr h12_own12 = {0};
     HeroStr h13_own13 = {0};
     HeroStr h14_own14 = {0};
-    h_main_0opt1 h15_own15 = {0};
-    h_main_0opt1 h16_own16 = {0};
+    h_0opt_4f4c4677 h15_own15 = {0};
+    h_0opt_4f4c4677 h16_own16 = {0};
     h_list_Task h17_own17 = {0};
     int64_t t1;
     int64_t t2;
@@ -4293,7 +4293,7 @@ h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
     int64_t t17;
     HeroStr t18 = {0};
     HeroStr t19 = {0};
-    h_main_0opt1 t20 = {0};
+    h_0opt_4f4c4677 t20 = {0};
     HeroArrayHeader * t21 = {0};
     int64_t t22;
     HeroArrayHeader * t23 = {0};
@@ -4325,7 +4325,7 @@ h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
     int64_t t53;
     int64_t t54;
     HeroArrayHeader * t55 = {0};
-    h_main_0opt1 t56 = {0};
+    h_0opt_4f4c4677 t56 = {0};
     HeroArrayHeader * t57 = {0};
     HeroArrayHeader * t58 = {0};
     HeroArrayHeader * t59 = {0};
@@ -4336,8 +4336,8 @@ h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
     HeroStr t64 = {0};
     HeroStr t65 = {0};
     HeroStr t66 = {0};
-    h_main_0opt1 t67 = {0};
-    h_main_0opt1 t68 = {0};
+    h_0opt_4f4c4677 t67 = {0};
+    h_0opt_4f4c4677 t68 = {0};
     h_list_Task t69 = {0};
     HeroArrayHeader * t70 = {0};
     HeroArrayHeader * t71 = {0};
@@ -4349,8 +4349,8 @@ h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
     HeroStr t77 = {0};
     HeroStr t78 = {0};
     HeroStr t79 = {0};
-    h_main_0opt1 t80 = {0};
-    h_main_0opt1 t81 = {0};
+    h_0opt_4f4c4677 t80 = {0};
+    h_0opt_4f4c4677 t81 = {0};
     h_list_Task t82 = {0};
     HeroArrayHeader * t83 = {0};
     HeroArrayHeader * t84 = {0};
@@ -4362,8 +4362,8 @@ h_main_0opt1 h_list_complete(HeroArrayHeader * h0_tasks, int64_t h1_n) {
     HeroStr t90 = {0};
     HeroStr t91 = {0};
     HeroStr t92 = {0};
-    h_main_0opt1 t93 = {0};
-    h_main_0opt1 t94 = {0};
+    h_0opt_4f4c4677 t93 = {0};
+    h_0opt_4f4c4677 t94 = {0};
     h_list_Task t95 = {0};
     goto bb0;
 bb0:
@@ -4510,16 +4510,16 @@ bb4:
 #line 4511 "main.c"
     hero_str_incref(t19);
 #line 106 "examples/todo/list.hero"
-    t20 = (h_main_0opt1){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t19}};
+    t20 = (h_0opt_4f4c4677){.tag = INT64_C(1), .as.err = {.code = t9, .msg = t19}};
 #line 106 "examples/todo/list.hero"
     t67 = h15_own15;
 #line 106 "examples/todo/list.hero"
     h15_own15 = t20;
 #line 4519 "main.c"
-    h_main_0opt1_release(&t67);
+    h_0opt_4f4c4677_release(&t67);
 #line 106 "examples/todo/list.hero"
 #line 4522 "main.c"
-    h_main_0opt1_retain(&t20);
+    h_0opt_4f4c4677_retain(&t20);
 #line 106 "examples/todo/list.hero"
     t70 = h3_out;
 #line 4526 "main.c"
@@ -4563,11 +4563,11 @@ bb4:
 #line 106 "examples/todo/list.hero"
     t80 = h15_own15;
 #line 4566 "main.c"
-    h_main_0opt1_release(&t80);
+    h_0opt_4f4c4677_release(&t80);
 #line 106 "examples/todo/list.hero"
     t81 = h16_own16;
 #line 4570 "main.c"
-    h_main_0opt1_release(&t81);
+    h_0opt_4f4c4677_release(&t81);
 #line 106 "examples/todo/list.hero"
     t82 = h17_own17;
 #line 4574 "main.c"
@@ -4627,16 +4627,16 @@ bb9:
 #line 4628 "main.c"
     hero_array_incref(t55);
 #line 113 "examples/todo/list.hero"
-    t56 = (h_main_0opt1){.tag = INT64_C(0), .as.ok = t55};
+    t56 = (h_0opt_4f4c4677){.tag = INT64_C(0), .as.ok = t55};
 #line 113 "examples/todo/list.hero"
     t68 = h16_own16;
 #line 113 "examples/todo/list.hero"
     h16_own16 = t56;
 #line 4636 "main.c"
-    h_main_0opt1_release(&t68);
+    h_0opt_4f4c4677_release(&t68);
 #line 113 "examples/todo/list.hero"
 #line 4639 "main.c"
-    h_main_0opt1_retain(&t56);
+    h_0opt_4f4c4677_retain(&t56);
 #line 113 "examples/todo/list.hero"
     t83 = h3_out;
 #line 4643 "main.c"
@@ -4680,11 +4680,11 @@ bb9:
 #line 113 "examples/todo/list.hero"
     t93 = h15_own15;
 #line 4683 "main.c"
-    h_main_0opt1_release(&t93);
+    h_0opt_4f4c4677_release(&t93);
 #line 113 "examples/todo/list.hero"
     t94 = h16_own16;
 #line 4687 "main.c"
-    h_main_0opt1_release(&t94);
+    h_0opt_4f4c4677_release(&t94);
 #line 113 "examples/todo/list.hero"
     t95 = h17_own17;
 #line 4691 "main.c"
@@ -5144,29 +5144,29 @@ bb4:
 #line 171 "examples/todo/list.hero"
 HeroStr h_list_code_of(HeroStr h0_text) {
 #line 5147 "main.c"
-    h_main_0opt1 h1_s0 = {0};
+    h_0opt_4f4c4677 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
-    h_main_0opt1 h4_own4 = {0};
+    h_0opt_4f4c4677 h4_own4 = {0};
     HeroStr t1 = {0};
-    h_main_0opt1 t2 = {0};
-    h_main_0opt1 t3 = {0};
+    h_0opt_4f4c4677 t2 = {0};
+    h_0opt_4f4c4677 t3 = {0};
     int64_t t4;
     HeroStr t5 = {0};
-    h_main_0opt1 t6 = {0};
+    h_0opt_4f4c4677 t6 = {0};
     HeroFailure t7 = {0};
     HeroFailure t8 = {0};
     HeroStr t9 = {0};
     HeroStr t10 = {0};
-    h_main_0opt1 t11 = {0};
-    h_main_0opt1 t12 = {0};
+    h_0opt_4f4c4677 t11 = {0};
+    h_0opt_4f4c4677 t12 = {0};
     HeroStr t13 = {0};
     HeroFailure t14 = {0};
     HeroStr t15 = {0};
-    h_main_0opt1 t16 = {0};
+    h_0opt_4f4c4677 t16 = {0};
     HeroStr t17 = {0};
     HeroFailure t18 = {0};
-    h_main_0opt1 t19 = {0};
+    h_0opt_4f4c4677 t19 = {0};
     goto bb0;
 bb0:
 #line 172 "examples/todo/list.hero"
@@ -5178,15 +5178,15 @@ bb0:
 #line 172 "examples/todo/list.hero"
     h4_own4 = t2;
 #line 5181 "main.c"
-    h_main_0opt1_release(&t11);
+    h_0opt_4f4c4677_release(&t11);
 #line 172 "examples/todo/list.hero"
     t12 = h1_s0;
 #line 5185 "main.c"
-    h_main_0opt1_retain(&t2);
+    h_0opt_4f4c4677_retain(&t2);
 #line 172 "examples/todo/list.hero"
     h1_s0 = t2;
 #line 5189 "main.c"
-    h_main_0opt1_release(&t12);
+    h_0opt_4f4c4677_release(&t12);
 #line 172 "examples/todo/list.hero"
     t3 = h1_s0;
 #line 172 "examples/todo/list.hero"
@@ -5210,7 +5210,7 @@ bb1:
 #line 172 "examples/todo/list.hero"
     t16 = h1_s0;
 #line 5213 "main.c"
-    h_main_0opt1_release(&t16);
+    h_0opt_4f4c4677_release(&t16);
 #line 172 "examples/todo/list.hero"
     t17 = h2_r0;
 #line 5217 "main.c"
@@ -5222,7 +5222,7 @@ bb1:
 #line 172 "examples/todo/list.hero"
     t19 = h4_own4;
 #line 5225 "main.c"
-    h_main_0opt1_release(&t19);
+    h_0opt_4f4c4677_release(&t19);
     return t10;
 bb2:
 #line 173 "examples/todo/list.hero"
@@ -5364,16 +5364,16 @@ int64_t h_library_HERO_OS_NOT_FOUND(void) {
 }
 
 #line 163 "<heroes library>"
-h_main_0opt0 h_library_read_file(HeroStr h0_path) {
+h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 5369 "main.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
-    h_main_0opt0 h4_own4 = {0};
+    h_0opt_f87774a h4_own4 = {0};
     HeroStr h5_own5 = {0};
-    h_main_0opt0 h6_own6 = {0};
+    h_0opt_f87774a h6_own6 = {0};
     HeroStr h7_own7 = {0};
-    h_main_0opt0 h8_own8 = {0};
+    h_0opt_f87774a h8_own8 = {0};
     int64_t t1;
     HeroStr t2 = {0};
     const char * t3;
@@ -5382,7 +5382,7 @@ h_main_0opt0 h_library_read_file(HeroStr h0_path) {
     int64_t t6;
     bool t7;
     HeroStr t8 = {0};
-    h_main_0opt0 t9 = {0};
+    h_0opt_f87774a t9 = {0};
     int64_t t10;
     int64_t t11;
     bool t12;
@@ -5390,40 +5390,40 @@ h_main_0opt0 h_library_read_file(HeroStr h0_path) {
     HeroStr t14 = {0};
     HeroStr t15 = {0};
     HeroStr t16 = {0};
-    h_main_0opt0 t17 = {0};
+    h_0opt_f87774a t17 = {0};
     HeroStr t18 = {0};
     HeroStr t19 = {0};
     HeroStr t20 = {0};
     HeroStr t21 = {0};
-    h_main_0opt0 t22 = {0};
+    h_0opt_f87774a t22 = {0};
     HeroStr t23 = {0};
     HeroStr t24 = {0};
-    h_main_0opt0 t25 = {0};
+    h_0opt_f87774a t25 = {0};
     HeroStr t26 = {0};
-    h_main_0opt0 t27 = {0};
+    h_0opt_f87774a t27 = {0};
     HeroStr t28 = {0};
-    h_main_0opt0 t29 = {0};
+    h_0opt_f87774a t29 = {0};
     HeroStr t30 = {0};
     HeroStr t31 = {0};
-    h_main_0opt0 t32 = {0};
+    h_0opt_f87774a t32 = {0};
     HeroStr t33 = {0};
-    h_main_0opt0 t34 = {0};
+    h_0opt_f87774a t34 = {0};
     HeroStr t35 = {0};
-    h_main_0opt0 t36 = {0};
+    h_0opt_f87774a t36 = {0};
     HeroStr t37 = {0};
     HeroStr t38 = {0};
-    h_main_0opt0 t39 = {0};
+    h_0opt_f87774a t39 = {0};
     HeroStr t40 = {0};
-    h_main_0opt0 t41 = {0};
+    h_0opt_f87774a t41 = {0};
     HeroStr t42 = {0};
-    h_main_0opt0 t43 = {0};
+    h_0opt_f87774a t43 = {0};
     HeroStr t44 = {0};
     HeroStr t45 = {0};
-    h_main_0opt0 t46 = {0};
+    h_0opt_f87774a t46 = {0};
     HeroStr t47 = {0};
-    h_main_0opt0 t48 = {0};
+    h_0opt_f87774a t48 = {0};
     HeroStr t49 = {0};
-    h_main_0opt0 t50 = {0};
+    h_0opt_f87774a t50 = {0};
     goto bb0;
 bb0:
 #line 164 "<heroes library>"
@@ -5475,16 +5475,16 @@ bb2:
 #line 5476 "main.c"
     hero_str_incref(t8);
 #line 167 "<heroes library>"
-    t9 = (h_main_0opt0){.tag = INT64_C(0), .as.ok = t8};
+    t9 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t8};
 #line 167 "<heroes library>"
     t25 = h4_own4;
 #line 167 "<heroes library>"
     h4_own4 = t9;
 #line 5484 "main.c"
-    h_main_0opt0_release(&t25);
+    h_0opt_f87774a_release(&t25);
 #line 167 "<heroes library>"
 #line 5487 "main.c"
-    h_main_0opt0_retain(&t9);
+    h_0opt_f87774a_retain(&t9);
 #line 167 "<heroes library>"
     t30 = h2_text;
 #line 5491 "main.c"
@@ -5496,7 +5496,7 @@ bb2:
 #line 167 "<heroes library>"
     t32 = h4_own4;
 #line 5499 "main.c"
-    h_main_0opt0_release(&t32);
+    h_0opt_f87774a_release(&t32);
 #line 167 "<heroes library>"
     t33 = h5_own5;
 #line 5503 "main.c"
@@ -5504,7 +5504,7 @@ bb2:
 #line 167 "<heroes library>"
     t34 = h6_own6;
 #line 5507 "main.c"
-    h_main_0opt0_release(&t34);
+    h_0opt_f87774a_release(&t34);
 #line 167 "<heroes library>"
     t35 = h7_own7;
 #line 5511 "main.c"
@@ -5512,7 +5512,7 @@ bb2:
 #line 167 "<heroes library>"
     t36 = h8_own8;
 #line 5515 "main.c"
-    h_main_0opt0_release(&t36);
+    h_0opt_f87774a_release(&t36);
     return t9;
 bb3:
     goto bb1;
@@ -5538,16 +5538,16 @@ bb4:
 #line 5539 "main.c"
     hero_str_incref(t21);
 #line 170 "<heroes library>"
-    t22 = (h_main_0opt0){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
+    t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
 #line 170 "<heroes library>"
     t27 = h6_own6;
 #line 170 "<heroes library>"
     h6_own6 = t22;
 #line 5547 "main.c"
-    h_main_0opt0_release(&t27);
+    h_0opt_f87774a_release(&t27);
 #line 170 "<heroes library>"
 #line 5550 "main.c"
-    h_main_0opt0_retain(&t22);
+    h_0opt_f87774a_retain(&t22);
 #line 170 "<heroes library>"
     t37 = h2_text;
 #line 5554 "main.c"
@@ -5559,7 +5559,7 @@ bb4:
 #line 170 "<heroes library>"
     t39 = h4_own4;
 #line 5562 "main.c"
-    h_main_0opt0_release(&t39);
+    h_0opt_f87774a_release(&t39);
 #line 170 "<heroes library>"
     t40 = h5_own5;
 #line 5566 "main.c"
@@ -5567,7 +5567,7 @@ bb4:
 #line 170 "<heroes library>"
     t41 = h6_own6;
 #line 5570 "main.c"
-    h_main_0opt0_release(&t41);
+    h_0opt_f87774a_release(&t41);
 #line 170 "<heroes library>"
     t42 = h7_own7;
 #line 5574 "main.c"
@@ -5575,7 +5575,7 @@ bb4:
 #line 170 "<heroes library>"
     t43 = h8_own8;
 #line 5578 "main.c"
-    h_main_0opt0_release(&t43);
+    h_0opt_f87774a_release(&t43);
     return t22;
 bb5:
 #line 169 "<heroes library>"
@@ -5599,16 +5599,16 @@ bb5:
 #line 5600 "main.c"
     hero_str_incref(t16);
 #line 169 "<heroes library>"
-    t17 = (h_main_0opt0){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
+    t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
 #line 169 "<heroes library>"
     t29 = h8_own8;
 #line 169 "<heroes library>"
     h8_own8 = t17;
 #line 5608 "main.c"
-    h_main_0opt0_release(&t29);
+    h_0opt_f87774a_release(&t29);
 #line 169 "<heroes library>"
 #line 5611 "main.c"
-    h_main_0opt0_retain(&t17);
+    h_0opt_f87774a_retain(&t17);
 #line 169 "<heroes library>"
     t44 = h2_text;
 #line 5615 "main.c"
@@ -5620,7 +5620,7 @@ bb5:
 #line 169 "<heroes library>"
     t46 = h4_own4;
 #line 5623 "main.c"
-    h_main_0opt0_release(&t46);
+    h_0opt_f87774a_release(&t46);
 #line 169 "<heroes library>"
     t47 = h5_own5;
 #line 5627 "main.c"
@@ -5628,7 +5628,7 @@ bb5:
 #line 169 "<heroes library>"
     t48 = h6_own6;
 #line 5631 "main.c"
-    h_main_0opt0_release(&t48);
+    h_0opt_f87774a_release(&t48);
 #line 169 "<heroes library>"
     t49 = h7_own7;
 #line 5635 "main.c"
@@ -5636,39 +5636,39 @@ bb5:
 #line 169 "<heroes library>"
     t50 = h8_own8;
 #line 5639 "main.c"
-    h_main_0opt0_release(&t50);
+    h_0opt_f87774a_release(&t50);
     return t17;
 bb6:
     goto bb4;
 }
 
 #line 173 "<heroes library>"
-h_main_0opt3 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 5648 "main.c"
     HeroStr h2_own2 = {0};
-    h_main_0opt3 h3_own3 = {0};
-    h_main_0opt3 h4_own4 = {0};
+    h_0opt_a8ea2 h3_own3 = {0};
+    h_0opt_a8ea2 h4_own4 = {0};
     HeroStr t1 = {0};
     const char * t2;
     HeroStr t3 = {0};
     int64_t t4;
     int64_t t5;
     bool t6;
-    h_main_0opt3 t7 = {0};
+    h_0opt_a8ea2 t7 = {0};
     HeroStr t8 = {0};
     HeroStr t9 = {0};
     HeroStr t10 = {0};
     HeroStr t11 = {0};
-    h_main_0opt3 t12 = {0};
+    h_0opt_a8ea2 t12 = {0};
     HeroStr t13 = {0};
-    h_main_0opt3 t14 = {0};
-    h_main_0opt3 t15 = {0};
+    h_0opt_a8ea2 t14 = {0};
+    h_0opt_a8ea2 t15 = {0};
     HeroStr t16 = {0};
-    h_main_0opt3 t17 = {0};
-    h_main_0opt3 t18 = {0};
+    h_0opt_a8ea2 t17 = {0};
+    h_0opt_a8ea2 t18 = {0};
     HeroStr t19 = {0};
-    h_main_0opt3 t20 = {0};
-    h_main_0opt3 t21 = {0};
+    h_0opt_a8ea2 t20 = {0};
+    h_0opt_a8ea2 t21 = {0};
     goto bb0;
 bb0:
 #line 174 "<heroes library>"
@@ -5708,16 +5708,16 @@ bb1:
 #line 5709 "main.c"
     hero_str_incref(t11);
 #line 176 "<heroes library>"
-    t12 = (h_main_0opt3){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t11}};
+    t12 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t11}};
 #line 176 "<heroes library>"
     t14 = h3_own3;
 #line 176 "<heroes library>"
     h3_own3 = t12;
 #line 5717 "main.c"
-    h_main_0opt3_release(&t14);
+    h_0opt_a8ea2_release(&t14);
 #line 176 "<heroes library>"
 #line 5720 "main.c"
-    h_main_0opt3_retain(&t12);
+    h_0opt_a8ea2_retain(&t12);
 #line 176 "<heroes library>"
     t16 = h2_own2;
 #line 5724 "main.c"
@@ -5725,24 +5725,24 @@ bb1:
 #line 176 "<heroes library>"
     t17 = h3_own3;
 #line 5728 "main.c"
-    h_main_0opt3_release(&t17);
+    h_0opt_a8ea2_release(&t17);
 #line 176 "<heroes library>"
     t18 = h4_own4;
 #line 5732 "main.c"
-    h_main_0opt3_release(&t18);
+    h_0opt_a8ea2_release(&t18);
     return t12;
 bb2:
 #line 175 "<heroes library>"
-    t7 = (h_main_0opt3){.tag = INT64_C(0)};
+    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)};
 #line 175 "<heroes library>"
     t15 = h4_own4;
 #line 175 "<heroes library>"
     h4_own4 = t7;
 #line 5742 "main.c"
-    h_main_0opt3_release(&t15);
+    h_0opt_a8ea2_release(&t15);
 #line 175 "<heroes library>"
 #line 5745 "main.c"
-    h_main_0opt3_retain(&t7);
+    h_0opt_a8ea2_retain(&t7);
 #line 175 "<heroes library>"
     t19 = h2_own2;
 #line 5749 "main.c"
@@ -5750,11 +5750,11 @@ bb2:
 #line 175 "<heroes library>"
     t20 = h3_own3;
 #line 5753 "main.c"
-    h_main_0opt3_release(&t20);
+    h_0opt_a8ea2_release(&t20);
 #line 175 "<heroes library>"
     t21 = h4_own4;
 #line 5757 "main.c"
-    h_main_0opt3_release(&t21);
+    h_0opt_a8ea2_release(&t21);
     return t7;
 bb3:
     goto bb1;
@@ -5899,7 +5899,7 @@ uint64_t h_list_Task_hash(const void *elem) {
     return h;
 }
 
-void h_main_0opt0_retain(const h_main_0opt0 *v) {
+void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -5907,7 +5907,7 @@ void h_main_0opt0_retain(const h_main_0opt0 *v) {
     }
 }
 
-void h_main_0opt0_release(h_main_0opt0 *v) {
+void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -5915,14 +5915,14 @@ void h_main_0opt0_release(h_main_0opt0 *v) {
     }
 }
 
-bool h_main_0opt0_eq(const h_main_0opt0 *a, const h_main_0opt0 *b) {
+bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_main_0opt0_hash(const void *elem) {
-    const h_main_0opt0 *v = elem;
+uint64_t h_0opt_f87774a_hash(const void *elem) {
+    const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -5931,7 +5931,7 @@ uint64_t h_main_0opt0_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_main_0opt1_retain(const h_main_0opt1 *v) {
+void h_0opt_4f4c4677_retain(const h_0opt_4f4c4677 *v) {
     if (v->tag == INT64_C(0)) {
         hero_array_incref(v->as.ok);
     } else {
@@ -5939,7 +5939,7 @@ void h_main_0opt1_retain(const h_main_0opt1 *v) {
     }
 }
 
-void h_main_0opt1_release(h_main_0opt1 *v) {
+void h_0opt_4f4c4677_release(h_0opt_4f4c4677 *v) {
     if (v->tag == INT64_C(0)) {
         hero_array_decref(v->as.ok);
     } else {
@@ -5947,14 +5947,14 @@ void h_main_0opt1_release(h_main_0opt1 *v) {
     }
 }
 
-bool h_main_0opt1_eq(const h_main_0opt1 *a, const h_main_0opt1 *b) {
+bool h_0opt_4f4c4677_eq(const h_0opt_4f4c4677 *a, const h_0opt_4f4c4677 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_array)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_main_0opt1_hash(const void *elem) {
-    const h_main_0opt1 *v = elem;
+uint64_t h_0opt_4f4c4677_hash(const void *elem) {
+    const h_0opt_4f4c4677 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -5963,7 +5963,7 @@ uint64_t h_main_0opt1_hash(const void *elem) {
     return (h ^ (&hero_desc_array)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_main_0opt2_retain(const h_main_0opt2 *v) {
+void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -5971,7 +5971,7 @@ void h_main_0opt2_retain(const h_main_0opt2 *v) {
     }
 }
 
-void h_main_0opt2_release(h_main_0opt2 *v) {
+void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -5979,14 +5979,14 @@ void h_main_0opt2_release(h_main_0opt2 *v) {
     }
 }
 
-bool h_main_0opt2_eq(const h_main_0opt2 *a, const h_main_0opt2 *b) {
+bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_main_0opt2_hash(const void *elem) {
-    const h_main_0opt2 *v = elem;
+uint64_t h_0opt_e201354_hash(const void *elem) {
+    const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
@@ -5995,7 +5995,7 @@ uint64_t h_main_0opt2_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_main_0opt3_retain(const h_main_0opt3 *v) {
+void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6003,7 +6003,7 @@ void h_main_0opt3_retain(const h_main_0opt3 *v) {
     }
 }
 
-void h_main_0opt3_release(h_main_0opt3 *v) {
+void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -6011,14 +6011,14 @@ void h_main_0opt3_release(h_main_0opt3 *v) {
     }
 }
 
-bool h_main_0opt3_eq(const h_main_0opt3 *a, const h_main_0opt3 *b) {
+bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_main_0opt3_hash(const void *elem) {
-    const h_main_0opt3 *v = elem;
+uint64_t h_0opt_a8ea2_hash(const void *elem) {
+    const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
     if (v->tag != INT64_C(0)) {
