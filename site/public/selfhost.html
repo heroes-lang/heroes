@@ -54,11 +54,10 @@
     A language is a toy until it can express its own compiler. That needs a tree
     with heterogeneous nodes, symbol tables, lists, recursion, error handling and
     multiple files, so if a language can write that, the argument about whether
-    it is real is over. It was the finish line from the first day, and the test
-    for it is not a test suite.
+    it is real is over. It was the finish line from the first day.
   </p>
   <p>
-    It is this: ask both compilers to write out the same program in C, and
+    The test is not a suite: ask both compilers to write out the same program in C, and
     compare the results letter by letter. Then compile the letters the new
     compiler wrote, and ask <i>that</i> compiler to write the program a third
     time.
@@ -73,7 +72,7 @@
   <p>
     Read the three names as a chain: the C the bootstrap emits, the C emitted by
     the compiler that C built, and the C emitted by the compiler built from
-    <i>that</i>. A thing that reproduces itself exactly, twice over. What it
+    <i>that</i>. It is a thing that reproduces itself exactly, twice over. What it
     took, measured:
   </p>
   <ul class="stats">

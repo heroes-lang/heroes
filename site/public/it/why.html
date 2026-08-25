@@ -200,13 +200,13 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     Ogni valore si comporta come una copia: <code>b = a</code> significa che
     <code>b</code> è indipendente da <code>a</code>, e lo significa allo stesso
     modo per i <code>record</code>, per gli array e per le mappe. Quello è il
-    significato. L&rsquo;implementazione sotto è copy-on-write sopra il reference
+    significato; l&rsquo;implementazione sotto è copy-on-write sopra il reference
     counting: prima di una modifica il runtime si chiede se qualcun altro sta
     tenendo gli stessi dati, e copia solo in quel caso, altrimenti scrive sul
     posto.
   </p>
   <p>
-    La conseguenza è quella che vale la pena rileggere due volte. Un riferimento
+    Un riferimento
     non può essere conservato in una variabile né in un campo, perché il
     linguaggio non ha un tipo riferimento da conservare, quindi ogni valore è un
     albero la cui radice è un nome nel programma. Un ciclo non si può costruire.

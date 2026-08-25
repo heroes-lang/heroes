@@ -187,13 +187,13 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
   <p>
     Every value behaves as a copy: <code>b = a</code> means <code>b</code> is
     independent of <code>a</code>, and it means that for records, arrays and
-    maps alike. That is the meaning. The implementation underneath is
+    maps alike. That is the meaning; the implementation underneath is
     copy-on-write over reference counting: before a mutation the runtime asks
     whether anyone else is holding the same data, and copies only then,
     otherwise it writes in place.
   </p>
   <p>
-    The consequence is the one worth reading twice. A reference cannot be
+    A reference cannot be
     stored in a variable or in a field, because the language has no reference
     type to store, so every value is a tree whose root is a name in the
     program. A cycle cannot be built. Reference counting therefore cannot leak,
