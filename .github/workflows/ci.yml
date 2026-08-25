@@ -296,6 +296,29 @@ jobs:
         shell: bash
         run: ./heroes-from-seed${{ matrix.exe }} run tests/harness/main.hero -- ./heroes-from-seed${{ matrix.exe }}
 
+      # THE NET'S OWN TESTS — 81 blocks that nothing ran until 2026-08-25
+      # (author decision, `/decide` answer `a`). The two steps above drive the
+      # compiler; neither asks whether the thing driving it is right, and while
+      # nobody asked, **two of the 81 sat red**: a count that a later commit
+      # made wrong (`suite_emission.hero`, `sweep` grew a third check) and a
+      # self-test that reached a six-day-old binary because `./heroes` was
+      # missing from `shell.hero`'s candidate list while the archived
+      # bootstrap's path was on it. One of the cases in this file is called
+      # "every check here can fire — CLAUDE.md §9, a check nobody has seen fail
+      # is a decoration".
+      #
+      # **Every push, not tags only**, and the number is why: this compiles the
+      # 5,606-line harness rather than the 38,021-line compiler, so it is
+      # **13.5 s measured 2026-08-25** against the 20m35s that made the step
+      # above tags-only. `HEROES_COMPILER` is named rather than searched for:
+      # `some_compiler()` would otherwise walk a candidate list, and a self-test
+      # whose verdict depends on which binaries happen to exist is not a test.
+      - name: The net's own tests
+        shell: bash
+        env:
+          HEROES_COMPILER: ./heroes-from-seed${{ matrix.exe }}
+        run: ./heroes-from-seed${{ matrix.exe }} test tests/harness/main.hero
+
       # THE SEED IS WHAT TODAY'S SOURCE EMITS — and until 2026-08-23 nothing
       # asked. `tests/harness/suite_determinism.hero:13` claimed this repository
       # "now has one that matters — `seed/heroes.c` is checked by `cmp` against
