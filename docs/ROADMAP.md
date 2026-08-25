@@ -208,8 +208,8 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 24 | **M-harness-port** | done 2026-08-18 | `m-harness-port` | [023](journal/023-harness-port.md) | the net in Heroes · closure list |
 | 25 | **M-bootstrap-archive** | done 2026-08-19 | `m-bootstrap-archive` | [024](journal/024-bootstrap-archive.md) | the third language dies · v1's last clause (design.md:82) |
 | 26 | **M-separate-compilation** | **OPEN** | — | — | one `.c` per module, prototypes across TUs, the cache · closure list |
-| 27 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 28 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency |
+| 27 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
+| 28 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 29 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
 | 30 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
 | 31 | **M-vscode-extension** | scheduled | — | — | the extension, complete |

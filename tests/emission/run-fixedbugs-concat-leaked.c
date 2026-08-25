@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "fixedbugsconcatleaked.c"
+#line 43 "fixedbugsconcatleaked.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "fixedbugsconcatleaked.c"
+#line 61 "fixedbugsconcatleaked.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1b7183, "hi ");
@@ -79,21 +81,21 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name);
 void h_fixedbugsconcatleaked_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-concat-leaked.hero"
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name) {
-#line 97 "fixedbugsconcatleaked.c"
+#line 99 "fixedbugsconcatleaked.c"
     HeroStr h1_own1 = {0};
     HeroStr t1 = {0};
     HeroStr t2 = {0};
@@ -112,21 +114,21 @@ bb0:
     t4 = h1_own1;
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_own1 = t3;
-#line 116 "fixedbugsconcatleaked.c"
+#line 118 "fixedbugsconcatleaked.c"
     hero_str_decref(t4);
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
-#line 119 "fixedbugsconcatleaked.c"
+#line 121 "fixedbugsconcatleaked.c"
     hero_str_incref(t3);
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t5 = h1_own1;
-#line 123 "fixedbugsconcatleaked.c"
+#line 125 "fixedbugsconcatleaked.c"
     hero_str_decref(t5);
     return t3;
 }
 
 #line 20 "tests/golden/run/fixedbugs-concat-leaked.hero"
 void h_fixedbugsconcatleaked_main(void) {
-#line 130 "fixedbugsconcatleaked.c"
+#line 132 "fixedbugsconcatleaked.c"
     HeroStr h0_s = {0};
     HeroStr h1_out = {0};
     int64_t h2_i;
@@ -173,7 +175,7 @@ bb0:
     t20 = h3_own3;
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h3_own3 = t2;
-#line 177 "fixedbugsconcatleaked.c"
+#line 179 "fixedbugsconcatleaked.c"
     hero_str_decref(t20);
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_str(t2);
@@ -183,11 +185,11 @@ bb0:
     t3 = HERO_STR_LIT(hero_str_3205);
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t21 = h0_s;
-#line 187 "fixedbugsconcatleaked.c"
+#line 189 "fixedbugsconcatleaked.c"
     hero_str_incref(t3);
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h0_s = t3;
-#line 191 "fixedbugsconcatleaked.c"
+#line 193 "fixedbugsconcatleaked.c"
     hero_str_decref(t21);
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t4 = h0_s;
@@ -199,7 +201,7 @@ bb0:
     t22 = h4_own4;
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h4_own4 = t6;
-#line 203 "fixedbugsconcatleaked.c"
+#line 205 "fixedbugsconcatleaked.c"
     hero_str_decref(t22);
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_str(t6);
@@ -209,11 +211,11 @@ bb0:
     t7 = HERO_STR_LIT(hero_str_0);
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t23 = h1_out;
-#line 213 "fixedbugsconcatleaked.c"
+#line 215 "fixedbugsconcatleaked.c"
     hero_str_incref(t7);
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_out = t7;
-#line 217 "fixedbugsconcatleaked.c"
+#line 219 "fixedbugsconcatleaked.c"
     hero_str_decref(t23);
 #line 25 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t8 = INT64_C(0);
@@ -243,15 +245,15 @@ bb2:
     t24 = h5_own5;
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h5_own5 = t14;
-#line 247 "fixedbugsconcatleaked.c"
+#line 249 "fixedbugsconcatleaked.c"
     hero_str_decref(t24);
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t25 = h1_out;
-#line 251 "fixedbugsconcatleaked.c"
+#line 253 "fixedbugsconcatleaked.c"
     hero_str_incref(t14);
 #line 27 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_out = t14;
-#line 255 "fixedbugsconcatleaked.c"
+#line 257 "fixedbugsconcatleaked.c"
     hero_str_decref(t25);
 #line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t15 = h2_i;
@@ -275,27 +277,27 @@ bb3:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t26 = h0_s;
-#line 279 "fixedbugsconcatleaked.c"
+#line 281 "fixedbugsconcatleaked.c"
     hero_str_decref(t26);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t27 = h1_out;
-#line 283 "fixedbugsconcatleaked.c"
+#line 285 "fixedbugsconcatleaked.c"
     hero_str_decref(t27);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t28 = h3_own3;
-#line 287 "fixedbugsconcatleaked.c"
+#line 289 "fixedbugsconcatleaked.c"
     hero_str_decref(t28);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t29 = h4_own4;
-#line 291 "fixedbugsconcatleaked.c"
+#line 293 "fixedbugsconcatleaked.c"
     hero_str_decref(t29);
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t30 = h5_own5;
-#line 295 "fixedbugsconcatleaked.c"
+#line 297 "fixedbugsconcatleaked.c"
     hero_str_decref(t30);
     return;
 }
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -303,7 +305,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -311,13 +313,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -327,7 +329,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -335,7 +337,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -343,13 +345,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "fixedbugscasepayloadleaked.c"
+#line 43 "fixedbugscasepayloadleaked.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "fixedbugscasepayloadleaked.c"
+#line 61 "fixedbugscasepayloadleaked.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_334014a4, "alphabet");
@@ -98,24 +100,24 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_fixedbugscasepayloadleaked_Token_c_num_eq(const h_fixedbugscasepayloadleaked_Token_c_num *a, const h_fixedbugscasepayloadleaked_Token_c_num *b);
-uint64_t h_fixedbugscasepayloadleaked_Token_c_num_hash(const void *elem);
-void h_fixedbugscasepayloadleaked_Token_c_name_retain(const h_fixedbugscasepayloadleaked_Token_c_name *v);
-void h_fixedbugscasepayloadleaked_Token_c_name_release(h_fixedbugscasepayloadleaked_Token_c_name *v);
-bool h_fixedbugscasepayloadleaked_Token_c_name_eq(const h_fixedbugscasepayloadleaked_Token_c_name *a, const h_fixedbugscasepayloadleaked_Token_c_name *b);
-uint64_t h_fixedbugscasepayloadleaked_Token_c_name_hash(const void *elem);
-void h_fixedbugscasepayloadleaked_Token_retain(const h_fixedbugscasepayloadleaked_Token *v);
-void h_fixedbugscasepayloadleaked_Token_release(h_fixedbugscasepayloadleaked_Token *v);
-bool h_fixedbugscasepayloadleaked_Token_eq(const h_fixedbugscasepayloadleaked_Token *a, const h_fixedbugscasepayloadleaked_Token *b);
-uint64_t h_fixedbugscasepayloadleaked_Token_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_c_num_eq(const h_fixedbugscasepayloadleaked_Token_c_num *a, const h_fixedbugscasepayloadleaked_Token_c_num *b);
+HERO_TU_LOCAL uint64_t h_fixedbugscasepayloadleaked_Token_c_num_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_c_name_retain(const h_fixedbugscasepayloadleaked_Token_c_name *v);
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_c_name_release(h_fixedbugscasepayloadleaked_Token_c_name *v);
+HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_c_name_eq(const h_fixedbugscasepayloadleaked_Token_c_name *a, const h_fixedbugscasepayloadleaked_Token_c_name *b);
+HERO_TU_LOCAL uint64_t h_fixedbugscasepayloadleaked_Token_c_name_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_retain(const h_fixedbugscasepayloadleaked_Token *v);
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_release(h_fixedbugscasepayloadleaked_Token *v);
+HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_eq(const h_fixedbugscasepayloadleaked_Token *a, const h_fixedbugscasepayloadleaked_Token *b);
+HERO_TU_LOCAL uint64_t h_fixedbugscasepayloadleaked_Token_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugscasepayloadleaked_Token_desc_copy(void *dst, const void *src) {
     *(h_fixedbugscasepayloadleaked_Token *)dst = *(const h_fixedbugscasepayloadleaked_Token *)src;
@@ -127,7 +129,7 @@ static void h_fixedbugscasepayloadleaked_Token_desc_drop(void *elem) {
 static bool h_fixedbugscasepayloadleaked_Token_desc_eq(const void *a, const void *b) {
     return h_fixedbugscasepayloadleaked_Token_eq((const h_fixedbugscasepayloadleaked_Token *)a, (const h_fixedbugscasepayloadleaked_Token *)b);
 }
-static const HeroDesc h_fixedbugscasepayloadleaked_Token_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugscasepayloadleaked_Token_desc = {
     sizeof(h_fixedbugscasepayloadleaked_Token),
     h_fixedbugscasepayloadleaked_Token_desc_copy,
     h_fixedbugscasepayloadleaked_Token_desc_drop,
@@ -140,7 +142,7 @@ void h_fixedbugscasepayloadleaked_main(void);
 
 #line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 h_fixedbugscasepayloadleaked_Token h_fixedbugscasepayloadleaked_label(HeroStr h0_text, int64_t h1_from, int64_t h2_to) {
-#line 144 "fixedbugscasepayloadleaked.c"
+#line 146 "fixedbugscasepayloadleaked.c"
     HeroStr h3_own3 = {0};
     h_fixedbugscasepayloadleaked_Token h4_own4 = {0};
     HeroStr t1 = {0};
@@ -166,10 +168,10 @@ bb0:
     t6 = h3_own3;
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h3_own3 = t4;
-#line 170 "fixedbugscasepayloadleaked.c"
+#line 172 "fixedbugscasepayloadleaked.c"
     hero_str_decref(t6);
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-#line 173 "fixedbugscasepayloadleaked.c"
+#line 175 "fixedbugscasepayloadleaked.c"
     hero_str_incref(t4);
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t5 = (h_fixedbugscasepayloadleaked_Token){.tag = h_fixedbugscasepayloadleaked_Token_tag_name, .as.c_name = {.f_s = t4}};
@@ -177,25 +179,25 @@ bb0:
     t7 = h4_own4;
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h4_own4 = t5;
-#line 181 "fixedbugscasepayloadleaked.c"
+#line 183 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t7);
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-#line 184 "fixedbugscasepayloadleaked.c"
+#line 186 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_retain(&t5);
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t8 = h3_own3;
-#line 188 "fixedbugscasepayloadleaked.c"
+#line 190 "fixedbugscasepayloadleaked.c"
     hero_str_decref(t8);
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t9 = h4_own4;
-#line 192 "fixedbugscasepayloadleaked.c"
+#line 194 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t9);
     return t5;
 }
 
 #line 37 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 void h_fixedbugscasepayloadleaked_main(void) {
-#line 199 "fixedbugscasepayloadleaked.c"
+#line 201 "fixedbugscasepayloadleaked.c"
     HeroArrayHeader * h0_out = {0};
     HeroArrayHeader * h1_copy = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -258,15 +260,15 @@ bb0:
     t37 = h2_own2;
 #line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h2_own2 = t1;
-#line 262 "fixedbugscasepayloadleaked.c"
+#line 264 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t37);
 #line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t38 = h0_out;
-#line 266 "fixedbugscasepayloadleaked.c"
+#line 268 "fixedbugscasepayloadleaked.c"
     hero_array_incref(t1);
 #line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h0_out = t1;
-#line 270 "fixedbugscasepayloadleaked.c"
+#line 272 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t38);
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t3 = HERO_STR_LIT(hero_str_334014a4);
@@ -280,7 +282,7 @@ bb0:
     t39 = h3_own3;
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h3_own3 = t6;
-#line 284 "fixedbugscasepayloadleaked.c"
+#line 286 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t39);
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_push_owned(&h0_out, &t6);
@@ -292,7 +294,7 @@ bb0:
     t40 = h4_own4;
 #line 40 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h4_own4 = t10;
-#line 296 "fixedbugscasepayloadleaked.c"
+#line 298 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t40);
 #line 40 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_push_owned(&h0_out, &t10);
@@ -300,11 +302,11 @@ bb0:
     t12 = h0_out;
 #line 44 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t41 = h1_copy;
-#line 304 "fixedbugscasepayloadleaked.c"
+#line 306 "fixedbugscasepayloadleaked.c"
     hero_array_incref(t12);
 #line 44 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h1_copy = t12;
-#line 308 "fixedbugscasepayloadleaked.c"
+#line 310 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t41);
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t14 = HERO_STR_LIT(hero_str_68e7bae0);
@@ -318,7 +320,7 @@ bb0:
     t42 = h5_own5;
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h5_own5 = t17;
-#line 322 "fixedbugscasepayloadleaked.c"
+#line 324 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t42);
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_push_owned(&h0_out, &t17);
@@ -356,7 +358,7 @@ bb0:
     t43 = h6_own6;
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h6_own6 = t29;
-#line 360 "fixedbugscasepayloadleaked.c"
+#line 362 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t43);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t30 = h_fixedbugscasepayloadleaked_Token_eq(&t25, &t29);
@@ -378,7 +380,7 @@ bb0:
     t44 = h7_own7;
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h7_own7 = t35;
-#line 382 "fixedbugscasepayloadleaked.c"
+#line 384 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t44);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t36 = h_fixedbugscasepayloadleaked_Token_eq(&t33, &t35);
@@ -388,85 +390,85 @@ bb0:
     hero_print_end();
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t45 = h0_out;
-#line 392 "fixedbugscasepayloadleaked.c"
+#line 394 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t45);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t46 = h1_copy;
-#line 396 "fixedbugscasepayloadleaked.c"
+#line 398 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t46);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t47 = h2_own2;
-#line 400 "fixedbugscasepayloadleaked.c"
+#line 402 "fixedbugscasepayloadleaked.c"
     hero_array_decref(t47);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t48 = h3_own3;
-#line 404 "fixedbugscasepayloadleaked.c"
+#line 406 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t48);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t49 = h4_own4;
-#line 408 "fixedbugscasepayloadleaked.c"
+#line 410 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t49);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t50 = h5_own5;
-#line 412 "fixedbugscasepayloadleaked.c"
+#line 414 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t50);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t51 = h6_own6;
-#line 416 "fixedbugscasepayloadleaked.c"
+#line 418 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t51);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t52 = h7_own7;
-#line 420 "fixedbugscasepayloadleaked.c"
+#line 422 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t52);
     return;
 }
-bool h_fixedbugscasepayloadleaked_Token_c_num_eq(const h_fixedbugscasepayloadleaked_Token_c_num *a, const h_fixedbugscasepayloadleaked_Token_c_num *b) {
+HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_c_num_eq(const h_fixedbugscasepayloadleaked_Token_c_num *a, const h_fixedbugscasepayloadleaked_Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;
     return true;
 }
 
-uint64_t h_fixedbugscasepayloadleaked_Token_c_num_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugscasepayloadleaked_Token_c_num_hash(const void *elem) {
     const h_fixedbugscasepayloadleaked_Token_c_num *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_v)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_fixedbugscasepayloadleaked_Token_c_name_retain(const h_fixedbugscasepayloadleaked_Token_c_name *v) {
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_c_name_retain(const h_fixedbugscasepayloadleaked_Token_c_name *v) {
     hero_str_incref(v->f_s);
 }
 
-void h_fixedbugscasepayloadleaked_Token_c_name_release(h_fixedbugscasepayloadleaked_Token_c_name *v) {
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_c_name_release(h_fixedbugscasepayloadleaked_Token_c_name *v) {
     hero_str_decref(v->f_s);
 }
 
-bool h_fixedbugscasepayloadleaked_Token_c_name_eq(const h_fixedbugscasepayloadleaked_Token_c_name *a, const h_fixedbugscasepayloadleaked_Token_c_name *b) {
+HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_c_name_eq(const h_fixedbugscasepayloadleaked_Token_c_name *a, const h_fixedbugscasepayloadleaked_Token_c_name *b) {
     if (!(hero_str_eq(a->f_s, b->f_s))) return false;
     return true;
 }
 
-uint64_t h_fixedbugscasepayloadleaked_Token_c_name_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugscasepayloadleaked_Token_c_name_hash(const void *elem) {
     const h_fixedbugscasepayloadleaked_Token_c_name *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_s)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_fixedbugscasepayloadleaked_Token_retain(const h_fixedbugscasepayloadleaked_Token *v) {
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_retain(const h_fixedbugscasepayloadleaked_Token *v) {
     switch (v->tag) {
         case h_fixedbugscasepayloadleaked_Token_tag_name: h_fixedbugscasepayloadleaked_Token_c_name_retain(&v->as.c_name); break;
         default: break;
     }
 }
 
-void h_fixedbugscasepayloadleaked_Token_release(h_fixedbugscasepayloadleaked_Token *v) {
+HERO_TU_LOCAL void h_fixedbugscasepayloadleaked_Token_release(h_fixedbugscasepayloadleaked_Token *v) {
     switch (v->tag) {
         case h_fixedbugscasepayloadleaked_Token_tag_name: h_fixedbugscasepayloadleaked_Token_c_name_release(&v->as.c_name); break;
         default: break;
     }
 }
 
-bool h_fixedbugscasepayloadleaked_Token_eq(const h_fixedbugscasepayloadleaked_Token *a, const h_fixedbugscasepayloadleaked_Token *b) {
+HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_eq(const h_fixedbugscasepayloadleaked_Token *a, const h_fixedbugscasepayloadleaked_Token *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
         case h_fixedbugscasepayloadleaked_Token_tag_num: return h_fixedbugscasepayloadleaked_Token_c_num_eq(&a->as.c_num, &b->as.c_num);
@@ -475,7 +477,7 @@ bool h_fixedbugscasepayloadleaked_Token_eq(const h_fixedbugscasepayloadleaked_To
     hero_unreachable();
 }
 
-uint64_t h_fixedbugscasepayloadleaked_Token_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugscasepayloadleaked_Token_hash(const void *elem) {
     const h_fixedbugscasepayloadleaked_Token *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -486,7 +488,7 @@ uint64_t h_fixedbugscasepayloadleaked_Token_hash(const void *elem) {
     hero_unreachable();
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -494,7 +496,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -502,13 +504,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -518,7 +520,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -526,7 +528,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -534,13 +536,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

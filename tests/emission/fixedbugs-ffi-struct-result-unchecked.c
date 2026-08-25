@@ -6,6 +6,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #line 49 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 _Static_assert(__builtin_classify_type(((div_t *)0)->quot) == 1 && sizeof(((div_t *)0)->quot) == sizeof(int32_t) && (_Generic(((div_t *)0)->quot, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field div_t quot");
@@ -15,7 +17,7 @@ _Static_assert(__builtin_classify_type(((div_t *)0)->rem) == 1 && sizeof(((div_t
 _Static_assert(__builtin_classify_type(((ldiv_t *)0)->quot) == 1 && sizeof(((ldiv_t *)0)->quot) == sizeof(int64_t) && (_Generic(((ldiv_t *)0)->quot, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ldiv_t quot");
 #line 54 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 _Static_assert(__builtin_classify_type(((ldiv_t *)0)->rem) == 1 && sizeof(((ldiv_t *)0)->rem) == sizeof(int64_t) && (_Generic(((ldiv_t *)0)->rem, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ldiv_t rem");
-#line 19 "ffistructresultunchecked.c"
+#line 21 "ffistructresultunchecked.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
@@ -24,7 +26,7 @@ _Static_assert(__builtin_classify_type(((ldiv_t *)0)->rem) == 1 && sizeof(((ldiv
 __attribute__((unused)) static void hero_ffi_complete_h_ffistructresultunchecked_div_t(void) { div_t v = {0,0}; (void)v; }
 #line 52 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_ffistructresultunchecked_ldiv_t(void) { ldiv_t v = {0,0}; (void)v; }
-#line 28 "ffistructresultunchecked.c"
+#line 30 "ffistructresultunchecked.c"
 #pragma clang diagnostic pop
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
@@ -79,7 +81,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 83 "ffistructresultunchecked.c"
+#line 85 "ffistructresultunchecked.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_32446647, "nothing calls div, and that used to be enough to ship a binary");
@@ -99,24 +101,24 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_ffistructresultunchecked_div_t_eq(const div_t *a, const div_t *b);
-uint64_t h_ffistructresultunchecked_div_t_hash(const void *elem);
-bool h_ffistructresultunchecked_ldiv_t_eq(const ldiv_t *a, const ldiv_t *b);
-uint64_t h_ffistructresultunchecked_ldiv_t_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffistructresultunchecked_div_t_eq(const div_t *a, const div_t *b);
+HERO_TU_LOCAL uint64_t h_ffistructresultunchecked_div_t_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffistructresultunchecked_ldiv_t_eq(const ldiv_t *a, const ldiv_t *b);
+HERO_TU_LOCAL uint64_t h_ffistructresultunchecked_ldiv_t_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffistructresultunchecked_main(void);
 
 #line 58 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
 void h_ffistructresultunchecked_main(void) {
-#line 120 "ffistructresultunchecked.c"
+#line 122 "ffistructresultunchecked.c"
     HeroStr t1 = {0};
     goto bb0;
 bb0:
@@ -128,15 +130,15 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/fixedbugs/ffi-struct-result-unchecked.hero"
     return;
-#line 132 "ffistructresultunchecked.c"
+#line 134 "ffistructresultunchecked.c"
 }
-bool h_ffistructresultunchecked_div_t_eq(const div_t *a, const div_t *b) {
+HERO_TU_LOCAL bool h_ffistructresultunchecked_div_t_eq(const div_t *a, const div_t *b) {
     if (!(a->quot == b->quot)) return false;
     if (!(a->rem == b->rem)) return false;
     return true;
 }
 
-uint64_t h_ffistructresultunchecked_div_t_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffistructresultunchecked_div_t_hash(const void *elem) {
     const div_t *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_i32)->hash(&v->quot)) * UINT64_C(0x100000001b3);
@@ -144,13 +146,13 @@ uint64_t h_ffistructresultunchecked_div_t_hash(const void *elem) {
     return h;
 }
 
-bool h_ffistructresultunchecked_ldiv_t_eq(const ldiv_t *a, const ldiv_t *b) {
+HERO_TU_LOCAL bool h_ffistructresultunchecked_ldiv_t_eq(const ldiv_t *a, const ldiv_t *b) {
     if (!(a->quot == b->quot)) return false;
     if (!(a->rem == b->rem)) return false;
     return true;
 }
 
-uint64_t h_ffistructresultunchecked_ldiv_t_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_ffistructresultunchecked_ldiv_t_hash(const void *elem) {
     const ldiv_t *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->quot)) * UINT64_C(0x100000001b3);
@@ -158,7 +160,7 @@ uint64_t h_ffistructresultunchecked_ldiv_t_hash(const void *elem) {
     return h;
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -166,7 +168,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -174,13 +176,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -190,7 +192,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -198,7 +200,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -206,13 +208,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

@@ -21,6 +21,8 @@ use cli_argv
 use cli_io
 use cli_compile
 use cli_toolchain
+use cli_units
+use emit_unit
 use cli_shell
 use cli_libraries
 use cli_input
@@ -100,7 +102,33 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
     source_dir: str @ modules.open_directory(path)
     if source_dir.len() == 0
         source_dir @ "."
-    linked = cli_toolchain.link(t, c_file: c_file, object: object.must(), binary: binary, level: options.level, sanitize: options.sanitize, source_dir: source_dir, search_include: options.headers_from, search_library: options.library, package_flags: package_flags.must(), link_names: names)
+    linked: ()? @ ok()
+    if is_tests
+        # A test binary keeps the fused unit: `heroes test` compiles
+        # once and runs per block, and the fused path is the artifact
+        # path the blessed emissions pin.
+        linked @ cli_toolchain.link(t, c_file: c_file, object: object.must(), binary: binary, level: options.level, sanitize: options.sanitize, source_dir: source_dir, search_include: options.headers_from, search_library: options.library, package_flags: package_flags.must(), link_names: names)
+    else
+        # One .c per module (panel 093): each TU compiled to its own
+        # cached object, every dirty TU before any verdict (R5), one
+        # link over all of them re-run every build.
+        root = source.module_of(s.name)
+        objects: [str] @ [object.must()]
+        stopped: ()? @ ok()
+        for component in cli_units.components(s)
+            tu_text = emit_unit.unit(module: component, p: art.must().program, c: art.must().checked, s: s, decls: art.must().decls, version: version, is_root: component == root)
+            made = cli_units.tu_object(t, module: component, tu_text: tu_text, level: options.level, sanitize: options.sanitize, search: cli_compile.search_key(headers_from: options.headers_from, library: options.library), package_flags: package_flags.must(), source_dir: source_dir, search_include: options.headers_from)
+            if made.is_err()
+                if stopped.is_err()
+                    stopped @ stopped
+                else
+                    stopped @ carry_failure(made)
+            else
+                objects @ objects.push(made.must())
+        if stopped.is_err()
+            linked @ stopped
+        else
+            linked @ cli_units.link_objects(t, objects: objects, binary: binary, level: options.level, sanitize: options.sanitize, search_include: options.headers_from, search_library: options.library, package_flags: package_flags.must(), link_names: names)
     if linked.is_err()
         # Some clang failures are the AUTHOR's, and the ffi mapping is
         # the only place that decides which (panel 036 rider 3). The
@@ -111,7 +139,12 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
             _ = cli_compile.stage(theirs, s)
             return fail("diagnostics", "the author's extern disagrees with the header")
         cli_io.eprint(text: "internal error: " + message)
-        cli_io.eprint(text: "the generated C is at " + c_file)
+        if is_tests
+            # The per-module branch carries the failing TU's own path
+            # inside the message; only the fused test build still needs
+            # this line, and pointing at the fused unit after a TU
+            # failure would name a file clang never refused.
+            cli_io.eprint(text: "the generated C is at " + c_file)
         return fail("failed", "clang refused the generated C")
     return ok(Produced(binary: binary, tests: art.must().tests, stopped: false))
 
@@ -125,6 +158,14 @@ function unit_failure_text(failed: ()?) -> str
     match failed
         .ok => return ""
         .err e => return e.msg
+
+# A TU object's failure, re-shaped for the link result the caller
+# reads: same code (the exit), same message (clang's words, which the
+# ffi mapping reads).
+function carry_failure(failed: str?) -> ()?
+    match failed
+        .ok => return ok()
+        .err e => return fail(e.code, e.msg)
 
 function run_build(path: str, s: source.Source, inv: cli_argv.Invocation, t: cli_toolchain.Toolchain, version: str) -> cli_table.Exit
     if cli_argv.has(inv, spelling: "--dump-ir") && cli_argv.has(inv, spelling: "--emit-c")

@@ -67,7 +67,13 @@ function signature(f: ir_state.Function, c: check_state.Checked, names: emit_cty
     list: str @ "void"
     if params.len() > 0
         list @ params.join(", ")
-    return result + " " + name + "(" + list + ")"
+    # An INSTANCE is TU-local (panel 093 R2): under one .c per module a
+    # copy is emitted static in every unit that uses it, and the fused
+    # unit defines the macro empty — one printer for both paths.
+    local: str @ ""
+    if f.instance.len() > 0
+        local @ "HERO_TU_LOCAL "
+    return local + result + " " + name + "(" + list + ")"
 
 function one_param(f: ir_state.Function, c: check_state.Checked, names: emit_ctype.Names, slot_id: i64) -> str
     declared = f.slots[slot_id]

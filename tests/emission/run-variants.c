@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "variants.c"
+#line 43 "variants.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "variants.c"
+#line 61 "variants.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_1d0a2a, "num");
@@ -105,24 +107,24 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_variants_Token_c_num_eq(const h_variants_Token_c_num *a, const h_variants_Token_c_num *b);
-uint64_t h_variants_Token_c_num_hash(const void *elem);
-void h_variants_Token_c_word_retain(const h_variants_Token_c_word *v);
-void h_variants_Token_c_word_release(h_variants_Token_c_word *v);
-bool h_variants_Token_c_word_eq(const h_variants_Token_c_word *a, const h_variants_Token_c_word *b);
-uint64_t h_variants_Token_c_word_hash(const void *elem);
-void h_variants_Token_retain(const h_variants_Token *v);
-void h_variants_Token_release(h_variants_Token *v);
-bool h_variants_Token_eq(const h_variants_Token *a, const h_variants_Token *b);
-uint64_t h_variants_Token_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_variants_Token_c_num_eq(const h_variants_Token_c_num *a, const h_variants_Token_c_num *b);
+HERO_TU_LOCAL uint64_t h_variants_Token_c_num_hash(const void *elem);
+HERO_TU_LOCAL void h_variants_Token_c_word_retain(const h_variants_Token_c_word *v);
+HERO_TU_LOCAL void h_variants_Token_c_word_release(h_variants_Token_c_word *v);
+HERO_TU_LOCAL bool h_variants_Token_c_word_eq(const h_variants_Token_c_word *a, const h_variants_Token_c_word *b);
+HERO_TU_LOCAL uint64_t h_variants_Token_c_word_hash(const void *elem);
+HERO_TU_LOCAL void h_variants_Token_retain(const h_variants_Token *v);
+HERO_TU_LOCAL void h_variants_Token_release(h_variants_Token *v);
+HERO_TU_LOCAL bool h_variants_Token_eq(const h_variants_Token *a, const h_variants_Token *b);
+HERO_TU_LOCAL uint64_t h_variants_Token_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_variants_size(h_variants_Token h0_t);
 HeroStr h_variants_label(h_variants_Token h0_t);
@@ -130,7 +132,7 @@ void h_variants_main(void);
 
 #line 19 "tests/golden/run/variants.hero"
 int64_t h_variants_size(h_variants_Token h0_t) {
-#line 134 "variants.c"
+#line 136 "variants.c"
     h_variants_Token h1_s0 = {0};
     int64_t h2_r0;
     h_variants_Token_c_num h3_n;
@@ -159,11 +161,11 @@ bb0:
     t1 = h0_t;
 #line 20 "tests/golden/run/variants.hero"
     t15 = h1_s0;
-#line 163 "variants.c"
+#line 165 "variants.c"
     h_variants_Token_retain(&t1);
 #line 20 "tests/golden/run/variants.hero"
     h1_s0 = t1;
-#line 167 "variants.c"
+#line 169 "variants.c"
     h_variants_Token_release(&t15);
 #line 20 "tests/golden/run/variants.hero"
     t2 = h1_s0;
@@ -187,11 +189,11 @@ bb1:
     t14 = h2_r0;
 #line 20 "tests/golden/run/variants.hero"
     t17 = h1_s0;
-#line 191 "variants.c"
+#line 193 "variants.c"
     h_variants_Token_release(&t17);
 #line 20 "tests/golden/run/variants.hero"
     t18 = h4_w;
-#line 195 "variants.c"
+#line 197 "variants.c"
     h_variants_Token_c_word_release(&t18);
     return t14;
 bb2:
@@ -217,11 +219,11 @@ bb3:
     t9 = t8.as.c_word;
 #line 22 "tests/golden/run/variants.hero"
     t16 = h4_w;
-#line 221 "variants.c"
+#line 223 "variants.c"
     h_variants_Token_c_word_retain(&t9);
 #line 22 "tests/golden/run/variants.hero"
     h4_w = t9;
-#line 225 "variants.c"
+#line 227 "variants.c"
     h_variants_Token_c_word_release(&t16);
 #line 22 "tests/golden/run/variants.hero"
     t10 = h4_w;
@@ -241,12 +243,12 @@ bb4:
     h2_r0 = t13;
 #line 20 "tests/golden/run/variants.hero"
     goto bb1;
-#line 245 "variants.c"
+#line 247 "variants.c"
 }
 
 #line 25 "tests/golden/run/variants.hero"
 HeroStr h_variants_label(h_variants_Token h0_t) {
-#line 250 "variants.c"
+#line 252 "variants.c"
     h_variants_Token h1_s0 = {0};
     HeroStr h2_r0 = {0};
     h_variants_Token_c_word h3_w = {0};
@@ -279,11 +281,11 @@ bb0:
     t1 = h0_t;
 #line 26 "tests/golden/run/variants.hero"
     t13 = h1_s0;
-#line 283 "variants.c"
+#line 285 "variants.c"
     h_variants_Token_retain(&t1);
 #line 26 "tests/golden/run/variants.hero"
     h1_s0 = t1;
-#line 287 "variants.c"
+#line 289 "variants.c"
     h_variants_Token_release(&t13);
 #line 26 "tests/golden/run/variants.hero"
     t2 = h1_s0;
@@ -305,23 +307,23 @@ bb0:
 bb1:
 #line 26 "tests/golden/run/variants.hero"
     t12 = h2_r0;
-#line 309 "variants.c"
+#line 311 "variants.c"
     hero_str_incref(t12);
 #line 26 "tests/golden/run/variants.hero"
     t19 = h1_s0;
-#line 313 "variants.c"
+#line 315 "variants.c"
     h_variants_Token_release(&t19);
 #line 26 "tests/golden/run/variants.hero"
     t20 = h2_r0;
-#line 317 "variants.c"
+#line 319 "variants.c"
     hero_str_decref(t20);
 #line 26 "tests/golden/run/variants.hero"
     t21 = h3_w;
-#line 321 "variants.c"
+#line 323 "variants.c"
     h_variants_Token_c_word_release(&t21);
 #line 26 "tests/golden/run/variants.hero"
     t22 = h4_own4;
-#line 325 "variants.c"
+#line 327 "variants.c"
     hero_str_decref(t22);
     return t12;
 bb2:
@@ -329,11 +331,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_1d0a2a);
 #line 26 "tests/golden/run/variants.hero"
     t14 = h2_r0;
-#line 333 "variants.c"
+#line 335 "variants.c"
     hero_str_incref(t4);
 #line 26 "tests/golden/run/variants.hero"
     h2_r0 = t4;
-#line 337 "variants.c"
+#line 339 "variants.c"
     hero_str_decref(t14);
     goto bb1;
 bb3:
@@ -343,11 +345,11 @@ bb3:
     t6 = t5.as.c_word;
 #line 28 "tests/golden/run/variants.hero"
     t15 = h3_w;
-#line 347 "variants.c"
+#line 349 "variants.c"
     h_variants_Token_c_word_retain(&t6);
 #line 28 "tests/golden/run/variants.hero"
     h3_w = t6;
-#line 351 "variants.c"
+#line 353 "variants.c"
     h_variants_Token_c_word_release(&t15);
 #line 28 "tests/golden/run/variants.hero"
     t7 = HERO_STR_LIT(hero_str_37dd7354);
@@ -361,15 +363,15 @@ bb3:
     t16 = h4_own4;
 #line 28 "tests/golden/run/variants.hero"
     h4_own4 = t10;
-#line 365 "variants.c"
+#line 367 "variants.c"
     hero_str_decref(t16);
 #line 26 "tests/golden/run/variants.hero"
     t17 = h2_r0;
-#line 369 "variants.c"
+#line 371 "variants.c"
     hero_str_incref(t10);
 #line 26 "tests/golden/run/variants.hero"
     h2_r0 = t10;
-#line 373 "variants.c"
+#line 375 "variants.c"
     hero_str_decref(t17);
     goto bb1;
 bb4:
@@ -377,18 +379,18 @@ bb4:
     t11 = HERO_STR_LIT(hero_str_1aab3b);
 #line 26 "tests/golden/run/variants.hero"
     t18 = h2_r0;
-#line 381 "variants.c"
+#line 383 "variants.c"
     hero_str_incref(t11);
 #line 26 "tests/golden/run/variants.hero"
     h2_r0 = t11;
-#line 385 "variants.c"
+#line 387 "variants.c"
     hero_str_decref(t18);
     goto bb1;
 }
 
 #line 31 "tests/golden/run/variants.hero"
 void h_variants_main(void) {
-#line 392 "variants.c"
+#line 394 "variants.c"
     h_variants_Token h0_a = {0};
     h_variants_Token h1_b = {0};
     h_variants_Token h2_c = {0};
@@ -505,7 +507,7 @@ bb0:
     t44 = h6_own6;
 #line 32 "tests/golden/run/variants.hero"
     h6_own6 = t2;
-#line 509 "variants.c"
+#line 511 "variants.c"
     h_variants_Token_release(&t44);
 #line 32 "tests/golden/run/variants.hero"
     t3 = h_variants_size(t2);
@@ -515,7 +517,7 @@ bb0:
     hero_print_end();
 #line 33 "tests/golden/run/variants.hero"
     t4 = HERO_STR_LIT(hero_str_d19443a);
-#line 519 "variants.c"
+#line 521 "variants.c"
     hero_str_incref(t4);
 #line 33 "tests/golden/run/variants.hero"
     t5 = (h_variants_Token){.tag = h_variants_Token_tag_word, .as.c_word = {.f_text = t4}};
@@ -523,7 +525,7 @@ bb0:
     t45 = h7_own7;
 #line 33 "tests/golden/run/variants.hero"
     h7_own7 = t5;
-#line 527 "variants.c"
+#line 529 "variants.c"
     h_variants_Token_release(&t45);
 #line 33 "tests/golden/run/variants.hero"
     t6 = h_variants_size(t5);
@@ -537,7 +539,7 @@ bb0:
     t46 = h8_own8;
 #line 34 "tests/golden/run/variants.hero"
     h8_own8 = t7;
-#line 541 "variants.c"
+#line 543 "variants.c"
     h_variants_Token_release(&t46);
 #line 34 "tests/golden/run/variants.hero"
     t8 = h_variants_size(t7);
@@ -555,10 +557,10 @@ bb0:
     t47 = h9_own9;
 #line 35 "tests/golden/run/variants.hero"
     h9_own9 = t11;
-#line 559 "variants.c"
+#line 561 "variants.c"
     hero_str_decref(t47);
 #line 35 "tests/golden/run/variants.hero"
-#line 562 "variants.c"
+#line 564 "variants.c"
     hero_str_incref(t11);
 #line 35 "tests/golden/run/variants.hero"
     t12 = (h_variants_Token){.tag = h_variants_Token_tag_word, .as.c_word = {.f_text = t11}};
@@ -566,7 +568,7 @@ bb0:
     t48 = h10_own10;
 #line 35 "tests/golden/run/variants.hero"
     h10_own10 = t12;
-#line 570 "variants.c"
+#line 572 "variants.c"
     h_variants_Token_release(&t48);
 #line 35 "tests/golden/run/variants.hero"
     t13 = h_variants_label(t12);
@@ -574,7 +576,7 @@ bb0:
     t49 = h11_own11;
 #line 35 "tests/golden/run/variants.hero"
     h11_own11 = t13;
-#line 578 "variants.c"
+#line 580 "variants.c"
     hero_str_decref(t49);
 #line 35 "tests/golden/run/variants.hero"
     hero_print_str(t13);
@@ -586,7 +588,7 @@ bb0:
     t50 = h12_own12;
 #line 36 "tests/golden/run/variants.hero"
     h12_own12 = t14;
-#line 590 "variants.c"
+#line 592 "variants.c"
     h_variants_Token_release(&t50);
 #line 36 "tests/golden/run/variants.hero"
     t15 = h_variants_label(t14);
@@ -594,7 +596,7 @@ bb0:
     t51 = h13_own13;
 #line 36 "tests/golden/run/variants.hero"
     h13_own13 = t15;
-#line 598 "variants.c"
+#line 600 "variants.c"
     hero_str_decref(t51);
 #line 36 "tests/golden/run/variants.hero"
     hero_print_str(t15);
@@ -608,15 +610,15 @@ bb0:
     t52 = h14_own14;
 #line 38 "tests/golden/run/variants.hero"
     h14_own14 = t17;
-#line 612 "variants.c"
+#line 614 "variants.c"
     h_variants_Token_release(&t52);
 #line 38 "tests/golden/run/variants.hero"
     t53 = h0_a;
-#line 616 "variants.c"
+#line 618 "variants.c"
     h_variants_Token_retain(&t17);
 #line 38 "tests/golden/run/variants.hero"
     h0_a = t17;
-#line 620 "variants.c"
+#line 622 "variants.c"
     h_variants_Token_release(&t53);
 #line 39 "tests/golden/run/variants.hero"
     t18 = INT64_C(1);
@@ -626,15 +628,15 @@ bb0:
     t54 = h15_own15;
 #line 39 "tests/golden/run/variants.hero"
     h15_own15 = t19;
-#line 630 "variants.c"
+#line 632 "variants.c"
     h_variants_Token_release(&t54);
 #line 39 "tests/golden/run/variants.hero"
     t55 = h1_b;
-#line 634 "variants.c"
+#line 636 "variants.c"
     h_variants_Token_retain(&t19);
 #line 39 "tests/golden/run/variants.hero"
     h1_b = t19;
-#line 638 "variants.c"
+#line 640 "variants.c"
     h_variants_Token_release(&t55);
 #line 40 "tests/golden/run/variants.hero"
     t20 = INT64_C(2);
@@ -644,15 +646,15 @@ bb0:
     t56 = h16_own16;
 #line 40 "tests/golden/run/variants.hero"
     h16_own16 = t21;
-#line 648 "variants.c"
+#line 650 "variants.c"
     h_variants_Token_release(&t56);
 #line 40 "tests/golden/run/variants.hero"
     t57 = h2_c;
-#line 652 "variants.c"
+#line 654 "variants.c"
     h_variants_Token_retain(&t21);
 #line 40 "tests/golden/run/variants.hero"
     h2_c = t21;
-#line 656 "variants.c"
+#line 658 "variants.c"
     h_variants_Token_release(&t57);
 #line 41 "tests/golden/run/variants.hero"
     t22 = (h_variants_Token){.tag = h_variants_Token_tag_end};
@@ -660,15 +662,15 @@ bb0:
     t58 = h17_own17;
 #line 41 "tests/golden/run/variants.hero"
     h17_own17 = t22;
-#line 664 "variants.c"
+#line 666 "variants.c"
     h_variants_Token_release(&t58);
 #line 41 "tests/golden/run/variants.hero"
     t59 = h3_d;
-#line 668 "variants.c"
+#line 670 "variants.c"
     h_variants_Token_retain(&t22);
 #line 41 "tests/golden/run/variants.hero"
     h3_d = t22;
-#line 672 "variants.c"
+#line 674 "variants.c"
     h_variants_Token_release(&t59);
 #line 42 "tests/golden/run/variants.hero"
     t23 = h0_a;
@@ -712,7 +714,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/variants.hero"
     t35 = HERO_STR_LIT(hero_str_3205);
-#line 716 "variants.c"
+#line 718 "variants.c"
     hero_str_incref(t35);
 #line 48 "tests/golden/run/variants.hero"
     t36 = (h_variants_Token){.tag = h_variants_Token_tag_word, .as.c_word = {.f_text = t35}};
@@ -720,15 +722,15 @@ bb0:
     t60 = h18_own18;
 #line 48 "tests/golden/run/variants.hero"
     h18_own18 = t36;
-#line 724 "variants.c"
+#line 726 "variants.c"
     h_variants_Token_release(&t60);
 #line 48 "tests/golden/run/variants.hero"
     t61 = h4_w1;
-#line 728 "variants.c"
+#line 730 "variants.c"
     h_variants_Token_retain(&t36);
 #line 48 "tests/golden/run/variants.hero"
     h4_w1 = t36;
-#line 732 "variants.c"
+#line 734 "variants.c"
     h_variants_Token_release(&t61);
 #line 49 "tests/golden/run/variants.hero"
     t37 = HERO_STR_LIT(hero_str_61);
@@ -740,10 +742,10 @@ bb0:
     t62 = h19_own19;
 #line 49 "tests/golden/run/variants.hero"
     h19_own19 = t39;
-#line 744 "variants.c"
+#line 746 "variants.c"
     hero_str_decref(t62);
 #line 49 "tests/golden/run/variants.hero"
-#line 747 "variants.c"
+#line 749 "variants.c"
     hero_str_incref(t39);
 #line 49 "tests/golden/run/variants.hero"
     t40 = (h_variants_Token){.tag = h_variants_Token_tag_word, .as.c_word = {.f_text = t39}};
@@ -751,15 +753,15 @@ bb0:
     t63 = h20_own20;
 #line 49 "tests/golden/run/variants.hero"
     h20_own20 = t40;
-#line 755 "variants.c"
+#line 757 "variants.c"
     h_variants_Token_release(&t63);
 #line 49 "tests/golden/run/variants.hero"
     t64 = h5_w2;
-#line 759 "variants.c"
+#line 761 "variants.c"
     h_variants_Token_retain(&t40);
 #line 49 "tests/golden/run/variants.hero"
     h5_w2 = t40;
-#line 763 "variants.c"
+#line 765 "variants.c"
     h_variants_Token_release(&t64);
 #line 50 "tests/golden/run/variants.hero"
     t41 = h4_w1;
@@ -773,137 +775,137 @@ bb0:
     hero_print_end();
 #line 50 "tests/golden/run/variants.hero"
     t65 = h0_a;
-#line 777 "variants.c"
+#line 779 "variants.c"
     h_variants_Token_release(&t65);
 #line 50 "tests/golden/run/variants.hero"
     t66 = h1_b;
-#line 781 "variants.c"
+#line 783 "variants.c"
     h_variants_Token_release(&t66);
 #line 50 "tests/golden/run/variants.hero"
     t67 = h2_c;
-#line 785 "variants.c"
+#line 787 "variants.c"
     h_variants_Token_release(&t67);
 #line 50 "tests/golden/run/variants.hero"
     t68 = h3_d;
-#line 789 "variants.c"
+#line 791 "variants.c"
     h_variants_Token_release(&t68);
 #line 50 "tests/golden/run/variants.hero"
     t69 = h4_w1;
-#line 793 "variants.c"
+#line 795 "variants.c"
     h_variants_Token_release(&t69);
 #line 50 "tests/golden/run/variants.hero"
     t70 = h5_w2;
-#line 797 "variants.c"
+#line 799 "variants.c"
     h_variants_Token_release(&t70);
 #line 50 "tests/golden/run/variants.hero"
     t71 = h6_own6;
-#line 801 "variants.c"
+#line 803 "variants.c"
     h_variants_Token_release(&t71);
 #line 50 "tests/golden/run/variants.hero"
     t72 = h7_own7;
-#line 805 "variants.c"
+#line 807 "variants.c"
     h_variants_Token_release(&t72);
 #line 50 "tests/golden/run/variants.hero"
     t73 = h8_own8;
-#line 809 "variants.c"
+#line 811 "variants.c"
     h_variants_Token_release(&t73);
 #line 50 "tests/golden/run/variants.hero"
     t74 = h9_own9;
-#line 813 "variants.c"
+#line 815 "variants.c"
     hero_str_decref(t74);
 #line 50 "tests/golden/run/variants.hero"
     t75 = h10_own10;
-#line 817 "variants.c"
+#line 819 "variants.c"
     h_variants_Token_release(&t75);
 #line 50 "tests/golden/run/variants.hero"
     t76 = h11_own11;
-#line 821 "variants.c"
+#line 823 "variants.c"
     hero_str_decref(t76);
 #line 50 "tests/golden/run/variants.hero"
     t77 = h12_own12;
-#line 825 "variants.c"
+#line 827 "variants.c"
     h_variants_Token_release(&t77);
 #line 50 "tests/golden/run/variants.hero"
     t78 = h13_own13;
-#line 829 "variants.c"
+#line 831 "variants.c"
     hero_str_decref(t78);
 #line 50 "tests/golden/run/variants.hero"
     t79 = h14_own14;
-#line 833 "variants.c"
+#line 835 "variants.c"
     h_variants_Token_release(&t79);
 #line 50 "tests/golden/run/variants.hero"
     t80 = h15_own15;
-#line 837 "variants.c"
+#line 839 "variants.c"
     h_variants_Token_release(&t80);
 #line 50 "tests/golden/run/variants.hero"
     t81 = h16_own16;
-#line 841 "variants.c"
+#line 843 "variants.c"
     h_variants_Token_release(&t81);
 #line 50 "tests/golden/run/variants.hero"
     t82 = h17_own17;
-#line 845 "variants.c"
+#line 847 "variants.c"
     h_variants_Token_release(&t82);
 #line 50 "tests/golden/run/variants.hero"
     t83 = h18_own18;
-#line 849 "variants.c"
+#line 851 "variants.c"
     h_variants_Token_release(&t83);
 #line 50 "tests/golden/run/variants.hero"
     t84 = h19_own19;
-#line 853 "variants.c"
+#line 855 "variants.c"
     hero_str_decref(t84);
 #line 50 "tests/golden/run/variants.hero"
     t85 = h20_own20;
-#line 857 "variants.c"
+#line 859 "variants.c"
     h_variants_Token_release(&t85);
     return;
 }
-bool h_variants_Token_c_num_eq(const h_variants_Token_c_num *a, const h_variants_Token_c_num *b) {
+HERO_TU_LOCAL bool h_variants_Token_c_num_eq(const h_variants_Token_c_num *a, const h_variants_Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;
     return true;
 }
 
-uint64_t h_variants_Token_c_num_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_variants_Token_c_num_hash(const void *elem) {
     const h_variants_Token_c_num *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_v)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_variants_Token_c_word_retain(const h_variants_Token_c_word *v) {
+HERO_TU_LOCAL void h_variants_Token_c_word_retain(const h_variants_Token_c_word *v) {
     hero_str_incref(v->f_text);
 }
 
-void h_variants_Token_c_word_release(h_variants_Token_c_word *v) {
+HERO_TU_LOCAL void h_variants_Token_c_word_release(h_variants_Token_c_word *v) {
     hero_str_decref(v->f_text);
 }
 
-bool h_variants_Token_c_word_eq(const h_variants_Token_c_word *a, const h_variants_Token_c_word *b) {
+HERO_TU_LOCAL bool h_variants_Token_c_word_eq(const h_variants_Token_c_word *a, const h_variants_Token_c_word *b) {
     if (!(hero_str_eq(a->f_text, b->f_text))) return false;
     return true;
 }
 
-uint64_t h_variants_Token_c_word_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_variants_Token_c_word_hash(const void *elem) {
     const h_variants_Token_c_word *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_variants_Token_retain(const h_variants_Token *v) {
+HERO_TU_LOCAL void h_variants_Token_retain(const h_variants_Token *v) {
     switch (v->tag) {
         case h_variants_Token_tag_word: h_variants_Token_c_word_retain(&v->as.c_word); break;
         default: break;
     }
 }
 
-void h_variants_Token_release(h_variants_Token *v) {
+HERO_TU_LOCAL void h_variants_Token_release(h_variants_Token *v) {
     switch (v->tag) {
         case h_variants_Token_tag_word: h_variants_Token_c_word_release(&v->as.c_word); break;
         default: break;
     }
 }
 
-bool h_variants_Token_eq(const h_variants_Token *a, const h_variants_Token *b) {
+HERO_TU_LOCAL bool h_variants_Token_eq(const h_variants_Token *a, const h_variants_Token *b) {
     if (a->tag != b->tag) return false;
     switch (a->tag) {
         case h_variants_Token_tag_num: return h_variants_Token_c_num_eq(&a->as.c_num, &b->as.c_num);
@@ -913,7 +915,7 @@ bool h_variants_Token_eq(const h_variants_Token *a, const h_variants_Token *b) {
     hero_unreachable();
 }
 
-uint64_t h_variants_Token_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_variants_Token_hash(const void *elem) {
     const h_variants_Token *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -925,7 +927,7 @@ uint64_t h_variants_Token_hash(const void *elem) {
     hero_unreachable();
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -933,7 +935,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -941,13 +943,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -957,7 +959,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -965,7 +967,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -973,13 +975,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

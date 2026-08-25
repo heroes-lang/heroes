@@ -5,6 +5,8 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -37,7 +39,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, (int64_t *)0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 41 "fixedbugsagenericcallingageneric.c"
+#line 43 "fixedbugsagenericcallingageneric.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -55,7 +57,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 59 "fixedbugsagenericcallingageneric.c"
+#line 61 "fixedbugsagenericcallingageneric.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
@@ -82,16 +84,16 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_fixedbugsagenericcallingageneric_P_eq(const h_fixedbugsagenericcallingageneric_P *a, const h_fixedbugsagenericcallingageneric_P *b);
-uint64_t h_fixedbugsagenericcallingageneric_P_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsagenericcallingageneric_P_eq(const h_fixedbugsagenericcallingageneric_P *a, const h_fixedbugsagenericcallingageneric_P *b);
+HERO_TU_LOCAL uint64_t h_fixedbugsagenericcallingageneric_P_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugsagenericcallingageneric_P_desc_copy(void *dst, const void *src) {
     *(h_fixedbugsagenericcallingageneric_P *)dst = *(const h_fixedbugsagenericcallingageneric_P *)src;
@@ -102,7 +104,7 @@ static void h_fixedbugsagenericcallingageneric_P_desc_drop(void *elem) {
 static bool h_fixedbugsagenericcallingageneric_P_desc_eq(const void *a, const void *b) {
     return h_fixedbugsagenericcallingageneric_P_eq((const h_fixedbugsagenericcallingageneric_P *)a, (const h_fixedbugsagenericcallingageneric_P *)b);
 }
-static const HeroDesc h_fixedbugsagenericcallingageneric_P_desc = {
+HERO_TU_QUIET static const HeroDesc h_fixedbugsagenericcallingageneric_P_desc = {
     sizeof(h_fixedbugsagenericcallingageneric_P),
     h_fixedbugsagenericcallingageneric_P_desc_copy,
     h_fixedbugsagenericcallingageneric_P_desc_drop,
@@ -111,23 +113,23 @@ static const HeroDesc h_fixedbugsagenericcallingageneric_P_desc = {
 };
 
 void h_fixedbugsagenericcallingageneric_main(void);
-int64_t h_fixedbugsagenericcallingageneric_outer_1b9a87(HeroArrayHeader * h0_xs);
-HeroStr h_fixedbugsagenericcallingageneric_outer_1e58d9(HeroArrayHeader * h0_xs);
-h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_outer_50(HeroArrayHeader * h0_xs);
-int64_t h_fixedbugsagenericcallingageneric_both_1b9a87(HeroArrayHeader * h0_es);
-int64_t h_fixedbugsagenericcallingageneric_both_1e58d9(HeroArrayHeader * h0_es);
-int64_t h_fixedbugsagenericcallingageneric_middle_1b9a87(HeroArrayHeader * h0_ys);
-HeroStr h_fixedbugsagenericcallingageneric_middle_1e58d9(HeroArrayHeader * h0_ys);
-h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_middle_50(HeroArrayHeader * h0_ys);
-int64_t h_fixedbugsagenericcallingageneric_tally_1b9a87(HeroArrayHeader * h0_ds);
-int64_t h_fixedbugsagenericcallingageneric_tally_1e58d9(HeroArrayHeader * h0_ds);
-int64_t h_fixedbugsagenericcallingageneric_innermost_1b9a87(HeroArrayHeader * h0_zs);
-HeroStr h_fixedbugsagenericcallingageneric_innermost_1e58d9(HeroArrayHeader * h0_zs);
-h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_innermost_50(HeroArrayHeader * h0_zs);
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_outer_1b9a87(HeroArrayHeader * h0_xs);
+HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_outer_1e58d9(HeroArrayHeader * h0_xs);
+HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_outer_50(HeroArrayHeader * h0_xs);
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1b9a87(HeroArrayHeader * h0_es);
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1e58d9(HeroArrayHeader * h0_es);
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_middle_1b9a87(HeroArrayHeader * h0_ys);
+HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_middle_1e58d9(HeroArrayHeader * h0_ys);
+HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_middle_50(HeroArrayHeader * h0_ys);
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1b9a87(HeroArrayHeader * h0_ds);
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1e58d9(HeroArrayHeader * h0_ds);
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_innermost_1b9a87(HeroArrayHeader * h0_zs);
+HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_innermost_1e58d9(HeroArrayHeader * h0_zs);
+HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_innermost_50(HeroArrayHeader * h0_zs);
 
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 void h_fixedbugsagenericcallingageneric_main(void) {
-#line 131 "fixedbugsagenericcallingageneric.c"
+#line 133 "fixedbugsagenericcallingageneric.c"
     h_fixedbugsagenericcallingageneric_P h0_p;
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -192,7 +194,7 @@ bb0:
     t26 = h1_own1;
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h1_own1 = t3;
-#line 196 "fixedbugsagenericcallingageneric.c"
+#line 198 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t26);
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t4 = h_fixedbugsagenericcallingageneric_outer_1b9a87(t3);
@@ -218,7 +220,7 @@ bb0:
     t27 = h2_own2;
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h2_own2 = t7;
-#line 222 "fixedbugsagenericcallingageneric.c"
+#line 224 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t27);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t8 = h_fixedbugsagenericcallingageneric_outer_1e58d9(t7);
@@ -226,7 +228,7 @@ bb0:
     t28 = h3_own3;
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h3_own3 = t8;
-#line 230 "fixedbugsagenericcallingageneric.c"
+#line 232 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t28);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_print_str(t8);
@@ -254,7 +256,7 @@ bb0:
     t29 = h4_own4;
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h4_own4 = t13;
-#line 258 "fixedbugsagenericcallingageneric.c"
+#line 260 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t29);
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t14 = h_fixedbugsagenericcallingageneric_outer_50(t13);
@@ -292,7 +294,7 @@ bb0:
     t30 = h5_own5;
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h5_own5 = t20;
-#line 296 "fixedbugsagenericcallingageneric.c"
+#line 298 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t30);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t21 = h_fixedbugsagenericcallingageneric_both_1b9a87(t20);
@@ -310,7 +312,7 @@ bb0:
     t31 = h6_own6;
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h6_own6 = t24;
-#line 314 "fixedbugsagenericcallingageneric.c"
+#line 316 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t31);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t25 = h_fixedbugsagenericcallingageneric_both_1e58d9(t24);
@@ -324,27 +326,27 @@ bb0:
     hero_print_end();
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t32 = h1_own1;
-#line 328 "fixedbugsagenericcallingageneric.c"
+#line 330 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t32);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t33 = h2_own2;
-#line 332 "fixedbugsagenericcallingageneric.c"
+#line 334 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t33);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t34 = h3_own3;
-#line 336 "fixedbugsagenericcallingageneric.c"
+#line 338 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t34);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t35 = h4_own4;
-#line 340 "fixedbugsagenericcallingageneric.c"
+#line 342 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t35);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t36 = h5_own5;
-#line 344 "fixedbugsagenericcallingageneric.c"
+#line 346 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t36);
 #line 55 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t37 = h6_own6;
-#line 348 "fixedbugsagenericcallingageneric.c"
+#line 350 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t37);
     return;
 }
@@ -352,8 +354,8 @@ bb0:
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* outer<i64> */
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-int64_t h_fixedbugsagenericcallingageneric_outer_1b9a87(HeroArrayHeader * h0_xs) {
-#line 357 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_outer_1b9a87(HeroArrayHeader * h0_xs) {
+#line 359 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     goto bb0;
@@ -364,14 +366,14 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_middle_1b9a87(t1);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 368 "fixedbugsagenericcallingageneric.c"
+#line 370 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* outer<str> */
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-HeroStr h_fixedbugsagenericcallingageneric_outer_1e58d9(HeroArrayHeader * h0_xs) {
-#line 375 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_outer_1e58d9(HeroArrayHeader * h0_xs) {
+#line 377 "fixedbugsagenericcallingageneric.c"
     HeroStr h1_own1 = {0};
     HeroArrayHeader * t1 = {0};
     HeroStr t2 = {0};
@@ -387,14 +389,14 @@ bb0:
     t3 = h1_own1;
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h1_own1 = t2;
-#line 391 "fixedbugsagenericcallingageneric.c"
+#line 393 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t3);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-#line 394 "fixedbugsagenericcallingageneric.c"
+#line 396 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t2);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t4 = h1_own1;
-#line 398 "fixedbugsagenericcallingageneric.c"
+#line 400 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t4);
     return t2;
 }
@@ -402,8 +404,8 @@ bb0:
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* outer<P> */
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_outer_50(HeroArrayHeader * h0_xs) {
-#line 407 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_outer_50(HeroArrayHeader * h0_xs) {
+#line 409 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     h_fixedbugsagenericcallingageneric_P t2;
     goto bb0;
@@ -414,14 +416,14 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_middle_50(t1);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 418 "fixedbugsagenericcallingageneric.c"
+#line 420 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* both<i64> */
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-int64_t h_fixedbugsagenericcallingageneric_both_1b9a87(HeroArrayHeader * h0_es) {
-#line 425 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1b9a87(HeroArrayHeader * h0_es) {
+#line 427 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1 = {0};
     int64_t t2;
@@ -452,7 +454,7 @@ bb0:
     t8 = h1_own1;
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h1_own1 = t5;
-#line 456 "fixedbugsagenericcallingageneric.c"
+#line 458 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t8);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t6 = h_fixedbugsagenericcallingageneric_tally_1b9a87(t5);
@@ -460,7 +462,7 @@ bb0:
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t9 = h1_own1;
-#line 464 "fixedbugsagenericcallingageneric.c"
+#line 466 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t9);
     return t7;
 }
@@ -468,8 +470,8 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* both<str> */
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-int64_t h_fixedbugsagenericcallingageneric_both_1e58d9(HeroArrayHeader * h0_es) {
-#line 473 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1e58d9(HeroArrayHeader * h0_es) {
+#line 475 "fixedbugsagenericcallingageneric.c"
     HeroStr h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
     HeroArrayHeader * t1 = {0};
@@ -497,7 +499,7 @@ bb0:
     t8 = h1_own1;
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h1_own1 = t4;
-#line 501 "fixedbugsagenericcallingageneric.c"
+#line 503 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t8);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t5 = hero_array_new(&hero_desc_str, 1);
@@ -509,7 +511,7 @@ bb0:
     t9 = h2_own2;
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h2_own2 = t5;
-#line 513 "fixedbugsagenericcallingageneric.c"
+#line 515 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t9);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t6 = h_fixedbugsagenericcallingageneric_tally_1e58d9(t5);
@@ -517,11 +519,11 @@ bb0:
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t10 = h1_own1;
-#line 521 "fixedbugsagenericcallingageneric.c"
+#line 523 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t10);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t11 = h2_own2;
-#line 525 "fixedbugsagenericcallingageneric.c"
+#line 527 "fixedbugsagenericcallingageneric.c"
     hero_array_decref(t11);
     return t7;
 }
@@ -529,8 +531,8 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* middle<i64> */
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-int64_t h_fixedbugsagenericcallingageneric_middle_1b9a87(HeroArrayHeader * h0_ys) {
-#line 534 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_middle_1b9a87(HeroArrayHeader * h0_ys) {
+#line 536 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     goto bb0;
@@ -541,14 +543,14 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_innermost_1b9a87(t1);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 545 "fixedbugsagenericcallingageneric.c"
+#line 547 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* middle<str> */
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-HeroStr h_fixedbugsagenericcallingageneric_middle_1e58d9(HeroArrayHeader * h0_ys) {
-#line 552 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_middle_1e58d9(HeroArrayHeader * h0_ys) {
+#line 554 "fixedbugsagenericcallingageneric.c"
     HeroStr h1_own1 = {0};
     HeroArrayHeader * t1 = {0};
     HeroStr t2 = {0};
@@ -564,14 +566,14 @@ bb0:
     t3 = h1_own1;
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h1_own1 = t2;
-#line 568 "fixedbugsagenericcallingageneric.c"
+#line 570 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t3);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-#line 571 "fixedbugsagenericcallingageneric.c"
+#line 573 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t2);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t4 = h1_own1;
-#line 575 "fixedbugsagenericcallingageneric.c"
+#line 577 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t4);
     return t2;
 }
@@ -579,8 +581,8 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* middle<P> */
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_middle_50(HeroArrayHeader * h0_ys) {
-#line 584 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_middle_50(HeroArrayHeader * h0_ys) {
+#line 586 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     h_fixedbugsagenericcallingageneric_P t2;
     goto bb0;
@@ -591,14 +593,14 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_innermost_50(t1);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 595 "fixedbugsagenericcallingageneric.c"
+#line 597 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* tally<i64> */
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-int64_t h_fixedbugsagenericcallingageneric_tally_1b9a87(HeroArrayHeader * h0_ds) {
-#line 602 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1b9a87(HeroArrayHeader * h0_ds) {
+#line 604 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     goto bb0;
@@ -609,14 +611,14 @@ bb0:
     t2 = hero_array_len(t1);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 613 "fixedbugsagenericcallingageneric.c"
+#line 615 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* tally<str> */
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-int64_t h_fixedbugsagenericcallingageneric_tally_1e58d9(HeroArrayHeader * h0_ds) {
-#line 620 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1e58d9(HeroArrayHeader * h0_ds) {
+#line 622 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     goto bb0;
@@ -627,14 +629,14 @@ bb0:
     t2 = hero_array_len(t1);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 631 "fixedbugsagenericcallingageneric.c"
+#line 633 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* innermost<i64> */
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-int64_t h_fixedbugsagenericcallingageneric_innermost_1b9a87(HeroArrayHeader * h0_zs) {
-#line 638 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_innermost_1b9a87(HeroArrayHeader * h0_zs) {
+#line 640 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     int64_t t3;
@@ -648,14 +650,14 @@ bb0:
     t3 = *(int64_t const *)hero_array_at(t1, t2);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
-#line 652 "fixedbugsagenericcallingageneric.c"
+#line 654 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* innermost<str> */
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-HeroStr h_fixedbugsagenericcallingageneric_innermost_1e58d9(HeroArrayHeader * h0_zs) {
-#line 659 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_innermost_1e58d9(HeroArrayHeader * h0_zs) {
+#line 661 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     HeroStr t3 = {0};
@@ -667,7 +669,7 @@ bb0:
     t2 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t3 = *(HeroStr const *)hero_array_at(t1, t2);
-#line 671 "fixedbugsagenericcallingageneric.c"
+#line 673 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t3);
     return t3;
 }
@@ -675,8 +677,8 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* innermost<P> */
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_innermost_50(HeroArrayHeader * h0_zs) {
-#line 680 "fixedbugsagenericcallingageneric.c"
+HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_innermost_50(HeroArrayHeader * h0_zs) {
+#line 682 "fixedbugsagenericcallingageneric.c"
     HeroArrayHeader * t1 = {0};
     int64_t t2;
     h_fixedbugsagenericcallingageneric_P t3;
@@ -690,21 +692,21 @@ bb0:
     t3 = *(h_fixedbugsagenericcallingageneric_P const *)hero_array_at(t1, t2);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
-#line 694 "fixedbugsagenericcallingageneric.c"
+#line 696 "fixedbugsagenericcallingageneric.c"
 }
-bool h_fixedbugsagenericcallingageneric_P_eq(const h_fixedbugsagenericcallingageneric_P *a, const h_fixedbugsagenericcallingageneric_P *b) {
+HERO_TU_LOCAL bool h_fixedbugsagenericcallingageneric_P_eq(const h_fixedbugsagenericcallingageneric_P *a, const h_fixedbugsagenericcallingageneric_P *b) {
     if (!(a->f_x == b->f_x)) return false;
     return true;
 }
 
-uint64_t h_fixedbugsagenericcallingageneric_P_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fixedbugsagenericcallingageneric_P_hash(const void *elem) {
     const h_fixedbugsagenericcallingageneric_P *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
     return h;
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -712,7 +714,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -720,13 +722,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -736,7 +738,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -744,7 +746,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -752,13 +754,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

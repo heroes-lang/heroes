@@ -27,6 +27,7 @@ use check_state
 use ir_phases
 use emit_ctype
 use emit_types
+use emit_synth
 use emit_writer
 use parse
 use resolve
@@ -39,10 +40,11 @@ use emit_ffi_lookup
 # aggregates (panel 023's walk) then ascending type id — so a program
 # with no cross-kind containment emits byte-identically to the
 # two-pass form, and the double-emit determinism test still covers it.
-function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl])
+function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, s: source.Source, decls: [ast.Decl], want: emit_synth.Wanted)
     seeds: [i64] @ []
     for decl in emit_types.aggregates(c, decls)
-        seeds @ seeds.push(decl * 2)
+        if emit_synth.wants_decl(w: want, decl: decl)
+            seeds @ seeds.push(decl * 2)
     count = check_table.len_of(c.types)
     id: i64 @ 0
     while id < count
@@ -56,7 +58,7 @@ function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => wanted @ wanted
                 .array | .fixed | .map | .named => wanted @ wanted
                 .case_ty | .failure | .generic | .error => wanted @ wanted
-            if wanted
+            if wanted && emit_synth.wants_type(w: want, ty: id)
                 seeds @ seeds.push(id * 2 + 1)
         id @ id + 1
     state: Ordered @ Ordered(done: {}, out: [])
@@ -152,7 +154,7 @@ test "cross-kind containment lands each typedef after what it holds"
     names @ emit_ctype.with_options(names, c: c, s: s, decls: parsed.decls)
     names @ emit_ctype.with_functions(names, c: c, s: s, decls: parsed.decls, p: low.program)
     w: emit_writer.Writer @ emit_writer.new_writer("t")
-    definitions(@w, c, names, s, parsed.decls)
+    definitions(@w, c, names, s, parsed.decls, want: emit_synth.everything())
     got = emit_writer.finish(w)
     # Box holds an i64? by value, so the option's typedef must come
     # first; grab returns Box?, so that option must follow Box.

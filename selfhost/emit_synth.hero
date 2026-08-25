@@ -66,3 +66,54 @@ function collect(c: check_state.Checked, ty: i64, @into: {i64: bool})
             collect(c, ty: m.value, into: @into)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
         .fixed | .named | .case_ty | .failure | .generic | .error => return
+
+## What one translation unit wants
+
+# The filter a per-module unit applies to the whole-program sections
+# (panel 093 R2, tightened after measurement): a TU carries only the
+# typedefs, per-type functions and descriptors for the types its own
+# code reaches. It lives HERE rather than in emit.hero because
+# emit_typeorder and emit_perfn read it and emit.hero calls them —
+# Heroes refuses module cycles, so the shared vocabulary goes to the
+# leaf both sides already use.
+#
+# WHY IT MATTERS, measured 2026-08-25 on the compiler compiling itself:
+# unfiltered, one TU of a 157-module program is 19,193 lines of C, and
+# 16,712 of them (87%) are whole-program sections — 132 MB of text
+# against the fused unit's 22 MB, and the self-build went 188 s -> 484 s.
+# The trim is what makes one .c per module cheaper than one big .c
+# rather than 2.5x dearer.
+record Wanted
+    types: {i64: bool}
+    named: {i64: bool}
+    # The fused unit wants everything: one printer, two modes.
+    every: bool
+
+function everything() -> Wanted
+    no_types: {i64: bool} = {}
+    no_named: {i64: bool} = {}
+    return Wanted(types: no_types, named: no_named, every: true)
+
+# The declared types a set of reached type ids mentions — a `.named`
+# arm carries the declaration index the aggregate walks are keyed by.
+function wanted_of(c: check_state.Checked, reached: {i64: bool}) -> Wanted
+    named: {i64: bool} @ {}
+    # ORDER: none — the walk fills a SET, and both readers below ask it
+    # a membership question.
+    for id in keys(reached)
+        match check_table.get(c.types, id)
+            .named n => named[n.decl] @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => named @ named
+            .array | .fixed | .map | .fallible | .function_ty => named @ named
+            .case_ty | .failure | .generic | .error => named @ named
+    return Wanted(types: reached, named: named, every: false)
+
+function wants_type(w: Wanted, ty: i64) -> bool
+    if w.every
+        return true
+    return !w.types[ty].is_err()
+
+function wants_decl(w: Wanted, decl: i64) -> bool
+    if w.every
+        return true
+    return !w.named[decl].is_err()

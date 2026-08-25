@@ -6,19 +6,21 @@
 #include <heroes_runtime.h>
 
 _Static_assert(HERO_RUNTIME_ABI == 15, "heroes_runtime.h is from another compiler");
+#define HERO_TU_LOCAL
+#define HERO_TU_QUIET
 
 #line 30 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 _Static_assert(__builtin_classify_type(((Handle *)0)->pMethods) == 5 && _Generic(((Handle *)0)->pMethods, __typeof__(((Handle *)0)->pMethods): 1, default: 0) && sizeof(((Handle *)0)->pMethods) == sizeof(void *), "heroes-ffi-field Handle pMethods");
 #line 31 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 _Static_assert(__builtin_classify_type(((Handle *)0)->id) == 1 && sizeof(((Handle *)0)->id) == sizeof(int32_t) && (_Generic(((Handle *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Handle id");
-#line 15 "fficonstpointer.c"
+#line 17 "fficonstpointer.c"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wmissing-field-initializers"
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #line 29 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 __attribute__((unused)) static void hero_ffi_complete_h_fficonstpointer_Handle(void) { Handle v = {0,0}; (void)v; }
-#line 22 "fficonstpointer.c"
+#line 24 "fficonstpointer.c"
 #pragma clang diagnostic pop
 
 #define HERO_RET_INT(c) _Generic((c), signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, default:0)
@@ -74,7 +76,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 122 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, a1); }
-#line 78 "fficonstpointer.c"
+#line 80 "fficonstpointer.c"
 #pragma clang diagnostic pop
 
 HERO_STR_STATIC(hero_str_20, " ");
@@ -106,20 +108,20 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
-bool h_fficonstpointer_Handle_eq(const Handle *a, const Handle *b);
-uint64_t h_fficonstpointer_Handle_hash(const void *elem);
-void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-void h_0opt_e201354_release(h_0opt_e201354 *v);
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-uint64_t h_0opt_e201354_hash(const void *elem);
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-void h_0opt_f87774a_release(h_0opt_f87774a *v);
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-uint64_t h_0opt_f87774a_hash(const void *elem);
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fficonstpointer_Handle_eq(const Handle *a, const Handle *b);
+HERO_TU_LOCAL uint64_t h_fficonstpointer_Handle_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fficonstpointer_main(void);
 int64_t h_library_HERO_STR_OK(void);
@@ -127,7 +129,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 37 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 void h_fficonstpointer_main(void) {
-#line 131 "fficonstpointer.c"
+#line 133 "fficonstpointer.c"
     Handle h0_h;
     void * h1_p;
     h_0opt_e201354 h2_f0 = {0};
@@ -221,15 +223,15 @@ bb0:
     t43 = h6_own6;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h6_own6 = t10;
-#line 225 "fficonstpointer.c"
+#line 227 "fficonstpointer.c"
     h_0opt_e201354_release(&t43);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t44 = h2_f0;
-#line 229 "fficonstpointer.c"
+#line 231 "fficonstpointer.c"
     h_0opt_e201354_retain(&t10);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h2_f0 = t10;
-#line 233 "fficonstpointer.c"
+#line 235 "fficonstpointer.c"
     h_0opt_e201354_release(&t44);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t11 = h2_f0;
@@ -277,15 +279,15 @@ bb1:
     t45 = h7_own7;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h7_own7 = t24;
-#line 281 "fficonstpointer.c"
+#line 283 "fficonstpointer.c"
     h_0opt_f87774a_release(&t45);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t46 = h4_f1;
-#line 285 "fficonstpointer.c"
+#line 287 "fficonstpointer.c"
     h_0opt_f87774a_retain(&t24);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h4_f1 = t24;
-#line 289 "fficonstpointer.c"
+#line 291 "fficonstpointer.c"
     h_0opt_f87774a_release(&t46);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t25 = h4_f1;
@@ -303,7 +305,7 @@ bb2:
     t15 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t16 = t15.as.err;
-#line 307 "fficonstpointer.c"
+#line 309 "fficonstpointer.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
@@ -323,15 +325,15 @@ bb3:
     t47 = h8_own8;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h8_own8 = t34;
-#line 327 "fficonstpointer.c"
+#line 329 "fficonstpointer.c"
     h_0opt_f87774a_release(&t47);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t48 = h5_f2;
-#line 331 "fficonstpointer.c"
+#line 333 "fficonstpointer.c"
     h_0opt_f87774a_retain(&t34);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h5_f2 = t34;
-#line 335 "fficonstpointer.c"
+#line 337 "fficonstpointer.c"
     h_0opt_f87774a_release(&t48);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t35 = h5_f2;
@@ -349,7 +351,7 @@ bb4:
     t29 = h4_f1;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t30 = t29.as.err;
-#line 353 "fficonstpointer.c"
+#line 355 "fficonstpointer.c"
     hero_panic_must(t30);
     hero_unreachable();
 bb5:
@@ -363,27 +365,27 @@ bb5:
     hero_print_end();
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t49 = h2_f0;
-#line 367 "fficonstpointer.c"
+#line 369 "fficonstpointer.c"
     h_0opt_e201354_release(&t49);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t50 = h4_f1;
-#line 371 "fficonstpointer.c"
+#line 373 "fficonstpointer.c"
     h_0opt_f87774a_release(&t50);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t51 = h5_f2;
-#line 375 "fficonstpointer.c"
+#line 377 "fficonstpointer.c"
     h_0opt_f87774a_release(&t51);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t52 = h6_own6;
-#line 379 "fficonstpointer.c"
+#line 381 "fficonstpointer.c"
     h_0opt_e201354_release(&t52);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t53 = h7_own7;
-#line 383 "fficonstpointer.c"
+#line 385 "fficonstpointer.c"
     h_0opt_f87774a_release(&t53);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t54 = h8_own8;
-#line 387 "fficonstpointer.c"
+#line 389 "fficonstpointer.c"
     h_0opt_f87774a_release(&t54);
     return;
 bb6:
@@ -391,20 +393,20 @@ bb6:
     t39 = h5_f2;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t40 = t39.as.err;
-#line 395 "fficonstpointer.c"
+#line 397 "fficonstpointer.c"
     hero_panic_must(t40);
     hero_unreachable();
 }
 
 #line 121 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 402 "fficonstpointer.c"
+#line 404 "fficonstpointer.c"
     return HERO_STR_OK;
 }
 
 #line 151 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 408 "fficonstpointer.c"
+#line 410 "fficonstpointer.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     HeroStr h3_own3 = {0};
@@ -472,15 +474,15 @@ bb1:
     t18 = h3_own3;
 #line 155 "<heroes library>"
     h3_own3 = t9;
-#line 476 "fficonstpointer.c"
+#line 478 "fficonstpointer.c"
     hero_str_decref(t18);
 #line 155 "<heroes library>"
     t19 = h2_text;
-#line 480 "fficonstpointer.c"
+#line 482 "fficonstpointer.c"
     hero_str_incref(t9);
 #line 155 "<heroes library>"
     h2_text = t9;
-#line 484 "fficonstpointer.c"
+#line 486 "fficonstpointer.c"
     hero_str_decref(t19);
 #line 156 "<heroes library>"
     t10 = h1_status;
@@ -496,10 +498,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 153 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 500 "fficonstpointer.c"
+#line 502 "fficonstpointer.c"
     hero_str_incref(t4);
 #line 153 "<heroes library>"
-#line 503 "fficonstpointer.c"
+#line 505 "fficonstpointer.c"
     hero_str_incref(t5);
 #line 153 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -507,30 +509,30 @@ bb2:
     t20 = h4_own4;
 #line 153 "<heroes library>"
     h4_own4 = t6;
-#line 511 "fficonstpointer.c"
+#line 513 "fficonstpointer.c"
     h_0opt_f87774a_release(&t20);
 #line 153 "<heroes library>"
-#line 514 "fficonstpointer.c"
+#line 516 "fficonstpointer.c"
     h_0opt_f87774a_retain(&t6);
 #line 153 "<heroes library>"
     t23 = h2_text;
-#line 518 "fficonstpointer.c"
+#line 520 "fficonstpointer.c"
     hero_str_decref(t23);
 #line 153 "<heroes library>"
     t24 = h3_own3;
-#line 522 "fficonstpointer.c"
+#line 524 "fficonstpointer.c"
     hero_str_decref(t24);
 #line 153 "<heroes library>"
     t25 = h4_own4;
-#line 526 "fficonstpointer.c"
+#line 528 "fficonstpointer.c"
     h_0opt_f87774a_release(&t25);
 #line 153 "<heroes library>"
     t26 = h5_own5;
-#line 530 "fficonstpointer.c"
+#line 532 "fficonstpointer.c"
     h_0opt_f87774a_release(&t26);
 #line 153 "<heroes library>"
     t27 = h6_own6;
-#line 534 "fficonstpointer.c"
+#line 536 "fficonstpointer.c"
     h_0opt_f87774a_release(&t27);
     return t6;
 bb3:
@@ -540,10 +542,10 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 158 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 544 "fficonstpointer.c"
+#line 546 "fficonstpointer.c"
     hero_str_incref(t15);
 #line 158 "<heroes library>"
-#line 547 "fficonstpointer.c"
+#line 549 "fficonstpointer.c"
     hero_str_incref(t16);
 #line 158 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -551,36 +553,36 @@ bb4:
     t21 = h5_own5;
 #line 158 "<heroes library>"
     h5_own5 = t17;
-#line 555 "fficonstpointer.c"
+#line 557 "fficonstpointer.c"
     h_0opt_f87774a_release(&t21);
 #line 158 "<heroes library>"
-#line 558 "fficonstpointer.c"
+#line 560 "fficonstpointer.c"
     h_0opt_f87774a_retain(&t17);
 #line 158 "<heroes library>"
     t28 = h2_text;
-#line 562 "fficonstpointer.c"
+#line 564 "fficonstpointer.c"
     hero_str_decref(t28);
 #line 158 "<heroes library>"
     t29 = h3_own3;
-#line 566 "fficonstpointer.c"
+#line 568 "fficonstpointer.c"
     hero_str_decref(t29);
 #line 158 "<heroes library>"
     t30 = h4_own4;
-#line 570 "fficonstpointer.c"
+#line 572 "fficonstpointer.c"
     h_0opt_f87774a_release(&t30);
 #line 158 "<heroes library>"
     t31 = h5_own5;
-#line 574 "fficonstpointer.c"
+#line 576 "fficonstpointer.c"
     h_0opt_f87774a_release(&t31);
 #line 158 "<heroes library>"
     t32 = h6_own6;
-#line 578 "fficonstpointer.c"
+#line 580 "fficonstpointer.c"
     h_0opt_f87774a_release(&t32);
     return t17;
 bb5:
 #line 157 "<heroes library>"
     t13 = h2_text;
-#line 584 "fficonstpointer.c"
+#line 586 "fficonstpointer.c"
     hero_str_incref(t13);
 #line 157 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -588,42 +590,42 @@ bb5:
     t22 = h6_own6;
 #line 157 "<heroes library>"
     h6_own6 = t14;
-#line 592 "fficonstpointer.c"
+#line 594 "fficonstpointer.c"
     h_0opt_f87774a_release(&t22);
 #line 157 "<heroes library>"
-#line 595 "fficonstpointer.c"
+#line 597 "fficonstpointer.c"
     h_0opt_f87774a_retain(&t14);
 #line 157 "<heroes library>"
     t33 = h2_text;
-#line 599 "fficonstpointer.c"
+#line 601 "fficonstpointer.c"
     hero_str_decref(t33);
 #line 157 "<heroes library>"
     t34 = h3_own3;
-#line 603 "fficonstpointer.c"
+#line 605 "fficonstpointer.c"
     hero_str_decref(t34);
 #line 157 "<heroes library>"
     t35 = h4_own4;
-#line 607 "fficonstpointer.c"
+#line 609 "fficonstpointer.c"
     h_0opt_f87774a_release(&t35);
 #line 157 "<heroes library>"
     t36 = h5_own5;
-#line 611 "fficonstpointer.c"
+#line 613 "fficonstpointer.c"
     h_0opt_f87774a_release(&t36);
 #line 157 "<heroes library>"
     t37 = h6_own6;
-#line 615 "fficonstpointer.c"
+#line 617 "fficonstpointer.c"
     h_0opt_f87774a_release(&t37);
     return t14;
 bb6:
     goto bb4;
 }
-bool h_fficonstpointer_Handle_eq(const Handle *a, const Handle *b) {
+HERO_TU_LOCAL bool h_fficonstpointer_Handle_eq(const Handle *a, const Handle *b) {
     if (!(a->pMethods == b->pMethods)) return false;
     if (!(a->id == b->id)) return false;
     return true;
 }
 
-uint64_t h_fficonstpointer_Handle_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_fficonstpointer_Handle_hash(const void *elem) {
     const Handle *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
@@ -631,7 +633,7 @@ uint64_t h_fficonstpointer_Handle_hash(const void *elem) {
     return h;
 }
 
-void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -639,7 +641,7 @@ void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     }
 }
 
-void h_0opt_e201354_release(h_0opt_e201354 *v) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -647,13 +649,13 @@ void h_0opt_e201354_release(h_0opt_e201354 *v) {
     }
 }
 
-bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_e201354_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
     const h_0opt_e201354 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -663,7 +665,7 @@ uint64_t h_0opt_e201354_hash(const void *elem) {
     return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
     } else {
@@ -671,7 +673,7 @@ void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     }
 }
 
-void h_0opt_f87774a_release(h_0opt_f87774a *v) {
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_decref(v->as.ok);
     } else {
@@ -679,13 +681,13 @@ void h_0opt_f87774a_release(h_0opt_f87774a *v) {
     }
 }
 
-bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
 }
 
-uint64_t h_0opt_f87774a_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
     const h_0opt_f87774a *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);
@@ -695,7 +697,7 @@ uint64_t h_0opt_f87774a_hash(const void *elem) {
     return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
 }
 
-void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -703,7 +705,7 @@ void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     }
 }
 
-void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;
     } else {
@@ -711,13 +713,13 @@ void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
     }
 }
 
-bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
     if (a->tag != b->tag) return false;
     if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
     return true;
 }
 
-uint64_t h_0opt_a8ea2_hash(const void *elem) {
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
     const h_0opt_a8ea2 *v = elem;
     uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
         * UINT64_C(0x100000001b3);

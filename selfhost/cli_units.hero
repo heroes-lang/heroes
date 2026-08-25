@@ -1,0 +1,133 @@
+# The per-module build pipeline (panel 093 R1/R4; M-separate-compilation
+# step 6): each module's translation unit compiled to its own cached
+# object, then one link over all of them. The fused single unit stays
+# the artifact path (--emit-c, the seed, the blessed emissions); this
+# file is what `heroes build` and `heroes run` walk instead.
+#
+# THE KEY, per TU (panel 093 R4): the compiler fingerprint, the level,
+# the sanitizer bit, the module name, the TU's own emitted text, the
+# runtime's whole contents, the search paths, and the RESOLVED package
+# cflags — machine state that changes with no source edit, so the name
+# is not enough. Link names deliberately do NOT enter it: the link line
+# is re-run on every build (it is one clang call over cached objects),
+# so a `link` edit takes effect without a recompile — which is the
+# 093 ffi-pragmatist's falsifier answered by construction. What the key
+# does not yet carry is each included C header's contents — acceptance
+# row 2's second half, owed to this milestone as its own step with
+# clang's own dependency listing, and the fused path has the same gap
+# today, so nothing regresses here.
+#
+# THE VERDICT ORDER (panel 093 R5): every dirty TU is compiled before
+# any verdict is rendered, so a failure in the declaring module's TU is
+# reported wherever the cache happens to be warm, and a cache hit can
+# never convert a failing build into a passing one.
+
+use source
+use cli_io
+use cli_flags
+use cli_shell
+use cli_toolchain
+
+# The distinct components of a compilation, in file-table order: the
+# root first, then each `use`d module, then the library. The order is
+# a function of the source table, so the link line is deterministic.
+# ORDER: file-table order — s.files is built in load order, which is
+# itself a function of the program's `use` graph.
+function components(s: source.Source) -> [str]
+    out: [str] @ []
+    for entry in s.files
+        already: bool @ false
+        for one in out
+            if one == entry.component
+                already @ true
+        if !already
+            out @ out.push(entry.component)
+    return out
+
+# One TU compiled to its cached object. The .c and .o live under
+# build/<key>/, so a text or configuration change is a different
+# directory and a hit is `test -e` on the object.
+function tu_object(t: cli_toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str]) -> str?
+    san: str @ ""
+    if sanitize
+        san @ "+san"
+    key = cli_toolchain.digest(t.fingerprint + "|tu|" + level + san + "|" + module + "|" + tu_text + "|" + cli_toolchain.runtime_text(t) + "|" + search + "|" + package_flags.join(" "))
+    dir = t.build + "/tu-" + key
+    made = cli_toolchain.mkdir_all(dir)
+    if made.is_err()
+        return fail("failed", "cannot create " + dir)
+    c_file = dir + "/" + module + ".c"
+    object = dir + "/" + module + ".o"
+    saved = dir + "/warnings.txt"
+    if cli_toolchain.exists(object)
+        # A warm object REPLAYS the warnings its compile produced: the
+        # flag set exists so a warning can falsify something (§7), and
+        # a cache that swallows one on every hit after the first makes
+        # the `ptr` lends-a-pointer warning — kept deliberately as the
+        # type's declared limit — visible exactly once per edit.
+        # Measured: suite_warnings went red on a warm cache before this
+        # existed, on the program whose warnings are the expectation.
+        kept = read_file(saved)
+        if !kept.is_err() && kept.must().len() > 0
+            cli_io.eprint_raw(text: kept.must())
+        return ok(object)
+    written = write_file(path: c_file, text: tu_text)
+    if written.is_err()
+        return fail("failed", "cannot write " + c_file)
+    err_path = t.build + "/clang-stderr.txt"
+    staged = object + ".tmp"
+    line: str @ "clang " + cli_toolchain.words(cli_flags.flags()) + " " + level + " " + cli_toolchain.words(cli_flags.sanitizers(sanitize: sanitize)) + " -c"
+    for one in search_include
+        line @ line + " -I " + cli_shell.sq(one)
+    for flag in package_flags
+        if cli_toolchain.starts_with(text: flag, prefix: "-I")
+            line @ line + " " + cli_shell.sq(flag)
+    line @ line + " " + cli_shell.sq(c_file) + " -I " + cli_shell.sq(t.runtime)
+    if source_dir.len() > 0
+        line @ line + " -I " + cli_shell.sq(source_dir)
+    line @ line + " -o " + cli_shell.sq(staged)
+    compiled = cli_toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
+    if compiled.is_err()
+        # The failing TU's path rides INSIDE the message: emit_ffi's
+        # matchers read it line by line and ignore this one, so an
+        # author-error still maps to their .hero line with no build/
+        # path on screen — printing the path here unconditionally sent
+        # `build/tu-…` into diagnostics the surface rows pin as
+        # `err_lacks("build/")`, measured on the fixedbugs corpus.
+        return fail("clang", failure_note(compiled) + "\nthe generated C is at " + c_file)
+    captured = read_file(err_path)
+    if !captured.is_err() && captured.must().len() > 0
+        _ = write_file(path: saved, text: captured.must())
+    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(object)) != 0
+        return fail("failed", "cannot publish " + object)
+    return ok(object)
+
+function failure_note(failed: ()?) -> str
+    match failed
+        .ok => return ""
+        .err e => return e.msg
+
+# One link over every object. Re-run on every build, deliberately: it
+# is one clang call, and it is what lets a `link` name change take
+# effect on a fully warm cache.
+function link_objects(t: cli_toolchain.Toolchain, objects: [str], binary: str, level: str, sanitize: bool, search_include: [str], search_library: [str], package_flags: [str], link_names: [str]) -> ()?
+    err_path = t.build + "/clang-stderr.txt"
+    line: str @ "clang " + cli_toolchain.words(cli_flags.flags()) + " " + level + " " + cli_toolchain.words(cli_flags.sanitizers(sanitize: sanitize))
+    for dir in search_include
+        line @ line + " -I " + cli_shell.sq(dir)
+    for dir in search_library
+        line @ line + " -L " + cli_shell.sq(dir)
+    for object in objects
+        line @ line + " " + cli_shell.sq(object)
+    for flag in package_flags
+        line @ line + " " + cli_shell.sq(flag)
+    for name in link_names
+        line @ line + " " + cli_shell.sq("-l" + name)
+    staged = binary + ".tmp"
+    line @ line + " -o " + cli_shell.sq(staged)
+    linked = cli_toolchain.run_clang(line: line, what: "linking", err_path: err_path)
+    if linked.is_err()
+        linked?
+    if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(binary)) != 0
+        return fail("failed", "cannot publish " + binary)
+    return ok()
