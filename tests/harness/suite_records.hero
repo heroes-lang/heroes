@@ -468,18 +468,49 @@ constant QUEUE: str
 # Does an OPEN item in the queue name this sitting? The number is the key, because
 # a panel file's name changes and its number does not (CLAUDE.md §14: an id is
 # never renamed once it is in the record).
+#
+# **THE DIGITS AS THE FILENAME SPELLS THEM, NOT THE INTEGER THEY PARSE TO**
+# (repaired 2026-08-25, by this check firing on panel 091 — the first sitting to
+# reach it with a pending verdict). It read `"panel " + number.to_str()`, so for
+# `091-*.md` it hunted for `panel 91` while every reference in this repository
+# writes `panel 091`: measured that day, `docs/debrief/DECIDE.md` contains the
+# padded form 30-odd times and the unpadded form **zero** times. So `queued`
+# could not return true for any sitting between 063 and 099 — the entire live
+# range — and the correction that gave this check its second half was inert from
+# the hour it landed. It never showed because the only pending sitting since was
+# ratified the same night.
+#
+# CLAUDE.md §11's rule, in one line: the file's own digits are a fact about the
+# VALUE IN HAND; how the repository happens to spell a number is a premise about
+# the world, and it expired silently. Both forms are accepted because a human
+# writing the item may reach for either and neither can name a different sitting.
 function queued(path: str) -> bool
-    number = sitting_number(path)
-    if number.is_err()
+    digits = sitting_digits(path)
+    if digits.is_err()
         return false
     text = read_file(QUEUE)
     if text.is_err()
         return false
-    needle = "panel " + number.must().to_str()
+    padded = "panel " + digits.must()
+    bare: str @ padded
+    number = strings.to_number(text: digits.must())
+    if !number.is_err()
+        bare @ "panel " + number.must().to_str()
     for line in strings.lines(text: text.must())
-        if strings.starts_with(text: line, prefix: "- [ ] ") && strings.contains(text: line, needle: needle)
-            return true
+        if strings.starts_with(text: line, prefix: "- [ ] ")
+            if strings.contains(text: line, needle: padded) || strings.contains(text: line, needle: bare)
+                return true
     return false
+
+# The digits a sitting's filename opens with, exactly as written. Kept apart from
+# `sitting_number` because the two answer different questions: the floor needs an
+# integer to compare, and the queue needs the spelling the record uses.
+function sitting_digits(path: str) -> str?
+    rest = strings.without_prefix(text: path, prefix: "docs/panel/")
+    at = strings.index_of(text: rest, needle: "-")
+    if at.is_err()
+        return fail("unnumbered", "no `-` after the number in " + path)
+    return ok(rest.slice(from: 0, to: at.must()))
 
 # A numbered sitting under `docs/panel/`. `OPEN-QUESTIONS.md` is not one: it is
 # the watch list, it has no resolution, and nobody ratifies it.
@@ -667,3 +698,24 @@ test "the alias table is read out of the ROADMAP"
     table = alias_table()
     assert table.len() == ROWS
     assert table[0].len() > 2
+
+test "a sitting's queue item is found by the digits the record actually writes"
+    # The defect this repaired: `091-*.md` parsed to 91 and hunted for
+    # `panel 91`, while every item in the queue writes `panel 091`. The
+    # padded form is what the repository uses; the bare one is accepted
+    # because a human may reach for it and it names no other sitting.
+    assert sitting_digits("docs/panel/091-a-name.md").must() == "091"
+    assert sitting_digits("docs/panel/007-a-name.md").must() == "007"
+    assert sitting_digits("docs/panel/OPEN-QUESTIONS.md").must() == "OPEN"
+    assert sitting_digits("docs/panel/nodash.md").is_err()
+    # The integer is still what the floor compares, and the two answers
+    # differ exactly where the defect lived.
+    assert sitting_number("docs/panel/091-a-name.md").must() == 91
+    assert sitting_digits("docs/panel/091-a-name.md").must() != sitting_number("docs/panel/091-a-name.md").must().to_str()
+
+test "the pending rule fires only when nothing is asking"
+    # This is the pair the check exists for, exercised in both directions
+    # against the live queue: 091 is pending AND queued, so it passes; a
+    # sitting number nobody has ever held is queued by nothing.
+    assert queued(path: "docs/panel/091-the-saving-the-architecture-already-makes.md")
+    assert !queued(path: "docs/panel/999-a-sitting-nobody-held.md")
