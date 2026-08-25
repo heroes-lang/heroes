@@ -134,11 +134,10 @@ hole at holes.hero:26:74
     library.hero_file_read(path: cstr, @status: i64)
     library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
   <p>
-    Leggi il secondo. Il compilatore ha capito che il pezzo mancante deve essere
-    uno <code>str</code>, ha elencato quello che c&rsquo;è a disposizione nel
-    punto dove sta il buco, e poi ha elencato le funzioni che <i>restituiscono</i>
-    uno <code>str</code>, con la prima riga del commento di ognuna, perché
-    quella è la documentazione. È la risposta a &ldquo;che cosa ci potrebbe stare qui?&rdquo;, che è la
+    Leggi il secondo. Il compilatore ha capito che lì ci vuole uno
+    <code>str</code>. Poi ha elencato che cosa hai a disposizione in quel punto,
+    e quali funzioni restituiscono proprio uno <code>str</code>, ognuna con la
+    prima riga del suo commento: quella è la documentazione. È la risposta a &ldquo;che cosa ci potrebbe stare qui?&rdquo;, che è la
     domanda che hai davvero, non un messaggio di errore travestito da aiuto.
   </p>
 

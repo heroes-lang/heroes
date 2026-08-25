@@ -152,9 +152,9 @@
       <span class="when">2026-08-14 · M-binding-fidelity, half a promise</span>
       <b>Declare a foreign function wrongly and the program will not build. It was true in one direction only.</b>
       What a C function <i>hands back</i> had been checked since the boundary
-      existed; what it <i>takes</i> had never been checked at all, and two
-      independent readers demonstrated it the same way, pass a number too large
-      for the slot it is going into, compile without complaint, run, print
+      existed; what it <i>takes</i> had never been checked at all. Two
+      independent readers demonstrated it the same way: pass a number too large
+      for the slot it is going into, compile without complaint, run, and print
       something else. Forty-two per cent of everything anybody actually binds has
       a slot like that. The cure is a small function nobody ever calls, written
       only so the C compiler is obliged to look at the conversion, with its line
@@ -249,10 +249,10 @@
     <li>
       <span class="when">2026-08-10 · M-optional-map: the last two types, entangled</span>
       <b>Fallible values and maps could not be built in either order.</b>
-      Looking a key up in a map returns &ldquo;the value, or an error&rdquo;, so
-      the map needed that type first, and that type turned out to be
-      reference-counted even when it holds a plain number, because its error side
-      carries two strings. The container was built anyway, on the author's
+      Looking a key up in a map returns the value or an error, so the map needed
+      that type first. And that type, it turned out, has to count holders even
+      when all it holds is a plain number, because its error side carries two
+      strings. The container was built anyway, on the author's
       instruction, with a standing disagreement written down rather than smoothed
       over: an earlier review argued the map cannot be added to, and that
       deleting it outright would give back more spec budget than finishing it
@@ -354,11 +354,11 @@
     <li>
       <span class="when">2026-08-04 · M-token-stream: the lexer</span>
       <b>The first real code, and three things it found by being written.</b>
-      Source text now becomes tokens: rigid indentation where a tab is an error
-      rather than an interpretation, statement ends inferred so the language needs
-      no semicolons, and keywords borrowed from other languages,
-      <i>struct</i>, <i>let</i>, <i>while</i>, failing with the correction
-      already written into the message. Writing it to the letter of the design
+      Source text now becomes tokens. Indentation is rigid, and a tab is an
+      error rather than something to interpret. The end of a statement is
+      inferred, so the language needs no semicolons. And keywords stolen from
+      other languages (<i>struct</i>, <i>let</i>, <i>while</i>) fail with the
+      correction already written into the message. Writing it to the letter of the design
       exposed three holes in the design itself: the rule for ending a line cited
       Go but had dropped three of Go's words; strings had no way to hold a
       newline, or a quotation mark at all; and the budget the project had been

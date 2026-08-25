@@ -140,10 +140,10 @@
       <span class="when">2026-08-15 · M-complete-structs: un rifiuto è un&rsquo;affermazione</span>
       <b>Da 191 dichiarazioni C collegabili a 349, e nemmeno un passo era una nuova funzionalità.</b>
       Ognuno era un rifiuto senza via d&rsquo;uscita. Uno diceva all&rsquo;autore
-      che a una descrizione mancava una parte che invece aveva scritto davvero; un
-      altro gli diceva di correggere un campo quando nessuna correzione esisteva,
-      perché la regola chiedeva come fosse scritto il testo della libreria invece
-      di che cosa fosse quella cosa. La lezione non è che i rifiuti dovrebbero
+      che a una descrizione mancava un pezzo, e quel pezzo lui l&rsquo;aveva
+      scritto. Un altro gli chiedeva di correggere un campo quando nessuna
+      correzione era possibile: la regola guardava come era scritto il testo della
+      libreria, invece di guardare che cosa fosse quella cosa. La lezione non è che i rifiuti dovrebbero
       essere più morbidi: un rifiuto è un&rsquo;affermazione, e
       un&rsquo;affermazione che nessun programma può soddisfare non è
       conservativa, è sbagliata, ed è invisibile da dentro, perché tutto sembra
@@ -184,10 +184,11 @@
       riassuntore di log, un gioco. Nessun test esistente avrebbe potuto trovare
       nemmeno uno dei sei, e nessuno li ha trovati leggendo. Tre sono lo stesso
       difetto vestito in modi diversi, ed è quello su cui questo progetto continua
-      a scrivere regole: una decisione che era corretta quando è stata presa,
-      appoggiata su qualcosa che riguarda il mondo intorno invece del valore che ha
-      davanti, che va storta in silenzio più tardi mentre il commento che la
-      spiegava continua a leggersi perfettamente.
+      a scrivere regole. Una decisione corretta nel momento in cui viene presa,
+      ma appoggiata su qualcosa che sta fuori invece che sul valore che ha
+      davanti. Col tempo quel qualcosa cambia, la decisione diventa sbagliata in
+      silenzio, e il commento che la spiegava continua a leggersi
+      perfettamente.
     </li>
     <li>
       <span class="when">2026-08-12 · M-sized-integers: la cosa temuta, lunga un paragrafo</span>
@@ -272,10 +273,10 @@
     <li>
       <span class="when">2026-08-10 · M-optional-map: gli ultimi due tipi, intrecciati</span>
       <b>I valori che possono fallire e le mappe non si potevano costruire in nessuno dei due ordini.</b>
-      Cercare una chiave in una mappa restituisce &ldquo;il valore, oppure un
-      errore&rdquo;, quindi alla mappa serviva prima quel tipo, e quel tipo, si è
-      scoperto, usa il reference counting anche quando contiene un numero
-      semplice, perché il suo lato errore porta due stringhe. Il contenitore è
+      Cercare una chiave in una mappa restituisce il valore oppure un errore,
+      quindi prima della mappa serviva quel tipo. E quel tipo, si è scoperto,
+      deve contare le copie anche quando dentro c&rsquo;è un numero semplice,
+      perché il suo lato errore si porta dietro due stringhe. Il contenitore è
       stato costruito comunque, per istruzione dell&rsquo;autore, con un
       disaccordo permanente messo per iscritto invece di essere smussato: una
       revisione precedente sosteneva che la mappa non si può estendere, e che
@@ -386,11 +387,12 @@
     <li>
       <span class="when">2026-08-04 · M-token-stream: il lexer</span>
       <b>Il primo codice vero, e tre cose che ha trovato solo perché è stato scritto.</b>
-      Il testo sorgente adesso diventa token: indentazione rigida dove un tab è un
-      errore e non un&rsquo;interpretazione, fine delle istruzioni dedotta così che
-      al linguaggio non servano i punti e virgola, e parole chiave prese in prestito
-      da altri linguaggi (<i>struct</i>, <i>let</i>, <i>while</i>)
-      che falliscono con la correzione già scritta dentro il messaggio. Scriverlo
+      Il testo sorgente adesso diventa token. I rientri sono rigidi, e un tab è
+      un errore invece che una cosa da interpretare. La fine di
+      un&rsquo;istruzione la deduce il compilatore, così i punti e virgola non
+      servono. E le parole chiave rubate ad altri linguaggi
+      (<i>struct</i>, <i>let</i>, <i>while</i>) falliscono con la correzione già
+      scritta dentro il messaggio. Scriverlo
       alla lettera seguendo il progetto ha scoperto tre buchi nel progetto stesso:
       la regola per chiudere una riga citava Go ma aveva perso tre delle parole di
       Go; le stringhe non avevano modo di contenere un ritorno a capo, né una

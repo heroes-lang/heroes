@@ -53,12 +53,11 @@
       <p class="kicker">Un linguaggio di programmazione compilato</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
       <p class="promise">Così piccolo da stare in un prompt, così vero da <em>compilare se stesso</em>.</p>
-      <p class="tagline">Fatto per le macchine che oggi scrivono codice, e
-      comunque chiaro per un occhio umano. Il linguaggio intero sta nelle poche
-      pagine che si danno da leggere a un modello prima di chiedergli un
-      programma. Diventa un eseguibile vero, di quelli che parti e vanno, senza
-      niente da installare intorno. E ogni errore che un modello fa facilmente
-      qui non compila.</p>
+      <p class="tagline">Fatto per le macchine che scrivono codice, e chiaro
+      per le persone che lo leggono. Tutto il linguaggio sta in cinque pagine:
+      le dài a un modello, e gli resta spazio per il programma. Quello che
+      scrivi diventa un eseguibile, senza installare altro. E gli sbagli che i
+      modelli fanno più spesso, qui, non compilano.</p>
       <div class="cta">
         <a class="primary" href="errors.html">Guarda un errore vero</a>
         <a class="ghost" href="docs/failure-is-a-value.html">Leggi un capitolo</a>
@@ -143,13 +142,12 @@
     <figcaption>examples/gallery/11-trees.hero, righe 8&ndash;25</figcaption>
   </figure>
   <p>
-    Quello è un albero che contiene se stesso, e lo fa in un linguaggio dove
-    <b>non esistono i puntatori</b>, cioè quei valori che invece di contenere
-    un dato dicono soltanto dove sta a memoria. Qui l&rsquo;unico modo che ha
-    una cosa di rimandare a un&rsquo;altra è l&rsquo;array, e infatti i rami di
-    quell&rsquo;albero stanno dentro un array. Il risultato è che la struttura
-    intera si copia come si copia un numero: se la passi a una funzione, quella
-    ne riceve una copia sua.
+    Quello è un albero che contiene se stesso. E lo fa in un linguaggio dove
+    <b>non esistono i puntatori</b>: quei valori che non contengono un dato, ma
+    dicono soltanto dove sta. Qui l&rsquo;unico modo per rimandare a
+    un&rsquo;altra cosa è la lista, e infatti i rami di quell&rsquo;albero stanno
+    in una lista. Così l&rsquo;albero intero si copia come si copia un numero: se
+    lo passi a una funzione, lei ne riceve una copia tutta sua.
   </p>
   <p>
     Ogni blocco di codice di questo sito è ritagliato da un file vero, che sta
@@ -210,12 +208,12 @@ we can be heroes</code></pre>
     <li>
       <h3>Uno sbaglio non compila</h3>
       <p>
-        Due argomenti dello stesso tipo passati nell&rsquo;ordine sbagliato,
-        un caso dimenticato quando si elencano tutte le forme che un dato può
-        avere, un nome cambiato che nessuno aveva dichiarato, una parola chiave
-        presa in prestito da un altro linguaggio. Ognuno di questi diventa un
-        errore di compilazione che arriva con la correzione già scritta dentro,
-        invece di un programma che parte e fa la cosa sbagliata in silenzio.
+        Due argomenti dello stesso tipo invertiti. Un caso dimenticato fra
+        tutte le forme che un dato può avere. Un nome cambiato senza averlo
+        dichiarato. Una parola chiave rubata a un altro linguaggio. Ognuno di
+        questi sbagli qui non compila, e l&rsquo;errore ti arriva con la
+        correzione già scritta dentro. Altrove il programma parte e sbaglia in
+        silenzio.
       </p>
       <a class="more" href="errors.html">Guarda un errore vero</a>
     </li>

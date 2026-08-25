@@ -131,10 +131,10 @@ hole at holes.hero:26:74
     library.hero_file_read(path: cstr, @status: i64)
     library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
   <p>
-    Read the second one. The compiler worked out that the missing piece has to
-    be a <code>str</code>, listed what is in scope where the hole is, and then
-    listed the functions that <i>return</i> a <code>str</code>, with the
-    first line of each one&rsquo;s comment, because that is the documentation.
+    Read the second one. The compiler worked out that a <code>str</code>
+    belongs there. Then it listed what you have to hand at that point, and which
+    functions return a <code>str</code>, each with the first line of its comment:
+    that is the documentation.
     It is the answer to &ldquo;what could go here?&rdquo;, which is the
     question you actually have, not an error message dressed up as help.
   </p>

@@ -184,11 +184,11 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
     <figcaption>examples/gallery/11-trees.hero, lines 76&ndash;87</figcaption>
   </figure>
   <p>
-    The second test is the one worth copying into your own code. Every recursive
-    shape has an empty case, and what it means is a decision somebody has to
-    make; writing it down as four assertions means the next person to touch
-    <code>value_of</code> finds out immediately if they changed their mind by
-    accident.
+    The second test is the one to copy into your own code. Every shape that
+    contains itself has an empty case, and what it should mean there is a
+    decision somebody has to make. Writing it down as four assertions means the
+    next person to touch <code>value_of</code> finds out at once if they changed
+    it by accident.
   </p>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="62-67">
 <pre><code><span class="c"># Two cases share one answer, so their patterns share one arm (`|`).</span>

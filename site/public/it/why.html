@@ -273,10 +273,10 @@ grafica, audio, terminale     <span class="c">→</span> SDL, raylib, ncurses</c
     che lo dice (<code>fail(code, msg)</code>), e quando quel fallimento passa
     alla funzione che ti ha chiamato lo vedi sulla riga, marcato con
     <code>?</code>. Tutto quello che fa saltare il programma da un punto
-    all&rsquo;altro senza che si veda è vietato in blocco (eccezioni,
-    ereditarietà, macro, operatori che cambiano significato), perché chi legge,
-    modello o persona, ha davanti quella riga e non può andare a cercare una
-    definizione tre file più in là.
+    all&rsquo;altro senza che si veda è vietato in blocco: eccezioni,
+    ereditarietà, macro, operatori che cambiano significato. Chi legge ha
+    davanti quella riga e basta, e non può mettersi a cercare una definizione
+    tre file più in là.
     <a href="docs/failure-is-a-value.html">Il capitolo su questo →</a></dd>
 
     <dt>Perché gli argomenti hanno bisogno dei nomi quando due parametri hanno lo stesso tipo?</dt>
