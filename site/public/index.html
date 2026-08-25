@@ -53,11 +53,11 @@
       <p class="kicker">A compiled programming language</p>
       <h1><span class="q">&ldquo;</span>Heroes<span class="q">&rdquo;</span></h1>
       <p class="promise">Small enough to fit in a prompt, real enough to <em>compile itself</em>.</p>
-      <p class="tagline">Made for the machines that write code now, yet plain
-      to human eyes. The whole language fits in the few pages you hand a model
-      before asking it for a program, and what comes out is a real executable
-      with nothing to install around it. And every mistake a model makes easily
-      is a compile error here.</p>
+      <p class="tagline">Made for the machines that write code, and clear to
+      the people who read it. The whole language fits in five pages: hand them
+      to a model and there is still room for the program. What you write becomes
+      an executable, with nothing else to install. And the mistakes models make
+      most often do not compile here.</p>
       <div class="cta">
         <a class="primary" href="errors.html">See a real error</a>
         <a class="ghost" href="docs/failure-is-a-value.html">Read a chapter</a>
@@ -142,12 +142,12 @@
     <figcaption>examples/gallery/11-trees.hero, lines 8&ndash;25</figcaption>
   </figure>
   <p>
-    That is a tree that contains itself, and it does it in a language with
-    <b>no pointers</b>, which are the values that hold no data of their own and
-    only say where the real data sits in memory. Here the only way one thing can
-    refer to another is an array, which is why the branches of that tree live in
-    one. The result is that the whole structure copies the way a number copies:
-    pass it to a function and that function gets its own.
+    That is a tree that contains itself. And it does it in a language with
+    <b>no pointers</b>: the values that hold no data of their own and only say
+    where the real data sits. Here the only way to refer to another thing is a
+    list, which is why the branches of that tree live in one. So the whole tree
+    copies the way a number copies: pass it to a function and that function gets
+    its own.
   </p>
   <p>
     Every code block on this site is cut from a real file that lives in the
@@ -205,11 +205,11 @@ we can be heroes</code></pre>
     <li>
       <h3>Mistakes are compile errors</h3>
       <p>
-        Two arguments of the same type passed in the wrong order, a case left
-        out when you list the forms a value can take, a changed name nobody
-        declared, a keyword borrowed from another language. Each one is a
-        compile error that arrives with the repair already written in, instead
-        of a program that runs and does the wrong thing quietly.
+        Two arguments of the same type, swapped. A case left out of the forms
+        a value can take. A name changed without being declared. A keyword
+        stolen from another language. None of these compile here, and the error
+        arrives with the repair already written in. Elsewhere the program runs
+        and gets it quietly wrong.
       </p>
       <a class="more" href="errors.html">See a real error</a>
     </li>

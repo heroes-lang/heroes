@@ -131,7 +131,7 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     <code>sort</code>, the conversions between types, and <code>map</code>,
     <code>filter</code>, <code>fold</code>. They all fit in a list you can read
     in a minute, so when you meet a function you never wonder where it came
-    from, and that list changes only by a recorded decision, never by
+    from. That list changes only by a recorded decision, never by
     accumulation.
   </p>
   <p>
@@ -258,9 +258,9 @@ graphics, audio, terminal <span class="c">→</span> SDL, raylib, ncurses</code>
     saying so (<code>fail(code, msg)</code>), and when that failure is passed up
     to your caller you see it on the line, marked <code>?</code>. Anything that
     jumps the program from one place to another without showing it is banned
-    wholesale (exceptions, inheritance, macros, operator overloading), because
-    the reader, model or person, has that line in front of them and cannot go
-    hunting for a definition three files away.
+    wholesale: exceptions, inheritance, macros, operator overloading. The reader
+    has that line and nothing else, and cannot go hunting for a definition three
+    files away.
     <a href="docs/failure-is-a-value.html">The chapter on this →</a></dd>
 
     <dt>Why do arguments need names when two parameters share a type?</dt>
