@@ -44,6 +44,7 @@ use check_table
 use check_state
 use ir_phases
 use emit_types
+use emit_synth
 use source
 use parse
 use resolve
@@ -53,7 +54,19 @@ use checker
 # walk is the sort, and the emitted order must be a function of the
 # program, not of the interner's insertion order (the double-emit
 # determinism test is what that buys).
-function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}) -> [i64]
+#
+# `want` is the unit's own filter and it binds the THIRD source alone.
+# The first two ask the arena a question about this unit's reach; the
+# aggregate walk asked the DECLARATIONS a question about the whole
+# program, which is the same answer in a fused unit and wrong in a
+# per-module one: the compiler's root TU generated a descriptor for
+# `token.Span` because some other module declares a `Span?` field, and
+# emitted it beside no typedef and no `_eq` — `use of undeclared
+# identifier 'h_token_Span'`, 20 errors, exit 2 on a correct program
+# (measured 2026-08-25, the first per-module self-build). A descriptor
+# and the type it describes are emitted by two different filters, so
+# the filters have to be one question.
+function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: emit_synth.Wanted) -> [i64]
     wanted: {i64: bool} @ {}
     queue: [i64] @ []
     count = check_table.len_of(c.types)
@@ -109,6 +122,11 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
     # descriptors nothing points at, the exact warning this worklist
     # exists to avoid.
     for decl in emit_types.aggregates(c, decls)
+        # Only an aggregate THIS unit defines: its `_hash` is what walks
+        # the T? fields, and a unit that does not write the hash does not
+        # name the payload's descriptor.
+        if !emit_synth.wants_decl(want, decl: decl)
+            continue
         written_ids: [i64] @ []
         for field in emit_types.fields_of(decls, decl: decl)
             written_ids @ written_ids.push(field.ty)
@@ -160,8 +178,8 @@ function generated(c: check_state.Checked, decls: [ast.Decl], reachable: {i64: b
     # NO ORDER, and it measurably does not — a map with 50, 3, 97, 12 put
     # in answers `97 50 3 12`. The bootstrap got ascending order free from
     # BTreeMap; the port pays for it here (design.md §4.9).
-    for want in sort(keys(wanted))
-        out @ out.push(want)
+    for ty in sort(keys(wanted))
+        out @ out.push(ty)
     return out
 
 ## Tests
@@ -188,7 +206,7 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     # `construct` instructions and nothing else.
     constructed: {i64: bool} @ {}
     constructed[check_table.lookup(c.types, .array(element: point)).must()] @ true
-    got = generated(c, p.decls, reachable: reachable, constructed: constructed)
+    got = generated(c, p.decls, reachable: reachable, constructed: constructed, want: emit_synth.everything())
     saw_point: bool @ false
     saw_option: bool @ false
     for one in got
@@ -233,13 +251,13 @@ test "an array a signature interned and nobody builds gets no descriptor"
         id @ id + 1
     # Nothing constructed: the empty map is the whole point of the case.
     nothing: {i64: bool} @ {}
-    assert generated(c, p.decls, reachable: reachable, constructed: nothing).len() == 0
+    assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: emit_synth.everything()).len() == 0
     # And the same program WITH the array built asks for Row's
     # descriptor, which is what keeps this from passing for the wrong
     # reason.
     row = check_table.lookup(c.types, .named(decl: 0)).must()
     built: {i64: bool} @ {}
     built[check_table.lookup(c.types, .array(element: row)).must()] @ true
-    got = generated(c, p.decls, reachable: reachable, constructed: built)
+    got = generated(c, p.decls, reachable: reachable, constructed: built, want: emit_synth.everything())
     assert got.len() == 1
     assert got[0] == row

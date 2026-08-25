@@ -152,7 +152,7 @@ function fixture() -> source.Source
     return source.new_source(name: "t.hero", text: "i64 A Point f geom.Point nope.X flot\n")
 
 function typed(@a: ast.Ast, start: i64, end: i64) -> i64
-    return ast.push_type(@a, ast.TypeNode(kind: .named, span: token.Span(start: start, end: end)))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .named, span: token.Span(start: start, end: end)))
 
 function empty_decls() -> [ast.Decl]
     return []
@@ -186,7 +186,7 @@ test "a compound type is one walk over the arena"
     s = fixture()
     a: ast.Ast @ ast.new_ast()
     element = typed(@a, start: 0, end: 3)
-    array_node = ast.push_type(@a, ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: 0, end: 3)))
+    array_node = ast.push_type(@a.types, ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: 0, end: 3)))
     r: resolve_state.Resolver @ resolve_state.new_resolver(expr_count: 0, type_count: 2)
     r.module @ "t"
     resolve_type(@r, a, s, empty_decls(), array_node)

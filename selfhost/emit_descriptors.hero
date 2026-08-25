@@ -19,6 +19,7 @@ use check_state
 use emit_ctype
 use emit_writer
 use emit_descriptor_set
+use emit_synth
 use ir_layout
 use ast
 use source
@@ -109,8 +110,8 @@ function through_pointer(c: check_state.Checked, names: emit_ctype.Names, ty: i6
 # `constructed` narrows one of the worklist's three sources and nothing
 # else — see `emit_descriptor_set.generated`, which is where the two sets
 # meet.
-function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool})
-    wanted = emit_descriptor_set.generated(c, decls, reachable: reachable, constructed: constructed)
+function definitions(@w: emit_writer.Writer, c: check_state.Checked, names: emit_ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: emit_synth.Wanted)
+    wanted = emit_descriptor_set.generated(c, decls, reachable: reachable, constructed: constructed, want: want)
     for ty in wanted
         prefix: str @ ""
         c_type: str @ ""

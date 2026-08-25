@@ -137,19 +137,31 @@ function reach_of(p: ir_state.Program, c: check_state.Checked, target: emit_decl
                     .func_ref | .store | .push_owned | .unary | .binary | .cast => reached[inst.ty] @ true
                     .index | .map_get | .copy_out | .abort_op => reached[inst.ty] @ true
                     .incref | .decref | .hole | .missing => reached[inst.ty] @ true
+    return Reach(reached: closed_over(c, reached: reached), constructed: constructed)
+
+# A set of types plus everything they contain: naming `[i64?]` declares
+# one slot type and two declarations, and naming only the outer one left
+# the inner `i64?` unnamed under a rule that asserts every T? is named
+# before anything mentions one (found by the mutant corpus).
+#
+# Its own function because the per-module path closes a SECOND set: the
+# signature types of the functions a TU prototypes, which the body walk
+# above never sees.
+function closed_over(c: check_state.Checked, reached: {i64: bool}) -> {i64: bool}
+    out: {i64: bool} @ reached
     # ORDER: none — this is a worklist, and what leaves it is a SET. Every
-    # id drained is added to `reached`, which two sorted walks read later
+    # id drained is added to `out`, which two sorted walks read later
     # (emit_ctype, emit_descriptor_set), so the drain order changes how
     # long the loop runs and nothing a reader or clang can see.
-    frontier: [i64] @ keys(reached)
+    frontier: [i64] @ keys(out)
     while frontier.len() > 0
         id = frontier[frontier.len() - 1]
         frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
         for inner in check_table.contained(c.types, id)
-            if reached[inner].is_err()
-                reached[inner] @ true
+            if out[inner].is_err()
+                out[inner] @ true
                 frontier @ frontier.push(inner)
-    return Reach(reached: reached, constructed: constructed)
+    return out
 
 function emit(p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
     return emit_for(target: .program_build, p: p, c: c, s: s, decls: decls, version: version)
@@ -159,11 +171,26 @@ function emit(p: ir_state.Program, c: check_state.Checked, s: source.Source, dec
 # message that carries the list is one round trip and three
 # invocations is three.
 function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
+    return emit_maybe(target: target, p: p, c: c, s: s, decls: decls, version: version, text: true)
+
+# The same walk with the TEXT made optional, because the per-module
+# path does not want it and used to pay for it anyway: `heroes build`
+# printed the whole fused unit — 785,323 lines for the compiler's own
+# source — wrote it to disk, and then emitted 157 translation units
+# that made it redundant. What the driver actually needs from here on
+# that path is the GATE (a refusal is program-wide) and the `link` and
+# `package` names, and neither is in the text.
+#
+# `--emit-c`, `heroes test` and the seed still take `text: true`: they
+# ARE the artifact path, and R1 says it stays one fused unit.
+function emit_maybe(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool) -> Emitted
     refused = emit_gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
     if refused.len() > 0
         none_link: [str] = []
         none_pkg: [str] = []
         return Emitted(c: "", diagnostics: refused, link: none_link, packages: none_pkg)
+    if !text
+        return Emitted(c: "", diagnostics: [], link: emit_externs.libraries(p, s, decls), packages: emit_externs.packages(p, s, decls))
     # The ROOT module names exactly two things: the generated .c in a
     # #line directive, and the program-wide types the emitter invents.
     # Every name from a declaration takes that declaration's own
@@ -197,7 +224,7 @@ function emit_for(target: emit_decls.BuildTarget, p: ir_state.Program, c: check_
     # so the object must exist before a function body mentions it.
     emit_typeorder.definitions(@w, c, names, s, decls, want: emit_synth.everything())
     emit_perfn.prototypes(@w, c, names, decls, want: emit_synth.everything())
-    emit_descriptors.definitions(@w, c, names, decls, reachable: reached, constructed: constructed)
+    emit_descriptors.definitions(@w, c, names, decls, reachable: reached, constructed: constructed, want: emit_synth.everything())
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             emit_signature.prototype(@w, p.functions[at], c, names, s, decls)

@@ -5,16 +5,28 @@
 # each compiled to its own cached object and linked.
 #
 # The v1 trade, taken deliberately and priced by panel 093's engineer:
-# the TYPEDEF section is whole-program and therefore byte-identical in
-# every TU — consistency by construction, no interface dedup machinery,
-# at the cost that a type edit re-texts every TU (a body edit, the
-# common case, re-texts one). The per-type functions and the
-# monomorphised instances are duplicated per TU under HERO_TU_LOCAL,
-# which the per-module prelude defines as `__attribute__((unused))
-# static` — the probes' own precedent — so an unused copy is silent
-# where a reach filter would have been a second machinery. Descriptors
-# stay reach-trimmed per TU: suite_descriptors requires every one
-# defined to be pointed at, and the walk already exists (emit.reach_of).
+# a monomorphised instance and a per-type function are DUPLICATED per
+# TU under HERO_TU_LOCAL, which the per-module prelude defines as
+# `__attribute__((unused)) static` — the probes' own precedent — so an
+# unused copy is silent instead of `-Wunused-function` against §7's
+# zero-warning bar.
+#
+# What the first draft got wrong, and the measurement that corrected it:
+# the whole-program sections were emitted WHOLE in every TU, on the
+# argument that a shared section is byte-identical by construction and
+# needs no dedup machinery. It is byte-identical, and it is also 87% of
+# a TU that has no use for it — one TU of this 157-module program was
+# 19,193 lines, and the build went 188 s -> 484 s. So typedefs, per-type
+# functions and descriptors are all filtered by ONE per-TU reach
+# (`emit.reach_of` over the TU's own members, read through
+# `emit_synth.Wanted`). One filter over all four sections is what makes
+# them agree: trimming the descriptors alone left `h_parse_Expr_desc`
+# undeclared under satellites that still mentioned it.
+#
+# The one whole-program section that stays whole is the PROTOTYPE
+# block, and that is R3 rather than an oversight: a cross-TU call
+# resolves against it, and the declaring TU compiles the same text
+# beside its own definition so a divergence is clang's error there.
 #
 # WHAT A TU CONTAINS, in the fused unit's own order: prelude (runtime
 # include, THIS module's extern headers and asserts and probes, the
@@ -40,8 +52,8 @@ use source
 use check_state
 use ir_state
 use emit
-use emit_ctype
 use emit_synth
+use emit_members
 use emit_writer
 use emit_decls
 use emit_typeorder
@@ -50,91 +62,13 @@ use emit_descriptors
 use emit_signature
 use emit_body
 
-# The function indices a module's TU defines: its own, then the
-# instances they reach. `taken` is keyed by function index; the
-# frontier carries indices whose calls are still to be walked.
-function members(module: str, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl]) -> [i64]
-    taken: {i64: bool} @ {}
-    frontier: [i64] @ []
-    # Seeded from the FUSED unit's own selection, filtered to this
-    # module: for an author module that is exactly its functions, and
-    # for the library it is the functions the program reaches — the
-    # same pruning the fused unit applies, so the library TU defines
-    # what the program calls and not its whole catalogue.
-    for at in emit.shown_fused(p, s)
-        f = p.functions[at]
-        if f.instance.len() == 0 && source.component_at(s, decls[f.decl].name.start) == module
-            taken[at] @ true
-            frontier @ frontier.push(at)
-    while frontier.len() > 0
-        at = frontier[frontier.len() - 1]
-        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
-        f = p.functions[at]
-        for blk in f.blocks
-            for inst in blk.insts
-                match inst.op
-                    .call cl =>
-                        instance: [i64] @ []
-                        on_copy = f.call_instances[inst.span.start]
-                        if !on_copy.is_err()
-                            instance @ on_copy.must()
-                        else
-                            recorded = c.instantiations[inst.span.start]
-                            if !recorded.is_err()
-                                instance @ recorded.must()
-                        if instance.len() > 0
-                            match cl.callee
-                                .heroes_fn hf =>
-                                    found = instance_index(p, decl: hf.decl, instance: instance)
-                                    if !found.is_err() && taken[found.must()].is_err()
-                                        taken[found.must()] @ true
-                                        frontier @ frontier.push(found.must())
-                                .extern_fn | .builtin_fn | .indirect => instance @ instance
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast => continue
-                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct => continue
-                    .func_ref | .copy_out | .abort_op | .incref | .decref | .hole | .missing => continue
-    # ORDER: ascending function index — the emitted order must be a
-    # function of the program, not of the worklist, and the double-emit
-    # check on the build path reads it.
-    return sort(keys(taken))
-
-# The instance of `decl` at exactly these type arguments, if the mono
-# pass created one.
-function instance_index(p: ir_state.Program, decl: i64, instance: [i64]) -> i64?
-    index: i64 @ 0
-    for f in p.functions
-        if f.decl == decl && same_list(a: f.instance, b: instance)
-            return ok(index)
-        index @ index + 1
-    return fail("none", "no such instance")
-
-function same_list(a: [i64], b: [i64]) -> bool
-    if a.len() != b.len()
-        return false
-    at: i64 @ 0
-    while at < a.len()
-        if a[at] != b[at]
-            return false
-        at @ at + 1
-    return true
-
-# A program filtered to one TU's members. Declarations, types and the
-# string table stay whole — every index a kept function carries still
-# resolves — and only `functions` shrinks.
-function tu_program(p: ir_state.Program, keep: [i64]) -> ir_state.Program
-    out: ir_state.Program @ p
-    kept: [ir_state.Function] @ []
-    for at in keep
-        kept @ kept.push(p.functions[at])
-    out.functions @ kept
-    return out
-
 # One module's translation unit. The caller has already run the gate
 # over the whole program (a refusal is program-wide) and monomorphised;
 # `is_root` says whether this TU carries the shim.
-function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str, is_root: bool) -> str
-    keep = members(module, p, c, s, decls)
-    tu_p = tu_program(p, keep: keep)
+function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: source.Source, decls: [ast.Decl], version: str, is_root: bool, whole: emit_members.Whole) -> str
+    mine = emit_members.members(module, p, c, s, decls, shown: whole.shown, by_decl: whole.by_decl)
+    keep = mine.defined
+    tu_p = emit_members.tu_program(p, keep: keep)
     # THIS TU's reach, and every whole-program section is filtered by
     # it — typedefs, per-type functions, descriptors. Trimming the
     # descriptors alone left `h_parse_Expr_desc` undeclared under
@@ -142,28 +76,52 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
     # 19,193 lines where 87% belonged to other modules, and the
     # compiler's own build went 188 s -> 484 s (measured 2026-08-25).
     # One filter over all four sections is what makes them agree.
-    walked = emit.reach_of(tu_p, c, target: .program_build, shown: all_of(tu_p))
-    want = emit_synth.wanted_of(c, reached: walked.reached)
-    names: emit_ctype.Names @ emit_ctype.new_names(s, decls)
-    names @ emit_ctype.with_options(names, c: c, s: s, decls: decls)
-    names @ emit_ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
+    walked = emit.reach_of(tu_p, c, target: .program_build, shown: emit_members.all_of(tu_p))
+    # A PROTOTYPE names types too, and the body walk above cannot see
+    # the ones belonging to another TU's function. So the signatures of
+    # everything this TU declares join the reach before the filter is
+    # built — asked of the value in hand (these exact functions) rather
+    # than argued from "an argument must be a local anyway", which is
+    # true today and is a premise about the world (CLAUDE.md §11).
+    reached: {i64: bool} @ walked.reached
+    for at in mine.needed
+        f = p.functions[at]
+        reached[f.result] @ true
+        for slot in f.params
+            reached[f.slots[slot].ty] @ true
+    # ONE set feeds all four sections, and that is the invariant rather
+    # than a tidiness. Every time a section got its own answer the TU
+    # stopped compiling: descriptors from the whole program against
+    # per-TU typedefs (`h_token_Span`), prototypes for the whole program
+    # against per-TU typedefs (`h_source_InputFile`), a wanted record
+    # whose field's `_hash` nobody declared (`h_diag_Kind_hash`), and a
+    # wanted `T?` whose payload descriptor nobody defined
+    # (`h_clitoolchain_Toolchain_desc`). Four symptoms, one cause, and
+    # the cause is two sets where there should be one.
+    declared = emit_members.declared_reach(c, decls, seed: emit.closed_over(c, reached: reached))
+    want = emit_synth.wanted_of(c, reached: declared)
+    names = whole.names
     w: emit_writer.Writer @ emit_writer.new_writer(module)
     emit_decls.prelude(@w, tu_p, target: .program_build, c: c, names: names, s: s, decls: decls, version: version, tu_local: "__attribute__((unused)) static")
     emit_typeorder.definitions(@w, c, names, s, decls, want: want)
     emit_perfn.prototypes(@w, c, names, decls, want: want)
-    emit_descriptors.definitions(@w, c, names, decls, reachable: walked.reached, constructed: walked.constructed)
-    # Every ordinary function in the PROGRAM gets a prototype: a
-    # cross-TU call resolves against it, and the declaring TU compiles
-    # this same text beside its own definition, so the two cannot
-    # drift apart without clang saying `conflicting types` there.
-    for f in p.functions
-        if f.instance.len() == 0 && emit_decls.emitted(f, target: .program_build)
-            emit_signature.prototype(@w, f, c, names, s, decls)
-    # This TU's instances carry HERO_TU_LOCAL, so their prototypes are
-    # emitted only where their definitions are.
-    for at in keep
+    # `declared`, not `walked.reached`: an option this TU prints `_hash`
+    # for takes its payload's descriptor address, so the descriptor set
+    # has to read the same reach the printer does. `constructed` stays
+    # the NARROW one on purpose — it is the container narrowing that
+    # keeps a `[Probe]` nobody builds from getting a descriptor nothing
+    # points at (-Wunused-const-variable, §7's zero-warning bar).
+    emit_descriptors.definitions(@w, c, names, decls, reachable: declared, constructed: walked.constructed, want: want)
+    # What this TU defines and what it calls, in one ascending walk:
+    # a cross-TU call resolves against the callee's prototype, and the
+    # DECLARING TU compiles that same text beside its own definition,
+    # so the two cannot drift apart without clang saying `conflicting
+    # types` there (panel 093 R3). An instance's prototype rides the
+    # same list and carries HERO_TU_LOCAL from `signature` itself,
+    # which is right: its definition is in this TU too.
+    for at in mine.needed
         f = p.functions[at]
-        if f.instance.len() > 0 && emit_decls.emitted(f, target: .program_build)
+        if emit_decls.emitted(f, target: .program_build)
             emit_signature.prototype(@w, f, c, names, s, decls)
     for at in keep
         f = p.functions[at]
@@ -182,13 +140,3 @@ function unit(module: str, p: ir_state.Program, c: check_state.Checked, s: sourc
         if !entry.is_err()
             emit_decls.shim(@w, p.functions[entry.must()], s)
     return emit_writer.finish(w)
-
-# Every function index in a program — the per-TU walk's own list, since
-# a TU's program IS its members.
-function all_of(p: ir_state.Program) -> [i64]
-    out: [i64] @ []
-    index: i64 @ 0
-    for _ in p.functions
-        out @ out.push(index)
-        index @ index + 1
-    return out

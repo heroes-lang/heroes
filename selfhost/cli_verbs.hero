@@ -23,6 +23,7 @@ use cli_compile
 use cli_toolchain
 use cli_units
 use emit_unit
+use emit_members
 use cli_shell
 use cli_libraries
 use cli_input
@@ -58,10 +59,15 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
         cli_io.eprint(text: "error: cannot create the build directory")
         return fail("failed", "no build directory")
     c_file = dir.must() + "/" + module + ".c"
-    written = write_file(path: c_file, text: art.must().c)
-    if written.is_err()
-        cli_io.eprint(text: "error: cannot write " + c_file)
-        return fail("failed", "cannot write the unit")
+    # Written only where it is compiled: the fused unit is the test
+    # binary's, and a program build writes one .c per module instead
+    # (cli_units.tu_object). It used to be written on both paths, which
+    # put 785,323 dead lines on disk for every build of the compiler.
+    if is_tests
+        written = write_file(path: c_file, text: art.must().c)
+        if written.is_err()
+            cli_io.eprint(text: "error: cannot write " + c_file)
+            return fail("failed", "cannot write the unit")
     object = cli_toolchain.runtime_object(t, level: options.level, sanitize: options.sanitize)
     if object.is_err()
         cli_io.eprint(text: "internal error: the runtime did not compile")
@@ -115,8 +121,14 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
         root = source.module_of(s.name)
         objects: [str] @ [object.must()]
         stopped: ()? @ ok()
+        # The whole-program tables, built once for the whole build
+        # rather than once per TU. They are functions of the program,
+        # so 157 modules used to buy 157 identical answers — and the
+        # arena walk and the content hashing behind them is what made
+        # the per-module self-build take longer than the fused one.
+        whole = emit_members.whole_of(art.must().program, c: art.must().checked, s: s, decls: art.must().decls)
         for component in cli_units.components(s)
-            tu_text = emit_unit.unit(module: component, p: art.must().program, c: art.must().checked, s: s, decls: art.must().decls, version: version, is_root: component == root)
+            tu_text = emit_unit.unit(module: component, p: art.must().program, c: art.must().checked, s: s, decls: art.must().decls, version: version, is_root: component == root, whole: whole)
             made = cli_units.tu_object(t, module: component, tu_text: tu_text, level: options.level, sanitize: options.sanitize, search: cli_compile.search_key(headers_from: options.headers_from, library: options.library), package_flags: package_flags.must(), source_dir: source_dir, search_include: options.headers_from)
             if made.is_err()
                 if stopped.is_err()
