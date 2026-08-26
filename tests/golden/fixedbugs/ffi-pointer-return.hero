@@ -27,7 +27,7 @@
 # `a_wrong_pointer_return_is_a_diagnostic_not_an_internal_error`.
 
 extern "stdlib.h"
-    function getenv(name: cstr) -> i64
+    function getenv(name: cstr) -> i64               #~ ffi_return_type
 
 function main()
     print(getenv("PATH".cstr()))
