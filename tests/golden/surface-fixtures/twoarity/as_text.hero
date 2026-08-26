@@ -1,0 +1,13 @@
+# The other arity of the SAME C symbol, in its own module.
+#
+# `printf` again, `<stdio.h>` again, a different value type. Two `extern`
+# groups in two modules naming one symbol is not a collision: the probes
+# are mangled per module (panel 053), and the call goes through the
+# header's own prototype, so C sees one function and Heroes sees two
+# bindings.
+
+extern "stdio.h"
+    function printf(format: cstr, value: cstr) -> i32
+
+function say(format: cstr, value: cstr) -> i32
+    return printf(format: format, value: value)

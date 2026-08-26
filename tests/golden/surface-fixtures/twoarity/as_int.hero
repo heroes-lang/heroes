@@ -1,0 +1,13 @@
+# One arity of `printf`, in its own module.
+#
+# The header is `<stdio.h>` and the C symbol is `printf` — the same
+# symbol `as_text.hero` binds, at a different signature. That is the
+# whole point of this fixture: it is legal, it links, and it runs.
+
+extern "stdio.h"
+    function printf(format: cstr, value: i64) -> i32
+
+# The route out of the module, because an `extern` is never callable
+# across a module boundary (acceptance row 1, panel 033 R5).
+function say(format: cstr, value: i64) -> i32
+    return printf(format: format, value: value)

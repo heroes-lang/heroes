@@ -1,0 +1,8 @@
+# Both arities, one program, one C symbol.
+
+use as_int
+use as_text
+
+function main()
+    _ = as_int.say(format: "n = %d\n".cstr(), value: 42)
+    _ = as_text.say(format: "s = %s\n".cstr(), value: "forty-two".cstr())

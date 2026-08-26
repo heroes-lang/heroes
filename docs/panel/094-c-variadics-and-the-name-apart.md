@@ -4,7 +4,7 @@
 answers `1c` (grow the language until `...` can be written) and `2a` (a way to
 spell the C name apart from the Heroes name), taken as one sitting.
 
-**Status:** provisional — author ratification pending.
+**Status:** **RATIFIED 2026-08-26** (author instruction *"fai la cosa migliore e piu robusta"*).
 
 ## The proposal, verbatim
 
@@ -159,7 +159,16 @@ sitting.
 
 ## Author's verdict
 
-**Pending.** Queued as an open item in `docs/work/DECIDE.md` naming `panel 094`.
+**RATIFIED 2026-08-26**, author instruction *"fai la cosa migliore e piu
+robusta"* — a mandate to take the most robust option rather than the one already
+answered. R1 through R6 stand as adopted: **neither half lands**.
+
+**Why the robust reading is the refusal, and not the language growth.** §1.12
+makes not corrupting memory a goal that outranks ergonomics, and `...` moves in
+the wrong direction on exactly that axis: it removes the declared width that
+makes a wrong argument a compile error, in the one call form where C punishes
+hardest. The three lines the rename would save are ergonomics; the +23 tokens
+and the second notation are permanent. Both wait.
 
 **What the sitting is asking the author to take again, and why it is worth
 asking twice.** The answers `1c` and `2a` were given before it was measured that
