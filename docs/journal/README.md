@@ -11,7 +11,7 @@ The division of labour, and the reason this file exists:
 - **`docs/ROADMAP.md` says what is next.** It had accumulated 512 lines about the
   past before its first line about the future, growing ~66 lines per close. The
   retrospectives live here now, and `/step`'s checklist keeps the ROADMAP's
-  § Status at ≤15 lines.
+  § Where we are at ≤15 lines.
 - **These journals say what happened**, one milestone at a time, with the lesson
   next to the inventory.
 - `DESIGN-LOG.md` says what was decided, `docs/panel/` why, `docs/measurements/`
