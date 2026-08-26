@@ -1,0 +1,336 @@
+# What one translation unit contains, and what it must never contain
+# (M-separate-compilation step 8; the instruments panel 093 owes with the
+# landing of R1/R2/R3).
+#
+# WHY IT IS A SUITE AND NOT A GOLDEN. A golden is one argv and one
+# expected text. Every question here is about the FILES A BUILD WROTE
+# UNDER `build/` — several of them, named by a cache key nobody can write
+# down in advance — so there is no text to check in. `suite_cache` next
+# door exists for the same reason, one question further on: it asks what
+# the SECOND invocation does, this one asks what the first one produced.
+#
+# WHAT IT PINS, and each one is a way the per-module path can be wrong
+# that the fused path cannot:
+#
+# 1. **Every TU is emitted identically twice.** CLAUDE.md §7 says the
+#    double-emit determinism test stays green at all times, and panel 093
+#    R1 says the build path owes its OWN check: `suite_determinism`
+#    compares the fused unit, which the per-module path does not emit at
+#    all since step 6. A wobbling TU is worse here than there, because
+#    the emitted text IS the cache key: two spellings of one module are
+#    two directories, two compiles, and a cache that never hits.
+# 2. **A caller compiles the same prototype the definition sits beside.**
+#    Panel 093 R3: a cross-TU call resolves against the prototype block,
+#    and the declaring TU compiles that same text next to its own
+#    definition, so a divergence is `conflicting types` in the declaring
+#    TU rather than a silent miscompile. The pragmatist measured what the
+#    alternative costs: a caller that believes a different signature
+#    links, runs, and returns garbage at exit 0. The mechanism landed at
+#    step 6; this is the test that makes it fire, which §9 asks of every
+#    check in this project.
+# 3. **A TU names the runtime's descriptors and defines none.** Panel
+#    093 R2 duplicates per-type functions and descriptors per TU under
+#    `HERO_TU_QUIET`, deliberately — but the RUNTIME's descriptors
+#    (`hero_desc_int`, `hero_desc_str`, and the rest of
+#    `heroes_runtime.h`'s `extern const HeroDesc` block) are referenced,
+#    never copied. A copy would give one type two descriptors in one
+#    binary, and descriptor identity is what `==` and `hash` walk
+#    through.
+#
+# THE PROGRAM IS WRITTEN HERE rather than checked in under
+# `tests/golden/`, for `suite_cache`'s reason: the case is about what a
+# build leaves on disk across two runs, so the source has no single
+# resting state and no expectation file could hold the answer.
+
+use report
+use shell
+use strings
+
+# Where the two-module program lives for the duration, under the scratch
+# directory so `heroes build`'s own `build/` stays the one it always is.
+constant HOME: str
+    "units-program"
+
+# A record, a variant with a payload and one without, and a function
+# returning an array of the record: enough that the TU carries a
+# descriptor of its own AND reaches for the runtime's.
+constant SHAPE_LINES: [str]
+    [
+        "record Point"
+        "    x: i64"
+        "    y: i64"
+        ""
+        "variant Shape"
+        "    dot"
+        "    line"
+        "        a: Point"
+        "        b: Point"
+        ""
+        "function corners(s: Shape) -> [Point]"
+        "    none: [Point] = []"
+        "    return match s"
+        "        .dot => none"
+        "        .line l => [l.a, l.b]"
+    ]
+
+constant PROG_LINES: [str]
+    [
+        "use unitshape"
+        ""
+        "function main()"
+        "    s: unitshape.Shape = .line(a: unitshape.Point(x: 1, y: 2), b: unitshape.Point(x: 3, y: 4))"
+        "    print(unitshape.corners(s: s).len())"
+    ]
+
+# The one function that crosses the module boundary, mangled
+# (CLAUDE.md §7: `h_<module>_<name>`).
+constant DECLARED: str
+    "h_unitshape_corners"
+
+# The prefix every descriptor the RUNTIME owns carries. Measured against
+# `runtime/heroes_runtime.h`, where the whole block is `extern const
+# HeroDesc hero_desc_<type>` — so a TU that spells `HeroDesc hero_desc_`
+# at all is declaring or defining one, and a TU that spells
+# `&hero_desc_` is doing the only thing it may do: take its address.
+constant RUNTIME_DESC: str
+    "hero_desc_"
+
+# One clean emission: the paths the build wrote (which are the cache
+# keys) and what it wrote into them.
+record Emission
+    paths: [str]
+    texts: [str]
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    every_tu_is_emitted_identically_twice(@r, scratch: scratch, compiler: compiler)
+    a_caller_compiles_the_prototype_the_definition_sits_beside(@r, scratch: scratch, compiler: compiler)
+    a_tu_names_the_runtime_descriptors_and_defines_none(@r, scratch: scratch, compiler: compiler)
+    return ok(r)
+
+# The program, freshly laid down. Returns the directory it lives in.
+function laid_out(scratch: str) -> str?
+    dir = scratch + "/" + HOME
+    shell.remove_tree(dir)?
+    shell.mkdir_all(dir)?
+    write_file(path: dir + "/unitshape.hero", text: SHAPE_LINES.join("\n") + "\n")?
+    write_file(path: dir + "/unitprog.hero", text: PROG_LINES.join("\n") + "\n")?
+    return ok(dir)
+
+# Every `.c` this program's own two modules were emitted into. Asked by
+# module name rather than by date: a warm build writes nothing, so
+# "what is newer than a marker" would answer the empty list.
+#
+# The library's own TU is deliberately out of scope. It is keyed on its
+# per-TU reach, so every program in `build/` has a different one, and
+# there is no name that picks out THIS program's copy. The mechanism
+# under test is the same for it.
+function tu_sources(scratch: str) -> [str]?
+    listed = shell.run(scratch: scratch, command: "find build -name 'unitshape.c' -o -name 'unitprog.c'")
+    if listed.is_err()
+        return fail("cannot_run", "cannot list this program's translation units under build/")
+    out: [str] @ []
+    for row in strings.lines(listed.must().out)
+        if row.len() > 0
+            out @ out.push(row)
+    return ok(out.sort())
+
+# Drop the cached objects of this program's modules, so the next build
+# EMITS instead of hitting. Without this there is only ever one emission
+# to compare: a hit never rewrites the `.c`.
+function forget_tus(scratch: str) -> ()?
+    for path in tu_sources(scratch)?
+        shell.remove_tree(parent_of(path))?
+    return ok()
+
+function parent_of(path: str) -> str
+    return strings.without_suffix(text: path, suffix: "/" + strings.base_name(path))
+
+# Forget, build, read back. Every call is one full emission of both TUs.
+#
+# **The empty check between the two is what stops this whole suite
+# passing on nothing.** A warm build writes no `.c` at all, so if
+# `forget_tus` ever stopped removing anything, `emitted` would return the
+# SAME file twice and every comparison below would be a file compared
+# against itself — three green cases asking no question. The one shape a
+# determinism test must not have is a way to be trivially true, so the
+# forget is asserted rather than assumed.
+function emitted(scratch: str, compiler: str, dir: str) -> Emission?
+    forget_tus(scratch)?
+    left = tu_sources(scratch)?
+    if left.len() > 0
+        return fail("cannot_run", "the cached translation units survived the forget, so a second build would hit instead of emitting and this suite would compare a file with itself:\n    " + left.join("\n    "))
+    built = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/unitprog.hero"))
+    if built.is_err() || built.must().code != 0
+        return fail("cannot_run", "the build did not run: " + built.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+    paths = tu_sources(scratch)?
+    texts: [str] @ []
+    for path in paths
+        texts @ texts.push(read_file(path)?)
+    return ok(Emission(paths: paths, texts: texts))
+
+# **Every TU is emitted identically twice.** Same source, same flags, two
+# clean emissions: the paths must match (the key is a digest of the text,
+# so a different path IS a different text) and so must the bytes.
+function every_tu_is_emitted_identically_twice(@r: report.Report, scratch: str, compiler: str)
+    label = "units/every translation unit is emitted identically twice"
+    dir = laid_out(scratch)
+    if dir.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
+        return
+    one = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
+    two = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
+    if one.is_err() || two.is_err()
+        report.keep_failure(@r, label: label, detail: "  a clean emission did not run twice under " + dir.must() + ":\n    " + why(one) + why(two))
+        return
+    first = one.must()
+    second = two.must()
+    if first.paths.len() != 2
+        report.keep_failure(@r, label: label, detail: "  a two-module program should emit 2 translation units, this emitted " + first.paths.len().to_str() + ":\n    " + first.paths.join("\n    "))
+        return
+    if first.paths != second.paths
+        report.keep_failure(@r, label: label, detail: "  the two emissions landed under different cache keys, so the emitted text differs:\n    " + first.paths.join("\n    ") + "\n  then\n    " + second.paths.join("\n    ") + "\n  The key is a digest of the TU's own text, so this is the determinism failure seen through the cache: a wobbling emitter means a cache that can never hit.")
+        return
+    wrong: [str] @ []
+    for i in range(from: 0, to: first.paths.len())
+        if first.texts[i] != second.texts[i]
+            wrong @ wrong.push("    " + first.paths[i] + " came out with different bytes the second time")
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  CLAUDE.md §7 says the double-emit determinism test stays green at all times, and panel 093 R1 says the build path owes its own: `suite_determinism` compares the FUSED unit, which the per-module path stopped emitting at step 6.")
+    else
+        report.keep_pass(@r)
+
+# **A caller compiles the same prototype the definition sits beside**
+# (panel 093 R3). Both TUs are read for the one line that declares the
+# crossing function, and the declaring TU is read for its definition too.
+function a_caller_compiles_the_prototype_the_definition_sits_beside(@r: report.Report, scratch: str, compiler: str)
+    label = "units/a caller compiles the prototype the definition sits beside"
+    dir = laid_out(scratch)
+    if dir.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
+        return
+    got = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
+    if got.is_err()
+        report.keep_failure(@r, label: label, detail: "  the program did not emit under " + dir.must())
+        return
+    declaring = text_of(e: got.must(), name: "unitshape.c")
+    calling = text_of(e: got.must(), name: "unitprog.c")
+    if declaring.len() == 0 || calling.len() == 0
+        report.keep_failure(@r, label: label, detail: "  the two translation units are not both on disk:\n    " + got.must().paths.join("\n    "))
+        return
+    exported = prototype_of(text: calling, name: DECLARED)
+    kept = prototype_of(text: declaring, name: DECLARED)
+    defined = definition_of(text: declaring, name: DECLARED)
+    wrong: [str] @ []
+    if exported.len() == 0
+        wrong @ wrong.push("    the calling TU carries no prototype for " + DECLARED + ", so the call resolves against nothing")
+    if kept.len() == 0
+        wrong @ wrong.push("    the DECLARING TU carries no prototype for " + DECLARED + " — R3's whole mechanism is that it compiles the same text it exports, so clang catches a divergence there")
+    if defined.len() == 0
+        wrong @ wrong.push("    the declaring TU carries no definition of " + DECLARED)
+    if exported.len() > 0 && kept.len() > 0 && exported != kept
+        wrong @ wrong.push("    the two TUs spell it differently:\n      caller:    " + exported + "\n      declarer:  " + kept)
+    if kept.len() > 0 && defined.len() > 0 && strings.without_suffix(text: kept, suffix: ";") + " {" != defined
+        wrong @ wrong.push("    the prototype and the definition beside it do not agree:\n      prototype:  " + kept + "\n      definition: " + defined)
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  A caller that believes a signature the definition does not have links, runs, and returns garbage at exit 0 — the shape panel 093's ffi-pragmatist measured, and the reason R3 makes the declaring TU compile its own exported text.")
+    else
+        report.keep_pass(@r)
+
+# **A TU names the runtime's descriptors and defines none.** A copy would
+# give one type two descriptors inside one binary, and descriptor
+# identity is what `==` and `hash` walk through.
+function a_tu_names_the_runtime_descriptors_and_defines_none(@r: report.Report, scratch: str, compiler: str)
+    label = "units/a translation unit names the runtime's descriptors and defines none"
+    dir = laid_out(scratch)
+    if dir.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
+        return
+    got = emitted(scratch: scratch, compiler: compiler, dir: dir.must())
+    if got.is_err()
+        report.keep_failure(@r, label: label, detail: "  the program did not emit under " + dir.must())
+        return
+    seen = got.must()
+    carried: [str] @ []
+    named: i64 @ 0
+    for i in range(from: 0, to: seen.paths.len())
+        for row in strings.lines(seen.texts[i])
+            if strings.contains(text: row, needle: "HeroDesc " + RUNTIME_DESC)
+                carried @ carried.push("    " + seen.paths[i] + ": " + strings.trimmed(row))
+            if strings.contains(text: row, needle: "&" + RUNTIME_DESC)
+                named @ named + 1
+    if carried.len() > 0
+        report.keep_failure(@r, label: label, detail: "  a translation unit declares or defines a descriptor the runtime owns:\n" + carried.join("\n") + "\n  `runtime/heroes_runtime.h` already declares every one of them `extern const HeroDesc`, so a TU may take the address and nothing else. Two descriptors for one type inside one binary is a `==` that can answer no.")
+    else
+        if named == 0
+            report.keep_failure(@r, label: label, detail: "  no translation unit took the address of a runtime descriptor, so this check passed without asking anything.\n  The program holds an `i64` field and an array of records, which reach `" + RUNTIME_DESC + "int` — if that stopped being true the case needs rewriting, not deleting.")
+        else
+            report.keep_pass(@r)
+
+# Why an emission did not run, so the failure message carries the cause
+# instead of costing a second command to understand (design.md §4.17,
+# which is `report.hero`'s own rule for a test).
+function why(got: Emission?) -> str
+    return match got
+        .ok _ => ""
+        .err e => e.msg
+
+# The text of the TU whose file has this basename, or "" where the build
+# did not write one.
+function text_of(e: Emission, name: str) -> str
+    for i in range(from: 0, to: e.paths.len())
+        if strings.base_name(e.paths[i]) == name
+            return e.texts[i]
+    return ""
+
+# The prototype line: it names the function, ends in a semicolon, and
+# starts at column zero.
+#
+# **The column is the whole discriminator and it is written down rather
+# than relied on**: a CALL also names the function and also ends in a
+# semicolon (`    t9 = h_unitshape_corners(t8);`), and what separates the
+# two is that every statement inside a function body is indented.
+function prototype_of(text: str, name: str) -> str
+    for row in strings.lines(text)
+        if strings.contains(text: row, needle: name) && strings.ends_with(text: row, suffix: ";") && !strings.starts_with(text: row, prefix: " ")
+            return row
+    return ""
+
+# The definition's opening line: same name, at column zero, ending in the
+# brace that opens the body.
+function definition_of(text: str, name: str) -> str
+    for row in strings.lines(text)
+        if strings.contains(text: row, needle: name) && strings.ends_with(text: row, suffix: "{") && !strings.starts_with(text: row, prefix: " ")
+            return row
+    return ""
+
+test "a prototype is told apart from a call to the same function"
+    body = "int64_t h_m_f(int64_t a);\nint64_t h_m_f(int64_t a) {\n    t0 = h_m_f(t1);\n}\n"
+    assert prototype_of(text: body, name: "h_m_f") == "int64_t h_m_f(int64_t a);"
+    assert definition_of(text: body, name: "h_m_f") == "int64_t h_m_f(int64_t a) {"
+
+test "a prototype and the definition beside it agree by construction"
+    proto = "HeroArrayHeader * h_m_f(h_m_S s);"
+    assert strings.without_suffix(text: proto, suffix: ";") + " {" == "HeroArrayHeader * h_m_f(h_m_S s) {"
+
+test "a divergence between two translation units is visible in the two lines"
+    # THE CASE THE CHECK EXISTS FOR, and no live tree can produce it: the
+    # emitter writes both lines from one walk, so a divergence has to be
+    # written by hand to be seen at all. Without this the end-to-end case
+    # only ever proves that three lines were FOUND. What it looks like is
+    # one word apart — and one word apart is a caller pushing 8 bytes
+    # where the callee reads 4, at exit 0.
+    declarer = "int64_t h_m_f(int64_t a);\nint64_t h_m_f(int64_t a) {\n"
+    caller = "int64_t h_m_f(int32_t a);\n"
+    kept = prototype_of(text: declarer, name: "h_m_f")
+    exported = prototype_of(text: caller, name: "h_m_f")
+    assert kept != exported
+    assert kept == "int64_t h_m_f(int64_t a);"
+    assert exported == "int64_t h_m_f(int32_t a);"
+    # And the other half: a definition that drifted from the prototype
+    # standing right above it.
+    drifted = "int64_t h_m_g(int64_t a);\nint64_t h_m_g(int32_t a) {\n"
+    assert strings.without_suffix(text: prototype_of(text: drifted, name: "h_m_g"), suffix: ";") + " {" != definition_of(text: drifted, name: "h_m_g")
+
+test "a translation unit path yields the cache directory it lives in"
+    assert parent_of("build/tu-42b71f2b1b108165/unitprog.c") == "build/tu-42b71f2b1b108165"

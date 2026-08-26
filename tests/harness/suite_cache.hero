@@ -28,6 +28,17 @@
 #    it must move exactly one object. If it moved all of them the
 #    architecture would be sound and the cache pointless; if it moved
 #    none, (1) would be back.
+# 4. **A reordered variant is never served from a warm object** — panel
+#    093's tag-reorder witness, and the engineer's own prediction to
+#    score. A variant's cases are numbered by position, so moving them
+#    renumbers every tag; the caller's `match` is a C `switch` over
+#    those numbers, and it lives in a DIFFERENT translation unit. What
+#    stops the caller being served a warm object full of the old numbers
+#    is that a TU's text carries the tag enum of every type it reaches,
+#    so the edit changes the caller's own text and therefore its key
+#    (R4, with R6's content-derived names underneath). The failure this
+#    catches has no diagnostic and no crash: the program prints the
+#    wrong case at exit 0.
 #
 # THE PROGRAM IS WRITTEN HERE rather than kept under
 # `tests/golden/surface-fixtures/`, and the header is why: the case is
@@ -52,11 +63,23 @@ constant BIND: str
 constant PROG: str
     "use bind\n\nfunction main()\n    print(bind.limit())\n"
 
+# The tag-reorder witness's own program: a variant in one module, a
+# `match` over it in another. `TAGS_HOME` is a second directory rather
+# than a second state of the first, because the two cases edit different
+# files and a shared tree would make each one's setup the other's
+# leftovers.
+constant TAGS_HOME: str
+    "cache-tags"
+
+constant TAGS_CALLER: str
+    "use hue\n\nfunction main()\n    print(hue.name_of(c: .blue))\n"
+
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     a_header_edit_is_not_invisible(@r, scratch: scratch, compiler: compiler)
     an_untouched_build_still_hits(@r, scratch: scratch, compiler: compiler)
     only_the_module_that_read_it_is_rebuilt(@r, scratch: scratch, compiler: compiler)
+    a_reordered_variant_is_not_served_warm(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
 # The program, freshly laid down with the header at `value`. Returns
@@ -150,6 +173,62 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
         report.keep_failure(@r, label: label, detail: "  the header edit should move `bind.o` and nothing else — it moved:\n    " + only.join("\n    ") + "\n  Nothing means the edit was invisible; everything means the header reached translation units that never declared the `extern`.")
     else
         report.keep_pass(@r)
+
+# **A reordered variant is not served from a warm object.** Three
+# orderings in a row, the third one seen by neither of the first two, and
+# after each the caller must still print the case it names by NAME.
+#
+# Nothing here edits the caller's file. That is the point: the caller's
+# text is regenerated from the module it reaches, so the edit lands in
+# its key without anybody writing the dependency down.
+#
+# **That the case has teeth was measured rather than assumed** (step 8,
+# 2026-08-26): the three orderings put `h_hue_Colour_tag_blue` at 2, then
+# 0, then 1 in the CALLER's own emitted C, and each one landed under a
+# different cache key. So a key blind to the tag enum would hand the
+# second build an object that still switches on 2 while the module now
+# says 0, and the program would print `red` at exit 0.
+function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/a reordered variant is not served warm"
+    dir = scratch + "/" + TAGS_HOME
+    if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
+        return
+    if write_file(path: dir + "/caller.hero", text: TAGS_CALLER).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the caller")
+        return
+    wrong: [str] @ []
+    orders: [[str]] = [
+        ["red", "green", "blue"]
+        ["blue", "green", "red"]
+        ["green", "blue", "red"]
+    ]
+    for order in orders
+        if write_file(path: dir + "/hue.hero", text: hue_module(order)).is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot write the variant module")
+            return
+        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero"))
+        if said.is_err() || said.must().code != 0
+            wrong @ wrong.push("    with the cases in the order " + order.join(", ") + " the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+            continue
+        if said.must().out != "blue\n"
+            wrong @ wrong.push("    with the cases in the order " + order.join(", ") + " the program printed " + strings.trimmed(said.must().out) + " where it names `.blue`")
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  A variant's cases are numbered by position and the caller's `match` is a C `switch` over those numbers, in another translation unit. What keeps them together is that a TU's text carries the tag enum of every type it reaches, so this edit changes the CALLER's own text and therefore its key. A wrong case here is exit 0 with no diagnostic anywhere.")
+    else
+        report.keep_pass(@r)
+
+# The variant module, with its cases in the order given. The arms are
+# written in the same order, which is arbitrary — `match` is exhaustive
+# by name and the order of the arms is not the order of the tags.
+function hue_module(order: [str]) -> str
+    text: str @ "variant Colour\n"
+    for name in order
+        text @ text + "    " + name + "\n"
+    text @ text + "\nfunction name_of(c: Colour) -> str\n    return match c\n"
+    for name in order
+        text @ text + "        ." + name + " => \"" + name + "\"\n"
+    return text
 
 # Run `command`, and answer which object files under `build/` came out
 # of it newer than a marker written just before.

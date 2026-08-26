@@ -50,8 +50,13 @@
 #   descriptors   every descriptor the blessed C names is defined in it,
 #                 and every one it defines is named — both directions
 #   cache         the per-module build cache: a header edit is not
-#                 invisible, an untouched build still hits, and an edit
-#                 moves exactly the objects that read the edited file
+#                 invisible, an untouched build still hits, an edit moves
+#                 exactly the objects that read the edited file, and a
+#                 reordered variant is never served from a warm object
+#   units         what one translation unit contains: emitted identically
+#                 twice, the prototype a caller compiles is the one the
+#                 definition sits beside, and the runtime's descriptors
+#                 are named and never copied
 #
 # Nothing is left in Rust that this cannot ask. The last one to arrive was
 # `emission`, and it is the only suite here whose ancestor could not be
@@ -75,6 +80,7 @@ use suite_records
 use suite_spec
 use suite_special
 use suite_surface
+use suite_units
 use suite_warnings
 use suite_run
 
@@ -193,6 +199,18 @@ function main()
             print("harness: the cache suite could not run")
             exit(2)
         print("  cache: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # What ONE translation unit holds, asked of the files a build wrote:
+    # the cache suite above asks what the second invocation does, this
+    # one asks what the first one produced.
+    if only == "" || only == "units"
+        got = suite_units.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the units suite could not run")
+            exit(2)
+        print("  units: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
