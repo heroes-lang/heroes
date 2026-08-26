@@ -492,3 +492,12 @@ run <harness>.hero` cannot express — §10's third clause refuses it until then
 (`d_type: i8[4]` against `unsigned char`) is `internal error` at exit **2**, the
 compiler blaming itself for the author's `extern`, and it waits in `DECIDE.md` with
 its repair undecided.
+
+---
+
+**Scored at M-separate-compilation close, 2026-08-26.** This sitting's
+predictions are scored in `docs/journal/025-separate-compilation.md`
+§ *Predictions, scored*, with what each was measured against. Predictions that
+could not be scored are marked **lapsed** there, and the clause each one bought
+is back in `docs/work/DECIDE.md` to be re-argued under the removal branch, never
+renewed under a new milestone name (panel 046 R2).

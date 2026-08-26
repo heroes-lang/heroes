@@ -340,3 +340,12 @@ and truer at every correction. The brief's two errors are recorded in this file
 under their own heading rather than smoothed away, because the shape they share —
 generalising from a sample to a class, then relaying it before checking — is
 CLAUDE.md §1's, committed by the seat whose job is to police it.
+
+---
+
+**Scored at M-separate-compilation close, 2026-08-26.** This sitting's
+predictions are scored in `docs/journal/025-separate-compilation.md`
+§ *Predictions, scored*, with what each was measured against. Predictions that
+could not be scored are marked **lapsed** there, and the clause each one bought
+is back in `docs/work/DECIDE.md` to be re-argued under the removal branch, never
+renewed under a new milestone name (panel 046 R2).
