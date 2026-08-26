@@ -33,6 +33,7 @@
 
 use cases
 use report
+use shell
 use strings
 
 # `unsupported/` is in the sweep because its kind lives INSIDE the
@@ -45,15 +46,55 @@ constant DIRECTORIES: [str]
         "tests/golden/unsupported"
     ]
 
-# Measured 2026-08-18 over those two directories: 181 pinned diagnostics
-# across 76 cases. golden.rs floors at 60, which is a number from when
-# there were sixty — a floor at the real count is the same rule with the
-# slack taken out, and it is the count this session ran rather than one
-# carried from a document.
-constant LEAST: i64
-    181
+# **The second sweep, and why there had to be one** (author decision
+# 2026-08-26, `/decide` answer `5a`). The mechanism above compares a
+# case's `.hero` with its `.expected`, so it can only reach cases that
+# HAVE an expectation. Measured at M-separate-compilation close: **19
+# annotations lived outside it** — 15 across 11 files in
+# `tests/golden/fixedbugs/`, which has zero `.expected` for 16 `.hero`,
+# and 4 across 3 in `surface-fixtures/`. Both are driven by
+# `suite_surface` rows that run the compiler and match stderr, so there
+# was no expectation file to compare against and the marks were
+# decorations. The failure message below has said so about its own floor
+# since it was written; it could not say it about these.
+#
+# So this half RUNS the compiler and reads what it prints. Three things
+# it has to get right, each one measured on the real tree rather than
+# assumed:
+#
+# 1. **Which command provokes the diagnostic.** `check` for a type error,
+#    `build` for anything FFI — the probe block only reaches clang on a
+#    build. Measured over all fourteen files: check-then-build resolves
+#    every one, so the rule is *try check, and if it says nothing, build*.
+# 2. **Which file to run.** A case is a DIRECTORY here, not a file: some
+#    of these are modules with no `main`, whose diagnostic is provoked by
+#    a neighbour. So every `.hero` in the group that has a `main` is run,
+#    and their diagnostics are pooled.
+# 3. **The comparison carries the FILE.** `externsignature/` is the case
+#    that forced it: the annotation is in `bind.hero` and the `main` is in
+#    `wrong.hero`, which is the general shape and not an oddity — a
+#    diagnostic names the file it lands in. So both sides are
+#    `<file>:<line>:<code>` here, where the sweep above needs only
+#    `<line>:<code>`.
+constant RUN_ROOTS: [str]
+    [
+        "tests/golden/fixedbugs"
+        "tests/golden/surface-fixtures"
+    ]
 
-function run_all(scratch: str) -> report.Report?
+# The floor: how many diagnostics this file pins. `golden.rs` floored at
+# 60, which was a number from when there were sixty — a floor at the real
+# count is the same rule with the slack taken out.
+#
+# **181 over the two `.expected` directories, measured 2026-08-18. 207
+# with the run-the-compiler half, measured 2026-08-26** — and the number
+# was read out of the suite rather than added up by hand: the floor was
+# briefly set impossibly high so the failure message would print the true
+# count, which is this file's own rule applied to itself.
+constant LEAST: i64
+    207
+
+function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     annotated: i64 @ 0
     for dir in DIRECTORIES
@@ -71,9 +112,100 @@ function run_all(scratch: str) -> report.Report?
                     report.keep_failure(@r, label: "annotations/" + item.name, detail: "  " + item.source + ": the annotations and the diagnostics disagree\n    annotated: " + claimed.join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one")
                 else
                     report.keep_pass(@r)
+    for group in groups(scratch)?
+        annotated @ annotated + one_group(@r, scratch: scratch, compiler: compiler, group: group)
     if annotated < LEAST
         report.keep_failure(@r, label: "annotations", detail: "  only " + annotated.to_str() + " annotated diagnostics, and there were " + LEAST.to_str() + " — annotations that stop being checked are the shape §9 calls a decoration")
     return ok(r)
+
+# Every directory whose cases carry no `.expected`: `fixedbugs/` flat,
+# plus each subdirectory of `surface-fixtures/`. Discovered rather than
+# listed, because a list of directories is a premise about the tree and
+# premises expire in silence (CLAUDE.md §11) — a new fixture directory
+# joins this sweep by existing.
+function groups(scratch: str) -> [str]?
+    out: [str] @ []
+    for root in RUN_ROOTS
+        holds_cases: bool @ false
+        for entry in shell.list_entries(scratch: scratch, dir: root)?
+            if strings.ends_with(text: entry, suffix: ".hero")
+                holds_cases @ true
+        if holds_cases
+            out @ out.push(root)
+        for sub in shell.list_directories(scratch: scratch, dir: root)?
+            out @ out.push(sub)
+    return ok(out.sort())
+
+# One group: run every program in it, pool what the compiler said, and
+# compare against every annotation in it. Returns how many diagnostics
+# were pinned, for the floor.
+function one_group(@r: report.Report, scratch: str, compiler: str, group: str) -> i64
+    label = "annotations/" + group
+    files = shell.list_entries(scratch: scratch, dir: group)
+    if files.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot list " + group)
+        return 0
+    claimed: [str] @ []
+    said: str @ ""
+    ran: i64 @ 0
+    for path in files.must()
+        if !strings.ends_with(text: path, suffix: ".hero")
+            continue
+        text = read_file(path)
+        if text.is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot read " + path)
+            return 0
+        for mark in claimed_by(text.must())
+            claimed @ claimed.push(path + ":" + mark)
+        if strings.contains(text: text.must(), needle: "function main")
+            said @ said + provoked(scratch: scratch, compiler: compiler, path: path)
+            ran @ ran + 1
+    if claimed.len() == 0
+        return 0
+    if ran == 0
+        report.keep_failure(@r, label: label, detail: "  " + claimed.len().to_str() + " annotations here and no program with a `main` to provoke them:\n    " + claimed.join("\n    "))
+        return 0
+    reported = sorted(reported_with_file(said))
+    if sorted(claimed) != reported
+        report.keep_failure(@r, label: label, detail: "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now.")
+        return 0
+    report.keep_pass(@r)
+    return reported.len()
+
+# What the compiler says about one program: `check` first, and `build`
+# when check is silent, because an FFI diagnostic only reaches clang on a
+# build. Measured over all fourteen annotated files at the close.
+function provoked(scratch: str, compiler: str, path: str) -> str
+    checked = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " check " + shell.sq(path))
+    if !checked.is_err() && checked.must().code == 1
+        return checked.must().err
+    built = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(path) + " -o " + shell.sq(scratch + "/annotated.bin"))
+    if built.is_err()
+        return ""
+    return built.must().err
+
+# Every diagnostic in real compiler output, as `<file>:<line>:<code>`.
+# The rich form only: this reads what the compiler prints by default, and
+# by default it prints §4.17's form, whose `  at <file>:<line>:<col>` line
+# carries both halves the comparison needs.
+function reported_with_file(text: str) -> [str]
+    found: [str] @ []
+    pending: str @ ""
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "  at ")
+            if pending.len() > 0
+                rest = strings.without_prefix(text: row, prefix: "  at ")
+                parts = strings.split_on(text: rest, byte: 58)
+                if parts.len() > 2
+                    number = strings.to_number(parts[1])
+                    if !number.is_err()
+                        found @ found.push(parts[0] + ":" + number.must().to_str() + ":" + pending)
+                pending @ ""
+            continue
+        code = code_of(row)
+        if !code.is_err()
+            pending @ code.must()
+    return found
 
 # Both sides are compared as sorted `<line>:<code>` strings: Heroes sorts
 # numbers, strings and bools and not records (spec:172), and the pair is
@@ -83,12 +215,33 @@ function sorted(marks: [str]) -> [str]
     return marks.sort()
 
 # Every annotation in a case, with `#~v` resolved to the next line.
+#
+# **A MARK IS NOT A SENTENCE QUOTING ONE**, and this project has now paid
+# for that distinction twice. Step 1 of M-separate-compilation found the
+# `ORDER:` inventory was a grep returning **10 hits in 8 files, four of
+# them prose**; this function had the same hole, found the day the sweep
+# below started reading directories that contain README-shaped comments.
+# `externsignature/wrong.hero` explains in its header comment where its
+# annotation lives — and the sentence contains the two characters, so
+# every word after them was read as a diagnostic code: `annotation`,
+# `belongs`, `the`, `own`.
+#
+# The rule is one line and it is about position rather than vocabulary: a
+# row whose first non-blank character is `#` is PROSE unless the mark is
+# the very next thing. A real mark either opens its own comment (`#~ code`)
+# or trails code (`… -> i64    #~ ffi_return_type`), and in the second
+# case the row does not start with `#` at all. Filtering on what a code
+# looks like would not have worked here: `annotation` and `belongs` are
+# both perfectly good snake_case.
 function claimed_by(text: str) -> [str]
     found: [str] @ []
     rows = strings.lines(text)
     line: i64 @ 0
     for row in rows
         line @ line + 1
+        opener = strings.trimmed(row)
+        if strings.starts_with(text: opener, prefix: "#") && !strings.starts_with(text: opener, prefix: "#~")
+            continue
         at = strings.index_of(text: row, needle: "#~")
         if at.is_err()
             continue

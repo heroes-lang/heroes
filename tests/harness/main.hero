@@ -150,7 +150,7 @@ function main()
     # it takes no compiler at all — it is about whether the goldens agree
     # with themselves.
     if only == "" || only == "annotations"
-        got = suite_annotations.run_all(SCRATCH)
+        got = suite_annotations.run_all(scratch: SCRATCH, compiler: compiler)
         if got.is_err()
             print("harness: the annotations sweep could not run")
             exit(2)
