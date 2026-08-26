@@ -27,6 +27,7 @@ use resolved
 use resolve_state
 use resolve_errors
 use module_errors
+use resolve_binding
 
 # `geom.f(...)` — the receiver is a module this file names. Returns whether
 # it handled the expression; everything it does not handle falls through to
@@ -174,7 +175,7 @@ test "a local wearing the module's name turns the dot back into UFCS"
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", module: "geom")
     resolve_state.open_scope(@r)
-    _ = resolve_state.declare(@r, s, decls, token.Span(start: 0, end: 4), resolve_state.bind_binding(ty: fail("absent", "inferred"), value: 0))
+    _ = resolve_state.declare(@r, s, decls, token.Span(start: 0, end: 4), resolve_binding.bind_binding(ty: fail("absent", "inferred"), value: 0))
     handled = qualified(@r, a, s, decls, at: 0, receiver: receiver, called: token.Span(start: 5, end: 10))
     assert !handled
 

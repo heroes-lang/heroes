@@ -43,7 +43,7 @@ in the numbers that were re-measured.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs · **steps 1–8 done** — the compiler builds itself as 157 TUs, re-emits all 297 blessed emissions byte for byte, its cache no longer serves an object built against a header that has since changed, and the four instruments panel 093 owed are in the net, each one seen to fail first; what is open is the frontend, which the author has sent toward incremental |
+| **State** | four repairs · **steps 1–9 done** — the compiler builds itself as 157 TUs, re-emits all 297 blessed emissions byte for byte, its cache no longer serves an object built against a header that has since changed, the four instruments panel 093 owed are in the net, and the frontend went from **88 s to about 8** on the compiler's own source: four instances of one quadratic, no architecture change |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 25 of 36 · 25 tags |
 | The compiler | **39,507 lines** of Heroes in 162 files |
@@ -493,6 +493,33 @@ in its failing direction before the commit (§9). The one case no live tree can
 produce is the prototype **divergence** — the emitter writes both lines from
 one walk — so it is a test block over two hand-written lines, which is the
 only way to see it at all. Net **1171 → 1175**.
+
+**Step 9 — the frontend was one function, and `heroes check` on the compiler's
+own source goes from 88 s to about 8** (2026-08-26, author instruction *"rendi il
+più ottimizzato possibile il frontend"*). The answer to the open item was *make
+it incremental*; **the profile said it was not slow, it was quadratic**, and
+finding that out cost no architecture change at all. `sample` over `heroes check
+selfhost/main.hero`: **21,119 of 21,254 samples — 99.4% — inside
+`cursor.line_col`** and the three runtime calls it makes. `line_col` answers with
+a line NUMBER, so it walks from byte 0; `take_docs` asked it once per declaration
+and once per comment; the parse runs over the whole concatenated Source, so each
+call read up to a million bytes. **The rule the repair records: ask for the
+DISTANCE you need, not for the position you could derive it from.** `take_docs`
+wanted *is this comment one line above* and *does it start in the same column* —
+both local, both tens of bytes. **88.0 → 27.9 s.** The profile then named the
+same shape as the day before, one department over: `new_resolver` appended
+through a FIELD place once per expression in the program, so the in-place store
+never fired and every push copied the arena (**→ 11.2 s**); a systematic grep for
+`x.y @ x.y.push(` found three more, in `state.emit` (once per TOKEN) and twice in
+`resolve_state.declare` (**→ 5.2 s**). **Two files were split along seams, not
+squeezed**: `text_lines.hero` (it imports nothing) and `resolve_binding.hero`.
+**One inference was written and falsified before it reached the record** — that
+splitting would cost speed because clang cannot inline across a TU boundary:
+fused **9.90 s** against per-module **10.29 s**, inside the noise. And the noise
+is stated rather than hidden — repeated runs vary 5.2 s to 12.6 s for the same
+binary and input — so every number here is a minimum over its repetitions.
+Fixpoint verified on **793,526 lines** of emitted C, byte for byte; `heroes test
+selfhost/main.hero` **512** passed; the net **1175**, all green.
 
 #### What it does not deliver
 

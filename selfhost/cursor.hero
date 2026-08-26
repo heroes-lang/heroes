@@ -37,28 +37,14 @@
 use token
 use diag
 use describe
+use text_lines
 
 ## Reading the text
 
-# Line and column of a byte offset, both 1-based. The Rust side asks its
-# `Source` for this; the port computes it from the text, which is all `take_docs`
-# needs and keeps this file free of a `Source` the parser does not have yet.
-record Position
-    line: i64
-    col: i64
-
-function line_col(text: str, offset: i64) -> Position
-    line: i64 @ 1
-    col: i64 @ 1
-    i: i64 @ 0
-    while i < offset && i < text.len()
-        if text[i] == '\n'
-            line @ line + 1
-            col @ 1
-        else
-            col @ col + 1
-        i @ i + 1
-    return Position(line: line, col: col)
+# Line and column live in `text_lines.hero` — a seam, not a squeeze: reading
+# lines out of a text has nothing to do with tokens, and the file that does
+# it imports nothing at all. That module's own doc carries why three of its
+# four functions exist.
 
 function slice_of(text: str, span: token.Span) -> str
     return text.slice(from: span.start, to: span.end)
@@ -206,25 +192,28 @@ function skip_terminators(@c: Cursor)
 # line before. A `##` section heading ends the run: it documents the section,
 # not the declaration under it.
 function take_docs(@c: Cursor, text: str, decl: token.Span) -> [token.Span]
-    at_decl = line_col(text, decl.start)
-    wanted: i64 @ at_decl.line
+    # Counted UPWARD from the declaration instead of downward from byte 0:
+    # `wanted` is how many lines above it the next doc comment must sit, so
+    # the run is 1, 2, 3 … and nothing here needs a line number at all.
+    decl_col = text_lines.column_of(text, decl.start)
+    wanted: i64 @ 1
     docs: [token.Span] @ []
     i: i64 @ c.comments.len() - 1
     while i >= 0
         s = c.comments[i]
-        here = line_col(text, s.start)
-        if here.line >= at_decl.line
+        above = text_lines.lines_above(text: text, comment: s.start, decl: decl.start)
+        if above == 0
             # A trailing comment on the declaration's own line.
             i @ i - 1
             continue
-        if here.line + 1 != wanted || here.col != at_decl.col
+        if above != wanted || text_lines.column_of(text, s.start) != decl_col
             i @ -1
             continue
         if starts_a_section(slice_of(text, s))
             i @ -1
             continue
         docs @ docs.push(s)
-        wanted @ here.line
+        wanted @ wanted + 1
         i @ i - 1
     empty: [token.Span] = []
     c.comments @ empty
@@ -360,13 +349,8 @@ test "a section heading ends the run rather than documenting the declaration"
     assert docs.len() == 1
     assert slice_of(text, docs[0]) == "# doc"
 
-test "line and column are 1-based and count the newline"
-    text = "ab\ncd"
-    assert line_col(text, 0).line == 1
-    assert line_col(text, 0).col == 1
-    assert line_col(text, 1).col == 2
-    assert line_col(text, 3).line == 2
-    assert line_col(text, 3).col == 1
+
+
 
 ## Recovery — what to drop after a mistake
 

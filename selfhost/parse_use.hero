@@ -16,6 +16,7 @@
 
 use token
 use diag
+use text_lines
 use cursor
 use ast
 
@@ -74,8 +75,8 @@ function quoted_module(@c: cursor.Cursor, text: str)
 function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
     if cursor.at_reported_error(c)
         return
-    keyword_line = cursor.line_col(text, keyword.start).line
-    found_line = cursor.line_col(text, cursor.current_span(c).start).line
+    keyword_line = text_lines.line_col(text, keyword.start).line
+    found_line = text_lines.line_col(text, cursor.current_span(c).start).line
     message: str @ "`use` names one module and this line names none — `use geom`, which reads `geom.hero` beside this file"
     if keyword_line == found_line
         message @ "expected the module's name after `use`, found " + cursor.found(c, text) + " — `use geom`, which reads `geom.hero` beside this file"
