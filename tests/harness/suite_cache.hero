@@ -1,0 +1,177 @@
+# The build cache never serves an answer the world has moved past
+# (M-separate-compilation acceptance row 2; panel 093 R4/R5).
+#
+# WHY IT IS A SUITE AND NOT A GOLDEN. Every question here is about a
+# SECOND invocation: what the compiler does the time after this one,
+# with a file on disk changed in between. A golden is one argv and one
+# expected text, so none of this fits a row — the same reason
+# `suite_special` exists, one department over.
+#
+# WHAT IT PINS, and each one is a direction the cache can be wrong in:
+#
+# 1. **A header edit is not invisible.** The measured defect, 2026-08-26:
+#    `extern "conf.h"` with `constant CONF_LIMIT` emits `return
+#    CONF_LIMIT;` whatever the header says, so the emitted C is
+#    byte-identical across an edit and the key could not see it. The
+#    program printed `1` at exit 0 with the header saying `2`. A build
+#    system's worst outcome is a wrong answer that looks like a right
+#    one, and CLAUDE.md §12 puts stopping that ahead of everything else
+#    in this file.
+# 2. **The cache still HITS.** The cheapest way to pass (1) is to
+#    recompile every time, so (2) is what makes (1) worth anything: two
+#    builds with nothing touched leave every object exactly where it
+#    was, asked of the filesystem with `find -newer` rather than of a
+#    number the compiler prints about itself.
+# 3. **Only the module that READ the header is rebuilt.** This is
+#    acceptance row 1 seen from the cache's side: the header travels
+#    with the `extern` into exactly one translation unit, so an edit to
+#    it must move exactly one object. If it moved all of them the
+#    architecture would be sound and the cache pointless; if it moved
+#    none, (1) would be back.
+#
+# THE PROGRAM IS WRITTEN HERE rather than kept under
+# `tests/golden/surface-fixtures/`, and the header is why: the case is
+# about EDITING a C header, so the header is test data with three
+# versions and no single resting state. Keeping one in the repository
+# would also put a `.h` outside the three directories that own C, which
+# `suite_records.c_files` refuses by design.
+
+use report
+use shell
+use strings
+
+# Where the two-module program and its header live for the duration.
+# Under the scratch directory, so `heroes build`'s own `build/` (at the
+# repository root, where the harness runs) stays the one it always is.
+constant HOME: str
+    "cache-program"
+
+constant BIND: str
+    "extern \"conf.h\"\n    constant CONF_LIMIT: i64\n\nfunction limit() -> i64\n    return CONF_LIMIT\n"
+
+constant PROG: str
+    "use bind\n\nfunction main()\n    print(bind.limit())\n"
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    a_header_edit_is_not_invisible(@r, scratch: scratch, compiler: compiler)
+    an_untouched_build_still_hits(@r, scratch: scratch, compiler: compiler)
+    only_the_module_that_read_it_is_rebuilt(@r, scratch: scratch, compiler: compiler)
+    return ok(r)
+
+# The program, freshly laid down with the header at `value`. Returns
+# the directory it lives in.
+function laid_out(scratch: str, value: str) -> str?
+    dir = scratch + "/" + HOME
+    shell.remove_tree(dir)?
+    shell.mkdir_all(dir)?
+    write_file(path: dir + "/bind.hero", text: BIND)?
+    write_file(path: dir + "/prog.hero", text: PROG)?
+    write_header(dir: dir, value: value)?
+    return ok(dir)
+
+function write_header(dir: str, value: str) -> ()?
+    return write_file(path: dir + "/conf.h", text: "#define CONF_LIMIT " + value + "\n")
+
+# **A header edit is not invisible.** Three values in a row, and the
+# third is a repeat of nothing seen before so a two-entry cache cannot
+# pass by luck.
+function a_header_edit_is_not_invisible(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/a header edit is not invisible"
+    dir = laid_out(scratch: scratch, value: "1")
+    if dir.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
+        return
+    wrong: [str] @ []
+    for value in ["1", "2", "7", "2"]
+        if write_header(dir: dir.must(), value: value).is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot write the header")
+            return
+        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir.must() + "/prog.hero"))
+        if said.is_err() || said.must().code != 0
+            wrong @ wrong.push("    the header said " + value + " and the build did not run: " + said.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+            continue
+        if said.must().out != value + "\n"
+            wrong @ wrong.push("    the header said " + value + " and the program printed " + strings.trimmed(said.must().out) + " — a cached object built against an older header")
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  the key cannot see a header edit by construction (the emitted C is identical), so what stands between this and a wrong answer at exit 0 is `cli_deps`: clang's own dependency listing, recorded per object and re-checked before a warm one is served.")
+    else
+        report.keep_pass(@r)
+
+# **The cache still hits.** Recompiling everything would pass the case
+# above and cost the whole architecture, so this is the other half of
+# the same claim. Asked of the filesystem: after a build, a marker; then
+# a second build that touches nothing; then no object may be newer than
+# the marker.
+function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/an untouched build still hits"
+    dir = laid_out(scratch: scratch, value: "3")
+    if dir.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
+        return
+    first = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    if first.is_err() || first.must().code != 0
+        report.keep_failure(@r, label: label, detail: "  the first build did not run")
+        return
+    moved = objects_newer_than(scratch: scratch, marker: dir.must() + "/marker", command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    if moved.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot ask the filesystem which objects moved")
+        return
+    if moved.must().len() > 0
+        report.keep_failure(@r, label: label, detail: "  nothing was edited and these objects were rebuilt:\n    " + moved.must().join("\n    ") + "\n  A cache that misses on every build passes the header case above for the worst possible reason.")
+    else
+        report.keep_pass(@r)
+
+# **Only the module that read the header is rebuilt.** Acceptance row 1
+# from the cache's side: the header reaches exactly one translation
+# unit, so an edit to it moves exactly one object.
+function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/only the module that read it is rebuilt"
+    dir = laid_out(scratch: scratch, value: "4")
+    if dir.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
+        return
+    first = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    if first.is_err() || first.must().code != 0
+        report.keep_failure(@r, label: label, detail: "  the first build did not run")
+        return
+    if write_header(dir: dir.must(), value: "5").is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot rewrite the header")
+        return
+    moved = objects_newer_than(scratch: scratch, marker: dir.must() + "/marker", command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir.must() + "/prog.hero"))
+    if moved.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot ask the filesystem which objects moved")
+        return
+    names: [str] @ []
+    for path in moved.must()
+        names @ names.push(strings.base_name(path))
+    only = names.sort()
+    if only.len() != 1 || only[0] != "bind.o"
+        report.keep_failure(@r, label: label, detail: "  the header edit should move `bind.o` and nothing else — it moved:\n    " + only.join("\n    ") + "\n  Nothing means the edit was invisible; everything means the header reached translation units that never declared the `extern`.")
+    else
+        report.keep_pass(@r)
+
+# Run `command`, and answer which object files under `build/` came out
+# of it newer than a marker written just before.
+#
+# `find -newer` rather than a timestamp read and compared: the harness
+# has no clock, and the question is a comparison between two files
+# rather than a moment in time. The marker is written first and the
+# command runs after it, so anything newer was written by the command.
+function objects_newer_than(scratch: str, marker: str, command: str) -> [str]?
+    touched = shell.run(scratch: scratch, command: "touch " + shell.sq(marker))
+    if touched.is_err() || touched.must().code != 0
+        return fail("cannot_run", "cannot write the marker at " + marker)
+    ran = shell.run(scratch: scratch, command: command)
+    if ran.is_err() || ran.must().code != 0
+        return fail("cannot_run", "the build did not run: " + ran.default(shell.Run(code: -1, out: "", err: "cannot run")).err)
+    listed = shell.run(scratch: scratch, command: "find build -name '*.o' -newer " + shell.sq(marker))
+    if listed.is_err()
+        return fail("cannot_run", "cannot list what moved under build/")
+    out: [str] @ []
+    for row in strings.lines(listed.must().out)
+        # The runtime's own object is not in scope: it is keyed on the
+        # runtime's contents and nothing here edits those.
+        if row.len() > 0 && !strings.starts_with(text: strings.base_name(row), prefix: "runtime-")
+            out @ out.push(row)
+    return ok(out.sort())

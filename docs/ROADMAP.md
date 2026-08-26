@@ -43,15 +43,15 @@ in the numbers that were re-measured.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs · **steps 1–6 done** — the compiler builds itself as 157 TUs and re-emits all 297 blessed emissions byte for byte; what is open is the author's call on a per-module build that is still slower than the fused one |
+| **State** | four repairs · **steps 1–7 done** — the compiler builds itself as 157 TUs, re-emits all 297 blessed emissions byte for byte, and its cache no longer serves an object built against a header that has since changed; what is open is the author's call on a per-module build that is still slower than the fused one |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 25 of 36 · 25 tags |
-| The compiler | **39,195 lines** of Heroes in 161 files |
-| The seed | **788,406** lines of generated C — the whole way in |
+| The compiler | **39,507 lines** of Heroes in 162 files |
+| The seed | **792,357** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 15 |
 | Panels held | **92** · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **6 decisions** in `DECIDE.md` · 10 assigned in `SCHEDULED.md` · 269 in `LEARN.md` (never a gate) |
+| Waiting on the author | **6 decisions** in `DECIDE.md` · 9 assigned in `SCHEDULED.md` · 273 in `LEARN.md` (never a gate) |
 
 ---
 
@@ -417,6 +417,57 @@ points now take the array itself and their 56 call sites pass `@a.exprs`.
 Measured: `heroes check` on the compiler's own source **191 s → 88 s**, its own
 tests **3m39s → 2m15s**, the seed's emission **224 s → 120 s**. No language
 change, three lines.
+
+**Step 7 — the cache stops serving an object built against a header that has
+since changed** (2026-08-26, acceptance row 2's second half). **The defect was
+measured before the repair and it was a wrong answer at exit 0**: a two-module
+program whose `extern "conf.h"` group declares `constant CONF_LIMIT` printed `1`
+with the header on disk saying `2`, and `1` again with it saying `7`. The cause
+is structural rather than an oversight — the accessor emits `return CONF_LIMIT;`
+whatever the header holds, so the emitted C is byte-identical across the edit and
+a key that contains the whole emitted C is blind to it **by construction**. The
+repair is **clang's own dependency listing** (`-MD`), riding the compile that is
+already happening: each translation unit records every file it opened,
+transitively, with a content digest, and a warm object is served only when all of
+them still hash the same. **The comment that stood in `cli_units.hero` saying the
+fused path had the same gap was FALSE**, measured both ways on the same witness:
+the fused path recompiles its unit on every call, so it caught the edit and this
+was the only path that missed it. Three instruments land in
+`tests/harness/suite_cache.hero` — a header edit is not invisible, an untouched
+build still hits, and an edit moves exactly the objects that read the edited file
+— and all three were run against a compiler built from the **previous** seed
+before they were believed: **2 of 3 red there, 3 of 3 green here**.
+
+**What it costs, measured back to back against the pre-step-7 binary** (four
+timings inside fifteen minutes, one machine, one source tree): the per-module
+self-build is **cold 142.29 s → 145.53 s (+3.2 s, +2.3%)** and **warm 133.08 s →
+132.68 s (unchanged)**. The freshness check is the half that runs on every warm
+build and it costs nothing measurable; the cold build pays about three seconds for
+157 depfile writes and one pass over the 797 KB of headers a TU reaches. That is
+the price of never serving a stale object, and §12 puts it ahead of speed by name.
+**One thing the step was believed to save and does not**: taking `runtime_text`
+out of the per-TU loop removes 157 shell `cat` calls and 25 MB of hashing per
+build — the count is real and re-measured — and the two warm numbers are the same
+to within 0.4 s. The work removed was not where the seconds were. It stays because
+it is less work for the same answer, not because it bought time.
+
+**And the same repair reached the adjacent shape before the commit, which is
+CLAUDE.md §1's fourth clause spent rather than quoted.** This compiler caches
+**two** objects, and the runtime's had the identical hole: keyed on the runtime's
+own sources and on nothing else, so `runtime.c` including `<stdio.h>` was outside
+the key — and that failure is *worse* than the one that provoked the work, because
+every TU rebuilds against changed system headers while this object does not, which
+is a libc ABI mismatch inside one binary reached with nobody touching a line of
+Heroes. **The language then chose where the code lives**: `cli_toolchain` must ask
+`cli_deps`, `cli_deps` must hash a file, and `digest` lived in `cli_toolchain` — a
+module cycle, which Heroes refuses on the `use` edge whatever it carries. So
+`digest`/`hex8` are `selfhost/cli_digest.hero` now, which is where §11's
+single-concern rule puts them anyway. Panel 031 R6's *"reversible direction"*
+paying for itself in the small. A third thing fell out and was not the point:
+`Toolchain.fingerprint` is the **Heroes** version (`0.0.1`) and never clang's, so
+a clang upgrade alone never moved any key — and now it does, because clang's
+builtin headers sit under a versioned path (`…/clang/21/include/stdbool.h`) that
+every listing records.
 
 #### What it does not deliver
 

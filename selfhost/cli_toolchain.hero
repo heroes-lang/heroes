@@ -15,12 +15,11 @@
 #   (§1.11 eating its own cooking), with stderr redirected to a file
 #   under build/ and read back — which is what keeps the ffi error
 #   mapping working.
-# - the digest is TWO polynomial hashes (bases 131 and 137, mod
-#   2^31-1, the mangler's own math) rather than FNV-64: Heroes
-#   arithmetic ABORTS on overflow by design, so wrapping u64
-#   multiplication is not a thing this language says — 62 bits of key
-#   against the bootstrap's 64, cache names differ from the
-#   bootstrap's, and nothing compares them.
+# - the digest is `cli_digest.digest` — two polynomial hashes rather
+#   than FNV-64, with the reason in that file. It left this one on
+#   2026-08-26 because the runtime object's freshness check needs
+#   `cli_deps`, `cli_deps` needs to hash a file, and Heroes refuses
+#   module cycles.
 # - the compiler fingerprint and the runtime hint arrive as PARAMETERS
 #   from the driver: the language has no current_exe and no getenv
 #   (yet — the DECIDE entry owns the question).
@@ -29,6 +28,8 @@
 #   same fact, same key, different plumbing.
 
 use cli_io
+use cli_deps
+use cli_digest
 use cli_flags
 use cli_shell
 
@@ -36,6 +37,12 @@ record Toolchain
     runtime: str
     build: str
     fingerprint: str
+    # The runtime's whole contents, already hashed. It is a FIELD and
+    # not a call because the per-module path asks for it once per
+    # translation unit: on the compiler's own source that was 157 shell
+    # `cat` invocations and 25 MB of hashing (162 KB × 157) for one
+    # answer that cannot change during a build. Located once, here.
+    runtime_key: str
 
 # Locate the runtime, or say the places it looked. The search is why
 # the ABI stamp exists: a decoy runtime/ compiled with zero warnings
@@ -48,7 +55,7 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
     candidates @ candidates.push("runtime")
     for candidate in candidates
         if !read_file(candidate + "/heroes_runtime.h").is_err() && !read_file(candidate + "/runtime.c").is_err()
-            return ok(Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint))
+            return ok(Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint, runtime_key: cli_digest.digest(runtime_text(runtime: candidate, build: "build"))))
     return fail("failed", "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is")
 
 # Run one clang line, stderr captured to a file and read back. clang's
@@ -93,42 +100,19 @@ function mkdir_all(path: str) -> ()?
         return fail("failed", "cannot create " + path)
     return ok()
 
-# Two polynomial hashes over the bytes' chars, sixteen hex digits —
-# deterministic across runs and machines, no seed, which BTreeMap-only
-# (CLAUDE.md §5) exists to guarantee for the same reason.
-function digest(text: str) -> str
-    m = 2147483647
-    a: i64 @ 0
-    b: i64 @ 0
-    index: i64 @ 0
-    while index < text.len()
-        v = text[index].to_i64().must()
-        a @ (a * 131 + v) % m
-        b @ (b * 137 + v) % m
-        index @ index + 1
-    return hex8(a) + hex8(b)
-
-function hex8(number: i64) -> str
-    ds = "0123456789abcdef"
-    out: str @ ""
-    value: i64 @ number
-    count: i64 @ 0
-    while count < 8
-        d = value % 16
-        out @ ds.slice(from: d, to: d + 1) + out
-        value @ value / 16
-        count @ count + 1
-    return out
-
 # The runtime's whole contents — EVERY file, not the two entry points:
 # runtime.c is assembled from parts/, so hashing only the file clang
 # is handed would let a part be edited with the cached object still
 # used. The shell's glob order is sorted, so the key is a function of
 # the contents and not of readdir order.
-function runtime_text(t: Toolchain) -> str
-    gathered = t.build + "/runtime-sources.txt"
-    _ = mkdir_all(t.build)
-    _ = cli_shell.shell(command: "cat " + cli_shell.sq(t.runtime) + "/*.c " + cli_shell.sq(t.runtime) + "/*.h " + cli_shell.sq(t.runtime) + "/parts/*.c " + cli_shell.sq(t.runtime) + "/parts/*.h > " + cli_shell.sq(gathered) + " 2>/dev/null")
+#
+# It takes the two strings rather than the Toolchain because it is what
+# BUILDS one: `locate_toolchain` calls it to fill `runtime_key`, and
+# every other caller reads that field instead.
+function runtime_text(runtime: str, build: str) -> str
+    gathered = build + "/runtime-sources.txt"
+    _ = mkdir_all(build)
+    _ = cli_shell.shell(command: "cat " + cli_shell.sq(runtime) + "/*.c " + cli_shell.sq(runtime) + "/*.h " + cli_shell.sq(runtime) + "/parts/*.c " + cli_shell.sq(runtime) + "/parts/*.h > " + cli_shell.sq(gathered) + " 2>/dev/null")
     found = read_file(gathered)
     if found.is_err()
         return ""
@@ -143,7 +127,7 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
     san: str @ ""
     if sanitize
         san @ "+san"
-    key = digest(t.fingerprint + "|" + level_key + san + "|" + source_name + "|" + text + "|" + runtime_text(t) + search)
+    key = cli_digest.digest(t.fingerprint + "|" + level_key + san + "|" + source_name + "|" + text + "|" + t.runtime_key + search)
     dir = t.build + "/" + key
     made = mkdir_all(dir)
     if made.is_err()
@@ -156,19 +140,37 @@ function dir_for(t: Toolchain, source_name: str, text: str, level_key: str, sani
 # wrong reason. Staged beside and moved into place: mv inside one
 # directory is atomic on POSIX, and whoever wins the race published
 # byte-for-byte our object, because the key covers everything.
+#
+# **The key covers the runtime's own sources and nothing else, so the
+# C HEADERS `runtime.c` includes were outside it** — the same hole the
+# per-module cache had, one level over, and this one is worse when it
+# fires: every translation unit rebuilds against the new headers while
+# this object does not, which is a libc ABI mismatch inside a single
+# binary and needs nobody to have touched a line of Heroes. So it
+# records what clang opened, exactly as `cli_units.tu_object` does, and
+# `skip` is the runtime's own directory because `runtime_key` already
+# hashes every byte of it (CLAUDE.md §1: a repair is attacked at the
+# shapes next to the one that provoked it, before the commit).
 function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
-    key = digest(t.fingerprint + "|" + level + "|" + bool_text(sanitize) + "|" + runtime_text(t))
+    key = cli_digest.digest(t.fingerprint + "|" + level + "|" + bool_text(sanitize) + "|" + t.runtime_key)
     made = mkdir_all(t.build)
     if made.is_err()
         return fail("failed", "cannot create " + t.build)
     object = t.build + "/runtime-" + key + ".o"
-    if exists(object)
+    memo: {str: str} @ {}
+    if exists(object) && cli_deps.fresh(cli_deps.record_for(object), @memo)
         return ok(object)
+    depfile = object + ".d"
     staged = object + ".tmp"
-    line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c " + cli_shell.sq(t.runtime + "/runtime.c") + " -I " + cli_shell.sq(t.runtime) + " -o " + cli_shell.sq(staged)
+    line: str @ "clang " + words(cli_flags.flags()) + " " + level + " " + words(cli_flags.sanitizers(sanitize: sanitize)) + " -c -MD -MT dep -MF " + cli_shell.sq(depfile) + " " + cli_shell.sq(t.runtime + "/runtime.c") + " -I " + cli_shell.sq(t.runtime) + " -o " + cli_shell.sq(staged)
     ran = run_clang(line: line, what: "compiling the runtime", err_path: t.build + "/clang-stderr.txt")
     if ran.is_err()
         ran?
+    # Recorded before the object is published, so an object on disk is
+    # never one this cache cannot justify serving.
+    recorded = cli_deps.record_deps(record_path: cli_deps.record_for(object), depfile: depfile, skip: t.runtime + "/", @memo)
+    if recorded.is_err()
+        return fail("failed", "cannot record what the runtime's translation unit read")
     if cli_shell.shell(command: "mv -f " + cli_shell.sq(staged) + " " + cli_shell.sq(object)) != 0
         return fail("failed", "cannot publish " + object)
     return ok(object)
@@ -248,9 +250,6 @@ function starts_with(text: str, prefix: str) -> bool
 ## Tests
 
 test "digesting and probing — the shell spoken safely"
-    assert digest(text: "abc") == digest(text: "abc")
-    assert digest(text: "abc") != digest(text: "abd")
-    assert digest(text: "").len() == 16
     assert starts_with(text: "-I/opt", prefix: "-I")
     assert !starts_with(text: "-L/opt", prefix: "-I")
     assert is_directory(path: "runtime")

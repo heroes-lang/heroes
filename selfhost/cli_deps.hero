@@ -1,0 +1,307 @@
+# What a translation unit READ, and whether it still says the same
+# thing (M-separate-compilation acceptance row 2's second half; panel
+# 093 R4, which names "extern headers' contents" as part of the key).
+#
+# THE HOLE THIS CLOSES, measured before it was written. A two-module
+# program whose `extern "conf.h"` group declares `constant CONF_LIMIT`
+# printed `1` at exit 0 with the header on disk saying `2`: the emitted
+# C is byte-identical either way — the accessor is `return CONF_LIMIT;`
+# — so the per-TU key could not see the edit and the warm object was
+# reused. A wrong answer at exit 0 is the worst outcome a build system
+# has, and CLAUDE.md §12 puts it ahead of every other criterion here.
+#
+# WHY CLANG'S OWN LISTING AND NOT THE GROUP'S HEADER NAMES. A header
+# includes other headers, so hashing the names an `extern` writes down
+# would miss the file one level below — and resolving `<sqlite3.h>` to a
+# path means re-implementing the include search. `-MD` makes clang say
+# which files it actually opened, transitively, with the paths it
+# actually used; that is a fact about the compilation in hand rather
+# than a premise about the world (CLAUDE.md §11). It rides the compile
+# that is happening anyway: no second clang invocation.
+#
+# WHY BESIDE THE OBJECT AND NOT IN THE DIRECTORY NAME. The key names
+# the directory, and the directory has to be known BEFORE clang runs —
+# but the header set is only known after. R4's guarantee is that a
+# stale object is never reused, and a recorded digest per dependency
+# gives exactly that: the object is served only when every file it read
+# still hashes the same. What is given up is directory retention (two
+# versions of a header do not keep two objects), which costs a
+# recompile and never an answer.
+#
+# TWO OBJECTS ARE CACHED IN THIS COMPILER AND BOTH USE THIS, because
+# the second is the first's adjacent shape and CLAUDE.md §1 says a
+# repair is attacked there before it is committed. A translation unit's
+# object is the case above. The **runtime's** object is keyed on the
+# runtime's own sources and on nothing else, so `runtime.c` including
+# `<stdio.h>` had the identical hole one level over — and its failure
+# is the loudest kind there is: every TU recompiles against the new
+# headers while the runtime object does not, which is a libc ABI
+# mismatch inside one binary. Nobody had to change a line of Heroes for
+# that to happen.
+#
+# AND IT CATCHES A CLANG UPGRADE, which was not the point and is worth
+# writing down. `Toolchain.fingerprint` is the HEROES version (`0.0.1`)
+# rather than clang's, so a new clang alone never moved the key. Its
+# builtin headers live under a versioned path
+# (`.../clang/21/include/stdbool.h`), which every listing records, so a
+# major-version bump makes that path vanish, `digest_of` answers
+# `absent`, and everything rebuilds. That is a side effect of asking
+# the right question, not a design — a clang whose headers keep their
+# path and change their contents is caught by the digest instead, and
+# one that changes neither cannot matter.
+#
+# THE FALLBACKS ALL POINT THE LOUD WAY (CLAUDE.md §11). No record, an
+# unreadable record, a short line, a vanished header: every one of them
+# is "not fresh", which recompiles. Nothing here can turn a miss into a
+# hit.
+
+use cli_digest
+use cli_shell
+
+# What a record is called, given the object it stands beside. One line
+# per dependency, `<digest> <path>`.
+function record_for(object: str) -> str
+    return object + ".deps.txt"
+
+# One file's content digest, computed at most once per build.
+#
+# The memo is what makes this affordable: the 39 headers a trivial
+# program reaches are 797 KB, and 157 translation units sharing them
+# would be 125 MB of hashing per warm build (measured at ~1.2 MB/s,
+# which is 104 s). Read once, hashed once, answered 157 times.
+#
+# A file that cannot be read answers `absent` rather than a digest, and
+# that is a valid answer rather than an error: a header that vanished
+# must invalidate the object. It cannot collide with a real digest,
+# which is always sixteen hex characters.
+function digest_of(path: str, @memo: {str: str}) -> str
+    known = memo[path]
+    if !known.is_err()
+        return known.must()
+    text = read_file(path)
+    answer: str @ "absent"
+    if !text.is_err()
+        answer @ cli_digest.digest(text.must())
+    memo[path] @ answer
+    return answer
+
+# Every path in one of clang's Make-style dependency files.
+#
+# The shape, with `-MT dep` so the target is a word we chose rather
+# than a path we would have to un-parse:
+#
+#     dep: /a/tu.c /usr/include/stdio.h \
+#       /usr/include/sys/cdefs.h
+#
+# Two escapes matter and both are read as bytes rather than guessed at:
+# `\` at the end of a line folds the list, and `\ ` is a literal space
+# inside a path — macOS puts them in SDK paths. Everything up to the
+# first `:` is the target and is dropped.
+function paths_of(text: str) -> [str]
+    out: [str] @ []
+    piece: str @ ""
+    start: i64 @ 0
+    index: i64 @ 0
+    seen_target: bool @ false
+    while index < text.len() && !seen_target
+        if text[index] == 58
+            seen_target @ true
+        index @ index + 1
+    start @ index
+    while index < text.len()
+        byte = text[index]
+        if byte == 92 && index + 1 < text.len() && text[index + 1] == 32
+            piece @ piece + text.slice(from: start, to: index) + " "
+            index @ index + 2
+            start @ index
+            continue
+        if byte == 92 || byte == 32 || byte == 9 || byte == 10 || byte == 13
+            piece @ piece + text.slice(from: start, to: index)
+            if piece.len() > 0
+                out @ out.push(piece)
+                piece @ ""
+            index @ index + 1
+            start @ index
+            continue
+        index @ index + 1
+    piece @ piece + text.slice(from: start, to: text.len())
+    if piece.len() > 0
+        out @ out.push(piece)
+    return out
+
+# Write the record beside a freshly built object.
+#
+# **`skip` names what the KEY already covers**, and the caller says what
+# that is because only the caller knows. It is asked of the path rather
+# than assumed of a position in the listing. Both callers have one:
+# a translation unit's `.c` lives in the directory the key names, so it
+# cannot change without the object landing somewhere else entirely
+# (~90 KB per module — recording it would hash 14 MB per build of this
+# compiler to re-answer a question the directory name settled); the
+# runtime's own sources are hashed whole into `Toolchain.runtime_key`.
+#
+# A path holding a newline would write a line the reader cannot parse.
+# That is safe by construction rather than by luck: the reader treats
+# anything it cannot parse as not fresh, so such an object is rebuilt
+# every time instead of being served stale.
+function record_deps(record_path: str, depfile: str, skip: str, @memo: {str: str}) -> ()?
+    listing = read_file(depfile)
+    if listing.is_err()
+        return fail("failed", "clang wrote no dependency listing at " + depfile)
+    rows: [str] @ []
+    for path in paths_of(listing.must())
+        if under(path: path, prefix: skip)
+            continue
+        rows @ rows.push(digest_of(path, @memo) + " " + path)
+    return write_file(path: record_path, text: rows.join("\n"))
+
+# Prefix test by BYTES, never by slicing: a path is arbitrary UTF-8 and
+# `slice` aborts where it would split a character (spec:151), so cutting
+# a path at the prefix's length is a crash waiting for a directory with
+# an accent in its name. Comparing bytes cannot abort.
+function under(path: str, prefix: str) -> bool
+    if path.len() < prefix.len()
+        return false
+    index: i64 @ 0
+    while index < prefix.len()
+        if path[index] != prefix[index]
+            return false
+        index @ index + 1
+    return true
+
+# Whether every file this object was built from still says the same
+# thing. False means recompile — including when there is no record at
+# all, which is what an object built before this existed looks like.
+function fresh(record_path: str, @memo: {str: str}) -> bool
+    kept = read_file(record_path)
+    if kept.is_err()
+        return false
+    for row in lines(kept.must())
+        if row.len() == 0
+            continue
+        # `<16 hex><space><path>`, and the SPACE is checked before
+        # anything is sliced. Not tidiness: `slice` aborts where it
+        # would split a character (spec:151), so cutting at byte 17 of
+        # a line this format did not write is a crash. A space at 16
+        # makes 16 and 17 character boundaries, because a space is one
+        # whole character and the byte after it begins the next.
+        # The line that can reach here unrecognised is a path holding a
+        # newline, which `lines` splits in two — and this sends it to
+        # the loud side: not fresh, recompile.
+        if row.len() < 18 || row[16] != 32
+            return false
+        if digest_of(row.slice(from: 17, to: row.len()), @memo) != row.slice(from: 0, to: 16)
+            return false
+    return true
+
+function lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    index: i64 @ 0
+    while index < text.len()
+        if text[index] == 10
+            out @ out.push(text.slice(from: start, to: index))
+            start @ index + 1
+        index @ index + 1
+    out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+test "a dependency listing gives up its paths, target dropped"
+    got = paths_of("dep: /a/tu.c /usr/include/stdio.h\n")
+    assert got.len() == 2
+    assert got[0] == "/a/tu.c"
+    assert got[1] == "/usr/include/stdio.h"
+
+test "a folded listing is one list"
+    got = paths_of("dep: /a.h \\\n  /b.h \\\n  /c.h\n")
+    assert got.len() == 3
+    assert got[2] == "/c.h"
+
+test "an escaped space stays inside its path"
+    got = paths_of("dep: /Applications/Xcode\\ 16.app/x.h /b.h\n")
+    assert got.len() == 2
+    assert got[0] == "/Applications/Xcode 16.app/x.h"
+    assert got[1] == "/b.h"
+
+test "an empty listing has no paths"
+    assert paths_of("").len() == 0
+    assert paths_of("dep:\n").len() == 0
+
+test "a file that is not there answers absent, not a digest"
+    memo: {str: str} @ {}
+    assert digest_of("selfhost/no-such-file-exists.h", @memo) == "absent"
+    assert memo.len() == 1
+
+test "a digest is asked of the file once"
+    memo: {str: str} @ {}
+    first = digest_of("runtime/heroes_runtime.h", @memo)
+    assert first.len() == 16
+    assert digest_of("runtime/heroes_runtime.h", @memo) == first
+    assert memo.len() == 1
+
+test "no record means not fresh"
+    memo: {str: str} @ {}
+    assert !fresh("selfhost/no-such-directory/deps.txt", @memo)
+
+# The invariant itself, made to fire (CLAUDE.md §9): a record written
+# over a file is fresh, and stops being fresh the moment the file's
+# bytes change. Nothing here goes through clang — the dependency
+# listing is hand-written, because what is under test is the record.
+test "a record goes stale when what it recorded changes"
+    dir = "build/selftest-deps"
+    _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
+    # OUTSIDE `dir` on purpose: what lives under the key's own
+    # directory is deliberately not recorded, so a watched file placed
+    # in there would make this case pass for the wrong reason — which
+    # is exactly what it did when this test was first written.
+    watched = "build/selftest-deps-watched.h"
+    _ = write_file(path: watched, text: "#define LIMIT 1\n")
+    _ = write_file(path: dir + "/listing.d", text: "dep: " + watched + "\n")
+    writing: {str: str} @ {}
+    assert !record_deps(record_path: dir + "/deps.txt", depfile: dir + "/listing.d", skip: dir + "/", @writing).is_err()
+    reading: {str: str} @ {}
+    assert fresh(dir + "/deps.txt", @reading)
+    _ = write_file(path: watched, text: "#define LIMIT 2\n")
+    after: {str: str} @ {}
+    assert !fresh(dir + "/deps.txt", @after)
+
+test "a prefix test on a path with an accent in it does not abort"
+    assert under(path: "build/tu-1/x.c", prefix: "build/tu-1/")
+    assert !under(path: "build/tu-2/x.c", prefix: "build/tu-1/")
+    assert !under(path: "/a", prefix: "/abc")
+    # A genuine prefix that stops mid-`à`, and two paths that differ
+    # INSIDE a multi-byte character. Cutting either with `slice` at the
+    # prefix's length would abort (spec:151); comparing bytes answers.
+    assert under(path: "/Cartellà/x.h", prefix: "/Cartel")
+    assert !under(path: "/Cartellá/x.h", prefix: "/Cartellà/")
+
+test "what the key already names is not recorded"
+    dir = "build/selftest-deps-own"
+    _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
+    _ = write_file(path: dir + "/watched.h", text: "#define X 1\n")
+    _ = write_file(path: dir + "/listing.d", text: "dep: " + dir + "/unit.c " + dir + "/watched.h\n")
+    memo: {str: str} @ {}
+    assert !record_deps(record_path: dir + "/deps.txt", depfile: dir + "/listing.d", skip: dir + "/", @memo).is_err()
+    # Both paths are inside the keyed directory, so the record is empty
+    # and the memo was never asked about either.
+    written = read_file(dir + "/deps.txt")
+    assert !written.is_err()
+    assert written.must().len() == 0
+    assert memo.len() == 0
+
+test "a record line this format did not write is not fresh, and does not abort"
+    dir = "build/selftest-deps-shape"
+    _ = cli_shell.shell(command: "mkdir -p " + cli_shell.sq(dir))
+    memo: {str: str} @ {}
+    # A path with a newline in it, which is what `lines` would hand
+    # back in two pieces — the second piece has no digest and no space
+    # at byte 16, and slicing it at 17 would split the `à`.
+    _ = write_file(path: dir + "/deps.txt", text: "0123456789abcdef /a/b.h\nCartellà-continued-name.h\n")
+    assert !fresh(dir + "/deps.txt", @memo)
+    _ = write_file(path: dir + "/deps.txt", text: "short\n")
+    assert !fresh(dir + "/deps.txt", @memo)
+
+test "text splits into lines, the last one without a newline"
+    got = lines("a\nbb\nccc")
+    assert got.len() == 3
+    assert got[1] == "bb"

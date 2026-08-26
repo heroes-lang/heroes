@@ -49,6 +49,9 @@
 #                 compilers agreed on (M-bootstrap-archive step 1)
 #   descriptors   every descriptor the blessed C names is defined in it,
 #                 and every one it defines is named — both directions
+#   cache         the per-module build cache: a header edit is not
+#                 invisible, an untouched build still hits, and an edit
+#                 moves exactly the objects that read the edited file
 #
 # Nothing is left in Rust that this cannot ask. The last one to arrive was
 # `emission`, and it is the only suite here whose ancestor could not be
@@ -58,6 +61,7 @@
 use report
 use shell
 use suite_annotations
+use suite_cache
 use suite_corpus
 use suite_descriptors
 use suite_determinism
@@ -178,6 +182,17 @@ function main()
             print("harness: the descriptors suite could not run")
             exit(2)
         print("  descriptors: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The per-module build cache, asked across TWO invocations with a
+    # file edited in between — the one question no golden row can put.
+    if only == "" || only == "cache"
+        got = suite_cache.run_all(scratch: SCRATCH, compiler: compiler)
+        if got.is_err()
+            print("harness: the cache suite could not run")
+            exit(2)
+        print("  cache: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
