@@ -43,7 +43,7 @@ in the numbers that were re-measured.
 | | |
 |---|---|
 | **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs · **steps 1–7 done** — the compiler builds itself as 157 TUs, re-emits all 297 blessed emissions byte for byte, and its cache no longer serves an object built against a header that has since changed; what is open is the author's call on a per-module build that is still slower than the fused one |
+| **State** | four repairs · **steps 1–8 done** — the compiler builds itself as 157 TUs, re-emits all 297 blessed emissions byte for byte, its cache no longer serves an object built against a header that has since changed, and the four instruments panel 093 owed are in the net, each one seen to fail first; what is open is the frontend, which the author has sent toward incremental |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
 | Milestones closed | 25 of 36 · 25 tags |
 | The compiler | **39,507 lines** of Heroes in 162 files |
@@ -469,14 +469,48 @@ a clang upgrade alone never moved any key — and now it does, because clang's
 builtin headers sit under a versioned path (`…/clang/21/include/stdbool.h`) that
 every listing records.
 
+**Step 8 — the four instruments the sitting owed, each one seen to fail
+first** (2026-08-26). Panel 093's resolution ends by naming what the
+architecture owes in tests, and steps 6 and 7 landed the mechanisms while
+that line stayed open. All four are failures with **no diagnostic and no
+crash**: a wobbling TU is worse here than on the fused path because the
+emitted text *is* the cache key, so two spellings of one module are two
+directories and a cache that can never hit; a caller compiling a prototype
+the definition does not have links, runs, and returns garbage at exit 0; a
+copied runtime descriptor gives one type two identities inside one binary,
+and identity is what `==` and `hash` walk through. **The tag-reorder witness
+was measured to have teeth rather than assumed to**: three orderings of a
+three-case variant put `h_hue_Colour_tag_blue` at **2, then 0, then 1** in
+the *caller's* own emitted C, each under a different key — so a key blind to
+the tag enum hands the second build an object switching on 2 while the module
+says 0, and the program prints `red` at exit 0. **The determinism case
+carries a guard against itself**: a warm build writes no `.c`, so the check
+deletes the cached objects before each of its two emissions, and if that
+deletion ever stopped working the suite would compare a file with itself and
+report three green cases having asked nothing — so the forget is asserted
+between the builds, and disabling it turns all three red. Every check was run
+in its failing direction before the commit (§9). The one case no live tree can
+produce is the prototype **divergence** — the emitter writes both lines from
+one walk — so it is a test block over two hand-written lines, which is the
+only way to see it at all. Net **1171 → 1175**.
+
 #### What it does not deliver
 
 **Measured and queued rather than glossed**: the per-module build is **slower**
-than the fused one on every invocation today — cold 261 s, fully warm 250 s,
-against ≈123 s fused — because the frontend is 83% of a build and the cache can
-only ever save the **4.3 s** clang spends on 788,406 lines. The cache itself
-works (162 directories after two identical builds, not 314). The decision that
-follows is the author's and it is in `SCHEDULED.md` with the numbers.
+than the fused one on every invocation today. Re-measured at step 7's close,
+four timings inside fifteen minutes on one machine and one tree: per-module
+**cold 145.5 s**, **fully warm 132.7 s**, against **≈124 s** fused (`--emit-c`
+120.5 s + one clang line over the seed 3.7 s). The pair this section carried
+until 2026-08-26 — cold 261 s, warm 250 s — is **not reproducible on today's
+tree** and is 1.9× the same command's number; no cause is asserted, because none
+was measured. The gap is therefore **8.7 s and not 127**, which is a different
+question with the same shape: the frontend is **83% of a build**, so a warm
+rebuild re-parses and re-checks all 158 modules whatever the cache holds, and
+the cache can only ever save the clang seconds. The cache itself works (162
+directories after two identical builds, not 314). **The author's answer,
+2026-08-26: make the frontend incremental** — the one direction that changes the
+ratio rather than the constant. It is an architecture change, so it goes to a
+sitting before it goes into the compiler.
 
 ### M-package-layout — `use` paths, the qualifier, and where a program's files live
 
