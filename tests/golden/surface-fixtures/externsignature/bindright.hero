@@ -1,0 +1,13 @@
+# The corrected declaring module: `double sqrt(double)`, which is what
+# `math.h` says.
+#
+# A second file rather than an edit of `bind.hero`, because a fixture has
+# no single resting state otherwise and both directions have to be on
+# disk at once — `externroute/` next door made the same choice for the
+# same reason.
+
+extern "math.h"
+    function sqrt(x: f64) -> f64
+
+function root(x: f64) -> f64
+    return sqrt(x: x)

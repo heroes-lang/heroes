@@ -1,0 +1,16 @@
+# The declaring module, with an `extern` the header refuses.
+#
+# `math.h` declares `double sqrt(double)`. This says `i64` both ways, so
+# clang's own check on the probe block rejects it, and the diagnostic
+# lands HERE — on the author's line, in the module that declared it —
+# rather than in whatever translation unit happened to be compiling.
+#
+# The wrapper exists because acceptance row 1 forbids reaching an
+# `extern` across a module boundary: the caller reaches `root`, and only
+# this module carries the header.
+
+extern "math.h"
+    function sqrt(x: i64) -> i64                    #~ ffi_return_type
+
+function root(x: i64) -> i64
+    return sqrt(x: x)

@@ -521,6 +521,28 @@ binary and input — so every number here is a minimum over its repetitions.
 Fixpoint verified on **793,526 lines** of emitted C, byte for byte; `heroes test
 selfhost/main.hero` **512** passed; the net **1175**, all green.
 
+**Step 10 — acceptance row 4, in the shape the sitting re-read it into**
+(2026-08-26). The row was tabled as *"exit 1 in both TUs"* and panel 093 R5
+measured that unsatisfiable: the caller is **correct**, the mistake is one
+module over, so there is no second failing unit to demand. R5's three claims
+replace it and all three are instruments now.
+`tests/golden/surface-fixtures/externsignature/` carries two of them —
+`math.h` declares `double sqrt(double)`, the declaring module says `i64` both
+ways, and the verdict is `error[ffi_return_type]` at **exit 1 on
+`bind.hero:13:5`**, the author's own line rather than whichever TU was
+compiling; the corrected twin runs and prints `4.0`, so the case cannot pass
+by refusing every program forever. **The third cannot be a golden**, because
+it is about the second invocation: `suite_cache` builds three times with
+every healthy object warm and each must exit 1 with the same code and the
+same file named, because a build that goes green on its second run is the
+worst outcome a build system has. Falsified before it was believed.
+**Annotating the fixture found a defect in the invariant itself**, filed in
+`DECIDE.md` rather than fixed: `suite_annotations` sweeps two directories
+because it compares a `.hero` with its `.expected`, and **15 annotations in
+11 `fixedbugs/` files plus 4 in 3 `surface-fixtures/` files sit outside it**,
+against 181 inside — in the directory §9 created for defects that already
+shipped.
+
 #### What it does not deliver
 
 **Measured and queued rather than glossed**: the per-module build is **slower**

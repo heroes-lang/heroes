@@ -1,0 +1,10 @@
+# The same program with the signature the header actually declares, so
+# the pair pins both directions: the refusal above, and that the shape it
+# refuses is otherwise ordinary and runs.
+#
+# `sqrt` of 16 is 4, and a float prints with a point (spec:181).
+
+use bindright
+
+function main()
+    print(bindright.root(x: 16.0))
