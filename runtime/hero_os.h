@@ -111,4 +111,24 @@ const char *hero_args_raw(int64_t index);
  * corpus keeps one path that does not. */
 _Noreturn void hero_exit(int64_t code);
 
+/* How wide C's `long` is on THIS target, in bits.
+ *
+ * **A width is not a constant to be tabled; it is a question about the target**
+ * — `emit_c_spellings.hero` has said so in prose since the port, and then passed
+ * the literal 64 at every call site, which is the one option that comment calls
+ * out as forbidden ("derived, never tabled"). The bootstrap derived it from
+ * `size_of::<c_ulong>()`; Heroes has no such thing, and an `extern constant`
+ * cannot carry it either, because declaring `ULONG_MAX` at one width fails the
+ * width assertion on the other platform. So it comes from here, which is the
+ * one place that can ask C directly. Author decision 2026-08-26, `/decide`
+ * answer `4a`.
+ *
+ * **What it is FOR is a diagnostic, and that is why the wrong answer is quiet.**
+ * The compiler tells an author which Heroes type a C `long` is, and 64 is right
+ * on Darwin and Linux and wrong on Windows, where `long` is 32 bits under LLP64.
+ * Nothing crashes: the author is simply told `i64` where the header means
+ * `i32`, on the one platform where this project has a CI leg and no local
+ * machine. */
+int64_t hero_word_bits(void);
+
 #endif /* HERO_OS_H */

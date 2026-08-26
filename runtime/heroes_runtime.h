@@ -34,7 +34,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 15
+#define HERO_RUNTIME_ABI 16
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);

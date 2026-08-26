@@ -74,7 +74,7 @@ function prelude(@w: emit_writer.Writer, p: ir_state.Program, target: BuildTarge
     for header in emit_externs.headers(p, s, decls)
         emit_writer.line(@w, text: "#include <" + header + ">")
     emit_writer.line(@w, text: "")
-    emit_writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 15, \"heroes_runtime.h is from another compiler\");")
+    emit_writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 16, \"heroes_runtime.h is from another compiler\");")
     # What a per-type function and a monomorphised instance are LINKED
     # as. One fused unit needs no linkage word; a per-module unit
     # (panel 093 R2) defines its own copies of both, so there the same
@@ -277,7 +277,7 @@ test "the prelude stamps the ABI and emits only the strings a build reads"
     names = emit_ctype.new_names(s, parsed.decls)
     prelude(@w, low.program, target: .program_build, c: c, names: names, s: s, decls: parsed.decls, version: "0.1.0", tu_local: "")
     got = emit_writer.finish(w)
-    assert has(text: got, needle: "_Static_assert(HERO_RUNTIME_ABI == 15")
+    assert has(text: got, needle: "_Static_assert(HERO_RUNTIME_ABI == 16")
     assert has(text: got, needle: "run me")
     # The test block's literal is invisible to a program build — and
     # the surviving index is the literal's own, not a renumbering.
