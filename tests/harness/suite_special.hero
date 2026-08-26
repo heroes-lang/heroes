@@ -27,6 +27,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     the_specs_own_example_opens_a_database(@r, scratch: scratch, compiler: compiler)
     a_search_path_is_one_word(@r, scratch: scratch, compiler: compiler)
     a_search_path_that_names_nothing(@r, scratch: scratch, compiler: compiler)
+    one_bad_argument_does_not_kill_the_other_two(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
 # **`build` says where it put the binary, and the binary is there and
@@ -281,3 +282,95 @@ test "the expectation module reads what a special case needs"
     e = expectation.split("").must()
     assert e.stdout == ""
     assert expectation.unmet(e, out: "", err: "", code: 0).is_err()
+
+# **One ill-formed argument does not kill the other two.** The instrument
+# the spec budget's ledger registered when it bought `args_checked` for
+# **+11 tokens** (row 3541, panel 012 branch 2), and which nobody built:
+# scored FALSE at M-separate-compilation close, then built here by author
+# decision 2026-08-26.
+#
+# WHY IT IS HERE AND NOT A `run/` GOLDEN, which is what the ledger row
+# said. A golden is one argv and one expected text, and `suite_run` has
+# no way to pass arguments to the program it builds — measured at the
+# close. This suite exists for exactly that gap: it writes a program,
+# builds it, and runs the binary itself.
+#
+# THE BAD ARGUMENT IS THE SHELL'S DOING, not the file's. A `.hero` source
+# is UTF-8 and cannot contain the byte 0xff, so the argument is spelled
+# `$(printf '\377\376')` on the command line — which is also how a real
+# user meets this: an argument the shell handed over, not one they typed.
+#
+# **IT BUILDS AND RUNS THE BINARY RATHER THAN USING `heroes run`, and the
+# reason is a defect this case found on its first run** (measured
+# 2026-08-26): `heroes run prog.hero -- $(printf '\377\376')` kills the
+# COMPILER — `panic: hero_str_from_bytes: not well-formed UTF-8`, exit
+# 134 — because `main.hero:55` reads its own command line with `args()`,
+# and the arguments after `--` are not its own. So the one spelling the
+# spec provides for surviving such an argument is unreachable through the
+# dev loop, and only a built binary can use it.
+#
+# **It is not a fix that was skipped, it is a limit that has to be
+# decided.** A Heroes `str` IS UTF-8 (spec:52), so the compiler cannot
+# represent that argument in order to hand it on: the most `heroes run`
+# could ever do is refuse it with a diagnostic instead of aborting.
+# That choice is in `docs/work/DECIDE.md`.
+#
+# The two halves are one claim. `args()` ABORTS on such an argument, by
+# specification, and that is correct — a program that asked for text got
+# something that is not text. `args_checked()` gives one `str?` per
+# argument, so the good ones survive and the bad one is reportable by
+# POSITION. Both are asserted, because the value of the second is exactly
+# that it differs from the first.
+function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch: str, compiler: str)
+    label = "special/one bad argument does not kill the other two"
+    dir = scratch + "/argv-checked"
+    if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
+        return
+    if write_file(path: dir + "/checked.hero", text: CHECKED_PROGRAM).is_err() || write_file(path: dir + "/plain.hero", text: PLAIN_PROGRAM).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the two programs")
+        return
+    if built(scratch: scratch, compiler: compiler, source: dir + "/checked.hero", binary: dir + "/checked").is_err() || built(scratch: scratch, compiler: compiler, source: dir + "/plain.hero", binary: dir + "/plain").is_err()
+        report.keep_failure(@r, label: label, detail: "  the two programs did not build")
+        return
+    wrong: [str] @ []
+    bad = " one $(printf '\\377\\376') three"
+    checked = shell.run(scratch: scratch, command: shell.patience() + shell.sq(dir + "/checked") + bad)
+    if checked.is_err()
+        report.keep_failure(@r, label: label, detail: "  the checked program could not run at all")
+        return
+    if checked.must().code != 0
+        wrong @ wrong.push("    `args_checked` exited " + checked.must().code.to_str() + " where the whole point is that it does not: one argument the shell chose must not end the program")
+    if checked.must().out != "1 one\n2 not text\n3 three\n"
+        wrong @ wrong.push("    `args_checked` printed:\n      " + strings.trimmed(checked.must().out) + "\n    where it should keep arguments 1 and 3 and name 2 by position")
+    # The other half: `args()` ABORTS, which is the specified behaviour
+    # and the whole reason the checked spelling had to be bought. If this
+    # ever becomes 0 the two spellings have collapsed into one and the
+    # +11 tokens bought nothing.
+    plain = shell.run(scratch: scratch, command: shell.patience() + shell.sq(dir + "/plain") + bad)
+    if plain.is_err()
+        report.keep_failure(@r, label: label, detail: "  the plain program could not run at all")
+        return
+    if plain.must().code != 134
+        wrong @ wrong.push("    `args()` exited " + plain.must().code.to_str() + " where spec:186 says it aborts on an argument that is not UTF-8")
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  `docs/measurements/010-spec-budget-ledger.md` row 3541 spent +11 spec tokens on the sentence `args_checked() -> [str?]`, paid by the prediction this case is. A budget whose additions are paid by promises is only as honest as the promises somebody comes back for.")
+    else
+        report.keep_pass(@r)
+
+# `[str?]` and not `[str]?` is the design the tokens bought: a fallible
+# ARRAY would have thrown the good arguments away with the bad one, which
+# is the failure this case exists to prove does not happen.
+constant CHECKED_PROGRAM: str
+    "function main()\n    n: i64 @ 0\n    for one in args_checked()\n        n @ n + 1\n        if one.is_err()\n            print(n.to_str() + \" not text\")\n        else\n            print(n.to_str() + \" \" + one.must())\n"
+
+constant PLAIN_PROGRAM: str
+    "function main()\n    print(len(args()))\n"
+
+# One program built to a named path, so the harness can run the binary
+# with a command line of its own choosing.
+function built(scratch: str, compiler: str, source: str, binary: str) -> ()?
+    made = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(source) + " -o " + shell.sq(binary))
+    if made.is_err() || made.must().code != 0
+        return fail("cannot_run", "cannot build " + source)
+    return ok()
