@@ -214,3 +214,32 @@ twenty problems, which is the useful half.
 three places is **one thing to test, not three** — which is the shape
 `a_declared_type_cannot_contain_a_type_parameter` already takes, and the reason
 the remaining work is five tests rather than eleven fixes.
+
+## Re-read 2026-08-26 — nothing retracted, and where the tree it names lives now
+
+Asked whether this file still earns its place. **Nothing above is retracted**, and
+the sweep is load-bearing rather than historical — measured today:
+
+- **CLAUDE.md §11 rests on it.** *"A narrowing asks the value, never the world
+  (author instruction 2026-08-12, sweep 001)"*, and four lines below, *"Two of
+  sweep 001's twenty were exactly this"* (`CLAUDE.md:422` and `:429`). The rule
+  cites the evidence; deleting the evidence would leave the rule asserting a
+  sweep nobody can read.
+- **Six comments in the live compiler cite these audits by number** —
+  `selfhost/ir_verify.hero:199` (S8), `scan.hero:43` (S6), `diag_render.hero:73`
+  (S5), `modules.hero:111` (L2) and `:203` (S2), `print_fmt.hero:588` (S3). The
+  Rust they were written against is archived; the *defects* were ported forward
+  with the compiler, and those comments are how a reader learns why the code
+  guards what it guards.
+- Two golden cases carry the same numbers
+  (`tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero` is S1,
+  `tests/golden/check/stray-carriage-return.hero` is S6), `DESIGN-LOG:204` cites
+  the sweep, journal 011 records it, and four open `LEARN.md` items ask about it.
+
+**What has expired is the addressing, not the content.** Every path above is the
+bootstrap's — `crates/heroes/src/modules/tests.rs` at the top, and the bare module
+paths under it (`emit/descriptors.rs`, `source/mod.rs`, `types/mod.rs`,
+`resolve/top.rs`, `render.rs`, `phases.rs`). Since M-bootstrap-archive,
+2026-08-19, that tree is `archive/bootstrap-rs/heroes/src/…`, where nothing builds
+and nothing lints. They stay as written, because CLAUDE.md §14 does not rewrite a
+record and 2026-08-12 is where they pointed; **this paragraph is the redirection**.

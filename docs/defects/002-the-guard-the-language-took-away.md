@@ -165,7 +165,8 @@ recalled from the fix's own commit:
 - the guard at `suite_records.hero:148` is **reachable at last**: the call that
   killed the process returns `.err`, which is the only thing that branch tests
 
-**What the fix did not close, and both are queued in `docs/debrief/DECIDE.md`**:
+**What the fix did not close, and both are queued in `docs/debrief/DECIDE.md`**
+(that path died on 2026-08-26 — see the note at the end of this file):
 the status is collapsed into `read_failed`, so the message still says *could not
 read* about a file that read perfectly well (naming it `file_not_text` is one
 `constant` line and the two compiling seats disagreed, so it is the author's);
@@ -173,3 +174,38 @@ and three of panel 087's four doors are untouched — `args()` has no error chan
 at all, `spec:229` sends a binding author through a null test and then kills them
 anyway, and a "is this pointer safe" predicate is categorically unbindable
 because every `cstr` argument is wrapped in `hero_cstr_nonnull`.
+
+## Re-read 2026-08-26 — the defect holds, the paragraph above has expired
+
+Asked whether this file still earns its place. **The defect does not need
+re-arguing: the repair still holds**, run again today rather than recalled — the
+five-line reproducer at the top of this file, against the same tracked JPEG,
+prints `fail: read_failed` at exit **0**. What has moved is the paragraph
+immediately above, and each of its three claims was checked against the record and
+the tree, not remembered.
+
+- **The path is dead.** `docs/debrief/` no longer exists: the lists were re-cut on
+  2026-08-26 by what an item *is* rather than where it was written, and the live
+  ones are `docs/work/DECIDE.md` (open decisions), `docs/work/SCHEDULED.md` (work
+  with a milestone) and `docs/work/DONE.md` (the record). CLAUDE.md §3 carries the
+  reason.
+- **Two of the three doors are shut, both on 2026-08-24.** `args()` got its error
+  channel — `args_checked() -> [str?]`, the shape the ffi-pragmatist compiled, now
+  at `spec:186` and `selfhost/library_source.hero:226` (`DONE.md:620`). And
+  `spec:229` stopped sending a binding author through a null test: the sentence
+  *"test `c == nullptr` first, because converting one aborts"* is **deleted**, −15
+  tokens, the named removal that funded panel 089 (`DONE.md:640`) — and the
+  killing it warned about is a named abort now, because every `cstr` argument
+  leaves through `guard_cstr_arguments` (`selfhost/emit_ops.hero:181`). Only the
+  third is still open as written: a *"is this pointer safe"* predicate remains
+  categorically unbindable.
+- **The `read_failed` collapse is still real and still the author's call.**
+  `runtime/hero_os.h:46` says in the live header that the Tier-2 wrapper collapses
+  `HERO_OS_NOT_TEXT`, and the reproducer above still says *could not read* about a
+  file that read perfectly well. **But the item is in no open list**: `DONE.md:638`
+  struck it from panel 090's ballot on 2026-08-25 with the words *"It stays open as
+  scheduled work, not as a decision"*, and `SCHEDULED.md` does not carry it — ten
+  open items on 2026-08-26 and none is this one. Ticked in the record and absent
+  from the work is exactly the shape CLAUDE.md §3 was amended to prevent, and it is
+  recorded here because this file is where somebody looking for that decision will
+  come.
