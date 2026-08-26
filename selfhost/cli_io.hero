@@ -33,11 +33,32 @@
 
 extern "hero_os.h"
     function hero_write_err(text: str)
+    function hero_word_bits() -> i64
 
 # One line to stderr, newline included — the eprintln the commands
 # share.
 function eprint(text: str)
     hero_write_err(text: text + "\n")
+
+# How wide C's `long` is on this target, in bits — asked of C rather
+# than tabled (author decision 2026-08-26, `/decide` answer `4a`).
+#
+# **The wrapper is not ceremony**: acceptance row 1 says an `extern` is
+# never callable across a module boundary, so the route out of this
+# module is a Heroes function beside the declaration. It lives here
+# because this is the module that already carries the `hero_os.h`
+# group, and a second group in a second module would put the same
+# header in two translation units.
+#
+# What reads it is `emit_c_spellings.spelling`, which tells an author
+# which Heroes type a C `long` is. That file's own comment has said
+# since the port that *"a width is not a constant to be tabled; it is a
+# question about the target"* — and every live call site then passed
+# the literal 64, which is the one option the same comment calls
+# forbidden. 64 is right on Darwin and Linux and wrong on Windows,
+# where `long` is 32 bits.
+function word_bits() -> i64
+    return hero_word_bits()
 
 # The same channel, no newline added — for a blob that already ends
 # with one (the rich renderer's, the JSON's).

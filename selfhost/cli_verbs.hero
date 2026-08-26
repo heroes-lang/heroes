@@ -91,7 +91,7 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
         # which is every part of §4.17 at once, in the one class where the
         # compiler is allowed to blame the author's own `extern` (§7).
         message = failure_text(package_flags)
-        theirs = emit_ffi.explain(message, s, art.must().tree, art.must().decls, art.must().checked, art.must().program, word_bits: 64)
+        theirs = emit_ffi.explain(message, s, art.must().tree, art.must().decls, art.must().checked, art.must().program, word_bits: cli_io.word_bits())
         if theirs.len() > 0
             _ = cli_compile.stage(theirs, s)
             return fail("diagnostics", "the package could not answer")
@@ -151,7 +151,7 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
         # the only place that decides which (panel 036 rider 3). The
         # pipeline pieces ride in the Artifact for exactly this call.
         message = unit_failure_text(linked)
-        theirs = emit_ffi.explain(message, s, art.must().tree, art.must().decls, art.must().checked, art.must().program, word_bits: 64)
+        theirs = emit_ffi.explain(message, s, art.must().tree, art.must().decls, art.must().checked, art.must().program, word_bits: cli_io.word_bits())
         if theirs.len() > 0
             _ = cli_compile.stage(theirs, s)
             return fail("diagnostics", "the author's extern disagrees with the header")

@@ -33,6 +33,7 @@ static void hero_stdout_is_bytes(void) {
 static void hero_stdout_is_bytes(void) {}
 #endif
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -233,4 +234,12 @@ void hero_write_err(HeroStr text) {
  * A shell reads the low 8 bits anyway. */
 _Noreturn void hero_exit(int64_t code) {
     exit((int)code);
+}
+
+/* `sizeof` rather than a preprocessor guess about the platform: the question is
+ * what this compiler does with `long` on this target, and the compiler is the
+ * only thing that knows. CHAR_BIT is 8 everywhere clang runs, and multiplying by
+ * it rather than by 8 says which assumption is being made. */
+int64_t hero_word_bits(void) {
+    return (int64_t)(sizeof(long) * CHAR_BIT);
 }
