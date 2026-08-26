@@ -127,9 +127,14 @@ function produce(path: str, s: source.Source, options: cli_compile.Options, t: c
         # arena walk and the content hashing behind them is what made
         # the per-module self-build take longer than the fused one.
         whole = emit_members.whole_of(art.must().program, c: art.must().checked, s: s, decls: art.must().decls)
+        # One build's answers about files on disk. Every TU asks whether
+        # the headers it read still say the same thing, and 157 of them
+        # share almost all of those headers — so the map is threaded
+        # through the loop rather than rebuilt per unit.
+        memo: {str: str} @ {}
         for component in cli_units.components(s)
             tu_text = emit_unit.unit(module: component, p: art.must().program, c: art.must().checked, s: s, decls: art.must().decls, version: version, is_root: component == root, whole: whole)
-            made = cli_units.tu_object(t, module: component, tu_text: tu_text, level: options.level, sanitize: options.sanitize, search: cli_compile.search_key(headers_from: options.headers_from, library: options.library), package_flags: package_flags.must(), source_dir: source_dir, search_include: options.headers_from)
+            made = cli_units.tu_object(t, module: component, tu_text: tu_text, level: options.level, sanitize: options.sanitize, search: cli_compile.search_key(headers_from: options.headers_from, library: options.library), package_flags: package_flags.must(), source_dir: source_dir, search_include: options.headers_from, @memo)
             if made.is_err()
                 if stopped.is_err()
                     stopped @ stopped
