@@ -39,6 +39,15 @@
 #    (R4, with R6's content-derived names underneath). The failure this
 #    catches has no diagnostic and no crash: the program prints the
 #    wrong case at exit 0.
+# 5. **A warm cache never turns a failure into a pass** — acceptance row
+#    4's third claim (panel 093 R5), and the one half of that row no
+#    golden can hold, because it is about the SECOND invocation. The
+#    programs it refuses and then accepts are in
+#    `tests/golden/surface-fixtures/externsignature/`, whose README
+#    carries the row; what is here is that the refusal SURVIVES a build
+#    where every healthy object is already warm. A build that goes green
+#    on its second run is the worst outcome a build system has, because
+#    nobody re-reads a green build.
 #
 # THE PROGRAM IS WRITTEN HERE rather than kept under
 # `tests/golden/surface-fixtures/`, and the header is why: the case is
@@ -74,12 +83,30 @@ constant TAGS_HOME: str
 constant TAGS_CALLER: str
     "use hue\n\nfunction main()\n    print(hue.name_of(c: .blue))\n"
 
+# Acceptance row 4's own program: a declaring module whose `extern`
+# signature the header refuses, and a caller that is correct.
+constant FAIL_HOME: str
+    "cache-failure"
+
+constant FAIL_BIND: str
+    "extern \"math.h\"\n    function sqrt(x: i64) -> i64\n\nfunction root(x: i64) -> i64\n    return sqrt(x: x)\n"
+
+constant GOOD_BIND: str
+    "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nfunction root(x: f64) -> f64\n    return sqrt(x: x)\n"
+
+constant FAIL_CALLER: str
+    "use failbind\n\nfunction main()\n    print(failbind.root(x: 16))\n"
+
+constant GOOD_CALLER: str
+    "use failbind\n\nfunction main()\n    print(failbind.root(x: 16.0))\n"
+
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     a_header_edit_is_not_invisible(@r, scratch: scratch, compiler: compiler)
     an_untouched_build_still_hits(@r, scratch: scratch, compiler: compiler)
     only_the_module_that_read_it_is_rebuilt(@r, scratch: scratch, compiler: compiler)
     a_reordered_variant_is_not_served_warm(@r, scratch: scratch, compiler: compiler)
+    a_warm_cache_never_turns_a_failure_into_a_pass(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
 # The program, freshly laid down with the header at `value`. Returns
@@ -215,6 +242,56 @@ function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str,
             wrong @ wrong.push("    with the cases in the order " + order.join(", ") + " the program printed " + strings.trimmed(said.must().out) + " where it names `.blue`")
     if wrong.len() > 0
         report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  A variant's cases are numbered by position and the caller's `match` is a C `switch` over those numbers, in another translation unit. What keeps them together is that a TU's text carries the tag enum of every type it reaches, so this edit changes the CALLER's own text and therefore its key. A wrong case here is exit 0 with no diagnostic anywhere.")
+    else
+        report.keep_pass(@r)
+
+# **A warm cache never turns a failure into a pass** — M-separate-compilation
+# acceptance row 4, in the shape panel 093 R5 re-read it into. The row was
+# written as *"exit 1 in both TUs"* and the sitting measured that
+# unsatisfiable: the caller here is CORRECT, and the mistake is one module
+# over, so there is no second failing unit to demand.
+#
+# What is left is the half that can go wrong, and it can only go wrong on
+# the SECOND invocation, which is why it lives in this file. Build once: the
+# declaring module's `extern` is rejected by clang against the real header,
+# and the verdict is exit 1 on the author's own line. Build again with every
+# healthy object now warm, and the temptation the architecture has to resist
+# is reporting success because there was nothing left to compile. Three
+# builds, because a cache that fails once and then forgets would pass a pair.
+#
+# The fourth build repairs the signature and must reach exit 0 and the right
+# answer, so the case cannot pass by simply refusing everything forever.
+function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/a warm cache never turns a failure into a pass"
+    dir = scratch + "/" + FAIL_HOME
+    if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + dir)
+        return
+    if write_file(path: dir + "/failbind.hero", text: FAIL_BIND).is_err() || write_file(path: dir + "/caller.hero", text: FAIL_CALLER).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the program")
+        return
+    wrong: [str] @ []
+    for attempt in ["first", "second", "third"]
+        said = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " build " + shell.sq(dir + "/caller.hero"))
+        if said.is_err()
+            report.keep_failure(@r, label: label, detail: "  the " + attempt + " build could not run at all")
+            return
+        if said.must().code != 1
+            wrong @ wrong.push("    the " + attempt + " build exited " + said.must().code.to_str() + " where the `extern` disagrees with `math.h` — exit 1 is the contract, and a warm cache is not a reason to stop checking")
+        if !strings.contains(text: said.must().err, needle: "error[ffi_return_type]")
+            wrong @ wrong.push("    the " + attempt + " build did not report `ffi_return_type`; it said:\n      " + strings.trimmed(said.must().err))
+        if !strings.contains(text: said.must().err, needle: "failbind.hero")
+            wrong @ wrong.push("    the " + attempt + " build blamed something other than the declaring module — the span must land on the author's line, wherever the cache happens to be warm")
+    # And it is a refusal rather than a stuck compiler: repair the
+    # signature and the same command must run.
+    if write_file(path: dir + "/failbind.hero", text: GOOD_BIND).is_err() || write_file(path: dir + "/caller.hero", text: GOOD_CALLER).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the repaired program")
+        return
+    fixed = shell.run(scratch: scratch, command: shell.patience() + shell.sq(compiler) + " run " + shell.sq(dir + "/caller.hero"))
+    if fixed.is_err() || fixed.must().code != 0 || fixed.must().out != "4.0\n"
+        wrong @ wrong.push("    the repaired program did not run: exit " + fixed.default(shell.Run(code: -1, out: "", err: "cannot run")).code.to_str() + ", printed " + strings.trimmed(fixed.default(shell.Run(code: -1, out: "", err: "")).out) + " where `sqrt` of 16.0 is 4.0\n    Without this the case would pass by refusing every program forever.")
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  Panel 093 R5: every dirty TU compiles before any verdict is rendered, the declaring TU's clang failure maps to exit 1 on the `.hero` line, and a cache hit never converts a failure into a success. A build that goes green on its second run is the worst outcome a build system has, because nobody re-reads a green build.")
     else
         report.keep_pass(@r)
 
