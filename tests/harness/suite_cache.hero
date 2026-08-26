@@ -89,10 +89,10 @@ constant FAIL_HOME: str
     "cache-failure"
 
 constant FAIL_BIND: str
-    "extern \"math.h\"\n    function sqrt(x: i64) -> i64\n\nfunction root(x: i64) -> i64\n    return sqrt(x: x)\n"
+    "extern \"math.h\" link \"m\"\n    function sqrt(x: i64) -> i64\n\nfunction root(x: i64) -> i64\n    return sqrt(x: x)\n"
 
 constant GOOD_BIND: str
-    "extern \"math.h\"\n    function sqrt(x: f64) -> f64\n\nfunction root(x: f64) -> f64\n    return sqrt(x: x)\n"
+    "extern \"math.h\" link \"m\"\n    function sqrt(x: f64) -> f64\n\nfunction root(x: f64) -> f64\n    return sqrt(x: x)\n"
 
 constant FAIL_CALLER: str
     "use failbind\n\nfunction main()\n    print(failbind.root(x: 16))\n"
