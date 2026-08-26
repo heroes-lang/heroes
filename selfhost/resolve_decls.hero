@@ -23,6 +23,7 @@ use resolve_state
 use resolve_types
 use resolve_errors
 use resolve_walk
+use resolve_binding
 
 function declaration(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], index: i64)
     r.generics @ r.generics.slice(from: 0, to: 0)
@@ -63,7 +64,7 @@ function function_declaration(@r: resolve_state.Resolver, a: ast.Ast, s: source.
         return
     resolve_state.open_scope(@r)
     for param in f.params
-        _ = resolve_state.declare(@r, s, decls, param.name, resolve_state.param_binding(ty: param.ty, mutable: param.mutable))
+        _ = resolve_state.declare(@r, s, decls, param.name, resolve_binding.param_binding(ty: param.ty, mutable: param.mutable))
     resolve_walk.block(@r, a, s, decls, f.body.must())
     resolve_state.close_scope(@r)
 

@@ -1,0 +1,110 @@
+# Line and column, read out of a source text by byte offset.
+#
+# Split out of `cursor.hero` on 2026-08-26, along a seam §11 names rather
+# than at a line count: reading lines out of a text is not the token
+# cursor's job, and it has no idea what a token is. Nothing here imports
+# anything, which is the tell that the concern is its own.
+#
+# **THREE OF THE FOUR FUNCTIONS EXIST BECAUSE THE FOURTH WAS THIS
+# COMPILER'S SINGLE LARGEST COST.** `line_col` answers with a line NUMBER,
+# so it walks from byte 0. `cursor.take_docs` asked it once per declaration
+# and once per comment it examined, and the parse runs over the whole
+# concatenated Source (§1.11 appends the library to every compilation) —
+# so on this compiler's own 1.2 MB source each call read up to a million
+# bytes, and the pair was quadratic in the file. Measured with `sample`
+# over `heroes check selfhost/main.hero`: **21,119 of 21,254 samples**
+# were inside `line_col` and the three runtime calls it makes, 99.4% of
+# the profile, for a question about two ADJACENT lines.
+#
+# The rule the split records: **ask for the distance you need, not for the
+# position you could derive it from**. A distance between two adjacent
+# offsets is tens of bytes; a position is the file.
+#
+# `line_col` stays, because a diagnostic really does want a line number and
+# asks for it once per diagnostic (`parse_use` is its only caller here).
+
+## The position of one offset
+
+# Line and column of a byte offset, both 1-based.
+record Position
+    line: i64
+    col: i64
+
+function line_col(text: str, offset: i64) -> Position
+    line: i64 @ 1
+    col: i64 @ 1
+    i: i64 @ 0
+    while i < offset && i < text.len()
+        if text[i] == '\n'
+            line @ line + 1
+            col @ 1
+        else
+            col @ col + 1
+        i @ i + 1
+    return Position(line: line, col: col)
+
+## Distances, which is what adjacency questions actually ask
+
+# How many line ends lie between two offsets, `from` included and `to`
+# excluded. Zero means the two offsets are on the same line.
+function newlines_between(text: str, from: i64, to: i64) -> i64
+    count: i64 @ 0
+    i: i64 @ from
+    while i < to && i < text.len()
+        if text[i] == '\n'
+            count @ count + 1
+        i @ i + 1
+    return count
+
+# The 1-based column of an offset, read BACKWARDS to the line end above it
+# — so the cost is the length of one line rather than of the file.
+function column_of(text: str, offset: i64) -> i64
+    i: i64 @ offset
+    if i > text.len()
+        i @ text.len()
+    col: i64 @ 1
+    while i > 0 && text[i - 1] != '\n'
+        col @ col + 1
+        i @ i - 1
+    return col
+
+# How many lines above `decl` the offset `comment` sits. A comment at or
+# past the declaration's own offset is on its line or after it, which every
+# caller treats as a trailing note rather than documentation.
+function lines_above(text: str, comment: i64, decl: i64) -> i64
+    if comment >= decl
+        return 0
+    return newlines_between(text: text, from: comment, to: decl)
+
+test "line and column are 1-based and count the newline"
+    text = "ab\ncd"
+    assert line_col(text, 0).line == 1
+    assert line_col(text, 0).col == 1
+    assert line_col(text, 1).col == 2
+    assert line_col(text, 3).line == 2
+    assert line_col(text, 3).col == 1
+
+test "the local readings agree with the walk from byte zero, at every offset"
+    # THE PREMISE THE REPAIR RESTS ON, given a test that fires the day it
+    # dies (CLAUDE.md §11). The cheap readings are correct only because they
+    # answer what the expensive walk answered. Every offset of a text with a
+    # leading newline, an empty line and a trailing one is checked, so the
+    # agreement is a measurement rather than a sentence.
+    text = "\nab\n\ncdef\n"
+    i: i64 @ 0
+    while i <= text.len()
+        assert column_of(text, i) == line_col(text, i).col
+        assert newlines_between(text: text, from: 0, to: i) == line_col(text, i).line - 1
+        i @ i + 1
+
+test "lines above is a distance, and a comment at or past the declaration is none"
+    text = "# far\n\n# near\nfunction f()\n"
+    # `# near` starts at 7 and `function` at 14: one line end between them,
+    # which is the only distance a doc comment may have.
+    assert lines_above(text: text, comment: 7, decl: 14) == 1
+    # `# far` at 0 is THREE line ends up, not two — the blank line counts,
+    # and it is exactly the blank line that makes it not documentation.
+    assert lines_above(text: text, comment: 0, decl: 14) == 3
+    # A trailing note sits at or past the declaration's own offset.
+    assert lines_above(text: text, comment: 14, decl: 14) == 0
+    assert lines_above(text: text, comment: 20, decl: 14) == 0

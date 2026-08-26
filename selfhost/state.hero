@@ -65,8 +65,20 @@ function emit(@l: LexState, kind: token.TokenKind, start: i64)
         # the parser reports it.
         if l.open_brackets.len() > 0
             l.open_brackets @ l.open_brackets.slice(from: 0, to: l.open_brackets.len() - 1)
-    l.tokens @ l.tokens.push(token.Token(kind: kind, span: span))
+    push_token(@l.tokens, token.Token(kind: kind, span: span))
     l.last_significant @ ok(kind)
+
+# **The array is the parameter, and that is the whole reason this
+# function exists** (§4.10, measured 2026-08-26). Written inline as
+# `l.tokens @ l.tokens.push(t)` this is a FIELD place, and the in-place
+# store fires on a BARE place only — so every token appended copied the
+# whole token array, and lexing was quadratic in the token count. Taking
+# the array itself makes the parameter a bare place, which is the same
+# repair `ast.push_expr` took the day before, and CLAUDE.md §1's fourth
+# clause is why it is applied here rather than left for the profile to
+# find twice.
+function push_token(@tokens: [token.Token], t: token.Token)
+    tokens @ tokens.push(t)
 
 # Error recovery in one move: record why, emit an `error` token over the same
 # span, keep lexing. The lexer never stops.

@@ -44,6 +44,7 @@ use resolve_types
 use resolve_errors
 use resolve_qualified
 use resolve_names
+use resolve_binding
 
 ## Statements
 
@@ -66,11 +67,11 @@ function statement(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
             expr(@r, a, s, decls, b.value)
             if !b.ty.is_err()
                 resolve_types.resolve_type(@r, a, s, decls, b.ty.must())
-            _ = resolve_state.declare(@r, s, decls, b.name, resolve_state.bind_binding(ty: b.ty, value: b.value))
+            _ = resolve_state.declare(@r, s, decls, b.name, resolve_binding.bind_binding(ty: b.ty, value: b.value))
         .declare d =>
             expr(@r, a, s, decls, d.value)
             resolve_types.resolve_type(@r, a, s, decls, d.ty)
-            _ = resolve_state.declare(@r, s, decls, d.name, resolve_state.cell_binding(ty: d.ty, value: d.value))
+            _ = resolve_state.declare(@r, s, decls, d.name, resolve_binding.cell_binding(ty: d.ty, value: d.value))
         # The initialiser above is not counted as a write: a cell that is
         # only ever initialised has been written once by definition, and
         # counting it would blind the unused rule to every cell.
@@ -91,7 +92,7 @@ function statement(@r: resolve_state.Resolver, a: ast.Ast, s: source.Source, dec
             # x` must not find its own binding.
             expr(@r, a, s, decls, f.iterable)
             resolve_state.open_scope(@r)
-            _ = resolve_state.declare(@r, s, decls, f.name, resolve_state.loop_binding(iterable: f.iterable))
+            _ = resolve_state.declare(@r, s, decls, f.name, resolve_binding.loop_binding(iterable: f.iterable))
             statements(@r, a, s, decls, f.block.stmts)
             resolve_state.close_scope(@r)
 
@@ -182,7 +183,7 @@ function bind_payload(@r: resolve_state.Resolver, s: source.Source, decls: [ast.
     if text != "_" && resolve_state.bound_in_current_scope(r, text)
         resolve_state.push_diagnostic(@r, resolve_errors.duplicate_pattern_binding(text, span: binding))
         return
-    _ = resolve_state.declare(@r, s, decls, binding, resolve_state.payload_binding())
+    _ = resolve_state.declare(@r, s, decls, binding, resolve_binding.payload_binding())
 
 ## The left of `@`
 
@@ -259,7 +260,7 @@ function walked(text: str) -> resolve_state.Resolver
             .function_decl fd =>
                 resolve_state.open_scope(@r)
                 for param in fd.value.params
-                    _ = resolve_state.declare(@r, s, p.decls, param.name, resolve_state.param_binding(ty: param.ty, mutable: param.mutable))
+                    _ = resolve_state.declare(@r, s, p.decls, param.name, resolve_binding.param_binding(ty: param.ty, mutable: param.mutable))
                 if !fd.value.body.is_err()
                     statements(@r, p.tree, s, p.decls, fd.value.body.must().stmts)
                 resolve_state.close_scope(@r)
