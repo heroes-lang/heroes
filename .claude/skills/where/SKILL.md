@@ -21,7 +21,12 @@ first time it appears — no exceptions, take nothing for granted.**
 git log --oneline -15
 git tag --list --sort=creatordate
 tail -8 DESIGN-LOG.md
-head -40 docs/ROADMAP.md          # § Status + § The order: where we are, what is next
+sed -n '/^## Where we are/,/^## Verify/p' docs/ROADMAP.md        # where we are
+sed -n '/^## The chain/,/^## The milestones/p' docs/ROADMAP.md   # what is next, in order
+                                  # (this said `head -40 … § Status + § The order` until
+                                  #  2026-08-26: two headings renamed on 2026-08-25 and a
+                                  #  line count that stopped reaching the table it named.
+                                  #  A pattern range cannot rot the same way.)
 cat docs/work/DECIDE.md           # open decisions = what the compiler is waiting on
 cat docs/work/SCHEDULED.md        # open work, each item naming the milestone that does it
                                   # (this said `QUEUE.md` until 2026-08-26 — the RECORD,
@@ -54,7 +59,7 @@ testo .hero
 poi: [M-module-namespace moduli] → [M-ffi-ladder FFI]
   → [M-program-corpus corpus] → [M-selfhost-probe sonda]
   → [M-selfhost-port port] → [M-selfhost-fixpoint fixpoint] = v1
-  (l'ordine è quello scritto in docs/ROADMAP.md § The order; il nome
+  (l'ordine è quello scritto in docs/ROADMAP.md § The chain; il nome
    non promette una posizione)
 ```
 

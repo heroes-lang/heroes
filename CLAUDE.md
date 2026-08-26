@@ -515,8 +515,11 @@ home; `docs/ROADMAP.md` § The names carries the map and cites this.
   uses over an invented one.
 - **An id is never renamed once it is in the record.** A milestone that changes
   shape gets a *new* id; the old one is retired in § The names.
-- **Order lives in the ROADMAP's order table and nowhere else** — the id claims
-  nothing about position. `git tag --list --sort=creatordate` gives the chronology.
+- **Order lives in the ROADMAP's § The chain table and nowhere else** — the id
+  claims nothing about position, and no other heading may repeat it (which is why
+  that file's milestone sections carry no numbers: they carry the order by their
+  position and the table carries the numbers). `git tag --list --sort=creatordate`
+  gives the chronology.
 - An id never reaches a diagnostic or any user-visible output (§8, asserted by
   `archive/bootstrap-rs/heroes/src/emit/tests/gate.rs`).
 - **Appending to a dated record uses that record's vocabulary**, with the new name

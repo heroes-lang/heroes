@@ -28,7 +28,7 @@ yet compile its own compiler; that is the v1 finish line.
 | value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | file I/O, `args()`, `exit(code)` |
 | generics by monomorphisation, function values, `T?`, `test`/`assert` | self-hosting, and the fixpoint that defines v1 |
 
-The chain from here is `docs/ROADMAP.md` § The order. What is already built has
+The chain from here is `docs/ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/journal/README.md`.
 
 ## Build and try it

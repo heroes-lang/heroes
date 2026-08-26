@@ -93,10 +93,14 @@ Milestone close — the checklist (this is its only copy):
   mutation drill, exit-quiz (all optional, author's call);
 - append the closing block — the status paragraph and the milestone's chain entry —
   to `docs/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
-  leave `docs/ROADMAP.md` § Status at **≤15 lines**. The ROADMAP says what is
+  leave `docs/ROADMAP.md` § Where we are at **≤15 lines**. The ROADMAP says what is
   *next*; a closed milestone's record is its journal. (It reached 935 lines before
   this rule existed, growing ~66 per close, and the reader met 512 lines about the
   past before the first line about the future.)
-- update `docs/ROADMAP.md` § Status and § The order; tag `m-<name>`, push
-  `--follow-tags`;
+- update `docs/ROADMAP.md` § Where we are and § The chain — the closing row takes
+  its date, tag and journal link, the next row becomes `**OPEN**`, and the counts
+  in the summary table are **re-measured, never carried** (CLAUDE.md §1); then the
+  milestone's own section under § The milestones, one by one keeps only the
+  reasoning a future milestone has to honour, the rest going to the journal. Tag
+  `m-<name>`, push `--follow-tags`;
 - site build log: only when the author asks (`site/README.md`).
