@@ -335,3 +335,12 @@ cost rather than a settled question. The three doors the fix did not touch —
 predicate — and `spec:14`'s false sentence, the ~12 unnamed aborts, the bytes
 reader, the extern-group pruning and `suite_determinism.hero:13-14`'s missing
 instrument all stay open where the sitting left them.
+
+---
+
+**Scored at M-separate-compilation close, 2026-08-26.** This sitting's
+predictions are scored in `docs/journal/025-separate-compilation.md`
+§ *Predictions, scored*, with what each was measured against. Predictions that
+could not be scored are marked **lapsed** there, and the clause each one bought
+is back in `docs/work/DECIDE.md` to be re-argued under the removal branch, never
+renewed under a new milestone name (panel 046 R2).

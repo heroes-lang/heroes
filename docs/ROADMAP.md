@@ -42,16 +42,16 @@ in the numbers that were re-measured.
 
 | | |
 |---|---|
-| **Current milestone** | **M-separate-compilation** — open since 2026-08-19 |
-| **State** | four repairs · **steps 1–9 done** — the compiler builds itself as 157 TUs, re-emits all 297 blessed emissions byte for byte, its cache no longer serves an object built against a header that has since changed, the four instruments panel 093 owed are in the net, and the frontend went from **88 s to about 8** on the compiler's own source: four instances of one quadratic, no architecture change |
+| **Current milestone** | **M-package-layout** — next, not yet opened |
+| **Last closed** | **M-separate-compilation**, 2026-08-26, tag `m-separate-compilation` — all four acceptance rows, and the frontend from **88 s to about 8** ([journal 025](journal/025-separate-compilation.md)) |
 | **v1** | **reached** at M-selfhost-fixpoint, 2026-08-18 — the compiler compiles itself |
-| Milestones closed | 25 of 36 · 25 tags |
-| The compiler | **39,507 lines** of Heroes in 162 files |
-| The seed | **792,357** lines of generated C — the whole way in |
+| Milestones closed | 26 of 36 · 26 tags |
+| The compiler | **39,739 lines** of Heroes in 165 files, built as **157** translation units |
+| The seed | **793,526** lines of generated C — the whole way in |
 | The spec | **3592** tokens of a hard 4096 · headroom 504 |
 | Runtime ABI | 15 |
-| Panels held | **92** · journals 25 · measurements 13 · examples 15 |
-| Waiting on the author | **6 decisions** in `DECIDE.md` · 9 assigned in `SCHEDULED.md` · 273 in `LEARN.md` (never a gate) |
+| Panels held | **92** · journals 26 · measurements 13 · examples 15 |
+| Waiting on the author | **9 decisions** in `DECIDE.md` · 8 assigned in `SCHEDULED.md` · 274 in `LEARN.md` (never a gate) |
 
 ---
 
@@ -140,8 +140,8 @@ it), **§1.1** (comprehension is the objective), or **scheduled, no warrant**.
 | 23 | **M-selfhost-fixpoint** | done 2026-08-18 | `m-selfhost-fixpoint` | [022](journal/022-selfhost-fixpoint.md) | the fixpoint and the seed · **v1** |
 | 24 | **M-harness-port** | done 2026-08-18 | `m-harness-port` | [023](journal/023-harness-port.md) | the net in Heroes · closure list |
 | 25 | **M-bootstrap-archive** | done 2026-08-19 | `m-bootstrap-archive` | [024](journal/024-bootstrap-archive.md) | the third language dies · v1's last clause (design.md:82) |
-| 26 | **M-separate-compilation** | **OPEN** | — | — | one `.c` per module, prototypes across TUs, the cache · closure list |
-| 27 | **M-package-layout** | scheduled | — | — | `use` paths, the qualifier, where a program's files live · **scheduled by author decision 2026-08-25** |
+| 26 | **M-separate-compilation** | done 2026-08-26 | `m-separate-compilation` | [025](journal/025-separate-compilation.md) | one `.c` per module, prototypes across TUs, the cache · closure list |
+| 27 | **M-package-layout** | **OPEN** | — | — | `use` paths, the qualifier, where a program's files live · **scheduled by author decision 2026-08-25** |
 | 28 | **M-isolated-threads** | scheduled | — | — | Part 7.13 concurrency · **moved ahead of packages by author instruction, 2026-08-25** |
 | 29 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 30 | **M-qbe-backend** | scheduled | — | — | Part 7.14 — the proof that the IR is not C in disguise |
@@ -243,323 +243,54 @@ found nine dead citations that predated the archive.
 the Rust and ~16 minutes through the seed. That is the price of self-hosting, and
 it became its own decision — CI runs them at tags, the net on every push.
 
-### M-separate-compilation — one `.c` per module *(open)*
+### M-separate-compilation — one `.c` per module *(closed 2026-08-26)*
 
-#### What it delivers, and the four rows that accept it
+**The record is [journal 025](journal/025-separate-compilation.md).** What stays
+here is only what a later milestone has to honour.
 
-One `.c` per module, prototypes across translation units, the per-module cache:
-the second half of the modules row, moved past the fixpoint because it costs
-+700–1000 lines against the namespace's ~+330, because Nim has not finished its
-own per-module cache since 2018 and Rust shipped 1.52.1 to disable incremental,
-and because — measured — it is where §4.19's guarantee can quietly die.
+**The four acceptance rows, and what closed each** (panel 030 R2 — they are what
+lifted the ffi-pragmatist's veto):
 
-**Four acceptance rows, and they are what lift the ffi-pragmatist's veto**
-(panel 030 R2):
+| row | what it demands | closed by |
+|---|---|---|
+| 1 | the header travels with the `extern` into every calling TU, or an `extern` is never callable across a module boundary | step 5, via panel 033 R5's third answer: a qualified mention is a type error and the route is a Heroes function in the declaring module |
+| 2 | headers and link flags enter the cache key, `runtime_text()` kept | step 7, by clang's own dependency listing rather than by naming headers |
+| 3 | every dependency's emitted interface enters the key | by construction — a TU's text carries the prototypes and tag enums of everything it reaches, so a dependency's signature change moves the caller's key |
+| 4 | a two-module FFI case with a wrong `extern` signature | step 10, in panel 093 R5's re-reading: the row as tabled ("exit 1 in both TUs") is unsatisfiable, because the caller is correct |
 
-1. the header travels with the `extern` into **every calling TU**, or externs are
-   module-private and the *type checker* refuses the qualified call. **Panel 033
-   found a third answer that costs nothing and is not a visibility rule**: an
-   `extern` declaration is never callable across a module boundary, a qualified
-   call to one is a type error, and the route is a Heroes function in the
-   declaring module. Compiled, linked and run — and the shape this row exists to
-   prevent reproduced exactly beside it (header only in the declaring TU: exit 1
-   there, **exit 0 in the caller**, `rc=0 db=open`, with the wrong signature);
-2. headers and link flags enter the cache key, with `runtime_text()` kept;
-3. every dependency's emitted interface enters the key — `-flto` does not catch
-   cross-TU signature skew and changes the answer;
-4. one two-module FFI-shaped golden with a wrong `extern` signature: **exit 1 in
-   both TUs**, `#~` annotated.
+**Three things a later sitting must not re-derive.**
 
-#### What landed — four repairs, then six steps
+**The `extern` block is not pruned, and the architecture is why.** Panel 091
+vetoed every pruning option with compiled evidence: pruning the `#include`
+deletes a group record's C type, an uncalled group holds up a used one, the prune
+takes the `-l` with the declaration and a constructor library stops running at
+exit 0, and the probe is a **memory-safety instrument** — the only thing that
+sees a `size_t` out-parameter declared `i32`, which when executed wrote four bytes
+into an adjacent object with ASan and UBSan silent. One `.c` per module plus row 1
+puts every group in exactly one TU, which is what makes the duplication go away
+for free.
 
-- **`docs/defects/002`** — a legal program that handled both arms of a fallible
-  was killed before either. Five lines of runtime C, +0 spec tokens (panel 087).
-- **A dead descriptor** in every unit that named a container type it never built
-  (panel 088's neighbour, `/decide` 3c).
-- **The compiler's last POSIX binding.** `selfhost/cli_io.hero` bound
-  `extern "unistd.h"`, so `seed/heroes.c` carried `#include <unistd.h>` and the
-  self-hosted compiler could not be built on Windows at all. Nothing caught it
-  because the Rust bootstrap had no such dependency, so the third CI leg was
-  testing a compiler that did not have the problem. `hero_write_err` replaces it;
-  the Windows leg runs every step again, **untested from here until the first
-  tag**.
-- **The C text boundary, closed over two sittings.** Panel 089 landed
-  `validated(c: cstr) -> str?` and `args_checked() -> [str?]`; panel 090 retired
-  `cstr.to_str()`, the spelling that aborted, and made the spec say that `args()`
-  aborts while `args_checked` does not. On the way the two sittings closed a
-  defect nobody had looked for — **the shipping compiler could be killed by an
-  environment variable** — and left the spec **five tokens lighter** than it
-  started, because the second sitting's warden found a sentence worth more out
-  than in.
-- **A field declared as an array where the header has a scalar** stopped being
-  `internal error` at exit 2 and became the author's own diagnostic at exit 1;
-  and **a real C name declared under the wrong header** stopped doing the same,
-  because clang has three words for that mistake and the mapper knew two.
-- **Two sentences in which the specification contradicted itself**: its own
-  § Tests example did not compile for seven days — it is now a golden that runs —
-  and `spec:14` claimed strings may hold any UTF-8 when a raw carriage return is
-  refused in a string and accepted in a comment.
+**A cache key can be blind to its own input by construction**, and this is the
+shape to check first in anything that caches: an `extern constant` emits as
+`return CONF_LIMIT;` whatever the header holds, so the emitted C is
+byte-identical across a header edit. What stands between that and a wrong answer
+at exit 0 is asking clang which files it actually opened. `tests/harness/suite_cache.hero`
+is the instrument, and `suite_units.hero` holds what one translation unit must
+contain.
 
-**The 46× question is answered, repaired and closed all the way down**
-(measurements 012 and 013). The writer and the loader fell to two repairs, then
-the author pulled panel 037's trigger and the place store landed: the compiler
-builds itself in **188.51 s against 944.76 s the day before — 5.01×** — the suite
-6.2× faster, the spec 6 tokens lighter, and one masked use-after-free found and
-repaired on the way.
+#### What it does not deliver, and what the next sitting argues from
 
-**Step 1 — the `ORDER:` mark stops being a grep** (2026-08-25). A map walk whose
-order somebody can see owes an explicit `sort` and a mark saying by what and who
-watches; the inventory was a grep, and a grep cannot tell a mark from a sentence
-quoting one — it returned **10 hits in 8 files, four of them prose**. Measured
-against the item's own premise: all four walks it called unmarked were **already
-sorted**, so the fixpoint was green because the sorts were paid, not by luck. Now
-`tests/harness/suite_order.hero` fails the net when a walk in `selfhost/` carries
-no mark, and it was made to fire before it was believed. Inventory **12 files /
-16 marks**, three previously unjudged walks ruled `ORDER: none`.
+**The per-module build still does not beat the fused one.** Re-measured at the
+close, one machine, one tree: per-module **cold 57.9 s**, **warm 45.2 s**; fused
+**emit 40.4 s + one clang line 3.7 s = 44.1 s**. The gap is about a second, where
+it was 8.7 before step 9's frontend repair and where this file once carried 127.
 
-**And the net got a net** (author decision the same day, `/decide` answer `a`).
-Running step 1's own new cases meant running `heroes test tests/harness/main.hero`
-— which **nothing ran**, and **two of its 81 blocks had been red** long enough to
-predate the step that found them. Both were the test being wrong: a count that a
-later commit made stale, and a self-test that reached a six-day-old binary
-because `./heroes` was missing from the candidate list while the **archived
-bootstrap's path was on it** — the file's own comment has said *"the path they
-must not name is the bootstrap's"* since the archive, with the list underneath
-naming it. It is a CI leg now, on every push: **13.5 s**, because it compiles the
-5,606-line harness rather than the 38,021-line compiler.
-
-**Step 2 — the block stays, because the architecture already deletes the
-duplication** (panel 091, five judges, ratified). The last `SCHEDULED.md` item
-this milestone owed was panel 087's unpruned `extern` asserts: **27 of a
-`print(1)` program's 166 lines of C** exist for a library group it never touches,
-and **138 of 155 modules** would carry that under one `.c` per module. Every
-option that prunes was **vetoed with compiled evidence** — pruning the `#include`
-deletes a group record's C type; an *uncalled* group holds up a used one
-(`<stdio.h>` before `<jpeglib.h>`); the prune takes the `-l` with the declaration
-and a constructor library stops running at exit 0; and the probe is a
-**memory-safety instrument**, the only thing that sees a `size_t` out-parameter
-declared `i32`, which when executed wrote four bytes into an adjacent object with
-ASan and UBSan silent. What replaces them costs **nothing**: the library is one
-module, so one `.c` per module plus acceptance row 1 puts every group in exactly
-one TU. Option B would have cost +40 compiler lines and 146 re-blessed emissions
-to buy what the close gives away.
-
-**Step 3 — the check was there all along, and a macro was hiding it from half of
-libc** (panel 092, five judges, ratified). Convened on the claim that an
-`extern`'s parameter width and sign are unchecked. **They are checked** —
-`-Werror=shorten-64-to-32` and `-Werror=sign-conversion` have shipped all along —
-and the silent set was never clang's builtins: `strncmp`, `malloc`, `calloc`,
-`abs` and `fwrite` are builtins and are all caught. What hid the rest is
-**`_FORTIFY_SOURCE`**, which rewrites `memset` into `__builtin___memset_chk(…)`
-and discards the diagnostic; `-fno-builtin` cannot touch it, because a **macro**
-does the redirect. **Two production lines fix it** — `(void)(f)(…)` is not a
-function-like macro invocation — and the repair immediately found a **live defect
-in this repository**: `examples/curl` declared `option: i32` where `CURLoption`
-is unsigned, invisible since the example was written. A third line stops the
-emitter routing **its own** warning to the author's line. Cost: 922 re-blessed
-lines across 146 emissions, 36 hand-edited in the six `emit/` goldens where
-`UPDATE_GOLDEN` is forbidden, and **+12 spec tokens** for the one mapping row a
-reader cannot derive — `u64` where C says `size_t`.
-
-**Step 4 — the float half closes with four flags where the sitting expected one**
-(2026-08-25, landing panel 092's queued half). `-Wdouble-promotion` was measured a
-QUARTER of the answer: `f64` against a header's `float` still demoted in silence
-under it, a float against a header's integer dropped its fraction in silence, and
-the integer family had the same gap below the 64→32 window (`i64` against `short`).
-The probe block's pragma now carries **four** errors, each with a witness that
-fired first — and the scope is measured load-bearing: enabled globally the four
-fire on **19 of 146** blessed emissions of correct programs, so none can ever
-enter `flags()`. All four wrong directions are `error[ffi_parameter_type]` at
-exit 1 on the author's line with the right fix; the spec names what stays silent,
-once, at **+32** (3592): what C converts exactly, and what a pointer points at.
-
-**Step 5 — acceptance row 1: an `extern` never crosses a module boundary**
-(2026-08-25, executing panel 033 R5 at panel 091's measured price). The seven
-qualified `cli_toolchain.system` call sites route through `cli_shell.shell`,
-a Heroes function beside the extern; the rule lands as
-`error[extern_across_modules]` on the qualified **reference** — the call and the
-extern taken as a value alike — and closed two shapes the ruling had not named,
-both measured open: the library's externs were reachable unqualified
-(`hero_args_count()` was check-clean from any program, zero users in the
-repository), and UFCS reached them through the dot. Group constants and records
-stay reachable, deliberately: their C is compiler-written on both sides. Both
-directions pinned: `externroute/wrong.hero` exit 1, `right.hero` runs exit 0.
-The layout check fired on the landing — `resolve_walk.hero` was frozen at its
-366-line pin — and the answer was a seam, not a squeeze: the name lookup left
-as `resolve_names.hero`, and the walk is under the default ceiling for the
-first time since the port.
-
-**Step 6 — the compiler builds itself as 157 translation units** (2026-08-26,
-executing panel 093 R1–R6). It links, it runs, it checks its own source at exit
-0, and it re-emits all **297** blessed emissions byte for byte. **The first
-per-module self-build failed with 20 clang errors, and that is the finding**:
-every section of a TU was answering *what do I need* for itself, and four
-answers cannot share one file. Descriptors came from the whole program's
-aggregates against typedefs from the module (`h_token_Span`); prototypes for all
-1,318 functions against types from the module (`h_source_InputFile`); a record's
-`_hash` calling its field's, which `check_table.contained` never reaches because
-it stops at a declared type (`h_diag_Kind_hash`); a `T?` taking its payload's
-descriptor where the descriptor set was narrower
-(`h_clitoolchain_Toolchain_desc`). **One set now feeds all four**, closed the way
-C reads a declaration — fields, cases' fields, and a FIXED array's element, which
-the FFI corpus found (`h_ffiacarraymember_Matrix_hash`). Two deletions came with
-it: a TU prototypes **what it defines and what it calls**, not the program (R3's
-guarantee is untouched — the declaring TU still compiles its own prototype beside
-its definition); and the fused unit is no longer emitted on the per-module path,
-where it was printed and dropped, **785,323 lines per build**.
-
-**And the place store finally reached the compiler's own arena — the frontend
-halved** (author instruction, *"la forma giusta è il place store"*, alongside
-step 6). `push_owned` fires on a BARE place, and `ast.push_expr(@a: Ast, …)`
-wrote `a.exprs @ a.exprs.push(node)`, a **field** place — so the hottest push in
-the compiler copied the whole expression arena, every time. The three arena entry
-points now take the array itself and their 56 call sites pass `@a.exprs`.
-Measured: `heroes check` on the compiler's own source **191 s → 88 s**, its own
-tests **3m39s → 2m15s**, the seed's emission **224 s → 120 s**. No language
-change, three lines.
-
-**Step 7 — the cache stops serving an object built against a header that has
-since changed** (2026-08-26, acceptance row 2's second half). **The defect was
-measured before the repair and it was a wrong answer at exit 0**: a two-module
-program whose `extern "conf.h"` group declares `constant CONF_LIMIT` printed `1`
-with the header on disk saying `2`, and `1` again with it saying `7`. The cause
-is structural rather than an oversight — the accessor emits `return CONF_LIMIT;`
-whatever the header holds, so the emitted C is byte-identical across the edit and
-a key that contains the whole emitted C is blind to it **by construction**. The
-repair is **clang's own dependency listing** (`-MD`), riding the compile that is
-already happening: each translation unit records every file it opened,
-transitively, with a content digest, and a warm object is served only when all of
-them still hash the same. **The comment that stood in `cli_units.hero` saying the
-fused path had the same gap was FALSE**, measured both ways on the same witness:
-the fused path recompiles its unit on every call, so it caught the edit and this
-was the only path that missed it. Three instruments land in
-`tests/harness/suite_cache.hero` — a header edit is not invisible, an untouched
-build still hits, and an edit moves exactly the objects that read the edited file
-— and all three were run against a compiler built from the **previous** seed
-before they were believed: **2 of 3 red there, 3 of 3 green here**.
-
-**What it costs, measured back to back against the pre-step-7 binary** (four
-timings inside fifteen minutes, one machine, one source tree): the per-module
-self-build is **cold 142.29 s → 145.53 s (+3.2 s, +2.3%)** and **warm 133.08 s →
-132.68 s (unchanged)**. The freshness check is the half that runs on every warm
-build and it costs nothing measurable; the cold build pays about three seconds for
-157 depfile writes and one pass over the 797 KB of headers a TU reaches. That is
-the price of never serving a stale object, and §12 puts it ahead of speed by name.
-**One thing the step was believed to save and does not**: taking `runtime_text`
-out of the per-TU loop removes 157 shell `cat` calls and 25 MB of hashing per
-build — the count is real and re-measured — and the two warm numbers are the same
-to within 0.4 s. The work removed was not where the seconds were. It stays because
-it is less work for the same answer, not because it bought time.
-
-**And the same repair reached the adjacent shape before the commit, which is
-CLAUDE.md §1's fourth clause spent rather than quoted.** This compiler caches
-**two** objects, and the runtime's had the identical hole: keyed on the runtime's
-own sources and on nothing else, so `runtime.c` including `<stdio.h>` was outside
-the key — and that failure is *worse* than the one that provoked the work, because
-every TU rebuilds against changed system headers while this object does not, which
-is a libc ABI mismatch inside one binary reached with nobody touching a line of
-Heroes. **The language then chose where the code lives**: `cli_toolchain` must ask
-`cli_deps`, `cli_deps` must hash a file, and `digest` lived in `cli_toolchain` — a
-module cycle, which Heroes refuses on the `use` edge whatever it carries. So
-`digest`/`hex8` are `selfhost/cli_digest.hero` now, which is where §11's
-single-concern rule puts them anyway. Panel 031 R6's *"reversible direction"*
-paying for itself in the small. A third thing fell out and was not the point:
-`Toolchain.fingerprint` is the **Heroes** version (`0.0.1`) and never clang's, so
-a clang upgrade alone never moved any key — and now it does, because clang's
-builtin headers sit under a versioned path (`…/clang/21/include/stdbool.h`) that
-every listing records.
-
-**Step 8 — the four instruments the sitting owed, each one seen to fail
-first** (2026-08-26). Panel 093's resolution ends by naming what the
-architecture owes in tests, and steps 6 and 7 landed the mechanisms while
-that line stayed open. All four are failures with **no diagnostic and no
-crash**: a wobbling TU is worse here than on the fused path because the
-emitted text *is* the cache key, so two spellings of one module are two
-directories and a cache that can never hit; a caller compiling a prototype
-the definition does not have links, runs, and returns garbage at exit 0; a
-copied runtime descriptor gives one type two identities inside one binary,
-and identity is what `==` and `hash` walk through. **The tag-reorder witness
-was measured to have teeth rather than assumed to**: three orderings of a
-three-case variant put `h_hue_Colour_tag_blue` at **2, then 0, then 1** in
-the *caller's* own emitted C, each under a different key — so a key blind to
-the tag enum hands the second build an object switching on 2 while the module
-says 0, and the program prints `red` at exit 0. **The determinism case
-carries a guard against itself**: a warm build writes no `.c`, so the check
-deletes the cached objects before each of its two emissions, and if that
-deletion ever stopped working the suite would compare a file with itself and
-report three green cases having asked nothing — so the forget is asserted
-between the builds, and disabling it turns all three red. Every check was run
-in its failing direction before the commit (§9). The one case no live tree can
-produce is the prototype **divergence** — the emitter writes both lines from
-one walk — so it is a test block over two hand-written lines, which is the
-only way to see it at all. Net **1171 → 1175**.
-
-**Step 9 — the frontend was one function, and `heroes check` on the compiler's
-own source goes from 88 s to about 8** (2026-08-26, author instruction *"rendi il
-più ottimizzato possibile il frontend"*). The answer to the open item was *make
-it incremental*; **the profile said it was not slow, it was quadratic**, and
-finding that out cost no architecture change at all. `sample` over `heroes check
-selfhost/main.hero`: **21,119 of 21,254 samples — 99.4% — inside
-`cursor.line_col`** and the three runtime calls it makes. `line_col` answers with
-a line NUMBER, so it walks from byte 0; `take_docs` asked it once per declaration
-and once per comment; the parse runs over the whole concatenated Source, so each
-call read up to a million bytes. **The rule the repair records: ask for the
-DISTANCE you need, not for the position you could derive it from.** `take_docs`
-wanted *is this comment one line above* and *does it start in the same column* —
-both local, both tens of bytes. **88.0 → 27.9 s.** The profile then named the
-same shape as the day before, one department over: `new_resolver` appended
-through a FIELD place once per expression in the program, so the in-place store
-never fired and every push copied the arena (**→ 11.2 s**); a systematic grep for
-`x.y @ x.y.push(` found three more, in `state.emit` (once per TOKEN) and twice in
-`resolve_state.declare` (**→ 5.2 s**). **Two files were split along seams, not
-squeezed**: `text_lines.hero` (it imports nothing) and `resolve_binding.hero`.
-**One inference was written and falsified before it reached the record** — that
-splitting would cost speed because clang cannot inline across a TU boundary:
-fused **9.90 s** against per-module **10.29 s**, inside the noise. And the noise
-is stated rather than hidden — repeated runs vary 5.2 s to 12.6 s for the same
-binary and input — so every number here is a minimum over its repetitions.
-Fixpoint verified on **793,526 lines** of emitted C, byte for byte; `heroes test
-selfhost/main.hero` **512** passed; the net **1175**, all green.
-
-**Step 10 — acceptance row 4, in the shape the sitting re-read it into**
-(2026-08-26). The row was tabled as *"exit 1 in both TUs"* and panel 093 R5
-measured that unsatisfiable: the caller is **correct**, the mistake is one
-module over, so there is no second failing unit to demand. R5's three claims
-replace it and all three are instruments now.
-`tests/golden/surface-fixtures/externsignature/` carries two of them —
-`math.h` declares `double sqrt(double)`, the declaring module says `i64` both
-ways, and the verdict is `error[ffi_return_type]` at **exit 1 on
-`bind.hero:13:5`**, the author's own line rather than whichever TU was
-compiling; the corrected twin runs and prints `4.0`, so the case cannot pass
-by refusing every program forever. **The third cannot be a golden**, because
-it is about the second invocation: `suite_cache` builds three times with
-every healthy object warm and each must exit 1 with the same code and the
-same file named, because a build that goes green on its second run is the
-worst outcome a build system has. Falsified before it was believed.
-**Annotating the fixture found a defect in the invariant itself**, filed in
-`DECIDE.md` rather than fixed: `suite_annotations` sweeps two directories
-because it compares a `.hero` with its `.expected`, and **15 annotations in
-11 `fixedbugs/` files plus 4 in 3 `surface-fixtures/` files sit outside it**,
-against 181 inside — in the directory §9 created for defects that already
-shipped.
-
-#### What it does not deliver
-
-**Measured and queued rather than glossed**: the per-module build is **slower**
-than the fused one on every invocation today. Re-measured at step 7's close,
-four timings inside fifteen minutes on one machine and one tree: per-module
-**cold 145.5 s**, **fully warm 132.7 s**, against **≈124 s** fused (`--emit-c`
-120.5 s + one clang line over the seed 3.7 s). The pair this section carried
-until 2026-08-26 — cold 261 s, warm 250 s — is **not reproducible on today's
-tree** and is 1.9× the same command's number; no cause is asserted, because none
-was measured. The gap is therefore **8.7 s and not 127**, which is a different
-question with the same shape: the frontend is **83% of a build**, so a warm
-rebuild re-parses and re-checks all 158 modules whatever the cache holds, and
-the cache can only ever save the clang seconds. The cache itself works (162
-directories after two identical builds, not 314). **The author's answer,
-2026-08-26: make the frontend incremental** — the one direction that changes the
-ratio rather than the constant. It is an architecture change, so it goes to a
-sitting before it goes into the compiler.
+**And the reason is architectural rather than a defect**: panel 093 R4 puts the
+emitted text **in** the cache key, so a warm build must emit all 157 translation
+units to learn that it may reuse their objects. **A cache cannot skip the work
+that computes its own key.** The frontend is now ~18% of a build where the open
+item measured 83%, so an incremental frontend is the smaller half; the emission
+is the larger one. Both numbers are in `docs/work/SCHEDULED.md` with their dates.
 
 ### M-package-layout — `use` paths, the qualifier, and where a program's files live
 
