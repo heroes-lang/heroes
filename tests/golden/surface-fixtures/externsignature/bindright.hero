@@ -6,7 +6,7 @@
 # disk at once — `externroute/` next door made the same choice for the
 # same reason.
 
-extern "math.h"
+extern "math.h" link "m"
     function sqrt(x: f64) -> f64
 
 function root(x: f64) -> f64

@@ -9,7 +9,7 @@
 # `extern` across a module boundary: the caller reaches `root`, and only
 # this module carries the header.
 
-extern "math.h"
+extern "math.h" link "m"
     function sqrt(x: i64) -> i64                    #~ ffi_return_type
 
 function root(x: i64) -> i64

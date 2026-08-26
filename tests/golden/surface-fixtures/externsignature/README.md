@@ -35,3 +35,20 @@ door: `cases.collect` requires a `.hero`/`.expected` pair, which a
 neighbour module breaks, and `suite_emission` requires every collected
 program to emit, which a refused case breaks. What runs these files is
 the pair of `suite_surface` rows naming them.
+
+## `link "m"`, and why it is here
+
+Added 2026-08-26, hours after the fixture landed, because **the CI's Linux leg
+went red and macOS never would have**. `sqrt` lives in `libm` on Linux and must
+be linked explicitly; on Darwin the maths functions are in libSystem, so
+`extern "math.h"` with no `link` builds and runs there and nowhere else.
+
+Three checks failed on one cause — this fixture's `surface` row, the
+`annotations` sweep (an unannotated `ffi_missing_link` it had never seen), and
+`suite_cache`'s row-4 case, which writes the same binding into its own scratch
+program. All three are one edit.
+
+It is the platform lesson this repository keeps re-learning from the other
+direction: `shell.hero` carries the note about `/tmp`, true of both platforms
+the CI covered and false of the third. A binding that works on the machine it
+was written on is not a binding that works.
