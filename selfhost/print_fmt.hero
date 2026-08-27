@@ -514,7 +514,17 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
                         fmt_block(@f, tree, s, comments, block: blk.block, indent: indent + 8)
                 index @ index + 1
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
-        .name | .hole | .unary | .binary | .field | .index => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
+        # A binary whose RIGHT EDGE is a control form is a head plus a
+        # block, not a line. Routed on through plain_valued it reached
+        # render(), which returns a control form's header alone — and the
+        # body was gone. See binary_control_tail for the defect.
+        .binary =>
+            tail = binary_control_tail(tree, id: value)
+            if tail.is_err()
+                plain_valued(@f, tree, s, head: head, value: value, indent: indent)
+            else
+                valued(@f, tree, s, comments, head: head + binary_prefix(tree, s, id: value), value: tail.must(), indent: indent)
+        .name | .hole | .unary | .field | .index => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
         .call | .method | .variant_case | .array | .map | .try_expr | .error => plain_valued(@f, tree, s, head: head, value: value, indent: indent)
 
 function plain_valued(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64, indent: i64)
@@ -554,8 +564,43 @@ function broken(@f: Fmt, tree: ast.Ast, s: source.Source, head: str, value: i64,
             else
                 put_line(@f, indent: indent, text: head + render(tree, s, id: value))
         .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => put_line(@f, indent: indent, text: head + render(tree, s, id: value))
+        # A binary reaching here is control-free: valued() intercepts one
+        # whose right edge is a control form before this path is taken.
         .name | .hole | .unary | .binary | .field | .index => put_line(@f, indent: indent, text: head + render(tree, s, id: value))
         .if_expr | .match_expr | .try_expr | .error => put_line(@f, indent: indent, text: head + render(tree, s, id: value))
+
+# The control form at the right edge of a chain of binary operators, if
+# there is one.
+#
+# THE INVARIANT: render() returns a control form's HEADER ONLY, and owes
+# the blocks to valued(). That obligation held for a value that IS a
+# control form and not for one that CONTAINS it — which deleted seven
+# arms out of digits.hero at exit 0 (docs/defects/003). A control form
+# runs to the end of its line and carries its block indented below, so
+# it can only ever be the RIGHTMOST operand: that is what makes the rest
+# of the expression printable as a head.
+function binary_control_tail(tree: ast.Ast, id: i64) -> i64?
+    match tree.exprs[id].kind
+        .if_expr | .match_expr => return ok(id)
+        .binary b => return binary_control_tail(tree, id: b.right)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return fail("none", "not a control form")
+        .name | .hole | .unary | .field | .index => return fail("none", "not a control form")
+        .call | .method | .variant_case | .array | .map | .try_expr | .error => return fail("none", "not a control form")
+    return fail("none", "not a control form")
+
+# Everything to the LEFT of that control form, rendered as the head it
+# is printed under. Parenthesised exactly as render() would, so the
+# minimum-parentheses table holds on this path too.
+function binary_prefix(tree: ast.Ast, s: source.Source, id: i64) -> str
+    match tree.exprs[id].kind
+        .binary b =>
+            mine = power(tree, id)
+            return wrapped(tree, s, id: b.left, needed: mine) + " " + print_bodies.binary_op(b.op) + " " + binary_prefix(tree, s, id: b.right)
+        .if_expr | .match_expr => return ""
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return ""
+        .name | .hole | .unary | .field | .index => return ""
+        .call | .method | .variant_case | .array | .map | .try_expr | .error => return ""
+    return ""
 
 function broken_args(@f: Fmt, tree: ast.Ast, s: source.Source, open: str, given: [ast.Arg], indent: i64)
     put_line(@f, indent: indent, text: open)
@@ -863,3 +908,41 @@ test "fmt is idempotent on a program with groups, comments and a match"
     assert once == twice
     # The group survives as one head line, the arms line up.
     assert once == "# A file header remark.\n\nuse geom\n\nextern \"m.h\" link \"m\"\n    function sqrtish(x: f64) -> f64\n    constant K: i64\n\n# Documentation for pick.\nfunction pick(n: i64) -> i64\n    match n\n        0 => return 10\n        1 => return 20\n        _ =>\n            v = n * 2\n            return v\n\nfunction main()\n    print(pick(n: 1))\n"
+
+# docs/defects/003: fmt deleted seven arms out of digits.hero at exit 0.
+# Four shapes, because the provoking case is a witness and not the class
+# (CLAUDE.md §1): the plain binary tail, a chain of two operators, a
+# match nested inside an arm of the outer one, and an `if` rather than a
+# `match` in the same position.
+test "a control form at a binary's right edge keeps its body"
+    plain = "function f(c: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => \"b\"\n        _ => c\n    return out\n"
+    parsed = parse.parse(plain)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: plain)
+    got = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert got == "function f(c: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => \"b\"\n        _   => c\n    return out\n"
+
+    # Two operators before the control form, and the prefix keeps its
+    # minimum parentheses.
+    chain = "function f(c: str, p: str) -> str\n    out: str @ \"\"\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _ => c\n    return out\n"
+    pc = parse.parse(chain)
+    assert pc.diagnostics.len() == 0
+    sc = source.new_source(name: "t.hero", text: chain)
+    gc = format_file(pc.tree, sc, pc.comments, pc.uses, pc.decls)
+    assert gc == "function f(c: str, p: str) -> str\n    out: str @ \"\"\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _   => c\n    return out\n"
+
+    # A match inside an arm of the match at the right edge: all four arms.
+    nested = "function f(c: str, e: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _ => e\n        _ => c\n    return out\n"
+    pn = parse.parse(nested)
+    assert pn.diagnostics.len() == 0
+    sn = source.new_source(name: "t.hero", text: nested)
+    gn = format_file(pn.tree, sn, pn.comments, pn.uses, pn.decls)
+    assert gn == "function f(c: str, e: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _   => e\n        _   => c\n    return out\n"
+
+    # The same position, an `if` instead: the else branch used to go.
+    branchy = "function f(c: str) -> str\n    out: str @ \"\"\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
+    pb = parse.parse(branchy)
+    assert pb.diagnostics.len() == 0
+    sb = source.new_source(name: "t.hero", text: branchy)
+    gb = format_file(pb.tree, sb, pb.comments, pb.uses, pb.decls)
+    assert gb == branchy
