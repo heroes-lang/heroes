@@ -47,8 +47,8 @@ constant CEILING: i64
 # 400 was red in the Rust.
 #
 # One number has moved since, twice in one day: `print_fmt.hero`
-# 843 -> 888 -> 903 -> 996, measured 2026-08-26: docs/defects/003,
-# docs/defects/004, then panel 095 stage 3. Raised, not split: the language refuses
+# 843 -> 888 -> 903 -> 996 -> 1005, measured 2026-08-26/28: defects 003,
+# 004, panel 095 stage 3, and WIDTH 88 -> 120. Raised, not split: the language refuses
 # the only cut available — 003's two functions read `power` and
 # `wrapped`, so the seam runs print_bodies -> print_fmt -> print_bodies
 # and `module_cycle` fires on the `use` edge (§11's knot clause). This
@@ -61,7 +61,7 @@ constant DECIDED: [str]
         "selfhost/ir_lower.hero 1389"
         "selfhost/check_walk.hero 1385"
         "selfhost/grammar_expr.hero 868"
-        "selfhost/print_fmt.hero 996"
+        "selfhost/print_fmt.hero 1005"
         "selfhost/parse_decl.hero 606"
         "selfhost/ast.hero 495"
         "selfhost/ir_print.hero 485"

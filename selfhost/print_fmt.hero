@@ -47,8 +47,17 @@ use parse
 # Where a line stops being one line. Not a language rule — one
 # constant, and the only thing that decides single- versus multi-line
 # literals (§4.9 leaves the choice to the formatter on purpose).
+#
+# 88 until 2026-08-28, then 120 by author instruction. The 88 was never
+# adjudicated either — `DESIGN-LOG:46` fixed it with `—` in the panel
+# column, and panel 007 ruled on WHERE a line may break (inside brackets
+# only), never on how wide. What the number buys is measured in the
+# commit that moved it: at 88 the canonical form of `selfhost/` was
+# +19.7% longer than the source, and the breaking is what made a run of
+# match arms stop being a run — every non-fixpoint in docs/defects/004
+# began with a line this constant decided to break.
 constant WIDTH: i64
-    88
+    120
 
 ## The state
 
