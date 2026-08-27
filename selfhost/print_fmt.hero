@@ -500,11 +500,18 @@ function valued(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span]
                 match arm.body
                     .one_stmt one =>
                         statement(@f, tree, s, comments, id: one.at, indent: indent + 4, head: pad_right(left, width: pads[index]) + " => ")
-                        # The arm's OWN line, not span.end: that span
-                        # reaches the terminator, and one line too far
-                        # made trailing_comment steal the next
-                        # declaration's doc comment.
+                        # Not `arm.span.end`: it reaches the terminator,
+                        # and one line too far made trailing_comment
+                        # steal the next declaration's doc comment. Not
+                        # `line` alone either — a value THIS FORMATTER
+                        # broke across lines occupies them, and stopping
+                        # short grew a blank line on every re-format
+                        # (docs/defects/004). The value's own extent is
+                        # the question, and fmt_block already asks it.
                         f.last_line @ line
+                        spread = literal_end_line(tree, s, id: one.at)
+                        if !spread.is_err() && spread.must() > f.last_line
+                            f.last_line @ spread.must()
                         trailing_comment(@f, s, comments, line: f.last_line)
                     .block blk =>
                         # A block arm never pads: its => ends the
@@ -696,21 +703,29 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, arm: ast.Arm, left: i
         .one_stmt one => stmt_at @ one.at
         .block => return fail("none", "a block arm has no one-line form")
     value: i64 @ -1
+    # THE HEAD THE PRINTER WILL PUT BEFORE THE VALUE. It must be the same
+    # string `statement()` puts there, and its width comes from the
+    # literal rather than typed, so the two cannot drift in characters.
+    # `return ` was missing here: the arm measured short, joined the run,
+    # was padded past the margin and then broken (docs/defects/004).
+    head: i64 @ 0
     match tree.stmts[stmt_at].kind
         .expr_stmt e => value @ e.value
         .return_stmt r =>
             if !r.value.is_err()
                 value @ r.value.must()
+                head @ "return ".chars().len()
         .bind | .declare | .mutate | .break_stmt | .continue_stmt => value @ value
         .assert_stmt | .while_stmt | .for_in | .error => value @ value
     if value == -1
         # Any other statement shape prints on its own line by
         # construction, so it is in the run and its length is its
-        # head's.
-        return ok(indent + left + 4)
+        # head's. NO `indent`: `close_run` adds it, and this path added
+        # it twice (docs/defects/004).
+        return ok(left + 4)
     if spans_lines(tree, s, value: value)
         return fail("none", "the author spread this value")
-    measured = (" ".repeat((left + 4).to_u64().must()) + render(tree, s, id: value)).chars().len()
+    measured = left + 4 + head + render(tree, s, id: value).chars().len()
     if indent + measured <= WIDTH
         return ok(measured)
     return fail("none", "past the margin")
