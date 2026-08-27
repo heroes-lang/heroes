@@ -390,11 +390,103 @@ function signature(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionD
 
 ## The statement walk (fmt_stmt)
 
+## Structure as air (panel 095)
+
+# What kind of block a statement opens, or NO_BLOCK. The three rules that
+# insert vertical space all read this one dispatch.
+constant NO_BLOCK: i64
+    0
+
+constant LOOP_BLOCK: i64
+    1
+
+constant MATCH_BLOCK: i64
+    2
+
+constant IF_BLOCK: i64
+    3
+
+# THIS MUST AGREE WITH `statement()` AND `valued()` ARM FOR ARM, and that
+# obligation is the whole risk of this function. It is a SECOND dispatch
+# over the same two kinds, and docs/defects/003 is what a second dispatch
+# that disagrees costs: `valued` knew a control form can sit at a
+# binary's right edge, `render` did not, and seven arms were deleted at
+# exit 0. `a_block_opener_is_what_valued_prints_a_block_for` is the test
+# that fires when the two drift.
+function block_shape(tree: ast.Ast, id: i64) -> i64
+    match tree.stmts[id].kind
+        .while_stmt | .for_in => return LOOP_BLOCK
+        .bind b => return value_block_shape(tree, id: b.value)
+        .declare dc => return value_block_shape(tree, id: dc.value)
+        .mutate m => return value_block_shape(tree, id: m.value)
+        .assert_stmt a => return value_block_shape(tree, id: a.value)
+        .expr_stmt e => return value_block_shape(tree, id: e.value)
+        .return_stmt r =>
+            if r.value.is_err()
+                return NO_BLOCK
+            return value_block_shape(tree, id: r.value.must())
+        .break_stmt | .continue_stmt | .error => return NO_BLOCK
+    return NO_BLOCK
+
+# The value half, and it is `valued()`'s own dispatch: a control form, or
+# a binary whose right edge is one.
+function value_block_shape(tree: ast.Ast, id: i64) -> i64
+    match tree.exprs[id].kind
+        .if_expr => return IF_BLOCK
+        .match_expr => return MATCH_BLOCK
+        .binary =>
+            tail = binary_control_tail(tree, id: id)
+            if tail.is_err()
+                return NO_BLOCK
+            return value_block_shape(tree, id: tail.must())
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return NO_BLOCK
+        .name | .hole | .unary | .field | .index => return NO_BLOCK
+        .call | .method | .variant_case | .array | .map | .try_expr | .error => return NO_BLOCK
+    return NO_BLOCK
+
+# Is a comment waiting to be printed above `line`? RULE 4 puts its blank
+# ABOVE the comment, and `comments_before` has already printed the
+# comment by the time it could say so — hence the peek.
+function comment_waits_before(f: Fmt, s: source.Source, comments: [token.Span], line: i64) -> bool
+    if f.next_comment >= comments.len()
+        return false
+    return source.line_of(s, comments[f.next_comment].start) < line
+
 function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], block: ast.Block, indent: i64)
     first: bool @ true
+    # RULE 2's state, and it is the only new state the air rules need: a
+    # loop or match block just closed, so the next statement resumes at
+    # the outer level and takes air above it. Nothing to thread through
+    # the knot — the transition is observable right here, in the parent's
+    # own loop.
+    closed_a_loop: bool @ false
     for id in block.stmts
         stmt = tree.stmts[id]
         line = source.line_of(s, stmt.span.start)
+        shape = block_shape(tree, id: id)
+        # RULE 2, NARROWED to a loop or a match and never an `if` (panel
+        # 095, the llm-ergonomist, measured): 7 of the 8 block-close
+        # blanks in its sample were an `if`'s dedent that STAYS inside
+        # the loop and the 8th was the one that leaves it, so thirteen
+        # readings out of fourteen taught "back one level" and the
+        # fourteenth — the only one whose wrong answer compiles — was the
+        # exception. Fewer marks, each carrying more.
+        if closed_a_loop
+            blank_line(@f)
+        # RULE 1: air before a form that opens a block, `if` included.
+        # Never before the FIRST statement, which `first` already carries
+        # below for the author's own blank and for the same reason: a
+        # block does not open on an empty line.
+        if !first && shape != NO_BLOCK
+            blank_line(@f)
+        # RULE 4: air above a comment run, and nothing between the
+        # comment and what it documents. Statement bodies only — a
+        # `record`, `variant` or `extern` body is reached by other
+        # callers of comments_before, and design.md §4.1 makes the blank
+        # BELOW a comment there the difference between a remark and that
+        # field's documentation (docs/defects/004 § What is still owed).
+        if !first && comment_waits_before(f, s, comments, line: line)
+            blank_line(@f)
         comments_before(@f, s, comments, line: line, indent: indent)
         # A blank line the author left between two statements survives
         # — never before the FIRST statement: a block does not open on
@@ -416,6 +508,7 @@ function fmt_block(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Sp
         if f.last_line < stop
             f.last_line @ stop
         trailing_comment(@f, s, comments, line: f.last_line)
+        closed_a_loop @ shape == LOOP_BLOCK || shape == MATCH_BLOCK
 
 # One statement, optionally behind a head. A match arm passes its
 # patterns as the head, which routes an arm whose body is an if
@@ -935,7 +1028,7 @@ test "a control form at a binary's right edge keeps its body"
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: plain)
     got = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
-    assert got == "function f(c: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => \"b\"\n        _   => c\n    return out\n"
+    assert got == "function f(c: str) -> str\n    out: str @ \"\"\n\n    out @ out + match c\n        \"a\" => \"b\"\n        _   => c\n\n    return out\n"
 
     # Two operators before the control form, and the prefix keeps its
     # minimum parentheses.
@@ -944,7 +1037,7 @@ test "a control form at a binary's right edge keeps its body"
     assert pc.diagnostics.len() == 0
     sc = source.new_source(name: "t.hero", text: chain)
     gc = format_file(pc.tree, sc, pc.comments, pc.uses, pc.decls)
-    assert gc == "function f(c: str, p: str) -> str\n    out: str @ \"\"\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _   => c\n    return out\n"
+    assert gc == "function f(c: str, p: str) -> str\n    out: str @ \"\"\n\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _   => c\n\n    return out\n"
 
     # A match inside an arm of the match at the right edge: all four arms.
     nested = "function f(c: str, e: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _ => e\n        _ => c\n    return out\n"
@@ -952,12 +1045,15 @@ test "a control form at a binary's right edge keeps its body"
     assert pn.diagnostics.len() == 0
     sn = source.new_source(name: "t.hero", text: nested)
     gn = format_file(pn.tree, sn, pn.comments, pn.uses, pn.decls)
-    assert gn == "function f(c: str, e: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _   => e\n        _   => c\n    return out\n"
+    assert gn == "function f(c: str, e: str) -> str\n    out: str @ \"\"\n\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _   => e\n        _   => c\n\n    return out\n"
 
     # The same position, an `if` instead: the else branch used to go.
+    # AND it is the control case for panel 095's narrowing of rule 2:
+    # `if` takes air BEFORE it, like the match above, and none AFTER,
+    # where the match gets one. Same position, different air, on purpose.
     branchy = "function f(c: str) -> str\n    out: str @ \"\"\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
     pb = parse.parse(branchy)
     assert pb.diagnostics.len() == 0
     sb = source.new_source(name: "t.hero", text: branchy)
     gb = format_file(pb.tree, sb, pb.comments, pb.uses, pb.decls)
-    assert gb == branchy
+    assert gb == "function f(c: str) -> str\n    out: str @ \"\"\n\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
