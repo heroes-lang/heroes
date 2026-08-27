@@ -42,7 +42,7 @@ function run_fmt(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_t
         cli_io.eprint(text: "error: refusing to format a file with diagnostics")
         return .diagnostics_exit
     formatted = print_fmt.format_file(out.tree, s, out.comments, out.uses, out.decls)
-    refusal = refuse_output_the_formatter_broke(path: path, formatted: formatted)
+    refusal = refuse_output_the_formatter_broke(path: path, original: source_extent.user_text(s), formatted: formatted)
     if !refusal.is_err()
         cli_io.eprint(text: "error: " + refusal.must())
         cli_io.eprint(text: "error: this is a compiler bug — `" + path + "` was NOT changed")
@@ -63,27 +63,52 @@ function run_fmt(path: str, s: source.Source, inv: cli_argv.Invocation) -> cli_t
 # file at exit 0 (docs/defects/003, the third instance of this class
 # after panels 014 and 060/061 — every one found by a person).
 #
-# Two checks. The output must PARSE, because a formatter that emits
-# source the parser refuses has produced a non-program. And formatting
-# it again must give the same text, because a canonical form that is not
-# a fixpoint is not canonical.
+# THREE CHECKS, and they are three different properties. The output must
+# PARSE, because a formatter that emits source the parser refuses has
+# produced a non-program. Formatting it again must give the same TEXT,
+# because a canonical form that is not a fixpoint is not canonical. And
+# it must hold the same TREE — which is the one the other two cannot do:
+# output that parses and is a fixpoint can still mean something else.
+# Panel 061's deleted `partial`, panel 060's hoisted `record`, and a
+# record-field remark promoted to documentation are all of that kind.
 #
-# WHAT THIS DOES NOT CATCH is output that parses and means something
-# else — panel 061's deleted `partial`. That is `assert_canonical`,
-# `dump(text) == dump(fmt(text))`, which the port never brought over,
-# and it is still owed. The two are different properties and this one is
-# the weaker: do not read a green guard here as the tree being safe.
+# The third check is `assert_canonical` — `dump(text) == dump(fmt(text))`
+# — which the Rust bootstrap had, the port never brought over, and
+# `print_dump.hero` went on claiming as live for a week. It is here now.
+#
+# HOW THE TWO TREES ARE MADE COMPARABLE, because they are not by default:
+# the input reaches `run_fmt` parsed with the WHOLE module graph plus the
+# library appended, while the output is one file. So this re-parses the
+# ROOT FILE'S OWN TEXT standalone and compares that against the output
+# parsed standalone — one file against one file, both named `path` so
+# `dump_ast`'s first line agrees.
+#
+# Two things make the dump invariant under legitimate formatting, both
+# measured rather than assumed: `print_bodies.hero:130` runs an integer
+# literal through `canonical_int`, so `fmt`'s one literal rewrite
+# (`0xFF` -> `0xff`) dumps identically; and the dump carries names,
+# structure and doc comments, never spans or columns.
 #
 # Every failure is the COMPILER's (§7): exit 2, author's file untouched.
-function refuse_output_the_formatter_broke(path: str, formatted: str) -> str?
+function refuse_output_the_formatter_broke(path: str, original: str, formatted: str) -> str?
+    after = source.new_source(name: path, text: formatted)
     reparsed = parse.parse(formatted)
     if reparsed.diagnostics.len() > 0
-        out = source.new_source(name: path, text: formatted)
-        return ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], out))
-    twice = print_fmt.format_file(reparsed.tree, source.new_source(name: path, text: formatted), reparsed.comments, reparsed.uses, reparsed.decls)
+        return ok("`fmt` produced source that does not parse: " + diag.render_line(reparsed.diagnostics[0], after))
+    twice = print_fmt.format_file(reparsed.tree, after, reparsed.comments, reparsed.uses, reparsed.decls)
     if twice != formatted
         return ok("`fmt` is not a fixpoint on its own output for `" + path + "`")
-    return fail("clean", "the output parses and is a fixpoint")
+    before = parse.parse(original)
+    if before.diagnostics.len() > 0
+        # The root file alone does not parse, which `run_fmt` has already
+        # ruled out for the whole compilation — so there is no tree to
+        # compare against and the two checks above stand on their own.
+        return fail("clean", "the root file alone does not parse")
+    was = print_dump.dump_ast(before.tree, source.new_source(name: path, text: original), before.uses, before.decls)
+    now = print_dump.dump_ast(reparsed.tree, after, reparsed.uses, reparsed.decls)
+    if was != now
+        return ok("`fmt` changed the TREE of `" + path + "` — the output parses and is a fixpoint, and it is a DIFFERENT PROGRAM")
+    return fail("clean", "the output parses, is a fixpoint, and holds the same tree")
 
 ## Tests
 
@@ -119,6 +144,34 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
 # wrote the header alone at exit 0 and destroyed the file. When the
 # printer learns the shape, the expectation here becomes `.ok_exit` and
 # the guard keeps its job over everything else.
+# §9, and it is the case the other two guards cannot make fire. SYMPTOM:
+# `heroes fmt` deleted the blank line under a remark inside a `record`,
+# and `--dump-ast` showed a `doc` appear on the field below it — an
+# ordinary remark promoted to that field's DOCUMENTATION, which the
+# compiler reuses in `???` output, error messages and `outline`. CAUSE:
+# design.md §4.1 makes that blank line the discriminator
+# (`selfhost/cursor.hero:194-220`, `take_docs`, where `above != wanted`
+# ends the run) and `comments_before` did not know it. DATE: 2026-08-26,
+# found by panel 095's compiler-engineer.
+#
+# The point of the case is what it proves about the OTHER guards: this
+# output PARSES and IS a fixpoint. Only the tree comparison sees it.
+test "fmt refuses output that parses and is a fixpoint and still means something else"
+    remark = "record Point\n    x: i64\n    # a remark, not documentation for y\n\n    y: i64\n"
+    _ = write_file(path: "build/selftest_fmt_tree.hero", text: remark)
+    rs = source.new_source(name: "build/selftest_fmt_tree.hero", text: remark)
+    marks: [cli_argv.FlagHit] = [cli_argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    rinv = cli_argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_tree.hero"), program_args: [], flags: marks)
+    assert run_fmt(path: "build/selftest_fmt_tree.hero", s: rs, inv: rinv) == .failed_exit
+    assert read_file("build/selftest_fmt_tree.hero").must() == remark
+    # And the two weaker properties really do hold on that output, which
+    # is why this case is the only one that can fail the third check.
+    squashed = "record Point\n    x: i64\n    # a remark, not documentation for y\n    y: i64\n"
+    reparsed = parse.parse(squashed)
+    assert reparsed.diagnostics.len() == 0
+    ss = source.new_source(name: "t.hero", text: squashed)
+    assert print_fmt.format_file(reparsed.tree, ss, reparsed.comments, reparsed.uses, reparsed.decls) == squashed
+
 test "fmt refuses to write output it cannot parse back, and leaves the file alone"
     unspellable = "function f(c: str) -> str\n    return match c\n        \"a\" => \"b\"\n        _ => c\n    + \"x\"\n"
     _ = write_file(path: "build/selftest_fmt_guard.hero", text: unspellable)

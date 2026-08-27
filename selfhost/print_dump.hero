@@ -9,9 +9,20 @@
 # contain it, so a change to a word here churns them all.
 #
 # EVERY FIELD OF A DECLKIND IS DESTRUCTURED AND USED HERE (panels 060,
-# 061, 062). This module is half of a guard: assert_canonical says
-# dump(text) == dump(fmt(text)) — "fmt changed the tree" — so a field
-# the formatter can print and this dump elides is a CANCELLING PAIR.
+# 061, 062). This module is half of a guard, and the other half lives in
+# `cli_syntax_cmds.hero::refuse_output_the_formatter_broke`: it asserts
+# dump(text) == dump(fmt(text)) — "fmt changed the tree" — so a field the
+# formatter can print and this dump elides is a CANCELLING PAIR, and the
+# pair reports GREEN.
+#
+# **This paragraph described that guard for a week while it did not
+# exist** (the port dropped it; restored 2026-08-26, panel 095's
+# condition 2). Its first catch was a remark inside a `record` promoted
+# to the next field's documentation — output that parses, is a fixpoint,
+# and is a different program. If the citation above ever stops naming a
+# live function, this comment is a claim about the world that has expired
+# (CLAUDE.md §11) and the guard is gone again.
+#
 # It happened twice in the bootstrap: header/library on a record, then
 # partial, both swallowed by a `..`. Heroes has no `..` in patterns —
 # the whole payload is bound by name — so the rule the bootstrap needs
