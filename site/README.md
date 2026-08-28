@@ -350,29 +350,42 @@ For a deploy that stops at `pages.dev`, the token needs one policy: resource
 **Entire Account**, `Cloudflare Pages: Edit` and `Account Settings: Read`. Give
 it a short expiry.
 
-### The domain, which has not moved
+### The domain
 
-The Pages project is `heroes-lang-site` and the site answers on
-`heroes-lang-site.pages.dev`. **`heroes-lang.org` is not on Cloudflare**:
-measured against the `.org` registry, resolver `1.1.1.1`, resolver `8.8.8.8` and
-whois, it is served by `dns106.ovh.net` and `ns106.ovh.net` and still points at
-OVH's parking address. `public/CNAME` records which domain the site expects;
-Cloudflare Pages ignores it.
+The Pages project is `heroes-lang-site`, and the site answers on
+`heroes-lang.org` as well as on `heroes-lang-site.pages.dev`. The zone moved
+from OVH to Cloudflare, which was not optional: **a `CNAME` cannot exist at the
+apex of a zone**, Pages is reached by `CNAME`, and OVH's DNS has no `ALIAS` to
+work around it. Cloudflare flattens the apex natively.
 
-Attaching the real domain needs the nameservers moved, because **a `CNAME`
-cannot exist at the apex of a zone** and Pages is reached by `CNAME`. OVH's DNS
-has no `ALIAS` to work around it; Cloudflare's own zone flattens the apex
-natively. Two things in that order, and the first one is easy to forget:
-**DNSSEC comes off at OVH first** — the domain is signed today, and switching
-nameservers while the `DS` record is still published in the registry takes the
-domain off the network until the signatures agree again. Then add the zone at
-Cloudflare, check the imported records, verify the new nameservers answer
-correctly before delegating to them, switch at OVH, wait for **Active**, and
-only then attach the custom domain to the Pages project. Attaching while the
-zone is still Pending writes no DNS record *and* makes Pages choose HTTP
-validation, which parks in a circular stall.
+**One hostname on the project, exactly as the author's other site is set up**:
+`giuseppearici.com` is the only custom domain on `giuseppearici-site`, and
+`heroes-lang.org` is the only one here. `www` is not on the project. It is a
+proxied placeholder record at `192.0.2.1` — RFC 5737 documentation space, never
+contacted — plus a Redirect Rule that answers **301** to the apex, path kept.
+One canonical hostname, and no second copy of the site to explain to a crawler.
 
-None of that is done, and none of it is owed until the author asks.
+Four things learned doing it, each of which cost time:
+
+- **The order is DNS first, custom domain second.** Pages validates a custom
+  domain over HTTP, so it has to reach the name; with an empty zone it cannot,
+  and the domain sits at `pending` forever. Detaching and re-attaching does not
+  help, because the missing piece is the record.
+- **Attaching over the API does not create the DNS record.** The dashboard flow
+  does; `POST /pages/projects/<p>/domains` only registers the domain with the
+  project. The record is a separate act.
+- **A leftover record blocks it.** The zone imported from OVH still had `A`
+  records for the apex and `www` pointing at OVH's server, proxied, so
+  Cloudflare dutifully forwarded to a machine that answered nothing: **521**,
+  then **525** once the SSL mode tried HTTPS to it. Both are the same fact.
+- **Every Redirect Rule carries `and not starts_with(http.request.uri.path,
+  "/.well-known/")`**, or Universal SSL cannot complete its challenge and parks
+  in `Pending Validation` for good.
+
+Verified live once it was up, against four independent public resolvers: `/`
+answers 200 with the holding page, every other path answers 404, both carry
+`x-robots-tag: noindex`, `?preview=` opens the real site in both editions, `www`
+answers 301 to the apex, and the certificate is issued to `heroes-lang.org`.
 
 ## The Italian edition — `site/src/html/it/`
 
