@@ -453,6 +453,22 @@ function declaration(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 function field_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], field: ast.Field, indent: i64)
     line = source.line_of(s, field.name.start)
     comments_before(@f, s, comments, line: line, indent: indent)
+
+    # §4.1's DISCRIMINATOR, and this is the one blank line in the language
+    # that carries MEANING rather than layout: a comment directly above a
+    # field IS that field's documentation, and a blank line between them
+    # makes it an ordinary remark. `cursor.hero:194-220`'s `take_docs`
+    # implements it — `above != wanted` ends the run — and the compiler
+    # reuses doc comments in `???` output, error messages and `outline`.
+    #
+    # Deleting that blank PROMOTED a remark to documentation: a different
+    # program that parses and is a fixpoint, which is why only the tree
+    # guard saw it (docs/defects/004 § What is still owed, found by panel
+    # 095's compiler-engineer). The same test as `fmt_block` uses between
+    # two statements, for the same reason — the layout the author chose is
+    # content — and here it is content the CHECKER reads.
+    if f.last_line > 0 && line > f.last_line + 1
+        blank_line(@f)
     put_line(
         @f,
         indent: indent,
@@ -464,6 +480,15 @@ function field_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.S
 function case_line(@f: Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], one_case: ast.Case)
     line = source.line_of(s, one_case.name.start)
     comments_before(@f, s, comments, line: line, indent: 4)
+
+    # The same §4.1 discriminator `field_line` carries, and here because a
+    # variant case takes a doc comment too (`print_dump.hero`'s
+    # `case_lines` prints one). This is the ADJACENT SHAPE of
+    # docs/defects/004's repair, fixed with it rather than after it —
+    # CLAUDE.md §1's fourth rule: the provoking case is a witness and a
+    # `record` field and a `variant` case are the same witness twice.
+    if f.last_line > 0 && line > f.last_line + 1
+        blank_line(@f)
     put_line(@f, indent: 4, text: source.span_text(s, one_case.name))
     f.last_line @ line
     trailing_comment(@f, s, comments, line: line)
@@ -1318,6 +1343,34 @@ test "fmt is idempotent on a program with groups, comments and a match"
 
     # The group survives as one head line, the arms line up.
     assert once == "# A file header remark.\n\nuse geom\n\nextern \"m.h\" link \"m\"\n    function sqrtish(x: f64) -> f64\n    constant K: i64\n\n# Documentation for pick.\nfunction pick(n: i64) -> i64\n    match n\n        0 => return 10\n        1 => return 20\n        _ =>\n            v = n * 2\n            return v\n\nfunction main()\n    print(pick(n: 1))\n"
+
+# docs/defects/004 § What is still owed, closed 2026-08-28 (`/decide` answer
+# `4a`). §4.1 makes the blank line below a comment the difference between
+# an ordinary remark and the next member's DOCUMENTATION, and deleting it
+# promoted one — a different program that parses, is a fixpoint, and was
+# caught only by the tree guard. Both members that take a doc comment are
+# asserted here, a `record` field and a `variant` case, because they are
+# the same witness twice (CLAUDE.md §1).
+test "the blank line that decides remark from documentation survives"
+    fields = "record Point\n    x: i64\n    # a remark, not documentation for y\n\n    y: i64\n"
+    pf = parse.parse(fields)
+    assert pf.diagnostics.len() == 0
+    sf = source.new_source(name: "t.hero", text: fields)
+    assert format_file(pf.tree, sf, pf.comments, pf.uses, pf.decls) == fields
+
+    # And with NO blank line it is documentation, and stays attached.
+    docs = "record Point\n    x: i64\n    # documentation for y\n    y: i64\n"
+    pd = parse.parse(docs)
+    assert pd.diagnostics.len() == 0
+    sd = source.new_source(name: "t.hero", text: docs)
+    assert format_file(pd.tree, sd, pd.comments, pd.uses, pd.decls) == docs
+
+    # The adjacent shape: a variant case takes a doc comment too.
+    cases = "variant Shape\n    dot\n    # a remark, not documentation for box\n\n    box\n"
+    pc = parse.parse(cases)
+    assert pc.diagnostics.len() == 0
+    sc = source.new_source(name: "t.hero", text: cases)
+    assert format_file(pc.tree, sc, pc.comments, pc.uses, pc.decls) == cases
 
 # docs/defects/003: fmt deleted seven arms out of digits.hero at exit 0.
 # Four shapes, because the provoking case is a witness and not the class

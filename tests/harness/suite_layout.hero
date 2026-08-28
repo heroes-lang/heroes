@@ -60,20 +60,37 @@ constant CEILING: i64
 # files at once. It happens exactly once. From the next commit on, a file
 # here that grows is red again.
 #
-# The one number that WAS raised, four times, on 2026-08-26 and -28:
+# The one number that WAS raised, four times on 2026-08-26 and -28:
 # `print_fmt.hero` 843 -> 888 -> 903 -> 996 -> 1005 for docs/defects/003,
 # docs/defects/004, panel 095 stage 3 and WIDTH 88 -> 120. Raised, never
 # split, because the language refuses the only cut available — 003's two
 # functions read `power` and `wrapped`, so the seam runs print_bodies ->
 # print_fmt -> print_bodies and `module_cycle` fires on the `use` edge
-# (§11's knot clause). Four raises in three days is itself the signal, and
-# `docs/work/DECIDE.md` is where the author has that question.
+# (§11's knot clause).
+#
+# **It stands at 1150, a round number, by author decision 2026-08-28**
+# (`/decide`, answer `7c`), and the open question it was keeping is
+# retired. The argument FOR splitting was real and is recorded here rather
+# than lost: four of the five defects found in that module across three
+# days were one class — a measurement or a bookkeeping fact that
+# disagreed with what the printer prints. The author took the counter:
+# those repairs made the module sounder, so splitting now is risk with no
+# defect asking for it.
+#
+# The author chose **1100** against a measured 1083, and the same
+# session's own repairs took the file to **1106** before the commit landed
+# — the comments explaining `field_line`'s §4.1 discriminator and the
+# parser guard. So the ceiling is **1150**: it honours a decision taken
+# twenty minutes earlier with room in it, rather than asking the same
+# question again over six lines of comment. `grammar_expr.hero` went
+# 954 -> **1000** in the same commit, for `ends_the_expression` and the
+# paragraph naming panel 007's Amendment B as the rule it enforces.
 constant DECIDED: [str]
     [
         "selfhost/check_walk.hero 1583"
         "selfhost/ir_lower.hero 1483"
-        "selfhost/print_fmt.hero 1083"
-        "selfhost/grammar_expr.hero 954"
+        "selfhost/print_fmt.hero 1150"
+        "selfhost/grammar_expr.hero 1000"
         "selfhost/parse_decl.hero 638"
         "selfhost/ir_print.hero 460"
         "selfhost/ast.hero 449"

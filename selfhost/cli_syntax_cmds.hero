@@ -174,30 +174,84 @@ test "parse checks silently, dumps only a clean tree, and fmt round-trips"
 #
 # The point of the case is what it proves about the OTHER guards: this
 # output PARSES and IS a fixpoint. Only the tree comparison sees it.
-test "fmt refuses output that parses and is a fixpoint and still means something else"
+test "the tree check fires on output that parses and is a fixpoint and means something else"
+    # THE GUARD IS TESTED AS A PREDICATE, not through `run_fmt`, and the
+    # reason is worth writing down. This case used to hand `fmt` a
+    # `record` with a remark in it and assert the REFUSAL, because
+    # `comments_before` deleted the blank line below the comment and §4.1
+    # makes that blank the difference between a remark and the next
+    # field's documentation. That defect is fixed (`/decide` answer `4a`,
+    # `print_fmt.hero`'s `field_line`), so the shape no longer trips the
+    # guard — and a firing test that depends on a live defect stops firing
+    # the day the defect is repaired, which is the day it stops being a
+    # test (§9 asks for a check that FIRES, permanently).
+    #
+    # So the pair is built by hand: the same program with the blank line
+    # and without it. Both parse, both are fixpoints, and their trees
+    # differ by one `doc` — which is exactly what the third check exists
+    # to see and what the first two cannot.
     remark = "record Point\n    x: i64\n    # a remark, not documentation for y\n\n    y: i64\n"
-    _ = write_file(path: "build/selftest_fmt_tree.hero", text: remark)
-    rs = source.new_source(name: "build/selftest_fmt_tree.hero", text: remark)
-    marks: [cli_argv.FlagHit] = [cli_argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
-    rinv = cli_argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_tree.hero"), program_args: [], flags: marks)
-    assert run_fmt(path: "build/selftest_fmt_tree.hero", s: rs, inv: rinv) == .failed_exit
-    assert read_file("build/selftest_fmt_tree.hero").must() == remark
-
-    # And the two weaker properties really do hold on that output, which
-    # is why this case is the only one that can fail the third check.
     squashed = "record Point\n    x: i64\n    # a remark, not documentation for y\n    y: i64\n"
+    caught = refuse_output_the_formatter_broke(path: "t.hero", original: remark, formatted: squashed)
+    assert !caught.is_err()
+
+    # The two weaker properties really do hold on that output, which is
+    # what makes this case the only kind the third check can catch.
     reparsed = parse.parse(squashed)
     assert reparsed.diagnostics.len() == 0
     ss = source.new_source(name: "t.hero", text: squashed)
     assert print_fmt.format_file(reparsed.tree, ss, reparsed.comments, reparsed.uses, reparsed.decls) == squashed
 
-test "fmt refuses to write output it cannot parse back, and leaves the file alone"
-    unspellable = "function f(c: str) -> str\n    return match c\n        \"a\" => \"b\"\n        _ => c\n    + \"x\"\n"
-    _ = write_file(path: "build/selftest_fmt_guard.hero", text: unspellable)
-    gs = source.new_source(name: "build/selftest_fmt_guard.hero", text: unspellable)
+    # And it does NOT fire when the tree is the same: the formatter is
+    # allowed to change text, only not meaning. `0xFF` -> `0xff` is the
+    # one literal rewrite `fmt` makes, and `print_bodies.hero`'s
+    # `canonical_int` is why both dump identically.
+    upper = "constant MASK: i64\n    0xFF\n"
+    lower = "constant MASK: i64\n    0xff\n"
+    quiet = refuse_output_the_formatter_broke(path: "t.hero", original: upper, formatted: lower)
+    assert quiet.is_err()
+
+    # And the real command formats that record now instead of refusing it.
+    _ = write_file(path: "build/selftest_fmt_tree.hero", text: remark)
+    rs = source.new_source(name: "build/selftest_fmt_tree.hero", text: remark)
+    marks: [cli_argv.FlagHit] = [cli_argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
+    rinv = cli_argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_tree.hero"), program_args: [], flags: marks)
+    assert run_fmt(path: "build/selftest_fmt_tree.hero", s: rs, inv: rinv) == .ok_exit
+    assert read_file("build/selftest_fmt_tree.hero").must() == remark
+
+test "the parse and fixpoint checks fire, and the input's own errors are not blamed on the compiler"
+    # A PREDICATE TEST, for the same reason as the one above. This case
+    # used to hand `fmt` a `match` as the LEFT operand with the expression
+    # continuing after its block — a form the printer could not spell —
+    # and assert exit 2. `/decide` answer `5a` settled which artifact was
+    # wrong: panel 007's Amendment B and design.md:1794 both say a long
+    # expression is broken inside brackets or not at all, so the PARSER
+    # was accepting a continuation the language does not have, and
+    # `grammar_expr.hero`'s `ends_the_expression` now refuses it. The
+    # printer owed nothing all along.
+    #
+    # So the two checks get hand-built inputs instead of a live defect.
+    good = "function f() -> i64\n    return 1\n"
+    torn = "function f() -> i64\n    return\n        1 +\n"
+    broken = refuse_output_the_formatter_broke(path: "t.hero", original: good, formatted: torn)
+    assert !broken.is_err()
+
+    # Not a fixpoint: text that parses, and that `fmt` would print
+    # differently — the parentheses come off.
+    parens = "function f() -> i64\n    return (1 + 2)\n"
+    unstable = refuse_output_the_formatter_broke(path: "t.hero", original: good, formatted: parens)
+    assert !unstable.is_err()
+
+    # And the honest attribution, which is what `5a` bought: the file the
+    # PARSER refuses is exit 1 with the diagnostic on the author's line,
+    # not exit 2 with the compiler accusing itself.
+    refused_input = "function f(c: str) -> str\n    return match c\n        \"a\" => \"b\"\n        _ => c\n    + \"x\"\n"
+    _ = write_file(path: "build/selftest_fmt_guard.hero", text: refused_input)
+    gs = source.new_source(name: "build/selftest_fmt_guard.hero", text: refused_input)
     hits: [cli_argv.FlagHit] = [cli_argv.FlagHit(spelling: "--in-place", value: fail("none", "no value"))]
     ginv = cli_argv.Invocation(tag: .fmt_cmd, file: ok("build/selftest_fmt_guard.hero"), program_args: [], flags: hits)
-    assert run_fmt(path: "build/selftest_fmt_guard.hero", s: gs, inv: ginv) == .failed_exit
+    assert run_fmt(path: "build/selftest_fmt_guard.hero", s: gs, inv: ginv) == .diagnostics_exit
 
-    # The whole point: the author's file is byte-for-byte untouched.
-    assert read_file("build/selftest_fmt_guard.hero").must() == unspellable
+    # The whole point either way: the author's file is byte-for-byte
+    # untouched.
+    assert read_file("build/selftest_fmt_guard.hero").must() == refused_input
