@@ -338,6 +338,18 @@ most pushes here touch only the compiler. This path spends none of them, and
 about a minute of Actions against 2,000. **Use one path or the other**; the git
 integration stays off.
 
+**And the traffic goes the other way too.** `ci.yml`, the compiler's own corpus,
+carries `paths-ignore: ['site/**']` and the two site workflows, so a commit that
+changes only a paragraph here no longer starts a seven-minute run building the
+compiler from seed and running the net to answer a question no file under
+`site/` can ask. `paths-ignore` rather than a `paths` allow-list on purpose: an
+ignore list is safe by default, and a new directory of real code stays covered
+without anybody remembering to add it.
+
+The site keeps its own gate either way. `deploy-site.yml` runs `npm run build`
+on every push that touches `site/`, so a site that does not build is a red
+workflow rather than a bad deploy.
+
 ### The credentials
 
 Two repository secrets, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
