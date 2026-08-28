@@ -1,0 +1,211 @@
+
+  <div class="page-head">
+    <h1 class="page">The panel</h1>
+    <span class="nod">· under pressure ·</span>
+  </div>
+  <p class="lede">Nothing changes in this language because it seemed like a
+  good idea. Five judges review it first, four of them can stop it, and each
+  one is shown different evidence on purpose.</p>
+
+  <p>
+    A language built by one person has one failure mode above all others: the
+    author always agrees with themselves. Nobody is paid to say that a construct
+    is elegant and useless. That a rule reads well and cannot be implemented.
+    That the thing being invented already has a name and a paper describing it.
+    So the project hired those voices.
+  </p>
+  <p>
+    The panel is convened before the <i>language</i> changes: the
+    specification, the design document's own rules, surface syntax or meaning,
+    a whole class of diagnostic, or the architecture underneath (the backend,
+    the intermediate representation, the shape of the command line). Changing
+    how the project teaches, or how it writes things down, needs no panel. The
+    line is drawn at the thing a program written in Heroes can see.
+  </p>
+
+  <h2>Five seats, four vetoes <span class="nod">· five years ·</span></h2>
+  <p>
+    Each seat defends exactly one thing, and each is handed a different brief.
+    That is the mechanism, not an accident of convenience: a judge who has read
+    the design document already knows what the answer is supposed to be, so the
+    seat that speaks for the reader is never allowed to see it.
+  </p>
+  <ul class="seats">
+    <li>
+      <span class="who">The reader<span class="veto">veto</span></span>
+      <div>
+        <p>Speaks for the objective: can a language model understand this from
+        the page in front of it? Receives <b>only</b> the specification and
+        sample programs, never the design document and never the repository, so
+        its verdict is an experiment rather than an opinion. Its veto covers
+        anything whose meaning cannot be worked out locally.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">The compiler engineer<span class="veto">veto</span></span>
+      <div>
+        <p>Speaks for the ceiling: what will this cost to implement, and is it
+        core or sugar? Its brief must contain the actual compiler source, not a
+        description of it. Its veto covers a new construct in the core and
+        anything that pushes the compiler past the size one person can finish.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">The C pragmatist<span class="veto">veto</span></span>
+      <div>
+        <p>Speaks for the founding constraint: there is no standard library, so
+        everything a program touches arrives from C. Its brief must include the
+        C that a real binding would need under the proposal, and the seat
+        compiles it or shows why it cannot. Its veto covers anything that
+        breaks the C boundary.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">The spec warden<span class="veto">veto</span></span>
+      <div>
+        <p>Speaks for the budget: the whole specification has to keep fitting in
+        a prompt, so every addition has to name what it removes. Its brief must
+        carry the real token count before and after, measured, never estimated.
+        Its veto fires when the measured budget goes over the ceiling.</p>
+      </div>
+    </li>
+    <li>
+      <span class="who">The historian<span class="veto no-veto">advisory</span></span>
+      <div>
+        <p>Speaks for everyone who solved this before. It is the only seat with
+        no veto, and the only one under a search obligation: dates, line counts
+        and claims have to be verified against sources, because an invented
+        precedent is worse than none. It is the seat below.</p>
+      </div>
+    </li>
+  </ul>
+  <p>
+    Two rules hold the whole thing together. Every judge has to state what
+    would prove them wrong, so a verdict is a claim that can fail rather than a
+    preference. And <b>the panel never blocks the work</b>: the synthesis adopts
+    the most conservative reading, marks it provisional, and queues it for the
+    author to ratify, so a review can be slow without the project stopping.
+  </p>
+  <p>
+    Nothing lands on a verdict alone. A design change needs the sitting written
+    up in the repository, one line in the decision log saying what was decided
+    and why, and its own commit citing the verdict. That record is what
+    separates reasoning from improvisation once the reasons are three months
+    old. There have been <b>94 sittings</b> so far, and they are all in the
+    <a href="https://github.com/giuseppearici/heroes-lang">repository</a>,
+    including the ones where the proposal lost.
+  </p>
+
+  <h2>The historian, and why the past holds a seat <span class="nod">· look back in anger ·</span></h2>
+  <p>
+    Almost every question a new language runs into has been answered by
+    somebody else, usually decades ago, often in a paper that says exactly what
+    it cost. Deciding it from scratch is not brave, it is expensive: the design
+    gets a worse answer and the project pays for the same lesson twice.
+  </p>
+  <p>
+    So one seat does nothing but look backwards. It has no veto, because
+    precedent is evidence rather than authority, and it carries the strictest
+    rule on the panel: every date, every line count, every claim about what
+    another language did has to be checked against a source and cited. A
+    precedent nobody verified is the most confident kind of wrong answer, and
+    this is the one seat where that failure is most likely.
+  </p>
+  <p>
+    It matters more here than it would on another project, because this
+    language did not begin as a language. Its author wrote <i>Heroes of
+    code</i>, a history of programming languages framed as a dream journey with
+    Bowie as the guide, out on 20 September 2026: twenty-one chapters on
+    FORTRAN, COBOL, ALGOL, Lisp, Simula, Smalltalk, Prolog and the rest, with
+    notes, references and a timeline behind them. Nobody bolted that history onto
+    the design afterwards: it is where the design came from, and where the name
+    came from. Somebody who has just spent twenty-one chapters
+    on how this went the first time has one fewer excuse for repeating any of
+    it. <a href="author.html">The author, and the book →</a>
+  </p>
+
+  <h2>What it borrowed, and from whom</h2>
+  <p>
+    Nothing here is invented from nothing. Each borrowing is written down so
+    the departures are deliberate, and so that a reader who knows one of these
+    languages already knows most of Heroes:
+  </p>
+  <ul class="lineage">
+    <li><b>Hylo, Val</b> mutable value semantics. No aliasing means no cycles,
+    so reference counting is complete with no collector. The reason the design
+    stays small.</li>
+    <li><b>Swift</b> copy-on-write over reference counting, <code>inout</code>
+    (this language's <code>@</code>), leading-dot variants. Heroes declines
+    <code>class</code>, and with it <code>weak</code> and <code>unowned</code>.</li>
+    <li><b>Cyclone</b> references only as function parameters, which deletes
+    lifetime annotations. The compiler is written in that discipline, which is
+    why porting it here was mechanical.</li>
+    <li><b>Go</b> canonical formatting, unused variables as errors, and the
+    rule that ends a line without a semicolon.</li>
+    <li><b>Nim</b> the FFI mechanism, the per-module cache and
+    <code>heroes run</code>. Also the cautionary tale: copy the surface, never
+    the implementation.</li>
+    <li><b>Zig</b> tests in the file they test, and the NUL-terminated strings
+    that cross into C.</li>
+    <li><b>Ada</b> one refusal: the same variable twice in one call, when both
+    can write to it. Illegal since 2012, after thirty-three years.</li>
+    <li><b>Pascal, ML, Wirth</b> <code>record</code> and <code>variant</code>,
+    the sixteen-page Oberon report as the size a specification may be, and
+    Pascal-P4 as the size a self-hosting compiler may be.</li>
+    <li><b>Idris, Agda</b> typed holes, moved from proof assistants to code
+    generation: <code>???</code> is a question the compiler answers.</li>
+    <li><b>Rust, Elm</b> the proof that error message quality changes
+    everything, aimed here at a different reader.</li>
+    <li><b>Erlang</b> immutability at scale, motive inverted: it drops sharing
+    for concurrency, Heroes drops it for local readability.</li>
+    <li><b>APL, K, R, MATLAB</b> cited both ways. Against on notation, compact
+    syntax fails for models. In favour on the value model, sixty years of it,
+    and the evidence that it is not what makes a language slow.</li>
+    <li><b>cfront, Vala, Chicken Scheme</b> the C-emission lineage, and the
+    reason clang gets to check every foreign declaration.</li>
+    <li><b>ABC, Python</b> indentation as the syntax, with no braces to
+    balance: a brace nobody writes is a token nobody spends, and it is the one
+    piece of layout every model has already read a great deal of.</li>
+    <li><b>Python</b> <code>import this</code> became
+    <code>heroes this</code>, carried in the binary rather than in a document
+    that drifts. <a href="zen.html">Here.</a></li>
+  </ul>
+  <p>
+    Refusals are recorded the same way, and held to the same standard: a
+    permanent no has to name the program or the compiler fact that would prove
+    it wrong, exactly as a feature does.
+  </p>
+  <p>
+    Every language in that list was designed by somebody, and most of them are
+    still reachable by name. They are named one by one on their own page.
+    <a href="thanks.html">Thanks, and the names &rarr;</a>
+  </p>
+
+  <h2>Who is building this <span class="nod">· absolute beginners ·</span></h2>
+  <p>
+    One person: Giuseppe Arici, partner and CTO at Codermine, in Brescia, over
+    twenty years of software, and a book on the history of programming
+    languages. <b>He had never written a compiler before this one</b>, which is
+    the premise of the project rather than an apology for it, and the reason
+    everything here is written down as it happens.
+    <a href="author.html">Who he is, and the book →</a>
+  </p>
+  <p>
+    Everything the project decided, and everything it got wrong on the way,
+    is public in the
+    <a href="https://github.com/giuseppearici/heroes-lang">repository</a>: the
+    sittings above, the failed predictions, the defects with their symptoms,
+    and the measurements that did not flatter the design.
+  </p>
+
+  <p class="next">
+    Next: <a href="log.html">the build log</a>, where these decisions turn into
+    milestones, newest first.
+  </p>
+
+  <footer>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

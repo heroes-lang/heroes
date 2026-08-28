@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/docs/tests-and-holes.html?raw';
+---
+<BaseLayout path="/docs/tests-and-holes.html" title={'Tests and holes, Heroes documentation'} description={'Tests are part of the language and live beside the code. ??? is a legal expression that makes the compiler tell you what belongs there, so an unfinished program is still one the compiler will talk about.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

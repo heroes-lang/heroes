@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import content from '../html/panel.html?raw';
+---
+<BaseLayout path="/panel.html" title={'The panel, how a change to Heroes gets decided'} description={"Five judges review every change to the Heroes language, four of them with a veto, each one given different evidence on purpose. Plus the historian's seat, the languages Heroes borrowed from, and the person building it."} current="panel">
+<Fragment set:html={content} />
+</BaseLayout>

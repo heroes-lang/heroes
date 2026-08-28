@@ -1,0 +1,181 @@
+
+  <p class="crumb"><a href="index.html">Heroes</a> / <a href="docs/index.html">Docs</a> / errors</p>
+  <div class="page-head">
+    <h1 class="page">Errors</h1>
+    <span class="nod">· always crashing in the same car ·</span>
+  </div>
+  <p class="lede">An error message here is a finished product, made with the
+  same care as the rest, and the claim behind it is measured mistake by mistake,
+  never averaged. Every error below really came out of the compiler, copied and
+  pasted.</p>
+
+  <p>
+    A model does not have the project open in front of it. It gets one message
+    and has to fix the program with that and nothing else, or spend a whole
+    round re-reading files, which is the most expensive thing that can happen.
+    So every error message carries three things: the exact place that is wrong,
+    the other end of the story, meaning where the thing it clashes with was
+    declared, and the repair.
+  </p>
+
+  <h2>The classic inversion</h2>
+  <p>
+    Two parameters of the same type, arguments the wrong way round. It
+    type-checks perfectly in most languages and does the wrong thing. Here the
+    names are mandatory precisely because the types cannot help:
+  </p>
+  <pre class="diag"><code><span class="k">error</span>[needs_label]: two of `copy_text`'s parameters are `str`, so every one of them is named at the call site — this one is `from`
+  at tests/golden/check/swapped-arguments.hero:16:21
+     |
+  16 |     print(copy_text("a", "b"))  <span class="c">#~ needs_label needs_label</span>
+     |                     ^^^
+  fix (certain): write `from: `
+
+<span class="k">error</span>[wrong_label]: `copy_text` has nothing called `to` at this position — it is `from`
+  at tests/golden/check/swapped-arguments.hero:18:21
+     |
+  18 |     print(copy_text(to: "b", from: "a"))  <span class="c">#~ wrong_label wrong_label</span>
+     |                     ^^
+  fix (certain): write `from:`</code></pre>
+  <p>
+    The <code>#~ needs_label</code> notes are in the source on purpose: they are
+    how the test suite checks that the underline lands where the message says it
+    does. And the caret is the span, not the line: in a long call the wrong
+    argument is pointed at rather than described.
+  </p>
+
+  <h2>Two kinds of fix, and only one is machine-applicable</h2>
+  <p>
+    A fix tagged <code>certain</code> is one the compiler worked out rather
+    than guessed: the type it just inferred itself, the one similar name that
+    exists at that point in the program. The <code>heroes check --apply</code>
+    command applies those, and what comes out compiles. A fix tagged
+    <code>guess</code> is a suggestion for the reader, and no tool ever applies
+    it for you: guessing a repair a model would apply blindly is worse than
+    explaining.
+  </p>
+  <p>
+    The same messages also come out as JSON, the format programs read easily,
+    for when the reader is not a person but another program.
+  </p>
+  <p>The loop, as commands:</p>
+  <pre><code>$ heroes check program.hero           <span class="c"># diagnostics, on stderr</span>
+$ heroes check --apply program.hero   <span class="c"># certain fixes applied</span>
+$ heroes check --apply --in-place program.hero
+$ heroes run program.hero</code></pre>
+  <p>
+    <code>heroes</code> there is the binary you built: <code>./heroes</code>,
+    one clang command away from a fresh clone.
+    <a href="index.html#run">How to build it →</a>
+  </p>
+
+  <h2>Words from other languages, refused with the answer attached</h2>
+  <p>
+    The likeliest mistake from a model on autopilot is a keyword imported from
+    somewhere else. Each one is a compile error carrying its own solution,
+    which makes it a single-turn repair rather than a conversation:
+  </p>
+  <pre class="diag"><code>tests/golden/check/reserved-words.hero:2:1: <span class="k">error</span>[reserved_word]: `struct` is not a word in this language — use `record`: `record Point`
+tests/golden/check/reserved-words.hero:3:1: <span class="k">error</span>[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/reserved-words.hero:4:1: <span class="k">error</span>[reserved_word]: `const` is not a word in this language — use `constant`: `constant MAX: i64`
+tests/golden/check/deleted-int.hero:23:8: <span class="k">error</span>[reserved_word]: `int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`</code></pre>
+  <p>
+    That is the one-line-per-diagnostic form; the fuller rendering above is what
+    the command prints. Three of those
+    four carry a <code>certain</code> fix, so <code>--apply</code> migrates a
+    whole file of borrowed keywords in one pass.
+  </p>
+
+  <h2>An unfinished program is not a broken one</h2>
+  <p>
+    <code>???</code> is a legal expression anywhere. The compiler type-checks
+    everything around it and then reports what belongs in the gap: the
+    expected type, what is in scope, and which functions return it. It produces
+    no binary, and it exits <b>zero</b>, because a skeleton under construction
+    is not an error:
+  </p>
+  <pre><code>hole at examples/gallery/09-holes.hero:28:74
+  expected type: str
+  in scope:
+    entries: [Entry]
+  functions that return it:
+    summary_of(entries: [Entry])
+      <span class="c"># The hole can be one argument of an otherwise finished line.</span>
+    library.hero_args_at(index: i64)
+    library.hero_file_read(path: cstr, @status: i64)
+    library.hero_str_try_from_cstr(p: cstr, @status: i64)</code></pre>
+  <p>
+    That is what lets a program be written skeleton-first: sketch the shape, let
+    the compiler tell you what each gap needs, fill them in. The hole is a
+    question the compiler answers, not a failure it reports. Two spellings in
+    that output belong to the C boundary and appear nowhere else:
+    <code>cstr</code> is a C string and <code>@status</code> marks a parameter
+    the callee may write into: a C out-parameter, named at the call site like
+    every other argument.
+  </p>
+
+  <h2>How this gets measured</h2>
+  <p>
+    None of the above is worth anything as an assertion, so it is a number.
+    <code>heroes mutate</code> takes working programs, injects one plausible
+    mistake at a time, and counts how many the compiler turns into compile
+    errors. Then it runs the same corpus against the same compiler with the
+    thesis rules switched off. The difference between the two columns is the
+    only part that means anything.
+  </p>
+  <p>
+    Measured over the 49 programs in <code>examples/</code>, which come to 6,254
+    injected mistakes. Every operator the tool generates is here, including the
+    ones where the design does nothing and the two it fails at:
+  </p>
+  <pre class="table"><code><span class="c">mistake injected                   mutants   caught   without the rules</span>
+a dropped argument label               313      76%          0%
+a shadowed name                        285      94%          0%
+a lazy catch-all on a variant          219     100%         63%
+two same-typed arguments swapped       671      74%         61%
+a forgotten @ on a declaration         234      90%         90%
+a dropped variant case                  78     100%        100%
+a dropped ?                             64      86%         86%
+a swapped pair of booleans             132     100%        100%
+a name that was never declared         255     100%        100%
+a typo in a name                      3611     100%        100%
+mixed integer and float arithmetic     376     100%        100%
+<span class="hi">a typo in an error code</span>                  4       0%          0%
+<span class="hi">a typo in a digit</span>                       12       0%          0%</code></pre>
+  <p>
+    <b>The project refuses to average these into one figure</b>, and the tool
+    prints the refusal every time it runs. The reason is in the table. The top
+    four rows are the measurement: a dropped label and a shadowed name go to
+    zero without the thesis rules, because nothing else in a conventional
+    language is looking for either. The middle rows are caught by names and
+    types in any language, so averaging them in would credit the design with
+    work it did not do. The forgotten <code>@</code> is excluded from any
+    summary on the project&rsquo;s own instruction, because its rate is 100 per
+    cent by construction.
+  </p>
+  <p>
+    Three rows are worth reading against the site&rsquo;s own headline. Swapped
+    same-typed arguments are caught 74 per cent of the time, not 100: where a
+    label is optional because the types already differ, nothing is looking. And
+    the last two rows are caught <b>none</b> of the time, in either arm. A typo
+    inside an error code is a string with a letter changed, and no rule
+    constrains how a string is spelled. A typo inside a number is a number, and
+    <code>10</code> is as legal as <code>100</code>. Those two are the honest
+    edge of the whole design: nothing in a type system can see them.
+  </p>
+  <p>
+    That is what the measurement is for. A number that only ever flattered the
+    design would not be worth printing.
+  </p>
+
+  <p class="next">
+    Next: <a href="selfhost.html">the compiler, written in its own
+    language</a>.
+  </p>
+
+  <footer>
+    <p>Built by Giuseppe Arici, CTO at Codermine, Brescia. Author of
+    <a href="author.html"><i>Heroes of code</i></a>. Standing on
+    <a href="thanks.html">a lot of other people&rsquo;s work</a>.</p>
+    <p>&copy; 2026 Giuseppe Arici &middot; heroes-lang.org</p>
+  </footer>

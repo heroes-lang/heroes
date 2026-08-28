@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/docs/variants-and-match.html?raw';
+---
+<BaseLayout path="/docs/variants-and-match.html" title={'Variants and match, Heroes documentation'} description={'A variant is a value that is one of several shapes. match takes it apart, every case must be named, and a catch-all arm is forbidden, so adding a case breaks every place that reads it.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

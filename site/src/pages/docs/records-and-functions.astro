@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/docs/records-and-functions.html?raw';
+---
+<BaseLayout path="/docs/records-and-functions.html" title={'Records and functions, Heroes documentation'} description={'Records hold fields by value and are always built with field names. Where two parameters share a type, the call site must name them, which is how a swapped pair of arguments becomes a compile error.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Serve site/public over HTTPS on localhost, for previewing the site.
+"""Serve site/dist over HTTPS on localhost, for previewing the site.
+
+It serves `dist/`, which is what `npm run build` writes and what the deploy
+uploads, so what is read here is the artifact and not its ingredients. Before
+the site became an Astro project this served `public/`, and `public/` is now
+the assets alone: serving it would answer 404 for every page.
 
 Why this exists, and why it is not a `heroes` subcommand: CLAUDE.md §10 says
 every new capability is a subcommand of the one binary, and §10's own stopping
@@ -7,7 +12,13 @@ rule is what keeps this out of it — a capability enters that surface only if t
 fixpoint invocation, the golden harness or the Part 11 harness must type it, or
 it has a measured Part 11 effect. Previewing a static directory is none of
 those, and it is not a property of the language at all. It lives here, beside
-the thing it serves, and outside `public/` so it can never be deployed.
+the thing it serves, and outside both `public/` and `dist/` so it can never be
+deployed.
+
+Why it still exists next to `npm run dev`, which is faster: the dev server does
+not answer on the site's real name over HTTPS, and that is the entire point of
+this script. Every absolute URL on these pages is `https://heroes-lang.org/...`,
+and under any other name none of them is exercised.
 
 Why HTTPS rather than `python3 -m http.server`: the pages are meant to be read
 the way a browser will really see them. Over plain HTTP a browser applies a
@@ -49,7 +60,7 @@ import webbrowser
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE / "public"
+ROOT = HERE / "dist"
 CACHE = HERE / ".cache"
 CERT_DAYS = 365
 
@@ -144,7 +155,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Preview site/public over HTTPS.")
+    ap = argparse.ArgumentParser(description="Preview site/dist over HTTPS.")
     ap.add_argument("--host", default="localhost",
                     help="name to bind and to certify (default: localhost)")
     ap.add_argument("--port", type=int, default=None,
@@ -160,7 +171,10 @@ def main() -> None:
         8443 if args.host in ("localhost", "127.0.0.1") else 443)
 
     if not (ROOT / "index.html").is_file():
-        sys.exit(f"{ROOT} does not look like the site: no index.html in it.")
+        sys.exit(
+            f"{ROOT} does not look like the site: no index.html in it.\n"
+            f"The site is built rather than served from source now:\n"
+            f"    cd {HERE.name} && npm ci && npm run build")
     if port < 1024 and hasattr(os, "geteuid") and os.geteuid() != 0:
         sys.exit(
             f"port {port} is privileged, so this needs root:\n"

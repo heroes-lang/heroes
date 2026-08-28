@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/docs/strings.html?raw';
+---
+<BaseLayout path="/docs/strings.html" title={'Strings, Heroes documentation'} description={'A str is immutable UTF-8 measured in bytes. Indexing gives a byte and chars() gives characters: two different jobs the type system keeps apart. Six escapes exist and no others.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

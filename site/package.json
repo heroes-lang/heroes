@@ -1,0 +1,22 @@
+{
+  "name": "heroes-lang-site",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The showcase site for heroes-lang.org",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.2.1",
+    "astro": "^5.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.7.2"
+  }
+}

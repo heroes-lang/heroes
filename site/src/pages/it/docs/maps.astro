@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import content from '../../../html/it/docs/maps.html?raw';
+---
+<BaseLayout path="/it/docs/maps.html" title={'Le mappe, documentazione di Heroes'} description={'Cercare una chiave in una mappa non restituisce un valore. Restituisce un valore oppure un errore, quindi al caso mancante devi rispondere prima di poter usare quello che è tornato indietro.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

@@ -1,0 +1,74 @@
+---
+// The nav bar every page carries, so that no page is a dead end.
+//
+// This file exists because the hand-written site had FORTY-FOUR of these and
+// no two were the same: measured, 44 pages and 44 distinct nav blocks. They
+// differed by exactly three mechanical things, and nothing else:
+//
+//   1. `class="here"` on the entry for the page you are reading;
+//   2. how many `../` the links need to climb;
+//   3. the link to the other edition, which points at this same page.
+//
+// All three are computed here from `path`, which is the page's own canonical
+// path. Adding a nav entry used to mean editing 44 files.
+//
+// TWO DEPTHS, and they are not the same number. `/it/index.html` is one
+// directory down from the site root, so its stylesheet is `../style.css`, but
+// it is the TOP of the Italian edition, so its nav links carry no `../` at all.
+// The stylesheet depth belongs to the layout; the nav depth belongs here.
+
+interface Props {
+  /** The page's canonical path, always absolute and always ending in .html. */
+  path: string;
+  /** Which nav entry is the page you are reading. `errors` is `docs`. */
+  current?: string;
+}
+
+const { path, current } = Astro.props;
+
+const lang = path.startsWith('/it/') ? 'it' : 'en';
+
+// The path inside its own edition: `/it/docs/maps.html` and `/docs/maps.html`
+// both become `docs/maps.html`, which is what makes the two editions one
+// calculation instead of two.
+const rel = (lang === 'it' ? path.slice(4) : path.slice(1));
+const depth = rel.split('/').length - 1;
+const up = '../'.repeat(depth);
+
+// The other edition's copy of this same page. Climbing out of the Italian
+// edition costs one extra step, which is the whole difference between the two.
+const other = lang === 'en' ? `${up}it/${rel}` : `${'../'.repeat(depth + 1)}${rel}`;
+
+// A page inside `docs/` reaches the documentation landing as a sibling; every
+// other page has to go down into the directory. `errors.html` is the case that
+// keeps these two rules apart: it is marked as Docs but it does not live there.
+const inDocs = rel.startsWith('docs/');
+
+const entries = [
+  { key: 'why', href: `${up}why.html`, en: 'Why Heroes', it: 'Perché Heroes' },
+  { key: 'docs', href: inDocs ? 'index.html' : `${up}docs/index.html`, en: 'Docs', it: 'Docs' },
+  { key: 'selfhost', href: `${up}selfhost.html`, en: 'Self-hosted', it: 'Self-hosted' },
+  { key: 'zen', href: `${up}zen.html`, en: 'Zen', it: 'Zen' },
+  { key: 'panel', href: `${up}panel.html`, en: 'Panel', it: 'Panel' },
+  { key: 'thanks', href: `${up}thanks.html`, en: 'Thanks', it: 'Grazie' },
+  { key: 'author', href: `${up}author.html`, en: 'Author', it: 'Autore' },
+  { key: 'log', href: `${up}log.html`, en: 'Log', it: 'Log' },
+];
+---
+<nav class="site">
+  <div>
+    <a class="mark" href={`${up}index.html`}>
+      <svg viewBox="0 0 24 32" aria-hidden="true"><path fill="var(--red)" d="M 14 0 L2 18 h8 L7 32 L22 12 h-9 z"/></svg>
+      <span>Heroes</span>
+    </a>
+    <ul>
+      {entries.map((e) => (
+        <li><a class={e.key === current ? 'here' : undefined} href={e.href}>{lang === 'it' ? e.it : e.en}</a></li>
+      ))}
+    </ul>
+    {lang === 'en'
+      ? <a class="lang" href={other} hreflang="it" lang="it" title="Questa pagina in italiano">IT</a>
+      : <a class="lang" href={other} hreflang="en" lang="en" title="This page in English">EN</a>}
+    <a class="out" href="https://github.com/giuseppearici/heroes-lang">GitHub ↗</a>
+  </div>
+</nav>

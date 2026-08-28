@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import content from '../../html/docs/maps.html?raw';
+---
+<BaseLayout path="/docs/maps.html" title={'Maps, Heroes documentation'} description={'Looking a key up in a map does not return a value. It returns a value or an error, so the missing case has to be answered before you can use what came back.'} current="docs">
+<Fragment set:html={content} />
+</BaseLayout>

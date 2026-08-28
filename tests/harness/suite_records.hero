@@ -51,8 +51,47 @@ constant RECORD: [str]
         "DESIGN-LOG.md"
         "vendor"
         "editors/vscode/icons"
-        "site/log.html"
         "archive"
+    ]
+
+# **`site/log.html` was on that list and is not any more**, and it is deleted
+# rather than repointed. The entry stopped matching anything the day the site's
+# pages moved under `site/public/`, and it matched nothing again when they moved
+# to `site/src/html/`: measured 2026-08-28, `site/log.html` selects **0** of the
+# repository's tracked paths. It was also never needed. The claim, falsifiable by
+# one command: **the build log names no numbered milestone in either edition** —
+# measured the same day, 0 occurrences in `site/src/html/log.html` and 0 in
+# `site/src/html/it/log.html`, because every entry there is written `M-<name>`.
+#
+# Repointing it would have restored a line that has never fired, over exactly the
+# surface §14 cares most about: the site is user-visible output, and that is where
+# an identifier must never appear. A dead exemption is not free — it reads as a
+# statement that the log is allowed to breach the rule, and the next person to add
+# an entry would believe it.
+
+# Files git tracks that NOBODY WRITES. Not records, which are prose somebody
+# meant; artifacts, whose bytes are chosen by a tool.
+#
+# `site/package-lock.json` is here because base64 and this check disagree about
+# what a word boundary is. `opens_at` excludes a letter, a digit, `_` and `-`
+# before the `M`, which is what makes `sha512-M3...` safe. It does not exclude
+# `+` or `/`, and those two are IN THE BASE64 ALPHABET, so an integrity hash
+# containing `+M3` or `/M9` reads as a milestone identifier. Measured 2026-08-28
+# on the 232,880-byte lockfile this repository now carries: **4 occurrences**,
+# `/M9`, `/M7`, `+M3` and `/M6`, every one of them inside an `integrity` field,
+# and `M93B` is the one the check reported. `named` finds 0, so only this half of
+# the rule is affected.
+#
+# The falsifiable claim: **no file in this list is written by a person, so no
+# identifier in one is a claim about this project.** The day that stops being
+# true of an entry, it belongs in RECORD or nowhere.
+#
+# Exact match, never a prefix. RECORD names trees because a record directory is
+# a record all the way down; a generated file is one file, and a prefix here
+# would quietly exempt a directory somebody adds later.
+constant GENERATED: [str]
+    [
+        "site/package-lock.json"
     ]
 
 # The blessed emissions: 5.4 MB of generated C, derived from the
@@ -137,13 +176,14 @@ function run_all(scratch: str) -> report.Report?
     living: [str] @ []
 
     for path in walked
-        if !quoting(path) && !is_record(path)
+        if !quoting(path) && !is_record(path) && !is_generated(path)
             living @ living.push(path)
 
     numbered(@r, living: living)
     named(@r, living: living)
     c_files(@r, living: living)
     citations(@r, present: walked)
+    exemptions(@r, present: walked)
     expectations(@r, scratch: scratch)
     boundary(@r)
     verdicts(@r, present: walked)
@@ -155,6 +195,74 @@ function run_all(scratch: str) -> report.Report?
 function is_record(path: str) -> bool
     for entry in RECORD
         if path == entry || strings.starts_with(text: path, prefix: entry + "/")
+            return true
+
+    return false
+
+# Whether this path is an artifact nobody writes. Exact match, and the reason
+# it is not a prefix match like `is_record` is up at GENERATED.
+function is_generated(path: str) -> bool
+    for entry in GENERATED
+        if path == entry
+            return true
+
+    return false
+
+# Every exemption still selects a file.
+#
+# This is the check `site/log.html` needed and did not have. That entry stopped
+# matching anything the day the site's pages moved into `site/public/`, and it
+# went on sitting in RECORD reading like a rule — the walk skipped nothing, and
+# nothing said so. The comment above QUOTES_THE_OLD_SPELLING describes the same
+# accident from the other side: a record was renamed, its SUFFIX match silently
+# stopped firing, and 486 KB of legacy identifiers would have been reported as
+# breaches. Both are one failure, an exemption that no longer reaches anything,
+# and it is invisible in both directions — the list still reads as correct.
+#
+# The three lists match differently and the question is the same for all three:
+# does this line still reach a file git tracks? RECORD names trees, GENERATED
+# names one file exactly, QUOTES_THE_OLD_SPELLING matches a suffix.
+function exemptions(@r: report.Report, present: [str])
+    dead: [str] @ []
+
+    for entry in RECORD
+        if !selects_tree(entry: entry, present: present)
+            dead @ dead.push("    RECORD: " + entry)
+
+    for entry in GENERATED
+        if !selects_exactly(entry: entry, present: present)
+            dead @ dead.push("    GENERATED: " + entry)
+
+    for entry in QUOTES_THE_OLD_SPELLING
+        if !selects_suffix(entry: entry, present: present)
+            dead @ dead.push("    QUOTES_THE_OLD_SPELLING: " + entry)
+
+    if dead.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/exemptions",
+            detail: "  an exemption selects no file this repository tracks:\n" + dead.join("\n") + "\n  Either the path moved, and the entry has to follow it, or nothing needs the\n  exemption any more and the line comes out. A rule that reaches nothing still\n  reads as a rule to whoever finds it next."
+        )
+    else
+        report.keep_pass(@r)
+
+function selects_tree(entry: str, present: [str]) -> bool
+    for path in present
+        if path == entry || strings.starts_with(text: path, prefix: entry + "/")
+            return true
+
+    return false
+
+function selects_exactly(entry: str, present: [str]) -> bool
+    for path in present
+        if path == entry
+            return true
+
+    return false
+
+function selects_suffix(entry: str, present: [str]) -> bool
+    for path in present
+        if strings.ends_with(text: path, suffix: entry)
             return true
 
     return false
